@@ -1,0 +1,416 @@
+{
+  "frames": {
+    "hat-0020.png": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 77,
+        "h": 43
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 44,
+        "y": 94,
+        "w": 77,
+        "h": 43
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0019.png": {
+      "frame": {
+        "x": 2,
+        "y": 47,
+        "w": 104,
+        "h": 38
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 27,
+        "y": 95,
+        "w": 104,
+        "h": 38
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0018.png": {
+      "frame": {
+        "x": 2,
+        "y": 87,
+        "w": 72,
+        "h": 69
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 53,
+        "y": 88,
+        "w": 72,
+        "h": 69
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0017.png": {
+      "frame": {
+        "x": 108,
+        "y": 2,
+        "w": 60,
+        "h": 46
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 55,
+        "y": 93,
+        "w": 60,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0016.png": {
+      "frame": {
+        "x": 156,
+        "y": 2,
+        "w": 96,
+        "h": 93
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 23,
+        "y": 39,
+        "w": 96,
+        "h": 93
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0015.png": {
+      "frame": {
+        "x": 2,
+        "y": 158,
+        "w": 123,
+        "h": 98
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 5,
+        "y": 9,
+        "w": 123,
+        "h": 98
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0014.png": {
+      "frame": {
+        "x": 127,
+        "y": 100,
+        "w": 119,
+        "h": 87
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 7,
+        "y": 28,
+        "w": 119,
+        "h": 87
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0013.png": {
+      "frame": {
+        "x": 251,
+        "y": 2,
+        "w": 101,
+        "h": 93
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 8,
+        "y": 44,
+        "w": 101,
+        "h": 93
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0012.png": {
+      "frame": {
+        "x": 248,
+        "y": 105,
+        "w": 96,
+        "h": 104
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 21,
+        "y": 38,
+        "w": 96,
+        "h": 104
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0011.png": {
+      "frame": {
+        "x": 2,
+        "y": 258,
+        "w": 80,
+        "h": 89
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 19,
+        "y": 43,
+        "w": 80,
+        "h": 89
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0010.png": {
+      "frame": {
+        "x": 93,
+        "y": 258,
+        "w": 70,
+        "h": 86
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 39,
+        "y": 52,
+        "w": 70,
+        "h": 86
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0009.png": {
+      "frame": {
+        "x": 181,
+        "y": 211,
+        "w": 101,
+        "h": 89
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 17,
+        "w": 101,
+        "h": 89
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0008.png": {
+      "frame": {
+        "x": 2,
+        "y": 340,
+        "w": 139,
+        "h": 107
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 31,
+        "w": 139,
+        "h": 107
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0007.png": {
+      "frame": {
+        "x": 143,
+        "y": 330,
+        "w": 77,
+        "h": 31
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 39,
+        "y": 76,
+        "w": 77,
+        "h": 31
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0006.png": {
+      "frame": {
+        "x": 176,
+        "y": 330,
+        "w": 104,
+        "h": 111
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 19,
+        "y": 34,
+        "w": 104,
+        "h": 111
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0005.png": {
+      "frame": {
+        "x": 346,
+        "y": 2,
+        "w": 90,
+        "h": 93
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 20,
+        "y": 39,
+        "w": 90,
+        "h": 93
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0004.png": {
+      "frame": {
+        "x": 346,
+        "y": 97,
+        "w": 81,
+        "h": 78
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 26,
+        "y": 29,
+        "w": 81,
+        "h": 78
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0003.png": {
+      "frame": {
+        "x": 272,
+        "y": 211,
+        "w": 99,
+        "h": 55
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 25,
+        "y": 38,
+        "w": 99,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0002.png": {
+      "frame": {
+        "x": 282,
+        "y": 312,
+        "w": 109,
+        "h": 134
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 19,
+        "y": 0,
+        "w": 109,
+        "h": 134
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    },
+    "hat-0001.png": {
+      "frame": {
+        "x": 346,
+        "y": 177,
+        "w": 108,
+        "h": 70
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 11,
+        "y": 33,
+        "w": 108,
+        "h": 70
+      },
+      "sourceSize": {
+        "w": 142,
+        "h": 216
+      }
+    }
+  },
+  "meta": {
+    "app": "http://github.com/pixijs/assetpack",
+    "version": "1.0",
+    "image": "main.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 438,
+      "h": 449
+    },
+    "scale": 1,
+    "related_multi_packs": []
+  }
+}

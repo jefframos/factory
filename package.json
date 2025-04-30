@@ -1,0 +1,26 @@
+{
+    "name": "multi-game-project",
+    "version": "1.0.0",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "serve": "vite preview",
+        "dev:game": "cross-env GAME=$GAME vite",
+        "build:game": "cross-env GAME=$GAME vite build",
+        "zip:game": "cross-env GAME=$GAME ts-node scripts/zip-game.ts",
+        "build:assets": "cross-env GAME=$GAME node tools/build-assets.mjs",
+        "build:all": "ts-node scripts/build-all.ts",
+        "generate:index": "ts-node scripts/generate-index.ts"
+    },
+    "devDependencies": {
+        "archiver": "^5.3.1",
+        "cross-env": "^7.0.3",
+        "pixi.js": "7.4.2",
+        "ts-node": "^10.9.2",
+        "vite": "^4.5.0",
+        "vite-plugin-static-copy": "^0.16.0"
+    },
+    "dependencies": {
+        "@assetpack/core": "^1.4.0"
+    }
+}

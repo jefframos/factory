@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@core/*": ["core/*"]
+    },
+    "outDir": "dist",
+    "strict": true
+  },
+  "include": ["games", "core", "scripts"]
+}

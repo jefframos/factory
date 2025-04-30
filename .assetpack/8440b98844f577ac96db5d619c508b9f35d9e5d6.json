@@ -1,0 +1,285 @@
+{
+    "assets": {
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images": {
+            "isFolder": true,
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1745901295045,
+                "duration": 4.905999958515167,
+                "success": true
+            }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}": {
+            "isFolder": true,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images",
+            "metaData": {
+                "tps": true
+            },
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1745901295045,
+                "duration": 113.05629998445511,
+                "success": true
+            }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0001.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "7zVU"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0002.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "rPr73Q"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0003.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "xSPKJQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0004.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "bcdK"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0005.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "8RGyIw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0006.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "aasa7A"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0007.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "8UMJxg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0008.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "bUeIFQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0009.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "j12SiA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0010.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "qQoa5w"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0011.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "e9V2Ug"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0012.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "flNXeQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0013.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "IUqp0w"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0014.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "MElN"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0015.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "yDE13A"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0016.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "JLj_OQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0017.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "KFmV6A"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0018.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "WG2aFw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0019.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "pL5-9Q"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}/hat-0020.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "Gd1EXg"
+        },
+        ".assetpack/texture-packer/main.png": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {
+                "mIgnore": true,
+                "nomip": true
+            },
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game1/images/main.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/texture-packer/main.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true,
+                "mIgnore": true,
+                "nomip": true
+            },
+            "transformData": {}
+        },
+        ".assetpack/texture-packer/main.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game1/raw-assets/images/main{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {
+                "page": 0
+            }
+        },
+        ".assetpack/json/main.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/texture-packer/main.json",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {
+                "page": 0
+            }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game1/images/main.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/main.json",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {
+                "page": 0
+            }
+        }
+    }
+}
