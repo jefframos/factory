@@ -8,7 +8,7 @@ if (!GAME) {
 
 export default defineConfig({
     root: `games/${GAME}`,
-    base: `/${GAME}/`,
+    base: `./`,
     publicDir: resolve(__dirname, 'public'),
     // base: `./`,
     resolve: {
@@ -18,7 +18,7 @@ export default defineConfig({
     },
     build: {
         //outDir: resolve(__dirname, 'dist', GAME),
-        outDir: `../../dist/${GAME}`,
+        outDir: `../../dist/`,
         emptyOutDir: true,
         rollupOptions: {
             input: resolve(__dirname, `games/${GAME}/index.html`),

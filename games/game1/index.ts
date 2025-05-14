@@ -37,6 +37,7 @@ export default class MyGame extends Game {
         PIXI.Assets.addBundle('fonts', fonts.bundles[0].assets)
 
 
+        console.log(fonts)
 
         await PIXI.Assets.loadBundle('fonts', (p) => {
             this.loaderScene.updateLoader(p * 0.5);
@@ -50,7 +51,7 @@ export default class MyGame extends Game {
             style.textContent = `
             @font-face {
                 font-family: ${element};
-                src: url('/game1/fonts/${element}.woff2') format('woff2');
+                src: url('./game1/fonts/${element}.woff2') format('woff2');
                 font-weight: normal;
                 font-style: normal;
             }
