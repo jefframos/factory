@@ -724,7 +724,7 @@
   "meta": {
     "app": "http://github.com/pixijs/assetpack",
     "version": "1.0",
-    "image": "main.png",
+    "image": "ui.png",
     "format": "RGBA8888",
     "size": {
       "w": 807,

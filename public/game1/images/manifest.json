@@ -5,10 +5,10 @@
       "assets": [
         {
           "alias": [
-            "main"
+            "ui"
           ],
           "src": [
-            "main.json"
+            "ui.json"
           ]
         }
       ]
