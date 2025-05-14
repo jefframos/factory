@@ -5,6 +5,7 @@
         "dev": "vite",
         "start": "cross-env GAME=game1 npm run dev:game",
         "assets": "cross-env GAME=game1 npm run build:assets",
+        "build-game1": "cross-env GAME=game1 npm run build:game",
         "build": "vite build",
         "serve": "vite preview",
         "dev:game": "cross-env GAME=$GAME vite",

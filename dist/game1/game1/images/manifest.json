@@ -1,0 +1,17 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "main"
+          ],
+          "src": [
+            "main.json"
+          ]
+        }
+      ]
+    }
+  ]
+}
