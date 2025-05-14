@@ -8,7 +8,7 @@ if (!GAME) {
 
 export default defineConfig({
     root: `games/${GAME}`,
-    base: `/`,
+    base: `/${GAME}/`,
     publicDir: resolve(__dirname, 'public'),
     // base: `./`,
     resolve: {
