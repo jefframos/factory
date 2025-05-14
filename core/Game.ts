@@ -1,6 +1,6 @@
 import '@core/style.css';
 import * as PIXI from 'pixi.js';
-
+import Stats from 'stats.js';
 
 export class Game {
     static DESIGN_WIDTH = 720;
@@ -10,7 +10,7 @@ export class Game {
     public overlayContainer: PIXI.Container;
 
     private lastTime: number = performance.now();
-
+    private stats?: Stats;
     // Screen data
     static gameScreenData: {
         center: PIXI.Point,
@@ -28,7 +28,7 @@ export class Game {
         bottomRight: PIXI.Point
     };
 
-    constructor(options?: Partial<PIXI.IApplicationOptions>) {
+    constructor(options?: Partial<PIXI.IApplicationOptions>, showStats?: boolean) {
         this.app = new PIXI.Application({
             backgroundColor: 0x1099bb,
             resizeTo: window,
@@ -43,6 +43,20 @@ export class Game {
         this.app.stage.addChild(this.stageContainer);
         this.app.stage.addChild(this.overlayContainer);
 
+
+        if (showStats) {
+            this.stats = new Stats();
+            this.stats.showPanel(0); // 0 = FPS
+            Object.assign(this.stats.dom.style, {
+                position: 'absolute',
+                top: '0px',
+                right: '0px',
+                left: 'unset',
+                zIndex: '1000',
+            });
+            document.body.appendChild(this.stats.dom);
+        }
+
         this.app.ticker.add(this.loop, this);
 
         window.addEventListener('resize', this.onResize.bind(this));
@@ -50,12 +64,14 @@ export class Game {
     }
 
     private loop() {
+        this.stats?.begin();
         const now = performance.now();
         const deltaMS = now - this.lastTime;
         this.lastTime = now;
 
         const deltaSeconds = deltaMS / 1000;
         this.update(deltaSeconds);
+        this.stats?.end();
     }
 
     protected update(delta: number) {

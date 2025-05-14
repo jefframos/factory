@@ -16,6 +16,7 @@
     },
     "devDependencies": {
         "@types/signals": "^1.0.4",
+        "@types/stats.js": "^0.17.4",
         "archiver": "^5.3.1",
         "cross-env": "^7.0.3",
         "pixi.js": "7.4.2",
@@ -26,6 +27,7 @@
     "dependencies": {
         "@assetpack/core": "^1.4.0",
         "gsap": "^3.13.0",
-        "signals": "^1.0.0"
+        "signals": "^1.0.0",
+        "stats.js": "^0.17.0"
     }
 }

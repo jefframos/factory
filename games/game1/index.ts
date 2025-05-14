@@ -17,7 +17,7 @@ export default class MyGame extends Game {
     private loaderScene!: LoaderScene;
 
     constructor() {
-        super();
+        super(undefined, true);
         this.stageContainer.addChild(this.gameContainer);
         this.sceneManager = new SceneManager(this.gameContainer);
         this.loaderScene = this.sceneManager.register('loader', LoaderScene);
