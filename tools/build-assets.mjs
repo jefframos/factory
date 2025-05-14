@@ -9,7 +9,6 @@ import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import audio from './pack/audio.mjs';
 import font from './pack/font.mjs';
-import image from './pack/image.mjs';
 import json from './pack/json.mjs';
 import manifest from './pack/manifest.mjs';
 
@@ -21,6 +20,9 @@ const __dirname = dirname(__filename);
 const rawImages = resolve(__dirname, `../games/${GAME}/raw-assets/images`);
 const outputImages = resolve(__dirname, `../public/${GAME}/images`);
 
+const rawFonts = resolve(__dirname, `../games/${GAME}/raw-assets/fonts`);
+const outputFonts = resolve(__dirname, `../public/${GAME}/fonts`);
+
 if (!GAME) {
     console.error('❌ Please specify GAME=game1');
     process.exit(1);
@@ -28,7 +30,6 @@ if (!GAME) {
 
 async function buildAllAssets() {
     const pipes = [];
-    pipes.push(image.pipes[0]);
     pipes.push(font.pipes[0]);
     pipes.push(json.pipes[0]);
     pipes.push(audio.pipes[0]);
@@ -52,13 +53,29 @@ async function buildAllAssets() {
                 compression: { jpg: true, png: true, webp: true },
                 texturePacker: { nameStyle: "relative" },
                 audio: audio.pipes[0],
-
             }),
         ]
     });
 
+    const fontPack = new AssetPack({
+        entry: rawFonts,
+        output: outputFonts,
+        // pipes: pipes
+        pipes: [
+            font.pipes[0],
+            pixiManifest({
+                output: "manifest.json",
+                createShortcuts: false,
+                trimExtensions: true,
+                includeMetaData: false,
+                //nameStyle: 'short'
+            }),
+        ]
+    })
+
     // To run AssetPack
     await assetpack.run();
+    await fontPack.run();
 }
 
 buildAllAssets();

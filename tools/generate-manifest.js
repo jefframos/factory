@@ -13,7 +13,7 @@ if (!GAME) {
 const publicPath = resolve(__dirname, `../public/${GAME}`);
 const publicImages = resolve(publicPath, 'images');
 const publicAudio = resolve(publicPath, 'audio');
-const publicFonts = resolve(publicPath, 'fonts');
+const publicFonts = resolve(publicPath, 'style');
 
 function createBundle(folderPath, folderName) {
     if (!readdirSync(folderPath).length) return null;

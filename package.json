@@ -3,6 +3,8 @@
     "version": "1.0.0",
     "scripts": {
         "dev": "vite",
+        "start": "cross-env GAME=game1 npm run dev:game",
+        "assets": "cross-env GAME=game1 npm run build:assets",
         "build": "vite build",
         "serve": "vite preview",
         "dev:game": "cross-env GAME=$GAME vite",
@@ -13,6 +15,7 @@
         "generate:index": "ts-node scripts/generate-index.ts"
     },
     "devDependencies": {
+        "@types/signals": "^1.0.4",
         "archiver": "^5.3.1",
         "cross-env": "^7.0.3",
         "pixi.js": "7.4.2",
@@ -21,6 +24,8 @@
         "vite-plugin-static-copy": "^0.16.0"
     },
     "dependencies": {
-        "@assetpack/core": "^1.4.0"
+        "@assetpack/core": "^1.4.0",
+        "gsap": "^3.13.0",
+        "signals": "^1.0.0"
     }
 }
