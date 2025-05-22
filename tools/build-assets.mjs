@@ -38,20 +38,20 @@ async function buildAllAssets() {
     const assetpack = new AssetPack({
         entry: rawImages,
         output: outputImages,
-        // pipes: pipes
         pipes: [
             pixiManifest({
                 output: "manifest.json",
                 createShortcuts: false,
                 trimExtensions: true,
                 includeMetaData: false,
-                //nameStyle: 'short'
+                nameStyle: 'short'
             }),
             pixiPipes({
+                manifest: { trimExtensions: true },
                 cacheBust: true,
                 resolutions: { default: 1 },
                 compression: { jpg: true, png: true, webp: true },
-                texturePacker: { nameStyle: "relative" },
+                texturePacker: { nameStyle: "short", texturePacker: { removeFileExtension: true } },
                 audio: audio.pipes[0],
             }),
         ]
@@ -68,7 +68,6 @@ async function buildAllAssets() {
                 createShortcuts: false,
                 trimExtensions: true,
                 includeMetaData: false,
-                //nameStyle: 'short'
             }),
         ]
     })

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="x-ogp-key" content="3174fafe-7de9-4772-a186-5ba6524cb3ac">
+    <title>Flappy Bird</title>
+    <script src="https://cdn.opengameprotocol.com/opengame-sdk-v2.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div id="startScreen">
+        <h1>Flappy Bird</h1>
+        <button id="startButton">Start</button>
+    </div>
+    <div id="gameOverScreen">
+        <h1>Game Over</h1>
+        <p>Score: <span id="finalScore">0</span></p>
+        <p id="pointsDisplay">OGP Points: <span id="ogpPoints">0</span></p>
+        <button id="playAgainButton">Play Again</button>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
