@@ -1,0 +1,167 @@
+{
+    "assets": {
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/fonts": {
+            "isFolder": true,
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1747970103572,
+                "duration": 531.5959000587463,
+                "success": true
+            }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/fonts/LEMONMILK-Bold{wf}.otf": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/fonts",
+            "metaData": {
+                "wf": true,
+                "family": "LEMONMILK-Bold"
+            },
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1747970103572,
+                "duration": 532.2957999706268,
+                "success": true
+            },
+            "hash": "rCbI6w"
+        },
+        ".assetpack/webfont/LEMONMILK-Bold{wf}.woff2": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/fonts/LEMONMILK-Bold{wf}.otf",
+            "metaData": {
+                "wf": true
+            },
+            "inheritedMetaData": {
+                "wf": true,
+                "family": "LEMONMILK-Bold"
+            },
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/fonts/LEMONMILK-Bold.woff2": {
+            "isFolder": false,
+            "transformParent": ".assetpack/webfont/LEMONMILK-Bold{wf}.woff2",
+            "metaData": {},
+            "inheritedMetaData": {
+                "wf": true,
+                "family": "LEMONMILK-Bold"
+            },
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/fonts/LEMONMILK-Regular{wf}.otf": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/fonts",
+            "metaData": {
+                "wf": true,
+                "family": "LEMONMILK-Regular"
+            },
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1747970103734,
+                "duration": 369.70990002155304,
+                "success": true
+            },
+            "hash": "Fbjx8w"
+        },
+        ".assetpack/webfont/LEMONMILK-Regular{wf}.woff2": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/fonts/LEMONMILK-Regular{wf}.otf",
+            "metaData": {
+                "wf": true
+            },
+            "inheritedMetaData": {
+                "wf": true,
+                "family": "LEMONMILK-Regular"
+            },
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/fonts/LEMONMILK-Regular.woff2": {
+            "isFolder": false,
+            "transformParent": ".assetpack/webfont/LEMONMILK-Regular{wf}.woff2",
+            "metaData": {},
+            "inheritedMetaData": {
+                "wf": true,
+                "family": "LEMONMILK-Regular"
+            },
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/fonts/Poppins-Bold{wf}.ttf": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/fonts",
+            "metaData": {
+                "wf": true,
+                "family": "Poppins-Bold"
+            },
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1747970103853,
+                "duration": 250.8513000011444,
+                "success": true
+            },
+            "hash": "vGNH1g"
+        },
+        ".assetpack/webfont/Poppins-Bold{wf}.woff2": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/fonts/Poppins-Bold{wf}.ttf",
+            "metaData": {
+                "wf": true
+            },
+            "inheritedMetaData": {
+                "wf": true,
+                "family": "Poppins-Bold"
+            },
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/fonts/Poppins-Bold.woff2": {
+            "isFolder": false,
+            "transformParent": ".assetpack/webfont/Poppins-Bold{wf}.woff2",
+            "metaData": {},
+            "inheritedMetaData": {
+                "wf": true,
+                "family": "Poppins-Bold"
+            },
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/fonts/Poppins-Regular{wf}.ttf": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/fonts",
+            "metaData": {
+                "wf": true,
+                "family": "Poppins-Regular"
+            },
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1747970103977,
+                "duration": 127.39569997787476,
+                "success": true
+            },
+            "hash": "luId7Q"
+        },
+        ".assetpack/webfont/Poppins-Regular{wf}.woff2": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/fonts/Poppins-Regular{wf}.ttf",
+            "metaData": {
+                "wf": true
+            },
+            "inheritedMetaData": {
+                "wf": true,
+                "family": "Poppins-Regular"
+            },
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/fonts/Poppins-Regular.woff2": {
+            "isFolder": false,
+            "transformParent": ".assetpack/webfont/Poppins-Regular{wf}.woff2",
+            "metaData": {},
+            "inheritedMetaData": {
+                "wf": true,
+                "family": "Poppins-Regular"
+            },
+            "transformData": {}
+        }
+    }
+}

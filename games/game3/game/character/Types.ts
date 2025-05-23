@@ -1,25 +1,28 @@
 import * as PIXI from 'pixi.js';
 export type CharacterAnimationData = {
     name: string;
-    frames: string[]; // sprite IDs
+    frame: string | string[]; // sprite IDs
     frameRate: number; // frames per second
     loop?: boolean;
+    first?: number;
+    last?: number;
 };
 
-export type PieceData = {
+export type PieceViewData = {
     id: string;
+    tile?: string;
     idle: CharacterAnimationData;
     walk: CharacterAnimationData;
 };
 
 export class CharacterTable {
-    public static characters: PieceData[] = [];
+    public static characters: PieceViewData[] = [];
 
-    public static getCharacter(index: number): PieceData {
+    public static getCharacter(index: number): PieceViewData {
         return CharacterTable.characters[index];
     }
 
-    public static load(characters: PieceData[]) {
+    public static load(characters: PieceViewData[]) {
         CharacterTable.characters = characters;
     }
 }
@@ -39,6 +42,32 @@ export function generateFrames(base: string, start: number, end: number): string
     return frames;
 }
 
+export function convertCharacterSetTable(raw: PieceViewData[]): PieceViewData[] {
+    const copy: PieceViewData[] = raw.map(p => ({ ...p, idle: { ...p.idle }, walk: { ...p.walk } }));
+
+    copy.forEach(element => {
+        if (typeof element.idle.frame === "string") {
+            const source = element.idle.frame;
+            if (element.idle.first === undefined || element.idle.last === undefined) {
+                element.idle.frame = [source];
+            } else {
+                element.idle.frame = generateFrames(source, element.idle.first, element.idle.last);
+            }
+        }
+
+        if (typeof element.walk.frame === "string") {
+            const source = element.walk.frame;
+            if (element.walk.first === undefined || element.walk.last === undefined) {
+                element.walk.frame = [source];
+            } else {
+                element.walk.frame = generateFrames(source, element.walk.first, element.walk.last);
+            }
+        }
+    });
+
+    return copy;
+}
+
 export const Fonts = {
     Main: new PIXI.TextStyle({
         fontFamily: 'LEMONMILK-Bold',
@@ -51,156 +80,6 @@ export const Fonts = {
     })
 } as const;
 
-
-export const CharacterTableData: PieceData[] = [
-    {
-        id: "doge",
-        idle: {
-            name: "idle",
-            frames: generateFrames("meme-small-10000", 1, 6),
-            frameRate: 10,
-            loop: true
-        },
-        walk: {
-            name: "walk",
-            frames: generateFrames("meme-small-10000", 7, 24),
-            frameRate: 15,
-            loop: true
-        }
-    },
-    {
-        id: "shark",
-        idle: {
-            name: "idle",
-            frames: generateFrames("meme-small-20000", 1, 6),
-            frameRate: 10,
-            loop: true
-        },
-        walk: {
-            name: "walk",
-            frames: generateFrames("meme-small-20000", 7, 24),
-            frameRate: 15,
-            loop: true
-        }
-    },
-    {
-        id: "grumps",
-        idle: {
-            name: "idle",
-            frames: generateFrames("meme-small-30000", 1, 6),
-            frameRate: 10,
-            loop: true
-        },
-        walk: {
-            name: "walk",
-            frames: generateFrames("meme-small-30000", 7, 24),
-            frameRate: 15,
-            loop: true
-        }
-    },
-    {
-        id: "toilet",
-        idle: {
-            name: "idle",
-            frames: generateFrames("meme-small-40000", 1, 8),
-            frameRate: 6,
-            loop: true
-        },
-        walk: {
-            name: "walk",
-            frames: generateFrames("meme-small-40000", 1, 8),
-            frameRate: 15,
-            loop: true
-        }
-    },
-    {
-        id: "pepe",
-        idle: {
-            name: "idle",
-            frames: generateFrames("meme-10000", 2, 2),
-            frameRate: 6,
-            loop: true
-        },
-        walk: {
-            name: "walk",
-            frames: generateFrames("meme-10000", 1, 12),
-            frameRate: 15,
-            loop: true
-        }
-    },
-    {
-        id: "woj",
-        idle: {
-            name: "idle",
-            frames: generateFrames("meme-20000", 2, 2),
-            frameRate: 6,
-            loop: true
-        },
-        walk: {
-            name: "walk",
-            frames: generateFrames("meme-20000", 1, 12),
-            frameRate: 15,
-            loop: true
-        }
-    },
-    {
-        id: "woj2",
-        idle: {
-            name: "idle",
-            frames: generateFrames("meme-30000", 2, 2),
-            frameRate: 6,
-            loop: true
-        },
-        walk: {
-            name: "walk",
-            frames: generateFrames("meme-30000", 1, 12),
-            frameRate: 15,
-            loop: true
-        }
-    },
-    {
-        id: "woj3",
-        idle: {
-            name: "idle",
-            frames: generateFrames("meme-40000", 2, 2),
-            frameRate: 6,
-            loop: true
-        },
-        walk: {
-            name: "walk",
-            frames: generateFrames("meme-40000", 1, 12),
-            frameRate: 15,
-            loop: true
-        }
-    },
-    {
-        id: "woj4",
-        idle: {
-            name: "idle",
-            frames: generateFrames("meme-50000", 2, 2),
-            frameRate: 6,
-            loop: true
-        },
-        walk: {
-            name: "walk",
-            frames: generateFrames("meme-50000", 1, 12),
-            frameRate: 15,
-            loop: true
-        }
-    },
-    {
-        id: "woj5",
-        idle: {
-            name: "idle",
-            frames: generateFrames("meme-60000", 2, 2),
-            frameRate: 6,
-            loop: true
-        },
-        walk: {
-            name: "walk",
-            frames: generateFrames("meme-60000", 1, 12),
-            frameRate: 15,
-            loop: true
-        }
-    },
-]
+export const CharacterTableStore = {
+    data: [] as PieceViewData[],
+};

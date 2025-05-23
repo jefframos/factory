@@ -1,6 +1,6 @@
 import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
-import { CharacterTableData, Fonts, PieceData } from '../character/Types';
+import { Fonts, PieceViewData } from '../character/Types';
 import { SpriteAnimation } from './SpriteAnimation';
 
 export class Piece extends PIXI.Container {
@@ -41,10 +41,10 @@ export class Piece extends PIXI.Container {
         this.spriteContainer.addChild(this.sprite);
 
         this.animation = new SpriteAnimation();
-        this.animation.register(CharacterTableData[0].idle);
+
         this.merged = false;
     }
-    public reset(value: number, character: PieceData) {
+    public reset(value: number, character: PieceViewData) {
         this.value = value;
         this.merged = false;
 
@@ -55,6 +55,7 @@ export class Piece extends PIXI.Container {
         this.animation.register(character.walk);
         this.animation.play("idle");
 
+        this.background.texture = PIXI.Texture.from(character.tile ? character.tile : "ItemFrame03_Single_Blue");
 
 
         this.sprite.texture = PIXI.Texture.from(this.animation.currentSpriteId);

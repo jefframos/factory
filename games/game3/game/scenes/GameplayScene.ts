@@ -1,9 +1,12 @@
 import { Game } from "@core/Game";
 import { GameScene } from "@core/scene/GameScene";
+import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
+import TiledAutoPositionObject from "@core/tiled/TiledAutoPositionObject";
+import TiledLayerObject from "@core/tiled/TiledLayerObject";
 import BaseButton from "@core/ui/BaseButton";
 import * as PIXI from 'pixi.js';
-import { Fonts } from "../character/Types";
 import SwipeInputManager from "../io/SwipeInputManager";
+import ScoreUi from "../ui/ScoreUi";
 import { GridManager } from "./GridManager";
 
 export default class GameplayScene extends GameScene {
@@ -14,14 +17,22 @@ export default class GameplayScene extends GameScene {
     private isTransitioning = false;
 
 
-
     public highScore = 0;
     private canAutoMove: boolean = false;
 
-    private scoreText!: PIXI.Text;
+    private background: TiledAutoPositionObject = new TiledAutoPositionObject()
+    private scoreUi!: ScoreUi;
 
     constructor() {
         super();
+
+        if (ExtractTiledFile.TiledData) {
+            this.background.build(ExtractTiledFile.TiledData, ['Background'])
+            this.addChild(this.background)
+        }
+
+
+
         this.highScore = parseInt(localStorage.getItem('meme_highscore') || '0');
 
         const menu = new PIXI.Container();
@@ -85,10 +96,12 @@ export default class GameplayScene extends GameScene {
         menu.position.set(0, Game.DESIGN_HEIGHT - 120);
 
 
-        this.scoreText = new PIXI.Text('', { ...Fonts.Main } as Partial<PIXI.TextStyle>);
-        this.scoreText.anchor.set(0, 0);
-        this.scoreText.position.set(20, 20);
-        this.addChild(this.scoreText);
+        if (ExtractTiledFile.TiledData) {
+            const layer = new TiledLayerObject();
+            layer.build(ExtractTiledFile.TiledData, ['ScoreMenu'])
+            this.scoreUi = new ScoreUi(layer)
+            this.addChild(this.scoreUi)
+        }
     }
     private updateScoreText(points: number) {
 
@@ -96,13 +109,21 @@ export default class GameplayScene extends GameScene {
             this.highScore = points;
             localStorage.setItem('meme_highscore', String(this.highScore));
         }
-        this.scoreText.text = `Score: ${points}\nHighscore: ${this.highScore}`;
+
+        this.scoreUi?.updateScores(points, this.highScore)
     }
     public build(): void {
         this.addChild(this.gameplayContainer);
 
         this.gridManager = new GridManager(this.gameplayContainer);
+
+        this.gridManager.onGameOver.add(() => {
+            //alert('gameover')
+        });
+        // this.gridManager.onWin.add(stop);
+
         this.gridManager.onPointsUpdated.add(this.updateScoreText.bind(this));
+        this.updateScoreText(0)
         this.inputManager = new SwipeInputManager();
 
         this.inputManager.onMove.add(async (direction) => {
@@ -148,6 +169,10 @@ export default class GameplayScene extends GameScene {
 
         this.gridManager.update(delta);
 
+        this.background?.update(delta)
+
+        this.scoreUi.x = Game.DESIGN_WIDTH / 2
+        this.scoreUi.y = 250
         this.gameplayContainer.x = Game.DESIGN_WIDTH / 2
         this.gameplayContainer.y = Game.DESIGN_HEIGHT / 2
         // future animations or per-frame logic

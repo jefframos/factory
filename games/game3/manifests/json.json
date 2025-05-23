@@ -1,0 +1,33 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "characterMemeSet.json"
+          ],
+          "src": [
+            "characterMemeSet.json"
+          ]
+        },
+        {
+          "alias": [
+            "test.json"
+          ],
+          "src": [
+            "test.json"
+          ]
+        },
+        {
+          "alias": [
+            "tiled.json"
+          ],
+          "src": [
+            "tiled.json"
+          ]
+        }
+      ]
+    }
+  ]
+}

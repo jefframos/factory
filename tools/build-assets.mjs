@@ -23,6 +23,8 @@ const outputImages = resolve(__dirname, `../public/${GAME}/images`);
 const rawFonts = resolve(__dirname, `../games/${GAME}/raw-assets/fonts`);
 const outputFonts = resolve(__dirname, `../public/${GAME}/fonts`);
 
+const outputManifest = resolve(__dirname, `../games/${GAME}/manifests`);
+
 if (!GAME) {
     console.error('❌ Please specify GAME=game1');
     process.exit(1);
@@ -40,7 +42,7 @@ async function buildAllAssets() {
         output: outputImages,
         pipes: [
             pixiManifest({
-                output: "manifest.json",
+                output: `${outputManifest}/images.json`,
                 createShortcuts: false,
                 trimExtensions: true,
                 includeMetaData: false,
@@ -64,7 +66,7 @@ async function buildAllAssets() {
         pipes: [
             font.pipes[0],
             pixiManifest({
-                output: "manifest.json",
+                output: `${outputManifest}/fonts.json`,
                 createShortcuts: false,
                 trimExtensions: true,
                 includeMetaData: false,
@@ -72,7 +74,6 @@ async function buildAllAssets() {
         ]
     })
 
-    // To run AssetPack
     await assetpack.run();
     await fontPack.run();
 }

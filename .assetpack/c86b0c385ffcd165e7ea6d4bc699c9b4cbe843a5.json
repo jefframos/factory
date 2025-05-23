@@ -1,0 +1,69 @@
+{
+    "assets": {
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json": {
+            "isFolder": true,
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1747969838715,
+                "duration": 4.505199909210205,
+                "success": true
+            }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterMemeSet.json": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1747969838715,
+                "duration": 4.482699990272522,
+                "success": true
+            },
+            "hash": "oDZ9JQ"
+        },
+        ".assetpack/json/characterMemeSet.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterMemeSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/manifests/characterMemeSet.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/characterMemeSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/test.json": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1747969838718,
+                "duration": 1.7081999778747559,
+                "success": true
+            },
+            "hash": "Z2z_rw"
+        },
+        ".assetpack/json/test.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/test.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/manifests/test.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/test.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        }
+    }
+}

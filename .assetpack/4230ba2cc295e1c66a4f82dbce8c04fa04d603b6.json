@@ -1,0 +1,96 @@
+{
+    "assets": {
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json": {
+            "isFolder": true,
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1747975725733,
+                "duration": 3.5424000024795532,
+                "success": true
+            }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterMemeSet.json": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1747975725733,
+                "duration": 3.5254000425338745,
+                "success": true
+            },
+            "hash": "vYcKdg"
+        },
+        ".assetpack/json/characterMemeSet.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterMemeSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/characterMemeSet.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/characterMemeSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/test.json": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1747970011655,
+                "duration": 1.8792001008987427,
+                "success": true
+            },
+            "hash": "Z2z_rw"
+        },
+        ".assetpack/json/test.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/test.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/test.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/test.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/tiled.json": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1747975036853,
+                "duration": 9.471099972724915,
+                "success": true
+            },
+            "hash": "cg4Srw"
+        },
+        ".assetpack/json/tiled.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/tiled.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/tiled.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/tiled.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        }
+    }
+}

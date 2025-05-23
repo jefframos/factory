@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1747885032647,
-                "duration": 4.9893999099731445,
+                "date": 1747972983260,
+                "duration": 5.8424999713897705,
                 "success": true
             }
         },
@@ -21,10 +21,119 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1747885032647,
-                "duration": 844.1870000362396,
+                "date": 1747972983260,
+                "duration": 1309.6022999286652,
                 "success": true
             }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain": {
+            "isFolder": true,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "a": true,
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0001.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain",
+            "metaData": {},
+            "inheritedMetaData": {
+                "a": true,
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "nYhY"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0002.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain",
+            "metaData": {},
+            "inheritedMetaData": {
+                "a": true,
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "7rNsKQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0003.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain",
+            "metaData": {},
+            "inheritedMetaData": {
+                "a": true,
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "IhKHFg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0004.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain",
+            "metaData": {},
+            "inheritedMetaData": {
+                "a": true,
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "d5N6ug"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0005.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain",
+            "metaData": {},
+            "inheritedMetaData": {
+                "a": true,
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "lW7qzw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0006.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain",
+            "metaData": {},
+            "inheritedMetaData": {
+                "a": true,
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "Hw6Izw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0007.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain",
+            "metaData": {},
+            "inheritedMetaData": {
+                "a": true,
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "c-TLkQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0008.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain",
+            "metaData": {},
+            "inheritedMetaData": {
+                "a": true,
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "JLjj9w"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0009.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/gigabrain",
+            "metaData": {},
+            "inheritedMetaData": {
+                "a": true,
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "qJqwiQ"
         },
         "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/characters{a}{tps}/meme-1": {
             "isFolder": true,
@@ -1856,8 +1965,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1747885032652,
-                "duration": 671.1248999834061,
+                "date": 1747972983265,
+                "duration": 1302.1493000984192,
                 "success": true
             }
         },
@@ -1871,6 +1980,86 @@
             "transformData": {},
             "hash": "jTFdEg"
         },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/BorderFrame_Round20_Single_Dark.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "lEF_wg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/BorderFrame_Round20_Single_Yellow.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "6sfgXg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/BorderFrame_Round20_White_Bg.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "hK3o_A"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/BorderFrame_Round24.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "ZJh9Hg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/BorderFrame_Round30.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "VQxyPQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/BorderFrame_Squrare_Bg.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "5NVy"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/BorderFrame_Squrare_Inner.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "wwIivQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/BubbleFrame01_Bg.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "tYbE6Q"
+        },
         "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/BubbleFrame01_Hexagon_Bg_Blue.png": {
             "isFolder": false,
             "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
@@ -1880,6 +2069,26 @@
             },
             "transformData": {},
             "hash": "9M-I0w"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/BubbleFrame01_Hexagon_Bg_Green.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "uy0saQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/BubbleFrame01_Hexagon_Bg_Yellow.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "GDeAsg"
         },
         "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Button01_s_Blue.png": {
             "isFolder": false,
@@ -2001,6 +2210,46 @@
             "transformData": {},
             "hash": "Mk_N"
         },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Button_SkillBtn_Blue.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "WCj3ww"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Button_SkillBtn_Dark.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "h6Wo0A"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Button_SkillBtn_Orange.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "eLUBCQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Button_SkillBtn_Red.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "f0qMCw"
+        },
         "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/CardFrame02_n_Light.png": {
             "isFolder": false,
             "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
@@ -2020,6 +2269,555 @@
             },
             "transformData": {},
             "hash": "zhUlwQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons": {
+            "isFolder": true,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Back.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "RoWgBQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Check01.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "KkqNrw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Check02.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "W3y4Aw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Check03_s.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "0fDZag"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Close02.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "bMHu_g"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Exclamation.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "aklKxg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Lock01_s.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "n1uZAg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Lock02.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "za7iTQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Lock03.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "Uvf8MQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Megaphone.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "q6WVnQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Menu_Hamburger.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "wKG6hg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Pause.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "UMIsxg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Property.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "z7nyxQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Setting.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "afxqaQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Skip.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "egHgZQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Star_Off.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "peLg9w"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Star_On.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "XqmUFw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Ticket01.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "IvXjuA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Ticket02.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "dYz2mg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Ticket_Gold.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "TJwagA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Ticket_Silver.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "4ShsPw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/Icon_Trophy02.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "6L3nuA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Bag_Brown.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "HPIWig"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Bag_Gray.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "5d41SQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Chest_Gem.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "YfLj2w"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Chest_Gold.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "aYCx9w"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Chest_Premium.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "VRX1RQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Chest_Skull.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "-e2Ahg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Chest_Wood.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "3T0DoQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Clover_Green.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "MhBhSQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Gem_Star_Blue.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "HjwAwQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Gift_Blue.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "rYiJqw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Gift_Green.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "z2IyIQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Heart_Red.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "3buNJQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Medalstand.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "lQgF-g"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_MemoPad.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "lEE5FA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Money_Coin.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "Ru3m7Q"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Shop.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "EB6scA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Star_Blue.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "JqEJ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Star_Bronze.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "mGI55w"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Star_Gold.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "0LZVow"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Star_Purple.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "3ZLkKA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Star_Red.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "haystQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Star_Silver.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "0lTFIQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Ticket_Gold.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "ZHOseQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Ticket_Red.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "Yzv2lA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Trophy_Bronze.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "LwIDzA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Trophy_Gold.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "NKNXbg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Trophy_Silver.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "bYJ3lw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_TV_AdBlock.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "zH8EwA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Video.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "yf1BCQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Image_Effect_Light02.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "1GJf6Q"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Image_Effect_Light03.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "0uWU8Q"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Image_Effect_Rotate.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "UJhqPw"
         },
         "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ItemFrame01_Single_Blue.png": {
             "isFolder": false,
@@ -2121,7 +2919,7 @@
             "transformData": {},
             "hash": "ts5f5g"
         },
-        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ItemIcon_Clover_Green.Png": {
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ItemFrame03_Single_Gray.png": {
             "isFolder": false,
             "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
             "metaData": {},
@@ -2129,9 +2927,9 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "MhBhSQ"
+            "hash": "q3Vo5g"
         },
-        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ItemIcon_Gem_Star_Blue.Png": {
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ItemFrame03_Single_Green.png": {
             "isFolder": false,
             "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
             "metaData": {},
@@ -2139,9 +2937,9 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "HjwAwQ"
+            "hash": "dgl2Qw"
         },
-        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ItemIcon_Heart_Red.Png": {
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ItemFrame03_Single_Navy.png": {
             "isFolder": false,
             "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
             "metaData": {},
@@ -2149,9 +2947,9 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "3buNJQ"
+            "hash": "Wnk9xA"
         },
-        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ItemIcon_Star_Gold.Png": {
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ItemFrame03_Single_Purple.png": {
             "isFolder": false,
             "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
             "metaData": {},
@@ -2159,7 +2957,147 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "0LZVow"
+            "hash": "bXiL4g"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ItemFrame03_Single_Red.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "jh1KVA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ItemFrame03_Single_Yellow.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "s84Byw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Label_Badge01_Green.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "hDM8jg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Label_Badge01_Purple.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "eOSJQw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Label_Badge01_Red.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "qR4wBw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Label_Badge01_Yellow.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "vKYGGQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Label_Badge02.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "l7lUxg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Label_Parallelogram_Blue.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "OHj-gw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Label_Parallelogram_Gray.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "mLjBjg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Label_Parallelogram_Green.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "sedNeQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Label_Parallelogram_Hologram.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "z_cyBw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Label_Parallelogram_Purple.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "He1eIQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Label_Parallelogram_Red.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "xNr6pQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Label_Parallelogram_Yellow.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "voONdg"
         },
         "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ListFrame04_Single_f_Blue.png": {
             "isFolder": false,
@@ -2180,6 +3118,86 @@
             },
             "transformData": {},
             "hash": "nVMGnQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Popup06_Pattern.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "ORPJ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ResourceBar_Single_Btn_Blue1.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "diwAtg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ResourceBar_Single_Btn_Purple1.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "ZvcnLw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ResourceBar_Single_Btn_Yellow1.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "nOL5eg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ResourceBar_Single_Icon_Coin.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "hCqfvg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ResourceBar_Single_Icon_Energy.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "VmoM5g"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ResourceBar_Single_Icon_Gem.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "v-K1Fg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/ResourceBar_Single_Icon_Monster.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "gICfiw"
         },
         "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Slider_Basic01_Bg_Single.png": {
             "isFolder": false,
@@ -2220,6 +3238,146 @@
             },
             "transformData": {},
             "hash": "Xglvrw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Slider_Level02_Icon_Up_Green.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "ihXLWg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Slider_Level02_Icon_Up_White.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "a2pmOQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Title_Ribbon01_Blue.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "U_U90g"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Title_Ribbon01_Gray.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "irJWrA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Title_Ribbon01_Green.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "cbB2OQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Title_Ribbon01_Magenta.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "iILbLg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Title_Ribbon01_Plum.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "vPic_g"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Title_Ribbon01_Purple.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "sXh6"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Title_Ribbon01_Red.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "nODJPA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Title_Ribbon01_Sky.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "wtFbXA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Title_Tapered01.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "0Lo7nw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Toggle_Check_Single_Icon.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "LEFo"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/Toggle_Check_White_Icon.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "W3y4Aw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/tutorial_hand_2.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "O8AmzQ"
         },
         ".assetpack/multi-pipe-1/ui.png": {
             "isFolder": false,

@@ -1,7 +1,7 @@
 import Pool from '@core/Pool';
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
-import { CharacterTableData } from '../character/Types';
+import { CharacterTableStore } from '../character/Types';
 import { Direction } from '../io/SwipeInputManager';
 import { Piece } from '../view/Piece';
 
@@ -35,11 +35,12 @@ export class GridManager {
 
         for (let y = 0; y < GRID_SIZE; y++) {
             for (let x = 0; x < GRID_SIZE; x++) {
-                const tile = new PIXI.Graphics();
+
+                const tile = new PIXI.NineSlicePlane(PIXI.Texture.from('ItemFrame03_Single_Gray'), 10, 10, 10, 10);
+                tile.width = TILE_SIZE_WIDTH;
+                tile.height = TILE_SIZE_HEIGHT;
+
                 const pos = this.getTilePosition(x, y);
-                tile.beginFill(0x444444);
-                tile.drawRoundedRect(0, 0, TILE_SIZE_WIDTH, TILE_SIZE_HEIGHT, 10);
-                tile.endFill();
                 tile.position.set(pos.x, pos.y);
                 this.backgroundContainer.addChild(tile);
             }
@@ -115,7 +116,7 @@ export class GridManager {
 
         const piece = Pool.instance.getElement<Piece>(Piece);
         piece.build(TILE_SIZE_WIDTH, TILE_SIZE_HEIGHT);
-        piece.reset(value, CharacterTableData[power]);
+        piece.reset(value, CharacterTableStore.data[power]);
         piece.setDirection(this.getVector(this.latestDirection));
 
         const pos = this.getTilePosition(spot.x, spot.y);
@@ -171,7 +172,7 @@ export class GridManager {
                             this.container.removeChild(nextPiece);
 
                             const power = Math.log2(newValue) - 1;
-                            piece.reset(newValue, CharacterTableData[power]);
+                            piece.reset(newValue, CharacterTableStore.data[power]);
                             piece.upgrade();
 
                             this.points += newValue;

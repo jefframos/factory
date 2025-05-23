@@ -30,7 +30,7 @@ export class SpriteAnimation {
         this.currentAnimation = anim;
         this.currentFrameIndex = 0;
         this.elapsedTime = 0;
-        this._currentSpriteId = anim.frames[0];
+        this._currentSpriteId = anim.frame[0];
     }
 
     public update(delta: number) {
@@ -40,7 +40,7 @@ export class SpriteAnimation {
 
         const frameDuration = 1 / this.currentAnimation.frameRate;
         if (this.elapsedTime >= frameDuration) {
-            const frames = this.currentAnimation.frames;
+            const frames = this.currentAnimation.frame;
             this.currentFrameIndex++;
 
             if (this.currentFrameIndex >= frames.length) {
