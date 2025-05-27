@@ -54,15 +54,15 @@ export interface TiledTile {
     properties?: Record<string, any>;
 }
 
-export interface ExtradedTiledTile {
+export interface ExtratedTiledTileData {
     layers: Map<string, TiledLayer>,
     tilesets: Map<string, TiledTileset>,
     settings?: TiledLayer
 }
 
 export class ExtractTiledFile {
-    static TiledData?: ExtradedTiledTile;
-    static parseTiledData(tiledData: any): ExtradedTiledTile {
+    static TiledData?: ExtratedTiledTileData;
+    static parseTiledData(tiledData: any): ExtratedTiledTileData {
         let settings: TiledLayer | undefined;
         const layers = new Map<string, TiledLayer>();
         const tilesets = new Map<string, TiledTileset>();

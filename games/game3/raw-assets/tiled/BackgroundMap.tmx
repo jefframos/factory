@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="10" nextobjectid="69">
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="11" nextobjectid="79">
  <editorsettings>
   <export target="../json/tiled.json" format="json"/>
  </editorsettings>
- <tileset firstgid="1" name="Background" tilewidth="411" tileheight="275" tilecount="4" columns="0">
+ <tileset firstgid="1" name="Background" tilewidth="734" tileheight="770" tilecount="5" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="3">
    <image width="250" height="243" source="images/ui/BubbleFrame01_Hexagon_Bg_Blue.png"/>
@@ -17,8 +17,11 @@
   <tile id="6">
    <image width="270" height="275" source="images/ui/Image_Effect_Rotate.png"/>
   </tile>
+  <tile id="7">
+   <image width="734" height="770" source="images/backgrounds/Background_Lobby_Bg_center.png"/>
+  </tile>
  </tileset>
- <tileset firstgid="8" name="UI" tilewidth="609" tileheight="601" tilecount="138" columns="0">
+ <tileset firstgid="9" name="UI" tilewidth="609" tileheight="601" tilecount="139" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="20">
    <properties>
@@ -91,25 +94,25 @@
   </tile>
   <tile id="33">
    <properties>
-    <property name="nineSliced" type="int" value="10"/>
+    <property name="nineSliced" type="int" value="50"/>
    </properties>
    <image width="128" height="107" source="images/ui/Button_SkillBtn_Blue.png"/>
   </tile>
   <tile id="34">
    <properties>
-    <property name="nineSliced" type="int" value="10"/>
+    <property name="nineSliced" type="int" value="50"/>
    </properties>
    <image width="128" height="107" source="images/ui/Button_SkillBtn_Dark.png"/>
   </tile>
   <tile id="35">
    <properties>
-    <property name="nineSliced" type="int" value="10"/>
+    <property name="nineSliced" type="int" value="50"/>
    </properties>
    <image width="128" height="107" source="images/ui/Button_SkillBtn_Orange.png"/>
   </tile>
   <tile id="36">
    <properties>
-    <property name="nineSliced" type="int" value="10"/>
+    <property name="nineSliced" type="int" value="50"/>
    </properties>
    <image width="128" height="107" source="images/ui/Button_SkillBtn_Red.png"/>
   </tile>
@@ -199,55 +202,55 @@
   </tile>
   <tile id="51">
    <properties>
-    <property name="nineSliced" type="int" value="10"/>
+    <property name="nineSliced" type="int" value="30"/>
    </properties>
    <image width="60" height="122" source="images/ui/ItemFrame01_Single_Blue.png"/>
   </tile>
   <tile id="52">
    <properties>
-    <property name="nineSliced" type="int" value="10"/>
+    <property name="nineSliced" type="int" value="30"/>
    </properties>
    <image width="60" height="122" source="images/ui/ItemFrame01_Single_Gray.png"/>
   </tile>
   <tile id="53">
    <properties>
-    <property name="nineSliced" type="int" value="10"/>
+    <property name="nineSliced" type="int" value="30"/>
    </properties>
    <image width="60" height="122" source="images/ui/ItemFrame01_Single_Green.png"/>
   </tile>
   <tile id="54">
    <properties>
-    <property name="nineSliced" type="int" value="10"/>
+    <property name="nineSliced" type="int" value="30"/>
    </properties>
    <image width="60" height="122" source="images/ui/ItemFrame01_Single_Hologram1.png"/>
   </tile>
   <tile id="55">
    <properties>
-    <property name="nineSliced" type="int" value="10"/>
+    <property name="nineSliced" type="int" value="30"/>
    </properties>
    <image width="60" height="122" source="images/ui/ItemFrame01_Single_Navy.png"/>
   </tile>
   <tile id="56">
    <properties>
-    <property name="nineSliced" type="int" value="10"/>
+    <property name="nineSliced" type="int" value="30"/>
    </properties>
    <image width="60" height="122" source="images/ui/ItemFrame01_Single_OffWhite.png"/>
   </tile>
   <tile id="57">
    <properties>
-    <property name="nineSliced" type="int" value="10"/>
+    <property name="nineSliced" type="int" value="30"/>
    </properties>
    <image width="60" height="122" source="images/ui/ItemFrame01_Single_Purple.png"/>
   </tile>
   <tile id="58">
    <properties>
-    <property name="nineSliced" type="int" value="10"/>
+    <property name="nineSliced" type="int" value="30"/>
    </properties>
    <image width="60" height="122" source="images/ui/ItemFrame01_Single_Red.png"/>
   </tile>
   <tile id="59">
    <properties>
-    <property name="nineSliced" type="int" value="10"/>
+    <property name="nineSliced" type="int" value="30"/>
    </properties>
    <image width="60" height="122" source="images/ui/ItemFrame01_Single_Yellow.png"/>
   </tile>
@@ -602,30 +605,48 @@
   <tile id="157">
    <image width="128" height="128" source="images/ui/icons/ItemIcon_Video.Png"/>
   </tile>
+  <tile id="158">
+   <image width="64" height="73" source="images/ui/icons/Icon_Timer.png"/>
+  </tile>
  </tileset>
  <objectgroup draworder="index" id="3" name="Background">
-  <properties>
-   <property name="height" type="int" value="1080"/>
-   <property name="width" type="int" value="1920"/>
-  </properties>
-  <object id="64" gid="7" x="138.455" y="1178" width="1291.09" height="1315"/>
+  <object id="64" gid="7" x="-307.545" y="1182" width="1291.09" height="1315"/>
+  <object id="70" gid="8" x="-5" y="1089" width="734" height="770"/>
+  <object id="71" gid="2147483656" x="729" y="1089" width="734" height="770"/>
+  <object id="72" gid="2147483656" x="-738" y="1089" width="734" height="770"/>
+ </objectgroup>
+ <objectgroup id="10" name="MainMenu">
+  <object id="77" gid="61" x="22" y="1065" width="676" height="122"/>
+  <object id="78" x="42.6667" y="958.667" width="633.333" height="85.3333">
+   <properties>
+    <property name="id" value="buttons-list"/>
+   </properties>
+  </object>
  </objectgroup>
  <objectgroup draworder="index" id="8" name="ScoreMenu">
-  <object id="65" gid="92" x="12.6663" y="6" width="262.666" height="62"/>
-  <object id="67" gid="162" x="203.333" y="0.181818" width="52" height="52"/>
-  <object id="68" gid="90" x="-275.333" y="6" width="262.67" height="62"/>
-  <object id="50" x="-252.395" y="-41.8182" width="215.455" height="32">
+  <object id="65" gid="93" x="377.666" y="132" width="262.666" height="62"/>
+  <object id="67" gid="163" x="584.666" y="145.515" width="88" height="88"/>
+  <object id="68" gid="91" x="78.667" y="132" width="262.67" height="62"/>
+  <object id="50" x="132.605" y="83.1818" width="172.122" height="32">
    <properties>
     <property name="id" value="current-score"/>
    </properties>
   </object>
-  <object id="51" x="52.9993" y="-41.8185" width="142.667" height="32">
+  <object id="51" x="412.999" y="83.1815" width="172" height="32">
    <properties>
     <property name="id" value="highscore"/>
    </properties>
   </object>
+  <object id="73" gid="92" x="458.667" y="223.667" width="181.333" height="62"/>
+  <object id="74" gid="167" x="599.333" y="225.292" width="59.5799" height="67.9583"/>
+  <object id="75" gid="95" x="64.6667" y="140" width="57" height="79"/>
+  <object id="76" x="479.272" y="174.667" width="106.122" height="32">
+   <properties>
+    <property name="id" value="timer"/>
+   </properties>
+  </object>
  </objectgroup>
  <objectgroup id="4" name="Settings" locked="1">
-  <object id="17" name="Screen" x="0" y="0" width="1546.06" height="1080"/>
+  <object id="17" name="Screen" x="0" y="0" width="720" height="1080"/>
  </objectgroup>
 </map>

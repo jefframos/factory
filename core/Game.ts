@@ -4,7 +4,7 @@ import Stats from 'stats.js';
 
 export class Game {
     static DESIGN_WIDTH = 720;
-    static DESIGN_HEIGHT = 1280;
+    static DESIGN_HEIGHT = 1080;
     public app: PIXI.Application;
     public stageContainer: PIXI.Container;
     public overlayContainer: PIXI.Container;
@@ -27,6 +27,7 @@ export class Game {
         bottomLeft: PIXI.Point,
         bottomRight: PIXI.Point
     };
+    static deltaTime: number;
 
     constructor(options?: Partial<PIXI.IApplicationOptions>, showStats?: boolean) {
         this.app = new PIXI.Application({
@@ -70,6 +71,7 @@ export class Game {
         this.lastTime = now;
 
         const deltaSeconds = deltaMS / 1000;
+        Game.deltaTime = deltaSeconds;
         this.update(deltaSeconds);
         this.stats?.end();
     }

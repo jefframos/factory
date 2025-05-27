@@ -2,10 +2,9 @@ import { Game } from "@core/Game";
 import { GameScene } from "@core/scene/GameScene";
 import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
 import TiledAutoPositionObject from "@core/tiled/TiledAutoPositionObject";
-import TiledLayerObject from "@core/tiled/TiledLayerObject";
-import BaseButton from "@core/ui/BaseButton";
 import * as PIXI from 'pixi.js';
 import SwipeInputManager from "../io/SwipeInputManager";
+import MainMenuUi from "../ui/MainMenuUi";
 import ScoreUi from "../ui/ScoreUi";
 import { GridManager } from "./GridManager";
 
@@ -22,6 +21,7 @@ export default class GameplayScene extends GameScene {
 
     private background: TiledAutoPositionObject = new TiledAutoPositionObject()
     private scoreUi!: ScoreUi;
+    private mainMenu!: MainMenuUi;
 
     constructor() {
         super();
@@ -29,79 +29,31 @@ export default class GameplayScene extends GameScene {
         if (ExtractTiledFile.TiledData) {
             this.background.build(ExtractTiledFile.TiledData, ['Background'])
             this.addChild(this.background)
+
+            this.mainMenu = new MainMenuUi(ExtractTiledFile.TiledData, ['MainMenu']);
+            this.addChild(this.mainMenu);
+            this.mainMenu.registerButton('Start', () => {
+                this.gridManager.start();
+            });
+            this.mainMenu.registerButton('Autoplay', () => {
+                this.autoplay();
+            })
+            this.mainMenu.registerButton('Clear Cookies', () => {
+                localStorage.clear();
+            })
+            this.mainMenu.registerButton('Reset Game', () => {
+                this.canAutoMove = false;
+                this.gridManager.reset();
+            })
+
+            this.scoreUi = new ScoreUi(ExtractTiledFile.TiledData, ['ScoreMenu'])
+            this.addChild(this.scoreUi)
         }
 
 
 
         this.highScore = parseInt(localStorage.getItem('meme_highscore') || '0');
 
-        const menu = new PIXI.Container();
-        this.addChild(menu);
-
-        const labels = ['Start', 'Autoplay', 'Clear Cookies', 'Reset Game'];
-        const ids = ['start', 'autoplay', 'clearCookies', 'resetGame'];
-        const callbacks = [
-            () => {
-                this.gridManager.start();
-            },
-            () => {
-                this.autoplay();
-            },
-            () => {
-                localStorage.clear();
-            },
-            () => {
-                this.canAutoMove = false;
-                this.gridManager.reset();
-            }
-        ]
-
-        const buttons: BaseButton[] = [];
-
-        const buttonWidth = 150;
-        const buttonHeight = 90;
-        const spacing = 20;
-
-        labels.forEach((label, i) => {
-            const button = new BaseButton({
-                standard: {
-                    allPadding: 35,
-                    texture: PIXI.Texture.from('Button01_s_Blue'),
-                    width: buttonWidth,
-                    height: buttonHeight,
-                    fontStyle: new PIXI.TextStyle({
-                        fontFamily: 'LEMONMILK-Bold',
-                        fill: 0xffffff,
-                        stroke: "#0c0808",
-                        strokeThickness: 4,
-                    }),
-                    fitText: 0.8
-                },
-                over: {
-                    texture: PIXI.Texture.from('Button01_s_Purple'),
-                },
-                click: {
-                    callback: () => {
-                        callbacks[i]()
-                    }
-                }
-            });
-
-            button.position.set(i * (buttonWidth + spacing), 0);
-            menu.addChild(button);
-            button.setLabel(labels[i])
-            buttons.push(button);
-        });
-
-        menu.position.set(0, Game.DESIGN_HEIGHT - 120);
-
-
-        if (ExtractTiledFile.TiledData) {
-            const layer = new TiledLayerObject();
-            layer.build(ExtractTiledFile.TiledData, ['ScoreMenu'])
-            this.scoreUi = new ScoreUi(layer)
-            this.addChild(this.scoreUi)
-        }
     }
     private updateScoreText(points: number) {
 
@@ -120,7 +72,6 @@ export default class GameplayScene extends GameScene {
         this.gridManager.onGameOver.add(() => {
             //alert('gameover')
         });
-        // this.gridManager.onWin.add(stop);
 
         this.gridManager.onPointsUpdated.add(this.updateScoreText.bind(this));
         this.updateScoreText(0)
@@ -169,10 +120,8 @@ export default class GameplayScene extends GameScene {
 
         this.gridManager.update(delta);
 
-        this.background?.update(delta)
+        this.scoreUi?.update(delta)
 
-        this.scoreUi.x = Game.DESIGN_WIDTH / 2
-        this.scoreUi.y = 250
         this.gameplayContainer.x = Game.DESIGN_WIDTH / 2
         this.gameplayContainer.y = Game.DESIGN_HEIGHT / 2
         // future animations or per-frame logic

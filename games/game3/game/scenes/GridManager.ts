@@ -6,8 +6,8 @@ import { Direction } from '../io/SwipeInputManager';
 import { Piece } from '../view/Piece';
 
 const GRID_SIZE = 4;
-const TILE_SIZE_WIDTH = 150;
-const TILE_SIZE_HEIGHT = 150;
+const TILE_SIZE_WIDTH = 130;
+const TILE_SIZE_HEIGHT = 130;
 const TILE_PADDING = 10;
 
 

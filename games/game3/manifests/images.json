@@ -5,6 +5,14 @@
       "assets": [
         {
           "alias": [
+            "backgrounds"
+          ],
+          "src": [
+            "backgrounds.json"
+          ]
+        },
+        {
+          "alias": [
             "characters"
           ],
           "src": [

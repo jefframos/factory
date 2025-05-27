@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1747975725733,
-                "duration": 3.5424000024795532,
+                "date": 1748324108680,
+                "duration": 4.0162999629974365,
                 "success": true
             }
         },
@@ -18,11 +18,11 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1747975725733,
-                "duration": 3.5254000425338745,
+                "date": 1748324108681,
+                "duration": 3.9444000720977783,
                 "success": true
             },
-            "hash": "vYcKdg"
+            "hash": "TiNQpg"
         },
         ".assetpack/json/characterMemeSet.json": {
             "isFolder": false,
@@ -72,11 +72,11 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1747975036853,
-                "duration": 9.471099972724915,
+                "date": 1748320495565,
+                "duration": 11.230400085449219,
                 "success": true
             },
-            "hash": "cg4Srw"
+            "hash": "tzC7eA"
         },
         ".assetpack/json/tiled.json": {
             "isFolder": false,

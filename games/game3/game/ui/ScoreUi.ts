@@ -1,43 +1,41 @@
-import TiledLayerObject from '@core/tiled/TiledLayerObject';
+import AutoPositionTiledContainer from '@core/tiled/AutoPositionTiledContainer';
+import { ExtratedTiledTileData } from '@core/tiled/ExtractTiledFile';
+import { PinMode, ScaleMode } from '@core/tiled/TiledAutoPositionObject';
 import * as PIXI from 'pixi.js';
 import { Fonts } from '../character/Types';
-export default class ScoreUi extends PIXI.Container {
+export default class ScoreUi extends AutoPositionTiledContainer {
 
-    private layer!: TiledLayerObject;
     private scoreText!: PIXI.Text;
     private highScore!: PIXI.Text;
-    constructor(layer: TiledLayerObject) {
-        super()
 
-        this.layer = layer;
+    constructor(mainMenuData: ExtratedTiledTileData, layers?: string[]) {
+        super(mainMenuData, layers, { scaleMode: ScaleMode.FIT, matchRatio: 0 }, { pinMode: PinMode.TOP });
 
-        this.addChild(this.layer)
-
-        this.scoreText = new PIXI.Text('0', { ...Fonts.Main } as Partial<PIXI.TextStyle>);
-        this.scoreText.anchor.set(0.5);
-        this.addChild(this.scoreText);
-
-        this.highScore = new PIXI.Text('0', { ...Fonts.Main } as Partial<PIXI.TextStyle>);
-        this.highScore.anchor.set(0.5);
-        this.addChild(this.highScore);
-
-        const containerScore = this.layer.findFromProperties('id', 'current-score')
+        const containerScore = this.findFromProperties('id', 'current-score')
         if (containerScore) {
-            this.scoreText.position.set(containerScore.object.x + containerScore.object.width / 2, containerScore.object.y + containerScore.object.height / 2);
+            this.scoreText = new PIXI.Text('0', { ...Fonts.Main } as Partial<PIXI.TextStyle>);
+            this.scoreText.anchor.set(0.5);
+            containerScore.view?.addChild(this.scoreText);
+
+            this.scoreText.position.set(containerScore.object.width / 2, containerScore.object.height / 2);
         }
 
-        const containerHighscore = this.layer.findFromProperties('id', 'highscore')
+        const containerHighscore = this.findFromProperties('id', 'highscore')
         if (containerHighscore) {
-            this.highScore.position.set(containerHighscore.object.x + containerHighscore.object.width / 2, containerHighscore.object.y + containerHighscore.object.height / 2);
+            this.highScore = new PIXI.Text('0', { ...Fonts.Main } as Partial<PIXI.TextStyle>);
+            this.highScore.anchor.set(0.5);
+            containerHighscore.view?.addChild(this.highScore);
+            this.highScore.position.set(containerHighscore.object.width / 2, containerHighscore.object.height / 2);
         }
     }
-    updateScores(points: number, highScore: number) {
-        this.scoreText.text = points
-        this.highScore.text = highScore
-    }
-    build() {
 
-    }
-    update(delta: number, unscaledTime: number) {
+
+    updateScores(points: number, highScore: number) {
+        if (this.scoreText) {
+            this.scoreText.text = points
+        }
+        if (this.highScore) {
+            this.highScore.text = highScore
+        }
     }
 }
