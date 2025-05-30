@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="11" nextobjectid="79">
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="12" nextobjectid="87">
  <editorsettings>
   <export target="../json/tiled.json" format="json"/>
  </editorsettings>
@@ -21,7 +21,7 @@
    <image width="734" height="770" source="images/backgrounds/Background_Lobby_Bg_center.png"/>
   </tile>
  </tileset>
- <tileset firstgid="9" name="UI" tilewidth="609" tileheight="601" tilecount="139" columns="0">
+ <tileset firstgid="9" name="UI" tilewidth="609" tileheight="601" tilecount="140" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="20">
    <properties>
@@ -61,7 +61,7 @@
   </tile>
   <tile id="26">
    <properties>
-    <property name="nineSliced" type="int" value="10"/>
+    <property name="nineSliced" type="int" value="32"/>
    </properties>
    <image width="64" height="75" source="images/ui/BorderFrame_Round30.png"/>
   </tile>
@@ -79,7 +79,7 @@
   </tile>
   <tile id="29">
    <properties>
-    <property name="nineSliced" type="int" value="10"/>
+    <property name="nineSliced" type="int" value="30"/>
    </properties>
    <image width="72" height="78" source="images/ui/BubbleFrame01_Bg.png"/>
   </tile>
@@ -423,6 +423,10 @@
    <image width="304" height="143" source="images/ui/Title_Ribbon01_Gray.png"/>
   </tile>
   <tile id="97">
+   <properties>
+    <property name="left" type="float" value="150"/>
+    <property name="nineSliced" type="int" value="0"/>
+   </properties>
    <image width="304" height="143" source="images/ui/Title_Ribbon01_Green.png"/>
   </tile>
   <tile id="98">
@@ -608,12 +612,19 @@
   <tile id="158">
    <image width="64" height="73" source="images/ui/icons/Icon_Timer.png"/>
   </tile>
+  <tile id="159">
+   <image width="80" height="80" source="images/ui/handHud.png"/>
+  </tile>
  </tileset>
  <objectgroup draworder="index" id="3" name="Background">
-  <object id="64" gid="7" x="-307.545" y="1182" width="1291.09" height="1315"/>
+  <object id="64" gid="7" x="-1.30846" y="840" width="737.308" height="695"/>
   <object id="70" gid="8" x="-5" y="1089" width="734" height="770"/>
   <object id="71" gid="2147483656" x="729" y="1089" width="734" height="770"/>
   <object id="72" gid="2147483656" x="-738" y="1089" width="734" height="770"/>
+ </objectgroup>
+ <objectgroup draworder="index" id="11" name="WinPopup">
+  <object id="86" gid="35" x="-354" y="240" width="696" height="483"/>
+  <object id="82" gid="106" x="-321.939" y="-138.121" width="614" height="143"/>
  </objectgroup>
  <objectgroup id="10" name="MainMenu">
   <object id="77" gid="61" x="22" y="1065" width="676" height="122"/>
@@ -622,6 +633,7 @@
     <property name="id" value="buttons-list"/>
    </properties>
   </object>
+  <object id="79" x="987.879" y="-227.273"/>
  </objectgroup>
  <objectgroup draworder="index" id="8" name="ScoreMenu">
   <object id="65" gid="93" x="377.666" y="132" width="262.666" height="62"/>

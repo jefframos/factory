@@ -1,7 +1,8 @@
+import ViewUtils from '@core/utils/ViewUtils';
 import * as PIXI from 'pixi.js';
-import { ExtratedTiledTileData, FlipStates, TiledObject } from './ExtractTiledFile';
+import { createTextFromObject, ExtratedTiledTileData, FlipStates, TiledObject } from './ExtractTiledFile';
 
-export type TiledLayerTypes = PIXI.Container | PIXI.NineSlicePlane | PIXI.Sprite;
+export type TiledLayerTypes = PIXI.Container | PIXI.NineSlicePlane | PIXI.Sprite | PIXI.BitmapText | PIXI.Text;
 export type FoundTiledObject = { object: TiledObject, view?: TiledLayerTypes } | undefined;
 
 export default class TiledLayerObject extends PIXI.Container {
@@ -36,6 +37,39 @@ export default class TiledLayerObject extends PIXI.Container {
             layerData.objects?.forEach(obj => {
                 this.objectToView.set(obj, undefined);
 
+                // ✅ If it's a TextObject
+                if (obj.text) {
+                    const props = obj.properties || {};
+                    const text = createTextFromObject(obj.text, obj.width, obj.height, props.isBitmapFont)
+
+
+                    text.rotation = obj.rotation * Math.PI / 180;
+                    if (obj.rotation !== 0) {
+                        // Set anchor to bottom-left (0, 1)
+                        text.anchor.set(0, 1);
+                        // Apply position at bottom-left
+                        text.x = obj.x;
+                        text.y = obj.y + obj.height / 2;
+                    } else {
+                        // Use anchor-based placement if no rotation
+                        text.x = obj.x + obj.width * text.anchor.x;
+                        text.y = obj.y + obj.height * text.anchor.y;
+                    }
+
+
+                    if (props.isBitmapFont) {
+                        text.scale.set(ViewUtils.elementScalerBySize(text.width, text.height, obj.width, obj.height))
+                    }
+
+                    this.container.addChild(text);
+                    this.objectToView.set(obj, text);
+                    entities.push(text);
+
+                    this.localBounds.width = Math.max(this.localBounds.width, text.x + text.width);
+                    this.localBounds.height = Math.max(this.localBounds.height, text.y);
+                    return; // ✅ skip rest of logic since it's a text object
+                }
+
                 const tilesets = Array.from(this.tiledLayerData.tilesets.values());
                 const tileset = tilesets.find((ts, index) => {
                     const next = tilesets[index + 1];
@@ -59,24 +93,46 @@ export default class TiledLayerObject extends PIXI.Container {
 
                 let sprite: TiledLayerTypes;
 
-                const nineSliceSize = tile.properties?.nineSliced as number | undefined;
+                const props = tile.properties || {};
+                const defaultSlice = props.nineSliced as number | undefined;
 
-                if (nineSliceSize) {
+                if (defaultSlice !== undefined) {
+
+                    let left = props.left as number | undefined;
+                    let right = props.right as number | undefined;
+                    let top = props.top as number | undefined;
+                    let bottom = props.bottom as number | undefined;
+
+                    if (left === undefined && right === undefined && top === undefined && bottom === undefined) {
+                        left = right = top = bottom = defaultSlice;
+                    }
+                    if (left !== undefined && right === undefined) right = left;
+                    if (right !== undefined && left === undefined) left = right;
+                    if (top !== undefined && bottom === undefined) bottom = top;
+                    if (bottom !== undefined && top === undefined) top = bottom;
+
+                    // const sprite2 = new PIXI.NineSlicePlane(texture, left, top, right, bottom);
+
+
                     sprite = new PIXI.NineSlicePlane(
                         texture,
-                        nineSliceSize,
-                        nineSliceSize,
-                        nineSliceSize,
-                        nineSliceSize
+                        left, top, right, bottom
                     );
-                    sprite.pivot.set(0, sprite.height);
                     sprite.width = obj.width;
                     sprite.height = obj.height;
+                    sprite.pivot.set(0, sprite.height);
                 } else {
                     sprite = new PIXI.Sprite(texture);
                     (sprite as PIXI.Sprite).anchor.set(0, 1);
                     sprite.scale.x = obj.width / sprite.width;
                     sprite.scale.y = obj.height / sprite.height;
+                }
+
+                // Set pivot as always bottom-left (0,1)
+                if (sprite instanceof PIXI.Sprite) {
+                    sprite.anchor.set(0, 1);
+                } else {
+                    sprite.pivot.set(0, sprite.height); // same effect for NineSlice
                 }
 
                 sprite.rotation = rotation;
@@ -85,9 +141,24 @@ export default class TiledLayerObject extends PIXI.Container {
                 if (obj.flipStates?.horizontal) {
                     obj.x += sprite.width;
                 }
+                if (obj.flipStates?.vertical) {
+                    obj.y -= sprite.height;
+                }
+                // Correct position if rotated
+                if (rotation !== 0) {
+                    // Simulate rotation from bottom-left pivot
+                    const cos = Math.cos(rotation);
+                    const sin = Math.sin(rotation);
+                    const dx = obj.width;
+                    const dy = obj.height;
 
-                sprite.x = obj.x;
-                sprite.y = obj.y;
+                    sprite.x = obj.x + dx * cos - dy * sin;
+                    sprite.y = obj.y + dx * sin + dy * cos;
+                } else {
+                    sprite.x = obj.x;
+                    sprite.y = obj.y;
+                }
+
                 sprite.zIndex = -1;
 
                 this.container.addChild(sprite);
@@ -118,13 +189,33 @@ export default class TiledLayerObject extends PIXI.Container {
             this.bounds.width = settings.screenWidth;
             this.bounds.height = settings.screenHeight;
         }
+    }
 
-        console.log(this.objectToView)
+    addAtId(element: PIXI.Container, value: string, anchor?: PIXI.Point) {
+        const tiledElement = this.findFromProperties('id', value);
+        if (tiledElement) {
+            tiledElement.view?.addChild(element)
+
+
+            if (element.anchor && anchor) {
+                element.anchor.set(anchor); // PIXI v7+ only
+                element.position.set(tiledElement.object.width * anchor.x, tiledElement.object.height * anchor.y);
+            }
+        }
     }
 
     findFromProperties(propertyName: string, value: any): FoundTiledObject {
         for (const [obj, view] of this.objectToView.entries()) {
             if (obj.properties?.[propertyName] === value) {
+                return { object: obj, view };
+            }
+        }
+        return undefined;
+    }
+
+    findByName(name: string): FoundTiledObject {
+        for (const [obj, view] of this.objectToView.entries()) {
+            if (obj.name === name) {
                 return { object: obj, view };
             }
         }

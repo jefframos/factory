@@ -5,6 +5,4 @@ export default class AutoPositionTiledContainer extends TiledAutoPositionObject 
         super()
         this.build(backgroundData, layers, scaleSettings, pinSettings);
     }
-
-
 }

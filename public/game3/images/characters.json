@@ -160,490 +160,10 @@
         "h": 142
       }
     },
-    "meme-small-30024": {
-      "frame": {
-        "x": 320,
-        "y": 2,
-        "w": 91,
-        "h": 83
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 7,
-        "y": 0,
-        "w": 91,
-        "h": 83
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30023": {
-      "frame": {
-        "x": 320,
-        "y": 87,
-        "w": 91,
-        "h": 83
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 7,
-        "y": 0,
-        "w": 91,
-        "h": 83
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30022": {
-      "frame": {
-        "x": 2,
-        "y": 355,
-        "w": 92,
-        "h": 83
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 5,
-        "y": 0,
-        "w": 92,
-        "h": 83
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30021": {
-      "frame": {
-        "x": 96,
-        "y": 355,
-        "w": 94,
-        "h": 82
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 3,
-        "y": 0,
-        "w": 94,
-        "h": 82
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30020": {
-      "frame": {
-        "x": 192,
-        "y": 355,
-        "w": 97,
-        "h": 83
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 1,
-        "y": 0,
-        "w": 97,
-        "h": 83
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30019": {
-      "frame": {
-        "x": 291,
-        "y": 355,
-        "w": 97,
-        "h": 83
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 97,
-        "h": 83
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30018": {
-      "frame": {
-        "x": 413,
-        "y": 2,
-        "w": 97,
-        "h": 84
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 97,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30017": {
-      "frame": {
-        "x": 390,
-        "y": 355,
-        "w": 98,
-        "h": 83
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 1,
-        "w": 98,
-        "h": 83
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30016": {
-      "frame": {
-        "x": 425,
-        "y": 88,
-        "w": 98,
-        "h": 82
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 1,
-        "y": 2,
-        "w": 98,
-        "h": 82
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30015": {
-      "frame": {
-        "x": 425,
-        "y": 188,
-        "w": 97,
-        "h": 82
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 2,
-        "y": 2,
-        "w": 97,
-        "h": 82
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30014": {
-      "frame": {
-        "x": 2,
-        "y": 440,
-        "w": 96,
-        "h": 81
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 4,
-        "y": 3,
-        "w": 96,
-        "h": 81
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30013": {
-      "frame": {
-        "x": 100,
-        "y": 440,
-        "w": 93,
-        "h": 79
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 7,
-        "y": 4,
-        "w": 93,
-        "h": 79
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30012": {
-      "frame": {
-        "x": 195,
-        "y": 440,
-        "w": 90,
-        "h": 81
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 10,
-        "y": 3,
-        "w": 90,
-        "h": 81
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30011": {
-      "frame": {
-        "x": 512,
-        "y": 2,
-        "w": 86,
-        "h": 82
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 13,
-        "y": 2,
-        "w": 86,
-        "h": 82
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30010": {
-      "frame": {
-        "x": 509,
-        "y": 90,
-        "w": 87,
-        "h": 82
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 12,
-        "y": 2,
-        "w": 87,
-        "h": 82
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30009": {
-      "frame": {
-        "x": 509,
-        "y": 179,
-        "w": 88,
-        "h": 83
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 10,
-        "y": 1,
-        "w": 88,
-        "h": 83
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30008": {
-      "frame": {
-        "x": 509,
-        "y": 269,
-        "w": 89,
-        "h": 82
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 9,
-        "y": 1,
-        "w": 89,
-        "h": 82
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30007": {
-      "frame": {
-        "x": 490,
-        "y": 360,
-        "w": 91,
-        "h": 83
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 7,
-        "y": 0,
-        "w": 91,
-        "h": 83
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30006": {
-      "frame": {
-        "x": 2,
-        "y": 523,
-        "w": 91,
-        "h": 84
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 7,
-        "y": 0,
-        "w": 91,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30005": {
-      "frame": {
-        "x": 95,
-        "y": 523,
-        "w": 91,
-        "h": 84
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 7,
-        "y": 0,
-        "w": 91,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30004": {
-      "frame": {
-        "x": 188,
-        "y": 523,
-        "w": 92,
-        "h": 84
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 6,
-        "y": 0,
-        "w": 92,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30003": {
-      "frame": {
-        "x": 282,
-        "y": 523,
-        "w": 94,
-        "h": 83
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 4,
-        "y": 1,
-        "w": 94,
-        "h": 83
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30002": {
-      "frame": {
-        "x": 378,
-        "y": 440,
-        "w": 92,
-        "h": 84
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 6,
-        "y": 0,
-        "w": 92,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
-    "meme-small-30001": {
-      "frame": {
-        "x": 472,
-        "y": 445,
-        "w": 91,
-        "h": 84
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 7,
-        "y": 0,
-        "w": 91,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 100,
-        "h": 84
-      }
-    },
     "meme-small-20024": {
       "frame": {
-        "x": 378,
-        "y": 531,
+        "x": 289,
+        "y": 142,
         "w": 112,
         "h": 76
       },
@@ -662,12 +182,12 @@
     },
     "meme-small-20023": {
       "frame": {
-        "x": 492,
-        "y": 531,
+        "x": 320,
+        "y": 2,
         "w": 112,
         "h": 76
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -682,8 +202,8 @@
     },
     "meme-small-20022": {
       "frame": {
-        "x": 289,
-        "y": 172,
+        "x": 2,
+        "y": 355,
         "w": 108,
         "h": 75
       },
@@ -702,12 +222,12 @@
     },
     "meme-small-20021": {
       "frame": {
-        "x": 596,
-        "y": 2,
+        "x": 112,
+        "y": 355,
         "w": 103,
         "h": 75
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -722,12 +242,12 @@
     },
     "meme-small-20020": {
       "frame": {
-        "x": 594,
-        "y": 107,
+        "x": 217,
+        "y": 355,
         "w": 102,
         "h": 74
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -742,12 +262,12 @@
     },
     "meme-small-20019": {
       "frame": {
-        "x": 594,
-        "y": 211,
+        "x": 321,
+        "y": 355,
         "w": 101,
         "h": 73
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -762,12 +282,12 @@
     },
     "meme-small-20018": {
       "frame": {
-        "x": 565,
-        "y": 445,
+        "x": 425,
+        "y": 2,
         "w": 101,
         "h": 70
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -782,8 +302,8 @@
     },
     "meme-small-20017": {
       "frame": {
-        "x": 593,
-        "y": 314,
+        "x": 403,
+        "y": 105,
         "w": 102,
         "h": 72
       },
@@ -802,12 +322,12 @@
     },
     "meme-small-20016": {
       "frame": {
-        "x": 2,
-        "y": 609,
+        "x": 425,
+        "y": 209,
         "w": 102,
         "h": 71
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 2,
@@ -822,12 +342,12 @@
     },
     "meme-small-20015": {
       "frame": {
-        "x": 106,
-        "y": 609,
+        "x": 425,
+        "y": 313,
         "w": 103,
         "h": 70
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 2,
@@ -842,8 +362,8 @@
     },
     "meme-small-20014": {
       "frame": {
-        "x": 211,
-        "y": 609,
+        "x": 2,
+        "y": 432,
         "w": 104,
         "h": 69
       },
@@ -862,8 +382,8 @@
     },
     "meme-small-20013": {
       "frame": {
-        "x": 317,
-        "y": 609,
+        "x": 108,
+        "y": 432,
         "w": 105,
         "h": 69
       },
@@ -882,8 +402,8 @@
     },
     "meme-small-20012": {
       "frame": {
-        "x": 424,
-        "y": 609,
+        "x": 215,
+        "y": 432,
         "w": 106,
         "h": 68
       },
@@ -902,7 +422,7 @@
     },
     "meme-small-20011": {
       "frame": {
-        "x": 673,
+        "x": 498,
         "y": 2,
         "w": 105,
         "h": 74
@@ -922,12 +442,12 @@
     },
     "meme-small-20010": {
       "frame": {
-        "x": 670,
-        "y": 109,
+        "x": 424,
+        "y": 418,
         "w": 105,
         "h": 76
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -942,12 +462,12 @@
     },
     "meme-small-20009": {
       "frame": {
-        "x": 669,
-        "y": 216,
+        "x": 2,
+        "y": 503,
         "w": 106,
         "h": 78
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -962,12 +482,12 @@
     },
     "meme-small-20008": {
       "frame": {
-        "x": 668,
-        "y": 324,
+        "x": 110,
+        "y": 503,
         "w": 109,
         "h": 78
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -982,12 +502,12 @@
     },
     "meme-small-20007": {
       "frame": {
-        "x": 668,
-        "y": 435,
+        "x": 221,
+        "y": 502,
         "w": 111,
         "h": 76
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 2,
@@ -1002,8 +522,8 @@
     },
     "meme-small-20006": {
       "frame": {
-        "x": 606,
-        "y": 548,
+        "x": 497,
+        "y": 313,
         "w": 102,
         "h": 73
       },
@@ -1022,12 +542,12 @@
     },
     "meme-small-20005": {
       "frame": {
-        "x": 2,
-        "y": 682,
+        "x": 498,
+        "y": 109,
         "w": 102,
         "h": 73
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -1042,8 +562,8 @@
     },
     "meme-small-20004": {
       "frame": {
-        "x": 106,
-        "y": 681,
+        "x": 334,
+        "y": 496,
         "w": 101,
         "h": 73
       },
@@ -1062,12 +582,12 @@
     },
     "meme-small-20003": {
       "frame": {
-        "x": 532,
-        "y": 652,
+        "x": 437,
+        "y": 496,
         "w": 102,
         "h": 73
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -1082,12 +602,12 @@
     },
     "meme-small-20002": {
       "frame": {
-        "x": 209,
-        "y": 681,
+        "x": 574,
+        "y": 2,
         "w": 101,
         "h": 73
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 2,
@@ -1102,8 +622,8 @@
     },
     "meme-small-20001": {
       "frame": {
-        "x": 607,
-        "y": 652,
+        "x": 574,
+        "y": 105,
         "w": 101,
         "h": 73
       },
@@ -1120,490 +640,10 @@
         "h": 78
       }
     },
-    "meme-small-10024": {
-      "frame": {
-        "x": 312,
-        "y": 680,
-        "w": 72,
-        "h": 84
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 2,
-        "y": 2,
-        "w": 72,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10023": {
-      "frame": {
-        "x": 398,
-        "y": 680,
-        "w": 72,
-        "h": 84
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 2,
-        "y": 2,
-        "w": 72,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10022": {
-      "frame": {
-        "x": 287,
-        "y": 440,
-        "w": 72,
-        "h": 85
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 1,
-        "y": 1,
-        "w": 72,
-        "h": 85
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10021": {
-      "frame": {
-        "x": 749,
-        "y": 2,
-        "w": 72,
-        "h": 84
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 1,
-        "y": 1,
-        "w": 72,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10020": {
-      "frame": {
-        "x": 749,
-        "y": 88,
-        "w": 72,
-        "h": 84
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 1,
-        "y": 1,
-        "w": 72,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10019": {
-      "frame": {
-        "x": 749,
-        "y": 174,
-        "w": 72,
-        "h": 84
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 1,
-        "y": 1,
-        "w": 72,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10018": {
-      "frame": {
-        "x": 749,
-        "y": 260,
-        "w": 72,
-        "h": 85
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 1,
-        "y": 1,
-        "w": 72,
-        "h": 85
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10017": {
-      "frame": {
-        "x": 748,
-        "y": 347,
-        "w": 73,
-        "h": 84
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 1,
-        "y": 2,
-        "w": 73,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10016": {
-      "frame": {
-        "x": 748,
-        "y": 433,
-        "w": 73,
-        "h": 83
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 1,
-        "y": 3,
-        "w": 73,
-        "h": 83
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10015": {
-      "frame": {
-        "x": 746,
-        "y": 518,
-        "w": 74,
-        "h": 83
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 1,
-        "y": 3,
-        "w": 74,
-        "h": 83
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10014": {
-      "frame": {
-        "x": 682,
-        "y": 603,
-        "w": 74,
-        "h": 82
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 1,
-        "y": 4,
-        "w": 74,
-        "h": 82
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10013": {
-      "frame": {
-        "x": 682,
-        "y": 679,
-        "w": 74,
-        "h": 81
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 2,
-        "y": 5,
-        "w": 74,
-        "h": 81
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10012": {
-      "frame": {
-        "x": 2,
-        "y": 757,
-        "w": 71,
-        "h": 82
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 4,
-        "y": 4,
-        "w": 71,
-        "h": 82
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10011": {
-      "frame": {
-        "x": 86,
-        "y": 757,
-        "w": 70,
-        "h": 81
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 5,
-        "y": 4,
-        "w": 70,
-        "h": 81
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10010": {
-      "frame": {
-        "x": 169,
-        "y": 756,
-        "w": 70,
-        "h": 82
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 5,
-        "y": 3,
-        "w": 70,
-        "h": 82
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10009": {
-      "frame": {
-        "x": 253,
-        "y": 756,
-        "w": 70,
-        "h": 83
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 4,
-        "y": 3,
-        "w": 70,
-        "h": 83
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10008": {
-      "frame": {
-        "x": 338,
-        "y": 756,
-        "w": 71,
-        "h": 84
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 3,
-        "y": 2,
-        "w": 71,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10007": {
-      "frame": {
-        "x": 424,
-        "y": 756,
-        "w": 72,
-        "h": 84
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 2,
-        "y": 2,
-        "w": 72,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10006": {
-      "frame": {
-        "x": 510,
-        "y": 756,
-        "w": 72,
-        "h": 84
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 2,
-        "y": 2,
-        "w": 72,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10005": {
-      "frame": {
-        "x": 596,
-        "y": 756,
-        "w": 72,
-        "h": 84
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 2,
-        "y": 2,
-        "w": 72,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10004": {
-      "frame": {
-        "x": 682,
-        "y": 755,
-        "w": 72,
-        "h": 84
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 2,
-        "y": 2,
-        "w": 72,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10003": {
-      "frame": {
-        "x": 823,
-        "y": 2,
-        "w": 73,
-        "h": 84
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 1,
-        "y": 2,
-        "w": 73,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10002": {
-      "frame": {
-        "x": 765,
-        "y": 679,
-        "w": 72,
-        "h": 84
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 2,
-        "y": 2,
-        "w": 72,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
-    "meme-small-10001": {
-      "frame": {
-        "x": 766,
-        "y": 603,
-        "w": 72,
-        "h": 84
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 2,
-        "y": 2,
-        "w": 72,
-        "h": 84
-      },
-      "sourceSize": {
-        "w": 80,
-        "h": 91
-      }
-    },
     "meme-60012": {
       "frame": {
-        "x": 2,
-        "y": 830,
+        "x": 498,
+        "y": 213,
         "w": 90,
         "h": 131
       },
@@ -1622,12 +662,12 @@
     },
     "meme-60011": {
       "frame": {
-        "x": 169,
-        "y": 828,
+        "x": 541,
+        "y": 417,
         "w": 92,
         "h": 136
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -1642,12 +682,12 @@
     },
     "meme-60010": {
       "frame": {
-        "x": 768,
-        "y": 753,
+        "x": 2,
+        "y": 583,
         "w": 92,
         "h": 136
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -1662,12 +702,12 @@
     },
     "meme-60009": {
       "frame": {
-        "x": 898,
-        "y": 2,
+        "x": 140,
+        "y": 583,
         "w": 92,
         "h": 132
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -1682,8 +722,8 @@
     },
     "meme-60008": {
       "frame": {
-        "x": 852,
-        "y": 136,
+        "x": 274,
+        "y": 580,
         "w": 92,
         "h": 133
       },
@@ -1702,8 +742,8 @@
     },
     "meme-60007": {
       "frame": {
-        "x": 862,
-        "y": 230,
+        "x": 409,
+        "y": 571,
         "w": 92,
         "h": 129
       },
@@ -1722,12 +762,12 @@
     },
     "meme-60006": {
       "frame": {
-        "x": 852,
-        "y": 324,
+        "x": 649,
+        "y": 2,
         "w": 92,
         "h": 133
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -1742,12 +782,12 @@
     },
     "meme-60005": {
       "frame": {
-        "x": 852,
-        "y": 418,
+        "x": 649,
+        "y": 137,
         "w": 92,
         "h": 131
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -1762,8 +802,8 @@
     },
     "meme-60004": {
       "frame": {
-        "x": 852,
-        "y": 512,
+        "x": 540,
+        "y": 571,
         "w": 92,
         "h": 133
       },
@@ -1782,12 +822,12 @@
     },
     "meme-60003": {
       "frame": {
-        "x": 852,
-        "y": 606,
+        "x": 631,
+        "y": 270,
         "w": 92,
         "h": 133
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -1802,8 +842,8 @@
     },
     "meme-60002": {
       "frame": {
-        "x": 862,
-        "y": 700,
+        "x": 635,
+        "y": 405,
         "w": 91,
         "h": 133
       },
@@ -1822,8 +862,8 @@
     },
     "meme-60001": {
       "frame": {
-        "x": 307,
-        "y": 830,
+        "x": 2,
+        "y": 677,
         "w": 90,
         "h": 131
       },
@@ -1840,14 +880,974 @@
         "h": 138
       }
     },
+    "meme-small-30024": {
+      "frame": {
+        "x": 274,
+        "y": 674,
+        "w": 91,
+        "h": 83
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 7,
+        "y": 0,
+        "w": 91,
+        "h": 83
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30023": {
+      "frame": {
+        "x": 359,
+        "y": 674,
+        "w": 91,
+        "h": 83
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 7,
+        "y": 0,
+        "w": 91,
+        "h": 83
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30022": {
+      "frame": {
+        "x": 135,
+        "y": 677,
+        "w": 92,
+        "h": 83
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 5,
+        "y": 0,
+        "w": 92,
+        "h": 83
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30021": {
+      "frame": {
+        "x": 444,
+        "y": 665,
+        "w": 94,
+        "h": 82
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 3,
+        "y": 0,
+        "w": 94,
+        "h": 82
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30020": {
+      "frame": {
+        "x": 528,
+        "y": 665,
+        "w": 97,
+        "h": 83
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 0,
+        "w": 97,
+        "h": 83
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30019": {
+      "frame": {
+        "x": 613,
+        "y": 665,
+        "w": 97,
+        "h": 83
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 97,
+        "h": 83
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30018": {
+      "frame": {
+        "x": 743,
+        "y": 2,
+        "w": 97,
+        "h": 84
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 97,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30017": {
+      "frame": {
+        "x": 728,
+        "y": 270,
+        "w": 98,
+        "h": 83
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 1,
+        "w": 98,
+        "h": 83
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30016": {
+      "frame": {
+        "x": 728,
+        "y": 355,
+        "w": 98,
+        "h": 82
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 2,
+        "w": 98,
+        "h": 82
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30015": {
+      "frame": {
+        "x": 743,
+        "y": 101,
+        "w": 97,
+        "h": 82
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 2,
+        "y": 2,
+        "w": 97,
+        "h": 82
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30014": {
+      "frame": {
+        "x": 728,
+        "y": 439,
+        "w": 96,
+        "h": 81
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 4,
+        "y": 3,
+        "w": 96,
+        "h": 81
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30013": {
+      "frame": {
+        "x": 728,
+        "y": 522,
+        "w": 93,
+        "h": 79
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 7,
+        "y": 4,
+        "w": 93,
+        "h": 79
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30012": {
+      "frame": {
+        "x": 698,
+        "y": 603,
+        "w": 90,
+        "h": 81
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 3,
+        "w": 90,
+        "h": 81
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30011": {
+      "frame": {
+        "x": 444,
+        "y": 761,
+        "w": 86,
+        "h": 82
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 13,
+        "y": 2,
+        "w": 86,
+        "h": 82
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30010": {
+      "frame": {
+        "x": 528,
+        "y": 764,
+        "w": 87,
+        "h": 82
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 12,
+        "y": 2,
+        "w": 87,
+        "h": 82
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30009": {
+      "frame": {
+        "x": 135,
+        "y": 762,
+        "w": 88,
+        "h": 83
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 1,
+        "w": 88,
+        "h": 83
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30008": {
+      "frame": {
+        "x": 2,
+        "y": 769,
+        "w": 89,
+        "h": 82
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 9,
+        "y": 1,
+        "w": 89,
+        "h": 82
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30007": {
+      "frame": {
+        "x": 220,
+        "y": 767,
+        "w": 91,
+        "h": 83
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 7,
+        "y": 0,
+        "w": 91,
+        "h": 83
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30006": {
+      "frame": {
+        "x": 313,
+        "y": 767,
+        "w": 91,
+        "h": 84
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 7,
+        "y": 0,
+        "w": 91,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30005": {
+      "frame": {
+        "x": 612,
+        "y": 764,
+        "w": 91,
+        "h": 84
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 7,
+        "y": 0,
+        "w": 91,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30004": {
+      "frame": {
+        "x": 705,
+        "y": 686,
+        "w": 92,
+        "h": 84
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 6,
+        "y": 0,
+        "w": 92,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30003": {
+      "frame": {
+        "x": 829,
+        "y": 2,
+        "w": 94,
+        "h": 83
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 4,
+        "y": 1,
+        "w": 94,
+        "h": 83
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30002": {
+      "frame": {
+        "x": 828,
+        "y": 101,
+        "w": 92,
+        "h": 84
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 6,
+        "y": 0,
+        "w": 92,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-30001": {
+      "frame": {
+        "x": 828,
+        "y": 195,
+        "w": 91,
+        "h": 84
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 7,
+        "y": 0,
+        "w": 91,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 84
+      }
+    },
+    "meme-small-10024": {
+      "frame": {
+        "x": 828,
+        "y": 288,
+        "w": 72,
+        "h": 84
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 2,
+        "y": 2,
+        "w": 72,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10023": {
+      "frame": {
+        "x": 828,
+        "y": 362,
+        "w": 72,
+        "h": 84
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 2,
+        "y": 2,
+        "w": 72,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10022": {
+      "frame": {
+        "x": 826,
+        "y": 439,
+        "w": 72,
+        "h": 85
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 1,
+        "w": 72,
+        "h": 85
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10021": {
+      "frame": {
+        "x": 826,
+        "y": 513,
+        "w": 72,
+        "h": 84
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 1,
+        "w": 72,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10020": {
+      "frame": {
+        "x": 823,
+        "y": 587,
+        "w": 72,
+        "h": 84
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 1,
+        "w": 72,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10019": {
+      "frame": {
+        "x": 705,
+        "y": 772,
+        "w": 72,
+        "h": 84
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 1,
+        "w": 72,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10018": {
+      "frame": {
+        "x": 791,
+        "y": 772,
+        "w": 72,
+        "h": 85
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 1,
+        "w": 72,
+        "h": 85
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10017": {
+      "frame": {
+        "x": 799,
+        "y": 661,
+        "w": 73,
+        "h": 84
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 2,
+        "w": 73,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10016": {
+      "frame": {
+        "x": 2,
+        "y": 853,
+        "w": 73,
+        "h": 83
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 3,
+        "w": 73,
+        "h": 83
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10015": {
+      "frame": {
+        "x": 93,
+        "y": 852,
+        "w": 74,
+        "h": 83
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 3,
+        "w": 74,
+        "h": 83
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10014": {
+      "frame": {
+        "x": 178,
+        "y": 852,
+        "w": 74,
+        "h": 82
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 4,
+        "w": 74,
+        "h": 82
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10013": {
+      "frame": {
+        "x": 612,
+        "y": 850,
+        "w": 74,
+        "h": 81
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 2,
+        "y": 5,
+        "w": 74,
+        "h": 81
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10012": {
+      "frame": {
+        "x": 262,
+        "y": 853,
+        "w": 71,
+        "h": 82
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 4,
+        "y": 4,
+        "w": 71,
+        "h": 82
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10011": {
+      "frame": {
+        "x": 346,
+        "y": 853,
+        "w": 70,
+        "h": 81
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 5,
+        "y": 4,
+        "w": 70,
+        "h": 81
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10010": {
+      "frame": {
+        "x": 429,
+        "y": 853,
+        "w": 70,
+        "h": 82
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 5,
+        "y": 3,
+        "w": 70,
+        "h": 82
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10009": {
+      "frame": {
+        "x": 513,
+        "y": 853,
+        "w": 70,
+        "h": 83
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 4,
+        "y": 3,
+        "w": 70,
+        "h": 83
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10008": {
+      "frame": {
+        "x": 695,
+        "y": 850,
+        "w": 71,
+        "h": 84
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 3,
+        "y": 2,
+        "w": 71,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10007": {
+      "frame": {
+        "x": 781,
+        "y": 846,
+        "w": 72,
+        "h": 84
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 2,
+        "y": 2,
+        "w": 72,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10006": {
+      "frame": {
+        "x": 914,
+        "y": 2,
+        "w": 72,
+        "h": 84
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 2,
+        "y": 2,
+        "w": 72,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10005": {
+      "frame": {
+        "x": 914,
+        "y": 88,
+        "w": 72,
+        "h": 84
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 2,
+        "y": 2,
+        "w": 72,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10004": {
+      "frame": {
+        "x": 914,
+        "y": 174,
+        "w": 72,
+        "h": 84
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 2,
+        "y": 2,
+        "w": 72,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10003": {
+      "frame": {
+        "x": 913,
+        "y": 436,
+        "w": 73,
+        "h": 84
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 2,
+        "w": 73,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10002": {
+      "frame": {
+        "x": 914,
+        "y": 260,
+        "w": 72,
+        "h": 84
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 2,
+        "y": 2,
+        "w": 72,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
+    "meme-small-10001": {
+      "frame": {
+        "x": 914,
+        "y": 346,
+        "w": 72,
+        "h": 84
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 2,
+        "y": 2,
+        "w": 72,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 91
+      }
+    },
     "meme-50012": {
       "frame": {
-        "x": 440,
-        "y": 830,
+        "x": 878,
+        "y": 661,
         "w": 85,
         "h": 135
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -1862,8 +1862,8 @@
     },
     "meme-50011": {
       "frame": {
-        "x": 577,
-        "y": 830,
+        "x": 2,
+        "y": 928,
         "w": 80,
         "h": 141
       },
@@ -1882,8 +1882,8 @@
     },
     "meme-50010": {
       "frame": {
-        "x": 2,
-        "y": 922,
+        "x": 145,
+        "y": 928,
         "w": 78,
         "h": 140
       },
@@ -1902,8 +1902,8 @@
     },
     "meme-50009": {
       "frame": {
-        "x": 144,
-        "y": 922,
+        "x": 287,
+        "y": 926,
         "w": 78,
         "h": 138
       },
@@ -1922,8 +1922,8 @@
     },
     "meme-50008": {
       "frame": {
-        "x": 284,
-        "y": 922,
+        "x": 427,
+        "y": 926,
         "w": 78,
         "h": 138
       },
@@ -1942,8 +1942,8 @@
     },
     "meme-50007": {
       "frame": {
-        "x": 440,
-        "y": 917,
+        "x": 567,
+        "y": 926,
         "w": 81,
         "h": 133
       },
@@ -1962,8 +1962,8 @@
     },
     "meme-50006": {
       "frame": {
-        "x": 575,
-        "y": 917,
+        "x": 702,
+        "y": 923,
         "w": 77,
         "h": 137
       },
@@ -1982,8 +1982,8 @@
     },
     "meme-50005": {
       "frame": {
-        "x": 714,
-        "y": 912,
+        "x": 841,
+        "y": 920,
         "w": 77,
         "h": 135
       },
@@ -2002,12 +2002,12 @@
     },
     "meme-50004": {
       "frame": {
-        "x": 851,
-        "y": 891,
+        "x": 912,
+        "y": 522,
         "w": 77,
         "h": 137
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -2022,7 +2022,7 @@
     },
     "meme-50003": {
       "frame": {
-        "x": 993,
+        "x": 988,
         "y": 2,
         "w": 77,
         "h": 138
@@ -2042,8 +2042,8 @@
     },
     "meme-50002": {
       "frame": {
-        "x": 990,
-        "y": 324,
+        "x": 978,
+        "y": 661,
         "w": 78,
         "h": 137
       },
@@ -2062,8 +2062,8 @@
     },
     "meme-50001": {
       "frame": {
-        "x": 955,
-        "y": 700,
+        "x": 978,
+        "y": 800,
         "w": 85,
         "h": 135
       },
@@ -2078,256 +2078,16 @@
       "sourceSize": {
         "w": 85,
         "h": 142
-      }
-    },
-    "meme-40012": {
-      "frame": {
-        "x": 2,
-        "y": 1002,
-        "w": 88,
-        "h": 142
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 3,
-        "w": 88,
-        "h": 142
-      },
-      "sourceSize": {
-        "w": 89,
-        "h": 149
-      }
-    },
-    "meme-40011": {
-      "frame": {
-        "x": 424,
-        "y": 1000,
-        "w": 89,
-        "h": 148
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 1,
-        "w": 89,
-        "h": 148
-      },
-      "sourceSize": {
-        "w": 89,
-        "h": 149
-      }
-    },
-    "meme-40010": {
-      "frame": {
-        "x": 574,
-        "y": 1000,
-        "w": 89,
-        "h": 147
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 89,
-        "h": 147
-      },
-      "sourceSize": {
-        "w": 89,
-        "h": 149
-      }
-    },
-    "meme-40009": {
-      "frame": {
-        "x": 723,
-        "y": 991,
-        "w": 89,
-        "h": 144
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 89,
-        "h": 144
-      },
-      "sourceSize": {
-        "w": 89,
-        "h": 149
-      }
-    },
-    "meme-40008": {
-      "frame": {
-        "x": 869,
-        "y": 970,
-        "w": 89,
-        "h": 144
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 89,
-        "h": 144
-      },
-      "sourceSize": {
-        "w": 89,
-        "h": 149
-      }
-    },
-    "meme-40007": {
-      "frame": {
-        "x": 1072,
-        "y": 2,
-        "w": 89,
-        "h": 141
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 89,
-        "h": 141
-      },
-      "sourceSize": {
-        "w": 89,
-        "h": 149
-      }
-    },
-    "meme-40006": {
-      "frame": {
-        "x": 1070,
-        "y": 145,
-        "w": 89,
-        "h": 143
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 1,
-        "w": 89,
-        "h": 143
-      },
-      "sourceSize": {
-        "w": 89,
-        "h": 149
-      }
-    },
-    "meme-40005": {
-      "frame": {
-        "x": 1070,
-        "y": 290,
-        "w": 89,
-        "h": 141
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 1,
-        "w": 89,
-        "h": 141
-      },
-      "sourceSize": {
-        "w": 89,
-        "h": 149
-      }
-    },
-    "meme-40004": {
-      "frame": {
-        "x": 1015,
-        "y": 837,
-        "w": 89,
-        "h": 144
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 1,
-        "w": 89,
-        "h": 144
-      },
-      "sourceSize": {
-        "w": 89,
-        "h": 149
-      }
-    },
-    "meme-40003": {
-      "frame": {
-        "x": 1015,
-        "y": 928,
-        "w": 89,
-        "h": 145
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 1,
-        "w": 89,
-        "h": 145
-      },
-      "sourceSize": {
-        "w": 89,
-        "h": 149
-      }
-    },
-    "meme-40002": {
-      "frame": {
-        "x": 146,
-        "y": 1002,
-        "w": 88,
-        "h": 144
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 2,
-        "w": 88,
-        "h": 144
-      },
-      "sourceSize": {
-        "w": 89,
-        "h": 149
-      }
-    },
-    "meme-40001": {
-      "frame": {
-        "x": 1070,
-        "y": 433,
-        "w": 88,
-        "h": 142
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 3,
-        "w": 88,
-        "h": 142
-      },
-      "sourceSize": {
-        "w": 89,
-        "h": 149
       }
     },
     "meme-30012": {
       "frame": {
-        "x": 1042,
-        "y": 577,
+        "x": 2,
+        "y": 1010,
         "w": 88,
         "h": 137
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -2342,12 +2102,12 @@
     },
     "meme-30011": {
       "frame": {
-        "x": 2,
-        "y": 1092,
+        "x": 978,
+        "y": 937,
         "w": 82,
         "h": 143
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -2362,8 +2122,8 @@
     },
     "meme-30010": {
       "frame": {
-        "x": 147,
-        "y": 1092,
+        "x": 141,
+        "y": 1010,
         "w": 82,
         "h": 142
       },
@@ -2382,8 +2142,8 @@
     },
     "meme-30009": {
       "frame": {
-        "x": 291,
-        "y": 1092,
+        "x": 285,
+        "y": 1009,
         "w": 82,
         "h": 139
       },
@@ -2402,8 +2162,8 @@
     },
     "meme-30008": {
       "frame": {
-        "x": 432,
-        "y": 1091,
+        "x": 426,
+        "y": 1009,
         "w": 81,
         "h": 140
       },
@@ -2422,8 +2182,8 @@
     },
     "meme-30007": {
       "frame": {
-        "x": 723,
-        "y": 1082,
+        "x": 841,
+        "y": 999,
         "w": 85,
         "h": 133
       },
@@ -2442,8 +2202,8 @@
     },
     "meme-30006": {
       "frame": {
-        "x": 574,
-        "y": 1091,
+        "x": 568,
+        "y": 1009,
         "w": 79,
         "h": 138
       },
@@ -2462,12 +2222,12 @@
     },
     "meme-30005": {
       "frame": {
-        "x": 1015,
-        "y": 1019,
+        "x": 1067,
+        "y": 2,
         "w": 79,
         "h": 136
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -2482,12 +2242,12 @@
     },
     "meme-30004": {
       "frame": {
-        "x": 869,
-        "y": 1061,
+        "x": 1067,
+        "y": 140,
         "w": 79,
         "h": 138
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -2502,8 +2262,8 @@
     },
     "meme-30003": {
       "frame": {
-        "x": 1163,
-        "y": 2,
+        "x": 1065,
+        "y": 280,
         "w": 79,
         "h": 139
       },
@@ -2522,8 +2282,8 @@
     },
     "meme-30002": {
       "frame": {
-        "x": 1162,
-        "y": 145,
+        "x": 1065,
+        "y": 421,
         "w": 80,
         "h": 139
       },
@@ -2542,8 +2302,8 @@
     },
     "meme-30001": {
       "frame": {
-        "x": 1153,
-        "y": 1019,
+        "x": 1058,
+        "y": 562,
         "w": 87,
         "h": 137
       },
@@ -2560,10 +2320,250 @@
         "h": 151
       }
     },
+    "meme-40012": {
+      "frame": {
+        "x": 2,
+        "y": 1100,
+        "w": 88,
+        "h": 142
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 3,
+        "w": 88,
+        "h": 142
+      },
+      "sourceSize": {
+        "w": 89,
+        "h": 149
+      }
+    },
+    "meme-40011": {
+      "frame": {
+        "x": 146,
+        "y": 1094,
+        "w": 89,
+        "h": 148
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 1,
+        "w": 89,
+        "h": 148
+      },
+      "sourceSize": {
+        "w": 89,
+        "h": 149
+      }
+    },
+    "meme-40010": {
+      "frame": {
+        "x": 296,
+        "y": 1093,
+        "w": 89,
+        "h": 147
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 89,
+        "h": 147
+      },
+      "sourceSize": {
+        "w": 89,
+        "h": 149
+      }
+    },
+    "meme-40009": {
+      "frame": {
+        "x": 445,
+        "y": 1092,
+        "w": 89,
+        "h": 144
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 89,
+        "h": 144
+      },
+      "sourceSize": {
+        "w": 89,
+        "h": 149
+      }
+    },
+    "meme-40008": {
+      "frame": {
+        "x": 591,
+        "y": 1090,
+        "w": 89,
+        "h": 144
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 89,
+        "h": 144
+      },
+      "sourceSize": {
+        "w": 89,
+        "h": 149
+      }
+    },
+    "meme-40007": {
+      "frame": {
+        "x": 737,
+        "y": 1002,
+        "w": 89,
+        "h": 141
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 89,
+        "h": 141
+      },
+      "sourceSize": {
+        "w": 89,
+        "h": 149
+      }
+    },
+    "meme-40006": {
+      "frame": {
+        "x": 828,
+        "y": 1086,
+        "w": 89,
+        "h": 143
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 1,
+        "w": 89,
+        "h": 143
+      },
+      "sourceSize": {
+        "w": 89,
+        "h": 149
+      }
+    },
+    "meme-40005": {
+      "frame": {
+        "x": 973,
+        "y": 1086,
+        "w": 89,
+        "h": 141
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 1,
+        "w": 89,
+        "h": 141
+      },
+      "sourceSize": {
+        "w": 89,
+        "h": 149
+      }
+    },
+    "meme-40004": {
+      "frame": {
+        "x": 1148,
+        "y": 2,
+        "w": 89,
+        "h": 144
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 1,
+        "w": 89,
+        "h": 144
+      },
+      "sourceSize": {
+        "w": 89,
+        "h": 149
+      }
+    },
+    "meme-40003": {
+      "frame": {
+        "x": 1148,
+        "y": 148,
+        "w": 89,
+        "h": 145
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 1,
+        "w": 89,
+        "h": 145
+      },
+      "sourceSize": {
+        "w": 89,
+        "h": 149
+      }
+    },
+    "meme-40002": {
+      "frame": {
+        "x": 1147,
+        "y": 295,
+        "w": 88,
+        "h": 144
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 2,
+        "w": 88,
+        "h": 144
+      },
+      "sourceSize": {
+        "w": 89,
+        "h": 149
+      }
+    },
+    "meme-40001": {
+      "frame": {
+        "x": 1147,
+        "y": 441,
+        "w": 88,
+        "h": 142
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 3,
+        "w": 88,
+        "h": 142
+      },
+      "sourceSize": {
+        "w": 89,
+        "h": 149
+      }
+    },
     "meme-20012": {
       "frame": {
-        "x": 1132,
-        "y": 577,
+        "x": 1062,
+        "y": 937,
         "w": 83,
         "h": 140
       },
@@ -2582,12 +2582,12 @@
     },
     "meme-20011": {
       "frame": {
-        "x": 1042,
-        "y": 719,
+        "x": 1147,
+        "y": 585,
         "w": 84,
         "h": 146
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -2602,12 +2602,12 @@
     },
     "meme-20010": {
       "frame": {
-        "x": 2,
-        "y": 1176,
+        "x": 1147,
+        "y": 733,
         "w": 84,
         "h": 145
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -2622,12 +2622,12 @@
     },
     "meme-20009": {
       "frame": {
-        "x": 149,
-        "y": 1176,
+        "x": 1147,
+        "y": 880,
         "w": 84,
         "h": 141
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -2642,12 +2642,12 @@
     },
     "meme-20008": {
       "frame": {
-        "x": 1009,
-        "y": 1100,
+        "x": 1147,
+        "y": 1023,
         "w": 84,
         "h": 142
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -2662,8 +2662,8 @@
     },
     "meme-20007": {
       "frame": {
-        "x": 292,
-        "y": 1176,
+        "x": 2,
+        "y": 1190,
         "w": 84,
         "h": 139
       },
@@ -2682,8 +2682,8 @@
     },
     "meme-20006": {
       "frame": {
-        "x": 433,
-        "y": 1174,
+        "x": 143,
+        "y": 1190,
         "w": 84,
         "h": 143
       },
@@ -2702,8 +2702,8 @@
     },
     "meme-20005": {
       "frame": {
-        "x": 578,
-        "y": 1172,
+        "x": 288,
+        "y": 1185,
         "w": 84,
         "h": 141
       },
@@ -2722,8 +2722,8 @@
     },
     "meme-20004": {
       "frame": {
-        "x": 858,
-        "y": 1142,
+        "x": 431,
+        "y": 1184,
         "w": 84,
         "h": 142
       },
@@ -2742,12 +2742,12 @@
     },
     "meme-20003": {
       "frame": {
-        "x": 1244,
-        "y": 2,
+        "x": 575,
+        "y": 1183,
         "w": 83,
         "h": 143
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -2762,12 +2762,12 @@
     },
     "meme-20002": {
       "frame": {
-        "x": 1160,
-        "y": 433,
+        "x": 720,
+        "y": 1181,
         "w": 83,
         "h": 142
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -2782,12 +2782,12 @@
     },
     "meme-20001": {
       "frame": {
-        "x": 1244,
-        "y": 147,
+        "x": 864,
+        "y": 1177,
         "w": 83,
         "h": 140
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -2800,9 +2800,189 @@
         "h": 147
       }
     },
+    "gigabrain0009": {
+      "frame": {
+        "x": 1239,
+        "y": 2,
+        "w": 217,
+        "h": 249
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 3,
+        "w": 217,
+        "h": 249
+      },
+      "sourceSize": {
+        "w": 217,
+        "h": 253
+      }
+    },
+    "gigabrain0008": {
+      "frame": {
+        "x": 1239,
+        "y": 253,
+        "w": 214,
+        "h": 250
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 1,
+        "w": 214,
+        "h": 250
+      },
+      "sourceSize": {
+        "w": 217,
+        "h": 253
+      }
+    },
+    "gigabrain0007": {
+      "frame": {
+        "x": 1237,
+        "y": 505,
+        "w": 211,
+        "h": 251
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 211,
+        "h": 251
+      },
+      "sourceSize": {
+        "w": 217,
+        "h": 253
+      }
+    },
+    "gigabrain0006": {
+      "frame": {
+        "x": 1233,
+        "y": 758,
+        "w": 207,
+        "h": 253
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 207,
+        "h": 253
+      },
+      "sourceSize": {
+        "w": 217,
+        "h": 253
+      }
+    },
+    "gigabrain0005": {
+      "frame": {
+        "x": 1233,
+        "y": 1013,
+        "w": 210,
+        "h": 252
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 210,
+        "h": 252
+      },
+      "sourceSize": {
+        "w": 217,
+        "h": 253
+      }
+    },
+    "gigabrain0004": {
+      "frame": {
+        "x": 2,
+        "y": 1276,
+        "w": 212,
+        "h": 251
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 212,
+        "h": 251
+      },
+      "sourceSize": {
+        "w": 217,
+        "h": 253
+      }
+    },
+    "gigabrain0003": {
+      "frame": {
+        "x": 288,
+        "y": 1271,
+        "w": 213,
+        "h": 250
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 213,
+        "h": 250
+      },
+      "sourceSize": {
+        "w": 217,
+        "h": 253
+      }
+    },
+    "gigabrain0002": {
+      "frame": {
+        "x": 540,
+        "y": 1270,
+        "w": 215,
+        "h": 250
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 1,
+        "w": 215,
+        "h": 250
+      },
+      "sourceSize": {
+        "w": 217,
+        "h": 253
+      }
+    },
+    "gigabrain0001": {
+      "frame": {
+        "x": 792,
+        "y": 1267,
+        "w": 216,
+        "h": 249
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 3,
+        "w": 216,
+        "h": 249
+      },
+      "sourceSize": {
+        "w": 217,
+        "h": 253
+      }
+    },
     "meme-10012": {
       "frame": {
-        "x": 993,
+        "x": 988,
         "y": 142,
         "w": 75,
         "h": 117
@@ -2822,8 +3002,8 @@
     },
     "meme-10011": {
       "frame": {
-        "x": 1161,
-        "y": 805,
+        "x": 988,
+        "y": 261,
         "w": 74,
         "h": 121
       },
@@ -2842,12 +3022,12 @@
     },
     "meme-10010": {
       "frame": {
-        "x": 1002,
-        "y": 1186,
+        "x": 988,
+        "y": 384,
         "w": 74,
         "h": 121
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -2862,8 +3042,8 @@
     },
     "meme-10009": {
       "frame": {
-        "x": 1161,
-        "y": 286,
+        "x": 878,
+        "y": 798,
         "w": 75,
         "h": 117
       },
@@ -2882,8 +3062,8 @@
     },
     "meme-10008": {
       "frame": {
-        "x": 1245,
-        "y": 289,
+        "x": 1065,
+        "y": 701,
         "w": 75,
         "h": 117
       },
@@ -2902,12 +3082,12 @@
     },
     "meme-10007": {
       "frame": {
-        "x": 1245,
-        "y": 408,
+        "x": 1116,
+        "y": 1167,
         "w": 75,
         "h": 114
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -2922,12 +3102,12 @@
     },
     "meme-10006": {
       "frame": {
-        "x": 1245,
-        "y": 524,
+        "x": 1043,
+        "y": 1244,
         "w": 75,
         "h": 117
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -2942,12 +3122,12 @@
     },
     "meme-10005": {
       "frame": {
-        "x": 1190,
-        "y": 719,
+        "x": 1065,
+        "y": 820,
         "w": 75,
         "h": 115
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -2962,8 +3142,8 @@
     },
     "meme-10004": {
       "frame": {
-        "x": 1242,
-        "y": 796,
+        "x": 1043,
+        "y": 1321,
         "w": 75,
         "h": 117
       },
@@ -2982,8 +3162,8 @@
     },
     "meme-10003": {
       "frame": {
-        "x": 1242,
-        "y": 915,
+        "x": 1120,
+        "y": 1321,
         "w": 75,
         "h": 118
       },
@@ -3002,12 +3182,12 @@
     },
     "meme-10002": {
       "frame": {
-        "x": 1125,
-        "y": 1186,
+        "x": 1197,
+        "y": 1267,
         "w": 74,
         "h": 118
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -3022,12 +3202,12 @@
     },
     "meme-10001": {
       "frame": {
-        "x": 1245,
-        "y": 1035,
+        "x": 1197,
+        "y": 1387,
         "w": 75,
         "h": 117
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 2,
@@ -3039,186 +3219,6 @@
         "w": 77,
         "h": 122
       }
-    },
-    "gigabrain0009": {
-      "frame": {
-        "x": 2,
-        "y": 1262,
-        "w": 217,
-        "h": 249
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 3,
-        "w": 217,
-        "h": 249
-      },
-      "sourceSize": {
-        "w": 217,
-        "h": 253
-      }
-    },
-    "gigabrain0008": {
-      "frame": {
-        "x": 721,
-        "y": 1228,
-        "w": 214,
-        "h": 250
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 1,
-        "w": 214,
-        "h": 250
-      },
-      "sourceSize": {
-        "w": 217,
-        "h": 253
-      }
-    },
-    "gigabrain0007": {
-      "frame": {
-        "x": 253,
-        "y": 1262,
-        "w": 211,
-        "h": 251
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 211,
-        "h": 251
-      },
-      "sourceSize": {
-        "w": 217,
-        "h": 253
-      }
-    },
-    "gigabrain0006": {
-      "frame": {
-        "x": 937,
-        "y": 1262,
-        "w": 207,
-        "h": 253
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 207,
-        "h": 253
-      },
-      "sourceSize": {
-        "w": 217,
-        "h": 253
-      }
-    },
-    "gigabrain0005": {
-      "frame": {
-        "x": 1329,
-        "y": 2,
-        "w": 210,
-        "h": 252
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 210,
-        "h": 252
-      },
-      "sourceSize": {
-        "w": 217,
-        "h": 253
-      }
-    },
-    "gigabrain0004": {
-      "frame": {
-        "x": 1322,
-        "y": 289,
-        "w": 212,
-        "h": 251
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 212,
-        "h": 251
-      },
-      "sourceSize": {
-        "w": 217,
-        "h": 253
-      }
-    },
-    "gigabrain0003": {
-      "frame": {
-        "x": 1192,
-        "y": 1262,
-        "w": 213,
-        "h": 250
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 213,
-        "h": 250
-      },
-      "sourceSize": {
-        "w": 217,
-        "h": 253
-      }
-    },
-    "gigabrain0002": {
-      "frame": {
-        "x": 1322,
-        "y": 542,
-        "w": 215,
-        "h": 250
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 1,
-        "w": 215,
-        "h": 250
-      },
-      "sourceSize": {
-        "w": 217,
-        "h": 253
-      }
-    },
-    "gigabrain0001": {
-      "frame": {
-        "x": 1322,
-        "y": 794,
-        "w": 216,
-        "h": 249
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 3,
-        "w": 216,
-        "h": 249
-      },
-      "sourceSize": {
-        "w": 217,
-        "h": 253
-      }
     }
   },
   "meta": {
@@ -3227,8 +3227,8 @@
     "image": "characters.png",
     "format": "RGBA8888",
     "size": {
-      "w": 1541,
-      "h": 1481
+      "w": 1458,
+      "h": 1490
     },
     "scale": 1,
     "related_multi_packs": []

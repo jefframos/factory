@@ -23,4 +23,8 @@ export default class ViewUtils {
         }
         return Math.max(Math.abs(widthTarget / element.width * element.scale.x), Math.abs(heightTarget / element.height * element.scale.y));
     }
+    public static centerBitmapText(text: PIXI.BitmapText, containerWidth: number, containerHeight: number) {
+        text.x = containerWidth / 2 - text.textWidth / 2;
+        text.y = containerHeight / 2 - text.textHeight / 2;
+    }
 }

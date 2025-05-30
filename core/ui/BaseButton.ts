@@ -19,13 +19,14 @@ export interface ButtonAttributes {
     textResolution?: number;
     texture?: PIXI.Texture;
     fontColor?: number;
-    texturePadding?: PIXI.Rectangle; // For nine-slice
+    texturePadding?: Partial<PIXI.Rectangle>; // For nine-slice
     allPadding?: number; // For nine-slice
     anchor?: PIXI.Point; // Anchor point for the button
     sound?: HTMLAudioElement; // Sound to play on state
     callback?: () => void; // Callback function to call on state
     width?: number; // Width of the button
     height?: number; // Height of the button
+    tint?: number; // Height of the button
 
 
     fitText?: number; // Scale factor for fitting text within the button 
@@ -118,6 +119,12 @@ export default class BaseButton extends PIXI.Container {
         // Apply texture
         if (attr.texture) {
             this.button.texture = attr.texture || this.buttonDataSet[ButtonState.STANDARD].texture;
+        }
+
+        if (attr.tint !== undefined) {
+            this.button.tint = attr.tint
+        } else {
+            this.button.tint = 0xFFFFFF
         }
 
         // Apply texture padding if needed (for nine-slice)

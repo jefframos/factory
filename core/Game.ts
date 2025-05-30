@@ -8,11 +8,15 @@ export class Game {
     public app: PIXI.Application;
     public stageContainer: PIXI.Container;
     public overlayContainer: PIXI.Container;
-
+    static debugParams: Record<string, any> = {};
     private lastTime: number = performance.now();
     private stats?: Stats;
     // Screen data
+    static renderer: PIXI.Renderer;
+
     static gameScreenData: {
+        width: number,
+        height: number,
         center: PIXI.Point,
         topLeft: PIXI.Point,
         topRight: PIXI.Point,
@@ -21,6 +25,8 @@ export class Game {
     };
 
     static overlayScreenData: {
+        width: number,
+        height: number,
         center: PIXI.Point,
         topLeft: PIXI.Point,
         topRight: PIXI.Point,
@@ -28,14 +34,22 @@ export class Game {
         bottomRight: PIXI.Point
     };
     static deltaTime: number;
-
+    private static extractDebugParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.forEach((value, key) => {
+            if (value) {
+                this.debugParams[key] = isNaN(Number(value)) ? value : parseFloat(value);
+            }
+        });
+    }
     constructor(options?: Partial<PIXI.IApplicationOptions>, showStats?: boolean) {
+        Game.extractDebugParams();
         this.app = new PIXI.Application({
             backgroundColor: 0x1099bb,
             resizeTo: window,
             ...options,
         });
-
+        Game.renderer = this.app.renderer
         document.body.appendChild(this.app.view as HTMLCanvasElement);
 
         this.stageContainer = new PIXI.Container();
@@ -84,45 +98,52 @@ export class Game {
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
 
-        // Calculate scale factor
+        // Calculate scale factor to contain the design resolution
         const scaleX = screenWidth / Game.DESIGN_WIDTH;
         const scaleY = screenHeight / Game.DESIGN_HEIGHT;
-        const scale = Math.min(scaleX, scaleY); // contain fit
+        const scale = Math.min(scaleX, scaleY);
 
         // Scale containers
         this.stageContainer.scale.set(scale);
         this.overlayContainer.scale.set(scale);
 
-        // Center the stage
-        this.stageContainer.x = (screenWidth - Game.DESIGN_WIDTH * scale) / 2;
-        this.stageContainer.y = (screenHeight - Game.DESIGN_HEIGHT * scale) / 2;
+        // Center the containers
+        const offsetX = (screenWidth - Game.DESIGN_WIDTH * scale) / 2;
+        const offsetY = (screenHeight - Game.DESIGN_HEIGHT * scale) / 2;
+        this.stageContainer.x = offsetX;
+        this.stageContainer.y = offsetY;
+        this.overlayContainer.x = offsetX;
+        this.overlayContainer.y = offsetY;
 
-        // Overlay container follows stageContainer's position
-        this.overlayContainer.x = this.stageContainer.x;
-        this.overlayContainer.y = this.stageContainer.y;
-
-        // Resize renderer
+        // Resize the renderer
         this.app.renderer.resize(screenWidth, screenHeight);
 
-        // Set game screen data (based on logical Game.DESIGN_WIDTH/HEIGHT)
+        const gameTopLeft = this.stageContainer.toLocal(new PIXI.Point(0, 0), this.app.stage);
+        const gameBottomRight = this.stageContainer.toLocal(new PIXI.Point(screenWidth, screenHeight), this.app.stage);
+
         Game.gameScreenData = {
-            center: new PIXI.Point(Game.DESIGN_WIDTH / 2, Game.DESIGN_HEIGHT / 2),
-            topLeft: new PIXI.Point(0, 0),
-            topRight: new PIXI.Point(Game.DESIGN_WIDTH, 0),
-            bottomLeft: new PIXI.Point(0, Game.DESIGN_HEIGHT),
-            bottomRight: new PIXI.Point(Game.DESIGN_WIDTH, Game.DESIGN_HEIGHT),
+            topLeft: gameTopLeft,
+            topRight: this.stageContainer.toLocal(new PIXI.Point(screenWidth, 0), this.app.stage),
+            bottomLeft: this.stageContainer.toLocal(new PIXI.Point(0, screenHeight), this.app.stage),
+            bottomRight: gameBottomRight,
+            center: this.stageContainer.toLocal(new PIXI.Point(screenWidth / 2, screenHeight / 2), this.app.stage),
+            width: gameBottomRight.x - gameTopLeft.x,
+            height: gameBottomRight.y - gameTopLeft.y,
         };
 
-        // Set overlay screen data (based on real screen and reverse scale)
-        const screenScaledWidth = screenWidth / scale;
-        const screenScaledHeight = screenHeight / scale;
+        // Convert screen corners into overlayContainer space
+        const overlayTopLeft = this.overlayContainer.toLocal(new PIXI.Point(0, 0), this.app.stage);
+        const overlayBottomRight = this.overlayContainer.toLocal(new PIXI.Point(screenWidth, screenHeight), this.app.stage);
 
         Game.overlayScreenData = {
-            center: new PIXI.Point(screenScaledWidth / 2, screenScaledHeight / 2),
-            topLeft: new PIXI.Point(0, 0),
-            topRight: new PIXI.Point(screenScaledWidth, 0),
-            bottomLeft: new PIXI.Point(0, screenScaledHeight),
-            bottomRight: new PIXI.Point(screenScaledWidth, screenScaledHeight),
+            topLeft: overlayTopLeft,
+            topRight: this.overlayContainer.toLocal(new PIXI.Point(screenWidth, 0), this.app.stage),
+            bottomLeft: this.overlayContainer.toLocal(new PIXI.Point(0, screenHeight), this.app.stage),
+            bottomRight: overlayBottomRight,
+            center: this.overlayContainer.toLocal(new PIXI.Point(screenWidth / 2, screenHeight / 2), this.app.stage),
+            width: overlayBottomRight.x - overlayTopLeft.x,
+            height: overlayBottomRight.y - overlayTopLeft.y,
         };
     }
+
 }

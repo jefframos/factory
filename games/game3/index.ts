@@ -1,11 +1,18 @@
 import { Game } from '@core/Game';
 import LoaderScene from '@core/loader/LoaderScene';
 import { ManifestHelper } from '@core/loader/ManifestHelper';
+import PlatformHandler from '@core/platforms/PlatformHandler';
+import PokiPlatform from '@core/platforms/PokiPlatform';
+import { PopupManager } from '@core/popup/PopupManager';
 import { SceneManager } from '@core/scene/SceneManager';
 import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
 import * as PIXI from 'pixi.js';
-import { CharacterTableStore, convertCharacterSetTable } from './game/character/Types';
+import GameplayCharacterData from './game/character/GameplayCharacterData';
+import { convertCharacterSetTable, Fonts } from './game/character/Types';
+import { ConfirmationPopup } from './game/popup/ConfirmationPopup';
+import { GameOverPopup } from './game/popup/GameOverPopup';
 import GameplayScene from './game/scenes/GameplayScene';
+import StartupScene from './game/scenes/StartupScene';
 import fontManifest from './manifests/fonts.json'; // adjust path
 import imageManifest from './manifests/images.json'; // adjust path
 import jsonManifest from './manifests/json.json'; // adjust path
@@ -18,8 +25,15 @@ export default class MyGame extends Game {
 
     private folder: string = 'game3'
 
+    private popupManager: PopupManager = new PopupManager();
+
+
     constructor() {
         super(undefined, true);
+
+        PlatformHandler.instance.initialize(new PokiPlatform())
+
+        PlatformHandler.instance.platform.startLoad();
         this.stageContainer.addChild(this.gameContainer);
         this.sceneManager = new SceneManager(this.gameContainer);
         this.loaderScene = this.sceneManager.register('loader', LoaderScene);
@@ -83,9 +97,12 @@ export default class MyGame extends Game {
             this.loaderScene.updateLoader(p * 1 / bundles.length);
         })
 
+
+        PlatformHandler.instance.platform.loadFinished();
+
         const externalSet = PIXI.Assets.get('characterMemeSet.json')
         if (externalSet) {
-            CharacterTableStore.data = convertCharacterSetTable(PIXI.Assets.get('characterMemeSet.json'))
+            GameplayCharacterData.registerTable('meme', convertCharacterSetTable(PIXI.Assets.get('characterMemeSet.json')))
         }
 
         const tiled = PIXI.Assets.get('tiled.json')
@@ -93,19 +110,48 @@ export default class MyGame extends Game {
             ExtractTiledFile.parseTiledData(tiled)
         }
 
+        PIXI.BitmapFont.from(Fonts.MainFamily, {
+            ...Fonts.Main,
+            letterSpacing: 8,
+        }, {
+            chars: ['0123456789: ?!{}()@#$%^&*-+', ['a', 'z'], ['A', 'Z']]
+        });
+
+
+
+        this.overlayContainer.addChild(this.popupManager)
+        this.popupManager.registerPopup('confirm', new ConfirmationPopup(), false);
+        this.popupManager.registerPopup('gameOver', new GameOverPopup(), false);
+
+
+
         this.startGame();
 
     }
     /** After load: wire up scenes and show first one */
     protected startGame(): void {
 
-        const mainMenu = this.sceneManager.register<GameplayScene>('game', GameplayScene);
-        this.sceneManager.changeScene('game');
+        const mainMenu = this.sceneManager.register<StartupScene>('menu', StartupScene);
+        mainMenu.onGamePlay.add(() => {
+
+            this.sceneManager.changeScene('game');
+        })
+
+        const gameplay = this.sceneManager.register<GameplayScene>('game', GameplayScene);
+
+        gameplay.onQuit.add(() => {
+
+            this.sceneManager.changeScene('menu');
+        })
+
+        this.sceneManager.changeScene(Game.debugParams.scene || 'game');
         this.sceneManager.resize();
     }
 
     protected override update(delta: number): void {
         this.sceneManager?.update(delta);
+        this.popupManager?.update(delta)
+
     }
 
     protected override onResize(): void {

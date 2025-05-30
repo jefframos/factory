@@ -1,3 +1,5 @@
+
+import * as PIXI from 'pixi.js';
 export interface TiledMap {
     width: number;
     height: number;
@@ -11,6 +13,15 @@ export interface FlipStates {
     vertical: boolean;
     diagonal: boolean;
 }
+export type HorizontalAlign = 'left' | 'center' | 'right';
+export type VerticalAlign = 'top' | 'center' | 'bottom';
+
+export interface TextObject {
+    halign: HorizontalAlign;
+    valign: VerticalAlign;
+    text: string;
+    wrap: boolean;
+}
 export interface TiledLayer {
     id: number;
     name: string;
@@ -18,7 +29,29 @@ export interface TiledLayer {
     properties?: Record<string, any>;
     objects?: TiledObject[];
 }
+export function createTextFromObject(textObject: TextObject, width: number, height: number, isBitmapFont?: string): PIXI.Text | PIXI.BitmapText {
+    const { halign, valign, text = "" } = textObject;
+    const { wrap = true } = textObject;
 
+    const anchorX = halign === 'left' ? 0 : halign === 'center' ? 0.5 : 1;
+    const anchorY = valign === 'top' ? 0 : valign === 'center' ? 0.5 : 1;
+
+    if (isBitmapFont) {
+        const bitmapText = new PIXI.BitmapText(text, {
+            fontName: isBitmapFont
+        });
+        bitmapText.anchor.set(anchorX, anchorY);
+        return bitmapText
+    } else {
+        const pixiText = new PIXI.Text(text, new PIXI.TextStyle({
+            wordWrap: wrap,
+            wordWrapWidth: width || 100,
+            align: halign
+        }));
+        pixiText.anchor.set(anchorX, anchorY);
+        return pixiText;
+    }
+}
 export interface TiledObject {
     name?: string;
     id: number;
@@ -29,6 +62,7 @@ export interface TiledObject {
     height: number;
     rotation: number;
     flipStates: FlipStates;
+    text?: TextObject;
     visible: boolean;
     properties?: Record<string, any>;
 
@@ -141,6 +175,7 @@ export class ExtractTiledFile {
             name: obj.name,
             id: obj.id,
             flipStates: gid.flipStates,
+            text: obj.text,
             properties: obj ? ExtractTiledFile.parseProperties(obj.properties) : {},
             gid: gid.tileId,
             rotation: obj.rotation,

@@ -1,6 +1,6 @@
 import AutoPositionTiledContainer from '@core/tiled/AutoPositionTiledContainer';
 import { ExtratedTiledTileData } from '@core/tiled/ExtractTiledFile';
-import { PinMode, ScaleMode } from '@core/tiled/TiledAutoPositionObject';
+import { ScaleMode } from '@core/tiled/TiledAutoPositionObject';
 import { FoundTiledObject } from '@core/tiled/TiledLayerObject';
 import BaseButton, { ButtonState } from '@core/ui/BaseButton';
 import * as PIXI from 'pixi.js';
@@ -14,7 +14,7 @@ export default class MainMenuUi extends AutoPositionTiledContainer {
     private tiledButtonsContainer: FoundTiledObject;
 
     constructor(mainMenuData: ExtratedTiledTileData, layers?: string[]) {
-        super(mainMenuData, layers, { scaleMode: ScaleMode.FIT, matchRatio: 0 }, { pinMode: PinMode.BOTTOM });
+        super(mainMenuData, layers, { scaleMode: ScaleMode.FIT, matchRatio: 0 }, { pinAnchor: new PIXI.Point(0.5, 1) });
 
         this.tiledButtonsContainer = this.findFromProperties('id', 'buttons-list');
 

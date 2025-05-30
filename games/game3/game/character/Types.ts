@@ -68,18 +68,16 @@ export function convertCharacterSetTable(raw: PieceViewData[]): PieceViewData[] 
     return copy;
 }
 
+const MainFamily = 'LEMONMILK-Bold';
 export const Fonts = {
+    MainFamily: MainFamily,
     Main: new PIXI.TextStyle({
-        fontFamily: 'LEMONMILK-Bold',
+        fontFamily: MainFamily,
         fontSize: 32,
         fill: 0xffffff,
         align: 'center',
         stroke: 0,
-        strokeThickness: 8
+        strokeThickness: 6
 
     })
 } as const;
-
-export const CharacterTableStore = {
-    data: [] as PieceViewData[],
-};

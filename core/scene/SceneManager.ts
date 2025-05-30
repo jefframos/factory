@@ -29,6 +29,7 @@ export class SceneManager {
         // tear down current
         if (this.currentKey) {
             const old = this.scenes.get(this.currentKey)!;
+            old.hide();
             old.destroy();
             this.appContainer.removeChild(old);
         }
@@ -40,6 +41,7 @@ export class SceneManager {
         next.build(...buildParams);
         this.appContainer.addChild(next);
         next.resize();
+        next.show();
     }
 
     public update(delta: number): void {

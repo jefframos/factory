@@ -9,60 +9,49 @@ export enum ScaleMode {
     MATCH = "match"
 }
 
-export enum PinMode {
-    NONE = "none",
-    BOTTOM = "bottom",
-    TOP = "top",
-    CENTER = "center"
-}
-
 export type ScaleSettings = {
     scaleMode: ScaleMode;
     matchRatio?: number; // 0 = match width, 1 = match height
 };
 
 export type PinSettings = {
-    pinMode: PinMode;
+    pinAnchor?: PIXI.Point; // e.g., (0, 0) for top-left, (0.5, 1) for center-bottom
 };
 
 export default class TiledAutoPositionObject extends TiledLayerObject {
     private scaleMode: ScaleMode = ScaleMode.MATCH;
     private matchRatio: number = 1;
-    private pinMode: PinMode = PinMode.NONE;
+    private pinAnchor: PIXI.Point | undefined;
 
-    private db: PIXI.Graphics = new PIXI.Graphics().beginFill(0x00FF00).drawCircle(0, 0, 50);
+    // private db: PIXI.Graphics = new PIXI.Graphics().beginFill(0x00FF00).drawCircle(0, 0, 50);
+    // private db2: PIXI.Graphics = new PIXI.Graphics().beginFill(0x00FFFF).drawCircle(0, 0, 50);
 
     build(
         backgroundData: ExtratedTiledTileData,
         layers?: string[],
         scaleSettings: ScaleSettings = { scaleMode: ScaleMode.MATCH, matchRatio: 1 },
-        pinSettings: PinSettings = { pinMode: PinMode.NONE }
+        pinSettings: PinSettings = {}
     ): void {
         super.build(backgroundData, layers);
 
-        // Read properties from layers or background data
         if (layers && layers.length === 1) {
             const props = this.tiledLayersProperties.get(layers[0])?.properties || {};
             this.scaleMode = props.scaleMode || scaleSettings.scaleMode;
             this.matchRatio = props.matchRatio ?? scaleSettings.matchRatio;
-            this.pinMode = props.pinMode || pinSettings.pinMode;
+            this.pinAnchor = props.pinAnchor ?? pinSettings.pinAnchor;
         } else {
             const props = backgroundData.settings?.properties || {};
             this.scaleMode = props.scaleMode || scaleSettings.scaleMode;
             this.matchRatio = props.matchRatio ?? scaleSettings.matchRatio;
-            this.pinMode = props.pinMode || pinSettings.pinMode;
+            this.pinAnchor = props.pinAnchor ?? pinSettings.pinAnchor;
         }
 
-        // Set pivot to top-left (0,0)
-        this.container.pivot.set(0, 0);
+        // Set pivot to top-left
+        // this.container.pivot.set(0, 0);
 
-        // Add debug marker
+        // // Debug helpers
         // this.addChild(this.db);
-
-        // // Place a test object at DESIGN_HEIGHT (bottom of layout)
-        // const zero = new PIXI.Graphics().beginFill(0xFF0000).drawCircle(0, 0, 20);
-        // zero.y = Game.DESIGN_HEIGHT;
-        // this.container.addChild(zero);
+        // this.addChild(this.db2);
     }
 
     updateTransform(): void {
@@ -71,11 +60,11 @@ export default class TiledAutoPositionObject extends TiledLayerObject {
     }
 
     update(delta: number): void {
-        const cameraCenterX = Game.gameScreenData.center.x;
-        const cameraCenterY = Game.gameScreenData.center.y;
+        const screen = Game.overlayScreenData;
+        const center = Game.gameScreenData.center;
 
-        const scaleX = Game.overlayScreenData.bottomRight.x / this.bounds.width;
-        const scaleY = Game.overlayScreenData.bottomRight.y / this.bounds.height;
+        const scaleX = (screen.bottomRight.x - screen.topLeft.x) / this.bounds.width;
+        const scaleY = (screen.bottomRight.y - screen.topLeft.y) / this.bounds.height;
 
         let targetScale: number;
 
@@ -92,28 +81,23 @@ export default class TiledAutoPositionObject extends TiledLayerObject {
         }
 
         this.container.scale.set(targetScale);
-        this.container.x = cameraCenterX - (this.bounds.width / 2) * targetScale;
 
-        // db at bottom of screen
-        this.db.y = cameraCenterY + Game.overlayScreenData.bottomRight.y / 2;
+        // Debug markers
+        // this.db.y = screen.bottomRight.y;
+        // this.db2.y = screen.topLeft.y;
 
-        switch (this.pinMode) {
-            case PinMode.TOP:
-                this.container.y = cameraCenterY - (Game.DESIGN_HEIGHT / 2) * targetScale;
-                break;
+        // Position using pinAnchor
+        if (this.pinAnchor) {
+            const pin = this.pinAnchor;
+            const screenWidth = screen.bottomRight.x - screen.topLeft.x;
+            const screenHeight = screen.bottomRight.y - screen.topLeft.y;
 
-            case PinMode.BOTTOM:
-                this.container.y = this.db.y - Game.DESIGN_HEIGHT * targetScale;
-                break;
-
-            case PinMode.CENTER:
-                this.container.y = cameraCenterY - (this.bounds.height / 2) * targetScale;
-                break;
-
-            case PinMode.NONE:
-            default:
-                this.container.y = cameraCenterY - (this.bounds.height / 2) * targetScale;
-                break;
+            this.container.x = screen.topLeft.x + screenWidth * pin.x - (this.bounds.width * targetScale * pin.x);
+            this.container.y = screen.topLeft.y + screenHeight * pin.y - (this.bounds.height * targetScale * pin.y);
+        } else {
+            // Default: center
+            this.container.x = center.x - (this.bounds.width / 2) * targetScale;
+            this.container.y = center.y - (this.bounds.height / 2) * targetScale;
         }
     }
 }

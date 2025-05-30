@@ -1,13 +1,5 @@
 import { texturePacker, texturePackerCompress } from '@assetpack/core/texture-packer';
 
-
-const GAME = process.env.GAME;
-if (!GAME) {
-    console.error('❌ Please specify GAME=game1');
-    process.exit(1);
-}
-
-
 const options = {
     jpg: {},
     png: { quality: 90 },
