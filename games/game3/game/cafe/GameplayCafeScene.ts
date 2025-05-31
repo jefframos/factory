@@ -84,7 +84,7 @@ export default class GameplayCafeScene extends GameScene {
             // }
         }
 
-        this.hud = new AutoPositionTiledContainer(uiSettings, ['HUD'], { scaleMode: ScaleMode.MATCH, matchRatio: 0 })
+        this.hud = new AutoPositionTiledContainer(uiSettings, ['HUD'], { scaleMode: ScaleMode.MATCH, matchRatio: 1 }, { pinAnchor: new PIXI.Point(1, 0) })
         this.uiContainer.addChild(this.hud);
         this.addChild(this.uiContainer)
 

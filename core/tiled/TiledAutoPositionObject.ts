@@ -99,5 +99,11 @@ export default class TiledAutoPositionObject extends TiledLayerObject {
             this.container.x = center.x - (this.bounds.width / 2) * targetScale;
             this.container.y = center.y - (this.bounds.height / 2) * targetScale;
         }
+
+        this.tiledLayers.forEach(element => {
+            element.container.x = this.container.x
+            element.container.y = this.container.y
+            element.container.scale.set(targetScale);
+        });
     }
 }

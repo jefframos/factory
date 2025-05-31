@@ -24,7 +24,6 @@ export default class TiledLayerObject extends PIXI.Container {
         if (value) {
             return this.tiledLayers.get(value);
         }
-        console.log(Array.from(this.tiledLayers.values()))
         return Array.from(this.tiledLayers.values())[0];
     }
     build(backgroundData: ExtratedTiledTileData, layers?: string[]): void {

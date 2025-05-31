@@ -42,5 +42,6 @@ export class CameraComponent {
 
     public setScreenBounds(bounds: PIXI.Rectangle) {
         this.screenBounds.copyFrom(bounds);
+        this.update(1)
     }
 }
