@@ -7,17 +7,17 @@ import TiledAutoPositionObject from "@core/tiled/TiledAutoPositionObject";
 import gsap from "gsap";
 import * as PIXI from 'pixi.js';
 import { Signal } from "signals";
-import GameplayCharacterData from "../character/GameplayCharacterData";
-import SwipeInputManager from "../io/SwipeInputManager";
-import { ConfirmationPopupData } from "../popup/ConfirmationPopup";
+import GameplayCharacterData from "../../character/GameplayCharacterData";
+import SwipeInputManager from "../../io/SwipeInputManager";
+import { ConfirmationPopupData } from "../../popup/ConfirmationPopup";
+import { GlobalDataManager } from "../../scenes/data/GlobalDataManager";
 import MainMenuUi from "../ui/MainMenuUi";
 import ScoreUi from "../ui/ScoreUi";
 import TutorialDesktopUi from "../ui/TutorialDesktopUi";
-import { GlobalDataManager } from "./data/GlobalDataManager";
 import { GridManager, MovementResult } from "./GridManager";
 import MatchManager from "./MatchManager";
 
-export default class GameplayScene extends GameScene {
+export default class Gameplay2048Scene extends GameScene {
 
     private gameplayContainer = new PIXI.Container();
     private gridManager!: GridManager;
@@ -36,16 +36,18 @@ export default class GameplayScene extends GameScene {
 
     private matchManager: MatchManager = new MatchManager();
 
+    private inputShape: PIXI.Sprite = PIXI.Sprite.from(PIXI.Texture.WHITE)
+
     public onQuit: Signal = new Signal();
 
     constructor() {
         super();
 
         if (ExtractTiledFile.TiledData) {
-            this.background.build(ExtractTiledFile.TiledData, ['Background'])
+            this.background.build(ExtractTiledFile.getTiledFrom('2048'), ['Background'])
             this.addChild(this.background)
 
-            this.mainMenu = new MainMenuUi(ExtractTiledFile.TiledData, ['MainMenu']);
+            this.mainMenu = new MainMenuUi(ExtractTiledFile.getTiledFrom('2048'), ['MainMenu']);
             //this.addChild(this.mainMenu);
 
 
@@ -84,7 +86,7 @@ export default class GameplayScene extends GameScene {
             //     PopupManager.instance.show('confirm', confirmationData)
             // })
 
-            this.scoreUi = new ScoreUi(ExtractTiledFile.TiledData, ['ScoreMenu'])
+            this.scoreUi = new ScoreUi(ExtractTiledFile.getTiledFrom('2048'), ['ScoreMenu'])
             this.addChild(this.scoreUi)
 
             this.scoreUi.onQuit.add(() => {
@@ -126,10 +128,11 @@ export default class GameplayScene extends GameScene {
                 PopupManager.instance.show('confirm', confirmationData)
             })
 
-            this.tutorialDesktop = new TutorialDesktopUi(ExtractTiledFile.TiledData, ['TutorialDesktop']);
+            this.tutorialDesktop = new TutorialDesktopUi(ExtractTiledFile.getTiledFrom('2048'), ['TutorialDesktop']);
             if (!PIXI.isMobile.any) {
                 this.addChild(this.tutorialDesktop);
             }
+
         }
 
         this.highScore = parseInt(GlobalDataManager.getData('meme_highscore') || '0');
@@ -176,7 +179,7 @@ export default class GameplayScene extends GameScene {
 
     }
     private startMatch() {
-        this.matchManager.start()
+
         this.gridManager.start();
         this.scoreUi.startMatch();
         this.scoreUi.updateHighestPiece(2, GameplayCharacterData.fetchById(0)!);
@@ -194,6 +197,10 @@ export default class GameplayScene extends GameScene {
         this.gridManager.onPointsUpdated.add(this.updateScoreText.bind(this));
         this.updateScoreText(0)
         this.inputManager = new SwipeInputManager();
+        this.inputManager.setShape(this.inputShape)
+        this.addChild(this.inputShape)
+        this.inputShape.alpha = 0;
+
 
         this.inputManager.onMove.add(async (direction) => {
             if (this.isTransitioning) return;
@@ -208,8 +215,8 @@ export default class GameplayScene extends GameScene {
     }
     private updateTurn(moveResult: MovementResult) {
         if (moveResult.isValid) {
-
             if (this.matchManager.moveCounter < 2) {
+                this.matchManager.start()
                 PlatformHandler.instance.platform.gameplayStart();
             }
 
@@ -264,6 +271,13 @@ export default class GameplayScene extends GameScene {
     public update(delta: number): void {
         this.gameplayContainer.x = Game.DESIGN_WIDTH / 2
         this.gameplayContainer.y = Game.DESIGN_HEIGHT / 2 + 120
+
+        if (this.inputShape) {
+            this.inputShape.width = this.gameplayContainer.width
+            this.inputShape.height = this.gameplayContainer.height
+            this.inputShape.x = this.gameplayContainer.x - this.gameplayContainer.width / 2
+            this.inputShape.y = this.gameplayContainer.y - this.gameplayContainer.height / 2
+        }
         if (this.paused) {
             return;
         }

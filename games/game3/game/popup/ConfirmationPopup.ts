@@ -31,7 +31,7 @@ export class ConfirmationPopup extends BasePopup {
     constructor() {
         super();
 
-        this.layout.build(ExtractTiledFile.TiledData, ['ConfirmationPopup'])
+        this.layout.build(ExtractTiledFile.getTiledFrom('2048'), ['ConfirmationPopup'])
         this.addChild(this.layout);
 
 

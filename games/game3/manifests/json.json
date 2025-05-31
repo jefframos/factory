@@ -26,6 +26,22 @@
           "src": [
             "tiled.json"
           ]
+        },
+        {
+          "alias": [
+            "memeWorld.json"
+          ],
+          "src": [
+            "memeWorld.json"
+          ]
+        },
+        {
+          "alias": [
+            "memeUi.json"
+          ],
+          "src": [
+            "memeUi.json"
+          ]
         }
       ]
     }

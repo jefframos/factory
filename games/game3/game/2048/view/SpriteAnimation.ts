@@ -1,4 +1,4 @@
-import { CharacterAnimationData } from "../character/Types";
+import { CharacterAnimationData } from "../../character/Types";
 
 export class SpriteAnimation {
     private animations: Record<string, CharacterAnimationData> = {};
@@ -7,13 +7,14 @@ export class SpriteAnimation {
     private elapsedTime = 0;
     private _currentSpriteId = "";
 
-    constructor() {
+    private frameRateOverrides: Map<string, number> = new Map();
+    public globalSpeedMultiplier: number = 1;
 
-    }
+    constructor() { }
 
     public register(animation: CharacterAnimationData) {
         this.animations[animation.name] = animation;
-        this.play(animation.name)
+        this.play(animation.name);
     }
 
     public wipe() {
@@ -22,23 +23,37 @@ export class SpriteAnimation {
         this.currentFrameIndex = 0;
         this.elapsedTime = 0;
         this._currentSpriteId = "";
+        this.frameRateOverrides.clear();
     }
 
-    public play(name: string) {
+    public play(name: string, overrideIfSame: boolean = false) {
+        if (this.currentAnimation?.name === name && !overrideIfSame) {
+            return;
+        }
+
         const anim = this.animations[name];
         if (!anim) return;
+
         this.currentAnimation = anim;
         this.currentFrameIndex = 0;
         this.elapsedTime = 0;
         this._currentSpriteId = anim.frame[0];
     }
 
+    public overrideFrameRate(name: string, frameRate: number) {
+        this.frameRateOverrides.set(name, frameRate);
+    }
+
     public update(delta: number) {
         if (!this.currentAnimation) return;
 
+        const animationName = this.currentAnimation.name;
+        const overriddenRate = this.frameRateOverrides.get(animationName);
+        const frameRate = overriddenRate ?? this.currentAnimation.frameRate;
+
+        const frameDuration = (1 / frameRate) / this.globalSpeedMultiplier;
         this.elapsedTime += delta;
 
-        const frameDuration = 1 / this.currentAnimation.frameRate;
         if (this.elapsedTime >= frameDuration) {
             const frames = this.currentAnimation.frame;
             this.currentFrameIndex++;

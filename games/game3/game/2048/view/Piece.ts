@@ -1,6 +1,6 @@
 import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
-import { Fonts, PieceViewData } from '../character/Types';
+import { Fonts, PieceViewData } from '../../character/Types';
 import { SpriteAnimation } from './SpriteAnimation';
 
 export class Piece extends PIXI.Container {

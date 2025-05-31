@@ -8,7 +8,7 @@ import { TimerConversionUtils } from '@core/utils/TimeConversionUtils';
 import ViewUtils from '@core/utils/ViewUtils';
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
-import { Fonts, PieceViewData } from '../character/Types';
+import { Fonts } from '../../character/Types';
 import { Piece } from '../view/Piece';
 export default class ScoreUi extends AutoPositionTiledContainer {
 

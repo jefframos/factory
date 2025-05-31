@@ -14,7 +14,7 @@
             "name": "walk",
             "frame": "meme-small-10000",
             "first": 7,
-            "last": 24,
+            "last": 22,
             "frameRate": 15,
             "loop": true
         }
@@ -34,7 +34,7 @@
             "name": "walk",
             "frame": "meme-small-20000",
             "first": 7,
-            "last": 24,
+            "last": 22,
             "frameRate": 15,
             "loop": true
         }
@@ -54,7 +54,7 @@
             "name": "walk",
             "frame": "meme-small-30000",
             "first": 7,
-            "last": 24,
+            "last": 22,
             "frameRate": 15,
             "loop": true
         }

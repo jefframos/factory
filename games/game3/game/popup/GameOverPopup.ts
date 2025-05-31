@@ -6,10 +6,10 @@ import BaseButton from '@core/ui/BaseButton';
 import { TimerConversionUtils } from '@core/utils/TimeConversionUtils';
 import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
+import MatchManager from '../2048/scene/MatchManager';
+import { Piece } from '../2048/view/Piece';
 import GameplayCharacterData from '../character/GameplayCharacterData';
 import { Fonts } from '../character/Types';
-import MatchManager from '../scenes/MatchManager';
-import { Piece } from '../view/Piece';
 interface GameOverPopupData extends PopupData {
     matchManager: MatchManager;
 }
@@ -29,7 +29,7 @@ export class GameOverPopup extends BasePopup {
     constructor() {
         super();
 
-        this.layout.build(ExtractTiledFile.TiledData!, ['GameOverPopup'])
+        this.layout.build(ExtractTiledFile.getTiledFrom('2048')!, ['GameOverPopup'])
         this.addChild(this.layout);
 
 

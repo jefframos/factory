@@ -7,11 +7,12 @@ import { PopupManager } from '@core/popup/PopupManager';
 import { SceneManager } from '@core/scene/SceneManager';
 import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
 import * as PIXI from 'pixi.js';
+import Gameplay2048Scene from './game/2048/scene/Gameplay2048Scene';
+import GameplayCafeScene from './game/cafe/GameplayCafeScene';
 import GameplayCharacterData from './game/character/GameplayCharacterData';
 import { convertCharacterSetTable, Fonts } from './game/character/Types';
 import { ConfirmationPopup } from './game/popup/ConfirmationPopup';
 import { GameOverPopup } from './game/popup/GameOverPopup';
-import GameplayScene from './game/scenes/GameplayScene';
 import StartupScene from './game/scenes/StartupScene';
 import fontManifest from './manifests/fonts.json'; // adjust path
 import imageManifest from './manifests/images.json'; // adjust path
@@ -107,7 +108,17 @@ export default class MyGame extends Game {
 
         const tiled = PIXI.Assets.get('tiled.json')
         if (tiled) {
-            ExtractTiledFile.parseTiledData(tiled)
+            ExtractTiledFile.parseTiledData(tiled, '2048')
+        }
+
+        const memeWorld = PIXI.Assets.get('memeWorld.json')
+        if (memeWorld) {
+            ExtractTiledFile.parseTiledData(memeWorld, 'memeWorld')
+        }
+
+        const memeUi = PIXI.Assets.get('memeUi.json')
+        if (memeUi) {
+            ExtractTiledFile.parseTiledData(memeUi, 'memeUi')
         }
 
         PIXI.BitmapFont.from(Fonts.MainFamily, {
@@ -137,12 +148,13 @@ export default class MyGame extends Game {
             this.sceneManager.changeScene('game');
         })
 
-        const gameplay = this.sceneManager.register<GameplayScene>('game', GameplayScene);
+        const gameplay = this.sceneManager.register<Gameplay2048Scene>('game', Gameplay2048Scene);
 
         gameplay.onQuit.add(() => {
 
             this.sceneManager.changeScene('menu');
         })
+        const gameplayCafe = this.sceneManager.register<GameplayCafeScene>('cafe', GameplayCafeScene);
 
         this.sceneManager.changeScene(Game.debugParams.scene || 'game');
         this.sceneManager.resize();

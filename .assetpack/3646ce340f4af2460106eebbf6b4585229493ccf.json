@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1748588357468,
-                "duration": 4.509500026702881,
+                "date": 1748649708870,
+                "duration": 4.7749998569488525,
                 "success": true
             }
         },
@@ -20,8 +20,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1748404259965,
-                "duration": 749.2788000106812,
+                "date": 1748648176029,
+                "duration": 118.95260000228882,
                 "success": true
             }
         },
@@ -34,6 +34,164 @@
             },
             "transformData": {},
             "hash": "TzlU_g"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert": {
+            "isFolder": true,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert/cactus0001.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "_aBJ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert/cactus0002.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "xjkrjg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert/desert_bush01.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "Fx-wmw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert/desert_bush02.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "ljh6vA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert/desert_bush03.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "o8Uh7g"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert/desert_bush04.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "zj2Ykg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert/desert_tree-1.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "q701xw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert/desert_tree-2.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/desert",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "bXh6wA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/rocks": {
+            "isFolder": true,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/rocks/rocks0001.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/rocks",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "atPr0w"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/rocks/rocks0002.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/rocks",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "ibIVhg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/rocks/rocks0003.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/rocks",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "8IbzIg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/rocks/rocks0004.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/rocks",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "L72wNA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/rocks/rocks0005.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/rocks",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "n82joA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/rocks/rocks0006.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/backgrounds{tps}/rocks",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "lKHlDg"
         },
         ".assetpack/multi-pipe-1/backgrounds.png": {
             "isFolder": false,
@@ -2019,6 +2177,75 @@
             "metaData": {},
             "inheritedMetaData": {
                 "a": true,
+                "tps": true
+            },
+            "transformData": {
+                "page": 0
+            }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/terrain{tps}": {
+            "isFolder": true,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images",
+            "metaData": {
+                "tps": true
+            },
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1748649708870,
+                "duration": 26.426999807357788,
+                "success": true
+            }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/terrain{tps}/grass-patch-1.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/terrain{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "kGLSVw"
+        },
+        ".assetpack/multi-pipe-1/terrain.png": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/terrain{tps}",
+            "metaData": {
+                "mIgnore": true,
+                "nomip": true
+            },
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/images/terrain.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/terrain.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true,
+                "mIgnore": true,
+                "nomip": true
+            },
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-1/terrain.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/terrain{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {
+                "page": 0
+            }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/images/terrain.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/terrain.json",
+            "metaData": {},
+            "inheritedMetaData": {
                 "tps": true
             },
             "transformData": {

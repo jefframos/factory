@@ -2,22 +2,31 @@ import ViewUtils from '@core/utils/ViewUtils';
 import * as PIXI from 'pixi.js';
 import { createTextFromObject, ExtratedTiledTileData, FlipStates, TiledObject } from './ExtractTiledFile';
 
-export type TiledLayerTypes = PIXI.Container | PIXI.NineSlicePlane | PIXI.Sprite | PIXI.BitmapText | PIXI.Text;
+export type TiledLayerTypes = PIXI.Container | PIXI.NineSlicePlane | PIXI.Sprite | PIXI.BitmapText | PIXI.Text | PIXI.TilingSprite;
 export type FoundTiledObject = { object: TiledObject, view?: TiledLayerTypes } | undefined;
+export type LayerTypes = { container: PIXI.Container, objects: TiledLayerTypes[] };
 
 export default class TiledLayerObject extends PIXI.Container {
     protected tiledLayerData!: ExtratedTiledTileData;
-    protected tiledLayers: Map<string, { container: PIXI.Container, objects: TiledLayerTypes[] }> = new Map();
+    protected tiledLayers: Map<string, LayerTypes> = new Map();
     protected tiledLayersProperties: Map<string, any> = new Map();
     public bounds = { width: 0, height: 0 };
     public localBounds = { width: 0, height: 0 };
     protected container: PIXI.Container;
     protected objectToView: Map<TiledObject, TiledLayerTypes | undefined> = new Map();
+
+
     constructor() {
         super();
         this.container = new PIXI.Container();
     }
-
+    public getLayerByName(value?: string): LayerTypes | undefined {
+        if (value) {
+            return this.tiledLayers.get(value);
+        }
+        console.log(Array.from(this.tiledLayers.values()))
+        return Array.from(this.tiledLayers.values())[0];
+    }
     build(backgroundData: ExtratedTiledTileData, layers?: string[]): void {
         this.tiledLayerData = backgroundData;
 
@@ -36,7 +45,6 @@ export default class TiledLayerObject extends PIXI.Container {
 
             layerData.objects?.forEach(obj => {
                 this.objectToView.set(obj, undefined);
-
                 // ✅ If it's a TextObject
                 if (obj.text) {
                     const props = obj.properties || {};
@@ -61,7 +69,7 @@ export default class TiledLayerObject extends PIXI.Container {
                         text.scale.set(ViewUtils.elementScalerBySize(text.width, text.height, obj.width, obj.height))
                     }
 
-                    this.container.addChild(text);
+                    layer.addChild(text);
                     this.objectToView.set(obj, text);
                     entities.push(text);
 
@@ -80,14 +88,17 @@ export default class TiledLayerObject extends PIXI.Container {
 
                 if (!tileset) {
                     const empty = new PIXI.Container();
-                    this.container.addChild(empty);
+                    layer.addChild(empty);
                     empty.x = obj.x;
                     empty.y = obj.y;
                     this.objectToView.set(obj, empty);
                     return;
                 }
 
+
+
                 const tile = tileset.tiles[obj.gid - tileset.firstgid];
+
                 const rotation = obj.rotation * Math.PI / 180;
                 const texture = PIXI.Texture.from(tile.image);
 
@@ -95,8 +106,18 @@ export default class TiledLayerObject extends PIXI.Container {
 
                 const props = tile.properties || {};
                 const defaultSlice = props.nineSliced as number | undefined;
+                const isTiled = props.isTiled as number | undefined;
+                if (isTiled !== undefined) {
 
-                if (defaultSlice !== undefined) {
+                    const tilingSprite = new PIXI.TilingSprite(
+                        texture,
+                        obj.width,
+                        obj.height
+                    );
+                    tilingSprite.tileScale.set(1); // optional: keep full texture scale
+                    sprite = tilingSprite;
+
+                } else if (defaultSlice !== undefined) {
 
                     let left = props.left as number | undefined;
                     let right = props.right as number | undefined;
@@ -135,6 +156,8 @@ export default class TiledLayerObject extends PIXI.Container {
                     sprite.pivot.set(0, sprite.height); // same effect for NineSlice
                 }
 
+
+
                 sprite.rotation = rotation;
                 this.sortFlip(sprite, obj.flipStates);
 
@@ -159,9 +182,18 @@ export default class TiledLayerObject extends PIXI.Container {
                     sprite.y = obj.y;
                 }
 
-                sprite.zIndex = -1;
+                sprite.zIndex = obj.y;
 
-                this.container.addChild(sprite);
+                if (props.anchorX) {
+                    (sprite as PIXI.Sprite).anchor.x = props.anchorX;
+                    sprite.x += obj.width * props.anchorX;
+                }
+
+                if (props.anchorY) {
+                    (sprite as PIXI.Sprite).anchor.y = props.anchorY;
+                }
+
+                layer.addChild(sprite);
                 this.objectToView.set(obj, sprite);
                 entities.push(sprite);
 

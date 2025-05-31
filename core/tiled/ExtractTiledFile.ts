@@ -95,8 +95,8 @@ export interface ExtratedTiledTileData {
 }
 
 export class ExtractTiledFile {
-    static TiledData?: ExtratedTiledTileData;
-    static parseTiledData(tiledData: any): ExtratedTiledTileData {
+    static TiledData?: Record<string, ExtratedTiledTileData>;
+    static parseTiledData(tiledData: any, tiledId: string) {
         let settings: TiledLayer | undefined;
         const layers = new Map<string, TiledLayer>();
         const tilesets = new Map<string, TiledTileset>();
@@ -155,10 +155,17 @@ export class ExtractTiledFile {
                 tiles
             });
         }
-        ExtractTiledFile.TiledData = { layers, tilesets, settings }
-        return ExtractTiledFile.TiledData;
+        ExtractTiledFile.TiledData = ExtractTiledFile.TiledData || {};
+        ExtractTiledFile.TiledData[tiledId] = { layers, tilesets, settings };
     }
+    public static getTiledFrom(tiledId: string) {
+        if (!(ExtractTiledFile.TiledData ?? {})[tiledId]) {
+            console.warn("Warning: TiledData is undefined. Ensure that parseTiledData is called before accessing TiledData.");
+            return undefined
+        }
+        return ExtractTiledFile.TiledData?.[tiledId];
 
+    }
     private static parseLayer(layer: any): TiledLayer {
         return {
             id: layer.id,

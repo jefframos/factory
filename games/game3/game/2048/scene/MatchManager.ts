@@ -1,4 +1,4 @@
-import { GlobalDataManager } from './data/GlobalDataManager';
+import { GlobalDataManager } from '../../scenes/data/GlobalDataManager';
 import { MovementResult } from './GridManager';
 
 export type GameStatus = 'waiting' | 'playing' | 'won' | 'lost';

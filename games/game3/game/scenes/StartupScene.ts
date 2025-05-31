@@ -2,7 +2,7 @@ import { GameScene } from "@core/scene/GameScene";
 import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
-import MainSceneUi from "../ui/MainSceneUi";
+import MainSceneUi from "./ui/MainSceneUi";
 
 export interface MenuButtonData {
     id: string;
@@ -19,7 +19,7 @@ export default class StartupScene extends GameScene {
 
     constructor() {
         super();
-        this.mainScene = new MainSceneUi(ExtractTiledFile.TiledData, ['MainScreen']);
+        this.mainScene = new MainSceneUi(ExtractTiledFile.getTiledFrom('2048'), ['MainScreen']);
         this.addChild(this.mainScene);
 
         this.mainScene.onPlay.add(() => {

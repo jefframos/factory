@@ -1,8 +1,8 @@
 import Pool from '@core/Pool';
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
-import GameplayCharacterData from '../character/GameplayCharacterData';
-import { Direction } from '../io/SwipeInputManager';
+import GameplayCharacterData from '../../character/GameplayCharacterData';
+import { Direction } from '../../io/SwipeInputManager';
 import { Piece } from '../view/Piece';
 
 const GRID_SIZE = 4;

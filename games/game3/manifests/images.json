@@ -21,6 +21,14 @@
         },
         {
           "alias": [
+            "terrain"
+          ],
+          "src": [
+            "terrain.json"
+          ]
+        },
+        {
+          "alias": [
             "ui"
           ],
           "src": [
