@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1748650547364,
-                "duration": 2.7999000549316406,
+                "date": 1748932776248,
+                "duration": 5.29259991645813,
                 "success": true
             }
         },
@@ -34,6 +34,60 @@
         "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/characterMemeSet.json": {
             "isFolder": false,
             "transformParent": ".assetpack/json/characterMemeSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/memeUi.json": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1748650547364,
+                "duration": 2.7922000885009766,
+                "success": true
+            },
+            "hash": "jMt00Q"
+        },
+        ".assetpack/json/memeUi.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/memeUi.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/memeUi.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/memeUi.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/memeWorld.json": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1748932776248,
+                "duration": 5.284899950027466,
+                "success": true
+            },
+            "hash": "VuqK6w"
+        },
+        ".assetpack/json/memeWorld.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/memeWorld.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/memeWorld.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/memeWorld.json",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}
@@ -88,60 +142,6 @@
         "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/tiled.json": {
             "isFolder": false,
             "transformParent": ".assetpack/json/tiled.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/memeWorld.json": {
-            "isFolder": false,
-            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1748650235311,
-                "duration": 4.580600023269653,
-                "success": true
-            },
-            "hash": "OASrHQ"
-        },
-        ".assetpack/json/memeWorld.json": {
-            "isFolder": false,
-            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/memeWorld.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/memeWorld.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/json/memeWorld.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/memeUi.json": {
-            "isFolder": false,
-            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1748650547364,
-                "duration": 2.7922000885009766,
-                "success": true
-            },
-            "hash": "jMt00Q"
-        },
-        ".assetpack/json/memeUi.json": {
-            "isFolder": false,
-            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/memeUi.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/memeUi.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/json/memeUi.json",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="6" nextobjectid="41">
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="7" nextobjectid="52">
  <editorsettings>
   <export target="../json/memeWorld.json" format="json"/>
  </editorsettings>
  <tileset firstgid="1" name="Background" tilewidth="734" tileheight="770" tilecount="16" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="0">
-   <image width="734" height="770" source="images/backgrounds/Background_Lobby_Bg_center.png"/>
+   <image source="images/backgrounds/Background_Lobby_Bg_center.png"/>
   </tile>
   <tile id="2">
    <properties>
@@ -49,6 +49,11 @@
     <property name="anchorY" type="float" value="1"/>
    </properties>
    <image width="82" height="68" source="images/backgrounds{tps}/desert/desert_bush04.png"/>
+   <objectgroup draworder="index" id="4">
+    <object id="3" x="32" y="36" width="18.6667" height="18.6667">
+     <ellipse/>
+    </object>
+   </objectgroup>
   </tile>
   <tile id="8">
    <properties>
@@ -56,6 +61,11 @@
     <property name="anchorY" type="float" value="1"/>
    </properties>
    <image width="146" height="250" source="images/backgrounds{tps}/desert/desert_tree-1.png"/>
+   <objectgroup draworder="index" id="2">
+    <object id="1" x="106.261" y="245.128">
+     <polygon points="0,0 -79.7913,-1.15084 -42.9646,-39.512"/>
+    </object>
+   </objectgroup>
   </tile>
   <tile id="9">
    <properties>
@@ -63,6 +73,9 @@
     <property name="anchorY" type="float" value="1"/>
    </properties>
    <image width="208" height="357" source="images/backgrounds{tps}/desert/desert_tree-2.png"/>
+   <objectgroup draworder="index" id="2">
+    <object id="1" x="71.7355" y="255.869" width="51.404" height="44.499"/>
+   </objectgroup>
   </tile>
   <tile id="10">
    <properties>
@@ -407,6 +420,20 @@
  <objectgroup draworder="index" id="4" name="Floor">
   <object id="36" gid="17" x="-79.5152" y="1591.64" width="2174.18" height="1656"/>
  </objectgroup>
+ <objectgroup id="6" name="Colliders">
+  <object id="48" x="6.06061" y="345.455">
+   <polygon points="-248.485,1321.21 433.333,1300 33.3333,-272.727 -333.333,-269.697"/>
+  </object>
+  <object id="49" x="-9.09091" y="218.182">
+   <polygon points="0,0 2215.15,12.1212 2151.52,-339.394 -127.273,-351.515"/>
+  </object>
+  <object id="50" x="1703.03" y="193.939">
+   <polygon points="0,0 339.394,1384.85 503.03,1163.64 454.545,-78.7879"/>
+  </object>
+  <object id="51" x="-118.182" y="1421.21">
+   <polygon points="0,0 2254.55,-66.6667 2236.36,245.455 24.2424,242.424"/>
+  </object>
+ </objectgroup>
  <objectgroup id="3" name="Background">
   <object id="7" x="951.515" y="496.97" width="60.6061" height="60.6061">
    <properties>
@@ -448,7 +475,7 @@
   <object id="39" gid="88" x="1824.55" y="115.848" width="60" height="62"/>
   <object id="40" gid="88" x="963.939" y="188.576" width="60" height="62"/>
  </objectgroup>
- <objectgroup id="2" name="Settings">
+ <objectgroup id="2" name="Settings" locked="1">
   <object id="1" name="Screen" x="0" y="0" width="2029.09" height="1507.27"/>
  </objectgroup>
 </map>

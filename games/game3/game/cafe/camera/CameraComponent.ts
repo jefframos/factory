@@ -10,6 +10,8 @@ export class CameraComponent {
     public targetZoom = 1;
     private currentZoom = 1;
 
+    private followPosition = new PIXI.Point();
+
     constructor(world: PIXI.Container) {
         this.world = world;
     }
@@ -21,19 +23,36 @@ export class CameraComponent {
         this.currentZoom += (this.targetZoom - this.currentZoom) * Math.min(delta * 10, 1);
         this.world.scale.set(this.currentZoom);
 
+        // Smooth follow
+        const lerp = (start: number, end: number, t: number) => start + (end - start) * t;
+        const followSpeed = Math.min(delta * 5, 1); // Tune this multiplier to control snappiness
+
+        this.followPosition.x = lerp(this.followPosition.x, this.target.x, followSpeed);
+        this.followPosition.y = lerp(this.followPosition.y, this.target.y, followSpeed);
+
         const halfWidth = this.screenBounds.width / 2 / this.currentZoom;
         const halfHeight = this.screenBounds.height / 2 / this.currentZoom;
 
-        let camX = -this.target.x + halfWidth;
-        let camY = -this.target.y + halfHeight;
+        let pivotX = this.followPosition.x;
+        let pivotY = this.followPosition.y;
 
-        // Clamp camera within world bounds
-        camX = Math.min(camX, 0);
-        camY = Math.min(camY, 0);
-        camX = Math.max(camX, -this.worldBounds.width + this.screenBounds.width / this.currentZoom);
-        camY = Math.max(camY, -this.worldBounds.height + this.screenBounds.height / this.currentZoom);
+        // Clamp X
+        if (this.screenBounds.width / this.currentZoom < this.worldBounds.width) {
+            pivotX = Math.max(pivotX, halfWidth);
+            pivotX = Math.min(pivotX, this.worldBounds.width - halfWidth);
+        } else {
+            pivotX = this.worldBounds.width / 2;
+        }
 
-        this.world.position.set(camX + this.screenBounds.x, camY + this.screenBounds.y);
+        // Clamp Y
+        if (this.screenBounds.height / this.currentZoom < this.worldBounds.height) {
+            pivotY = Math.max(pivotY, halfHeight);
+            pivotY = Math.min(pivotY, this.worldBounds.height - halfHeight);
+        } else {
+            pivotY = this.worldBounds.height / 2;
+        }
+
+        this.world.pivot.set(pivotX, pivotY);
     }
 
     public setWorldBounds(bounds: PIXI.Rectangle) {
@@ -42,6 +61,6 @@ export class CameraComponent {
 
     public setScreenBounds(bounds: PIXI.Rectangle) {
         this.screenBounds.copyFrom(bounds);
-        this.update(1)
+        this.update(1);
     }
 }

@@ -34,6 +34,7 @@ export class Game {
         bottomRight: PIXI.Point
     };
     static deltaTime: number;
+    static scale: number;
     private static extractDebugParams() {
         const urlParams = new URLSearchParams(window.location.search);
         urlParams.forEach((value, key) => {
@@ -106,6 +107,8 @@ export class Game {
         // Scale containers
         this.stageContainer.scale.set(scale);
         this.overlayContainer.scale.set(scale);
+
+        Game.scale = scale;
 
         // Center the containers
         const offsetX = (screenWidth - Game.DESIGN_WIDTH * scale) / 2;

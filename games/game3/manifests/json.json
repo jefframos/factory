@@ -13,18 +13,10 @@
         },
         {
           "alias": [
-            "test.json"
+            "memeUi.json"
           ],
           "src": [
-            "test.json"
-          ]
-        },
-        {
-          "alias": [
-            "tiled.json"
-          ],
-          "src": [
-            "tiled.json"
+            "memeUi.json"
           ]
         },
         {
@@ -37,10 +29,18 @@
         },
         {
           "alias": [
-            "memeUi.json"
+            "test.json"
           ],
           "src": [
-            "memeUi.json"
+            "test.json"
+          ]
+        },
+        {
+          "alias": [
+            "tiled.json"
+          ],
+          "src": [
+            "tiled.json"
           ]
         }
       ]

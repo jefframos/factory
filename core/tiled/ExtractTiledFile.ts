@@ -63,6 +63,7 @@ export interface TiledObject {
     rotation: number;
     flipStates: FlipStates;
     text?: TextObject;
+    polygon?: PIXI.Point[];
     visible: boolean;
     properties?: Record<string, any>;
 
@@ -77,6 +78,8 @@ export interface TiledTileset {
     tiles: Record<number, TiledTile>;
 }
 
+export type PolygonType = 'polygon' | 'rect' | 'circle';
+
 export interface TiledTile {
     id: number;
     image: string;
@@ -85,6 +88,7 @@ export interface TiledTile {
     subpath: string[];
     imagewidth: number;
     imageheight: number;
+    polygon?: { type: PolygonType, radius?: number, points: PIXI.Point[] };
     properties?: Record<string, any>;
 }
 
@@ -134,7 +138,13 @@ export class ExtractTiledFile {
                     }
                 }
 
+
+                let shapePolygon = this.checkForPolygon(tile)
+
                 const animatedId = props.animated && imagePath ? imagePath.subpath[0] : undefined;
+                console.log(shapePolygon)
+
+
                 tiles[tile.id] = {
                     id: tile.id,
                     image: imagePath ? imagePath.image : "",
@@ -143,7 +153,8 @@ export class ExtractTiledFile {
                     imagewidth: tile.imagewidth,
                     imageheight: tile.imageheight,
                     properties: props,
-                    animationId: animatedId
+                    animationId: animatedId,
+                    ...(shapePolygon ? { polygon: shapePolygon } : {})
                 };
             }
             tilesets.set(tileset.name, {
@@ -157,6 +168,66 @@ export class ExtractTiledFile {
         }
         ExtractTiledFile.TiledData = ExtractTiledFile.TiledData || {};
         ExtractTiledFile.TiledData[tiledId] = { layers, tilesets, settings };
+
+    }
+    private static checkForPolygon(tile: any): { type: PolygonType; points: PIXI.Point[]; radius?: number } | undefined {
+        let shapePolygon: { type: PolygonType; points: PIXI.Point[]; radius?: number } | undefined = undefined;
+        if (tile.objectgroup && Array.isArray(tile.objectgroup.objects)) {
+            const shapeObject = tile.objectgroup.objects[0];
+            if (shapeObject) {
+                if (shapeObject.polygon) {
+                    // Polygon type
+                    const points = shapeObject.polygon.map((pt: any) =>
+                        new PIXI.Point(pt.x + shapeObject.x, pt.y + shapeObject.y)
+                    );
+                    shapePolygon = {
+                        type: 'polygon',
+                        points
+                    };
+                } else if (shapeObject.ellipse) {
+                    // Circle or ellipse type
+                    const cx = shapeObject.x + shapeObject.width / 2;
+                    const cy = shapeObject.y + shapeObject.height / 2;
+                    const rx = shapeObject.width / 2;
+                    const ry = shapeObject.height / 2;
+                    const steps = 20;
+                    const points: PIXI.Point[] = [];
+
+                    for (let i = 0; i < steps; i++) {
+                        const theta = (i / steps) * Math.PI * 2;
+                        points.push(new PIXI.Point(
+                            cx + rx * Math.cos(theta),
+                            cy + ry * Math.sin(theta)
+                        ));
+                    }
+
+                    shapePolygon = {
+                        type: 'circle',
+                        radius: Math.max(rx, ry), // or average if you want elliptical behavior
+                        points
+                    };
+                } else {
+                    // Rectangle type
+                    const x = shapeObject.x;
+                    const y = shapeObject.y;
+                    const w = shapeObject.width;
+                    const h = shapeObject.height;
+
+                    const points = [
+                        new PIXI.Point(x, y),
+                        new PIXI.Point(x + w, y),
+                        new PIXI.Point(x + w, y + h),
+                        new PIXI.Point(x, y + h)
+                    ];
+
+                    shapePolygon = {
+                        type: 'rect',
+                        points
+                    };
+                }
+            }
+        }
+        return shapePolygon
     }
     public static getTiledFrom(tiledId: string) {
         if (!(ExtractTiledFile.TiledData ?? {})[tiledId]) {
@@ -182,6 +253,7 @@ export class ExtractTiledFile {
             name: obj.name,
             id: obj.id,
             flipStates: gid.flipStates,
+            polygon: obj.polygon,
             text: obj.text,
             properties: obj ? ExtractTiledFile.parseProperties(obj.properties) : {},
             gid: gid.tileId,
