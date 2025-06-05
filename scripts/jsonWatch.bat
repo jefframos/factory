@@ -1,0 +1,3 @@
+@echo off
+echo Starting Watcher in another terminal...
+start "Watcher" cmd /k "npm run watch-json"

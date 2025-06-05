@@ -1,124 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="7" nextobjectid="52">
+<map version="1.10" tiledversion="1.10.2" orientation="staggered" renderorder="right-down" width="30" height="20" tilewidth="128" tileheight="64" infinite="1" staggeraxis="y" staggerindex="odd" nextlayerid="7" nextobjectid="69">
  <editorsettings>
   <export target="../json/memeWorld.json" format="json"/>
  </editorsettings>
- <tileset firstgid="1" name="Background" tilewidth="734" tileheight="770" tilecount="16" columns="0">
+ <tileset firstgid="1" name="Background" tilewidth="256" tileheight="256" tilecount="1" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
-  <tile id="0">
-   <image source="images/backgrounds/Background_Lobby_Bg_center.png"/>
-  </tile>
-  <tile id="2">
-   <properties>
-    <property name="anchorX" type="float" value="0.5"/>
-    <property name="anchorY" type="float" value="1"/>
-   </properties>
-   <image width="74" height="89" source="images/backgrounds{tps}/desert/cactus0001.png"/>
-  </tile>
-  <tile id="3">
-   <properties>
-    <property name="anchorX" type="float" value="0.5"/>
-    <property name="anchorY" type="float" value="1"/>
-   </properties>
-   <image width="61" height="109" source="images/backgrounds{tps}/desert/cactus0002.png"/>
-  </tile>
-  <tile id="4">
-   <properties>
-    <property name="anchorX" type="float" value="0.5"/>
-    <property name="anchorY" type="float" value="1"/>
-   </properties>
-   <image width="83" height="57" source="images/backgrounds{tps}/desert/desert_bush01.png"/>
-  </tile>
-  <tile id="5">
-   <properties>
-    <property name="anchorX" type="float" value="0.5"/>
-    <property name="anchorY" type="float" value="1"/>
-   </properties>
-   <image width="58" height="41" source="images/backgrounds{tps}/desert/desert_bush02.png"/>
-  </tile>
-  <tile id="6">
-   <properties>
-    <property name="anchorX" type="float" value="0.5"/>
-    <property name="anchorY" type="float" value="1"/>
-   </properties>
-   <image width="63" height="63" source="images/backgrounds{tps}/desert/desert_bush03.png"/>
-  </tile>
-  <tile id="7">
-   <properties>
-    <property name="anchorX" type="float" value="0.5"/>
-    <property name="anchorY" type="float" value="1"/>
-   </properties>
-   <image width="82" height="68" source="images/backgrounds{tps}/desert/desert_bush04.png"/>
-   <objectgroup draworder="index" id="4">
-    <object id="3" x="32" y="36" width="18.6667" height="18.6667">
-     <ellipse/>
-    </object>
-   </objectgroup>
-  </tile>
-  <tile id="8">
-   <properties>
-    <property name="anchorX" type="float" value="0.5"/>
-    <property name="anchorY" type="float" value="1"/>
-   </properties>
-   <image width="146" height="250" source="images/backgrounds{tps}/desert/desert_tree-1.png"/>
-   <objectgroup draworder="index" id="2">
-    <object id="1" x="106.261" y="245.128">
-     <polygon points="0,0 -79.7913,-1.15084 -42.9646,-39.512"/>
-    </object>
-   </objectgroup>
-  </tile>
-  <tile id="9">
-   <properties>
-    <property name="anchorX" type="float" value="0.5"/>
-    <property name="anchorY" type="float" value="1"/>
-   </properties>
-   <image width="208" height="357" source="images/backgrounds{tps}/desert/desert_tree-2.png"/>
-   <objectgroup draworder="index" id="2">
-    <object id="1" x="71.7355" y="255.869" width="51.404" height="44.499"/>
-   </objectgroup>
-  </tile>
-  <tile id="10">
-   <properties>
-    <property name="anchorX" type="float" value="0.5"/>
-    <property name="anchorY" type="float" value="1"/>
-   </properties>
-   <image width="83" height="47" source="images/backgrounds{tps}/rocks/rocks0001.png"/>
-  </tile>
-  <tile id="11">
-   <properties>
-    <property name="anchorX" type="float" value="0.5"/>
-    <property name="anchorY" type="float" value="1"/>
-   </properties>
-   <image width="83" height="47" source="images/backgrounds{tps}/rocks/rocks0002.png"/>
-  </tile>
-  <tile id="12">
-   <properties>
-    <property name="anchorX" type="float" value="0.5"/>
-    <property name="anchorY" type="float" value="1"/>
-   </properties>
-   <image width="83" height="47" source="images/backgrounds{tps}/rocks/rocks0003.png"/>
-  </tile>
-  <tile id="13">
-   <properties>
-    <property name="anchorX" type="float" value="0.5"/>
-    <property name="anchorY" type="float" value="1"/>
-   </properties>
-   <image width="83" height="47" source="images/backgrounds{tps}/rocks/rocks0004.png"/>
-  </tile>
-  <tile id="14">
-   <properties>
-    <property name="anchorX" type="float" value="0.5"/>
-    <property name="anchorY" type="float" value="1"/>
-   </properties>
-   <image width="83" height="47" source="images/backgrounds{tps}/rocks/rocks0005.png"/>
-  </tile>
-  <tile id="15">
-   <properties>
-    <property name="anchorX" type="float" value="0.5"/>
-    <property name="anchorY" type="float" value="1"/>
-   </properties>
-   <image width="83" height="47" source="images/backgrounds{tps}/rocks/rocks0006.png"/>
-  </tile>
   <tile id="16">
    <properties>
     <property name="isTiled" type="float" value="256"/>
@@ -417,6 +303,72 @@
    <image width="128" height="128" source="images/ui/tutorial_hand_2.png"/>
   </tile>
  </tileset>
+ <tileset firstgid="114" name="Cafe" tilewidth="256" tileheight="256" tilecount="15" columns="0">
+  <grid orientation="orthogonal" width="1" height="1"/>
+  <tile id="0">
+   <properties>
+    <property name="anchorX" type="float" value="0.5"/>
+    <property name="anchorY" type="float" value="1"/>
+   </properties>
+   <image width="64" height="64" source="images/scene/blender.png"/>
+  </tile>
+  <tile id="1">
+   <image width="64" height="64" source="images/scene/cashier.png"/>
+  </tile>
+  <tile id="2">
+   <image width="64" height="64" source="images/scene/chair.png"/>
+  </tile>
+  <tile id="3">
+   <image width="64" height="64" source="images/scene/display1.png"/>
+  </tile>
+  <tile id="4">
+   <image width="64" height="64" source="images/scene/expresso1.png"/>
+  </tile>
+  <tile id="5">
+   <image width="64" height="64" source="images/scene/expresso2.png"/>
+  </tile>
+  <tile id="6">
+   <image width="64" height="64" source="images/scene/expresso3.png"/>
+  </tile>
+  <tile id="7">
+   <image width="64" height="64" source="images/scene/grind.png"/>
+  </tile>
+  <tile id="8">
+   <image width="64" height="64" source="images/scene/plant1.png"/>
+   <objectgroup draworder="index" id="2">
+    <object id="1" x="23" y="43" width="19" height="19">
+     <ellipse/>
+    </object>
+   </objectgroup>
+  </tile>
+  <tile id="9">
+   <image width="64" height="64" source="images/scene/plant2.png"/>
+  </tile>
+  <tile id="10">
+   <image width="64" height="64" source="images/scene/plant3.png"/>
+  </tile>
+  <tile id="11">
+   <image width="64" height="64" source="images/scene/sink.png"/>
+  </tile>
+  <tile id="12">
+   <image width="64" height="64" source="images/scene/stand.png"/>
+  </tile>
+  <tile id="13">
+   <image width="128" height="128" source="images/scene/table.png"/>
+  </tile>
+  <tile id="14">
+   <properties>
+    <property name="anchorX" type="float" value="0.5"/>
+    <property name="anchorY" type="float" value="0.4"/>
+   </properties>
+   <image width="128" height="128" source="images/scene/bench.png"/>
+   <objectgroup draworder="index" id="2">
+    <object id="3" x="56" y="66">
+     <polygon points="0,0 40,21 10,46 -27,26"/>
+    </object>
+   </objectgroup>
+  </tile>
+ </tileset>
  <objectgroup draworder="index" id="4" name="Floor">
   <object id="36" gid="17" x="-79.5152" y="1591.64" width="2174.18" height="1656"/>
  </objectgroup>
@@ -433,6 +385,9 @@
   <object id="51" x="-118.182" y="1421.21">
    <polygon points="0,0 2254.55,-66.6667 2236.36,245.455 24.2424,242.424"/>
   </object>
+  <object id="68" x="1146" y="393">
+   <polygon points="0,0 -1,128 97,57"/>
+  </object>
  </objectgroup>
  <objectgroup id="3" name="Background">
   <object id="7" x="951.515" y="496.97" width="60.6061" height="60.6061">
@@ -441,34 +396,14 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="8" gid="3" x="375.121" y="520.758" width="74" height="89"/>
-  <object id="9" gid="3" x="220.576" y="1011.67" width="74" height="89"/>
-  <object id="10" gid="3" x="484.212" y="1290.45" width="74" height="89"/>
-  <object id="11" gid="3" x="1505.42" y="1278.33" width="74" height="89"/>
-  <object id="12" gid="3" x="1399.36" y="963.182" width="74" height="89"/>
-  <object id="13" gid="3" x="1814.52" y="484.394" width="74" height="89"/>
-  <object id="14" gid="9" x="1605.79" y="1403.79" width="146" height="250"/>
-  <object id="15" gid="9" x="1793.67" y="676.515" width="146" height="250"/>
-  <object id="16" gid="9" x="1114.88" y="1321.97" width="146" height="250"/>
-  <object id="17" gid="9" x="1345.18" y="573.485" width="146" height="250"/>
-  <object id="18" gid="9" x="220.939" y="712.879" width="146" height="250"/>
-  <object id="19" gid="9" x="275.485" y="303.788" width="146" height="250"/>
-  <object id="20" gid="9" x="1614.88" y="331.061" width="146" height="250"/>
-  <object id="21" gid="5" x="1774.15" y="786.576" width="83" height="57"/>
-  <object id="22" gid="7" x="117.485" y="859.273" width="63" height="63"/>
-  <object id="23" gid="12" x="1492.33" y="1017.94" width="83" height="47"/>
-  <object id="24" gid="12" x="831.727" y="1024" width="83" height="47"/>
-  <object id="25" gid="12" x="643.848" y="1354.3" width="83" height="47"/>
-  <object id="26" gid="12" x="98.3939" y="1302.79" width="83" height="47"/>
-  <object id="27" gid="14" x="213.545" y="1105.82" width="83" height="47"/>
-  <object id="28" gid="15" x="340.818" y="857.333" width="83" height="47"/>
-  <object id="29" gid="15" x="431.727" y="572.485" width="83" height="47"/>
-  <object id="30" gid="15" x="1813.55" y="1024" width="83" height="47"/>
-  <object id="31" gid="16" x="-10.697" y="42.1818" width="83" height="47"/>
-  <object id="32" gid="16" x="1977.18" y="39.1515" width="83" height="47"/>
-  <object id="33" gid="16" x="1974.15" y="1517.94" width="83" height="47"/>
-  <object id="34" gid="16" x="-25.8485" y="1517.94" width="83" height="47"/>
-  <object id="35" gid="9" x="1696.7" y="1385.61" width="146" height="250"/>
+  <object id="54" gid="124" x="1405.33" y="868" width="128" height="128"/>
+  <object id="55" gid="122" x="1176.56" y="435.239" width="128" height="128" rotation="26.3752"/>
+  <object id="61" gid="122" x="366.667" y="985.333" width="128" height="128"/>
+  <object id="63" gid="128" x="1085" y="369.334" width="128" height="128"/>
+  <object id="65" gid="2147483776" x="899" y="339.334" width="128" height="128"/>
+  <object id="64" gid="114" x="1109" y="544.667" width="64" height="64"/>
+  <object id="66" gid="2147483767" x="1031" y="267" width="64" height="64"/>
+  <object id="67" gid="2147483767" x="932" y="271" width="64" height="64"/>
  </objectgroup>
  <objectgroup id="5" name="HUD">
   <object id="38" gid="88" x="1918.48" y="118.879" width="60" height="62"/>

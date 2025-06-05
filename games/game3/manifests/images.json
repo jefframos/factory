@@ -21,6 +21,14 @@
         },
         {
           "alias": [
+            "scene"
+          ],
+          "src": [
+            "scene.json"
+          ]
+        },
+        {
+          "alias": [
             "terrain"
           ],
           "src": [

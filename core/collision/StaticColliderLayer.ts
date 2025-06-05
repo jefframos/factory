@@ -1,6 +1,6 @@
 import { TiledLayer } from '@core/tiled/ExtractTiledFile';
 import * as PIXI from 'pixi.js';
-import { Collider, ColliderOptions } from './Collider';
+import Collider, { ColliderOptions } from './Collider';
 import { ColliderDebugHelper } from './ColliderDebugHelper';
 import { CollisionSystem } from './CollisionSystem';
 
@@ -15,19 +15,16 @@ export class StaticColliderLayer {
                 if (!obj.visible || !obj.polygon) continue;
 
                 const points = obj.polygon.map(p => new PIXI.Point(p.x, p.y));
-                const clockwisePoints = points//ColliderDebugHelper.ensureClockwise([...points]);
-
-
+                // Reverse the points to match the expected order for SAT polygons
+                // This is necessary because Tiled exports polygons in a clockwise order,
+                // but SAT expects them in a counter-clockwise order for correct collision detection.
                 const reversedPoints = points.slice().reverse();
 
                 const colliderOptions: ColliderOptions = {
                     shape: 'polygon',
                     points: reversedPoints,
                     position: { x: obj.x, y: obj.y },
-                    //  parent: parentContainer
                 };
-
-
                 const collider = new Collider(colliderOptions);
                 CollisionSystem.addCollider(collider);
                 this.colliders.push(collider);

@@ -1,0 +1,6 @@
+@echo off
+echo Starting Vite in a new terminal...
+start "Vite" cmd /k "npm start"
+
+echo Starting Watcher in another terminal...
+start "Watcher" cmd /k "npm run watch-json"

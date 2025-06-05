@@ -7,13 +7,13 @@ import TiledLayerObject from "@core/tiled/TiledLayerObject";
 import { DebugGraphicsHelper } from "@core/utils/DebugGraphicsHelper";
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
+import { StaticColliderLayer } from "../../../../core/collision/StaticColliderLayer";
+import { TriggerBox } from "../../../../core/collision/TriggerBox";
+import { TriggerManager } from "../../../../core/collision/TriggerManager";
 import GameplayCharacterData from "../character/GameplayCharacterData";
 import AnalogInput from "../io/AnalogInput";
 import KeyboardInputMovement from "../io/KeyboardInputMovement";
 import { CameraComponent } from "./camera/CameraComponent";
-import { StaticColliderLayer } from "./collision/StaticColliderLayer";
-import { TriggerBox } from "./collision/TriggerBox";
-import { TriggerManager } from "./collision/TriggerManager";
 import EntityView from "./view/EntityView";
 import MoveableEntity from "./view/MoveableEntity";
 
@@ -99,6 +99,10 @@ export default class GameplayCafeScene extends GameScene {
         this.addChild(this.uiContainer)
 
         new StaticColliderLayer(worldSettings?.layers.get('Colliders')!, this.worldContainer, true)
+
+        this.tiledWorld.addColliders()
+        console.log('use the internal colliders')
+        // new StaticColliderLayer(worldSettings?.layers.get('Background')!, this.worldContainer, true)
 
         // const tbox = new TriggerBox('test', 500)
         // this.gameplayContainer.addChild(tbox)

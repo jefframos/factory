@@ -142,7 +142,6 @@ export class ExtractTiledFile {
                 let shapePolygon = this.checkForPolygon(tile)
 
                 const animatedId = props.animated && imagePath ? imagePath.subpath[0] : undefined;
-                console.log(shapePolygon)
 
 
                 tiles[tile.id] = {

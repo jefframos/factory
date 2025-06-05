@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { CollisionSystem } from '../collision/CollisionSystem';
+import { CollisionSystem } from '../../../../../core/collision/CollisionSystem';
 import EntityView from './EntityView';
 
 export default class MoveableEntity extends PIXI.Container {

@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
-import { Collider } from './Collider';
+import Collider from './Collider';
 import { ColliderDebugHelper } from './ColliderDebugHelper';
 import { CollisionSystem } from './CollisionSystem';
 

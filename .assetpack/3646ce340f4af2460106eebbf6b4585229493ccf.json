@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1748649708870,
-                "duration": 4.7749998569488525,
+                "date": 1749100993251,
+                "duration": 4.36269998550415,
                 "success": true
             }
         },
@@ -2177,6 +2177,215 @@
             "metaData": {},
             "inheritedMetaData": {
                 "a": true,
+                "tps": true
+            },
+            "transformData": {
+                "page": 0
+            }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}": {
+            "isFolder": true,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images",
+            "metaData": {
+                "tps": true
+            },
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1749100993251,
+                "duration": 69.49370002746582,
+                "success": true
+            }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}/bench.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "LPno7g"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}/blender.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "uQcenQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}/cashier.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "0QCq"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}/chair.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "9FYgNg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}/display1.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "KyjI_A"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}/expresso1.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "KkHgYQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}/expresso2.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "lAK0gg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}/expresso3.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "MepgHg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}/grind.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "MqMivw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}/plant1.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "pcEA_A"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}/plant2.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "lPKfMQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}/plant3.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "NTdfhw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}/sink.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "oUdl2Q"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}/stand.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "Ui_RjQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}/table.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "qFM5Gg"
+        },
+        ".assetpack/multi-pipe-1/scene.png": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {
+                "mIgnore": true,
+                "nomip": true
+            },
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/images/scene.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/scene.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true,
+                "mIgnore": true,
+                "nomip": true
+            },
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-1/scene.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {
+                "page": 0
+            }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/images/scene.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/scene.json",
+            "metaData": {},
+            "inheritedMetaData": {
                 "tps": true
             },
             "transformData": {

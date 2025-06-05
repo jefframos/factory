@@ -1,4 +1,3 @@
-import ShortcutManager from '@core/utils/ShortcutManager';
 import * as PIXI from 'pixi.js';
 import * as SAT from 'sat';
 
@@ -15,7 +14,7 @@ export interface ColliderOptions {
     trigger?: boolean;
 }
 
-export class Collider {
+export default class Collider {
     static currentID: number = 0;
     public _colliderID: number = Collider.currentID++;
 
@@ -46,11 +45,6 @@ export class Collider {
         this.parent = options.parent;
         this.onCollide = options.onCollide;
         this.isTrigger = options.trigger ?? false;
-
-        ShortcutManager.registerShortcut(['alt', 'm'], () => {
-            this.canD = true;
-        });
-
         this.getSATShape(); // precompute shape
     }
 

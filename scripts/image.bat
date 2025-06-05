@@ -1,0 +1,3 @@
+@echo off
+echo Starting Image in another terminal...
+start "Image" cmd /k "npm run image"
