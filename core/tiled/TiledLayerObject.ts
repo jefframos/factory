@@ -7,8 +7,7 @@ import {
     createTextFromObject,
     ExtratedTiledTileData,
     FlipStates,
-    TiledObject,
-    TiledTile
+    TiledObject
 } from './ExtractTiledFile';
 
 export type TiledLayerTypes =
@@ -31,8 +30,9 @@ export default class TiledLayerObject extends PIXI.Container {
     protected tiledLayers: Map<string, LayerTypes> = new Map();
     protected tiledLayersProperties: Map<string, any> = new Map();
     protected objectToView: Map<TiledObject, TiledLayerTypes | undefined> = new Map();
-    protected tileToView: Map<TiledTile, TiledLayerTypes | undefined> = new Map();
     protected polygonsToView: Map<TiledObject, TiledLayerTypes | undefined> = new Map();
+    private objectToCollider: Map<TiledObject, Collider> = new Map();
+
 
     constructor() {
         super();
@@ -107,6 +107,8 @@ export default class TiledLayerObject extends PIXI.Container {
                 const defaultSlice = props.nineSliced as number | undefined;
                 const isTiled = props.isTiled as number | undefined;
 
+                obj.tile = tile;
+
                 let sprite: TiledLayerTypes;
 
                 if (isTiled !== undefined) {
@@ -176,7 +178,6 @@ export default class TiledLayerObject extends PIXI.Container {
                 layer.addChild(sprite);
 
                 this.objectToView.set(obj, sprite);
-                this.tileToView.set(tile, sprite);
                 entities.push(sprite);
 
                 this.localBounds.width = Math.max(this.localBounds.width, sprite.x + sprite.width);
@@ -204,36 +205,89 @@ export default class TiledLayerObject extends PIXI.Container {
     public addColliders(layers?: string[]) {
         for (const [name, layer] of this.tiledLayers.entries()) {
             if (layers && !layers.includes(name)) continue;
-            for (const obj of layer.objects) {
-                //console.log(obj)
-                const tiledObject = Array.from(this.tileToView.entries()).find(([key, value]) => value === obj)?.[0];
-                const objs = Array.from(this.objectToView.entries()).find(([key, value]) => value === obj)?.[0];
+            for (const spriteObject of layer.objects) {
+                const viewObject = Array.from(this.objectToView.entries()).find(([key, value]) => value === spriteObject)?.[0];
+                const polygon = viewObject?.tile?.polygon;
+                if (polygon) {
+                    if (polygon.type === 'polygon' && polygon.points) {
+                        const points = polygon.points.map(p => new PIXI.Point(p.x, p.y));
+                        if (!points) continue
 
-                if (tiledObject) {
-                    console.log(objs, tiledObject.polygon);
+                        const scaledPoints = ColliderDebugHelper.scalePolygonPoints(
+                            points,
+                            viewObject.tile?.imagewidth || viewObject.width,
+                            viewObject.tile?.imageheight || viewObject.height,
+                            viewObject.width,
+                            viewObject.height,
+                        );
+                        const reversedPoints = ColliderDebugHelper.ensureAntiClockwise(ColliderDebugHelper.checkForFlip(scaledPoints, viewObject.width, viewObject.height, viewObject.flipStates))
+                        const colliderOptions: ColliderOptions = {
+                            shape: 'polygon',
+                            points: reversedPoints,
+                            position: { x: viewObject.x, y: viewObject.y - viewObject.height },
+                        };
+                        const collider = new Collider(colliderOptions);
+                        CollisionSystem.addCollider(collider);
+                        ColliderDebugHelper.addDebugGraphics(collider, this)
+                        this.objectToCollider.set(viewObject, collider);
 
+                    } else if (polygon.type === 'circle') {
+                        const scaleX = spriteObject.scale.x;
+                        const scaleY = spriteObject.scale.y;
 
-                    const points = tiledObject.polygon?.points.map(p => new PIXI.Point(p.x - objs?.width / 2, p.y - objs?.height / 2));
-                    if (!points) continue
-                    // Reverse the points to match the expected order for SAT polygons
-                    // This is necessary because Tiled exports polygons in a clockwise order,
-                    // but SAT expects them in a counter-clockwise order for correct collision detection.
-                    const reversedPoints = points//.slice().reverse();
+                        const anchorX = spriteObject instanceof PIXI.Sprite ? spriteObject.anchor?.x ?? 0.5 : 0.5;
+                        const anchorY = spriteObject instanceof PIXI.Sprite ? spriteObject.anchor?.y ?? 0 : 0;
 
-                    const colliderOptions: ColliderOptions = {
-                        shape: 'polygon',
-                        points: reversedPoints,
-                        position: { x: obj.x, y: obj.y },
-                    };
-                    const collider = new Collider(colliderOptions);
-                    CollisionSystem.addCollider(collider);
+                        const radius = (polygon.radius ?? 10) * scaleY;
 
-                    ColliderDebugHelper.addDebugGraphics(collider, this)
+                        // Step 1: Get anchor-adjusted sprite position
+                        const spriteWorldX = viewObject.x //+ (viewObject.width * anchorX);
+                        const spriteWorldY = viewObject.y - (viewObject.height * anchorY);
+
+                        // Step 2: Add scaled polygon center
+                        const position = new PIXI.Point(
+                            spriteWorldX + (polygon.center?.x ?? 0) * scaleX,
+                            spriteWorldY + (polygon.center?.y ?? 0) * scaleY
+                        );
+
+                        const colliderOptions: ColliderOptions = {
+                            shape: 'circle',
+                            radius,
+                            position,
+                        };
+
+                        const collider = new Collider(colliderOptions);
+                        CollisionSystem.addCollider(collider);
+                        ColliderDebugHelper.addDebugGraphics(collider, this);
+                        this.objectToCollider.set(viewObject, collider);
+
+                    }
                 }
-                //const tiledObject
             }
         }
 
+    }
+    public setActiveObjectByName(name: string, visible: boolean, enable?: boolean): void {
+        for (const [obj, view] of this.objectToView.entries()) {
+            if (obj.name === name) {
+                if (view instanceof PIXI.DisplayObject) {
+                    view.visible = visible;
+                }
+                const collider = this.objectToCollider.get(obj);
+                if (collider) {
+                    collider.enabled = enable ? enable : visible; // assuming Collider has an `enabled` flag
+                }
+
+                break;
+            }
+        }
+    }
+    public updateColliderStateForObject(obj: TiledObject): void {
+        const view = this.objectToView.get(obj);
+        const collider = this.objectToCollider.get(obj);
+        if (collider && view instanceof PIXI.DisplayObject) {
+            collider.enabled = view.visible;
+        }
     }
     public addAtId(element: PIXI.Container, value: string, anchor?: PIXI.Point): void {
         const tiledElement = this.findFromProperties('id', value);

@@ -9,7 +9,9 @@ export class TriggerBox extends PIXI.Container {
     public readonly trigger: Collider;
     public readonly debugGraphics: PIXI.Graphics;
 
-    public onCollided: Signal = new Signal();
+    public onCollide: Signal = new Signal();
+    public onCollideEnter: Signal = new Signal();
+    public onCollideExit: Signal = new Signal();
 
     constructor(id: string, size: number = 100, triggerRadius: number = 20, color: number = 0x66ccff) {
         super();
@@ -30,7 +32,13 @@ export class TriggerBox extends PIXI.Container {
             id: this.id,
             position: new PIXI.Point(0, 0),
             onCollide: (other: PIXI.Container | undefined) => {
-                this.onCollided?.dispatch(this, other);
+                this.onCollide?.dispatch(this, other);
+            },
+            onCollideEnter: (other: PIXI.Container | undefined) => {
+                this.onCollideEnter?.dispatch(this, other);
+            },
+            onCollideExit: (other: PIXI.Container | undefined) => {
+                this.onCollideExit?.dispatch(this, other);
             }
         });
 

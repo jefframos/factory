@@ -1,5 +1,5 @@
 import { Signal } from 'signals';
-import { Collider } from './Collider';
+import Collider from './Collider';
 import { TriggerBox } from './TriggerBox';
 
 interface TriggerData {
@@ -10,7 +10,9 @@ interface TriggerData {
 
 export class TriggerManager {
     private static triggers: Map<string, TriggerData> = new Map();
-    public static onTriggerActivated: Signal = new Signal(); // (triggerId, source, data)
+    public static onTriggerStay: Signal = new Signal(); // (triggerId, source, data)
+    public static onTriggerEnter: Signal = new Signal(); // (triggerId, source, data)
+    public static onTriggerExit: Signal = new Signal(); // (triggerId, source, data)
 
     public static registerTrigger(triggerBox: TriggerBox, data: Record<string, any> = {}) {
         this.triggers.set(triggerBox.id, {
@@ -19,9 +21,21 @@ export class TriggerManager {
             box: triggerBox,
         });
 
-        triggerBox.onCollided.add((trigger: Collider, source: any) => {
+        triggerBox.onCollide.add((trigger: Collider, source: any) => {
             if (source?.tag === 'PLAYER') {
-                this.onTriggerActivated.dispatch(trigger.id, source, data);
+                this.onTriggerStay.dispatch(trigger.id, source, data);
+            }
+        });
+
+        triggerBox.onCollideEnter.add((trigger: Collider, source: any) => {
+            if (source?.tag === 'PLAYER') {
+                this.onTriggerEnter.dispatch(trigger.id, source, data);
+            }
+        });
+
+        triggerBox.onCollideExit.add((trigger: Collider, source: any) => {
+            if (source?.tag === 'PLAYER') {
+                this.onTriggerExit.dispatch(trigger.id, source, data);
             }
         });
     }

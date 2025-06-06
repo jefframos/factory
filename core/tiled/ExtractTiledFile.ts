@@ -66,7 +66,7 @@ export interface TiledObject {
     polygon?: PIXI.Point[];
     visible: boolean;
     properties?: Record<string, any>;
-
+    tile?: TiledTile;
 }
 
 export interface TiledTileset {
@@ -79,6 +79,7 @@ export interface TiledTileset {
 }
 
 export type PolygonType = 'polygon' | 'rect' | 'circle';
+export type TiledPolygon = { type: PolygonType, radius?: number, points?: PIXI.Point[], center?: PIXI.Point }
 
 export interface TiledTile {
     id: number;
@@ -88,7 +89,7 @@ export interface TiledTile {
     subpath: string[];
     imagewidth: number;
     imageheight: number;
-    polygon?: { type: PolygonType, radius?: number, points: PIXI.Point[] };
+    polygon?: TiledPolygon;
     properties?: Record<string, any>;
 }
 
@@ -143,7 +144,9 @@ export class ExtractTiledFile {
 
                 const animatedId = props.animated && imagePath ? imagePath.subpath[0] : undefined;
 
-
+                if (shapePolygon) {
+                    console.log("Shape Polygon found for tile", tile.id, shapePolygon);
+                }
                 tiles[tile.id] = {
                     id: tile.id,
                     image: imagePath ? imagePath.image : "",
@@ -169,8 +172,8 @@ export class ExtractTiledFile {
         ExtractTiledFile.TiledData[tiledId] = { layers, tilesets, settings };
 
     }
-    private static checkForPolygon(tile: any): { type: PolygonType; points: PIXI.Point[]; radius?: number } | undefined {
-        let shapePolygon: { type: PolygonType; points: PIXI.Point[]; radius?: number } | undefined = undefined;
+    private static checkForPolygon(tile: any): TiledPolygon | undefined {
+        let shapePolygon: TiledPolygon | undefined = undefined;
         if (tile.objectgroup && Array.isArray(tile.objectgroup.objects)) {
             const shapeObject = tile.objectgroup.objects[0];
             if (shapeObject) {
@@ -185,6 +188,7 @@ export class ExtractTiledFile {
                     };
                 } else if (shapeObject.ellipse) {
                     // Circle or ellipse type
+
                     const cx = shapeObject.x + shapeObject.width / 2;
                     const cy = shapeObject.y + shapeObject.height / 2;
                     const rx = shapeObject.width / 2;
@@ -203,7 +207,7 @@ export class ExtractTiledFile {
                     shapePolygon = {
                         type: 'circle',
                         radius: Math.max(rx, ry), // or average if you want elliptical behavior
-                        points
+                        center: new PIXI.Point(cx, cy),
                     };
                 } else {
                     // Rectangle type
@@ -220,7 +224,7 @@ export class ExtractTiledFile {
                     ];
 
                     shapePolygon = {
-                        type: 'rect',
+                        type: 'polygon',
                         points
                     };
                 }
@@ -296,6 +300,29 @@ export class ExtractTiledFile {
             }
         }
         return null;
+    }
+    static getPolygonCentroid(points: { x: number; y: number }[]): PIXI.Point {
+        let area = 0;
+        let cx = 0;
+        let cy = 0;
+
+        const n = points.length;
+
+        for (let i = 0; i < n; i++) {
+            const p1 = points[i];
+            const p2 = points[(i + 1) % n];
+
+            const a = p1.x * p2.y - p2.x * p1.y;
+            area += a;
+            cx += (p1.x + p2.x) * a;
+            cy += (p1.y + p2.y) * a;
+        }
+
+        area *= 0.5;
+        cx /= (6 * area);
+        cy /= (6 * area);
+
+        return new PIXI.Point(cx, cy);
     }
     static decodeGid(gid: number): { tileId: number; flipStates: FlipStates } {
         // Bitmasks for extracting flipping information

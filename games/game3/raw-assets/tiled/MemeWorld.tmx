@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.10.2" orientation="staggered" renderorder="right-down" width="30" height="20" tilewidth="128" tileheight="64" infinite="1" staggeraxis="y" staggerindex="odd" nextlayerid="7" nextobjectid="69">
+<map version="1.10" tiledversion="1.10.2" orientation="staggered" renderorder="right-down" width="30" height="20" tilewidth="128" tileheight="64" infinite="1" staggeraxis="y" staggerindex="odd" nextlayerid="7" nextobjectid="74">
  <editorsettings>
   <export target="../json/memeWorld.json" format="json"/>
  </editorsettings>
@@ -336,16 +336,26 @@
   <tile id="8">
    <image width="64" height="64" source="images/scene/plant1.png"/>
    <objectgroup draworder="index" id="2">
-    <object id="1" x="23" y="43" width="19" height="19">
+    <object id="1" x="22.5455" y="41.5455" width="19" height="19">
      <ellipse/>
     </object>
    </objectgroup>
   </tile>
   <tile id="9">
    <image width="64" height="64" source="images/scene/plant2.png"/>
+   <objectgroup draworder="index" id="2">
+    <object id="1" x="22.5" y="42.3182" width="19" height="19">
+     <ellipse/>
+    </object>
+   </objectgroup>
   </tile>
   <tile id="10">
    <image width="64" height="64" source="images/scene/plant3.png"/>
+   <objectgroup draworder="index" id="2">
+    <object id="1" x="22.3182" y="41.7727" width="19" height="19">
+     <ellipse/>
+    </object>
+   </objectgroup>
   </tile>
   <tile id="11">
    <image width="64" height="64" source="images/scene/sink.png"/>
@@ -355,6 +365,11 @@
   </tile>
   <tile id="13">
    <image width="128" height="128" source="images/scene/table.png"/>
+   <objectgroup draworder="index" id="2">
+    <object id="1" x="12.5455" y="87.2727">
+     <polygon points="0,0 60.3636,35.2727 102.727,11.6364 43.0909,-19.6364"/>
+    </object>
+   </objectgroup>
   </tile>
   <tile id="14">
    <properties>
@@ -364,12 +379,12 @@
    <image width="128" height="128" source="images/scene/bench.png"/>
    <objectgroup draworder="index" id="2">
     <object id="3" x="56" y="66">
-     <polygon points="0,0 40,21 10,46 -27,26"/>
+     <polygon points="3.81818,-5.27273 52.3636,22.8182 13.6364,47.4545 -35,18.7273"/>
     </object>
    </objectgroup>
   </tile>
  </tileset>
- <objectgroup draworder="index" id="4" name="Floor">
+ <objectgroup draworder="index" id="4" name="Floor" locked="1">
   <object id="36" gid="17" x="-79.5152" y="1591.64" width="2174.18" height="1656"/>
  </objectgroup>
  <objectgroup id="6" name="Colliders">
@@ -385,9 +400,6 @@
   <object id="51" x="-118.182" y="1421.21">
    <polygon points="0,0 2254.55,-66.6667 2236.36,245.455 24.2424,242.424"/>
   </object>
-  <object id="68" x="1146" y="393">
-   <polygon points="0,0 -1,128 97,57"/>
-  </object>
  </objectgroup>
  <objectgroup id="3" name="Background">
   <object id="7" x="951.515" y="496.97" width="60.6061" height="60.6061">
@@ -397,13 +409,16 @@
    <ellipse/>
   </object>
   <object id="54" gid="124" x="1405.33" y="868" width="128" height="128"/>
-  <object id="55" gid="122" x="1176.56" y="435.239" width="128" height="128" rotation="26.3752"/>
   <object id="61" gid="122" x="366.667" y="985.333" width="128" height="128"/>
-  <object id="63" gid="128" x="1085" y="369.334" width="128" height="128"/>
-  <object id="65" gid="2147483776" x="899" y="339.334" width="128" height="128"/>
-  <object id="64" gid="114" x="1109" y="544.667" width="64" height="64"/>
-  <object id="66" gid="2147483767" x="1031" y="267" width="64" height="64"/>
-  <object id="67" gid="2147483767" x="932" y="271" width="64" height="64"/>
+  <object id="63" gid="128" x="1313" y="405.334" width="128" height="128"/>
+  <object id="73" gid="128" x="1415" y="463.334" width="128" height="128"/>
+  <object id="65" name="Bench2" gid="2147483776" x="1175" y="375.334" width="128" height="128"/>
+  <object id="69" name="Bench1" gid="128" x="1262" y="375.334" width="128" height="128"/>
+  <object id="72" gid="128" x="1364" y="433.334" width="128" height="128"/>
+  <object id="64" gid="114" x="1296" y="301.667" width="64" height="64"/>
+  <object id="66" gid="119" x="1449" y="394" width="64" height="64"/>
+  <object id="67" gid="2147483767" x="1208" y="307" width="64" height="64"/>
+  <object id="71" gid="122" x="1493" y="474" width="64" height="64"/>
  </objectgroup>
  <objectgroup id="5" name="HUD">
   <object id="38" gid="88" x="1918.48" y="118.879" width="60" height="62"/>

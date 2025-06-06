@@ -18,7 +18,7 @@ export class StaticColliderLayer {
                 // Reverse the points to match the expected order for SAT polygons
                 // This is necessary because Tiled exports polygons in a clockwise order,
                 // but SAT expects them in a counter-clockwise order for correct collision detection.
-                const reversedPoints = points.slice().reverse();
+                const reversedPoints = ColliderDebugHelper.ensureAntiClockwise(points)//.slice().reverse();
 
                 const colliderOptions: ColliderOptions = {
                     shape: 'polygon',

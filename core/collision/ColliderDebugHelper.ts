@@ -62,6 +62,48 @@ export class ColliderDebugHelper {
         }
         return points;
     }
+    static scalePolygonPoints(
+        points: PIXI.Point[],
+        originalWidth: number,
+        originalHeight: number,
+        newWidth: number,
+        newHeight: number
+    ): PIXI.Point[] {
+        const scaleX = newWidth / originalWidth;
+        const scaleY = newHeight / originalHeight;
+
+        return points.map(p => new PIXI.Point(p.x * scaleX, p.y * scaleY));
+    }
+    static ensureAntiClockwise(points: PIXI.Point[]): PIXI.Point[] {
+        const area = this._signedArea(points);
+        if (area < 0) {
+            return points; // Return a new array reversed
+        }
+        return points.slice().reverse();
+    }
+    static checkForFlip(
+        points: PIXI.Point[],
+        width: number,
+        height: number,
+        flipStates?: { horizontal?: boolean; vertical?: boolean }
+    ): PIXI.Point[] {
+        if (!flipStates?.horizontal && !flipStates?.vertical) return points;
+
+        return points.map(p => {
+            let x = p.x;
+            let y = p.y;
+
+            if (flipStates.horizontal) {
+                x = width - x;
+            }
+
+            if (flipStates.vertical) {
+                y = height - y;
+            }
+
+            return new PIXI.Point(x, y);
+        });
+    }
 
     /**
      * Creates a clockwise box polygon from (0, 0) with given width and height.

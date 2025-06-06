@@ -101,19 +101,12 @@ export default class GameplayCafeScene extends GameScene {
         new StaticColliderLayer(worldSettings?.layers.get('Colliders')!, this.worldContainer, true)
 
         this.tiledWorld.addColliders()
-        console.log('use the internal colliders')
-        // new StaticColliderLayer(worldSettings?.layers.get('Background')!, this.worldContainer, true)
 
-        // const tbox = new TriggerBox('test', 500)
-        // this.gameplayContainer.addChild(tbox)
-        // tbox.setPosition(500, 500)
-        // tbox.onCollided.add((trigger: TriggerBox, source: any) => {
-        //     console.log(trigger, source)
-        // })
+        this.tiledWorld.setActiveObjectByName('Bench2', false)
 
-        const tbox = new TriggerBox('test', 500);
+        const tbox = new TriggerBox('test', 500, 50);
         this.gameplayContainer.addChild(tbox);
-        tbox.setPosition(500, 500);
+        tbox.setPosition(750, 500);
 
         TriggerManager.registerTrigger(tbox, {
             description: 'Test trigger zone',
@@ -121,8 +114,16 @@ export default class GameplayCafeScene extends GameScene {
         });
 
         // Global handler for any trigger activated by a PLAYER
-        TriggerManager.onTriggerActivated.add((triggerId, source, data) => {
-            console.log(`Trigger ${triggerId} activated by PLAYER`, data);
+        TriggerManager.onTriggerStay.add((triggerId, source, data) => {
+            //console.log(`onTriggerStay ${triggerId} activated by PLAYER`, data);
+        });
+
+        TriggerManager.onTriggerEnter.add((triggerId, source, data) => {
+            console.log(`onTriggerEnter ${triggerId} activated by PLAYER`, data, source);
+        });
+
+        TriggerManager.onTriggerExit.add((triggerId, source, data) => {
+            console.log(`onTriggerExit ${triggerId} activated by PLAYER`, data);
         });
 
     }

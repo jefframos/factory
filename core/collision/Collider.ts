@@ -10,7 +10,9 @@ export interface ColliderOptions {
     id?: string;
     position?: PIXI.IPointData;
     parent?: PIXI.Container;
+    onCollideEnter?: (other: PIXI.Container | undefined) => void;
     onCollide?: (other: PIXI.Container | undefined) => void;
+    onCollideExit?: (other: PIXI.Container | undefined) => void;
     trigger?: boolean;
 }
 
@@ -25,7 +27,9 @@ export default class Collider {
     public position: PIXI.Point;
     public parent?: PIXI.Container;
     public id?: string;
+    public onCollideEnter?: (other: PIXI.Container | undefined) => void;
     public onCollide?: (other: PIXI.Container | undefined) => void;
+    public onCollideExit?: (other: PIXI.Container | undefined) => void;
     public readonly isTrigger: boolean;
 
     private _cachedShape: SAT.Circle | SAT.Polygon | null = null;
@@ -43,7 +47,9 @@ export default class Collider {
         const pos = options.position ?? { x: 0, y: 0 };
         this.position = new PIXI.Point(pos.x, pos.y);
         this.parent = options.parent;
+        this.onCollideEnter = options.onCollideEnter;
         this.onCollide = options.onCollide;
+        this.onCollideExit = options.onCollideExit;
         this.isTrigger = options.trigger ?? false;
         this.getSATShape(); // precompute shape
     }
