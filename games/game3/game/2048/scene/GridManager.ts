@@ -39,9 +39,10 @@ export class GridManager {
 
         for (let y = 0; y < GRID_SIZE; y++) {
             for (let x = 0; x < GRID_SIZE; x++) {
-                const tile = new PIXI.NineSlicePlane(PIXI.Texture.from('ItemFrame03_Single_Gray'), 10, 10, 10, 10);
+                const tile = new PIXI.NineSlicePlane(PIXI.Texture.from('back1'), 10, 10, 10, 10);
                 tile.width = TILE_SIZE_WIDTH;
                 tile.height = TILE_SIZE_HEIGHT;
+                tile.alpha = (x + y) % 2 === 0 ? 0.5 : 0.2;
                 const pos = this.getTilePosition(x, y);
                 tile.position.set(pos.x, pos.y);
                 this.backgroundContainer.addChild(tile);

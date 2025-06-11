@@ -1,10 +1,13 @@
+
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
-import Collider from './Collider';
-import { ColliderDebugHelper } from './ColliderDebugHelper';
-import { CollisionSystem } from './CollisionSystem';
+import Collider from '../../../../../core/collision/Collider';
+import { ColliderDebugHelper } from '../../../../../core/collision/ColliderDebugHelper';
+import { CollisionSystem } from '../../../../../core/collision/CollisionSystem';
+import { Fonts } from '../../character/Types';
 
 export class TriggerBox extends PIXI.Container {
+
     public readonly id: string;
     public readonly trigger: Collider;
     public readonly debugGraphics: PIXI.Graphics;
@@ -13,9 +16,20 @@ export class TriggerBox extends PIXI.Container {
     public onCollideEnter: Signal = new Signal();
     public onCollideExit: Signal = new Signal();
 
+    private label: PIXI.BitmapText;
+
     constructor(id: string, size: number = 100, triggerRadius: number = 20, color: number = 0x66ccff) {
         super();
         this.id = id;
+
+        this.label = new PIXI.BitmapText('0', {
+            fontName: Fonts.MainFamily,
+            fontSize: Fonts.Main.fontSize as number,
+            align: 'center',
+            letterSpacing: 2
+        });
+
+        this.addChild(this.label);
 
         // Draw debug square (background)
         this.debugGraphics = new PIXI.Graphics();
@@ -44,6 +58,10 @@ export class TriggerBox extends PIXI.Container {
 
         // Register the trigger in the collision system
         CollisionSystem.addCollider(this.trigger);
+    }
+
+    updateAmount(currentAmount: number, upgradeThreshold: number) {
+        this.label.text = `${currentAmount} / ${upgradeThreshold}`;
     }
 
     setPosition(x: number, y: number) {

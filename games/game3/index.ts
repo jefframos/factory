@@ -9,6 +9,7 @@ import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
 import * as PIXI from 'pixi.js';
 import Gameplay2048Scene from './game/2048/scene/Gameplay2048Scene';
 import GameplayCafeScene from './game/cafe/GameplayCafeScene';
+import { DevGuiManager } from './game/cafe/utils/DevGuiManager';
 import GameplayCharacterData from './game/character/GameplayCharacterData';
 import { convertCharacterSetTable, Fonts } from './game/character/Types';
 import { ConfirmationPopup } from './game/popup/ConfirmationPopup';
@@ -142,6 +143,7 @@ export default class MyGame extends Game {
     /** After load: wire up scenes and show first one */
     protected startGame(): void {
 
+        DevGuiManager.instance.initialize(Game.debugParams.dev);
         const mainMenu = this.sceneManager.register<StartupScene>('menu', StartupScene);
         mainMenu.onGamePlay.add(() => {
 

@@ -1,20 +1,20 @@
 import { Game } from "@core/Game";
 import { GameScene } from "@core/scene/GameScene";
-import AutoPositionTiledContainer from "@core/tiled/AutoPositionTiledContainer";
 import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
-import { ScaleMode } from "@core/tiled/TiledAutoPositionObject";
 import TiledLayerObject from "@core/tiled/TiledLayerObject";
 import { DebugGraphicsHelper } from "@core/utils/DebugGraphicsHelper";
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
 import { StaticColliderLayer } from "../../../../core/collision/StaticColliderLayer";
-import { TriggerBox } from "../../../../core/collision/TriggerBox";
-import { TriggerManager } from "../../../../core/collision/TriggerManager";
 import GameplayCharacterData from "../character/GameplayCharacterData";
 import AnalogInput from "../io/AnalogInput";
 import KeyboardInputMovement from "../io/KeyboardInputMovement";
 import { CameraComponent } from "./camera/CameraComponent";
+import { GameManager } from "./manager/GameManager";
+import { UpgradeTrigger } from "./manager/UpgradeTrigger";
+import { WorldManager } from "./manager/WorldManager";
 import EntityView from "./view/EntityView";
+import GameplayHud from "./view/GameplayHud";
 import MoveableEntity from "./view/MoveableEntity";
 
 
@@ -40,10 +40,15 @@ export default class GameplayCafeScene extends GameScene {
     private camera: CameraComponent
 
     private tiledWorld: TiledLayerObject = new TiledLayerObject()
-    private hud: AutoPositionTiledContainer;
+
+    private hud!: GameplayHud;
 
     constructor() {
         super();
+
+
+        const gm = GameManager.instance;
+        const level = gm.getLevelData();
 
         const worldSettings = ExtractTiledFile.getTiledFrom('memeWorld')
 
@@ -53,6 +58,8 @@ export default class GameplayCafeScene extends GameScene {
 
         this.addChild(this.worldContainer)
         this.addChild(this.inputContainer)
+        this.addChild(this.uiContainer);
+
 
         this.inputContainer.addChild(this.inputShape)
         this.inputShape.alpha = 0.2
@@ -82,7 +89,7 @@ export default class GameplayCafeScene extends GameScene {
         ));
 
         //this position the player on the correct world container
-        const playerProps = this.tiledWorld.findFromProperties('id', 'player')
+        const playerProps = this.tiledWorld.findAndGetFromProperties('id', 'player')
         if (playerProps) {
 
             this.player.setPosition(playerProps.object.x, playerProps.object.y)
@@ -94,37 +101,28 @@ export default class GameplayCafeScene extends GameScene {
         }
 
         const uiSettings = ExtractTiledFile.getTiledFrom('memeUi')
-        this.hud = new AutoPositionTiledContainer(uiSettings!, ['HUD'], { scaleMode: ScaleMode.MATCH, matchRatio: 1 }, { pinAnchor: new PIXI.Point(1, 0) })
+
+        this.hud = new GameplayHud(uiSettings!);
         this.uiContainer.addChild(this.hud);
-        this.addChild(this.uiContainer)
+
 
         new StaticColliderLayer(worldSettings?.layers.get('Colliders')!, this.worldContainer, true)
 
         this.tiledWorld.addColliders()
 
-        this.tiledWorld.setActiveObjectByName('Bench2', false)
+        //this.tiledWorld.setActiveObjectByName('Bench2', false)
+        const upgrade1 = new UpgradeTrigger('upgrade1', 100);
+        this.gameplayContainer.addChild(upgrade1.getView());
+        upgrade1.setPosition(750, 500);
+        const upgrade2 = new UpgradeTrigger('upgrade2', 50);
+        this.gameplayContainer.addChild(upgrade2.getView());
+        upgrade2.setPosition(1000, 300);
 
-        const tbox = new TriggerBox('test', 500, 50);
-        this.gameplayContainer.addChild(tbox);
-        tbox.setPosition(750, 500);
+        WorldManager.instance.registerTrigger(upgrade1);
+        WorldManager.instance.registerTrigger(upgrade2);
 
-        TriggerManager.registerTrigger(tbox, {
-            description: 'Test trigger zone',
-            reward: 100
-        });
-
-        // Global handler for any trigger activated by a PLAYER
-        TriggerManager.onTriggerStay.add((triggerId, source, data) => {
-            //console.log(`onTriggerStay ${triggerId} activated by PLAYER`, data);
-        });
-
-        TriggerManager.onTriggerEnter.add((triggerId, source, data) => {
-            console.log(`onTriggerEnter ${triggerId} activated by PLAYER`, data, source);
-        });
-
-        TriggerManager.onTriggerExit.add((triggerId, source, data) => {
-            console.log(`onTriggerExit ${triggerId} activated by PLAYER`, data);
-        });
+        upgrade1.refresh()
+        upgrade2.refresh()
 
     }
     public build(...data: any[]): void {

@@ -28,7 +28,7 @@ export default class ScoreUi extends AutoPositionTiledContainer {
     constructor(mainMenuData: ExtratedTiledTileData, layers?: string[]) {
         super(mainMenuData, layers, { scaleMode: ScaleMode.FIT, matchRatio: 0 }, { pinAnchor: new PIXI.Point(0.5, 0) });
         const yoffset = - 8
-        const containerScore = this.findFromProperties('id', 'current-score');
+        const containerScore = this.findAndGetFromProperties('id', 'current-score');
         if (containerScore) {
             this.scoreText = new PIXI.BitmapText('0', {
                 fontName: Fonts.MainFamily,
@@ -41,7 +41,7 @@ export default class ScoreUi extends AutoPositionTiledContainer {
             this.scoreText.position.set(containerScore.object.width / 2, containerScore.object.height / 2 + yoffset);
         }
 
-        const containerHighscore = this.findFromProperties('id', 'highscore');
+        const containerHighscore = this.findAndGetFromProperties('id', 'highscore');
         if (containerHighscore) {
             this.highScore = new PIXI.BitmapText('0', {
                 fontName: Fonts.MainFamily,
@@ -55,7 +55,7 @@ export default class ScoreUi extends AutoPositionTiledContainer {
             this.highScore.position.set(containerHighscore.object.width / 2, containerHighscore.object.height / 2 + yoffset);
         }
 
-        const timer = this.findFromProperties('id', 'timer');
+        const timer = this.findAndGetFromProperties('id', 'timer');
         if (timer) {
             this.timer = new PIXI.BitmapText('0', {
                 fontName: Fonts.MainFamily,
@@ -67,7 +67,7 @@ export default class ScoreUi extends AutoPositionTiledContainer {
             timer.view?.addChild(this.timer);
             this.timer.position.set(timer.object.width, timer.object.height / 2 + yoffset);
         }
-        const moves = this.findFromProperties('id', 'moves');
+        const moves = this.findAndGetFromProperties('id', 'moves');
         if (moves) {
             this.moves = new PIXI.BitmapText('0', {
                 fontName: Fonts.MainFamily,
@@ -80,7 +80,7 @@ export default class ScoreUi extends AutoPositionTiledContainer {
             this.moves.position.set(moves.object.width, moves.object.height / 2 + yoffset);
         }
 
-        const highest = this.findFromProperties('id', 'highest');
+        const highest = this.findAndGetFromProperties('id', 'highest');
         if (highest) {
 
             highest.view?.addChild(this.highestPiece)
@@ -89,18 +89,18 @@ export default class ScoreUi extends AutoPositionTiledContainer {
             this.highestPiece.reset(-1);
         }
 
-        const badge = this.findFromProperties('id', 'badge')
+        const badge = this.findAndGetFromProperties('id', 'badge')
         if (badge) {
             this.badge = badge.view!
         }
 
-        const best = this.findByName('best')
+        const best = this.findAndGetByName('best')
         if (best) {
             this.best = best.view!
         }
 
 
-        const left = this.findFromProperties('id', 'home-button');
+        const left = this.findAndGetFromProperties('id', 'home-button');
         this.quitButton = new BaseButton({
             standard: {
                 width: left?.object.width,
@@ -134,7 +134,7 @@ export default class ScoreUi extends AutoPositionTiledContainer {
 
 
 
-        const restart = this.findFromProperties('id', 'restart');
+        const restart = this.findAndGetFromProperties('id', 'restart');
         const restartButton = new BaseButton({
             standard: {
                 width: left?.object.width,

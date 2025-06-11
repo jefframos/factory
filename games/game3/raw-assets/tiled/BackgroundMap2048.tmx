@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="15" nextobjectid="167">
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="15" nextobjectid="189">
  <editorsettings>
   <export target="../json/tiled.json" format="json"/>
  </editorsettings>
- <tileset firstgid="1" name="Background" tilewidth="734" tileheight="770" tilecount="12" columns="0">
+ <tileset firstgid="1" name="Background" tilewidth="734" tileheight="770" tilecount="29" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="3">
    <image width="250" height="243" source="images/ui/BubbleFrame01_Hexagon_Bg_Blue.png"/>
@@ -20,29 +20,83 @@
   <tile id="7">
    <image width="734" height="770" source="images/backgrounds/Background_Lobby_Bg_center.png"/>
   </tile>
-  <tile id="8">
-   <image width="217" height="253" source="images/characters{a}{tps}/gigabrain/gigabrain0001.png"/>
+  <tile id="15">
+   <properties>
+    <property name="isTiled" type="float" value="256"/>
+   </properties>
+   <image width="256" height="256" source="images/terrain/grass-patch-1.png"/>
   </tile>
-  <tile id="9">
-   <image width="94" height="151" source="images/characters{a}{tps}/meme-3/meme-30005.png"/>
+  <tile id="16">
+   <image width="14" height="56" source="images/backgrounds/forestpack_fence_wood_start_angular_south_east.png"/>
   </tile>
-  <tile id="10">
-   <image width="92" height="138" source="images/characters{a}{tps}/meme-6/meme-60002.png"/>
+  <tile id="17">
+   <image width="14" height="56" source="images/backgrounds/forestpack_fence_wood_start_angular_south_west.png"/>
   </tile>
-  <tile id="11">
-   <image width="80" height="91" source="images/characters{a}{tps}/meme-small-1/meme-small-10001.png"/>
+  <tile id="18">
+   <image width="11" height="21" source="images/backgrounds/forestpack_foliage_flower_1_south_east.png"/>
   </tile>
-  <tile id="12">
-   <image width="113" height="78" source="images/characters{a}{tps}/meme-small-2/meme-small-20001.png"/>
+  <tile id="19">
+   <image width="13" height="21" source="images/backgrounds/forestpack_foliage_flower_1_south_west.png"/>
   </tile>
-  <tile id="13">
-   <image width="100" height="84" source="images/characters{a}{tps}/meme-small-3/meme-small-30001.png"/>
+  <tile id="20">
+   <image width="10" height="15" source="images/backgrounds/forestpack_foliage_flower_2_south_east.png"/>
   </tile>
-  <tile id="14">
-   <image width="77" height="122" source="images/characters{a}{tps}/meme-1/meme-10002.png"/>
+  <tile id="21">
+   <image width="16" height="23" source="images/backgrounds/forestpack_foliage_flower_2_south_west.png"/>
+  </tile>
+  <tile id="22">
+   <image width="76" height="72" source="images/backgrounds/forestpack_foliage_grassPatch_large_1_south_east.png"/>
+  </tile>
+  <tile id="23">
+   <image width="89" height="61" source="images/backgrounds/forestpack_foliage_grassPatch_large_1_south_west.png"/>
+  </tile>
+  <tile id="24">
+   <image width="93" height="65" source="images/backgrounds/forestpack_foliage_grassPatch_large_2_south_east.png"/>
+  </tile>
+  <tile id="25">
+   <image width="88" height="69" source="images/backgrounds/forestpack_foliage_grassPatch_large_2_south_west.png"/>
+  </tile>
+  <tile id="26">
+   <image width="29" height="27" source="images/backgrounds/forestpack_foliage_grassPatch_small_1_south_east.png"/>
+  </tile>
+  <tile id="27">
+   <image width="24" height="31" source="images/backgrounds/forestpack_foliage_grassPatch_small_1_south_west.png"/>
+  </tile>
+  <tile id="28">
+   <image width="21" height="24" source="images/backgrounds/forestpack_foliage_grassPatch_small_2_south_east.png"/>
+  </tile>
+  <tile id="29">
+   <image width="18" height="21" source="images/backgrounds/forestpack_foliage_grassPatch_small_2_south_west.png"/>
+  </tile>
+  <tile id="30">
+   <image width="16" height="12" source="images/backgrounds/forestpack_foliage_grassPatch_small_3_south_east.png"/>
+  </tile>
+  <tile id="31">
+   <image width="22" height="20" source="images/backgrounds/forestpack_foliage_grassPatch_small_3_south_west.png"/>
+  </tile>
+  <tile id="32">
+   <image width="37" height="28" source="images/backgrounds/forestpack_foliage_grassPatch_small_4_south_east.png"/>
+  </tile>
+  <tile id="33">
+   <image width="38" height="31" source="images/backgrounds/forestpack_foliage_grassPatch_small_4_south_west.png"/>
+  </tile>
+  <tile id="34">
+   <image width="43" height="33" source="images/backgrounds/forestpack_shrine_stair_2_moss_light_south_west.png"/>
+  </tile>
+  <tile id="35">
+   <image width="47" height="36" source="images/backgrounds/forestpack_shrine_stair_3_moss_light_south_east.png"/>
+  </tile>
+  <tile id="36">
+   <image width="43" height="35" source="images/backgrounds/forestpack_shrine_stair_3_moss_light_south_west.png"/>
+  </tile>
+  <tile id="37">
+   <image width="32" height="28" source="images/backgrounds/forestpack_shrine_stair_rubble_1_moss_light_south_east.png"/>
+  </tile>
+  <tile id="38">
+   <image width="33" height="23" source="images/backgrounds/forestpack_shrine_stair_rubble_1_moss_light_south_west.png"/>
   </tile>
  </tileset>
- <tileset firstgid="16" name="UI" tilewidth="609" tileheight="601" tilecount="146" columns="0">
+ <tileset firstgid="40" name="UI" tilewidth="609" tileheight="601" tilecount="146" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="20">
    <properties>
@@ -687,19 +741,36 @@
    <image width="128" height="128" source="images/ui/equal.Png"/>
   </tile>
  </tileset>
- <objectgroup draworder="index" id="3" name="Background" visible="0">
+ <objectgroup draworder="index" id="3" name="Background">
   <object id="64" gid="7" x="-1.30846" y="840" width="737.308" height="695"/>
-  <object id="70" gid="8" x="-5" y="1089" width="734" height="770"/>
-  <object id="71" gid="2147483656" x="729" y="1089" width="734" height="770"/>
-  <object id="72" gid="2147483656" x="-738" y="1089" width="734" height="770"/>
+  <object id="167" gid="16" x="-907.152" y="1291.03" width="2834.79" height="1765.09"/>
+  <object id="168" gid="26" x="-106" y="307" width="88" height="69"/>
+  <object id="169" gid="26" x="-82" y="459" width="88" height="69"/>
+  <object id="170" gid="26" x="112" y="497" width="88" height="69"/>
+  <object id="171" gid="26" x="22" y="965" width="88" height="69"/>
+  <object id="172" gid="26" x="564" y="951" width="88" height="69"/>
+  <object id="173" gid="26" x="836" y="1091" width="88" height="69"/>
+  <object id="174" gid="26" x="960" y="345" width="88" height="69"/>
+  <object id="175" gid="26" x="766" y="293" width="88" height="69"/>
+  <object id="176" gid="23" x="520" y="742" width="76" height="72"/>
+  <object id="177" gid="23" x="600" y="516" width="76" height="72"/>
+  <object id="178" gid="23" x="138" y="694" width="76" height="72"/>
+  <object id="179" gid="23" x="-210" y="566" width="76" height="72"/>
+  <object id="180" gid="23" x="-372" y="1016" width="76" height="72"/>
+  <object id="181" gid="23" x="1264" y="1190" width="76" height="72"/>
+  <object id="182" gid="25" x="250" y="1081" width="93" height="65"/>
+  <object id="183" gid="25" x="388" y="1215" width="93" height="65"/>
+  <object id="184" gid="25" x="802" y="207" width="93" height="65"/>
+  <object id="185" gid="25" x="-240" y="181" width="93" height="65"/>
+  <object id="186" gid="25" x="-178" y="837" width="93" height="65"/>
  </objectgroup>
  <objectgroup draworder="index" id="14" name="TutorialDesktop">
-  <object id="150" gid="40" x="770.358" y="683.127" width="72.1914" height="76.4379"/>
-  <object id="151" gid="40" x="850.335" y="597.493" width="72.1914" height="76.4379"/>
-  <object id="152" gid="40" x="850.333" y="683.131" width="72.1914" height="76.4379"/>
-  <object id="153" gid="40" x="928.896" y="683.127" width="72.1914" height="76.4379"/>
-  <object id="154" gid="110" x="867.321" y="575.552" width="38.219" height="45.2966"/>
-  <object id="157" gid="1073741934" x="867.198" y="667.561" width="38.219" height="45.2966"/>
+  <object id="150" gid="64" x="770.358" y="683.127" width="72.1914" height="76.4379"/>
+  <object id="151" gid="64" x="850.335" y="597.493" width="72.1914" height="76.4379"/>
+  <object id="152" gid="64" x="850.333" y="683.131" width="72.1914" height="76.4379"/>
+  <object id="153" gid="64" x="928.896" y="683.127" width="72.1914" height="76.4379"/>
+  <object id="154" gid="134" x="867.321" y="575.552" width="38.219" height="45.2966"/>
+  <object id="157" gid="1073741958" x="867.198" y="667.561" width="38.219" height="45.2966"/>
   <object id="158" name="test" x="768.878" y="427.543" width="242.183" height="72.3667">
    <properties>
     <property name="isBitmapFont" value="LEMONMILK-Bold"/>
@@ -708,13 +779,13 @@
 
 to move the pieces</text>
   </object>
-  <object id="159" gid="177" x="944.883" y="660.437" width="45.2966" height="38.219"/>
-  <object id="160" gid="2147483825" x="781.929" y="660.314" width="45.2966" height="38.219"/>
-  <object id="161" gid="179" x="740.069" y="898.725" width="87.0576" height="87.0576"/>
-  <object id="162" gid="179" x="836.133" y="898.725" width="87.0576" height="87.0576"/>
-  <object id="163" gid="180" x="948.207" y="898.725" width="87.0576" height="87.0576"/>
-  <object id="164" gid="178" x="812.45" y="872.041" width="36.0238" height="36.0238"/>
-  <object id="165" gid="181" x="913.184" y="877.711" width="41.3607" height="41.3607"/>
+  <object id="159" gid="201" x="944.883" y="660.437" width="45.2966" height="38.219"/>
+  <object id="160" gid="2147483849" x="781.929" y="660.314" width="45.2966" height="38.219"/>
+  <object id="161" gid="203" x="740.069" y="898.725" width="87.0576" height="87.0576"/>
+  <object id="162" gid="203" x="836.133" y="898.725" width="87.0576" height="87.0576"/>
+  <object id="163" gid="204" x="948.207" y="898.725" width="87.0576" height="87.0576"/>
+  <object id="164" gid="202" x="812.45" y="872.041" width="36.0238" height="36.0238"/>
+  <object id="165" gid="205" x="913.184" y="877.711" width="41.3607" height="41.3607"/>
   <object id="166" name="test" x="780.9" y="739.817" width="206.705" height="61.7654">
    <properties>
     <property name="isBitmapFont" value="LEMONMILK-Bold"/>
@@ -725,27 +796,27 @@ the same number</text>
   </object>
  </objectgroup>
  <objectgroup draworder="index" id="12" name="GameOverPopup" visible="0">
-  <object id="93" gid="42" x="-323.667" y="267.894" width="650" height="490.667">
+  <object id="93" gid="66" x="-323.667" y="267.894" width="650" height="490.667">
    <properties>
     <property name="id" value="background"/>
    </properties>
   </object>
   <object id="113" gid="7" x="-219" y="222.667" width="436.667" height="427"/>
-  <object id="95" gid="117" x="-298.67" y="-162.89" width="600" height="143"/>
+  <object id="95" gid="141" x="-298.67" y="-162.89" width="600" height="143"/>
   <object id="96" x="-143.333" y="-283.667" width="290.667" height="60">
    <properties>
     <property name="id" value="title-label"/>
    </properties>
   </object>
-  <object id="97" gid="2147483823" x="-269" y="141" width="68" height="68"/>
-  <object id="105" gid="99" x="-193" y="58.6667" width="251.33" height="62"/>
-  <object id="106" gid="99" x="-193" y="140.667" width="251.33" height="62"/>
+  <object id="97" gid="2147483847" x="-269" y="141" width="68" height="68"/>
+  <object id="105" gid="123" x="-193" y="58.6667" width="251.33" height="62"/>
+  <object id="106" gid="123" x="-193" y="140.667" width="251.33" height="62"/>
   <object id="98" x="-171.667" y="83" width="226.667" height="53.3333">
    <properties>
     <property name="id" value="total-moves"/>
    </properties>
   </object>
-  <object id="109" gid="98" x="-191" y="-25.6667" width="251.33" height="62"/>
+  <object id="109" gid="122" x="-191" y="-25.6667" width="251.33" height="62"/>
   <object id="99" x="108" y="-50" width="140" height="138.667">
    <properties>
     <property name="id" value="highest-piece"/>
@@ -761,9 +832,9 @@ the same number</text>
     <property name="id" value="points"/>
    </properties>
   </object>
-  <object id="107" gid="174" x="-260.333" y="54.125" width="50.6667" height="57.7917"/>
-  <object id="110" gid="102" x="-255" y="-25" width="45.4557" height="63"/>
-  <object id="112" gid="126" x="211.667" y="106" width="55" height="51"/>
+  <object id="107" gid="198" x="-260.333" y="54.125" width="50.6667" height="57.7917"/>
+  <object id="110" gid="126" x="-255" y="-25" width="45.4557" height="63"/>
+  <object id="112" gid="150" x="211.667" y="106" width="55" height="51"/>
   <object id="114" x="-149.333" y="213.333" width="303.333" height="82.6667">
    <properties>
     <property name="id" value="continue"/>
@@ -771,8 +842,8 @@ the same number</text>
   </object>
  </objectgroup>
  <objectgroup draworder="index" id="11" name="ConfirmationPopup" visible="0">
-  <object id="86" gid="42" x="-361" y="147" width="722" height="372"/>
-  <object id="138" gid="49" x="-225" y="-153" width="449" height="107"/>
+  <object id="86" gid="66" x="-361" y="147" width="722" height="372"/>
+  <object id="138" gid="73" x="-225" y="-153" width="449" height="107"/>
   <object id="126" x="-186.667" y="-248" width="366.667" height="66.6667">
    <properties>
     <property name="id" value="title-label"/>
@@ -795,7 +866,7 @@ the same number</text>
   </object>
  </objectgroup>
  <objectgroup id="10" name="MainMenu" visible="0">
-  <object id="77" gid="68" x="22" y="1065" width="676" height="122"/>
+  <object id="77" gid="92" x="22" y="1065" width="676" height="122"/>
   <object id="78" x="42.6667" y="958.667" width="633.333" height="85.3333">
    <properties>
     <property name="id" value="buttons-list"/>
@@ -804,42 +875,41 @@ the same number</text>
   <object id="79" x="987.879" y="-227.273"/>
  </objectgroup>
  <objectgroup draworder="index" id="8" name="ScoreMenu">
-  <object id="130" gid="68" x="27" y="-38" width="645" height="169"/>
-  <object id="65" gid="100" x="449.643" y="-127.236" width="208.939" height="49.3182"/>
-  <object id="67" gid="170" x="614.303" y="-116.485" width="70" height="70"/>
-  <object id="68" gid="98" x="36.47" y="320.098" width="208.942" height="62"/>
+  <object id="65" gid="124" x="449.643" y="-127.236" width="208.939" height="49.3182"/>
+  <object id="67" gid="194" x="614.303" y="-116.485" width="70" height="70"/>
+  <object id="68" gid="122" x="36.47" y="320.098" width="208.942" height="62"/>
   <object id="50" x="79.3752" y="276.265" width="136.915" height="25.4545">
    <properties>
     <property name="id" value="current-score"/>
    </properties>
   </object>
-  <object id="141" gid="100" x="261.333" y="320.667" width="208.94" height="62"/>
+  <object id="141" gid="124" x="261.333" y="320.667" width="208.94" height="62"/>
   <object id="51" x="477.749" y="-166.068" width="136.818" height="25.4545">
    <properties>
     <property name="id" value="highscore"/>
    </properties>
   </object>
-  <object id="74" gid="174" x="248.645" y="320.292" width="50.9197" height="58.0802"/>
-  <object id="75" gid="102" x="25.3334" y="321.461" width="45.3409" height="62.8409"/>
+  <object id="74" gid="198" x="248.645" y="320.292" width="50.9197" height="58.0802"/>
+  <object id="75" gid="126" x="25.3334" y="321.461" width="45.3409" height="62.8409"/>
   <object id="76" x="316.939" y="272.334" width="106.122" height="32">
    <properties>
     <property name="id" value="timer"/>
    </properties>
   </object>
-  <object id="87" gid="99" x="487.467" y="320.003" width="208.94" height="62"/>
+  <object id="87" gid="123" x="487.467" y="320.003" width="208.94" height="62"/>
   <object id="89" x="548.649" y="271.003" width="99.622" height="32">
    <properties>
     <property name="id" value="moves"/>
    </properties>
   </object>
-  <object id="90" gid="2147483823" x="463.06" y="321.36" width="72.5697" height="68.7618"/>
+  <object id="90" gid="2147483847" x="463.06" y="321.36" width="72.5697" height="68.7618"/>
   <object id="91" x="276" y="32" width="174" height="174">
    <properties>
     <property name="id" value="highest"/>
    </properties>
   </object>
-  <object id="119" gid="133" x="872" y="-82.1765" width="60" height="53.8235"/>
-  <object id="122" gid="86" x="410" y="239.802" width="77.5" height="79.3023">
+  <object id="119" gid="157" x="872" y="-82.1765" width="60" height="53.8235"/>
+  <object id="122" gid="110" x="410" y="239.802" width="77.5" height="79.3023">
    <properties>
     <property name="id" value="badge"/>
    </properties>
@@ -886,13 +956,11 @@ the same number</text>
   </object>
  </objectgroup>
  <objectgroup draworder="index" id="13" name="MainScreen" visible="0">
-  <object id="134" gid="176" x="94" y="944" width="545" height="194">
+  <object id="134" gid="200" x="94" y="944" width="545" height="194">
    <properties>
     <property name="id" value="play-button"/>
    </properties>
   </object>
-  <object id="146" gid="2147483661" x="59.7051" y="828.532" width="141.93" height="97.9692"/>
-  <object id="145" gid="12" x="552.277" y="837.459" width="108.723" height="123.672"/>
  </objectgroup>
  <objectgroup id="4" name="Settings" locked="1">
   <object id="17" name="Screen" x="0" y="0" width="720" height="1080"/>

@@ -1,13 +1,473 @@
 {
   "frames": {
-    "Background_Lobby_Bg_center": {
+    "forestpack_shrine_stair_rubble_1_moss_light_south_west": {
       "frame": {
         "x": 2,
+        "y": 2,
+        "w": 33,
+        "h": 23
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 33,
+        "h": 23
+      },
+      "sourceSize": {
+        "w": 33,
+        "h": 23
+      }
+    },
+    "forestpack_shrine_stair_rubble_1_moss_light_south_east": {
+      "frame": {
+        "x": 2,
+        "y": 27,
+        "w": 32,
+        "h": 28
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 28
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 28
+      }
+    },
+    "forestpack_shrine_stair_3_moss_light_south_west": {
+      "frame": {
+        "x": 37,
+        "y": 2,
+        "w": 43,
+        "h": 35
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 43,
+        "h": 35
+      },
+      "sourceSize": {
+        "w": 43,
+        "h": 35
+      }
+    },
+    "forestpack_shrine_stair_3_moss_light_south_east": {
+      "frame": {
+        "x": 2,
+        "y": 57,
+        "w": 47,
+        "h": 36
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 47,
+        "h": 36
+      },
+      "sourceSize": {
+        "w": 47,
+        "h": 36
+      }
+    },
+    "forestpack_shrine_stair_2_moss_light_south_west": {
+      "frame": {
+        "x": 74,
+        "y": 2,
+        "w": 43,
+        "h": 33
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 43,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 43,
+        "h": 33
+      }
+    },
+    "forestpack_foliage_grassPatch_small_4_south_west": {
+      "frame": {
+        "x": 51,
+        "y": 47,
+        "w": 33,
+        "h": 22
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 4,
+        "y": 7,
+        "w": 33,
+        "h": 22
+      },
+      "sourceSize": {
+        "w": 38,
+        "h": 31
+      }
+    },
+    "forestpack_foliage_grassPatch_small_4_south_east": {
+      "frame": {
+        "x": 75,
+        "y": 47,
+        "w": 31,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 2,
+        "y": 3,
+        "w": 31,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 37,
+        "h": 28
+      }
+    },
+    "forestpack_foliage_grassPatch_small_3_south_west": {
+      "frame": {
+        "x": 75,
+        "y": 73,
+        "w": 21,
+        "h": 19
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 1,
+        "w": 21,
+        "h": 19
+      },
+      "sourceSize": {
+        "w": 22,
+        "h": 20
+      }
+    },
+    "forestpack_foliage_grassPatch_small_3_south_east": {
+      "frame": {
+        "x": 2,
+        "y": 95,
+        "w": 15,
+        "h": 12
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 15,
+        "h": 12
+      },
+      "sourceSize": {
+        "w": 16,
+        "h": 12
+      }
+    },
+    "forestpack_foliage_grassPatch_small_2_south_west": {
+      "frame": {
+        "x": 51,
+        "y": 82,
+        "w": 18,
+        "h": 18
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 1,
+        "w": 18,
+        "h": 18
+      },
+      "sourceSize": {
+        "w": 18,
+        "h": 21
+      }
+    },
+    "forestpack_foliage_grassPatch_small_2_south_east": {
+      "frame": {
+        "x": 109,
+        "y": 2,
+        "w": 19,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 2,
+        "y": 0,
+        "w": 19,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 21,
+        "h": 24
+      }
+    },
+    "forestpack_foliage_grassPatch_small_1_south_west": {
+      "frame": {
+        "x": 98,
+        "y": 73,
+        "w": 23,
+        "h": 29
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 2,
+        "w": 23,
+        "h": 29
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 31
+      }
+    },
+    "forestpack_foliage_grassPatch_small_1_south_east": {
+      "frame": {
+        "x": 2,
+        "y": 109,
+        "w": 27,
+        "h": 22
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 2,
+        "y": 2,
+        "w": 27,
+        "h": 22
+      },
+      "sourceSize": {
+        "w": 29,
+        "h": 27
+      }
+    },
+    "forestpack_foliage_grassPatch_large_2_south_west": {
+      "frame": {
+        "x": 130,
+        "y": 2,
+        "w": 85,
+        "h": 68
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 3,
+        "y": 1,
+        "w": 85,
+        "h": 68
+      },
+      "sourceSize": {
+        "w": 88,
+        "h": 69
+      }
+    },
+    "forestpack_foliage_grassPatch_large_2_south_east": {
+      "frame": {
+        "x": 2,
+        "y": 133,
+        "w": 90,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 1,
+        "w": 90,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 93,
+        "h": 65
+      }
+    },
+    "forestpack_foliage_grassPatch_large_1_south_west": {
+      "frame": {
+        "x": 129,
+        "y": 89,
+        "w": 89,
+        "h": 59
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 2,
+        "w": 89,
+        "h": 59
+      },
+      "sourceSize": {
+        "w": 89,
+        "h": 61
+      }
+    },
+    "forestpack_foliage_grassPatch_large_1_south_east": {
+      "frame": {
+        "x": 2,
+        "y": 199,
+        "w": 75,
+        "h": 71
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 1,
+        "w": 75,
+        "h": 71
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 72
+      }
+    },
+    "forestpack_foliage_flower_2_south_west": {
+      "frame": {
+        "x": 108,
+        "y": 47,
+        "w": 15,
+        "h": 20
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 2,
+        "w": 15,
+        "h": 20
+      },
+      "sourceSize": {
+        "w": 16,
+        "h": 23
+      }
+    },
+    "forestpack_foliage_flower_2_south_east": {
+      "frame": {
+        "x": 19,
+        "y": 95,
+        "w": 10,
+        "h": 14
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 1,
+        "w": 10,
+        "h": 14
+      },
+      "sourceSize": {
+        "w": 10,
+        "h": 15
+      }
+    },
+    "forestpack_foliage_flower_1_south_west": {
+      "frame": {
+        "x": 35,
+        "y": 95,
+        "w": 13,
+        "h": 20
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 1,
+        "w": 13,
+        "h": 20
+      },
+      "sourceSize": {
+        "w": 13,
+        "h": 21
+      }
+    },
+    "forestpack_foliage_flower_1_south_east": {
+      "frame": {
+        "x": 71,
+        "y": 94,
+        "w": 10,
+        "h": 21
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 0,
+        "w": 10,
+        "h": 21
+      },
+      "sourceSize": {
+        "w": 11,
+        "h": 21
+      }
+    },
+    "forestpack_fence_wood_start_angular_south_west": {
+      "frame": {
+        "x": 31,
+        "y": 117,
+        "w": 14,
+        "h": 55
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 14,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 14,
+        "h": 56
+      }
+    },
+    "forestpack_fence_wood_start_angular_south_east": {
+      "frame": {
+        "x": 79,
+        "y": 199,
+        "w": 14,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 14,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 14,
+        "h": 56
+      }
+    },
+    "Background_Lobby_Bg_center": {
+      "frame": {
+        "x": 200,
         "y": 2,
         "w": 734,
         "h": 770
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -22,12 +482,12 @@
     },
     "rocks0006": {
       "frame": {
-        "x": 738,
-        "y": 2,
+        "x": 95,
+        "y": 180,
         "w": 69,
         "h": 47
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 7,
@@ -42,12 +502,12 @@
     },
     "rocks0005": {
       "frame": {
-        "x": 738,
-        "y": 73,
+        "x": 166,
+        "y": 180,
         "w": 39,
         "h": 30
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 22,
@@ -62,12 +522,12 @@
     },
     "rocks0004": {
       "frame": {
-        "x": 738,
-        "y": 105,
+        "x": 166,
+        "y": 221,
         "w": 44,
         "h": 31
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 21,
@@ -82,8 +542,8 @@
     },
     "rocks0003": {
       "frame": {
-        "x": 738,
-        "y": 138,
+        "x": 94,
+        "y": 98,
         "w": 49,
         "h": 29
       },
@@ -102,12 +562,12 @@
     },
     "rocks0002": {
       "frame": {
-        "x": 738,
-        "y": 189,
+        "x": 79,
+        "y": 257,
         "w": 83,
         "h": 44
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -122,8 +582,8 @@
     },
     "rocks0001": {
       "frame": {
-        "x": 738,
-        "y": 274,
+        "x": 94,
+        "y": 149,
         "w": 32,
         "h": 23
       },
@@ -143,7 +603,7 @@
     "desert_tree-2": {
       "frame": {
         "x": 2,
-        "y": 774,
+        "y": 738,
         "w": 208,
         "h": 357
       },
@@ -162,12 +622,12 @@
     },
     "desert_tree-1": {
       "frame": {
-        "x": 361,
-        "y": 774,
+        "x": 2,
+        "y": 303,
         "w": 146,
         "h": 249
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -182,12 +642,12 @@
     },
     "desert_bush04": {
       "frame": {
-        "x": 612,
-        "y": 774,
+        "x": 2,
+        "y": 554,
         "w": 81,
         "h": 67
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -202,8 +662,8 @@
     },
     "desert_bush03": {
       "frame": {
-        "x": 695,
-        "y": 774,
+        "x": 2,
+        "y": 637,
         "w": 63,
         "h": 63
       },
@@ -222,8 +682,8 @@
     },
     "desert_bush02": {
       "frame": {
-        "x": 361,
-        "y": 922,
+        "x": 150,
+        "y": 303,
         "w": 58,
         "h": 41
       },
@@ -242,12 +702,12 @@
     },
     "desert_bush01": {
       "frame": {
-        "x": 404,
-        "y": 922,
+        "x": 67,
+        "y": 637,
         "w": 83,
         "h": 56
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -262,8 +722,8 @@
     },
     "cactus0002": {
       "frame": {
-        "x": 695,
-        "y": 839,
+        "x": 125,
+        "y": 554,
         "w": 61,
         "h": 109
       },
@@ -282,8 +742,8 @@
     },
     "cactus0001": {
       "frame": {
-        "x": 612,
-        "y": 843,
+        "x": 361,
+        "y": 738,
         "w": 74,
         "h": 88
       },
@@ -307,8 +767,8 @@
     "image": "backgrounds.png",
     "format": "RGBA8888",
     "size": {
-      "w": 787,
-      "h": 984
+      "w": 972,
+      "h": 948
     },
     "scale": 1,
     "related_multi_packs": []

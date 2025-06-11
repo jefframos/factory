@@ -412,7 +412,7 @@
   <object id="61" gid="122" x="366.667" y="985.333" width="128" height="128"/>
   <object id="63" gid="128" x="1313" y="405.334" width="128" height="128"/>
   <object id="73" gid="128" x="1415" y="463.334" width="128" height="128"/>
-  <object id="65" name="Bench2" gid="2147483776" x="1175" y="375.334" width="128" height="128"/>
+  <object id="65" name="Bench2" gid="2147483776" x="763" y="639.334" width="128" height="128"/>
   <object id="69" name="Bench1" gid="128" x="1262" y="375.334" width="128" height="128"/>
   <object id="72" gid="128" x="1364" y="433.334" width="128" height="128"/>
   <object id="64" gid="114" x="1296" y="301.667" width="64" height="64"/>

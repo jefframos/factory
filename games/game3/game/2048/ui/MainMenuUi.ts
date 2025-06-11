@@ -16,7 +16,7 @@ export default class MainMenuUi extends AutoPositionTiledContainer {
     constructor(mainMenuData: ExtratedTiledTileData, layers?: string[]) {
         super(mainMenuData, layers, { scaleMode: ScaleMode.FIT, matchRatio: 0 }, { pinAnchor: new PIXI.Point(0.5, 1) });
 
-        this.tiledButtonsContainer = this.findFromProperties('id', 'buttons-list');
+        this.tiledButtonsContainer = this.findAndGetFromProperties('id', 'buttons-list');
 
     }
 

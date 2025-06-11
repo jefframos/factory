@@ -156,7 +156,10 @@ export default class TiledLayerObject extends PIXI.Container {
 
                 // STEP 1: delta from Tiled's (0,1) anchor to desired anchor
                 const deltaAnchorX = 0 - anchorX;      // because Tiled uses anchorX = 0
-                const deltaAnchorY = 1 - anchorY;      // because Tiled uses anchorY = 1
+                let deltaAnchorY = 1 - anchorY;      // because Tiled uses anchorY = 1
+                if (obj.flipStates.vertical) {
+                    deltaAnchorY += 1
+                }
 
                 const offsetX = obj.width * deltaAnchorX;
                 const offsetY = obj.height * deltaAnchorY;
@@ -290,7 +293,7 @@ export default class TiledLayerObject extends PIXI.Container {
         }
     }
     public addAtId(element: PIXI.Container, value: string, anchor?: PIXI.Point): void {
-        const tiledElement = this.findFromProperties('id', value);
+        const tiledElement = this.findAndGetFromProperties('id', value);
         if (tiledElement?.view) {
             tiledElement.view.addChild(element);
             if ((element as any).anchor && anchor) {
@@ -307,14 +310,23 @@ export default class TiledLayerObject extends PIXI.Container {
         return value ? this.tiledLayers.get(value) : Array.from(this.tiledLayers.values())[0];
     }
 
-    public findByName(name: string): FoundTiledObject {
+    public findAndGetByName(name: string): FoundTiledObject {
         for (const [obj, view] of this.objectToView.entries()) {
             if (obj.name === name) return { object: obj, view };
         }
         return undefined;
     }
 
-    public findFromProperties(propertyName: string, value: any): FoundTiledObject {
+    public findFromProperties(propertyName: string, value: any, callback: (result: FoundTiledObject) => void): FoundTiledObject {
+        for (const [obj, view] of this.objectToView.entries()) {
+            if (obj.properties?.[propertyName] === value) {
+                callback({ object: obj, view })
+            };
+        }
+        return undefined;
+    }
+
+    public findAndGetFromProperties(propertyName: string, value: any): FoundTiledObject {
         for (const [obj, view] of this.objectToView.entries()) {
             if (obj.properties?.[propertyName] === value) return { object: obj, view };
         }

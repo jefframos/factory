@@ -33,11 +33,11 @@ export class GameOverPopup extends BasePopup {
         this.addChild(this.layout);
 
 
-        const background = this.layout.findFromProperties('id', 'background');
+        const background = this.layout.findAndGetFromProperties('id', 'background');
         if (background && background.view) {
             background.view.tint = 0xFC8492
         }
-        const highest = this.layout.findFromProperties('id', 'highest-piece');
+        const highest = this.layout.findAndGetFromProperties('id', 'highest-piece');
         if (highest) {
 
             highest.view?.addChild(this.highestPiece)
@@ -48,7 +48,7 @@ export class GameOverPopup extends BasePopup {
 
 
         const yoffset = - 8
-        const title = this.layout.findFromProperties('id', 'title-label');
+        const title = this.layout.findAndGetFromProperties('id', 'title-label');
         if (title) {
             this.autoOfMoves = new PIXI.BitmapText('Out of moves', {
                 fontName: Fonts.MainFamily,
@@ -61,7 +61,7 @@ export class GameOverPopup extends BasePopup {
             this.autoOfMoves.position.set(title.object.width / 2, title.object.height / 2);
         }
 
-        const containerScore = this.layout.findFromProperties('id', 'points');
+        const containerScore = this.layout.findAndGetFromProperties('id', 'points');
         if (containerScore) {
             this.scoreText = new PIXI.BitmapText('0', {
                 fontName: Fonts.MainFamily,
@@ -76,7 +76,7 @@ export class GameOverPopup extends BasePopup {
 
 
 
-        const timer = this.layout.findFromProperties('id', 'timer');
+        const timer = this.layout.findAndGetFromProperties('id', 'timer');
         if (timer) {
             this.timer = new PIXI.BitmapText('0', {
                 fontName: Fonts.MainFamily,
@@ -87,7 +87,7 @@ export class GameOverPopup extends BasePopup {
             timer.view?.addChild(this.timer);
             this.timer.position.set(timer.object.width / 2, timer.object.height / 2 + yoffset);
         }
-        const moves = this.layout.findFromProperties('id', 'total-moves');
+        const moves = this.layout.findAndGetFromProperties('id', 'total-moves');
         if (moves) {
             this.moves = new PIXI.BitmapText('0', {
                 fontName: Fonts.MainFamily,
@@ -98,7 +98,7 @@ export class GameOverPopup extends BasePopup {
             moves.view?.addChild(this.moves);
             this.moves.position.set(moves.object.width / 2, moves.object.height / 2 + yoffset);
         }
-        const continueButton = this.layout.findFromProperties('id', 'continue');
+        const continueButton = this.layout.findAndGetFromProperties('id', 'continue');
         if (continueButton) {
             const button = new BaseButton({
                 standard: {

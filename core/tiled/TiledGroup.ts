@@ -37,7 +37,7 @@ export default class TiledGroup extends PIXI.Container {
         const results: FoundTiledObject[] = [];
 
         for (const layer of this.layers) {
-            const tiledObjects = layer.findFromProperties(propertyName, value)
+            const tiledObjects = layer.findAndGetFromProperties(propertyName, value)
             if (tiledObjects) {
                 results.push(tiledObjects);
             }

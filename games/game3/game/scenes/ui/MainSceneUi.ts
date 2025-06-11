@@ -19,7 +19,7 @@ export default class MainSceneUi extends AutoPositionTiledContainer {
     constructor(mainMenuData: ExtratedTiledTileData, layers?: string[]) {
         super(mainMenuData, layers, { scaleMode: ScaleMode.FIT, matchRatio: 0 }, { pinAnchor: new PIXI.Point(0.5, 1) });
 
-        const play = this.findFromProperties('id', 'play-button');
+        const play = this.findAndGetFromProperties('id', 'play-button');
 
         const button = new BaseButton({
             standard: {

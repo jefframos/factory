@@ -5,31 +5,48 @@
         {
          "draworder":"topdown",
          "id":3,
-         "name":"HUD",
+         "name":"HUD-Right",
          "objects":[
                 {
-                 "gid":70,
-                 "height":62,
-                 "id":2,
+                 "gid":1,
+                 "height":48,
+                 "id":4,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":60,
-                 "x":641,
+                 "width":202,
+                 "x":503,
                  "y":84
                 }, 
                 {
-                 "gid":70,
-                 "height":62,
-                 "id":3,
+                 "gid":134,
+                 "height":78,
+                 "id":5,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":60,
-                 "x":555,
-                 "y":83
+                 "width":78,
+                 "x":481,
+                 "y":97
+                }, 
+                {
+                 "height":32,
+                 "id":13,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"current-money"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":125.333333333333,
+                 "x":566.666666666667,
+                 "y":44
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -39,7 +56,132 @@
         }, 
         {
          "draworder":"topdown",
+         "id":5,
+         "name":"HUD-BottomLeft",
+         "objects":[
+                {
+                 "gid":28,
+                 "height":63,
+                 "id":7,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":136.5,
+                 "x":61.59375,
+                 "y":1045.5
+                }, 
+                {
+                 "gid":120,
+                 "height":84,
+                 "id":8,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":84,
+                 "x":36,
+                 "y":1056
+                }, 
+                {
+                 "height":17,
+                 "id":9,
+                 "name":"",
+                 "rotation":0,
+                 "text":
+                    {
+                     "text":"Hello World",
+                     "wrap":true
+                    },
+                 "type":"",
+                 "visible":true,
+                 "width":80,
+                 "x":126,
+                 "y":1003.5
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":6,
+         "name":"HUD-TopCenter",
+         "objects":[
+                {
+                 "gid":71,
+                 "height":62,
+                 "id":11,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":192,
+                 "x":262,
+                 "y":89
+                }, 
+                {
+                 "height":17,
+                 "id":12,
+                 "name":"",
+                 "rotation":0,
+                 "text":
+                    {
+                     "text":"Level",
+                     "wrap":true
+                    },
+                 "type":"",
+                 "visible":true,
+                 "width":80,
+                 "x":318,
+                 "y":63.5
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":4,
+         "name":"HUD-Left",
+         "objects":[
+                {
+                 "gid":110,
+                 "height":63,
+                 "id":6,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":56.4827586206897,
+                 "x":31,
+                 "y":93
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":7,
+         "name":"Popup-Settings",
+         "objects":[],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":2,
+         "locked":true,
          "name":"Settings",
          "objects":[
                 {
@@ -59,8 +201,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":4,
- "nextobjectid":4,
+ "nextlayerid":8,
+ "nextobjectid":14,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -78,7 +220,7 @@
          "margin":0,
          "name":"MemeUI",
          "spacing":0,
-         "tilecount":96,
+         "tilecount":152,
          "tileheight":601,
          "tiles":[
                 {
@@ -479,7 +621,13 @@
                  "id":65,
                  "image":"..\/tiled\/images\/ui\/ListFrame04_Single_f_Blue.png",
                  "imageheight":83,
-                 "imagewidth":80
+                 "imagewidth":80,
+                 "properties":[
+                        {
+                         "name":"nineSliced",
+                         "type":"int",
+                         "value":10
+                        }]
                 }, 
                 {
                  "id":66,
@@ -503,19 +651,37 @@
                  "id":69,
                  "image":"..\/tiled\/images\/ui\/ResourceBar_Single_Btn_Blue1.png",
                  "imageheight":62,
-                 "imagewidth":60
+                 "imagewidth":60,
+                 "properties":[
+                        {
+                         "name":"nineSliced",
+                         "type":"int",
+                         "value":10
+                        }]
                 }, 
                 {
                  "id":70,
                  "image":"..\/tiled\/images\/ui\/ResourceBar_Single_Btn_Purple1.png",
                  "imageheight":62,
-                 "imagewidth":60
+                 "imagewidth":60,
+                 "properties":[
+                        {
+                         "name":"nineSliced",
+                         "type":"int",
+                         "value":10
+                        }]
                 }, 
                 {
                  "id":71,
                  "image":"..\/tiled\/images\/ui\/ResourceBar_Single_Btn_Yellow1.png",
                  "imageheight":62,
-                 "imagewidth":60
+                 "imagewidth":60,
+                 "properties":[
+                        {
+                         "name":"nineSliced",
+                         "type":"int",
+                         "value":10
+                        }]
                 }, 
                 {
                  "id":72,
@@ -659,6 +825,346 @@
                 {
                  "id":95,
                  "image":"..\/tiled\/images\/ui\/tutorial_hand_2.png",
+                 "imageheight":128,
+                 "imagewidth":128
+                },
+            
+                {
+                 "id":96,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Back.png",
+                 "imageheight":78,
+                 "imagewidth":91
+                }, 
+                {
+                 "id":97,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Check01.png",
+                 "imageheight":42,
+                 "imagewidth":43
+                }, 
+                {
+                 "id":98,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Check02.png",
+                 "imageheight":48,
+                 "imagewidth":54
+                }, 
+                {
+                 "id":99,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Check03_s.png",
+                 "imageheight":51,
+                 "imagewidth":55
+                }, 
+                {
+                 "id":100,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Close02.png",
+                 "imageheight":75,
+                 "imagewidth":75
+                }, 
+                {
+                 "id":101,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Exclamation.png",
+                 "imageheight":29,
+                 "imagewidth":15
+                }, 
+                {
+                 "id":102,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Lock01_s.png",
+                 "imageheight":71,
+                 "imagewidth":51
+                }, 
+                {
+                 "id":103,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Lock02.png",
+                 "imageheight":86,
+                 "imagewidth":83
+                }, 
+                {
+                 "id":104,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Lock03.png",
+                 "imageheight":93,
+                 "imagewidth":71
+                }, 
+                {
+                 "id":105,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Megaphone.png",
+                 "imageheight":56,
+                 "imagewidth":59
+                }, 
+                {
+                 "id":106,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Menu_Hamburger.png",
+                 "imageheight":61,
+                 "imagewidth":68
+                }, 
+                {
+                 "id":107,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Pause.png",
+                 "imageheight":64,
+                 "imagewidth":61
+                }, 
+                {
+                 "id":108,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Property.png",
+                 "imageheight":60,
+                 "imagewidth":60
+                }, 
+                {
+                 "id":109,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Setting.png",
+                 "imageheight":87,
+                 "imagewidth":78
+                }, 
+                {
+                 "id":110,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Skip.png",
+                 "imageheight":56,
+                 "imagewidth":57
+                }, 
+                {
+                 "id":111,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Star_Off.png",
+                 "imageheight":288,
+                 "imagewidth":289
+                },
+            
+                {
+                 "id":112,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Star_On.png",
+                 "imageheight":288,
+                 "imagewidth":289
+                }, 
+                {
+                 "id":113,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Ticket_Gold.png",
+                 "imageheight":127,
+                 "imagewidth":239
+                }, 
+                {
+                 "id":114,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Ticket_Silver.png",
+                 "imageheight":127,
+                 "imagewidth":239
+                }, 
+                {
+                 "id":115,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Ticket01.png",
+                 "imageheight":93,
+                 "imagewidth":115
+                }, 
+                {
+                 "id":116,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Ticket02.png",
+                 "imageheight":197,
+                 "imagewidth":252
+                }, 
+                {
+                 "id":117,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Timer.png",
+                 "imageheight":73,
+                 "imagewidth":64
+                }, 
+                {
+                 "id":118,
+                 "image":"..\/tiled\/images\/ui\/icons\/Icon_Trophy02.png",
+                 "imageheight":259,
+                 "imagewidth":415
+                }, 
+                {
+                 "id":119,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Bag_Brown.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":120,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Bag_Gray.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":121,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Chest_Gem.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":122,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Chest_Gold.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":123,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Chest_Premium.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":124,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Chest_Skull.png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":125,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Chest_Wood.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":126,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Clover_Green.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":127,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Gem_Star_Blue.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                },
+            
+                {
+                 "id":128,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Gift_Blue.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":129,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Gift_Green.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":130,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Heart_Red.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":131,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Medalstand.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":132,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_MemoPad.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":133,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Money_Coin.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":134,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Shop.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":135,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Star_Blue.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":136,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Star_Bronze.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":137,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Star_Gold.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":138,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Star_Purple.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":139,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Star_Red.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":140,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Star_Silver.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":141,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Ticket_Gold.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":142,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Ticket_Red.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":143,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Trophy_Bronze.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                },
+            
+                {
+                 "id":144,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Trophy_Gold.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":145,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Trophy_Silver.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":146,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_TV_AdBlock.png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":147,
+                 "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Video.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":148,
+                 "image":"..\/tiled\/images\/ui\/icons\/PictoIcon_Home_1.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":149,
+                 "image":"..\/tiled\/images\/ui\/icons\/PictoIcon_Home_2.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":150,
+                 "image":"..\/tiled\/images\/ui\/icons\/PictoIcon_Sound.Png",
+                 "imageheight":128,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":151,
+                 "image":"..\/tiled\/images\/ui\/icons\/PictoIcon_Sound_Off.Png",
                  "imageheight":128,
                  "imagewidth":128
                 }],

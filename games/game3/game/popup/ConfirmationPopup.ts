@@ -35,7 +35,7 @@ export class ConfirmationPopup extends BasePopup {
         this.addChild(this.layout);
 
 
-        const title = this.layout.findFromProperties('id', 'title-label');
+        const title = this.layout.findAndGetFromProperties('id', 'title-label');
         if (title) {
             this.titleText = new PIXI.BitmapText('Out of moves', {
                 fontName: Fonts.MainFamily,
@@ -48,7 +48,7 @@ export class ConfirmationPopup extends BasePopup {
             this.titleText.position.set(title.object.width / 2, title.object.height / 2);
         }
 
-        const description = this.layout.findFromProperties('id', 'description-label');
+        const description = this.layout.findAndGetFromProperties('id', 'description-label');
         if (description) {
             this.descriptionText = new PIXI.BitmapText('', {
                 fontName: Fonts.MainFamily,
@@ -63,7 +63,7 @@ export class ConfirmationPopup extends BasePopup {
 
 
 
-        const right = this.layout.findFromProperties('id', 'button-right');
+        const right = this.layout.findAndGetFromProperties('id', 'button-right');
         this.confirmButton = new BaseButton({
             standard: {
                 width: right?.object.width,
@@ -94,7 +94,7 @@ export class ConfirmationPopup extends BasePopup {
 
 
 
-        const left = this.layout.findFromProperties('id', 'button-left');
+        const left = this.layout.findAndGetFromProperties('id', 'button-left');
         this.cancelButton = new BaseButton({
             standard: {
                 width: left?.object.width,
@@ -136,12 +136,12 @@ export class ConfirmationPopup extends BasePopup {
         this.onConfirm = data.onConfirm;
         this.onCancel = data.onCancel;
 
-        const title = this.layout.findFromProperties('id', 'title-label');
+        const title = this.layout.findAndGetFromProperties('id', 'title-label');
         if (title) {
             this.titleText.position.set(title.object.width / 2, title.object.height / 2);
         }
 
-        const description = this.layout.findFromProperties('id', 'description-label');
+        const description = this.layout.findAndGetFromProperties('id', 'description-label');
         if (description) {
             this.descriptionText.position.set(description.object.width / 2, description.object.height / 2);
         }

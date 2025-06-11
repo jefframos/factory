@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="4" nextobjectid="4">
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="8" nextobjectid="14">
  <editorsettings>
   <export target="../json/memeUi.json" format="json"/>
  </editorsettings>
- <tileset firstgid="1" name="MemeUI" tilewidth="609" tileheight="601" tilecount="96" columns="0">
+ <tileset firstgid="1" name="MemeUI" tilewidth="609" tileheight="601" tilecount="152" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="0">
    <image width="338" height="114" source="images/ui/BannerFrame03_Single.png"/>
@@ -201,6 +201,9 @@
    <image width="69" height="66" source="images/ui/Label_Parallelogram_Yellow.png"/>
   </tile>
   <tile id="65">
+   <properties>
+    <property name="nineSliced" type="int" value="10"/>
+   </properties>
    <image width="80" height="83" source="images/ui/ListFrame04_Single_f_Blue.png"/>
   </tile>
   <tile id="66">
@@ -213,12 +216,21 @@
    <image width="609" height="601" source="images/ui/Popup06_Pattern.png"/>
   </tile>
   <tile id="69">
+   <properties>
+    <property name="nineSliced" type="int" value="10"/>
+   </properties>
    <image width="60" height="62" source="images/ui/ResourceBar_Single_Btn_Blue1.png"/>
   </tile>
   <tile id="70">
+   <properties>
+    <property name="nineSliced" type="int" value="10"/>
+   </properties>
    <image width="60" height="62" source="images/ui/ResourceBar_Single_Btn_Purple1.png"/>
   </tile>
   <tile id="71">
+   <properties>
+    <property name="nineSliced" type="int" value="10"/>
+   </properties>
    <image width="60" height="62" source="images/ui/ResourceBar_Single_Btn_Yellow1.png"/>
   </tile>
   <tile id="72">
@@ -293,12 +305,205 @@
   <tile id="95">
    <image width="128" height="128" source="images/ui/tutorial_hand_2.png"/>
   </tile>
+  <tile id="96">
+   <image width="91" height="78" source="images/ui/icons/Icon_Back.png"/>
+  </tile>
+  <tile id="97">
+   <image width="43" height="42" source="images/ui/icons/Icon_Check01.png"/>
+  </tile>
+  <tile id="98">
+   <image width="54" height="48" source="images/ui/icons/Icon_Check02.png"/>
+  </tile>
+  <tile id="99">
+   <image width="55" height="51" source="images/ui/icons/Icon_Check03_s.png"/>
+  </tile>
+  <tile id="100">
+   <image width="75" height="75" source="images/ui/icons/Icon_Close02.png"/>
+  </tile>
+  <tile id="101">
+   <image width="15" height="29" source="images/ui/icons/Icon_Exclamation.png"/>
+  </tile>
+  <tile id="102">
+   <image width="51" height="71" source="images/ui/icons/Icon_Lock01_s.png"/>
+  </tile>
+  <tile id="103">
+   <image width="83" height="86" source="images/ui/icons/Icon_Lock02.png"/>
+  </tile>
+  <tile id="104">
+   <image width="71" height="93" source="images/ui/icons/Icon_Lock03.png"/>
+  </tile>
+  <tile id="105">
+   <image width="59" height="56" source="images/ui/icons/Icon_Megaphone.png"/>
+  </tile>
+  <tile id="106">
+   <image width="68" height="61" source="images/ui/icons/Icon_Menu_Hamburger.png"/>
+  </tile>
+  <tile id="107">
+   <image width="61" height="64" source="images/ui/icons/Icon_Pause.png"/>
+  </tile>
+  <tile id="108">
+   <image width="60" height="60" source="images/ui/icons/Icon_Property.png"/>
+  </tile>
+  <tile id="109">
+   <image width="78" height="87" source="images/ui/icons/Icon_Setting.png"/>
+  </tile>
+  <tile id="110">
+   <image width="57" height="56" source="images/ui/icons/Icon_Skip.png"/>
+  </tile>
+  <tile id="111">
+   <image width="289" height="288" source="images/ui/icons/Icon_Star_Off.png"/>
+  </tile>
+  <tile id="112">
+   <image width="289" height="288" source="images/ui/icons/Icon_Star_On.png"/>
+  </tile>
+  <tile id="113">
+   <image width="239" height="127" source="images/ui/icons/Icon_Ticket_Gold.png"/>
+  </tile>
+  <tile id="114">
+   <image width="239" height="127" source="images/ui/icons/Icon_Ticket_Silver.png"/>
+  </tile>
+  <tile id="115">
+   <image width="115" height="93" source="images/ui/icons/Icon_Ticket01.png"/>
+  </tile>
+  <tile id="116">
+   <image width="252" height="197" source="images/ui/icons/Icon_Ticket02.png"/>
+  </tile>
+  <tile id="117">
+   <image width="64" height="73" source="images/ui/icons/Icon_Timer.png"/>
+  </tile>
+  <tile id="118">
+   <image width="415" height="259" source="images/ui/icons/Icon_Trophy02.png"/>
+  </tile>
+  <tile id="119">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Bag_Brown.Png"/>
+  </tile>
+  <tile id="120">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Bag_Gray.Png"/>
+  </tile>
+  <tile id="121">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Chest_Gem.Png"/>
+  </tile>
+  <tile id="122">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Chest_Gold.Png"/>
+  </tile>
+  <tile id="123">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Chest_Premium.Png"/>
+  </tile>
+  <tile id="124">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Chest_Skull.png"/>
+  </tile>
+  <tile id="125">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Chest_Wood.Png"/>
+  </tile>
+  <tile id="126">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Clover_Green.Png"/>
+  </tile>
+  <tile id="127">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Gem_Star_Blue.Png"/>
+  </tile>
+  <tile id="128">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Gift_Blue.Png"/>
+  </tile>
+  <tile id="129">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Gift_Green.Png"/>
+  </tile>
+  <tile id="130">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Heart_Red.Png"/>
+  </tile>
+  <tile id="131">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Medalstand.Png"/>
+  </tile>
+  <tile id="132">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_MemoPad.Png"/>
+  </tile>
+  <tile id="133">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Money_Coin.Png"/>
+  </tile>
+  <tile id="134">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Shop.Png"/>
+  </tile>
+  <tile id="135">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Star_Blue.Png"/>
+  </tile>
+  <tile id="136">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Star_Bronze.Png"/>
+  </tile>
+  <tile id="137">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Star_Gold.Png"/>
+  </tile>
+  <tile id="138">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Star_Purple.Png"/>
+  </tile>
+  <tile id="139">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Star_Red.Png"/>
+  </tile>
+  <tile id="140">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Star_Silver.Png"/>
+  </tile>
+  <tile id="141">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Ticket_Gold.Png"/>
+  </tile>
+  <tile id="142">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Ticket_Red.Png"/>
+  </tile>
+  <tile id="143">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Trophy_Bronze.Png"/>
+  </tile>
+  <tile id="144">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Trophy_Gold.Png"/>
+  </tile>
+  <tile id="145">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Trophy_Silver.Png"/>
+  </tile>
+  <tile id="146">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_TV_AdBlock.png"/>
+  </tile>
+  <tile id="147">
+   <image width="128" height="128" source="images/ui/icons/ItemIcon_Video.Png"/>
+  </tile>
+  <tile id="148">
+   <image width="128" height="128" source="images/ui/icons/PictoIcon_Home_1.Png"/>
+  </tile>
+  <tile id="149">
+   <image width="128" height="128" source="images/ui/icons/PictoIcon_Home_2.Png"/>
+  </tile>
+  <tile id="150">
+   <image width="128" height="128" source="images/ui/icons/PictoIcon_Sound.Png"/>
+  </tile>
+  <tile id="151">
+   <image width="128" height="128" source="images/ui/icons/PictoIcon_Sound_Off.Png"/>
+  </tile>
  </tileset>
- <objectgroup id="3" name="HUD">
-  <object id="2" gid="70" x="641" y="84" width="60" height="62"/>
-  <object id="3" gid="70" x="555" y="83" width="60" height="62"/>
+ <objectgroup id="3" name="HUD-Right">
+  <object id="4" gid="1" x="503" y="84" width="202" height="48"/>
+  <object id="5" gid="134" x="481" y="97" width="78" height="78"/>
+  <object id="13" x="566.667" y="44" width="125.333" height="32">
+   <properties>
+    <property name="id" value="current-money"/>
+   </properties>
+  </object>
  </objectgroup>
- <objectgroup id="2" name="Settings">
+ <objectgroup id="5" name="HUD-BottomLeft">
+  <object id="7" gid="28" x="61.5938" y="1045.5" width="136.5" height="63"/>
+  <object id="8" gid="120" x="36" y="1056" width="84" height="84"/>
+  <object id="9" x="126" y="1003.5" width="80" height="17">
+   <properties>
+    <property name="id" value="current-quest"/>
+   </properties>
+   <text wrap="1">Hello World</text>
+  </object>
+ </objectgroup>
+ <objectgroup id="6" name="HUD-TopCenter">
+  <object id="11" gid="71" x="262" y="89" width="192" height="62"/>
+  <object id="12" x="318" y="63.5" width="80" height="17">
+   <text wrap="1">Level</text>
+  </object>
+ </objectgroup>
+ <objectgroup id="4" name="HUD-Left">
+  <object id="6" gid="110" x="31" y="93" width="56.4828" height="63"/>
+ </objectgroup>
+ <objectgroup id="7" name="Popup-Settings"/>
+ <objectgroup id="2" name="Settings" locked="1">
   <object id="1" name="Screen" x="0" y="0" width="720" height="1080"/>
  </objectgroup>
 </map>

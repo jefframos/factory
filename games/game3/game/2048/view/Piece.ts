@@ -15,14 +15,8 @@ export class Piece extends PIXI.Container {
 
     constructor() {
         super();
-
-    }
-    public build(width: number, height: number) {
-        // Nine-slice background
         const texture = PIXI.Texture.from("ItemFrame03_Single_Blue");
         this.background = new PIXI.NineSlicePlane(texture, 10, 10, 10, 10);
-        this.background.width = width;
-        this.background.height = height;
 
         // Label
         this.label = new PIXI.BitmapText('0', {
@@ -31,6 +25,12 @@ export class Piece extends PIXI.Container {
             align: 'center',
             letterSpacing: 2
         });
+
+    }
+    public build(width: number, height: number) {
+        // Nine-slice background
+        this.background.width = width;
+        this.background.height = height;
 
         // Sprite setup
         this.sprite.anchor.set(0.5, 0.8);
@@ -44,6 +44,8 @@ export class Piece extends PIXI.Container {
 
         this.addChild(this.background, this.spriteContainer, this.label);
         this.spriteContainer.addChild(this.sprite);
+
+        //this.background.visible = false
 
         this.animation = new SpriteAnimation();
 
