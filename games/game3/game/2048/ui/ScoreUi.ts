@@ -84,6 +84,7 @@ export default class ScoreUi extends AutoPositionTiledContainer {
         if (highest) {
 
             highest.view?.addChild(this.highestPiece)
+            this.highestPiece.position.set(highest.object.width / 2, highest.object.height / 2 + yoffset);
 
             this.highestPiece.build(highest.object.width, highest.object.height)
             this.highestPiece.reset(-1);
@@ -196,10 +197,13 @@ export default class ScoreUi extends AutoPositionTiledContainer {
         this.setMoves(0);
     }
 
-
+    private currentHighestPiece: number = -1;
     updateHighestPiece(highestPiece: number, viewData: PieceViewData) {
         this.highestPiece.reset(highestPiece, viewData)
-
+        if (this.currentHighestPiece != highestPiece) {
+            this.highestPiece.upgrade()
+        }
+        this.currentHighestPiece = highestPiece;
     }
 
     setTimer(matchTimer: number) {

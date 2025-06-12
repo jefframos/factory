@@ -13,6 +13,7 @@ import { ConfirmationPopupData } from "../../popup/ConfirmationPopup";
 import { GlobalDataManager } from "../../scenes/data/GlobalDataManager";
 import MainMenuUi from "../ui/MainMenuUi";
 import ScoreUi from "../ui/ScoreUi";
+import { SwipeHint } from "../ui/SwipeHint";
 import TutorialDesktopUi from "../ui/TutorialDesktopUi";
 import { GridManager, MovementResult } from "./GridManager";
 import MatchManager from "./MatchManager";
@@ -39,6 +40,7 @@ export default class Gameplay2048Scene extends GameScene {
     private inputShape: PIXI.Sprite = PIXI.Sprite.from(PIXI.Texture.WHITE)
 
     public onQuit: Signal = new Signal();
+    hint: SwipeHint;
 
     constructor() {
         super();
@@ -87,7 +89,8 @@ export default class Gameplay2048Scene extends GameScene {
             // })
 
             this.scoreUi = new ScoreUi(ExtractTiledFile.getTiledFrom('2048'), ['ScoreMenu'])
-            this.addChild(this.scoreUi)
+
+
 
             this.scoreUi.onQuit.add(() => {
                 this.canAutoMove = false;
@@ -130,7 +133,7 @@ export default class Gameplay2048Scene extends GameScene {
 
             this.tutorialDesktop = new TutorialDesktopUi(ExtractTiledFile.getTiledFrom('2048'), ['TutorialDesktop']);
             if (!PIXI.isMobile.any) {
-                this.addChild(this.tutorialDesktop);
+                //this.addChild(this.tutorialDesktop);
             }
 
         }
@@ -149,6 +152,8 @@ export default class Gameplay2048Scene extends GameScene {
                 this.paused = true;
             }
         })
+
+        this.hint = new SwipeHint(PIXI.Texture.from('tutorial_hand_2'))
 
 
     }
@@ -185,7 +190,6 @@ export default class Gameplay2048Scene extends GameScene {
         this.scoreUi.updateHighestPiece(2, GameplayCharacterData.fetchById(0)!);
     }
     public build(): void {
-        this.addChild(this.gameplayContainer);
 
         this.gridManager = new GridManager(this.gameplayContainer);
 
@@ -202,15 +206,24 @@ export default class Gameplay2048Scene extends GameScene {
         this.inputShape.alpha = 0;
 
 
+        this.addChild(this.scoreUi)
+        this.addChild(this.gameplayContainer);
+
         this.inputManager.onMove.add(async (direction) => {
             if (this.isTransitioning) return;
 
 
+            if (this.hint.visible) {
+                this.hint.hide();
+            }
             this.isTransitioning = true;
             const moveResult = await this.gridManager.move(direction);
             this.updateTurn(moveResult)
             this.isTransitioning = false;
         });
+
+        this.addChild(this.hint)
+        this.hint.show()
 
     }
     private updateTurn(moveResult: MovementResult) {
@@ -273,11 +286,14 @@ export default class Gameplay2048Scene extends GameScene {
         this.gameplayContainer.y = Game.DESIGN_HEIGHT / 2 + 120
 
         if (this.inputShape) {
-            this.inputShape.width = this.gameplayContainer.width
-            this.inputShape.height = this.gameplayContainer.height
-            this.inputShape.x = this.gameplayContainer.x - this.gameplayContainer.width / 2
-            this.inputShape.y = this.gameplayContainer.y - this.gameplayContainer.height / 2
+            this.inputShape.width = this.gameplayContainer.width * 2
+            this.inputShape.height = this.gameplayContainer.height * 2
+            this.inputShape.x = this.gameplayContainer.x - this.gameplayContainer.width
+            this.inputShape.y = this.gameplayContainer.y - this.gameplayContainer.height
         }
+
+        this.hint.x = this.gameplayContainer.x;
+        this.hint.y = this.gameplayContainer.y;
         if (this.paused) {
             return;
         }

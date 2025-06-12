@@ -107,6 +107,20 @@ export default class MyGame extends Game {
             GameplayCharacterData.registerTable('meme', convertCharacterSetTable(PIXI.Assets.get('characterMemeSet.json')))
         }
 
+        const externalSetMonster = PIXI.Assets.get('characterMonsterSet.json')
+        if (externalSetMonster) {
+            GameplayCharacterData.registerTable('monster', convertCharacterSetTable(PIXI.Assets.get('characterMonsterSet.json')))
+
+            GameplayCharacterData.setTable('monster')
+        }
+
+        const externalSetUnicorn = PIXI.Assets.get('characterUnicornSet.json')
+        if (externalSetUnicorn) {
+            GameplayCharacterData.registerTable('unicorn', convertCharacterSetTable(PIXI.Assets.get('characterUnicornSet.json')))
+
+            // GameplayCharacterData.setTable('unicorn')
+        }
+
         const tiled = PIXI.Assets.get('tiled.json')
         if (tiled) {
             ExtractTiledFile.parseTiledData(tiled, '2048')

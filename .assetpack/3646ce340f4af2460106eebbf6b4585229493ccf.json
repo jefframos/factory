@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1749458241080,
-                "duration": 4.438000202178955,
+                "date": 1749710965760,
+                "duration": 4.338900089263916,
                 "success": true
             }
         },
@@ -2413,6 +2413,305 @@
                 "page": 0
             }
         },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}": {
+            "isFolder": true,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images",
+            "metaData": {
+                "tps": true
+            },
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1749710965760,
+                "duration": 167.31889963150024,
+                "success": true
+            }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/blobMonster.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "OuZOsg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/dracula.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "Fxcrrg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/drake.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "4QHy6w"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/frank.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "wdRY4g"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/ghoul.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "ThmS2w"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/gorgoyle.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "VF77Mw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/imp.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "dTaXWw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/nosferatu.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "Mn7irQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/succubus.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "o2rCdw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/troll.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "E2Lg4w"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/uni-gary.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "_zyPxA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/uni-josh.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "jfpOdw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/uni-julia.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "pIyoew"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/uni-king.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "uP2M7A"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/uni-lady.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "lS6L4A"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/uni-logan.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "OOIacg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/uni-peter.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "92Rodg"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/uni-richard.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "cfgfVw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/uni-ricky.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "qCIQ7g"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/uni-roger.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "17EsJw"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/uni-rose.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "TB_VWQ"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/uni-tess.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "zB7eiA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/vampire.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "JRbjew"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}/zombie.png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "O9LcRA"
+        },
+        ".assetpack/multi-pipe-1/portraits.png": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {
+                "mIgnore": true,
+                "nomip": true
+            },
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/images/portraits.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/portraits.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true,
+                "mIgnore": true,
+                "nomip": true
+            },
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-1/portraits.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {
+                "page": 0
+            }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/images/portraits.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/portraits.json",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {
+                "page": 0
+            }
+        },
         "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/scene{tps}": {
             "isFolder": true,
             "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images",
@@ -2700,8 +2999,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1749458241080,
-                "duration": 798.2288999557495,
+                "date": 1749706843075,
+                "duration": 802.8968997001648,
                 "success": true
             }
         },
@@ -2713,7 +3012,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "aru3GQ"
+            "hash": "fHWzkw"
         },
         "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/BannerFrame03_Single.png": {
             "isFolder": false,

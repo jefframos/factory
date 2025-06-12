@@ -21,6 +21,14 @@
         },
         {
           "alias": [
+            "portraits"
+          ],
+          "src": [
+            "portraits.json"
+          ]
+        },
+        {
+          "alias": [
             "scene"
           ],
           "src": [

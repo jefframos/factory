@@ -39,10 +39,14 @@ export class GridManager {
 
         for (let y = 0; y < GRID_SIZE; y++) {
             for (let x = 0; x < GRID_SIZE; x++) {
-                const tile = new PIXI.NineSlicePlane(PIXI.Texture.from('back1'), 10, 10, 10, 10);
+                const tile = new PIXI.NineSlicePlane(PIXI.Texture.from('back1'), 20, 20, 20, 20);
                 tile.width = TILE_SIZE_WIDTH;
                 tile.height = TILE_SIZE_HEIGHT;
-                tile.alpha = (x + y) % 2 === 0 ? 0.5 : 0.2;
+                tile.pivot.set(TILE_SIZE_WIDTH / 2, TILE_SIZE_HEIGHT / 2);
+                tile.alpha = (x + y) % 2 === 0 ? 0.75 : 0.5;
+                tile.tint = 0x444444
+                //tile.tint = 0x2c7223
+                //tile.blendMode = PIXI.BLEND_MODES.SCREEN;
                 const pos = this.getTilePosition(x, y);
                 tile.position.set(pos.x, pos.y);
                 this.backgroundContainer.addChild(tile);
@@ -82,8 +86,8 @@ export class GridManager {
     }
 
     public spawnInitialTiles() {
-        this.spawnRandomTile();
-        this.spawnRandomTile();
+        this.spawnRandomTile(0, 0, 2);
+        this.spawnRandomTile(3, 0, 2);
     }
 
     update(delta: number) {
@@ -99,12 +103,12 @@ export class GridManager {
 
     private getTilePosition(x: number, y: number): { x: number; y: number } {
         return {
-            x: x * (TILE_SIZE_WIDTH + TILE_PADDING),
-            y: y * (TILE_SIZE_HEIGHT + TILE_PADDING),
+            x: x * (TILE_SIZE_WIDTH + TILE_PADDING) + TILE_SIZE_WIDTH / 2,
+            y: y * (TILE_SIZE_HEIGHT + TILE_PADDING) + TILE_SIZE_HEIGHT / 2,
         };
     }
 
-    private async spawnRandomTile() {
+    private async spawnRandomTile(x?: number, y?: number, pieceValue?: number) {
         const empty: { x: number, y: number }[] = [];
         for (let y = 0; y < GRID_SIZE; y++) {
             for (let x = 0; x < GRID_SIZE; x++) {
@@ -115,20 +119,21 @@ export class GridManager {
         if (empty.length === 0) return;
 
         const spot = empty[Math.floor(Math.random() * empty.length)];
-        const value = Math.random() < 0.9 ? 2 : 4;
+        const value = pieceValue != undefined ? pieceValue : Math.random() < 0.9 ? 2 : 4;
         const power = Math.log2(value) - 1;
 
         const piece = Pool.instance.getElement<Piece>(Piece);
         piece.build(TILE_SIZE_WIDTH, TILE_SIZE_HEIGHT);
-        console.log(power, GameplayCharacterData.fetchById(power))
+        //console.log(power, GameplayCharacterData.fetchById(power))
         piece.reset(value, GameplayCharacterData.fetchById(power));
         piece.setDirection(this.getVector(this.latestDirection));
 
-        const pos = this.getTilePosition(spot.x, spot.y);
+        let newSpot = { x: x !== undefined ? x : spot.x, y: y !== undefined ? y : spot.y };
+        const pos = this.getTilePosition(newSpot.x, newSpot.y);
         piece.position.set(pos.x, pos.y);
 
         this.container.addChild(piece);
-        this.grid[spot.y][spot.x] = piece;
+        this.grid[newSpot.y][newSpot.x] = piece;
         this.spawnedPieces.push(piece);
         await piece.pop();
     }

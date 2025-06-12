@@ -1920,10 +1920,30 @@
         "h": 114
       }
     },
-    "PictoIcon_Sound_Off": {
+    "back1": {
       "frame": {
         "x": 758,
         "y": 1299,
+        "w": 130,
+        "h": 130
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 130,
+        "h": 130
+      },
+      "sourceSize": {
+        "w": 130,
+        "h": 130
+      }
+    },
+    "PictoIcon_Sound_Off": {
+      "frame": {
+        "x": 758,
+        "y": 1431,
         "w": 127,
         "h": 121
       },
@@ -1942,12 +1962,12 @@
     },
     "PictoIcon_Sound": {
       "frame": {
-        "x": 758,
-        "y": 1422,
+        "x": 887,
+        "y": 1431,
         "w": 128,
         "h": 121
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -1962,12 +1982,12 @@
     },
     "PictoIcon_Home_2": {
       "frame": {
-        "x": 881,
-        "y": 1422,
+        "x": 890,
+        "y": 1307,
         "w": 126,
         "h": 117
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -1982,12 +2002,12 @@
     },
     "PictoIcon_Home_1": {
       "frame": {
-        "x": 887,
-        "y": 1307,
+        "x": 1017,
+        "y": 1426,
         "w": 120,
         "h": 111
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 5,
@@ -2022,7 +2042,7 @@
     },
     "ItemIcon_TV_AdBlock": {
       "frame": {
-        "x": 1000,
+        "x": 1130,
         "y": 1444,
         "w": 109,
         "h": 116
@@ -2042,26 +2062,6 @@
     },
     "ItemIcon_Trophy_Silver": {
       "frame": {
-        "x": 1118,
-        "y": 1444,
-        "w": 125,
-        "h": 93
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 1,
-        "y": 17,
-        "w": 125,
-        "h": 93
-      },
-      "sourceSize": {
-        "w": 128,
-        "h": 128
-      }
-    },
-    "ItemIcon_Trophy_Gold": {
-      "frame": {
         "x": 1348,
         "y": 2,
         "w": 125,
@@ -2080,10 +2080,30 @@
         "h": 128
       }
     },
-    "ItemIcon_Trophy_Bronze": {
+    "ItemIcon_Trophy_Gold": {
       "frame": {
         "x": 1348,
         "y": 129,
+        "w": 125,
+        "h": 93
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1,
+        "y": 17,
+        "w": 125,
+        "h": 93
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "ItemIcon_Trophy_Bronze": {
+      "frame": {
+        "x": 1345,
+        "y": 256,
         "w": 125,
         "h": 93
       },
@@ -2142,7 +2162,7 @@
     },
     "ItemIcon_Star_Silver": {
       "frame": {
-        "x": 1245,
+        "x": 1248,
         "y": 1444,
         "w": 114,
         "h": 109
@@ -2263,7 +2283,7 @@
     "ItemIcon_Shop": {
       "frame": {
         "x": 1439,
-        "y": 256,
+        "y": 383,
         "w": 113,
         "h": 103
       },
@@ -2302,8 +2322,8 @@
     },
     "ItemIcon_MemoPad": {
       "frame": {
-        "x": 1439,
-        "y": 361,
+        "x": 1440,
+        "y": 256,
         "w": 100,
         "h": 110
       },
@@ -2343,7 +2363,7 @@
     "ItemIcon_Heart_Red": {
       "frame": {
         "x": 1439,
-        "y": 463,
+        "y": 488,
         "w": 112,
         "h": 96
       },
@@ -2363,7 +2383,7 @@
     "ItemIcon_Gift_Green": {
       "frame": {
         "x": 1439,
-        "y": 561,
+        "y": 586,
         "w": 107,
         "h": 105
       },
@@ -2383,7 +2403,7 @@
     "ItemIcon_Gift_Blue": {
       "frame": {
         "x": 1439,
-        "y": 668,
+        "y": 693,
         "w": 107,
         "h": 105
       },
@@ -2403,7 +2423,7 @@
     "ItemIcon_Gem_Star_Blue": {
       "frame": {
         "x": 1439,
-        "y": 775,
+        "y": 800,
         "w": 108,
         "h": 106
       },
@@ -2502,7 +2522,7 @@
     },
     "ItemIcon_Chest_Gold": {
       "frame": {
-        "x": 1361,
+        "x": 1364,
         "y": 1447,
         "w": 117,
         "h": 95
@@ -2543,7 +2563,7 @@
     "ItemIcon_Bag_Gray": {
       "frame": {
         "x": 1548,
-        "y": 561,
+        "y": 586,
         "w": 108,
         "h": 101
       },
@@ -2563,7 +2583,7 @@
     "ItemIcon_Bag_Brown": {
       "frame": {
         "x": 1548,
-        "y": 664,
+        "y": 689,
         "w": 108,
         "h": 101
       },
@@ -2642,12 +2662,12 @@
     },
     "Icon_Ticket_Gold": {
       "frame": {
-        "x": 758,
-        "y": 1552,
+        "x": 419,
+        "y": 1555,
         "w": 239,
         "h": 127
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -2662,7 +2682,7 @@
     },
     "Icon_Ticket02": {
       "frame": {
-        "x": 999,
+        "x": 548,
         "y": 1555,
         "w": 252,
         "h": 197
@@ -2742,8 +2762,8 @@
     },
     "Icon_Skip": {
       "frame": {
-        "x": 1009,
-        "y": 1384,
+        "x": 1289,
+        "y": 1371,
         "w": 57,
         "h": 56
       },
@@ -2763,7 +2783,7 @@
     "Icon_Setting": {
       "frame": {
         "x": 1345,
-        "y": 256,
+        "y": 383,
         "w": 78,
         "h": 87
       },
@@ -2782,8 +2802,8 @@
     },
     "Icon_Property": {
       "frame": {
-        "x": 1289,
-        "y": 1371,
+        "x": 1345,
+        "y": 463,
         "w": 60,
         "h": 60
       },
@@ -2803,7 +2823,7 @@
     "Icon_Pause": {
       "frame": {
         "x": 1345,
-        "y": 336,
+        "y": 525,
         "w": 61,
         "h": 64
       },
@@ -2823,7 +2843,7 @@
     "Icon_Menu_Hamburger": {
       "frame": {
         "x": 1345,
-        "y": 399,
+        "y": 588,
         "w": 68,
         "h": 61
       },
@@ -2842,12 +2862,12 @@
     },
     "Icon_Megaphone": {
       "frame": {
-        "x": 1067,
-        "y": 1384,
+        "x": 1347,
+        "y": 1371,
         "w": 59,
         "h": 56
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -2862,8 +2882,8 @@
     },
     "Icon_Lock03": {
       "frame": {
-        "x": 1551,
-        "y": 361,
+        "x": 1553,
+        "y": 488,
         "w": 71,
         "h": 93
       },
@@ -2882,8 +2902,8 @@
     },
     "Icon_Lock02": {
       "frame": {
-        "x": 1345,
-        "y": 462,
+        "x": 1554,
+        "y": 235,
         "w": 83,
         "h": 86
       },
@@ -2902,12 +2922,12 @@
     },
     "Icon_Lock01_s": {
       "frame": {
-        "x": 1351,
-        "y": 1371,
+        "x": 1345,
+        "y": 651,
         "w": 51,
         "h": 71
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -2942,8 +2962,8 @@
     },
     "Icon_Close02": {
       "frame": {
-        "x": 1345,
-        "y": 547,
+        "x": 1554,
+        "y": 320,
         "w": 75,
         "h": 75
       },
@@ -2962,8 +2982,8 @@
     },
     "Icon_Check03_s": {
       "frame": {
-        "x": 1345,
-        "y": 624,
+        "x": 1554,
+        "y": 397,
         "w": 55,
         "h": 51
       },
@@ -2982,8 +3002,8 @@
     },
     "Icon_Check02": {
       "frame": {
-        "x": 1009,
-        "y": 1307,
+        "x": 1607,
+        "y": 397,
         "w": 54,
         "h": 48
       },
@@ -3022,12 +3042,12 @@
     },
     "Icon_Back": {
       "frame": {
-        "x": 1554,
-        "y": 235,
+        "x": 1532,
+        "y": 1242,
         "w": 91,
         "h": 78
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,

@@ -41,7 +41,7 @@ export class GameOverPopup extends BasePopup {
         if (highest) {
 
             highest.view?.addChild(this.highestPiece)
-
+            this.highestPiece.position.set(highest.object.width / 2, highest.object.height / 2);
             this.highestPiece.build(highest.object.width, highest.object.height)
             this.highestPiece.reset(2, GameplayCharacterData.fetchById(0));
         }

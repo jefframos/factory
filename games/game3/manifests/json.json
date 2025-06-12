@@ -42,6 +42,22 @@
           "src": [
             "tiled.json"
           ]
+        },
+        {
+          "alias": [
+            "characterMonsterSet.json"
+          ],
+          "src": [
+            "characterMonsterSet.json"
+          ]
+        },
+        {
+          "alias": [
+            "characterUnicornSet.json"
+          ],
+          "src": [
+            "characterUnicornSet.json"
+          ]
         }
       ]
     }

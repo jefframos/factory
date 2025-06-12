@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1749615623470,
-                "duration": 4.558300018310547,
+                "date": 1749710931714,
+                "duration": 13.763800144195557,
                 "success": true
             }
         },
@@ -126,11 +126,11 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1749547867106,
-                "duration": 17.949100017547607,
+                "date": 1749707712183,
+                "duration": 9.950600147247314,
                 "success": true
             },
-            "hash": "o6LntA"
+            "hash": "Z8AHKw"
         },
         ".assetpack/json/tiled.json": {
             "isFolder": false,
@@ -142,6 +142,60 @@
         "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/tiled.json": {
             "isFolder": false,
             "transformParent": ".assetpack/json/tiled.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterMonsterSet.json": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1749709395573,
+                "duration": 8.37339973449707,
+                "success": true
+            },
+            "hash": "vyWV"
+        },
+        ".assetpack/json/characterMonsterSet.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterMonsterSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/characterMonsterSet.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/characterMonsterSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterUnicornSet.json": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1749710931714,
+                "duration": 13.743000030517578,
+                "success": true
+            },
+            "hash": "MTjFKg"
+        },
+        ".assetpack/json/characterUnicornSet.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterUnicornSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/characterUnicornSet.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/characterUnicornSet.json",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

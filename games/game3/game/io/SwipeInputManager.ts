@@ -72,15 +72,13 @@ export default class SwipeInputManager {
         }
     };
 
-    private handleTouchStart = (e: TouchEvent) => {
-        const touch = e.changedTouches[0];
-        this.startX = touch.clientX;
-        this.startY = touch.clientY;
+    private handleTouchStart = (e: PIXI.FederatedPointerEvent) => {
+        this.startX = e.clientX;
+        this.startY = e.clientY;
     };
 
-    private handleTouchEnd = (e: TouchEvent) => {
-        const touch = e.changedTouches[0];
-        this.detectSwipe(touch.clientX, touch.clientY);
+    private handleTouchEnd = (e: PIXI.FederatedPointerEvent) => {
+        this.detectSwipe(e.clientX, e.clientY);
     };
 
     private handleMouseDown = (e: MouseEvent) => {

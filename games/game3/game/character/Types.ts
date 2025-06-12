@@ -11,6 +11,7 @@ export type CharacterAnimationData = {
 export type PieceViewData = {
     id: string;
     tile?: string;
+    fit?: boolean;
     idle: CharacterAnimationData;
     walk: CharacterAnimationData;
 };
