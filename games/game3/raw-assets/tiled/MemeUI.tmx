@@ -474,7 +474,7 @@
    <image width="128" height="128" source="images/ui/icons/PictoIcon_Sound_Off.Png"/>
   </tile>
  </tileset>
- <objectgroup id="3" name="HUD-Right">
+ <objectgroup draworder="index" id="3" name="HUD-Right">
   <object id="4" gid="1" x="503" y="84" width="202" height="48"/>
   <object id="5" gid="134" x="481" y="97" width="78" height="78"/>
   <object id="13" x="566.667" y="44" width="125.333" height="32">
@@ -487,9 +487,6 @@
   <object id="7" gid="28" x="61.5938" y="1045.5" width="136.5" height="63"/>
   <object id="8" gid="120" x="36" y="1056" width="84" height="84"/>
   <object id="9" x="126" y="1003.5" width="80" height="17">
-   <properties>
-    <property name="id" value="current-quest"/>
-   </properties>
    <text wrap="1">Hello World</text>
   </object>
  </objectgroup>

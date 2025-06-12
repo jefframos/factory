@@ -1,29 +1,30 @@
 import { Game } from "@core/Game";
+import { Signal } from "signals";
+import { AreaProgress } from "../progression/ProgressionManager";
 import { GameManager } from "./GameManager";
 import { TriggerBox } from "./TriggerBox";
 import { TriggerManager } from "./TriggerManager";
-import { UpgradeTriggerSaveData } from "./UpdateTriggerSaveData";
-import { WorldManager } from "./WorldManager";
 
 export class UpgradeTrigger {
     public readonly id: string;
     private triggerBox: TriggerBox;
-    private upgradeLevel = 1;
-    private currentAmount = 0;
-    private upgradeThreshold: number;
     private timer = 0;
     private collecting = false;
     private levelId: string;
+    private areaProgress?: AreaProgress;
 
-    constructor(id: string, upgradeThreshold: number, levelId: string = 'default', saveData?: UpgradeTriggerSaveData) {
+    public onUpgrade: Signal = new Signal();
+
+    public enable() {
+        this.triggerBox.enable()
+    }
+    public disable() {
+        this.triggerBox.disable()
+    }
+
+    constructor(id: string, levelId: string = 'default') {
         this.id = id;
-        this.upgradeThreshold = upgradeThreshold;
         this.levelId = levelId;
-
-        if (saveData) {
-            this.upgradeLevel = saveData.upgradeLevel;
-            this.currentAmount = saveData.currentAmount;
-        }
 
         this.triggerBox = new TriggerBox(id, 500, 50);
         TriggerManager.registerTrigger(this.triggerBox, {
@@ -34,6 +35,26 @@ export class UpgradeTrigger {
         });
     }
 
+    public setProgressData(areaProgress: AreaProgress) {
+        this.areaProgress = areaProgress;
+        this.areaProgress.currentValue.onChange.add((value: number, newValue: number) => {
+            this.refresh()
+        });
+
+        this.areaProgress.level.onChange.add((value: number, newValue: number) => {
+            this.collecting = false;
+            this.refresh()
+        });
+
+        this.refresh()
+
+        if (this.areaProgress.unlocked) {
+            this.enable();
+        } else {
+            this.disable();
+        }
+    }
+
     public getView(): TriggerBox {
         return this.triggerBox;
     }
@@ -41,20 +62,15 @@ export class UpgradeTrigger {
     public setPosition(x: number, y: number): void {
         this.triggerBox.setPosition(x, y);
     }
-    public getSaveData(): UpgradeTriggerSaveData {
-        return {
-            upgradeLevel: this.upgradeLevel,
-            currentAmount: this.currentAmount,
-        };
-    }
-    public updateData(data: UpgradeTriggerSaveData): void {
-        this.upgradeLevel = data.upgradeLevel;
-        this.currentAmount = data.currentAmount;
-        this.refresh();
-    }
+
 
     public refresh() {
-        this.triggerBox.updateAmount(this.currentAmount, this.upgradeThreshold);
+        if (!this.areaProgress) return;
+        if (this.areaProgress.isMaxLevel) {
+            this.triggerBox.visible = false
+        } else {
+            this.triggerBox.updateAmount(this.areaProgress.currentValue.value, this.areaProgress.nextLevelThreshold);
+        }
     }
     private onEnter = () => {
         this.collecting = true;
@@ -66,30 +82,27 @@ export class UpgradeTrigger {
 
         this.timer += Game.deltaTime;
 
+        const time = 0.1
+        if (!this.areaProgress) {
+            while (this.timer >= time) {
+                this.onUpgrade.dispatch(this.id, 1);
+                this.timer -= time;
+            }
+            return;
+        }
+
         const levelData = GameManager.instance.getLevelData(this.levelId);
         const coins = levelData.soft.coins;
-
-        while (this.timer >= 0.2 && coins.value > 0 && this.currentAmount < this.upgradeThreshold) {
+        while (this.timer >= time && coins.value > 0 && this.areaProgress.currentValue.value < this.areaProgress.nextLevelThreshold) {
             coins.update(-1);
-            this.currentAmount += 1;
-            this.timer -= 0.2;
-
-            this.triggerBox.updateAmount(this.currentAmount, this.upgradeThreshold);
-            WorldManager.instance.save();
-            console.log(`[${this.id}] Collecting: ${this.currentAmount}/${this.upgradeThreshold}`);
+            this.onUpgrade.dispatch(this.id, 1);
+            this.timer -= time;
         }
 
-        if (this.currentAmount >= this.upgradeThreshold) {
-            this.collecting = false;
-            this.upgradeLevel += 1;
-            this.currentAmount = 0;
-            console.log(`🎉 [${this.id}] Upgraded to level ${this.upgradeLevel}`);
-        }
     };
 
     private onExit = () => {
         this.collecting = false;
         this.timer = 0;
-        console.log(`[${this.id}] Exited. Progress: ${this.currentAmount}/${this.upgradeThreshold}`);
     };
 }

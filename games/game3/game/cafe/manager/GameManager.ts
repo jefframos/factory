@@ -33,6 +33,7 @@ export class GameManager {
 
         DevGuiManager.instance.addButton('Wipe GameData', () => {
             this.wipe()
+            window.location.reload();
         });
 
         DevGuiManager.instance.addButton('Increase Speed', () => {

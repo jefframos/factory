@@ -12,7 +12,9 @@ import KeyboardInputMovement from "../io/KeyboardInputMovement";
 import { CameraComponent } from "./camera/CameraComponent";
 import { GameManager } from "./manager/GameManager";
 import { UpgradeTrigger } from "./manager/UpgradeTrigger";
-import { WorldManager } from "./manager/WorldManager";
+import { ProgressionManager } from "./progression/ProgressionManager";
+import { getStaticProgressionData } from "./progression/StaticProgression";
+import { DevGuiManager } from "./utils/DevGuiManager";
 import EntityView from "./view/EntityView";
 import GameplayHud from "./view/GameplayHud";
 import MoveableEntity from "./view/MoveableEntity";
@@ -49,6 +51,9 @@ export default class GameplayCafeScene extends GameScene {
 
         const gm = GameManager.instance;
         const level = gm.getLevelData();
+
+        ProgressionManager.instance.initialize(getStaticProgressionData());
+
 
         const worldSettings = ExtractTiledFile.getTiledFrom('memeWorld')
 
@@ -111,19 +116,60 @@ export default class GameplayCafeScene extends GameScene {
         this.tiledWorld.addColliders()
 
         //this.tiledWorld.setActiveObjectByName('Bench2', false)
-        const upgrade1 = new UpgradeTrigger('upgrade1', 100);
+        const upgrade1 = new UpgradeTrigger('upgrade1');
         this.gameplayContainer.addChild(upgrade1.getView());
         upgrade1.setPosition(750, 500);
-        const upgrade2 = new UpgradeTrigger('upgrade2', 50);
+        const upgrade2 = new UpgradeTrigger('upgrade2');
         this.gameplayContainer.addChild(upgrade2.getView());
         upgrade2.setPosition(1000, 300);
 
-        WorldManager.instance.registerTrigger(upgrade1);
-        WorldManager.instance.registerTrigger(upgrade2);
+        upgrade1.setProgressData(ProgressionManager.instance.getAreaProgress('upgrade1'));
+        upgrade2.setProgressData(ProgressionManager.instance.getAreaProgress('upgrade2'))
 
-        upgrade1.refresh()
-        upgrade2.refresh()
+        upgrade2.onUpgrade.add((id, value) => {
+            ProgressionManager.instance.addValue(id, value);
+        })
 
+        upgrade1.onUpgrade.add((id, value) => {
+            ProgressionManager.instance.addValue(id, value);
+        })
+
+
+        const collector = new UpgradeTrigger('collector');
+        this.gameplayContainer.addChild(collector.getView());
+        collector.setPosition(1000, 600);
+        collector.onUpgrade.add((id, value) => {
+            console.log('stay')
+            const level = GameManager.instance.getLevelData();
+            level.soft.coins.update(1);
+        })
+
+        ProgressionManager.instance.onAreaUnlocked.add((id) => {
+            const area = ProgressionManager.instance.getAreaProgress(id);
+            if (area) {
+                console.log(`Area Unlocked: ${id}: Current Value: ${area.currentValue.value}, Level: ${area.level.value}`);
+
+                if (id === 'upgrade2') {
+                    upgrade2.enable();
+                }
+            }
+        });
+        ProgressionManager.instance.onLevelUp.add((id) => {
+            const area = ProgressionManager.instance.getAreaProgress(id);
+            if (area) {
+                console.log(`Area Level Up: ${id}: New Level: ${area.level.value}, Actions Completed: ${area.actionsCompleted.value}`);
+            }
+        });
+
+
+
+        DevGuiManager.instance.addButton('Add Value', () => {
+            ProgressionManager.instance.addValue('upgrade1', 20)
+            const area = ProgressionManager.instance.getAreaProgress('upgrade1');
+            if (area) {
+                console.log(`Current Value: ${area.currentValue.value}, Level: ${area.level.value}`);
+            }
+        });
     }
     public build(...data: any[]): void {
 

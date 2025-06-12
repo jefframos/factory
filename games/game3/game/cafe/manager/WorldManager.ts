@@ -21,6 +21,7 @@ export class WorldManager {
 
         DevGuiManager.instance.addButton('Wipe WorldData', () => {
             this.wipe()
+            window.location.reload();
         });
     }
 

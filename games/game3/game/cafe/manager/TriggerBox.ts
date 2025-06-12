@@ -18,6 +18,14 @@ export class TriggerBox extends PIXI.Container {
 
     private label: PIXI.BitmapText;
 
+    public enable() {
+        this.trigger.enabled = true;
+        this.visible = true;
+    }
+    public disable() {
+        this.trigger.enabled = false;
+        this.visible = false;
+    }
     constructor(id: string, size: number = 100, triggerRadius: number = 20, color: number = 0x66ccff) {
         super();
         this.id = id;
@@ -29,6 +37,8 @@ export class TriggerBox extends PIXI.Container {
             letterSpacing: 2
         });
 
+        this.label.anchor.set(0.5, 0.5);
+
         this.addChild(this.label);
 
         // Draw debug square (background)
@@ -36,7 +46,7 @@ export class TriggerBox extends PIXI.Container {
         this.debugGraphics.beginFill(color, 0.2);
         this.debugGraphics.drawRect(0, 0, size, size);
         this.debugGraphics.endFill();
-        this.addChild(this.debugGraphics);
+        //this.addChild(this.debugGraphics);
 
         // Create circular trigger at (0,0)
         this.trigger = new Collider({
