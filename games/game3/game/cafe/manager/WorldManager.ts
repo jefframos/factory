@@ -1,6 +1,6 @@
 import { DevGuiManager } from "../utils/DevGuiManager";
 import { UpgradeTriggerSaveData } from "./UpdateTriggerSaveData";
-import { UpgradeTrigger } from "./UpgradeTrigger";
+import { UpgradeTrigger } from "./triggers/UpgradeTrigger";
 
 
 const WORLD_STORAGE_KEY = 'dogeCafe_world';

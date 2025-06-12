@@ -11,7 +11,8 @@ import AnalogInput from "../io/AnalogInput";
 import KeyboardInputMovement from "../io/KeyboardInputMovement";
 import { CameraComponent } from "./camera/CameraComponent";
 import { GameManager } from "./manager/GameManager";
-import { UpgradeTrigger } from "./manager/UpgradeTrigger";
+import CollectorTrigger from "./manager/triggers/CollectorTrigger";
+import { UpgradeTrigger } from "./manager/triggers/UpgradeTrigger";
 import { ProgressionManager } from "./progression/ProgressionManager";
 import { getStaticProgressionData } from "./progression/StaticProgression";
 import { DevGuiManager } from "./utils/DevGuiManager";
@@ -135,7 +136,7 @@ export default class GameplayCafeScene extends GameScene {
         })
 
 
-        const collector = new UpgradeTrigger('collector');
+        const collector = new CollectorTrigger('collector');
         this.gameplayContainer.addChild(collector.getView());
         collector.setPosition(1000, 600);
         collector.onUpgrade.add((id, value) => {

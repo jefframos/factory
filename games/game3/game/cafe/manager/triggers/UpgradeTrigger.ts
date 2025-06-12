@@ -1,17 +1,17 @@
 import { Game } from "@core/Game";
 import { Signal } from "signals";
-import { AreaProgress } from "../progression/ProgressionManager";
-import { GameManager } from "./GameManager";
-import { TriggerBox } from "./TriggerBox";
-import { TriggerManager } from "./TriggerManager";
+import { AreaProgress } from "../../progression/ProgressionManager";
+import { GameManager } from "../GameManager";
+import { TriggerBox } from "../TriggerBox";
+import { TriggerManager } from "../TriggerManager";
 
 export class UpgradeTrigger {
     public readonly id: string;
-    private triggerBox: TriggerBox;
-    private timer = 0;
-    private collecting = false;
-    private levelId: string;
-    private areaProgress?: AreaProgress;
+    protected triggerBox: TriggerBox;
+    protected timer = 0;
+    protected collecting = false;
+    protected levelId: string;
+    protected areaProgress?: AreaProgress;
 
     public onUpgrade: Signal = new Signal();
 
@@ -29,9 +29,9 @@ export class UpgradeTrigger {
         this.triggerBox = new TriggerBox(id, 500, 50);
         TriggerManager.registerTrigger(this.triggerBox, {
             description: 'Upgrade Trigger: ' + id,
-            onEnter: this.onEnter,
-            onStay: this.onStay,
-            onExit: this.onExit,
+            onEnter: this.onEnter.bind(this),
+            onStay: this.onStay.bind(this),
+            onExit: this.onExit.bind(this),
         });
     }
 
@@ -72,22 +72,18 @@ export class UpgradeTrigger {
             this.triggerBox.updateAmount(this.areaProgress.currentValue.value, this.areaProgress.nextLevelThreshold);
         }
     }
-    private onEnter = () => {
+    protected onEnter() {
         this.collecting = true;
         this.timer = 0;
     };
 
-    private onStay = () => {
+    protected onStay() {
         if (!this.collecting) return;
 
         this.timer += Game.deltaTime;
 
         const time = 0.1
         if (!this.areaProgress) {
-            while (this.timer >= time) {
-                this.onUpgrade.dispatch(this.id, 1);
-                this.timer -= time;
-            }
             return;
         }
 
@@ -101,7 +97,7 @@ export class UpgradeTrigger {
 
     };
 
-    private onExit = () => {
+    protected onExit() {
         this.collecting = false;
         this.timer = 0;
     };
