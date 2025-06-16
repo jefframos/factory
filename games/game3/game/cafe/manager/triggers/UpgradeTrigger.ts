@@ -1,12 +1,13 @@
 import { Game } from "@core/Game";
+import * as PIXI from 'pixi.js';
 import { Signal } from "signals";
 import { AreaProgress } from "../../progression/ProgressionManager";
 import { GameManager } from "../GameManager";
 import { TriggerBox } from "../TriggerBox";
 import { TriggerManager } from "../TriggerManager";
-
 export class UpgradeTrigger {
     public readonly id: string;
+    protected areaContainer: PIXI.Container = new PIXI.Container();
     protected triggerBox: TriggerBox;
     protected timer = 0;
     protected collecting = false;
@@ -25,14 +26,22 @@ export class UpgradeTrigger {
     constructor(id: string, levelId: string = 'default') {
         this.id = id;
         this.levelId = levelId;
-
         this.triggerBox = new TriggerBox(id, 500, 50);
         TriggerManager.registerTrigger(this.triggerBox, {
             description: 'Upgrade Trigger: ' + id,
             onEnter: this.onEnter.bind(this),
             onStay: this.onStay.bind(this),
             onExit: this.onExit.bind(this),
-        });
+            update: this.update.bind(this),
+            onAction: this.onAction.bind(this),
+        }, this);
+        this.areaContainer.addChild(this.triggerBox);
+
+        this.setUp();
+    }
+
+    protected setUp() {
+        console.log(`Setting up UpgradeTrigger: ${this.id}`);
     }
 
     public setProgressData(areaProgress: AreaProgress) {
@@ -55,15 +64,17 @@ export class UpgradeTrigger {
         }
     }
 
-    public getView(): TriggerBox {
-        return this.triggerBox;
+    public getView(): PIXI.Container {
+        return this.areaContainer;
     }
 
     public setPosition(x: number, y: number): void {
         this.triggerBox.setPosition(x, y);
+        this.areaContainer.position.set(x, y);
     }
 
-
+    public update(delta: number) {
+    }
     public refresh() {
         if (!this.areaProgress) return;
         if (this.areaProgress.isMaxLevel) {
@@ -76,7 +87,9 @@ export class UpgradeTrigger {
         this.collecting = true;
         this.timer = 0;
     };
-
+    protected onAction() {
+        console.log('ON ACTION')
+    };
     protected onStay() {
         if (!this.collecting) return;
 

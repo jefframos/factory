@@ -310,21 +310,29 @@ export default class TiledLayerObject extends PIXI.Container {
         return value ? this.tiledLayers.get(value) : Array.from(this.tiledLayers.values())[0];
     }
 
-    public findAndGetByName(name: string): FoundTiledObject {
-        for (const [obj, view] of this.objectToView.entries()) {
-            if (obj.name === name) return { object: obj, view };
-        }
-        return undefined;
+    public findAndGetByName(name: string): Promise<FoundTiledObject> {
+        return new Promise((resolve, reject) => {
+            for (const [obj, view] of this.objectToView.entries()) {
+                if (obj.name === name) {
+                    resolve({ object: obj, view });
+                }
+            }
+            reject(new Error(`Object with name ${name}  not found.`));
+        })
     }
 
-    public findFromProperties(propertyName: string, value: any, callback: (result: FoundTiledObject) => void): FoundTiledObject {
-        for (const [obj, view] of this.objectToView.entries()) {
-            if (obj.properties?.[propertyName] === value) {
-                callback({ object: obj, view })
-            };
-        }
-        return undefined;
+    public findFromProperties(propertyName: string, value: any): Promise<FoundTiledObject> {
+        return new Promise((resolve, reject) => {
+            for (const [obj, view] of this.objectToView.entries()) {
+                if (obj.properties?.[propertyName] === value) {
+                    resolve({ object: obj, view });
+                    return;
+                }
+            }
+            reject(new Error(`Object with property ${propertyName} = ${value} not found.`));
+        });
     }
+
 
     public findAndGetFromProperties(propertyName: string, value: any): FoundTiledObject {
         for (const [obj, view] of this.objectToView.entries()) {

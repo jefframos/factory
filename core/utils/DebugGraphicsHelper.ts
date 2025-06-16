@@ -9,10 +9,10 @@ export class DebugGraphicsHelper {
     }
 
     /** Adds a debug circle below an entity (must have a `radius` property) */
-    public static addCircle(entity: PIXI.Container & { radius: number }, color = 0xff0000, alpha = 0.5): void {
+    public static addCircle(entity: PIXI.Container & { radius: number }, radius = 20, color = 0xff0000, alpha = 0.5): void {
         const gfx = new PIXI.Graphics();
         gfx.beginFill(color, alpha);
-        gfx.drawCircle(0, 0, entity.radius);
+        gfx.drawCircle(0, 0, entity.radius || radius);
         gfx.endFill();
 
         // Position it at the bottom of the container

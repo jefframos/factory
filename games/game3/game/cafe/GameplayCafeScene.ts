@@ -3,6 +3,7 @@ import { GameScene } from "@core/scene/GameScene";
 import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
 import TiledLayerObject from "@core/tiled/TiledLayerObject";
 import { DebugGraphicsHelper } from "@core/utils/DebugGraphicsHelper";
+import { StringUtils } from "@core/utils/StringUtils";
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
 import { StaticColliderLayer } from "../../../../core/collision/StaticColliderLayer";
@@ -11,10 +12,13 @@ import AnalogInput from "../io/AnalogInput";
 import KeyboardInputMovement from "../io/KeyboardInputMovement";
 import { CameraComponent } from "./camera/CameraComponent";
 import { GameManager } from "./manager/GameManager";
-import CollectorTrigger from "./manager/triggers/CollectorTrigger";
+import { TriggerManager } from "./manager/TriggerManager";
+import CollectorStayTrigger from "./manager/triggers/CollectorStayTrigger";
+import DispenserTrigger from "./manager/triggers/DispenserTrigger";
+import TimeDispenserTrigger from "./manager/triggers/TimeDispenserTrigger";
 import { UpgradeTrigger } from "./manager/triggers/UpgradeTrigger";
+import { UpgradeManager } from "./manager/upgrade/UpgradeManager";
 import { ProgressionManager } from "./progression/ProgressionManager";
-import { getStaticProgressionData } from "./progression/StaticProgression";
 import { DevGuiManager } from "./utils/DevGuiManager";
 import EntityView from "./view/EntityView";
 import GameplayHud from "./view/GameplayHud";
@@ -42,25 +46,32 @@ export default class GameplayCafeScene extends GameScene {
     private player: MoveableEntity;
     private camera: CameraComponent
 
-    private tiledWorld: TiledLayerObject = new TiledLayerObject()
+    private tiledBackgroundWorld: TiledLayerObject = new TiledLayerObject()
+    private tiledGameplayWorld: TiledLayerObject = new TiledLayerObject()
 
     private hud!: GameplayHud;
 
     constructor() {
         super();
 
+        GameplayCharacterData.setTable('meme')
 
         const gm = GameManager.instance;
         const level = gm.getLevelData();
 
-        ProgressionManager.instance.initialize(getStaticProgressionData());
 
+        ProgressionManager.instance.initialize(PIXI.Cache.get('cafeProgression.json'));
+        UpgradeManager.instance.initialize(PIXI.Cache.get('upgradeSettings.json'));
 
         const worldSettings = ExtractTiledFile.getTiledFrom('memeWorld')
 
-        this.tiledWorld.build(worldSettings!, ['Floor', 'Background'])
-        this.worldContainer.addChild(this.tiledWorld);
-        this.tiledWorld.sortableChildren = true;
+        this.tiledBackgroundWorld.build(worldSettings!, ['Floor', 'Background'])
+        this.worldContainer.addChild(this.tiledBackgroundWorld);
+        this.tiledBackgroundWorld.sortableChildren = true;
+
+        this.tiledGameplayWorld.build(worldSettings!, ['Gameplay'])
+        this.worldContainer.addChild(this.tiledGameplayWorld);
+        this.tiledGameplayWorld.sortableChildren = true;
 
         this.addChild(this.worldContainer)
         this.addChild(this.inputContainer)
@@ -95,7 +106,7 @@ export default class GameplayCafeScene extends GameScene {
         ));
 
         //this position the player on the correct world container
-        const playerProps = this.tiledWorld.findAndGetFromProperties('id', 'player')
+        const playerProps = this.tiledBackgroundWorld.findAndGetFromProperties('id', 'player')
         if (playerProps) {
 
             this.player.setPosition(playerProps.object.x, playerProps.object.y)
@@ -114,33 +125,47 @@ export default class GameplayCafeScene extends GameScene {
 
         new StaticColliderLayer(worldSettings?.layers.get('Colliders')!, this.worldContainer, true)
 
-        this.tiledWorld.addColliders()
+        this.tiledBackgroundWorld.addColliders()
 
-        //this.tiledWorld.setActiveObjectByName('Bench2', false)
-        const upgrade1 = new UpgradeTrigger('upgrade1');
-        this.gameplayContainer.addChild(upgrade1.getView());
-        upgrade1.setPosition(750, 500);
-        const upgrade2 = new UpgradeTrigger('upgrade2');
-        this.gameplayContainer.addChild(upgrade2.getView());
-        upgrade2.setPosition(1000, 300);
 
-        upgrade1.setProgressData(ProgressionManager.instance.getAreaProgress('upgrade1'));
-        upgrade2.setProgressData(ProgressionManager.instance.getAreaProgress('upgrade2'))
+        this.buildArea('cashier-1')
+        this.buildArea('coffee-1')
+        this.buildArea('clientDispenser-1')
 
-        upgrade2.onUpgrade.add((id, value) => {
-            ProgressionManager.instance.addValue(id, value);
+
+        const overtime = new TimeDispenserTrigger('upgrade3');
+        this.gameplayContainer.addChild(overtime.getView());
+        overtime.setPosition(700, 300);
+
+
+        const dispenserTrigger = new DispenserTrigger('upgrade4');
+        this.gameplayContainer.addChild(dispenserTrigger.getView());
+        dispenserTrigger.setPosition(820, 300);
+
+
+        TriggerManager.onTriggerAction.add((trigger, action) => {
+
         })
 
-        upgrade1.onUpgrade.add((id, value) => {
-            ProgressionManager.instance.addValue(id, value);
+        TriggerManager.onTriggerEnter.add((trigger, source) => {
+            const component = TriggerManager.getComponent(trigger.id)
+            if (source == this.player) {
+                if (component instanceof DispenserTrigger) {
+                    const stackList = component.stackList;
+
+                    if (stackList.totalAmount) {
+                        const level = GameManager.instance.getLevelData();
+                        level.soft.coins.update(stackList.totalAmount * 5);
+                        stackList.clear();
+                    }
+                }
+            }
         })
 
-
-        const collector = new CollectorTrigger('collector');
+        const collector = new CollectorStayTrigger('collector');
         this.gameplayContainer.addChild(collector.getView());
         collector.setPosition(1000, 600);
         collector.onUpgrade.add((id, value) => {
-            console.log('stay')
             const level = GameManager.instance.getLevelData();
             level.soft.coins.update(1);
         })
@@ -149,10 +174,9 @@ export default class GameplayCafeScene extends GameScene {
             const area = ProgressionManager.instance.getAreaProgress(id);
             if (area) {
                 console.log(`Area Unlocked: ${id}: Current Value: ${area.currentValue.value}, Level: ${area.level.value}`);
+                const areaComponent = TriggerManager.getComponent(id)
+                areaComponent?.enable();
 
-                if (id === 'upgrade2') {
-                    upgrade2.enable();
-                }
             }
         });
         ProgressionManager.instance.onLevelUp.add((id) => {
@@ -170,7 +194,36 @@ export default class GameplayCafeScene extends GameScene {
             if (area) {
                 console.log(`Current Value: ${area.currentValue.value}, Level: ${area.level.value}`);
             }
-        });
+        }, "MISC");
+
+        DevGuiManager.instance.addButton('Add Value on Dispenser', () => {
+            const component = TriggerManager.getComponent('upgrade4')
+            if (component instanceof DispenserTrigger) {
+                component.tryExecuteAction()
+            }
+
+        }, "MISC");
+    }
+    private buildArea(id: string) {
+        const ups = UpgradeManager.instance.getUpgrade(id)
+
+        console.log('check the required level, if it is the correct level make this statio works, must attach the trigger with the station', ups, id, UpgradeManager.instance)
+
+        this.tiledGameplayWorld.findAndGetByName(id).then((obj) => {
+
+            let states = obj?.object?.properties?.states
+            if (states) {
+                states = StringUtils.parseStringArray(states)
+            }
+            const cashier = new UpgradeTrigger(id);
+            this.gameplayContainer.addChild(cashier.getView());
+            cashier.setProgressData(ProgressionManager.instance.getAreaProgress(id));
+            cashier.setPosition(obj?.object.x, obj?.object.y)
+            cashier.onUpgrade.add((id, value) => {
+                ProgressionManager.instance.addValue(id, value);
+            })
+
+        })
     }
     public build(...data: any[]): void {
 
@@ -190,6 +243,8 @@ export default class GameplayCafeScene extends GameScene {
 
         this.worldContainer.x = Game.overlayScreenData.center.x
         this.worldContainer.y = Game.overlayScreenData.center.y
+
+        TriggerManager.updateTriggers(delta);
     }
     public resize(): void {
         this.camera.setScreenBounds(new PIXI.Rectangle(Game.gameScreenData.topLeft.x, Game.gameScreenData.topLeft.y, Game.gameScreenData.width, Game.gameScreenData.height));

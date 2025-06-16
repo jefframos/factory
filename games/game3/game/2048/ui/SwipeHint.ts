@@ -17,9 +17,11 @@ export class SwipeHint extends PIXI.Container {
         this.addChild(tiled);
         tiled.y = 250
 
-        tiled.findFromProperties('id', 'back', (obj) => {
-            obj.view.alpha = 0.65
-            obj.view.tint = 0
+        tiled.findFromProperties('id', 'back').then((obj) => {
+            if (obj.view) {
+                obj.view.alpha = 0.65
+                obj.view.tint = 0
+            }
         })
 
         this.swipeSprite = new PIXI.Sprite(texture);

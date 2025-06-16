@@ -45,6 +45,7 @@ export default class Gameplay2048Scene extends GameScene {
     constructor() {
         super();
 
+
         if (ExtractTiledFile.TiledData) {
             this.background.build(ExtractTiledFile.getTiledFrom('2048'), ['Background'])
             this.addChild(this.background)
@@ -154,6 +155,7 @@ export default class Gameplay2048Scene extends GameScene {
         })
 
         this.hint = new SwipeHint(PIXI.Texture.from('tutorial_hand_2'))
+        GameplayCharacterData.setTable('monster')
 
 
     }
@@ -163,6 +165,7 @@ export default class Gameplay2048Scene extends GameScene {
     }
     public show(): void {
         this.startMatch();
+        ;
     }
 
     private updateScoreText(points: number) {

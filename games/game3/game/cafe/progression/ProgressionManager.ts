@@ -50,7 +50,7 @@ export class ProgressionManager {
         DevGuiManager.instance.addButton('Reset Progression', () => {
             this.reset();
             window.location.reload();
-        });
+        }, 'PROGRESSION');
     }
 
     public initialize(staticData: Record<string, StaticAreaData>) {
@@ -159,10 +159,25 @@ export class ProgressionManager {
 
             const unlocked = def.unlockConditions.every(cond => {
                 const target = this.getOrCreateArea(cond.areaId);
+
+                if (!target) {
+                    console.warn(`[Unlock Check] Area '${cond.areaId}' not found for unlock condition in '${id}'`);
+                    return false; // Treat missing area as not satisfying the condition
+                }
+
                 switch (cond.type) {
-                    case 'areaLevel': return target.level.value >= cond.level;
-                    case 'areaMaxed': return target.level.value >= this.getMaxLevel(this.staticData[cond.areaId]);
-                    case 'actionsCompleted': return target.actionsCompleted.value >= cond.count;
+                    case 'areaLevel':
+                        return target.level.value >= cond.level;
+                    case 'areaMaxed': {
+                        const staticTarget = this.staticData[cond.areaId];
+                        if (!staticTarget) {
+                            console.warn(`[Unlock Check] Static data for '${cond.areaId}' not found in 'areaMaxed' condition for '${id}'`);
+                            return false;
+                        }
+                        return target.level.value >= this.getMaxLevel(staticTarget);
+                    }
+                    case 'actionsCompleted':
+                        return target.actionsCompleted.value >= cond.count;
                 }
             });
 
@@ -173,6 +188,7 @@ export class ProgressionManager {
             }
         }
     }
+
 
     private save() {
         const flatState: Record<string, { level: number; actionsCompleted: number; currentValue: number; unlocked: boolean }> = {};
@@ -213,19 +229,40 @@ export class ProgressionManager {
     }
     private updateAreaProgress(areaId: string): void {
         const area = this.getOrCreateArea(areaId);
+        if (!area) {
+            console.warn(`[Progress Update] Area '${areaId}' not found.`);
+            return;
+        }
+
         const def = this.staticData[areaId];
-        const thresholds = Array.isArray(def.upgradeThreshold) ? def.upgradeThreshold : [def.upgradeThreshold ?? 0];
+        if (!def) {
+            console.warn(`[Progress Update] Static definition for area '${areaId}' not found.`);
+            return;
+        }
+
+        const thresholds = Array.isArray(def.upgradeThreshold)
+            ? def.upgradeThreshold
+            : [def.upgradeThreshold ?? 0];
 
         const maxLevel = this.getMaxLevel(def);
         const currentLevel = area.level.value;
 
-        area.nextLevelThreshold = currentLevel < maxLevel ? thresholds[currentLevel] ?? 0 : 0;
+        area.nextLevelThreshold = currentLevel < maxLevel
+            ? thresholds[currentLevel] ?? 0
+            : 0;
+
         area.isMaxLevel = currentLevel >= maxLevel;
 
-        area.normalizedValue = area.nextLevelThreshold > 0 ? area.currentValue.value / area.nextLevelThreshold : 1;
+        area.normalizedValue = area.nextLevelThreshold > 0
+            ? area.currentValue.value / area.nextLevelThreshold
+            : 1;
+
         const maxActions = this.getMaxActionRequirement(def);
-        area.normalizedAction = maxActions > 0 ? area.actionsCompleted.value / maxActions : 1;
+        area.normalizedAction = maxActions > 0
+            ? area.actionsCompleted.value / maxActions
+            : 1;
     }
+
 
     public getAreaProgress(id: string): AreaProgress | undefined {
         this.updateAreaProgress(id)

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.10.2" orientation="staggered" renderorder="right-down" width="30" height="20" tilewidth="128" tileheight="64" infinite="1" staggeraxis="y" staggerindex="odd" nextlayerid="7" nextobjectid="74">
+<map version="1.10" tiledversion="1.10.2" orientation="staggered" renderorder="right-down" width="30" height="20" tilewidth="128" tileheight="64" infinite="1" staggeraxis="y" staggerindex="odd" nextlayerid="8" nextobjectid="79">
  <editorsettings>
   <export target="../json/memeWorld.json" format="json"/>
  </editorsettings>
@@ -412,13 +412,45 @@
   <object id="61" gid="122" x="366.667" y="985.333" width="128" height="128"/>
   <object id="63" gid="128" x="1313" y="405.334" width="128" height="128"/>
   <object id="73" gid="128" x="1415" y="463.334" width="128" height="128"/>
-  <object id="65" name="Bench2" gid="2147483776" x="763" y="639.334" width="128" height="128"/>
+  <object id="65" name="Bench2" gid="2147483776" x="1157" y="339.334" width="128" height="128"/>
   <object id="69" name="Bench1" gid="128" x="1262" y="375.334" width="128" height="128"/>
   <object id="72" gid="128" x="1364" y="433.334" width="128" height="128"/>
   <object id="64" gid="114" x="1296" y="301.667" width="64" height="64"/>
   <object id="66" gid="119" x="1449" y="394" width="64" height="64"/>
   <object id="67" gid="2147483767" x="1208" y="307" width="64" height="64"/>
   <object id="71" gid="122" x="1493" y="474" width="64" height="64"/>
+ </objectgroup>
+ <objectgroup id="7" name="Gameplay">
+  <object id="74" name="cashier-1" x="1164" y="678" width="60" height="60">
+   <properties>
+    <property name="states" value="[&quot;build&quot;, &quot;playerTrigger&quot;]"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="78" name="clientDispenser-1" x="1330.67" y="602" width="60" height="60">
+   <properties>
+    <property name="states" value="[&quot;playerTrigger&quot;]"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="75" name="coffee-1" x="1014" y="308" width="60" height="60">
+   <properties>
+    <property name="states" value="[&quot;build&quot;, &quot;playerTrigger&quot;]"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="76" name="table-1" x="920" y="848" width="60" height="60">
+   <properties>
+    <property name="states" value="[&quot;build&quot;, &quot;clientTrigger&quot;]"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="77" name="bin-1" x="1568" y="522" width="60" height="60">
+   <properties>
+    <property name="states" value="[&quot;build&quot;, &quot;playerTrigger&quot;]"/>
+   </properties>
+   <ellipse/>
+  </object>
  </objectgroup>
  <objectgroup id="5" name="HUD">
   <object id="38" gid="88" x="1918.48" y="118.879" width="60" height="62"/>

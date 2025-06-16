@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1749710931714,
-                "duration": 13.763800144195557,
+                "date": 1750053250339,
+                "duration": 6.298699975013733,
                 "success": true
             }
         },
@@ -34,6 +34,60 @@
         "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/characterMemeSet.json": {
             "isFolder": false,
             "transformParent": ".assetpack/json/characterMemeSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterMonsterSet.json": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1749709395573,
+                "duration": 8.37339973449707,
+                "success": true
+            },
+            "hash": "vyWV"
+        },
+        ".assetpack/json/characterMonsterSet.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterMonsterSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/characterMonsterSet.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/characterMonsterSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterUnicornSet.json": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1749710931714,
+                "duration": 13.743000030517578,
+                "success": true
+            },
+            "hash": "MTjFKg"
+        },
+        ".assetpack/json/characterUnicornSet.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterUnicornSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/characterUnicornSet.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/characterUnicornSet.json",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}
@@ -72,11 +126,11 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1749547899159,
-                "duration": 10.537400245666504,
+                "date": 1750050668274,
+                "duration": 5.902100026607513,
                 "success": true
             },
-            "hash": "uQLdSA"
+            "hash": "MkIp2Q"
         },
         ".assetpack/json/memeWorld.json": {
             "isFolder": false,
@@ -146,56 +200,56 @@
             "inheritedMetaData": {},
             "transformData": {}
         },
-        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterMonsterSet.json": {
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/cafeProgression.json": {
             "isFolder": false,
             "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1749709395573,
-                "duration": 8.37339973449707,
+                "date": 1750050877193,
+                "duration": 9.612099945545197,
                 "success": true
             },
-            "hash": "vyWV"
+            "hash": "1XR42Q"
         },
-        ".assetpack/json/characterMonsterSet.json": {
+        ".assetpack/json/cafeProgression.json": {
             "isFolder": false,
-            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterMonsterSet.json",
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/cafeProgression.json",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}
         },
-        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/characterMonsterSet.json": {
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/cafeProgression.json": {
             "isFolder": false,
-            "transformParent": ".assetpack/json/characterMonsterSet.json",
+            "transformParent": ".assetpack/json/cafeProgression.json",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}
         },
-        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterUnicornSet.json": {
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/upgradeSettings.json": {
             "isFolder": false,
             "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1749710931714,
-                "duration": 13.743000030517578,
+                "date": 1750053250339,
+                "duration": 6.287499964237213,
                 "success": true
             },
-            "hash": "MTjFKg"
+            "hash": "c_W_pw"
         },
-        ".assetpack/json/characterUnicornSet.json": {
+        ".assetpack/json/upgradeSettings.json": {
             "isFolder": false,
-            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterUnicornSet.json",
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/upgradeSettings.json",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}
         },
-        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/characterUnicornSet.json": {
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/upgradeSettings.json": {
             "isFolder": false,
-            "transformParent": ".assetpack/json/characterUnicornSet.json",
+            "transformParent": ".assetpack/json/upgradeSettings.json",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

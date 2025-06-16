@@ -1,6 +1,5 @@
 import * as dat from 'dat.gui';
 
-
 export class DevGuiManager {
     private static _instance: DevGuiManager;
     public static get instance(): DevGuiManager {
@@ -11,6 +10,7 @@ export class DevGuiManager {
     }
 
     private gui: dat.GUI | null = null;
+    private folders: Map<string, dat.GUI> = new Map();
     private initialized = false;
     private isDev = false;
 
@@ -21,7 +21,7 @@ export class DevGuiManager {
 
         this.isDev = isDev;
 
-        this.gui = new dat.GUI({ width: 300 });
+        this.gui = new dat.GUI({ width: 200 });
         this.gui.domElement.style.position = 'fixed';
         this.gui.domElement.style.left = '0';
         this.gui.domElement.style.top = '0';
@@ -29,12 +29,26 @@ export class DevGuiManager {
         this.initialized = true;
     }
 
-    /** Adds a button with label and callback */
-    public addButton(name: string, callback: () => void): void {
+    /** Adds a button with label and callback, optionally inside a folder */
+    public addButton(name: string, callback: () => void, folderName?: string): void {
         if (!this.isDev || !this.gui) return;
 
         const obj = { [name]: callback };
-        this.gui.add(obj, name);
+
+        const target = folderName ? this.getOrCreateFolder(folderName) : this.gui;
+        target.add(obj, name);
+    }
+
+    /** Gets or creates a folder by name, collapsed by default */
+    private getOrCreateFolder(name: string): dat.GUI {
+        if (this.folders.has(name)) {
+            return this.folders.get(name)!;
+        }
+
+        const folder = this.gui!.addFolder(name);
+        folder.open()//close(); // collapsed by default
+        this.folders.set(name, folder);
+        return folder;
     }
 
     /** Clear all GUI entries (optional) */
@@ -45,6 +59,7 @@ export class DevGuiManager {
         guiDom.parentElement?.removeChild(guiDom);
         this.gui.destroy();
         this.gui = null;
+        this.folders.clear();
         this.initialized = false;
     }
 }

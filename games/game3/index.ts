@@ -163,6 +163,7 @@ export default class MyGame extends Game {
 
             this.sceneManager.changeScene('game');
         })
+        const gameplayCafe = this.sceneManager.register<GameplayCafeScene>('cafe', GameplayCafeScene);
 
         const gameplay = this.sceneManager.register<Gameplay2048Scene>('game', Gameplay2048Scene);
 
@@ -170,7 +171,6 @@ export default class MyGame extends Game {
 
             this.sceneManager.changeScene('menu');
         })
-        const gameplayCafe = this.sceneManager.register<GameplayCafeScene>('cafe', GameplayCafeScene);
 
         this.sceneManager.changeScene(Game.debugParams.scene || 'game');
         this.sceneManager.resize();

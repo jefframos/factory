@@ -51,7 +51,7 @@ export default class GameplayHud extends PIXI.Container {
         this.addChild(this.hudTopCenter);
 
 
-        this.hudRight.findFromProperties('id', 'current-money', (obj) => {
+        this.hudRight.findFromProperties('id', 'current-money').then((obj) => {
 
             const currentSoftCurrency = new PIXI.BitmapText('0', {
                 fontName: Fonts.MainFamily,
@@ -65,7 +65,7 @@ export default class GameplayHud extends PIXI.Container {
             })
             obj?.view?.addChild(currentSoftCurrency)
             currentSoftCurrency.anchor.set(1, 0.5);
-            currentSoftCurrency.x = obj?.object.width - 10;
+            currentSoftCurrency.x = (obj?.object?.width ?? 0) - 10;
 
         })
 

@@ -23,23 +23,23 @@ export class GameManager {
             const level = this.getLevelData();
             level.soft.coins.update(100)
             console.log('Added 100 coins:', level.soft[SoftCurrency.COINS].value);
-        });
+        }, "GENERAL");
 
         DevGuiManager.instance.addButton('Remove 100 Coins', () => {
             const level = this.getLevelData();
             level.soft.coins.update(-100)
             console.log('Added 100 coins:', level.soft[SoftCurrency.COINS].value);
-        });
+        }, "GENERAL");
 
         DevGuiManager.instance.addButton('Wipe GameData', () => {
             this.wipe()
             window.location.reload();
-        });
+        }, "GENERAL");
 
         DevGuiManager.instance.addButton('Increase Speed', () => {
             this.updateAttribute(PlayerAttribute.SPEED, 0.5);
             this.logAttributes()
-        });
+        }, "GENERAL");
 
     }
     public updateAttribute(attr: PlayerAttribute, delta: number): void {

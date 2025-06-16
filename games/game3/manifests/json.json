@@ -13,6 +13,22 @@
         },
         {
           "alias": [
+            "characterMonsterSet.json"
+          ],
+          "src": [
+            "characterMonsterSet.json"
+          ]
+        },
+        {
+          "alias": [
+            "characterUnicornSet.json"
+          ],
+          "src": [
+            "characterUnicornSet.json"
+          ]
+        },
+        {
+          "alias": [
             "memeUi.json"
           ],
           "src": [
@@ -45,18 +61,18 @@
         },
         {
           "alias": [
-            "characterMonsterSet.json"
+            "cafeProgression.json"
           ],
           "src": [
-            "characterMonsterSet.json"
+            "cafeProgression.json"
           ]
         },
         {
           "alias": [
-            "characterUnicornSet.json"
+            "upgradeSettings.json"
           ],
           "src": [
-            "characterUnicornSet.json"
+            "upgradeSettings.json"
           ]
         }
       ]

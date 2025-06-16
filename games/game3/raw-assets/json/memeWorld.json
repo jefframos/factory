@@ -229,8 +229,8 @@
                  "type":"",
                  "visible":true,
                  "width":128,
-                 "x":763,
-                 "y":639.334
+                 "x":1157,
+                 "y":339.334
                 }, 
                 {
                  "gid":128,
@@ -312,6 +312,107 @@
         }, 
         {
          "draworder":"topdown",
+         "id":7,
+         "name":"Gameplay",
+         "objects":[
+                {
+                 "ellipse":true,
+                 "height":60,
+                 "id":74,
+                 "name":"cashier-1",
+                 "properties":[
+                        {
+                         "name":"states",
+                         "type":"string",
+                         "value":"[\"build\", \"playerTrigger\"]"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":60,
+                 "x":1164,
+                 "y":678
+                }, 
+                {
+                 "ellipse":true,
+                 "height":60,
+                 "id":78,
+                 "name":"clientDispenser-1",
+                 "properties":[
+                        {
+                         "name":"states",
+                         "type":"string",
+                         "value":"[\"playerTrigger\"]"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":60,
+                 "x":1330.66666666667,
+                 "y":602
+                }, 
+                {
+                 "ellipse":true,
+                 "height":60,
+                 "id":75,
+                 "name":"coffee-1",
+                 "properties":[
+                        {
+                         "name":"states",
+                         "type":"string",
+                         "value":"[\"build\", \"playerTrigger\"]"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":60,
+                 "x":1014,
+                 "y":308
+                }, 
+                {
+                 "ellipse":true,
+                 "height":60,
+                 "id":76,
+                 "name":"table-1",
+                 "properties":[
+                        {
+                         "name":"states",
+                         "type":"string",
+                         "value":"[\"build\", \"clientTrigger\"]"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":60,
+                 "x":920,
+                 "y":848
+                }, 
+                {
+                 "ellipse":true,
+                 "height":60,
+                 "id":77,
+                 "name":"bin-1",
+                 "properties":[
+                        {
+                         "name":"states",
+                         "type":"string",
+                         "value":"[\"build\", \"playerTrigger\"]"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":60,
+                 "x":1568,
+                 "y":522
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":5,
          "name":"HUD",
          "objects":[
@@ -380,8 +481,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":7,
- "nextobjectid":74,
+ "nextlayerid":8,
+ "nextobjectid":79,
  "orientation":"staggered",
  "renderorder":"right-down",
  "staggeraxis":"y",

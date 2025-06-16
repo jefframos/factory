@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1749710965760,
-                "duration": 4.338900089263916,
+                "date": 1750046237360,
+                "duration": 4.456800043582916,
                 "success": true
             }
         },
@@ -2999,8 +2999,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1749706843075,
-                "duration": 802.8968997001648,
+                "date": 1750046237361,
+                "duration": 779.4784000515938,
                 "success": true
             }
         },
@@ -3732,6 +3732,16 @@
             },
             "transformData": {},
             "hash": "lEE5FA"
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Money_Bill.Png": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "WfXB4A"
         },
         "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/images/ui{tps}/icons/ItemIcon_Money_Coin.Png": {
             "isFolder": false,

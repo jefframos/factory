@@ -15,8 +15,10 @@ export class TriggerBox extends PIXI.Container {
     public onCollide: Signal = new Signal();
     public onCollideEnter: Signal = new Signal();
     public onCollideExit: Signal = new Signal();
+    public onTriggerAction: Signal = new Signal();
 
     private label: PIXI.BitmapText;
+    private name: PIXI.BitmapText;
 
     public enable() {
         this.trigger.enabled = true;
@@ -30,16 +32,26 @@ export class TriggerBox extends PIXI.Container {
         super();
         this.id = id;
 
-        this.label = new PIXI.BitmapText('0', {
+        this.label = new PIXI.BitmapText('', {
             fontName: Fonts.MainFamily,
             fontSize: Fonts.Main.fontSize as number,
             align: 'center',
             letterSpacing: 2
         });
 
+        this.name = new PIXI.BitmapText(id, {
+            fontName: Fonts.MainFamily,
+            fontSize: 12,
+            align: 'center',
+            letterSpacing: 2
+        });
+
+        this.name.anchor.set(0.5, 0);
         this.label.anchor.set(0.5, 0.5);
 
         this.addChild(this.label);
+        this.addChild(this.name);
+        this.name.y = - triggerRadius
 
         // Draw debug square (background)
         this.debugGraphics = new PIXI.Graphics();
@@ -75,11 +87,13 @@ export class TriggerBox extends PIXI.Container {
     }
 
     setPosition(x: number, y: number) {
-        this.x = x;
-        this.y = y;
+        // this.x = x;
+        // this.y = y;
 
         this.trigger.setPosition(x, y)
-        ColliderDebugHelper.addDebugGraphics(this.trigger, this.parent)
+        const gr = ColliderDebugHelper.addDebugGraphics(this.trigger, this.parent)
+        gr.x -= x
+        gr.y -= y
     }
 
     public destroy(options?: PIXI.IDestroyOptions | boolean): void {

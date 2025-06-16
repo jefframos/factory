@@ -1,7 +1,7 @@
 
 import { Game } from '@core/Game';
 import { UpgradeTrigger } from './UpgradeTrigger';
-export default class CollectorTrigger extends UpgradeTrigger {
+export default class CollectorStayTrigger extends UpgradeTrigger {
     protected onStay() {
 
         this.timer += Game.deltaTime;
@@ -13,4 +13,5 @@ export default class CollectorTrigger extends UpgradeTrigger {
 
 
     };
+
 }

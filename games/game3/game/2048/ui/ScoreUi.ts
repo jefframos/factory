@@ -8,7 +8,7 @@ import { TimerConversionUtils } from '@core/utils/TimeConversionUtils';
 import ViewUtils from '@core/utils/ViewUtils';
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
-import { Fonts } from '../../character/Types';
+import { Fonts, PieceViewData } from '../../character/Types';
 import { Piece } from '../view/Piece';
 export default class ScoreUi extends AutoPositionTiledContainer {
 
@@ -95,10 +95,11 @@ export default class ScoreUi extends AutoPositionTiledContainer {
             this.badge = badge.view!
         }
 
-        const best = this.findAndGetByName('best')
-        if (best) {
-            this.best = best.view!
-        }
+        this.findAndGetByName('best').then((best) => {
+            if (best?.view) {
+                this.best = best.view as PIXI.BitmapText;
+            }
+        })
 
 
         const left = this.findAndGetFromProperties('id', 'home-button');
@@ -168,7 +169,10 @@ export default class ScoreUi extends AutoPositionTiledContainer {
         this.addAtId(restartButton, 'restart')
 
 
-        this.hidePiece();
+        setTimeout(() => {
+
+            this.hidePiece();
+        }, 1);
 
         ShortcutManager.registerDevShortcut(['alt', 'o'], () => {
             PixiExportUtils.exportContainerAsImage(this.highestPiece, this.highestPiece.width, this.highestPiece.height, 'my-export.png');
@@ -187,9 +191,11 @@ export default class ScoreUi extends AutoPositionTiledContainer {
         this.badge.visible = false;
     }
     showPiece() {
-        this.highestPiece.visible = true;
-        this.best.visible = true;
-        this.badge.visible = true;
+        setTimeout(() => {
+            this.highestPiece.visible = true;
+            this.best.visible = true;
+            this.badge.visible = true;
+        }, 1);
     }
     startMatch() {
         this.highestPiece.visible = true;
