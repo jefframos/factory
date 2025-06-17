@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { Collider } from './Collider';
+import Collider from './Collider';
 
 export class ColliderDebugHelper {
     /** Draws a visual shape matching the collider inside the given container */

@@ -1,7 +1,7 @@
 import { Game } from "@core/Game";
 import { GameScene } from "@core/scene/GameScene";
 import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
-import TiledLayerObject from "@core/tiled/TiledLayerObject";
+import TiledLayerObject, { FoundTiledObject } from "@core/tiled/TiledLayerObject";
 import { DebugGraphicsHelper } from "@core/utils/DebugGraphicsHelper";
 import { StringUtils } from "@core/utils/StringUtils";
 import * as PIXI from 'pixi.js';
@@ -11,18 +11,23 @@ import GameplayCharacterData from "../character/GameplayCharacterData";
 import AnalogInput from "../io/AnalogInput";
 import KeyboardInputMovement from "../io/KeyboardInputMovement";
 import { CameraComponent } from "./camera/CameraComponent";
+import { ClassRegistry } from "./manager/ClassRegistry";
 import { GameManager } from "./manager/GameManager";
 import { TriggerManager } from "./manager/TriggerManager";
-import CollectorStayTrigger from "./manager/triggers/CollectorStayTrigger";
+import ActiveableTrigger from "./manager/triggers/ActiveableTrigger";
 import DispenserTrigger from "./manager/triggers/DispenserTrigger";
+import CaffeeStation from "./manager/triggers/stations/CaffeeStation";
+import CashierStation from "./manager/triggers/stations/CashierStation";
 import TimeDispenserTrigger from "./manager/triggers/TimeDispenserTrigger";
-import { UpgradeTrigger } from "./manager/triggers/UpgradeTrigger";
 import { UpgradeManager } from "./manager/upgrade/UpgradeManager";
-import { ProgressionManager } from "./progression/ProgressionManager";
+import { createAreaInstance, ItemType, ProgressionManager } from "./progression/ProgressionManager";
 import { DevGuiManager } from "./utils/DevGuiManager";
+import ActionEntity from "./view/ActionEntity";
 import EntityView from "./view/EntityView";
 import GameplayHud from "./view/GameplayHud";
-import MoveableEntity from "./view/MoveableEntity";
+ClassRegistry.register('ActiveableTrigger', ActiveableTrigger);
+ClassRegistry.register('CaffeeStation', CaffeeStation);
+ClassRegistry.register('CashierStation', CashierStation);
 
 
 export default class GameplayCafeScene extends GameScene {
@@ -43,13 +48,15 @@ export default class GameplayCafeScene extends GameScene {
     private uiContainer: PIXI.Container = new PIXI.Container();
     private inputShape: PIXI.Sprite = PIXI.Sprite.from(PIXI.Texture.WHITE)
 
-    private player: MoveableEntity;
+    private player: ActionEntity;
     private camera: CameraComponent
 
-    private tiledBackgroundWorld: TiledLayerObject = new TiledLayerObject()
-    private tiledGameplayWorld: TiledLayerObject = new TiledLayerObject()
+    static tiledGameplayLayer: TiledLayerObject = new TiledLayerObject()
+    static tiledTriggerLayer: TiledLayerObject = new TiledLayerObject()
 
     private hud!: GameplayHud;
+
+    static belongGroup: Record<string, Array<FoundTiledObject>>
 
     constructor() {
         super();
@@ -65,13 +72,16 @@ export default class GameplayCafeScene extends GameScene {
 
         const worldSettings = ExtractTiledFile.getTiledFrom('memeWorld')
 
-        this.tiledBackgroundWorld.build(worldSettings!, ['Floor', 'Background'])
-        this.worldContainer.addChild(this.tiledBackgroundWorld);
-        this.tiledBackgroundWorld.sortableChildren = true;
+        GameplayCafeScene.tiledGameplayLayer.build(worldSettings!, ['Floor', 'Background'])
+        this.worldContainer.addChild(GameplayCafeScene.tiledGameplayLayer);
+        GameplayCafeScene.tiledGameplayLayer.sortableChildren = true;
 
-        this.tiledGameplayWorld.build(worldSettings!, ['Gameplay'])
-        this.worldContainer.addChild(this.tiledGameplayWorld);
-        this.tiledGameplayWorld.sortableChildren = true;
+        GameplayCafeScene.tiledTriggerLayer.build(worldSettings!, ['Gameplay'])
+        this.worldContainer.addChild(GameplayCafeScene.tiledTriggerLayer);
+        GameplayCafeScene.tiledTriggerLayer.sortableChildren = true;
+
+        GameplayCafeScene.tiledGameplayLayer.addColliders()
+        GameplayCafeScene.belongGroup = GameplayCafeScene.tiledGameplayLayer.groupByProperty('belongsTo')
 
         this.addChild(this.worldContainer)
         this.addChild(this.inputContainer)
@@ -91,7 +101,7 @@ export default class GameplayCafeScene extends GameScene {
             this.player.setInput(direction, magnitude);
         });
 
-        this.player = new MoveableEntity('PLAYER')
+        this.player = new ActionEntity('PLAYER')
         this.player.setCharacter(new EntityView(GameplayCharacterData.fetchById(0)!))
         this.player.maxSpeed = 200
         DebugGraphicsHelper.addCircle(this.player)
@@ -106,10 +116,9 @@ export default class GameplayCafeScene extends GameScene {
         ));
 
         //this position the player on the correct world container
-        const playerProps = this.tiledBackgroundWorld.findAndGetFromProperties('id', 'player')
+        const playerProps = GameplayCafeScene.tiledGameplayLayer.findAndGetFromProperties('id', 'player')
         if (playerProps) {
-
-            this.player.setPosition(playerProps.object.x, playerProps.object.y)
+            this.player.setPosition(playerProps.object.x + playerProps.object.width / 2, playerProps.object.y + playerProps.object.height / 2)
             if (playerProps.view) {
                 playerProps.view?.parent.addChild(this.player)
                 this.gameplayContainer = playerProps.view?.parent;
@@ -125,7 +134,7 @@ export default class GameplayCafeScene extends GameScene {
 
         new StaticColliderLayer(worldSettings?.layers.get('Colliders')!, this.worldContainer, true)
 
-        this.tiledBackgroundWorld.addColliders()
+
 
 
         this.buildArea('cashier-1')
@@ -136,12 +145,13 @@ export default class GameplayCafeScene extends GameScene {
         const overtime = new TimeDispenserTrigger('upgrade3');
         this.gameplayContainer.addChild(overtime.getView());
         overtime.setPosition(700, 300);
+        overtime.setUpStackList(3, 5, 40, 15, 60)
 
 
         const dispenserTrigger = new DispenserTrigger('upgrade4');
         this.gameplayContainer.addChild(dispenserTrigger.getView());
         dispenserTrigger.setPosition(820, 300);
-
+        dispenserTrigger.setUpStackList(3, 5, 40, 15, 60)
 
         TriggerManager.onTriggerAction.add((trigger, action) => {
 
@@ -153,7 +163,7 @@ export default class GameplayCafeScene extends GameScene {
                 if (component instanceof DispenserTrigger) {
                     const stackList = component.stackList;
 
-                    if (stackList.totalAmount) {
+                    if (component.itemType == ItemType.MONEY && stackList.totalAmount) {
                         const level = GameManager.instance.getLevelData();
                         level.soft.coins.update(stackList.totalAmount * 5);
                         stackList.clear();
@@ -162,13 +172,13 @@ export default class GameplayCafeScene extends GameScene {
             }
         })
 
-        const collector = new CollectorStayTrigger('collector');
-        this.gameplayContainer.addChild(collector.getView());
-        collector.setPosition(1000, 600);
-        collector.onUpgrade.add((id, value) => {
-            const level = GameManager.instance.getLevelData();
-            level.soft.coins.update(1);
-        })
+        // const collector = new CollectorStayTrigger('collector', 50);
+        // this.gameplayContainer.addChild(collector.getView());
+        // collector.setPosition(1000, 600);
+        // collector.onUpgrade.add((id, value) => {
+        //     const level = GameManager.instance.getLevelData();
+        //     level.soft.coins.update(1);
+        // })
 
         ProgressionManager.instance.onAreaUnlocked.add((id) => {
             const area = ProgressionManager.instance.getAreaProgress(id);
@@ -182,7 +192,10 @@ export default class GameplayCafeScene extends GameScene {
         ProgressionManager.instance.onLevelUp.add((id) => {
             const area = ProgressionManager.instance.getAreaProgress(id);
             if (area) {
-                console.log(`Area Level Up: ${id}: New Level: ${area.level.value}, Actions Completed: ${area.actionsCompleted.value}`);
+
+                const trigger = TriggerManager.getComponent(id)
+                trigger?.levelUp()
+                console.log(`Area Level Up: ${id}: New Level: ${area.level.value}, Actions Completed: ${area.actionsCompleted.value}`, trigger);
             }
         });
 
@@ -209,16 +222,19 @@ export default class GameplayCafeScene extends GameScene {
 
         console.log('check the required level, if it is the correct level make this statio works, must attach the trigger with the station', ups, id, UpgradeManager.instance)
 
-        this.tiledGameplayWorld.findAndGetByName(id).then((obj) => {
+        GameplayCafeScene.tiledTriggerLayer.findAndGetByName(id).then((obj) => {
 
             let states = obj?.object?.properties?.states
             if (states) {
                 states = StringUtils.parseStringArray(states)
             }
-            const cashier = new UpgradeTrigger(id);
+            const instance = ProgressionManager.instance.getRawArea(id)
+            const cashier = createAreaInstance(instance!, [id, obj?.object.width / 2])
+
             this.gameplayContainer.addChild(cashier.getView());
+            cashier.setPosition(obj?.object.x + obj?.object.width / 2, obj?.object.y + obj?.object.height / 2)
+
             cashier.setProgressData(ProgressionManager.instance.getAreaProgress(id));
-            cashier.setPosition(obj?.object.x, obj?.object.y)
             cashier.onUpgrade.add((id, value) => {
                 ProgressionManager.instance.addValue(id, value);
             })

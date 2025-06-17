@@ -18,7 +18,7 @@ export type TiledLayerTypes =
     | PIXI.Text
     | PIXI.TilingSprite;
 
-export type FoundTiledObject = { object: TiledObject, view?: TiledLayerTypes } | undefined;
+export type FoundTiledObject = { object: TiledObject, view?: TiledLayerTypes, collider?: Collider } | undefined;
 export type LayerTypes = { container: PIXI.Container, objects: TiledLayerTypes[] };
 
 export default class TiledLayerObject extends PIXI.Container {
@@ -333,6 +333,24 @@ export default class TiledLayerObject extends PIXI.Container {
         });
     }
 
+
+    public groupByProperty(propertyName: string): Record<string, Array<FoundTiledObject>> {
+        const result: Record<string, Array<FoundTiledObject>> = {};
+
+        for (const [obj, view] of this.objectToView.entries()) {
+            const propValue = obj.properties?.[propertyName];
+            if (propValue !== undefined) {
+                const key = String(propValue); // convert to string for object key
+                if (!result[key]) {
+                    result[key] = [];
+                }
+                const collider = this.objectToCollider.get(obj);
+                result[key].push({ object: obj, view, collider });
+            }
+        }
+
+        return result;
+    }
 
     public findAndGetFromProperties(propertyName: string, value: any): FoundTiledObject {
         for (const [obj, view] of this.objectToView.entries()) {

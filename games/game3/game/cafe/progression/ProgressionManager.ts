@@ -1,14 +1,34 @@
 import { Signal } from 'signals';
+import { ClassRegistry } from '../manager/ClassRegistry';
+import { UpgradeTrigger } from '../manager/triggers/UpgradeTrigger';
 import { DevGuiManager } from "../utils/DevGuiManager";
 import { Observable } from '../utils/Observable';
 
-type UnlockCondition =
+export enum ItemType {
+    MONEY = 1,
+    COFFEE = 2,
+}
+
+export function createAreaInstance<T = any>(areaData: StaticAreaData, args: any[] = []): T | null {
+    if (!areaData.className) return new UpgradeTrigger(...args) as T;
+    const AreaClass = ClassRegistry.get<T>(areaData.className);
+    if (!AreaClass) {
+        console.warn(`Class ${areaData.className} not found in registry`);
+        return new UpgradeTrigger(areaData.id) as T;
+    }
+
+    return new AreaClass(...args);
+}
+
+export type UnlockCondition =
     | { type: 'areaLevel'; areaId: string; level: number }
     | { type: 'actionsCompleted'; areaId: string; count: number }
     | { type: 'areaMaxed'; areaId: string };
 
 export interface StaticAreaData {
+    id: string;
     name: string;
+    className?: string;
     maxLevel?: number;
     unlockConditions: UnlockCondition[];
     upgradeThreshold?: number | number[];
@@ -267,6 +287,9 @@ export class ProgressionManager {
     public getAreaProgress(id: string): AreaProgress | undefined {
         this.updateAreaProgress(id)
         return this.saveState.areas[id];
+    }
+    public getRawArea(id: string): StaticAreaData | undefined {
+        return this.staticData[id];
     }
 
     public isUnlocked(id: string): boolean {

@@ -6,6 +6,7 @@ export default class TimeDispenserTrigger extends DispenserTrigger {
 
 
     public update(delta: number): void {
+        if (!this.isActive) return;
         this.elapsed += delta;
         while (this.elapsed >= this.interval) {
             this.elapsed -= this.interval;
@@ -15,6 +16,7 @@ export default class TimeDispenserTrigger extends DispenserTrigger {
 
 
     public onAction(): void {
+        if (!this.isActive) return;
         const sprite = PIXI.Sprite.from('ItemIcon_Money_Bill'); // Replace with your asset
         const item = new StackableItem(sprite);
         const added = this._stackList.addItem(item);

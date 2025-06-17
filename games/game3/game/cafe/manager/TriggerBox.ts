@@ -20,6 +20,9 @@ export class TriggerBox extends PIXI.Container {
     private label: PIXI.BitmapText;
     private name: PIXI.BitmapText;
 
+    public get isActive() {
+        return this.trigger.enabled
+    }
     public enable() {
         this.trigger.enabled = true;
         this.visible = true;

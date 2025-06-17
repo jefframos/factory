@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.10.2" orientation="staggered" renderorder="right-down" width="30" height="20" tilewidth="128" tileheight="64" infinite="1" staggeraxis="y" staggerindex="odd" nextlayerid="8" nextobjectid="79">
+<map version="1.10" tiledversion="1.10.2" orientation="staggered" renderorder="right-down" width="30" height="20" tilewidth="128" tileheight="64" infinite="1" staggeraxis="y" staggerindex="odd" nextlayerid="8" nextobjectid="85">
  <editorsettings>
   <export target="../json/memeWorld.json" format="json"/>
  </editorsettings>
@@ -313,6 +313,10 @@
    <image width="64" height="64" source="images/scene/blender.png"/>
   </tile>
   <tile id="1">
+   <properties>
+    <property name="anchorX" type="float" value="0.5"/>
+    <property name="anchorY" type="float" value="1"/>
+   </properties>
    <image width="64" height="64" source="images/scene/cashier.png"/>
   </tile>
   <tile id="2">
@@ -402,26 +406,65 @@
   </object>
  </objectgroup>
  <objectgroup id="3" name="Background">
-  <object id="7" x="951.515" y="496.97" width="60.6061" height="60.6061">
+  <object id="7" name="Player" x="951.515" y="496.97" width="60.6061" height="60.6061">
    <properties>
     <property name="id" value="player"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="54" gid="124" x="1405.33" y="868" width="128" height="128"/>
+  <object id="54" gid="124" x="1197.66" y="275" width="128" height="128"/>
   <object id="61" gid="122" x="366.667" y="985.333" width="128" height="128"/>
   <object id="63" gid="128" x="1313" y="405.334" width="128" height="128"/>
   <object id="73" gid="128" x="1415" y="463.334" width="128" height="128"/>
-  <object id="65" name="Bench2" gid="2147483776" x="1157" y="339.334" width="128" height="128"/>
-  <object id="69" name="Bench1" gid="128" x="1262" y="375.334" width="128" height="128"/>
+  <object id="65" name="cashier-bench" gid="2147483776" x="1155.67" y="782.001" width="128" height="128">
+   <properties>
+    <property name="belongsTo" value="cashier-1"/>
+   </properties>
+  </object>
+  <object id="80" name="cashier-bench" gid="2147483776" x="1210.67" y="751.001" width="128" height="128">
+   <properties>
+    <property name="belongsTo" value="cashier-1"/>
+   </properties>
+  </object>
+  <object id="81" name="cashier-bench" gid="2147483776" x="1100.67" y="814.001" width="128" height="128">
+   <properties>
+    <property name="belongsTo" value="cashier-1"/>
+   </properties>
+  </object>
+  <object id="69" name="coffee-bench" gid="2147483776" x="938" y="357.334" width="128" height="128">
+   <properties>
+    <property name="belongsTo" value="coffee-1"/>
+   </properties>
+  </object>
+  <object id="67" name="expresso2" gid="2147483767" x="968" y="291" width="64" height="64">
+   <properties>
+    <property name="belongsTo" value="coffee-1"/>
+   </properties>
+  </object>
   <object id="72" gid="128" x="1364" y="433.334" width="128" height="128"/>
   <object id="64" gid="114" x="1296" y="301.667" width="64" height="64"/>
-  <object id="66" gid="119" x="1449" y="394" width="64" height="64"/>
-  <object id="67" gid="2147483767" x="1208" y="307" width="64" height="64"/>
+  <object id="66" gid="119" x="1457" y="384.667" width="64" height="64"/>
   <object id="71" gid="122" x="1493" y="474" width="64" height="64"/>
+  <object id="79" gid="115" x="1189" y="714" width="64" height="64">
+   <properties>
+    <property name="belongsTo" value="cashier-1"/>
+   </properties>
+  </object>
+  <object id="83" name="cashier-money" x="1002" y="765.333" width="114.667" height="114.667">
+   <properties>
+    <property name="belongsTo" value="cashier-1"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="84" name="cashier-dispenser" x="1218" y="630" width="53.3333" height="53.3333">
+   <properties>
+    <property name="belongsTo" value="cashier-1"/>
+   </properties>
+   <ellipse/>
+  </object>
  </objectgroup>
  <objectgroup id="7" name="Gameplay">
-  <object id="74" name="cashier-1" x="1164" y="678" width="60" height="60">
+  <object id="74" name="cashier-1" x="1124" y="670" width="60" height="60">
    <properties>
     <property name="states" value="[&quot;build&quot;, &quot;playerTrigger&quot;]"/>
    </properties>
@@ -433,7 +476,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="75" name="coffee-1" x="1014" y="308" width="60" height="60">
+  <object id="75" name="coffee-1" x="1026" y="321.667" width="60" height="60">
    <properties>
     <property name="states" value="[&quot;build&quot;, &quot;playerTrigger&quot;]"/>
    </properties>

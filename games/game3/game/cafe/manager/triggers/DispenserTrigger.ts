@@ -1,8 +1,10 @@
 import * as PIXI from 'pixi.js';
+import { ItemType } from '../../progression/ProgressionManager';
 import { UpgradeTrigger } from './UpgradeTrigger';
 import StackList, { StackableItem } from './stack/Stackable';
 
 export default class DispenserTrigger extends UpgradeTrigger {
+    public itemType: ItemType = ItemType.MONEY
     protected elapsed = 0;
     protected interval = 2;
 
@@ -11,13 +13,19 @@ export default class DispenserTrigger extends UpgradeTrigger {
         return this._stackList;
     }
 
-    constructor(id: string, levelId: string = 'default') {
-        super(id, levelId);
-        this._stackList = new StackList(this.areaContainer, 3, 5, 40, 15, 60); // 3 stacks, 5 items max, 40px offset
+
+    constructor(id: string, radius: number = 30, levelId: string = 'default') {
+        super(id, radius, levelId);
         this.areaContainer.sortableChildren = true;
 
     }
+    public setStackPosition(x: number, y: number) {
+        this._stackList.setPosition(x, y);
+    }
+    public setUpStackList(numStacks: number, stackSize: number, xOffset: number, yOffset: number, size?: number) {
+        this._stackList = new StackList(this.areaContainer, numStacks, stackSize, xOffset, yOffset, size); // 3 stacks, 5 items max, 40px offset
 
+    }
     public update(delta: number): void {
     }
 
@@ -26,6 +34,7 @@ export default class DispenserTrigger extends UpgradeTrigger {
     }
 
     public onAction(): void {
+        if (!this.isActive) return;
         const sprite = PIXI.Sprite.from('ItemIcon_Money_Bill'); // Replace with your asset
         const item = new StackableItem(sprite);
         const added = this._stackList.addItem(item);
@@ -37,6 +46,5 @@ export default class DispenserTrigger extends UpgradeTrigger {
 
     public onEnter(): void {
         console.log(`Player entered: ${this.id}`, this._stackList.totalAmount);
-        //this.stackList.clear();
     }
 }

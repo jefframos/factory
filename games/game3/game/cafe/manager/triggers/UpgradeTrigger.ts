@@ -16,6 +16,15 @@ export class UpgradeTrigger {
 
     public onUpgrade: Signal = new Signal();
 
+    public get isActive() {
+        return this.triggerBox.isActive
+    }
+
+    public get position(): PIXI.Point {
+        return this.areaContainer.position
+    }
+
+
     public enable() {
         this.triggerBox.enable()
     }
@@ -23,10 +32,19 @@ export class UpgradeTrigger {
         this.triggerBox.disable()
     }
 
-    constructor(id: string, levelId: string = 'default') {
+    public levelUp() {
+
+    }
+    public setReady() {
+
+    }
+    public levelRefresh(value: number, newValue: number) {
+        this.refresh()
+    }
+    constructor(id: string, radius: number, levelId: string = 'default') {
         this.id = id;
         this.levelId = levelId;
-        this.triggerBox = new TriggerBox(id, 500, 50);
+        this.triggerBox = new TriggerBox(id, 500, radius);
         TriggerManager.registerTrigger(this.triggerBox, {
             description: 'Upgrade Trigger: ' + id,
             onEnter: this.onEnter.bind(this),
@@ -52,7 +70,7 @@ export class UpgradeTrigger {
 
         this.areaProgress.level.onChange.add((value: number, newValue: number) => {
             this.collecting = false;
-            this.refresh()
+            this.levelRefresh(value, newValue)
         });
 
         this.refresh()
@@ -88,7 +106,6 @@ export class UpgradeTrigger {
         this.timer = 0;
     };
     protected onAction() {
-        console.log('ON ACTION')
     };
     protected onStay() {
         if (!this.collecting) return;

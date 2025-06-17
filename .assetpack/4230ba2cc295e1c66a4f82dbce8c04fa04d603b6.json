@@ -6,10 +6,37 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1750053250339,
-                "duration": 6.298699975013733,
+                "date": 1750135857034,
+                "duration": 10.48470002412796,
                 "success": true
             }
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/cafeProgression.json": {
+            "isFolder": false,
+            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1750134270362,
+                "duration": 12.069199979305267,
+                "success": true
+            },
+            "hash": "3Eu2Wg"
+        },
+        ".assetpack/json/cafeProgression.json": {
+            "isFolder": false,
+            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/cafeProgression.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/cafeProgression.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/cafeProgression.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
         },
         "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/characterMemeSet.json": {
             "isFolder": false,
@@ -126,11 +153,11 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1750050668274,
-                "duration": 5.902100026607513,
+                "date": 1750135857034,
+                "duration": 10.470499992370605,
                 "success": true
             },
-            "hash": "MkIp2Q"
+            "hash": "8-k0Fg"
         },
         ".assetpack/json/memeWorld.json": {
             "isFolder": false,
@@ -196,33 +223,6 @@
         "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/tiled.json": {
             "isFolder": false,
             "transformParent": ".assetpack/json/tiled.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/cafeProgression.json": {
-            "isFolder": false,
-            "parent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1750050877193,
-                "duration": 9.612099945545197,
-                "success": true
-            },
-            "hash": "1XR42Q"
-        },
-        ".assetpack/json/cafeProgression.json": {
-            "isFolder": false,
-            "transformParent": "D:/projects/_HYPERCHIP/_FACTORY/games/game3/raw-assets/json/cafeProgression.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "D:/projects/_HYPERCHIP/_FACTORY/public/game3/json/cafeProgression.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/json/cafeProgression.json",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

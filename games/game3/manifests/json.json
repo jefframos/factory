@@ -5,6 +5,14 @@
       "assets": [
         {
           "alias": [
+            "cafeProgression.json"
+          ],
+          "src": [
+            "cafeProgression.json"
+          ]
+        },
+        {
+          "alias": [
             "characterMemeSet.json"
           ],
           "src": [
@@ -57,14 +65,6 @@
           ],
           "src": [
             "tiled.json"
-          ]
-        },
-        {
-          "alias": [
-            "cafeProgression.json"
-          ],
-          "src": [
-            "cafeProgression.json"
           ]
         },
         {

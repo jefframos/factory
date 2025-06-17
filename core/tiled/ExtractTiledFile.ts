@@ -118,7 +118,7 @@ export class ExtractTiledFile {
                         screenHeight: screenObj.height
                     };
                     settings = parsedLayer;
-                    console.log("screenObj", screenObj, settings);
+                    console.debug("screenObj", screenObj, settings);
                 }
             } else {
                 layers.set(parsedLayer.name, parsedLayer);
@@ -144,9 +144,6 @@ export class ExtractTiledFile {
 
                 const animatedId = props.animated && imagePath ? imagePath.subpath[0] : undefined;
 
-                if (shapePolygon) {
-                    console.log("Shape Polygon found for tile", tile.id, shapePolygon);
-                }
                 tiles[tile.id] = {
                     id: tile.id,
                     image: imagePath ? imagePath.image : "",

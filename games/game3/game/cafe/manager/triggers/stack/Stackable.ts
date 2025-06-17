@@ -7,17 +7,24 @@ export class StackableItem {
     constructor(public sprite: PIXI.Sprite) { }
 }
 
+
 // ---- ItemStack ----
 export class ItemStack {
     private items: StackableItem[] = [];
 
+    public container: PIXI.Container;
     constructor(
-        public container: PIXI.Container,
+        public parentContainer: PIXI.Container,
         public maxSize: number,
         public baseX: number,
         public baseY: number,
         public yOffset: number
-    ) { }
+    ) {
+        this.container = new PIXI.Container()
+        this.parentContainer.addChild(this.container)
+        this.container.x = this.baseX;
+        this.container.y = this.baseY;
+    }
 
     get amount(): number {
         return this.items.length;
@@ -26,12 +33,16 @@ export class ItemStack {
     get isFull(): boolean {
         return this.items.length >= this.maxSize;
     }
+    public setPosition(x: number, y: number): void {
+        // Option 1: set a dedicated container's position (best way)
+        this.container.position.set(x, y);
 
+    }
     add(item: StackableItem): boolean {
         if (this.isFull) return false;
+        this.container.zIndex = -this.baseY + this.baseX * 1000
 
-        item.sprite.x = this.baseX;
-        item.sprite.y = this.baseY - this.items.length * this.yOffset;
+        item.sprite.y = - this.items.length * this.yOffset;
         item.sprite.zIndex = -item.sprite.y + this.baseX * 1000
         this.container.addChild(item.sprite);
         this.items.push(item);
@@ -51,8 +62,13 @@ export class ItemStack {
 export default class StackList {
     private stacks: ItemStack[] = [];
     private size: number;
+    private baseX: number = 0;
+    private baseY: number = 0;
+    private xOffset: number;
+    private yOffset: number;
+
     constructor(
-        container: PIXI.Container,
+        private container: PIXI.Container,
         numStacks: number,
         stackSize: number,
         xOffset: number,
@@ -60,17 +76,32 @@ export default class StackList {
         size: number = 100
     ) {
         this.size = size;
+        this.xOffset = xOffset;
+        this.yOffset = yOffset;
+
         for (let i = 0; i < numStacks; i++) {
-            const baseX = i * xOffset;
-            const baseY = 0;
-            this.stacks.push(new ItemStack(container, stackSize, baseX, baseY, yOffset));
+            const relX = i * xOffset;
+            const relY = 0;
+            this.stacks.push(new ItemStack(container, stackSize, relX, relY, yOffset));
         }
 
-        DebugGraphicsHelper.addCircle(container)
+        DebugGraphicsHelper.addCircle(container);
+    }
+
+    /** Set new position for the entire stack group */
+    public setPosition(x: number, y: number): void {
+        this.baseX = x;
+        this.baseY = y;
+
+        for (let i = 0; i < this.stacks.length; i++) {
+            const stack = this.stacks[i];
+            const relX = i * this.xOffset;
+            stack.setPosition(this.baseX + relX, this.baseY); // assumes `ItemStack` has this
+        }
     }
 
     addItem(item: StackableItem): boolean {
-        item.sprite.scale.set(ViewUtils.elementScaler(item.sprite, this.size))
+        item.sprite.scale.set(ViewUtils.elementScaler(item.sprite, this.size));
         for (const stack of this.stacks) {
             if (stack.add(item)) return true;
         }

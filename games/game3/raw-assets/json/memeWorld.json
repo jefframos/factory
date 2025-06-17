@@ -158,7 +158,7 @@
                  "ellipse":true,
                  "height":60.6061,
                  "id":7,
-                 "name":"",
+                 "name":"Player",
                  "properties":[
                         {
                          "name":"id",
@@ -181,8 +181,8 @@
                  "type":"",
                  "visible":true,
                  "width":128,
-                 "x":1405.33,
-                 "y":868
+                 "x":1197.66333333333,
+                 "y":275
                 }, 
                 {
                  "gid":122,
@@ -224,25 +224,91 @@
                  "gid":2147483776,
                  "height":128,
                  "id":65,
-                 "name":"Bench2",
+                 "name":"cashier-bench",
+                 "properties":[
+                        {
+                         "name":"belongsTo",
+                         "type":"string",
+                         "value":"cashier-1"
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":128,
-                 "x":1157,
-                 "y":339.334
+                 "x":1155.66666666667,
+                 "y":782.000666666667
                 }, 
                 {
-                 "gid":128,
+                 "gid":2147483776,
                  "height":128,
-                 "id":69,
-                 "name":"Bench1",
+                 "id":80,
+                 "name":"cashier-bench",
+                 "properties":[
+                        {
+                         "name":"belongsTo",
+                         "type":"string",
+                         "value":"cashier-1"
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":128,
-                 "x":1262,
-                 "y":375.334
+                 "x":1210.66666666667,
+                 "y":751.000666666667
+                }, 
+                {
+                 "gid":2147483776,
+                 "height":128,
+                 "id":81,
+                 "name":"cashier-bench",
+                 "properties":[
+                        {
+                         "name":"belongsTo",
+                         "type":"string",
+                         "value":"cashier-1"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":128,
+                 "x":1100.66666666667,
+                 "y":814.000666666667
+                }, 
+                {
+                 "gid":2147483776,
+                 "height":128,
+                 "id":69,
+                 "name":"coffee-bench",
+                 "properties":[
+                        {
+                         "name":"belongsTo",
+                         "type":"string",
+                         "value":"coffee-1"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":128,
+                 "x":938,
+                 "y":357.334
+                }, 
+                {
+                 "gid":2147483767,
+                 "height":64,
+                 "id":67,
+                 "name":"expresso2",
+                 "properties":[
+                        {
+                         "name":"belongsTo",
+                         "type":"string",
+                         "value":"coffee-1"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":64,
+                 "x":968,
+                 "y":291
                 }, 
                 {
                  "gid":128,
@@ -277,20 +343,8 @@
                  "type":"",
                  "visible":true,
                  "width":64,
-                 "x":1449,
-                 "y":394
-                }, 
-                {
-                 "gid":2147483767,
-                 "height":64,
-                 "id":67,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":64,
-                 "x":1208,
-                 "y":307
+                 "x":1457,
+                 "y":384.666666666667
                 }, 
                 {
                  "gid":122,
@@ -303,6 +357,61 @@
                  "width":64,
                  "x":1493,
                  "y":474
+                }, 
+                {
+                 "gid":115,
+                 "height":64,
+                 "id":79,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"belongsTo",
+                         "type":"string",
+                         "value":"cashier-1"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":64,
+                 "x":1189,
+                 "y":714
+                }, 
+                {
+                 "ellipse":true,
+                 "height":114.666666666667,
+                 "id":83,
+                 "name":"cashier-money",
+                 "properties":[
+                        {
+                         "name":"belongsTo",
+                         "type":"string",
+                         "value":"cashier-1"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":114.666666666667,
+                 "x":1002,
+                 "y":765.333333333333
+                },
+            
+                {
+                 "ellipse":true,
+                 "height":53.3333333333333,
+                 "id":84,
+                 "name":"cashier-dispenser",
+                 "properties":[
+                        {
+                         "name":"belongsTo",
+                         "type":"string",
+                         "value":"cashier-1"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":53.3333333333333,
+                 "x":1218,
+                 "y":630
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -330,8 +439,8 @@
                  "type":"",
                  "visible":true,
                  "width":60,
-                 "x":1164,
-                 "y":678
+                 "x":1124,
+                 "y":670
                 }, 
                 {
                  "ellipse":true,
@@ -348,7 +457,7 @@
                  "type":"",
                  "visible":true,
                  "width":60,
-                 "x":1330.66666666667,
+                 "x":1330.67,
                  "y":602
                 }, 
                 {
@@ -366,8 +475,8 @@
                  "type":"",
                  "visible":true,
                  "width":60,
-                 "x":1014,
-                 "y":308
+                 "x":1026,
+                 "y":321.666666666667
                 }, 
                 {
                  "ellipse":true,
@@ -482,7 +591,7 @@
          "y":0
         }],
  "nextlayerid":8,
- "nextobjectid":79,
+ "nextobjectid":85,
  "orientation":"staggered",
  "renderorder":"right-down",
  "staggeraxis":"y",
@@ -1153,7 +1262,18 @@
                  "id":1,
                  "image":"..\/tiled\/images\/scene\/cashier.png",
                  "imageheight":64,
-                 "imagewidth":64
+                 "imagewidth":64,
+                 "properties":[
+                        {
+                         "name":"anchorX",
+                         "type":"float",
+                         "value":0.5
+                        }, 
+                        {
+                         "name":"anchorY",
+                         "type":"float",
+                         "value":1
+                        }]
                 }, 
                 {
                  "id":2,
