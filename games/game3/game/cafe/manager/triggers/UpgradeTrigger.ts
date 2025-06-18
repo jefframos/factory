@@ -8,7 +8,7 @@ import { TriggerManager } from "../TriggerManager";
 export class UpgradeTrigger {
     public readonly id: string;
     protected areaContainer: PIXI.Container = new PIXI.Container();
-    protected triggerBox: TriggerBox;
+    public triggerBox: TriggerBox;
     protected timer = 0;
     protected collecting = false;
     protected levelId: string;

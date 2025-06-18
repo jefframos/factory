@@ -464,7 +464,7 @@
   </object>
  </objectgroup>
  <objectgroup id="7" name="Gameplay">
-  <object id="74" name="cashier-1" x="1124" y="670" width="60" height="60">
+  <object id="74" name="cashier-1" x="1136" y="672.667" width="62.6667" height="62.6667">
    <properties>
     <property name="states" value="[&quot;build&quot;, &quot;playerTrigger&quot;]"/>
    </properties>

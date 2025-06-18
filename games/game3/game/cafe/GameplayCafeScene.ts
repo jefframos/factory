@@ -51,6 +51,7 @@ export default class GameplayCafeScene extends GameScene {
     private player: ActionEntity;
     private camera: CameraComponent
 
+    private floor: TiledLayerObject = new TiledLayerObject()
     static tiledGameplayLayer: TiledLayerObject = new TiledLayerObject()
     static tiledTriggerLayer: TiledLayerObject = new TiledLayerObject()
 
@@ -72,7 +73,13 @@ export default class GameplayCafeScene extends GameScene {
 
         const worldSettings = ExtractTiledFile.getTiledFrom('memeWorld')
 
-        GameplayCafeScene.tiledGameplayLayer.build(worldSettings!, ['Floor', 'Background'])
+
+        this.floor.build(worldSettings!, ['Floor'])
+        this.worldContainer.addChild(this.floor);
+        this.floor.sortableChildren = true;
+
+
+        GameplayCafeScene.tiledGameplayLayer.build(worldSettings!, ['Background'])
         this.worldContainer.addChild(GameplayCafeScene.tiledGameplayLayer);
         GameplayCafeScene.tiledGameplayLayer.sortableChildren = true;
 
@@ -167,6 +174,10 @@ export default class GameplayCafeScene extends GameScene {
                         const level = GameManager.instance.getLevelData();
                         level.soft.coins.update(stackList.totalAmount * 5);
                         stackList.clear();
+                    } else if (component.itemType == ItemType.COFFEE && stackList.totalAmount) {
+                        console.log('take the coffee ' + stackList.totalAmount)
+                        stackList.removeOneItemOfType(ItemType.COFFEE)
+                        source.takeItem(ItemType.COFFEE)
                     }
                 }
             }

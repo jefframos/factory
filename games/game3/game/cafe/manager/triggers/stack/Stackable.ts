@@ -1,18 +1,18 @@
 
-import { DebugGraphicsHelper } from '@core/utils/DebugGraphicsHelper';
 import ViewUtils from '@core/utils/ViewUtils';
 import * as PIXI from 'pixi.js';
+import { ItemType } from '../../../progression/ProgressionManager';
 // ---- StackableItem ----
+import { gsap } from 'gsap';
+
 export class StackableItem {
-    constructor(public sprite: PIXI.Sprite) { }
+    constructor(public sprite: PIXI.Sprite, public itemType: ItemType) { }
 }
 
-
-// ---- ItemStack ----
 export class ItemStack {
     private items: StackableItem[] = [];
-
     public container: PIXI.Container;
+
     constructor(
         public parentContainer: PIXI.Container,
         public maxSize: number,
@@ -20,8 +20,8 @@ export class ItemStack {
         public baseY: number,
         public yOffset: number
     ) {
-        this.container = new PIXI.Container()
-        this.parentContainer.addChild(this.container)
+        this.container = new PIXI.Container();
+        this.parentContainer.addChild(this.container);
         this.container.x = this.baseX;
         this.container.y = this.baseY;
     }
@@ -33,20 +33,86 @@ export class ItemStack {
     get isFull(): boolean {
         return this.items.length >= this.maxSize;
     }
-    public setPosition(x: number, y: number): void {
-        // Option 1: set a dedicated container's position (best way)
-        this.container.position.set(x, y);
 
+    public setPosition(x: number, y: number): void {
+        this.container.position.set(x, y);
     }
+
     add(item: StackableItem): boolean {
         if (this.isFull) return false;
-        this.container.zIndex = -this.baseY + this.baseX * 1000
 
-        item.sprite.y = - this.items.length * this.yOffset;
-        item.sprite.zIndex = -item.sprite.y + this.baseX * 1000
+        if (item && item.sprite) {
+            gsap.killTweensOf(item.sprite);
+            gsap.killTweensOf(item.sprite.scale);
+        }
+
+        const targetY = -this.items.length * this.yOffset;
+        item.sprite.y = targetY - this.yOffset * 2;
+        const scale = item.sprite.scale.clone()
+        item.sprite.scale.set(0);
+        item.sprite.anchor.set(0.5)
+
         this.container.addChild(item.sprite);
         this.items.push(item);
+
+
+        // Animate with pop and bounce
+        gsap.to(item.sprite.scale, {
+            x: scale.x,
+            y: scale.y,
+            ease: 'bounce.out',
+            duration: 0.6
+        });
+        gsap.to(item.sprite, {
+            y: targetY,
+            delay: 0.3,
+            ease: 'bounce.out',
+            duration: 0.6
+        });
+
+        item.sprite.zIndex = -targetY + this.baseX * 1000;
+        this.container.zIndex = -this.baseY + this.baseX * 1000;
+
         return true;
+    }
+
+    removeFirstOfType(type: ItemType): boolean {
+        const index = this.items.findIndex(i => i.itemType === type);
+        if (index === -1) return false;
+
+        const item = this.items[index];
+        this.container.removeChild(item.sprite);
+
+
+        if (item && item.sprite) {
+            gsap.killTweensOf(item.sprite);
+            gsap.killTweensOf(item.sprite.scale);
+        }
+
+        item.sprite.destroy();
+        this.items.splice(index, 1);
+
+        this.reorderItems();
+        return true;
+    }
+
+    reorderItems(): void {
+        for (let i = 0; i < this.items.length; i++) {
+            const item = this.items[i];
+            const targetY = -i * this.yOffset;
+
+            if (item && item.sprite) {
+                gsap.killTweensOf(item.sprite)
+                gsap.killTweensOf(item.sprite.scale)
+            }
+            gsap.to(item.sprite, {
+                y: targetY,
+                ease: 'bounce.out',
+                duration: 0.5
+            });
+
+            item.sprite.zIndex = -targetY + this.baseX * 1000;
+        }
     }
 
     clear(): void {
@@ -58,7 +124,9 @@ export class ItemStack {
     }
 }
 
+
 // ---- StackList ----
+
 export default class StackList {
     private stacks: ItemStack[] = [];
     private size: number;
@@ -81,11 +149,8 @@ export default class StackList {
 
         for (let i = 0; i < numStacks; i++) {
             const relX = i * xOffset;
-            const relY = 0;
-            this.stacks.push(new ItemStack(container, stackSize, relX, relY, yOffset));
+            this.stacks.push(new ItemStack(container, stackSize, relX, 0, yOffset));
         }
-
-        DebugGraphicsHelper.addCircle(container);
     }
 
     /** Set new position for the entire stack group */
@@ -96,11 +161,11 @@ export default class StackList {
         for (let i = 0; i < this.stacks.length; i++) {
             const stack = this.stacks[i];
             const relX = i * this.xOffset;
-            stack.setPosition(this.baseX + relX, this.baseY); // assumes `ItemStack` has this
+            stack.setPosition(this.baseX + relX, this.baseY);
         }
     }
 
-    addItem(item: StackableItem): boolean {
+    public addItem(item: StackableItem): boolean {
         item.sprite.scale.set(ViewUtils.elementScaler(item.sprite, this.size));
         for (const stack of this.stacks) {
             if (stack.add(item)) return true;
@@ -108,7 +173,22 @@ export default class StackList {
         return false;
     }
 
-    clear(): void {
+    /** Check if any item of a given type exists in any stack */
+    public hasItemOfType(type: ItemType): boolean {
+        return this.stacks.some(stack =>
+            stack['items']?.some(item => item.itemType === type)
+        );
+    }
+
+    /** Remove one item of the given type from any stack */
+    public removeOneItemOfType(type: ItemType): boolean {
+        for (const stack of this.stacks) {
+            if (stack.removeFirstOfType(type)) return true;
+        }
+        return false;
+    }
+
+    public clear(): void {
         for (const stack of this.stacks) {
             stack.clear();
         }

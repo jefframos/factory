@@ -95,8 +95,10 @@ export class TriggerBox extends PIXI.Container {
 
         this.trigger.setPosition(x, y)
         const gr = ColliderDebugHelper.addDebugGraphics(this.trigger, this.parent)
-        gr.x -= x
-        gr.y -= y
+        if (gr) {
+            gr.x -= x
+            gr.y -= y
+        }
     }
 
     public destroy(options?: PIXI.IDestroyOptions | boolean): void {

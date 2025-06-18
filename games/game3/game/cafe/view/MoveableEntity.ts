@@ -7,15 +7,15 @@ export default class MoveableEntity extends PIXI.Container {
     public speed = 0.0;
     public maxSpeed = 200;
 
-    private direction = new PIXI.Point(0, 0);
-    private magnitude = 0;
+    protected direction = new PIXI.Point(0, 0);
+    protected magnitude = 0;
 
-    private viewContainer?: PIXI.Container;
-    private targetScale = new PIXI.Point(1, 1);
-    private flipLerpSpeed = 50;
-    private radius: number = 30;
+    protected viewContainer?: PIXI.Container;
+    protected targetScale = new PIXI.Point(1, 1);
+    protected flipLerpSpeed = 50;
+    protected radius: number = 30;
 
-    private virtualPosition = new PIXI.Point(0, 0); // <-- new virtual position
+    protected virtualPosition = new PIXI.Point(0, 0); // <-- new virtual position
 
     constructor(tag?: string) {
         super();
@@ -34,6 +34,11 @@ export default class MoveableEntity extends PIXI.Container {
         this.addChild(container);
         this.viewContainer = container;
         this.targetScale.copyFrom(container.scale);
+        this.characterReady();
+    }
+
+    protected characterReady() {
+
     }
 
     public setInput(direction: PIXI.Point, magnitude: number) {

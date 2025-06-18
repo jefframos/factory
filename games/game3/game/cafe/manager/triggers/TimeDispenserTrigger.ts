@@ -18,7 +18,7 @@ export default class TimeDispenserTrigger extends DispenserTrigger {
     public onAction(): void {
         if (!this.isActive) return;
         const sprite = PIXI.Sprite.from('ItemIcon_Money_Bill'); // Replace with your asset
-        const item = new StackableItem(sprite);
+        const item = new StackableItem(sprite, this.itemType);
         const added = this._stackList.addItem(item);
         if (!added) {
             sprite.destroy(); // optional: destroy unused

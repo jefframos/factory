@@ -1,9 +1,11 @@
+import { Game } from '@core/Game';
 import * as PIXI from 'pixi.js';
 import Collider from './Collider';
 
 export class ColliderDebugHelper {
     /** Draws a visual shape matching the collider inside the given container */
-    public static addDebugGraphics(collider: Collider, container: PIXI.Container, color = 0x00ff00, alpha = 0.3): PIXI.Graphics {
+    public static addDebugGraphics(collider: Collider, container: PIXI.Container, color = 0x00ff00, alpha = 0.3): PIXI.Graphics | undefined {
+        if (!Game.debugParams.debug) return undefined
         const gfx = new PIXI.Graphics();
         gfx.name = '__colliderDebug';
         gfx.alpha = alpha;

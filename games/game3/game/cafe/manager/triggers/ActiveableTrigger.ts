@@ -3,12 +3,17 @@ import * as PIXI from 'pixi.js';
 import GameplayCafeScene from '../../GameplayCafeScene';
 import { AreaProgress } from '../../progression/ProgressionManager';
 import { AnimatorUtils } from '../../utils/AnimatorUtils';
+import TriggerView from '../../view/TriggerView';
 import { UpgradeTrigger } from './UpgradeTrigger';
 export default class ActiveableTrigger extends UpgradeTrigger {
 
     protected belongings: FoundTiledObject[] = []
+    protected mainTriggerView!: TriggerView;
+
+    protected viewsEnabled = false;
 
     protected disableViews() {
+        this.viewsEnabled = false;
         this.belongings.forEach(element => {
             if (element?.view) {
                 if (element?.view) {
@@ -22,6 +27,7 @@ export default class ActiveableTrigger extends UpgradeTrigger {
 
     }
     protected enableViews(animate: boolean = false) {
+        this.viewsEnabled = true;
         const toAnimate: PIXI.DisplayObject[] = [];
         this.belongings.forEach(element => {
             if (element?.view) {
