@@ -16,6 +16,7 @@ import { GameManager } from "./manager/GameManager";
 import { TriggerManager } from "./manager/TriggerManager";
 import ActiveableTrigger from "./manager/triggers/ActiveableTrigger";
 import DispenserTrigger from "./manager/triggers/DispenserTrigger";
+import IStats from "./manager/triggers/IStats";
 import CaffeeStation from "./manager/triggers/stations/CaffeeStation";
 import CashierStation from "./manager/triggers/stations/CashierStation";
 import TimeDispenserTrigger from "./manager/triggers/TimeDispenserTrigger";
@@ -183,6 +184,43 @@ export default class GameplayCafeScene extends GameScene {
             }
         })
 
+        TriggerManager.onTriggerEnter.add((trigger, source) => {
+            const component = TriggerManager.getComponent(trigger.id);
+            if (source instanceof ActionEntity) {
+                if (component instanceof DispenserTrigger) {
+                    const stackList = component.stackList;
+
+                    if (component.itemType == ItemType.MONEY && stackList.totalAmount) {
+                        const level = GameManager.instance.getLevelData();
+                        level.soft.coins.update(stackList.totalAmount * 5);
+                        stackList.clear();
+                    } else if (component.itemType == ItemType.COFFEE && stackList.totalAmount && source.canStack) {
+                        console.log('take the coffee ' + stackList.totalAmount);
+                        stackList.removeOneItemOfType(ItemType.COFFEE);
+                        source.takeItem(ItemType.COFFEE);
+                    }
+                }
+            }
+        });
+        TriggerManager.onTriggerStay.add((trigger, source) => {
+            const component = TriggerManager.getComponent(trigger.id);
+            if (source instanceof ActionEntity) {
+                if (component instanceof DispenserTrigger) {
+                    const stackList = component.stackList;
+
+                    if (component.itemType == ItemType.MONEY && stackList.totalAmount) {
+                        const level = GameManager.instance.getLevelData();
+                        level.soft.coins.update(stackList.totalAmount * 5);
+                        stackList.clear();
+                    } else if (component.itemType == ItemType.COFFEE && stackList.totalAmount && source.canStack) {
+                        console.log('take the coffee ' + stackList.totalAmount);
+                        stackList.removeOneItemOfType(ItemType.COFFEE);
+                        source.takeItem(ItemType.COFFEE);
+                    }
+                }
+            }
+        })
+
         // const collector = new CollectorStayTrigger('collector', 50);
         // this.gameplayContainer.addChild(collector.getView());
         // collector.setPosition(1000, 600);
@@ -240,13 +278,22 @@ export default class GameplayCafeScene extends GameScene {
                 states = StringUtils.parseStringArray(states)
             }
             const instance = ProgressionManager.instance.getRawArea(id)
-            const cashier = createAreaInstance(instance!, [id, obj?.object.width / 2])
+            const area = createAreaInstance(instance!, [id, obj?.object.width / 2])
 
-            this.gameplayContainer.addChild(cashier.getView());
-            cashier.setPosition(obj?.object.x + obj?.object.width / 2, obj?.object.y + obj?.object.height / 2)
+            this.gameplayContainer.addChild(area.getView());
 
-            cashier.setProgressData(ProgressionManager.instance.getAreaProgress(id));
-            cashier.onUpgrade.add((id, value) => {
+            if ('setStats' in area && typeof area.setStats === 'function') {
+                const statsArea = area as IStats;
+                if (ups.raw) {
+                    console.warn('SET THIS UP', ups.raw)
+                    statsArea.setStats(ups.raw.attributes);
+                }
+                console.log(`Area ${id} implements IStats and has been initialized.`);
+            }
+
+            area.setPosition(obj?.object.x + obj?.object.width / 2, obj?.object.y + obj?.object.height / 2)
+            area.setProgressData(ProgressionManager.instance.getAreaProgress(id));
+            area.onUpgrade.add((id, value) => {
                 ProgressionManager.instance.addValue(id, value);
             })
 

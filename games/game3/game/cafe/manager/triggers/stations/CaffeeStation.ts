@@ -21,6 +21,8 @@ export default class CaffeeStation extends ActiveableTrigger {
         this.mainTriggerView = new TriggerView(this.triggerBox.trigger);
         this.mainTriggerView.position.set(this.position.x, this.position.y);
 
+        console.log('CaffeeStation', this.rawStats)
+
     }
 
     protected disableViews() {

@@ -5,7 +5,9 @@ import { AreaProgress } from "../../progression/ProgressionManager";
 import { GameManager } from "../GameManager";
 import { TriggerBox } from "../TriggerBox";
 import { TriggerManager } from "../TriggerManager";
-export class UpgradeTrigger {
+import { UpgradeableAttributes } from "../upgrade/UpgradeManager";
+import { IStats } from "./IStats";
+export class UpgradeTrigger implements IStats {
     public readonly id: string;
     protected areaContainer: PIXI.Container = new PIXI.Container();
     public triggerBox: TriggerBox;
@@ -13,6 +15,7 @@ export class UpgradeTrigger {
     protected collecting = false;
     protected levelId: string;
     protected areaProgress?: AreaProgress;
+    protected rawStats: UpgradeableAttributes = {};
 
     public onUpgrade: Signal = new Signal();
 
@@ -56,6 +59,12 @@ export class UpgradeTrigger {
         this.areaContainer.addChild(this.triggerBox);
 
         this.setUp();
+    }
+    setStats(stats: UpgradeableAttributes): void {
+        this.rawStats = stats
+    }
+    getStats(): UpgradeableAttributes {
+        return this.rawStats;
     }
 
     protected setUp() {

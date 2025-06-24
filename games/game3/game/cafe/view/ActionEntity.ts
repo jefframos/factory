@@ -13,6 +13,10 @@ export default class ActionEntity extends MoveableEntity {
         this.stackList = new StackList(this, 1, 5, 0, 10, 50);
         this.stackList.setPosition(30, -50)
     }
+    public get canStack() {
+        console.warn('this must return if the item can be taken, if fits on the stack')
+        return this.stackList.totalAmount
+    }
     public takeItem(itemType: ItemType, itemQuantity: number = 1) {
 
         const sprite = PIXI.Sprite.from('ItemIcon_Money_Bill'); // Replace with your asset
