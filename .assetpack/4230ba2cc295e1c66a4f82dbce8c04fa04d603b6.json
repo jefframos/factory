@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1750220078433,
-                "duration": 5.7325000166893005,
+                "date": 1750824833942,
+                "duration": 6.255800008773804,
                 "success": true
             }
         },
@@ -18,11 +18,11 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1750134270362,
-                "duration": 12.069199979305267,
+                "date": 1750822120777,
+                "duration": 7.027700185775757,
                 "success": true
             },
-            "hash": "3Eu2Wg"
+            "hash": "x4Is"
         },
         ".assetpack/json/cafeProgression.json": {
             "isFolder": false,
@@ -153,11 +153,11 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1750220078434,
-                "duration": 5.61300003528595,
+                "date": 1750824833942,
+                "duration": 6.247699975967407,
                 "success": true
             },
-            "hash": "18jG0g"
+            "hash": "TxXuKQ"
         },
         ".assetpack/json/memeWorld.json": {
             "isFolder": false,
@@ -234,11 +234,11 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1750053250339,
-                "duration": 6.287499964237213,
+                "date": 1750812160500,
+                "duration": 2.6182000637054443,
                 "success": true
             },
-            "hash": "c_W_pw"
+            "hash": "j49o"
         },
         ".assetpack/json/upgradeSettings.json": {
             "isFolder": false,

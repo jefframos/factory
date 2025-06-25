@@ -9,13 +9,17 @@ import ActionEntity from '../../../view/ActionEntity';
 import TriggerView from '../../../view/TriggerView';
 import ActiveableTrigger from '../ActiveableTrigger';
 import DispenserTrigger from '../DispenserTrigger';
+import StackList from '../stack/Stackable';
 
 export default class CashierStation extends ActiveableTrigger {
-    private dispenser!: DispenserTrigger;
+    private clientMoneyDispenser!: DispenserTrigger;
     private trigger!: Collider;
 
     private moneyTriggerView!: TriggerView;
-    private dispenserTriggerView!: TriggerView;
+    private moneyDispenserPickupTriggerView!: TriggerView;
+
+    public clientOrderStack!: StackList;
+
 
     public setProgressData(areaProgress: AreaProgress): void {
         super.setProgressData(areaProgress);
@@ -35,6 +39,11 @@ export default class CashierStation extends ActiveableTrigger {
                 dispenserFound = true;
             }
 
+
+            if (name === 'cashier-coffee-dispenser') {
+                this.setupCoffeeDispenser(centerX, centerY);
+            }
+
             if (name === 'cashier-dispenser') {
                 this.setupTrigger(centerX, centerY, width);
                 triggerFound = true;
@@ -45,7 +54,7 @@ export default class CashierStation extends ActiveableTrigger {
             console.error('[CashierStation] No "cashier-money" element found in scene');
         } else {
             DevGuiManager.instance.addButton('Cashier Money', () => {
-                this.dispenser.tryExecuteAction();
+                this.clientMoneyDispenser.tryExecuteAction();
             }, 'CASHIER');
         }
 
@@ -57,21 +66,27 @@ export default class CashierStation extends ActiveableTrigger {
         this.mainTriggerView.position.set(this.position.x, this.position.y);
 
         if (!this.viewsEnabled) {
-            this.dispenserTriggerView?.setStatus('disabled')
+            this.moneyDispenserPickupTriggerView?.setStatus('disabled')
             this.moneyTriggerView?.setStatus('disabled')
         }
+
     }
 
-    private setupDispenser(x: number, y: number, width: number): void {
-        this.dispenser = new DispenserTrigger('clientPurchase', width / 2);
-        this.dispenser.itemType = ItemType.MONEY;
-        this.dispenser.setUpStackList(2, 2, 40, 40, 50);
-        this.dispenser.setPosition(x, y);
-        this.dispenser.setStackPosition(-80, -20);
-        GameplayCafeScene.tiledGameplayLayer.addChild(this.dispenser.getView());
+    private setupCoffeeDispenser(x: number, y: number): void {
 
-        this.dispenserTriggerView = new TriggerView(this.dispenser.triggerBox.trigger);
-        this.dispenserTriggerView.position.set(x, y);
+        this.clientOrderStack = new StackList(GameplayCafeScene.tiledGameplayLayer, 1, 5, 0, 10, 50);
+        this.clientOrderStack.setPosition(x, y);
+    }
+    private setupDispenser(x: number, y: number, width: number): void {
+        this.clientMoneyDispenser = new DispenserTrigger('clientPurchase', width / 2);
+        this.clientMoneyDispenser.itemType = ItemType.MONEY;
+        this.clientMoneyDispenser.setUpStackList(10, 2, 40, 40, 50);
+        this.clientMoneyDispenser.setPosition(x, y);
+        this.clientMoneyDispenser.setStackPosition(-80, -20);
+        GameplayCafeScene.tiledGameplayLayer.addChild(this.clientMoneyDispenser.getView());
+
+        this.moneyDispenserPickupTriggerView = new TriggerView(this.clientMoneyDispenser.triggerBox.trigger);
+        this.moneyDispenserPickupTriggerView.position.set(x, y);
 
 
     }
@@ -83,18 +98,17 @@ export default class CashierStation extends ActiveableTrigger {
             trigger: true,
             id: this.id,
             position: new PIXI.Point(x, y),
-            onCollide: () => {
+            onCollide: (entity) => {
                 this.moneyTriggerView?.setStatus('active');
-            },
-            onCollideEnter: (entity) => {
-                if (entity instanceof ActionEntity) {
-                    console.log(entity.stackList)
-                    if (entity.stackList.hasItemOfType(ItemType.COFFEE)) {
-                        entity.stackList.removeOneItemOfType(ItemType.COFFEE)
+                if (entity instanceof ActionEntity && entity.disposeAllowed()) {
+                    if (entity.disposeItem(ItemType.COFFEE)) {
+                        this.clientOrderStack.addItemFromType(ItemType.COFFEE)
+                        console.log(entity, '[CashierStation] Action Entity entered cashier dispenser. If holding food, it should drop here for clients.');
                     }
                 }
 
-                console.log(entity, '[CashierStation] Player entered cashier dispenser. If holding food, it should drop here for clients.');
+            },
+            onCollideEnter: (entity) => {
             },
             onCollideExit: () => {
                 this.moneyTriggerView?.setStatus('available');
@@ -115,18 +129,18 @@ export default class CashierStation extends ActiveableTrigger {
 
     protected disableViews(): void {
         super.disableViews();
-        this.dispenser?.disable();
+        this.clientMoneyDispenser?.disable();
 
         this.moneyTriggerView?.setStatus('disabled');
-        this.dispenserTriggerView?.setStatus('disabled');
+        this.moneyDispenserPickupTriggerView?.setStatus('disabled');
     }
 
     protected enableViews(animate: boolean = false): void {
         super.enableViews(animate);
-        this.dispenser?.enable();
+        this.clientMoneyDispenser?.enable();
 
         this.moneyTriggerView?.setStatus('available');
-        this.dispenserTriggerView?.setStatus('available');
+        this.moneyDispenserPickupTriggerView?.setStatus('available');
 
     }
 }

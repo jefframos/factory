@@ -35,6 +35,15 @@
             }
         ]
     },
+    "bin-1": {
+        "name": "Bin",
+        "className": "BinStation",
+        "maxLevel": 0,
+        "upgradeThreshold": [
+            50
+        ],
+        "unlockConditions": []
+    },
     "pastry_station": {
         "name": "Pastry Station",
         "maxLevel": 2,

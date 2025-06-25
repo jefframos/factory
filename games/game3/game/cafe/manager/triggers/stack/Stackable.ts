@@ -4,9 +4,13 @@ import * as PIXI from 'pixi.js';
 import { ItemType } from '../../../progression/ProgressionManager';
 // ---- StackableItem ----
 import { gsap } from 'gsap';
+import { ItemAssetRegistry } from '../../../assets/ItemAssetRegistry';
 
 export class StackableItem {
     constructor(public sprite: PIXI.Sprite, public itemType: ItemType) { }
+    public destroy() {
+        this.sprite.destroy()
+    }
 }
 
 export class ItemStack {
@@ -36,6 +40,17 @@ export class ItemStack {
 
     public setPosition(x: number, y: number): void {
         this.container.position.set(x, y);
+
+        this.container.zIndex = y
+    }
+
+    public setMaxSize(newSize: number): void {
+        this.maxSize = newSize;
+        // Optional: remove excess items if new size is smaller
+        while (this.items.length > newSize) {
+            const removed = this.items.pop();
+            removed?.destroy(); // or handle accordingly
+        }
     }
 
     add(item: StackableItem): boolean {
@@ -75,7 +90,24 @@ export class ItemStack {
 
         return true;
     }
+    removeFirstItem(): boolean {
+        if (this.items.length <= 0) return false
+        const index = 0
+        const item = this.items[index];
+        this.container.removeChild(item.sprite);
 
+
+        if (item && item.sprite) {
+            gsap.killTweensOf(item.sprite);
+            gsap.killTweensOf(item.sprite.scale);
+        }
+
+        item.sprite.destroy();
+        this.items.splice(index, 1);
+
+        this.reorderItems();
+        return true;
+    }
     removeFirstOfType(type: ItemType): boolean {
         const index = this.items.findIndex(i => i.itemType === type);
         if (index === -1) return false;
@@ -152,6 +184,9 @@ export default class StackList {
             this.stacks.push(new ItemStack(container, stackSize, relX, 0, yOffset));
         }
     }
+    public hasAvailableSpace(): boolean {
+        return this.totalAmount < this.stacks.length * this.stacks[0].maxSize;
+    }
 
     /** Set new position for the entire stack group */
     public setPosition(x: number, y: number): void {
@@ -162,8 +197,25 @@ export default class StackList {
             const stack = this.stacks[i];
             const relX = i * this.xOffset;
             stack.setPosition(this.baseX + relX, this.baseY);
+
+
         }
     }
+    public addItemFromType(itemType: ItemType): boolean {
+
+        const asset = ItemAssetRegistry.get(itemType);
+
+        const sprite = PIXI.Sprite.from(asset.spriteId);
+        const item = new StackableItem(sprite, itemType);
+        const added = this.addItem(item);
+
+        if (!added) {
+            sprite.destroy();
+        }
+
+        return added
+    }
+
 
     public addItem(item: StackableItem): boolean {
         item.sprite.scale.set(ViewUtils.elementScaler(item.sprite, this.size));
@@ -188,6 +240,15 @@ export default class StackList {
         return false;
     }
 
+    /** Remove one item of the given type from any stack */
+    public removeFirstItem(): boolean {
+        for (const stack of this.stacks) {
+            if (stack.removeFirstItem()) return true;
+        }
+        return false;
+    }
+
+
     public clear(): void {
         for (const stack of this.stacks) {
             stack.clear();
@@ -196,5 +257,29 @@ export default class StackList {
 
     get totalAmount(): number {
         return this.stacks.reduce((sum, s) => sum + s.amount, 0);
+    }
+
+    public getStacks(): ItemStack[] {
+        return this.stacks;
+    }
+
+    public addStack(stackSize: number): void {
+        const relX = this.stacks.length * this.xOffset;
+        const relY = 0;
+        const stack = new ItemStack(this.container, stackSize, relX, relY, this.yOffset);
+        this.stacks.push(stack);
+    }
+
+    public removeStacksFromEnd(count: number): void {
+        for (let i = 0; i < count; i++) {
+            const removed = this.stacks.pop();
+            if (removed) removed?.clear(); // Assuming ItemStack has a destroy method
+        }
+    }
+
+    public resizeStacks(newStackSize: number): void {
+        for (const stack of this.stacks) {
+            stack.setMaxSize(newStackSize); // Assuming ItemStack supports this
+        }
     }
 }

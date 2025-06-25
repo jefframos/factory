@@ -1,16 +1,18 @@
-import * as PIXI from 'pixi.js';
 import { ItemType } from '../../progression/ProgressionManager';
 import { UpgradeTrigger } from './UpgradeTrigger';
-import StackList, { StackableItem } from './stack/Stackable';
+import StackList from './stack/Stackable';
 
 export default class DispenserTrigger extends UpgradeTrigger {
     public itemType: ItemType = ItemType.MONEY
     protected elapsed = 0;
-    protected interval = 2;
+    protected _interval = 2;
 
     protected _stackList!: StackList;
     public get stackList(): StackList {
         return this._stackList;
+    }
+    public set interval(value: number) {
+        this._interval = value;
     }
 
 
@@ -26,6 +28,22 @@ export default class DispenserTrigger extends UpgradeTrigger {
         this._stackList = new StackList(this.areaContainer, numStacks, stackSize, xOffset, yOffset, size); // 3 stacks, 5 items max, 40px offset
 
     }
+    public resizeStackList(numStacks: number, stackSize: number): void {
+        const currentStacks = this._stackList.getStacks();
+        const currentNumStacks = currentStacks.length;
+
+        if (numStacks > currentNumStacks) {
+            const stacksToAdd = numStacks - currentNumStacks;
+            for (let i = 0; i < stacksToAdd; i++) {
+                this._stackList.addStack(stackSize);
+            }
+        } else if (numStacks < currentNumStacks) {
+            this._stackList.removeStacksFromEnd(currentNumStacks - numStacks);
+        }
+
+        this._stackList.resizeStacks(stackSize);
+    }
+
     public update(delta: number): void {
     }
 
@@ -34,14 +52,16 @@ export default class DispenserTrigger extends UpgradeTrigger {
     }
 
     public onAction(): void {
-        if (!this.isActive) return;
-        const sprite = PIXI.Sprite.from('ItemIcon_Money_Bill'); // Replace with your asset
-        const item = new StackableItem(sprite, this.itemType);
-        const added = this._stackList.addItem(item);
-        if (!added) {
-            sprite.destroy(); // optional: destroy unused
-            console.warn('All stacks full, item discarded');
-        }
+        if (!this.isActive || !this._stackList.hasAvailableSpace()) return;
+
+        this._stackList.addItemFromType(this.itemType)
+        // const sprite = PIXI.Sprite.from('ItemIcon_Money_Bill'); // Replace with your asset
+        // const item = new StackableItem(sprite, this.itemType);
+        // const added = this._stackList.addItem(item);
+        // if (!added) {
+        //     sprite.destroy(); // optional: destroy unused
+        //     console.warn('All stacks full, item discarded');
+        // }
     }
 
     public onEnter(): void {

@@ -2,7 +2,6 @@ import { Game } from "@core/Game";
 import { GameScene } from "@core/scene/GameScene";
 import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
 import TiledLayerObject, { FoundTiledObject } from "@core/tiled/TiledLayerObject";
-import { DebugGraphicsHelper } from "@core/utils/DebugGraphicsHelper";
 import { StringUtils } from "@core/utils/StringUtils";
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
@@ -10,17 +9,21 @@ import { StaticColliderLayer } from "../../../../core/collision/StaticColliderLa
 import GameplayCharacterData from "../character/GameplayCharacterData";
 import AnalogInput from "../io/AnalogInput";
 import KeyboardInputMovement from "../io/KeyboardInputMovement";
+import { ItemAssetRegistry } from "./assets/ItemAssetRegistry";
 import { CameraComponent } from "./camera/CameraComponent";
 import { ClassRegistry } from "./manager/ClassRegistry";
+import { ClientManager } from "./manager/costumers/ClientManager";
+import { Spline } from "./manager/costumers/Spline";
 import { GameManager } from "./manager/GameManager";
 import { TriggerManager } from "./manager/TriggerManager";
 import ActiveableTrigger from "./manager/triggers/ActiveableTrigger";
 import DispenserTrigger from "./manager/triggers/DispenserTrigger";
 import IStats from "./manager/triggers/IStats";
+import BinStation from "./manager/triggers/stations/BinStation";
 import CaffeeStation from "./manager/triggers/stations/CaffeeStation";
 import CashierStation from "./manager/triggers/stations/CashierStation";
 import TimeDispenserTrigger from "./manager/triggers/TimeDispenserTrigger";
-import { UpgradeManager } from "./manager/upgrade/UpgradeManager";
+import { UpgradeableAttributes, UpgradeManager } from "./manager/upgrade/UpgradeManager";
 import { createAreaInstance, ItemType, ProgressionManager } from "./progression/ProgressionManager";
 import { DevGuiManager } from "./utils/DevGuiManager";
 import ActionEntity from "./view/ActionEntity";
@@ -29,6 +32,7 @@ import GameplayHud from "./view/GameplayHud";
 ClassRegistry.register('ActiveableTrigger', ActiveableTrigger);
 ClassRegistry.register('CaffeeStation', CaffeeStation);
 ClassRegistry.register('CashierStation', CashierStation);
+ClassRegistry.register('BinStation', BinStation);
 
 
 export default class GameplayCafeScene extends GameScene {
@@ -60,8 +64,22 @@ export default class GameplayCafeScene extends GameScene {
 
     static belongGroup: Record<string, Array<FoundTiledObject>>
 
+    private costumerManager: ClientManager;
+
     constructor() {
         super();
+
+        ItemAssetRegistry.register(ItemType.MONEY, {
+            spriteId: 'ItemIcon_Money_Bill',
+            width: 32,
+            height: 16
+        });
+
+        ItemAssetRegistry.register(ItemType.COFFEE, {
+            spriteId: 'ItemIcon_Star_Bronze',
+            width: 24,
+            height: 24
+        });
 
         GameplayCharacterData.setTable('meme')
 
@@ -112,7 +130,7 @@ export default class GameplayCafeScene extends GameScene {
         this.player = new ActionEntity('PLAYER')
         this.player.setCharacter(new EntityView(GameplayCharacterData.fetchById(0)!))
         this.player.maxSpeed = 200
-        DebugGraphicsHelper.addCircle(this.player)
+        //DebugGraphicsHelper.addCircle(this.player)
 
         this.camera = new CameraComponent(this.worldContainer)
         this.camera.target = this.player;
@@ -148,6 +166,7 @@ export default class GameplayCafeScene extends GameScene {
         this.buildArea('cashier-1')
         this.buildArea('coffee-1')
         this.buildArea('clientDispenser-1')
+        this.buildArea('bin-1')
 
 
         const overtime = new TimeDispenserTrigger('upgrade3');
@@ -165,24 +184,24 @@ export default class GameplayCafeScene extends GameScene {
 
         })
 
-        TriggerManager.onTriggerEnter.add((trigger, source) => {
-            const component = TriggerManager.getComponent(trigger.id)
-            if (source == this.player) {
-                if (component instanceof DispenserTrigger) {
-                    const stackList = component.stackList;
+        // TriggerManager.onTriggerEnter.add((trigger, source) => {
+        //     const component = TriggerManager.getComponent(trigger.id)
+        //     if (source == this.player) {
+        //         if (component instanceof DispenserTrigger) {
+        //             const stackList = component.stackList;
 
-                    if (component.itemType == ItemType.MONEY && stackList.totalAmount) {
-                        const level = GameManager.instance.getLevelData();
-                        level.soft.coins.update(stackList.totalAmount * 5);
-                        stackList.clear();
-                    } else if (component.itemType == ItemType.COFFEE && stackList.totalAmount) {
-                        console.log('take the coffee ' + stackList.totalAmount)
-                        stackList.removeOneItemOfType(ItemType.COFFEE)
-                        source.takeItem(ItemType.COFFEE)
-                    }
-                }
-            }
-        })
+        //             if (component.itemType == ItemType.MONEY && stackList.totalAmount) {
+        //                 const level = GameManager.instance.getLevelData();
+        //                 level.soft.coins.update(stackList.totalAmount * 5);
+        //                 stackList.clear();
+        //             } else if (component.itemType == ItemType.COFFEE && stackList.totalAmount) {
+        //                 console.log('take the coffee ' + stackList.totalAmount)
+        //                 stackList.removeOneItemOfType(ItemType.COFFEE)
+        //                 source.takeItem(ItemType.COFFEE)
+        //             }
+        //         }
+        //     }
+        // })
 
         TriggerManager.onTriggerEnter.add((trigger, source) => {
             const component = TriggerManager.getComponent(trigger.id);
@@ -194,8 +213,7 @@ export default class GameplayCafeScene extends GameScene {
                         const level = GameManager.instance.getLevelData();
                         level.soft.coins.update(stackList.totalAmount * 5);
                         stackList.clear();
-                    } else if (component.itemType == ItemType.COFFEE && stackList.totalAmount && source.canStack) {
-                        console.log('take the coffee ' + stackList.totalAmount);
+                    } else if (component.itemType == ItemType.COFFEE && stackList.totalAmount && source.pickupAllowed()) {
                         stackList.removeOneItemOfType(ItemType.COFFEE);
                         source.takeItem(ItemType.COFFEE);
                     }
@@ -212,8 +230,7 @@ export default class GameplayCafeScene extends GameScene {
                         const level = GameManager.instance.getLevelData();
                         level.soft.coins.update(stackList.totalAmount * 5);
                         stackList.clear();
-                    } else if (component.itemType == ItemType.COFFEE && stackList.totalAmount && source.canStack) {
-                        console.log('take the coffee ' + stackList.totalAmount);
+                    } else if (component.itemType == ItemType.COFFEE && stackList.totalAmount && source.pickupAllowed()) {
                         stackList.removeOneItemOfType(ItemType.COFFEE);
                         source.takeItem(ItemType.COFFEE);
                     }
@@ -265,6 +282,26 @@ export default class GameplayCafeScene extends GameScene {
             }
 
         }, "MISC");
+
+
+
+        console.log('worldSettings', worldSettings?.layers.get('ClientQueue1').objects)
+        const queuePoints = [
+            new PIXI.Point(0 + 800, 0 + 800),
+            new PIXI.Point(50 + 800, 50 + 700),
+            new PIXI.Point(100 + 500, 100 + 800),
+            new PIXI.Point(150 + 800, 150 + 1200),
+        ];
+
+        const spline = new Spline(worldSettings?.layers.get('ClientQueue1').objects);
+
+        this.costumerManager = new ClientManager(this.gameplayContainer, spline.getEvenPoints(15), 'MainEntrance');
+
+
+        DevGuiManager.instance.addButton('Sort first costumer', () => {
+            this.costumerManager.getClientReady()
+        }, "Costumers");
+
     }
     private buildArea(id: string) {
         const ups = UpgradeManager.instance.getUpgrade(id)
@@ -278,22 +315,24 @@ export default class GameplayCafeScene extends GameScene {
                 states = StringUtils.parseStringArray(states)
             }
             const instance = ProgressionManager.instance.getRawArea(id)
-            const area = createAreaInstance(instance!, [id, obj?.object.width / 2])
+            const area = createAreaInstance(instance!, [id, obj?.object?.width ? obj.object.width / 2 : 0])
 
             this.gameplayContainer.addChild(area.getView());
 
             if ('setStats' in area && typeof area.setStats === 'function') {
                 const statsArea = area as IStats;
                 if (ups.raw) {
+                    statsArea.setStats(ups.raw as unknown as UpgradeableAttributes);
                     console.warn('SET THIS UP', ups.raw)
-                    statsArea.setStats(ups.raw.attributes);
                 }
                 console.log(`Area ${id} implements IStats and has been initialized.`);
             }
 
-            area.setPosition(obj?.object.x + obj?.object.width / 2, obj?.object.y + obj?.object.height / 2)
+            if (obj?.object?.x !== undefined && obj?.object?.y !== undefined) {
+                area.setPosition(obj.object.x + obj.object.width / 2, obj.object.y + obj.object.height / 2);
+            }
             area.setProgressData(ProgressionManager.instance.getAreaProgress(id));
-            area.onUpgrade.add((id, value) => {
+            area.onUpgrade.add((id: string, value: number) => {
                 ProgressionManager.instance.addValue(id, value);
             })
 
@@ -308,6 +347,9 @@ export default class GameplayCafeScene extends GameScene {
     public update(delta: number): void {
         this.player?.update(delta)
         this.camera?.update(delta)
+        this.costumerManager?.update(delta)
+
+
 
         this.inputShape.width = Game.overlayScreenData.width
         this.inputShape.height = Game.overlayScreenData.height

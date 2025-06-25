@@ -5,8 +5,8 @@ import { DevGuiManager } from "../utils/DevGuiManager";
 import { Observable } from '../utils/Observable';
 
 export enum ItemType {
-    MONEY = 1,
-    COFFEE = 2,
+    MONEY = 'money',
+    COFFEE = 'coffee',
 }
 
 export function createAreaInstance<T = any>(areaData: StaticAreaData, args: any[] = []): T | null {

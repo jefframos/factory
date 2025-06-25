@@ -150,7 +150,7 @@
          "y":0
         }, 
         {
-         "draworder":"topdown",
+         "draworder":"index",
          "id":3,
          "name":"Background",
          "objects":[
@@ -412,6 +412,149 @@
                  "width":53.3333,
                  "x":1218,
                  "y":630
+                }, 
+                {
+                 "ellipse":true,
+                 "height":14.6666333333335,
+                 "id":85,
+                 "name":"cashier-coffee-dispenser",
+                 "properties":[
+                        {
+                         "name":"belongsTo",
+                         "type":"string",
+                         "value":"cashier-1"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":14.6666333333335,
+                 "x":1268.00001666667,
+                 "y":657.33335
+                }, 
+                {
+                 "gid":126,
+                 "height":64,
+                 "id":86,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"belongsTo",
+                         "type":"string",
+                         "value":"bin-1"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":64,
+                 "x":1592.66666666667,
+                 "y":556
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":8,
+         "name":"ClientQueue1",
+         "objects":[
+                {
+                 "ellipse":true,
+                 "height":0,
+                 "id":87,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1298.66666666667,
+                 "y":768
+                }, 
+                {
+                 "ellipse":true,
+                 "height":0,
+                 "id":88,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1340,
+                 "y":856
+                }, 
+                {
+                 "ellipse":true,
+                 "height":0,
+                 "id":90,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1472,
+                 "y":881.333333333333
+                }, 
+                {
+                 "ellipse":true,
+                 "height":0,
+                 "id":91,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1510.66666666667,
+                 "y":997.333333333333
+                }, 
+                {
+                 "ellipse":true,
+                 "height":0,
+                 "id":92,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1664,
+                 "y":1004
+                }, 
+                {
+                 "ellipse":true,
+                 "height":0,
+                 "id":93,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1694.66666666667,
+                 "y":1124
+                }, 
+                {
+                 "ellipse":true,
+                 "height":0,
+                 "id":94,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1845.33333333333,
+                 "y":1137.33333333333
+                }, 
+                {
+                 "ellipse":true,
+                 "height":0,
+                 "id":95,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1909.33333333333,
+                 "y":1269.33333333333
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -426,7 +569,7 @@
          "objects":[
                 {
                  "ellipse":true,
-                 "height":62.6666666666667,
+                 "height":62.6667,
                  "id":74,
                  "name":"cashier-1",
                  "properties":[
@@ -438,9 +581,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":62.6666666666667,
+                 "width":62.6667,
                  "x":1136,
-                 "y":672.666666666667
+                 "y":672.667
                 }, 
                 {
                  "ellipse":true,
@@ -590,8 +733,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":8,
- "nextobjectid":85,
+ "nextlayerid":9,
+ "nextobjectid":96,
  "orientation":"staggered",
  "renderorder":"right-down",
  "staggeraxis":"y",

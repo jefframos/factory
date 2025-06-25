@@ -1,40 +1,80 @@
-import * as PIXI from 'pixi.js';
-import StackList, { StackableItem } from '../manager/triggers/stack/Stackable';
+import StackList from '../manager/triggers/stack/Stackable';
 import { ItemType } from '../progression/ProgressionManager';
 import MoveableEntity from './MoveableEntity';
-export default class ActionEntity extends MoveableEntity {
 
-    public stackList!: StackList
+export default class ActionEntity extends MoveableEntity {
+    public stackList!: StackList;
+
+    private pickupTimer: number = 0;
+    private pickupCooldown: number = 1.5; // seconds
+
+    private disposeTimer: number = 0;
+    private disposeCooldown: number = 1.5; // seconds
 
     constructor(tag?: string) {
-        super(tag)
+        super(tag);
     }
+
     protected characterReady(): void {
         this.stackList = new StackList(this, 1, 5, 0, 10, 50);
-        this.stackList.setPosition(30, -50)
+        this.stackList.setPosition(30, -50);
     }
-    public get canStack() {
-        console.warn('this must return if the item can be taken, if fits on the stack')
-        return this.stackList.totalAmount
-    }
-    public takeItem(itemType: ItemType, itemQuantity: number = 1) {
 
-        const sprite = PIXI.Sprite.from('ItemIcon_Money_Bill'); // Replace with your asset
-        const item = new StackableItem(sprite, itemType);
-        const added = this.stackList.addItem(item);
-
+    public get canStack(): boolean {
+        return this.stackList.hasAvailableSpace();
     }
+
+    public pickupAllowed(): boolean {
+        return this.pickupTimer <= 0 && this.canStack;
+    }
+
+    public disposeAllowed(): boolean {
+        return this.disposeTimer <= 0;
+    }
+
+    public disposeFirstItem(): boolean {
+        if (!this.stackList.totalAmount) return false;
+        const removed = this.stackList.removeFirstItem()
+        if (removed) {
+            this.disposeTimer = this.disposeCooldown;
+        }
+        return removed;
+    }
+
+    public disposeItem(itemType: ItemType, itemQuantity: number = 1): boolean {
+        if (!this.stackList.hasItemOfType(itemType)) return false;
+
+        const removed = this.stackList.removeOneItemOfType(itemType);
+        if (removed) {
+            this.disposeTimer = this.disposeCooldown;
+            return true;
+        }
+
+        return false;
+    }
+
+    public takeItem(itemType: ItemType, itemQuantity: number = 1): void {
+        if (!this.pickupAllowed()) return;
+
+        if (this.stackList.addItemFromType(itemType)) {
+            this.pickupTimer = this.pickupCooldown;
+        }
+    }
+
     public update(delta: number): void {
         super.update(delta);
 
+        if (this.pickupTimer > 0) {
+            this.pickupTimer -= delta;
+        }
+
+        if (this.disposeTimer > 0) {
+            this.disposeTimer -= delta;
+        }
+
         if (this.viewContainer) {
-
-            if (this.viewContainer.scale.x > 0) {
-                this.stackList.setPosition(-30, -50)
-            } else {
-                this.stackList.setPosition(30, -50)
-
-            }
+            const offsetX = this.viewContainer.scale.x > 0 ? -30 : 30;
+            this.stackList.setPosition(offsetX, -50);
         }
     }
 }
