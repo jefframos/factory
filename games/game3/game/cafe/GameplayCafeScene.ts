@@ -162,8 +162,13 @@ export default class GameplayCafeScene extends GameScene {
 
 
 
+        let cashier = undefined
+        this.buildArea('cashier-1').then((_cashier) => {
+            cashier = _cashier
 
-        this.buildArea('cashier-1')
+            console.log(cashier)
+        })
+
         this.buildArea('coffee-1')
         this.buildArea('clientDispenser-1')
         this.buildArea('bin-1')
@@ -301,14 +306,20 @@ export default class GameplayCafeScene extends GameScene {
         DevGuiManager.instance.addButton('Sort first costumer', () => {
             this.costumerManager.getClientReady()
         }, "Costumers");
+        DevGuiManager.instance.addButton('Give coffee', () => {
+            if (this.costumerManager.giveItem(ItemType.COFFEE)) {
+                console.log('ORDER MUST GIVE HOW MUCH MONEY', cashier);
+                cashier?.dispenseMoney()
+            }
+        }, "Costumers");
 
     }
-    private buildArea(id: string) {
+    private buildArea(id: string): Promise<any | undefined> {
         const ups = UpgradeManager.instance.getUpgrade(id)
 
         console.log('check the required level, if it is the correct level make this statio works, must attach the trigger with the station', ups, id, UpgradeManager.instance)
 
-        GameplayCafeScene.tiledTriggerLayer.findAndGetByName(id).then((obj) => {
+        return GameplayCafeScene.tiledTriggerLayer.findAndGetByName(id).then((obj) => {
 
             let states = obj?.object?.properties?.states
             if (states) {
@@ -336,6 +347,7 @@ export default class GameplayCafeScene extends GameScene {
                 ProgressionManager.instance.addValue(id, value);
             })
 
+            return area
         })
     }
     public build(...data: any[]): void {

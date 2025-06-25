@@ -9,6 +9,13 @@ export class CustomerEntity extends MoveableEntity {
     public speed = 100; // pixels per second
     private targetPosition: PIXI.Point = new PIXI.Point();
 
+    public get isAtTarget(): boolean {
+        const dx = this.targetPosition.x - this.x;
+        const dy = this.targetPosition.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        return dist <= 0.5;
+    }
+
     constructor() {
         super();
 

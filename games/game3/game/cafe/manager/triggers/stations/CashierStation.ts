@@ -72,6 +72,9 @@ export default class CashierStation extends ActiveableTrigger {
 
     }
 
+    public dispenseMoney() {
+        this.clientMoneyDispenser.onAction();
+    }
     private setupCoffeeDispenser(x: number, y: number): void {
 
         this.clientOrderStack = new StackList(GameplayCafeScene.tiledGameplayLayer, 1, 5, 0, 10, 50);
@@ -80,7 +83,7 @@ export default class CashierStation extends ActiveableTrigger {
     private setupDispenser(x: number, y: number, width: number): void {
         this.clientMoneyDispenser = new DispenserTrigger('clientPurchase', width / 2);
         this.clientMoneyDispenser.itemType = ItemType.MONEY;
-        this.clientMoneyDispenser.setUpStackList(10, 2, 40, 40, 50);
+        this.clientMoneyDispenser.setUpStackList(5, 10, 40, 10, 50);
         this.clientMoneyDispenser.setPosition(x, y);
         this.clientMoneyDispenser.setStackPosition(-80, -20);
         GameplayCafeScene.tiledGameplayLayer.addChild(this.clientMoneyDispenser.getView());
