@@ -5,7 +5,7 @@ set "source_folder=.\dist"
 set "destination_folder=..\play\games\factory"
 set "root_folder=..\play\"
 
-CALL npm run build-dev
+CALL npm run build
 
 REM Define the counter file
 set "counter_file=%~dp0..\counterFactory.txt"
