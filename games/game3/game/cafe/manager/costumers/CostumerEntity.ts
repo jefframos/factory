@@ -20,7 +20,7 @@ export class CustomerEntity extends MoveableEntity {
         super();
 
         // add some variety
-        this.scale.set(0.9 + Math.random() * 0.2);
+        //this.scale.set(0.9 + Math.random() * 0.2);
         this.position.x += (Math.random() - 0.5) * 10;
         this.speed *= (Math.random() * 0.01 + 0.99)
     }

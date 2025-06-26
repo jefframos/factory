@@ -8,6 +8,15 @@
         ],
         "unlockConditions": []
     },
+    "bin-1": {
+        "name": "Bin",
+        "className": "BinStation",
+        "maxLevel": 0,
+        "upgradeThreshold": [
+            50
+        ],
+        "unlockConditions": []
+    },
     "coffee-1": {
         "name": "Coffee Bar",
         "maxLevel": 1,
@@ -35,15 +44,6 @@
             }
         ]
     },
-    "bin-1": {
-        "name": "Bin",
-        "className": "BinStation",
-        "maxLevel": 0,
-        "upgradeThreshold": [
-            50
-        ],
-        "unlockConditions": []
-    },
     "pastry_station": {
         "name": "Pastry Station",
         "maxLevel": 2,
@@ -51,7 +51,7 @@
             {
                 "type": "areaLevel",
                 "areaId": "cashier-1",
-                "level": 3
+                "level": 1
             }
         ]
     },

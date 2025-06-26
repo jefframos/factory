@@ -300,7 +300,7 @@ export default class GameplayCafeScene extends GameScene {
 
         const spline = new Spline(worldSettings?.layers.get('ClientQueue1').objects);
 
-        this.costumerManager = new ClientManager(this.gameplayContainer, spline.getEvenPoints(15), 'MainEntrance');
+        this.costumerManager = new ClientManager(this.gameplayContainer, spline.getEvenPoints(10), 'MainEntrance');
 
 
         DevGuiManager.instance.addButton('Sort first costumer', () => {
