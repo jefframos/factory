@@ -7,6 +7,7 @@ import { AreaProgress, ItemType } from '../../../progression/ProgressionManager'
 import { DevGuiManager } from '../../../utils/DevGuiManager';
 import ActionEntity from '../../../view/ActionEntity';
 import TriggerView from '../../../view/TriggerView';
+import { ClientQueue, ClientQueueManager, ClientQueueType } from '../../costumers/ClientQueue';
 import ActiveableTrigger from '../ActiveableTrigger';
 import DispenserTrigger from '../DispenserTrigger';
 import StackList from '../stack/Stackable';
@@ -19,6 +20,8 @@ export default class CashierStation extends ActiveableTrigger {
     private moneyDispenserPickupTriggerView!: TriggerView;
 
     public clientOrderStack!: StackList;
+
+    private clientQueue!: ClientQueue;
 
 
     public setProgressData(areaProgress: AreaProgress): void {
@@ -123,10 +126,32 @@ export default class CashierStation extends ActiveableTrigger {
 
         this.moneyTriggerView = new TriggerView(this.trigger);
         this.moneyTriggerView.position.set(x, y);
+
+        ClientQueueManager.instance.getQueue(ClientQueueType.MainEntrance)
     }
 
+    protected onStay(): void {
+        super.onStay();
+
+        const costumer = this.clientQueue.getFirstClientWaiting()
+
+        if (costumer && !this.clientQueue.isFirstClientBusy()) {
+            console.log(costumer.order)
+            if (costumer.order.length > 0 && this.clientOrderStack.hasItemOfType(ItemType.COFFEE)) {
+                this.clientOrderStack.removeOneItemOfType(ItemType.COFFEE);
+                if (this.clientQueue.giveItem(ItemType.COFFEE)) {
+                    this.clientMoneyDispenser.tryExecuteAction();
+                }
+            }
+        }
+        console.log('[CashierStation] Player STAY cashier area. SHOW ORDER PREVIEW');
+    }
     protected onEnter(): void {
         super.onEnter();
+
+        if (!this.clientQueue) {
+            this.clientQueue = ClientQueueManager.instance.getQueue(ClientQueueType.MainEntrance)!;
+        }
         console.log('[CashierStation] Player entered cashier area. If food is ready and order is fulfilled, payment can be received.');
     }
 

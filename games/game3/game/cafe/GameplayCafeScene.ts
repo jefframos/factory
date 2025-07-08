@@ -12,7 +12,7 @@ import KeyboardInputMovement from "../io/KeyboardInputMovement";
 import { ItemAssetRegistry } from "./assets/ItemAssetRegistry";
 import { CameraComponent } from "./camera/CameraComponent";
 import { ClassRegistry } from "./manager/ClassRegistry";
-import { ClientManager } from "./manager/costumers/ClientManager";
+import { ClientQueue, ClientQueueManager, ClientQueueType } from "./manager/costumers/ClientQueue";
 import { Spline } from "./manager/costumers/Spline";
 import { GameManager } from "./manager/GameManager";
 import { TriggerManager } from "./manager/TriggerManager";
@@ -39,7 +39,6 @@ export default class GameplayCafeScene extends GameScene {
 
     public onGamePlay: Signal = new Signal();
 
-    private title!: PIXI.Text;
 
     private analogInput: AnalogInput;
     private keyboardInput: KeyboardInputMovement;
@@ -63,8 +62,6 @@ export default class GameplayCafeScene extends GameScene {
     private hud!: GameplayHud;
 
     static belongGroup: Record<string, Array<FoundTiledObject>>
-
-    private costumerManager: ClientManager;
 
     constructor() {
         super();
@@ -162,10 +159,9 @@ export default class GameplayCafeScene extends GameScene {
 
 
 
-        let cashier = undefined
+        let cashier: { dispenseMoney: () => void; } | undefined = undefined
         this.buildArea('cashier-1').then((_cashier) => {
             cashier = _cashier
-
             console.log(cashier)
         })
 
@@ -290,24 +286,22 @@ export default class GameplayCafeScene extends GameScene {
 
 
 
-        console.log('worldSettings', worldSettings?.layers.get('ClientQueue1').objects)
-        const queuePoints = [
-            new PIXI.Point(0 + 800, 0 + 800),
-            new PIXI.Point(50 + 800, 50 + 700),
-            new PIXI.Point(100 + 500, 100 + 800),
-            new PIXI.Point(150 + 800, 150 + 1200),
-        ];
+        console.log('worldSettings', worldSettings?.layers.get('ClientQueue1')!.objects)
+        const clientQueueObjects = worldSettings?.layers.get('ClientQueue1')?.objects;
+        const points: PIXI.Point[] = clientQueueObjects ? clientQueueObjects.map(obj => new PIXI.Point(obj.x, obj.y)) : [];
+        const spline = new Spline(points);
 
-        const spline = new Spline(worldSettings?.layers.get('ClientQueue1').objects);
 
-        this.costumerManager = new ClientManager(this.gameplayContainer, spline.getEvenPoints(10), 'MainEntrance');
+        const costumerManager = new ClientQueue(this.gameplayContainer, spline.getEvenPoints(10), ClientQueueType.MainEntrance);
+        ClientQueueManager.instance.registerQueue(ClientQueueType.MainEntrance, costumerManager)
+
 
 
         DevGuiManager.instance.addButton('Sort first costumer', () => {
-            this.costumerManager.getClientReady()
+            costumerManager.getClientReady()
         }, "Costumers");
         DevGuiManager.instance.addButton('Give coffee', () => {
-            if (this.costumerManager.giveItem(ItemType.COFFEE)) {
+            if (costumerManager.giveItem(ItemType.COFFEE)) {
                 console.log('ORDER MUST GIVE HOW MUCH MONEY', cashier);
                 cashier?.dispenseMoney()
             }
@@ -359,7 +353,7 @@ export default class GameplayCafeScene extends GameScene {
     public update(delta: number): void {
         this.player?.update(delta)
         this.camera?.update(delta)
-        this.costumerManager?.update(delta)
+        ClientQueueManager.instance.updateAllQueues(delta)
 
 
 
