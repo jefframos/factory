@@ -148,6 +148,11 @@ export class ClientQueue {
             if (i > 0) {
                 client.setQueue();
             }
+
+            if (client.state === 'waiting') {
+                client.showOrder(this.activeOrders.get(client)?.order ?? []);
+                //console.log('waiting Here', this.activeOrders.get(client))
+            }
         }
     }
     public giveItem(itemType: ItemType): boolean {

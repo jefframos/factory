@@ -98,8 +98,7 @@ export class ItemStack {
 
 
         if (item && item.sprite) {
-            gsap.killTweensOf(item.sprite);
-            gsap.killTweensOf(item.sprite.scale);
+            this.removeTweens(item.sprite);
         }
 
         item.sprite.destroy();
@@ -117,8 +116,7 @@ export class ItemStack {
 
 
         if (item && item.sprite) {
-            gsap.killTweensOf(item.sprite);
-            gsap.killTweensOf(item.sprite.scale);
+            this.removeTweens(item.sprite);
         }
 
         item.sprite.destroy();
@@ -134,8 +132,7 @@ export class ItemStack {
             const targetY = -i * this.yOffset;
 
             if (item && item.sprite) {
-                gsap.killTweensOf(item.sprite)
-                gsap.killTweensOf(item.sprite.scale)
+                this.removeTweens(item.sprite);
             }
             gsap.to(item.sprite, {
                 y: targetY,
@@ -146,10 +143,14 @@ export class ItemStack {
             item.sprite.zIndex = -targetY + this.baseX * 1000;
         }
     }
-
+    removeTweens(item: PIXI.Sprite) {
+        gsap.killTweensOf(item);
+        gsap.killTweensOf(item.scale);
+    }
     clear(): void {
         for (const item of this.items) {
             this.container.removeChild(item.sprite);
+            this.removeTweens(item.sprite);
             item.sprite.destroy();
         }
         this.items.length = 0;
