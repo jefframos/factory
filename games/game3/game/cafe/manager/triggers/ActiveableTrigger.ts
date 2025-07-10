@@ -11,7 +11,9 @@ export default class ActiveableTrigger extends UpgradeTrigger {
     protected mainTriggerView!: TriggerView;
 
     protected viewsEnabled = false;
-
+    protected getBelongingsByName(name: string): FoundTiledObject | undefined {
+        return this.belongings.find(element => element?.object?.name === name);
+    }
     protected disableViews() {
         this.viewsEnabled = false;
         this.belongings.forEach(element => {

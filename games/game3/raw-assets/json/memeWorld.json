@@ -415,7 +415,7 @@
                 }, 
                 {
                  "ellipse":true,
-                 "height":14.6666333333335,
+                 "height":14.6666,
                  "id":85,
                  "name":"cashier-coffee-dispenser",
                  "properties":[
@@ -427,9 +427,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":14.6666333333335,
-                 "x":1268.00001666667,
-                 "y":657.33335
+                 "width":14.6666,
+                 "x":1266,
+                 "y":654.666333333333
                 }, 
                 {
                  "gid":126,
@@ -446,8 +446,37 @@
                  "type":"",
                  "visible":true,
                  "width":64,
-                 "x":1592.66666666667,
+                 "x":1592.67,
                  "y":556
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":9,
+         "name":"Tables",
+         "objects":[
+                {
+                 "gid":127,
+                 "height":128,
+                 "id":97,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"belongsTo",
+                         "type":"string",
+                         "value":"table-1"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":128,
+                 "x":947.333333333333,
+                 "y":1116.66666666667
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -469,80 +498,8 @@
                  "type":"",
                  "visible":true,
                  "width":0,
-                 "x":1298.66666666667,
-                 "y":768
-                }, 
-                {
-                 "ellipse":true,
-                 "height":0,
-                 "id":88,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":0,
-                 "x":1340,
-                 "y":856
-                }, 
-                {
-                 "ellipse":true,
-                 "height":0,
-                 "id":90,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":0,
-                 "x":1472,
-                 "y":881.333333333333
-                }, 
-                {
-                 "ellipse":true,
-                 "height":0,
-                 "id":91,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":0,
-                 "x":1510.66666666667,
-                 "y":997.333333333333
-                }, 
-                {
-                 "ellipse":true,
-                 "height":0,
-                 "id":92,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":0,
-                 "x":1664,
-                 "y":1004
-                }, 
-                {
-                 "ellipse":true,
-                 "height":0,
-                 "id":93,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":0,
-                 "x":1694.66666666667,
-                 "y":1124
-                }, 
-                {
-                 "ellipse":true,
-                 "height":0,
-                 "id":94,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":0,
-                 "x":1845.33333333333,
-                 "y":1137.33333333333
+                 "x":1368.00333333333,
+                 "y":798
                 }, 
                 {
                  "ellipse":true,
@@ -553,8 +510,8 @@
                  "type":"",
                  "visible":true,
                  "width":0,
-                 "x":1909.33333333333,
-                 "y":1269.33333333333
+                 "x":1859.99666666667,
+                 "y":1049.33
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -623,7 +580,7 @@
                 }, 
                 {
                  "ellipse":true,
-                 "height":60,
+                 "height":138.666666666667,
                  "id":76,
                  "name":"table-1",
                  "properties":[
@@ -635,9 +592,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":60,
-                 "x":920,
-                 "y":848
+                 "width":138.666666666667,
+                 "x":941.333333333333,
+                 "y":983.333333333333
                 }, 
                 {
                  "ellipse":true,
@@ -733,8 +690,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":9,
- "nextobjectid":96,
+ "nextlayerid":10,
+ "nextobjectid":100,
  "orientation":"staggered",
  "renderorder":"right-down",
  "staggeraxis":"y",

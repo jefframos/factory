@@ -12,18 +12,28 @@ export default class CaffeeStation extends ActiveableTrigger {
         super.setProgressData(areaProgress)
 
 
-        GameplayCafeScene.tiledGameplayLayer.addChild(this.dispenser.getView());
 
         this.dispenser.itemType = ItemType.COFFEE;
         this.dispenser.getView().zIndex = 5000
-        this.dispenser.setPosition(this.position.x, this.position.y);
         this.dispenser.setUpStackList(1, 1, 40, 20, 50)
-        this.dispenser.setStackPosition(-50, -80)
-
+        this.dispenser.setStackPosition(0, -50)
 
 
         this.mainTriggerView = new TriggerView(this.triggerBox.trigger);
         this.mainTriggerView.position.set(this.position.x, this.position.y);
+        this.dispenser.setPosition(this.position.x, this.position.y);
+
+        const expressoView = this.getBelongingsByName('expresso2')
+        if (expressoView) {
+            const stackView = this.dispenser.getView()
+            expressoView.view.addChild(this.dispenser.getView());
+            stackView.position.set(0, 0);
+
+        } else {
+            GameplayCafeScene.tiledGameplayLayer.addChild(this.dispenser.getView());
+        }
+
+
 
         this.dispenser.resizeStackList(1, this.rawStats.stack[0])
         console.log('CaffeeStation', this.rawStats)

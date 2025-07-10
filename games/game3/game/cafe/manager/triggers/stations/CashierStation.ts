@@ -73,6 +73,10 @@ export default class CashierStation extends ActiveableTrigger {
             this.moneyTriggerView?.setStatus('disabled')
         }
 
+
+
+
+
     }
 
     public dispenseMoney() {
@@ -80,8 +84,17 @@ export default class CashierStation extends ActiveableTrigger {
     }
     private setupCoffeeDispenser(x: number, y: number): void {
 
-        this.clientOrderStack = new StackList(GameplayCafeScene.tiledGameplayLayer, 1, 5, 0, 10, 50);
-        this.clientOrderStack.setPosition(x, y);
+
+        const bench = this.getBelongingsByName('cashier-bench')
+        const dispenser = this.getBelongingsByName('cashier-coffee-dispenser')
+        if (bench) {
+            this.clientOrderStack = new StackList(bench.view, 1, 5, 0, 10, 50);
+            this.clientOrderStack.setPosition(bench.view.x - dispenser?.view.x, dispenser?.view.y - bench.view.y);
+
+        } else {
+            this.clientOrderStack = new StackList(GameplayCafeScene.tiledGameplayLayer, 1, 5, 0, 10, 50);
+            this.clientOrderStack.setPosition(x, y);
+        }
     }
     private setupDispenser(x: number, y: number, width: number): void {
         this.clientMoneyDispenser = new DispenserTrigger('clientPurchase', width / 2);
@@ -136,15 +149,16 @@ export default class CashierStation extends ActiveableTrigger {
         const costumer = this.clientQueue.getFirstClientWaiting()
 
         if (costumer && !this.clientQueue.isFirstClientBusy()) {
-            console.log(costumer.order)
             if (costumer.order.length > 0 && this.clientOrderStack.hasItemOfType(ItemType.COFFEE)) {
                 this.clientOrderStack.removeOneItemOfType(ItemType.COFFEE);
-                if (this.clientQueue.giveItem(ItemType.COFFEE)) {
-                    this.clientMoneyDispenser.tryExecuteAction();
+                const orderResult = this.clientQueue.giveItem(ItemType.COFFEE)
+                if (orderResult) {
+                    for (let index = 0; index < orderResult.total; index++) {
+                        this.clientMoneyDispenser.tryExecuteAction();
+                    }
                 }
             }
         }
-        console.log('[CashierStation] Player STAY cashier area. SHOW ORDER PREVIEW');
     }
     protected onEnter(): void {
         super.onEnter();

@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { CollisionSystem } from '../../../../../core/collision/CollisionSystem';
+import { PieceViewData } from '../../character/Types';
 import EntityView from './EntityView';
 
 export default class MoveableEntity extends PIXI.Container {
@@ -16,6 +17,7 @@ export default class MoveableEntity extends PIXI.Container {
     protected radius: number = 30;
 
     protected virtualPosition = new PIXI.Point(0, 0); // <-- new virtual position
+    protected entityView!: EntityView;
 
     constructor(tag?: string) {
         super();
@@ -30,10 +32,18 @@ export default class MoveableEntity extends PIXI.Container {
         this.virtualPosition.set(this.x, this.y);
     }
 
-    setCharacter(container: PIXI.Container) {
-        this.addChild(container);
-        this.viewContainer = container;
-        this.targetScale.copyFrom(container.scale);
+    setCharacter(charData: PieceViewData) {
+
+        if (this.entityView) {
+            this.entityView.resetCharacter(charData);
+        } else {
+            this.entityView = new EntityView(charData)
+            this.addChild(this.entityView);
+            this.viewContainer = this.entityView;
+            this.targetScale.copyFrom(this.entityView.scale);
+        }
+
+
         this.characterReady();
     }
 
@@ -45,7 +55,7 @@ export default class MoveableEntity extends PIXI.Container {
         this.direction.copyFrom(direction);
         this.magnitude = magnitude;
 
-        if (this.viewContainer && Math.abs(direction.x) > 0.01) {
+        if (this.viewContainer && Math.abs(direction.x) > 0.5) {
             this.targetScale.x = Math.sign(direction.x) >= 0 ? Math.abs(this.targetScale.x) : -Math.abs(this.targetScale.x);
         }
     }

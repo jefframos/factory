@@ -22,17 +22,18 @@ import IStats from "./manager/triggers/IStats";
 import BinStation from "./manager/triggers/stations/BinStation";
 import CaffeeStation from "./manager/triggers/stations/CaffeeStation";
 import CashierStation from "./manager/triggers/stations/CashierStation";
+import TableStation from "./manager/triggers/stations/TableStation";
 import TimeDispenserTrigger from "./manager/triggers/TimeDispenserTrigger";
 import { UpgradeableAttributes, UpgradeManager } from "./manager/upgrade/UpgradeManager";
 import { createAreaInstance, ItemType, ProgressionManager } from "./progression/ProgressionManager";
 import { DevGuiManager } from "./utils/DevGuiManager";
 import ActionEntity from "./view/ActionEntity";
-import EntityView from "./view/EntityView";
 import GameplayHud from "./view/GameplayHud";
 ClassRegistry.register('ActiveableTrigger', ActiveableTrigger);
 ClassRegistry.register('CaffeeStation', CaffeeStation);
 ClassRegistry.register('CashierStation', CashierStation);
 ClassRegistry.register('BinStation', BinStation);
+ClassRegistry.register('TableStation', TableStation);
 
 
 export default class GameplayCafeScene extends GameScene {
@@ -95,7 +96,7 @@ export default class GameplayCafeScene extends GameScene {
         this.floor.sortableChildren = true;
 
 
-        GameplayCafeScene.tiledGameplayLayer.build(worldSettings!, ['Background'])
+        GameplayCafeScene.tiledGameplayLayer.build(worldSettings!, ['Background', 'Tables'])
         this.worldContainer.addChild(GameplayCafeScene.tiledGameplayLayer);
         GameplayCafeScene.tiledGameplayLayer.sortableChildren = true;
 
@@ -125,7 +126,8 @@ export default class GameplayCafeScene extends GameScene {
         });
 
         this.player = new ActionEntity('PLAYER')
-        this.player.setCharacter(new EntityView(GameplayCharacterData.fetchById(0)!))
+        this.player.setCharacter(GameplayCharacterData.fetchById(0)!)
+        //this.player.setCharacter(new EntityView(GameplayCharacterData.fetchById(0)!))
         this.player.maxSpeed = 200
         //DebugGraphicsHelper.addCircle(this.player)
 
@@ -168,6 +170,7 @@ export default class GameplayCafeScene extends GameScene {
         this.buildArea('coffee-1')
         this.buildArea('clientDispenser-1')
         this.buildArea('bin-1')
+        this.buildArea('table-1')
 
 
         const overtime = new TimeDispenserTrigger('upgrade3');
@@ -292,7 +295,7 @@ export default class GameplayCafeScene extends GameScene {
         const spline = new Spline(points);
 
 
-        const costumerManager = new ClientQueue(this.gameplayContainer, spline.getEvenPoints(10), ClientQueueType.MainEntrance);
+        const costumerManager = new ClientQueue(this.gameplayContainer, spline.getEvenPoints(8), ClientQueueType.MainEntrance);
         ClientQueueManager.instance.registerQueue(ClientQueueType.MainEntrance, costumerManager)
 
 
@@ -320,6 +323,10 @@ export default class GameplayCafeScene extends GameScene {
                 states = StringUtils.parseStringArray(states)
             }
             const instance = ProgressionManager.instance.getRawArea(id)
+
+            if (!instance) {
+                return
+            }
             const area = createAreaInstance(instance!, [id, obj?.object?.width ? obj.object.width / 2 : 0])
 
             this.gameplayContainer.addChild(area.getView());

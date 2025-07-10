@@ -13,9 +13,11 @@ export class OrderView extends PIXI.Container {
         super();
         this.onCompleted = onCompleted;
 
-        const texture = PIXI.Texture.from('bubble');
-        this.background = new PIXI.NineSlicePlane(texture, 16, 40, 16, 100);
-        this.background.width = 147;
+        //const texture = PIXI.Texture.from('bubble');
+        const texture = PIXI.Texture.from('Button01_s_White_Bg');
+        //this.background = new PIXI.NineSlicePlane(texture, 16, 40, 16, 100);
+        this.background = new PIXI.NineSlicePlane(texture, 30, 30, 30, 30);
+        this.background.width = 80;
         this.background.height = 60;
 
         // Container to hold background + rows
@@ -87,25 +89,30 @@ export class OrderView extends PIXI.Container {
     }
 
     private layoutRows() {
-        let y = 10;
+        const topPadding = 10;
+        const rowSpacing = 30;
+        const bottomPadding = 10;
+        let y = topPadding;
         let maxWidth = 0;
 
         for (const row of this.itemRows.values()) {
             const label = row.getChildByName('label') as PIXI.Text;
             label.x = 30;
 
-            row.x = 0; // horizontal layout will center later
+            row.x = 0;
             row.y = y;
-            y += 30;
+            y += rowSpacing;
 
             const rowWidth = label.x + label.width;
             if (rowWidth > maxWidth) maxWidth = rowWidth;
         }
 
-        //this.background.width = Math.max(189, maxWidth + 20);
-        this.background.height = Math.max(147, y);
+        // Calculate total content height + padding
+        const totalHeight = y + bottomPadding;
+        this.background.height = totalHeight;
+        this.background.width = Math.max(120, maxWidth + 20); // Optional: adjust width too
 
-        // Recenter pivot based on new size
+        // Update pivot for centering
         this.contentContainer.pivot.set(this.background.width / 2, this.background.height);
 
         // Center each row horizontally
@@ -113,4 +120,5 @@ export class OrderView extends PIXI.Container {
             row.x = (this.background.width - row.width) / 2;
         }
     }
+
 }

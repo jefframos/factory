@@ -32,14 +32,17 @@
             }
         ]
     },
-    "clientDispenser-1": {
-        "name": "Item Dispenser",
+    "table-1": {
+        "name": "Table",
         "maxLevel": 0,
-        "upgradeThreshold": [],
+        "className": "TableStation",
+        "upgradeThreshold": [
+            50
+        ],
         "unlockConditions": [
             {
                 "type": "areaLevel",
-                "areaId": "coffee-1",
+                "areaId": "bin-1",
                 "level": 1
             }
         ]

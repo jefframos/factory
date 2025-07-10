@@ -10,6 +10,7 @@ export enum ItemType {
 }
 
 export function createAreaInstance<T = any>(areaData: StaticAreaData, args: any[] = []): T | null {
+    console.log('createAreaInstance', areaData.className, areaData)
     if (!areaData.className) return new UpgradeTrigger(...args) as T;
     const AreaClass = ClassRegistry.get<T>(areaData.className);
     if (!AreaClass) {

@@ -48,6 +48,7 @@ export class UpgradeTrigger implements IStats {
         this.id = id;
         this.levelId = levelId;
         this.triggerBox = new TriggerBox(id, 500, radius);
+
         TriggerManager.registerTrigger(this.triggerBox, {
             description: 'Upgrade Trigger: ' + id,
             onEnter: this.onEnter.bind(this),

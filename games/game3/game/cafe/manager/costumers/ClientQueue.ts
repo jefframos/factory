@@ -2,7 +2,6 @@ import Pool from '@core/Pool';
 import * as PIXI from 'pixi.js';
 import GameplayCharacterData from '../../../character/GameplayCharacterData';
 import { ItemType } from '../../progression/ProgressionManager';
-import EntityView from '../../view/EntityView';
 import { CustomerEntity } from './CostumerEntity';
 import { OrderEntry, OrderTable } from './OrderTable';
 export enum ClientQueueType {
@@ -52,6 +51,7 @@ export class ClientQueueManager {
 export interface ClientOrderData {
     busyTimer: number;
     order: OrderEntry[];
+    originalOrder: OrderEntry[];
 }
 
 
@@ -62,7 +62,7 @@ export class ClientQueue {
     private clients: CustomerEntity[] = [];
     private spawnTimer = 0;
     private spawnInterval = 1;
-    private maxClients = 8;
+    private maxClients = 6;
     private activeOrders: Map<CustomerEntity, ClientOrderData> = new Map();
 
 
@@ -112,7 +112,7 @@ export class ClientQueue {
 
         const client = Pool.instance.getElement<CustomerEntity>(CustomerEntity);
         client.id = Math.floor(Math.random() * 10000);
-        client.setCharacter(new EntityView(GameplayCharacterData.fetchById(1)!))
+        client.setCharacter((GameplayCharacterData.fetchById(1)!))
         client.setQueue();
         this.container.addChild(client);
         this.clients.push(client);
@@ -123,9 +123,9 @@ export class ClientQueue {
             ? OrderTable.getFirstOrder()
             : OrderTable.getRandomOrder();
 
-        //this.activeOrders.set(client, order);
+        const originalOrder = order.map(e => ({ ...e })); // Deep copy
+        this.activeOrders.set(client, { order, originalOrder, busyTimer: 0 });
 
-        this.activeOrders.set(client, { order, busyTimer: 0 });
 
         console.log('order', order)
         //client.setOrder(order);
@@ -155,7 +155,7 @@ export class ClientQueue {
             }
         }
     }
-    public giveItem(itemType: ItemType): boolean {
+    public giveItem(itemType: ItemType): { order: OrderEntry[]; total: number } | false {
         const client = this.clients[0];
         const clientData = this.activeOrders.get(client);
 
@@ -175,8 +175,10 @@ export class ClientQueue {
         // client.updateOrder(previousOrder, order);
 
         if (order.every(e => e.amount <= 0)) {
+            const original = clientData.originalOrder.map(e => ({ ...e }));
+            const total = original.reduce((sum, entry) => sum + entry.amount, 0);
             this.removeClient(client);
-            return true;
+            return { order: original, total };
         }
 
         console.log('Updated order:', order.map(e => ({
