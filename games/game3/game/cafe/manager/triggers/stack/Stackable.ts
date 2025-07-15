@@ -241,6 +241,13 @@ export default class StackList {
         return false;
     }
 
+    /** Get the item type of the first item in the first stack */
+    public getFirstItemType(): ItemType | null {
+        if (this.stacks.length === 0 || this.stacks[0].amount === 0) {
+            return null;
+        }
+        return this.stacks[0]['items'][0]?.itemType || null;
+    }
     /** Remove one item of the given type from any stack */
     public removeFirstItem(): boolean {
         for (const stack of this.stacks) {

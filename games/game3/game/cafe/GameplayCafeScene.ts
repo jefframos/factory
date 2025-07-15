@@ -78,6 +78,11 @@ export default class GameplayCafeScene extends GameScene {
             width: 24,
             height: 24
         });
+        ItemAssetRegistry.register(ItemType.GARBAGE, {
+            spriteId: 'Icon_Check03_s',
+            width: 24,
+            height: 24
+        });
 
         GameplayCharacterData.setTable('meme')
 

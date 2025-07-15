@@ -7,6 +7,7 @@ import { Observable } from '../utils/Observable';
 export enum ItemType {
     MONEY = 'money',
     COFFEE = 'coffee',
+    GARBAGE = 'garbage',
 }
 
 export function createAreaInstance<T = any>(areaData: StaticAreaData, args: any[] = []): T | null {

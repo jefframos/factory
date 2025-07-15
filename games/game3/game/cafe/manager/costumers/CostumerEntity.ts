@@ -5,15 +5,27 @@ import MoveableEntity from '../../view/MoveableEntity';
 import { OrderEntry } from './OrderTable';
 import { OrderView } from './OrderView';
 
+export enum CustomerState {
+    Queue = 'queue',
+    Waiting = 'waiting',
+    Ready = 'ready',
+    Table = 'table',
+    WaitingForTable = 'waitingForTable',
+    Ordering = 'Ordering',
+    Eating = 'Eating',
+    OrderFinished = 'orderFinished',
+}
+
 export class CustomerEntity extends MoveableEntity {
+
     public id: number = -1;
-    public state: 'queue' | 'waiting' | 'ready' = 'queue';
+    public state: CustomerState = CustomerState.Queue;
 
-    public speed = 100; // pixels per second
+    public speed = 100;
     private targetPosition: PIXI.Point = new PIXI.Point();
-
     private isMovingToTarget = false;
     private wasAtTargetLastFrame = true;
+    private debugState: PIXI.Text = new PIXI.Text()
 
     public onStartMoving?: () => void;
     public onReachTarget?: () => void;
@@ -30,9 +42,45 @@ export class CustomerEntity extends MoveableEntity {
 
     constructor() {
         super();
-
         this.position.x += (Math.random() - 0.5) * 10;
         this.speed *= (Math.random() * 0.01 + 0.99);
+
+        this.addChild(this.debugState);
+        this.debugState.anchor.set(0.5, 1);
+        this.debugState.y = -50
+    }
+
+    public setState(state: CustomerState): void {
+
+        if (this.state === CustomerState.OrderFinished && this.state != state) {
+
+            if (this.orderView) {
+                const initialScale = 1;
+                const targetScale = 1.5;
+                const duration = 500; // in milliseconds
+
+                let elapsed = 0;
+                const originalAlpha = this.orderView.alpha;
+
+                const tween = (delta: number) => {
+                    elapsed += delta * 16.67; // Approximation for delta in ms
+                    const progress = Math.min(elapsed / duration, 1);
+
+                    const scale = initialScale + (targetScale - initialScale) * progress;
+                    this.orderView.scale.set(scale, scale);
+
+                    this.orderView.alpha = originalAlpha * (1 - progress);
+
+                    if (progress >= 1) {
+                        this.orderView.visible = false;
+                        PIXI.Ticker.shared.remove(tween);
+                    }
+                };
+
+                PIXI.Ticker.shared.add(tween);
+            }
+        }
+        this.state = state;
     }
 
     public positionTo(x: number, y: number): void {
@@ -44,7 +92,9 @@ export class CustomerEntity extends MoveableEntity {
         this.targetPosition.set(x, y);
         this.isMovingToTarget = true;
     }
-
+    updateEatingTimer(timeLeft: number) {
+        console.log('WAITING FOR TABLE STATE NOT WORKING', timeLeft)
+    }
     public update(delta: number): void {
         const dx = this.targetPosition.x - this.x;
         const dy = this.targetPosition.y - this.y;
@@ -73,7 +123,7 @@ export class CustomerEntity extends MoveableEntity {
                 this.y = this.targetPosition.y;
                 this.wasAtTargetLastFrame = true;
                 this.isMovingToTarget = false;
-                this.setWaiting();
+                this.setState(CustomerState.Waiting);
                 this.onReachTarget?.();
             }
         }
@@ -100,29 +150,24 @@ export class CustomerEntity extends MoveableEntity {
                 (1 / parentScaleX),
                 (1 / parentScaleY)
             );
-            this.orderView.visible = true
-
+            this.orderView.visible = true;
         }
+
+        this.debugState.text = this.state
     }
 
     public showOrder(order: OrderEntry[]) {
-        // Merge items by itemType
         let mergedOrder: OrderEntry[] = order;
         if (order.length > 1) {
-
             const mergedMap = new Map<ItemType, number>();
             for (const entry of order) {
                 if (entry.amount <= 0) continue;
                 mergedMap.set(entry.itemType, (mergedMap.get(entry.itemType) || 0) + entry.amount);
             }
 
-            mergedOrder = Array.from(mergedMap.entries()).map(([itemType, amount]) => ({
-                itemType,
-                amount
-            }));
+            mergedOrder = Array.from(mergedMap.entries()).map(([itemType, amount]) => ({ itemType, amount }));
         }
 
-        // Avoid rebuild if nothing changed
         const orderKey = mergedOrder.map(e => `${e.itemType}:${e.amount}`).sort().join(',');
         if (orderKey === this.currentOrderKey) return;
         this.currentOrderKey = orderKey;
@@ -139,24 +184,5 @@ export class CustomerEntity extends MoveableEntity {
         }
 
         this.orderView.updateOrder(mergedOrder);
-    }
-    public setWaiting(): void {
-        this.state = 'waiting';
-    }
-
-    public setQueue(): void {
-        this.state = 'queue';
-        if (this.orderView) {
-            this.orderView.visible = false
-        }
-
-    }
-
-    public setReady(): void {
-        this.state = 'ready';
-        if (this.orderView) {
-            this.orderView.visible = false
-        }
-
     }
 }

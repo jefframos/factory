@@ -2,7 +2,8 @@ import Pool from '@core/Pool';
 import * as PIXI from 'pixi.js';
 import GameplayCharacterData from '../../../character/GameplayCharacterData';
 import { ItemType } from '../../progression/ProgressionManager';
-import { CustomerEntity } from './CostumerEntity';
+import { TableManager } from '../triggers/stations/TableManager';
+import { CustomerEntity, CustomerState } from './CostumerEntity';
 import { OrderEntry, OrderTable } from './OrderTable';
 export enum ClientQueueType {
     MainEntrance = 'MainEntrance',
@@ -64,6 +65,8 @@ export class ClientQueue {
     private spawnInterval = 1;
     private maxClients = 6;
     private activeOrders: Map<CustomerEntity, ClientOrderData> = new Map();
+    private tableManager: TableManager = TableManager.instance;
+    private waitingForTableClients: CustomerEntity[] = [];
 
 
     constructor(container: PIXI.Container, queuePoints: PIXI.Point[], name: string) {
@@ -80,11 +83,9 @@ export class ClientQueue {
             this.spawnTimer = this.spawnInterval;
         }
 
-        // update all clients
         for (const client of this.clients) {
             client?.update(delta);
         }
-
 
         for (const [client, data] of this.activeOrders.entries()) {
             if (data.busyTimer > 0) {
@@ -93,9 +94,19 @@ export class ClientQueue {
             }
         }
 
+        // Try assigning tables to clients waiting for one
+        for (let i = this.waitingForTableClients.length - 1; i >= 0; i--) {
+            const client = this.waitingForTableClients[i];
+            const table = this.tableManager.getAvailableTable();
+            if (table) {
+                this.waitingForTableClients.splice(i, 1);
+                this.getClientOrderFinish(client); // Re-attempt finish
+            }
+        }
 
         this.rebuildQueue();
     }
+
     public isFirstClientBusy(): boolean {
         const client = this.clients[0];
         if (!client) return false;
@@ -113,9 +124,12 @@ export class ClientQueue {
         const client = Pool.instance.getElement<CustomerEntity>(CustomerEntity);
         client.id = Math.floor(Math.random() * 10000);
         client.setCharacter((GameplayCharacterData.fetchById(1)!))
-        client.setQueue();
+        client.setState(CustomerState.Queue);
         this.container.addChild(client);
         this.clients.push(client);
+        client.onReachTarget = () => {
+            client.setState(CustomerState.Ordering);
+        }
         const lastPoint = this.queuePoints[this.queuePoints.length - 1]
         client.positionTo(lastPoint.x, lastPoint.y);
 
@@ -133,7 +147,7 @@ export class ClientQueue {
     }
     public getFirstClientWaiting(): { client: CustomerEntity; order: OrderEntry[] } | null {
         const client = this.clients[0];
-        if (!client || client.state !== 'waiting') return null;
+        if (!client || client.state !== CustomerState.Ordering) return null;
 
         const order = this.activeOrders.get(client);
         if (!order) return null;
@@ -146,12 +160,14 @@ export class ClientQueue {
             const point = this.queuePoints[i] ?? this.queuePoints[this.queuePoints.length - 1];
             client.moveTo(point.x, point.y);
             if (i > 0) {
-                client.setQueue();
-            }
-
-            if (client.state === 'waiting') {
-                client.showOrder(this.activeOrders.get(client)?.order ?? []);
-                //console.log('waiting Here', this.activeOrders.get(client))
+                client.setState(CustomerState.Queue);
+            } else {
+                if (client.state === CustomerState.Ordering) {
+                    client.showOrder(this.activeOrders.get(client)?.order ?? []);
+                    //console.log('waiting Here', this.activeOrders.get(client))
+                } else {
+                    //console.log(client.state)
+                }
             }
         }
     }
@@ -159,7 +175,7 @@ export class ClientQueue {
         const client = this.clients[0];
         const clientData = this.activeOrders.get(client);
 
-        if (!client || !client.isAtTarget || client.state !== 'waiting' || !clientData) return false;
+        if (!client || !client.isAtTarget || client.state !== CustomerState.Ordering || !clientData) return false;
         if (clientData.busyTimer > 0) return false;
 
         const order = clientData.order;
@@ -177,7 +193,8 @@ export class ClientQueue {
         if (order.every(e => e.amount <= 0)) {
             const original = clientData.originalOrder.map(e => ({ ...e }));
             const total = original.reduce((sum, entry) => sum + entry.amount, 0);
-            this.removeClient(client);
+            client.setState(CustomerState.OrderFinished);
+            this.getClientOrderFinish(client);
             return { order: original, total };
         }
 
@@ -189,21 +206,35 @@ export class ClientQueue {
         return false;
 
     }
+    private getClientOrderFinish(client: CustomerEntity): void {
+        const table = this.tableManager.getAvailableTable();
+        if (table) {
+            client.setState(CustomerState.Table);
+            this.activeOrders.delete(client);
+            this.clients = this.clients.filter(c => c !== client);
+            client.onReachTarget = undefined;
+            table.assignCustomer(client);
+        } else {
+            // No table available, buffer the client
+            if (!this.waitingForTableClients.includes(client)) {
+                this.waitingForTableClients.push(client);
+            }
+            client.setState(CustomerState.WaitingForTable);
+        }
+    }
 
     private removeClient(client: CustomerEntity): void {
-        client.setReady();
-        this.container.removeChild(client);
-        this.activeOrders.delete(client);
-        Pool.instance.returnElement(client);
-        this.clients = this.clients.filter(c => c !== client);
+        // this.container.removeChild(client);
+        // Pool.instance.returnElement(client);
+        // this.clients = this.clients.filter(c => c !== client);
     }
     public getClientReady(): void {
         const front = this.clients[0];
-        if (!front || front.state !== 'waiting') return;
-
-        front.setReady();
-        this.container.removeChild(front);
-        Pool.instance.returnElement(front);
-        this.clients.shift(); // remove from list
+        // if (!front || front.state !== 'waiting') return;
+        this.getClientOrderFinish(front);
+        // front.setReady();
+        // this.container.removeChild(front);
+        // Pool.instance.returnElement(front);
+        // this.clients.shift(); // remove from list
     }
 }

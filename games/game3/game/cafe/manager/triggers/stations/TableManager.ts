@@ -24,4 +24,9 @@ export class TableManager {
         }
         return null;
     }
+    public update(delta: number): void {
+        this.tables.forEach(element => {
+            element?.update(delta);
+        });
+    }
 }

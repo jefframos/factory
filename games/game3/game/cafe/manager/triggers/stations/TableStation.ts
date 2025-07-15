@@ -1,9 +1,10 @@
+import Pool from '@core/Pool';
 import * as PIXI from 'pixi.js';
 import GameplayCafeScene from '../../../GameplayCafeScene';
 import { AreaProgress, ItemType } from '../../../progression/ProgressionManager';
 import ActionEntity from '../../../view/ActionEntity';
 import TriggerView from '../../../view/TriggerView';
-import { CustomerEntity } from '../../costumers/CostumerEntity';
+import { CustomerEntity, CustomerState } from '../../costumers/CostumerEntity';
 import { TriggerBox } from '../../TriggerBox';
 import { UpgradeableAttributes } from '../../upgrade/UpgradeManager';
 import ActiveableTrigger from '../ActiveableTrigger';
@@ -21,6 +22,8 @@ interface SeatData {
 
 export default class TableStation extends ActiveableTrigger {
     private seats: SeatData[] = [];
+    private clients: CustomerEntity[] = [];
+    private eatingData: Map<CustomerEntity, { seat: SeatData, timeLeft: number }> = new Map();
 
     public setProgressData(areaProgress: AreaProgress): void {
         super.setProgressData(areaProgress);
@@ -52,8 +55,8 @@ export default class TableStation extends ActiveableTrigger {
             GameplayCafeScene.tiledGameplayLayer.addChild(seatSprite);
 
             // Garbage stack next to the seat
-            const stack = new StackList(GameplayCafeScene.tiledGameplayLayer, 1, 5, 0, 20);
-            stack.setPosition(worldX + 20, worldY); // offset for visuals
+            const stack = new StackList(GameplayCafeScene.tiledGameplayLayer, 1, 5, 0, 20, 30);
+            stack.setPosition(worldX + 20, worldY - 50); // offset for visuals
 
             const seatData: SeatData = {
                 seatSprite,
@@ -63,6 +66,7 @@ export default class TableStation extends ActiveableTrigger {
                 garbageStack: stack
             };
 
+            //this.addGarbageToSeat(seatData);
             this.seats.push(seatData);
         }
     }
@@ -77,24 +81,26 @@ export default class TableStation extends ActiveableTrigger {
         seat.busy = true;
         seat.customer = customer;
 
+        this.clients.push(customer);
+
+        customer.onReachTarget = () => {
+            customer.setState(CustomerState.Eating);
+            this.eatingData.set(customer, { seat, timeLeft: 5 });
+        }
+
         // You can animate/move the customer here to the seat position
-        customer.moveTo(seat.position.x, seat.position.y);
+        customer.moveTo(this.position.x + seat.position.x, this.position.y + seat.position.y);
+        console.log(this.position.x + seat.position.x, this.position.y + seat.position.y)
 
         return true;
     }
 
     /** Call this when customer finishes eating */
-    public markSeatDirty(customer: CustomerEntity): void {
-        const seat = this.seats.find(s => s.customer === customer);
-        if (!seat) return;
 
+    private addGarbageToSeat(seat: SeatData, itemType: ItemType = ItemType.GARBAGE): void {
         seat.hasGarbage = true;
         seat.customer = undefined;
-
-        // Add garbage to the stack
-        seat.garbageStack.addItemFromType(ItemType.COFFEE); // Use your garbage item type or ID
-
-        console.log('Customer left. Garbage added to stack.');
+        seat.garbageStack.addItemFromType(ItemType.GARBAGE);
     }
 
 
@@ -102,9 +108,26 @@ export default class TableStation extends ActiveableTrigger {
     protected onStay(trigger: TriggerBox, entity: ActionEntity): void {
         super.onStay();
 
-        console.log('atTable')
-        if (entity.disposeAllowed()) {
-            entity.disposeFirstItem();
+        if (entity.pickupAllowed()) {
+            //PICK ITEM FROM TABLE
+            this.pickItemFromTable(entity);
+        }
+
+
+    }
+    private pickItemFromTable(entity: ActionEntity): void {
+        if (entity.canStack) {
+            for (const element of this.seats) {
+                if (element.hasGarbage && element.garbageStack.totalAmount > 0) {
+                    const itemType = element.garbageStack.getFirstItemType();
+                    if (itemType) {
+                        entity.takeItem(itemType);
+                        element.garbageStack.removeFirstItem();
+                        element.hasGarbage = element.garbageStack.totalAmount > 0;
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -115,14 +138,46 @@ export default class TableStation extends ActiveableTrigger {
         });
     }
     public isAvailableForCustomer(): boolean {
-        return this.seats.some(seat => !seat.busy);
+        return this.seats.some(seat => !seat.busy && !seat.hasGarbage);
     }
-    public onEnable(): void {
+    public enable(): void {
+        super.enable();
         TableManager.instance.registerTable(this);
     }
 
-    public onDisable(): void {
+    public disable(): void {
+        super.disable();
         TableManager.instance.unregisterTable(this);
     }
 
+    public update(delta: number): void {
+        super.update(delta);
+
+        for (const client of this.clients) {
+            client.update(delta);
+        }
+
+        for (const [client, data] of this.eatingData.entries()) {
+            data.timeLeft -= delta;
+            client.updateEatingTimer?.(data.timeLeft);
+
+            if (data.timeLeft <= 0) {
+                this.eatingData.delete(client);
+                this.addGarbageToSeat(data.seat);
+                this.removeCustomer(client);
+            }
+        }
+    }
+
+    private removeCustomer(customer: CustomerEntity): void {
+        const seat = this.seats.find(s => s.customer === customer);
+        if (seat) {
+            seat.busy = false;
+            seat.customer = undefined;
+        }
+
+        this.clients = this.clients.filter(c => c !== customer);
+        Pool.instance.returnElement(customer);
+        customer.parent?.removeChild(customer);
+    }
 }
