@@ -1,0 +1,258 @@
+{
+    "assets": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json": {
+            "isFolder": true,
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1768563288352,
+                "duration": 139.96590000000003,
+                "success": true
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/cafeProgression.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1768563288355,
+                "duration": 169.98979999999995,
+                "success": true
+            },
+            "hash": "5kuFuQ"
+        },
+        ".assetpack/json/cafeProgression.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/cafeProgression.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/cafeProgression.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/cafeProgression.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/characterMemeSet.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1768563288388,
+                "duration": 137.41100000000006,
+                "success": true
+            },
+            "hash": "I7Oxog"
+        },
+        ".assetpack/json/characterMemeSet.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/characterMemeSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/characterMemeSet.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/characterMemeSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/characterMonsterSet.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1768563288416,
+                "duration": 109.41280000000006,
+                "success": true
+            },
+            "hash": "vyWV"
+        },
+        ".assetpack/json/characterMonsterSet.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/characterMonsterSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/characterMonsterSet.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/characterMonsterSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/characterUnicornSet.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1768563288442,
+                "duration": 82.94270000000006,
+                "success": true
+            },
+            "hash": "MTjFKg"
+        },
+        ".assetpack/json/characterUnicornSet.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/characterUnicornSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/characterUnicornSet.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/characterUnicornSet.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/memeUi.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1768563288497,
+                "duration": 156.17059999999992,
+                "success": true
+            },
+            "hash": "_pHPKg"
+        },
+        ".assetpack/json/memeUi.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/memeUi.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/memeUi.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/memeUi.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/memeWorld.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1768563288525,
+                "duration": 128.1467,
+                "success": true
+            },
+            "hash": "y0qVXQ"
+        },
+        ".assetpack/json/memeWorld.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/memeWorld.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/memeWorld.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/memeWorld.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/test.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1768563288559,
+                "duration": 94.68650000000002,
+                "success": true
+            },
+            "hash": "Z2z_rw"
+        },
+        ".assetpack/json/test.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/test.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/test.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/test.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/tiled.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1768563288580,
+                "duration": 73.4867999999999,
+                "success": true
+            },
+            "hash": "Z8AHKw"
+        },
+        ".assetpack/json/tiled.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/tiled.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/tiled.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/tiled.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/upgradeSettings.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1768563288619,
+                "duration": 34.0462,
+                "success": true
+            },
+            "hash": "j49o"
+        },
+        ".assetpack/json/upgradeSettings.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/upgradeSettings.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/upgradeSettings.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/upgradeSettings.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        }
+    }
+}

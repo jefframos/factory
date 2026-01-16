@@ -5,7 +5,7 @@
         "dev": "vite",
         "start": "vite",
         "build": "vite build",
-        "assets": "node tools/build-assets.mjs && npm run build:json",
+        "assets": "cross-env node tools/build-assets.mjs && npm run build:json",
         "json": "node tools/json/build-json.mjs",
         "zip": "ts-node scripts/zip-game.ts",
         "build:all": "ts-node scripts/build-all.ts",
@@ -14,6 +14,7 @@
         "watch:image": "cross-env WATCH=true node tools/image/build-image.mjs",
         "font": "node tools/font/build-font.mjs",
         "watch:font": "cross-env WATCH=true node tools/font/build-font.mjs",
+        "all": "npm run image && npm run font && npm run json && npm run audio",
         "audio": "node tools/audio/build-audio.mjs",
         "watch:audio": "cross-env WATCH=true node tools/audio/build-audio.mjs"
     },

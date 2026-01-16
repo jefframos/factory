@@ -1,0 +1,57 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "backgrounds"
+          ],
+          "src": [
+            "backgrounds.json"
+          ]
+        },
+        {
+          "alias": [
+            "characters"
+          ],
+          "src": [
+            "characters.json"
+          ]
+        },
+        {
+          "alias": [
+            "jigsaw"
+          ],
+          "src": [
+            "jigsaw.json"
+          ]
+        },
+        {
+          "alias": [
+            "portraits"
+          ],
+          "src": [
+            "portraits.json"
+          ]
+        },
+        {
+          "alias": [
+            "terrain"
+          ],
+          "src": [
+            "terrain.json"
+          ]
+        },
+        {
+          "alias": [
+            "ui"
+          ],
+          "src": [
+            "ui.json"
+          ]
+        }
+      ]
+    }
+  ]
+}
