@@ -7,7 +7,7 @@ import TiledAutoPositionObject from "@core/tiled/TiledAutoPositionObject";
 import * as PIXI from 'pixi.js';
 import { Signal } from "signals";
 import GameplayCharacterData from "../../character/GameplayCharacterData";
-import SwipeInputManager from "../../io/SwipeInputManager";
+// import SwipeInputManager from "../../io/SwipeInputManager";
 import JigsawView from "../../jigsaw/JigsawView";
 import { MaskedTabsGenerator } from "../../jigsaw/MaskedTabsGenerator";
 import { ConfirmationPopupData } from "../../popup/ConfirmationPopup";
@@ -16,15 +16,15 @@ import MainMenuUi from "../ui/MainMenuUi";
 import ScoreUi from "../ui/ScoreUi";
 import { SwipeHint } from "../ui/SwipeHint";
 import TutorialDesktopUi from "../ui/TutorialDesktopUi";
-import { MovementResult } from "./GridManager";
+import MatchManager from "./MatchManager";
 
-export default class Gameplay2048Scene extends GameScene {
+export default class GameplayJigsawScene extends GameScene {
 
     private gameplayContainer = new PIXI.Container();
-    private inputManager!: SwipeInputManager;
+    // private inputManager!: SwipeInputManager;
     private isTransitioning = false;
 
-
+    private matchManager: MatchManager = new MatchManager();
     public highScore = 0;
     private canAutoMove: boolean = false;
     private paused: boolean = false;
@@ -33,6 +33,8 @@ export default class Gameplay2048Scene extends GameScene {
     private scoreUi!: ScoreUi;
     private mainMenu!: MainMenuUi;
     private tutorialDesktop!: TutorialDesktopUi;
+
+    private jigsawBoardView: JigsawView = new JigsawView();
 
 
     private inputShape: PIXI.Sprite = PIXI.Sprite.from(PIXI.Texture.WHITE)
@@ -45,8 +47,8 @@ export default class Gameplay2048Scene extends GameScene {
 
 
         if (ExtractTiledFile.TiledData) {
-            this.background.build(ExtractTiledFile.getTiledFrom('2048'), ['Background'])
-            this.addChild(this.background)
+            // this.background.build(ExtractTiledFile.getTiledFrom('2048'), ['Background'])
+            // this.addChild(this.background)
 
             this.mainMenu = new MainMenuUi(ExtractTiledFile.getTiledFrom('2048'), ['MainMenu']);
             //this.addChild(this.mainMenu);
@@ -58,10 +60,10 @@ export default class Gameplay2048Scene extends GameScene {
             });
 
             this.mainMenu.registerButton('GameOver', () => {
-                //PopupManager.instance.show('gameOver', { matchManager: this.matchManager })
+                PopupManager.instance.show('gameOver', { matchManager: this.matchManager })
             })
             this.mainMenu.registerButton('Autoplay', () => {
-                this.autoplay();
+                //this.autoplay();
             })
             // this.mainMenu.registerButton('Clear Cookies', () => {
             //     GlobalDataManager.wipe();
@@ -155,28 +157,27 @@ export default class Gameplay2048Scene extends GameScene {
         this.hint = new SwipeHint(PIXI.Texture.from('tutorial_hand_2'))
         GameplayCharacterData.setTable('monster')
 
-        const board = new JigsawView();
 
-        const img = PIXI.Sprite.from("link");
-        const generator = new MaskedTabsGenerator();
 
-        board.buildFromSprite(this.gameplayContainer, img, generator, {
-            cols: 7,
-            rows: 5,
-            scatterRect: new PIXI.Rectangle(-450, -300, 900, 600),
-        });
 
-        board.onPieceConnected.add((e) => {
+
+        this.jigsawBoardView.onPieceConnected.add((e) => {
             console.log('piece', e)
 
+            PlatformHandler.instance.platform.gameplayStart();
+
         })
 
-        board.onPuzzleCompleted.add((e) => {
+        this.jigsawBoardView.onPuzzleCompleted.add(async (e) => {
             console.log('completed', e)
 
+            this.jigsawBoardView.input?.setEnabled(false);
+            await this.jigsawBoardView.snapCompletedPuzzleToSolvedPose({ duration: 0.8, ease: "power4.out" });
+            this.jigsawBoardView.input?.setEnabled(true);
+
         })
 
-        this.gameplayContainer.addChild(board)
+        this.gameplayContainer.addChild(this.jigsawBoardView)
 
 
     }
@@ -201,53 +202,61 @@ export default class Gameplay2048Scene extends GameScene {
         PopupManager.instance.show('gameOver', { matchManager: null })
     }
     private resetMatch() {
+        this.matchManager.reset()
         this.scoreUi.gameOver()
 
     }
     private startMatch() {
+        this.matchManager.start();
+        const img = PIXI.Sprite.from("link");
 
-        this.scoreUi.startMatch();
-        this.scoreUi.updateHighestPiece(2, GameplayCharacterData.fetchById(0)!);
+
+        const generator = new MaskedTabsGenerator();
+
+        this.jigsawBoardView.buildFromSprite(this.gameplayContainer, img, generator, {
+            cols: 4,
+            rows: 3,
+            scatterRect: new PIXI.Rectangle(-Game.DESIGN_WIDTH * 0.5, -Game.DESIGN_HEIGHT * 0.4, Game.DESIGN_WIDTH, Game.DESIGN_HEIGHT * 0.8),
+            safeRect: new PIXI.Rectangle(-Game.DESIGN_WIDTH * 0.5 - 40, -Game.DESIGN_HEIGHT * 0.4 - 50, Game.DESIGN_WIDTH + 80, Game.DESIGN_HEIGHT * 0.8 + 100),
+        });
+
+        PlatformHandler.instance.platform.gameplayStart();
+        // this.scoreUi.startMatch();
+        // this.scoreUi.updateHighestPiece(2, GameplayCharacterData.fetchById(0)!);
     }
     public build(): void {
 
 
         this.updateScoreText(0)
-        this.inputManager = new SwipeInputManager();
-        this.inputManager.setShape(this.inputShape)
-        this.addChild(this.inputShape)
-        this.inputShape.alpha = 0;
+        // this.inputManager = new SwipeInputManager();
+        // this.inputManager.setShape(this.inputShape)
+        // this.addChild(this.inputShape)
+        // this.inputShape.alpha = 0;
 
 
-        this.addChild(this.scoreUi)
         this.addChild(this.gameplayContainer);
+        if (this.scoreUi)
+            this.addChild(this.scoreUi)
 
-        this.inputManager.onMove.add(async (direction) => {
-            if (this.isTransitioning) return;
-            // if (this.hint.visible) {
-            //     this.hint.hide();
-            // }
-            this.isTransitioning = true;
-            //const moveResult = await this.gridManager.move(direction);
-            //this.updateTurn(moveResult)
-            this.isTransitioning = false;
-        });
+        // this.inputManager.onMove.add(async (direction) => {
+        //     if (this.isTransitioning) return;
+        //     // if (this.hint.visible) {
+        //     //     this.hint.hide();
+        //     // }
+        //     this.isTransitioning = true;
+        //     //const moveResult = await this.gridManager.move(direction);
+        //     //this.updateTurn(moveResult)
+        //     this.isTransitioning = false;
+        // });
 
         // this.addChild(this.hint)
         // this.hint.show()
 
     }
-    private updateTurn(moveResult: MovementResult) {
-        if (moveResult.isValid) {
-            PlatformHandler.instance.platform.gameplayStart();
-        }
-
-
-    }
 
 
     public override destroy(): void {
-        this.inputManager.destroy();
+        //this.inputManager.destroy();
     }
 
     public update(delta: number): void {
@@ -266,6 +275,8 @@ export default class Gameplay2048Scene extends GameScene {
         if (this.paused) {
             return;
         }
-        //this.scoreUi.setTimer(this.matchManager.matchTimer);
+
+        this.matchManager.update(delta)
+        this.scoreUi.setTimer(this.matchManager.matchTimer);
     }
 }

@@ -80,6 +80,7 @@ export type JigsawBuildOptions =
          * If omitted, pieces are laid out in a neat grid.
          */
         scatterRect?: PIXI.Rectangle;
+        safeRect?: PIXI.Rectangle;
 
         /**
          * Random seed is optional (v1 uses Math.random).

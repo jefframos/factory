@@ -1,6 +1,8 @@
+import { Game } from "@core/Game";
 import { PieceDefinition } from "games/game4/types";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
+import { FXApplier } from "./FXApplier";
 import { JigsawCluster } from "./JigsawCluster";
 import { buildJigsawPath } from "./paths/buildJigsawPath";
 
@@ -11,6 +13,7 @@ export class JigsawPiece extends PIXI.Container {
     public readonly onSelected: Signal = new Signal();
 
     private sprite: PIXI.Sprite;
+    //private pivotT: PIXI.Sprite = PIXI.Sprite.from(PIXI.Texture.WHITE);
     private maskGfx?: PIXI.Graphics;
     private outlineGfx?: PIXI.Graphics;
     public cluster!: JigsawCluster
@@ -23,13 +26,14 @@ export class JigsawPiece extends PIXI.Container {
 
         this.definition = definition;
 
+
         const e = definition.edges;
         if (![-1, 0, 1].includes(e.left) || ![-1, 0, 1].includes(e.right) ||
             ![-1, 0, 1].includes(e.top) || ![-1, 0, 1].includes(e.bottom)) {
             throw new Error(`Invalid edges for ${definition.id}: ${JSON.stringify(e)}`);
         }
 
-
+        this.pivot.set(definition.pad, definition.pad);
         // Visuals
         this.sprite = new PIXI.Sprite(definition.texture);
         //this.sprite.position.set(definition.pad, definition.pad);
@@ -49,26 +53,34 @@ export class JigsawPiece extends PIXI.Container {
                 .drawPolygon(poly)
                 .endFill();
 
-            this.outlineGfx = new PIXI.Graphics()
-                .lineStyle({ width: 2, color: 0xFFFFFF, alpha: 0.25 })
-                //.beginFill(0xffffff, 0.25)
-                .drawPolygon(poly);
 
             this.sprite.mask = this.maskGfx;
 
             this.addChildAt(this.maskGfx, 0);
+
+
+            this.outlineGfx = new PIXI.Graphics()
+                .lineStyle({ width: 1, color: 0xFFFFFF, alpha: 0.15 })
+                //.beginFill(0xffffff, 0.25)
+                .drawPolygon(poly);
             this.addChild(this.outlineGfx);
 
             this.cacheAsBitmap = true
         }
 
         // The manager will do hit-testing; we keep a stable rect that includes padding.
-        const totalW = definition.pieceW + definition.pad * 2;
-        const totalH = definition.pieceH + definition.pad * 2;
-        this.hitRect = new PIXI.Rectangle(0, 0, totalW, totalH);
+        const totalW = definition.pieceW //+ definition.pad * 2;
+        const totalH = definition.pieceH //+ definition.pad * 2;
+        this.hitRect = new PIXI.Rectangle(definition.pad, definition.pad, totalW, totalH);
 
         // Important: do not set eventMode here. Input is handled by the manager.
         // (If you want hover cursor, do it in manager with custom logic.)
+
+        const flat = FXApplier.applyFiltersAndFlatten(Game.renderer, this);
+
+        // Replace visuals with a single sprite for performance:
+        this.removeChildren().forEach((c) => c.destroy({ children: true, texture: false, baseTexture: false } as any));
+        this.addChild(flat);
     }
 
     /** Called by the input manager when this piece is selected. */

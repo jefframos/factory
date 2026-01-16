@@ -123,13 +123,9 @@ export class JigsawClusterManager {
 
 
     private findBestSnapCandidate(activeCluster: JigsawCluster): SnapCandidate | null {
-        console.group("Jigsaw Debug: findBestSnapCandidate");
-        console.log("activeCluster.id:", activeCluster.id);
-        console.log("activeCluster pieces:", activeCluster.pieces.size);
+
 
         if (activeCluster.pieces.size === 0) {
-            console.warn("Cluster has zero pieces -> cannot snap.");
-            console.groupEnd();
             return null;
         }
 
@@ -139,7 +135,6 @@ export class JigsawClusterManager {
             const c = movingPiece.definition.col;
             const r = movingPiece.definition.row;
 
-            console.log("movingPiece:", movingPiece.definition.id, "col,row:", c, r);
 
             const leftKey = this.key(c - 1, r);
             const rightKey = this.key(c + 1, r);
@@ -151,13 +146,7 @@ export class JigsawClusterManager {
             const top = this.pieceByKey.get(topKey) ?? null;
             const bottom = this.pieceByKey.get(bottomKey) ?? null;
 
-            console.log("neighbor keys:", { leftKey, rightKey, topKey, bottomKey });
-            console.log("neighbors found:", {
-                left: !!left ? left.definition.id : null,
-                right: !!right ? right.definition.id : null,
-                top: !!top ? top.definition.id : null,
-                bottom: !!bottom ? bottom.definition.id : null
-            });
+
 
             // If all are null, your pieceByKey map doesn't contain expected keys.
             const neighbors: Array<["left" | "right" | "top" | "bottom", JigsawPiece | null]> =
@@ -174,7 +163,6 @@ export class JigsawClusterManager {
                 }
 
                 if (staticPiece.cluster === activeCluster) {
-                    console.log("skip neighbor in same cluster:", dir, staticPiece.definition.id);
                     continue;
                 }
 
@@ -186,8 +174,7 @@ export class JigsawClusterManager {
             }
         }
 
-        console.log("best:", best ? { dist: best.dist, moving: best.movingPiece.definition.id, static: best.staticPiece.definition.id } : null);
-        console.groupEnd();
+
 
         return best;
     }

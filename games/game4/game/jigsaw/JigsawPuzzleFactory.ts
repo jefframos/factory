@@ -31,6 +31,7 @@ export class JigsawPuzzleFactory {
         // Layout: grid or scatter.
         if (options.scatterRect) {
             for (const p of pieces) {
+
                 p.position.set(
                     options.scatterRect.x + Math.random() * options.scatterRect.width,
                     options.scatterRect.y + Math.random() * options.scatterRect.height

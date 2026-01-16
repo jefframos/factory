@@ -7,7 +7,7 @@ import { PopupManager } from '@core/popup/PopupManager';
 import { SceneManager } from '@core/scene/SceneManager';
 import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
 import * as PIXI from 'pixi.js';
-import Gameplay2048Scene from './game/2048/scene/Gameplay2048Scene';
+import GameplayJigsawScene from './game/2048/scene/GameplayJigsawScene';
 import { DevGuiManager } from './game/cafe/utils/DevGuiManager';
 import GameplayCharacterData from './game/character/GameplayCharacterData';
 import { convertCharacterSetTable, Fonts } from './game/character/Types';
@@ -156,7 +156,7 @@ export default class MyGame extends Game {
     protected startGame(): void {
 
         DevGuiManager.instance.initialize(Game.debugParams.dev);
-        const gameplay = this.sceneManager.register<Gameplay2048Scene>('game', Gameplay2048Scene);
+        const gameplay = this.sceneManager.register<GameplayJigsawScene>('game', GameplayJigsawScene);
         this.sceneManager.changeScene(Game.debugParams.scene || 'game');
         this.sceneManager.resize();
     }
