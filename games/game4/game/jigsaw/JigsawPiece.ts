@@ -2,9 +2,11 @@ import { Game } from "@core/Game";
 import { PieceDefinition } from "games/game4/types";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
-import { FXApplier } from "./FXApplier";
 import { JigsawCluster } from "./JigsawCluster";
 import { buildJigsawPath } from "./paths/buildJigsawPath";
+import { FXApplier } from "./vfx/FXApplier";
+
+
 
 export class JigsawPiece extends PIXI.Container {
     public readonly definition: PieceDefinition;
@@ -60,7 +62,7 @@ export class JigsawPiece extends PIXI.Container {
 
 
             this.outlineGfx = new PIXI.Graphics()
-                .lineStyle({ width: 1, color: 0xFFFFFF, alpha: 0.15 })
+                .lineStyle({ width: 2, color: 0xFFFFFF, alpha: 0.25 })
                 //.beginFill(0xffffff, 0.25)
                 .drawPolygon(poly);
             this.addChild(this.outlineGfx);
@@ -82,6 +84,7 @@ export class JigsawPiece extends PIXI.Container {
         this.removeChildren().forEach((c) => c.destroy({ children: true, texture: false, baseTexture: false } as any));
         this.addChild(flat);
     }
+
 
     /** Called by the input manager when this piece is selected. */
     public notifySelected(): void {

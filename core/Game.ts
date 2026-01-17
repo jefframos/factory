@@ -8,6 +8,7 @@ export class Game {
     public app: PIXI.Application;
     public stageContainer: PIXI.Container;
     public overlayContainer: PIXI.Container;
+    public folderPath: string = '';
     static debugParams: Record<string, any> = {};
     private lastTime: number = performance.now();
     private stats?: Stats;

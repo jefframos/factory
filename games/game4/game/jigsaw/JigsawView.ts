@@ -1,17 +1,18 @@
 import { JigsawBuildOptions } from "games/game4/types";
-import gsap from "gsap";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
 import { IJigsawPuzzleGenerator } from "./IJigsawPuzzleGenerator";
-import { JigsawCluster } from "./JigsawCluster";
 import { JigsawClusterManager } from "./JigsawClusterManager";
 import { JigsawInputManager } from "./JigsawInputManager";
 import { JigsawPiece } from "./JigsawPiece";
 import { JigsawPuzzleFactory } from "./JigsawPuzzleFactory";
+import { JigsawScatterUtils } from "./paths/JigsawScatterUtils";
+import { JigsawSnapUtils } from "./vfx/JigsawSnapUtils";
 
 export default class JigsawView extends PIXI.Container {
     private piecesLayer: PIXI.Container = new PIXI.Container();
     private scatterRect: PIXI.Sprite = PIXI.Sprite.from(PIXI.Texture.WHITE);
+    private safeRect: PIXI.Sprite = PIXI.Sprite.from(PIXI.Texture.WHITE);
     private pieces: JigsawPiece[] = [];
 
     private clusterManager: JigsawClusterManager;
@@ -33,6 +34,9 @@ export default class JigsawView extends PIXI.Container {
 
         this.clusterManager = new JigsawClusterManager(this.piecesLayer);
     }
+    private rectEquals(a: PIXI.Rectangle, b: PIXI.Rectangle): boolean {
+        return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+    }
 
     public buildFromSprite(
         stage: PIXI.Container,
@@ -50,15 +54,14 @@ export default class JigsawView extends PIXI.Container {
 
         this.clusterManager.registerPieces(this.pieces);
 
+        this.clusterManager.signals.onPieceConnected.removeAll();
+        this.clusterManager.signals.onPuzzleCompleted.removeAll();
+
         this.clusterManager.signals.onPieceConnected.add((e) => this.onPieceConnected.dispatch(e));
         this.clusterManager.signals.onPuzzleCompleted.add((e) => this.onPuzzleCompleted.dispatch(e));
 
         const clusters = this.clusterManager.createInitialClusters(this.pieces);
 
-        // Safe area selection:
-        // - If user specified safeRect, use it
-        // - Else if scatterRect exists, safeRect defaults to scatterRect
-        // - Else no safe rect (undefined)
         this._safeRect = options.safeRect
             ? options.safeRect.clone?.() ?? new PIXI.Rectangle(options.safeRect.x, options.safeRect.y, options.safeRect.width, options.safeRect.height)
             : options.scatterRect
@@ -66,25 +69,82 @@ export default class JigsawView extends PIXI.Container {
                 : undefined;
 
         if (options.scatterRect) {
-            for (const c of clusters) {
-                c.container.position.set(
-                    options.scatterRect.x + Math.random() * (options.scatterRect.width - c.container.width),
-                    options.scatterRect.y + Math.random() * (options.scatterRect.height - c.container.height)
-                );
+            if (options.scatterRect) {
+                // Build items list (use LOCAL bounds, not container.width/height)
+                const items = clusters.map((c) => {
+                    c.rebuildPivotFromBounds();
+                    const lb = c.container.getLocalBounds();
 
-                // Ensure initial scatter respects safe rect too (if safeRect differs from scatterRect).
-                if (this._safeRect) {
-                    this.clampClusterToSafeRect(c.container, this._safeRect);
+                    return {
+                        id: c.id,
+                        width: Math.max(1, lb.width),
+                        height: Math.max(1, lb.height),
+                    };
+                });
+
+                const rng = JigsawScatterUtils.createSeededRng((Date.now() & 0xffffffff) >>> 0);
+
+                const placements = JigsawScatterUtils.computeBlueNoisePlacements({
+                    scatterRect: options.scatterRect,
+                    items,
+                    candidatesPerItem: 24,        // good default
+                    padding: 6,                   // small margin
+                    separationMultiplier: 1.05,   // slightly more spread
+                    rng,
+                });
+
+                for (let i = 0; i < clusters.length; i++) {
+                    const c = clusters[i];
+
+                    const lb = c.container.getLocalBounds();
+                    const pos = placements[i];
+
+                    if (options.allowRation) {
+                        const r = Math.floor(Math.random() * 4)
+                        for (let index = 0; index < r; index++) {
+                            c.rotateCW()
+                        }
+                    }
+
+                    // Place so bounds top-left matches placement top-left
+                    c.container.position.set(
+                        pos.x - lb.x + c.container.pivot.x,
+                        pos.y - lb.y + c.container.pivot.y
+                    );
+
+                    if (this._safeRect) {
+                        this.clampClusterToSafeRect(c.container, this._safeRect);
+                    }
                 }
+
+
+                stage.addChildAt(this.scatterRect, 0);
+
+                this.scatterRect.x = options.scatterRect.x;
+                this.scatterRect.y = options.scatterRect.y;
+                this.scatterRect.width = options.scatterRect.width;
+                this.scatterRect.height = options.scatterRect.height;
+                this.scatterRect.alpha = 0.1;
             }
 
+
             stage.addChildAt(this.scatterRect, 0);
+            stage.addChildAt(this.safeRect, 0);
 
             this.scatterRect.x = options.scatterRect.x;
             this.scatterRect.y = options.scatterRect.y;
             this.scatterRect.width = options.scatterRect.width;
             this.scatterRect.height = options.scatterRect.height;
             this.scatterRect.alpha = 0.1;
+
+            if (this._safeRect) {
+                this.safeRect.x = this._safeRect.x;
+                this.safeRect.y = this._safeRect.y;
+                this.safeRect.width = this._safeRect.width;
+                this.safeRect.height = this._safeRect.height;
+                this.safeRect.alpha = 0.1;
+                this.safeRect.tint = 0xFF0000;
+            }
         } else {
             for (const p of this.pieces) {
                 p.cluster.container.position.set(
@@ -103,6 +163,29 @@ export default class JigsawView extends PIXI.Container {
         this.input.setSafeAreaRect(this._safeRect);
     }
 
+    updateSafeAre(x: number, y: number, width: number, height: number) {
+        if (!this._safeRect) {
+            return;
+        }
+        if (this._safeRect.x !== x || this._safeRect.y !== y || this._safeRect.width !== width || this._safeRect.height !== height) {
+            this._safeRect.x = x;
+            this._safeRect.y = y;
+            this._safeRect.width = width;
+            this._safeRect.height = height;
+
+            if (this._safeRect) {
+                this.safeRect.x = this._safeRect.x;
+                this.safeRect.y = this._safeRect.y;
+                this.safeRect.width = this._safeRect.width;
+                this.safeRect.height = this._safeRect.height;
+                this.safeRect.alpha = 0.1;
+                this.safeRect.tint = 0xFF0000;
+            }
+
+            this.input?.setSafeAreaRect(this._safeRect);
+
+        }
+    }
     private clampClusterToSafeRect(clusterContainer: PIXI.Container, safeRect: PIXI.Rectangle): void {
         // Clamp using the cluster's bounds in piecesLayer local space
         const b = clusterContainer.getBounds();
@@ -139,96 +222,20 @@ export default class JigsawView extends PIXI.Container {
         duration?: number;
         ease?: string;
     }): Promise<void> {
-        const duration = opts?.duration ?? 0.7;
-        const ease = opts?.ease ?? "power3.out";
-
-        if (this.pieces.length === 0) {
-            return;
-        }
-
-        // 1) Pick winning cluster (largest by piece count)
-        const clusterToCount = new Map<JigsawCluster, number>();
-        for (const p of this.pieces) {
-            clusterToCount.set(p.cluster, (clusterToCount.get(p.cluster) ?? 0) + 1);
-        }
-
-        let winner: JigsawCluster | null = null;
-        let best = -1;
-
-        for (const [c, count] of clusterToCount.entries()) {
-            if (count > best) {
-                best = count;
-                winner = c;
-            }
-        }
-
-        if (!winner) {
-
-            return;
-        }
-
-        const winnerContainer = winner.container;
-
-        // 2) Choose an anchor piece inside the winner cluster.
-        // Prefer the true top-left (row=0,col=0). If not found, take smallest (row,col).
-        let anchor: JigsawPiece | null = null;
-
-        for (const p of this.pieces) {
-            if (p.cluster !== winner) {
-                continue;
-            }
-            if (p.definition.row === 0 && p.definition.col === 0) {
-                anchor = p;
-                break;
-            }
-            if (!anchor) {
-                anchor = p;
-            } else {
-                const a = anchor.definition;
-                const d = p.definition;
-                if (d.row < a.row || (d.row === a.row && d.col < a.col)) {
-                    anchor = p;
-                }
-            }
-        }
-
-        if (!anchor) {
-
-            return;
-        }
-
-        // 3) Compute where the anchor piece SHOULD be in piecesLayer local space in solved layout
-        // Solved position of a piece's origin:
-        // x = solvedOrigin.x + col * pieceW
-        // y = solvedOrigin.y + row * pieceH
-        const pieceW = anchor.definition.pieceW;
-        const pieceH = anchor.definition.pieceH;
-
-        const desiredAnchorLocal = new PIXI.Point(
-            this._solvedOrigin.x + anchor.definition.col * pieceW,
-            this._solvedOrigin.y + anchor.definition.row * pieceH
-        );
-
-        // 4) Compute where the anchor piece currently is in piecesLayer local space
-        // Use global -> piecesLayer local conversion to avoid merge-order/local-origin issues.
-        const currentAnchorGlobal = anchor.getGlobalPosition(new PIXI.Point(), false);
-        const currentAnchorLocal = this.piecesLayer.toLocal(currentAnchorGlobal);
-
-        // 5) Delta needed to move the whole winner cluster so the anchor lands exactly on desired solved position
-        const dx = desiredAnchorLocal.x - currentAnchorLocal.x;
-        const dy = desiredAnchorLocal.y - currentAnchorLocal.y;
-
-        await new Promise<void>((resolve) => {
-            gsap.to(winnerContainer.position, {
-                x: winnerContainer.position.x + dx,
-                y: winnerContainer.position.y + dy,
-                duration,
-                ease,
-                onComplete: () => resolve(),
-                onInterrupt: () => resolve(),
-            });
+        await JigsawSnapUtils.tweenClusterToSolvedPose({
+            piecesLayer: this.piecesLayer,
+            pieces: this.pieces,
+            solvedOrigin: this._solvedOrigin,
+            duration: opts?.duration,
+            ease: opts?.ease,
+            killTweensForTarget: true,
         });
-
-
     }
+
+    public dispose() {
+        this.clusterManager.dispose();
+        this.piecesLayer.removeChildren()
+        this.pieces = [];
+    }
+
 }

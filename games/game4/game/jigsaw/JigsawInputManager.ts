@@ -24,6 +24,18 @@ export class JigsawInputManager {
     // If true, clamp includes shadow bounds. Usually causes “sticky” edges; default false.
     private _clampIncludesShadow: boolean = false;
 
+
+    private _downTimeMs: number = 0;
+    private _downGlobal: PIXI.Point = new PIXI.Point();
+    private _lastGlobal: PIXI.Point = new PIXI.Point();
+
+    private _dragging: boolean = false;
+
+    private _tapMaxMs: number = 260;
+    private _tapMaxMovePx: number = 8;
+    private _dragStartPx: number = 12;
+
+
     public constructor(
         stage: PIXI.Container,
         piecesLayer: PIXI.Container,
@@ -116,16 +128,16 @@ export class JigsawInputManager {
 
         topPiece.notifySelected?.();
 
-        // Start visuals (lift + filter)
-        this.beginDragVisuals(this.activeCluster);
+        // Tap/drag tracking
+        this._downTimeMs = performance.now();
+        this._downGlobal.copyFrom(global);
+        this._lastGlobal.copyFrom(global);
+        this._dragging = false;
 
-        // Offset between pointer and cluster container position (in piecesLayer space)
-        const pLocal = this.piecesLayer.toLocal(global);
-        this.dragOffset.set(
-            pLocal.x - this.activeCluster.container.x,
-            pLocal.y - this.activeCluster.container.y
-        );
+        // Do NOT lift/apply shadow yet.
+        // Do NOT compute dragOffset yet.
     }
+
 
     private onPointerMove(e: PIXI.FederatedPointerEvent): void {
         if (!this._enabled || !this.activeCluster) {
@@ -137,7 +149,33 @@ export class JigsawInputManager {
             return;
         }
 
-        const pLocal = this.piecesLayer.toLocal(e.global);
+        const global = e.global;
+
+        const dx0 = global.x - this._downGlobal.x;
+        const dy0 = global.y - this._downGlobal.y;
+        const dist0 = Math.hypot(dx0, dy0);
+
+        if (!this._dragging) {
+            if (dist0 < this._dragStartPx) {
+                // Still a tap candidate; do not move cluster.
+                return;
+            }
+
+            // Drag begins now
+            this._dragging = true;
+
+            // Start visuals only when a real drag starts
+            this.beginDragVisuals(this.activeCluster);
+
+            // Compute drag offset at drag start, not on pointer down
+            const pLocal = this.piecesLayer.toLocal(global);
+            this.dragOffset.set(
+                pLocal.x - this.activeCluster.container.x,
+                pLocal.y - this.activeCluster.container.y
+            );
+        }
+
+        const pLocal = this.piecesLayer.toLocal(global);
 
         this.activeCluster.container.position.set(
             pLocal.x - this.dragOffset.x,
@@ -147,7 +185,10 @@ export class JigsawInputManager {
         if (this._safeRect) {
             this.clampClusterToSafeRect(this.activeCluster.container, this._safeRect);
         }
+
+        this._lastGlobal.copyFrom(global);
     }
+
 
     private onPointerUp(e: PIXI.FederatedPointerEvent): void {
         if (!this._enabled || !this.activeCluster) {
@@ -161,18 +202,51 @@ export class JigsawInputManager {
 
         const releasedCluster = this.activeCluster;
 
-        // End visuals first (so merge doesn’t carry filters around)
-        this.endDragVisuals(releasedCluster);
+        const elapsed = performance.now() - this._downTimeMs;
+        const dx = e.global.x - this._downGlobal.x;
+        const dy = e.global.y - this._downGlobal.y;
+        const dist = Math.hypot(dx, dy);
+
+        const isTap =
+            !this._dragging &&
+            elapsed <= this._tapMaxMs &&
+            dist <= this._tapMaxMovePx;
+
+        // End visuals only if we actually started dragging
+        if (this._dragging) {
+            this.endDragVisuals(releasedCluster);
+        }
 
         this.activeCluster = null;
         this.activePointerId = null;
 
+        if (isTap) {
+            // Tap rotates and must not move the cluster
+            releasedCluster.rotateCW();
+
+            // Optional: clamp after rotation
+            if (this._safeRect) {
+                this.clampClusterToSafeRect(releasedCluster.container, this._safeRect);
+            }
+
+            // Try snap after rotation (often desired)
+            this.clusterManager.trySnapAndMerge(releasedCluster);
+
+            if (this._safeRect) {
+                this.clampAllClustersToSafeRect();
+            }
+
+            return;
+        }
+
+        // Drag release => snap/merge only, no rotation
         this.clusterManager.trySnapAndMerge(releasedCluster);
 
         if (this._safeRect) {
             this.clampAllClustersToSafeRect();
         }
     }
+
 
     private beginDragVisuals(cluster: JigsawCluster): void {
         const c = cluster.container;

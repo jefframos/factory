@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768564026271,
-                "duration": 8.59209999999996,
+                "date": 1768643368911,
+                "duration": 8.671299999999974,
                 "success": true
             }
         },
@@ -20,8 +20,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768563699167,
-                "duration": 112.50810000000001,
+                "date": 1768642973626,
+                "duration": 1419.1304,
                 "success": true
             }
         },
@@ -90,8 +90,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768562983784,
-                "duration": 5632.7176,
+                "date": 1768642973635,
+                "duration": 3237.4568000000004,
                 "success": true
             }
         },
@@ -2034,8 +2034,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768564026271,
-                "duration": 181.21540000000005,
+                "date": 1768642973637,
+                "duration": 1524.786,
                 "success": true
             }
         },
@@ -2113,8 +2113,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768562983786,
-                "duration": 5070.1515,
+                "date": 1768643368911,
+                "duration": 328.40689999999995,
                 "success": true
             }
         },
@@ -2187,6 +2187,16 @@
             },
             "transformData": {},
             "hash": "dTaXWw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/portraits{tps}/nosferatu - Copy.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/portraits{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "Mn7irQ"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/portraits{tps}/nosferatu.png": {
             "isFolder": false,
@@ -2403,6 +2413,128 @@
                 "page": 0
             }
         },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/puzzles": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1768642973639,
+                "duration": 0.04610000000002401,
+                "success": true
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/puzzles/meme1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/puzzles",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1768642973639,
+                "duration": 1423.9218999999998,
+                "success": true
+            },
+            "hash": "0ATZTA"
+        },
+        ".assetpack/multi-pipe-1/puzzles/meme1.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/puzzles/meme1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/puzzles/meme1.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/puzzles/meme1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-1/puzzles/meme1.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/puzzles/meme1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/puzzles/meme1.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/puzzles/meme1.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-1/puzzles/meme1-0ATZTA.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/puzzles/meme1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/puzzles/meme1-0ATZTA.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/puzzles/meme1-0ATZTA.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/puzzles/meme2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/puzzles",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1768642975045,
+                "duration": 1560.8222,
+                "success": true
+            },
+            "hash": "QMvw0w"
+        },
+        ".assetpack/multi-pipe-1/puzzles/meme2.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/puzzles/meme2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/puzzles/meme2.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/puzzles/meme2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-1/puzzles/meme2.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/puzzles/meme2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/puzzles/meme2.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/puzzles/meme2.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-1/puzzles/meme2-QMvw0w.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/puzzles/meme2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/puzzles/meme2-QMvw0w.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/puzzles/meme2-QMvw0w.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/terrain{tps}": {
             "isFolder": true,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images",
@@ -2412,8 +2544,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768562983788,
-                "duration": 1930.3256000000001,
+                "date": 1768642975063,
+                "duration": 112.25869999999986,
                 "success": true
             }
         },
@@ -2481,8 +2613,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768562985719,
-                "duration": 3776.408800000001,
+                "date": 1768642975162,
+                "duration": 1848.2810000000004,
                 "success": true
             }
         },

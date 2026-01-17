@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768581934782,
-                "duration": 27.113900000000285,
+                "date": 1768649778812,
+                "duration": 45.73769999999786,
                 "success": true
             }
         },
@@ -18,8 +18,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768563288355,
-                "duration": 169.98979999999995,
+                "date": 1768649679501,
+                "duration": 250.67410000000018,
                 "success": true
             },
             "hash": "5kuFuQ"
@@ -45,8 +45,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768563288388,
-                "duration": 137.41100000000006,
+                "date": 1768649679551,
+                "duration": 200.1988999999994,
                 "success": true
             },
             "hash": "I7Oxog"
@@ -72,8 +72,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768563288416,
-                "duration": 109.41280000000006,
+                "date": 1768649679594,
+                "duration": 158.07359999999971,
                 "success": true
             },
             "hash": "vyWV"
@@ -99,8 +99,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768563288442,
-                "duration": 82.94270000000006,
+                "date": 1768649679626,
+                "duration": 125.4396999999999,
                 "success": true
             },
             "hash": "MTjFKg"
@@ -126,8 +126,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768563288497,
-                "duration": 156.17059999999992,
+                "date": 1768649679698,
+                "duration": 227.8122000000003,
                 "success": true
             },
             "hash": "_pHPKg"
@@ -153,8 +153,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768563288525,
-                "duration": 128.1467,
+                "date": 1768649679752,
+                "duration": 175.84150000000045,
                 "success": true
             },
             "hash": "y0qVXQ"
@@ -180,8 +180,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768563288559,
-                "duration": 94.68650000000002,
+                "date": 1768649679800,
+                "duration": 127.40360000000055,
                 "success": true
             },
             "hash": "Z2z_rw"
@@ -207,11 +207,11 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768581934785,
-                "duration": 28.237100000000282,
+                "date": 1768649778812,
+                "duration": 45.72049999999581,
                 "success": true
             },
-            "hash": "91gFeA"
+            "hash": "W-9O2Q"
         },
         ".assetpack/json/tiled.json": {
             "isFolder": false,
@@ -234,8 +234,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768563288619,
-                "duration": 34.0462,
+                "date": 1768649679868,
+                "duration": 59.32210000000032,
                 "success": true
             },
             "hash": "j49o"

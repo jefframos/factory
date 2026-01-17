@@ -868,8 +868,8 @@ to move the pieces</text>
  <objectgroup draworder="index" id="8" name="ScoreMenu">
   <object id="65" gid="125" x="449.643" y="-127.236" width="208.939" height="49.3182"/>
   <object id="67" gid="195" x="614.303" y="-116.485" width="70" height="70"/>
-  <object id="68" gid="123" x="1.47" y="-476.902" width="208.942" height="62"/>
-  <object id="50" x="44.3752" y="-520.735" width="136.915" height="25.4545">
+  <object id="68" gid="123" x="254.47" y="143.098" width="208.942" height="62"/>
+  <object id="50" x="297.375" y="99.265" width="136.915" height="25.4545">
    <properties>
     <property name="id" value="current-score"/>
    </properties>
@@ -881,19 +881,19 @@ to move the pieces</text>
    </properties>
   </object>
   <object id="74" gid="199" x="239.645" y="77.292" width="50.9197" height="58.0802"/>
-  <object id="75" gid="127" x="-9.6666" y="-475.539" width="45.3409" height="62.8409"/>
+  <object id="75" gid="127" x="243.333" y="144.461" width="45.3409" height="62.8409"/>
   <object id="76" x="311.606" y="32" width="106.122" height="32">
    <properties>
     <property name="id" value="timer"/>
    </properties>
   </object>
-  <object id="87" gid="124" x="452.467" y="-476.997" width="208.94" height="62"/>
-  <object id="89" x="513.649" y="-525.997" width="99.622" height="32">
+  <object id="87" gid="124" x="221.407" y="-377" width="208.94" height="62"/>
+  <object id="89" x="282.589" y="-426" width="99.622" height="32">
    <properties>
     <property name="id" value="moves"/>
    </properties>
   </object>
-  <object id="90" gid="2147483848" x="428.06" y="-475.64" width="72.5697" height="68.7618"/>
+  <object id="90" gid="2147483848" x="197" y="-375.643" width="72.5697" height="68.7618"/>
   <object id="91" x="261" y="-394" width="174" height="174">
    <properties>
     <property name="id" value="highest"/>

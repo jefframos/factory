@@ -11,12 +11,14 @@
         "build:all": "ts-node scripts/build-all.ts",
         "generate:index": "ts-node scripts/generate-index.ts",
         "image": "node tools/image/build-image.mjs",
+        "image2": "npm run thumbs && npm run image",
         "watch:image": "cross-env WATCH=true node tools/image/build-image.mjs",
         "font": "node tools/font/build-font.mjs",
         "watch:font": "cross-env WATCH=true node tools/font/build-font.mjs",
         "all": "npm run image && npm run font && npm run json && npm run audio",
         "audio": "node tools/audio/build-audio.mjs",
-        "watch:audio": "cross-env WATCH=true node tools/audio/build-audio.mjs"
+        "watch:audio": "cross-env WATCH=true node tools/audio/build-audio.mjs",
+        "thumbs": "node tools/image/thumbs.mjs ./games/game4/raw-assets/non-preload/puzzles{copy} ./games/game4/raw-assets/images/thumbs{tps} 200x200"
     },
     "devDependencies": {
         "@types/dat.gui": "^0.7.13",
@@ -36,6 +38,7 @@
         "@pixi/filter-drop-shadow": "^5.2.0",
         "@pixi/filter-glow": "^5.2.1",
         "dat.gui": "^0.7.9",
+        "fs": "^0.0.1-security",
         "gsap": "^3.13.0",
         "sat": "^0.9.0",
         "signals": "^1.0.0",

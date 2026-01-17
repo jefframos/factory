@@ -8,7 +8,7 @@
             "backgrounds"
           ],
           "src": [
-            "backgrounds.json"
+            "backgrounds-gFSUsA.json"
           ]
         },
         {
@@ -16,7 +16,7 @@
             "characters"
           ],
           "src": [
-            "characters.json"
+            "characters-y32Lvg.json"
           ]
         },
         {
@@ -24,7 +24,7 @@
             "jigsaw"
           ],
           "src": [
-            "jigsaw.json"
+            "jigsaw-9HyMxA.json"
           ]
         },
         {
@@ -32,7 +32,7 @@
             "portraits"
           ],
           "src": [
-            "portraits.json"
+            "portraits---TqKw.json"
           ]
         },
         {
@@ -40,7 +40,15 @@
             "terrain"
           ],
           "src": [
-            "terrain.json"
+            "terrain-XwbvIg.json"
+          ]
+        },
+        {
+          "alias": [
+            "thumbs"
+          ],
+          "src": [
+            "thumbs-kcBi_g.json"
           ]
         },
         {
@@ -48,7 +56,7 @@
             "ui"
           ],
           "src": [
-            "ui.json"
+            "ui-wfKR8Q.json"
           ]
         }
       ]

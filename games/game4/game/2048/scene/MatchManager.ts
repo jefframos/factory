@@ -45,6 +45,9 @@ export default class MatchManager {
         }
     }
 
+    public incrementMove(): void {
+        this.moveCounter++;
+    }
     public registerMove(result: MovementResult): void {
         if (this.status === 'waiting') {
             this.start(); // auto-start on first move

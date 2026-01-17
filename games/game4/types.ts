@@ -81,9 +81,56 @@ export type JigsawBuildOptions =
          */
         scatterRect?: PIXI.Rectangle;
         safeRect?: PIXI.Rectangle;
+        allowRation?: boolean;
 
         /**
          * Random seed is optional (v1 uses Math.random).
          * You can add a seeded RNG later without changing the interface.
          */
     };
+
+// types.ts
+export type Difficulty = "easy" | "medium" | "hard";
+
+export interface DifficultyProgress {
+    completed: boolean;
+    bestTimeMs?: number; // store best (lowest) time
+    lastTimeMs?: number;
+    completedAt?: number; // epoch ms
+}
+
+export interface LevelProgress {
+    id: string; // unique across all sections
+    difficulties: Record<Difficulty, DifficultyProgress>;
+}
+
+export interface SectionDefinition {
+    id: string;
+    name: string;
+
+    // Which level image to use as the section cover (must exist in levels[])
+    coverLevelId: string;
+
+    levels: LevelDefinition[];
+}
+
+export interface LevelDefinition {
+    id: string;
+    sectionId: string;
+
+    // Display name like "Puzzle 1" or "Level 1"
+    name: string;
+
+    // Texture id / url / asset key (whatever your loader uses)
+    thumb?: string;
+    imageSrc: string;
+
+    // optional payload sent to game
+    payload?: unknown;
+}
+
+export interface GameProgress {
+    version: number;
+    levels: Record<string, LevelProgress>; // key = levelId
+}
+

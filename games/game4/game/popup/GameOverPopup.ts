@@ -8,7 +8,7 @@ import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
 import MatchManager from '../2048/scene/MatchManager';
 import { Piece } from '../2048/view/Piece';
-import GameplayCharacterData from '../character/GameplayCharacterData';
+// import GameplayCharacterData from '../character/GameplayCharacterData';
 import { Fonts } from '../character/Types';
 interface GameOverPopupData extends PopupData {
     matchManager: MatchManager;
@@ -43,7 +43,7 @@ export class GameOverPopup extends BasePopup {
             highest.view?.addChild(this.highestPiece)
             this.highestPiece.position.set(highest.object.width / 2, highest.object.height / 2);
             this.highestPiece.build(highest.object.width, highest.object.height)
-            this.highestPiece.reset(2, GameplayCharacterData.fetchById(0));
+            // this.highestPiece.reset(2, GameplayCharacterData.fetchById(0));
         }
 
 
@@ -134,7 +134,7 @@ export class GameOverPopup extends BasePopup {
         // if (!data) return;
 
         const power = Math.log2(data.matchManager.highestPiece) - 1;
-        this.highestPiece.reset(data.matchManager.highestPiece, GameplayCharacterData.fetchById(power));
+        // this.highestPiece.reset(data.matchManager.highestPiece, GameplayCharacterData.fetchById(power));
         this.moves.text = data.matchManager.moveCounter.toString();
         this.scoreText.text = data.matchManager.matchPoints.toString();
         this.timer.text = TimerConversionUtils.toUncappedMinutesSeconds(data.matchManager.matchTimer * 1000)
