@@ -35,9 +35,10 @@ export class JigsawClusterManager {
         this.piecesLayer = piecesLayer;
     }
 
-    public dispose() {
+    public dispose(): void {
         this.pieceByKey.clear();
     }
+
     public resetCompletionState(): void {
         this.completed = false;
     }
@@ -88,17 +89,81 @@ export class JigsawClusterManager {
         }
     }
 
-    public trySnapAndMerge(activeCluster: JigsawCluster): void {
+    /**
+     * Async snap+merge:
+     * - Keeps rotation DISCRETE (stable): uses setClusterRotationQ (instant quarter-turns)
+     * - Tweens translation only (safe)
+     *
+     * IMPORTANT: Callers should `await` this.
+     */
+    public async trySnapAndMerge(activeCluster: JigsawCluster): Promise<void> {
+        if ((activeCluster as any).__snapping) {
+            return;
+        }
+        (activeCluster as any).__snapping = true;
+
+        try {
+            for (let i = 0; i < this.snapIterations; i++) {
+                const best = this.findBestSnapCandidate(activeCluster);
+                if (!best || best.dist > this.snapDistance) {
+                    break;
+                }
+
+                // 1) Rotate instantly to target quarter (stable logic)
+                this.setClusterRotationQ(activeCluster, best.targetRotationQ);
+
+                // 2) Tween translation in piecesLayer-local (safe)
+                if (Math.abs(best.deltaLocal.x) > 0.001 || Math.abs(best.deltaLocal.y) > 0.001) {
+                    await this.tweenContainerByLocalDelta(activeCluster.container, best.deltaLocal, 90);
+                }
+
+                const fromCluster = best.movingPiece.cluster;
+                const toCluster = best.staticPiece.cluster;
+
+                if (fromCluster !== toCluster) {
+                    const mergedCluster = this.mergeClusters(fromCluster, toCluster);
+
+                    this.signals.onPieceConnected.dispatch({
+                        movingPiece: best.movingPiece,
+                        staticPiece: best.staticPiece,
+                        fromCluster,
+                        toCluster,
+                        mergedCluster,
+                    });
+
+                    // Update cluster count and completion
+                    this.clusterCount = Math.max(1, this.clusterCount - 1);
+
+                    if (!this.completed && this.clusterCount === 1 && this.totalPieces > 0) {
+                        this.completed = true;
+                        this.signals.onPuzzleCompleted.dispatch({
+                            finalCluster: mergedCluster,
+                            totalPieces: this.totalPieces,
+                        });
+                    }
+
+                    // Critical: continue on the surviving cluster
+                    activeCluster = mergedCluster;
+                }
+            }
+        }
+        finally {
+            (activeCluster as any).__snapping = false;
+        }
+    }
+
+    /**
+     * Original (sync) version kept for reference if you need it.
+     */
+    public trySnapAndMergeSync(activeCluster: JigsawCluster): void {
         for (let i = 0; i < this.snapIterations; i++) {
             const best = this.findBestSnapCandidate(activeCluster);
             if (!best || best.dist > this.snapDistance) {
                 break;
             }
 
-            // Rotate first (keeps world position stable)
             this.setClusterRotationQ(activeCluster, best.targetRotationQ);
 
-            // Apply snap translation (piecesLayer-local delta)
             activeCluster.container.position.x += best.deltaLocal.x;
             activeCluster.container.position.y += best.deltaLocal.y;
 
@@ -116,7 +181,6 @@ export class JigsawClusterManager {
                     mergedCluster,
                 });
 
-                // Update cluster count and completion
                 this.clusterCount = Math.max(1, this.clusterCount - 1);
 
                 if (!this.completed && this.clusterCount === 1 && this.totalPieces > 0) {
@@ -126,6 +190,8 @@ export class JigsawClusterManager {
                         totalPieces: this.totalPieces,
                     });
                 }
+
+                activeCluster = mergedCluster;
             }
         }
     }
@@ -163,8 +229,7 @@ export class JigsawClusterManager {
                     continue;
                 }
 
-                // Try matching by rotating the active cluster to the static cluster's rotation.
-                // This enables "magnet rotated clusters": active will rotate into alignment on snap.
+                // Align active rotation to static cluster rotation
                 const targetRotationQ = staticPiece.cluster.rotationQ;
 
                 const candidate = this.computeCandidate(movingPiece, staticPiece, dir, targetRotationQ);
@@ -195,23 +260,30 @@ export class JigsawClusterManager {
 
         // dir means where static sits relative to moving (in solved grid)
         switch (dir) {
-            case "left": expected.set(+w, 0); break;     // static left  => moving right
-            case "right": expected.set(-w, 0); break;    // static right => moving left
-            case "top": expected.set(0, +h); break;      // static above => moving below
-            case "bottom": expected.set(0, -h); break;   // static below => moving above
+            case "left":
+                {
+                    expected.set(+w, 0);
+                    break;
+                }
+            case "right":
+                {
+                    expected.set(-w, 0);
+                    break;
+                }
+            case "top":
+                {
+                    expected.set(0, +h);
+                    break;
+                }
+            case "bottom":
+                {
+                    expected.set(0, -h);
+                    break;
+                }
         }
 
         // Under rotation, the expected translation rotates with the cluster.
-        const expectedRot = this.rotateVecByQ(expected, targetRotationQ);
-
-        // We need the moving piece "core origin" expressed in piecesLayer space
-        // AFTER applying the target rotation to the moving cluster, but WITHOUT committing it.
-        //
-        // Approach:
-        // - use a small rotation-delta transform around active cluster pivot in world space
-        // - then compute the projected moving core position in piecesLayer
-        //
-        // This avoids temporarily mutating scene graph / risking visible flicker.
+        const expectedRot = this.rotateVecByQ_CW(expected, targetRotationQ);
 
         const activeCluster = movingPiece.cluster;
         const activeContainer = activeCluster.container;
@@ -223,7 +295,6 @@ export class JigsawClusterManager {
         // Convert static core to piecesLayer local (stable)
         const staticCoreL = this.piecesLayer.toLocal(staticCoreG);
 
-        // If target rotation equals current, we can use existing movingCore directly
         const currentQ = activeCluster.rotationQ;
         let movingCoreL: PIXI.Point;
 
@@ -231,7 +302,6 @@ export class JigsawClusterManager {
             movingCoreL = this.piecesLayer.toLocal(movingCoreG_now);
         }
         else {
-            // Project moving core position as if cluster rotated from currentQ -> targetRotationQ
             const projected = this.projectPointUnderClusterQuarterTurn(
                 activeContainer,
                 movingCoreG_now,
@@ -259,6 +329,27 @@ export class JigsawClusterManager {
         };
     }
 
+    private rotateVecByQ_CW(v: PIXI.Point, q: number): PIXI.Point {
+        const qq = q & 3;
+
+        if (qq === 0) {
+            return new PIXI.Point(v.x, v.y);
+        }
+
+        // 90° CW
+        if (qq === 1) {
+            return new PIXI.Point(v.y, -v.x);
+        }
+
+        // 180°
+        if (qq === 2) {
+            return new PIXI.Point(-v.x, -v.y);
+        }
+
+        // 270° CW
+        return new PIXI.Point(-v.y, v.x);
+    }
+
     private mergeClusters(a: JigsawCluster, b: JigsawCluster): JigsawCluster {
         let target = a;
         let source = b;
@@ -273,10 +364,7 @@ export class JigsawClusterManager {
             return target;
         }
 
-        // Assumption for clean merge:
-        // source has already been snapped so that its transform aligns with target in world space.
-        // We still preserve each piece world position when reparenting.
-
+        // Preserve each piece world position when reparenting.
         for (const piece of source.pieces) {
             const worldPos = new PIXI.Point();
             (piece as any).getGlobalPosition(worldPos);
@@ -310,30 +398,9 @@ export class JigsawClusterManager {
             return;
         }
 
-        // Rotate CW until we reach desired q (since rotateCW preserves world pivot)
-        // This keeps your "no jump" guarantee.
         while (cluster.rotationQ !== qq) {
             cluster.rotateCW();
         }
-    }
-
-    private rotateVecByQ(v: PIXI.Point, q: number): PIXI.Point {
-        const qq = q & 3;
-
-        if (qq === 0) {
-            return new PIXI.Point(v.x, v.y);
-        }
-
-        if (qq === 1) {
-            return new PIXI.Point(-v.y, v.x);
-        }
-
-        if (qq === 2) {
-            return new PIXI.Point(-v.x, -v.y);
-        }
-
-        // qq === 3
-        return new PIXI.Point(v.y, -v.x);
     }
 
     /**
@@ -346,30 +413,19 @@ export class JigsawClusterManager {
         fromQ: number,
         toQ: number
     ): PIXI.Point {
-        // Get pivot in local space, then to global (world pivot point)
-        const pivotLocal = clusterContainer.pivot;
-        const pivotWorld = clusterContainer.toGlobal(new PIXI.Point(pivotLocal.x, pivotLocal.y));
+        const pivotWorld = clusterContainer.toGlobal(clusterContainer.pivot.clone());
 
         const from = fromQ & 3;
         const to = toQ & 3;
+        const dq = (to - from) & 3;
 
-        // We need delta rotation in quarter turns (CW)
-        let dq = (to - from) & 3;
-
-        // Convert point to pivot-relative
         const x = pointGlobal.x - pivotWorld.x;
         const y = pointGlobal.y - pivotWorld.y;
 
         let rx = x;
         let ry = y;
 
-        // Apply dq * 90deg CW
         if (dq === 1) {
-            // (x, y) -> (y, -x) for CW 90? In screen coords with y down:
-            // Using standard math with y down is tricky; however Pixi rotation uses
-            // standard +rotation = clockwise? Actually Pixi uses radians with
-            // positive rotation = clockwise in screen coords (y down).
-            // Empirically, for Pixi, 90deg CW corresponds to (x, y)->(y, -x).
             rx = y;
             ry = -x;
         }
@@ -382,10 +438,57 @@ export class JigsawClusterManager {
             ry = x;
         }
 
-        return new PIXI.Point(
-            pivotWorld.x + rx,
-            pivotWorld.y + ry
-        );
+        return new PIXI.Point(pivotWorld.x + rx, pivotWorld.y + ry);
+    }
+
+    // ---------- Tweens (translation only) ----------
+
+    private async tweenContainerByLocalDelta(
+        container: PIXI.Container,
+        deltaLocal: PIXI.Point,
+        durationMs: number = 90
+    ): Promise<void> {
+        const sx = container.x;
+        const sy = container.y;
+        const ex = sx + deltaLocal.x;
+        const ey = sy + deltaLocal.y;
+
+        const easeOutCubic = (t: number) => {
+            return 1 - Math.pow(1 - t, 3);
+        };
+
+        await this.rafTween(durationMs, (t01) => {
+            const k = easeOutCubic(t01);
+
+            container.position.set(
+                sx + (ex - sx) * k,
+                sy + (ey - sy) * k
+            );
+        });
+    }
+
+    private rafTween(durationMs: number, onUpdate: (t01: number) => void): Promise<void> {
+        const d = Math.max(1, durationMs);
+
+        return new Promise<void>((resolve) => {
+            const start = performance.now();
+
+            const tick = () => {
+                const now = performance.now();
+                const t = Math.min(1, (now - start) / d);
+
+                onUpdate(t);
+
+                if (t < 1) {
+                    requestAnimationFrame(tick);
+                }
+                else {
+                    resolve();
+                }
+            };
+
+            requestAnimationFrame(tick);
+        });
     }
 
     private key(col: number, row: number): string {

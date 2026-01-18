@@ -24,6 +24,7 @@ export default class ScoreUi extends AutoPositionTiledContainer {
 
     public onQuit: Signal = new Signal()
     public onRestart: Signal = new Signal()
+    public onPreview: Signal = new Signal()
 
     constructor(mainMenuData: ExtratedTiledTileData, layers?: string[]) {
         super(mainMenuData, layers, { scaleMode: ScaleMode.FIT, matchRatio: 0 }, { pinAnchor: new PIXI.Point(0.5, 0) });
@@ -167,6 +168,39 @@ export default class ScoreUi extends AutoPositionTiledContainer {
             }
         });
         this.addAtId(restartButton, 'restart')
+
+
+
+
+
+
+
+
+
+        const previewButton = new BaseButton({
+            standard: {
+                width: left?.object.width,
+                height: left?.object.height,
+                allPadding: 35,
+                texture: PIXI.Texture.from('Button01_s_Sky'),
+
+                //iconTexture: PIXI.Texture.from('Icon_Back'),
+                iconTexture: PIXI.Texture.from('ItemIcon_Trophy_Gold'),
+                iconSize: { width: left?.object.width * 0.6, height: left?.object.height * 0.6 },
+                iconAnchor: new PIXI.Point(0, 0.1),
+                centerIconVertically: true,
+                centerIconHorizontally: true
+            },
+            over: {
+                tint: 0xcccccc
+            },
+            click: {
+                callback: () => {
+                    this.onPreview.dispatch();
+                }
+            }
+        });
+        this.addAtId(previewButton, 'preview')
 
 
         setTimeout(() => {

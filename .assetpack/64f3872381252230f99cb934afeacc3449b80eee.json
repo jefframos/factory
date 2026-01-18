@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768645325397,
-                "duration": 7.570299999999861,
+                "date": 1768750779355,
+                "duration": 20.963400000000547,
                 "success": true
             }
         },
@@ -20,8 +20,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768645325397,
-                "duration": 7.434200000000146,
+                "date": 1768750779356,
+                "duration": 20.796399999999267,
                 "success": true
             }
         },
@@ -67,6 +67,78 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/meme2.png": {
             "isFolder": false,
             "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/meme2.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/n1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768750779356,
+                "duration": 20.89129999999932,
+                "success": true
+            },
+            "hash": "kElgQw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/n1.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/n1.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/n2.avif": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768750779362,
+                "duration": 14.70560000000114,
+                "success": true
+            },
+            "hash": "wVdPmw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/n2.avif": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/n2.avif",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/n3.webp": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768750779369,
+                "duration": 7.90400000000227,
+                "success": true
+            },
+            "hash": "x27Xig"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/n3.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/n3.webp",
             "metaData": {},
             "inheritedMetaData": {
                 "copy": true

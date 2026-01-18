@@ -7,11 +7,11 @@ import { PopupManager } from '@core/popup/PopupManager';
 import { SceneManager } from '@core/scene/SceneManager';
 import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
 import * as PIXI from 'pixi.js';
-import GameplayJigsawScene from './game/2048/scene/GameplayJigsawScene';
-import { DevGuiManager } from './game/cafe/utils/DevGuiManager';
 import { Fonts } from './game/character/Types';
+import GameplayJigsawScene from './game/jigsaw/GameplayJigsawScene';
 import { ConfirmationPopup } from './game/popup/ConfirmationPopup';
 import { GameOverPopup } from './game/popup/GameOverPopup';
+import { DevGuiManager } from './game/utils/DevGuiManager';
 import fontManifest from './manifests/fonts.json'; // adjust path
 import imageManifest from './manifests/images.json'; // adjust path
 import jsonManifest from './manifests/json.json'; // adjust path

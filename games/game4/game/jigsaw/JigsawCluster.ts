@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
 import { JigsawPiece } from "./JigsawPiece";
+import { shortestDeltaRad } from "./vfx/JigsawMergeUtils";
 
 let _clusterId = 0;
 const RAD90 = Math.PI * 0.5;
@@ -34,73 +35,156 @@ export class JigsawCluster {
     public rotateCW(): void {
         const parent = this.container.parent;
         if (!parent) {
-            // Still rotate; can't preserve world center without a parent transform.
             this.rotationQ = (((this.rotationQ + 1) & 3) as QuarterTurns);
             this.container.rotation = this.rotationQ * RAD90;
             return;
         }
 
-        // Ensure pivot is correct before rotating (especially after merges)
+        // Ensure pivot is right before rotation
         this.rebuildPivotFromBounds();
 
-        // Keep the same world position for the pivot point:
-        // 1) measure world position of pivot BEFORE rotation
-        const pivotWorldBefore = this.container.toGlobal(this._pivotLocal);
+        const pivotWorldBefore = this.container.toGlobal(this.container.pivot.clone());
 
-        // 2) apply rotation
         this.rotationQ = (((this.rotationQ + 1) & 3) as QuarterTurns);
         this.container.rotation = this.rotationQ * RAD90;
 
-        // 3) measure world position of pivot AFTER rotation
-        const pivotWorldAfter = this.container.toGlobal(this._pivotLocal);
+        const pivotWorldAfter = this.container.toGlobal(this.container.pivot.clone());
 
-        // 4) shift container so pivot stays in the same world place
-        const dx = pivotWorldBefore.x - pivotWorldAfter.x;
-        const dy = pivotWorldBefore.y - pivotWorldAfter.y;
+        this.container.position.x += (pivotWorldBefore.x - pivotWorldAfter.x);
+        this.container.position.y += (pivotWorldBefore.y - pivotWorldAfter.y);
+    }
+    public async rotateCW_Tween(durationMs: number = 140): Promise<void> {
+        const parent = this.container.parent;
+        if (!parent) {
+            this.rotateCW();
+            return;
+        }
 
-        this.container.position.x += dx;
-        this.container.position.y += dy;
+        this.rebuildPivotFromBounds();
+
+        const c = this.container;
+
+        // ---- CONFIG (tweak freely) ----
+        const jumpHeight = 10;      // pixels up
+        const scaleUp = 1.06;       // scale pop
+        const bounce = 4;           // small overshoot on landing
+        const rotEase = (t: number) => 1 - Math.pow(1 - t, 3); // easeOutCubic
+        const jumpEaseUp = (t: number) => t * t;               // easeIn
+        const jumpEaseDown = (t: number) => 1 - Math.pow(1 - t, 2); // easeOut
+        // --------------------------------
+
+        // Preserve pivot world position during rotation
+        const pivotWorld = c.toGlobal(c.pivot.clone());
+
+        const startRot = c.rotation;
+        const startY = c.y;
+        const startScale = c.scale.x; // assume uniform scale
+
+        const startQ = this.rotationQ;
+        const endQ = (((startQ + 1) & 3) as QuarterTurns);
+        const targetRot = endQ * RAD90;
+
+        // Shortest angular delta
+        const dRot = shortestDeltaRad(startRot, targetRot);
+
+        await new Promise<void>((resolve) => {
+            const d = Math.max(1, durationMs);
+            const t0 = performance.now();
+
+            const tick = () => {
+                const t1 = performance.now();
+                const t = Math.min(1, (t1 - t0) / d);
+
+                // ---- ROTATION ----
+                const kr = rotEase(t);
+                c.rotation = startRot + dRot * kr;
+
+                // ---- JUMP PROFILE ----
+                let yOffset = 0;
+                let s = 1;
+
+                if (t < 0.5) {
+                    // Going up
+                    const u = jumpEaseUp(t / 0.5);
+                    yOffset = -jumpHeight * u;
+                    s = 1 + (scaleUp - 1) * u;
+                }
+                else {
+                    // Falling + small bounce
+                    const u = jumpEaseDown((t - 0.5) / 0.5);
+                    yOffset = -jumpHeight * (1 - u) + Math.sin(u * Math.PI) * bounce;
+                    s = scaleUp - (scaleUp - 1) * u;
+                }
+
+                c.y = startY + yOffset;
+                c.scale.set(startScale * s);
+
+                // ---- KEEP PIVOT WORLD-LOCKED ----
+                const pivotAfter = c.toGlobal(c.pivot.clone());
+                c.position.x += (pivotWorld.x - pivotAfter.x);
+                c.position.y += (pivotWorld.y - pivotAfter.y);
+
+                if (t < 1) {
+                    requestAnimationFrame(tick);
+                }
+                else {
+                    resolve();
+                }
+            };
+
+            requestAnimationFrame(tick);
+        });
+
+        // ---- SNAP TO CLEAN FINAL STATE ----
+        this.rotationQ = endQ;
+        c.rotation = targetRot;
+        c.scale.set(startScale);
+        c.y = startY;
+
+        const pivotFinal = c.toGlobal(c.pivot.clone());
+        c.position.x += (pivotWorld.x - pivotFinal.x);
+        c.position.y += (pivotWorld.y - pivotFinal.y);
     }
 
-    /**
-     * Recomputes a stable rotation center:
-     * - Uses local bounds of container contents.
-     * - Sets container.pivot to bounds center.
-     * - Tracks pivot in _pivotLocal for world-stable rotation logic.
-     *
-     * Call after:
-     * - add/remove piece
-     * - merge clusters
-     * - any operation that changes visuals/layout
-     */
-    public rebuildPivotFromBounds(): void {
-        // Using getLocalBounds() is OK at cluster-size scales.
-        // Avoid calling this every frame; only on structural changes.
-        const b = this.container.getLocalBounds();
 
+
+    /**
+   * Recomputes a stable rotation center:
+   * - Uses local bounds of container contents.
+   * - Sets container.pivot to bounds center.
+   * - Tracks pivot in _pivotLocal for world-stable rotation logic.
+   *
+   * Call after:
+   * - add/remove piece
+   * - merge clusters
+   * - any operation that changes visuals/layout
+   */
+    public rebuildPivotFromBounds(): void {
+        const parent = this.container.parent;
+
+        // Preserve the container's local origin (0,0) in world space.
+        // This makes pivot changes not "teleport" the cluster.
+        let originWorldBefore: PIXI.Point | null = null;
+
+        if (parent) {
+            originWorldBefore = this.container.toGlobal(new PIXI.Point(0, 0));
+        }
+
+        const b = this.container.getLocalBounds();
         const cx = b.x + b.width * 0.5;
         const cy = b.y + b.height * 0.5;
 
         this._pivotLocal.set(cx, cy);
 
-        // Update pivot without changing visuals:
-        // When you change pivot, the container's world transform changes.
-        // So we preserve the pivot's world position similarly to rotateCW.
-        const parent = this.container.parent;
+        this.container.pivot.set(cx, cy);
 
-        if (parent) {
-            const before = this.container.toGlobal(this._pivotLocal);
-
-            this.container.pivot.set(cx, cy);
-
-            const after = this.container.toGlobal(this._pivotLocal);
-
-            this.container.position.x += (before.x - after.x);
-            this.container.position.y += (before.y - after.y);
-        }
-        else {
-            // No parent: just set pivot; can't preserve world position.
-            this.container.pivot.set(cx, cy);
+        if (parent && originWorldBefore) {
+            const originWorldAfter = this.container.toGlobal(new PIXI.Point(0, 0));
+            this.container.position.x += (originWorldBefore.x - originWorldAfter.x);
+            this.container.position.y += (originWorldBefore.y - originWorldAfter.y);
         }
     }
+
+
+
 }

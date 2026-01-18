@@ -7,6 +7,7 @@ import { JigsawInputManager } from "./JigsawInputManager";
 import { JigsawPiece } from "./JigsawPiece";
 import { JigsawPuzzleFactory } from "./JigsawPuzzleFactory";
 import { JigsawScatterUtils } from "./paths/JigsawScatterUtils";
+import { PuzzlePreview } from "./ui/PuzzlePreview";
 import { JigsawSnapUtils } from "./vfx/JigsawSnapUtils";
 
 export default class JigsawView extends PIXI.Container {
@@ -22,8 +23,12 @@ export default class JigsawView extends PIXI.Container {
     private _snapTween?: gsap.core.Tween;
     private _safeRect?: PIXI.Rectangle;
 
+    private targetSprite!: PIXI.Sprite;
+
 
     private _solvedOrigin: PIXI.Point = new PIXI.Point(0, 0);
+
+    private previewPopup?: PuzzlePreview;
 
     public readonly onPieceConnected: Signal = new Signal();
     public readonly onPuzzleCompleted: Signal = new Signal();
@@ -46,7 +51,13 @@ export default class JigsawView extends PIXI.Container {
     ): void {
         this._stage = stage;
 
+        this.targetSprite = targetSprite;
+        //stage.addChild(this.targetSprite)
         this.piecesLayer.removeChildren();
+
+        if (this.previewPopup) this.previewPopup.destroy();
+        this.previewPopup = new PuzzlePreview(targetSprite);
+
         this.pieces = [];
 
         const built = JigsawPuzzleFactory.build(targetSprite.texture, generator, options);
@@ -95,16 +106,18 @@ export default class JigsawView extends PIXI.Container {
 
                 for (let i = 0; i < clusters.length; i++) {
                     const c = clusters[i];
-
-                    const lb = c.container.getLocalBounds();
                     const pos = placements[i];
 
                     if (options.allowRation) {
-                        const r = Math.floor(Math.random() * 4)
+                        const r = Math.floor(Math.random() * 4);
                         for (let index = 0; index < r; index++) {
-                            c.rotateCW()
+                            c.rotateCW();
                         }
                     }
+
+                    // After rotation, bounds/pivot may have changed => recompute
+                    c.rebuildPivotFromBounds();
+                    const lb = c.container.getLocalBounds();
 
                     // Place so bounds top-left matches placement top-left
                     c.container.position.set(
@@ -112,8 +125,9 @@ export default class JigsawView extends PIXI.Container {
                         pos.y - lb.y + c.container.pivot.y
                     );
 
+
                     if (this._safeRect) {
-                        this.clampClusterToSafeRect(c.container, this._safeRect);
+                        //this.clampClusterToSafeRect(c.container, this._safeRect);
                     }
                 }
 
@@ -161,6 +175,29 @@ export default class JigsawView extends PIXI.Container {
 
         // Send safe area to input. If undefined, input will not clamp.
         this.input.setSafeAreaRect(this._safeRect);
+
+
+    }
+    showPreview(): void {
+        if (!this.previewPopup || !this._stage) {
+            return;
+        }
+
+        //this.input?.setEnabled(false)
+
+        // Ensure it's attached to stage
+        if (this.previewPopup.parent !== this._stage) {
+            this._stage.addChild(this.previewPopup);
+        }
+        else {
+            // Move to top if already present
+            this._stage.setChildIndex(
+                this.previewPopup,
+                this._stage.children.length - 1
+            );
+        }
+
+        this.previewPopup.show();
     }
 
     updateSafeAre(x: number, y: number, width: number, height: number) {
@@ -233,6 +270,7 @@ export default class JigsawView extends PIXI.Container {
     }
 
     public dispose() {
+        this.previewPopup?.hide();
         this.clusterManager.dispose();
         this.piecesLayer.removeChildren()
         this.pieces = [];

@@ -190,7 +190,7 @@ export class JigsawInputManager {
     }
 
 
-    private onPointerUp(e: PIXI.FederatedPointerEvent): void {
+    private async onPointerUp(e: PIXI.FederatedPointerEvent): Promise<void> {
         if (!this._enabled || !this.activeCluster) {
             return;
         }
@@ -212,7 +212,6 @@ export class JigsawInputManager {
             elapsed <= this._tapMaxMs &&
             dist <= this._tapMaxMovePx;
 
-        // End visuals only if we actually started dragging
         if (this._dragging) {
             this.endDragVisuals(releasedCluster);
         }
@@ -221,16 +220,15 @@ export class JigsawInputManager {
         this.activePointerId = null;
 
         if (isTap) {
-            // Tap rotates and must not move the cluster
-            releasedCluster.rotateCW();
+            // Tweened rotation (no translation)
+            await releasedCluster.rotateCW_Tween(140);
 
-            // Optional: clamp after rotation
             if (this._safeRect) {
                 this.clampClusterToSafeRect(releasedCluster.container, this._safeRect);
             }
 
-            // Try snap after rotation (often desired)
-            this.clusterManager.trySnapAndMerge(releasedCluster);
+            // IMPORTANT: await, because snap/merge is async now
+            await this.clusterManager.trySnapAndMerge(releasedCluster);
 
             if (this._safeRect) {
                 this.clampAllClustersToSafeRect();
@@ -239,13 +237,14 @@ export class JigsawInputManager {
             return;
         }
 
-        // Drag release => snap/merge only, no rotation
-        this.clusterManager.trySnapAndMerge(releasedCluster);
+        // Drag release => snap/merge only
+        await this.clusterManager.trySnapAndMerge(releasedCluster);
 
         if (this._safeRect) {
             this.clampAllClustersToSafeRect();
         }
     }
+
 
 
     private beginDragVisuals(cluster: JigsawCluster): void {

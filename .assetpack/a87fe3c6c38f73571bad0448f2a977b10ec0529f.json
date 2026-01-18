@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768659156871,
-                "duration": 8.410299999999552,
+                "date": 1768750779158,
+                "duration": 8.799599999998463,
                 "success": true
             }
         },
@@ -2603,8 +2603,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768659156871,
-                "duration": 62.74439999999959,
+                "date": 1768750779159,
+                "duration": 82.17729999999938,
                 "success": true
             }
         },
@@ -2628,6 +2628,36 @@
             "transformData": {},
             "hash": "9s6S3w"
         },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/n1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "oEWz-A"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/n2.avif": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "wVdPmw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/n3.webp": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "u0lM7g"
+        },
         ".assetpack/multi-pipe-1/thumbs.png": {
             "isFolder": false,
             "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
@@ -2640,7 +2670,7 @@
             },
             "transformData": {}
         },
-        ".assetpack/cache-buster/thumbs-Y-RDoA.png": {
+        ".assetpack/cache-buster/thumbs-u9SUtQ.png": {
             "isFolder": false,
             "transformParent": ".assetpack/multi-pipe-1/thumbs.png",
             "metaData": {},
@@ -2651,9 +2681,9 @@
             },
             "transformData": {}
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/thumbs-Y-RDoA.png": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/thumbs-u9SUtQ.png": {
             "isFolder": false,
-            "transformParent": ".assetpack/cache-buster/thumbs-Y-RDoA.png",
+            "transformParent": ".assetpack/cache-buster/thumbs-u9SUtQ.png",
             "metaData": {},
             "inheritedMetaData": {
                 "tps": true,
@@ -2673,7 +2703,7 @@
                 "page": 0
             }
         },
-        ".assetpack/cache-buster/thumbs-ZiMg1Q.json": {
+        ".assetpack/cache-buster/thumbs-bywpGQ.json": {
             "isFolder": false,
             "transformParent": ".assetpack/multi-pipe-1/thumbs.json",
             "metaData": {},
@@ -2684,9 +2714,9 @@
                 "page": 0
             }
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/thumbs-kcBi_g.json": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/thumbs-TUrCoA.json": {
             "isFolder": false,
-            "transformParent": ".assetpack/cache-buster/thumbs-ZiMg1Q.json",
+            "transformParent": ".assetpack/cache-buster/thumbs-bywpGQ.json",
             "metaData": {},
             "inheritedMetaData": {
                 "tps": true

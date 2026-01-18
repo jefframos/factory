@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768649778812,
-                "duration": 45.73769999999786,
+                "date": 1768749609768,
+                "duration": 23.243000000000393,
                 "success": true
             }
         },
@@ -207,11 +207,11 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768649778812,
-                "duration": 45.72049999999581,
+                "date": 1768749609770,
+                "duration": 24.28740000000016,
                 "success": true
             },
-            "hash": "W-9O2Q"
+            "hash": "7lOiIg"
         },
         ".assetpack/json/tiled.json": {
             "isFolder": false,

@@ -1,3 +1,4 @@
+import { BevelFilter } from "@pixi/filter-bevel";
 import { GlowFilter } from "@pixi/filter-glow";
 import * as PIXI from "pixi.js";
 
@@ -43,6 +44,11 @@ export class FXApplier {
                 quality: 0.3,
                 knockout: false
             }),
+            new BevelFilter({
+                thickness: 3,
+                lightAlpha: 0.5,
+                shadowAlpha: 0.7
+            })
         ];
 
         // 2) Apply filters temporarily

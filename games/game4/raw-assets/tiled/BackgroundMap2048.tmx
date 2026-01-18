@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="16" nextobjectid="227">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="16" nextobjectid="228">
  <editorsettings>
   <export target="../json/tiled.json" format="json"/>
  </editorsettings>
@@ -940,9 +940,14 @@ to move the pieces</text>
     <property name="id" value="home-button"/>
    </properties>
   </object>
-  <object id="135" x="576" y="32" width="83.4405" height="79.5595">
+  <object id="135" x="480" y="32" width="83.4405" height="79.5595">
    <properties>
     <property name="id" value="restart"/>
+   </properties>
+  </object>
+  <object id="227" x="576" y="64" width="63.4405" height="60.4897">
+   <properties>
+    <property name="id" value="preview"/>
    </properties>
   </object>
  </objectgroup>
