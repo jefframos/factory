@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768750779158,
-                "duration": 8.799599999998463,
+                "date": 1768780250236,
+                "duration": 9.052200000000084,
                 "success": true
             }
         },
@@ -20,12 +20,12 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768644983064,
-                "duration": 1358.9577,
+                "date": 1768778857570,
+                "duration": 511.8846000000001,
                 "success": true
             }
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/backgrounds{tps}/Background_Lobby_Bg_center.png": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/backgrounds{tps}/background.png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/backgrounds{tps}",
             "metaData": {},
@@ -33,7 +33,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "TzlU_g"
+            "hash": "OHc8uA"
         },
         ".assetpack/multi-pipe-1/backgrounds.png": {
             "isFolder": false,
@@ -47,7 +47,7 @@
             },
             "transformData": {}
         },
-        ".assetpack/cache-buster/backgrounds-ZKMf.png": {
+        ".assetpack/cache-buster/backgrounds-mLRQdw.png": {
             "isFolder": false,
             "transformParent": ".assetpack/multi-pipe-1/backgrounds.png",
             "metaData": {},
@@ -58,9 +58,9 @@
             },
             "transformData": {}
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/backgrounds-ZKMf.png": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/backgrounds-mLRQdw.png": {
             "isFolder": false,
-            "transformParent": ".assetpack/cache-buster/backgrounds-ZKMf.png",
+            "transformParent": ".assetpack/cache-buster/backgrounds-mLRQdw.png",
             "metaData": {},
             "inheritedMetaData": {
                 "tps": true,
@@ -80,7 +80,7 @@
                 "page": 0
             }
         },
-        ".assetpack/cache-buster/backgrounds-vR_muA.json": {
+        ".assetpack/cache-buster/backgrounds-yuGE5w.json": {
             "isFolder": false,
             "transformParent": ".assetpack/multi-pipe-1/backgrounds.json",
             "metaData": {},
@@ -91,1980 +91,11 @@
                 "page": 0
             }
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/backgrounds-gFSUsA.json": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/backgrounds-a_Fa4g.json": {
             "isFolder": false,
-            "transformParent": ".assetpack/cache-buster/backgrounds-vR_muA.json",
+            "transformParent": ".assetpack/cache-buster/backgrounds-yuGE5w.json",
             "metaData": {},
             "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {
-                "page": 0
-            }
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}": {
-            "isFolder": true,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images",
-            "metaData": {
-                "a": true,
-                "tps": true
-            },
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1768644983073,
-                "duration": 3028.8601,
-                "success": true
-            }
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain": {
-            "isFolder": true,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0001.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "nYhY"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0002.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "7rNsKQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0003.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "IhKHFg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0004.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "d5N6ug"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0005.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "lW7qzw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0006.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "Hw6Izw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0007.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "c-TLkQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0008.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "JLjj9w"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain/gigabrain0009.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/gigabrain",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "qJqwiQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1": {
-            "isFolder": true,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1/meme-10001.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "ve2ISQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1/meme-10002.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "M4AtKw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1/meme-10003.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "zPML4g"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1/meme-10004.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "LVgb"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1/meme-10005.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "zfbsJQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1/meme-10006.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "I7Bczw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1/meme-10007.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "ez0z"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1/meme-10008.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "jv37Kg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1/meme-10009.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "vOAU5A"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1/meme-10010.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "-kkV7A"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1/meme-10011.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "UObxLw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1/meme-10012.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "tBNjnQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2": {
-            "isFolder": true,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2/meme-20001.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "qNZL0A"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2/meme-20002.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "Lmsuig"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2/meme-20003.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "4pHS"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2/meme-20004.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "x_vP_Q"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2/meme-20005.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "ZWAhKA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2/meme-20006.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "FSy51g"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2/meme-20007.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "gCr5zA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2/meme-20008.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "W587sw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2/meme-20009.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "Yk0hCA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2/meme-20010.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "te4mGA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2/meme-20011.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "gAjesw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2/meme-20012.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "T8Kqqg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3": {
-            "isFolder": true,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3/meme-30001.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "jise6w"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3/meme-30002.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "MAUxIg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3/meme-30003.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "UKX00Q"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3/meme-30004.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "7yf44Q"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3/meme-30005.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "geyLfQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3/meme-30006.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "TiUEZg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3/meme-30007.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "p2c3"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3/meme-30008.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "tz3PTw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3/meme-30009.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "FnGQiQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3/meme-30010.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "LrUjxA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3/meme-30011.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "6VqyRg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3/meme-30012.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "xkZA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4": {
-            "isFolder": true,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4/meme-40001.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "b8ldXw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4/meme-40002.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "bnpaOQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4/meme-40003.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "Q3k21Q"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4/meme-40004.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "WtecEA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4/meme-40005.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "0-Rc9Q"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4/meme-40006.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "0ofMaw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4/meme-40007.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "WPF6TQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4/meme-40008.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "h6-Yuw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4/meme-40009.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "Xr1k"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4/meme-40010.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "1Bw4Vg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4/meme-40011.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "SaHCUw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4/meme-40012.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "xfOM5A"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5": {
-            "isFolder": true,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5/meme-50001.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "dG-UWQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5/meme-50002.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "_yPf5w"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5/meme-50003.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "2uHVDw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5/meme-50004.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "KZEDbA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5/meme-50005.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "xEeTEg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5/meme-50006.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "9LMS2Q"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5/meme-50007.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "Q8t5TA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5/meme-50008.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "u15Aow"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5/meme-50009.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "dInW3g"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5/meme-50010.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "kvAIEA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5/meme-50011.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "EVhUjw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5/meme-50012.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-5",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "F9Y0"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6": {
-            "isFolder": true,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6/meme-60001.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "PhZMtQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6/meme-60002.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "JglsQQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6/meme-60003.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "p5ouBA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6/meme-60004.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "UteI"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6/meme-60005.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "du5D9w"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6/meme-60006.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "YHGtVg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6/meme-60007.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "zSG4Jw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6/meme-60008.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "WR3UGw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6/meme-60009.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "rvyKMA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6/meme-60010.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "PaRZQQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6/meme-60011.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "IjPxHQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6/meme-60012.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-6",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "swDdAg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1": {
-            "isFolder": true,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10001.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "LbjLAA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10002.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "WQM9Ug"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10003.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "_ie4Jw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10004.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "fa8NDg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10005.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "9r5C"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10006.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "9r5C"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10007.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "3RN2eA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10008.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "Q2JRgQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10009.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "9dvfcA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10010.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "fI6YtQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10011.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "N5zc"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10012.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "uCgGkg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10013.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "y0RATQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10014.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "4ObAUQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10015.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "0sRIGA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10016.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "nY93TA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10017.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "PAM7Ww"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10018.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "NLYoeA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10019.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "w4pGRw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10020.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "_GtyTQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10021.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "QRBDtg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10022.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "61qxxA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10023.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "x0_H"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1/meme-small-10024.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-1",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "x0_H"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2": {
-            "isFolder": true,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20001.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "mwlZFg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20002.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "8OzLiQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20003.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "rTtcPg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20004.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "8OzLiQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20005.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "xrezrQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20006.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "xrezrQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20007.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "1FzJOQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20008.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "X-LjfQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20009.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "GqNHhQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20010.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "-XkmoQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20011.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "X57QQg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20012.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "UKC3Ug"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20013.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "xHsrzg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20014.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "nyzs1A"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20015.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "SxJlyg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20016.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "x2oqpA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20017.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "ZcV6nQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20018.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "rIXEKA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20019.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "t7cSRw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20020.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "wW4mWw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20021.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "HqYnZg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20022.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "pm7QOw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20023.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "UZf8hA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2/meme-small-20024.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-2",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "UZf8hA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3": {
-            "isFolder": true,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30001.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "9jrMJg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30002.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "gDuS"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30003.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "XGH0zQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30004.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "gDuS"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30005.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "cRGU2w"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30006.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "cRGU2w"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30007.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "-Hrb0A"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30008.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "iYMaaQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30009.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "X4rvKQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30010.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "G4qexQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30011.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "odFDNA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30012.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "h7wR"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30013.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "UFByCA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30014.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "Wzkv0A"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30015.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "KL1pvw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30016.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "ZYcIMQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30017.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "OKH7Ow"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30018.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "nfih0A"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30019.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "2lb1Wg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30020.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "fsmOGg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30021.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "aEQZBA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30022.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "ct5eRw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30023.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "alhewQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3/meme-small-30024.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-3",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "alhewQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4": {
-            "isFolder": true,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4/meme-small-40001.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "bgYRow"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4/meme-small-40002.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "YCUDFA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4/meme-small-40003.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "3HRvdg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4/meme-small-40004.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "qEP11w"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4/meme-small-40005.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "HesCUg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4/meme-small-40006.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "uLeZSA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4/meme-small-40007.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "T8lloQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4/meme-small-40008.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}/meme-small-4",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "y_Xujw"
-        },
-        ".assetpack/multi-pipe-1/characters.png": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}",
-            "metaData": {
-                "mIgnore": true,
-                "nomip": true
-            },
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {}
-        },
-        ".assetpack/cache-buster/characters-zxw7Yw.png": {
-            "isFolder": false,
-            "transformParent": ".assetpack/multi-pipe-1/characters.png",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true,
-                "mIgnore": true,
-                "nomip": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/characters-zxw7Yw.png": {
-            "isFolder": false,
-            "transformParent": ".assetpack/cache-buster/characters-zxw7Yw.png",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true,
-                "mIgnore": true,
-                "nomip": true
-            },
-            "transformData": {}
-        },
-        ".assetpack/multi-pipe-1/characters.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/characters{a}{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {
-                "page": 0
-            }
-        },
-        ".assetpack/cache-buster/characters--AizsQ.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/multi-pipe-1/characters.json",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
-                "tps": true
-            },
-            "transformData": {
-                "page": 0
-            }
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/characters-y32Lvg.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/cache-buster/characters--AizsQ.json",
-            "metaData": {},
-            "inheritedMetaData": {
-                "a": true,
                 "tps": true
             },
             "transformData": {
@@ -2603,10 +634,217 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768750779159,
-                "duration": 82.17729999999938,
+                "date": 1768778216512,
+                "duration": 312.04279999999994,
                 "success": true
             }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-animals": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-animals/cute_animals_1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-animals",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "U7xhxw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-animals/cute_animals_2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-animals",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "ayPcWQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-animals/cute_animals_3.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-animals",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "1tTY0w"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-animals/cute_animals_4.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-animals",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "L_ZexQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-animals/cute_animals_5.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-animals",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "0wgtDQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-animals/cute_animals_6.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-animals",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "l_c8Zg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-food": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-food/cute_food_1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-food",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "fxdr5A"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-food/cute_food_2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-food",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "IFBJaw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-food/cute_food_3.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-food",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "jgAvBQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-food/cute_food_4.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-food",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "YnBo4A"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-food/cute_food_5.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-food",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "Xa0Btg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-food/cute_food_6.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-food",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "zSzwXg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/fantasy-nature": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/fantasy-nature/fantasy_nature_1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/fantasy-nature",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "mHa5hg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/fantasy-nature/fantasy_nature_2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/fantasy-nature",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "cc4W2w"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/fantasy-nature/fantasy_nature_3.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/fantasy-nature",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "UdJgLQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/fantasy-nature/fantasy_nature_4.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/fantasy-nature",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "1y7DzQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/fantasy-nature/fantasy_nature_5.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/fantasy-nature",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "ejJjEg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/fantasy-nature/fantasy_nature_6.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/fantasy-nature",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "PJZATg"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/meme1.png": {
             "isFolder": false,
@@ -2648,6 +886,16 @@
             "transformData": {},
             "hash": "wVdPmw"
         },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/n3.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "aRXXpw"
+        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/n3.webp": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
@@ -2670,7 +918,7 @@
             },
             "transformData": {}
         },
-        ".assetpack/cache-buster/thumbs-u9SUtQ.png": {
+        ".assetpack/cache-buster/thumbs-wBD9Uw.png": {
             "isFolder": false,
             "transformParent": ".assetpack/multi-pipe-1/thumbs.png",
             "metaData": {},
@@ -2681,9 +929,9 @@
             },
             "transformData": {}
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/thumbs-u9SUtQ.png": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/thumbs-wBD9Uw.png": {
             "isFolder": false,
-            "transformParent": ".assetpack/cache-buster/thumbs-u9SUtQ.png",
+            "transformParent": ".assetpack/cache-buster/thumbs-wBD9Uw.png",
             "metaData": {},
             "inheritedMetaData": {
                 "tps": true,
@@ -2703,7 +951,7 @@
                 "page": 0
             }
         },
-        ".assetpack/cache-buster/thumbs-bywpGQ.json": {
+        ".assetpack/cache-buster/thumbs-sY8MVw.json": {
             "isFolder": false,
             "transformParent": ".assetpack/multi-pipe-1/thumbs.json",
             "metaData": {},
@@ -2714,9 +962,9 @@
                 "page": 0
             }
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/thumbs-TUrCoA.json": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/thumbs-wkCr1g.json": {
             "isFolder": false,
-            "transformParent": ".assetpack/cache-buster/thumbs-bywpGQ.json",
+            "transformParent": ".assetpack/cache-buster/thumbs-sY8MVw.json",
             "metaData": {},
             "inheritedMetaData": {
                 "tps": true
@@ -2734,8 +982,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768644984376,
-                "duration": 1848.1835,
+                "date": 1768780250237,
+                "duration": 1868.4486,
                 "success": true
             }
         },
@@ -3107,6 +1355,16 @@
                 "tps": true
             },
             "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}/icons/eye.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "KkmhxA"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}/icons/Icon_Back.png": {
             "isFolder": false,
@@ -4310,7 +2568,7 @@
             },
             "transformData": {}
         },
-        ".assetpack/cache-buster/ui-gfRsTw.png": {
+        ".assetpack/cache-buster/ui-4uJyOQ.png": {
             "isFolder": false,
             "transformParent": ".assetpack/multi-pipe-1/ui.png",
             "metaData": {},
@@ -4321,9 +2579,9 @@
             },
             "transformData": {}
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/ui-gfRsTw.png": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/ui-4uJyOQ.png": {
             "isFolder": false,
-            "transformParent": ".assetpack/cache-buster/ui-gfRsTw.png",
+            "transformParent": ".assetpack/cache-buster/ui-4uJyOQ.png",
             "metaData": {},
             "inheritedMetaData": {
                 "tps": true,
@@ -4343,7 +2601,7 @@
                 "page": 0
             }
         },
-        ".assetpack/cache-buster/ui-XLtf8w.json": {
+        ".assetpack/cache-buster/ui-HrT5Pw.json": {
             "isFolder": false,
             "transformParent": ".assetpack/multi-pipe-1/ui.json",
             "metaData": {},
@@ -4354,9 +2612,9 @@
                 "page": 0
             }
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/ui-wfKR8Q.json": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/ui-L9fmVQ.json": {
             "isFolder": false,
-            "transformParent": ".assetpack/cache-buster/ui-XLtf8w.json",
+            "transformParent": ".assetpack/cache-buster/ui-HrT5Pw.json",
             "metaData": {},
             "inheritedMetaData": {
                 "tps": true

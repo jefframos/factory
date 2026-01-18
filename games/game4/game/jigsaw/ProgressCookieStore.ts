@@ -11,6 +11,11 @@ export class ProgressCookieStore {
         this.version = version;
     }
 
+    public static isFirstTime(cookieName = "jg_progress_v1"): boolean {
+        const parts = document.cookie.split(";").map((p) => p.trim());
+        return !parts.some((p) => p.startsWith(cookieName + "="));
+    }
+
     public load(): GameProgress {
         const raw = this.readCookie(this.cookieName);
         if (!raw) {

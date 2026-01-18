@@ -1,0 +1,55 @@
+{
+    "version": 1,
+    "basePath": "jiggy/",
+    "tiers": [
+        {
+            "id": "tier1",
+            "name": "Starter",
+            "enabled": true,
+            "items": [
+                {
+                    "id": "cuteAnimals",
+                    "enabled": true,
+                    "type": 1,
+                    "json": "cuteAnimals.json",
+                    "sectionCost": 0
+                },
+                {
+                    "id": "cuteFood",
+                    "enabled": true,
+                    "type": 1,
+                    "json": "cuteFood.json",
+                    "sectionCost": 0
+                },
+                {
+                    "id": "nature",
+                    "enabled": true,
+                    "type": 1,
+                    "json": "nature.json",
+                    "sectionCost": 0
+                }
+            ]
+        },
+        {
+            "id": "tier2",
+            "name": "More",
+            "enabled": false,
+            "items": [
+                {
+                    "id": "space",
+                    "enabled": true,
+                    "type": 2,
+                    "json": "data/puzzles/space.json",
+                    "sectionCost": 300
+                },
+                {
+                    "id": "dinosaurs",
+                    "enabled": false,
+                    "type": 2,
+                    "json": "data/puzzles/dinosaurs.json",
+                    "sectionCost": 350
+                }
+            ]
+        }
+    ]
+}

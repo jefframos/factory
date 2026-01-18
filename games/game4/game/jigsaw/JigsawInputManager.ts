@@ -1,3 +1,4 @@
+import PlatformHandler from "@core/platforms/PlatformHandler";
 import { DropShadowFilter } from "@pixi/filter-drop-shadow";
 import * as PIXI from "pixi.js";
 import { JigsawCluster } from "./JigsawCluster";
@@ -111,6 +112,9 @@ export class JigsawInputManager {
         if (!this._enabled || this.activeCluster) {
             return;
         }
+
+        PlatformHandler.instance.platform.gameplayStart();
+
 
         const pointerId = e.pointerId ?? 0;
         const global = e.global;

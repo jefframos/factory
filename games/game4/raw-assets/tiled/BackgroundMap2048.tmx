@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="16" nextobjectid="228">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="16" nextobjectid="235">
  <editorsettings>
   <export target="../json/tiled.json" format="json"/>
  </editorsettings>
@@ -744,13 +744,13 @@
    <image source="images/ui/equal.Png" width="128" height="128"/>
   </tile>
  </tileset>
- <objectgroup draworder="index" id="3" name="Background">
+ <objectgroup draworder="index" id="3" name="Background" visible="0">
   <object id="167" gid="16" x="-1071.15" y="-1124.97" width="2834.79" height="1765.09"/>
   <object id="224" gid="8" x="-11" y="1211" width="734" height="770"/>
   <object id="225" gid="2147483656" x="722" y="1211" width="734" height="770"/>
   <object id="226" gid="2147483656" x="-744" y="1211" width="734" height="770"/>
  </objectgroup>
- <objectgroup draworder="index" id="14" name="TutorialDesktop">
+ <objectgroup draworder="index" id="14" name="TutorialDesktop" visible="0">
   <object id="150" gid="65" x="773.388" y="1043.73" width="72.1914" height="76.4379"/>
   <object id="151" gid="65" x="853.365" y="958.099" width="72.1914" height="76.4379"/>
   <object id="152" gid="65" x="853.363" y="1043.74" width="72.1914" height="76.4379"/>
@@ -768,7 +768,7 @@ to move the pieces</text>
   <object id="159" gid="202" x="947.913" y="1021.04" width="45.2966" height="38.219"/>
   <object id="160" gid="2147483850" x="784.959" y="1020.92" width="45.2966" height="38.219"/>
  </objectgroup>
- <objectgroup draworder="index" id="15" name="TutorialMobile">
+ <objectgroup draworder="index" id="15" name="TutorialMobile" visible="0">
   <object id="207" gid="68" x="-213.97" y="91.7273" width="428.939" height="486.485">
    <properties>
     <property name="id" value="back"/>
@@ -786,47 +786,47 @@ to move the pieces</text>
    <text wrap="1" halign="center" valign="center">Match equal tiles to level up!</text>
   </object>
  </objectgroup>
- <objectgroup draworder="index" id="12" name="GameOverPopup" visible="0">
-  <object id="93" gid="67" x="-323.667" y="267.894" width="650" height="490.667">
+ <objectgroup draworder="index" id="12" name="GameOverPopup">
+  <object id="93" gid="67" x="-323.667" y="115.894" width="650" height="338.667">
    <properties>
     <property name="id" value="background"/>
    </properties>
   </object>
-  <object id="113" gid="7" x="-219" y="222.667" width="436.667" height="427"/>
-  <object id="95" gid="142" x="-298.67" y="-162.89" width="600" height="143"/>
+  <object id="113" gid="7" x="-213.667" y="128" width="436.667" height="427"/>
+  <object id="234" gid="138" x="-304" y="-176" width="610.667" height="132.333"/>
   <object id="96" x="-143.333" y="-283.667" width="290.667" height="60">
    <properties>
     <property name="id" value="title-label"/>
    </properties>
   </object>
-  <object id="97" gid="2147483848" x="-269" y="141" width="68" height="68"/>
-  <object id="105" gid="124" x="-193" y="58.6667" width="251.33" height="62"/>
-  <object id="106" gid="124" x="-193" y="140.667" width="251.33" height="62"/>
-  <object id="98" x="-171.667" y="83" width="226.667" height="53.3333">
+  <object id="97" gid="2147483848" x="-197" y="-625.667" width="68" height="68"/>
+  <object id="105" gid="124" x="-113" y="-41.3333" width="251.33" height="62"/>
+  <object id="106" gid="124" x="-121" y="-626" width="251.33" height="62"/>
+  <object id="98" x="-99.667" y="-683.667" width="226.667" height="53.3333">
    <properties>
     <property name="id" value="total-moves"/>
    </properties>
   </object>
-  <object id="109" gid="123" x="-191" y="-25.6667" width="251.33" height="62"/>
-  <object id="99" x="108" y="-50" width="140" height="138.667">
+  <object id="109" gid="123" x="-275" y="-809.667" width="251.33" height="62"/>
+  <object id="99" x="57.3333" y="-943.333" width="140" height="138.667">
    <properties>
     <property name="id" value="highest-piece"/>
    </properties>
   </object>
-  <object id="101" x="-172" y="1.66667e-05" width="226.667" height="53.3333">
+  <object id="101" x="-92" y="-100" width="226.667" height="53.3333">
    <properties>
     <property name="id" value="timer"/>
    </properties>
   </object>
-  <object id="103" x="-172" y="-84.6667" width="226.667" height="53.3333">
+  <object id="103" x="-261.333" y="-863.333" width="226.667" height="53.3333">
    <properties>
     <property name="id" value="points"/>
    </properties>
   </object>
-  <object id="107" gid="199" x="-260.333" y="54.125" width="50.6667" height="57.7917"/>
-  <object id="110" gid="127" x="-255" y="-25" width="45.4557" height="63"/>
-  <object id="112" gid="151" x="211.667" y="106" width="55" height="51"/>
-  <object id="114" x="-149.333" y="213.333" width="303.333" height="82.6667">
+  <object id="107" gid="199" x="-180.333" y="-45.875" width="50.6667" height="57.7917"/>
+  <object id="110" gid="127" x="-344.333" y="-803.667" width="45.4557" height="63"/>
+  <object id="112" gid="151" x="161" y="-787.333" width="55" height="51"/>
+  <object id="114" x="-146.666" y="-18.667" width="303.333" height="82.6667">
    <properties>
     <property name="id" value="continue"/>
    </properties>
@@ -866,23 +866,23 @@ to move the pieces</text>
   <object id="79" x="987.879" y="-227.273"/>
  </objectgroup>
  <objectgroup draworder="index" id="8" name="ScoreMenu">
+  <object id="229" gid="93" x="0" y="100" width="720" height="90"/>
   <object id="65" gid="125" x="449.643" y="-127.236" width="208.939" height="49.3182"/>
   <object id="67" gid="195" x="614.303" y="-116.485" width="70" height="70"/>
-  <object id="68" gid="123" x="254.47" y="143.098" width="208.942" height="62"/>
-  <object id="50" x="297.375" y="99.265" width="136.915" height="25.4545">
+  <object id="68" gid="123" x="194.47" y="-162.902" width="208.942" height="62"/>
+  <object id="50" x="237.375" y="-206.735" width="136.915" height="25.4545">
    <properties>
     <property name="id" value="current-score"/>
    </properties>
   </object>
-  <object id="141" gid="125" x="256" y="80.333" width="208.94" height="62"/>
   <object id="51" x="477.749" y="-166.068" width="136.818" height="25.4545">
    <properties>
     <property name="id" value="highscore"/>
    </properties>
   </object>
-  <object id="74" gid="199" x="239.645" y="77.292" width="50.9197" height="58.0802"/>
-  <object id="75" gid="127" x="243.333" y="144.461" width="45.3409" height="62.8409"/>
-  <object id="76" x="311.606" y="32" width="106.122" height="32">
+  <object id="74" gid="199" x="283.645" y="74.8493" width="35.9197" height="40.9708"/>
+  <object id="75" gid="127" x="183.333" y="-161.539" width="45.3409" height="62.8409"/>
+  <object id="76" x="314.939" y="41.3333" width="106.122" height="32">
    <properties>
     <property name="id" value="timer"/>
    </properties>
@@ -935,17 +935,17 @@ to move the pieces</text>
    </properties>
    <text wrap="1" halign="right" valign="center">Time</text>
   </object>
-  <object id="132" x="64" y="32" width="83.4405" height="79.5595">
+  <object id="132" x="10" y="20" width="70" height="70">
    <properties>
     <property name="id" value="home-button"/>
    </properties>
   </object>
-  <object id="135" x="480" y="32" width="83.4405" height="79.5595">
+  <object id="135" x="640" y="20" width="70" height="70">
    <properties>
     <property name="id" value="restart"/>
    </properties>
   </object>
-  <object id="227" x="576" y="64" width="63.4405" height="60.4897">
+  <object id="227" x="554" y="20" width="70" height="70">
    <properties>
     <property name="id" value="preview"/>
    </properties>

@@ -159,8 +159,9 @@ export class LevelSelectViewFactory {
         cover.scale.set(ViewUtils.elementEvelop(cover, w, coverH) + 0.05)
         cover.mask = mask
 
-        cover.anchor.set(0.5, 0)
+        cover.anchor.set(0.5, 0.5)
         cover.x = w / 2
+        cover.y = h / 2
         coverContaienr.addChild(cover)
         const c2 = makeResizedSpriteTexture(Game.renderer, coverContaienr, 0, 0)
         root.addChild(c2);

@@ -109,7 +109,7 @@ export default class ScoreUi extends AutoPositionTiledContainer {
                 width: left?.object.width,
                 height: left?.object.height,
                 allPadding: 35,
-                texture: PIXI.Texture.from('Button01_s_Red'),
+                texture: PIXI.Texture.from('ResourceBar_Single_Btn_Purple1'),
                 fontStyle: new PIXI.TextStyle({
                     fontFamily: 'LEMONMILK-Bold',
                     fill: 0xffffff,
@@ -140,10 +140,10 @@ export default class ScoreUi extends AutoPositionTiledContainer {
         const restart = this.findAndGetFromProperties('id', 'restart');
         const restartButton = new BaseButton({
             standard: {
-                width: left?.object.width,
-                height: left?.object.height,
+                width: restart?.object.width,
+                height: restart?.object.height,
                 allPadding: 35,
-                texture: PIXI.Texture.from('Button01_s_PInk'),
+                texture: PIXI.Texture.from('ResourceBar_Single_Btn_Purple1'),
                 fontStyle: new PIXI.TextStyle({
                     fontFamily: 'LEMONMILK-Bold',
                     fill: 0xffffff,
@@ -153,7 +153,7 @@ export default class ScoreUi extends AutoPositionTiledContainer {
 
                 //iconTexture: PIXI.Texture.from('Icon_Back'),
                 iconTexture: PIXI.Texture.from('Icon_Back'),
-                iconSize: { width: left?.object.width * 0.6, height: left?.object.height * 0.6 },
+                iconSize: { width: restart?.object.width * 0.6, height: restart?.object.height * 0.6 },
                 iconAnchor: new PIXI.Point(0, 0.1),
                 centerIconVertically: true,
                 centerIconHorizontally: true
@@ -176,17 +176,18 @@ export default class ScoreUi extends AutoPositionTiledContainer {
 
 
 
+        const prev = this.findAndGetFromProperties('id', 'preview');
 
         const previewButton = new BaseButton({
             standard: {
-                width: left?.object.width,
-                height: left?.object.height,
+                width: prev?.object.width,
+                height: prev?.object.height,
                 allPadding: 35,
-                texture: PIXI.Texture.from('Button01_s_Sky'),
+                texture: PIXI.Texture.from('ResourceBar_Single_Btn_Blue1'),
 
                 //iconTexture: PIXI.Texture.from('Icon_Back'),
-                iconTexture: PIXI.Texture.from('ItemIcon_Trophy_Gold'),
-                iconSize: { width: left?.object.width * 0.6, height: left?.object.height * 0.6 },
+                iconTexture: PIXI.Texture.from('eye'),
+                iconSize: { width: prev?.object.width * 0.6, height: prev?.object.height * 0.6 },
                 iconAnchor: new PIXI.Point(0, 0.1),
                 centerIconVertically: true,
                 centerIconHorizontally: true

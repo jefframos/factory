@@ -35,7 +35,7 @@ export class GameOverPopup extends BasePopup {
 
         const background = this.layout.findAndGetFromProperties('id', 'background');
         if (background && background.view) {
-            background.view.tint = 0xFC8492
+            background.view.tint = 0x3dffd5
         }
         const highest = this.layout.findAndGetFromProperties('id', 'highest-piece');
         if (highest) {
@@ -50,7 +50,7 @@ export class GameOverPopup extends BasePopup {
         const yoffset = - 8
         const title = this.layout.findAndGetFromProperties('id', 'title-label');
         if (title) {
-            this.autoOfMoves = new PIXI.BitmapText('Out of moves', {
+            this.autoOfMoves = new PIXI.BitmapText('Well Done!', {
                 fontName: Fonts.MainFamily,
                 fontSize: Fonts.Main.fontSize as number,
                 letterSpacing: 3,

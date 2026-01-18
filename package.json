@@ -11,7 +11,7 @@
         "build:all": "ts-node scripts/build-all.ts",
         "generate:index": "ts-node scripts/generate-index.ts",
         "image": "node tools/image/build-image.mjs",
-        "image2": "npm run thumbs && npm run image",
+        "image2": "npm run thumbs && npm run sizes && npm run image",
         "watch:image": "cross-env WATCH=true node tools/image/build-image.mjs",
         "font": "node tools/font/build-font.mjs",
         "watch:font": "cross-env WATCH=true node tools/font/build-font.mjs",

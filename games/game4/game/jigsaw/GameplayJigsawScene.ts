@@ -12,11 +12,11 @@ import JigsawView from "./JigsawView";
 import { MaskedTabsGenerator } from "./MaskedTabsGenerator";
 
 import ViewUtils from "@core/utils/ViewUtils";
-import { SectionDefinition } from "games/game4/types";
 import MatchManager from "../2048/scene/MatchManager";
 import MainMenuUi from "../2048/ui/MainMenuUi";
 import ScoreUi from "../2048/ui/ScoreUi";
 import { ProgressCookieStore } from "./ProgressCookieStore";
+import { PuzzleDataBuilder, PuzzleMasterJson } from "./data/PuzzleCatalogParser";
 import { LevelSelectMediator, PlayLevelRequest } from "./progress/LevelSelectMediator";
 import { LevelSelectView } from "./ui/LevelSelectView";
 import { createDefaultLevelSelectTheme } from "./ui/LevelSelectViewElements";
@@ -34,6 +34,8 @@ export default class GameplayJigsawScene extends GameScene {
     private readonly matchManager: MatchManager = new MatchManager();
     private readonly jigsawBoardView: JigsawView = new JigsawView();
     private readonly jigsawGenerator: MaskedTabsGenerator = new MaskedTabsGenerator();
+
+    private background: PIXI.Sprite = PIXI.Sprite.from('background')
 
     private mainMenu?: MainMenuUi;
     private scoreUi?: ScoreUi;
@@ -76,56 +78,20 @@ export default class GameplayJigsawScene extends GameScene {
     public build(): void {
         this.updateScoreUi(0);
 
+        this.addChild(this.background)
+
         this.addChild(this.gameplayContainer);
 
         if (this.scoreUi) {
             this.addChild(this.scoreUi);
         }
 
-        // if (this.mainMenu) {
-        //     this.addChild(this.mainMenu);
-        // }
+        const master = PIXI.Assets.get("jiggy/puzzleData.json") as PuzzleMasterJson;
 
+        const built = PuzzleDataBuilder.buildSections(master, this.game.folderPath + '/images/non-preload/puzzles');
 
-        const sections: SectionDefinition[] = [
-            {
-                id: "nblocks",
-                name: "nblocks",
-                coverLevelId: "nblocks_01",
-                levels: [
-                    { id: "nblocks_01", sectionId: "nblocks", name: "Puzzle 1", thumb: 'n1', imageSrc: this.game.folderPath + '/images/non-preload/puzzles/n1.png' },
-                    // { id: "nblocks_02", sectionId: "nblocks", name: "Puzzle 2", thumb: 'n2', imageSrc: this.game.folderPath + '/images/non-preload/puzzles/n2.png' },
-                    { id: "nblocks_03", sectionId: "nblocks", name: "Puzzle 3", thumb: 'n3', imageSrc: this.game.folderPath + '/images/non-preload/puzzles/n3.webp' }
-                ]
-            },
-            {
-                id: "space",
-                name: "Space",
-                coverLevelId: "space_02",
-                levels: [
-                    { id: "space_01", sectionId: "space", name: "Puzzle 1", thumb: 'meme1', imageSrc: this.game.folderPath + '/images/non-preload/puzzles/meme1.png' },
-                    { id: "space_02", sectionId: "space", name: "Puzzle 2", thumb: 'meme2', imageSrc: this.game.folderPath + '/images/non-preload/puzzles/meme2.png' }
-                ]
-            },
-            {
-                id: "space2",
-                name: "Space2",
-                coverLevelId: "space_02",
-                levels: [
-                    { id: "space_01", sectionId: "space", name: "Puzzle 1", thumb: 'meme1', imageSrc: this.game.folderPath + '/images/non-preload/puzzles/meme1.png' },
-                    { id: "space_02", sectionId: "space", name: "Puzzle 2", thumb: 'meme2', imageSrc: this.game.folderPath + '/images/non-preload/puzzles/meme2.png' }
-                ]
-            },
-            {
-                id: "space3",
-                name: "Space3",
-                coverLevelId: "space_02",
-                levels: [
-                    { id: "space_01", sectionId: "space", name: "Puzzle 1", thumb: 'meme1', imageSrc: this.game.folderPath + '/images/non-preload/puzzles/meme1.png' },
-                    { id: "space_02", sectionId: "space", name: "Puzzle 2", thumb: 'meme2', imageSrc: this.game.folderPath + '/images/non-preload/puzzles/meme2.png' }
-                ]
-            }
-        ];
+        const sections = built.sections;
+        const sectionMeta = built.meta;
 
         const store = new ProgressCookieStore("jg_progress_v1", 1);
         this.mediator = new LevelSelectMediator(store);
@@ -147,6 +113,25 @@ export default class GameplayJigsawScene extends GameScene {
 
         if (Game.debugParams.dev) {
             this.startMatch()
+        }
+        if (Game.debugParams.over) {
+            PopupManager.instance.show("gameOver", { matchManager: this.matchManager });
+        }
+
+
+        if (ProgressCookieStore.isFirstTime() || Game.debugParams.first) {
+
+            const s = 1
+            const l = 5
+            const request: PlayLevelRequest = {
+                difficulty: "easy",
+                level: sections[s].levels[l],
+                levelId: sections[s].levels[l].id,
+                section: sections[s],
+                allowRotation: false
+            }
+            this.startMatch(request)
+
         }
     }
 
@@ -279,7 +264,7 @@ export default class GameplayJigsawScene extends GameScene {
         const srcSprite = PIXI.Sprite.from(image);
 
         // 2-4) render to RT and get a new sprite that *has* a 300x300 texture
-        const scale = ViewUtils.elementScaler(srcSprite, Game.DESIGN_WIDTH - 20, Game.DESIGN_HEIGHT - 50)
+        const scale = ViewUtils.elementScaler(srcSprite, Game.DESIGN_WIDTH - 50, Game.DESIGN_HEIGHT - 100)
         const resizedSprite = makeResizedSpriteTexture(
             Game.renderer,    // or app.renderer
             srcSprite,
@@ -292,8 +277,8 @@ export default class GameplayJigsawScene extends GameScene {
         const ratio = width / height;
 
         // 1. Define target total pieces instead of hardcoded grids
-        let targetPieces = 9; // Default (easy)
-        const difficulty = data?.difficulty || "easy";
+        let targetPieces = 12; // Default (easy)
+        const difficulty = data?.difficulty || "medium";
 
         if (difficulty === "medium") {
             targetPieces = PIXI.isMobile ? 25 : 36;
@@ -313,12 +298,18 @@ export default class GameplayJigsawScene extends GameScene {
         this.jigsawBoardView.buildFromSprite(this.gameplayContainer, resizedSprite, this.jigsawGenerator, {
             cols: col,
             rows: row,
-            allowRation: true,
+            allowRation: data?.allowRotation,
             scatterRect: this.getScatterRect(),
             safeRect: this.getSafeRect(),
         });
 
-        PlatformHandler.instance.platform.gameplayStart();
+
+        this.jigsawBoardView.showPreview();
+
+        setTimeout(() => {
+            this.jigsawBoardView.hidePreview();
+        }, 1800);
+
 
         if (this.scoreUi) {
             this.scoreUi.visible = true;
@@ -363,6 +354,15 @@ export default class GameplayJigsawScene extends GameScene {
         this.gameplayContainer.y = Game.DESIGN_HEIGHT / 2;
 
 
+        this.background.anchor.set(0.5, 1)
+        this.background.x = Game.DESIGN_WIDTH / 2;
+        this.background.y = Game.gameScreenData.height;
+
+
+
+        this.background.scale.set(ViewUtils.elementEvelop(this.background, Game.gameScreenData.width, Game.gameScreenData.height / Game.scale))
+
+
     }
 
     private updateSafeAreaFromOverlay(): void {
@@ -371,14 +371,14 @@ export default class GameplayJigsawScene extends GameScene {
         if (this.levelSelectMenu) {
 
             this.levelSelectMenu.x = -this.gameplayContainer.x + Game.gameScreenData.center.x - cappedSize / 2;
-            this.levelSelectMenu.y = -this.gameplayContainer.y + Game.gameScreenData.topLeft.y;
+            this.levelSelectMenu.y = -this.gameplayContainer.y + Game.gameScreenData.topLeft.y + 10;
         }
 
         this.jigsawBoardView.updateSafeAre(
-            Game.overlayScreenData.topLeft.x - this.gameplayContainer.x,
-            Game.overlayScreenData.topLeft.y - this.gameplayContainer.y,
-            Game.overlayScreenData.width,
-            Game.overlayScreenData.height
+            Game.overlayScreenData.topLeft.x - this.gameplayContainer.x - 75,
+            Game.overlayScreenData.topLeft.y - this.gameplayContainer.y + 100,
+            Game.overlayScreenData.width + 150,
+            Game.overlayScreenData.height - 25
         );
     }
 

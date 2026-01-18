@@ -26,7 +26,7 @@ export default class MyGame extends Game {
 
 
     constructor() {
-        super(undefined, true);
+        super(undefined, false);
 
         this.folderPath = 'game4';
 

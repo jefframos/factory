@@ -109,7 +109,7 @@ export default class JigsawView extends PIXI.Container {
                     const pos = placements[i];
 
                     if (options.allowRation) {
-                        const r = Math.floor(Math.random() * 4);
+                        const r = i % 3//Math.floor(Math.random() * 4);
                         for (let index = 0; index < r; index++) {
                             c.rotateCW();
                         }
@@ -138,7 +138,7 @@ export default class JigsawView extends PIXI.Container {
                 this.scatterRect.y = options.scatterRect.y;
                 this.scatterRect.width = options.scatterRect.width;
                 this.scatterRect.height = options.scatterRect.height;
-                this.scatterRect.alpha = 0.1;
+                this.scatterRect.alpha = 0;
             }
 
 
@@ -149,14 +149,14 @@ export default class JigsawView extends PIXI.Container {
             this.scatterRect.y = options.scatterRect.y;
             this.scatterRect.width = options.scatterRect.width;
             this.scatterRect.height = options.scatterRect.height;
-            this.scatterRect.alpha = 0.1;
+            this.scatterRect.alpha = 0;
 
             if (this._safeRect) {
                 this.safeRect.x = this._safeRect.x;
                 this.safeRect.y = this._safeRect.y;
                 this.safeRect.width = this._safeRect.width;
                 this.safeRect.height = this._safeRect.height;
-                this.safeRect.alpha = 0.1;
+                this.safeRect.alpha = 0;
                 this.safeRect.tint = 0xFF0000;
             }
         } else {
@@ -177,6 +177,9 @@ export default class JigsawView extends PIXI.Container {
         this.input.setSafeAreaRect(this._safeRect);
 
 
+    }
+    hidePreview() {
+        this.previewPopup?.hide();
     }
     showPreview(): void {
         if (!this.previewPopup || !this._stage) {
@@ -215,7 +218,7 @@ export default class JigsawView extends PIXI.Container {
                 this.safeRect.y = this._safeRect.y;
                 this.safeRect.width = this._safeRect.width;
                 this.safeRect.height = this._safeRect.height;
-                this.safeRect.alpha = 0.1;
+                this.safeRect.alpha = 0;
                 this.safeRect.tint = 0xFF0000;
             }
 

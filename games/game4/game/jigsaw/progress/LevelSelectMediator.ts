@@ -8,6 +8,7 @@ export interface PlayLevelRequest {
     difficulty: Difficulty;
     level: LevelDefinition;
     section: SectionDefinition;
+    allowRotation: boolean;
 }
 
 export class LevelSelectMediator {
@@ -50,7 +51,8 @@ export class LevelSelectMediator {
             levelId,
             difficulty,
             level: hit.level,
-            section: hit.section
+            section: hit.section,
+            allowRotation: true
         };
 
         this.onPlayLevel.dispatch(req);

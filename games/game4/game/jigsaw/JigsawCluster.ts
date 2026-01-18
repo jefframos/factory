@@ -10,9 +10,19 @@ export type QuarterTurns = 0 | 1 | 2 | 3;
 export class JigsawCluster {
     public readonly id: number = ++_clusterId;
     public readonly container: PIXI.Container = new PIXI.Container();
+    public readonly debugContainer: PIXI.Container = new PIXI.Container();
     public readonly pieces: Set<JigsawPiece> = new Set();
 
-    public rotationQ: QuarterTurns = 0;
+    private _rotationQ: QuarterTurns = 0;
+    public set rotationQ(value: QuarterTurns) {
+        this._rotationQ = value;
+
+        this._rotationQ = (this._rotationQ % 4 + 4) % 4
+    }
+
+    public get rotationQ() {
+        return this._rotationQ
+    }
 
     // If you want to block rotate during drags, your input system can set this.
     public isHeld: boolean = false;
@@ -25,9 +35,65 @@ export class JigsawCluster {
         piece.cluster = this;
         this.container.addChild(piece);
 
+
+        // const text = new PIXI.Text(piece.definition.col + '/' + piece.definition.row)
+        // this.debugContainer.addChild(text);
+        // text.style.fill = 0xFFffff
+        // text.style.stroke = 0//0xFF0000
+        // text.style.strokeThickness = 8
+
+
+
+        // if (piece.definition.edges.top) {
+        //     const textBottom = new PIXI.Text(piece.definition.edges.top)
+        //     this.debugContainer.addChild(textBottom);
+        //     textBottom.style.fill = 0xFFffff
+        //     textBottom.style.stroke = 0xFF0000
+        //     textBottom.style.strokeThickness = 8
+        //     textBottom.x = piece.definition.pieceW / 2
+        // }
+
+        // if (piece.definition.edges.left) {
+        //     const textBottom = new PIXI.Text(piece.definition.edges.left)
+        //     this.debugContainer.addChild(textBottom);
+        //     textBottom.style.fill = 0xFFffff
+        //     textBottom.style.stroke = 0xFF0000
+        //     textBottom.style.strokeThickness = 8
+        //     textBottom.x = 0
+        //     textBottom.y = piece.definition.pieceH / 2
+        // }
+
+        // if (piece.definition.edges.right) {
+        //     const textBottom = new PIXI.Text(piece.definition.edges.right)
+        //     this.debugContainer.addChild(textBottom);
+        //     textBottom.style.fill = 0xFFffff
+        //     textBottom.style.stroke = 0xFF0000
+        //     textBottom.style.strokeThickness = 8
+        //     textBottom.x = piece.definition.pieceW
+        //     textBottom.y = piece.definition.pieceH / 2
+        // }
+
+        // if (piece.definition.edges.bottom) {
+        //     const textBottom = new PIXI.Text(piece.definition.edges.bottom)
+        //     this.debugContainer.addChild(textBottom);
+        //     textBottom.style.fill = 0xFFffff
+        //     textBottom.style.stroke = 0xFF0000
+        //     textBottom.style.strokeThickness = 8
+        //     textBottom.x = piece.definition.pieceW / 2
+        //     textBottom.y = piece.definition.pieceH
+        // }
+
+
+        // this.textRot = new PIXI.Text(this.rotationQ)
+        // this.debugContainer.addChild(this.textRot);
+        // this.textRot.style.fill = 0xFFffff
+        // this.textRot.style.stroke = 0xFF00ff
+        // this.textRot.style.strokeThickness = 8
+        // this.textRot.x = piece.definition.pieceW / 2
+        // this.textRot.y = piece.definition.pieceH / 2
         this.rebuildPivotFromBounds();
     }
-
+    private textRot!: PIXI.Text;
     /**
      * Rotate 90deg clockwise around the cluster's visual center,
      * keeping the cluster's world position stable (no "jump" on tap).
@@ -37,6 +103,8 @@ export class JigsawCluster {
         if (!parent) {
             this.rotationQ = (((this.rotationQ + 1) & 3) as QuarterTurns);
             this.container.rotation = this.rotationQ * RAD90;
+
+            if (this.textRot) this.textRot.text = this.rotationQ
             return;
         }
 
@@ -46,6 +114,7 @@ export class JigsawCluster {
         const pivotWorldBefore = this.container.toGlobal(this.container.pivot.clone());
 
         this.rotationQ = (((this.rotationQ + 1) & 3) as QuarterTurns);
+        if (this.textRot) this.textRot.text = this.rotationQ
         this.container.rotation = this.rotationQ * RAD90;
 
         const pivotWorldAfter = this.container.toGlobal(this.container.pivot.clone());
@@ -137,6 +206,7 @@ export class JigsawCluster {
 
         // ---- SNAP TO CLEAN FINAL STATE ----
         this.rotationQ = endQ;
+        if (this.textRot) this.textRot.text = this.rotationQ
         c.rotation = targetRot;
         c.scale.set(startScale);
         c.y = startY;

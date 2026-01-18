@@ -1,6 +1,6 @@
 // JigsawClusterManager.ts
 import * as PIXI from "pixi.js";
-import { JigsawCluster } from "./JigsawCluster";
+import { JigsawCluster, QuarterTurns } from "./JigsawCluster";
 import { JigsawPiece } from "./JigsawPiece";
 import { JigsawSignals } from "./JigsawSignals";
 
@@ -12,7 +12,7 @@ type SnapCandidate =
         staticPiece: JigsawPiece;
         deltaLocal: PIXI.Point;          // piecesLayer local translation to apply to active cluster
         dist: number;
-        targetRotationQ: 0 | 1 | 2 | 3;  // rotation the active cluster should be in for this snap
+        targetRotationQ: QuarterTurns;  // rotation the active cluster should be in for this snap
     };
 
 export class JigsawClusterManager {
@@ -249,50 +249,49 @@ export class JigsawClusterManager {
     private computeCandidate(
         movingPiece: JigsawPiece,
         staticPiece: JigsawPiece,
-        dir: NeighborDir,
-        targetRotationQ: 0 | 1 | 2 | 3
+        dir: NeighborDir,                 // keep for neighbor selection; not used for expected offset
+        targetRotationQ: QuarterTurns
     ): SnapCandidate | null {
-        const w = movingPiece.definition.pieceW;
-        const h = movingPiece.definition.pieceH;
+        // IMPORTANT: This must match the distance between CORE points in solved layout.
+        // If your core is the center of the inner piece (excluding tabs), use that here.
 
-        // expected = (static -> moving) in solved state (unrotated)
-        const expected = new PIXI.Point(0, 0);
+        // Inside computeCandidate
+        const movingClusterRot = movingPiece.cluster.rotationQ;
+        const staticClusterRot = staticPiece.cluster.rotationQ;
 
-        // dir means where static sits relative to moving (in solved grid)
-        switch (dir) {
-            case "left":
-                {
-                    expected.set(+w, 0);
-                    break;
-                }
-            case "right":
-                {
-                    expected.set(-w, 0);
-                    break;
-                }
-            case "top":
-                {
-                    expected.set(0, +h);
-                    break;
-                }
-            case "bottom":
-                {
-                    expected.set(0, -h);
-                    break;
-                }
+        // If they aren't in the same orientation, they shouldn't snap 
+        // (Unless your game allows merging at different angles, which is rare)
+        if (movingClusterRot !== staticClusterRot) {
+            return null;
         }
 
-        // Under rotation, the expected translation rotates with the cluster.
-        const expectedRot = this.rotateVecByQ_CW(expected, targetRotationQ);
+        const stepX = movingPiece.definition.pieceW;
+        const stepY = movingPiece.definition.pieceH;
+
+        // Solved-space delta from static -> moving (in grid units)k
+
+        // dc = 1 if moving is to the right of static
+        // dr = 1 if moving is below static
+        const dc = movingPiece.definition.col - staticPiece.definition.col;
+        const dr = movingPiece.definition.row - staticPiece.definition.row;
+
+        // This represents the offset in a standard "solved" (rotation 0) state
+        const expectedSolved = new PIXI.Point(
+            dc * stepX,
+            dr * stepY
+        );
+
+        // Now we rotate that fixed offset to match the current target orientation
+        const expectedRot = this.rotateVecByQ_CW(expectedSolved, targetRotationQ);
+
+
 
         const activeCluster = movingPiece.cluster;
         const activeContainer = activeCluster.container;
 
-        // Global positions of moving/static cores (current state)
         const movingCoreG_now = movingPiece.getCoreOriginGlobal();
         const staticCoreG = staticPiece.getCoreOriginGlobal();
 
-        // Convert static core to piecesLayer local (stable)
         const staticCoreL = this.piecesLayer.toLocal(staticCoreG);
 
         const currentQ = activeCluster.rotationQ;
@@ -302,13 +301,13 @@ export class JigsawClusterManager {
             movingCoreL = this.piecesLayer.toLocal(movingCoreG_now);
         }
         else {
-            const projected = this.projectPointUnderClusterQuarterTurn(
+            // Use your new origin-anchored projection here (not pivot)
+            const projected = this.projectPointUnderClusterQuarterTurn_Origin(
                 activeContainer,
                 movingCoreG_now,
                 currentQ,
                 targetRotationQ
             );
-
             movingCoreL = this.piecesLayer.toLocal(projected);
         }
 
@@ -329,25 +328,61 @@ export class JigsawClusterManager {
         };
     }
 
+
+    private projectPointUnderClusterQuarterTurn_Origin(
+        clusterContainer: PIXI.Container,
+        pointGlobal: PIXI.IPointData,
+        fromQ: number,
+        toQ: number
+    ): PIXI.Point {
+        // Anchor: world position of local origin (0,0), stable if you preserve it when pivot changes
+        const originWorld = clusterContainer.toGlobal(new PIXI.Point(0, 0));
+
+        const from = fromQ & 3;
+        const to = toQ & 3;
+        const dq = (to - from) & 3;
+
+        const x = pointGlobal.x - originWorld.x;
+        const y = pointGlobal.y - originWorld.y;
+
+        let rx = x;
+        let ry = y;
+
+        // Same CW convention you already used
+        if (dq === 1) { // 90 CW
+            rx = -y;
+            ry = x;
+        }
+        else if (dq === 2) { // 180
+            rx = -x;
+            ry = -y;
+        }
+        else if (dq === 3) { // 270 CW
+            rx = y;
+            ry = -x;
+        }
+
+        return new PIXI.Point(originWorld.x + rx, originWorld.y + ry);
+    }
+
+
     private rotateVecByQ_CW(v: PIXI.Point, q: number): PIXI.Point {
         const qq = q & 3;
 
-        if (qq === 0) {
-            return new PIXI.Point(v.x, v.y);
-        }
+        if (qq === 0) return new PIXI.Point(v.x, v.y);
 
-        // 90° CW
+        // 90° CW: (x, y) -> (-y, x)
         if (qq === 1) {
-            return new PIXI.Point(v.y, -v.x);
+            return new PIXI.Point(-v.y, v.x);
         }
 
-        // 180°
+        // 180°: (x, y) -> (-x, -y)
         if (qq === 2) {
             return new PIXI.Point(-v.x, -v.y);
         }
 
-        // 270° CW
-        return new PIXI.Point(-v.y, v.x);
+        // 270° CW (or 90° CCW): (x, y) -> (y, -x)
+        return new PIXI.Point(v.y, -v.x);
     }
 
     private mergeClusters(a: JigsawCluster, b: JigsawCluster): JigsawCluster {
@@ -391,8 +426,8 @@ export class JigsawClusterManager {
         return target;
     }
 
-    private setClusterRotationQ(cluster: JigsawCluster, q: 0 | 1 | 2 | 3): void {
-        const qq = (q & 3) as 0 | 1 | 2 | 3;
+    private setClusterRotationQ(cluster: JigsawCluster, q: QuarterTurns): void {
+        const qq = (q & 3) as QuarterTurns;
 
         if (cluster.rotationQ === qq) {
             return;
@@ -401,44 +436,6 @@ export class JigsawClusterManager {
         while (cluster.rotationQ !== qq) {
             cluster.rotateCW();
         }
-    }
-
-    /**
-     * Projects a global point as if `clusterContainer` were rotated from fromQ to toQ
-     * around the cluster's pivot (in world space), without mutating the scene graph.
-     */
-    private projectPointUnderClusterQuarterTurn(
-        clusterContainer: PIXI.Container,
-        pointGlobal: PIXI.IPointData,
-        fromQ: number,
-        toQ: number
-    ): PIXI.Point {
-        const pivotWorld = clusterContainer.toGlobal(clusterContainer.pivot.clone());
-
-        const from = fromQ & 3;
-        const to = toQ & 3;
-        const dq = (to - from) & 3;
-
-        const x = pointGlobal.x - pivotWorld.x;
-        const y = pointGlobal.y - pivotWorld.y;
-
-        let rx = x;
-        let ry = y;
-
-        if (dq === 1) {
-            rx = y;
-            ry = -x;
-        }
-        else if (dq === 2) {
-            rx = -x;
-            ry = -y;
-        }
-        else if (dq === 3) {
-            rx = -y;
-            ry = x;
-        }
-
-        return new PIXI.Point(pivotWorld.x + rx, pivotWorld.y + ry);
     }
 
     // ---------- Tweens (translation only) ----------
@@ -490,6 +487,7 @@ export class JigsawClusterManager {
             requestAnimationFrame(tick);
         });
     }
+
 
     private key(col: number, row: number): string {
         return `${col},${row}`;

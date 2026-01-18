@@ -37,6 +37,30 @@
         },
         {
           "alias": [
+            "jiggy/cuteAnimals.json"
+          ],
+          "src": [
+            "jiggy/cuteAnimals.json"
+          ]
+        },
+        {
+          "alias": [
+            "jiggy/cuteFood.json"
+          ],
+          "src": [
+            "jiggy/cuteFood.json"
+          ]
+        },
+        {
+          "alias": [
+            "jiggy/puzzleData.json"
+          ],
+          "src": [
+            "jiggy/puzzleData.json"
+          ]
+        },
+        {
+          "alias": [
             "memeUi.json"
           ],
           "src": [

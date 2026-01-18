@@ -8,15 +8,7 @@
             "backgrounds"
           ],
           "src": [
-            "backgrounds-gFSUsA.json"
-          ]
-        },
-        {
-          "alias": [
-            "characters"
-          ],
-          "src": [
-            "characters-y32Lvg.json"
+            "backgrounds-a_Fa4g.json"
           ]
         },
         {
@@ -48,7 +40,7 @@
             "thumbs"
           ],
           "src": [
-            "thumbs-TUrCoA.json"
+            "thumbs-wkCr1g.json"
           ]
         },
         {
@@ -56,7 +48,7 @@
             "ui"
           ],
           "src": [
-            "ui-wfKR8Q.json"
+            "ui-L9fmVQ.json"
           ]
         }
       ]

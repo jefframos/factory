@@ -176,8 +176,8 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
         headerHeight: 70,
         padding: 16,
 
-        headerBgTexture: PIXI.Texture.from("BubbleFrame01_Bg"),
-        headerBgNineSlice: { left: 18, top: 18, right: 18, bottom: 18 },
+        headerBgTexture: PIXI.Texture.from("ItemFrame03_Single_Yellow"),
+        headerBgNineSlice: { left: 50, top: 50, right: 50, bottom: 50 },
 
         titleStyle,
 
@@ -256,8 +256,8 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
 
         sectionCard: {
             useNineSliceCardBg: true,
-            cardBgTexture: PIXI.Texture.from("ItemFrame01_Single_Gray"),
-            cardBgNineSlice: { left: 22, top: 22, right: 22, bottom: 22 },
+            cardBgTexture: PIXI.Texture.from("ItemFrame03_Single_Blue"),
+            cardBgNineSlice: { left: 62, top: 62, right: 62, bottom: 62 },
 
             coverHeightRatio: 0.80,
             coverOverlayAlpha: 0,
@@ -274,12 +274,12 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
         levelRow: {
             useNineSliceBg: true,
             bgTexture: PIXI.Texture.from("ItemFrame01_Single_Navy"),
-            bgNineSlice: { left: 22, top: 22, right: 22, bottom: 22 },
+            bgNineSlice: { left: 20, top: 20, right: 20, bottom: 20 },
 
             rowHeight: 150,
-            thumbSize: 130,
+            thumbSize: 120,
             titleStyle: rowTitleStyle,
-            rowPadding: 10,
+            rowPadding: 15,
             rowCornerRadius: 14,
         },
 

@@ -38,6 +38,7 @@ async function processImage(srcPath, dstPath, width, height) {
             fit: 'inside',
             withoutEnlargement: true
         })
+        .png() // Forces the output to be PNG format
         .toFile(dstPath);
 }
 
@@ -48,20 +49,24 @@ async function processFolder(inputDir, outputDir, width, height) {
 
     for (const entry of entries) {
         const srcPath = path.join(inputDir, entry.name);
-        const dstPath = path.join(outputDir, entry.name);
+        const ext = path.extname(entry.name).toLowerCase();
 
         if (entry.isDirectory()) {
+            const dstPath = path.join(outputDir, entry.name);
             await processFolder(srcPath, dstPath, width, height);
             continue;
         }
 
-        const ext = path.extname(entry.name).toLowerCase();
-
         if (!SUPPORTED_EXTENSIONS.has(ext)) {
-            // Copy non-images as-is
+            // Copy non-images as-is (keeping original name/ext)
+            const dstPath = path.join(outputDir, entry.name);
             fs.copyFileSync(srcPath, dstPath);
             continue;
         }
+
+        // Change the extension to .png for the destination path
+        const baseName = path.basename(entry.name, ext);
+        const dstPath = path.join(outputDir, `${baseName}.png`);
 
         await processImage(srcPath, dstPath, width, height);
     }
@@ -88,7 +93,7 @@ async function main() {
 
     await processFolder(absInput, absOutput, width, height);
 
-    console.log(`✔ Images processed to ${width}x${height}`);
+    console.log(`✔ All images converted to .png and resized to max ${width}x${height}`);
 }
 
 main().catch(err => {
