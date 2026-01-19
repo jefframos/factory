@@ -21,7 +21,7 @@ export class LevelSelectView extends PIXI.Container {
 
     private readonly scrollView: VerticalScrollView;
 
-    private readonly headerView: ReturnType<LevelSelectViewFactory["createHeader"]>;
+    public readonly headerView: ReturnType<LevelSelectViewFactory["createHeader"]>;
 
     private viewW: number;
     private viewH: number;
@@ -112,7 +112,8 @@ export class LevelSelectView extends PIXI.Container {
         this.headerView.backButton.visible = false;
         this.headerView.closeButton.visible = false;
 
-        this.scrollView.content.removeChildren();
+        //this.scrollView.content.removeChildren();
+        this.clearScrollView();
 
         const sections = (this.mediator as any).sections as SectionDefinition[] | undefined;
         const list = sections ?? [];
@@ -166,33 +167,60 @@ export class LevelSelectView extends PIXI.Container {
         this.headerView.backButton.visible = true;
         this.headerView.closeButton.visible = true;
 
-        this.scrollView.content.removeChildren();
+        //this.scrollView.content.removeChildren();
+        this.clearScrollView();
 
         const padding = this.theme.padding;
-        const rowH = this.theme.levelRow.rowHeight;
         const progress = this.mediator.getProgress();
 
-        let y = padding;
+        // NEW: grid config
+        const cols = 2;
+        const gap = 12;
+
+        const availableW = this.viewW - padding * 2;
+        const cardW = Math.floor((availableW - gap * (cols - 1)) / cols);
+        const cardH = this.theme.levelRow.rowHeight;
+
+        let i = 0;
         for (const level of this.activeSection.levels) {
-            const row = this.factory.createLevelRow(
+            const row = Math.floor(i / cols);
+            const col = i % cols;
+
+            const x = padding + col * (cardW + gap);
+            const y = padding + row * (cardH + gap);
+
+            const unlocked = this.mediator.isLevelUnlocked(level.id);
+
+            const tile = this.factory.createLevelRow(
                 level,
                 this.activeSection,
-                this.viewW - padding * 2,
-                rowH,
+                cardW,
+                cardH,
                 progress,
+                unlocked,
                 (levelId: string, d: Difficulty) => {
                     this.mediator.requestPlay(levelId, d);
+                },
+                (levelId: string) => {
+                    this.mediator.requestPurchase(levelId);
                 }
             );
 
-            row.x = padding;
-            row.y = y;
-            this.scrollView.content.addChild(row);
+            tile.x = x;
+            tile.y = y;
 
-            y += rowH + 12;
+            this.scrollView.content.addChild(tile);
+
+            i += 1;
         }
 
         this.scrollView.scrollToTop();
         this.scrollView.refresh();
+    }
+
+    private clearScrollView(): void {
+        // This tells PIXI to call .destroy() on every child.
+        // Our BaseButton cleanup (the .on('destroyed') listener) will now trigger.
+        this.scrollView.content.removeChildren().forEach(child => child.destroy({ children: true }));
     }
 }

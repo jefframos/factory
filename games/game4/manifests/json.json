@@ -61,6 +61,22 @@
         },
         {
           "alias": [
+            "jiggy/fastFood.json"
+          ],
+          "src": [
+            "jiggy/fastFood.json"
+          ]
+        },
+        {
+          "alias": [
+            "jiggy/fantasyCreatures.json"
+          ],
+          "src": [
+            "jiggy/fantasyCreatures.json"
+          ]
+        },
+        {
+          "alias": [
             "memeUi.json"
           ],
           "src": [

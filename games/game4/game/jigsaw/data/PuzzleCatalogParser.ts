@@ -4,6 +4,8 @@ import * as PIXI from "pixi.js";
 
 export type PuzzleMasterJson = {
     version: number;
+    prizes: number[];
+    prizesSpecial: number[];
     basePath: string;
     tiers: PuzzleTierJson[];
 };
@@ -30,6 +32,7 @@ export type PuzzleCategoryJson = {
         coverLevelId: string;
         levels: Array<{
             id: string;
+            isSpecial: boolean;
             name: string;
             thumb: string;
             cost: number;
@@ -64,6 +67,7 @@ export class PuzzleDataBuilder {
 
         const basePath = folderPath
 
+        console.log(master)
 
         for (const tier of master.tiers) {
             if (!tier.enabled) {
@@ -90,11 +94,14 @@ export class PuzzleDataBuilder {
                         sectionId: s.id,
                         name: l.name,
                         thumb: l.thumb,
+                        isSpecial: l.isSpecial,
                         imageSrc: this.joinPaths(basePath, l.image),
+                        unlockCost: l.cost,
+                        prize: master.prizes,
+                        prizesSpecial: master.prizesSpecial
                     };
                 });
 
-                console.log(levels)
                 const sectionDef: SectionDefinition = {
                     id: s.id,
                     name: s.name,

@@ -125,12 +125,22 @@ export interface LevelDefinition {
     thumb?: string;
     imageSrc: string;
 
+    unlockCost?: number;
+    unlockSpecial?: number;
     // optional payload sent to game
     payload?: unknown;
+
+    prize: number[],
+    prizesSpecial: number[],
+
+    isSpecial: boolean
 }
 
 export interface GameProgress {
     version: number;
     levels: Record<string, LevelProgress>; // key = levelId
+    unlockedLevels?: Record<string, boolean>;
+    coins: number;        // Normal currency
+    gems: number;         // Special currency
 }
 

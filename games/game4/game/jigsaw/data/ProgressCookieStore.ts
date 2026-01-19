@@ -18,47 +18,51 @@ export class ProgressCookieStore {
 
     public load(): GameProgress {
         const raw = this.readCookie(this.cookieName);
-        if (!raw) {
-            return this.createEmpty();
-        }
+        if (!raw) return this.createEmpty();
 
         try {
             const decoded = decodeURIComponent(raw);
             const parsed = JSON.parse(decoded) as Partial<GameProgress>;
 
-            if (!parsed || typeof parsed !== "object") {
-                return this.createEmpty();
-            }
+            if (!parsed || typeof parsed !== "object") return this.createEmpty();
+            if (parsed.version !== this.version) return this.createEmpty();
 
-            if (parsed.version !== this.version) {
-                // If you later introduce migrations, do it here.
-                return this.createEmpty();
-            }
-
-            if (!parsed.levels || typeof parsed.levels !== "object") {
-                return this.createEmpty();
-            }
-
+            // Return the full object including unlockedLevels
             return {
                 version: this.version,
-                levels: parsed.levels as Record<string, LevelProgress>
+                levels: parsed.levels ?? {},
+                unlockedLevels: parsed.unlockedLevels ?? {},
+                coins: parsed.coins ?? 0, // Default starting coins
+                gems: parsed.gems ?? 0      // Default starting gems
             };
         }
         catch {
             return this.createEmpty();
         }
     }
+    public markLevelUnlocked(progress: GameProgress, levelId: string): GameProgress {
+        const next: GameProgress = {
+            ...progress,
+            unlockedLevels: {
+                ...(progress.unlockedLevels ?? {}),
+                [levelId]: true,
+            },
+        };
 
+        return next;
+    }
+    public isLevelUnlocked(progress: GameProgress, levelId: string): boolean {
+        return !!progress.unlockedLevels?.[levelId];
+    }
     public save(progress: GameProgress): void {
         const safe: GameProgress = {
+            ...progress, // Spread the progress to catch coins/gems
             version: this.version,
-            levels: progress.levels ?? {}
         };
 
         const str = JSON.stringify(safe);
         const encoded = encodeURIComponent(str);
 
-        // 365 days. Adjust as needed.
         const maxAgeSeconds = 60 * 60 * 24 * 365;
         document.cookie = `${this.cookieName}=${encoded}; Max-Age=${maxAgeSeconds}; Path=/; SameSite=Lax`;
     }
@@ -93,7 +97,10 @@ export class ProgressCookieStore {
     private createEmpty(): GameProgress {
         return {
             version: this.version,
-            levels: {}
+            levels: {},
+            unlockedLevels: {},
+            coins: 0,
+            gems: 0
         };
     }
 
@@ -104,7 +111,7 @@ export class ProgressCookieStore {
                 easy: { completed: false },
                 medium: { completed: false },
                 hard: { completed: false }
-            }
+            },
         };
     }
 
@@ -122,5 +129,17 @@ export class ProgressCookieStore {
             }
         }
         return null;
+    }
+
+    public resetGameProgress(): void {
+        // 1. Clear the specific game progress cookie
+        // We set Max-Age to -1 and an expired Date to ensure the browser deletes it
+        document.cookie = `${this.cookieName}=; Path=/; Max-Age=-1; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+
+        // 2. Optional: If you use other keys or localStorage, clear those too
+        // localStorage.clear(); 
+
+        // 3. Reload the page to reset the application state
+        window.location.reload();
     }
 }

@@ -1,19 +1,22 @@
 {
     "version": 1,
     "basePath": "jiggy/",
+    "prizes": [
+        10,
+        20,
+        30
+    ],
+    "prizesSpecial": [
+        1,
+        2,
+        3
+    ],
     "tiers": [
         {
             "id": "tier1",
             "name": "Starter",
             "enabled": true,
             "items": [
-                {
-                    "id": "cuteAnimals",
-                    "enabled": true,
-                    "type": 1,
-                    "json": "cuteAnimals.json",
-                    "sectionCost": 0
-                },
                 {
                     "id": "cuteFood",
                     "enabled": true,
@@ -22,10 +25,24 @@
                     "sectionCost": 0
                 },
                 {
-                    "id": "nature",
+                    "id": "cuteAnimals",
                     "enabled": true,
                     "type": 1,
-                    "json": "nature.json",
+                    "json": "cuteAnimals.json",
+                    "sectionCost": 0
+                },
+                {
+                    "id": "fastFood",
+                    "enabled": true,
+                    "type": 1,
+                    "json": "fastFood.json",
+                    "sectionCost": 0
+                },
+                {
+                    "id": "fantasyCreatures",
+                    "enabled": true,
+                    "type": 1,
+                    "json": "fantasyCreatures.json",
                     "sectionCost": 0
                 }
             ]

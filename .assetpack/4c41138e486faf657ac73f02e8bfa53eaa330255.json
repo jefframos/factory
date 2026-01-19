@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768779554045,
-                "duration": 43.6307000000088,
+                "date": 1768829841789,
+                "duration": 32.28870000015013,
                 "success": true
             }
         },
@@ -128,8 +128,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768778330385,
-                "duration": 33.844900000141934,
+                "date": 1768829841789,
+                "duration": 32.21999999997206,
                 "success": true
             }
         },
@@ -142,11 +142,11 @@
             },
             "transformData": {},
             "stats": {
-                "date": 1768778278029,
-                "duration": 28.482400000095367,
+                "date": 1768828649752,
+                "duration": 8.810200000000009,
                 "success": true
             },
-            "hash": "vMag-g"
+            "hash": "-NMvtw"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/jiggy/cuteAnimals.json": {
             "isFolder": false,
@@ -166,11 +166,11 @@
             },
             "transformData": {},
             "stats": {
-                "date": 1768778330385,
-                "duration": 33.852399999974295,
+                "date": 1768829841789,
+                "duration": 32.228899999987334,
                 "success": true
             },
-            "hash": "LFXX6w"
+            "hash": "xTCo_g"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/jiggy/cuteFood.json": {
             "isFolder": false,
@@ -190,15 +190,63 @@
             },
             "transformData": {},
             "stats": {
-                "date": 1768776888376,
-                "duration": 39.81899999998859,
+                "date": 1768829796554,
+                "duration": 34.56260000006296,
                 "success": true
             },
-            "hash": "Ev2MEA"
+            "hash": "Vy4lsA"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/jiggy/puzzleData.json": {
             "isFolder": false,
             "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}/puzzleData.json",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}/fastFood.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829813955,
+                "duration": 32.91159999999218,
+                "success": true
+            },
+            "hash": "h6f7QQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/jiggy/fastFood.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}/fastFood.json",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}/fantasyCreatures.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829821263,
+                "duration": 34.20409999997355,
+                "success": true
+            },
+            "hash": "xNAqKg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/jiggy/fantasyCreatures.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}/fantasyCreatures.json",
             "metaData": {},
             "inheritedMetaData": {
                 "copy": true

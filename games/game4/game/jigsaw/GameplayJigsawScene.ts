@@ -15,9 +15,12 @@ import ViewUtils from "@core/utils/ViewUtils";
 import MatchManager from "../2048/scene/MatchManager";
 import MainMenuUi from "../2048/ui/MainMenuUi";
 import ScoreUi from "../2048/ui/ScoreUi";
-import { ProgressCookieStore } from "./ProgressCookieStore";
+import { DevGuiManager } from "../utils/DevGuiManager";
+import { InGameEconomy } from "./data/InGameEconomy";
+import { ProgressCookieStore } from "./data/ProgressCookieStore";
 import { PuzzleDataBuilder, PuzzleMasterJson } from "./data/PuzzleCatalogParser";
-import { LevelSelectMediator, PlayLevelRequest } from "./progress/LevelSelectMediator";
+import { LevelSelectMediator, PlayLevelRequest, PurchaseLevelRequest } from "./progress/LevelSelectMediator";
+import { CurrencyHud } from "./ui/CurrencyHud";
 import { LevelSelectView } from "./ui/LevelSelectView";
 import { createDefaultLevelSelectTheme } from "./ui/LevelSelectViewElements";
 import { makeResizedSpriteTexture } from "./vfx/imageFlatten";
@@ -44,6 +47,7 @@ export default class GameplayJigsawScene extends GameScene {
 
     private highScore: number = 0;
     private paused: boolean = false;
+    private currencyHud!: CurrencyHud;
 
     private currentLevel?: PlayLevelRequest;
 
@@ -93,12 +97,57 @@ export default class GameplayJigsawScene extends GameScene {
         const sections = built.sections;
         const sectionMeta = built.meta;
 
+        console.log(sections, sectionMeta)
+
         const store = new ProgressCookieStore("jg_progress_v1", 1);
+        DevGuiManager.instance.addButton('erase', () => {
+            store.resetGameProgress();
+        })
+
+        DevGuiManager.instance.addButton('addCoins', () => {
+            InGameEconomy.instance.addCurrency(100)
+        })
+
         this.mediator = new LevelSelectMediator(store);
         this.mediator.setSections(sections);
 
+
+
+
+
+
         const theme = createDefaultLevelSelectTheme();
         this.levelSelectMenu = new LevelSelectView(this.mediator, theme, 500, 300);
+
+
+
+        this.currencyHud = new CurrencyHud({
+            textStyle: new PIXI.TextStyle({
+                fontFamily: "LEMONMILK-Bold",
+                fontSize: 16,
+                fill: 0xffffff,
+                stroke: "#0c0808",
+                strokeThickness: 5,
+            }),
+            currencyIcon: 'ResourceBar_Single_Icon_Coin',
+            specialCurrencyIcon: 'ResourceBar_Single_Icon_Gem',
+            bgTexture: PIXI.Texture.from('Slider_Basic01_Bg_Single'),
+            bgNineSlice: { left: 10, top: 10, right: 10, bottom: 10 },
+            padding: 15
+        });
+
+        this.currencyHud.x = 0; // Top left corner
+        this.currencyHud.y = 10;
+        this.levelSelectMenu.headerView.root.addChild(this.currencyHud);
+
+        console.log(this.levelSelectMenu.headerView)
+
+
+        this.mediator.onPurchaseLevel.add((req: PurchaseLevelRequest) => {
+            // 1) check currency / IAP
+            // 2) if success:
+            this.mediator.confirmPurchase(req.levelId);
+        });
 
         // 4) UI -> Game
         this.mediator.onPlayLevel.add((req) => {
@@ -111,7 +160,7 @@ export default class GameplayJigsawScene extends GameScene {
 
         this.gameplayContainer.addChild(this.levelSelectMenu)
 
-        if (Game.debugParams.dev) {
+        if (Game.debugParams.start) {
             this.startMatch()
         }
         if (Game.debugParams.over) {
@@ -141,6 +190,7 @@ export default class GameplayJigsawScene extends GameScene {
 
     public update(delta: number): void {
         this.layout();
+
 
         if (this.paused) {
             return;
@@ -244,14 +294,34 @@ export default class GameplayJigsawScene extends GameScene {
 
         this.jigsawBoardView.onPuzzleCompleted.add(async () => {
             this.jigsawBoardView.input?.setEnabled(false);
+
+            let rewardAmount = 0;
             if (this.currentLevel) {
-                this.mediator.reportLevelCompleted(this.currentLevel?.levelId, this.currentLevel?.difficulty, this.matchManager.matchTimer);
+                console.log(this.currentLevel.level)
+                // 1. Determine the prize amount based on difficulty
+                const prizes = !this.currentLevel.level.isSpecial ? this.currentLevel.level.prize : this.currentLevel.level.prizesSpecial;
+                const diffMapping: Record<string, number> = { "easy": 0, "medium": 1, "hard": 2 };
+                const prizeIndex = diffMapping[this.currentLevel.difficulty] ?? 0;
+                rewardAmount = prizes[prizeIndex];
+
+                // 2. Report completion to save progress/time
+                this.mediator.reportLevelCompleted(
+                    this.currentLevel.levelId,
+                    this.currentLevel.difficulty,
+                    this.matchManager.matchTimer
+                );
+
+                // 3. Award the currency via the Economy Singleton
+                if (rewardAmount > 0) {
+                    InGameEconomy.instance.addCurrency(rewardAmount, false);
+                    console.log(`Awarded ${rewardAmount} coins for ${this.currentLevel.difficulty} difficulty.`);
+                }
             }
+
             await this.jigsawBoardView.snapCompletedPuzzleToSolvedPose({ duration: 0.8, ease: "power4.out" });
             this.jigsawBoardView.input?.setEnabled(true);
 
-
-            PopupManager.instance.show("gameOver", { matchManager: this.matchManager });
+            PopupManager.instance.show("gameOver", { matchManager: this.matchManager, rewardAmount: rewardAmount || 0, isSpecial: this.currentLevel?.level.isSpecial });
         });
     }
 
@@ -277,7 +347,7 @@ export default class GameplayJigsawScene extends GameScene {
         const ratio = width / height;
 
         // 1. Define target total pieces instead of hardcoded grids
-        let targetPieces = 12; // Default (easy)
+        let targetPieces = 4; // Default (easy)
         const difficulty = data?.difficulty || "medium";
 
         if (difficulty === "medium") {
@@ -368,6 +438,8 @@ export default class GameplayJigsawScene extends GameScene {
     private updateSafeAreaFromOverlay(): void {
         const cappedSize = Math.min(Game.overlayScreenData.width, 1024)
         this.levelSelectMenu?.setSize(cappedSize, Game.overlayScreenData.height)
+        this.currencyHud.x = cappedSize - this.currencyHud.width - 100
+
         if (this.levelSelectMenu) {
 
             this.levelSelectMenu.x = -this.gameplayContainer.x + Game.gameScreenData.center.x - cappedSize / 2;

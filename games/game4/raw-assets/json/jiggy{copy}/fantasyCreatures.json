@@ -1,0 +1,52 @@
+{
+    "section": {
+        "id": "fantasyCreatures",
+        "name": "Fantasy Creatures",
+        "coverLevelId": "fantasyCreatures_01",
+        "levels": [
+            {
+                "id": "fantasyCreatures_06",
+                "name": "Puzzle 6",
+                "thumb": "fantasy_creatures_6",
+                "cost": 0,
+                "image": "fantasy-creatures/fantasy_creatures_6.png"
+            },
+            {
+                "id": "fantasyCreatures_01",
+                "name": "Puzzle 1",
+                "thumb": "fantasy_creatures_1",
+                "isSpecial": true,
+                "cost": 20,
+                "image": "fantasy-creatures/fantasy_creatures_1.png"
+            },
+            {
+                "id": "fantasyCreatures_02",
+                "name": "Puzzle 2",
+                "thumb": "fantasy_creatures_2",
+                "cost": 50,
+                "image": "fantasy-creatures/fantasy_creatures_2.png"
+            },
+            {
+                "id": "fantasyCreatures_03",
+                "name": "Puzzle 3",
+                "thumb": "fantasy_creatures_3",
+                "cost": 100,
+                "image": "fantasy-creatures/fantasy_creatures_3.png"
+            },
+            {
+                "id": "fantasyCreatures_04",
+                "name": "Puzzle 4",
+                "thumb": "fantasy_creatures_4",
+                "cost": 100,
+                "image": "fantasy-creatures/fantasy_creatures_4.png"
+            },
+            {
+                "id": "fantasyCreatures_05",
+                "name": "Puzzle 5",
+                "thumb": "fantasy_creatures_5",
+                "cost": 200,
+                "image": "fantasy-creatures/fantasy_creatures_5.png"
+            }
+        ]
+    }
+}

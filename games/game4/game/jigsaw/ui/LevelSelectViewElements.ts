@@ -11,10 +11,7 @@ export interface ButtonSkins {
         standard: ButtonAttributes;
         over?: ButtonAttributes;
         down?: ButtonAttributes;
-        completed?: {
-            texture?: PIXI.Texture;
-            fontStyle?: PIXI.TextStyle;
-        };
+        completed?: ButtonAttributes;
     };
 }
 
@@ -80,11 +77,13 @@ export interface LevelSelectTheme {
     levelRow: {
         useNineSliceBg: boolean;
         bgTexture?: PIXI.Texture;
+        bgTextureLocked?: PIXI.Texture;
         bgNineSlice?: { left: number; top: number; right: number; bottom: number };
 
         rowHeight: number;
         thumbSize: number;
         titleStyle: PIXI.TextStyle;
+        questStyle: PIXI.TextStyle;
         rowPadding: number;
         rowCornerRadius: number; // used only if useNineSliceBg=false
     };
@@ -158,10 +157,10 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
 
     const difficultyStyle = new PIXI.TextStyle({
         fontFamily: "LEMONMILK-Bold",
-        fontSize: 14,
+        fontSize: 16,
         fill: 0xffffff,
         stroke: "#0c0808",
-        strokeThickness: 4,
+        strokeThickness: 5,
     });
 
     const rowTitleStyle = new PIXI.TextStyle({
@@ -182,6 +181,22 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
         titleStyle,
 
         buttonSkins: {
+            purchase: {
+                standard: {
+                    allPadding: 20,
+                    texture: PIXI.Texture.from("ResourceBar_Single_Btn_Yellow1"),
+                    iconTexture: PIXI.Texture.from("ResourceBar_Single_Icon_Coin"),
+                    width: 200,
+                    height: 60,
+                    textOffset: new PIXI.Point(20, 0),
+                    fontStyle: headerButtonStyle,
+                    iconSize: { height: 45, width: 45 },
+                    iconOffset: new PIXI.Point(5, 5)
+                },
+                over: {
+                    texture: PIXI.Texture.from("ResourceBar_Single_Btn_Orange1"),
+                },
+            },
             primary: {
                 standard: {
                     allPadding: 20,
@@ -206,57 +221,90 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
                     texture: PIXI.Texture.from("ResourceBar_Single_Btn_Purple1"),
                 },
             },
+            back: {
+                standard: {
+                    allPadding: 20,
+                    texture: PIXI.Texture.from("ResourceBar_Single_Btn_Red1"),
+                    width: 80,
+                    height: 80,
+                    fontStyle: headerButtonStyle,
+                    iconTexture: PIXI.Texture.from("Icon_Back"),
+                    iconSize: { width: 60, height: 60 },
+                    centerIconHorizontally: true,
+                    centerIconVertically: true,
+                },
+                over: {
+                    texture: PIXI.Texture.from("ResourceBar_Single_Btn_Orange1"),
+                },
+            },
             difficultyEasy: {
                 standard: {
                     allPadding: 18,
-                    texture: PIXI.Texture.from("ResourceBar_Single_Btn_Blue1"),
-                    width: 120,
+                    texture: PIXI.Texture.from("ResourceBar_Single_Btn_Green1"),
+                    width: 100,
                     height: 60,
                     fontStyle: difficultyStyle,
-                    iconTexture: PIXI.Texture.from('Toggle_Check_White_Icon'),
+                    iconTexture: PIXI.Texture.from('jiggyGreen'),
+                    iconSize: { height: 50, width: 50 },
+                    iconOffset: new PIXI.Point(5, 5)
                 },
                 over: {
-                    texture: PIXI.Texture.from("ResourceBar_Single_Btn_Purple1"),
+                    texture: PIXI.Texture.from("ResourceBar_Single_Btn_Green1"),
                 },
                 completed: {
                     texture: PIXI.Texture.from("ResourceBar_Single_Btn_Yellow1"),
+                    iconTexture: PIXI.Texture.from('Icon_Check03_s'),
+                    iconSize: { height: 30, width: 30 },
+                    iconOffset: new PIXI.Point(70, -5)
                 },
             },
             difficultyMedium: {
                 standard: {
                     allPadding: 18,
                     texture: PIXI.Texture.from("ResourceBar_Single_Btn_Blue1"),
-                    width: 120,
+                    width: 100,
                     height: 60,
                     fontStyle: difficultyStyle,
+                    iconTexture: PIXI.Texture.from('jiggyBlue'),
+                    iconSize: { height: 50, width: 50 },
+                    iconOffset: new PIXI.Point(5, 5)
                 },
                 over: {
-                    texture: PIXI.Texture.from("ResourceBar_Single_Btn_Purple1"),
+                    texture: PIXI.Texture.from("ResourceBar_Single_Btn_Blue1"),
                 },
                 completed: {
                     texture: PIXI.Texture.from("ResourceBar_Single_Btn_Yellow1"),
+                    iconTexture: PIXI.Texture.from('Icon_Check03_s'),
+                    iconSize: { height: 30, width: 30 },
+                    iconOffset: new PIXI.Point(70, -5)
                 },
             },
             difficultyHard: {
                 standard: {
                     allPadding: 18,
-                    texture: PIXI.Texture.from("ResourceBar_Single_Btn_Blue1"),
-                    width: 120,
+                    texture: PIXI.Texture.from("ResourceBar_Single_Btn_Purple1"),
+                    width: 100,
                     height: 60,
                     fontStyle: difficultyStyle,
+                    iconTexture: PIXI.Texture.from('jiggyPurple'),
+                    iconSize: { height: 50, width: 50 },
+                    iconOffset: new PIXI.Point(5, 5)
                 },
                 over: {
                     texture: PIXI.Texture.from("ResourceBar_Single_Btn_Purple1"),
                 },
                 completed: {
                     texture: PIXI.Texture.from("ResourceBar_Single_Btn_Yellow1"),
+                    iconTexture: PIXI.Texture.from('Icon_Check03_s'),
+                    iconSize: { height: 30, width: 30 },
+                    iconOffset: new PIXI.Point(70, -5)
                 },
             },
         },
 
         sectionCard: {
             useNineSliceCardBg: true,
-            cardBgTexture: PIXI.Texture.from("ItemFrame03_Single_Blue"),
+            cardBgTexture: PIXI.Texture.from("ItemFrame03_Single_Green"),
             cardBgNineSlice: { left: 62, top: 62, right: 62, bottom: 62 },
 
             coverHeightRatio: 0.80,
@@ -266,19 +314,21 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
             cardTitleStyle,
             cardCompletionStyle,
 
-            completionPillTexture: PIXI.Texture.from("Label_Badge01_Green"),
+            completionPillTexture: PIXI.Texture.from("Label_Badge01_Yellow"),
             completionPillNineSlice: { left: 0, top: 0, right: 0, bottom: 0 },
             completionPillPadding: { x: 10, y: 6 },
         },
 
         levelRow: {
             useNineSliceBg: true,
-            bgTexture: PIXI.Texture.from("ItemFrame01_Single_Navy"),
+            bgTexture: PIXI.Texture.from("ItemFrame03_Single_Blue"),
+            bgTextureLocked: PIXI.Texture.from("ItemFrame03_Single_Navy"),
             bgNineSlice: { left: 20, top: 20, right: 20, bottom: 20 },
 
-            rowHeight: 150,
-            thumbSize: 120,
+            rowHeight: 250,
+            thumbSize: 130,
             titleStyle: rowTitleStyle,
+            questStyle: { ...rowTitleStyle, fontSize: 16 },
             rowPadding: 15,
             rowCornerRadius: 14,
         },

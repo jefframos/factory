@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768778028951,
-                "duration": 19.25720000000001,
+                "date": 1768829803217,
+                "duration": 28.21080000000029,
                 "success": true
             }
         },
@@ -20,8 +20,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768778028951,
-                "duration": 9.21270000000004,
+                "date": 1768829803217,
+                "duration": 13.889299999999821,
                 "success": true
             }
         },
@@ -341,6 +341,164 @@
             },
             "transformData": {}
         },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829803217,
+                "duration": 13.952800000000025,
+                "success": true
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures/fantasy_creatures_1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829803217,
+                "duration": 28.23219999999992,
+                "success": true
+            },
+            "hash": "h3CYmA"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/fantasy-creatures/fantasy_creatures_1.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures/fantasy_creatures_1.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures/fantasy_creatures_2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829803223,
+                "duration": 21.857500000000073,
+                "success": true
+            },
+            "hash": "b85iog"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/fantasy-creatures/fantasy_creatures_2.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures/fantasy_creatures_2.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures/fantasy_creatures_3.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829803231,
+                "duration": 26.36530000000039,
+                "success": true
+            },
+            "hash": "z6r2SQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/fantasy-creatures/fantasy_creatures_3.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures/fantasy_creatures_3.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures/fantasy_creatures_4.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829803237,
+                "duration": 20.12149999999974,
+                "success": true
+            },
+            "hash": "vaJDpg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/fantasy-creatures/fantasy_creatures_4.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures/fantasy_creatures_4.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures/fantasy_creatures_5.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829803245,
+                "duration": 31.358000000000175,
+                "success": true
+            },
+            "hash": "S7eMAw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/fantasy-creatures/fantasy_creatures_5.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures/fantasy_creatures_5.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures/fantasy_creatures_6.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829803251,
+                "duration": 25.47719999999981,
+                "success": true
+            },
+            "hash": "kP73kg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/fantasy-creatures/fantasy_creatures_6.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-creatures/fantasy_creatures_6.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-nature": {
             "isFolder": true,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}",
@@ -493,6 +651,164 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/fantasy-nature/fantasy_nature_6.png": {
             "isFolder": false,
             "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fantasy-nature/fantasy_nature_6.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829803257,
+                "duration": 0.15219999999999345,
+                "success": true
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food/fast_food_1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829803257,
+                "duration": 30.571100000000115,
+                "success": true
+            },
+            "hash": "aZnGKw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/fast-food/fast_food_1.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food/fast_food_1.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food/fast_food_2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829803264,
+                "duration": 23.85649999999987,
+                "success": true
+            },
+            "hash": "NYhODg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/fast-food/fast_food_2.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food/fast_food_2.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food/fast_food_3.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829803269,
+                "duration": 18.697200000000066,
+                "success": true
+            },
+            "hash": "NZd6YA"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/fast-food/fast_food_3.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food/fast_food_3.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food/fast_food_4.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829803277,
+                "duration": 16.71170000000029,
+                "success": true
+            },
+            "hash": "3-qPpQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/fast-food/fast_food_4.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food/fast_food_4.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food/fast_food_5.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829803282,
+                "duration": 11.295399999999972,
+                "success": true
+            },
+            "hash": "u5LF"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/fast-food/fast_food_5.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food/fast_food_5.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food/fast_food_6.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768829803288,
+                "duration": 5.717000000000098,
+                "success": true
+            },
+            "hash": "PMppCQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/fast-food/fast_food_6.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food/fast_food_6.png",
             "metaData": {},
             "inheritedMetaData": {
                 "copy": true
