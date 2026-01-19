@@ -99,7 +99,7 @@ export class ProgressCookieStore {
             version: this.version,
             levels: {},
             unlockedLevels: {},
-            coins: 0,
+            coins: 50,
             gems: 0
         };
     }

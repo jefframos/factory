@@ -41,10 +41,11 @@ export class CurrencyHud extends PIXI.Container {
         this.gemLabel = new PIXI.Text(this.displayGems.toString(), textStyle);
         this.gemLabel.anchor.set(0, 0.5);
 
-        items.addChild(this.coinIcon, this.coinLabel, this.gemIcon, this.gemLabel);
+        items.addChild(this.coinIcon, this.coinLabel);
+        //items.addChild(this.gemIcon, this.gemLabel);
         this.addChild(this.background = new PIXI.NineSlicePlane(bgTexture, bgNineSlice.left, bgNineSlice.top, bgNineSlice.right, bgNineSlice.bottom));
         this.addChild(items);
-
+        this.background.alpha = 0.3
         this.refreshLayout();
 
         this.coinIcon.scale.set(ViewUtils.elementScaler(this.coinIcon, this.iconSize * 2))
@@ -116,7 +117,7 @@ export class CurrencyHud extends PIXI.Container {
         this.gemLabel.y = this.background.height / 2;
 
         // Resize Background
-        this.background.width = this.gemLabel.x + this.gemLabel.width + p;
+        this.background.width = this.coinLabel.x + this.coinLabel.width + p;
         this.background.height = 50; // Or dynamic based on text height
     }
 }

@@ -26,7 +26,7 @@ export default class MyGame extends Game {
 
 
     constructor() {
-        super(undefined, false);
+        super({ resolution: 1.5 }, false);
 
         this.folderPath = 'game4';
 
@@ -128,10 +128,10 @@ export default class MyGame extends Game {
             ExtractTiledFile.parseTiledData(memeWorld, 'memeWorld')
         }
 
-        const memeUi = PIXI.Assets.get('memeUi.json')
-        if (memeUi) {
-            ExtractTiledFile.parseTiledData(memeUi, 'memeUi')
-        }
+        // const memeUi = PIXI.Assets.get('memeUi.json')
+        // if (memeUi) {
+        //     ExtractTiledFile.parseTiledData(memeUi, 'memeUi')
+        // }
 
         PIXI.BitmapFont.from(Fonts.MainFamily, {
             ...Fonts.Main,

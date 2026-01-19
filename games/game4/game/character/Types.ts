@@ -77,7 +77,7 @@ export const Fonts = {
         fontSize: 32,
         fill: 0xffffff,
         align: 'center',
-        stroke: 0,
+        stroke: 0x4b2a19,
         strokeThickness: 6
 
     })

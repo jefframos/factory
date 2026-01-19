@@ -42,6 +42,8 @@ export class LevelSelectViewFactory {
 
         const titleText = new PIXI.Text("", this.theme.titleStyle);
         root.addChild(titleText);
+        titleText.anchor.set(0, 0.5)
+        titleText.y = 0//this.theme.headerHeight / 2
 
         const backSkin = this.theme.buttonSkins.back;
         const closeSkin = this.theme.buttonSkins.secondary;
@@ -78,8 +80,8 @@ export class LevelSelectViewFactory {
             bg.width = w;
             bg.height = h;
 
-            titleText.x = 20;
-            titleText.y = Math.floor((h - titleText.height) * 0.5);
+            titleText.x = 30;
+            titleText.y = Math.floor((this.theme.headerHeight) * 0.5 - 5);
 
             // Right aligned buttons
             // closeButton.x = w - closeButton.width - 16;
@@ -87,7 +89,7 @@ export class LevelSelectViewFactory {
 
             //backButton.x = closeButton.x - backButton.width - 12;
             backButton.x = w - backButton.width - 16;
-            backButton.y = Math.floor((h - backButton.height) * 0.5);
+            backButton.y = Math.floor((h - backButton.height) * 0.5) - 5;
 
         };
 
@@ -113,6 +115,7 @@ export class LevelSelectViewFactory {
         root.cursor = "pointer";
 
         const override = getSectionOverride(this.theme, (section as any).id ?? section.name);
+        const pad = this.theme.sectionCard.padding;
 
         // Card background: nine-slice (preferred) or fallback
         if (this.theme.sectionCard.useNineSliceCardBg) {
@@ -152,7 +155,7 @@ export class LevelSelectViewFactory {
 
         const mask = new PIXI.Graphics();
         mask.beginFill(0xff0000);
-        mask.drawRoundedRect(0, 0, w - this.theme.padding * 2, coverH - this.theme.padding * 2, 20);
+        mask.drawRoundedRect(0, 0, w - this.theme.padding * 2, coverH - this.theme.padding * 2, 30);
         mask.endFill();
         coverContaienr.addChild(mask);
         cover.scale.set(ViewUtils.elementEvelop(cover, w, coverH) + 0.05)
@@ -205,7 +208,6 @@ export class LevelSelectViewFactory {
                 ns.bottom
             );
 
-            const pad = this.theme.sectionCard.completionPillPadding;
 
             completionPill.width = 80// Math.ceil(completionText.width + pad.x * 2);
             completionPill.height = 80//Math.ceil(completionText.height + pad.y * 2);
@@ -285,9 +287,9 @@ export class LevelSelectViewFactory {
         const c2 = makeResizedSpriteTexture(Game.renderer, thumbC, 0, 0)
         root.addChild(c2);
         c2.x = !unlocked ? w / 2 - thumbSize / 2 : w / 2 - thumbSize - pad;
-        c2.y = title.y + title.height;
+        c2.y = title.y + title.height + 10;
 
-        const yBtn = c2.y + thumbSize + pad / 2;
+        const yBtn = c2.y + thumbSize + pad / 2 + 10;
         thumbC.destroy();
         thumb.destroy();
 
@@ -328,7 +330,13 @@ export class LevelSelectViewFactory {
                 onDifficultyPressed(level.id, d);
             });
 
-            btn.setLabel(d);
+            let label = "medium"
+            if (d == "easy") {
+                label = "small"
+            } else if (d == "hard") {
+                label = "large"
+            }
+            btn.setLabel(label);
             root.addChild(btn);
 
             // 4. Increment x for the next button
@@ -345,7 +353,7 @@ export class LevelSelectViewFactory {
             standard: { ...skin.standard },
             over: { texture: skin.over?.texture },
             disabled: {
-                texture: PIXI.Texture.from('ResourceBar_Single_Btn_Grey')
+                texture: PIXI.Texture.from('bt-grey')
             },
             down: {
                 texture: skin.down?.texture,
@@ -355,7 +363,8 @@ export class LevelSelectViewFactory {
             },
         });
 
-        btn.setLabel(`Unlock ${cost}`);
+        //btn.setLabel(`Unlock ${cost}`);
+        btn.setLabel(`${cost}`);
 
         // Function to update the button state
         // const updateEnableState = (currentCoins: number) => {

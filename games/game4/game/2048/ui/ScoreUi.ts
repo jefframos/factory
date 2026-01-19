@@ -109,7 +109,7 @@ export default class ScoreUi extends AutoPositionTiledContainer {
                 width: left?.object.width,
                 height: left?.object.height,
                 allPadding: 35,
-                texture: PIXI.Texture.from('ResourceBar_Single_Btn_Purple1'),
+                texture: PIXI.Texture.from('bt-red'),
                 fontStyle: new PIXI.TextStyle({
                     fontFamily: 'LEMONMILK-Bold',
                     fill: 0xffffff,
@@ -143,7 +143,7 @@ export default class ScoreUi extends AutoPositionTiledContainer {
                 width: restart?.object.width,
                 height: restart?.object.height,
                 allPadding: 35,
-                texture: PIXI.Texture.from('ResourceBar_Single_Btn_Purple1'),
+                texture: PIXI.Texture.from('bt-red'),
                 fontStyle: new PIXI.TextStyle({
                     fontFamily: 'LEMONMILK-Bold',
                     fill: 0xffffff,
@@ -183,12 +183,12 @@ export default class ScoreUi extends AutoPositionTiledContainer {
                 width: prev?.object.width,
                 height: prev?.object.height,
                 allPadding: 35,
-                texture: PIXI.Texture.from('ResourceBar_Single_Btn_Blue1'),
+                texture: PIXI.Texture.from('bt-blue'),
 
                 //iconTexture: PIXI.Texture.from('Icon_Back'),
                 iconTexture: PIXI.Texture.from('eye'),
                 iconSize: { width: prev?.object.width * 0.6, height: prev?.object.height * 0.6 },
-                iconAnchor: new PIXI.Point(0, 0.1),
+                iconAnchor: new PIXI.Point(0, 0),
                 centerIconVertically: true,
                 centerIconHorizontally: true
             },

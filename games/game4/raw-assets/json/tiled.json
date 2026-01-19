@@ -337,18 +337,18 @@
                  "type":"",
                  "visible":true,
                  "width":436.667,
-                 "x":-213.666666666667,
-                 "y":128.000333333333
+                 "x":-213.667,
+                 "y":128
                 }, 
                 {
                  "gid":138,
-                 "height":132.333333333333,
+                 "height":132.333,
                  "id":234,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":610.666666666667,
+                 "width":610.667,
                  "x":-304,
                  "y":-176
                 }, 
@@ -379,7 +379,7 @@
                  "visible":true,
                  "width":68,
                  "x":-197,
-                 "y":-625.666666666667
+                 "y":-625.667
                 }, 
                 {
                  "gid":124,
@@ -403,7 +403,7 @@
                  "visible":true,
                  "width":251.33,
                  "x":-121,
-                 "y":-625.999666666667
+                 "y":-626
                 }, 
                 {
                  "height":53.3333,
@@ -420,7 +420,7 @@
                  "visible":true,
                  "width":226.667,
                  "x":-99.667,
-                 "y":-683.666666666667
+                 "y":-683.667
                 }, 
                 {
                  "gid":123,
@@ -432,7 +432,7 @@
                  "visible":true,
                  "width":251.33,
                  "x":-275,
-                 "y":-809.6667
+                 "y":-809.667
                 }, 
                 {
                  "height":138.667,
@@ -448,8 +448,8 @@
                  "type":"",
                  "visible":true,
                  "width":140,
-                 "x":57.3333333333333,
-                 "y":-943.333333333333
+                 "x":57.3333,
+                 "y":-943.333
                 }, 
                 {
                  "height":53.3333,
@@ -466,7 +466,7 @@
                  "visible":true,
                  "width":226.667,
                  "x":-92,
-                 "y":-99.9999833333
+                 "y":-100
                 }, 
                 {
                  "height":53.3333,
@@ -482,8 +482,8 @@
                  "type":"",
                  "visible":true,
                  "width":226.667,
-                 "x":-261.333333333333,
-                 "y":-863.333366666667
+                 "x":-261.333,
+                 "y":-863.333
                 }, 
                 {
                  "gid":199,
@@ -506,8 +506,8 @@
                  "type":"",
                  "visible":true,
                  "width":45.4557,
-                 "x":-344.333333333333,
-                 "y":-803.666666666667
+                 "x":-344.333,
+                 "y":-803.667
                 }, 
                 {
                  "gid":151,
@@ -518,8 +518,8 @@
                  "type":"",
                  "visible":true,
                  "width":55,
-                 "x":161.000333333333,
-                 "y":-787.333333333333
+                 "x":161,
+                 "y":-787.333
                 }, 
                 {
                  "height":82.6667,
@@ -535,12 +535,12 @@
                  "type":"",
                  "visible":true,
                  "width":303.333,
-                 "x":-146.666333333333,
+                 "x":-146.666,
                  "y":-18.667
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -550,28 +550,16 @@
          "name":"ConfirmationPopup",
          "objects":[
                 {
-                 "gid":67,
-                 "height":372,
-                 "id":86,
+                 "gid":215,
+                 "height":100,
+                 "id":236,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":722,
-                 "x":-361,
-                 "y":147
-                }, 
-                {
-                 "gid":74,
-                 "height":107,
-                 "id":138,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":449,
-                 "x":-225,
-                 "y":-153
+                 "width":537.666666666667,
+                 "x":-270.333333333333,
+                 "y":-150
                 }, 
                 {
                  "height":66.6667,
@@ -643,7 +631,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -704,16 +692,16 @@
          "name":"ScoreMenu",
          "objects":[
                 {
-                 "gid":93,
-                 "height":90,
-                 "id":229,
+                 "gid":215,
+                 "height":100,
+                 "id":235,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":720,
-                 "x":0,
-                 "y":100
+                 "width":744.333333333333,
+                 "x":-11.6666666666666,
+                 "y":114
                 }, 
                 {
                  "gid":125,
@@ -787,7 +775,7 @@
                 }, 
                 {
                  "gid":199,
-                 "height":40.9708493950278,
+                 "height":40.9708,
                  "id":74,
                  "name":"",
                  "rotation":0,
@@ -795,7 +783,7 @@
                  "visible":true,
                  "width":35.9197,
                  "x":283.645,
-                 "y":74.8493160616945
+                 "y":74.8493
                 }, 
                 {
                  "gid":127,
@@ -823,8 +811,8 @@
                  "type":"",
                  "visible":true,
                  "width":106.122,
-                 "x":314.939333333333,
-                 "y":41.3333333333333
+                 "x":314.939,
+                 "y":41.3333
                 }, 
                 {
                  "gid":124,
@@ -1050,7 +1038,7 @@
                  "visible":true,
                  "width":70,
                  "x":10,
-                 "y":20
+                 "y":23
                 }, 
                 {
                  "height":70,
@@ -1067,7 +1055,7 @@
                  "visible":true,
                  "width":70,
                  "x":640,
-                 "y":20
+                 "y":23
                 }, 
                 {
                  "height":70,
@@ -1084,11 +1072,11 @@
                  "visible":true,
                  "width":70,
                  "x":554,
-                 "y":20
+                 "y":23
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -1145,7 +1133,7 @@
          "y":0
         }],
  "nextlayerid":16,
- "nextobjectid":235,
+ "nextobjectid":237,
  "orientation":"orthogonal",
  "renderorder":"left-up",
  "tiledversion":"1.11.2",
@@ -1192,9 +1180,7 @@
                 }, 
                 {
                  "id":7,
-                 "image":"..\/tiled\/images\/backgrounds\/Background_Lobby_Bg_center.png",
-                 "imageheight":770,
-                 "imagewidth":734
+                 "image":"..\/tiled\/images\/backgrounds\/Background_Lobby_Bg_center.png"
                 }, 
                 {
                  "id":15,
@@ -1210,148 +1196,100 @@
                 }, 
                 {
                  "id":16,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_fence_wood_start_angular_south_east.png",
-                 "imageheight":56,
-                 "imagewidth":14
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_fence_wood_start_angular_south_east.png"
                 }, 
                 {
                  "id":17,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_fence_wood_start_angular_south_west.png",
-                 "imageheight":56,
-                 "imagewidth":14
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_fence_wood_start_angular_south_west.png"
                 }, 
                 {
                  "id":18,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_flower_1_south_east.png",
-                 "imageheight":21,
-                 "imagewidth":11
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_flower_1_south_east.png"
                 }, 
                 {
                  "id":19,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_flower_1_south_west.png",
-                 "imageheight":21,
-                 "imagewidth":13
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_flower_1_south_west.png"
                 }, 
                 {
                  "id":20,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_flower_2_south_east.png",
-                 "imageheight":15,
-                 "imagewidth":10
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_flower_2_south_east.png"
                 }, 
                 {
                  "id":21,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_flower_2_south_west.png",
-                 "imageheight":23,
-                 "imagewidth":16
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_flower_2_south_west.png"
                 }, 
                 {
                  "id":22,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_large_1_south_east.png",
-                 "imageheight":72,
-                 "imagewidth":76
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_large_1_south_east.png"
                 }, 
                 {
                  "id":23,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_large_1_south_west.png",
-                 "imageheight":61,
-                 "imagewidth":89
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_large_1_south_west.png"
                 }, 
                 {
                  "id":24,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_large_2_south_east.png",
-                 "imageheight":65,
-                 "imagewidth":93
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_large_2_south_east.png"
                 }, 
                 {
                  "id":25,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_large_2_south_west.png",
-                 "imageheight":69,
-                 "imagewidth":88
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_large_2_south_west.png"
                 },
             
                 {
                  "id":26,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_1_south_east.png",
-                 "imageheight":27,
-                 "imagewidth":29
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_1_south_east.png"
                 }, 
                 {
                  "id":27,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_1_south_west.png",
-                 "imageheight":31,
-                 "imagewidth":24
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_1_south_west.png"
                 }, 
                 {
                  "id":28,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_2_south_east.png",
-                 "imageheight":24,
-                 "imagewidth":21
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_2_south_east.png"
                 }, 
                 {
                  "id":29,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_2_south_west.png",
-                 "imageheight":21,
-                 "imagewidth":18
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_2_south_west.png"
                 }, 
                 {
                  "id":30,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_3_south_east.png",
-                 "imageheight":12,
-                 "imagewidth":16
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_3_south_east.png"
                 }, 
                 {
                  "id":31,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_3_south_west.png",
-                 "imageheight":20,
-                 "imagewidth":22
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_3_south_west.png"
                 }, 
                 {
                  "id":32,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_4_south_east.png",
-                 "imageheight":28,
-                 "imagewidth":37
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_4_south_east.png"
                 }, 
                 {
                  "id":33,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_4_south_west.png",
-                 "imageheight":31,
-                 "imagewidth":38
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_4_south_west.png"
                 }, 
                 {
                  "id":34,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_shrine_stair_2_moss_light_south_west.png",
-                 "imageheight":33,
-                 "imagewidth":43
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_shrine_stair_2_moss_light_south_west.png"
                 }, 
                 {
                  "id":35,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_shrine_stair_3_moss_light_south_east.png",
-                 "imageheight":36,
-                 "imagewidth":47
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_shrine_stair_3_moss_light_south_east.png"
                 }, 
                 {
                  "id":36,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_shrine_stair_3_moss_light_south_west.png",
-                 "imageheight":35,
-                 "imagewidth":43
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_shrine_stair_3_moss_light_south_west.png"
                 }, 
                 {
                  "id":37,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_shrine_stair_rubble_1_moss_light_south_east.png",
-                 "imageheight":28,
-                 "imagewidth":32
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_shrine_stair_rubble_1_moss_light_south_east.png"
                 }, 
                 {
                  "id":38,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_shrine_stair_rubble_1_moss_light_south_west.png",
-                 "imageheight":23,
-                 "imagewidth":33
+                 "image":"..\/tiled\/images\/backgrounds\/forestpack_shrine_stair_rubble_1_moss_light_south_west.png"
                 }, 
                 {
                  "id":39,
-                 "image":"..\/tiled\/images\/backgrounds\/rocks\/rocks0001.png",
-                 "imageheight":47,
-                 "imagewidth":83
+                 "image":"..\/tiled\/images\/backgrounds\/rocks\/rocks0001.png"
                 }],
          "tilewidth":734
         }, 
@@ -1367,7 +1305,7 @@
          "margin":0,
          "name":"UI",
          "spacing":0,
-         "tilecount":146,
+         "tilecount":157,
          "tileheight":601,
          "tiles":[
                 {
@@ -2103,8 +2041,8 @@
                 {
                  "id":85,
                  "image":"..\/tiled\/images\/ui\/ResourceBar_Single_Icon_Coin.png",
-                 "imageheight":75,
-                 "imagewidth":67
+                 "imageheight":103,
+                 "imagewidth":104
                 }, 
                 {
                  "id":86,
@@ -2542,8 +2480,8 @@
                 {
                  "id":143,
                  "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Money_Coin.Png",
-                 "imageheight":128,
-                 "imagewidth":128
+                 "imageheight":158,
+                 "imagewidth":160
                 }, 
                 {
                  "id":144,
@@ -2689,6 +2627,78 @@
                  "image":"..\/tiled\/images\/ui\/equal.Png",
                  "imageheight":128,
                  "imagewidth":128
+                }, 
+                {
+                 "id":166,
+                 "image":"..\/tiled\/images\/ui\/bt-blue.png",
+                 "imageheight":68,
+                 "imagewidth":89
+                }, 
+                {
+                 "id":167,
+                 "image":"..\/tiled\/images\/ui\/bt-gold.png",
+                 "imageheight":68,
+                 "imagewidth":89
+                }, 
+                {
+                 "id":168,
+                 "image":"..\/tiled\/images\/ui\/bt-green.png",
+                 "imageheight":68,
+                 "imagewidth":89
+                }, 
+                {
+                 "id":169,
+                 "image":"..\/tiled\/images\/ui\/bt-grey.png",
+                 "imageheight":68,
+                 "imagewidth":89
+                }, 
+                {
+                 "id":170,
+                 "image":"..\/tiled\/images\/ui\/bt-orange.png",
+                 "imageheight":68,
+                 "imagewidth":89
+                }, 
+                {
+                 "id":171,
+                 "image":"..\/tiled\/images\/ui\/bt-red.png",
+                 "imageheight":68,
+                 "imagewidth":89
+                }, 
+                {
+                 "id":172,
+                 "image":"..\/tiled\/images\/ui\/bt-yellow.png",
+                 "imageheight":68,
+                 "imagewidth":89
+                }, 
+                {
+                 "id":173,
+                 "image":"..\/tiled\/images\/ui\/card1.png",
+                 "imageheight":145,
+                 "imagewidth":192
+                }, 
+                {
+                 "id":174,
+                 "image":"..\/tiled\/images\/ui\/header.png",
+                 "imageheight":100,
+                 "imagewidth":131,
+                 "properties":[
+                        {
+                         "name":"nineSliced",
+                         "type":"int",
+                         "value":30
+                        }]
+                }, 
+                {
+                 "id":175,
+                 "image":"..\/tiled\/images\/ui\/section-bg.png",
+                 "imageheight":145,
+                 "imagewidth":192
+                }, 
+                {
+                 "id":176,
+                 "image":"..\/tiled\/images\/ui\/section-grey-bg.png",
+                 "imageheight":145,
+                 "imagewidth":192
                 }],
          "tilewidth":609
         }],

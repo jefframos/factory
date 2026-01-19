@@ -69,17 +69,17 @@ export class ConfirmationPopup extends BasePopup {
                 width: right?.object.width,
                 height: right?.object.height,
                 allPadding: 35,
-                texture: PIXI.Texture.from('Button01_s_Green'),
+                texture: PIXI.Texture.from('bt-green'),
                 fontStyle: new PIXI.TextStyle({
                     fontFamily: 'LEMONMILK-Bold',
                     fill: 0xffffff,
-                    stroke: "#0c0808",
+                    stroke: "#4b2a19",
                     strokeThickness: 4,
                 }),
                 fitText: 0.8
             },
             over: {
-                texture: PIXI.Texture.from('Button01_s_Purple'),
+                texture: PIXI.Texture.from('bt-green'),
             },
             click: {
                 callback: () => {
@@ -100,17 +100,17 @@ export class ConfirmationPopup extends BasePopup {
                 width: left?.object.width,
                 height: left?.object.height,
                 allPadding: 35,
-                texture: PIXI.Texture.from('Button01_s_Red'),
+                texture: PIXI.Texture.from('bt-red'),
                 fontStyle: new PIXI.TextStyle({
                     fontFamily: 'LEMONMILK-Bold',
                     fill: 0xffffff,
-                    stroke: "#0c0808",
+                    stroke: "#4b2a19",
                     strokeThickness: 4,
                 }),
                 fitText: 0.8
             },
             over: {
-                texture: PIXI.Texture.from('Button01_s_Purple'),
+                texture: PIXI.Texture.from('bt-red'),
             },
             click: {
                 callback: () => {

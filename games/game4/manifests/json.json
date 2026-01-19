@@ -53,10 +53,10 @@
         },
         {
           "alias": [
-            "jiggy/puzzleData.json"
+            "jiggy/fantasyCreatures.json"
           ],
           "src": [
-            "jiggy/puzzleData.json"
+            "jiggy/fantasyCreatures.json"
           ]
         },
         {
@@ -69,10 +69,10 @@
         },
         {
           "alias": [
-            "jiggy/fantasyCreatures.json"
+            "jiggy/puzzleData.json"
           ],
           "src": [
-            "jiggy/fantasyCreatures.json"
+            "jiggy/puzzleData.json"
           ]
         },
         {

@@ -106,7 +106,7 @@ export class GameOverPopup extends BasePopup {
             standard: {
                 width: 280,
                 height: 80,
-                texture: PIXI.Texture.from('ResourceBar_Single_Btn_Green1'),
+                texture: PIXI.Texture.from('ResourceBar_Single_Btn_Blue1'),
                 allPadding: 20,
 
                 fontStyle: new PIXI.TextStyle({

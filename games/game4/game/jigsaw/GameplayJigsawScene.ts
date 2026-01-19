@@ -38,7 +38,7 @@ export default class GameplayJigsawScene extends GameScene {
     private readonly jigsawBoardView: JigsawView = new JigsawView();
     private readonly jigsawGenerator: MaskedTabsGenerator = new MaskedTabsGenerator();
 
-    private background: PIXI.Sprite = PIXI.Sprite.from('background')
+    private background: PIXI.Sprite = PIXI.Sprite.from('main-bg')
 
     private mainMenu?: MainMenuUi;
     private scoreUi?: ScoreUi;
@@ -124,20 +124,20 @@ export default class GameplayJigsawScene extends GameScene {
         this.currencyHud = new CurrencyHud({
             textStyle: new PIXI.TextStyle({
                 fontFamily: "LEMONMILK-Bold",
-                fontSize: 16,
+                fontSize: 42,
                 fill: 0xffffff,
-                stroke: "#0c0808",
-                strokeThickness: 5,
+                stroke: "#4b2a19",
+                strokeThickness: 8,
             }),
             currencyIcon: 'ResourceBar_Single_Icon_Coin',
             specialCurrencyIcon: 'ResourceBar_Single_Icon_Gem',
-            bgTexture: PIXI.Texture.from('Slider_Basic01_Bg_Single'),
+            bgTexture: PIXI.Texture.from('fade-shape'),
             bgNineSlice: { left: 10, top: 10, right: 10, bottom: 10 },
             padding: 15
         });
 
         this.currencyHud.x = 0; // Top left corner
-        this.currencyHud.y = 10;
+        this.currencyHud.y = 15;
         this.levelSelectMenu.headerView.root.addChild(this.currencyHud);
 
         console.log(this.levelSelectMenu.headerView)
@@ -170,8 +170,8 @@ export default class GameplayJigsawScene extends GameScene {
 
         if (ProgressCookieStore.isFirstTime() || Game.debugParams.first) {
 
-            const s = 1
-            const l = 5
+            const s = 0
+            const l = 0
             const request: PlayLevelRequest = {
                 difficulty: "easy",
                 level: sections[s].levels[l],
@@ -347,7 +347,7 @@ export default class GameplayJigsawScene extends GameScene {
         const ratio = width / height;
 
         // 1. Define target total pieces instead of hardcoded grids
-        let targetPieces = 4; // Default (easy)
+        let targetPieces = 12; // Default (easy)
         const difficulty = data?.difficulty || "medium";
 
         if (difficulty === "medium") {
@@ -424,13 +424,13 @@ export default class GameplayJigsawScene extends GameScene {
         this.gameplayContainer.y = Game.DESIGN_HEIGHT / 2;
 
 
-        this.background.anchor.set(0.5, 1)
+        this.background.anchor.set(0.5, 0.5)
         this.background.x = Game.DESIGN_WIDTH / 2;
-        this.background.y = Game.gameScreenData.height;
+        this.background.y = Game.DESIGN_HEIGHT / 2;
 
 
 
-        this.background.scale.set(ViewUtils.elementEvelop(this.background, Game.gameScreenData.width, Game.gameScreenData.height / Game.scale))
+        this.background.scale.set(ViewUtils.elementEvelop(this.background, Game.gameScreenData.width, Game.gameScreenData.height))
 
 
     }

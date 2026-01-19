@@ -6,14 +6,14 @@
         "levels": [
             {
                 "id": "cuteFood_06",
-                "name": "Puzzle 6",
+                "name": "Puzzle 1",
                 "thumb": "cute_food_6",
                 "cost": 0,
                 "image": "cute-food/cute_food_6.png"
             },
             {
                 "id": "cuteFood_01",
-                "name": "Puzzle 1",
+                "name": "Puzzle 2",
                 "thumb": "cute_food_1",
                 "isSpecial": false,
                 "cost": 20,
@@ -21,28 +21,28 @@
             },
             {
                 "id": "cuteFood_02",
-                "name": "Puzzle 2",
+                "name": "Puzzle 3",
                 "thumb": "cute_food_2",
                 "cost": 50,
                 "image": "cute-food/cute_food_2.png"
             },
             {
                 "id": "cuteFood_03",
-                "name": "Puzzle 3",
+                "name": "Puzzle 4",
                 "thumb": "cute_food_3",
                 "cost": 100,
                 "image": "cute-food/cute_food_3.png"
             },
             {
                 "id": "cuteFood_04",
-                "name": "Puzzle 4",
+                "name": "Puzzle 5",
                 "thumb": "cute_food_4",
                 "cost": 100,
                 "image": "cute-food/cute_food_4.png"
             },
             {
                 "id": "cuteFood_05",
-                "name": "Puzzle 5",
+                "name": "Puzzle 6",
                 "thumb": "cute_food_5",
                 "cost": 200,
                 "image": "cute-food/cute_food_5.png"

@@ -331,8 +331,12 @@ export default class BaseButton extends PIXI.Container {
                 }
             }
 
+            if (!this.label || !this.label?.anchor) {
+                return
+            }
             const anchor = attr.textAnchor || this.buttonDataSet[ButtonState.STANDARD].textAnchor || new PIXI.Point(0.5, 0.5)
-            this.label.anchor.copyFrom(anchor); // Center the text by default
+
+            this.label?.anchor?.copyFrom(anchor); // Center the text by default
             // Apply text offset if provided
             const textOffset = attr.textOffset || this.buttonDataSet[ButtonState.STANDARD].textOffset || new PIXI.Point(0, 0);
 

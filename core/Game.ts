@@ -97,8 +97,8 @@ export class Game {
     }
 
     protected onResize() {
-        const screenWidth = window.innerWidth;
-        const screenHeight = window.innerHeight;
+        const screenWidth = window.innerWidth / Game.renderer.resolution;
+        const screenHeight = window.innerHeight / Game.renderer.resolution;
 
         // Calculate scale factor to contain the design resolution
         const scaleX = screenWidth / Game.DESIGN_WIDTH;
