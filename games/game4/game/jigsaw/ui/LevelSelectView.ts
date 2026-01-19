@@ -1,4 +1,5 @@
 // LevelSelectView.ts
+import SoundManager from "@core/audio/SoundManager";
 import { Difficulty, SectionDefinition } from "games/game4/types";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
@@ -141,6 +142,7 @@ export class LevelSelectView extends PIXI.Container {
                 this.activeSection = s;
                 this.mode = "sectionDetail";
                 this.renderSectionDetail();
+                SoundManager.instance.playSoundById('Tap', { volume: 0.3 })
             });
 
             this.scrollView.content.addChild(card);

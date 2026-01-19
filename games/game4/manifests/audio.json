@@ -1,0 +1,97 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "Applause Cheering.mp3"
+          ],
+          "src": [
+            "Applause Cheering.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Bubbles.wav"
+          ],
+          "src": [
+            "Bubbles.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Hover.wav"
+          ],
+          "src": [
+            "Hover.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "peace-be-with-you.mp3"
+          ],
+          "src": [
+            "peace-be-with-you.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Pitched-Tapping-Glass.wav"
+          ],
+          "src": [
+            "Pitched-Tapping-Glass.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Positive Open.wav"
+          ],
+          "src": [
+            "Positive Open.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ScoreUpdate.mp3"
+          ],
+          "src": [
+            "ScoreUpdate.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Synth-Appear-01.m4a"
+          ],
+          "src": [
+            "Synth-Appear-01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Synth-Whoosh-Small-01.m4a"
+          ],
+          "src": [
+            "Synth-Whoosh-Small-01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Tap.wav"
+          ],
+          "src": [
+            "Tap.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Whoosh.wav"
+          ],
+          "src": [
+            "Whoosh.mp3"
+          ]
+        }
+      ]
+    }
+  ]
+}

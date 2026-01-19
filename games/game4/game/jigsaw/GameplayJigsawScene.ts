@@ -11,6 +11,8 @@ import { GlobalDataManager } from "../scenes/data/GlobalDataManager";
 import JigsawView from "./JigsawView";
 import { MaskedTabsGenerator } from "./MaskedTabsGenerator";
 
+import SoundManager from "@core/audio/SoundManager";
+import PromiseUtils from "@core/utils/PromiseUtils";
 import ViewUtils from "@core/utils/ViewUtils";
 import MatchManager from "../2048/scene/MatchManager";
 import MainMenuUi from "../2048/ui/MainMenuUi";
@@ -23,6 +25,7 @@ import { LevelSelectMediator, PlayLevelRequest, PurchaseLevelRequest } from "./p
 import { CurrencyHud } from "./ui/CurrencyHud";
 import { LevelSelectView } from "./ui/LevelSelectView";
 import { createDefaultLevelSelectTheme } from "./ui/LevelSelectViewElements";
+import SoundToggleButton from "./ui/SoundToggleButton";
 import { makeResizedSpriteTexture } from "./vfx/imageFlatten";
 
 export default class GameplayJigsawScene extends GameScene {
@@ -50,6 +53,7 @@ export default class GameplayJigsawScene extends GameScene {
     private currencyHud!: CurrencyHud;
 
     private currentLevel?: PlayLevelRequest;
+    private soundToggleButton?: SoundToggleButton;
 
     // Popup event handlers stored so we can remove on destroy
     private readonly _onPopupEnd = (popupId: string) => {
@@ -82,6 +86,11 @@ export default class GameplayJigsawScene extends GameScene {
     public build(): void {
         this.updateScoreUi(0);
 
+
+        SoundManager.instance.playBackgroundSound('peace-be-with-you')
+        SoundManager.instance.setMasterAmbientVolume(0.05)
+
+
         this.addChild(this.background)
 
         this.addChild(this.gameplayContainer);
@@ -97,7 +106,7 @@ export default class GameplayJigsawScene extends GameScene {
         const sections = built.sections;
         const sectionMeta = built.meta;
 
-        console.log(sections, sectionMeta)
+        // console.log(sections, sectionMeta)
 
         const store = new ProgressCookieStore("jg_progress_v1", 1);
         DevGuiManager.instance.addButton('erase', () => {
@@ -140,20 +149,23 @@ export default class GameplayJigsawScene extends GameScene {
         this.currencyHud.y = 15;
         this.levelSelectMenu.headerView.root.addChild(this.currencyHud);
 
-        console.log(this.levelSelectMenu.headerView)
+        // console.log(this.levelSelectMenu.headerView)
 
 
         this.mediator.onPurchaseLevel.add((req: PurchaseLevelRequest) => {
             // 1) check currency / IAP
             // 2) if success:
             this.mediator.confirmPurchase(req.levelId);
+            SoundManager.instance.playSoundById('ScoreUpdate', { volume: 0.1 })
+
         });
 
         // 4) UI -> Game
         this.mediator.onPlayLevel.add((req) => {
             // req.levelId, req.difficulty, req.level.payload etc.
             // Start your jigsaw game scene with that data.
-            console.log("PLAY", req);
+            // console.log("PLAY", req);
+            SoundManager.instance.playSoundById('Whoosh', { volume: 0.15 })
 
             this.startMatch(req);
         });
@@ -179,9 +191,21 @@ export default class GameplayJigsawScene extends GameScene {
                 section: sections[s],
                 allowRotation: false
             }
-            this.startMatch(request)
+            this.startMatch(request, true)
 
         }
+
+
+        // Assuming your textures are loaded in the PIXI Assets cache
+        this.soundToggleButton = new SoundToggleButton("PictoIcon_Sound", "PictoIcon_Sound_Off");
+
+        this.soundToggleButton.x = 50;
+        this.soundToggleButton.y = 50;
+        //this.soundToggleButton.scale.x = -1
+
+        this.levelSelectMenu.headerView.root.addChild(this.soundToggleButton);
+
+
     }
 
     public show(): void {
@@ -289,15 +313,19 @@ export default class GameplayJigsawScene extends GameScene {
             this.matchManager.incrementMove();
             this.scoreUi?.updateScores(this.matchManager.moveCounter, 0);
 
+            SoundManager.instance.playSoundById('Bubbles', { pitch: 0.8 + Math.random() * 0.2, volume: 0.15 + Math.random() * 0.05 })
+
             PlatformHandler.instance.platform.gameplayStart();
         });
 
         this.jigsawBoardView.onPuzzleCompleted.add(async () => {
             this.jigsawBoardView.input?.setEnabled(false);
 
+            SoundManager.instance.playSoundById('Positive Open', { volume: 0.1 })
+
             let rewardAmount = 0;
             if (this.currentLevel) {
-                console.log(this.currentLevel.level)
+                //console.log(this.currentLevel.level)
                 // 1. Determine the prize amount based on difficulty
                 const prizes = !this.currentLevel.level.isSpecial ? this.currentLevel.level.prize : this.currentLevel.level.prizesSpecial;
                 const diffMapping: Record<string, number> = { "easy": 0, "medium": 1, "hard": 2 };
@@ -314,18 +342,22 @@ export default class GameplayJigsawScene extends GameScene {
                 // 3. Award the currency via the Economy Singleton
                 if (rewardAmount > 0) {
                     InGameEconomy.instance.addCurrency(rewardAmount, false);
-                    console.log(`Awarded ${rewardAmount} coins for ${this.currentLevel.difficulty} difficulty.`);
+                    //console.log(`Awarded ${rewardAmount} coins for ${this.currentLevel.difficulty} difficulty.`);
                 }
             }
 
             await this.jigsawBoardView.snapCompletedPuzzleToSolvedPose({ duration: 0.8, ease: "power4.out" });
             this.jigsawBoardView.input?.setEnabled(true);
 
+
+            await PromiseUtils.await(1000)
+            SoundManager.instance.playSoundById('Applause Cheering', { volume: 0.1 })
+
             PopupManager.instance.show("gameOver", { matchManager: this.matchManager, rewardAmount: rewardAmount || 0, isSpecial: this.currentLevel?.level.isSpecial });
         });
     }
 
-    private async startMatch(data?: PlayLevelRequest): Promise<void> {
+    private async startMatch(data?: PlayLevelRequest, isFirst: boolean = false): Promise<void> {
         this.matchManager.start();
 
         this.currentLevel = data;
@@ -371,6 +403,7 @@ export default class GameplayJigsawScene extends GameScene {
             allowRation: data?.allowRotation,
             scatterRect: this.getScatterRect(),
             safeRect: this.getSafeRect(),
+            isFirst
         });
 
 
@@ -439,6 +472,11 @@ export default class GameplayJigsawScene extends GameScene {
         const cappedSize = Math.min(Game.overlayScreenData.width, 1024)
         this.levelSelectMenu?.setSize(cappedSize, Game.overlayScreenData.height)
         this.currencyHud.x = cappedSize - this.currencyHud.width - 100
+
+        if (this.soundToggleButton) {
+            this.soundToggleButton.x = 50//cappedSize - this.currencyHud.width + 80//- 150
+            this.soundToggleButton.y = 40
+        }
 
         if (this.levelSelectMenu) {
 

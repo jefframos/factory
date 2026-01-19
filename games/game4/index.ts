@@ -1,3 +1,4 @@
+import SoundLoadManager from '@core/audio/SoundLoaderManager';
 import { Game } from '@core/Game';
 import LoaderScene from '@core/loader/LoaderScene';
 import { ManifestHelper } from '@core/loader/ManifestHelper';
@@ -12,6 +13,7 @@ import GameplayJigsawScene from './game/jigsaw/GameplayJigsawScene';
 import { ConfirmationPopup } from './game/popup/ConfirmationPopup';
 import { GameOverPopup } from './game/popup/GameOverPopup';
 import { DevGuiManager } from './game/utils/DevGuiManager';
+import audioManifest from './manifests/audio.json'; // adjust path
 import fontManifest from './manifests/fonts.json'; // adjust path
 import imageManifest from './manifests/images.json'; // adjust path
 import jsonManifest from './manifests/json.json'; // adjust path
@@ -96,6 +98,12 @@ export default class MyGame extends Game {
             this.loaderScene.updateLoader(p * 1 / bundles.length);
         })
 
+
+
+
+
+        const sounds = ManifestHelper.patchPaths(audioManifest, `${this.folderPath}/audio`);
+        SoundLoadManager.instance.setUpManifests([sounds], ["default"])
 
         PlatformHandler.instance.platform.loadFinished();
 

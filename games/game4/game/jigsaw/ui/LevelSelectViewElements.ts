@@ -1,4 +1,5 @@
 // LevelSelectViewElements.ts
+import SoundManager from "@core/audio/SoundManager";
 import { ButtonAttributes, ButtonData } from "@core/ui/BaseButton";
 import type { Difficulty } from "games/game4/types";
 import * as PIXI from "pixi.js";
@@ -205,6 +206,9 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
 
                 },
                 over: {
+                    callback: () => {
+                        SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
+                    },
                     texture: PIXI.Texture.from("bt-gold"),
                 },
             },
@@ -217,6 +221,9 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
                     fontStyle: headerButtonStyle,
                 },
                 over: {
+                    callback: () => {
+                        SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
+                    },
                     texture: PIXI.Texture.from("bt-blue"),
                 },
             },
@@ -229,6 +236,9 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
                     fontStyle: headerButtonStyle,
                 },
                 over: {
+                    callback: () => {
+                        SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
+                    },
                     texture: PIXI.Texture.from("bt-blue"),
                 },
             },
@@ -245,6 +255,9 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
                     centerIconVertically: true,
                 },
                 over: {
+                    callback: () => {
+                        SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
+                    },
                     texture: PIXI.Texture.from("bt-red"),
                 },
             },
@@ -260,6 +273,9 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
                     iconOffset: new PIXI.Point(5, 5)
                 },
                 over: {
+                    callback: () => {
+                        SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
+                    },
                     texture: PIXI.Texture.from("bt-green"),
                 },
                 completed: {
@@ -281,6 +297,9 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
                     iconOffset: new PIXI.Point(5, 5)
                 },
                 over: {
+                    callback: () => {
+                        SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
+                    },
                     texture: PIXI.Texture.from("bt-blue"),
                 },
                 completed: {
@@ -302,6 +321,9 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
                     iconOffset: new PIXI.Point(5, 5)
                 },
                 over: {
+                    callback: () => {
+                        SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
+                    },
                     texture: PIXI.Texture.from("bt-orange"),
                 },
                 completed: {

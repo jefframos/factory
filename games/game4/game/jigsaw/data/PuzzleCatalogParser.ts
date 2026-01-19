@@ -29,6 +29,7 @@ export type PuzzleCategoryJson = {
     section: {
         id: string;
         name: string;
+        type: number;
         coverLevelId: string;
         levels: Array<{
             id: string;
@@ -105,6 +106,7 @@ export class PuzzleDataBuilder {
                 const sectionDef: SectionDefinition = {
                     id: s.id,
                     name: s.name,
+                    type: s.type || 0,
                     coverLevelId: s.coverLevelId,
                     levels,
                 };

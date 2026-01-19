@@ -9,6 +9,7 @@ import ViewUtils from '@core/utils/ViewUtils';
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
 import { Fonts, PieceViewData } from '../../character/Types';
+import SoundToggleButton from '../../jigsaw/ui/SoundToggleButton';
 import { Piece } from '../view/Piece';
 export default class ScoreUi extends AutoPositionTiledContainer {
 
@@ -177,7 +178,6 @@ export default class ScoreUi extends AutoPositionTiledContainer {
 
 
         const prev = this.findAndGetFromProperties('id', 'preview');
-
         const previewButton = new BaseButton({
             standard: {
                 width: prev?.object.width,
@@ -202,6 +202,13 @@ export default class ScoreUi extends AutoPositionTiledContainer {
             }
         });
         this.addAtId(previewButton, 'preview')
+
+        const sound = this.findAndGetFromProperties('id', 'sound');
+        const soundButton = new SoundToggleButton('PictoIcon_Sound', 'PictoIcon_Sound_Off')
+        this.addAtId(soundButton, 'sound')
+        soundButton.x += soundButton.width / 2
+        soundButton.y += soundButton.height / 2
+
 
 
         setTimeout(() => {

@@ -106,7 +106,7 @@ export class GameOverPopup extends BasePopup {
             standard: {
                 width: 280,
                 height: 80,
-                texture: PIXI.Texture.from('ResourceBar_Single_Btn_Blue1'),
+                texture: PIXI.Texture.from('bt-blue'),
                 allPadding: 20,
 
                 fontStyle: new PIXI.TextStyle({
@@ -117,7 +117,7 @@ export class GameOverPopup extends BasePopup {
                     strokeThickness: 3,
                 })
             },
-            over: { texture: PIXI.Texture.from('ResourceBar_Single_Btn_Green1') },
+            over: { texture: PIXI.Texture.from('bt-blue') },
             click: { callback: () => this.popupManager.hideCurrent() }
         });
         this.continueButton.setLabel('CONTINUE');

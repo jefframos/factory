@@ -1,3 +1,4 @@
+import SoundManager from "@core/audio/SoundManager";
 import * as PIXI from "pixi.js";
 import { JigsawPiece } from "./JigsawPiece";
 import { shortestDeltaRad } from "./vfx/JigsawMergeUtils";
@@ -159,7 +160,7 @@ export class JigsawCluster {
         await new Promise<void>((resolve) => {
             const d = Math.max(1, durationMs);
             const t0 = performance.now();
-
+            SoundManager.instance.playSoundById('Hover', { pitch: 0.8 + Math.random() * 0.2, volume: 0.15 + Math.random() * 0.05 })
             const tick = () => {
                 const t1 = performance.now();
                 const t = Math.min(1, (t1 - t0) / d);

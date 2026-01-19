@@ -18,6 +18,20 @@
             "enabled": true,
             "items": [
                 {
+                    "id": "cozyGirls",
+                    "enabled": true,
+                    "type": 1,
+                    "json": "cozyGirls.json",
+                    "sectionCost": 0
+                },
+                {
+                    "id": "sportGirls",
+                    "enabled": true,
+                    "type": 2,
+                    "json": "sportGirls.json",
+                    "sectionCost": 0
+                },
+                {
                     "id": "cuteFood",
                     "enabled": true,
                     "type": 1,

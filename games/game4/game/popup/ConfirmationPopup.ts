@@ -1,4 +1,5 @@
 
+import SoundManager from '@core/audio/SoundManager';
 import { BasePopup, PopupData } from '@core/popup/BasePopup';
 import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
 import TiledLayerObject from '@core/tiled/TiledLayerObject';
@@ -80,6 +81,9 @@ export class ConfirmationPopup extends BasePopup {
             },
             over: {
                 texture: PIXI.Texture.from('bt-green'),
+                callback: () => {
+                    SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
+                },
             },
             click: {
                 callback: () => {
@@ -111,6 +115,9 @@ export class ConfirmationPopup extends BasePopup {
             },
             over: {
                 texture: PIXI.Texture.from('bt-red'),
+                callback: () => {
+                    SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
+                },
             },
             click: {
                 callback: () => {
@@ -128,7 +135,7 @@ export class ConfirmationPopup extends BasePopup {
     async transitionIn(data?: ConfirmationPopupData): Promise<void> {
         if (!data) return;
 
-
+        SoundManager.instance.playSoundById('Synth-Appear-01', { volume: 0.05 })
         this.titleText.text = data.title || '';
         this.descriptionText.text = data.description || '';
         this.confirmButton.setLabel(data.confirmLabel || 'Confirm');

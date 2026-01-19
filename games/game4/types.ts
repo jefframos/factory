@@ -82,6 +82,7 @@ export type JigsawBuildOptions =
         scatterRect?: PIXI.Rectangle;
         safeRect?: PIXI.Rectangle;
         allowRation?: boolean;
+        isFirst?: boolean;
 
         /**
          * Random seed is optional (v1 uses Math.random).
@@ -110,6 +111,7 @@ export interface SectionDefinition {
 
     // Which level image to use as the section cover (must exist in levels[])
     coverLevelId: string;
+    type: number;
 
     levels: LevelDefinition[];
 }

@@ -77,6 +77,22 @@
         },
         {
           "alias": [
+            "jiggy/cozyGirls.json"
+          ],
+          "src": [
+            "jiggy/cozyGirls.json"
+          ]
+        },
+        {
+          "alias": [
+            "jiggy/sportGirls.json"
+          ],
+          "src": [
+            "jiggy/sportGirls.json"
+          ]
+        },
+        {
+          "alias": [
             "memeUi.json"
           ],
           "src": [

@@ -1,9 +1,11 @@
 // LevelSelectViewFactory.ts
 import { Game } from "@core/Game";
 import BaseButton from "@core/ui/BaseButton";
+import ObjectCloner from "@core/utils/ObjectCloner";
 import ViewUtils from "@core/utils/ViewUtils";
 import type { Difficulty, LevelDefinition, SectionDefinition } from "games/game4/types";
 import * as PIXI from "pixi.js";
+import { Fonts } from "../../character/Types";
 import { InGameEconomy } from "../data/InGameEconomy";
 import { getLevelDifficultyCompleted, getSectionCompletion } from "../progress/progressUtils";
 import { makeResizedSpriteTexture } from "../vfx/imageFlatten";
@@ -52,9 +54,8 @@ export class LevelSelectViewFactory {
             standard: {
                 ...backSkin.standard
             },
-            over: {
-                texture: backSkin.over?.texture,
-            },
+            over: { ...backSkin.over },
+
         });
 
         const closeButton = new BaseButton({
@@ -66,7 +67,7 @@ export class LevelSelectViewFactory {
                 fontStyle: closeSkin.standard.fontStyle,
             },
             over: {
-                texture: closeSkin.over?.texture,
+                ...closeSkin.over
             },
         });
 
@@ -80,7 +81,7 @@ export class LevelSelectViewFactory {
             bg.width = w;
             bg.height = h;
 
-            titleText.x = 30;
+            titleText.x = 100;
             titleText.y = Math.floor((this.theme.headerHeight) * 0.5 - 5);
 
             // Right aligned buttons
@@ -196,6 +197,38 @@ export class LevelSelectViewFactory {
         const c = getSectionCompletion(progress, section);
         const pct = c.total > 0 ? Math.floor((c.done / c.total) * 100) : 0;
         completionText.text = `${pct}%`;
+
+        if (section.type == 1) {
+            const badge: PIXI.Sprite = PIXI.Sprite.from('Label_Badge01_Red')
+            root.addChild(badge);
+
+            const newText: PIXI.Text = new PIXI.Text('HOT!', ObjectCloner.clone(Fonts.Main))
+            newText.anchor.set(0.5, 0.5)
+            badge.addChild(newText);
+
+            badge.scale.set(ViewUtils.elementScaler(badge, 100))
+            newText.x = badge.width / 2 / badge.scale.x
+            newText.y = badge.height / 2 / badge.scale.y
+            badge.x = -25
+            badge.y = 0
+            badge.rotation = -0.5
+
+        } else if (section.type == 2) {
+            const badge: PIXI.Sprite = PIXI.Sprite.from('Label_Badge01_Purple')
+            root.addChild(badge);
+
+            const newText: PIXI.Text = new PIXI.Text('NEW!', ObjectCloner.clone(Fonts.Main))
+            newText.anchor.set(0.5, 0.5)
+            badge.addChild(newText);
+
+            badge.scale.set(ViewUtils.elementScaler(badge, 100))
+            newText.x = badge.width / 2 / badge.scale.x
+            newText.y = badge.height / 2 / badge.scale.y
+            badge.x = -25
+            badge.y = 0
+            badge.rotation = -0.5
+
+        }
 
         let completionPill: PIXI.NineSlicePlane | undefined;
         if (this.theme.sectionCard.completionPillTexture && this.theme.sectionCard.completionPillNineSlice) {
@@ -351,7 +384,7 @@ export class LevelSelectViewFactory {
 
         const btn = new BaseButton({
             standard: { ...skin.standard },
-            over: { texture: skin.over?.texture },
+            over: { ...skin.over },
             disabled: {
                 texture: PIXI.Texture.from('bt-grey')
             },
@@ -417,9 +450,7 @@ export class LevelSelectViewFactory {
 
         const btn = new BaseButton({
             standard: str,
-            over: {
-                texture: skin.over?.texture,
-            },
+            over: { ...skin.over },
             down: {
                 texture: skin.down?.texture,
             },

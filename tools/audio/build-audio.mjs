@@ -1,4 +1,5 @@
 import { AssetPack } from '@assetpack/core';
+import { pixiManifest } from '@assetpack/core/manifest';
 import dotenv from 'dotenv';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -19,12 +20,19 @@ const __dirname = dirname(__filename);
 
 const rawAudio = resolve(__dirname, `../../games/${GAME}/raw-assets/audio`);
 const outputAudio = resolve(__dirname, `../../public/${GAME}/audio`);
+const outputManifest = resolve(__dirname, `../../games/${GAME}/manifests`);
 
 const pack = new AssetPack({
     entry: rawAudio,
     output: outputAudio,
     pipes: [
-        audio.pipes[0]
+        audio.pipes[0],
+        pixiManifest({
+            output: `${outputManifest}/audio.json`,
+            createShortcuts: false,
+            trimExtensions: false,
+            includeMetaData: false,
+        }),
     ]
 });
 

@@ -1,0 +1,53 @@
+{
+    "section": {
+        "id": "cozyGirls",
+        "name": "Cozy Girls",
+        "coverLevelId": "cozy_girls_05",
+        "type": 2,
+        "levels": [
+            {
+                "id": "cozy_girls_01",
+                "name": "Puzzle 1",
+                "thumb": "cozy_girls_1",
+                "isSpecial": false,
+                "cost": 0,
+                "image": "cozy_girls/cozy_girls_1.png"
+            },
+            {
+                "id": "cozy_girls_02",
+                "name": "Puzzle 2",
+                "thumb": "cozy_girls_2",
+                "cost": 40,
+                "image": "cozy_girls/cozy_girls_2.png"
+            },
+            {
+                "id": "cozy_girls_03",
+                "name": "Puzzle 3",
+                "thumb": "cozy_girls_3",
+                "cost": 60,
+                "image": "cozy_girls/cozy_girls_3.png"
+            },
+            {
+                "id": "cozy_girls_04",
+                "name": "Puzzle 4",
+                "thumb": "cozy_girls_4",
+                "cost": 100,
+                "image": "cozy_girls/cozy_girls_4.png"
+            },
+            {
+                "id": "cozy_girls_05",
+                "name": "Puzzle 5",
+                "thumb": "cozy_girls_5",
+                "cost": 100,
+                "image": "cozy_girls/cozy_girls_5.png"
+            },
+            {
+                "id": "cozy_girls_06",
+                "name": "Puzzle 6",
+                "thumb": "cozy_girls_6",
+                "cost": 200,
+                "image": "cozy_girls/cozy_girls_6.png"
+            }
+        ]
+    }
+}
