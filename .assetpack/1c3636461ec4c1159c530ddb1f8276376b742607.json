@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768915487513,
-                "duration": 9.010700000000043,
+                "date": 1768947817328,
+                "duration": 8.64670000000001,
                 "success": true
             }
         },
@@ -89,8 +89,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768915487514,
-                "duration": 676.8788,
+                "date": 1768947817328,
+                "duration": 738.4979999999998,
                 "success": true
             }
         },
@@ -370,6 +370,75 @@
             "transformData": {},
             "hash": "LVyNsQ"
         },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-puppies": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-puppies/cute_puppies_1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-puppies",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "gTp_UQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-puppies/cute_puppies_2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-puppies",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "nVWCnA"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-puppies/cute_puppies_3.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-puppies",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "prfXVQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-puppies/cute_puppies_4.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-puppies",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "zmYy"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-puppies/cute_puppies_5.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-puppies",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "4y0NCg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-puppies/cute_puppies_6.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cute-puppies",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "qlXp8w"
+        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/fantasy-creatures": {
             "isFolder": true,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
@@ -597,6 +666,26 @@
             "transformData": {},
             "hash": "9s6S3w"
         },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/n1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "wP4a_A"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/n3.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "47byiA"
+        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/sport_girls": {
             "isFolder": true,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
@@ -720,8 +809,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768915379252,
-                "duration": 2387.7703,
+                "date": 1768941777481,
+                "duration": 2273.6910000000003,
                 "success": true
             }
         },
@@ -1154,6 +1243,16 @@
             },
             "transformData": {},
             "hash": "htUtnw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}/down.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "lizQjA"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}/equal.Png": {
             "isFolder": false,
@@ -1844,6 +1943,26 @@
             "transformData": {},
             "hash": "5W8Sxg"
         },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}/icons/PictoIcon_Music_1.Png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "JAM2bQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}/icons/PictoIcon_Music_1_Off.Png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "b0aYuA"
+        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}/icons/PictoIcon_Sound.Png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}/icons",
@@ -2424,16 +2543,6 @@
             "transformData": {},
             "hash": "7De1Nw"
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}/Slider_Level02_Icon_Up_White.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "a2pmOQ"
-        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}/Title_Ribbon01_Blue.png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}",
@@ -2553,6 +2662,16 @@
             },
             "transformData": {},
             "hash": "O8AmzQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}/up.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "a2pmOQ"
         },
         ".assetpack/multi-pipe-1/ui.png": {
             "isFolder": false,

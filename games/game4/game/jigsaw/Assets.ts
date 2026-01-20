@@ -115,6 +115,11 @@ export default class Assets {
                 soundId: 'Whoosh',
                 volumeMinMax: 0.15,
             },
+            Coin1: {
+                soundId: 'Coin2',
+                volumeMinMax: [0.15, 0.2],
+                pitchMinMax: [0.8, 1.2],
+            },
             PieceConnected: {
                 soundId: 'Bubbles',
                 volumeMinMax: [0.15, 0.2],
@@ -152,7 +157,7 @@ export default class Assets {
 
     static readonly Offsets = {
         UI: {
-            Header: { x: 0, y: 0 }
+            Header: { x: 0, y: 25 }
         }
     }
     static readonly Paddings = {
@@ -176,26 +181,30 @@ export default class Assets {
         Icons: {
             Coin: "ResourceBar_Single_Icon_Coin",
             Gem: "ResourceBar_Single_Icon_Gem",
+            Up: "up",
+            Down: "down",
             Back: "Icon_Back",
             Check: "Icon_Check03_s",
+            Finger: "handHud",
             // Check: "Toggle_Check_Single_Icon",
             CheckItem: "Icon_Check03_s",
             Pill: "Label_Badge01_Yellow",
-            SoundOn: "PictoIcon_Sound",
-            SoundOff: "PictoIcon_Sound_Off",
+            SoundOn: "PictoIcon_Music_1",
+            SoundOff: "PictoIcon_Music_1_Off",
             Badge1: "Label_Badge01_Red",
             Badge2: "Label_Badge01_Purple",
             Home: "PictoIcon_Home_1",
             Eye: "eye",
         },
         UI: {
+            NextCardBackground: "ItemFrame01_Single_Navy",
             EndRibbon: "Title_Ribbon01_Green",
             Shine: "Image_Effect_Rotate",
             Header: "ItemFrame01_Single_Hologram1",
             CardBg: "Button_SkillBtn_Blue",
             RowBg: "Button_SkillBtn_Orange",
             RowLock: "Button_SkillBtn_Dark",
-            FadeShape: "fade-shape",
+            FadeShape: "Slider_Basic01_Bg_Single",
         }
     } as const;
 

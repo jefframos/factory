@@ -55,7 +55,6 @@ export default class SoundLoadManager {
       manifest.bundles.forEach((bundle) => {
         if (bundleNames.includes(bundle.name)) {
           bundle.assets.forEach((asset) => {
-            console.log(asset)
             const audioAsset: AudioAsset = {};
 
             asset.src.forEach((src) => {

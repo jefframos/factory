@@ -37,6 +37,14 @@
         },
         {
           "alias": [
+            "jiggy/animeGirl-1.json"
+          ],
+          "src": [
+            "jiggy/animeGirl-1.json"
+          ]
+        },
+        {
+          "alias": [
             "jiggy/cozyGirls.json"
           ],
           "src": [
@@ -93,10 +101,10 @@
         },
         {
           "alias": [
-            "jiggy/animeGirl-1.json"
+            "jiggy/cutePuppies-1.json"
           ],
           "src": [
-            "jiggy/animeGirl-1.json"
+            "jiggy/cutePuppies-1.json"
           ]
         },
         {

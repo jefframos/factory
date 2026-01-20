@@ -14,6 +14,7 @@ import { MaskedTabsGenerator } from "./MaskedTabsGenerator";
 import SoundManager from "@core/audio/SoundManager";
 import PromiseUtils from "@core/utils/PromiseUtils";
 import ViewUtils from "@core/utils/ViewUtils";
+import { LevelDefinition } from "games/game4/types";
 import MatchManager from "../2048/scene/MatchManager";
 import MainMenuUi from "../2048/ui/MainMenuUi";
 import ScoreUi from "../2048/ui/ScoreUi";
@@ -35,6 +36,7 @@ export default class GameplayJigsawScene extends GameScene {
         throw new Error("Method not implemented.");
     }
 
+    public static FLOATING_LEVEL: LevelDefinition | undefined;
     public readonly onQuit: Signal = new Signal();
 
     private readonly gameplayContainer: PIXI.Container = new PIXI.Container();
@@ -63,7 +65,13 @@ export default class GameplayJigsawScene extends GameScene {
         if (popupId === "gameOver") {
             this.paused = false;
             this.resetMatch();
-            this.quitGameScene();
+            if (GameplayJigsawScene.FLOATING_LEVEL) {
+                this.startMatchFromLevel(GameplayJigsawScene.FLOATING_LEVEL)
+                GameplayJigsawScene.FLOATING_LEVEL = undefined
+            } else {
+
+                this.quitGameScene();
+            }
         }
     };
 
@@ -90,8 +98,7 @@ export default class GameplayJigsawScene extends GameScene {
         this.updateScoreUi(0);
 
 
-        SoundManager.instance.playBackgroundSound(Assets.AmbientSound.AmbientSoundId, 0.25)
-        SoundManager.instance.setMasterAmbientVolume(Assets.AmbientSound.AmbientMasterVolume)
+
 
 
         this.addChild(this.background)
@@ -106,7 +113,9 @@ export default class GameplayJigsawScene extends GameScene {
 
         const built = PuzzleDataBuilder.buildSections(master, this.game.folderPath + '/images/non-preload/puzzles');
 
+        console.log(built)
         const sections = built.sections;
+
         const sectionMeta = built.meta;
 
         StaticData.setData(built.sections);
@@ -131,7 +140,7 @@ export default class GameplayJigsawScene extends GameScene {
 
 
         const theme = createDefaultLevelSelectTheme();
-        this.levelSelectMenu = new LevelSelectView(this.mediator, theme, 500, 300);
+        this.levelSelectMenu = new LevelSelectView(this.mediator, theme, Game.DESIGN_WIDTH, 1024);
 
 
         // Assets.getTexture(T.Icons.Coin)
@@ -144,12 +153,12 @@ export default class GameplayJigsawScene extends GameScene {
             specialCurrencyIcon: 'ResourceBar_Single_Icon_Gem',
             bgTexture: PIXI.Texture.from(Assets.Textures.UI.FadeShape),// PIXI.Texture.from('fade-shape'),
             bgNineSlice: { left: 10, top: 10, right: 10, bottom: 10 },
-            padding: 15
+            padding: 20
         });
 
         this.currencyHud.x = 0; // Top left corner
         this.levelSelectMenu.headerView.root.addChild(this.currencyHud);
-        this.currencyHud.y = this.levelSelectMenu.headerView.root.height / 2 - this.currencyHud.height / 2 + Assets.Offsets.UI.Header.y;
+        this.currencyHud.y = theme.headerHeight / 2 - this.currencyHud.height / 2 + Assets.Offsets.UI.Header.y;
 
         // console.log(this.levelSelectMenu.headerView)
 
@@ -191,9 +200,13 @@ export default class GameplayJigsawScene extends GameScene {
                 section: sections[s],
                 allowRotation: false
             }
+            this.currentLevel = request
             this.startMatch(request, true)
 
+        } else {
         }
+        SoundManager.instance.playBackgroundSound(Assets.AmbientSound.AmbientSoundId, 0)
+        SoundManager.instance.setMasterAmbientVolume(Assets.AmbientSound.AmbientMasterVolume)
 
         if (Game.debugParams.over) {
             setTimeout(() => {
@@ -206,14 +219,34 @@ export default class GameplayJigsawScene extends GameScene {
         this.soundToggleButton = new SoundToggleButton(Assets.Textures.Icons.SoundOn, Assets.Textures.Icons.SoundOff);
 
         this.soundToggleButton.x = 50;
-        this.soundToggleButton.y = this.levelSelectMenu.headerView.root.height / 2 + Assets.Offsets.UI.Header.y;
+        this.soundToggleButton.y = theme.headerHeight / 2 + Assets.Offsets.UI.Header.y;
         //this.soundToggleButton.scale.x = -1
 
         this.levelSelectMenu.headerView.root.addChild(this.soundToggleButton);
 
+        sections.forEach(section => {
+            section.levels.forEach(level => {
+                if (level.unlockCost === 0) {
+                    console.log(level)
+
+                    this.mediator.confirmPurchase(level.id);
+                }
+            });
+        });
+
 
     }
+    public startMatchFromLevel(LevelDefinition: LevelDefinition) {
+        const request: PlayLevelRequest = {
+            difficulty: "easy",
+            level: LevelDefinition,
+            levelId: LevelDefinition.id,
+            section: StaticData.getSectionById(LevelDefinition.sectionId),
+            allowRotation: false
+        }
+        this.startMatch(request, false)
 
+    }
     public show(): void {
         // Main menu visible by default; play will start match.
     }
@@ -277,7 +310,7 @@ export default class GameplayJigsawScene extends GameScene {
     private showQuitConfirm(): void {
         const confirmationData: ConfirmationPopupData =
         {
-            title: "Exit Match",
+            title: "Exit Puzzle",
             description: "Do you want quit?",
             cancelLabel: "Confirm",
             confirmLabel: "Cancel",
@@ -337,13 +370,10 @@ export default class GameplayJigsawScene extends GameScene {
         Assets.tryToPlaySound(Assets.Sounds.UI.PuzzleCompleted)
         let rewardAmount = 0;
 
-        const nextToPlay = StaticData.getNextAvailableLevel(this.currentLevel?.levelId, (id) => {
-            return this.store.isLevelUnlocked(this.mediator.getProgress(), id);
-        });
 
-        if (nextToPlay) {
-            console.log("Redirecting player to:", nextToPlay);
-        }
+        console.log(this.currentLevel, this.currentLevel?.levelId, this.store)
+
+
 
         if (this.currentLevel) {
 
@@ -368,6 +398,15 @@ export default class GameplayJigsawScene extends GameScene {
             }
         }
 
+
+        const nextToPlay = StaticData.getNextAvailableLevel(this.currentLevel?.levelId, (id) => {
+            return this.store.isLevelUnlocked(this.mediator.getProgress(), id);
+        });
+
+        if (nextToPlay) {
+            console.log("Redirecting player to:", nextToPlay);
+        }
+
         await this.jigsawBoardView.snapCompletedPuzzleToSolvedPose({ duration: 0.8, ease: "power4.out" });
         this.jigsawBoardView.input?.setEnabled(true);
 
@@ -376,15 +415,15 @@ export default class GameplayJigsawScene extends GameScene {
         Assets.tryToPlaySound(Assets.Sounds.UI.GameOverAppear)
 
 
-        PopupManager.instance.show("gameOver", { matchManager: this.matchManager, rewardAmount: rewardAmount || 0, isSpecial: this.currentLevel?.level.isSpecial });
+        PopupManager.instance.show("gameOver", { matchManager: this.matchManager, rewardAmount: rewardAmount || 0, isSpecial: this.currentLevel?.level.isSpecial, nextPuzzle: nextToPlay });
     };
 
 
     private async startMatch(data?: PlayLevelRequest, isFirst: boolean = false): Promise<void> {
         this.matchManager.start();
 
-        SoundManager.instance.playBackgroundSound(Assets.AmbientSound.AmbientSoundGameplay, 0.25)
-        SoundManager.instance.setMasterAmbientVolume(Assets.AmbientSound.AmbientMasterVolumeGameplay)
+        //SoundManager.instance.playBackgroundSound(Assets.AmbientSound.AmbientSoundGameplay, 0)
+        //SoundManager.instance.setMasterAmbientVolume(Assets.AmbientSound.AmbientMasterVolumeGameplay)
 
 
         this.currentLevel = data;
@@ -473,8 +512,8 @@ export default class GameplayJigsawScene extends GameScene {
         this.onQuit.dispatch();
         PlatformHandler.instance.platform.gameplayStop();
 
-        SoundManager.instance.playBackgroundSound(Assets.AmbientSound.AmbientSoundId, 0.25)
-        SoundManager.instance.setMasterAmbientVolume(Assets.AmbientSound.AmbientMasterVolume)
+        //SoundManager.instance.playBackgroundSound(Assets.AmbientSound.AmbientSoundId, 0)
+        //SoundManager.instance.setMasterAmbientVolume(Assets.AmbientSound.AmbientMasterVolume)
     }
 
     // -------------------------
@@ -500,17 +539,19 @@ export default class GameplayJigsawScene extends GameScene {
 
     private updateSafeAreaFromOverlay(): void {
         const cappedSize = Math.min(Game.overlayScreenData.width, 1024)
-        this.levelSelectMenu?.setSize(cappedSize, Game.overlayScreenData.height)
-        if (this.currencyHud) this.currencyHud.x = cappedSize - this.currencyHud.width - 100
+        //this.levelSelectMenu?.setSize(cappedSize, Game.overlayScreenData.height)
+        this.levelSelectMenu?.setHeight(Game.overlayScreenData.height)
+        if (this.currencyHud) this.currencyHud.x = Game.DESIGN_WIDTH - this.currencyHud.width - 120
+        if (this.soundToggleButton)
 
-        if (this.soundToggleButton) {
-            this.soundToggleButton.x = 50//cappedSize - this.currencyHud.width + 80//- 150
-            //this.soundToggleButton.y = 40
-        }
+            if (this.soundToggleButton) {
+                this.soundToggleButton.x = Game.DESIGN_WIDTH - this.soundToggleButton.width
+                //this.soundToggleButton.y = 40
+            }
 
         if (this.levelSelectMenu) {
 
-            this.levelSelectMenu.x = -this.gameplayContainer.x + Game.gameScreenData.center.x - cappedSize / 2;
+            this.levelSelectMenu.x = -Game.DESIGN_WIDTH / 2//this.gameplayContainer.x - Game.overlayScreenData.width / 2;
             this.levelSelectMenu.y = -this.gameplayContainer.y + Game.gameScreenData.topLeft.y + 10;
         }
 

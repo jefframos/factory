@@ -49,6 +49,10 @@ export default class StaticData {
         return this._sections;
     }
 
+    public static getSectionById(id: string): SectionDefinition | undefined {
+        return this._sections.find(l => l.id === id);
+    }
+
     public static getLevelById(id: string): LevelDefinition | undefined {
         return this._flatLevels.find(l => l.id === id);
     }

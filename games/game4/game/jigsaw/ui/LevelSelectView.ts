@@ -1,14 +1,12 @@
-// LevelSelectView.ts
-import { Difficulty, SectionDefinition } from "games/game4/types";
+import BaseButton from "@core/ui/BaseButton";
+import { SectionDefinition } from "games/game4/types";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
 import Assets from "../Assets";
 import { LevelSelectMediator } from "../progress/LevelSelectMediator";
 import type { LevelSelectTheme } from "./LevelSelectViewElements";
-import { LevelSelectViewFactory } from "./LevelSelectViewFactory";
+import { LevelRowComponent, LevelSelectViewFactory, SectionCardComponent } from "./LevelSelectViewFactory";
 import { VerticalScrollView } from "./VerticalScrollView";
-
-type ViewMode = "sections" | "sectionDetail";
 
 export class LevelSelectView extends PIXI.Container {
     public readonly onClose: Signal = new Signal();
@@ -17,214 +15,207 @@ export class LevelSelectView extends PIXI.Container {
     private readonly factory: LevelSelectViewFactory;
     private readonly theme: LevelSelectTheme;
 
-    private mode: ViewMode = "sections";
+    private readonly navigationContainer = new PIXI.Container();
+    private upButton!: BaseButton;
+    private downButton!: BaseButton;
+
+    private mode: "sections" | "sectionDetail" = "sections";
     private activeSection?: SectionDefinition;
 
     private readonly scrollView: VerticalScrollView;
+    private readonly sectionsPage = new PIXI.Container();
+    private readonly detailPage = new PIXI.Container();
+
+    private sectionPool: SectionCardComponent[] = [];
+    private rowPool: LevelRowComponent[] = [];
 
     public readonly headerView: ReturnType<LevelSelectViewFactory["createHeader"]>;
-
     private viewW: number;
     private viewH: number;
 
-    public constructor(
-        mediator: LevelSelectMediator,
-        theme: LevelSelectTheme,
-        viewW: number,
-        viewH: number
-    ) {
+    public constructor(mediator: LevelSelectMediator, theme: LevelSelectTheme, viewW: number, viewH: number) {
         super();
-
         this.mediator = mediator;
         this.theme = theme;
         this.factory = new LevelSelectViewFactory(theme);
-
         this.viewW = viewW;
         this.viewH = viewH;
 
-        this.headerView = this.factory.createHeader(viewW);
-        this.addChild(this.headerView.root);
 
         this.scrollView = new VerticalScrollView(viewW, viewH - theme.headerHeight);
         this.scrollView.y = theme.headerHeight;
         this.addChild(this.scrollView);
 
-        this.headerView.backButton.visible = false;
-        this.headerView.closeButton.visible = false;
+        this.scrollView.content.addChild(this.sectionsPage);
+        this.scrollView.content.addChild(this.detailPage);
+
+        this.headerView = this.factory.createHeader(viewW);
+        this.addChild(this.headerView.root);
+
+        this.createNavigationUI();
+        this.addChild(this.navigationContainer);
+
+        // Link scroll events to UI updates
+        this.scrollView.onScroll = () => this.updateNavigationState();
+
 
         this.headerView.backButton.on("pointertap", () => {
-            if (this.mode === "sectionDetail") {
-                this.mode = "sections";
-                this.activeSection = undefined;
-                Assets.tryToPlaySound(Assets.Sounds.UI.RenderSection)
-                this.renderSections();
-            }
+            this.activeSection = undefined;
+            this.renderSections();
+            Assets.tryToPlaySound(Assets.Sounds.UI.RenderSection);
         });
 
-        this.headerView.closeButton.on("pointertap", () => {
-            this.onClose.dispatch();
-        });
-
-        this.mediator.onProgressChanged.add(this.onProgressChanged, this);
-
+        this.mediator.onProgressChanged.add(this.refresh, this);
         this.renderSections();
     }
 
-    public override destroy(options?: PIXI.IDestroyOptions | boolean): void {
-        this.mediator.onProgressChanged.remove(this.onProgressChanged, this);
-        super.destroy(options);
+    private createNavigationUI(): void {
+        // Assuming your theme has skins for these or reusing primary/secondary
+        const skin = this.theme.buttonSkins.secondary;
+
+        const size = 80
+
+        this.upButton = new BaseButton({
+            standard: { ...skin.standard, width: size, height: size, iconTexture: PIXI.Texture.from(Assets.Textures.Icons.Up), centerIconHorizontally: true, centerIconVertically: true }, // Pointing up
+            over: skin.over,
+            disabled: this.theme.buttonSkins.purchase.disabled // Use a grey skin
+        });
+
+        this.downButton = new BaseButton({
+            standard: { ...skin.standard, width: size, height: size, iconTexture: PIXI.Texture.from(Assets.Textures.Icons.Down), centerIconHorizontally: true, centerIconVertically: true }, // Pointing down
+            over: skin.over,
+            disabled: this.theme.buttonSkins.purchase.disabled
+        });
+
+        this.upButton.on("pointertap", () => this.scrollView.scrollBy(-200));
+        this.downButton.on("pointertap", () => this.scrollView.scrollBy(200));
+
+        this.navigationContainer.addChild(this.upButton, this.downButton);
+        this.positionNavigationButtons();
     }
 
-    public setSize(viewW: number, viewH: number): void {
-        if (this.viewW === viewW && this.viewH === viewH) {
+    private positionNavigationButtons(): void {
+        const margin = 20;
+        // Position buttons on the right side of the scroll view
+        this.upButton.x = this.viewW - this.upButton.width - margin;
+        this.upButton.y = this.theme.headerHeight + margin;
+
+        this.downButton.x = this.viewW - this.downButton.width - margin;
+        this.downButton.y = this.viewH - this.downButton.height - margin;
+    }
+
+    private updateNavigationState(): void {
+        const scrollY = this.scrollView.currentScroll;
+        const maxScroll = this.scrollView.maxScroll;
+
+        // 1. Visibility: If content fits, hide both
+        if (maxScroll <= 0) {
+            this.navigationContainer.visible = false;
             return;
         }
 
-        this.viewW = viewW;
-        this.viewH = viewH;
+        this.navigationContainer.visible = true;
 
-        this.headerView.setSize(viewW, this.theme.headerHeight);
+        // 2. Up Button: Disable if at the very top
+        if (scrollY <= 0) {
+            this.upButton.disable();
+            this.upButton.alpha = 0;
+        } else {
+            this.upButton.enable();
+            this.upButton.alpha = 1;
+        }
 
-        this.scrollView.setSize(viewW, viewH - this.theme.headerHeight);
-        this.scrollView.y = this.theme.headerHeight;
-
-        this.refresh();
+        // 3. Down Button: Disable if at the very bottom
+        if (scrollY >= maxScroll) {
+            this.downButton.disable();
+            this.downButton.alpha = 0;
+        } else {
+            this.downButton.enable();
+            this.downButton.alpha = 1;
+        }
     }
 
     public refresh(): void {
-        if (this.mode === "sections") {
-            this.renderSections();
-        }
-        else {
-            this.renderSectionDetail();
-        }
+        this.mode === "sections" ? this.renderSections() : this.renderSectionDetail();
     }
-
-    private onProgressChanged(): void {
-        this.refresh();
+    public setHeight(value: number) {
+        this.viewH = value;
+        this.scrollView.setSize(this.viewW, this.viewH - this.theme.headerHeight);
+        this.positionNavigationButtons();
+        this.updateNavigationState();
     }
-
-    // -------------------------
-    // Sections grid
-    // -------------------------
-
     private renderSections(): void {
         this.mode = "sections";
-        this.headerView.titleText.text = "Puzzles";
+        this.sectionsPage.visible = true;
+        this.detailPage.visible = false;
+        this.headerView.titleText.text = ''//"Puzzles";
         this.headerView.backButton.visible = false;
-        this.headerView.closeButton.visible = false;
 
-        //this.scrollView.content.removeChildren();
-        this.clearScrollView();
-
-        const sections = (this.mediator as any).sections as SectionDefinition[] | undefined;
-        const list = sections ?? [];
-
-        const padding = this.theme.padding;
-        const cols = 2;
-        const cardW = Math.floor((this.viewW - padding * (cols + 1)) / cols);
-        const cardH = this.theme.sectionCard.cardHeight;
-
+        const sections = (this.mediator as any).sections || [];
         const progress = this.mediator.getProgress();
+        const cols = 2;
+        const cardW = Math.floor((this.viewW - this.theme.padding * 3) / cols);
 
-        let i = 0;
-        for (const s of list) {
-            const row = Math.floor(i / cols);
-            const col = i % cols;
+        sections.forEach((s: SectionDefinition, i: number) => {
+            let card = this.sectionPool[i];
+            if (!card) {
+                card = this.factory.createSectionCard(s, cardW, this.theme.sectionCard.cardHeight, progress);
+                card.on("pointertap", () => {
+                    this.activeSection = s;
+                    this.renderSectionDetail();
+                    Assets.tryToPlaySound(Assets.Sounds.UI.Tap);
+                });
+                this.sectionPool.push(card);
+                this.sectionsPage.addChild(card);
+            }
+            card.visible = true;
+            card.x = this.theme.padding + (i % cols) * (cardW + this.theme.padding);
+            card.y = this.theme.padding + Math.floor(i / cols) * (this.theme.sectionCard.cardHeight + this.theme.padding);
+            card.update(s, progress);
+        });
 
-            const x = padding + col * (cardW + padding);
-            const y = padding + row * (cardH + padding);
-
-            const card = this.factory.createSectionCard(s, cardW, cardH, progress);
-            card.x = x;
-            card.y = y;
-
-            card.on("pointertap", () => {
-                this.activeSection = s;
-                this.mode = "sectionDetail";
-                this.renderSectionDetail();
-                Assets.tryToPlaySound(Assets.Sounds.UI.Tap)
-                Assets.tryToPlaySound(Assets.Sounds.UI.RenderSectionDetail)
-            });
-
-            this.scrollView.content.addChild(card);
-
-            i += 1;
-        }
+        for (let i = sections.length; i < this.sectionPool.length; i++) this.sectionPool[i].visible = false;
 
         this.scrollView.scrollToTop();
         this.scrollView.refresh();
     }
-
-    // -------------------------
-    // Section detail (subsection)
-    // -------------------------
 
     private renderSectionDetail(): void {
-        if (!this.activeSection) {
-            this.renderSections();
-            return;
-        }
-
+        if (!this.activeSection) return;
         this.mode = "sectionDetail";
+        this.sectionsPage.visible = false;
+        this.detailPage.visible = true;
         this.headerView.titleText.text = this.activeSection.name;
         this.headerView.backButton.visible = true;
-        this.headerView.closeButton.visible = true;
 
-        //this.scrollView.content.removeChildren();
-        this.clearScrollView();
-
-        const padding = this.theme.padding;
+        const levels = this.activeSection.levels;
         const progress = this.mediator.getProgress();
+        const cardW = Math.floor((this.viewW - this.theme.padding * 2 - 12) / 2);
 
-        // NEW: grid config
-        const cols = 2;
-        const gap = 12;
+        levels.forEach((lvl, i) => {
+            let row = this.rowPool[i];
+            const unlocked = this.mediator.isLevelUnlocked(lvl.id);
+            if (!row) {
+                row = this.factory.createLevelRow(lvl, this.activeSection!, cardW, this.theme.levelRow.rowHeight, progress, unlocked,
+                    (id, d) => this.mediator.requestPlay(id, d),
+                    (id) => this.mediator.requestPurchase(id));
+                this.rowPool.push(row);
+                this.detailPage.addChild(row);
+            }
+            row.visible = true;
+            row.x = this.theme.padding + (i % 2) * (cardW + 12);
+            row.y = this.theme.padding + Math.floor(i / 2) * (this.theme.levelRow.rowHeight + 12);
+            row.update(lvl, this.activeSection!, progress, unlocked);
+        });
 
-        const availableW = this.viewW - padding * 2;
-        const cardW = Math.floor((availableW - gap * (cols - 1)) / cols);
-        const cardH = this.theme.levelRow.rowHeight;
-
-        let i = 0;
-        for (const level of this.activeSection.levels) {
-            const row = Math.floor(i / cols);
-            const col = i % cols;
-
-            const x = padding + col * (cardW + gap);
-            const y = padding + row * (cardH + gap);
-
-            const unlocked = this.mediator.isLevelUnlocked(level.id);
-
-            const tile = this.factory.createLevelRow(
-                level,
-                this.activeSection,
-                cardW,
-                cardH,
-                progress,
-                unlocked,
-                (levelId: string, d: Difficulty) => {
-                    this.mediator.requestPlay(levelId, d);
-                },
-                (levelId: string) => {
-                    this.mediator.requestPurchase(levelId);
-                }
-            );
-
-            tile.x = x;
-            tile.y = y;
-
-            this.scrollView.content.addChild(tile);
-
-            i += 1;
-        }
+        for (let i = levels.length; i < this.rowPool.length; i++) this.rowPool[i].visible = false;
 
         this.scrollView.scrollToTop();
         this.scrollView.refresh();
     }
 
-    private clearScrollView(): void {
-        // This tells PIXI to call .destroy() on every child.
-        // Our BaseButton cleanup (the .on('destroyed') listener) will now trigger.
-        this.scrollView.content.removeChildren().forEach(child => child.destroy({ children: true }));
+    public override destroy(options?: any): void {
+        this.mediator.onProgressChanged.remove(this.refresh, this);
+        super.destroy(options);
     }
 }

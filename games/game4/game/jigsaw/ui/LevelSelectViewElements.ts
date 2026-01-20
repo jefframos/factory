@@ -147,9 +147,9 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
     }
     return {
         headerHeight: 90,
-        padding: 30,
+        padding: 40,
 
-        headerBgTexture: Assets.getTexture(T.UI.Header),
+        headerBgTexture: null,//Assets.getTexture(T.UI.Header),
         headerBgNineSlice: Assets.Paddings.UI.Header,
 
         titleStyle,
@@ -195,7 +195,7 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
             secondary: {
                 standard: {
                     allPadding: 20,
-                    texture: Assets.getTexture(T.Buttons.Blue),
+                    texture: Assets.getTexture(T.Buttons.Green),
                     width: 120,
                     height: 60,
                     fontStyle: headerButtonStyle,
@@ -203,7 +203,7 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
                 over: {
                     tint: 0xcccccc,
                     callback: () => playHoverSound(),
-                    texture: Assets.getTexture(T.Buttons.Blue),
+                    texture: Assets.getTexture(T.Buttons.Green),
                 },
             },
             back: {
@@ -228,7 +228,7 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
                 standard: {
                     allPadding: 30,
                     texture: Assets.getTexture(T.Buttons.Green),
-                    width: 100,
+                    width: 90,
                     height: 64,
                     fontStyle: difficultyStyle,
                     // iconTexture: PIXI.Texture.from('jiggyGreen'),
@@ -251,7 +251,7 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
                 standard: {
                     allPadding: 30,
                     texture: Assets.getTexture(T.Buttons.Blue),
-                    width: 100,
+                    width: 90,
                     height: 64,
                     fontStyle: difficultyStyle,
                     // iconTexture: PIXI.Texture.from('jiggyBlue'),
@@ -274,7 +274,7 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
                 standard: {
                     allPadding: 30,
                     texture: Assets.getTexture(T.Buttons.Orange),
-                    width: 100,
+                    width: 90,
                     height: 64,
                     fontStyle: difficultyStyle,
                     // iconTexture: PIXI.Texture.from('jiggyPurple'),
@@ -318,8 +318,8 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
             bgTextureLocked: Assets.getTexture(T.UI.RowLock),
             bgNineSlice: { left: 40, top: 40, right: 40, bottom: 40 },
 
-            rowHeight: 300,
-            thumbSize: 140,
+            rowHeight: 280,
+            thumbSize: 120,
             titleStyle: rowTitleStyle,
             questStyle: { ...difficultyStyle, fontSize: 16 },
             rowPadding: 15,

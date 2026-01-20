@@ -18,7 +18,7 @@ const useImageAsThumb = useThumbStr === 'true';
 const outputDir = outFolder ? path.resolve(process.cwd(), outFolder) : process.cwd();
 
 // Fixed costs array
-const costArray = [0, 40, 60, 100, 100, 200, 300, 500];
+const costArray = [0, 0, 20, 60, 100, 100, 200, 300, 500];
 
 const buildJson = () => {
     const dirPath = path.resolve(process.cwd(), folder);

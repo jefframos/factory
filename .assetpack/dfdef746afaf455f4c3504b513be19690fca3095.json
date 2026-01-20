@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768915617834,
-                "duration": 9.152299999999968,
+                "date": 1768947817186,
+                "duration": 0.5827000000000453,
                 "success": true
             }
         },
@@ -20,8 +20,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768915617835,
-                "duration": 8.721400000000017,
+                "date": 1768947817187,
+                "duration": 0.04650000000003729,
                 "success": true
             }
         },
@@ -651,6 +651,164 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/cute-food/cute_food_6.png": {
             "isFolder": false,
             "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-food/cute_food_6.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768947738375,
+                "duration": 6.890999999999963,
+                "success": true
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies/cute_puppies_1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768947738375,
+                "duration": 23.74840000000006,
+                "success": true
+            },
+            "hash": "SLmWxA"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/cute-puppies/cute_puppies_1.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies/cute_puppies_1.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies/cute_puppies_2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768947738379,
+                "duration": 19.655099999999948,
+                "success": true
+            },
+            "hash": "UqS0cg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/cute-puppies/cute_puppies_2.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies/cute_puppies_2.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies/cute_puppies_3.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768947738382,
+                "duration": 19.721700000000055,
+                "success": true
+            },
+            "hash": "E7faRQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/cute-puppies/cute_puppies_3.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies/cute_puppies_3.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies/cute_puppies_4.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768947738394,
+                "duration": 8.344299999999976,
+                "success": true
+            },
+            "hash": "7Bj-Fg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/cute-puppies/cute_puppies_4.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies/cute_puppies_4.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies/cute_puppies_5.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768947738397,
+                "duration": 5.527699999999982,
+                "success": true
+            },
+            "hash": "sZe60A"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/cute-puppies/cute_puppies_5.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies/cute_puppies_5.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies/cute_puppies_6.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768947738399,
+                "duration": 15.878999999999905,
+                "success": true
+            },
+            "hash": "8Hfs1Q"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/cute-puppies/cute_puppies_6.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/cute-puppies/cute_puppies_6.png",
             "metaData": {},
             "inheritedMetaData": {
                 "copy": true

@@ -56,10 +56,10 @@ export class LevelSelectMediator {
             return false;
         }
 
-        const cost = hit.level.unlockCost ?? 0;
-        if (cost <= 0) {
-            return true;
-        }
+        // const cost = hit.level.unlockCost ?? 0;
+        // if (cost <= 0) {
+        //     return true;
+        // }
 
         return this.store.isLevelUnlocked(this.progress, levelId);
     }
@@ -109,9 +109,11 @@ export class LevelSelectMediator {
     }
 
     public confirmPurchase(levelId: string): void {
+        console.log('purchase', levelId)
         if (this.isLevelUnlocked(levelId)) {
             return;
         }
+        console.log('purchase2', levelId)
 
         // 1. REFRESH: Pull the progress from the store again.
         // This ensures we have the deducted currency from the InGameEconomy. purchase call.
@@ -122,6 +124,7 @@ export class LevelSelectMediator {
 
         // 3. SAVE: Now save the object that has BOTH the new currency and the new unlock.
         this.store.save(this.progress);
+
 
 
         // 4. NOTIFY: Tell the UI to refresh.

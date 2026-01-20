@@ -1,72 +1,93 @@
-// ProgressCookieStore.ts
-
 import { Difficulty, GameProgress, LevelProgress } from "games/game4/types";
 
 export class ProgressCookieStore {
-    private readonly cookieName: string;
+    private readonly storageKey: string;
     private readonly version: number;
 
-    public constructor(cookieName = "jg_progress_v1", version = 1) {
-        this.cookieName = cookieName;
+    /**
+     * Using storageKey instead of cookieName for clarity, 
+     * but keeping the default value for backward compatibility.
+     */
+    public constructor(storageKey = "jg_progress_v1", version = 1) {
+        this.storageKey = storageKey;
         this.version = version;
     }
 
-    public static isFirstTime(cookieName = "jg_progress_v1"): boolean {
-        const parts = document.cookie.split(";").map((p) => p.trim());
-        return !parts.some((p) => p.startsWith(cookieName + "="));
+    /**
+     * Checks if the user has any saved progress.
+     */
+    public static isFirstTime(storageKey = "jg_progress_v1"): boolean {
+        return localStorage.getItem(storageKey) === null;
     }
 
+    /**
+     * Loads progress from localStorage.
+     */
     public load(): GameProgress {
-        const raw = this.readCookie(this.cookieName);
-        if (!raw) return this.createEmpty();
-
         try {
-            const decoded = decodeURIComponent(raw);
-            const parsed = JSON.parse(decoded) as Partial<GameProgress>;
+            const raw = localStorage.getItem(this.storageKey);
+            if (!raw) return this.createEmpty();
 
+            const parsed = JSON.parse(raw) as Partial<GameProgress>;
+
+            // Basic validation
             if (!parsed || typeof parsed !== "object") return this.createEmpty();
             if (parsed.version !== this.version) return this.createEmpty();
 
-            // Return the full object including unlockedLevels
             return {
                 version: this.version,
                 levels: parsed.levels ?? {},
                 unlockedLevels: parsed.unlockedLevels ?? {},
-                coins: parsed.coins ?? 0, // Default starting coins
-                gems: parsed.gems ?? 0      // Default starting gems
+                coins: parsed.coins ?? 0,
+                gems: parsed.gems ?? 0
             };
-        }
-        catch {
+        } catch (error) {
+            console.error("Error loading progress from localStorage:", error);
             return this.createEmpty();
         }
     }
+
+    /**
+     * Saves progress to localStorage.
+     */
+    public save(progress: GameProgress): void {
+        try {
+            const safe: GameProgress = {
+                ...progress,
+                version: this.version,
+            };
+
+            const str = JSON.stringify(safe);
+            localStorage.setItem(this.storageKey, str);
+        } catch (error) {
+            console.error("Error saving progress to localStorage (Storage might be full):", error);
+        }
+    }
+
+    /**
+     * Unlocks a specific level and returns the updated state.
+     */
     public markLevelUnlocked(progress: GameProgress, levelId: string): GameProgress {
         const next: GameProgress = {
-            ...progress,
+            ...this.clone(progress),
             unlockedLevels: {
                 ...(progress.unlockedLevels ?? {}),
                 [levelId]: true,
             },
         };
 
+        // Persist immediately to prevent loss of state
+        this.save(next);
         return next;
     }
+
     public isLevelUnlocked(progress: GameProgress, levelId: string): boolean {
         return !!progress.unlockedLevels?.[levelId];
     }
-    public save(progress: GameProgress): void {
-        const safe: GameProgress = {
-            ...progress, // Spread the progress to catch coins/gems
-            version: this.version,
-        };
 
-        const str = JSON.stringify(safe);
-        const encoded = encodeURIComponent(str);
-
-        const maxAgeSeconds = 60 * 60 * 24 * 365;
-        document.cookie = `${this.cookieName}=${encoded}; Max-Age=${maxAgeSeconds}; Path=/; SameSite=Lax`;
-    }
-
+    /**
+     * Records level completion and updates best times.
+     */
     public markCompleted(
         progress: GameProgress,
         levelId: string,
@@ -75,7 +96,11 @@ export class ProgressCookieStore {
     ): GameProgress {
         const next = this.clone(progress);
 
-        const level = next.levels[levelId] ?? this.createEmptyLevel(levelId);
+        if (!next.levels[levelId]) {
+            next.levels[levelId] = this.createEmptyLevel(levelId);
+        }
+
+        const level = next.levels[levelId];
         const entry = level.difficulties[difficulty];
 
         entry.completed = true;
@@ -86,7 +111,7 @@ export class ProgressCookieStore {
             entry.bestTimeMs = timeMs;
         }
 
-        next.levels[levelId] = level;
+        this.save(next);
         return next;
     }
 
@@ -115,31 +140,18 @@ export class ProgressCookieStore {
         };
     }
 
+    /**
+     * Creates a deep clone to avoid accidental mutations of the current state.
+     */
     private clone(progress: GameProgress): GameProgress {
-        // shallow is enough if we always replace nested objects we mutate;
-        // here we mutate nested entries, so do a structured clone.
         return JSON.parse(JSON.stringify(progress)) as GameProgress;
     }
 
-    private readCookie(name: string): string | null {
-        const parts = document.cookie.split(";").map((p) => p.trim());
-        for (const p of parts) {
-            if (p.startsWith(name + "=")) {
-                return p.substring(name.length + 1);
-            }
-        }
-        return null;
-    }
-
+    /**
+     * Completely resets progress and reloads the page.
+     */
     public resetGameProgress(): void {
-        // 1. Clear the specific game progress cookie
-        // We set Max-Age to -1 and an expired Date to ensure the browser deletes it
-        document.cookie = `${this.cookieName}=; Path=/; Max-Age=-1; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
-
-        // 2. Optional: If you use other keys or localStorage, clear those too
-        // localStorage.clear(); 
-
-        // 3. Reload the page to reset the application state
+        localStorage.removeItem(this.storageKey);
         window.location.reload();
     }
 }

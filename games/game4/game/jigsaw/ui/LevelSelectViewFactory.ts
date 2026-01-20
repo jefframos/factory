@@ -1,5 +1,3 @@
-// LevelSelectViewFactory.ts
-import { Game } from "@core/Game";
 import BaseButton from "@core/ui/BaseButton";
 import ViewUtils from "@core/utils/ViewUtils";
 import type { Difficulty, LevelDefinition, SectionDefinition } from "games/game4/types";
@@ -7,10 +5,7 @@ import * as PIXI from "pixi.js";
 import Assets from "../Assets";
 import { InGameEconomy } from "../data/InGameEconomy";
 import { getLevelDifficultyCompleted, getSectionCompletion } from "../progress/progressUtils";
-import { makeResizedSpriteTexture } from "../vfx/imageFlatten";
-import { getDifficultySkinKey, getSectionOverride, type LevelSelectTheme } from "./LevelSelectViewElements";
-
-// IMPORTANT: adjust this import path to your project
+import { getDifficultySkinKey, type LevelSelectTheme } from "./LevelSelectViewElements";
 
 export interface HeaderView {
     root: PIXI.Container;
@@ -18,6 +13,14 @@ export interface HeaderView {
     backButton: BaseButton;
     closeButton: BaseButton;
     setSize: (w: number, h: number) => void;
+}
+
+export interface SectionCardComponent extends PIXI.Container {
+    update: (section: SectionDefinition, progress: any) => void;
+}
+
+export interface LevelRowComponent extends PIXI.Container {
+    update: (level: LevelDefinition, section: SectionDefinition, progress: any, unlocked: boolean) => void;
 }
 
 export class LevelSelectViewFactory {
@@ -29,209 +32,169 @@ export class LevelSelectViewFactory {
 
     public createHeader(viewW: number): HeaderView {
         const root = new PIXI.Container();
+        let bg = null
+        if (this.theme.headerBgTexture) {
 
-        const bg = new PIXI.NineSlicePlane(
-            this.theme.headerBgTexture,
-            this.theme.headerBgNineSlice.left,
-            this.theme.headerBgNineSlice.top,
-            this.theme.headerBgNineSlice.right,
-            this.theme.headerBgNineSlice.bottom
-        );
-        bg.width = viewW;
-        bg.height = this.theme.headerHeight;
-        root.addChild(bg);
+            bg = new PIXI.NineSlicePlane(
+                this.theme.headerBgTexture,
+                this.theme.headerBgNineSlice.left,
+                this.theme.headerBgNineSlice.top,
+                this.theme.headerBgNineSlice.right,
+                this.theme.headerBgNineSlice.bottom
+            );
+            root.addChild(bg);
+        }
 
         const titleText = new PIXI.Text("", this.theme.titleStyle);
+        titleText.anchor.set(0, 0.5);
         root.addChild(titleText);
-        titleText.anchor.set(0, 0.5)
-        titleText.y = 0//this.theme.headerHeight / 2
 
         const backSkin = this.theme.buttonSkins.back;
-        const closeSkin = this.theme.buttonSkins.secondary;
-
         const backButton = new BaseButton({
-            standard: {
-                ...backSkin.standard
-            },
+            standard: { ...backSkin.standard },
             over: { ...backSkin.over },
-
         });
 
         const closeButton = new BaseButton({
-            standard: {
-                texture: closeSkin.standard.texture,
-                width: closeSkin.standard.width,
-                height: closeSkin.standard.height,
-                allPadding: closeSkin.standard.allPadding,
-                fontStyle: closeSkin.standard.fontStyle,
-            },
-            over: {
-                ...closeSkin.over
-            },
+            standard: { ...this.theme.buttonSkins.secondary.standard },
         });
 
-        // closeButton.setLabel('Close')
-        //backButton.setLabel('Back')
-
-        //root.addChild(backButton, closeButton);
         root.addChild(backButton);
 
         const setSize = (w: number, h: number) => {
-            bg.width = w;
-            bg.height = h;
+            if (bg) {
 
+                bg.width = w;
+                bg.height = h;
+            }
             titleText.x = 100;
-            titleText.y = Math.floor((this.theme.headerHeight) * 0.5 + Assets.Offsets.UI.Header.y);
-
-            // Right aligned buttons
-            // closeButton.x = w - closeButton.width - 16;
-            // closeButton.y = Math.floor((h - closeButton.height) * 0.5);
-
-            //backButton.x = closeButton.x - backButton.width - 12;
-            backButton.x = w - backButton.width - 16;
+            titleText.y = Math.floor(h * 0.5 + Assets.Offsets.UI.Header.y);
+            backButton.x = 15//w - backButton.width - 16;
             backButton.y = Math.floor((h - backButton.height) * 0.5) + Assets.Offsets.UI.Header.y;
-
         };
 
         setSize(viewW, this.theme.headerHeight);
-
-        return {
-            root,
-            titleText,
-            backButton,
-            closeButton,
-            setSize,
-        };
+        return { root, titleText, backButton, closeButton, setSize };
     }
 
-    public createSectionCard(
-        section: SectionDefinition,
-        w: number,
-        h: number,
-        progress: any
-    ): PIXI.Container {
-        const root = new PIXI.Container();
+    public createSectionCard(section: SectionDefinition, w: number, h: number, progress: any): SectionCardComponent {
+        const root = new PIXI.Container() as SectionCardComponent;
         root.eventMode = "static";
         root.cursor = "pointer";
 
-        const override = getSectionOverride(this.theme, (section as any).id ?? section.name);
         const pad = this.theme.padding;
 
-        // --- 1. CARD BACKGROUND ---
-        if (this.theme.sectionCard.useNineSliceCardBg) {
-            const tex = override?.cardTexture ?? this.theme.sectionCard.cardBgTexture ?? PIXI.Texture.WHITE;
-            const ns = this.theme.sectionCard.cardBgNineSlice ?? { left: 16, top: 16, right: 16, bottom: 16 };
-            const cardBg = new PIXI.NineSlicePlane(tex, ns.left, ns.top, ns.right, ns.bottom);
-            cardBg.width = w;
-            cardBg.height = h;
-            root.addChild(cardBg);
-        } else {
-            const g = new PIXI.Graphics().beginFill(0x2a2a2a).drawRoundedRect(0, 0, w, h, 14).endFill();
-            root.addChild(g);
-        }
+        // 1. BG
+        const cardBg = new PIXI.NineSlicePlane(
+            this.theme.sectionCard.cardBgTexture ?? PIXI.Texture.WHITE,
+            this.theme.sectionCard.cardBgNineSlice?.left ?? 16,
+            this.theme.sectionCard.cardBgNineSlice?.top ?? 16,
+            this.theme.sectionCard.cardBgNineSlice?.right ?? 16,
+            this.theme.sectionCard.cardBgNineSlice?.bottom ?? 16
+        );
+        cardBg.width = w;
+        cardBg.height = h;
+        root.addChild(cardBg);
 
-        // --- 2. COVER PREPARATION ---
+        // 2. Cover & Mask
         const coverH = Math.floor(h * this.theme.sectionCard.coverHeightRatio);
-        const coverLevel = section.levels.find((l) => l.id === (section as any).coverLevelId) ?? section.levels[0];
-
-        const coverContainer = new PIXI.Container();
-        coverContainer.x = pad;
-        coverContainer.y = pad;
-        root.addChild(coverContainer);
-
-        const mask = new PIXI.Graphics();
-        mask.beginFill(0xff0000);
-        mask.drawRoundedRect(0, 0, w - pad * 2, coverH - pad * 2, 30);
-        mask.endFill();
-        coverContainer.addChild(mask);
-
-        // Initial Sprite (White placeholder if no thumb)
         const coverSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
         coverSprite.anchor.set(0.5);
-        coverSprite.x = (w - pad * 2) / 2;
-        coverSprite.y = (coverH - pad * 2) / 2;
+        coverSprite.position.set(w / 2, coverH / 2);
+
+        const mask = new PIXI.Graphics().beginFill(0xff0000).drawRoundedRect(pad, pad, w - pad * 2, coverH - pad * 2, 30).endFill();
         coverSprite.mask = mask;
-        coverContainer.addChild(coverSprite);
+        root.addChild(mask, coverSprite);
 
-        const targetW = w - pad * 2;
-        const targetH = coverH - pad * 2;
+        // 3. Badges
+        const badgeGroup = new PIXI.Container();
+        const badgeSprite = new PIXI.Sprite();
+        badgeSprite.anchor.set(0.5);
+        const badgeText = new PIXI.Text("", { ...Assets.MainFont });
+        badgeText.anchor.set(0.5);
+        badgeGroup.addChild(badgeSprite, badgeText);
+        badgeGroup.position.set(50, 50);
+        badgeGroup.rotation = -0.2;
+        root.addChild(badgeGroup);
 
-        // --- 3. SYNC vs ASYNC TEXTURE LOGIC ---
-        if (coverLevel?.thumb) {
-            // CASE A: Thumb exists in cache/atlas - apply immediately
-            coverSprite.texture = PIXI.Texture.from(coverLevel.thumb);
-            const scale = ViewUtils.elementEvelop(coverSprite, targetW, targetH);
-            coverSprite.scale.set(scale + 0.05);
-        }
-        else if (coverLevel?.imageSrc) {
-            // CASE B: No thumb, must load image file async
-            PIXI.Assets.load(coverLevel.imageSrc).then((tex: PIXI.Texture) => {
-                if (coverSprite.destroyed) return;
-                coverSprite.texture = tex;
-                const scale = ViewUtils.elementEvelop(coverSprite, targetW, targetH);
-                coverSprite.scale.set(scale + 0.05);
-            });
-        }
-        else if (override?.defaultCoverTexture) {
-            coverSprite.texture = override.defaultCoverTexture;
-            const scale = ViewUtils.elementEvelop(coverSprite, targetW, targetH);
-            coverSprite.scale.set(scale + 0.05);
-        }
-
-        // --- 4. UI OVERLAYS (BADGES & TEXT) ---
-        const overlay = new PIXI.Graphics()
-            .beginFill(0x000000, this.theme.sectionCard.coverOverlayAlpha)
-            .drawRoundedRect(pad, pad, w - pad * 2, coverH - pad * 2, 30)
-            .endFill();
-        root.addChild(overlay);
-
-        if (section.type === 1 || section.type === 2) {
-            const isType1 = section.type === 1;
-            const badgeTex = isType1 ? Assets.Textures.Icons.Badge1 : Assets.Textures.Icons.Badge2;
-            const labelText = isType1 ? Assets.Labels.Hot : Assets.Labels.New;
-
-            const badge = PIXI.Sprite.from(badgeTex);
-            badge.anchor.set(0.5);
-            badge.scale.set(ViewUtils.elementScaler(badge, 100));
-            badge.x = 20;
-            badge.y = 20;
-            badge.rotation = -0.3;
-            root.addChild(badge);
-
-            const badgeText = new PIXI.Text(labelText, { ...Assets.MainFont });
-            badgeText.anchor.set(0.5);
-            badge.addChild(badgeText);
-        }
-
-        const nameText = new PIXI.Text(section.name, override?.cardTitleStyle ?? this.theme.sectionCard.cardTitleStyle);
+        // 4. Labels
+        const nameText = new PIXI.Text("", this.theme.sectionCard.cardTitleStyle);
         nameText.x = pad;
-        nameText.y = h - nameText.height - pad;
         root.addChild(nameText);
 
-        const completionStyle = override?.cardCompletionStyle ?? this.theme.sectionCard.cardCompletionStyle;
-        const completionText = new PIXI.Text("", completionStyle);
-        const compData = getSectionCompletion(progress, section);
-        const pct = compData.total > 0 ? Math.floor((compData.done / compData.total) * 100) : 0;
-        completionText.text = `${pct}%`;
+        // NEW: Puzzle Count Label
+        const puzzleCountText = new PIXI.Text("", {
+            ...this.theme.sectionCard.cardCompletionStyle,
+            fontSize: 16, // Slightly smaller than title
+            //alpha: 0.8    // Slightly faded for hierarchy
+        });
+        puzzleCountText.x = pad;
+        root.addChild(puzzleCountText);
+
+        const completionPill = new PIXI.Sprite(this.theme.sectionCard.completionPillTexture!);
+        completionPill.anchor.set(0.5);
+
+        const completionText = new PIXI.Text("", this.theme.sectionCard.cardCompletionStyle);
         completionText.anchor.set(0.5);
+        completionPill.addChild(completionText);
+        root.addChild(completionPill);
 
-        if (this.theme.sectionCard.completionPillTexture && this.theme.sectionCard.completionPillNineSlice) {
-            const ns = this.theme.sectionCard.completionPillNineSlice;
-            const pill = new PIXI.NineSlicePlane(this.theme.sectionCard.completionPillTexture, ns.left, ns.top, ns.right, ns.bottom);
-            pill.width = 80;
-            pill.height = 80;
-            pill.x = w - pill.width - 12;
-            pill.y = h - pill.height - pad;
-            root.addChild(pill);
-            completionText.x = pill.x + pill.width / 2;
-            completionText.y = pill.y + pill.height / 2;
-            root.addChild(completionText);
-        } else {
-            completionText.x = w - completionText.width - 12;
-            completionText.y = h - pad - 20;
-            root.addChild(completionText);
-        }
+        root.update = (s, prog) => {
+            nameText.text = s.name;
 
+            // Update Puzzle Count text
+            puzzleCountText.text = `${s.levels.length} Puzzles`;
+
+            // Stacked Positioning: Name above Puzzle Count
+            const totalTextHeight = nameText.height + puzzleCountText.height;
+            nameText.y = h - totalTextHeight - pad / 2;
+            puzzleCountText.y = nameText.y + nameText.height;
+
+            // Update Badge
+            if (s.type === 1 || s.type === 2) {
+                badgeGroup.visible = true;
+                badgeSprite.texture = PIXI.Texture.from(s.type === 1 ? Assets.Textures.Icons.Badge1 : Assets.Textures.Icons.Badge2);
+                badgeText.text = s.type === 1 ? Assets.Labels.Hot : Assets.Labels.New;
+                badgeSprite.scale.set(ViewUtils.elementScaler(badgeSprite, 100));
+            } else {
+                badgeGroup.visible = false;
+            }
+
+            // Update Completion
+            const compData = getSectionCompletion(prog, s);
+            const pct = compData.total > 0 ? Math.floor((compData.done / compData.total) * 100) : 0;
+            completionText.text = `${pct}%`;
+
+            completionPill.position.set(w - pad - 20, h - pad - 20);
+            completionText.position.set(0, 0);
+            completionText.scale.set(2);
+            completionPill.scale.set(ViewUtils.elementScaler(completionPill, 80));
+
+            // Image loading logic
+            const coverLevel = s.levels.find((l) => l.id === (s as any).coverLevelId) ?? s.levels[0];
+            const imgSrc = coverLevel?.thumb || coverLevel?.imageSrc;
+
+            if (imgSrc) {
+                const targetW = w - pad * 2;
+                const targetH = coverH - pad;
+
+                const applyTexture = (tex: PIXI.Texture) => {
+                    coverSprite.texture = tex;
+                    const scale = ViewUtils.elementEvelop(coverSprite, targetW, targetH);
+                    coverSprite.scale.set(scale + 0.05);
+                };
+
+                if (PIXI.Assets.cache.has(imgSrc)) {
+                    applyTexture(PIXI.Assets.get(imgSrc));
+                } else {
+                    PIXI.Assets.load(imgSrc).then((tex) => {
+                        if (!root.destroyed) applyTexture(tex);
+                    });
+                }
+            }
+        };
+
+        root.update(section, progress);
         return root;
     }
 
@@ -242,240 +205,130 @@ export class LevelSelectViewFactory {
         h: number,
         progress: any,
         unlocked: boolean,
-        onDifficultyPressed: (levelId: string, difficulty: Difficulty) => void,
-        onPurchasePressed: (levelId: string) => void
-    ): PIXI.Container {
-        const root = new PIXI.Container();
-
-        // Background
-        if (this.theme.levelRow.useNineSliceBg && this.theme.levelRow.bgTexture && this.theme.levelRow.bgNineSlice) {
-            const ns = this.theme.levelRow.bgNineSlice;
-            const bg = new PIXI.NineSlicePlane(unlocked ? this.theme.levelRow.bgTexture : this.theme.levelRow.bgTextureLocked, ns.left, ns.top, ns.right, ns.bottom);
-            bg.width = w;
-            bg.height = h;
-            root.addChild(bg);
-        }
-        else {
-            const g = new PIXI.Graphics();
-            g.beginFill(0x242424);
-            g.drawRoundedRect(0, 0, w, h, this.theme.levelRow.rowCornerRadius);
-            g.endFill();
-            root.addChild(g);
-        }
-
+        onDifficultyPressed: (id: string, d: Difficulty) => void,
+        onPurchasePressed: (id: string) => void
+    ): LevelRowComponent {
+        const root = new PIXI.Container() as LevelRowComponent;
         const pad = this.theme.levelRow.rowPadding;
         const thumbSize = this.theme.levelRow.thumbSize;
 
-        const title = new PIXI.Text(level.name, this.theme.levelRow.titleStyle);
-        title.x = w / 2;
-        title.y = pad / 2// thumbSize + pad * 2;
-        title.anchor.set(0.5, 0)
+        const bg = new PIXI.NineSlicePlane(this.theme.levelRow.bgTexture!, 40, 40, 40, 40);
+        bg.width = w;
+        bg.height = h;
+        root.addChild(bg);
+
+        const title = new PIXI.Text("", this.theme.levelRow.titleStyle);
+        title.anchor.set(0.5, 0);
+        title.position.set(w / 2, pad);
         root.addChild(title);
 
+        // Thumbnail with local coordinate mask
+        const thumbContainer = new PIXI.Container();
+        const thumbSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
+        thumbSprite.anchor.set(0.5);
+        const thumbMask = new PIXI.Graphics()
+            .beginFill(0x000000)
+            .drawRoundedRect(-thumbSize / 2, -thumbSize / 2, thumbSize, thumbSize, 14)
+            .endFill();
+        thumbSprite.mask = thumbMask;
+        thumbContainer.addChild(thumbMask, thumbSprite);
+        root.addChild(thumbContainer);
 
-        const thumbC = new PIXI.Container();
-        const thumb = PIXI.Sprite.from(level.thumb || level.imageSrc);
-        thumb.width = thumbSize;
-        thumb.height = thumbSize;
-        thumb.scale.set(ViewUtils.elementEvelop(thumb, thumbSize))
+        const lockedGroup = new PIXI.Container();
+        const unlockedGroup = new PIXI.Container();
+        root.addChild(lockedGroup, unlockedGroup);
 
-        const mask = new PIXI.Graphics();
-        mask.beginFill(0x2a2a2a);
-        mask.drawRoundedRect(0, 0, thumbSize, thumbSize, 14);
-        mask.endFill();
-        thumb.mask = mask;
-
-        thumbC.addChild(thumb);
-
-        const c2 = makeResizedSpriteTexture(Game.renderer, thumbC, 0, 0)
-        root.addChild(c2);
-        c2.x = !unlocked ? w / 2 - thumbSize / 2 : w / 2 - thumbSize - pad;
-        c2.y = title.y + title.height + 10;
-
-        const yBtn = c2.y + thumbSize + pad / 2 + 10;
-        thumbC.destroy();
-        thumb.destroy();
-
-
-        if (!unlocked) {
-            const cost = level.unlockCost ?? 0;
-
-            const purchaseBtn = this.createPurchaseButton(cost, level.id, onPurchasePressed);
-            purchaseBtn.x = w / 2 - purchaseBtn.width / 2;
-            purchaseBtn.y = yBtn;
-            root.addChild(purchaseBtn);
-
-            return root;
-        }
+        const purchaseBtn = this.createPurchaseButton(onPurchasePressed);
+        lockedGroup.addChild(purchaseBtn);
 
         const diffs: Difficulty[] = ["easy", "medium", "hard"];
-        const spacing = 10;
-        // 1. Calculate the total width of all buttons and their gaps
-        const rewardsList = this.createDifficultyRewardsList(level.id, progress, level);
-        rewardsList.x = c2.x + thumbSize + 20;
-        rewardsList.y = c2.y + 5;
-        root.addChild(rewardsList);
-        // 2. Set the starting x so the group is centered
-
-        const btnW = this.theme.buttonSkins['difficultyEasy'];
-        const totalWidth = (diffs.length * btnW.standard.width) + ((diffs.length - 1) * spacing);
-        let currentX = (w - totalWidth) / 2;
-
-        for (const d of diffs) {
-            const done = getLevelDifficultyCompleted(progress, level.id, d);
-            const btn = this.createDifficultyButton((section as any).id ?? section.name, d, done);
-
-            // 3. Position the button
-            btn.x = currentX;
-            btn.y = yBtn;
-
-            btn.on("pointertap", () => {
-                onDifficultyPressed(level.id, d);
-            });
-
-            let label = "medium"
-            if (d == "easy") {
-                label = "small"
-            } else if (d == "hard") {
-                label = "large"
-            }
-            btn.setLabel(label);
-            root.addChild(btn);
-
-            // 4. Increment x for the next button
-            currentX += btn.width + spacing;
-        }
-
-        return root;
-    }
-    private createPurchaseButton(cost: number, id: string, onPurchasePressed: (levelId: string) => void): BaseButton {
-        const skin = this.theme.buttonSkins["purchase"];
-        const economy = InGameEconomy.instance; // Import your Singleton
-
-        const btn = new BaseButton({
-            standard: { ...skin.standard },
-            over: { ...skin.over },
-            disabled: { ...skin.disabled },
-            down: {
-                texture: skin.down?.texture,
-                callback: () => {
-                    onPurchasePressed(id);
-                }
-            },
+        const diffBtns = diffs.map((d) => {
+            const btn = this.createDifficultyButton(undefined, d, false);
+            btn.on("pointertap", () => (root as any).currentLevelId && onDifficultyPressed((root as any).currentLevelId, d));
+            unlockedGroup.addChild(btn);
+            return btn;
         });
 
-        //btn.setLabel(`Unlock ${cost}`);
-        btn.setLabel(`${cost}`);
+        const rewardsContainer = new PIXI.Container();
+        unlockedGroup.addChild(rewardsContainer);
 
-        // Function to update the button state
-        // const updateEnableState = (currentCoins: number) => {
-        //     if (currentCoins < cost) {
-        //         btn.disable();
-        //         // Optional: set alpha or tint to look "greyed out" if BaseButton doesn't do it
-        //         btn.alpha = 0.5;
-        //     } else {
-        //         btn.enable();
-        //         btn.alpha = 1;
-        //     }
-        // };
+        root.update = (lvl, sec, prog, isUnlocked) => {
+            (root as any).currentLevelId = lvl.id;
+            title.text = lvl.name;
+            bg.texture = isUnlocked ? this.theme.levelRow.bgTexture! : this.theme.levelRow.bgTextureLocked!;
 
-        // Initial check
+            const imgSrc = lvl.thumb || lvl.imageSrc;
+            if (imgSrc) {
+                const applyTex = (tex: PIXI.Texture) => {
+                    thumbSprite.texture = tex;
+                    thumbSprite.scale.set(ViewUtils.elementEvelop(thumbSprite, thumbSize, thumbSize));
+                };
+                PIXI.Assets.cache.has(imgSrc) ? applyTex(PIXI.Assets.get(imgSrc)) : PIXI.Assets.load(imgSrc).then(applyTex);
+            }
 
-        const updateEnableState = () => {
-            const hasNormal = economy.coins >= cost;
-            // const hasSpecial = economy.gems >= specialCost; // if applicable
+            thumbContainer.y = title.y + title.height + thumbSize / 2 + 10;
+            lockedGroup.visible = !isUnlocked;
+            unlockedGroup.visible = isUnlocked;
 
-            if (hasNormal) {
-                btn.enable();
-                btn.alpha = 1;
+            if (!isUnlocked) {
+                thumbContainer.x = w / 2;
+                (purchaseBtn as any).targetId = lvl.id;
+                (purchaseBtn as any).currentCost = lvl.unlockCost ?? 0;
+                (purchaseBtn as any).refreshState();
+                purchaseBtn.setLabel(`${lvl.unlockCost}`);
+                purchaseBtn.position.set(w / 2 - purchaseBtn.width / 2, h - pad - purchaseBtn.height);
             } else {
-                btn.disable();
-                // btn.alpha = 0.5;
+                thumbContainer.x = w / 2 - thumbSize / 2 - pad;
+                this.updateRewardsList(rewardsContainer, lvl.id, prog, lvl);
+                rewardsContainer.position.set(thumbContainer.x + thumbSize / 2 + 20, thumbContainer.y - thumbSize / 2);
+
+                const b1 = diffBtns[0].width
+                let curX = (w - (3 * b1 + 20)) / 2;
+                diffBtns.forEach((btn, idx) => {
+                    btn.setLabel(diffs[idx] === "easy" ? "small" : diffs[idx] === "hard" ? "large" : "medium");
+                    btn.position.set(curX, h - pad - btn.height);
+                    curX += btn.width + 10;
+                });
             }
         };
-        updateEnableState();
 
-        economy.onCoinsChanged.add(updateEnableState);
-        economy.onGemsChanged.add(updateEnableState);
-
-        // Listen for future changes
-        economy.onCoinsChanged.add(updateEnableState);
-
-        // IMPORTANT: Cleanup to prevent memory leaks when the row is destroyed
-        btn.on('destroyed', () => {
-            console.log('destroy')
-            economy.onCoinsChanged.remove(updateEnableState);
-            economy.onGemsChanged.remove(updateEnableState);
-        });
-
-        return btn;
-    }
-    public createDifficultyButton(sectionId: string | undefined, d: Difficulty, completed: boolean): BaseButton {
-        const skinKey = getDifficultySkinKey(this.theme, sectionId, d);
-        const skin = this.theme.buttonSkins[skinKey];
-
-        const str = completed ? { ...skin.standard, ...skin.completed } : { ...skin.standard };
-
-        const btn = new BaseButton({
-            standard: str,
-            over: { ...skin.over },
-            down: {
-                texture: skin.down?.texture,
-            },
-        });
-
-        return btn;
+        root.update(level, section, progress, unlocked);
+        return root;
     }
 
-    private createDifficultyRewardsList(levelId: string, progress: any, definition: LevelDefinition): PIXI.Container {
-        const container = new PIXI.Container();
-        const diffs: Difficulty[] = ["easy", "medium", "hard"];
-        const rowHeight = 35; // Adjust based on your UI scale
-        const iconSize = 30;
-
-        let c = 0
-        diffs.forEach((d, index) => {
+    private updateRewardsList(container: PIXI.Container, levelId: string, progress: any, definition: LevelDefinition) {
+        container.removeChildren().forEach(c => c.destroy());
+        ["easy", "medium", "hard"].forEach((d, i) => {
             const row = new PIXI.Container();
-            row.y = index * (rowHeight + 5);
-
-            const isCompleted = getLevelDifficultyCompleted(progress, levelId, d);
-
-            // 1. Level/Status Icon
-            let statusIcon: PIXI.Sprite;
-            if (isCompleted) {
-                statusIcon = PIXI.Sprite.from(Assets.Textures.Icons.CheckItem); // Replace with your check asset key
-                //(statusIcon as PIXI.Sprite).tint = 0x00FF00;
-            } else {
-                statusIcon = PIXI.Sprite.from(`jiggy${d}`); // Replace with difficulty icons
-            }
-            //statusIcon.width = statusIcon.height = iconSize;
-
-            statusIcon.scale.set(ViewUtils.elementScaler(statusIcon, iconSize, iconSize))
-            row.addChild(statusIcon);
-
-            const p = definition.isSpecial ? definition.prizesSpecial[c] : definition.prize[c]
-            // 2. Text (Value or "Completed")
-            const labelText = isCompleted ? "COMPLETED" : p; // Example reward value
-            c++
-            const style = isCompleted ? this.theme.levelRow.questStyle : this.theme.levelRow.questStyle;
-            const txt = new PIXI.Text(labelText, style || { fontSize: 14, fill: 0xffffff });
-            txt.x = iconSize + 10;
-            row.addChild(txt);
-
-            // 3. Currency Icon (Only if not completed)
-            if (!isCompleted) {
-                const t = definition.isSpecial ? Assets.Textures.Icons.Gem : Assets.Textures.Icons.Coin
-                const coin = PIXI.Sprite.from(t);
-                coin.scale.set(ViewUtils.elementScaler(coin, iconSize, iconSize))
-
-                coin.x = txt.x + txt.width + 5;
-                coin.y = 2;
-                row.addChild(coin);
-            }
-
+            row.y = i * 40;
+            const isDone = getLevelDifficultyCompleted(progress, levelId, d as Difficulty);
+            const icon = PIXI.Sprite.from(isDone ? Assets.Textures.Icons.CheckItem : `jiggy${d}`);
+            icon.scale.set(ViewUtils.elementScaler(icon, 30, 30));
+            const prizeText = new PIXI.Text(isDone ? "DONE" : (definition.isSpecial ? (definition.prizesSpecial?.[i] ?? "0") : (definition.prize?.[i] ?? "0")), this.theme.levelRow.questStyle);
+            prizeText.x = 40;
+            row.addChild(icon, prizeText);
             container.addChild(row);
         });
+    }
 
-        return container;
+    private createDifficultyButton(secId: string | undefined, d: Difficulty, done: boolean): BaseButton {
+        const skin = this.theme.buttonSkins[getDifficultySkinKey(this.theme, secId, d)];
+        return new BaseButton({ standard: done ? { ...skin.standard, ...skin.completed } : skin.standard, over: skin.over });
+    }
+
+    private createPurchaseButton(onPurchase: (id: string) => void): BaseButton {
+        const skin = this.theme.buttonSkins["purchase"];
+        const btn = new BaseButton({
+            standard: skin.standard, over: skin.over, disabled: skin.disabled,
+            down: { callback: () => onPurchase((btn as any).targetId) }
+        });
+        (btn as any).refreshState = () => {
+            const canAfford = InGameEconomy.instance.coins >= ((btn as any).currentCost || 0);
+            canAfford ? btn.enable() : btn.disable();
+            btn.alpha = canAfford ? 1 : 0.5;
+        };
+        InGameEconomy.instance.onCoinsChanged.add((btn as any).refreshState);
+        btn.on('destroyed', () => InGameEconomy.instance.onCoinsChanged.remove((btn as any).refreshState));
+        return btn;
     }
 }

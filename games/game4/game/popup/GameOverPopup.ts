@@ -1,17 +1,21 @@
 import { BasePopup, PopupData } from '@core/popup/BasePopup';
-import BaseButton from '@core/ui/BaseButton';
+import BaseButton, { ButtonState } from '@core/ui/BaseButton';
 import { TimerConversionUtils } from '@core/utils/TimeConversionUtils';
+import { LevelDefinition } from 'games/game4/types';
 import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
 import MatchManager from '../2048/scene/MatchManager';
 import Assets from '../jigsaw/Assets';
-import { PlayLevelRequest } from '../jigsaw/progress/LevelSelectMediator';
+import GameplayJigsawScene from '../jigsaw/GameplayJigsawScene';
 import { ConfettiEffect } from '../jigsaw/ui/ConfettiEffect';
+import { CurrencyHud } from '../jigsaw/ui/CurrencyHud';
+import { NextLevelCard } from '../jigsaw/ui/NextLevelCard';
+import { CoinEffect } from '../jigsaw/vfx/CoinEffect';
 
 interface GameOverPopupData extends PopupData {
     matchManager: MatchManager;
     rewardAmount: number;
-    nextPuzzle?: PlayLevelRequest;
+    nextPuzzle?: LevelDefinition;
     isSpecial?: boolean;
 }
 
@@ -33,6 +37,14 @@ export class GameOverPopup extends BasePopup {
 
     private confetti: ConfettiEffect;
     private displayReward: number = 0;
+
+    private currencyHud: CurrencyHud;
+
+    private coinEffect: CoinEffect;
+    private lastCeilReward: number = 0; // To track integer changes
+
+    private nextLevelCard: NextLevelCard;
+    private tempNextLevel: LevelDefinition | undefined;;
 
     constructor() {
         super();
@@ -59,7 +71,7 @@ export class GameOverPopup extends BasePopup {
         this.addChild(this.flag);
 
         // 3. Title Label
-        this.titleLabel = new PIXI.Text('PUZZLE SOLVED!', new PIXI.TextStyle({ ...Assets.MainFont, fontSize: 42, strokeThickness: 10 }));
+        this.titleLabel = new PIXI.Text('PUZZLE SOLVED!', new PIXI.TextStyle({ ...Assets.MainFontTitle, fontSize: 42, strokeThickness: 10 }));
         this.titleLabel.anchor.set(0.5);
         this.titleLabel.y = -250;
         this.addChild(this.titleLabel);
@@ -106,10 +118,42 @@ export class GameOverPopup extends BasePopup {
         this.continueButton.visible = false;
         this.addChild(this.continueButton);
 
+
+        this.currencyHud = new CurrencyHud({
+            textStyle: new PIXI.TextStyle({
+                ...Assets.MainFont, fontSize: 42,
+                //strokeThickness: 8,
+            }),
+            currencyIcon: Assets.Textures.Icons.Coin,// 'ResourceBar_Single_Icon_Coin',
+            specialCurrencyIcon: 'ResourceBar_Single_Icon_Gem',
+            bgTexture: PIXI.Texture.from(Assets.Textures.UI.FadeShape),// PIXI.Texture.from('fade-shape'),
+            bgNineSlice: { left: 10, top: 10, right: 10, bottom: 10 },
+            padding: 20
+        });
+        this.addChild(this.currencyHud);
+        this.currencyHud.x = -this.currencyHud.width / 2
+        this.currencyHud.y = - 400
+
         this.visible = false;
 
         this.confetti = new ConfettiEffect(150);
         this.addChild(this.confetti);
+
+        this.coinEffect = new CoinEffect();
+        this.addChild(this.coinEffect); // Add on top of other elements
+
+        this.nextLevelCard = new NextLevelCard(280, 350);
+        this.nextLevelCard.y = 0; // Position below the reward
+        this.nextLevelCard.onClicked.add(() => {
+            GameplayJigsawScene.FLOATING_LEVEL = this.tempNextLevel;
+
+            this.popupManager.hideCurrent()
+
+        })
+        //this.nextLevelCard.visible = false;
+        // this.nextLevelCard.onClicked.add(() => this.onNextLevelClicked());
+        this.addChild(this.nextLevelCard);
+
     }
 
     override update(delta: number): void {
@@ -122,11 +166,15 @@ export class GameOverPopup extends BasePopup {
     }
 
     async transitionIn(data: GameOverPopupData): Promise<void> {
-        console.log(data)
+        console.log(data.nextPuzzle)
         this.visible = true;
         this.alpha = 1;
 
         this.confetti.start();
+
+        if (data.nextPuzzle) {
+
+        }
         // Reset states
         this.displayReward = 0;
         this.rewardText.text = "";
@@ -134,30 +182,72 @@ export class GameOverPopup extends BasePopup {
 
         const tl = gsap.timeline();
 
+        this.lastCeilReward = 0;
+
         // 1. Fade in Background & Shine
         tl.fromTo([this.blackout, this.shine, this.titleLabel], { alpha: 0 }, { alpha: 1, duration: 0.5 });
 
         this.prizeIcon.texture = data.isSpecial ? PIXI.Texture.from(Assets.Textures.Icons.Gem) : PIXI.Texture.from(Assets.Textures.Icons.Coin);
         // 2. Pop the Prize Icon
-        tl.to(this.prizeIcon.scale, { x: 2, y: 2, duration: 0.4, ease: "back.out(1.7)" });
+        tl.to(this.prizeIcon.scale, { x: 1.25, y: 1.25, duration: 0.4, ease: "back.out(1.7)" });
 
+        // 4. Fade in Timer
+        this.timerText.y = -100
+        this.timerText.alpha = 0
+        tl.to(this.timerText, { alpha: 1, y: -150, duration: 0.5, ease: "power2.out" });
         // 3. Show and Tween Reward Value
         tl.to(this.rewardText, { alpha: 1, duration: 0.2 }, "-=0.2");
         tl.to(this, {
-            displayReward: data.rewardAmount || 100,
-            duration: 1,
-            ease: "power1.out",
+            displayReward: data.rewardAmount || 30,
+            duration: 1.5, // Slightly longer looks nicer with coins
+            ease: "power1.inOut",
             onUpdate: () => {
-                this.rewardText.text = `${Math.ceil(this.displayReward)}`;
+                const currentCeil = Math.ceil(this.displayReward);
+
+                // If the integer changed, fire a coin
+                if (currentCeil > this.lastCeilReward) {
+                    this.rewardText.text = `${currentCeil}`;
+
+                    // Fire coin effect
+                    this.coinEffect.flyCoinFromTo(
+                        { x: this.rewardText.x, y: this.rewardText.y },
+                        { x: this.currencyHud.x, y: this.currencyHud.y },
+                        0.6,
+                        () => this.currencyHud.popCoin() // Your requested function
+                    );
+
+                    this.lastCeilReward = currentCeil;
+                }
             }
         });
 
-        // 4. Fade in Timer
-        tl.to(this.timerText, { alpha: 1, y: 180, duration: 0.5, ease: "power2.out" });
+        this.tempNextLevel = undefined;
+        if (data.nextPuzzle) {
+            console.log(data)
 
-        // 5. Show Continue Button
+            this.tempNextLevel = data.nextPuzzle;
+            this.continueButton.setLabel('QUIT');
+            this.continueButton.overrider(ButtonState.STANDARD, { texture: PIXI.Texture.from(Assets.Textures.Buttons.Grey) })
+
+
+
+            this.nextLevelCard.visible = true;
+            this.nextLevelCard.setup(data.nextPuzzle);
+
+            this.nextLevelCard.x = 0// - this.nextLevelCard.width / 2
+
+            // Animate it in with the rest of the UI
+            tl.fromTo(this.nextLevelCard, { alpha: 0, y: 500 }, { alpha: 1, y: 60, duration: 0.5 }, "-=0.3");
+        } else {
+            this.continueButton.setLabel('CONTINUE');
+            this.continueButton.overrider(ButtonState.STANDARD, { texture: PIXI.Texture.from(Assets.Textures.Buttons.Blue) })
+
+            this.nextLevelCard.visible = false;
+
+        }
+
         tl.set(this.continueButton, { visible: true });
-        tl.to(this.continueButton, { alpha: 1, y: 250, duration: 0.5, ease: "back.out(1.2)" });
+        tl.to(this.continueButton, { alpha: 1, y: 260, duration: 0.5, ease: "back.out(1.2)" });
 
         await tl;
     }

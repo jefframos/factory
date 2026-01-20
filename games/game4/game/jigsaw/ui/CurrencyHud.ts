@@ -1,6 +1,7 @@
 import ViewUtils from '@core/utils/ViewUtils';
 import { gsap } from 'gsap'; // or your preferred tweening library
 import * as PIXI from 'pixi.js';
+import Assets from '../Assets';
 import { InGameEconomy } from '../data/InGameEconomy';
 
 export class CurrencyHud extends PIXI.Container {
@@ -45,7 +46,7 @@ export class CurrencyHud extends PIXI.Container {
         //items.addChild(this.gemIcon, this.gemLabel);
         this.addChild(this.background = new PIXI.NineSlicePlane(bgTexture, bgNineSlice.left, bgNineSlice.top, bgNineSlice.right, bgNineSlice.bottom));
         this.addChild(items);
-        this.background.alpha = 0.3
+        //this.background.alpha = 0.3
         this.refreshLayout();
 
         this.coinIcon.scale.set(ViewUtils.elementScaler(this.coinIcon, this.iconSize * 2))
@@ -87,7 +88,15 @@ export class CurrencyHud extends PIXI.Container {
             }
         });
     }
-
+    public addCoin(amount: number) {
+        this.displayCoins += amount;
+        this.coinLabel.text = Math.floor(this.displayCoins).toString()
+    }
+    public popCoin() {
+        this.addCoin(1)
+        this.popIcon(this.coinIcon)
+        Assets.tryToPlaySound(Assets.Sounds.UI.Coin1)
+    }
     private popIcon(icon: PIXI.Sprite): void {
         // Quick scale up and back down
 
@@ -118,6 +127,6 @@ export class CurrencyHud extends PIXI.Container {
 
         // Resize Background
         this.background.width = this.coinLabel.x + this.coinLabel.width + p;
-        this.background.height = 50; // Or dynamic based on text height
+        this.background.height = 55; // Or dynamic based on text height
     }
 }

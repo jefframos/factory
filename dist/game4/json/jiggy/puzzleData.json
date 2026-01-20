@@ -18,6 +18,13 @@
             "enabled": true,
             "items": [
                 {
+                    "id": "cutePuppies-1",
+                    "enabled": true,
+                    "type": 2,
+                    "json": "cutePuppies-1.json",
+                    "sectionCost": 0
+                },
+                {
                     "id": "animeGirl-1",
                     "enabled": true,
                     "type": 2,
@@ -27,7 +34,7 @@
                 {
                     "id": "cozyGirls",
                     "enabled": true,
-                    "type": 2,
+                    "type": 0,
                     "json": "cozyGirls.json",
                     "sectionCost": 0
                 },
@@ -48,14 +55,14 @@
                 {
                     "id": "cuteAnimals",
                     "enabled": true,
-                    "type": 0,
+                    "type": 1,
                     "json": "cuteAnimals.json",
                     "sectionCost": 0
                 },
                 {
                     "id": "fastFood",
                     "enabled": true,
-                    "type": 1,
+                    "type": 0,
                     "json": "fastFood.json",
                     "sectionCost": 0
                 },

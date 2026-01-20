@@ -29,6 +29,22 @@
         },
         {
           "alias": [
+            "Coin1.wav"
+          ],
+          "src": [
+            "Coin1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Coin2.mp3"
+          ],
+          "src": [
+            "Coin2.mp3"
+          ]
+        },
+        {
+          "alias": [
             "Hover.wav"
           ],
           "src": [

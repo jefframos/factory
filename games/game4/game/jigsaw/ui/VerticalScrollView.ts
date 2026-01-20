@@ -2,6 +2,9 @@
 import * as PIXI from "pixi.js";
 
 export class VerticalScrollView extends PIXI.Container {
+
+    public onScroll: () => void = () => { };
+
     public readonly content: PIXI.Container = new PIXI.Container();
 
     private readonly maskGfx: PIXI.Graphics = new PIXI.Graphics();
@@ -60,8 +63,33 @@ export class VerticalScrollView extends PIXI.Container {
 
         super.destroy(options);
     }
+    public get currentScroll(): number { return this.scrollY; }
 
+    public get maxScroll(): number {
+        return Math.max(0, this.contentHeight() - this.viewH + 50);
+    }
+
+    private clampAndApply(): void {
+        const maxScroll = this.maxScroll;
+
+        if (this.scrollY < 0) this.scrollY = 0;
+        if (this.scrollY > maxScroll) this.scrollY = maxScroll;
+
+        this.content.y = -this.scrollY;
+
+        // Notify the view that the scroll position changed
+        this.onScroll();
+    }
+
+    // Existing methods to help the view scroll programmatically
+    public scrollBy(delta: number): void {
+        this.scrollY += delta;
+        this.clampAndApply();
+    }
     public setSize(viewW: number, viewH: number): void {
+        if (this.viewW == viewW && this.viewH == viewH) {
+            return;
+        }
         this.viewW = viewW;
         this.viewH = viewH;
 
@@ -129,20 +157,6 @@ export class VerticalScrollView extends PIXI.Container {
         this.clampAndApply();
     }
 
-    private clampAndApply(): void {
-        const contentH = this.contentHeight();
-        const maxScroll = Math.max(0, contentH - this.viewH);
-
-        if (this.scrollY < 0) {
-            this.scrollY = 0;
-        }
-
-        if (this.scrollY > maxScroll) {
-            this.scrollY = maxScroll;
-        }
-
-        this.content.y = -this.scrollY;
-    }
 
     private contentHeight(): number {
         const b = this.content.getLocalBounds();

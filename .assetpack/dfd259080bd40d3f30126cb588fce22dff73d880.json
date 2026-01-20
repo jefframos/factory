@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768908632211,
-                "duration": 0.9682999999999993,
+                "date": 1768943583262,
+                "duration": 1.2644000000000233,
                 "success": true
             }
         },
@@ -88,6 +88,60 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/audio/Bubbles.mp3": {
             "isFolder": false,
             "transformParent": ".assetpack/ffmpeg/Bubbles.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/audio/Coin1.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1768943583263,
+                "duration": 2184.5654999999997,
+                "success": true
+            },
+            "hash": "sPfZuQ"
+        },
+        ".assetpack/ffmpeg/Coin1.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/audio/Coin1.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/audio/Coin1.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Coin1.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/audio/Coin2.mp3": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1768943583264,
+                "duration": 65.50350000000003,
+                "success": true
+            },
+            "hash": "_YCHfw"
+        },
+        ".assetpack/ffmpeg/Coin2.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/audio/Coin2.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/audio/Coin2.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Coin2.mp3",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

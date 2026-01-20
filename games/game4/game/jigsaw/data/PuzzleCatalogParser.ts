@@ -102,7 +102,7 @@ export class PuzzleDataBuilder {
                     };
                 });
 
-                console.log(tier)
+                //console.log(tier)
                 const sectionDef: SectionDefinition = {
                     id: s.id,
                     name: s.name,
