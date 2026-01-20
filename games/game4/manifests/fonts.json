@@ -5,38 +5,20 @@
       "assets": [
         {
           "alias": [
-            "LEMONMILK-Bold.otf",
-            "LEMONMILK-Bold"
+            "Ourland.otf",
+            "Ourland"
           ],
           "src": [
-            "LEMONMILK-Bold.woff2"
+            "Ourland.woff2"
           ]
         },
         {
           "alias": [
-            "LEMONMILK-Regular.otf",
-            "LEMONMILK-Regular"
+            "Sniglet-Regular.ttf",
+            "Sniglet-Regular"
           ],
           "src": [
-            "LEMONMILK-Regular.woff2"
-          ]
-        },
-        {
-          "alias": [
-            "Poppins-Bold.ttf",
-            "Poppins-Bold"
-          ],
-          "src": [
-            "Poppins-Bold.woff2"
-          ]
-        },
-        {
-          "alias": [
-            "Poppins-Regular.ttf",
-            "Poppins-Regular"
-          ],
-          "src": [
-            "Poppins-Regular.woff2"
+            "Sniglet-Regular.woff2"
           ]
         }
       ]

@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768864945833,
-                "duration": 36.20480000041425,
+                "date": 1768915159554,
+                "duration": 30.145999999716878,
                 "success": true
             }
         },
@@ -128,10 +128,34 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768864945833,
-                "duration": 36.15210000053048,
+                "date": 1768915159554,
+                "duration": 30.087600000202656,
                 "success": true
             }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}/cozyGirls.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768913824616,
+                "duration": 3.406200001016259,
+                "success": true
+            },
+            "hash": "57XE-w"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/jiggy/cozyGirls.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}/cozyGirls.json",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}/cuteAnimals.json": {
             "isFolder": false,
@@ -238,39 +262,15 @@
             },
             "transformData": {},
             "stats": {
-                "date": 1768863761922,
-                "duration": 31.78269999846816,
+                "date": 1768915159554,
+                "duration": 30.103900000452995,
                 "success": true
             },
-            "hash": "E2qr4w"
+            "hash": "5DHRuw"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/jiggy/puzzleData.json": {
             "isFolder": false,
             "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}/puzzleData.json",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}/cozyGirls.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {},
-            "stats": {
-                "date": 1768864903205,
-                "duration": 28.278400000184774,
-                "success": true
-            },
-            "hash": "HGkP1g"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/jiggy/cozyGirls.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}/cozyGirls.json",
             "metaData": {},
             "inheritedMetaData": {
                 "copy": true
@@ -295,6 +295,30 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/jiggy/sportGirls.json": {
             "isFolder": false,
             "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}/sportGirls.json",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}/animeGirl-1.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1768915008998,
+                "duration": 4.616100000217557,
+                "success": true
+            },
+            "hash": "lQMUjA"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/json/jiggy/animeGirl-1.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/json/jiggy{copy}/animeGirl-1.json",
             "metaData": {},
             "inheritedMetaData": {
                 "copy": true
@@ -389,11 +413,11 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768863246543,
-                "duration": 29.315999999642372,
+                "date": 1768905582535,
+                "duration": 14.805900000035763,
                 "success": true
             },
-            "hash": "Gry-"
+            "hash": "0FM0Aw"
         },
         ".assetpack/json/tiled.json": {
             "isFolder": false,

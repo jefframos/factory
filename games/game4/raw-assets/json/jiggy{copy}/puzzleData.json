@@ -18,30 +18,37 @@
             "enabled": true,
             "items": [
                 {
+                    "id": "animeGirl-1",
+                    "enabled": true,
+                    "type": 2,
+                    "json": "animeGirl-1.json",
+                    "sectionCost": 0
+                },
+                {
                     "id": "cozyGirls",
                     "enabled": true,
-                    "type": 1,
+                    "type": 2,
                     "json": "cozyGirls.json",
                     "sectionCost": 0
                 },
                 {
                     "id": "sportGirls",
                     "enabled": true,
-                    "type": 2,
+                    "type": 0,
                     "json": "sportGirls.json",
                     "sectionCost": 0
                 },
                 {
                     "id": "cuteFood",
                     "enabled": true,
-                    "type": 1,
+                    "type": 0,
                     "json": "cuteFood.json",
                     "sectionCost": 0
                 },
                 {
                     "id": "cuteAnimals",
                     "enabled": true,
-                    "type": 1,
+                    "type": 0,
                     "json": "cuteAnimals.json",
                     "sectionCost": 0
                 },
@@ -55,7 +62,7 @@
                 {
                     "id": "fantasyCreatures",
                     "enabled": true,
-                    "type": 1,
+                    "type": 0,
                     "json": "fantasyCreatures.json",
                     "sectionCost": 0
                 }

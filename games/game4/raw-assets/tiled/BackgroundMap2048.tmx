@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="16" nextobjectid="238">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="16" nextobjectid="239">
  <editorsettings>
   <export target="../json/tiled.json" format="json"/>
  </editorsettings>
- <tileset firstgid="1" name="Background" tilewidth="734" tileheight="770" tilecount="30" columns="0">
+ <tileset firstgid="1" name="Background" tilewidth="411" tileheight="275" tilecount="5" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="3">
    <image source="images/ui/BubbleFrame01_Hexagon_Bg_Blue.png" width="250" height="243"/>
@@ -17,86 +17,11 @@
   <tile id="6">
    <image source="images/ui/Image_Effect_Rotate.png" width="270" height="275"/>
   </tile>
-  <tile id="7">
-   <image source="images/backgrounds/Background_Lobby_Bg_center.png"/>
-  </tile>
   <tile id="15">
    <properties>
     <property name="isTiled" type="float" value="256"/>
    </properties>
    <image source="images/terrain/grass-patch-1.png" width="256" height="256"/>
-  </tile>
-  <tile id="16">
-   <image source="images/backgrounds/forestpack_fence_wood_start_angular_south_east.png"/>
-  </tile>
-  <tile id="17">
-   <image source="images/backgrounds/forestpack_fence_wood_start_angular_south_west.png"/>
-  </tile>
-  <tile id="18">
-   <image source="images/backgrounds/forestpack_foliage_flower_1_south_east.png"/>
-  </tile>
-  <tile id="19">
-   <image source="images/backgrounds/forestpack_foliage_flower_1_south_west.png"/>
-  </tile>
-  <tile id="20">
-   <image source="images/backgrounds/forestpack_foliage_flower_2_south_east.png"/>
-  </tile>
-  <tile id="21">
-   <image source="images/backgrounds/forestpack_foliage_flower_2_south_west.png"/>
-  </tile>
-  <tile id="22">
-   <image source="images/backgrounds/forestpack_foliage_grassPatch_large_1_south_east.png"/>
-  </tile>
-  <tile id="23">
-   <image source="images/backgrounds/forestpack_foliage_grassPatch_large_1_south_west.png"/>
-  </tile>
-  <tile id="24">
-   <image source="images/backgrounds/forestpack_foliage_grassPatch_large_2_south_east.png"/>
-  </tile>
-  <tile id="25">
-   <image source="images/backgrounds/forestpack_foliage_grassPatch_large_2_south_west.png"/>
-  </tile>
-  <tile id="26">
-   <image source="images/backgrounds/forestpack_foliage_grassPatch_small_1_south_east.png"/>
-  </tile>
-  <tile id="27">
-   <image source="images/backgrounds/forestpack_foliage_grassPatch_small_1_south_west.png"/>
-  </tile>
-  <tile id="28">
-   <image source="images/backgrounds/forestpack_foliage_grassPatch_small_2_south_east.png"/>
-  </tile>
-  <tile id="29">
-   <image source="images/backgrounds/forestpack_foliage_grassPatch_small_2_south_west.png"/>
-  </tile>
-  <tile id="30">
-   <image source="images/backgrounds/forestpack_foliage_grassPatch_small_3_south_east.png"/>
-  </tile>
-  <tile id="31">
-   <image source="images/backgrounds/forestpack_foliage_grassPatch_small_3_south_west.png"/>
-  </tile>
-  <tile id="32">
-   <image source="images/backgrounds/forestpack_foliage_grassPatch_small_4_south_east.png"/>
-  </tile>
-  <tile id="33">
-   <image source="images/backgrounds/forestpack_foliage_grassPatch_small_4_south_west.png"/>
-  </tile>
-  <tile id="34">
-   <image source="images/backgrounds/forestpack_shrine_stair_2_moss_light_south_west.png"/>
-  </tile>
-  <tile id="35">
-   <image source="images/backgrounds/forestpack_shrine_stair_3_moss_light_south_east.png"/>
-  </tile>
-  <tile id="36">
-   <image source="images/backgrounds/forestpack_shrine_stair_3_moss_light_south_west.png"/>
-  </tile>
-  <tile id="37">
-   <image source="images/backgrounds/forestpack_shrine_stair_rubble_1_moss_light_south_east.png"/>
-  </tile>
-  <tile id="38">
-   <image source="images/backgrounds/forestpack_shrine_stair_rubble_1_moss_light_south_west.png"/>
-  </tile>
-  <tile id="39">
-   <image source="images/backgrounds/rocks/rocks0001.png"/>
   </tile>
  </tileset>
  <tileset firstgid="41" name="UI" tilewidth="609" tileheight="601" tilecount="157" columns="0">
@@ -870,7 +795,7 @@ to move the pieces</text>
  </objectgroup>
  <objectgroup draworder="index" id="11" name="ConfirmationPopup">
   <object id="236" gid="215" x="-270.333" y="-150" width="537.667" height="100"/>
-  <object id="126" x="-186.667" y="-248" width="366.667" height="66.6667">
+  <object id="126" x="-186.667" y="-238" width="366.667" height="66.6667">
    <properties>
     <property name="id" value="title-label"/>
    </properties>
@@ -900,8 +825,8 @@ to move the pieces</text>
   </object>
   <object id="79" x="987.879" y="-227.273"/>
  </objectgroup>
- <objectgroup draworder="index" id="8" name="ScoreMenu">
-  <object id="235" gid="215" x="-11.6667" y="114" width="744.333" height="100"/>
+ <objectgroup draworder="index" id="8" name="ScoreMenu" visible="0">
+  <object id="235" gid="215" x="473" y="113" width="260.333" height="100"/>
   <object id="65" gid="125" x="449.643" y="-127.236" width="208.939" height="49.3182"/>
   <object id="67" gid="195" x="614.303" y="-116.485" width="70" height="70"/>
   <object id="68" gid="123" x="194.47" y="-162.902" width="208.942" height="62"/>
@@ -915,9 +840,9 @@ to move the pieces</text>
     <property name="id" value="highscore"/>
    </properties>
   </object>
-  <object id="74" gid="199" x="283.645" y="74.8493" width="35.9197" height="40.9708"/>
+  <object id="74" gid="199" x="388.978" y="-115.817" width="35.9197" height="40.9708"/>
   <object id="75" gid="127" x="183.333" y="-161.539" width="45.3409" height="62.8409"/>
-  <object id="76" x="314.939" y="41.3333" width="106.122" height="32">
+  <object id="76" x="517.606" y="42.6666" width="106.122" height="32">
    <properties>
     <property name="id" value="timer"/>
    </properties>
@@ -964,6 +889,7 @@ to move the pieces</text>
    </properties>
    <text wrap="1" halign="center" valign="center">Highscore</text>
   </object>
+  <object id="238" gid="215" x="-9.83317" y="113" width="260.333" height="100"/>
   <object id="125" name="test" x="-267.147" y="-44.35" width="130.183" height="38.9">
    <properties>
     <property name="isBitmapFont" value="LEMONMILK-Bold"/>
@@ -977,15 +903,15 @@ to move the pieces</text>
   </object>
   <object id="135" x="640" y="23" width="70" height="70">
    <properties>
-    <property name="id" value="restart"/>
-   </properties>
-  </object>
-  <object id="227" x="554" y="23" width="70" height="70">
-   <properties>
     <property name="id" value="preview"/>
    </properties>
   </object>
-  <object id="237" x="95" y="23" width="70" height="70">
+  <object id="227" x="548.667" y="-113" width="70" height="70">
+   <properties>
+    <property name="id" value="restart"/>
+   </properties>
+  </object>
+  <object id="237" x="148" y="23" width="70" height="70">
    <properties>
     <property name="id" value="sound"/>
    </properties>

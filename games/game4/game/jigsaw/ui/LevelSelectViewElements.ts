@@ -1,10 +1,11 @@
 // LevelSelectViewElements.ts
-import SoundManager from "@core/audio/SoundManager";
 import { ButtonAttributes, ButtonData } from "@core/ui/BaseButton";
 import type { Difficulty } from "games/game4/types";
 import * as PIXI from "pixi.js";
+import Assets from "../Assets";
 
 export type ButtonSkinKey = "primary" | "secondary" | "difficultyEasy" | "difficultyMedium" | "difficultyHard";
+
 
 export interface ButtonSkins {
 
@@ -12,6 +13,7 @@ export interface ButtonSkins {
         standard: ButtonAttributes;
         over?: ButtonAttributes;
         down?: ButtonAttributes;
+        disabled?: ButtonAttributes;
         completed?: ButtonAttributes;
     };
 }
@@ -84,8 +86,8 @@ export interface LevelSelectTheme {
 
         rowHeight: number;
         thumbSize: number;
-        titleStyle: PIXI.TextStyle;
-        questStyle: PIXI.TextStyle;
+        titleStyle: Partial<PIXI.TextStyle>;
+        questStyle: Partial<PIXI.TextStyle>;
         rowPadding: number;
         rowCornerRadius: number; // used only if useNineSliceBg=false
     };
@@ -125,68 +127,30 @@ export function getDifficultySkinKey(
  * Replace texture names with your atlas keys.
  */
 export function createDefaultLevelSelectTheme(): LevelSelectTheme {
-    const titleStyle = new PIXI.TextStyle({
-        fontFamily: "LEMONMILK-Bold",
-        fontSize: 28,
-        fill: 0xffffff,
-        stroke: "#4b2a19",
-        strokeThickness: 4,
-    });
+    const titleStyle = new PIXI.TextStyle({ ...Assets.MainFontTitle });
 
-    const headerButtonStyle = new PIXI.TextStyle({
-        fontFamily: "LEMONMILK-Bold",
-        fontSize: 18,
-        fill: 0xffffff,
-        stroke: "#4b2a19",
-        strokeThickness: 4,
-    });
+    const headerButtonStyle = new PIXI.TextStyle({ ...Assets.MainFont, fontSize: 18 });
 
-    const purchaseButtonStyle = new PIXI.TextStyle({
-        fontFamily: "LEMONMILK-Bold",
-        fontSize: 32,
-        fill: 0xffffff,
-        stroke: "#4b2a19",
-        strokeThickness: 4,
-    });
+    const purchaseButtonStyle = new PIXI.TextStyle({ ...Assets.MainFont, fontSize: 32 });
 
-    const cardTitleStyle = new PIXI.TextStyle({
-        fontFamily: "LEMONMILK-Bold",
-        fontSize: 20,
-        fill: 0xffffff,
-        stroke: "#4b2a19",
-        strokeThickness: 3,
-    });
+    const cardTitleStyle = new PIXI.TextStyle({ ...Assets.MainFont, fontSize: 20 });
 
-    const cardCompletionStyle = new PIXI.TextStyle({
-        fontFamily: "LEMONMILK-Bold",
-        fontSize: 18,
-        fill: 0xffffff,
-        stroke: "#4b2a19",
-        strokeThickness: 3,
-    });
+    const cardCompletionStyle = new PIXI.TextStyle({ ...Assets.MainFont, fontSize: 18 });
 
-    const difficultyStyle = new PIXI.TextStyle({
-        fontFamily: "LEMONMILK-Bold",
-        fontSize: 16,
-        fill: 0xffffff,
-        stroke: "#4b2a19",
-        strokeThickness: 5,
-    });
+    const difficultyStyle = new PIXI.TextStyle({ ...Assets.MainFont, fontSize: 18 });
 
-    const rowTitleStyle = new PIXI.TextStyle({
-        fontFamily: "LEMONMILK-Bold",
-        fontSize: 22,
-        fill: 0xffffff,
-        stroke: "#4b2a19",
-        strokeThickness: 4,
-    });
+    const rowTitleStyle = new PIXI.TextStyle({ ...Assets.MainFontTitle, fontSize: 22 });
 
+    const T = Assets.Textures;
+    function playHoverSound() {
+        Assets.tryToPlaySound(Assets.Sounds.UI.Hover)
+    }
     return {
         headerHeight: 90,
-        padding: 25,
+        padding: 30,
 
-        headerBgTexture: PIXI.Texture.from("header"),
-        headerBgNineSlice: { left: 50, top: 50, right: 50, bottom: 50 },
+        headerBgTexture: Assets.getTexture(T.UI.Header),
+        headerBgNineSlice: Assets.Paddings.UI.Header,
 
         titleStyle,
 
@@ -194,8 +158,8 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
             purchase: {
                 standard: {
                     allPadding: 30,
-                    texture: PIXI.Texture.from("bt-gold"),
-                    iconTexture: PIXI.Texture.from("ResourceBar_Single_Icon_Coin"),
+                    texture: Assets.getTexture(T.Buttons.Gold),
+                    iconTexture: Assets.getTexture(T.Icons.Coin),
                     width: 200,
                     height: 64,
                     textOffset: new PIXI.Point(20, 0),
@@ -206,65 +170,64 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
 
                 },
                 over: {
-                    callback: () => {
-                        SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
-                    },
-                    texture: PIXI.Texture.from("bt-gold"),
+                    tint: 0xcccccc,
+                    callback: () => playHoverSound(),
+                    texture: Assets.getTexture(T.Buttons.Gold),
+                },
+                disabled: {
+                    texture: Assets.getTexture(T.Buttons.Grey),
                 },
             },
             primary: {
                 standard: {
                     allPadding: 20,
-                    texture: PIXI.Texture.from("bt-blue"),
+                    texture: Assets.getTexture(T.Buttons.Blue),
                     width: 120,
                     height: 60,
                     fontStyle: headerButtonStyle,
                 },
                 over: {
-                    callback: () => {
-                        SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
-                    },
-                    texture: PIXI.Texture.from("bt-blue"),
+                    tint: 0xcccccc,
+                    callback: () => playHoverSound(),
+                    texture: Assets.getTexture(T.Buttons.Blue),
                 },
             },
             secondary: {
                 standard: {
                     allPadding: 20,
-                    texture: PIXI.Texture.from("bt-blue"),
+                    texture: Assets.getTexture(T.Buttons.Blue),
                     width: 120,
                     height: 60,
                     fontStyle: headerButtonStyle,
                 },
                 over: {
-                    callback: () => {
-                        SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
-                    },
-                    texture: PIXI.Texture.from("bt-blue"),
+                    tint: 0xcccccc,
+                    callback: () => playHoverSound(),
+                    texture: Assets.getTexture(T.Buttons.Blue),
                 },
             },
             back: {
                 standard: {
                     allPadding: 30,
-                    texture: PIXI.Texture.from("bt-red"),
+                    texture: Assets.getTexture(T.Buttons.Red),
                     width: 70,
                     height: 64,
                     fontStyle: headerButtonStyle,
-                    iconTexture: PIXI.Texture.from("Icon_Back"),
+                    iconTexture: Assets.getTexture(T.Icons.Back),
                     iconSize: { width: 45, height: 45 },
                     centerIconHorizontally: true,
                     centerIconVertically: true,
                 },
                 over: {
-                    callback: () => {
-                        SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
-                    },
-                    texture: PIXI.Texture.from("bt-red"),
+                    tint: 0xcccccc,
+                    callback: () => playHoverSound(),
+                    texture: Assets.getTexture(T.Buttons.Red),
                 },
             },
             difficultyEasy: {
                 standard: {
                     allPadding: 30,
-                    texture: PIXI.Texture.from("bt-green"),
+                    texture: Assets.getTexture(T.Buttons.Green),
                     width: 100,
                     height: 64,
                     fontStyle: difficultyStyle,
@@ -273,14 +236,13 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
                     iconOffset: new PIXI.Point(5, 5)
                 },
                 over: {
-                    callback: () => {
-                        SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
-                    },
-                    texture: PIXI.Texture.from("bt-green"),
+                    tint: 0xcccccc,
+                    callback: () => playHoverSound(),
+                    texture: Assets.getTexture(T.Buttons.Green),
                 },
                 completed: {
-                    texture: PIXI.Texture.from("bt-gold"),
-                    iconTexture: PIXI.Texture.from('Icon_Check03_s'),
+                    //texture: Assets.getTexture(T.Buttons.Gold),
+                    iconTexture: Assets.getTexture(T.Icons.Check),
                     iconSize: { height: 30, width: 30 },
                     iconOffset: new PIXI.Point(70, -5)
                 },
@@ -288,7 +250,7 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
             difficultyMedium: {
                 standard: {
                     allPadding: 30,
-                    texture: PIXI.Texture.from("bt-blue"),
+                    texture: Assets.getTexture(T.Buttons.Blue),
                     width: 100,
                     height: 64,
                     fontStyle: difficultyStyle,
@@ -297,14 +259,13 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
                     iconOffset: new PIXI.Point(5, 5)
                 },
                 over: {
-                    callback: () => {
-                        SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
-                    },
-                    texture: PIXI.Texture.from("bt-blue"),
+                    tint: 0xcccccc,
+                    callback: () => playHoverSound(),
+                    texture: Assets.getTexture(T.Buttons.Blue),
                 },
                 completed: {
-                    texture: PIXI.Texture.from("bt-gold"),
-                    iconTexture: PIXI.Texture.from('Icon_Check03_s'),
+                    //texture: Assets.getTexture(T.Buttons.Gold),
+                    iconTexture: Assets.getTexture(T.Icons.Check),
                     iconSize: { height: 30, width: 30 },
                     iconOffset: new PIXI.Point(70, -5)
                 },
@@ -312,7 +273,7 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
             difficultyHard: {
                 standard: {
                     allPadding: 30,
-                    texture: PIXI.Texture.from("bt-orange"),
+                    texture: Assets.getTexture(T.Buttons.Orange),
                     width: 100,
                     height: 64,
                     fontStyle: difficultyStyle,
@@ -321,14 +282,13 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
                     iconOffset: new PIXI.Point(5, 5)
                 },
                 over: {
-                    callback: () => {
-                        SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
-                    },
-                    texture: PIXI.Texture.from("bt-orange"),
+                    tint: 0xcccccc,
+                    callback: () => playHoverSound(),
+                    texture: Assets.getTexture(T.Buttons.Orange),
                 },
                 completed: {
-                    texture: PIXI.Texture.from("bt-gold"),
-                    iconTexture: PIXI.Texture.from('Icon_Check03_s'),
+                    //texture: Assets.getTexture(T.Buttons.Gold),
+                    iconTexture: Assets.getTexture(T.Icons.Check),
                     iconSize: { height: 30, width: 30 },
                     iconOffset: new PIXI.Point(70, -5)
                 },
@@ -337,7 +297,7 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
 
         sectionCard: {
             useNineSliceCardBg: true,
-            cardBgTexture: PIXI.Texture.from("card1"),
+            cardBgTexture: Assets.getTexture(T.UI.CardBg),
             cardBgNineSlice: { left: 62, top: 62, right: 62, bottom: 62 },
 
             coverHeightRatio: 0.80,
@@ -347,21 +307,21 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
             cardTitleStyle,
             cardCompletionStyle,
 
-            completionPillTexture: PIXI.Texture.from("Label_Badge01_Yellow"),
+            completionPillTexture: Assets.getTexture(T.Icons.Pill),
             completionPillNineSlice: { left: 0, top: 0, right: 0, bottom: 0 },
             completionPillPadding: { x: 10, y: 6 },
         },
 
         levelRow: {
             useNineSliceBg: true,
-            bgTexture: PIXI.Texture.from("section-bg"),
-            bgTextureLocked: PIXI.Texture.from("section-grey-bg"),
+            bgTexture: Assets.getTexture(T.UI.RowBg),
+            bgTextureLocked: Assets.getTexture(T.UI.RowLock),
             bgNineSlice: { left: 40, top: 40, right: 40, bottom: 40 },
 
             rowHeight: 300,
             thumbSize: 140,
             titleStyle: rowTitleStyle,
-            questStyle: { ...rowTitleStyle, fontSize: 16 },
+            questStyle: { ...difficultyStyle, fontSize: 16 },
             rowPadding: 15,
             rowCornerRadius: 14,
         },

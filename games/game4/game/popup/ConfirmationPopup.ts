@@ -6,7 +6,7 @@ import TiledLayerObject from '@core/tiled/TiledLayerObject';
 import BaseButton from '@core/ui/BaseButton';
 import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
-import { Fonts } from '../character/Types';
+import Assets from '../jigsaw/Assets';
 
 export interface ConfirmationPopupData extends PopupData {
     title: string;
@@ -18,8 +18,8 @@ export interface ConfirmationPopupData extends PopupData {
 }
 
 export class ConfirmationPopup extends BasePopup {
-    private titleText!: PIXI.BitmapText;
-    private descriptionText!: PIXI.BitmapText;
+    private titleText!: PIXI.Text;
+    private descriptionText!: PIXI.Text;
 
     private confirmButton: BaseButton;
     private cancelButton: BaseButton;
@@ -38,12 +38,7 @@ export class ConfirmationPopup extends BasePopup {
 
         const title = this.layout.findAndGetFromProperties('id', 'title-label');
         if (title) {
-            this.titleText = new PIXI.BitmapText('Out of moves', {
-                fontName: Fonts.MainFamily,
-                fontSize: Fonts.Main.fontSize as number,
-                letterSpacing: 3,
-                align: 'center'
-            });
+            this.titleText = new PIXI.Text('', new PIXI.TextStyle({ ...Assets.MainFont, fontSize: 32 }))
             this.titleText.anchor.set(0.5); // PIXI v7+ only
             title.view?.addChild(this.titleText);
             this.titleText.position.set(title.object.width / 2, title.object.height / 2);
@@ -51,12 +46,7 @@ export class ConfirmationPopup extends BasePopup {
 
         const description = this.layout.findAndGetFromProperties('id', 'description-label');
         if (description) {
-            this.descriptionText = new PIXI.BitmapText('', {
-                fontName: Fonts.MainFamily,
-                fontSize: Fonts.Main.fontSize as number,
-                letterSpacing: 3,
-                align: 'center'
-            });
+            this.descriptionText = new PIXI.Text('', new PIXI.TextStyle({ ...Assets.MainFont }))
             this.descriptionText.anchor.set(0.5); // PIXI v7+ only
             description.view?.addChild(this.descriptionText);
             this.descriptionText.position.set(description.object.width / 2, description.object.height / 2);
@@ -70,17 +60,13 @@ export class ConfirmationPopup extends BasePopup {
                 width: right?.object.width,
                 height: right?.object.height,
                 allPadding: 35,
-                texture: PIXI.Texture.from('bt-green'),
-                fontStyle: new PIXI.TextStyle({
-                    fontFamily: 'LEMONMILK-Bold',
-                    fill: 0xffffff,
-                    stroke: "#4b2a19",
-                    strokeThickness: 4,
-                }),
+                texture: PIXI.Texture.from(Assets.Textures.Buttons.Green),
+                fontStyle: new PIXI.TextStyle({ ...Assets.MainFont }),
                 fitText: 0.8
             },
             over: {
-                texture: PIXI.Texture.from('bt-green'),
+                tint: 0xcccccc,
+                texture: PIXI.Texture.from(Assets.Textures.Buttons.Green),
                 callback: () => {
                     SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
                 },
@@ -104,17 +90,13 @@ export class ConfirmationPopup extends BasePopup {
                 width: left?.object.width,
                 height: left?.object.height,
                 allPadding: 35,
-                texture: PIXI.Texture.from('bt-red'),
-                fontStyle: new PIXI.TextStyle({
-                    fontFamily: 'LEMONMILK-Bold',
-                    fill: 0xffffff,
-                    stroke: "#4b2a19",
-                    strokeThickness: 4,
-                }),
+                texture: PIXI.Texture.from(Assets.Textures.Buttons.Red),
+                fontStyle: new PIXI.TextStyle({ ...Assets.MainFont }),
                 fitText: 0.8
             },
             over: {
-                texture: PIXI.Texture.from('bt-red'),
+                tint: 0xcccccc,
+                texture: PIXI.Texture.from(Assets.Textures.Buttons.Red),
                 callback: () => {
                     SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
                 },

@@ -89,8 +89,6 @@ export default class SoundLoadManager {
     if (!soundFilePath) {
       return;
     }
-
-    console.log('soundFilePath', soundFilePath)
     return new Promise<void>((resolve) => {
       const howl = new Howl({
         src: [soundFilePath],

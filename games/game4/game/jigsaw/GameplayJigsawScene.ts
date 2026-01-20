@@ -18,9 +18,11 @@ import MatchManager from "../2048/scene/MatchManager";
 import MainMenuUi from "../2048/ui/MainMenuUi";
 import ScoreUi from "../2048/ui/ScoreUi";
 import { DevGuiManager } from "../utils/DevGuiManager";
+import Assets from "./Assets";
 import { InGameEconomy } from "./data/InGameEconomy";
 import { ProgressCookieStore } from "./data/ProgressCookieStore";
 import { PuzzleDataBuilder, PuzzleMasterJson } from "./data/PuzzleCatalogParser";
+import StaticData from "./data/StaticData";
 import { LevelSelectMediator, PlayLevelRequest, PurchaseLevelRequest } from "./progress/LevelSelectMediator";
 import { CurrencyHud } from "./ui/CurrencyHud";
 import { LevelSelectView } from "./ui/LevelSelectView";
@@ -54,6 +56,7 @@ export default class GameplayJigsawScene extends GameScene {
 
     private currentLevel?: PlayLevelRequest;
     private soundToggleButton?: SoundToggleButton;
+    private store: ProgressCookieStore = new ProgressCookieStore("jg_progress_v1", 1);
 
     // Popup event handlers stored so we can remove on destroy
     private readonly _onPopupEnd = (popupId: string) => {
@@ -87,8 +90,8 @@ export default class GameplayJigsawScene extends GameScene {
         this.updateScoreUi(0);
 
 
-        SoundManager.instance.playBackgroundSound('peace-be-with-you')
-        SoundManager.instance.setMasterAmbientVolume(0.05)
+        SoundManager.instance.playBackgroundSound(Assets.AmbientSound.AmbientSoundId, 0.25)
+        SoundManager.instance.setMasterAmbientVolume(Assets.AmbientSound.AmbientMasterVolume)
 
 
         this.addChild(this.background)
@@ -106,18 +109,20 @@ export default class GameplayJigsawScene extends GameScene {
         const sections = built.sections;
         const sectionMeta = built.meta;
 
+        StaticData.setData(built.sections);
+
         // console.log(sections, sectionMeta)
 
-        const store = new ProgressCookieStore("jg_progress_v1", 1);
+        //const store = new ProgressCookieStore("jg_progress_v1", 1);
         DevGuiManager.instance.addButton('erase', () => {
-            store.resetGameProgress();
+            this.store.resetGameProgress();
         })
 
         DevGuiManager.instance.addButton('addCoins', () => {
             InGameEconomy.instance.addCurrency(100)
         })
 
-        this.mediator = new LevelSelectMediator(store);
+        this.mediator = new LevelSelectMediator(this.store);
         this.mediator.setSections(sections);
 
 
@@ -129,25 +134,22 @@ export default class GameplayJigsawScene extends GameScene {
         this.levelSelectMenu = new LevelSelectView(this.mediator, theme, 500, 300);
 
 
-
+        // Assets.getTexture(T.Icons.Coin)
         this.currencyHud = new CurrencyHud({
             textStyle: new PIXI.TextStyle({
-                fontFamily: "LEMONMILK-Bold",
-                fontSize: 42,
-                fill: 0xffffff,
-                stroke: "#4b2a19",
-                strokeThickness: 8,
+                ...Assets.MainFont, fontSize: 42,
+                //strokeThickness: 8,
             }),
-            currencyIcon: 'ResourceBar_Single_Icon_Coin',
+            currencyIcon: Assets.Textures.Icons.Coin,// 'ResourceBar_Single_Icon_Coin',
             specialCurrencyIcon: 'ResourceBar_Single_Icon_Gem',
-            bgTexture: PIXI.Texture.from('fade-shape'),
+            bgTexture: PIXI.Texture.from(Assets.Textures.UI.FadeShape),// PIXI.Texture.from('fade-shape'),
             bgNineSlice: { left: 10, top: 10, right: 10, bottom: 10 },
             padding: 15
         });
 
         this.currencyHud.x = 0; // Top left corner
-        this.currencyHud.y = 15;
         this.levelSelectMenu.headerView.root.addChild(this.currencyHud);
+        this.currencyHud.y = this.levelSelectMenu.headerView.root.height / 2 - this.currencyHud.height / 2 + Assets.Offsets.UI.Header.y;
 
         // console.log(this.levelSelectMenu.headerView)
 
@@ -156,7 +158,7 @@ export default class GameplayJigsawScene extends GameScene {
             // 1) check currency / IAP
             // 2) if success:
             this.mediator.confirmPurchase(req.levelId);
-            SoundManager.instance.playSoundById('ScoreUpdate', { volume: 0.1 })
+            Assets.tryToPlaySound(Assets.Sounds.UI.Purchase)
 
         });
 
@@ -165,7 +167,7 @@ export default class GameplayJigsawScene extends GameScene {
             // req.levelId, req.difficulty, req.level.payload etc.
             // Start your jigsaw game scene with that data.
             // console.log("PLAY", req);
-            SoundManager.instance.playSoundById('Whoosh', { volume: 0.15 })
+            Assets.tryToPlaySound(Assets.Sounds.UI.StartLevel)
 
             this.startMatch(req);
         });
@@ -175,9 +177,7 @@ export default class GameplayJigsawScene extends GameScene {
         if (Game.debugParams.start) {
             this.startMatch()
         }
-        if (Game.debugParams.over) {
-            PopupManager.instance.show("gameOver", { matchManager: this.matchManager });
-        }
+
 
 
         if (ProgressCookieStore.isFirstTime() || Game.debugParams.first) {
@@ -195,12 +195,18 @@ export default class GameplayJigsawScene extends GameScene {
 
         }
 
+        if (Game.debugParams.over) {
+            setTimeout(() => {
+                this.completePuzzle()
+            }, (10));
+            //PopupManager.instance.show("gameOver", { matchManager: this.matchManager });
+        }
 
         // Assuming your textures are loaded in the PIXI Assets cache
-        this.soundToggleButton = new SoundToggleButton("PictoIcon_Sound", "PictoIcon_Sound_Off");
+        this.soundToggleButton = new SoundToggleButton(Assets.Textures.Icons.SoundOn, Assets.Textures.Icons.SoundOff);
 
         this.soundToggleButton.x = 50;
-        this.soundToggleButton.y = 50;
+        this.soundToggleButton.y = this.levelSelectMenu.headerView.root.height / 2 + Assets.Offsets.UI.Header.y;
         //this.soundToggleButton.scale.x = -1
 
         this.levelSelectMenu.headerView.root.addChild(this.soundToggleButton);
@@ -313,52 +319,73 @@ export default class GameplayJigsawScene extends GameScene {
             this.matchManager.incrementMove();
             this.scoreUi?.updateScores(this.matchManager.moveCounter, 0);
 
-            SoundManager.instance.playSoundById('Bubbles', { pitch: 0.8 + Math.random() * 0.2, volume: 0.15 + Math.random() * 0.05 })
+            Assets.tryToPlaySound(Assets.Sounds.UI.PieceConnected)
+
 
             PlatformHandler.instance.platform.gameplayStart();
         });
 
         this.jigsawBoardView.onPuzzleCompleted.add(async () => {
-            this.jigsawBoardView.input?.setEnabled(false);
+            this.completePuzzle();
+        })
 
-            SoundManager.instance.playSoundById('Positive Open', { volume: 0.1 })
-
-            let rewardAmount = 0;
-            if (this.currentLevel) {
-                //console.log(this.currentLevel.level)
-                // 1. Determine the prize amount based on difficulty
-                const prizes = !this.currentLevel.level.isSpecial ? this.currentLevel.level.prize : this.currentLevel.level.prizesSpecial;
-                const diffMapping: Record<string, number> = { "easy": 0, "medium": 1, "hard": 2 };
-                const prizeIndex = diffMapping[this.currentLevel.difficulty] ?? 0;
-                rewardAmount = prizes[prizeIndex];
-
-                // 2. Report completion to save progress/time
-                this.mediator.reportLevelCompleted(
-                    this.currentLevel.levelId,
-                    this.currentLevel.difficulty,
-                    this.matchManager.matchTimer
-                );
-
-                // 3. Award the currency via the Economy Singleton
-                if (rewardAmount > 0) {
-                    InGameEconomy.instance.addCurrency(rewardAmount, false);
-                    //console.log(`Awarded ${rewardAmount} coins for ${this.currentLevel.difficulty} difficulty.`);
-                }
-            }
-
-            await this.jigsawBoardView.snapCompletedPuzzleToSolvedPose({ duration: 0.8, ease: "power4.out" });
-            this.jigsawBoardView.input?.setEnabled(true);
-
-
-            await PromiseUtils.await(1000)
-            SoundManager.instance.playSoundById('Applause Cheering', { volume: 0.1 })
-
-            PopupManager.instance.show("gameOver", { matchManager: this.matchManager, rewardAmount: rewardAmount || 0, isSpecial: this.currentLevel?.level.isSpecial });
-        });
     }
+
+    private async completePuzzle() {
+        this.jigsawBoardView.input?.setEnabled(false);
+
+        Assets.tryToPlaySound(Assets.Sounds.UI.PuzzleCompleted)
+        let rewardAmount = 0;
+
+        const nextToPlay = StaticData.getNextAvailableLevel(this.currentLevel?.levelId, (id) => {
+            return this.store.isLevelUnlocked(this.mediator.getProgress(), id);
+        });
+
+        if (nextToPlay) {
+            console.log("Redirecting player to:", nextToPlay);
+        }
+
+        if (this.currentLevel) {
+
+            //console.log(this.currentLevel.level)
+            // 1. Determine the prize amount based on difficulty
+            const prizes = !this.currentLevel.level.isSpecial ? this.currentLevel.level.prize : this.currentLevel.level.prizesSpecial;
+            const diffMapping: Record<string, number> = { "easy": 0, "medium": 1, "hard": 2 };
+            const prizeIndex = diffMapping[this.currentLevel.difficulty] ?? 0;
+            rewardAmount = prizes[prizeIndex];
+
+            // 2. Report completion to save progress/time
+            this.mediator.reportLevelCompleted(
+                this.currentLevel.levelId,
+                this.currentLevel.difficulty,
+                this.matchManager.matchTimer
+            );
+
+            // 3. Award the currency via the Economy Singleton
+            if (rewardAmount > 0) {
+                InGameEconomy.instance.addCurrency(rewardAmount, false);
+                //console.log(`Awarded ${rewardAmount} coins for ${this.currentLevel.difficulty} difficulty.`);
+            }
+        }
+
+        await this.jigsawBoardView.snapCompletedPuzzleToSolvedPose({ duration: 0.8, ease: "power4.out" });
+        this.jigsawBoardView.input?.setEnabled(true);
+
+
+        await PromiseUtils.await(1000)
+        Assets.tryToPlaySound(Assets.Sounds.UI.GameOverAppear)
+
+
+        PopupManager.instance.show("gameOver", { matchManager: this.matchManager, rewardAmount: rewardAmount || 0, isSpecial: this.currentLevel?.level.isSpecial });
+    };
+
 
     private async startMatch(data?: PlayLevelRequest, isFirst: boolean = false): Promise<void> {
         this.matchManager.start();
+
+        SoundManager.instance.playBackgroundSound(Assets.AmbientSound.AmbientSoundGameplay, 0.25)
+        SoundManager.instance.setMasterAmbientVolume(Assets.AmbientSound.AmbientMasterVolumeGameplay)
+
 
         this.currentLevel = data;
 
@@ -379,7 +406,7 @@ export default class GameplayJigsawScene extends GameScene {
         const ratio = width / height;
 
         // 1. Define target total pieces instead of hardcoded grids
-        let targetPieces = 12; // Default (easy)
+        let targetPieces = isFirst ? 9 : 12; // Default (easy)
         const difficulty = data?.difficulty || "medium";
 
         if (difficulty === "medium") {
@@ -403,7 +430,7 @@ export default class GameplayJigsawScene extends GameScene {
             allowRation: data?.allowRotation,
             scatterRect: this.getScatterRect(),
             safeRect: this.getSafeRect(),
-            isFirst
+            // isFirst
         });
 
 
@@ -445,6 +472,9 @@ export default class GameplayJigsawScene extends GameScene {
     private quitGameScene(): void {
         this.onQuit.dispatch();
         PlatformHandler.instance.platform.gameplayStop();
+
+        SoundManager.instance.playBackgroundSound(Assets.AmbientSound.AmbientSoundId, 0.25)
+        SoundManager.instance.setMasterAmbientVolume(Assets.AmbientSound.AmbientMasterVolume)
     }
 
     // -------------------------
@@ -471,11 +501,11 @@ export default class GameplayJigsawScene extends GameScene {
     private updateSafeAreaFromOverlay(): void {
         const cappedSize = Math.min(Game.overlayScreenData.width, 1024)
         this.levelSelectMenu?.setSize(cappedSize, Game.overlayScreenData.height)
-        this.currencyHud.x = cappedSize - this.currencyHud.width - 100
+        if (this.currencyHud) this.currencyHud.x = cappedSize - this.currencyHud.width - 100
 
         if (this.soundToggleButton) {
             this.soundToggleButton.x = 50//cappedSize - this.currencyHud.width + 80//- 150
-            this.soundToggleButton.y = 40
+            //this.soundToggleButton.y = 40
         }
 
         if (this.levelSelectMenu) {

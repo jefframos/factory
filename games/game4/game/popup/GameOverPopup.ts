@@ -4,11 +4,14 @@ import { TimerConversionUtils } from '@core/utils/TimeConversionUtils';
 import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
 import MatchManager from '../2048/scene/MatchManager';
+import Assets from '../jigsaw/Assets';
+import { PlayLevelRequest } from '../jigsaw/progress/LevelSelectMediator';
 import { ConfettiEffect } from '../jigsaw/ui/ConfettiEffect';
 
 interface GameOverPopupData extends PopupData {
     matchManager: MatchManager;
     rewardAmount: number;
+    nextPuzzle?: PlayLevelRequest;
     isSpecial?: boolean;
 }
 
@@ -42,27 +45,21 @@ export class GameOverPopup extends BasePopup {
         this.addChild(this.blackout);
 
         // 2. Shine Texture (Background Rotation)
-        this.shine = PIXI.Sprite.from('Image_Effect_Rotate'); // Ensure this asset exists
+        this.shine = PIXI.Sprite.from(Assets.Textures.UI.Shine); // Ensure this asset exists
         this.shine.anchor.set(0.5);
         this.shine.alpha = 0.1;
         this.shine.scale.set(1.5);
         this.shine.tint = 0xf0f04a
         this.addChild(this.shine);
 
-        this.flag = new PIXI.NineSlicePlane(PIXI.Texture.from('Title_Ribbon01_Green'), 150, 20, 150, 20); // Ensure this asset exists
+        this.flag = new PIXI.NineSlicePlane(PIXI.Texture.from(Assets.Textures.UI.EndRibbon), 150, 20, 150, 20); // Ensure this asset exists
         this.flag.width = 700
         this.flag.pivot.set(this.flag.width / 2, this.flag.height / 2)
         this.flag.scale.set(1);
         this.addChild(this.flag);
 
         // 3. Title Label
-        this.titleLabel = new PIXI.Text('PUZZLE SOLVED!', {
-            fontFamily: 'LEMONMILK-Bold',
-            fontSize: 42,
-            fill: 0xffffff,
-            stroke: "#0c0808",
-            strokeThickness: 6,
-        });
+        this.titleLabel = new PIXI.Text('PUZZLE SOLVED!', new PIXI.TextStyle({ ...Assets.MainFont, fontSize: 42, strokeThickness: 10 }));
         this.titleLabel.anchor.set(0.5);
         this.titleLabel.y = -250;
         this.addChild(this.titleLabel);
@@ -71,31 +68,19 @@ export class GameOverPopup extends BasePopup {
         this.flag.y = this.titleLabel.y + 10
 
         // 4. Prize Icon (Pop center)
-        this.prizeIcon = PIXI.Sprite.from('ResourceBar_Single_Icon_Coin'); // Icon representing reward
+        this.prizeIcon = PIXI.Sprite.from(Assets.Textures.Icons.Coin); // Icon representing reward
         this.prizeIcon.anchor.set(0.5);
         this.prizeIcon.scale.set(0);
         this.addChild(this.prizeIcon);
 
         // 5. Reward Text (Inside Icon)
-        this.rewardText = new PIXI.Text('0', {
-            fontFamily: 'LEMONMILK-Bold',
-            fontSize: 56,
-            fill: 0xffffff,
-            stroke: 0x000000,
-            strokeThickness: 10
-        });
+        this.rewardText = new PIXI.Text('0', new PIXI.TextStyle({ ...Assets.MainFont, fontSize: 50, strokeThickness: 10 }));
         this.rewardText.anchor.set(0.5);
         this.rewardText.alpha = 0;
         this.addChild(this.rewardText);
 
         // 6. Timer Text
-        this.timerText = new PIXI.Text('Time: 00:00', {
-            fontFamily: 'LEMONMILK-Regular',
-            fontSize: 32,
-            fill: 0xcccccc,
-            stroke: "#0c0808",
-            strokeThickness: 3,
-        });
+        this.timerText = new PIXI.Text('Time: 00:00', new PIXI.TextStyle({ ...Assets.MainFont, fontSize: 32 }),);
         this.timerText.anchor.set(0.5);
         this.timerText.y = 150;
         this.timerText.alpha = 0;
@@ -106,18 +91,12 @@ export class GameOverPopup extends BasePopup {
             standard: {
                 width: 280,
                 height: 80,
-                texture: PIXI.Texture.from('bt-blue'),
+                texture: PIXI.Texture.from(Assets.Textures.Buttons.Blue),
                 allPadding: 20,
 
-                fontStyle: new PIXI.TextStyle({
-                    fontFamily: "LEMONMILK-Bold",
-                    fontSize: 32,
-                    fill: 0xffffff,
-                    stroke: "#0c0808",
-                    strokeThickness: 3,
-                })
+                fontStyle: new PIXI.TextStyle({ ...Assets.MainFont }),
             },
-            over: { texture: PIXI.Texture.from('bt-blue') },
+            over: { tint: 0xcccccc, texture: PIXI.Texture.from(Assets.Textures.Buttons.Blue) },
             click: { callback: () => this.popupManager.hideCurrent() }
         });
         this.continueButton.setLabel('CONTINUE');
@@ -158,7 +137,7 @@ export class GameOverPopup extends BasePopup {
         // 1. Fade in Background & Shine
         tl.fromTo([this.blackout, this.shine, this.titleLabel], { alpha: 0 }, { alpha: 1, duration: 0.5 });
 
-        this.prizeIcon.texture = data.isSpecial ? PIXI.Texture.from('ResourceBar_Single_Icon_Gem') : PIXI.Texture.from('ResourceBar_Single_Icon_Coin');
+        this.prizeIcon.texture = data.isSpecial ? PIXI.Texture.from(Assets.Textures.Icons.Gem) : PIXI.Texture.from(Assets.Textures.Icons.Coin);
         // 2. Pop the Prize Icon
         tl.to(this.prizeIcon.scale, { x: 2, y: 2, duration: 0.4, ease: "back.out(1.7)" });
 
@@ -169,7 +148,7 @@ export class GameOverPopup extends BasePopup {
             duration: 1,
             ease: "power1.out",
             onUpdate: () => {
-                this.rewardText.text = `+${Math.ceil(this.displayReward)}`;
+                this.rewardText.text = `${Math.ceil(this.displayReward)}`;
             }
         });
 

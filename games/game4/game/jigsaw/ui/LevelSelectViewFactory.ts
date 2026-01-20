@@ -1,11 +1,10 @@
 // LevelSelectViewFactory.ts
 import { Game } from "@core/Game";
 import BaseButton from "@core/ui/BaseButton";
-import ObjectCloner from "@core/utils/ObjectCloner";
 import ViewUtils from "@core/utils/ViewUtils";
 import type { Difficulty, LevelDefinition, SectionDefinition } from "games/game4/types";
 import * as PIXI from "pixi.js";
-import { Fonts } from "../../character/Types";
+import Assets from "../Assets";
 import { InGameEconomy } from "../data/InGameEconomy";
 import { getLevelDifficultyCompleted, getSectionCompletion } from "../progress/progressUtils";
 import { makeResizedSpriteTexture } from "../vfx/imageFlatten";
@@ -82,7 +81,7 @@ export class LevelSelectViewFactory {
             bg.height = h;
 
             titleText.x = 100;
-            titleText.y = Math.floor((this.theme.headerHeight) * 0.5 - 5);
+            titleText.y = Math.floor((this.theme.headerHeight) * 0.5 + Assets.Offsets.UI.Header.y);
 
             // Right aligned buttons
             // closeButton.x = w - closeButton.width - 16;
@@ -90,7 +89,7 @@ export class LevelSelectViewFactory {
 
             //backButton.x = closeButton.x - backButton.width - 12;
             backButton.x = w - backButton.width - 16;
-            backButton.y = Math.floor((h - backButton.height) * 0.5) - 5;
+            backButton.y = Math.floor((h - backButton.height) * 0.5) + Assets.Offsets.UI.Header.y;
 
         };
 
@@ -116,149 +115,120 @@ export class LevelSelectViewFactory {
         root.cursor = "pointer";
 
         const override = getSectionOverride(this.theme, (section as any).id ?? section.name);
-        const pad = this.theme.sectionCard.padding;
+        const pad = this.theme.padding;
 
-        // Card background: nine-slice (preferred) or fallback
+        // --- 1. CARD BACKGROUND ---
         if (this.theme.sectionCard.useNineSliceCardBg) {
             const tex = override?.cardTexture ?? this.theme.sectionCard.cardBgTexture ?? PIXI.Texture.WHITE;
             const ns = this.theme.sectionCard.cardBgNineSlice ?? { left: 16, top: 16, right: 16, bottom: 16 };
-
             const cardBg = new PIXI.NineSlicePlane(tex, ns.left, ns.top, ns.right, ns.bottom);
             cardBg.width = w;
             cardBg.height = h;
             root.addChild(cardBg);
-        }
-        else {
-            const g = new PIXI.Graphics();
-            g.beginFill(0x2a2a2a);
-            g.drawRoundedRect(0, 0, w, h, 14);
-            g.endFill();
+        } else {
+            const g = new PIXI.Graphics().beginFill(0x2a2a2a).drawRoundedRect(0, 0, w, h, 14).endFill();
             root.addChild(g);
         }
 
+        // --- 2. COVER PREPARATION ---
         const coverH = Math.floor(h * this.theme.sectionCard.coverHeightRatio);
+        const coverLevel = section.levels.find((l) => l.id === (section as any).coverLevelId) ?? section.levels[0];
 
-        const coverLevel =
-            section.levels.find((l) => l.id === (section as any).coverLevelId) ?? section.levels[0];
-
-
-        const coverContaienr = new PIXI.Container();
-        let cover: PIXI.Sprite;
-        if (coverLevel) {
-            cover = PIXI.Sprite.from(coverLevel.thumb || coverLevel.imageSrc);
-        }
-        else if (override?.defaultCoverTexture) {
-            cover = new PIXI.Sprite(override.defaultCoverTexture);
-        }
-        else {
-            cover = PIXI.Sprite.from(PIXI.Texture.WHITE);
-        }
+        const coverContainer = new PIXI.Container();
+        coverContainer.x = pad;
+        coverContainer.y = pad;
+        root.addChild(coverContainer);
 
         const mask = new PIXI.Graphics();
         mask.beginFill(0xff0000);
-        mask.drawRoundedRect(0, 0, w - this.theme.padding * 2, coverH - this.theme.padding * 2, 30);
+        mask.drawRoundedRect(0, 0, w - pad * 2, coverH - pad * 2, 30);
         mask.endFill();
-        coverContaienr.addChild(mask);
-        cover.scale.set(ViewUtils.elementEvelop(cover, w, coverH) + 0.05)
-        cover.mask = mask
+        coverContainer.addChild(mask);
 
-        cover.anchor.set(0.5, 0.5)
-        cover.x = w / 2
-        cover.y = h / 2
-        coverContaienr.addChild(cover)
-        const c2 = makeResizedSpriteTexture(Game.renderer, coverContaienr, 0, 0)
-        root.addChild(c2);
-        c2.x = this.theme.padding
-        c2.y = this.theme.padding
-        coverContaienr.destroy();
-        cover.destroy();
+        // Initial Sprite (White placeholder if no thumb)
+        const coverSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
+        coverSprite.anchor.set(0.5);
+        coverSprite.x = (w - pad * 2) / 2;
+        coverSprite.y = (coverH - pad * 2) / 2;
+        coverSprite.mask = mask;
+        coverContainer.addChild(coverSprite);
 
-        // Dark overlay (Graphics is fine here; cheap and static)
-        const overlay = new PIXI.Graphics();
-        overlay.beginFill(0x000000, this.theme.sectionCard.coverOverlayAlpha);
-        overlay.drawRect(0, 0, w, coverH);
-        overlay.endFill();
+        const targetW = w - pad * 2;
+        const targetH = coverH - pad * 2;
+
+        // --- 3. SYNC vs ASYNC TEXTURE LOGIC ---
+        if (coverLevel?.thumb) {
+            // CASE A: Thumb exists in cache/atlas - apply immediately
+            coverSprite.texture = PIXI.Texture.from(coverLevel.thumb);
+            const scale = ViewUtils.elementEvelop(coverSprite, targetW, targetH);
+            coverSprite.scale.set(scale + 0.05);
+        }
+        else if (coverLevel?.imageSrc) {
+            // CASE B: No thumb, must load image file async
+            PIXI.Assets.load(coverLevel.imageSrc).then((tex: PIXI.Texture) => {
+                if (coverSprite.destroyed) return;
+                coverSprite.texture = tex;
+                const scale = ViewUtils.elementEvelop(coverSprite, targetW, targetH);
+                coverSprite.scale.set(scale + 0.05);
+            });
+        }
+        else if (override?.defaultCoverTexture) {
+            coverSprite.texture = override.defaultCoverTexture;
+            const scale = ViewUtils.elementEvelop(coverSprite, targetW, targetH);
+            coverSprite.scale.set(scale + 0.05);
+        }
+
+        // --- 4. UI OVERLAYS (BADGES & TEXT) ---
+        const overlay = new PIXI.Graphics()
+            .beginFill(0x000000, this.theme.sectionCard.coverOverlayAlpha)
+            .drawRoundedRect(pad, pad, w - pad * 2, coverH - pad * 2, 30)
+            .endFill();
         root.addChild(overlay);
 
-        const titleStyle = override?.cardTitleStyle ?? this.theme.sectionCard.cardTitleStyle;
-        const completionStyle = override?.cardCompletionStyle ?? this.theme.sectionCard.cardCompletionStyle;
+        if (section.type === 1 || section.type === 2) {
+            const isType1 = section.type === 1;
+            const badgeTex = isType1 ? Assets.Textures.Icons.Badge1 : Assets.Textures.Icons.Badge2;
+            const labelText = isType1 ? Assets.Labels.Hot : Assets.Labels.New;
 
-        const name = new PIXI.Text(section.name, titleStyle);
-        name.x = this.theme.padding;
-        name.y = h - name.height - this.theme.padding;
-        root.addChild(name);
-
-        // completion label + optional pill
-        const completionText = new PIXI.Text("", completionStyle);
-
-        // You already have these utils in your codebase
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-
-        const c = getSectionCompletion(progress, section);
-        const pct = c.total > 0 ? Math.floor((c.done / c.total) * 100) : 0;
-        completionText.text = `${pct}%`;
-
-        if (section.type == 1) {
-            const badge: PIXI.Sprite = PIXI.Sprite.from('Label_Badge01_Red')
+            const badge = PIXI.Sprite.from(badgeTex);
+            badge.anchor.set(0.5);
+            badge.scale.set(ViewUtils.elementScaler(badge, 100));
+            badge.x = 20;
+            badge.y = 20;
+            badge.rotation = -0.3;
             root.addChild(badge);
 
-            const newText: PIXI.Text = new PIXI.Text('HOT!', ObjectCloner.clone(Fonts.Main))
-            newText.anchor.set(0.5, 0.5)
-            badge.addChild(newText);
-
-            badge.scale.set(ViewUtils.elementScaler(badge, 100))
-            newText.x = badge.width / 2 / badge.scale.x
-            newText.y = badge.height / 2 / badge.scale.y
-            badge.x = -25
-            badge.y = 0
-            badge.rotation = -0.5
-
-        } else if (section.type == 2) {
-            const badge: PIXI.Sprite = PIXI.Sprite.from('Label_Badge01_Purple')
-            root.addChild(badge);
-
-            const newText: PIXI.Text = new PIXI.Text('NEW!', ObjectCloner.clone(Fonts.Main))
-            newText.anchor.set(0.5, 0.5)
-            badge.addChild(newText);
-
-            badge.scale.set(ViewUtils.elementScaler(badge, 100))
-            newText.x = badge.width / 2 / badge.scale.x
-            newText.y = badge.height / 2 / badge.scale.y
-            badge.x = -25
-            badge.y = 0
-            badge.rotation = -0.5
-
+            const badgeText = new PIXI.Text(labelText, { ...Assets.MainFont });
+            badgeText.anchor.set(0.5);
+            badge.addChild(badgeText);
         }
 
-        let completionPill: PIXI.NineSlicePlane | undefined;
+        const nameText = new PIXI.Text(section.name, override?.cardTitleStyle ?? this.theme.sectionCard.cardTitleStyle);
+        nameText.x = pad;
+        nameText.y = h - nameText.height - pad;
+        root.addChild(nameText);
+
+        const completionStyle = override?.cardCompletionStyle ?? this.theme.sectionCard.cardCompletionStyle;
+        const completionText = new PIXI.Text("", completionStyle);
+        const compData = getSectionCompletion(progress, section);
+        const pct = compData.total > 0 ? Math.floor((compData.done / compData.total) * 100) : 0;
+        completionText.text = `${pct}%`;
+        completionText.anchor.set(0.5);
+
         if (this.theme.sectionCard.completionPillTexture && this.theme.sectionCard.completionPillNineSlice) {
             const ns = this.theme.sectionCard.completionPillNineSlice;
-            completionPill = new PIXI.NineSlicePlane(
-                this.theme.sectionCard.completionPillTexture,
-                ns.left,
-                ns.top,
-                ns.right,
-                ns.bottom
-            );
-
-
-            completionPill.width = 80// Math.ceil(completionText.width + pad.x * 2);
-            completionPill.height = 80//Math.ceil(completionText.height + pad.y * 2);
-
-            completionPill.x = w - completionPill.width - 12;
-            completionPill.y = h - completionPill.height - this.theme.padding;
-
-            completionText.x = completionPill.x + completionPill.width / 2;
-            completionText.y = completionPill.y + completionPill.height / 2;
-
-            completionText.anchor.set(0.5)
-
-            root.addChild(completionPill);
+            const pill = new PIXI.NineSlicePlane(this.theme.sectionCard.completionPillTexture, ns.left, ns.top, ns.right, ns.bottom);
+            pill.width = 80;
+            pill.height = 80;
+            pill.x = w - pill.width - 12;
+            pill.y = h - pill.height - pad;
+            root.addChild(pill);
+            completionText.x = pill.x + pill.width / 2;
+            completionText.y = pill.y + pill.height / 2;
             root.addChild(completionText);
-        }
-        else {
+        } else {
             completionText.x = w - completionText.width - 12;
-            completionText.y = coverH + 12;
+            completionText.y = h - pad - 20;
             root.addChild(completionText);
         }
 
@@ -385,9 +355,7 @@ export class LevelSelectViewFactory {
         const btn = new BaseButton({
             standard: { ...skin.standard },
             over: { ...skin.over },
-            disabled: {
-                texture: PIXI.Texture.from('bt-grey')
-            },
+            disabled: { ...skin.disabled },
             down: {
                 texture: skin.down?.texture,
                 callback: () => {
@@ -475,7 +443,7 @@ export class LevelSelectViewFactory {
             // 1. Level/Status Icon
             let statusIcon: PIXI.Sprite;
             if (isCompleted) {
-                statusIcon = PIXI.Sprite.from("Toggle_Check_Single_Icon"); // Replace with your check asset key
+                statusIcon = PIXI.Sprite.from(Assets.Textures.Icons.CheckItem); // Replace with your check asset key
                 //(statusIcon as PIXI.Sprite).tint = 0x00FF00;
             } else {
                 statusIcon = PIXI.Sprite.from(`jiggy${d}`); // Replace with difficulty icons
@@ -496,7 +464,7 @@ export class LevelSelectViewFactory {
 
             // 3. Currency Icon (Only if not completed)
             if (!isCompleted) {
-                const t = definition.isSpecial ? "ResourceBar_Single_Icon_Gem" : "ResourceBar_Single_Icon_Coin"
+                const t = definition.isSpecial ? Assets.Textures.Icons.Gem : Assets.Textures.Icons.Coin
                 const coin = PIXI.Sprite.from(t);
                 coin.scale.set(ViewUtils.elementScaler(coin, iconSize, iconSize))
 

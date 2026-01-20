@@ -1,7 +1,7 @@
 // LevelSelectMediator.ts
-import SoundManager from "@core/audio/SoundManager";
 import { Signal } from "signals";
 import { Difficulty, GameProgress, LevelDefinition, SectionDefinition } from "../../../types";
+import Assets from "../Assets";
 import { InGameEconomy } from "../data/InGameEconomy";
 import { ProgressCookieStore } from "../data/ProgressCookieStore";
 
@@ -100,7 +100,7 @@ export class LevelSelectMediator {
 
         if (economy.purchase(normalCost, specialCost)) {
 
-            SoundManager.instance.playSoundById('ScoreUpdate', { volume: 0.1 })
+            Assets.tryToPlaySound(Assets.Sounds.UI.Purchase)
             // Economy handles the money, Mediator handles the unlock state
             this.confirmPurchase(levelId);
         } else {

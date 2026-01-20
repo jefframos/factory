@@ -1,8 +1,6 @@
 import { AssetPack } from '@assetpack/core';
-import { cacheBuster } from '@assetpack/core/cache-buster';
 import { pixiManifest } from '@assetpack/core/manifest';
 import { pixiPipes } from '@assetpack/core/pixi';
-import { texturePackerCacheBuster } from '@assetpack/core/texture-packer';
 import dotenv from 'dotenv';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -59,8 +57,8 @@ const pack = new AssetPack({
             },
         }),
 
-        texturePackerCacheBuster(),
-        cacheBuster(),
+        //texturePackerCacheBuster(),
+        //cacheBuster(),
         // compress(options),
         // texturePackerCompress(options),
         pixiManifest({
@@ -90,8 +88,8 @@ const packNonPreload = new AssetPack({
             },
         }),
 
-        texturePackerCacheBuster(),
-        cacheBuster(),
+        // texturePackerCacheBuster(),
+        // cacheBuster(),
         // compress(options),
         // texturePackerCompress(options),
 
@@ -105,7 +103,7 @@ if (WATCH) {
         console.log('✅ Rebuilt image assets');
     });
 } else {
-    await pack.run();
     await packNonPreload.run();
+    await pack.run();
     console.log('✅ Built image assets');
 }

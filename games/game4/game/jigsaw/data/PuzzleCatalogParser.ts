@@ -14,6 +14,7 @@ export type PuzzleTierJson = {
     id: string;
     name: string;
     enabled: boolean;
+    type: number;
     items: PuzzleTierItemJson[];
 };
 
@@ -68,8 +69,6 @@ export class PuzzleDataBuilder {
 
         const basePath = folderPath
 
-        console.log(master)
-
         for (const tier of master.tiers) {
             if (!tier.enabled) {
                 continue;
@@ -103,10 +102,11 @@ export class PuzzleDataBuilder {
                     };
                 });
 
+                console.log(tier)
                 const sectionDef: SectionDefinition = {
                     id: s.id,
                     name: s.name,
-                    type: s.type || 0,
+                    type: item.type || 0,
                     coverLevelId: s.coverLevelId,
                     levels,
                 };
@@ -123,7 +123,7 @@ export class PuzzleDataBuilder {
                     sectionId: s.id,
                     tierId: tier.id,
                     tierName: tier.name,
-                    type: item.type,
+                    type: tier.type,
                     sectionCost: item.sectionCost,
                     levelCosts,
                     sourceJson: item.json,

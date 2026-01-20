@@ -576,7 +576,7 @@
                  "visible":true,
                  "width":366.667,
                  "x":-186.667,
-                 "y":-248
+                 "y":-238
                 }, 
                 {
                  "height":94.6667,
@@ -699,9 +699,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":744.333,
-                 "x":-11.6667,
-                 "y":114
+                 "width":260.333,
+                 "x":472.999966666667,
+                 "y":113
                 }, 
                 {
                  "gid":125,
@@ -782,8 +782,8 @@
                  "type":"",
                  "visible":true,
                  "width":35.9197,
-                 "x":283.645,
-                 "y":74.8493
+                 "x":388.978333333333,
+                 "y":-115.817366666667
                 }, 
                 {
                  "gid":127,
@@ -811,8 +811,8 @@
                  "type":"",
                  "visible":true,
                  "width":106.122,
-                 "x":314.939,
-                 "y":41.3333
+                 "x":517.605666666667,
+                 "y":42.6666333333333
                 }, 
                 {
                  "gid":124,
@@ -1000,6 +1000,18 @@
                  "y":-214.35
                 }, 
                 {
+                 "gid":215,
+                 "height":100,
+                 "id":238,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":260.333,
+                 "x":-9.83316666666673,
+                 "y":113
+                }, 
+                {
                  "height":38.9,
                  "id":125,
                  "name":"test",
@@ -1048,7 +1060,7 @@
                         {
                          "name":"id",
                          "type":"string",
-                         "value":"restart"
+                         "value":"preview"
                         }],
                  "rotation":0,
                  "type":"",
@@ -1065,14 +1077,14 @@
                         {
                          "name":"id",
                          "type":"string",
-                         "value":"preview"
+                         "value":"restart"
                         }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":70,
-                 "x":554,
-                 "y":23
+                 "x":548.666666666667,
+                 "y":-113
                 }, 
                 {
                  "height":70,
@@ -1088,12 +1100,12 @@
                  "type":"",
                  "visible":true,
                  "width":70,
-                 "x":95,
+                 "x":148,
                  "y":23
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -1150,7 +1162,7 @@
          "y":0
         }],
  "nextlayerid":16,
- "nextobjectid":238,
+ "nextobjectid":239,
  "orientation":"orthogonal",
  "renderorder":"left-up",
  "tiledversion":"1.11.2",
@@ -1168,8 +1180,8 @@
          "margin":0,
          "name":"Background",
          "spacing":0,
-         "tilecount":30,
-         "tileheight":770,
+         "tilecount":5,
+         "tileheight":275,
          "tiles":[
                 {
                  "id":3,
@@ -1196,10 +1208,6 @@
                  "imagewidth":270
                 }, 
                 {
-                 "id":7,
-                 "image":"..\/tiled\/images\/backgrounds\/Background_Lobby_Bg_center.png"
-                }, 
-                {
                  "id":15,
                  "image":"..\/tiled\/images\/terrain\/grass-patch-1.png",
                  "imageheight":256,
@@ -1210,105 +1218,8 @@
                          "type":"float",
                          "value":256
                         }]
-                }, 
-                {
-                 "id":16,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_fence_wood_start_angular_south_east.png"
-                }, 
-                {
-                 "id":17,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_fence_wood_start_angular_south_west.png"
-                }, 
-                {
-                 "id":18,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_flower_1_south_east.png"
-                }, 
-                {
-                 "id":19,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_flower_1_south_west.png"
-                }, 
-                {
-                 "id":20,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_flower_2_south_east.png"
-                }, 
-                {
-                 "id":21,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_flower_2_south_west.png"
-                }, 
-                {
-                 "id":22,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_large_1_south_east.png"
-                }, 
-                {
-                 "id":23,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_large_1_south_west.png"
-                }, 
-                {
-                 "id":24,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_large_2_south_east.png"
-                }, 
-                {
-                 "id":25,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_large_2_south_west.png"
-                },
-            
-                {
-                 "id":26,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_1_south_east.png"
-                }, 
-                {
-                 "id":27,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_1_south_west.png"
-                }, 
-                {
-                 "id":28,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_2_south_east.png"
-                }, 
-                {
-                 "id":29,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_2_south_west.png"
-                }, 
-                {
-                 "id":30,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_3_south_east.png"
-                }, 
-                {
-                 "id":31,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_3_south_west.png"
-                }, 
-                {
-                 "id":32,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_4_south_east.png"
-                }, 
-                {
-                 "id":33,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_foliage_grassPatch_small_4_south_west.png"
-                }, 
-                {
-                 "id":34,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_shrine_stair_2_moss_light_south_west.png"
-                }, 
-                {
-                 "id":35,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_shrine_stair_3_moss_light_south_east.png"
-                }, 
-                {
-                 "id":36,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_shrine_stair_3_moss_light_south_west.png"
-                }, 
-                {
-                 "id":37,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_shrine_stair_rubble_1_moss_light_south_east.png"
-                }, 
-                {
-                 "id":38,
-                 "image":"..\/tiled\/images\/backgrounds\/forestpack_shrine_stair_rubble_1_moss_light_south_west.png"
-                }, 
-                {
-                 "id":39,
-                 "image":"..\/tiled\/images\/backgrounds\/rocks\/rocks0001.png"
                 }],
-         "tilewidth":734
+         "tilewidth":411
         }, 
         {
          "columns":0,

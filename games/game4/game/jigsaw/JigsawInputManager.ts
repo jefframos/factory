@@ -1,6 +1,7 @@
 import PlatformHandler from "@core/platforms/PlatformHandler";
 import { DropShadowFilter } from "@pixi/filter-drop-shadow";
 import * as PIXI from "pixi.js";
+import Assets from "./Assets";
 import { JigsawCluster } from "./JigsawCluster";
 import { JigsawClusterManager } from "./JigsawClusterManager";
 import { JigsawPiece } from "./JigsawPiece";
@@ -132,6 +133,7 @@ export class JigsawInputManager {
 
         topPiece.notifySelected?.();
 
+
         // Tap/drag tracking
         this._downTimeMs = performance.now();
         this._downGlobal.copyFrom(global);
@@ -170,6 +172,9 @@ export class JigsawInputManager {
 
             // Start visuals only when a real drag starts
             this.beginDragVisuals(this.activeCluster);
+
+            Assets.tryToPlaySound(Assets.Sounds.UI.Hold)
+
 
             // Compute drag offset at drag start, not on pointer down
             const pLocal = this.piecesLayer.toLocal(global);
@@ -239,6 +244,9 @@ export class JigsawInputManager {
             }
 
             return;
+        } else {
+            Assets.tryToPlaySound(Assets.Sounds.UI.Drop)
+
         }
 
         // Drag release => snap/merge only

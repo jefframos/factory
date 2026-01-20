@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768863748743,
-                "duration": 8.560200000000009,
+                "date": 1768915032200,
+                "duration": 9.282699999999977,
                 "success": true
             }
         },
@@ -634,10 +634,79 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768863748743,
-                "duration": 582.4885,
+                "date": 1768915032201,
+                "duration": 692.2698999999999,
                 "success": true
             }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/anime-girl": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/anime-girl/cozy_girl_1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/anime-girl",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "ScZQPw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/anime-girl/cozy_girl_2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/anime-girl",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "4c9eug"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/anime-girl/cozy_girl_3.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/anime-girl",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "xIIW8w"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/anime-girl/cozy_girl_4.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/anime-girl",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "YkxO0Q"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/anime-girl/cozy_girl_5.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/anime-girl",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "QTkPfQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/anime-girl/cozy_girl_6.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/anime-girl",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "GTF7dg"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/cozy_girls": {
             "isFolder": true,
@@ -1194,7 +1263,7 @@
             },
             "transformData": {}
         },
-        ".assetpack/cache-buster/thumbs-t7wrBg.png": {
+        ".assetpack/cache-buster/thumbs-3CTDRA.png": {
             "isFolder": false,
             "transformParent": ".assetpack/multi-pipe-1/thumbs.png",
             "metaData": {},
@@ -1205,9 +1274,9 @@
             },
             "transformData": {}
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/thumbs-t7wrBg.png": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/thumbs-3CTDRA.png": {
             "isFolder": false,
-            "transformParent": ".assetpack/cache-buster/thumbs-t7wrBg.png",
+            "transformParent": ".assetpack/cache-buster/thumbs-3CTDRA.png",
             "metaData": {},
             "inheritedMetaData": {
                 "tps": true,
@@ -1227,7 +1296,7 @@
                 "page": 0
             }
         },
-        ".assetpack/cache-buster/thumbs-QRvXPA.json": {
+        ".assetpack/cache-buster/thumbs-kjzl.json": {
             "isFolder": false,
             "transformParent": ".assetpack/multi-pipe-1/thumbs.json",
             "metaData": {},
@@ -1238,9 +1307,9 @@
                 "page": 0
             }
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/thumbs-NZQBYw.json": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/thumbs-0kNfZA.json": {
             "isFolder": false,
-            "transformParent": ".assetpack/cache-buster/thumbs-QRvXPA.json",
+            "transformParent": ".assetpack/cache-buster/thumbs-kjzl.json",
             "metaData": {},
             "inheritedMetaData": {
                 "tps": true

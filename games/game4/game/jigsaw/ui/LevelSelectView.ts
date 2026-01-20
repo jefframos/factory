@@ -1,8 +1,8 @@
 // LevelSelectView.ts
-import SoundManager from "@core/audio/SoundManager";
 import { Difficulty, SectionDefinition } from "games/game4/types";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
+import Assets from "../Assets";
 import { LevelSelectMediator } from "../progress/LevelSelectMediator";
 import type { LevelSelectTheme } from "./LevelSelectViewElements";
 import { LevelSelectViewFactory } from "./LevelSelectViewFactory";
@@ -56,6 +56,7 @@ export class LevelSelectView extends PIXI.Container {
             if (this.mode === "sectionDetail") {
                 this.mode = "sections";
                 this.activeSection = undefined;
+                Assets.tryToPlaySound(Assets.Sounds.UI.RenderSection)
                 this.renderSections();
             }
         });
@@ -142,7 +143,8 @@ export class LevelSelectView extends PIXI.Container {
                 this.activeSection = s;
                 this.mode = "sectionDetail";
                 this.renderSectionDetail();
-                SoundManager.instance.playSoundById('Tap', { volume: 0.3 })
+                Assets.tryToPlaySound(Assets.Sounds.UI.Tap)
+                Assets.tryToPlaySound(Assets.Sounds.UI.RenderSectionDetail)
             });
 
             this.scrollView.content.addChild(card);

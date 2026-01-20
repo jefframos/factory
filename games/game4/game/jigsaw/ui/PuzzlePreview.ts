@@ -1,6 +1,6 @@
-import SoundManager from "@core/audio/SoundManager";
 import gsap from "gsap";
 import * as PIXI from "pixi.js";
+import Assets from "../Assets";
 
 export class PuzzlePreview extends PIXI.Container {
     private blackout: PIXI.Graphics;
@@ -53,7 +53,7 @@ export class PuzzlePreview extends PIXI.Container {
         this.contentContainer.alpha = 1;
         this.contentContainer.y = 0;
 
-        SoundManager.instance.playSoundById('Synth-Appear-01', { volume: 0.1 })
+        Assets.tryToPlaySound(Assets.Sounds.UI.PreviewOverAppear)
 
         gsap.from(this.contentContainer, {
             y: 150,

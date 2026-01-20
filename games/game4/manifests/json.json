@@ -37,6 +37,14 @@
         },
         {
           "alias": [
+            "jiggy/cozyGirls.json"
+          ],
+          "src": [
+            "jiggy/cozyGirls.json"
+          ]
+        },
+        {
+          "alias": [
             "jiggy/cuteAnimals.json"
           ],
           "src": [
@@ -77,18 +85,18 @@
         },
         {
           "alias": [
-            "jiggy/cozyGirls.json"
+            "jiggy/sportGirls.json"
           ],
           "src": [
-            "jiggy/cozyGirls.json"
+            "jiggy/sportGirls.json"
           ]
         },
         {
           "alias": [
-            "jiggy/sportGirls.json"
+            "jiggy/animeGirl-1.json"
           ],
           "src": [
-            "jiggy/sportGirls.json"
+            "jiggy/animeGirl-1.json"
           ]
         },
         {
