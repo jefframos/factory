@@ -27,9 +27,17 @@ export class JigsawCluster {
 
     // If you want to block rotate during drags, your input system can set this.
     public isHeld: boolean = false;
+    private canRotate: boolean = false;
 
     // Cache pivot center in local space (recomputed when cluster content changes)
     private _pivotLocal: PIXI.Point = new PIXI.Point(0, 0);
+
+    disableRotation() {
+        this.canRotate = false;
+    }
+    enableRotation() {
+        this.canRotate = true;
+    }
 
     public addPiece(piece: JigsawPiece): void {
         this.pieces.add(piece);
@@ -100,6 +108,7 @@ export class JigsawCluster {
      * keeping the cluster's world position stable (no "jump" on tap).
      */
     public rotateCW(): void {
+        if (!this.canRotate) return;
         const parent = this.container.parent;
         if (!parent) {
             this.rotationQ = (((this.rotationQ + 1) & 3) as QuarterTurns);
@@ -124,6 +133,7 @@ export class JigsawCluster {
         this.container.position.y += (pivotWorldBefore.y - pivotWorldAfter.y);
     }
     public async rotateCW_Tween(durationMs: number = 140): Promise<void> {
+        if (!this.canRotate) return;
         const parent = this.container.parent;
         if (!parent) {
             this.rotateCW();

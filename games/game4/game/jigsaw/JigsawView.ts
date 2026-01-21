@@ -8,6 +8,7 @@ import { JigsawPiece } from "./JigsawPiece";
 import { JigsawPuzzleFactory } from "./JigsawPuzzleFactory";
 import { JigsawScatterUtils } from "./paths/JigsawScatterUtils";
 import { PuzzlePreview } from "./ui/PuzzlePreview";
+import TutorialSwipe from "./ui/TutorialSwipe";
 import { JigsawSnapUtils } from "./vfx/JigsawSnapUtils";
 
 export default class JigsawView extends PIXI.Container {
@@ -25,7 +26,7 @@ export default class JigsawView extends PIXI.Container {
     private _safeRect?: PIXI.Rectangle;
 
     private targetSprite!: PIXI.Sprite;
-
+    private tutorial?: TutorialSwipe;
 
     private _solvedOrigin: PIXI.Point = new PIXI.Point(0, 0);
 
@@ -67,7 +68,7 @@ export default class JigsawView extends PIXI.Container {
         this.clusterManager.signals.onPieceConnected.add((e) => this.onPieceConnected.dispatch(e));
         this.clusterManager.signals.onPuzzleCompleted.add((e) => this.onPuzzleCompleted.dispatch(e));
 
-        const clusters = this.clusterManager.createInitialClusters(this.pieces);
+        const clusters = this.clusterManager.createInitialClusters(this.pieces, options.allowRation);
 
         // 2. Setup Rects
         this._safeRect = options.safeRect
@@ -83,52 +84,82 @@ export default class JigsawView extends PIXI.Container {
             // A. Set EVERY piece to its solved position first
             for (const p of this.pieces) {
                 p.cluster.container.position.set(
-                    p.definition.col * p.definition.pieceW + this._solvedOrigin.x,
-                    p.definition.row * p.definition.pieceH + this._solvedOrigin.y
+                    p.definition.col * p.definition.pieceW + this._solvedOrigin.x + p.cluster._pivotLocal.x,
+                    p.definition.row * p.definition.pieceH + this._solvedOrigin.y + p.cluster._pivotLocal.y
                 );
             }
+
 
             // B. Decide which clusters to move away
             // If isFirst is true, we only scatter the last 2. Otherwise, scatter all.
-            const clustersToScatter = options.isFirst ? clusters.slice(-2) : clusters;
 
-            const items = clustersToScatter.map((c) => {
-                c.rebuildPivotFromBounds();
-                const lb = c.container.getLocalBounds();
-                return {
-                    id: c.id,
-                    width: Math.max(1, lb.width),
-                    height: Math.max(1, lb.height),
-                };
-            });
+            if (!options.isFirst) {
 
-            const rng = JigsawScatterUtils.createSeededRng((Date.now() & 0xffffffff) >>> 0);
-            const placements = JigsawScatterUtils.computeBlueNoisePlacements({
-                scatterRect: options.scatterRect,
-                items,
-                candidatesPerItem: 24,
-                padding: 6,
-                separationMultiplier: 1.05,
-                rng,
-            });
+                const clustersToScatter = options.isFirst ? clusters.slice(-1) : clusters;
 
-            // C. Apply scattering/rotation only to chosen clusters
-            for (let i = 0; i < clustersToScatter.length; i++) {
-                const c = clustersToScatter[i];
-                const pos = placements[i];
+                const items = clustersToScatter.map((c) => {
+                    c.rebuildPivotFromBounds();
+                    const lb = c.container.getLocalBounds();
+                    return {
+                        id: c.id,
+                        width: Math.max(1, lb.width),
+                        height: Math.max(1, lb.height),
+                    };
+                });
 
-                if (options.allowRation) {
-                    const r = i % 3;
-                    for (let index = 0; index < r; index++) { c.rotateCW(); }
+                const rng = JigsawScatterUtils.createSeededRng((Date.now() & 0xffffffff) >>> 0);
+                const placements = JigsawScatterUtils.computeBlueNoisePlacements({
+                    scatterRect: options.scatterRect,
+                    items,
+                    candidatesPerItem: 24,
+                    padding: 6,
+                    separationMultiplier: 1.05,
+                    rng,
+                });
+
+                // C. Apply scattering/rotation only to chosen clusters
+                for (let i = 0; i < clustersToScatter.length; i++) {
+                    const c = clustersToScatter[i];
+                    const pos = placements[i];
+
+                    if (options.allowRation) {
+                        const r = i % 3;
+                        for (let index = 0; index < r; index++) { c.rotateCW(); }
+                    }
+
+                    c.rebuildPivotFromBounds();
+                    const lb = c.container.getLocalBounds();
+                    c.container.position.set(
+                        pos.x - lb.x + c.container.pivot.x,
+                        pos.y - lb.y + c.container.pivot.y
+                    );
                 }
-
-                c.rebuildPivotFromBounds();
-                const lb = c.container.getLocalBounds();
-                c.container.position.set(
-                    pos.x - lb.x + c.container.pivot.x,
-                    pos.y - lb.y + c.container.pivot.y
+            } else {
+                this.clusterManager.snapClustersByIds([0, 1, 2, 3, 5, 6, 7, 8], clusters)
+                clusters[4].container.position.set(
+                    options.scatterRect.x + (options.scatterRect.width / 2),
+                    options.scatterRect.y + (options.scatterRect.height / 2) + 180
                 );
+
+
+                this.input?.moveClusterToFront(clusters[4]);
+                this.tutorial = new TutorialSwipe({
+                    handTexturePath: 'tutorial_hand_2',
+                    pauseAtStart: 1500,
+                    velocity: 0.45,
+                    repeatDelay: 500,
+                    originOffset: { x: 20, y: 20 },
+                    targetOffset: { x: 0, y: 0 } // Adjust based on your tab shape
+                });
+                this.addChild(this.tutorial); // Add on top of piecesLayer
+
+                // Target piece is 4, targets the surviving cluster
+                const cluster4 = this.pieces[4].cluster;
+                const mainMass = clusters[0]; // The snapped group
+                this.tutorial.setGuidance(cluster4, mainMass);
             }
+
+
 
             // D. Background/UI visibility setup
             this.setupBackgroundRects(stage, options.scatterRect);
@@ -159,13 +190,19 @@ export default class JigsawView extends PIXI.Container {
         this.scatterRect.alpha = 0;
 
         if (this._safeRect) {
-            stage.addChildAt(this.safeRect, 0);
+            //stage.addChildAt(this.safeRect, 0);
             this.safeRect.setTransform(this._safeRect.x, this._safeRect.y);
             this.safeRect.width = this._safeRect.width;
             this.scatterRect.height = this._safeRect.height;
             this.safeRect.alpha = 0;
-            stage.addChildAt(this.safeRectFrame, 2);
+            //stage.addChildAt(this.safeRectFrame, 2);
         }
+    }
+    puzzleCompleted() {
+        this.tutorial?.destroy();
+    }
+    update(delta: number) {
+        this.tutorial?.update(delta);
     }
     hidePreview() {
         this.previewPopup?.hide();

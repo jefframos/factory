@@ -18,6 +18,13 @@
             "enabled": true,
             "items": [
                 {
+                    "id": "littleExplorers-1",
+                    "enabled": true,
+                    "type": 2,
+                    "json": "littleExplorers-1.json",
+                    "sectionCost": 0
+                },
+                {
                     "id": "cutePuppies-1",
                     "enabled": true,
                     "type": 2,
@@ -27,7 +34,7 @@
                 {
                     "id": "animeGirl-1",
                     "enabled": true,
-                    "type": 2,
+                    "type": 1,
                     "json": "animeGirl-1.json",
                     "sectionCost": 0
                 },

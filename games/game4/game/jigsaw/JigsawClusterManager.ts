@@ -54,13 +54,18 @@ export class JigsawClusterManager {
         this.completed = false;
     }
 
-    public createInitialClusters(pieces: JigsawPiece[]): JigsawCluster[] {
+    public createInitialClusters(pieces: JigsawPiece[], allowRotation: boolean): JigsawCluster[] {
         const clusters: JigsawCluster[] = [];
 
         for (const p of pieces) {
             const c = new JigsawCluster();
             p.position.set(0, 0);
             c.addPiece(p);
+            if (!allowRotation) {
+                c.disableRotation();
+            } else {
+                c.enableRotation();
+            }
 
             clusters.push(c);
             this.piecesLayer.addChild(c.container);
@@ -385,7 +390,7 @@ export class JigsawClusterManager {
         return new PIXI.Point(v.y, -v.x);
     }
 
-    private mergeClusters(a: JigsawCluster, b: JigsawCluster): JigsawCluster {
+    public mergeClusters(a: JigsawCluster, b: JigsawCluster): JigsawCluster {
         let target = a;
         let source = b;
 
@@ -424,6 +429,91 @@ export class JigsawClusterManager {
         target.rebuildPivotFromBounds();
 
         return target;
+    }
+
+    /**
+ * Force-merges a list of clusters into a single solved group.
+ * @param clusterIds The IDs (or indices) of the clusters to snap together.
+ * @param allClusters The current active list of clusters in your game.
+ */
+    public snapClustersByIds(clusterIds: number[], allClusters: JigsawCluster[]): JigsawCluster | null {
+        if (clusterIds.length < 2) return null;
+
+        // 1. Collect the actual cluster objects based on the IDs provided
+        const targets = clusterIds
+            .map(id => allClusters[id])
+            .filter(c => c !== undefined && c !== null);
+
+        if (targets.length < 2) return null;
+
+        // 2. Pick the first one as the "Anchor"
+        let anchorCluster = targets[0];
+
+        // 3. Ensure all pieces in the group have the same rotation as the anchor
+        const targetRot = anchorCluster.rotationQ;
+
+        for (let i = 1; i < targets.length; i++) {
+            const movingCluster = targets[i];
+
+            // Match rotation instantly
+            this.setClusterRotationQ(movingCluster, targetRot);
+
+            // 4. Calculate the solved-relative position
+            // We pick one piece from each to find the relative distance they SHOULD have
+            const anchorPiece = Array.from(anchorCluster.pieces)[0];
+            const movingPiece = Array.from(movingCluster.pieces)[0];
+
+            const stepX = anchorPiece.definition.pieceW;
+            const stepY = anchorPiece.definition.pieceH;
+
+            // Grid difference
+            const dc = movingPiece.definition.col - anchorPiece.definition.col;
+            const dr = movingPiece.definition.row - anchorPiece.definition.row;
+
+            // The offset in "Solved Space" (Rotation 0)
+            const expectedSolved = new PIXI.Point(dc * stepX, dr * stepY);
+
+            // Rotate that offset to match the anchor's current rotation
+            const expectedRotated = this.rotateVecByQ_CW(expectedSolved, targetRot);
+
+            // 5. Teleport the moving cluster's container to the perfect position
+            // Get anchor piece position in the piecesLayer
+            const anchorPieceGlobal = anchorPiece.getCoreOriginGlobal();
+            const anchorPieceLocal = this.piecesLayer.toLocal(anchorPieceGlobal);
+
+            // The target local position for the moving piece
+            const targetMovingPieceLocal = new PIXI.Point(
+                anchorPieceLocal.x + expectedRotated.x,
+                anchorPieceLocal.y + expectedRotated.y
+            );
+
+            // Calculate how much we need to shift the whole container
+            const movingPieceGlobal = movingPiece.getCoreOriginGlobal();
+            const movingPieceLocal = this.piecesLayer.toLocal(movingPieceGlobal);
+
+            const dx = targetMovingPieceLocal.x - movingPieceLocal.x;
+            const dy = targetMovingPieceLocal.y - movingPieceLocal.y;
+
+            movingCluster.container.position.x += dx;
+            movingCluster.container.position.y += dy;
+
+            // 6. Merge into the anchor
+            anchorCluster = this.mergeClusters(anchorCluster, movingCluster);
+
+            // Update the clusterCount in the manager
+            this.clusterCount--;
+        }
+
+        // Check for puzzle completion
+        if (!this.completed && this.clusterCount === 1 && this.totalPieces > 0) {
+            this.completed = true;
+            this.signals.onPuzzleCompleted.dispatch({
+                finalCluster: anchorCluster,
+                totalPieces: this.totalPieces,
+            });
+        }
+
+        return anchorCluster;
     }
 
     private setClusterRotationQ(cluster: JigsawCluster, q: QuarterTurns): void {

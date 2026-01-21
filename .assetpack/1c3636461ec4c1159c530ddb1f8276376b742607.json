@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768947817328,
-                "duration": 8.64670000000001,
+                "date": 1769036504084,
+                "duration": 9.106700000000046,
                 "success": true
             }
         },
@@ -89,8 +89,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768947817328,
-                "duration": 738.4979999999998,
+                "date": 1769036504084,
+                "duration": 786.8896,
                 "success": true
             }
         },
@@ -645,6 +645,75 @@
             },
             "transformData": {},
             "hash": "a7Fs4w"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/little_explorers": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/little_explorers/cartoon_cute_animals_1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/little_explorers",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "RtBMag"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/little_explorers/cartoon_cute_animals_2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/little_explorers",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "-MWbDg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/little_explorers/cartoon_cute_animals_3.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/little_explorers",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "RjLKkg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/little_explorers/cartoon_cute_animals_4.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/little_explorers",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "sBlg3Q"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/little_explorers/cartoon_cute_animals_5.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/little_explorers",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "34dRxg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/little_explorers/cartoon_cute_animals_6.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/little_explorers",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "XZN3_g"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/images/thumbs{tps}/meme1.png": {
             "isFolder": false,

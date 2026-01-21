@@ -6,10 +6,133 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768947817186,
-                "duration": 0.5827000000000453,
+                "date": 1769036478634,
+                "duration": 7.045400000000086,
                 "success": true
             }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/bg_loader.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769030137560,
+                "duration": 77.23209999999995,
+                "success": true
+            },
+            "hash": "eygBxA"
+        },
+        ".assetpack/multi-pipe-2/bg_loader.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/bg_loader.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/bg_loader.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/bg_loader.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/bg_loader.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/bg_loader.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/bg_loader.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/bg_loader.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/fill_loader.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769030137585,
+                "duration": 80.46839999999997,
+                "success": true
+            },
+            "hash": "TwWiBw"
+        },
+        ".assetpack/multi-pipe-2/fill_loader.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/fill_loader.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/fill_loader.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/fill_loader.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/fill_loader.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/fill_loader.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/fill_loader.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/fill_loader.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/jiggy-pattern.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769028877642,
+                "duration": 54.67499999999927,
+                "success": true
+            },
+            "hash": "Y_ZuzA"
+        },
+        ".assetpack/multi-pipe-2/jiggy-pattern.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/jiggy-pattern.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/jiggy-pattern.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/jiggy-pattern.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/jiggy-pattern.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/jiggy-pattern.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/jiggy-pattern.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/jiggy-pattern.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}": {
             "isFolder": true,
@@ -20,8 +143,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1768947817187,
-                "duration": 0.04650000000003729,
+                "date": 1769036478634,
+                "duration": 6.684600000000046,
                 "success": true
             }
         },
@@ -1283,6 +1406,164 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/fast-food/fast_food_6.png": {
             "isFolder": false,
             "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/fast-food/fast_food_6.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1769036478634,
+                "duration": 6.683399999999892,
+                "success": true
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers/cartoon_cute_animals_1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1769036478634,
+                "duration": 16.97210000000007,
+                "success": true
+            },
+            "hash": "2XaP5g"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/little_explorers/cartoon_cute_animals_1.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers/cartoon_cute_animals_1.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers/cartoon_cute_animals_2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1769036478638,
+                "duration": 13.078199999999924,
+                "success": true
+            },
+            "hash": "Qy3UNw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/little_explorers/cartoon_cute_animals_2.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers/cartoon_cute_animals_2.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers/cartoon_cute_animals_3.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1769036478641,
+                "duration": 13.483600000000024,
+                "success": true
+            },
+            "hash": "4w3kYA"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/little_explorers/cartoon_cute_animals_3.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers/cartoon_cute_animals_3.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers/cartoon_cute_animals_4.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1769036478645,
+                "duration": 9.991300000000024,
+                "success": true
+            },
+            "hash": "dRx86w"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/little_explorers/cartoon_cute_animals_4.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers/cartoon_cute_animals_4.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers/cartoon_cute_animals_5.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1769036478648,
+                "duration": 6.375999999999976,
+                "success": true
+            },
+            "hash": "xZz0rA"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/little_explorers/cartoon_cute_animals_5.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers/cartoon_cute_animals_5.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers/cartoon_cute_animals_6.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1769036478652,
+                "duration": 3.170199999999909,
+                "success": true
+            },
+            "hash": "trUcNA"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/game4/images/non-preload/puzzles/little_explorers/cartoon_cute_animals_6.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/game4/raw-assets/non-preload/puzzles{copy}/little_explorers/cartoon_cute_animals_6.png",
             "metaData": {},
             "inheritedMetaData": {
                 "copy": true

@@ -4,7 +4,7 @@ import type { Difficulty, LevelDefinition, SectionDefinition } from "games/game4
 import * as PIXI from "pixi.js";
 import Assets from "../Assets";
 import { InGameEconomy } from "../data/InGameEconomy";
-import { getLevelDifficultyCompleted, getSectionCompletion } from "../progress/progressUtils";
+import { getSectionCompletion } from "../progress/progressUtils";
 import { getDifficultySkinKey, type LevelSelectTheme } from "./LevelSelectViewElements";
 
 export interface HeaderView {
@@ -101,8 +101,9 @@ export class LevelSelectViewFactory {
         const coverSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
         coverSprite.anchor.set(0.5);
         coverSprite.position.set(w / 2, coverH / 2);
+        coverSprite.scale.set(ViewUtils.elementEvelop(coverSprite, w, h));
 
-        const mask = new PIXI.Graphics().beginFill(0xff0000).drawRoundedRect(pad, pad, w - pad * 2, coverH - pad * 2, 30).endFill();
+        const mask = new PIXI.Graphics().beginFill(0xff0000).drawRoundedRect(pad / 2, pad / 2, w - pad, coverH - pad, 10).endFill();
         coverSprite.mask = mask;
         root.addChild(mask, coverSprite);
 
@@ -180,7 +181,7 @@ export class LevelSelectViewFactory {
 
                 const applyTexture = (tex: PIXI.Texture) => {
                     coverSprite.texture = tex;
-                    const scale = ViewUtils.elementEvelop(coverSprite, targetW, targetH);
+                    const scale = ViewUtils.elementEvelop(coverSprite, w, h)
                     coverSprite.scale.set(scale + 0.05);
                 };
 
@@ -210,7 +211,10 @@ export class LevelSelectViewFactory {
     ): LevelRowComponent {
         const root = new PIXI.Container() as LevelRowComponent;
         const pad = this.theme.levelRow.rowPadding;
-        const thumbSize = this.theme.levelRow.thumbSize;
+
+        // 1. Unified dimensions logic to match Section Card
+        const thumbW = this.theme.levelRow.thumbWidth ?? this.theme.levelRow.thumbSize;
+        const thumbH = this.theme.levelRow.thumbHeight ?? this.theme.levelRow.thumbSize;
 
         const bg = new PIXI.NineSlicePlane(this.theme.levelRow.bgTexture!, 40, 40, 40, 40);
         bg.width = w;
@@ -222,18 +226,25 @@ export class LevelSelectViewFactory {
         title.position.set(w / 2, pad);
         root.addChild(title);
 
-        // Thumbnail with local coordinate mask
+        // 2. Thumbnail Logic (Synced with Section Card)
         const thumbContainer = new PIXI.Container();
         const thumbSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
         thumbSprite.anchor.set(0.5);
+
+        // Center-crop Mask (Drawn from center to match Section Card style)
         const thumbMask = new PIXI.Graphics()
             .beginFill(0x000000)
-            .drawRoundedRect(-thumbSize / 2, -thumbSize / 2, thumbSize, thumbSize, 14)
+            .drawRoundedRect(-thumbW / 2, -thumbH / 2, thumbW, thumbH, 14)
             .endFill();
+
         thumbSprite.mask = thumbMask;
         thumbContainer.addChild(thumbMask, thumbSprite);
+
+        // Position the container at the vertical center of the row (or adjusted for title)
+        thumbContainer.position.set(w / 2, h / 2);
         root.addChild(thumbContainer);
 
+        // Groups for Lock/Unlock states
         const lockedGroup = new PIXI.Container();
         const unlockedGroup = new PIXI.Container();
         root.addChild(lockedGroup, unlockedGroup);
@@ -257,54 +268,53 @@ export class LevelSelectViewFactory {
             title.text = lvl.name;
             bg.texture = isUnlocked ? this.theme.levelRow.bgTexture! : this.theme.levelRow.bgTextureLocked!;
 
+            // 3. Texture Application (Identical to Section Card)
             const imgSrc = lvl.thumb || lvl.imageSrc;
             if (imgSrc) {
                 const applyTex = (tex: PIXI.Texture) => {
                     thumbSprite.texture = tex;
-                    thumbSprite.scale.set(ViewUtils.elementEvelop(thumbSprite, thumbSize, thumbSize));
+                    // Scale to fill the mask area (thumbW/thumbH) + bleed
+                    const scale = ViewUtils.elementEvelop(thumbSprite, thumbW, thumbH);
+                    thumbSprite.scale.set(scale + 0.05);
                 };
+
                 PIXI.Assets.cache.has(imgSrc) ? applyTex(PIXI.Assets.get(imgSrc)) : PIXI.Assets.load(imgSrc).then(applyTex);
             }
 
-            thumbContainer.y = title.y + title.height + thumbSize / 2 + 10;
+            // Final UI Layout adjustments
             lockedGroup.visible = !isUnlocked;
             unlockedGroup.visible = isUnlocked;
 
             if (!isUnlocked) {
-                thumbContainer.x = w / 2;
-                (purchaseBtn as any).targetId = lvl.id;
-                (purchaseBtn as any).currentCost = lvl.unlockCost ?? 0;
-                (purchaseBtn as any).refreshState();
                 purchaseBtn.setLabel(`${lvl.unlockCost}`);
                 purchaseBtn.position.set(w / 2 - purchaseBtn.width / 2, h - pad - purchaseBtn.height);
             } else {
-                thumbContainer.x = w / 2 - thumbSize / 2 - pad;
-                this.updateRewardsList(rewardsContainer, lvl.id, prog, lvl);
-                rewardsContainer.position.set(thumbContainer.x + thumbSize / 2 + 20, thumbContainer.y - thumbSize / 2);
-
-                const b1 = diffBtns[0].width
+                const b1 = diffBtns[0].width;
                 let curX = (w - (3 * b1 + 20)) / 2;
                 diffBtns.forEach((btn, idx) => {
                     btn.setLabel(diffs[idx] === "easy" ? "small" : diffs[idx] === "hard" ? "large" : "medium");
                     btn.position.set(curX, h - pad - btn.height);
                     curX += btn.width + 10;
                 });
+
+                this.updateRewardsList(rewardsContainer, lvl.id, prog, lvl);
+                rewardsContainer.position.set(pad, diffBtns[0].y - rewardsContainer.height - 5);
             }
         };
 
         root.update(level, section, progress, unlocked);
         return root;
     }
-
     private updateRewardsList(container: PIXI.Container, levelId: string, progress: any, definition: LevelDefinition) {
         container.removeChildren().forEach(c => c.destroy());
         ["easy", "medium", "hard"].forEach((d, i) => {
             const row = new PIXI.Container();
-            row.y = i * 40;
-            const isDone = getLevelDifficultyCompleted(progress, levelId, d as Difficulty);
+            row.x = i * 100;
+            const isDone = false//getLevelDifficultyCompleted(progress, levelId, d as Difficulty);
             const icon = PIXI.Sprite.from(isDone ? Assets.Textures.Icons.CheckItem : `jiggy${d}`);
             icon.scale.set(ViewUtils.elementScaler(icon, 30, 30));
-            const prizeText = new PIXI.Text(isDone ? "DONE" : (definition.isSpecial ? (definition.prizesSpecial?.[i] ?? "0") : (definition.prize?.[i] ?? "0")), this.theme.levelRow.questStyle);
+            const prizeText = new PIXI.Text((definition.isSpecial ? (definition.prizesSpecial?.[i] ?? "0") : (definition.prize?.[i] ?? "0")), this.theme.levelRow.questStyle);
+            //const prizeText = new PIXI.Text(isDone ? "DONE" : (definition.isSpecial ? (definition.prizesSpecial?.[i] ?? "0") : (definition.prize?.[i] ?? "0")), this.theme.levelRow.questStyle);
             prizeText.x = 40;
             row.addChild(icon, prizeText);
             container.addChild(row);

@@ -20,7 +20,7 @@
         "watch:audio": "cross-env WATCH=true node tools/audio/build-audio.mjs",
         "thumbs": "node tools/image/thumbs.mjs ./games/game4/raw-assets/non-preload/puzzles{copy} ./games/game4/raw-assets/images/thumbs{tps} 200x200 1",
         "sizes": "node tools/image/thumbs.mjs ./raw/puzzles ./games/game4/raw-assets/non-preload/puzzles{copy} 700x1000 0.7",
-        "help": "node tools/sections/build-section.mjs raw/puzzles/cute_animals cuteAnimals-1 'Cute Puppies' 1 false './games/game4/raw-assets/json/jiggy{copy}/'"
+        "help": "node tools/sections/build-section.mjs raw/puzzles/little_explorers littleExplorers-1 'Little Explorers' 1 false './games/game4/raw-assets/json/jiggy{copy}/'"
     },
     "devDependencies": {
         "@types/dat.gui": "^0.7.13",

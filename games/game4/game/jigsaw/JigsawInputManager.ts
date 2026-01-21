@@ -108,7 +108,9 @@ export class JigsawInputManager {
         this.activeCluster = null;
         this.activePointerId = null;
     }
-
+    public moveClusterToFront(cluster: JigsawCluster): void {
+        this.piecesLayer.addChild(cluster.container);
+    }
     private onPointerDown(e: PIXI.FederatedPointerEvent): void {
         if (!this._enabled || this.activeCluster) {
             return;

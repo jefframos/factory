@@ -1,6 +1,5 @@
 import SoundLoadManager from '@core/audio/SoundLoaderManager';
 import { Game } from '@core/Game';
-import LoaderScene from '@core/loader/LoaderScene';
 import { ManifestHelper } from '@core/loader/ManifestHelper';
 import PlatformHandler from '@core/platforms/PlatformHandler';
 import PokiPlatform from '@core/platforms/PokiPlatform';
@@ -10,6 +9,7 @@ import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
 import * as PIXI from 'pixi.js';
 import { Fonts } from './game/character/Types';
 import GameplayJigsawScene from './game/jigsaw/GameplayJigsawScene';
+import JigsawLoader from './game/loader/JigsawLoader';
 import { ConfirmationPopup } from './game/popup/ConfirmationPopup';
 import { GameOverPopup } from './game/popup/GameOverPopup';
 import { DevGuiManager } from './game/utils/DevGuiManager';
@@ -21,7 +21,7 @@ import jsonManifest from './manifests/json.json'; // adjust path
 export default class MyGame extends Game {
     private gameContainer = new PIXI.Container();
     private sceneManager!: SceneManager;
-    private loaderScene!: LoaderScene;
+    private loaderScene!: JigsawLoader;
 
 
     private popupManager: PopupManager = new PopupManager();
@@ -37,7 +37,7 @@ export default class MyGame extends Game {
         PlatformHandler.instance.platform.startLoad();
         this.stageContainer.addChild(this.gameContainer);
         this.sceneManager = new SceneManager(this.gameContainer);
-        this.loaderScene = this.sceneManager.register('loader', LoaderScene);
+        this.loaderScene = this.sceneManager.register('loader', JigsawLoader);
         this.sceneManager.changeScene('loader');
         this.loadAssets();
     }
@@ -99,7 +99,7 @@ export default class MyGame extends Game {
         })
 
 
-
+        //await PromiseUtils.await(5000)
 
 
         const sounds = ManifestHelper.patchPaths(audioManifest, `${this.folderPath}/audio`);

@@ -69,6 +69,14 @@
         },
         {
           "alias": [
+            "jiggy/cutePuppies-1.json"
+          ],
+          "src": [
+            "jiggy/cutePuppies-1.json"
+          ]
+        },
+        {
+          "alias": [
             "jiggy/fantasyCreatures.json"
           ],
           "src": [
@@ -85,6 +93,14 @@
         },
         {
           "alias": [
+            "jiggy/littleExplorers-1.json"
+          ],
+          "src": [
+            "jiggy/littleExplorers-1.json"
+          ]
+        },
+        {
+          "alias": [
             "jiggy/puzzleData.json"
           ],
           "src": [
@@ -97,14 +113,6 @@
           ],
           "src": [
             "jiggy/sportGirls.json"
-          ]
-        },
-        {
-          "alias": [
-            "jiggy/cutePuppies-1.json"
-          ],
-          "src": [
-            "jiggy/cutePuppies-1.json"
           ]
         },
         {

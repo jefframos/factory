@@ -86,6 +86,8 @@ export interface LevelSelectTheme {
 
         rowHeight: number;
         thumbSize: number;
+        thumbWidth?: number;
+        thumbHeight?: number;
         titleStyle: Partial<PIXI.TextStyle>;
         questStyle: Partial<PIXI.TextStyle>;
         rowPadding: number;
@@ -147,7 +149,7 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
     }
     return {
         headerHeight: 90,
-        padding: 40,
+        padding: 20,
 
         headerBgTexture: null,//Assets.getTexture(T.UI.Header),
         headerBgNineSlice: Assets.Paddings.UI.Header,
@@ -300,7 +302,7 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
             cardBgTexture: Assets.getTexture(T.UI.CardBg),
             cardBgNineSlice: { left: 62, top: 62, right: 62, bottom: 62 },
 
-            coverHeightRatio: 0.80,
+            coverHeightRatio: 0.90,
             coverOverlayAlpha: 0,
             cardHeight: 300,
 
@@ -316,13 +318,15 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
             useNineSliceBg: true,
             bgTexture: Assets.getTexture(T.UI.RowBg),
             bgTextureLocked: Assets.getTexture(T.UI.RowLock),
-            bgNineSlice: { left: 40, top: 40, right: 40, bottom: 40 },
+            bgNineSlice: { left: 62, top: 62, right: 62, bottom: 62 },
 
-            rowHeight: 280,
+            rowHeight: 300,
             thumbSize: 120,
+            thumbHeight: 300 * 0.9,
+            thumbWidth: 310,
             titleStyle: rowTitleStyle,
             questStyle: { ...difficultyStyle, fontSize: 16 },
-            rowPadding: 15,
+            rowPadding: 20,
             rowCornerRadius: 14,
         },
 

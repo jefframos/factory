@@ -80,7 +80,7 @@ export default class Assets {
     static readonly AmbientSound = {
 
         AmbientSoundId: 'peace-be-with-you',
-        AmbientMasterVolume: 0.1,
+        AmbientMasterVolume: 0.05,
 
         AmbientSoundGameplay: 'brittle-rille',
         AmbientMasterVolumeGameplay: 0.1,

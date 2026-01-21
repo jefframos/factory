@@ -28,6 +28,7 @@ import { LevelSelectMediator, PlayLevelRequest, PurchaseLevelRequest } from "./p
 import { CurrencyHud } from "./ui/CurrencyHud";
 import { LevelSelectView } from "./ui/LevelSelectView";
 import { createDefaultLevelSelectTheme } from "./ui/LevelSelectViewElements";
+import PatternBackground from "./ui/PatternBackground";
 import SoundToggleButton from "./ui/SoundToggleButton";
 import { makeResizedSpriteTexture } from "./vfx/imageFlatten";
 
@@ -60,6 +61,7 @@ export default class GameplayJigsawScene extends GameScene {
     private soundToggleButton?: SoundToggleButton;
     private store: ProgressCookieStore = new ProgressCookieStore("jg_progress_v1", 1);
 
+    private patternBackground!: PatternBackground;
     // Popup event handlers stored so we can remove on destroy
     private readonly _onPopupEnd = (popupId: string) => {
         if (popupId === "gameOver") {
@@ -97,11 +99,17 @@ export default class GameplayJigsawScene extends GameScene {
     public build(): void {
         this.updateScoreUi(0);
 
+        //const color = 0x00BFA5
 
+        if (Game.debugParams.autoWipe) {
+            this.store.resetGameProgress()
+        }
 
+        this.patternBackground = new PatternBackground({ background: 0x26C6DA, patternAlpha: 0.2, patternPath: 'game4/images/non-preload/jiggy-pattern.png' });
+        this.addChild(this.patternBackground);
+        this.patternBackground.init()
 
-
-        this.addChild(this.background)
+        //this.addChild(this.background)
 
         this.addChild(this.gameplayContainer);
 
@@ -124,7 +132,7 @@ export default class GameplayJigsawScene extends GameScene {
 
         //const store = new ProgressCookieStore("jg_progress_v1", 1);
         DevGuiManager.instance.addButton('erase', () => {
-            this.store.resetGameProgress();
+            this.store.resetGameProgress(true);
         })
 
         DevGuiManager.instance.addButton('addCoins', () => {
@@ -242,7 +250,7 @@ export default class GameplayJigsawScene extends GameScene {
             level: LevelDefinition,
             levelId: LevelDefinition.id,
             section: StaticData.getSectionById(LevelDefinition.sectionId),
-            allowRotation: false
+            allowRotation: true
         }
         this.startMatch(request, false)
 
@@ -252,6 +260,10 @@ export default class GameplayJigsawScene extends GameScene {
     }
 
     public update(delta: number): void {
+
+        this.patternBackground.update(delta);
+        this.jigsawBoardView.update(delta);
+
         this.layout();
 
 
@@ -366,6 +378,7 @@ export default class GameplayJigsawScene extends GameScene {
 
     private async completePuzzle() {
         this.jigsawBoardView.input?.setEnabled(false);
+        this.jigsawBoardView.puzzleCompleted();
 
         Assets.tryToPlaySound(Assets.Sounds.UI.PuzzleCompleted)
         let rewardAmount = 0;
@@ -469,7 +482,7 @@ export default class GameplayJigsawScene extends GameScene {
             allowRation: data?.allowRotation,
             scatterRect: this.getScatterRect(),
             safeRect: this.getSafeRect(),
-            // isFirst
+            isFirst
         });
 
 
@@ -522,6 +535,9 @@ export default class GameplayJigsawScene extends GameScene {
 
     private layout(): void {
         // Center gameplay container
+        this.patternBackground.x = Game.DESIGN_WIDTH / 2;
+        this.patternBackground.y = Game.DESIGN_HEIGHT / 2;
+
         this.gameplayContainer.x = Game.DESIGN_WIDTH / 2;
         this.gameplayContainer.y = Game.DESIGN_HEIGHT / 2;
 

@@ -154,7 +154,11 @@ export class LevelSelectView extends PIXI.Container {
         const sections = (this.mediator as any).sections || [];
         const progress = this.mediator.getProgress();
         const cols = 2;
-        const cardW = Math.floor((this.viewW - this.theme.padding * 3) / cols);
+
+        // Total space occupied by padding = (cols + 1) * padding
+        const totalPaddingSpace = (cols + 1) * this.theme.padding;
+        const cardW = Math.floor((this.viewW - totalPaddingSpace) / cols);
+        //const cardW = Math.floor((this.viewW - this.theme.padding * 2) / cols);
 
         sections.forEach((s: SectionDefinition, i: number) => {
             let card = this.sectionPool[i];
@@ -169,6 +173,8 @@ export class LevelSelectView extends PIXI.Container {
                 this.sectionsPage.addChild(card);
             }
             card.visible = true;
+            //card.x = this.theme.padding + (i % cols) * (cardW + this.theme.padding);
+            // This stays the same
             card.x = this.theme.padding + (i % cols) * (cardW + this.theme.padding);
             card.y = this.theme.padding + Math.floor(i / cols) * (this.theme.sectionCard.cardHeight + this.theme.padding);
             card.update(s, progress);
@@ -190,7 +196,11 @@ export class LevelSelectView extends PIXI.Container {
 
         const levels = this.activeSection.levels;
         const progress = this.mediator.getProgress();
-        const cardW = Math.floor((this.viewW - this.theme.padding * 2 - 12) / 2);
+
+        const cols = 2;
+        const totalPaddingSpace = (cols + 1) * this.theme.padding;
+        const cardW = Math.floor((this.viewW - totalPaddingSpace) / cols);
+        //const cardW = Math.floor((this.viewW - this.theme.padding * 2 - 12) / 2);
 
         levels.forEach((lvl, i) => {
             let row = this.rowPool[i];
@@ -203,8 +213,10 @@ export class LevelSelectView extends PIXI.Container {
                 this.detailPage.addChild(row);
             }
             row.visible = true;
-            row.x = this.theme.padding + (i % 2) * (cardW + 12);
-            row.y = this.theme.padding + Math.floor(i / 2) * (this.theme.levelRow.rowHeight + 12);
+            // row.x = this.theme.padding + (i % 2) * (cardW + 12);
+            row.x = this.theme.padding + (i % cols) * (cardW + this.theme.padding);
+            //row.y = this.theme.padding + Math.floor(i / 2) * (this.theme.levelRow.rowHeight + 12);
+            row.y = this.theme.padding + Math.floor(i / cols) * (this.theme.sectionCard.cardHeight + this.theme.padding);
             row.update(lvl, this.activeSection!, progress, unlocked);
         });
 

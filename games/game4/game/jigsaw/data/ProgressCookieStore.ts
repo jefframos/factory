@@ -4,20 +4,43 @@ export class ProgressCookieStore {
     private readonly storageKey: string;
     private readonly version: number;
 
-    /**
-     * Using storageKey instead of cookieName for clarity, 
-     * but keeping the default value for backward compatibility.
-     */
+    /** Static tracker for the number of unique levels that have been finished */
+    public static totalCompletedLevels: number = 0;
+
     public constructor(storageKey = "jg_progress_v1", version = 1) {
         this.storageKey = storageKey;
         this.version = version;
+
+        // Initialize the static counter by loading current data
+        this.syncCompletionCount();
     }
 
     /**
-     * Checks if the user has any saved progress.
+     * Now considers "First Time" as someone who has never saved 
+     * OR someone who hasn't finished a single level yet.
      */
     public static isFirstTime(storageKey = "jg_progress_v1"): boolean {
-        return localStorage.getItem(storageKey) === null;
+        const noData = localStorage.getItem(storageKey) === null;
+        return noData || ProgressCookieStore.totalCompletedLevels === 0;
+    }
+
+    /**
+     * Calculates how many levels have at least one difficulty completed
+     * and updates the static variable.
+     */
+    private syncCompletionCount(): void {
+        const progress = this.load();
+        let count = 0;
+
+        for (const levelId in progress.levels) {
+            const level = progress.levels[levelId];
+            const isFinished = Object.values(level.difficulties).some(d => d.completed);
+            if (isFinished) {
+                count++;
+            }
+        }
+
+        ProgressCookieStore.totalCompletedLevels = count;
     }
 
     /**
@@ -30,7 +53,6 @@ export class ProgressCookieStore {
 
             const parsed = JSON.parse(raw) as Partial<GameProgress>;
 
-            // Basic validation
             if (!parsed || typeof parsed !== "object") return this.createEmpty();
             if (parsed.version !== this.version) return this.createEmpty();
 
@@ -48,7 +70,7 @@ export class ProgressCookieStore {
     }
 
     /**
-     * Saves progress to localStorage.
+     * Saves progress to localStorage and updates the static counter.
      */
     public save(progress: GameProgress): void {
         try {
@@ -59,8 +81,11 @@ export class ProgressCookieStore {
 
             const str = JSON.stringify(safe);
             localStorage.setItem(this.storageKey, str);
+
+            // Update the counter whenever we save
+            this.syncCompletionCount();
         } catch (error) {
-            console.error("Error saving progress to localStorage (Storage might be full):", error);
+            console.error("Error saving progress to localStorage:", error);
         }
     }
 
@@ -76,7 +101,6 @@ export class ProgressCookieStore {
             },
         };
 
-        // Persist immediately to prevent loss of state
         this.save(next);
         return next;
     }
@@ -111,7 +135,7 @@ export class ProgressCookieStore {
             entry.bestTimeMs = timeMs;
         }
 
-        this.save(next);
+        this.save(next); // This will trigger syncCompletionCount()
         return next;
     }
 
@@ -140,18 +164,15 @@ export class ProgressCookieStore {
         };
     }
 
-    /**
-     * Creates a deep clone to avoid accidental mutations of the current state.
-     */
     private clone(progress: GameProgress): GameProgress {
         return JSON.parse(JSON.stringify(progress)) as GameProgress;
     }
 
-    /**
-     * Completely resets progress and reloads the page.
-     */
-    public resetGameProgress(): void {
+    public resetGameProgress(reload: boolean = false): void {
         localStorage.removeItem(this.storageKey);
-        window.location.reload();
+        ProgressCookieStore.totalCompletedLevels = 0; // Reset static counter
+        if (reload) {
+            window.location.reload();
+        }
     }
 }
