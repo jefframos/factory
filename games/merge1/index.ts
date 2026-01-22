@@ -30,7 +30,9 @@ export default class MyGame extends Game {
     constructor() {
         super({ resolution: 1.5 }, false);
 
-        this.folderPath = 'game4';
+        PIXI.Ticker.shared.maxFPS = 100;
+
+        this.folderPath = 'merge1';
 
         PlatformHandler.instance.initialize(new PokiPlatform())
 

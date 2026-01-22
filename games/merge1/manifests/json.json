@@ -5,138 +5,10 @@
       "assets": [
         {
           "alias": [
-            "cafeProgression.json"
+            "data/animals.json"
           ],
           "src": [
-            "cafeProgression.json"
-          ]
-        },
-        {
-          "alias": [
-            "characterMemeSet.json"
-          ],
-          "src": [
-            "characterMemeSet.json"
-          ]
-        },
-        {
-          "alias": [
-            "characterMonsterSet.json"
-          ],
-          "src": [
-            "characterMonsterSet.json"
-          ]
-        },
-        {
-          "alias": [
-            "characterUnicornSet.json"
-          ],
-          "src": [
-            "characterUnicornSet.json"
-          ]
-        },
-        {
-          "alias": [
-            "jiggy/animeGirl-1.json"
-          ],
-          "src": [
-            "jiggy/animeGirl-1.json"
-          ]
-        },
-        {
-          "alias": [
-            "jiggy/cozyGirls.json"
-          ],
-          "src": [
-            "jiggy/cozyGirls.json"
-          ]
-        },
-        {
-          "alias": [
-            "jiggy/cuteAnimals.json"
-          ],
-          "src": [
-            "jiggy/cuteAnimals.json"
-          ]
-        },
-        {
-          "alias": [
-            "jiggy/cuteFood.json"
-          ],
-          "src": [
-            "jiggy/cuteFood.json"
-          ]
-        },
-        {
-          "alias": [
-            "jiggy/cutePuppies-1.json"
-          ],
-          "src": [
-            "jiggy/cutePuppies-1.json"
-          ]
-        },
-        {
-          "alias": [
-            "jiggy/fantasyCreatures.json"
-          ],
-          "src": [
-            "jiggy/fantasyCreatures.json"
-          ]
-        },
-        {
-          "alias": [
-            "jiggy/fastFood.json"
-          ],
-          "src": [
-            "jiggy/fastFood.json"
-          ]
-        },
-        {
-          "alias": [
-            "jiggy/littleExplorers-1.json"
-          ],
-          "src": [
-            "jiggy/littleExplorers-1.json"
-          ]
-        },
-        {
-          "alias": [
-            "jiggy/puzzleData.json"
-          ],
-          "src": [
-            "jiggy/puzzleData.json"
-          ]
-        },
-        {
-          "alias": [
-            "jiggy/sportGirls.json"
-          ],
-          "src": [
-            "jiggy/sportGirls.json"
-          ]
-        },
-        {
-          "alias": [
-            "memeUi.json"
-          ],
-          "src": [
-            "memeUi.json"
-          ]
-        },
-        {
-          "alias": [
-            "memeWorld.json"
-          ],
-          "src": [
-            "memeWorld.json"
-          ]
-        },
-        {
-          "alias": [
-            "test.json"
-          ],
-          "src": [
-            "test.json"
+            "data/animals.json"
           ]
         },
         {
@@ -145,14 +17,6 @@
           ],
           "src": [
             "tiled.json"
-          ]
-        },
-        {
-          "alias": [
-            "upgradeSettings.json"
-          ],
-          "src": [
-            "upgradeSettings.json"
           ]
         }
       ]

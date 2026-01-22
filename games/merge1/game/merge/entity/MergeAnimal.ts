@@ -18,6 +18,7 @@ export class MergeAnimal extends PIXI.Container {
     private walkSpeed: number = 80;
     private walkAnimTime: number = 0;
 
+
     private isLanding: boolean = false;
     private landingTimeline?: gsap.core.Timeline;
 
@@ -34,24 +35,25 @@ export class MergeAnimal extends PIXI.Container {
 
         // 2. Sprite (Anchor at Bottom-Center)
         this.sprite = PIXI.Sprite.from(`ResourceBar_Single_Icon_Monster`);
-        this.sprite.anchor.set(0.5, 1);
+        this.sprite.anchor.set(0.5, 0.5);
         this.view.addChild(this.sprite);
 
         // 3. Level Text
         this.levelText = new PIXI.Text(`Lv.1`, {
             ...MergeAssets.MainFont, fontSize: 18
         });
-        this.levelText.anchor.set(0.5, 1);
-        this.levelText.y = 0;
+        this.levelText.anchor.set(0.5, 0);
+        this.levelText.y = 20;
         this.view.addChild(this.levelText);
     }
 
-    public init(level: number): void {
+    public init(level: number, spriteId: string, animationId: string): void {
         this.level = level;
         this.state = EntityState.IDLE;
-        this.levelText.text = `Lv.${level}`;
+        this.levelText.text = `${level}`;
+        //this.levelText.text = `Lv.${level}`;
         this.visible = true;
-
+        this.sprite.texture = PIXI.Texture.from(spriteId)
         this.walkSpeed = Math.random() * 50 + 20
 
         // Reset any existing animations
@@ -63,6 +65,7 @@ export class MergeAnimal extends PIXI.Container {
         this.sprite.y = -50; // High in the sky
         this.sprite.scale.set(0.6, 1.4); // Stretched thin while falling
         this.shadow.alpha = 0;
+        this.shadow.y = this.sprite.height / 2 * this.sprite.anchor.y
         // this.shadow.scale.set(0.2);
 
         // 2. GSAP Landing Timeline
@@ -105,6 +108,7 @@ export class MergeAnimal extends PIXI.Container {
             return;
         }
 
+
         this.stateTimer -= delta;
 
         if (this.state === EntityState.IDLE) {
@@ -120,7 +124,7 @@ export class MergeAnimal extends PIXI.Container {
 
     private enterIdle(): void {
         this.state = EntityState.IDLE;
-        this.stateTimer = 1 + Math.random() * 2;
+        this.stateTimer = 1 + Math.random() * 4;
     }
 
     private enterWalk(): void {
@@ -142,12 +146,34 @@ export class MergeAnimal extends PIXI.Container {
     }
 
     private handleWalkState(delta: number, bounds: PIXI.Rectangle): void {
+        // 1. Calculate movement
         this.x += this.moveDir.x * this.walkSpeed * delta;
         this.y += this.moveDir.y * this.walkSpeed * delta;
 
-        if (this.x < bounds.left || this.x > bounds.right) this.moveDir.x *= -1;
-        if (this.y < bounds.top || this.y > bounds.bottom) this.moveDir.y *= -1;
+        // 2. BOUNCE LOGIC (Direction flip)
+        // We check if it's PAST the edge and flip the movement vector
+        if (this.x < bounds.left) {
+            this.x = bounds.left;
+            this.moveDir.x *= -1;
+        } else if (this.x > bounds.right) {
+            this.x = bounds.right;
+            this.moveDir.x *= -1;
+        }
 
+        if (this.y < bounds.top) {
+            this.y = bounds.top;
+            this.moveDir.y *= -1;
+        } else if (this.y > bounds.bottom) {
+            this.y = bounds.bottom;
+            this.moveDir.y *= -1;
+        }
+
+        // 3. HARD CLAMP (Safety Net)
+        // This prevents the "not in focus" teleportation
+        this.x = Math.max(bounds.left, Math.min(this.x, bounds.right));
+        this.y = Math.max(bounds.top, Math.min(this.y, bounds.bottom));
+
+        // 4. Animation logic (Keep this as is)
         this.walkAnimTime += delta * 12;
         const hop = Math.abs(Math.sin(this.walkAnimTime));
         const side = this.moveDir.x > 0 ? 1 : -1;

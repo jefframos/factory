@@ -1,0 +1,170 @@
+[
+    {
+        "level": 1,
+        "spriteId": "Chick_Down",
+        "animationId": "idle",
+        "coinValue": 5,
+        "spawnTimer": 10
+    },
+    {
+        "level": 2,
+        "spriteId": "Rabbit_Down",
+        "animationId": "walk",
+        "coinValue": 12,
+        "spawnTimer": 9.5
+    },
+    {
+        "level": 3,
+        "spriteId": "Pig_Down",
+        "animationId": "walk",
+        "coinValue": 30,
+        "spawnTimer": 9
+    },
+    {
+        "level": 4,
+        "spriteId": "Cat_Down",
+        "animationId": "walk",
+        "coinValue": 75,
+        "spawnTimer": 8.5
+    },
+    {
+        "level": 5,
+        "spriteId": "Fox_Down",
+        "animationId": "walk",
+        "coinValue": 180,
+        "spawnTimer": 8
+    },
+    {
+        "level": 6,
+        "spriteId": "Mouse_Down",
+        "animationId": "walk",
+        "coinValue": 450,
+        "spawnTimer": 7.5
+    },
+    {
+        "level": 7,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 1100,
+        "spawnTimer": 7
+    },
+    {
+        "level": 8,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 2800,
+        "spawnTimer": 6.5
+    },
+    {
+        "level": 9,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 7200,
+        "spawnTimer": 6
+    },
+    {
+        "level": 10,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 18000,
+        "spawnTimer": 5.8
+    },
+    {
+        "level": 11,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 45000,
+        "spawnTimer": 5.6
+    },
+    {
+        "level": 12,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 110000,
+        "spawnTimer": 5.4
+    },
+    {
+        "level": 13,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 280000,
+        "spawnTimer": 5.2
+    },
+    {
+        "level": 14,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 700000,
+        "spawnTimer": 5
+    },
+    {
+        "level": 15,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 1800000,
+        "spawnTimer": 4.8
+    },
+    {
+        "level": 16,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 4500000,
+        "spawnTimer": 4.6
+    },
+    {
+        "level": 17,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 12000000,
+        "spawnTimer": 4.4
+    },
+    {
+        "level": 18,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 30000000,
+        "spawnTimer": 4.2
+    },
+    {
+        "level": 19,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 75000000,
+        "spawnTimer": 4
+    },
+    {
+        "level": 20,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 200000000,
+        "spawnTimer": 3.8
+    },
+    {
+        "level": 21,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 500000000,
+        "spawnTimer": 3.6
+    },
+    {
+        "level": 22,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 1200000000,
+        "spawnTimer": 3.4
+    },
+    {
+        "level": 23,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 3500000000,
+        "spawnTimer": 3.2
+    },
+    {
+        "level": 24,
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 10000000000,
+        "spawnTimer": 3
+    }
+]

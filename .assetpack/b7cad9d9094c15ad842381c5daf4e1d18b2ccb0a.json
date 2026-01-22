@@ -6,120 +6,12 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769086131010,
-                "duration": 101.51980000000003,
+                "date": 1769104731364,
+                "duration": 41.91119999997318,
                 "success": true
             }
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/cafeProgression.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1769086131013,
-                "duration": 103.04060000000004,
-                "success": true
-            },
-            "hash": "5kuFuQ"
-        },
-        ".assetpack/json/cafeProgression.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/cafeProgression.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/cafeProgression.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/json/cafeProgression.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/characterMemeSet.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1769086131020,
-                "duration": 96.05079999999998,
-                "success": true
-            },
-            "hash": "I7Oxog"
-        },
-        ".assetpack/json/characterMemeSet.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/characterMemeSet.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/characterMemeSet.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/json/characterMemeSet.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/characterMonsterSet.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1769086131042,
-                "duration": 73.73070000000007,
-                "success": true
-            },
-            "hash": "vyWV"
-        },
-        ".assetpack/json/characterMonsterSet.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/characterMonsterSet.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/characterMonsterSet.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/json/characterMonsterSet.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/characterUnicornSet.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1769086131069,
-                "duration": 47.567499999999995,
-                "success": true
-            },
-            "hash": "MTjFKg"
-        },
-        ".assetpack/json/characterUnicornSet.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/characterUnicornSet.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/characterUnicornSet.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/json/characterUnicornSet.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/data{copy}": {
             "isFolder": true,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json",
             "metaData": {
@@ -128,330 +20,33 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769086131116,
-                "duration": 95.28779999999995,
+                "date": 1769104731366,
+                "duration": 41.58540000009816,
                 "success": true
             }
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/animeGirl-1.json": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/data{copy}/animals.json": {
             "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}",
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/data{copy}",
             "metaData": {},
             "inheritedMetaData": {
                 "copy": true
             },
             "transformData": {},
             "stats": {
-                "date": 1769086131116,
-                "duration": 99.39459999999997,
+                "date": 1769104731366,
+                "duration": 41.70519999996759,
                 "success": true
             },
-            "hash": "4xsWpw"
+            "hash": "pM9G8g"
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/jiggy/animeGirl-1.json": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/data/animals.json": {
             "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/animeGirl-1.json",
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/data{copy}/animals.json",
             "metaData": {},
             "inheritedMetaData": {
                 "copy": true
             },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/cozyGirls.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {},
-            "stats": {
-                "date": 1769086131157,
-                "duration": 58.1418000000001,
-                "success": true
-            },
-            "hash": "0Wx3CA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/jiggy/cozyGirls.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/cozyGirls.json",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/cuteAnimals.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {},
-            "stats": {
-                "date": 1769086131182,
-                "duration": 34.0172,
-                "success": true
-            },
-            "hash": "-NMvtw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/jiggy/cuteAnimals.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/cuteAnimals.json",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/cuteFood.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {},
-            "stats": {
-                "date": 1769086131187,
-                "duration": 29.013400000000047,
-                "success": true
-            },
-            "hash": "fRUP0Q"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/jiggy/cuteFood.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/cuteFood.json",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/cutePuppies-1.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {},
-            "stats": {
-                "date": 1769086131212,
-                "duration": 45.59719999999993,
-                "success": true
-            },
-            "hash": "dqLGLw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/jiggy/cutePuppies-1.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/cutePuppies-1.json",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/fantasyCreatures.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {},
-            "stats": {
-                "date": 1769086131216,
-                "duration": 65.16380000000004,
-                "success": true
-            },
-            "hash": "MVysrg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/jiggy/fantasyCreatures.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/fantasyCreatures.json",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/fastFood.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {},
-            "stats": {
-                "date": 1769086131242,
-                "duration": 38.86670000000004,
-                "success": true
-            },
-            "hash": "O9PPbw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/jiggy/fastFood.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/fastFood.json",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/littleExplorers-1.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {},
-            "stats": {
-                "date": 1769086131247,
-                "duration": 34.36239999999998,
-                "success": true
-            },
-            "hash": "U8tiWw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/jiggy/littleExplorers-1.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/littleExplorers-1.json",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/puzzleData.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {},
-            "stats": {
-                "date": 1769086131251,
-                "duration": 29.90229999999997,
-                "success": true
-            },
-            "hash": "trrDeQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/jiggy/puzzleData.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/puzzleData.json",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/sportGirls.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {},
-            "stats": {
-                "date": 1769086131257,
-                "duration": 150.57179999999994,
-                "success": true
-            },
-            "hash": "yDJDwg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/jiggy/sportGirls.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/jiggy{copy}/sportGirls.json",
-            "metaData": {},
-            "inheritedMetaData": {
-                "copy": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/memeUi.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1769086131281,
-                "duration": 163.13619999999992,
-                "success": true
-            },
-            "hash": "_pHPKg"
-        },
-        ".assetpack/json/memeUi.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/memeUi.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/memeUi.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/json/memeUi.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/memeWorld.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1769086131316,
-                "duration": 128.57369999999992,
-                "success": true
-            },
-            "hash": "y0qVXQ"
-        },
-        ".assetpack/json/memeWorld.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/memeWorld.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/memeWorld.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/json/memeWorld.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/test.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1769086131358,
-                "duration": 85.94840000000022,
-                "success": true
-            },
-            "hash": "Z2z_rw"
-        },
-        ".assetpack/json/test.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/test.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/test.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/json/test.json",
-            "metaData": {},
-            "inheritedMetaData": {},
             "transformData": {}
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/tiled.json": {
@@ -477,33 +72,6 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/tiled.json": {
             "isFolder": false,
             "transformParent": ".assetpack/json/tiled.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/upgradeSettings.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1769086131421,
-                "duration": 23.638599999999997,
-                "success": true
-            },
-            "hash": "j49o"
-        },
-        ".assetpack/json/upgradeSettings.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/upgradeSettings.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/upgradeSettings.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/json/upgradeSettings.json",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

@@ -8,15 +8,15 @@ export default class MergeLoader extends LoaderScene {
 
     public async build() {
         // Create the component
-        this.patternBg = new PatternBackground({ background: 0x26C6DA, patternPath: 'game4/images/non-preload/jiggy-pattern.png', patternAlpha: 0.2 });
+        this.patternBg = new PatternBackground({ background: 0x26C6DA, patternPath: 'merge1/images/non-preload/jiggy-pattern.png', patternAlpha: 0.2 });
         this.addChild(this.patternBg);
 
 
         this.progress = new NineSliceProgressBarAsync({
             width: 300,
             height: 40,
-            bgPath: 'game4/images/non-preload/bg_loader.png',
-            barPath: 'game4/images/non-preload/fill_loader.png',
+            bgPath: 'merge1/images/non-preload/bg_loader.png',
+            barPath: 'merge1/images/non-preload/fill_loader.png',
             slices: [10, 10, 10, 10],
             barColor: 0xffffff, // Tint the white texture green
             padding: 4

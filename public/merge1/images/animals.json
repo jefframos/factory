@@ -1,0 +1,136 @@
+{
+  "frames": {
+    "Rabbit_Down": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 70,
+        "h": 107
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 29,
+        "y": 0,
+        "w": 70,
+        "h": 107
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "Pig_Down": {
+      "frame": {
+        "x": 74,
+        "y": 2,
+        "w": 91,
+        "h": 70
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 25,
+        "y": 34,
+        "w": 91,
+        "h": 70
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "Mouse_Down": {
+      "frame": {
+        "x": 2,
+        "y": 111,
+        "w": 87,
+        "h": 78
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 14,
+        "y": 25,
+        "w": 87,
+        "h": 78
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "Fox_Down": {
+      "frame": {
+        "x": 146,
+        "y": 2,
+        "w": 91,
+        "h": 73
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 28,
+        "y": 30,
+        "w": 91,
+        "h": 73
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "Chick_Down": {
+      "frame": {
+        "x": 91,
+        "y": 95,
+        "w": 68,
+        "h": 84
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 30,
+        "y": 20,
+        "w": 68,
+        "h": 84
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "Cat_Down": {
+      "frame": {
+        "x": 2,
+        "y": 191,
+        "w": 90,
+        "h": 73
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 30,
+        "y": 31,
+        "w": 90,
+        "h": 73
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    }
+  },
+  "meta": {
+    "app": "http://github.com/pixijs/assetpack",
+    "version": "1.0",
+    "image": "animals.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 221,
+      "h": 266
+    },
+    "scale": 1,
+    "related_multi_packs": []
+  }
+}

@@ -10,7 +10,7 @@ import PatternBackground from "@core/ui/PatternBackground";
 import ViewUtils from "@core/utils/ViewUtils";
 import MergeAssets from "../MergeAssets";
 import { DevGuiManager } from "../utils/DevGuiManager";
-import { MergeMediator } from "./MergeMediator";
+import { MergeMediator } from "./core/MergeMediator";
 import MergeHUD from "./ui/MergeHUD"; // Import your new component
 
 export default class MergeScene extends GameScene {
@@ -77,7 +77,7 @@ export default class MergeScene extends GameScene {
         );
 
         // Optional: Spawn a starting animal
-        this.mediator.spawnAnimal(1, new PIXI.Point(Game.DESIGN_WIDTH / 2, Game.DESIGN_HEIGHT / 2));
+        //this.mediator.spawnAnimal(1, new PIXI.Point(Game.DESIGN_WIDTH / 2, Game.DESIGN_HEIGHT / 2));
     }
 
     private setupAudio(): void {
