@@ -249,8 +249,15 @@ export class LevelSelectViewFactory {
         const unlockedGroup = new PIXI.Container();
         root.addChild(lockedGroup, unlockedGroup);
 
-        const purchaseBtn = this.createPurchaseButton(onPurchasePressed);
+        // Initialize button without an ID yet, or just create it
+        const purchaseBtn = this.createPurchaseButton(onPurchasePressed, "");
         lockedGroup.addChild(purchaseBtn);
+
+        // ... inside root.update = (lvl, sec, prog, isUnlocked) => {
+        (root as any).currentLevelId = level.id;
+        (purchaseBtn as any).targetId = level.id; // CRITICAL: Update the ID whenever the row is recycled
+        (purchaseBtn as any).currentCost = level.unlockCost; // Ensure cost is updated for the afford check
+        (purchaseBtn as any).refreshState(); // Refresh immediately
 
         const diffs: Difficulty[] = ["easy", "medium", "hard"];
         const diffBtns = diffs.map((d) => {
@@ -267,6 +274,9 @@ export class LevelSelectViewFactory {
             (root as any).currentLevelId = lvl.id;
             title.text = lvl.name;
             bg.texture = isUnlocked ? this.theme.levelRow.bgTexture! : this.theme.levelRow.bgTextureLocked!;
+
+            (purchaseBtn as any).targetId = lvl.id;
+            (purchaseBtn as any).currentCost = lvl.unlockCost || 0;
 
             // 3. Texture Application (Identical to Section Card)
             const imgSrc = lvl.thumb || lvl.imageSrc;
@@ -326,17 +336,28 @@ export class LevelSelectViewFactory {
         return new BaseButton({ standard: done ? { ...skin.standard, ...skin.completed } : skin.standard, over: skin.over });
     }
 
-    private createPurchaseButton(onPurchase: (id: string) => void): BaseButton {
+    private createPurchaseButton(onPurchase: (id: string) => void, levelId: string): BaseButton {
         const skin = this.theme.buttonSkins["purchase"];
         const btn = new BaseButton({
             standard: skin.standard, over: skin.over, disabled: skin.disabled,
-            down: { callback: () => onPurchase((btn as any).targetId) }
+            down: {
+                callback: () => {
+                    // Now targetId will be correctly set
+                    console.log('PURCHASE BUTTON CLICKED', (btn as any).targetId);
+                    onPurchase((btn as any).targetId);
+                }
+            }
         });
+
+        // Assign the ID here
+        (btn as any).targetId = levelId;
+
         (btn as any).refreshState = () => {
             const canAfford = InGameEconomy.instance.coins >= ((btn as any).currentCost || 0);
             canAfford ? btn.enable() : btn.disable();
             btn.alpha = canAfford ? 1 : 0.5;
         };
+
         InGameEconomy.instance.onCoinsChanged.add((btn as any).refreshState);
         btn.on('destroyed', () => InGameEconomy.instance.onCoinsChanged.remove((btn as any).refreshState));
         return btn;

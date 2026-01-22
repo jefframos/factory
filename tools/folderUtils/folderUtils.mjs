@@ -3,9 +3,12 @@ import { existsSync, mkdirSync } from 'fs';
 function ensureFolderExists(folderPath) {
   // Check if the folder exists
   if (!existsSync(folderPath)) {
-    // If it doesn't exist, create it
-    mkdirSync(folderPath);
-    console.log(`Folder "${folderPath}" created.`);
+    console.log(`Creating directory tree for: "${folderPath}"`);
+
+    // Adding { recursive: true } allows creating nested folders
+    mkdirSync(folderPath, { recursive: true });
+
+    console.log(`Folder path created successfully.`);
   }
 }
 

@@ -8,6 +8,7 @@ export interface SoundProperties {
 }
 
 export default class SoundManager {
+	static STORAGE_ID = "gameName";
 	private static _instance: SoundManager | null = null;
 	private masterSfxVolume: number = 1;
 	private masterAmbientVolume: number = 1;
@@ -25,7 +26,7 @@ export default class SoundManager {
 
 	private constructor() {
 		// Load saved state (defaults to false if not found)
-		const savedMute = localStorage.getItem("muted") === "true";
+		const savedMute = localStorage.getItem(SoundManager.STORAGE_ID + "muted") === "true";
 		this.setMuted(savedMute);
 	}
 
@@ -62,7 +63,7 @@ export default class SoundManager {
 		Howler.mute(mute);
 
 		// Persist the choice
-		localStorage.setItem("muted", String(mute));
+		localStorage.setItem(SoundManager.STORAGE_ID + "muted", String(mute));
 
 		this.onMuteChange.dispatch(this._isMuted);
 	}

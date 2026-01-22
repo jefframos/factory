@@ -65,7 +65,10 @@ export default class JigsawView extends PIXI.Container {
         this.clusterManager.registerPieces(this.pieces);
         this.clusterManager.signals.onPieceConnected.removeAll();
         this.clusterManager.signals.onPuzzleCompleted.removeAll();
-        this.clusterManager.signals.onPieceConnected.add((e) => this.onPieceConnected.dispatch(e));
+        this.clusterManager.signals.onPieceConnected.add((e) => {
+            this.hideTutorial();
+            this.onPieceConnected.dispatch(e)
+        });
         this.clusterManager.signals.onPuzzleCompleted.add((e) => this.onPuzzleCompleted.dispatch(e));
 
         const clusters = this.clusterManager.createInitialClusters(this.pieces, options.allowRation);
@@ -135,14 +138,20 @@ export default class JigsawView extends PIXI.Container {
                     );
                 }
             } else {
-                this.clusterManager.snapClustersByIds([0, 1, 2, 3, 5, 6, 7, 8], clusters)
+                this.clusterManager.snapClustersByIds([0, 1, 2, 3, 5, 6, 7, 8, 10, 11], clusters)
                 clusters[4].container.position.set(
-                    options.scatterRect.x + (options.scatterRect.width / 2),
-                    options.scatterRect.y + (options.scatterRect.height / 2) + 180
+                    options.scatterRect.x + (options.scatterRect.width / 2) - 150,
+                    options.scatterRect.y + (options.scatterRect.height / 2) + 250
                 );
 
 
+                clusters[9].container.position.set(
+                    options.scatterRect.x + (options.scatterRect.width / 2) + 150,
+                    options.scatterRect.y + (options.scatterRect.height / 2) + 250
+                );
+
                 this.input?.moveClusterToFront(clusters[4]);
+                this.input?.moveClusterToFront(clusters[7]);
                 this.tutorial = new TutorialSwipe({
                     handTexturePath: 'tutorial_hand_2',
                     pauseAtStart: 1500,
@@ -197,6 +206,9 @@ export default class JigsawView extends PIXI.Container {
             this.safeRect.alpha = 0;
             //stage.addChildAt(this.safeRectFrame, 2);
         }
+    }
+    hideTutorial() {
+        this.tutorial?.destroy();
     }
     puzzleCompleted() {
         this.tutorial?.destroy();

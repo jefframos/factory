@@ -1,0 +1,25 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "backgrounds"
+          ],
+          "src": [
+            "backgrounds.json"
+          ]
+        },
+        {
+          "alias": [
+            "ui"
+          ],
+          "src": [
+            "ui.json"
+          ]
+        }
+      ]
+    }
+  ]
+}

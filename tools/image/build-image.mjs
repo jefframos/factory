@@ -21,15 +21,16 @@ const __dirname = dirname(__filename);
 
 const rawImages = resolve(__dirname, `../../games/${GAME}/raw-assets/images`);
 const rawImagesN = resolve(__dirname, `../../games/${GAME}/raw-assets/non-preload`);
+
 const outputImagesN = resolve(__dirname, `../../public/${GAME}/images/non-preload`);
 const outputImages = resolve(__dirname, `../../public/${GAME}/images`);
 const outputManifest = resolve(__dirname, `../../games/${GAME}/manifests`);
 
 ensureFolderExists(rawImages)
 ensureFolderExists(rawImagesN)
+ensureFolderExists(outputManifest)
 ensureFolderExists(outputImagesN)
 ensureFolderExists(outputImages)
-ensureFolderExists(outputManifest)
 const options = {
     jpg: {},
     png: false,

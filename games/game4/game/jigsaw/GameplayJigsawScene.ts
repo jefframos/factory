@@ -12,9 +12,10 @@ import JigsawView from "./JigsawView";
 import { MaskedTabsGenerator } from "./MaskedTabsGenerator";
 
 import SoundManager from "@core/audio/SoundManager";
-import PromiseUtils from "@core/utils/PromiseUtils";
 import ViewUtils from "@core/utils/ViewUtils";
 import { LevelDefinition } from "games/game4/types";
+import PatternBackground from "../../../../core/ui/PatternBackground";
+import SoundToggleButton from "../../../../core/ui/SoundToggleButton";
 import MatchManager from "../2048/scene/MatchManager";
 import MainMenuUi from "../2048/ui/MainMenuUi";
 import ScoreUi from "../2048/ui/ScoreUi";
@@ -28,8 +29,6 @@ import { LevelSelectMediator, PlayLevelRequest, PurchaseLevelRequest } from "./p
 import { CurrencyHud } from "./ui/CurrencyHud";
 import { LevelSelectView } from "./ui/LevelSelectView";
 import { createDefaultLevelSelectTheme } from "./ui/LevelSelectViewElements";
-import PatternBackground from "./ui/PatternBackground";
-import SoundToggleButton from "./ui/SoundToggleButton";
 import { makeResizedSpriteTexture } from "./vfx/imageFlatten";
 
 export default class GameplayJigsawScene extends GameScene {
@@ -189,7 +188,6 @@ export default class GameplayJigsawScene extends GameScene {
             this.startMatch(req);
         });
 
-        this.gameplayContainer.addChild(this.levelSelectMenu)
 
         if (Game.debugParams.start) {
             this.startMatch()
@@ -210,8 +208,16 @@ export default class GameplayJigsawScene extends GameScene {
             }
             this.currentLevel = request
             this.startMatch(request, true)
+            setTimeout(() => {
+                if (this.levelSelectMenu) {
+                    this.gameplayContainer.addChild(this.levelSelectMenu)
+                }
+            }, 500);
+
 
         } else {
+            this.gameplayContainer.addChild(this.levelSelectMenu)
+
         }
         SoundManager.instance.playBackgroundSound(Assets.AmbientSound.AmbientSoundId, 0)
         SoundManager.instance.setMasterAmbientVolume(Assets.AmbientSound.AmbientMasterVolume)
@@ -424,7 +430,7 @@ export default class GameplayJigsawScene extends GameScene {
         this.jigsawBoardView.input?.setEnabled(true);
 
 
-        await PromiseUtils.await(1000)
+        //await PromiseUtils.await(1000)
         Assets.tryToPlaySound(Assets.Sounds.UI.GameOverAppear)
 
 
@@ -458,7 +464,7 @@ export default class GameplayJigsawScene extends GameScene {
         const ratio = width / height;
 
         // 1. Define target total pieces instead of hardcoded grids
-        let targetPieces = isFirst ? 9 : 12; // Default (easy)
+        let targetPieces = 12; // Default (easy)
         const difficulty = data?.difficulty || "medium";
 
         if (difficulty === "medium") {

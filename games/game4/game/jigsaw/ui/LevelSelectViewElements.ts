@@ -129,7 +129,7 @@ export function getDifficultySkinKey(
  * Replace texture names with your atlas keys.
  */
 export function createDefaultLevelSelectTheme(): LevelSelectTheme {
-    const titleStyle = new PIXI.TextStyle({ ...Assets.MainFontTitle });
+    const titleStyle = new PIXI.TextStyle({ ...Assets.MainFontTitle, fontSize: 30 });
 
     const headerButtonStyle = new PIXI.TextStyle({ ...Assets.MainFont, fontSize: 18 });
 

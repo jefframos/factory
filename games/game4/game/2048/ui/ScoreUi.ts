@@ -6,9 +6,9 @@ import { TimerConversionUtils } from '@core/utils/TimeConversionUtils';
 import ViewUtils from '@core/utils/ViewUtils';
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
+import SoundToggleButton from '../../../../../core/ui/SoundToggleButton';
 import { PieceViewData } from '../../character/Types';
 import Assets from '../../jigsaw/Assets';
-import SoundToggleButton from '../../jigsaw/ui/SoundToggleButton';
 import { Piece } from '../view/Piece';
 export default class ScoreUi extends AutoPositionTiledContainer {
 

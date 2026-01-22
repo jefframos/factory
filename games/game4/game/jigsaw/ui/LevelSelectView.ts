@@ -208,7 +208,10 @@ export class LevelSelectView extends PIXI.Container {
             if (!row) {
                 row = this.factory.createLevelRow(lvl, this.activeSection!, cardW, this.theme.levelRow.rowHeight, progress, unlocked,
                     (id, d) => this.mediator.requestPlay(id, d),
-                    (id) => this.mediator.requestPurchase(id));
+                    (id) => {
+                        console.log('PURCHASE', id)
+                        this.mediator.requestPurchase(id)
+                    });
                 this.rowPool.push(row);
                 this.detailPage.addChild(row);
             }

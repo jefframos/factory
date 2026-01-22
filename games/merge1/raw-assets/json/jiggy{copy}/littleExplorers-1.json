@@ -1,0 +1,58 @@
+{
+    "section": {
+        "id": "littleExplorers-1",
+        "name": "Little Explorers",
+        "coverLevelId": "littleExplorers-1_01",
+        "type": 1,
+        "levels": [
+            {
+                "id": "littleExplorers-1_01",
+                "name": "Puzzle 1",
+                "thumb": "cartoon_cute_animals_1",
+                "isSpecial": false,
+                "cost": 0,
+                "image": "little_explorers/cartoon_cute_animals_1.png"
+            },
+            {
+                "id": "littleExplorers-1_02",
+                "name": "Puzzle 2",
+                "thumb": "cartoon_cute_animals_2",
+                "isSpecial": false,
+                "cost": 0,
+                "image": "little_explorers/cartoon_cute_animals_2.png"
+            },
+            {
+                "id": "littleExplorers-1_03",
+                "name": "Puzzle 3",
+                "thumb": "cartoon_cute_animals_3",
+                "isSpecial": false,
+                "cost": 20,
+                "image": "little_explorers/cartoon_cute_animals_3.png"
+            },
+            {
+                "id": "littleExplorers-1_04",
+                "name": "Puzzle 4",
+                "thumb": "cartoon_cute_animals_4",
+                "isSpecial": false,
+                "cost": 60,
+                "image": "little_explorers/cartoon_cute_animals_4.png"
+            },
+            {
+                "id": "littleExplorers-1_05",
+                "name": "Puzzle 5",
+                "thumb": "cartoon_cute_animals_5",
+                "isSpecial": false,
+                "cost": 100,
+                "image": "little_explorers/cartoon_cute_animals_5.png"
+            },
+            {
+                "id": "littleExplorers-1_06",
+                "name": "Puzzle 6",
+                "thumb": "cartoon_cute_animals_6",
+                "isSpecial": false,
+                "cost": 100,
+                "image": "little_explorers/cartoon_cute_animals_6.png"
+            }
+        ]
+    }
+}

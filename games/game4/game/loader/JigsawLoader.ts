@@ -1,6 +1,6 @@
 import LoaderScene from "@core/loader/LoaderScene";
 import { NineSliceProgressBarAsync } from "@core/ui/NineSliceProgressBarAsync";
-import PatternBackground from "../jigsaw/ui/PatternBackground";
+import PatternBackground from "../../../../core/ui/PatternBackground";
 
 export default class JigsawLoader extends LoaderScene {
     private patternBg!: PatternBackground;

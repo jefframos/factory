@@ -1,14 +1,14 @@
 import { BasePopup, PopupData } from '@core/popup/BasePopup';
-import BaseButton, { ButtonState } from '@core/ui/BaseButton';
+import BaseButton from '@core/ui/BaseButton';
+import { CurrencyHud } from '@core/ui/CurrencyHud';
 import { TimerConversionUtils } from '@core/utils/TimeConversionUtils';
 import { LevelDefinition } from 'games/game4/types';
 import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
+import { ConfettiEffect } from '../../../../core/ui/ConfettiEffect';
 import MatchManager from '../2048/scene/MatchManager';
 import Assets from '../jigsaw/Assets';
 import GameplayJigsawScene from '../jigsaw/GameplayJigsawScene';
-import { ConfettiEffect } from '../jigsaw/ui/ConfettiEffect';
-import { CurrencyHud } from '../jigsaw/ui/CurrencyHud';
 import { NextLevelCard } from '../jigsaw/ui/NextLevelCard';
 import { CoinEffect } from '../jigsaw/vfx/CoinEffect';
 
@@ -64,20 +64,20 @@ export class GameOverPopup extends BasePopup {
         this.shine.tint = 0xf0f04a
         this.addChild(this.shine);
 
-        this.flag = new PIXI.NineSlicePlane(PIXI.Texture.from(Assets.Textures.UI.EndRibbon), 150, 20, 150, 20); // Ensure this asset exists
-        this.flag.width = 700
+        this.flag = new PIXI.NineSlicePlane(PIXI.Texture.from(Assets.Textures.UI.EndRibbon), 100, 20, 100, 20); // Ensure this asset exists
+        this.flag.width = 900
         this.flag.pivot.set(this.flag.width / 2, this.flag.height / 2)
-        this.flag.scale.set(1);
+        this.flag.scale.set(0.5);
         this.addChild(this.flag);
 
         // 3. Title Label
         this.titleLabel = new PIXI.Text('PUZZLE SOLVED!', new PIXI.TextStyle({ ...Assets.MainFontTitle, fontSize: 42, strokeThickness: 10 }));
         this.titleLabel.anchor.set(0.5);
-        this.titleLabel.y = -250;
+        this.titleLabel.y = -260;
         this.addChild(this.titleLabel);
 
         this.flag.x = this.titleLabel.x
-        this.flag.y = this.titleLabel.y + 10
+        this.flag.y = this.titleLabel.y
 
         // 4. Prize Icon (Pop center)
         this.prizeIcon = PIXI.Sprite.from(Assets.Textures.Icons.Coin); // Icon representing reward
@@ -199,7 +199,7 @@ export class GameOverPopup extends BasePopup {
         tl.to(this.rewardText, { alpha: 1, duration: 0.2 }, "-=0.2");
         tl.to(this, {
             displayReward: data.rewardAmount || 30,
-            duration: 1.5, // Slightly longer looks nicer with coins
+            duration: 1, // Slightly longer looks nicer with coins
             ease: "power1.inOut",
             onUpdate: () => {
                 const currentCeil = Math.ceil(this.displayReward);
@@ -226,8 +226,8 @@ export class GameOverPopup extends BasePopup {
             console.log(data)
 
             this.tempNextLevel = data.nextPuzzle;
-            this.continueButton.setLabel('QUIT');
-            this.continueButton.overrider(ButtonState.STANDARD, { texture: PIXI.Texture.from(Assets.Textures.Buttons.Grey) })
+            this.continueButton.setLabel('CONTINUE');
+            //this.continueButton.overrider(ButtonState.STANDARD, { texture: PIXI.Texture.from(Assets.Textures.Buttons.Grey) })
 
 
 
@@ -240,12 +240,14 @@ export class GameOverPopup extends BasePopup {
             tl.fromTo(this.nextLevelCard, { alpha: 0, y: 500 }, { alpha: 1, y: 60, duration: 0.5 }, "-=0.3");
         } else {
             this.continueButton.setLabel('CONTINUE');
-            this.continueButton.overrider(ButtonState.STANDARD, { texture: PIXI.Texture.from(Assets.Textures.Buttons.Blue) })
+            //this.continueButton.overrider(ButtonState.STANDARD, { texture: PIXI.Texture.from(Assets.Textures.Buttons.Blue) })
 
             this.nextLevelCard.visible = false;
 
         }
 
+        this.continueButton.alpha = 0;
+        this.continueButton.visible = false;
         tl.set(this.continueButton, { visible: true });
         tl.to(this.continueButton, { alpha: 1, y: 260, duration: 0.5, ease: "back.out(1.2)" });
 

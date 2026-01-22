@@ -92,6 +92,7 @@ export class LevelSelectMediator {
         const hit = this.levelIndex.get(levelId);
         if (!hit || this.isLevelUnlocked(levelId)) return;
 
+
         const normalCost = hit.level.unlockCost ?? 0;
         const specialCost = (hit.level as any).specialCost ?? 0; // Assuming this exists in your level def
 
@@ -104,7 +105,7 @@ export class LevelSelectMediator {
             // Economy handles the money, Mediator handles the unlock state
             this.confirmPurchase(levelId);
         } else {
-            console.log("Transaction cancelled: Insufficient funds");
+            console.log("Transaction cancelled: Insufficient funds", normalCost);
         }
     }
 

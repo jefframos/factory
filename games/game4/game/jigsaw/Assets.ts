@@ -197,8 +197,9 @@ export default class Assets {
             Eye: "eye",
         },
         UI: {
-            NextCardBackground: "ItemFrame01_Single_Navy",
-            EndRibbon: "Title_Ribbon01_Green",
+            NextCardBackground: "ItemFrame01_Single_Yellow",
+            //NextCardBackground: "ItemFrame01_Single_Navy",
+            EndRibbon: "BubbleFrame01_Hexagon_Bg_Green",
             Shine: "Image_Effect_Rotate",
             Header: "ItemFrame01_Single_Hologram1",
             CardBg: "Button_SkillBtn_Blue",
