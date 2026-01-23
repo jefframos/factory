@@ -12,6 +12,7 @@ import MergeAssets from "../MergeAssets";
 import { DevGuiManager } from "../utils/DevGuiManager";
 import { MergeMediator } from "./core/MergeMediator";
 import MergeHUD from "./ui/MergeHUD"; // Import your new component
+import { CoinEffectLayer } from "./vfx/CoinEffectLayer";
 
 export default class MergeScene extends GameScene {
     public readonly onQuit: Signal = new Signal();
@@ -67,14 +68,19 @@ export default class MergeScene extends GameScene {
             Game.DESIGN_HEIGHT * 2
         );
 
-
+        const effects = new CoinEffectLayer();
+        this.addChild(effects);
         // 4. Initialize Mediator
         this.mediator = new MergeMediator(
             this.gameplayContainer,
             inputBounds,
             gameBounds,
+            effects,
             this.hud
         );
+
+        // const bked = new BakePreviewContainer()
+        // this.addChild(bked)
 
         // Optional: Spawn a starting animal
         //this.mediator.spawnAnimal(1, new PIXI.Point(Game.DESIGN_WIDTH / 2, Game.DESIGN_HEIGHT / 2));

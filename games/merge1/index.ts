@@ -114,10 +114,6 @@ export default class MyGame extends Game {
             ExtractTiledFile.parseTiledData(tiled, '2048')
         }
 
-        const memeWorld = PIXI.Assets.get('memeWorld.json')
-        if (memeWorld) {
-            ExtractTiledFile.parseTiledData(memeWorld, 'memeWorld')
-        }
 
         // const memeUi = PIXI.Assets.get('memeUi.json')
         // if (memeUi) {

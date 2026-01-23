@@ -1,6 +1,8 @@
 import Pool from "@core/Pool";
 import * as PIXI from "pixi.js";
 import { DevGuiManager } from "../../utils/DevGuiManager";
+import { CurrencyType, InGameEconomy } from "../data/InGameEconomy";
+import { InGameProgress } from "../data/InGameProgress";
 import { StaticData } from "../data/StaticData";
 import { Coin } from "../entity/Coin";
 import { EggGenerator } from "../entity/EggGenerator";
@@ -8,8 +10,9 @@ import { EntityGridView } from "../entity/EntityGridView";
 import { EntityState, MergeAnimal } from "../entity/MergeAnimal";
 import { MergeEgg } from "../entity/MergeEgg";
 import { InputManager } from "../input/InputManager";
-import GameStorage from "../storage/GameStorage";
+import GameStorage, { ProgressionType } from "../storage/GameStorage";
 import MergeHUD from "../ui/MergeHUD";
+import { CoinEffectLayer } from "../vfx/CoinEffectLayer";
 import { CoinGenerator } from "./CoinGenerator";
 import { GridBaker } from "./GridBaker";
 
@@ -43,11 +46,14 @@ export class MergeMediator {
 
     public maxEntities: number = 12;
     private readonly MAX_COINS_PER_ENTITY: number = 3;
+    private autoCollectCoins: boolean = true;
+    private currentHighlightedEntity: MergeAnimal | null = null;
 
     constructor(
         private container: PIXI.Container,
         private inputBounds: PIXI.Rectangle,
         private walkBounds: PIXI.Rectangle,
+        private coinEffects: CoinEffectLayer,
         private hud: MergeHUD
     ) {
         this.gridView = new EntityGridView();
@@ -70,14 +76,29 @@ export class MergeMediator {
             this.gridView,
             (ent) => this.handleGrab(ent),
             (pos) => this.handleMove(pos),
-            (pos) => this.handleRelease(pos)
+            (pos) => this.handleRelease(pos),
+            (target) => this.handleHover(target) // New callback handler
         );
 
         this.hud.onSpeedUpRequested = () => this.generator.activateSpeedUp(50);
 
+        InGameProgress.instance.onMaxEntitiesChanged.add(this.handleGridExpanded, this);
+        this.maxEntities = InGameProgress.instance.getMaxGridSlots();
+
         this.loadGameState();
     }
+    private handleGridExpanded(newMax: number): void {
+        this.maxEntities = newMax;
 
+        // Trigger any "Juice" or VFX here
+        console.log("BOOM! New slot unlocked. Total:", newMax);
+
+        // Update the HUD counter immediately
+        this.hud.updateEntityCount(this.entityMap.size, this.maxEntities);
+
+        // Optional: Play a sound or show a popup
+        // SoundManager.play("unlock_slot");
+    }
     // --- PERSISTENCE ---
 
     private saveGameState(): void {
@@ -99,9 +120,10 @@ export class MergeMediator {
         }));
 
         GameStorage.instance.saveFullState({
-            coins: GameStorage.instance.coins,
+            currencies: InGameEconomy.instance.currencies,
             entities: entityList,
-            coinsOnGround: coinList
+            coinsOnGround: coinList,
+            progressions: InGameProgress.instance.getProgressions()
         });
     }
 
@@ -110,7 +132,6 @@ export class MergeMediator {
         if (!savedData) return;
 
         // Restore HUD
-        this.hud.updateCoins(savedData.coins);
 
         // 1. Load Entities - Reset pendingCoins to 0 during load to avoid double counting
         if (savedData.entities) {
@@ -127,7 +148,7 @@ export class MergeMediator {
         // 2. Load Coins - Link them back to their owners
         if (savedData.coinsOnGround) {
             savedData.coinsOnGround.forEach(c => {
-                this.dropCoin(c.x, c.y, c.value / 10, c.ownerId, true);
+                this.dropCoin(c.x, c.y, c.value, c.ownerId, true);
 
                 // Re-increment the specific owner's counter
                 this.entityMap.forEach(logic => {
@@ -195,29 +216,80 @@ export class MergeMediator {
         this.saveGameState();
     }
 
-    private dropCoin(x: number, y: number, level: number, isLoading: boolean = false): void {
+    private dropCoin(x: number, y: number, level: number, ownerId: string, isLoading: boolean = false): void {
         const coin = Pool.instance.getElement(Coin);
+        (coin as any).ownerId = ownerId; // Link owner
 
-        // 1. Calculate raw position (apply jitter only if not loading)
-        let ox = isLoading ? x : x + (Math.random() - 0.5) * 60;
-        let oy = isLoading ? y : y + (Math.random() - 0.5) * 40;
+        let ox = isLoading ? x : x;// + (Math.random() - 0.5) * 60;
+        let oy = isLoading ? y : y;// + (Math.random() - 0.5) * 40;
 
-        // 2. HARD CLAMP to bounds
-        // We add a small padding (e.g., 20px) so coins don't sit exactly on the line
         const padding = 20;
         ox = Math.max(this.walkBounds.left + padding, Math.min(ox, this.walkBounds.right - padding));
         oy = Math.max(this.walkBounds.top + padding, Math.min(oy, this.walkBounds.bottom - padding));
 
-        // 3. Initialize and add to world
-        coin.init(ox, oy, level * 10);
-        this.gridView.addChild(coin);
-        this.coins.push(coin);
+        coin.init(ox, oy, level);
 
-        if (!isLoading) this.saveGameState();
+        if (this.autoCollectCoins && !isLoading) {
+            // If auto-collect is ON, don't even add the physical coin to the board.
+            // Just trigger the "Pop and Fade" effect immediately.
+            // this.coinEffects.popAndFade(ox, oy, coin.value, coin.coinSprite);
+
+            // // Logic for auto-collect: skip ground save, increment money
+            // InGameEconomy.instance.add(CurrencyType.MONEY, coin.value);
+
+            this.collectCoin(coin, false);
+
+            // Recycle immediately
+            coin.reset();
+            Pool.instance.returnElement(coin);
+        } else {
+            // Manual collect: Add to grid or layer for interaction
+            this.gridView.addChild(coin);
+            this.coins.push(coin);
+            if (!isLoading) this.saveGameState();
+        }
+    }
+    private handleRelease(globalPos: PIXI.Point): void {
+        if (this.currentHighlightedEntity) {
+            this.currentHighlightedEntity.setHighlight(false);
+            this.currentHighlightedEntity = null;
+        }
+        if (!this.activeEntity) return;
+
+        const checkPos = this.gridView.toGlobal(this.activeEntity.position);
+        const target = this.gridView.getEntityAt(checkPos, this.activeEntity);
+
+        if (this.activeEntity instanceof MergeAnimal && target instanceof MergeAnimal && target.level === this.activeEntity.level) {
+            this.merge(this.activeEntity, target);
+        } else if (this.activeEntity instanceof MergeAnimal) {
+            this.activeEntity.state = EntityState.IDLE;
+        }
+
+        this.activeEntity = null;
+        this.saveGameState();
     }
 
     // --- INTERACTION ---
+    private handleHover(target: any | null): void {
+        // 1. If we are hovering the SAME thing we already highlighted, do nothing
+        if (target === this.currentHighlightedEntity) return;
 
+        // 2. Clear old highlight
+        if (this.currentHighlightedEntity) {
+            this.currentHighlightedEntity.setHighlight(false);
+            this.currentHighlightedEntity = null;
+        }
+
+        // 3. New highlight logic
+        if (this.activeEntity && target && target !== this.activeEntity) {
+            if (this.activeEntity instanceof MergeAnimal && target instanceof MergeAnimal) {
+                if (this.activeEntity.level === target.level) {
+                    this.currentHighlightedEntity = target;
+                    target.setHighlight(true);
+                }
+            }
+        }
+    }
     private handleGrab(entity: any): void {
         if (entity instanceof MergeEgg) {
             this.hatchEgg(entity);
@@ -242,9 +314,51 @@ export class MergeMediator {
             if (logic) { logic.data.x = clampedX; logic.data.y = clampedY; }
         }
 
-        this.checkCoinSwipe(localPos);
+        if (!this.autoCollectCoins) {
+            this.checkCoinSwipe(localPos);
+        }
     }
 
+
+    private collectCoin(targetCoin: Coin, autoCollect: boolean) {
+        if (targetCoin.isCollected) return;
+        targetCoin.isCollected = true;
+
+        const startX = targetCoin.x - targetCoin.width / 2;
+        const startY = targetCoin.y - targetCoin.height;
+        const val = targetCoin.value;
+        const ownerId = (targetCoin as any).ownerId;
+
+        // 1. Calculate Target (HUD position)
+        const hudGlobal = this.hud.getCoinTargetGlobalPos();
+        const effectTarget = this.coinEffects.toLocal(hudGlobal);
+
+        // 2. Trigger Fly Effect
+        this.coinEffects.popAndFlyToTarget(
+            startX,
+            startY,
+            effectTarget.x,
+            effectTarget.y,
+            targetCoin.coinSprite,
+            val,
+            () => {
+                // This runs when the coin reaches the bag
+                InGameEconomy.instance.add(CurrencyType.MONEY, val)
+            }
+        );
+
+        // 3. Clean up the physical world entity
+        const index = this.coins.indexOf(targetCoin);
+        if (index > -1) this.coins.splice(index, 1);
+
+        if (autoCollect) {
+            return;
+        }
+
+        this.decrementPendingCoin(ownerId);
+        this.recycleCoin(targetCoin);
+        this.saveGameState();
+    }
     private checkCoinSwipe(localPos: PIXI.Point): void {
         const radius = 60;
         for (let i = this.coins.length - 1; i >= 0; i--) {
@@ -252,20 +366,8 @@ export class MergeMediator {
             const dist = Math.hypot(coin.x - localPos.x, coin.y - localPos.y);
 
             if (dist < radius && !coin.isCollected) {
-                coin.isCollected = true;
-                const ownerId = (coin as any).ownerId;
-                this.coins.splice(i, 1);
-
-                coin.collect(() => {
-                    GameStorage.instance.addMoney(coin.value);
-                    this.hud.updateCoins(GameStorage.instance.coins);
-
-                    // Decrement the specific owner
-                    this.decrementPendingCoin(ownerId);
-
-                    this.saveGameState();
-                    this.recycleCoin(coin);
-                });
+                // We don't need a callback here anymore, collectCoin handles the visual
+                this.collectCoin(coin, false);
             }
         }
     }
@@ -278,21 +380,6 @@ export class MergeMediator {
         });
     }
 
-    private handleRelease(globalPos: PIXI.Point): void {
-        if (!this.activeEntity) return;
-
-        const checkPos = this.gridView.toGlobal(this.activeEntity.position);
-        const target = this.gridView.getEntityAt(checkPos, this.activeEntity);
-
-        if (this.activeEntity instanceof MergeAnimal && target instanceof MergeAnimal && target.level === this.activeEntity.level) {
-            this.merge(this.activeEntity, target);
-        } else if (this.activeEntity instanceof MergeAnimal) {
-            this.activeEntity.state = EntityState.IDLE;
-        }
-
-        this.activeEntity = null;
-        this.saveGameState();
-    }
 
     // --- SYSTEMS ---
 
@@ -300,9 +387,16 @@ export class MergeMediator {
         const nextLevel = source.level + 1;
         const spawnPos = new PIXI.Point(target.x, target.y);
 
+        InGameProgress.instance.reportMergeLevel(nextLevel, ProgressionType.MAIN);
+        this.maxEntities = InGameProgress.instance.getMaxGridSlots();
+
+        InGameProgress.instance.addXP(source.level + 1, ProgressionType.MAIN)
+
         this.recycleEntity(source);
         this.recycleEntity(target);
         this.spawnAnimal(nextLevel, spawnPos);
+
+        this.hud.updateEntityCount(this.entityMap.size, this.maxEntities);
     }
 
     private hatchEgg(egg: MergeEgg): void {

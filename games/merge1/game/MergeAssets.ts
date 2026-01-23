@@ -169,6 +169,32 @@ export default class MergeAssets {
         Hot: 'Popular',
         New: 'New!',
     }
+    static readonly Colors = [
+        ["#ED1C24"], // 1: Red (Primary)
+        ["#F7941D"], // 2: Orange (Primary)
+        ["#FFF200"], // 3: Yellow (Primary)
+        ["#00A651"], // 4: Green (Square)
+        ["#2E3192"], // 5: Blue (Star)
+        ["#8C6239", "#FFFFFF"], // 6: Purple/Indigo (Dice spots)
+        ["#ED1C24", "#F7941D", "#FFF200", "#00A651", "#2E3192", "#662D91"], // 7: Rainbow
+        ["#FF7BAC"], // 8: Pink (Octoblock)
+        ["#92278F"], // 9: Light Purple (Square)
+        ["#FFFFFF", "#ED1C24"], // 10: White with Red border
+        ["#ED1C24", "#FBB03B"], // 11: Red/Gold (Football/Soccer theme)
+        ["#F7941D", "#FBB03B"], // 12: Orange/Yellow (The Rectangle)
+        ["#FFF200", "#000000"], // 13: Yellow/Black (Unlucky/Cleansweep)
+        ["#00A651", "#ED1C24"], // 14: Green/Red (Skater)
+        ["#2E3192", "#FFFFFF", "#ED1C24"], // 15: Blue/White/Red (Agent)
+        ["#00A651", "#FFFFFF"], // 16: Square (Green tints)
+        ["#FFFF00", "#ED1C24"], // 17: Painting theme (Yellow/Red)
+        ["#FF7BAC", "#2E3192"], // 18: Pink/Blue (Super Speed)
+        ["#92278F", "#FFFFFF"], // 19: Purple/White (Artist)
+        ["#F7941D", "#FFFFFF"], // 20: Orange/White (Large base)
+        ["#ED1C24", "#FFD700"], // 21: Red/Gold (Explorer)
+        ["#F7941D", "#2E3192"], // 22: Orange/Blue
+        ["#FFF200", "#662D91"], // 23: Yellow/Purple
+        ["#00A651", "#F7941D"]  // 24: Green/Orange (Super Rectangle)
+    ]
     static readonly Textures = {
         Buttons: {
             Gold: "ResourceBar_Single_Btn_Yellow1",
@@ -179,7 +205,7 @@ export default class MergeAssets {
             Orange: "ResourceBar_Single_Btn_Orange1",
         },
         Icons: {
-            Coin: "ResourceBar_Single_Icon_Coin",
+            Coin: "ResourceBar_Single_Icon_Coin - Copy",
             Gem: "ResourceBar_Single_Icon_Gem",
             Up: "up",
             Down: "down",
@@ -197,7 +223,7 @@ export default class MergeAssets {
             Eye: "eye",
         },
         UI: {
-            NextCardBackground: "ItemFrame01_Single_Yellow",
+            CurrencyPanel: "BannerFrame03_Single",
             //NextCardBackground: "ItemFrame01_Single_Navy",
             EndRibbon: "BubbleFrame01_Hexagon_Bg_Green",
             Shine: "Image_Effect_Rotate",

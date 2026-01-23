@@ -1,6 +1,8 @@
+import { Game } from "@core/Game";
 import { gsap } from "gsap"; // Ensure gsap is installed
 import * as PIXI from "pixi.js";
 import MergeAssets from "../../MergeAssets";
+import { BakeDirection, TextureBaker } from "../vfx/TextureBaker";
 
 export enum EntityState { IDLE, WALK, GRABBED }
 
@@ -10,6 +12,7 @@ export class MergeAnimal extends PIXI.Container {
 
     private view: PIXI.Container = new PIXI.Container();
     private sprite: PIXI.Sprite;
+    private spriteContainer: PIXI.Container = new PIXI.Container();
     private levelText: PIXI.Text;
     private shadow: PIXI.Graphics;
 
@@ -22,9 +25,14 @@ export class MergeAnimal extends PIXI.Container {
     private isLanding: boolean = false;
     private landingTimeline?: gsap.core.Timeline;
 
+    private highlight: PIXI.Sprite;
+
     constructor() {
         super();
         this.addChild(this.view);
+
+
+        this.view.addChild(this.spriteContainer);
 
         // 1. Shadow
         this.shadow = new PIXI.Graphics();
@@ -35,25 +43,51 @@ export class MergeAnimal extends PIXI.Container {
 
         // 2. Sprite (Anchor at Bottom-Center)
         this.sprite = PIXI.Sprite.from(`ResourceBar_Single_Icon_Monster`);
-        this.sprite.anchor.set(0.5, 0.5);
-        this.view.addChild(this.sprite);
+        this.sprite.anchor.set(0.5, 1);
+        this.spriteContainer.addChild(this.sprite);
+
+        this.highlight = PIXI.Sprite.from('BubbleFrame01_White')
+        this.highlight.visible = false;
+        this.highlight.anchor.set(0.5, 1)
+        this.spriteContainer.addChildAt(this.highlight, 0); // Put it behind the shadow/sprite
+
 
         // 3. Level Text
         this.levelText = new PIXI.Text(`Lv.1`, {
             ...MergeAssets.MainFont, fontSize: 18
         });
-        this.levelText.anchor.set(0.5, 0);
-        this.levelText.y = 20;
-        this.view.addChild(this.levelText);
+        this.levelText.anchor.set(0.5, 0.5);
+        this.levelText.y = 0;
+        this.sprite.addChild(this.levelText);
     }
 
     public init(level: number, spriteId: string, animationId: string): void {
-        this.level = level;
-        this.state = EntityState.IDLE;
-        this.levelText.text = `${level}`;
-        //this.levelText.text = `Lv.${level}`;
         this.visible = true;
-        this.sprite.texture = PIXI.Texture.from(spriteId)
+        this.level = level;
+        this.levelText.text = `${level}`;
+
+        // Get the colors for this level (could be 1 or many)
+        const levelColors = MergeAssets.Colors[level - 1];
+
+        // Fetch or Bake the texture
+        const bakedTexture = TextureBaker.getTexture(
+            level,
+            'BubbleFrame01_Bg', // Base texture
+            levelColors,
+            Game.renderer, BakeDirection.HORIZONTAL
+        );
+
+        this.sprite.texture = bakedTexture;
+
+        // IMPORTANT: Reset the tint to white because the color is now part of the texture pixels!
+        this.sprite.tint = 0xFFFFFF;
+
+
+        this.highlight.y = (this.highlight.height / 2 - this.sprite.height / 2)
+
+        this.levelText.y = -this.sprite.height / 2;
+
+        //this.sprite.texture = PIXI.Texture.from(spriteId)
         this.walkSpeed = Math.random() * 50 + 20
 
         // Reset any existing animations
@@ -62,10 +96,10 @@ export class MergeAnimal extends PIXI.Container {
         this.isLanding = true;
 
         // 1. Setup Starting Pose
-        this.sprite.y = -50; // High in the sky
-        this.sprite.scale.set(0.6, 1.4); // Stretched thin while falling
+        this.spriteContainer.y = -50; // High in the sky
+        this.spriteContainer.scale.set(0.6, 1.4); // Stretched thin while falling
         this.shadow.alpha = 0;
-        this.shadow.y = this.sprite.height / 2 * this.sprite.anchor.y
+        this.shadow.y = 0//this.sprite.height / 2 * -this.sprite.anchor.y
         // this.shadow.scale.set(0.2);
 
         // 2. GSAP Landing Timeline
@@ -78,22 +112,32 @@ export class MergeAnimal extends PIXI.Container {
 
         this.landingTimeline
             // Fall down
-            .to(this.sprite, { y: 0, duration: 0.5, ease: "bounce.out" }, 0)
+            .to(this.spriteContainer, { y: 0, duration: 0.5, ease: "bounce.out" }, 0)
             .to(this.shadow, { alpha: 1, scale: 1, duration: 0.5, ease: "bounce.out" }, 0)
             // Squash on impact
-            .to(this.sprite.scale, { x: 0.6, y: 1.4, duration: 0.1, ease: "sine.out" }, 0)
+            .to(this.spriteContainer.scale, { x: 0.6, y: 1.4, duration: 0.1, ease: "sine.out" }, 0)
             // Bounce back up slightly and normalize
-            .to(this.sprite.scale, { delay: 0.1, x: 1, y: 1, duration: 0.6, ease: "elastic.out" }, 0);
+            .to(this.spriteContainer.scale, { delay: 0.1, x: 1, y: 1, duration: 0.6, ease: "elastic.out" }, 0);
     }
-
+    public setHighlight(visible: boolean): void {
+        this.highlight.visible = visible;
+        if (visible) {
+            // Optional: slight "breathing" effect or scale up
+            gsap.to(this.view.scale, { x: 1.1, y: 1.1, duration: 0.2 });
+        } else {
+            gsap.to(this.view.scale, { x: 1, y: 1, duration: 0.2 });
+        }
+    }
     public reset(): void {
         if (this.landingTimeline) this.landingTimeline.kill();
         this.visible = false;
         this.isLanding = false;
         this.state = EntityState.IDLE;
         this.walkAnimTime = 0;
-        this.sprite.position.set(0, 0);
-        this.sprite.scale.set(1);
+        this.spriteContainer.position.set(0, 0);
+        this.spriteContainer.scale.set(1);
+        this.spriteContainer.alpha = 1
+        this.sprite.alpha = 1
         this.shadow.alpha = 1;
         this.shadow.scale.set(1);
         if (this.parent) this.parent.removeChild(this);
@@ -101,6 +145,8 @@ export class MergeAnimal extends PIXI.Container {
 
     public update(delta: number, bounds: PIXI.Rectangle): void {
         // If landing, let GSAP handle the sprite. We just block logic.
+        this.levelText.scale.x = this.spriteContainer.scale.x < 0 ? -1 : 1;
+
         if (this.isLanding) return;
 
         if (this.state === EntityState.GRABBED) {
@@ -120,11 +166,12 @@ export class MergeAnimal extends PIXI.Container {
         if (this.stateTimer <= 0) {
             this.state === EntityState.IDLE ? this.enterWalk() : this.enterIdle();
         }
+
     }
 
     private enterIdle(): void {
         this.state = EntityState.IDLE;
-        this.stateTimer = 1 + Math.random() * 4;
+        this.stateTimer = 4 + Math.random() * 5;
     }
 
     private enterWalk(): void {
@@ -136,11 +183,11 @@ export class MergeAnimal extends PIXI.Container {
 
     private handleIdleState(delta: number): void {
         const lerpSpeed = 10 * delta;
-        const targetSide = this.moveDir.x > 0 ? 1 : -1;
+        const targetSide = this.moveDir.x >= 0 ? 1 : -1;
 
-        this.sprite.scale.x += (targetSide - this.sprite.scale.x) * lerpSpeed;
-        this.sprite.scale.y += (1 - this.sprite.scale.y) * lerpSpeed;
-        this.sprite.y += (0 - this.sprite.y) * lerpSpeed;
+        this.spriteContainer.scale.x += (targetSide - this.spriteContainer.scale.x) * lerpSpeed;
+        this.spriteContainer.scale.y += (1 - this.spriteContainer.scale.y) * lerpSpeed;
+        this.spriteContainer.y += (0 - this.spriteContainer.y) * lerpSpeed;
         this.shadow.scale.set(1);
         this.walkAnimTime = 0;
     }
@@ -178,9 +225,9 @@ export class MergeAnimal extends PIXI.Container {
         const hop = Math.abs(Math.sin(this.walkAnimTime));
         const side = this.moveDir.x > 0 ? 1 : -1;
 
-        this.sprite.y = -hop * 15;
-        this.sprite.scale.y = 1 + hop * 0.15;
-        this.sprite.scale.x = side * (1 - hop * 0.1);
+        this.spriteContainer.y = -hop * 15;
+        this.spriteContainer.scale.y = 1 + hop * 0.15;
+        this.spriteContainer.scale.x = side * (1 - hop * 0.1);
         this.shadow.scale.set(1 - hop * 0.3);
     }
 
@@ -188,15 +235,15 @@ export class MergeAnimal extends PIXI.Container {
         const lerpSpeed = 15 * delta; // Faster lerp for responsive feel
 
         // 1. Determine target horizontal scale based on current facing
-        const targetSide = this.sprite.scale.x > 0 ? 1 : -1;
+        const targetSide = this.spriteContainer.scale.x > 0 ? 1 : -1;
 
         // 2. Smoothly lerp scale to exactly 1 (or -1)
-        this.sprite.scale.x += (targetSide - this.sprite.scale.x) * lerpSpeed;
-        this.sprite.scale.y += (1 - this.sprite.scale.y) * lerpSpeed;
+        this.spriteContainer.scale.x += (targetSide - this.spriteContainer.scale.x) * lerpSpeed;
+        this.spriteContainer.scale.y += (1 - this.spriteContainer.scale.y) * lerpSpeed;
 
         // 3. Lift the sprite and shadow logic
         // We lift the sprite relative to the container to show it's "in the air"
-        this.sprite.y += (-20 - this.sprite.y) * lerpSpeed;
+        this.spriteContainer.y += (-15 - this.spriteContainer.y) * lerpSpeed;
 
         // Shadow becomes faint and small while lifted
         this.shadow.alpha += (0.1 - this.shadow.alpha) * lerpSpeed;

@@ -5,7 +5,7 @@ export class Coin extends PIXI.Container {
     public value: number = 0;
     public isCollected: boolean = false;
 
-    private coinSprite!: PIXI.Sprite;
+    public coinSprite!: PIXI.Sprite;
 
     constructor() {
         super(); // Ensure texture key is correct

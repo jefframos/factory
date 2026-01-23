@@ -19,7 +19,7 @@ export class StaticData {
                 level: item.level,
                 spriteId: item.spriteId,
                 animationId: item.animationId,
-                coinValue: item.coinValue,
+                coinValue: Math.pow(2, item.level),//item.coinValue,
                 spawnTimer: item.spawnTimer
             });
         });

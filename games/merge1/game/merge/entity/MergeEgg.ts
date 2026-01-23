@@ -28,7 +28,7 @@ export class MergeEgg extends PIXI.Container {
         this.addChild(this.shadow);
 
         // 2. Sprite
-        this.sprite = PIXI.Sprite.from('BubbleFrame01_Bg');
+        this.sprite = PIXI.Sprite.from('BorderFrame_Round24');
         this.sprite.anchor.set(0.5, 1);
         this.addChild(this.sprite);
     }
