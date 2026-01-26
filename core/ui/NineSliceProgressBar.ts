@@ -15,6 +15,7 @@ export interface NineSliceProgressBarOptions {
     /** Optional Tints */
     bgColor?: number;
     barColor?: number;
+    padding?: number;
 }
 
 export class NineSliceProgressBar extends PIXI.Container {
@@ -28,6 +29,14 @@ export class NineSliceProgressBar extends PIXI.Container {
     constructor(opts: NineSliceProgressBarOptions) {
         super();
         this.opts = opts;
+
+        this.opts = {
+            padding: 0,
+            bgColor: 0xffffff,
+            barColor: 0xffffff,
+            ...opts
+        };
+
         this.minVisualWidth = opts.leftWidth + opts.rightWidth;
 
         // 1. Setup Background
@@ -45,6 +54,11 @@ export class NineSliceProgressBar extends PIXI.Container {
             opts.leftWidth, opts.topHeight, opts.rightWidth, opts.bottomHeight
         );
         this.bar.height = opts.height;
+
+        this.bar.height = this.opts.height - ((this.opts.padding || 0) * 2);
+        // Position bar offset by padding
+        this.bar.position.set(this.opts.padding, this.opts.padding);
+
         if (opts.barColor !== undefined) this.bar.tint = opts.barColor;
 
         this.addChild(this.bg, this.bar);
@@ -54,7 +68,9 @@ export class NineSliceProgressBar extends PIXI.Container {
 
         this.update(0);
     }
-
+    public setTintColor(color: number) {
+        this.bar.tint = color
+    }
     /**
      * Updates the progress bar
      * @param percent value between 0 and 1
@@ -62,8 +78,10 @@ export class NineSliceProgressBar extends PIXI.Container {
     public update(percent: number): void {
         const clampedPercent = Math.max(0, Math.min(1, percent));
 
+        const available = this.opts.width - ((this.opts.padding || 0) * 2);
+
         // Calculate target width based on total width
-        const targetWidth = clampedPercent * this.opts.width;
+        const targetWidth = clampedPercent * available;
 
         // Logic: If the width is less than the corners, we hide it or 
         // cap it to the minVisualWidth to prevent texture folding.

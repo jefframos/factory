@@ -4,7 +4,7 @@ import { ConfettiEffect } from '@core/ui/ConfettiEffect';
 import { LevelDefinition } from 'games/game4/types';
 import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
-import MergeAssets from '../MergeAssets';
+import MergeAssets from '../merge/MergeAssets';
 
 
 interface GameOverPopupData extends PopupData {

@@ -1,7 +1,7 @@
 import Pool from "@core/Pool";
 import { Back, gsap } from "gsap";
 import * as PIXI from "pixi.js";
-import MergeAssets from "../../MergeAssets";
+import MergeAssets from "../MergeAssets";
 
 export class CoinEffectLayer extends PIXI.Container {
 
@@ -49,8 +49,8 @@ export class CoinEffectLayer extends PIXI.Container {
 
         // 1. Initial Pop (Bigger and faster)
         tl.to(coin.scale, {
-            x: targetScaleX * 1.5,
-            y: targetScaleY * 1.5,
+            x: targetScaleX * 1.25,
+            y: targetScaleY * 1.25,
             duration: 0.15,
             ease: "back.out(3)"
         });

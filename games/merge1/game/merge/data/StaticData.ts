@@ -8,7 +8,9 @@ export interface IAnimalStaticData {
 
 export class StaticData {
     private static _animals: Map<number, IAnimalStaticData> = new Map();
-
+    public static get entityCount(): number {
+        return StaticData._animals.size;
+    }
     /**
      * Call this at the start of your game with your JSON data
      */

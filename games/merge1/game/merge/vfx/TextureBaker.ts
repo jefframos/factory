@@ -1,4 +1,8 @@
+import { Game } from "@core/Game";
+import Pool from "@core/Pool";
 import * as PIXI from "pixi.js";
+import { StaticData } from "../data/StaticData";
+import { BlockMergeEntity } from "../entity/BlockMergeEntity";
 
 export enum BakeDirection {
     VERTICAL,
@@ -8,10 +12,29 @@ export enum BakeDirection {
 export class TextureBaker {
     private static cache: Map<string, PIXI.Texture> = new Map();
 
+    public static getTexture(cacheKey: string): PIXI.Texture | undefined {
+        if (this.cache.has(cacheKey)) {
+            return this.cache.get(cacheKey)!;
+        }
+    }
     /**
      * Fetches a cached texture or bakes a new one based on level, colors, and stripe direction.
      */
-    public static getTexture(
+    public static bakeEntityTextures() {
+        for (let index = 1; index <= StaticData.entityCount; index++) {
+            const entity = Pool.instance.getElement(BlockMergeEntity)
+            entity.initView(index, '', '')
+            // entity.spriteContainer.scale.set(1)
+            // entity.spriteContainer?.pivot?.set(-entity.width / 2, -entity.height)
+
+            console.log(entity.alpha, entity.visible)
+
+            TextureBaker.bakeContainer('ENTITY_' + index, entity, Game.renderer)
+            Pool.instance.returnElement(entity);
+
+        }
+    }
+    public static getStripedTintedTexture(
         level: number,
         baseKey: string,
         colors: string[],
@@ -68,6 +91,36 @@ export class TextureBaker {
         container.destroy({ children: true });
 
         this.cache.set(cacheKey, renderTexture);
+        return renderTexture;
+    }
+
+    /**
+     * Bakes any PIXI Container into a texture and saves it to the cache.
+     * @param id The unique identifier for the cached texture.
+     * @param container The PIXI container to bake.
+     * @param renderer The PIXI renderer.
+     * @returns The generated (or cached) PIXI.Texture.
+     */
+    public static bakeContainer(id: string, container: PIXI.Container, renderer: PIXI.Renderer): PIXI.Texture {
+        // Check if it already exists in cache
+        if (this.cache.has(id)) {
+            return this.cache.get(id)!;
+        }
+
+        // Calculate bounds to ensure we capture the whole container
+        const bounds = container.getLocalBounds();
+
+        const renderTexture = PIXI.RenderTexture.create({
+            width: bounds.width,
+            height: bounds.height
+        });
+
+        // Render the container to the texture
+        renderer.render(container, { renderTexture });
+
+        // Store in cache
+        this.cache.set(id, renderTexture);
+
         return renderTexture;
     }
 

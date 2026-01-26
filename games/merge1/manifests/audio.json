@@ -45,10 +45,90 @@
         },
         {
           "alias": [
+            "drop.wav"
+          ],
+          "src": [
+            "drop.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "grab (1).wav"
+          ],
+          "src": [
+            "grab (1).mp3"
+          ]
+        },
+        {
+          "alias": [
+            "grab (2).wav"
+          ],
+          "src": [
+            "grab (2).mp3"
+          ]
+        },
+        {
+          "alias": [
+            "grab (3).wav"
+          ],
+          "src": [
+            "grab (3).mp3"
+          ]
+        },
+        {
+          "alias": [
+            "grab (4).wav"
+          ],
+          "src": [
+            "grab (4).mp3"
+          ]
+        },
+        {
+          "alias": [
             "Hover.wav"
           ],
           "src": [
             "Hover.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-increase20.wav"
+          ],
+          "src": [
+            "hpp-increase20.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay1.wav"
+          ],
+          "src": [
+            "hpp-yay1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay2.wav"
+          ],
+          "src": [
+            "hpp-yay2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay3.wav"
+          ],
+          "src": [
+            "hpp-yay3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay4.wav"
+          ],
+          "src": [
+            "hpp-yay4.mp3"
           ]
         },
         {

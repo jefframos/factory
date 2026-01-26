@@ -6,7 +6,7 @@ import TiledLayerObject from '@core/tiled/TiledLayerObject';
 import BaseButton from '@core/ui/BaseButton';
 import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
-import MergeAssets from '../MergeAssets';
+import MergeAssets from '../merge/MergeAssets';
 
 export interface ConfirmationPopupData extends PopupData {
     title: string;

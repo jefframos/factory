@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769123524934,
-                "duration": 1.7449999999999477,
+                "date": 1769184584609,
+                "duration": 1.008700000000033,
                 "success": true
             }
         },
@@ -146,6 +146,141 @@
             "inheritedMetaData": {},
             "transformData": {}
         },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/drop.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769184422472,
+                "duration": 398.0194,
+                "success": true
+            },
+            "hash": "gZGdKw"
+        },
+        ".assetpack/ffmpeg/drop.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/drop.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/drop.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/drop.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/grab (1).wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769184229616,
+                "duration": 544.798,
+                "success": true
+            },
+            "hash": "3Ggp6A"
+        },
+        ".assetpack/ffmpeg/grab (1).mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/grab (1).wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/grab (1).mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/grab (1).mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/grab (2).wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769184229617,
+                "duration": 581.2717,
+                "success": true
+            },
+            "hash": "riagIQ"
+        },
+        ".assetpack/ffmpeg/grab (2).mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/grab (2).wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/grab (2).mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/grab (2).mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/grab (3).wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769184229617,
+                "duration": 571.8373,
+                "success": true
+            },
+            "hash": "y5kj5g"
+        },
+        ".assetpack/ffmpeg/grab (3).mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/grab (3).wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/grab (3).mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/grab (3).mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/grab (4).wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769184229618,
+                "duration": 610.157,
+                "success": true
+            },
+            "hash": "HLuKDw"
+        },
+        ".assetpack/ffmpeg/grab (4).mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/grab (4).wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/grab (4).mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/grab (4).mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Hover.wav": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
@@ -169,6 +304,141 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Hover.mp3": {
             "isFolder": false,
             "transformParent": ".assetpack/ffmpeg/Hover.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/hpp-increase20.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769184584610,
+                "duration": 412.7367,
+                "success": true
+            },
+            "hash": "FXBiNg"
+        },
+        ".assetpack/ffmpeg/hpp-increase20.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/hpp-increase20.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/hpp-increase20.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/hpp-increase20.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/hpp-yay1.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769184060216,
+                "duration": 2669.6813999999995,
+                "success": true
+            },
+            "hash": "VnWhCA"
+        },
+        ".assetpack/ffmpeg/hpp-yay1.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/hpp-yay1.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/hpp-yay1.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/hpp-yay1.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/hpp-yay2.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769184060217,
+                "duration": 2658.8355,
+                "success": true
+            },
+            "hash": "IR2P8g"
+        },
+        ".assetpack/ffmpeg/hpp-yay2.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/hpp-yay2.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/hpp-yay2.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/hpp-yay2.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/hpp-yay3.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769184060217,
+                "duration": 2676.9717999999993,
+                "success": true
+            },
+            "hash": "qTPL"
+        },
+        ".assetpack/ffmpeg/hpp-yay3.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/hpp-yay3.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/hpp-yay3.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/hpp-yay3.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/hpp-yay4.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769184060218,
+                "duration": 2673.1027999999997,
+                "success": true
+            },
+            "hash": "GKga6w"
+        },
+        ".assetpack/ffmpeg/hpp-yay4.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/hpp-yay4.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/hpp-yay4.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/hpp-yay4.mp3",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

@@ -8,11 +8,15 @@ import { Signal } from "signals";
 import SoundManager from "@core/audio/SoundManager";
 import PatternBackground from "@core/ui/PatternBackground";
 import ViewUtils from "@core/utils/ViewUtils";
-import MergeAssets from "../MergeAssets";
 import { DevGuiManager } from "../utils/DevGuiManager";
-import { MergeMediator } from "./core/MergeMediator";
+import { StaticData } from "./data/StaticData";
+import MergeAssets from "./MergeAssets";
+import { MergeMediator } from "./MergeMediator";
+import GameStorage from "./storage/GameStorage";
 import MergeHUD from "./ui/MergeHUD"; // Import your new component
+import { BakePreviewContainer } from "./vfx/BakePreviewContainer";
 import { CoinEffectLayer } from "./vfx/CoinEffectLayer";
+import { TextureBaker } from "./vfx/TextureBaker";
 
 export default class MergeScene extends GameScene {
     public readonly onQuit: Signal = new Signal();
@@ -31,11 +35,22 @@ export default class MergeScene extends GameScene {
         super(game);
         SoundManager.STORAGE_ID = "Merge1_";
 
+        const bked = new BakePreviewContainer()
+        bked.generatePieces()
+
         this.setupPopups();
     }
 
     public build(): void {
         // 1. Backgrounds
+
+        const monsters = PIXI.Assets.get('data/animals.json')
+        StaticData.parseData(monsters)
+
+
+
+
+        SoundManager.instance.setMasterSfxVolume(0.7)
         this.patternBackground = new PatternBackground({
             background: 0x26C6DA,
             patternAlpha: 0.2,
@@ -47,6 +62,9 @@ export default class MergeScene extends GameScene {
         // 2. Gameplay
         this.addChild(this.gameplayContainer);
 
+
+        TextureBaker.bakeEntityTextures()
+
         // 3. HUD
         this.hud = new MergeHUD();
         this.addChild(this.hud);
@@ -57,7 +75,7 @@ export default class MergeScene extends GameScene {
         this.updateScore(0);
 
         const gameBounds = new PIXI.Rectangle(
-            100, 100,
+            100, 200,
             Game.DESIGN_WIDTH - 200,
             Game.DESIGN_HEIGHT - 300
         );
@@ -68,8 +86,10 @@ export default class MergeScene extends GameScene {
             Game.DESIGN_HEIGHT * 2
         );
 
+
+
         const effects = new CoinEffectLayer();
-        this.addChild(effects);
+        this.hud.addEffects(effects)
         // 4. Initialize Mediator
         this.mediator = new MergeMediator(
             this.gameplayContainer,
@@ -79,8 +99,8 @@ export default class MergeScene extends GameScene {
             this.hud
         );
 
-        // const bked = new BakePreviewContainer()
-        // this.addChild(bked)
+
+        //this.addChild(bked)
 
         // Optional: Spawn a starting animal
         //this.mediator.spawnAnimal(1, new PIXI.Point(Game.DESIGN_WIDTH / 2, Game.DESIGN_HEIGHT / 2));
@@ -92,7 +112,9 @@ export default class MergeScene extends GameScene {
     }
 
     private setupDevGui(): void {
-        DevGuiManager.instance.addButton('erase', () => { });
+        DevGuiManager.instance.addButton('erase', () => {
+            GameStorage.instance.resetGameProgress(true)
+        });
         DevGuiManager.instance.addButton('addCoins', () => { });
     }
 

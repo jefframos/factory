@@ -10,6 +10,7 @@ export class CoinGenerator {
         // Subtract elapsed time from the interval to catch up
         // if elapsed > 5000, it triggers immediately on first update
         this.timer = Math.max(0, this.interval - (elapsed % this.interval));
+
     }
 
     public update(deltaMS: number): boolean {

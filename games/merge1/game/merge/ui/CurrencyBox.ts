@@ -1,3 +1,4 @@
+import { NumberConverter } from "@core/utils/NumberConverter";
 import ViewUtils from "@core/utils/ViewUtils";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
@@ -18,7 +19,7 @@ export class CurrencyBox extends PIXI.Container {
 
     private currentValue: number = 0;
     private readonly boxHeight: number = 60;
-    private readonly padding: number = 15;  // Inner distance from left edge
+    private readonly padding: number = 10;  // Inner distance from left edge
     private readonly spacing: number = 12;  // Gap between icon and text
 
     constructor(private type: CurrencyType, config: ICurrencyBoxConfig) {
@@ -57,7 +58,7 @@ export class CurrencyBox extends PIXI.Container {
 
         // Position: End of icon + spacing
         this.label.x = this.icon.x + (this.icon.width / 2) + this.spacing;
-        this.label.y = this.boxHeight / 2;
+        this.label.y = this.boxHeight / 2 - 5;
         this.addChild(this.label);
 
         // 4. Hook Economy Signal
@@ -65,7 +66,7 @@ export class CurrencyBox extends PIXI.Container {
 
         // 5. Set Initial State
         this.currentValue = InGameEconomy.instance.getAmount(this.type);
-        this.label.text = this.currentValue.toLocaleString();
+        this.label.text = NumberConverter.format(this.currentValue);
     }
 
     /**
@@ -92,11 +93,11 @@ export class CurrencyBox extends PIXI.Container {
             duration: 0.5,
             ease: "power2.out",
             onUpdate: () => {
-                this.label.text = Math.floor(tweenObj.val).toLocaleString();
+                this.label.text = NumberConverter.format(tweenObj.val);
             },
             onComplete: () => {
                 this.currentValue = targetValue;
-                this.label.text = targetValue.toLocaleString();
+                this.label.text = NumberConverter.format(targetValue);
             }
         });
 

@@ -3,11 +3,13 @@ export class EggGenerator {
     private readonly MAX_TIME = 5;
     private speedUpActive: boolean = false;
 
-    constructor(private onEggReady: () => void) { }
+    constructor(private onEggReady: () => boolean) { }
 
     public activateSpeedUp(duration: number): void {
         this.speedUpActive = true;
-        setTimeout(() => this.speedUpActive = false, duration);
+        setTimeout(() => {
+            this.speedUpActive = false;
+        }, duration);
     }
 
     public update(delta: number): void {
@@ -15,10 +17,19 @@ export class EggGenerator {
         this.progress += delta * multiplier;
 
         if (this.progress >= this.MAX_TIME) {
-            this.progress = 0;
-            this.onEggReady();
+            const spawned = this.onEggReady();
+
+            // Only consume the timer if we actually spawned an egg.
+            if (spawned) {
+                this.progress = 0;
+            } else {
+                // Keep it “ready” so we retry next frame.
+                this.progress = this.MAX_TIME;
+            }
         }
     }
 
-    public get ratio(): number { return this.progress / this.MAX_TIME; }
+    public get ratio(): number {
+        return this.progress / this.MAX_TIME;
+    }
 }

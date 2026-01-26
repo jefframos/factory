@@ -1,15 +1,37 @@
 import { Game } from "@core/Game";
 import * as PIXI from "pixi.js";
-import MergeAssets from "../../MergeAssets";
+import MergeAssets from "../MergeAssets";
+import { BlockMergeEntity } from "../entity/BlockMergeEntity";
 import { BakeDirection, TextureBaker } from "../vfx/TextureBaker";
 
 export class BakePreviewContainer extends PIXI.Container {
     constructor() {
         super();
-        this.generateGrid();
+        //this.generateGrid();
     }
 
-    private generateGrid(): void {
+    public generatePieces(): void {
+
+        const columns = 6;      // Number of sprites per row
+        const spacing = 200;    // Space between sprites
+        const startX = 50;
+        const startY = 200;
+
+        for (let index = 0; index < 24; index++) {
+            const baseM = new BlockMergeEntity();
+            baseM.init(index + 1, '', '')
+
+            const row = Math.floor(index / columns);
+            const col = index % columns;
+            baseM.x = startX + col * spacing;
+            baseM.y = startY + row * spacing;
+
+            this.addChild(baseM);
+
+
+        }
+    }
+    public generateGrid(): void {
         const columns = 6;      // Number of sprites per row
         const spacing = 110;    // Space between sprites
         const startX = 50;
@@ -22,7 +44,7 @@ export class BakePreviewContainer extends PIXI.Container {
             // 1. Bake the texture (Testing Horizontal/Vertical here)
             const direction = BakeDirection.HORIZONTAL// level % 2 === 0 ? BakeDirection.HORIZONTAL : BakeDirection.VERTICAL;
 
-            const bakedTexture = TextureBaker.getTexture(
+            const bakedTexture = TextureBaker.getStripedTintedTexture(
                 level,
                 'BubbleFrame01_Bg',
                 colors,
@@ -55,7 +77,8 @@ export class BakePreviewContainer extends PIXI.Container {
             this.addChild(sprite);
         });
 
+
         // Optional: Scale the whole preview to fit the screen
-        this.scale.set(0.8);
+        //this.scale.set(0.8);
     }
 }

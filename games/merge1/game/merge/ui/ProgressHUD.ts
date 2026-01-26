@@ -1,59 +1,92 @@
+import { NineSliceProgressBar } from "@core/ui/NineSliceProgressBar";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
+import MergeAssets from "../MergeAssets";
 
 export class ProgressHUD extends PIXI.Container {
-    private barWidth: number = 240;
-    private barHeight: number = 24;
-    private fill: PIXI.Graphics;
+    private progressBar: NineSliceProgressBar;
     private levelText: PIXI.Text;
     private xpText: PIXI.Text;
+    private badgeContainer: PIXI.Container;
+    private badgeBg: PIXI.Sprite;
+
+    private readonly BAR_WIDTH: number = 280;
+    private readonly BAR_HEIGHT: number = 40;
 
     constructor() {
         super();
+        this.pivot.x = this.BAR_WIDTH / 2
+        // 1. Progress Bar Setup
+        this.progressBar = new NineSliceProgressBar({
+            width: this.BAR_WIDTH,
+            height: this.BAR_HEIGHT,
+            bgTexture: PIXI.Texture.from('Slider_Basic01_Bg_Single'),
+            barTexture: PIXI.Texture.from('Slider_Basic03_FillMask'),
+            leftWidth: 8,
+            topHeight: 8,
+            rightWidth: 8,
+            bottomHeight: 8,
+            barColor: 0x3cf060,
+            padding: 4
+        });
+        this.progressBar.position.set(this.BAR_WIDTH / 2, 0);
+        this.addChild(this.progressBar);
 
-        // 1. Background
-        const bg = new PIXI.Graphics();
-        bg.beginFill(0x000000, 0.5);
-        bg.drawRoundedRect(0, 0, this.barWidth, this.barHeight, 8);
-        this.addChild(bg);
+        // 2. Level Badge Setup
+        this.badgeContainer = new PIXI.Container();
 
-        // 2. XP Fill
-        this.fill = new PIXI.Graphics();
-        this.fill.beginFill(0x3cf060);
-        this.fill.drawRect(0, 0, this.barWidth, this.barHeight);
-        this.fill.width = 0;
-        this.addChild(this.fill);
+        // Use a circular or shield-like badge texture from your assets
+        this.badgeBg = PIXI.Sprite.from('Label_Badge01_Yellow'); // Replace with a badge/circle asset
+        this.badgeBg.anchor.set(0.5);
+        this.badgeBg.scale.set(0.45); // Adjust based on your asset size
 
-        const mask = new PIXI.Graphics();
-        mask.beginFill(0xffffff);
-        mask.drawRoundedRect(0, 0, this.barWidth, this.barHeight, 8);
-        this.fill.mask = mask;
-        this.addChild(mask);
+        this.levelText = new PIXI.Text(`1`, {
+            ...MergeAssets.MainFont,
+            fontSize: 32,
+            strokeThickness: 4 // Thicker stroke for badge numbers
+        });
+        this.levelText.anchor.set(0.5);
 
-        // 3. Texts
-        this.levelText = new PIXI.Text(`LV. 1`, { fill: 0xffffff, fontSize: 18, fontWeight: 'bold' });
-        this.levelText.position.set(-70, 0);
-        this.addChild(this.levelText);
+        this.badgeContainer.addChild(this.badgeBg, this.levelText);
 
-        this.xpText = new PIXI.Text(`0 / 0`, { fill: 0xffffff, fontSize: 12 });
+        // Position the badge at the start of the bar
+        this.badgeContainer.position.set(0, 0);
+        this.addChild(this.badgeContainer);
+
+        // 3. XP Text (Center of Bar)
+        this.xpText = new PIXI.Text(`0 / 0`, {
+            ...MergeAssets.MainFont,
+            fontSize: 22
+        });
         this.xpText.anchor.set(0.5);
-        this.xpText.position.set(this.barWidth / 2, this.barHeight / 2);
+        this.xpText.position.set(this.BAR_WIDTH / 2, 0);
         this.addChild(this.xpText);
     }
 
-    /**
-     * Now called by MergeHUD
-     */
     public updateValues(level: number, current: number, required: number): void {
         const ratio = Math.min(current / required, 1);
+        this.progressBar.update(ratio);
 
-        gsap.to(this.fill, { width: this.barWidth * ratio, duration: 0.4, ease: "power2.out" });
-        this.levelText.text = `LV. ${level}`;
+        this.levelText.text = `${level}`;
         this.xpText.text = `${Math.floor(current)} / ${Math.floor(required)}`;
     }
 
     public playLevelUpEffect(newLevel: number): void {
-        this.levelText.text = `LV. ${newLevel}`;
-        gsap.fromTo(this.levelText.scale, { x: 1.5, y: 1.5 }, { x: 1, y: 1, duration: 0.6, ease: "back.out" });
+        this.levelText.text = `${newLevel}`;
+
+        // Animate the entire badge
+        gsap.fromTo(this.badgeContainer.scale,
+            { x: 0, y: 0 },
+            { x: 1, y: 1, duration: 0.6, ease: "back.out(1.7)" }
+        );
+
+        // Flash the badge background
+        gsap.to(this.badgeBg, {
+            tint: 0xFFFFFF,
+            duration: 0.1,
+            repeat: 3,
+            yoyo: true,
+            onComplete: () => { this.badgeBg.tint = 0xFFFFFF }
+        });
     }
 }

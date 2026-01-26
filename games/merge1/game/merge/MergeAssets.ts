@@ -5,6 +5,8 @@ export interface SoundAsset {
     volumeMinMax?: [number, number] | number,
     pitchMinMax?: [number, number] | number
 }
+
+
 export default class MergeAssets {
     // 1. Textures Registry (Central point for all images)
 
@@ -86,6 +88,38 @@ export default class MergeAssets {
         AmbientMasterVolumeGameplay: 0.1,
     }
     static readonly Sounds = {
+        Game: {
+            Yay: {
+                soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
+                volumeMinMax: 0.07,
+                pitchMinMax: [0.8, 1.1]
+            },
+            Egg: {
+                soundId: ['hpp-increase20'],
+                volumeMinMax: 0.07,
+                pitchMinMax: [0.8, 1]
+            },
+            Grab: {
+                soundId: ['grab (1)', 'grab (2)', 'grab (3)', 'grab (4)'],
+                volumeMinMax: 0.1,
+                pitchMinMax: [0.8, 1]
+            },
+            Drop: {
+                soundId: ['drop'],
+                volumeMinMax: 0.1,
+                pitchMinMax: [0.7, 1]
+            },
+            Merge: {
+                soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
+                volumeMinMax: 0.3,
+                pitchMinMax: [0.9, 1]
+            },
+            Coin: {
+                soundId: 'Coin2',
+                volumeMinMax: [0.1, 0.15],
+                pitchMinMax: [0.8, 1.2],
+            },
+        },
         UI: {
             Tap: {
                 soundId: 'Tap',
@@ -117,7 +151,7 @@ export default class MergeAssets {
             },
             Coin1: {
                 soundId: 'Coin2',
-                volumeMinMax: [0.15, 0.2],
+                volumeMinMax: [0.1, 0.15],
                 pitchMinMax: [0.8, 1.2],
             },
             PieceConnected: {
@@ -209,9 +243,12 @@ export default class MergeAssets {
             Gem: "ResourceBar_Single_Icon_Gem",
             Up: "up",
             Down: "down",
+            Shop: "ItemIcon_Shop",
             Back: "Icon_Back",
             Check: "Icon_Check03_s",
+            Lock: "Icon_Lock01_s",
             Finger: "handHud",
+            Speed: "ResourceBar_Single_Icon_Energy",
             // Check: "Toggle_Check_Single_Icon",
             CheckItem: "Icon_Check03_s",
             Pill: "Label_Badge01_Yellow",
@@ -276,4 +313,40 @@ export default class MergeAssets {
         letterSpacing: 2,
         miterLimit: 1
     };
+
+
 }
+
+export const SHOP_STYLE_CONFIG = {
+    Window: {
+        WIDTH: 600,
+        HEIGHT: 900,
+        TAB_HEIGHT: 60,
+        SCROLL_AREA_HEIGHT: 760,
+        CORNER_SIZE: 24,
+        PADDING: { TOP: 20, BOTTOM: 20, LEFT: 20, RIGHT: 80 },
+        Textures: {
+            Background: MergeAssets.Textures.UI.RowLock,
+            TabActive: MergeAssets.Textures.Buttons.Blue,
+            CloseBtn: MergeAssets.Textures.Buttons.Red,
+            CloseIcon: "Icon_Close02",
+            NavBtn: MergeAssets.Textures.Buttons.Blue,
+            NavDisabled: MergeAssets.Textures.Buttons.Grey,
+        }
+    },
+    Item: {
+        HEIGHT: 120,
+        SPACING: 15,
+        THUMB_SIZE: 90,
+        BUTTON_WIDTH: 140,
+        BUTTON_HEIGHT: 60,
+        TEXT_OFFSET_X: 130,
+        Textures: {
+            RowBgActive: MergeAssets.Textures.UI.CardBg,
+            RowBg: MergeAssets.Textures.UI.CurrencyPanel,
+            BuyBtn: MergeAssets.Textures.Buttons.Green,
+            BuyDisabled: MergeAssets.Textures.Buttons.Grey,
+            LockIcon: MergeAssets.Textures.Icons.Lock,
+        }
+    }
+};

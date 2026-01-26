@@ -1,71 +1,92 @@
+import BaseButton from "@core/ui/BaseButton";
+import { NineSliceProgressBar } from "@core/ui/NineSliceProgressBar";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
+import MergeAssets from "../MergeAssets";
 
 export default class GeneratorHUD extends PIXI.Container {
-    private progressBar: PIXI.Graphics = new PIXI.Graphics();
-    private progressBg: PIXI.Graphics = new PIXI.Graphics();
-    private speedUpBtn: PIXI.Container = new PIXI.Container();
+    private progressBar: NineSliceProgressBar;
+    private speedUpBtn: BaseButton;
     private statusLabel: PIXI.Text;
-    private btnLabel: PIXI.Text;
-    private btnBg: PIXI.Graphics;
 
     private isFull: boolean = false;
-    private readonly BAR_WIDTH = 200;
-    private readonly BAR_HEIGHT = 15;
+    private readonly BAR_WIDTH = 400;
+    private readonly BAR_HEIGHT = 40;
 
     public onSpeedUpRequested: () => void = () => { };
 
     constructor() {
         super();
 
-        // 1. Background Bar
-        this.progressBg.beginFill(0x000000, 0.5)
-            .drawRoundedRect(0, 0, this.BAR_WIDTH, this.BAR_HEIGHT, 5);
-        this.addChild(this.progressBg);
+        // 1. Setup the NineSlice Progress Bar
+        this.progressBar = new NineSliceProgressBar({
+            width: this.BAR_WIDTH,
+            height: this.BAR_HEIGHT,
+            bgTexture: PIXI.Texture.from('Slider_Basic01_Bg_Single'), // Replace with your actual asset key
+            barTexture: PIXI.Texture.from('Slider_Basic03_FillMask'),  // Replace with your actual asset key
+            leftWidth: 8,
+            topHeight: 8,
+            rightWidth: 8,
+            bottomHeight: 8,
+            //bgColor: 0x444444, // Darker backdrop
+            barColor: 0x00FF00,  // Default green
+            padding: 4
+
+        });
+
+        // Adjust pivot to match your previous layout or keep it centered
+        // If the original class centered the pivot, we position it at (0,0) locally
+        this.progressBar.position.set(this.BAR_WIDTH / 2, 0);
         this.addChild(this.progressBar);
 
-        // 2. Status Label (Above the bar)
-        this.statusLabel = new PIXI.Text("NEXT EGG", {
-            fontSize: 12,
-            fill: 0xffffff,
-            fontWeight: 'bold'
-        });
+        // 2. Status Label (Now using your LemonMilk style)
+        this.statusLabel = new PIXI.Text("NEXT EGG", { ...MergeAssets.MainFont });
         this.statusLabel.anchor.set(0.5, 1);
-        this.statusLabel.position.set(this.BAR_WIDTH / 2, -5);
+        this.statusLabel.position.set(this.BAR_WIDTH / 2, -20);
         this.addChild(this.statusLabel);
 
-        // 3. Speed up button
-        this.btnBg = new PIXI.Graphics()
-            .beginFill(0xffcc00)
-            .drawRoundedRect(0, 0, 80, 30, 8);
-
-        this.btnLabel = new PIXI.Text("SPEED", {
-            fontSize: 14,
-            fill: 0x000000,
-            fontWeight: 'bold'
+        // 3. Speed Up Button using BaseButton
+        this.speedUpBtn = new BaseButton({
+            standard: {
+                width: 100,
+                height: 80,
+                allPadding: 10,
+                texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Blue), // Using Blue for speed up
+                iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Speed), // Using Blue for speed up
+                fontStyle: new PIXI.TextStyle({ ...MergeAssets.MainFont }),
+                centerIconHorizontally: true,
+                centerIconVertically: true,
+                iconSize: { height: 50, width: 50 }
+            },
+            over: { tint: 0xeeeeee },
+            disabled: { texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Grey) },
+            click: {
+                callback: () => this.onSpeedUpRequested()
+            }
         });
-        this.btnLabel.anchor.set(0.5);
-        this.btnLabel.position.set(40, 15);
-
-        this.speedUpBtn.addChild(this.btnBg, this.btnLabel);
-        this.speedUpBtn.interactive = true;
-        this.speedUpBtn.cursor = 'pointer';
-        this.speedUpBtn.position.set(this.BAR_WIDTH + 10, -7);
-        this.speedUpBtn.on("pointertap", () => this.onSpeedUpRequested());
-
+        this.speedUpBtn.visible = false
+        // Position button to the right of the bar
+        this.speedUpBtn.position.set(this.BAR_WIDTH + 15, -this.speedUpBtn.height + 15);
         this.addChild(this.speedUpBtn);
     }
 
+    /**
+     * Updates the visual progress
+     */
     public updateProgress(ratio: number): void {
-        this.progressBar.clear();
+        this.progressBar.update(ratio);
 
-        // Visual feedback: Red if stuck at 100%, Green if working
-        const color = (this.isFull && ratio >= 0.99) ? 0xff4444 : 0x00ff00;
-
-        this.progressBar.beginFill(color)
-            .drawRoundedRect(0, 0, this.BAR_WIDTH * ratio, this.BAR_HEIGHT, 5);
+        // Dynamic coloring
+        if (this.isFull) {
+            this.progressBar.setTintColor(0xFF4444); // Red when blocked
+        } else {
+            this.progressBar.setTintColor(0x00FF00); // Green when working
+        }
     }
 
+    /**
+     * Handles UI changes when the grid is full
+     */
     public setFullState(isFull: boolean): void {
         if (this.isFull === isFull) return;
         this.isFull = isFull;
@@ -73,16 +94,16 @@ export default class GeneratorHUD extends PIXI.Container {
         if (isFull) {
             this.statusLabel.text = "BOARD FULL!";
             this.statusLabel.style.fill = 0xff4444;
-            this.speedUpBtn.interactive = false;
-            this.speedUpBtn.alpha = 0.5;
 
-            // "Denied" shake effect
-            gsap.to(this, { x: "+=3", duration: 0.05, repeat: 5, yoyo: true });
+            // Using BaseButton's inherent interactivity control
+            this.speedUpBtn.disable()
+
+            // "Denied" shake effect on the whole container
+            gsap.to(this, { x: "+=4", duration: 0.05, repeat: 5, yoyo: true });
         } else {
             this.statusLabel.text = "NEXT EGG";
             this.statusLabel.style.fill = 0xffffff;
-            this.speedUpBtn.interactive = true;
-            this.speedUpBtn.alpha = 1;
+            this.speedUpBtn.enable()
         }
     }
 }

@@ -8,8 +8,8 @@ import { SceneManager } from '@core/scene/SceneManager';
 import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
 import * as PIXI from 'pixi.js';
 import MergeLoader from './game/loader/MergeLoader';
+import MergeAssets from './game/merge/MergeAssets';
 import MergeScene from './game/merge/MergeScene';
-import MergeAssets from './game/MergeAssets';
 import { ConfirmationPopup } from './game/popup/ConfirmationPopup';
 import { GameOverPopup } from './game/popup/GameOverPopup';
 import { DevGuiManager } from './game/utils/DevGuiManager';
@@ -124,7 +124,7 @@ export default class MyGame extends Game {
             ...MergeAssets.MainFont,
             letterSpacing: 8,
         }, {
-            chars: ['0123456789: ?!{}()@#$%^&*-+', ['a', 'z'], ['A', 'Z']]
+            chars: ['0123456789: ?!{}()@#$%^&*-+,./', ['a', 'z'], ['A', 'Z']]
         });
 
 

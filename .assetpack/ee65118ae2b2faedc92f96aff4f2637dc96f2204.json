@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769122352816,
-                "duration": 9.217399999999543,
+                "date": 1769163931047,
+                "duration": 9.155600000001868,
                 "success": true
             }
         },
@@ -208,8 +208,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769122352816,
-                "duration": 2347.686099999999,
+                "date": 1769163931048,
+                "duration": 2130.3100000000013,
                 "success": true
             }
         },
@@ -673,6 +673,16 @@
             "transformData": {},
             "hash": "P0FdiA"
         },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/eye.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "NklS3g"
+        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/fade-shape.png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
@@ -721,16 +731,6 @@
                 "tps": true
             },
             "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/eye.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "KkmhxA"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/Icon_Back.png": {
             "isFolder": false,
@@ -1881,16 +1881,6 @@
             },
             "transformData": {},
             "hash": "vv9OBQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/shark.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "5moyLQ"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/Slider_Basic01_Bg_Single.png": {
             "isFolder": false,

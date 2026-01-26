@@ -1,4 +1,5 @@
 import { Signal } from "signals";
+import { MissionManager } from "../missions/MissionManager";
 import GameStorage from "../storage/GameStorage";
 
 export enum CurrencyType {
@@ -25,14 +26,13 @@ export class InGameEconomy {
         const state = GameStorage.instance.getFullState();
 
         Object.values(CurrencyType).forEach(type => {
-            // Priority 1: state.currencies[type]
-            // Priority 2: state.coins (migration)
-            // Priority 3: 0
             let initialValue = 0;
+
+            // Check current currencies object or handle legacy .coins field
             if (state?.currencies && state.currencies[type] !== undefined) {
                 initialValue = state.currencies[type];
-            } else if (type === CurrencyType.MONEY && state?.coins !== undefined) {
-                initialValue = state.coins;
+            } else if (type === CurrencyType.MONEY && (state as any)?.coins !== undefined) {
+                initialValue = (state as any).coins;
             }
 
             this._currencies.set(type as CurrencyType, initialValue);
@@ -45,20 +45,37 @@ export class InGameEconomy {
 
         this._currencies.set(type, next);
 
-        // --- THE CRITICAL FIX: ACTUAL SAVE ---
-        const fullState = GameStorage.instance.getFullState();
-        if (fullState) {
-            // Update the currencies object inside the state
-            fullState.currencies = Object.fromEntries(this._currencies);
-
-            // Push to LocalStorage
-            GameStorage.instance.saveFullState(fullState);
+        if (amount > 0) {
+            MissionManager.instance.reportCurrencyEarned(type, amount);
         }
+
+        // --- PATCH UPDATE ONLY ---
+        // We convert the map to a plain object and send ONLY the currencies key
+        GameStorage.instance.updateState({
+            currencies: Object.fromEntries(this._currencies)
+        });
 
         this.onCurrencyChanged.dispatch(type, next);
     }
 
+    /**
+     * Subtracts currency. Returns true if successful, false if insufficient funds.
+     */
+    public spend(type: CurrencyType, amount: number): boolean {
+        const current = this.getAmount(type);
+        if (current < amount) return false;
+
+
+
+        this.add(type, -amount);
+        return true;
+    }
+
     public getAmount(type: CurrencyType): number {
         return this._currencies.get(type) || 0;
+    }
+
+    public get currencies(): Record<string, number> {
+        return Object.fromEntries(this._currencies);
     }
 }
