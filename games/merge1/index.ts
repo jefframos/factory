@@ -122,7 +122,9 @@ export default class MyGame extends Game {
 
         PIXI.BitmapFont.from(MergeAssets.MainFont.fontFamily as string, {
             ...MergeAssets.MainFont,
-            letterSpacing: 8,
+            strokeThickness: 6,
+            //resolution: 2,
+            letterSpacing: 10,
         }, {
             chars: ['0123456789: ?!{}()@#$%^&*-+,./', ['a', 'z'], ['A', 'Z']]
         });

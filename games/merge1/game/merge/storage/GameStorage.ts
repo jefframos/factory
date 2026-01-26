@@ -43,15 +43,14 @@ export interface IMissionsSaveData {
     activeMissionId: string | null;
     activeDef?: MissionDefinition | null;
     states: Record<string, IMissionState>;
-
     nextMissionAtMs?: number;
-
-    // per-template progression (tap: 25,30,35… etc.)
     counters?: Record<string, number>;
+    tierCycleIndex?: number;
+    tierCounters?: Record<number, number>;
 
-    // NEW: tier cadence
-    tierCycleIndex?: number;                 // index into cadence array
-    tierCounters?: Record<number, number>;   // tier -> how many missions of this tier have been assigned/claimed (optional)
+    // ADD THESE TWO LINES:
+    activeTemplateId?: string;
+    activeK?: number;
 }
 
 

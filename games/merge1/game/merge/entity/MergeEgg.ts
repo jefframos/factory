@@ -2,6 +2,7 @@ import { Game } from "@core/Game";
 import ViewUtils from "@core/utils/ViewUtils";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
+import MergeAssets from "../MergeAssets";
 import { TextureBaker } from "../vfx/TextureBaker";
 
 export class MergeEgg extends PIXI.Container {
@@ -78,6 +79,11 @@ export class MergeEgg extends PIXI.Container {
         this.isLanding = true;
         this.angle = 0;
 
+        if (level > 2 && level < MergeAssets.Colors.length) {
+            this.sprite.tint = MergeAssets.Colors[level - 1][0]
+        } else {
+            this.sprite.tint = 0xFFFFFF
+        }
         // Setup initial "in-air" pose
         this.sprite.y = -120;
         this.sprite.scale.set(0.7, 1.3); // Stretched thin

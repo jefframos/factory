@@ -160,8 +160,8 @@ export class EntityManager {
         return animal;
     }
 
-    public spawnEgg(existingData?: IEntityData, merge?: Partial<IEntityData>): MergeEgg | null {
-        if (!existingData && this.entitiesByView.size >= this.maxEntitiesGetter()) {
+    public spawnEgg(existingData?: IEntityData, merge?: Partial<IEntityData>, force: boolean = false): MergeEgg | null {
+        if (!force && (!existingData && this.entitiesByView.size >= this.maxEntitiesGetter())) {
             return null;
         }
 
@@ -170,7 +170,7 @@ export class EntityManager {
         }
 
         const egg = Pool.instance.getElement(MergeEgg);
-        egg.init();
+        egg.init(merge?.level ?? 1);
 
         const spawnPos = existingData
             ? new PIXI.Point(existingData.x, existingData.y)

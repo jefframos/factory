@@ -20,7 +20,7 @@ export class CurrencyBox extends PIXI.Container {
     private currentValue: number = 0;
     private readonly boxHeight: number = 60;
     private readonly padding: number = 10;  // Inner distance from left edge
-    private readonly spacing: number = 12;  // Gap between icon and text
+    private readonly spacing: number = 2;  // Gap between icon and text
 
     constructor(private type: CurrencyType, config: ICurrencyBoxConfig) {
         super();

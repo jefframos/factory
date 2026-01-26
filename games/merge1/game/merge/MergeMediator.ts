@@ -1,16 +1,7 @@
 // MergeMediator.ts
-// Refactored to use services:
-// - RoomService handles boot + switching (save/restore/shuffle) via signals
-// - MergeInputMergeService handles input + merge + highlight + egg hover hatch
-// Keeps:
-// - FTUE driver
-// - Coin generator loop
-// - Shop wiring
-// - Save debounce wiring
-
 import * as PIXI from "pixi.js";
 import { GridBaker } from "./core/GridBaker";
-import { InGameEconomy } from "./data/InGameEconomy";
+import { CurrencyType, InGameEconomy } from "./data/InGameEconomy";
 import { InGameProgress } from "./data/InGameProgress";
 import { ProgressionStats } from "./data/ProgressionStats";
 import { ShopManager } from "./data/ShopManager";
@@ -28,8 +19,11 @@ import MergeAssets from "./MergeAssets";
 import { MissionManager } from "./missions/MissionManager";
 import { RoomId } from "./rooms/RoomRegistry";
 import { RoomService } from "./rooms/RoomService";
+import { MergeFtueService } from "./services/MergeFtueService";
 import { MergeInputMergeService } from "./services/MergeInputMergeService";
-import { MergeFTUE } from "./ui/ftue/MergeFTUE";
+import { TimedRewardRegistry } from "./timedRewards/TimedRewardRegistry";
+import { TimedRewardService } from "./timedRewards/TimedRewardService";
+import { TimedRewardsBar } from "./timedRewards/ui/TimedRewardsBar ";
 import MergeHUD from "./ui/MergeHUD";
 import ShopView from "./ui/shop/ShopView";
 import { CoinEffectLayer } from "./vfx/CoinEffectLayer";
@@ -46,15 +40,9 @@ export class MergeMediator {
     private activeEntity: BlockMergeEntity | MergeEgg | null = null;
 
     private readonly MAX_COINS_PER_ENTITY: number = 3;
-    private readonly MERGE_RADIUS_PX: number = 90;
+    private readonly MERGE_RADIUS_PX: number = 100;
 
     private autoCollectCoins: boolean = false;
-
-    private readonly ftue: MergeFTUE;
-    private ftueEnabled: boolean = true;
-    private ftueDirty: boolean = true;
-    private lastAllowEgg: boolean = false;
-    private lastAllowMerge: boolean = false;
 
     private shopView!: ShopView;
     private input!: InputManager;
@@ -63,6 +51,11 @@ export class MergeMediator {
     private readonly inputService: MergeInputMergeService;
 
     private readonly eggGenerator: EggGenerator;
+
+    private readonly ftueService: MergeFtueService;
+
+    private readonly timedRewards: TimedRewardService;
+    private readonly timedRewardsBar: TimedRewardsBar;
 
     public constructor(
         private readonly container: PIXI.Container,
@@ -74,7 +67,7 @@ export class MergeMediator {
         ProgressionStats.instance.recordSessionStart();
 
         MissionManager.instance.initDynamic({
-            nextMissionDelaySec: 20, // set to 0 for instant
+            nextMissionDelaySec: 20,
             cadence: [1, 1, 1, 1, 2],
             fallbackTier: 1
         });
@@ -134,21 +127,20 @@ export class MergeMediator {
             this.activeEntity = active;
         });
 
-        this.inputService.onDirty.add(() => {
-            this.ftueDirty = true;
-        });
-
-        // FTUE
+        // FTUE service
         const hintLayer = (this.hud as any).getHintLayer ? (this.hud as any).getHintLayer() : this.hud;
-        this.ftue = new MergeFTUE(hintLayer, {
+        this.ftueService = new MergeFtueService({
+            parentLayer: hintLayer,
             fingerTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Finger),
             maxPairDistancePx: 260,
             eggHoverOffsetY: -70,
             completeOnFirstMerge: true
         });
 
-        this.ftue.setFocus(true);
-        this.ftue.setAllowedHints(false, false);
+        // Any gameplay interaction that changes entities/highlights should re-evaluate FTUE
+        this.inputService.onDirty.add(() => {
+            this.ftueService.markDirty();
+        });
 
         this.wireEntitySignals();
 
@@ -167,7 +159,7 @@ export class MergeMediator {
         this.eggGenerator = new EggGenerator(() => {
             const egg = this.entities.spawnEgg();
             if (egg) {
-                this.ftueDirty = true;
+                this.ftueService.markDirty();
                 return true;
             }
             return false;
@@ -184,25 +176,55 @@ export class MergeMediator {
             // Ensure no dangling highlight/drag state after restore
             this.inputService.clearState();
 
-            this.ftueDirty = true;
+            this.ftueService.markDirty();
         });
 
-        this.ftueDirty = true;
-    }
+        this.ftueService.markDirty();
 
-    // -------------------------
-    // Setup
-    // -------------------------
+        const registry = TimedRewardRegistry.createDefault5m();
+
+        this.timedRewards = new TimedRewardService({
+            registry,
+            context: {
+                getMoney: () => InGameEconomy.instance.getAmount(CurrencyType.MONEY),
+                addMoney: (amt) => InGameEconomy.instance.add(CurrencyType.MONEY, amt),
+
+                getGems: () => InGameEconomy.instance.getAmount(CurrencyType.GEMS),
+                addGems: (amt) => InGameEconomy.instance.add(CurrencyType.GEMS, amt),
+
+                getHighestEntityLevel: () => {
+                    let highest = 1;
+                    this.entities.forEach((logic) => {
+                        if (logic.data.type !== "animal") {
+                            return;
+                        }
+                        highest = Math.max(highest, logic.data.level);
+                    });
+                    return highest;
+                },
+
+                spawnEntityAtLevel: (level) => {
+                    // If you later want “direct animal spawn”, replace this call.
+                    const egg = this.entities.spawnEgg(undefined, { level }, true);
+                    return !!egg;
+                }
+            },
+            visibleWindowSize: 3
+        });
+
+        this.hud.setTimeRewards(this.timedRewards)
+
+
+    }
 
     private loadSave(): void {
         this.rooms.boot();
-        this.ftueDirty = true;
+        this.ftueService.markDirty();
     }
 
     private wireEntitySignals(): void {
         this.entities.onEntitySpawned.add((view: any) => {
-            this.ftue.onEntitySpawned(view);
-            this.ftueDirty = true;
+            this.ftueService.onEntitySpawned(view);
 
             if (view instanceof MergeEgg) {
                 ProgressionStats.instance.recordEggSpawned(1);
@@ -215,16 +237,14 @@ export class MergeMediator {
         });
 
         this.entities.onEntityRemoved.add((view: any) => {
-            this.ftue.onEntityRemoved(view);
-            this.ftueDirty = true;
+            this.ftueService.onEntityRemoved(view);
         });
 
         this.entities.onEggHatched.add((egg: any, spawned: any) => {
             ProgressionStats.instance.recordEggHatched(1);
             MissionManager.instance.reportEggHatched(1);
 
-            this.ftue.onEggHatched(egg, spawned);
-            this.ftueDirty = true;
+            this.ftueService.onEggHatched(egg, spawned);
         });
     }
 
@@ -257,7 +277,7 @@ export class MergeMediator {
                 return;
             }
 
-            this.ftueDirty = true;
+            this.ftueService.markDirty();
             this.shopView.refreshStates();
         });
 
@@ -265,10 +285,6 @@ export class MergeMediator {
             this.shopView.refreshStates();
         });
     }
-
-    // -------------------------
-    // Coins bookkeeping
-    // -------------------------
 
     private decrementPendingCoin(ownerId: string): void {
         this.entities.forEach((logic) => {
@@ -278,62 +294,18 @@ export class MergeMediator {
         });
     }
 
-    // -------------------------
-    // FTUE driver (stats-based, gated)
-    // -------------------------
-
-    private handleFtueState(): void {
-        if (!this.ftueDirty) {
-            return;
-        }
-
-        const s = ProgressionStats.instance.snapshot;
-
-        if (s.mergesMade >= 2) {
-            if (this.ftueEnabled) {
-                this.ftueEnabled = false;
-                this.ftue.setAllowedHints(false, false);
-            }
-            this.ftueDirty = false;
-            return;
-        }
-
-        const eggsExist = this.ftue.getTrackedEggCount ? (this.ftue.getTrackedEggCount() > 0) : true;
-        const blocksCount = this.ftue.getTrackedBlockCount ? this.ftue.getTrackedBlockCount() : 0;
-
-        const allowEgg = (s.eggsHatched === 0) && eggsExist;
-
-        const allowMergePrefilter = (s.mergesMade === 0) && (blocksCount >= 2);
-        const allowMerge = allowMergePrefilter && !allowEgg;
-
-        if (allowEgg === this.lastAllowEgg && allowMerge === this.lastAllowMerge) {
-            this.ftueDirty = false;
-            return;
-        }
-
-        this.lastAllowEgg = allowEgg;
-        this.lastAllowMerge = allowMerge;
-
-        const anyAllowed = allowEgg || allowMerge;
-
-        this.ftueEnabled = anyAllowed;
-        this.ftue.setAllowedHints(allowEgg, allowMerge);
-
-        this.ftueDirty = false;
-    }
-
-    // -------------------------
-    // Update loop
-    // -------------------------
-
     public update(delta: number): void {
         const dtSeconds = delta;
 
         ProgressionStats.instance.recordPlaySeconds(dtSeconds);
         ProgressionStats.instance.update(dtSeconds);
         MissionManager.instance.update(dtSeconds);
+        this.timedRewards.update(dtSeconds);
 
         const inFocus = !this.hud.isAnyUiOpen;
+
+        // Keep FTUE focus in sync (service handles show/hide)
+        this.ftueService.setFocus(inFocus);
 
         // Generator / HUD
         if (inFocus) {
@@ -381,13 +353,8 @@ export class MergeMediator {
             }
         });
 
-        // FTUE
-        this.handleFtueState();
-        if (this.ftueEnabled && inFocus) {
-            this.ftue.update(dtSeconds);
-        } else {
-            this.ftue.setAllowedHints(false, false);
-        }
+        // FTUE (driver + visuals inside the service)
+        this.ftueService.update(dtSeconds);
 
         // Save debounce
         this.saver.update(dtSeconds);

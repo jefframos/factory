@@ -20,13 +20,13 @@ export class ProgressHUD extends PIXI.Container {
         this.progressBar = new NineSliceProgressBar({
             width: this.BAR_WIDTH,
             height: this.BAR_HEIGHT,
-            bgTexture: PIXI.Texture.from('Slider_Basic01_Bg_Single'),
-            barTexture: PIXI.Texture.from('Slider_Basic03_FillMask'),
+            bgTexture: PIXI.Texture.from(MergeAssets.Textures.UI.BarBg),
+            barTexture: PIXI.Texture.from(MergeAssets.Textures.UI.BarFill),
             leftWidth: 8,
             topHeight: 8,
             rightWidth: 8,
             bottomHeight: 8,
-            barColor: 0x3cf060,
+            barColor: MergeAssets.Textures.UI.FillColor,
             padding: 4
         });
         this.progressBar.position.set(this.BAR_WIDTH / 2, 0);
@@ -36,7 +36,7 @@ export class ProgressHUD extends PIXI.Container {
         this.badgeContainer = new PIXI.Container();
 
         // Use a circular or shield-like badge texture from your assets
-        this.badgeBg = PIXI.Sprite.from('Label_Badge01_Yellow'); // Replace with a badge/circle asset
+        this.badgeBg = PIXI.Sprite.from(MergeAssets.Textures.UI.LevelBadge); // Replace with a badge/circle asset
         this.badgeBg.anchor.set(0.5);
         this.badgeBg.scale.set(0.45); // Adjust based on your asset size
 

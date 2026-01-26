@@ -28,6 +28,10 @@ export class MissionFactory {
         return this.cfg.nextMissionDelaySec;
     }
 
+    // missions/MissionFactory.ts
+
+    // ... (other methods)
+
     public createNextMission(args: {
         counters: Record<string, number>;
         tierCycleIndex: number;
@@ -45,9 +49,14 @@ export class MissionFactory {
         const tier = this.pickTier(args.tierCycleIndex);
         const template = this.pickTemplateForTier(tier, ctx);
 
-        const def = template.build(ctx);
+        // FIX: Get the counter for this specific template
+        const k = ctx.counters[template.templateId] || 0;
 
-        // Maintain tier counters (assigned count)
+        // FIX: Pass BOTH ctx and k to the build function
+        const def = template.build(ctx, k);
+
+        // Maintain counters
+        ctx.counters[template.templateId] = k + 1; // Increment for next time
         args.tierCounters[tier] = (args.tierCounters[tier] || 0) + 1;
 
         return {
@@ -55,7 +64,6 @@ export class MissionFactory {
             tierCycleIndexNext: this.nextCycleIndex(args.tierCycleIndex)
         };
     }
-
     private pickTier(tierCycleIndex: number): number {
         const cadence = this.cfg.cadence || [];
         if (cadence.length <= 0) {
@@ -71,7 +79,17 @@ export class MissionFactory {
         if (cadence.length <= 0) return 0;
         return (Math.max(0, current) + 1) % cadence.length;
     }
+    // Inside missions/MissionFactory.ts
 
+    public getContext(): MissionGenContext {
+        const main = InGameProgress.instance.getProgression(ProgressionType.MAIN);
+        return {
+            counters: {}, // This will be overridden or handled by the builder
+            playerLevel: main.level,
+            highestCreature: main.highestMergeLevel,
+            tierCounters: {}
+        };
+    }
     private pickTemplateForTier(tier: number, ctx: MissionGenContext): MissionTemplate {
         const eligible = MISSION_TEMPLATES
             .filter(t => t.tier === tier)

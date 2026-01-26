@@ -127,6 +127,15 @@ export class MergeInputMergeService {
         if (this.activeEntity) {
             this.deps.entities.setEntityPosition(this.activeEntity as any, localPos.x, localPos.y);
             this.updateMergeHighlight();
+
+            const merged = this.tryMergeOnRelease();
+            if (merged) {
+                this.deps.gridView.setActive(null);
+                this.activeEntity = merged;
+                this.onActiveChanged.dispatch(null);
+                this.onDirty.dispatch();
+                return;
+            }
         }
 
         if (!autoCollectCoins) {
@@ -167,14 +176,7 @@ export class MergeInputMergeService {
             this.clearHighlight();
         }
 
-        const merged = this.tryMergeOnRelease();
-        if (merged) {
-            this.deps.gridView.setActive(null);
-            this.activeEntity = merged;
-            this.onActiveChanged.dispatch(null);
-            this.onDirty.dispatch();
-            return;
-        }
+
     }
 
     // -------------------------

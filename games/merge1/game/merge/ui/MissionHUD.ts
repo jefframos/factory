@@ -1,5 +1,5 @@
-// ui/MissionHUD.ts
 import BaseButton from "@core/ui/BaseButton";
+import { NineSliceProgressBar } from "@core/ui/NineSliceProgressBar";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
 import MergeAssets from "../MergeAssets";
@@ -12,14 +12,12 @@ export class MissionHUD extends PIXI.Container {
     private titleText: PIXI.Text;
     private progressText: PIXI.Text;
 
-    private barBg: PIXI.Sprite;
-    private barFill: PIXI.Sprite;
+    private progressBar: NineSliceProgressBar;
 
     private claimButton: BaseButton;
-    private chestIcon: PIXI.Sprite;
+    private checkIcon: PIXI.Sprite;
 
     private activeDef: MissionDefinition | null = null;
-
 
     private readonly w: number;
     private readonly h: number;
@@ -31,120 +29,112 @@ export class MissionHUD extends PIXI.Container {
         this.h = height;
 
         const ns = { left: 14, top: 14, right: 14, bottom: 14 };
-
-        // Use one of your existing UI panels (replace id if you prefer)
         const panelTex = PIXI.Texture.from(MergeAssets.Textures.UI.CurrencyPanel);
 
+        // 1. Background Panel
         this.bg = new PIXI.NineSlicePlane(panelTex, ns.left, ns.top, ns.right, ns.bottom);
         this.bg.width = this.w;
         this.bg.height = this.h;
         this.addChild(this.bg);
 
+        // 2. Mission Icon
         this.icon = PIXI.Sprite.from(PIXI.Texture.WHITE);
         this.icon.anchor.set(0.5);
         this.icon.width = 54;
         this.icon.height = 54;
         this.icon.x = 42;
         this.icon.y = this.h / 2;
-        this.icon.visible = false;
         this.addChild(this.icon);
 
+        // 3. Title Text (With Scaling Logic)
         this.titleText = new PIXI.Text("", {
             ...MergeAssets.MainFont,
-            fontSize: 22
+            fontSize: 22,
+            wordWrap: false // We will scale instead of wrap
         });
         this.titleText.anchor.set(0, 0);
         this.titleText.x = 80;
         this.titleText.y = 10;
         this.addChild(this.titleText);
 
+        // 4. Progress Text
         this.progressText = new PIXI.Text("", {
             ...MergeAssets.MainFont,
-            fontSize: 18
+            fontSize: 16
         });
-        this.progressText.anchor.set(0, 0);
-        this.progressText.x = 80;
-        this.progressText.y = 38;
+        this.progressText.anchor.set(1, 0.5);
+        this.progressText.x = this.w - 20;
+        this.progressText.y = this.h - 20;
         this.addChild(this.progressText);
 
-        // Progress bar (simple sprite fill)
-        this.barBg = PIXI.Sprite.from(PIXI.Texture.WHITE);
-        this.barBg.alpha = 0.25;
-        this.barBg.width = 220;
-        this.barBg.height = 10;
-        this.barBg.x = 80;
-        this.barBg.y = 66;
-        this.addChild(this.barBg);
+        // 5. Progress Bar (Replaced with NineSliceProgressBar)
+        this.progressBar = new NineSliceProgressBar({
+            width: 180,
+            height: 20,
+            bgTexture: PIXI.Texture.from(MergeAssets.Textures.UI.BarBg),
+            barTexture: PIXI.Texture.from(MergeAssets.Textures.UI.BarFill),
+            leftWidth: 8, topHeight: 8, rightWidth: 8, bottomHeight: 8,
+            barColor: MergeAssets.Textures.UI.FillColor,
+            padding: 3
+        });
+        this.progressBar.position.set(this.w / 2 - 20, this.h - 20);
+        this.addChild(this.progressBar);
 
-        this.barFill = PIXI.Sprite.from(PIXI.Texture.WHITE);
-        this.barFill.width = 0;
-        this.barFill.height = 10;
-        this.barFill.x = 80;
-        this.barFill.y = 66;
-        this.addChild(this.barFill);
+        // 6. Check Icon (Top Right)
+        this.checkIcon = PIXI.Sprite.from(PIXI.Texture.from(MergeAssets.Textures.Icons.Check));
+        this.checkIcon.anchor.set(0.5);
+        this.checkIcon.width = 30;
+        this.checkIcon.height = 30;
+        this.checkIcon.position.set(this.w - 20, 20);
+        this.addChild(this.checkIcon);
 
-        // Claim chest icon
-        this.chestIcon = PIXI.Sprite.from(PIXI.Texture.from(MergeAssets.Textures.Icons.Check || MergeAssets.Textures.Icons.Coin));
-        this.chestIcon.anchor.set(0.5);
-        this.chestIcon.width = 44;
-        this.chestIcon.height = 44;
-
-        // Claim button
+        // 7. Claim Button (Under the panel on the right)
         this.claimButton = new BaseButton({
             standard: {
-                width: 120,
-                height: 52,
-                allPadding: 8,
+                width: 140,
+                height: 45,
                 texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Green || MergeAssets.Textures.Buttons.Blue),
-                fontStyle: new PIXI.TextStyle({ ...MergeAssets.MainFont, fontSize: 20 })
+                fontStyle: new PIXI.TextStyle({ ...MergeAssets.MainFont, fontSize: 18 })
             },
             over: { tint: 0xeeeeee },
             click: {
                 callback: () => {
-                    const claimed = MissionManager.instance.claimActive();
-                    if (claimed) {
+                    if (MissionManager.instance.claimActive()) {
                         this.playClaimFx();
                     }
                 }
             }
         });
-        this.claimButton.setLabel('Claim')
-        this.claimButton.x = this.w - 130;
-        this.claimButton.y = (this.h - 52) / 2;
+        this.claimButton.setLabel('CLAIM');
+        // Positioned under the right side of the main panel
+        this.claimButton.x = this.w - this.claimButton.width;
+        this.claimButton.y = this.h + 5;
         this.addChild(this.claimButton);
 
-        this.chestIcon.x = this.claimButton.x - 28;
-        this.chestIcon.y = this.h / 2;
-        this.addChild(this.chestIcon);
+        this.initEvents();
+        this.syncInitialState();
+    }
 
-        this.setClaimVisible(false);
+    private initEvents(): void {
+        MissionManager.instance.onActiveMissionChanged.add(this.applyMission, this);
+        MissionManager.instance.onActiveMissionProgress.add(this.applyProgress, this);
 
-        // Bind to mission manager
-        MissionManager.instance.onActiveMissionChanged.add((def: MissionDefinition | null) => {
-            this.applyMission(def);
-        });
-
-        MissionManager.instance.onActiveMissionProgress.add((progress: number, target: number, completed: boolean) => {
-            this.applyProgress(progress, target, completed);
-        });
-
-
-        // inside MissionHUD constructor
         MissionManager.instance.onNextMissionTimerChanged.add((remainingSec: number) => {
             if (this.activeDef) return;
-
             if (remainingSec > 0) {
                 this.visible = true;
-                this.titleText.text = "Next mission";
+                this.updateTitle("Next mission");
                 this.progressText.text = `In ${remainingSec}s`;
-                this.barFill.width = 0;
-                this.setClaimVisible(false);
+                this.progressBar.update(0);
+                this.setClaimState(false);
+                this.visible = false;
             } else if (!MissionManager.instance.activeMissionDef) {
                 this.visible = false;
             }
         });
+    }
 
-        // Initial paint if already init’d:
+    private syncInitialState(): void {
         this.applyMission(MissionManager.instance.activeMissionDef);
         const st = MissionManager.instance.activeMissionState;
         if (st && this.activeDef) {
@@ -154,14 +144,13 @@ export class MissionHUD extends PIXI.Container {
 
     private applyMission(def: MissionDefinition | null): void {
         this.activeDef = def;
-
         if (!def) {
             this.visible = false;
             return;
         }
 
         this.visible = true;
-        this.titleText.text = def.title;
+        this.updateTitle(def.title);
 
         if (def.iconTextureId) {
             this.icon.texture = PIXI.Texture.from(def.iconTextureId);
@@ -170,33 +159,43 @@ export class MissionHUD extends PIXI.Container {
             this.icon.visible = false;
         }
 
-        if (def.chestTextureId) {
-            this.chestIcon.texture = PIXI.Texture.from(def.chestTextureId);
-        }
+        this.progressBar.update(0);
+        this.setClaimState(false);
+    }
 
-        // reset visuals
-        this.progressText.text = "";
-        this.barFill.width = 0;
-        this.setClaimVisible(false);
+    private updateTitle(text: string): void {
+        this.titleText.text = text;
+        this.titleText.scale.set(1);
+
+        // Auto-scale text down if it's wider than the available space (approx 250px)
+        const maxWidth = this.w - 100;
+        if (this.titleText.width > maxWidth) {
+            const ratio = maxWidth / this.titleText.width;
+            this.titleText.scale.set(ratio);
+        }
     }
 
     private applyProgress(progress: number, target: number, completed: boolean): void {
         const p = Math.min(progress, target);
-        this.progressText.text = `${p} / ${target}`;
+        this.progressText.text = `${p}/${target}`;
 
         const ratio = target <= 0 ? 0 : (p / target);
-        this.barFill.width = Math.floor(220 * ratio);
+        this.progressBar.update(ratio);
 
-        this.setClaimVisible(completed);
+        this.setClaimState(completed);
     }
 
-    private setClaimVisible(visible: boolean): void {
-        this.claimButton.visible = visible;
-        this.chestIcon.visible = visible;
+    private setClaimState(isCompleted: boolean): void {
+        this.claimButton.visible = isCompleted;
+        this.checkIcon.visible = isCompleted;
+
+        if (isCompleted) {
+            // Little bounce for the check icon
+            gsap.fromTo(this.checkIcon.scale, { x: 0, y: 0 }, { x: 1, y: 1, duration: 0.4, ease: "back.out(2)" });
+        }
     }
 
     private playClaimFx(): void {
-        gsap.fromTo(this.scale, { x: 1, y: 1 }, { x: 1.04, y: 1.04, duration: 0.12, yoyo: true, repeat: 1 });
-        gsap.fromTo(this, { alpha: 1 }, { alpha: 0.85, duration: 0.08, yoyo: true, repeat: 1 });
+        gsap.fromTo(this.scale, { x: 1, y: 1 }, { x: 1.02, y: 1.02, duration: 0.1, yoyo: true, repeat: 1 });
     }
 }
