@@ -269,7 +269,9 @@ export default class MergeAssets {
         },
         UI: {
             CurrencyPanel: "BannerFrame03_Single",
-            NitificationPanel: "fade-shape",
+            //CurrencyPanel: "BannerFrame03_Single",
+            MissionPanel: "ItemFrame01_Single_Navy",
+            NotificationPanel: "ItemFrame01_Single_Purple",
             //NextCardBackground: "ItemFrame01_Single_Navy",
             EndRibbon: "BubbleFrame01_Hexagon_Bg_Green",
             Shine: "Image_Effect_Rotate",

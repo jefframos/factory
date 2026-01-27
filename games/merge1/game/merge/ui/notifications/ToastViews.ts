@@ -44,7 +44,7 @@ export class PrizeToastView extends BaseNotificationView<PrizeToastData> {
                 // Case: Title on top, Subtitle below
                 this.titleText.y = pad;
                 this.subtitleText.visible = true;
-                this.subtitleText.y = this.titleText.y + this.titleText.height / 2 + 15;
+                this.subtitleText.y = this.titleText.y + this.titleText.height / 2 + 8;
             } else {
                 // Case: No subtitle, Title centered vertically
                 this.titleText.y = (this.height - this.titleText.height) / 2;
@@ -55,7 +55,7 @@ export class PrizeToastView extends BaseNotificationView<PrizeToastData> {
         }
 
         if (this.bg) {
-            this.bg.alpha = 0.5;
+            //this.bg.alpha = 0.5;
         }
     }
 }

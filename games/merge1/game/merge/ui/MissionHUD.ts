@@ -33,8 +33,8 @@ export class MissionHUD extends PIXI.Container {
         this.w = width;
         this.h = height;
 
-        const ns = { left: 14, top: 14, right: 14, bottom: 14 };
-        const panelTex = PIXI.Texture.from(MergeAssets.Textures.UI.CurrencyPanel);
+        const ns = { left: 25, top: 25, right: 25, bottom: 25 };
+        const panelTex = PIXI.Texture.from(MergeAssets.Textures.UI.MissionPanel);
 
         // 1. Background Panel
         this.bg = new PIXI.NineSlicePlane(panelTex, ns.left, ns.top, ns.right, ns.bottom);
@@ -74,7 +74,7 @@ export class MissionHUD extends PIXI.Container {
 
         // 5. Progress Bar (Replaced with NineSliceProgressBar)
         this.progressBar = new NineSliceProgressBar({
-            width: 180,
+            width: 160,
             height: 20,
             bgTexture: PIXI.Texture.from(MergeAssets.Textures.UI.BarBg),
             barTexture: PIXI.Texture.from(MergeAssets.Textures.UI.BarFill),
@@ -82,7 +82,7 @@ export class MissionHUD extends PIXI.Container {
             barColor: MergeAssets.Textures.UI.FillColor,
             padding: 3
         });
-        this.progressBar.position.set(this.w / 2 - 20, this.h - 20);
+        this.progressBar.position.set(this.w / 2, this.h - 20);
         this.addChild(this.progressBar);
 
         // 6. Check Icon (Top Right)

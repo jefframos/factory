@@ -174,7 +174,11 @@ export default class MergeHUD extends PIXI.Container {
 
     setFtueState(ftueEnabled: boolean) {
 
-        this.hudLayer.visible = ftueEnabled
+        //this.hudLayer.visible = ftueEnabled
+
+        this.missionHUD.visible = ftueEnabled
+        this.timedRewardsBar.visible = ftueEnabled
+        this.shopButton.visible = ftueEnabled
 
     }
 
@@ -203,8 +207,8 @@ export default class MergeHUD extends PIXI.Container {
         this.notifications.onOverlayChanged(Game.gameScreenData);
         // Example skins (swap to your own MergeAssets textures)
         this.notificationRegistry.setSkin("prize_toast", {
-            bgTexture: MergeAssets.Textures.UI.NitificationPanel, // replace with your toast bg
-            bgNineSlice: { left: 14, top: 14, right: 14, bottom: 14 },
+            bgTexture: MergeAssets.Textures.UI.NotificationPanel, // replace with your toast bg
+            bgNineSlice: { left: 25, top: 25, right: 25, bottom: 25 },
             //shinyTexture: MergeAssets.Textures.UI.Shine, // replace with shiny sprite
             shinyAlpha: 0.12,
             defaultDurationSeconds: 2.4,
@@ -215,8 +219,8 @@ export default class MergeHUD extends PIXI.Container {
         });
 
         this.notificationRegistry.setSkin("achievement_toast", {
-            bgTexture: MergeAssets.Textures.UI.CurrencyPanel,
-            bgNineSlice: { left: 14, top: 14, right: 14, bottom: 14 },
+            bgTexture: MergeAssets.Textures.UI.NotificationPanel,
+            bgNineSlice: { left: 25, top: 25, right: 25, bottom: 25 },
             shinyAlpha: 0.10,
             defaultDurationSeconds: 3.0,
             padding: 12,
@@ -226,8 +230,8 @@ export default class MergeHUD extends PIXI.Container {
         });
 
         this.notificationRegistry.setSkin("shop_item_toast", {
-            bgTexture: MergeAssets.Textures.UI.CurrencyPanel,
-            bgNineSlice: { left: 14, top: 14, right: 14, bottom: 14 },
+            bgTexture: MergeAssets.Textures.UI.NotificationPanel,
+            bgNineSlice: { left: 25, top: 25, right: 25, bottom: 25 },
             defaultDurationSeconds: 3.2,
             padding: 12,
             iconSize: 64,
@@ -236,7 +240,7 @@ export default class MergeHUD extends PIXI.Container {
         });
 
         this.notificationRegistry.setSkin("levelup_interstitial", {
-            bgTexture: MergeAssets.Textures.UI.CurrencyPanel, // replace with a big panel bg
+            bgTexture: MergeAssets.Textures.UI.NotificationPanel, // replace with a big panel bg
             bgNineSlice: { left: 20, top: 20, right: 20, bottom: 20 },
             shinyAlpha: 0.10,
             padding: 18,
