@@ -1,3 +1,4 @@
+// missions/MissionManager.ts
 import { Signal } from "signals";
 import { CurrencyType, InGameEconomy } from "../data/InGameEconomy";
 import { InGameProgress } from "../data/InGameProgress";
@@ -21,17 +22,17 @@ export interface MissionClaimResult {
     };
 }
 
-
 export class MissionManager {
     private static _instance: MissionManager;
+
     public static get instance(): MissionManager {
         return this._instance || (this._instance = new MissionManager());
     }
 
     // UI Signals
-    public readonly onActiveMissionChanged: Signal = new Signal();
-    public readonly onActiveMissionProgress: Signal = new Signal();
-    public readonly onNextMissionTimerChanged: Signal = new Signal();
+    public readonly onActiveMissionChanged: Signal = new Signal();      // dispatch(def: MissionDefinition|null, st: IMissionState|null)
+    public readonly onActiveMissionProgress: Signal = new Signal();     // dispatch(progress: number, target: number, completed: boolean)
+    public readonly onNextMissionTimerChanged: Signal = new Signal();   // dispatch(remSec: number)
 
     private _defsById: Map<string, MissionDefinition> = new Map();
     private _save: IMissionsSaveData;
@@ -39,8 +40,16 @@ export class MissionManager {
 
     private constructor() {
         const state = GameStorage.instance.getFullState();
-        // Initialize with default if null
-        this._save = state.missions || { activeMissionId: null, states: {} };
+
+        // IMPORTANT:
+        // - Do NOT persist MissionDefinition (it can contain non-serializable data).
+        // - Persist only pointers: activeMissionId + activeTemplateId + activeK.
+        const s = state.missions || { activeMissionId: null, states: {} };
+
+        // If an old save still has activeDef, strip it from memory immediately.
+        delete (s as any).activeDef;
+
+        this._save = s;
     }
 
     /**
@@ -50,9 +59,13 @@ export class MissionManager {
         this.factory = new MissionFactory(factoryCfg);
 
         // Standardize save structure
+        this._save.states ??= {};
         this._save.counters ??= {};
         this._save.tierCounters ??= {};
         this._save.tierCycleIndex ??= 0;
+
+        // Ensure we never keep / re-save activeDef
+        delete (this._save as any).activeDef;
 
         // RE-HYDRATE: Use saved TemplateID and K to rebuild the definition
         if (this._save.activeMissionId && this._save.activeTemplateId) {
@@ -62,11 +75,21 @@ export class MissionManager {
 
             if (template) {
                 const freshDef = template.build(this.factory.getContext(), k);
+
+                // If ID changed (shouldn't), heal pointers to match.
+                this._save.activeMissionId = freshDef.id;
+
                 this._defsById.set(freshDef.id, freshDef);
-                this._save.activeDef = freshDef;
+                this.ensureStateExists(freshDef.id);
+
+                // Make sure baseline exists (older saves won’t have it)
+                const st = this._save.states[freshDef.id];
+                if (typeof st.startValue !== "number") {
+                    st.startValue = this.getRawProgressValue(freshDef);
+                }
             } else {
                 // If template no longer exists in code, clear active mission
-                this._save.activeMissionId = null;
+                this.clearActiveMissionPointers();
             }
         }
 
@@ -103,7 +126,6 @@ export class MissionManager {
         }
     }
 
-
     private tryPickMissionNow(): void {
         if (this._save.activeMissionId) return;
 
@@ -115,16 +137,17 @@ export class MissionManager {
 
         const def = result.def;
 
-        // Save the reference pointers
+        // Save pointer refs (serializable only)
         this._save.activeMissionId = def.id;
         this._save.activeTemplateId = def.templateId;
         this._save.activeK = def.k;
-        this._save.activeDef = def;
         this._save.tierCycleIndex = result.tierCycleIndexNext;
 
+        // Runtime cache
         this._defsById.set(def.id, def);
-        this.ensureStateExists(def.id);
 
+        // State + baseline
+        this.ensureStateExists(def.id);
         const st = this._save.states[def.id];
         st.startValue = this.getRawProgressValue(def);
 
@@ -181,16 +204,12 @@ export class MissionManager {
         st.claimed = true;
         st.claimedAt = Date.now();
 
-        // Clear active mission refs
-        this._save.activeMissionId = null;
-        this._save.activeTemplateId = undefined;
-        this._save.activeK = undefined;
-        this._save.activeDef = null;
+        // Clear active mission refs (serializable only)
+        this.clearActiveMissionPointers();
 
         // Cooldown
         const delaySec = this.factory.nextDelaySec;
-        this._save.nextMissionAtMs =
-            delaySec <= 0 ? 0 : Date.now() + delaySec * 1000;
+        this._save.nextMissionAtMs = delaySec <= 0 ? 0 : (Date.now() + delaySec * 1000);
 
         this.sync();
         this.onActiveMissionChanged.dispatch(null, null);
@@ -206,9 +225,7 @@ export class MissionManager {
             missionId: def.id,
             templateId: def.templateId,
             rewards: {
-                currencies: Object.keys(claimedCurrencies).length
-                    ? claimedCurrencies
-                    : undefined
+                currencies: Object.keys(claimedCurrencies).length ? claimedCurrencies : undefined
             }
         };
     }
@@ -217,22 +234,39 @@ export class MissionManager {
 
     private getRawProgressValue(def: MissionDefinition): number {
         const stats = MissionStats.instance.snapshot;
+
         switch (def.type) {
-            case "tap_creature": return stats.tapsOnCreatures;
-            case "merge_creatures": return stats.mergesDone;
-            case "hatch_eggs": return stats.eggsHatched;
-            case "collect_currency": return def.currencyType ? (stats.lifetimeEarned[def.currencyType] || 0) : 0;
-            case "reach_player_level": return InGameProgress.instance.getProgression(ProgressionType.MAIN).level;
-            case "reach_creature_level": return InGameProgress.instance.getProgression(ProgressionType.MAIN).highestMergeLevel;
-            default: return 0;
+            case "tap_creature":
+                return stats.tapsOnCreatures;
+
+            case "merge_creatures":
+                return stats.mergesDone;
+
+            case "hatch_eggs":
+                return stats.eggsHatched;
+
+            case "collect_currency":
+                return def.currencyType ? (stats.lifetimeEarned[def.currencyType] || 0) : 0;
+
+            case "reach_player_level":
+                return InGameProgress.instance.getProgression(ProgressionType.MAIN).level;
+
+            case "reach_creature_level":
+                return InGameProgress.instance.getProgression(ProgressionType.MAIN).highestMergeLevel;
+
+            default:
+                return 0;
         }
     }
 
     private computeMissionProgress(def: MissionDefinition, st: IMissionState): number {
         const raw = this.getRawProgressValue(def);
+
+        // “Reach” missions are absolute, not delta-from-start.
         if (def.type === "reach_player_level" || def.type === "reach_creature_level") {
             return raw;
         }
+
         return Math.max(0, raw - (st.startValue || 0));
     }
 
@@ -258,6 +292,7 @@ export class MissionManager {
         if (forceChangedEvent) {
             this.onActiveMissionChanged.dispatch(def, st);
         }
+
         this.onActiveMissionProgress.dispatch(st.progress, def.target, st.completed);
     }
 
@@ -269,19 +304,15 @@ export class MissionManager {
 
         const def = this._defsById.get(id) || null;
 
-        // HEAL: saved activeMissionId but no definition available (old save / missing template)
+        // HEAL: pointer exists but runtime def is missing (e.g. missing template / init order)
         if (!def) {
-            this._save.activeMissionId = null;
-            this._save.activeTemplateId = undefined;
-            this._save.activeK = undefined;
-            this._save.activeDef = null;
+            this.clearActiveMissionPointers();
             this.sync();
             return null;
         }
 
         return def;
     }
-
 
     public get activeMissionState(): IMissionState | null {
         if (!this._save.activeMissionId) return null;
@@ -290,11 +321,31 @@ export class MissionManager {
 
     private ensureStateExists(id: string): void {
         if (!this._save.states[id]) {
-            this._save.states[id] = { id, progress: 0, completed: false, claimed: false };
+            this._save.states[id] = {
+                id,
+                progress: 0,
+                completed: false,
+                claimed: false
+            };
         }
     }
 
+    private clearActiveMissionPointers(): void {
+        this._save.activeMissionId = null;
+        this._save.activeTemplateId = undefined;
+        this._save.activeK = undefined;
+
+        // Never persist definitions
+        delete (this._save as any).activeDef;
+    }
+
+    /**
+     * Persist missions safely (never save MissionDefinition).
+     */
     private sync(): void {
+        // Strip any legacy field that could break JSON.stringify
+        delete (this._save as any).activeDef;
+
         GameStorage.instance.updateState({ missions: this._save });
     }
 }

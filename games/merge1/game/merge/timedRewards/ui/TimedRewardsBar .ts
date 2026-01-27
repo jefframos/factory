@@ -1,5 +1,7 @@
 // ui/timedRewards/TimedRewardsBar.ts
+import ViewUtils from "@core/utils/ViewUtils";
 import * as PIXI from "pixi.js";
+import MergeAssets from "../../MergeAssets";
 import { TimedRewardService } from "../../timedRewards/TimedRewardService";
 import { TimedRewardDefinition } from "../../timedRewards/TimedRewardTypes";
 import { TimedRewardSlot } from "./TimedRewardSlot";
@@ -39,6 +41,7 @@ export class TimedRewardsBar extends PIXI.Container {
     private bg!: PIXI.NineSlicePlane;
     private fillPlane!: PIXI.NineSlicePlane;
     private timerText!: PIXI.BitmapText;
+    private timerIcon!: PIXI.Sprite;
     private ticks!: PIXI.Graphics;
     private slotComponents: TimedRewardSlot[] = [];
 
@@ -84,6 +87,14 @@ export class TimedRewardsBar extends PIXI.Container {
         this.timerText.anchor.set(0, 0.5);
         this.timerText.position.set(14, h / 2 - 5);
         this.addChild(this.timerText);
+
+
+        this.timerIcon = PIXI.Sprite.from(MergeAssets.Textures.Icons.Timer)
+        this.addChild(this.timerIcon);
+        this.timerIcon.anchor.set(1, 0.5)
+        this.timerIcon.scale.set((ViewUtils.elementScaler(this.timerIcon, h * 1.5)))
+        this.timerIcon.x = 13
+        this.timerIcon.y = h / 2 - 4
 
         // Initialize reusable slots (positions will be updated in refresh)
         const slotCount = 3;

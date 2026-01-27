@@ -10,8 +10,6 @@ import * as PIXI from 'pixi.js';
 import MergeLoader from './game/loader/MergeLoader';
 import MergeAssets from './game/merge/MergeAssets';
 import MergeScene from './game/merge/MergeScene';
-import { ConfirmationPopup } from './game/popup/ConfirmationPopup';
-import { GameOverPopup } from './game/popup/GameOverPopup';
 import { DevGuiManager } from './game/utils/DevGuiManager';
 import audioManifest from './manifests/audio.json'; // adjust path
 import fontManifest from './manifests/fonts.json'; // adjust path
@@ -111,10 +109,15 @@ export default class MyGame extends Game {
 
         const tiled = PIXI.Assets.get('tiled.json')
         if (tiled) {
-            ExtractTiledFile.parseTiledData(tiled, '2048')
+            ExtractTiledFile.parseTiledData(tiled, 'garden')
         }
 
 
+
+        //  const tiled = PIXI.Assets.get('tiled.json')
+        //         if (tiled) {
+        //             ExtractTiledFile.parseTiledData(tiled, '2048')
+        //         }
         // const memeUi = PIXI.Assets.get('memeUi.json')
         // if (memeUi) {
         //     ExtractTiledFile.parseTiledData(memeUi, 'memeUi')
@@ -132,8 +135,8 @@ export default class MyGame extends Game {
 
 
         this.overlayContainer.addChild(this.popupManager)
-        this.popupManager.registerPopup('confirm', new ConfirmationPopup(), false);
-        this.popupManager.registerPopup('gameOver', new GameOverPopup(), false);
+        // this.popupManager.registerPopup('confirm', new ConfirmationPopup(), false);
+        // this.popupManager.registerPopup('gameOver', new GameOverPopup(), false);
 
 
 

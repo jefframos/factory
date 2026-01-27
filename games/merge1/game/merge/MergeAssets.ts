@@ -304,6 +304,7 @@ export default class MergeAssets {
             Speed: "ResourceBar_Single_Icon_Energy",
             // Check: "Toggle_Check_Single_Icon",
             CheckItem: "Icon_Check03_s",
+            Timer: "Icon_Timer",
             BadgeMain: "Label_Badge01_Yellow",
             SoundOn: "PictoIcon_Music_1",
             SoundOff: "PictoIcon_Music_1_Off",
@@ -313,7 +314,7 @@ export default class MergeAssets {
             Eye: "eye",
         },
         UI: {
-            CurrencyPanel: "BannerFrame03_Single",
+            CurrencyPanel: "Slider_Basic01_Bg_Single",
             //CurrencyPanel: "BannerFrame03_Single",
             MissionPanel: "ItemFrame01_Single_Navy",
             NotificationPanel: "ItemFrame01_Single_Purple",

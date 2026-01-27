@@ -1,662 +1,725 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="12" nextobjectid="87">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="12" nextobjectid="149">
  <editorsettings>
   <export target="../json/tiled.json" format="json"/>
  </editorsettings>
- <tileset firstgid="1" name="Background" tilewidth="734" tileheight="770" tilecount="5" columns="0">
+ <tileset firstgid="1" name="Background" tilewidth="270" tileheight="320" tilecount="21" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
-  <tile id="3">
-   <image width="250" height="243" source="images/ui/BubbleFrame01_Hexagon_Bg_Blue.png"/>
-  </tile>
-  <tile id="4">
-   <image width="411" height="183" source="images/ui/Image_Effect_Light02.png"/>
-  </tile>
-  <tile id="5">
-   <image width="322" height="129" source="images/ui/Image_Effect_Light03.png"/>
-  </tile>
   <tile id="6">
-   <image width="270" height="275" source="images/ui/Image_Effect_Rotate.png"/>
+   <image source="images/ui/Image_Effect_Rotate.png" width="270" height="275"/>
   </tile>
-  <tile id="7">
-   <image width="734" height="770" source="images/backgrounds/Background_Lobby_Bg_center.png"/>
+  <tile id="8">
+   <image source="images/garden/bush.png" width="122" height="97"/>
+  </tile>
+  <tile id="9">
+   <image source="images/garden/cat-poop-stuff.png" width="139" height="141"/>
+  </tile>
+  <tile id="10">
+   <image source="images/garden/chair.png" width="202" height="178"/>
+  </tile>
+  <tile id="11">
+   <image source="images/garden/lineyeard.png" width="93" height="66"/>
+  </tile>
+  <tile id="12">
+   <image source="images/garden/mat-1.png" width="159" height="98"/>
+  </tile>
+  <tile id="13">
+   <image source="images/garden/mat-2.png" width="189" height="106"/>
+  </tile>
+  <tile id="14">
+   <image source="images/garden/mat-3.png" width="202" height="112"/>
+  </tile>
+  <tile id="15">
+   <image source="images/garden/plant-1.png" width="89" height="150"/>
+  </tile>
+  <tile id="16">
+   <image source="images/garden/plant-2.png" width="70" height="184"/>
+  </tile>
+  <tile id="17">
+   <image source="images/garden/plant-3.png" width="95" height="160"/>
+  </tile>
+  <tile id="18">
+   <image source="images/garden/tower-toy.png" width="149" height="245"/>
+  </tile>
+  <tile id="19">
+   <image source="images/garden/toy.png" width="58" height="57"/>
+  </tile>
+  <tile id="20">
+   <image source="images/garden/water-bowl.png" width="94" height="66"/>
+  </tile>
+  <tile id="21">
+   <image source="images/garden/bush2.png" width="126" height="120"/>
+  </tile>
+  <tile id="22">
+   <image source="images/garden/bush3.png" width="187" height="152"/>
+  </tile>
+  <tile id="23">
+   <image source="images/garden/pot2.png" width="124" height="197"/>
+  </tile>
+  <tile id="24">
+   <image source="images/garden/pot-tree-1.png" width="216" height="320"/>
+  </tile>
+  <tile id="25">
+   <image source="images/garden/pot-tree-2.png" width="100" height="306"/>
+  </tile>
+  <tile id="26">
+   <image source="images/garden/pot-tree-3.png" width="114" height="270"/>
+  </tile>
+  <tile id="27">
+   <image source="images/garden/tree1.png" width="188" height="256"/>
   </tile>
  </tileset>
- <tileset firstgid="9" name="UI" tilewidth="609" tileheight="601" tilecount="140" columns="0">
+ <tileset firstgid="29" name="UI" tilewidth="609" tileheight="601" tilecount="139" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="20">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="70" height="114" source="images/ui/Button01_s_Gray.png"/>
+   <image source="images/ui/Button01_s_Gray.png" width="70" height="114"/>
   </tile>
   <tile id="21">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="338" height="114" source="images/ui/BannerFrame03_Single.png"/>
+   <image source="images/ui/BannerFrame03_Single.png" width="338" height="114"/>
   </tile>
   <tile id="22">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="44" height="46" source="images/ui/BorderFrame_Round20_Single_Dark.png"/>
+   <image source="images/ui/BorderFrame_Round20_Single_Dark.png" width="44" height="46"/>
   </tile>
   <tile id="23">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="44" height="48" source="images/ui/BorderFrame_Round20_Single_Yellow.png"/>
+   <image source="images/ui/BorderFrame_Round20_Single_Yellow.png" width="44" height="48"/>
   </tile>
   <tile id="24">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="44" height="46" source="images/ui/BorderFrame_Round20_White_Bg.png"/>
+   <image source="images/ui/BorderFrame_Round20_White_Bg.png" width="44" height="46"/>
   </tile>
   <tile id="25">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="62" height="62" source="images/ui/BorderFrame_Round24.png"/>
+   <image source="images/ui/BorderFrame_Round24.png" width="62" height="62"/>
   </tile>
   <tile id="26">
    <properties>
     <property name="nineSliced" type="int" value="32"/>
    </properties>
-   <image width="64" height="75" source="images/ui/BorderFrame_Round30.png"/>
+   <image source="images/ui/BorderFrame_Round30.png" width="64" height="75"/>
   </tile>
   <tile id="27">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="35" height="38" source="images/ui/BorderFrame_Squrare_Bg.png"/>
+   <image source="images/ui/BorderFrame_Squrare_Bg.png" width="35" height="38"/>
   </tile>
   <tile id="28">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="27" height="27" source="images/ui/BorderFrame_Squrare_Inner.png"/>
+   <image source="images/ui/BorderFrame_Squrare_Inner.png" width="27" height="27"/>
   </tile>
   <tile id="29">
    <properties>
     <property name="nineSliced" type="int" value="30"/>
    </properties>
-   <image width="72" height="78" source="images/ui/BubbleFrame01_Bg.png"/>
+   <image source="images/ui/BubbleFrame01_Bg.png" width="72" height="78"/>
   </tile>
   <tile id="30">
-   <image width="250" height="243" source="images/ui/BubbleFrame01_Hexagon_Bg_Blue.png"/>
+   <image source="images/ui/BubbleFrame01_Hexagon_Bg_Blue.png" width="250" height="243"/>
   </tile>
   <tile id="31">
-   <image width="250" height="243" source="images/ui/BubbleFrame01_Hexagon_Bg_Green.png"/>
+   <image source="images/ui/BubbleFrame01_Hexagon_Bg_Green.png" width="250" height="243"/>
   </tile>
   <tile id="32">
-   <image width="250" height="243" source="images/ui/BubbleFrame01_Hexagon_Bg_Yellow.png"/>
+   <image source="images/ui/BubbleFrame01_Hexagon_Bg_Yellow.png" width="250" height="243"/>
   </tile>
   <tile id="33">
    <properties>
     <property name="nineSliced" type="int" value="50"/>
    </properties>
-   <image width="128" height="107" source="images/ui/Button_SkillBtn_Blue.png"/>
+   <image source="images/ui/Button_SkillBtn_Blue.png" width="128" height="107"/>
   </tile>
   <tile id="34">
    <properties>
     <property name="nineSliced" type="int" value="50"/>
    </properties>
-   <image width="128" height="107" source="images/ui/Button_SkillBtn_Dark.png"/>
+   <image source="images/ui/Button_SkillBtn_Dark.png" width="128" height="107"/>
   </tile>
   <tile id="35">
    <properties>
     <property name="nineSliced" type="int" value="50"/>
    </properties>
-   <image width="128" height="107" source="images/ui/Button_SkillBtn_Orange.png"/>
+   <image source="images/ui/Button_SkillBtn_Orange.png" width="128" height="107"/>
   </tile>
   <tile id="36">
    <properties>
     <property name="nineSliced" type="int" value="50"/>
    </properties>
-   <image width="128" height="107" source="images/ui/Button_SkillBtn_Red.png"/>
+   <image source="images/ui/Button_SkillBtn_Red.png" width="128" height="107"/>
   </tile>
   <tile id="37">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="70" height="114" source="images/ui/Button01_s_Blue.png"/>
+   <image source="images/ui/Button01_s_Blue.png" width="70" height="114"/>
   </tile>
   <tile id="38">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="70" height="114" source="images/ui/Button01_s_DarkGray.png"/>
+   <image source="images/ui/Button01_s_DarkGray.png" width="70" height="114"/>
   </tile>
   <tile id="39">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="70" height="114" source="images/ui/Button01_s_Gray.png"/>
+   <image source="images/ui/Button01_s_Gray.png" width="70" height="114"/>
   </tile>
   <tile id="40">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="70" height="114" source="images/ui/Button01_s_Green.png"/>
+   <image source="images/ui/Button01_s_Green.png" width="70" height="114"/>
   </tile>
   <tile id="41">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="70" height="114" source="images/ui/Button01_s_Mint.png"/>
+   <image source="images/ui/Button01_s_Mint.png" width="70" height="114"/>
   </tile>
   <tile id="42">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="70" height="114" source="images/ui/Button01_s_PInk.png"/>
+   <image source="images/ui/Button01_s_PInk.png" width="70" height="114"/>
   </tile>
   <tile id="43">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="70" height="114" source="images/ui/Button01_s_Purple.png"/>
+   <image source="images/ui/Button01_s_Purple.png" width="70" height="114"/>
   </tile>
   <tile id="44">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="70" height="114" source="images/ui/Button01_s_Red.png"/>
+   <image source="images/ui/Button01_s_Red.png" width="70" height="114"/>
   </tile>
   <tile id="45">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="70" height="114" source="images/ui/Button01_s_Sky.png"/>
+   <image source="images/ui/Button01_s_Sky.png" width="70" height="114"/>
   </tile>
   <tile id="46">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="70" height="114" source="images/ui/Button01_s_White_Bg.png"/>
+   <image source="images/ui/Button01_s_White_Bg.png" width="70" height="114"/>
   </tile>
   <tile id="47">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="62" height="96" source="images/ui/Button01_s_White_Light1.png"/>
+   <image source="images/ui/Button01_s_White_Light1.png" width="62" height="96"/>
   </tile>
   <tile id="48">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="70" height="114" source="images/ui/Button01_s_Yellow.png"/>
+   <image source="images/ui/Button01_s_Yellow.png" width="70" height="114"/>
   </tile>
   <tile id="49">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="56" height="56" source="images/ui/CardFrame02_n_Light.png"/>
+   <image source="images/ui/CardFrame02_n_Light.png" width="56" height="56"/>
   </tile>
   <tile id="50">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="108" height="108" source="images/ui/CardFrame04_FocusGlow.png"/>
+   <image source="images/ui/CardFrame04_FocusGlow.png" width="108" height="108"/>
   </tile>
   <tile id="51">
    <properties>
     <property name="nineSliced" type="int" value="30"/>
    </properties>
-   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Blue.png"/>
+   <image source="images/ui/ItemFrame01_Single_Blue.png" width="60" height="122"/>
   </tile>
   <tile id="52">
    <properties>
     <property name="nineSliced" type="int" value="30"/>
    </properties>
-   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Gray.png"/>
+   <image source="images/ui/ItemFrame01_Single_Gray.png" width="60" height="122"/>
   </tile>
   <tile id="53">
    <properties>
     <property name="nineSliced" type="int" value="30"/>
    </properties>
-   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Green.png"/>
+   <image source="images/ui/ItemFrame01_Single_Green.png" width="60" height="122"/>
   </tile>
   <tile id="54">
    <properties>
     <property name="nineSliced" type="int" value="30"/>
    </properties>
-   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Hologram1.png"/>
+   <image source="images/ui/ItemFrame01_Single_Hologram1.png" width="60" height="122"/>
   </tile>
   <tile id="55">
    <properties>
     <property name="nineSliced" type="int" value="30"/>
    </properties>
-   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Navy.png"/>
+   <image source="images/ui/ItemFrame01_Single_Navy.png" width="60" height="122"/>
   </tile>
   <tile id="56">
    <properties>
     <property name="nineSliced" type="int" value="30"/>
    </properties>
-   <image width="60" height="122" source="images/ui/ItemFrame01_Single_OffWhite.png"/>
+   <image source="images/ui/ItemFrame01_Single_OffWhite.png" width="60" height="122"/>
   </tile>
   <tile id="57">
    <properties>
     <property name="nineSliced" type="int" value="30"/>
    </properties>
-   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Purple.png"/>
+   <image source="images/ui/ItemFrame01_Single_Purple.png" width="60" height="122"/>
   </tile>
   <tile id="58">
    <properties>
     <property name="nineSliced" type="int" value="30"/>
    </properties>
-   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Red.png"/>
+   <image source="images/ui/ItemFrame01_Single_Red.png" width="60" height="122"/>
   </tile>
   <tile id="59">
    <properties>
     <property name="nineSliced" type="int" value="30"/>
    </properties>
-   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Yellow.png"/>
+   <image source="images/ui/ItemFrame01_Single_Yellow.png" width="60" height="122"/>
   </tile>
   <tile id="60">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="128" height="130" source="images/ui/ItemFrame03_Single_Blue.png"/>
+   <image source="images/ui/ItemFrame03_Single_Blue.png" width="128" height="130"/>
   </tile>
   <tile id="61">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="128" height="130" source="images/ui/ItemFrame03_Single_Gray.png"/>
+   <image source="images/ui/ItemFrame03_Single_Gray.png" width="128" height="130"/>
   </tile>
   <tile id="62">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="128" height="130" source="images/ui/ItemFrame03_Single_Green.png"/>
+   <image source="images/ui/ItemFrame03_Single_Green.png" width="128" height="130"/>
   </tile>
   <tile id="63">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="128" height="130" source="images/ui/ItemFrame03_Single_Navy.png"/>
+   <image source="images/ui/ItemFrame03_Single_Navy.png" width="128" height="130"/>
   </tile>
   <tile id="64">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="128" height="130" source="images/ui/ItemFrame03_Single_Purple.png"/>
+   <image source="images/ui/ItemFrame03_Single_Purple.png" width="128" height="130"/>
   </tile>
   <tile id="65">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="128" height="130" source="images/ui/ItemFrame03_Single_Red.png"/>
+   <image source="images/ui/ItemFrame03_Single_Red.png" width="128" height="130"/>
   </tile>
   <tile id="66">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="128" height="130" source="images/ui/ItemFrame03_Single_Yellow.png"/>
+   <image source="images/ui/ItemFrame03_Single_Yellow.png" width="128" height="130"/>
   </tile>
   <tile id="67">
-   <image width="129" height="132" source="images/ui/Label_Badge01_Green.png"/>
+   <image source="images/ui/Label_Badge01_Green.png" width="129" height="132"/>
   </tile>
   <tile id="68">
-   <image width="129" height="132" source="images/ui/Label_Badge01_Purple.png"/>
+   <image source="images/ui/Label_Badge01_Purple.png" width="129" height="132"/>
   </tile>
   <tile id="69">
-   <image width="129" height="132" source="images/ui/Label_Badge01_Red.png"/>
+   <image source="images/ui/Label_Badge01_Red.png" width="129" height="132"/>
   </tile>
   <tile id="70">
-   <image width="129" height="132" source="images/ui/Label_Badge01_Yellow.png"/>
+   <image source="images/ui/Label_Badge01_Yellow.png" width="129" height="132"/>
   </tile>
   <tile id="71">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="99" height="102" source="images/ui/Label_Badge02.png"/>
+   <image source="images/ui/Label_Badge02.png" width="99" height="102"/>
   </tile>
   <tile id="72">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="67" height="66" source="images/ui/Label_Parallelogram_Blue.png"/>
+   <image source="images/ui/Label_Parallelogram_Blue.png" width="67" height="66"/>
   </tile>
   <tile id="73">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="67" height="66" source="images/ui/Label_Parallelogram_Gray.png"/>
+   <image source="images/ui/Label_Parallelogram_Gray.png" width="67" height="66"/>
   </tile>
   <tile id="74">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="67" height="66" source="images/ui/Label_Parallelogram_Green.png"/>
+   <image source="images/ui/Label_Parallelogram_Green.png" width="67" height="66"/>
   </tile>
   <tile id="75">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="67" height="66" source="images/ui/Label_Parallelogram_Hologram.png"/>
+   <image source="images/ui/Label_Parallelogram_Hologram.png" width="67" height="66"/>
   </tile>
   <tile id="76">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="67" height="66" source="images/ui/Label_Parallelogram_Purple.png"/>
+   <image source="images/ui/Label_Parallelogram_Purple.png" width="67" height="66"/>
   </tile>
   <tile id="77">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="67" height="66" source="images/ui/Label_Parallelogram_Red.png"/>
+   <image source="images/ui/Label_Parallelogram_Red.png" width="67" height="66"/>
   </tile>
   <tile id="78">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="69" height="66" source="images/ui/Label_Parallelogram_Yellow.png"/>
+   <image source="images/ui/Label_Parallelogram_Yellow.png" width="69" height="66"/>
   </tile>
   <tile id="79">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="80" height="83" source="images/ui/ListFrame04_Single_f_Blue.png"/>
+   <image source="images/ui/ListFrame04_Single_f_Blue.png" width="80" height="83"/>
   </tile>
   <tile id="80">
-   <image width="24" height="24" source="images/ui/particle.png"/>
+   <image source="images/ui/particle.png" width="24" height="24"/>
   </tile>
   <tile id="81">
-   <image width="609" height="601" source="images/ui/Popup06_Pattern.png"/>
+   <image source="images/ui/Popup06_Pattern.png" width="609" height="601"/>
   </tile>
   <tile id="82">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="60" height="62" source="images/ui/ResourceBar_Single_Btn_Blue1.png"/>
+   <image source="images/ui/ResourceBar_Single_Btn_Blue1.png" width="60" height="62"/>
   </tile>
   <tile id="83">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="60" height="62" source="images/ui/ResourceBar_Single_Btn_Purple1.png"/>
+   <image source="images/ui/ResourceBar_Single_Btn_Purple1.png" width="60" height="62"/>
   </tile>
   <tile id="84">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
    </properties>
-   <image width="60" height="62" source="images/ui/ResourceBar_Single_Btn_Yellow1.png"/>
+   <image source="images/ui/ResourceBar_Single_Btn_Yellow1.png" width="60" height="62"/>
   </tile>
   <tile id="85">
-   <image width="67" height="75" source="images/ui/ResourceBar_Single_Icon_Coin.png"/>
+   <image source="images/ui/ResourceBar_Single_Icon_Coin.png" width="104" height="103"/>
   </tile>
   <tile id="86">
-   <image width="57" height="79" source="images/ui/ResourceBar_Single_Icon_Energy.png"/>
+   <image source="images/ui/ResourceBar_Single_Icon_Energy.png" width="57" height="79"/>
   </tile>
   <tile id="87">
-   <image width="77" height="69" source="images/ui/ResourceBar_Single_Icon_Gem.png"/>
+   <image source="images/ui/ResourceBar_Single_Icon_Gem.png" width="77" height="69"/>
   </tile>
   <tile id="88">
-   <image width="79" height="67" source="images/ui/ResourceBar_Single_Icon_Monster.png"/>
+   <image source="images/ui/ResourceBar_Single_Icon_Monster.png" width="79" height="67"/>
   </tile>
   <tile id="89">
-   <image width="24" height="56" source="images/ui/Slider_Basic01_Bg_Single.png"/>
+   <image source="images/ui/Slider_Basic01_Bg_Single.png" width="24" height="56"/>
   </tile>
   <tile id="90">
-   <image width="8" height="35" source="images/ui/Slider_Basic02_Fill_Green.png"/>
+   <image source="images/ui/Slider_Basic02_Fill_Green.png" width="8" height="35"/>
   </tile>
   <tile id="91">
-   <image width="17" height="35" source="images/ui/Slider_Basic03_FillMask.png"/>
+   <image source="images/ui/Slider_Basic03_FillMask.png" width="17" height="35"/>
   </tile>
   <tile id="92">
-   <image width="18" height="30" source="images/ui/Slider_Handle_Fill_Pink.png"/>
+   <image source="images/ui/Slider_Handle_Fill_Pink.png" width="18" height="30"/>
   </tile>
   <tile id="93">
-   <image width="54" height="64" source="images/ui/Slider_Level02_Icon_Up_Green.png"/>
-  </tile>
-  <tile id="94">
-   <image width="54" height="64" source="images/ui/Slider_Level02_Icon_Up_White.png"/>
+   <image source="images/ui/Slider_Level02_Icon_Up_Green.png" width="54" height="64"/>
   </tile>
   <tile id="95">
-   <image width="304" height="143" source="images/ui/Title_Ribbon01_Blue.png"/>
+   <image source="images/ui/Title_Ribbon01_Blue.png" width="304" height="143"/>
   </tile>
   <tile id="96">
-   <image width="304" height="143" source="images/ui/Title_Ribbon01_Gray.png"/>
+   <image source="images/ui/Title_Ribbon01_Gray.png" width="304" height="143"/>
   </tile>
   <tile id="97">
    <properties>
     <property name="left" type="float" value="150"/>
     <property name="nineSliced" type="int" value="0"/>
    </properties>
-   <image width="304" height="143" source="images/ui/Title_Ribbon01_Green.png"/>
+   <image source="images/ui/Title_Ribbon01_Green.png" width="304" height="143"/>
   </tile>
   <tile id="98">
-   <image width="304" height="143" source="images/ui/Title_Ribbon01_Magenta.png"/>
+   <image source="images/ui/Title_Ribbon01_Magenta.png" width="304" height="143"/>
   </tile>
   <tile id="99">
-   <image width="304" height="143" source="images/ui/Title_Ribbon01_Plum.png"/>
+   <image source="images/ui/Title_Ribbon01_Plum.png" width="304" height="143"/>
   </tile>
   <tile id="100">
-   <image width="304" height="143" source="images/ui/Title_Ribbon01_Purple.png"/>
+   <image source="images/ui/Title_Ribbon01_Purple.png" width="304" height="143"/>
   </tile>
   <tile id="101">
-   <image width="304" height="143" source="images/ui/Title_Ribbon01_Red.png"/>
+   <image source="images/ui/Title_Ribbon01_Red.png" width="304" height="143"/>
   </tile>
   <tile id="102">
-   <image width="304" height="143" source="images/ui/Title_Ribbon01_Sky.png"/>
+   <image source="images/ui/Title_Ribbon01_Sky.png" width="304" height="143"/>
   </tile>
   <tile id="103">
-   <image width="108" height="115" source="images/ui/Title_Tapered01.png"/>
+   <image source="images/ui/Title_Tapered01.png" width="108" height="115"/>
   </tile>
   <tile id="104">
-   <image width="54" height="48" source="images/ui/Toggle_Check_Single_Icon.png"/>
+   <image source="images/ui/Toggle_Check_Single_Icon.png" width="54" height="48"/>
   </tile>
   <tile id="105">
-   <image width="54" height="48" source="images/ui/Toggle_Check_White_Icon.png"/>
+   <image source="images/ui/Toggle_Check_White_Icon.png" width="54" height="48"/>
   </tile>
   <tile id="106">
-   <image width="128" height="128" source="images/ui/tutorial_hand_2.png"/>
+   <image source="images/ui/tutorial_hand_2.png" width="128" height="128"/>
   </tile>
   <tile id="107">
-   <image width="91" height="78" source="images/ui/icons/Icon_Back.png"/>
+   <image source="images/ui/icons/Icon_Back.png" width="91" height="78"/>
   </tile>
   <tile id="108">
-   <image width="43" height="42" source="images/ui/icons/Icon_Check01.png"/>
+   <image source="images/ui/icons/Icon_Check01.png" width="43" height="42"/>
   </tile>
   <tile id="109">
-   <image width="54" height="48" source="images/ui/icons/Icon_Check02.png"/>
+   <image source="images/ui/icons/Icon_Check02.png" width="54" height="48"/>
   </tile>
   <tile id="110">
-   <image width="55" height="51" source="images/ui/icons/Icon_Check03_s.png"/>
+   <image source="images/ui/icons/Icon_Check03_s.png" width="55" height="51"/>
   </tile>
   <tile id="111">
-   <image width="75" height="75" source="images/ui/icons/Icon_Close02.png"/>
+   <image source="images/ui/icons/Icon_Close02.png" width="75" height="75"/>
   </tile>
   <tile id="112">
-   <image width="15" height="29" source="images/ui/icons/Icon_Exclamation.png"/>
+   <image source="images/ui/icons/Icon_Exclamation.png" width="21" height="35"/>
   </tile>
   <tile id="113">
-   <image width="51" height="71" source="images/ui/icons/Icon_Lock01_s.png"/>
+   <image source="images/ui/icons/Icon_Lock01_s.png" width="51" height="71"/>
   </tile>
   <tile id="114">
-   <image width="83" height="86" source="images/ui/icons/Icon_Lock02.png"/>
+   <image source="images/ui/icons/Icon_Lock02.png" width="83" height="86"/>
   </tile>
   <tile id="115">
-   <image width="71" height="93" source="images/ui/icons/Icon_Lock03.png"/>
+   <image source="images/ui/icons/Icon_Lock03.png" width="71" height="93"/>
   </tile>
   <tile id="116">
-   <image width="59" height="56" source="images/ui/icons/Icon_Megaphone.png"/>
+   <image source="images/ui/icons/Icon_Megaphone.png" width="59" height="56"/>
   </tile>
   <tile id="117">
-   <image width="68" height="61" source="images/ui/icons/Icon_Menu_Hamburger.png"/>
+   <image source="images/ui/icons/Icon_Menu_Hamburger.png" width="68" height="61"/>
   </tile>
   <tile id="118">
-   <image width="61" height="64" source="images/ui/icons/Icon_Pause.png"/>
+   <image source="images/ui/icons/Icon_Pause.png" width="61" height="64"/>
   </tile>
   <tile id="119">
-   <image width="60" height="60" source="images/ui/icons/Icon_Property.png"/>
+   <image source="images/ui/icons/Icon_Property.png" width="60" height="60"/>
   </tile>
   <tile id="120">
-   <image width="78" height="87" source="images/ui/icons/Icon_Setting.png"/>
+   <image source="images/ui/icons/Icon_Setting.png" width="78" height="87"/>
   </tile>
   <tile id="121">
-   <image width="57" height="56" source="images/ui/icons/Icon_Skip.png"/>
+   <image source="images/ui/icons/Icon_Skip.png" width="57" height="56"/>
   </tile>
   <tile id="122">
-   <image width="289" height="288" source="images/ui/icons/Icon_Star_Off.png"/>
+   <image source="images/ui/icons/Icon_Star_Off.png" width="289" height="288"/>
   </tile>
   <tile id="123">
-   <image width="289" height="288" source="images/ui/icons/Icon_Star_On.png"/>
+   <image source="images/ui/icons/Icon_Star_On.png" width="289" height="288"/>
   </tile>
   <tile id="124">
-   <image width="239" height="127" source="images/ui/icons/Icon_Ticket_Gold.png"/>
+   <image source="images/ui/icons/Icon_Ticket_Gold.png" width="239" height="127"/>
   </tile>
   <tile id="125">
-   <image width="239" height="127" source="images/ui/icons/Icon_Ticket_Silver.png"/>
+   <image source="images/ui/icons/Icon_Ticket_Silver.png" width="239" height="127"/>
   </tile>
   <tile id="126">
-   <image width="115" height="93" source="images/ui/icons/Icon_Ticket01.png"/>
+   <image source="images/ui/icons/Icon_Ticket01.png" width="115" height="93"/>
   </tile>
   <tile id="127">
-   <image width="252" height="197" source="images/ui/icons/Icon_Ticket02.png"/>
+   <image source="images/ui/icons/Icon_Ticket02.png" width="252" height="197"/>
   </tile>
   <tile id="128">
-   <image width="415" height="259" source="images/ui/icons/Icon_Trophy02.png"/>
+   <image source="images/ui/icons/Icon_Trophy02.png" width="415" height="259"/>
   </tile>
   <tile id="129">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Bag_Brown.Png"/>
+   <image source="images/ui/icons/ItemIcon_Bag_Brown.Png" width="128" height="128"/>
   </tile>
   <tile id="130">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Bag_Gray.Png"/>
+   <image source="images/ui/icons/ItemIcon_Bag_Gray.Png" width="128" height="128"/>
   </tile>
   <tile id="131">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Chest_Gem.Png"/>
+   <image source="images/ui/icons/ItemIcon_Chest_Gem.Png" width="128" height="128"/>
   </tile>
   <tile id="132">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Chest_Gold.Png"/>
+   <image source="images/ui/icons/ItemIcon_Chest_Gold.Png" width="128" height="128"/>
   </tile>
   <tile id="133">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Chest_Premium.Png"/>
+   <image source="images/ui/icons/ItemIcon_Chest_Premium.Png" width="128" height="128"/>
   </tile>
   <tile id="134">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Chest_Skull.png"/>
+   <image source="images/ui/icons/ItemIcon_Chest_Skull.png" width="128" height="128"/>
   </tile>
   <tile id="135">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Chest_Wood.Png"/>
+   <image source="images/ui/icons/ItemIcon_Chest_Wood.Png" width="128" height="128"/>
   </tile>
   <tile id="136">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Clover_Green.Png"/>
+   <image source="images/ui/icons/ItemIcon_Clover_Green.Png" width="128" height="128"/>
   </tile>
   <tile id="137">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Gem_Star_Blue.Png"/>
+   <image source="images/ui/icons/ItemIcon_Gem_Star_Blue.Png" width="128" height="128"/>
   </tile>
   <tile id="138">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Gift_Blue.Png"/>
+   <image source="images/ui/icons/ItemIcon_Gift_Blue.Png" width="128" height="128"/>
   </tile>
   <tile id="139">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Gift_Green.Png"/>
+   <image source="images/ui/icons/ItemIcon_Gift_Green.Png" width="128" height="128"/>
   </tile>
   <tile id="140">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Heart_Red.Png"/>
+   <image source="images/ui/icons/ItemIcon_Heart_Red.Png" width="128" height="128"/>
   </tile>
   <tile id="141">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Medalstand.Png"/>
+   <image source="images/ui/icons/ItemIcon_Medalstand.Png" width="128" height="128"/>
   </tile>
   <tile id="142">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_MemoPad.Png"/>
+   <image source="images/ui/icons/ItemIcon_MemoPad.Png" width="128" height="128"/>
   </tile>
   <tile id="143">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Money_Coin.Png"/>
+   <image source="images/ui/icons/ItemIcon_Money_Coin.Png" width="160" height="158"/>
   </tile>
   <tile id="144">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Shop.Png"/>
+   <image source="images/ui/icons/ItemIcon_Shop.Png" width="100" height="93"/>
   </tile>
   <tile id="145">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Star_Blue.Png"/>
+   <image source="images/ui/icons/ItemIcon_Star_Blue.Png" width="128" height="128"/>
   </tile>
   <tile id="146">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Star_Bronze.Png"/>
+   <image source="images/ui/icons/ItemIcon_Star_Bronze.Png" width="128" height="128"/>
   </tile>
   <tile id="147">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Star_Gold.Png"/>
+   <image source="images/ui/icons/ItemIcon_Star_Gold.Png" width="128" height="128"/>
   </tile>
   <tile id="148">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Star_Purple.Png"/>
+   <image source="images/ui/icons/ItemIcon_Star_Purple.Png" width="128" height="128"/>
   </tile>
   <tile id="149">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Star_Red.Png"/>
+   <image source="images/ui/icons/ItemIcon_Star_Red.Png" width="128" height="128"/>
   </tile>
   <tile id="150">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Star_Silver.Png"/>
+   <image source="images/ui/icons/ItemIcon_Star_Silver.Png" width="128" height="128"/>
   </tile>
   <tile id="151">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Ticket_Gold.Png"/>
+   <image source="images/ui/icons/ItemIcon_Ticket_Gold.Png" width="128" height="128"/>
   </tile>
   <tile id="152">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Ticket_Red.Png"/>
+   <image source="images/ui/icons/ItemIcon_Ticket_Red.Png" width="128" height="128"/>
   </tile>
   <tile id="153">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Trophy_Bronze.Png"/>
+   <image source="images/ui/icons/ItemIcon_Trophy_Bronze.Png" width="128" height="128"/>
   </tile>
   <tile id="154">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Trophy_Gold.Png"/>
+   <image source="images/ui/icons/ItemIcon_Trophy_Gold.Png" width="128" height="128"/>
   </tile>
   <tile id="155">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Trophy_Silver.Png"/>
+   <image source="images/ui/icons/ItemIcon_Trophy_Silver.Png" width="128" height="128"/>
   </tile>
   <tile id="156">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_TV_AdBlock.png"/>
+   <image source="images/ui/icons/ItemIcon_TV_AdBlock.png" width="128" height="128"/>
   </tile>
   <tile id="157">
-   <image width="128" height="128" source="images/ui/icons/ItemIcon_Video.Png"/>
+   <image source="images/ui/icons/ItemIcon_Video.Png" width="128" height="128"/>
   </tile>
   <tile id="158">
-   <image width="64" height="73" source="images/ui/icons/Icon_Timer.png"/>
+   <image source="images/ui/icons/Icon_Timer.png" width="64" height="73"/>
   </tile>
   <tile id="159">
-   <image width="80" height="80" source="images/ui/handHud.png"/>
+   <image source="images/ui/handHud.png" width="80" height="80"/>
   </tile>
  </tileset>
- <objectgroup draworder="index" id="3" name="Background">
-  <object id="64" gid="7" x="-1.30846" y="840" width="737.308" height="695"/>
-  <object id="70" gid="8" x="-5" y="1089" width="734" height="770"/>
-  <object id="71" gid="2147483656" x="729" y="1089" width="734" height="770"/>
-  <object id="72" gid="2147483656" x="-738" y="1089" width="734" height="770"/>
- </objectgroup>
- <objectgroup draworder="index" id="11" name="WinPopup">
-  <object id="86" gid="35" x="-354" y="240" width="696" height="483"/>
-  <object id="82" gid="106" x="-321.939" y="-138.121" width="614" height="143"/>
- </objectgroup>
- <objectgroup id="10" name="MainMenu">
-  <object id="77" gid="61" x="22" y="1065" width="676" height="122"/>
-  <object id="78" x="42.6667" y="958.667" width="633.333" height="85.3333">
-   <properties>
-    <property name="id" value="buttons-list"/>
-   </properties>
-  </object>
-  <object id="79" x="987.879" y="-227.273"/>
- </objectgroup>
- <objectgroup draworder="index" id="8" name="ScoreMenu">
-  <object id="65" gid="93" x="377.666" y="132" width="262.666" height="62"/>
-  <object id="67" gid="163" x="584.666" y="145.515" width="88" height="88"/>
-  <object id="68" gid="91" x="78.667" y="132" width="262.67" height="62"/>
-  <object id="50" x="132.605" y="83.1818" width="172.122" height="32">
-   <properties>
-    <property name="id" value="current-score"/>
-   </properties>
-  </object>
-  <object id="51" x="412.999" y="83.1815" width="172" height="32">
-   <properties>
-    <property name="id" value="highscore"/>
-   </properties>
-  </object>
-  <object id="73" gid="92" x="458.667" y="223.667" width="181.333" height="62"/>
-  <object id="74" gid="167" x="599.333" y="225.292" width="59.5799" height="67.9583"/>
-  <object id="75" gid="95" x="64.6667" y="140" width="57" height="79"/>
-  <object id="76" x="479.272" y="174.667" width="106.122" height="32">
-   <properties>
-    <property name="id" value="timer"/>
-   </properties>
-  </object>
+ <objectgroup id="3" name="Background">
+  <object id="87" gid="16" x="4" y="105.004" width="71.0805" height="119.799"/>
+  <object id="88" gid="16" x="110.488" y="68.7987" width="71.0805" height="119.799"/>
+  <object id="89" gid="16" x="506.157" y="128.512" width="71.0805" height="119.799"/>
+  <object id="92" gid="19" x="32.2304" y="314.315" width="119" height="195.671"/>
+  <object id="93" gid="21" x="8.74497" y="787.349" width="75.0738" height="52.7114"/>
+  <object id="94" gid="21" x="620.047" y="806.414" width="75.0738" height="52.7114"/>
+  <object id="95" gid="11" x="535.233" y="260.597" width="161.329" height="142.161"/>
+  <object id="96" gid="12" x="1.17673" y="678.593" width="74.2752" height="52.7114"/>
+  <object id="97" gid="12" x="581.57" y="875.774" width="74.2752" height="52.7114"/>
+  <object id="98" gid="9" x="-72.4362" y="1051.18" width="97.4362" height="77.4698"/>
+  <object id="99" gid="9" x="-41.3669" y="1114.35" width="97.4362" height="77.4698"/>
+  <object id="100" gid="9" x="632.092" y="1114.79" width="97.4362" height="77.4698"/>
+  <object id="121" gid="9" x="684.092" y="1050.79" width="97.4362" height="77.4698"/>
+  <object id="122" gid="9" x="676.092" y="538.794" width="97.4362" height="77.4698"/>
+  <object id="123" gid="9" x="-81.9083" y="496.794" width="97.4362" height="77.4698"/>
+  <object id="101" gid="10" x="-5" y="439" width="139" height="141"/>
+  <object id="102" gid="26" x="-72" y="443" width="100" height="306"/>
+  <object id="103" gid="26" x="696" y="531" width="100" height="306"/>
+  <object id="104" gid="28" x="668" y="760" width="188" height="256"/>
+  <object id="124" gid="28" x="710" y="663.319" width="258" height="351.319"/>
+  <object id="125" gid="28" x="826" y="837.319" width="258" height="351.319"/>
+  <object id="126" gid="28" x="788" y="1075.32" width="258" height="351.319"/>
+  <object id="127" gid="28" x="844" y="1255.32" width="258" height="351.319"/>
+  <object id="128" gid="28" x="804" y="451.319" width="258" height="351.319"/>
+  <object id="129" gid="28" x="858" y="281.319" width="258" height="351.319"/>
+  <object id="130" gid="28" x="-386" y="247.319" width="258" height="351.319"/>
+  <object id="131" gid="28" x="-346" y="473.319" width="258" height="351.319"/>
+  <object id="132" gid="28" x="-394" y="727.319" width="258" height="351.319"/>
+  <object id="133" gid="28" x="-362" y="947.319" width="258" height="351.319"/>
+  <object id="134" gid="28" x="-372" y="1179.32" width="258" height="351.319"/>
+  <object id="135" gid="28" x="-617" y="1271.32" width="305" height="415.319"/>
+  <object id="136" gid="28" x="-571" y="1057.32" width="305" height="415.319"/>
+  <object id="137" gid="28" x="-633" y="837.319" width="305" height="415.319"/>
+  <object id="138" gid="28" x="-571" y="591.319" width="305" height="415.319"/>
+  <object id="139" gid="28" x="-605" y="365.319" width="305" height="415.319"/>
+  <object id="140" gid="28" x="959" y="657.319" width="305" height="415.319"/>
+  <object id="141" gid="28" x="1039" y="453.319" width="305" height="415.319"/>
+  <object id="146" gid="28" x="1087" y="313.319" width="305" height="415.319"/>
+  <object id="142" gid="28" x="1035" y="885.319" width="305" height="415.319"/>
+  <object id="143" gid="28" x="991" y="1089.32" width="305" height="415.319"/>
+  <object id="144" gid="28" x="1071" y="1277.32" width="305" height="415.319"/>
+  <object id="105" gid="28" x="702" y="882" width="188" height="256"/>
+  <object id="106" gid="28" x="664" y="1020" width="188" height="256"/>
+  <object id="107" gid="28" x="670" y="396" width="188" height="256"/>
+  <object id="108" gid="28" x="686" y="240" width="188" height="256"/>
+  <object id="109" gid="28" x="-184" y="196" width="188" height="256"/>
+  <object id="110" gid="28" x="-154" y="348" width="188" height="256"/>
+  <object id="111" gid="28" x="-232" y="554" width="188" height="256"/>
+  <object id="112" gid="28" x="-178" y="714" width="188" height="256"/>
+  <object id="113" gid="28" x="-192" y="850" width="188" height="256"/>
+  <object id="114" gid="28" x="-156" y="1026" width="188" height="256"/>
+  <object id="115" gid="28" x="-190" y="1244" width="188" height="256"/>
+  <object id="116" gid="28" x="694" y="1254" width="188" height="256"/>
+  <object id="117" gid="24" x="604" y="163" width="124" height="197"/>
+  <object id="118" gid="24" x="24" y="71" width="124" height="197"/>
+  <object id="119" gid="23" x="33" y="200" width="187" height="152"/>
+  <object id="147" gid="20" x="617" y="311" width="58" height="57"/>
+  <object id="148" gid="13" x="613" y="409" width="159" height="98"/>
  </objectgroup>
  <objectgroup id="4" name="Settings" locked="1">
   <object id="17" name="Screen" x="0" y="0" width="720" height="1080"/>

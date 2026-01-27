@@ -10,8 +10,8 @@ export default class GeneratorHUD extends PIXI.Container {
     private statusLabel: PIXI.Text;
 
     private isFull: boolean = false;
-    private readonly BAR_WIDTH = 400;
-    private readonly BAR_HEIGHT = 40;
+    private readonly BAR_WIDTH = 300;
+    private readonly BAR_HEIGHT = 35;
 
     public onSpeedUpRequested: () => void = () => { };
 
@@ -92,7 +92,7 @@ export default class GeneratorHUD extends PIXI.Container {
         this.isFull = isFull;
 
         if (isFull) {
-            this.statusLabel.text = "BOARD FULL!";
+            this.statusLabel.text = "FULL!";
             this.statusLabel.style.fill = 0xff4444;
 
             // Using BaseButton's inherent interactivity control

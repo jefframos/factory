@@ -1,5 +1,4 @@
 import { IProgressionStats, ProgressionStats } from "../data/ProgressionStats";
-import { MissionDefinition } from "../missions/MissionTypes";
 
 export enum ProgressionType {
     MAIN = "MAIN",
@@ -42,14 +41,13 @@ export interface IMissionStatsSaveData {
 
 export interface IMissionsSaveData {
     activeMissionId: string | null;
-    activeDef?: MissionDefinition | null;
     states: Record<string, IMissionState>;
+
     nextMissionAtMs?: number;
     counters?: Record<string, number>;
     tierCycleIndex?: number;
     tierCounters?: Record<number, number>;
 
-    // ADD THESE TWO LINES:
     activeTemplateId?: string;
     activeK?: number;
 }

@@ -1,4 +1,6 @@
 // MergeMediator.ts
+import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
+import TiledContainer from "@core/tiled/TiledContainer";
 import * as PIXI from "pixi.js";
 import { GridBaker } from "./core/GridBaker";
 import { CurrencyType, InGameEconomy } from "./data/InGameEconomy";
@@ -74,6 +76,37 @@ export class MergeMediator {
 
         this.gridView = new EntityGridView();
         this.container.addChild(this.gridView);
+
+        if (ExtractTiledFile.TiledData) {
+            console.log(ExtractTiledFile.getTiledFrom('garden'))
+
+            const tiled = new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Background'])
+            // 1. Grab the top-level children (the containers you mentioned)
+            const topLevelChildren = [...tiled.children];
+
+            topLevelChildren.forEach((child) => {
+                // Check if this child is a Container (and not a Sprite or other object)
+                if (child instanceof PIXI.Container) {
+
+                    // 2. Loop through the content INSIDE this sub-container
+                    // We use a spread here too because we are removing them as we go
+                    const subChildren = [...child.children];
+
+                    subChildren.forEach((grandChild) => {
+                        // 3. Capture the global position before moving
+                        const worldPos = grandChild.getGlobalPosition();
+
+                        // 4. Transfer to the gridView
+                        this.gridView.addChild(grandChild);
+
+                        // 5. Convert back to gridView's local space to maintain position
+                        const localPos = this.gridView.toLocal(worldPos);
+                        grandChild.position.set(localPos.x, localPos.y);
+                    });
+                }
+            });
+        }
+
 
         this.baker = new GridBaker(this.walkBounds, 90);
 
@@ -300,6 +333,7 @@ export class MergeMediator {
 
         ProgressionStats.instance.recordPlaySeconds(dtSeconds);
         ProgressionStats.instance.update(dtSeconds);
+        this.inputService.update(dtSeconds);
 
         if (!this.ftueService.ftueEnabled) {
 

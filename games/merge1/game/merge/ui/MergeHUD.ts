@@ -90,10 +90,10 @@ export default class MergeHUD extends PIXI.Container {
         this.shopButton = new BaseButton({
             standard: {
                 width: 80, height: 80, allPadding: 10,
-                texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Blue),
+                texture: PIXI.Texture.EMPTY,
                 iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Shop),
                 centerIconHorizontally: true, centerIconVertically: true,
-                iconSize: { height: 60, width: 60 },
+                iconSize: { height: 80, width: 80 },
                 fontStyle: new PIXI.TextStyle({ ...MergeAssets.MainFont, fontSize: 20 })
             },
             over: { tint: 0xeeeeee },
@@ -120,7 +120,7 @@ export default class MergeHUD extends PIXI.Container {
         this.entityCountText.anchor.set(0.5);
         this.hudLayer.addChild(this.entityCountText);
 
-        this.missionHUD = new MissionHUD(350, 86);
+        this.missionHUD = new MissionHUD(320, 80);
         this.hudLayer.addChild(this.missionHUD);
 
         this.missionHUD.onClaim.add((claim: MissionClaimResult) => {
@@ -195,7 +195,7 @@ export default class MergeHUD extends PIXI.Container {
         this.notifications.setStack({
             anchor: "topRight",
             marginX: 18,
-            marginY: 140,
+            marginY: 200,
             offsetX: 50,
             width: 320,
             height: 85,
@@ -250,10 +250,10 @@ export default class MergeHUD extends PIXI.Container {
             blackoutAlpha: 0.70
         });
 
-        // setTimeout(() => {
+        setTimeout(() => {
 
-        //     this.notifications.toastPrize({ title: "Level Up!", subtitle: "Level " + 2, iconTexture: MergeAssets.Textures.Icons.BadgeMain });
-        // }, 100);
+            //this.notifications.toastPrize({ title: "Level Up!", subtitle: "Level " + 2, iconTexture: MergeAssets.Textures.Icons.BadgeMain });
+        }, 100);
 
     }
 
@@ -261,12 +261,12 @@ export default class MergeHUD extends PIXI.Container {
         this.currencyHUD = new CurrencyBox(CurrencyType.MONEY, {
             iconId: MergeAssets.Textures.Icons.Coin, fontName: MergeAssets.MainFont.fontFamily,
             fontSize: 22,
-            bgId: MergeAssets.Textures.UI.CurrencyPanel, width: 120
+            bgId: MergeAssets.Textures.UI.CurrencyPanel, width: 100
         });
         this.currencyHUDGem = new CurrencyBox(CurrencyType.GEMS, {
             iconId: MergeAssets.Textures.Icons.Gem, fontName: MergeAssets.MainFont.fontFamily,
             fontSize: 22,
-            bgId: MergeAssets.Textures.UI.CurrencyPanel, width: 120
+            bgId: MergeAssets.Textures.UI.CurrencyPanel, width: 100
         });
 
         this.currencyHUDList.set(CurrencyType.MONEY, this.currencyHUD);
@@ -339,26 +339,28 @@ export default class MergeHUD extends PIXI.Container {
         // Sound & Currency
         this.soundToggleButton.position.set(topRight.x - this.x - this.soundToggleButton.width / 2 - padding, padding + this.soundToggleButton.height / 2);
         this.currencyHUD.position.set(20, 20);
-        this.currencyHUDGem.position.set(20, 80);
+        this.currencyHUDGem.position.set(160, 20);
 
         // Top Center Items
         const centerX = (topRight.x - topLeft.x) / 2;
-        this.progressHUD.position.set(centerX, padding * 2);
+        const targetXProgress = Math.max(centerX, this.currencyHUDGem.x + this.currencyHUDGem.width + 30 + this.progressHUD.pivot.x)
+        this.progressHUD.position.set(targetXProgress, padding * 2);
         if (this.timedRewardsBar) this.timedRewardsBar.position.set(centerX, this.progressHUD.y + 50);
 
         // Bottom Center (Generator)
-        this.generator.position.set(centerX - this.generator.width / 2, bottomRight.y - 80 - this.y);
+        this.generator.position.set(bottomRight.x - this.generator.width - padding - this.x, bottomRight.y - 80 - this.y);
+        //this.generator.position.set(centerX - this.generator.width / 2, bottomRight.y - 80 - this.y);
         this.entityCountText.position.set(this.generator.x + this.generator.width / 2, this.generator.y);
 
         // --- NEW LAYOUT: Bottom Right Column ---
         this.shopButton.x = topRight.x - this.x - 80 - padding;
-        this.shopButton.y = bottomRight.y - this.y - 80 - padding;
+        this.shopButton.y = topRight.y - this.y + 80 + padding;
 
         // Room Buttons stacked vertically ABOVE the shop button
         this.roomSelector.x = this.shopButton.x;
         this.roomSelector.y = this.shopButton.y - this.roomSelector.height - 10;
 
-        this.missionHUD.position.set(20, 160);
+        this.missionHUD.position.set(0, bottomRight.y - 120 - this.y);
         this.shopView.position.set(centerX, (bottomRight.y - topRight.y) / 2);
 
         this.notifications.onOverlayChanged(Game.gameScreenData);

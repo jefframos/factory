@@ -44,6 +44,8 @@ export class MergeInputMergeService {
     private activeEntity: MergeInputEntity | null = null;
     private currentHighlightedEntity: BlockMergeEntity | null = null;
 
+    private dirtyCats: Map<MergeInputEntity, number> = new Map();
+
     public constructor(private readonly deps: MergeInputMergeServiceDeps) {
         this.mergeRadiusPx = deps.mergeRadiusPx ?? 90;
         this.eggHoverRadiusPx = deps.eggHoverRadiusPx ?? 60;
@@ -210,7 +212,27 @@ export class MergeInputMergeService {
         this.onActiveChanged.dispatch(null);
         this.deps.gridView.setActive(null);
     }
+    public update(delta: number) {
+        for (const [entity, timeLeft] of this.dirtyCats) {
+            // 1. Calculate the new time
+            const updatedTime = timeLeft - delta;
 
+            if (updatedTime <= 0) {
+                // 2. Remove the entity if time is up
+                this.dirtyCats.delete(entity);
+
+                // Optional: Trigger any "cleanup" logic for the entity here
+                // entity.cleanUp(); 
+            } else {
+                // 3. Update the map with the new value
+                this.dirtyCats.set(entity, updatedTime);
+            }
+        }
+    }
+
+    private setEntityDirty(entity: BlockMergeEntity) {
+        this.dirtyCats.set(entity, 0.25);
+    }
     // -------------------------
     // Merge logic
     // -------------------------
@@ -221,6 +243,9 @@ export class MergeInputMergeService {
             return;
         }
 
+        if (this.dirtyCats.get(this.activeEntity)) {
+            return;
+        }
         const source = this.activeEntity;
         const target = this.findMergeTargetFor(source);
 
@@ -239,6 +264,10 @@ export class MergeInputMergeService {
         InGameProgress.instance.reportMergeLevel(mergeData.nextLevel);
 
         this.onMergePerformed.dispatch(mergeData.nextLevel);
+
+        if (mergeData.mergeEntity) {
+            this.setEntityDirty(mergeData.mergeEntity)
+        }
 
         return mergeData.mergeEntity;
     }

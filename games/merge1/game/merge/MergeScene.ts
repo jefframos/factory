@@ -54,7 +54,8 @@ export default class MergeScene extends GameScene {
         this.patternBackground = new PatternBackground({
             background: 0x26C6DA,
             patternAlpha: 1,
-            patternPath: 'grass-patch-1',
+            //patternPath: 'grass-patch-1',
+            patternPath: 'grass-patch-1-old',
             tileSpeedX: 0,
             tileSpeedY: 0
         });
@@ -63,6 +64,9 @@ export default class MergeScene extends GameScene {
         if (this.patternBackground.tiledTexture) {
             this.patternBackground.tiledTexture.alpha = 0.75
         }
+
+
+
         // 2. Gameplay
         this.addChild(this.gameplayContainer);
 

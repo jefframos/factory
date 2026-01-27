@@ -18,7 +18,7 @@ export class CurrencyBox extends PIXI.Container {
     private background?: PIXI.NineSlicePlane;
 
     private currentValue: number = 0;
-    private readonly boxHeight: number = 50;
+    private readonly boxHeight: number = 40;
     private readonly padding: number = 10;  // Inner distance from left edge
     private readonly spacing: number = 2;  // Gap between icon and text
 
@@ -40,11 +40,11 @@ export class CurrencyBox extends PIXI.Container {
         this.icon.anchor.set(0.5);
 
         // Scale the icon relative to the box height (80% of height)
-        const targetIconSize = this.boxHeight * 0.8;
+        const targetIconSize = this.boxHeight * 1.2;
         this.icon.scale.set(ViewUtils.elementScaler(this.icon, targetIconSize));
 
         // Position: Padding + Half width (because of 0.5 anchor)
-        this.icon.x = this.padding + (this.icon.width / 2);
+        this.icon.x = this.padding;
         this.icon.y = this.boxHeight / 2;
         this.addChild(this.icon);
 
@@ -103,7 +103,8 @@ export class CurrencyBox extends PIXI.Container {
 
         // Icon "Punch" scale effect
         // We recalculate the base scale to ensure the "punch" is relative to current size
-        const baseScale = ViewUtils.elementScaler(this.icon, this.boxHeight * 0.8);
+        const targetIconSize = this.boxHeight * 1.2;
+        let baseScale = (ViewUtils.elementScaler(this.icon, targetIconSize));
 
         gsap.fromTo(this.icon.scale,
             { x: baseScale * 1.3, y: baseScale * 1.3 },

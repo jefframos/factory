@@ -19,6 +19,46 @@
         "w": 256,
         "h": 256
       }
+    },
+    "grass-patch-1-old2": {
+      "frame": {
+        "x": 260,
+        "y": 2,
+        "w": 256,
+        "h": 256
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      "sourceSize": {
+        "w": 256,
+        "h": 256
+      }
+    },
+    "grass-patch-1-old": {
+      "frame": {
+        "x": 2,
+        "y": 260,
+        "w": 256,
+        "h": 256
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      "sourceSize": {
+        "w": 256,
+        "h": 256
+      }
     }
   },
   "meta": {
@@ -27,8 +67,8 @@
     "image": "backgrounds.png",
     "format": "RGBA8888",
     "size": {
-      "w": 260,
-      "h": 260
+      "w": 518,
+      "h": 518
     },
     "scale": 1,
     "related_multi_packs": []

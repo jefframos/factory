@@ -39,9 +39,10 @@ export class MissionHUD extends PIXI.Container {
 
         // 1. Background Panel
         this.bg = new PIXI.NineSlicePlane(panelTex, ns.left, ns.top, ns.right, ns.bottom);
-        this.bg.width = this.w;
+        this.bg.width = this.w + 50;
         this.bg.height = this.h;
         this.addChild(this.bg);
+        this.bg.x = -50
 
         // 2. Mission Icon
         this.icon = PIXI.Sprite.from(PIXI.Texture.WHITE);
@@ -121,7 +122,7 @@ export class MissionHUD extends PIXI.Container {
         this.claimButton.setLabel('CLAIM');
         // Positioned under the right side of the main panel
         this.claimButton.x = this.w / 2;
-        this.claimButton.y = this.h + this.claimButton.height / 2 + 15;
+        this.claimButton.y = - this.claimButton.height / 2 - 5;
 
         this.claimButton.pivot.x = this.claimButton.width / 2;
         this.claimButton.pivot.y = this.claimButton.height / 2;
@@ -181,7 +182,6 @@ export class MissionHUD extends PIXI.Container {
 
 
         if (def.iconTextureId) {
-            console.log(def.iconTextureId, PIXI.Assets.cache)
             let tex = PIXI.Assets.cache.get(def.iconTextureId)
             if (!tex) {
                 tex = TextureBaker.getTexture(def.iconTextureId)

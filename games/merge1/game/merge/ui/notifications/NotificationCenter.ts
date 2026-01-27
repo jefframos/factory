@@ -312,7 +312,7 @@ export class NotificationCenter extends PIXI.Container {
         this.stackDirty = false;
 
         const base = this.computeStackTopLeft();
-        let y = 160;
+        let y = this.stack.marginY;
 
         //console.log(this.parent.parent.x)
 

@@ -19,6 +19,9 @@ export interface MissionDefinition {
     id: string;
     tier: number;
 
+    templateId: string;
+    k: number;
+
     title: string;
     description?: string;
 

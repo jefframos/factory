@@ -21,6 +21,14 @@
         },
         {
           "alias": [
+            "garden"
+          ],
+          "src": [
+            "garden.json"
+          ]
+        },
+        {
+          "alias": [
             "ui"
           ],
           "src": [
