@@ -7,6 +7,7 @@ import { Signal } from "signals";
 import MergeAssets from "../MergeAssets";
 import { MissionManager } from "../missions/MissionManager";
 import { MissionDefinition } from "../missions/MissionTypes";
+import { TextureBaker } from "../vfx/TextureBaker";
 
 export class MissionHUD extends PIXI.Container {
     public onClaim: Signal = new Signal();
@@ -98,7 +99,7 @@ export class MissionHUD extends PIXI.Container {
             standard: {
                 width: 200,
                 height: 70,
-                texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Green || MergeAssets.Textures.Buttons.Blue),
+                texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Gold || MergeAssets.Textures.Buttons.Blue),
                 fontStyle: new PIXI.TextStyle({ ...MergeAssets.MainFont, fontSize: 25 }),
                 iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Gift2),
                 iconSize: { height: 100, width: 100 },
@@ -120,7 +121,7 @@ export class MissionHUD extends PIXI.Container {
         this.claimButton.setLabel('CLAIM');
         // Positioned under the right side of the main panel
         this.claimButton.x = this.w / 2;
-        this.claimButton.y = this.h + this.claimButton.height / 2 + 5;
+        this.claimButton.y = this.h + this.claimButton.height / 2 + 15;
 
         this.claimButton.pivot.x = this.claimButton.width / 2;
         this.claimButton.pivot.y = this.claimButton.height / 2;
@@ -143,14 +144,16 @@ export class MissionHUD extends PIXI.Container {
         MissionManager.instance.onActiveMissionProgress.add(this.applyProgress, this);
 
         MissionManager.instance.onNextMissionTimerChanged.add((remainingSec: number) => {
+            this.alpha = 1;
             if (this.activeDef) return;
             if (remainingSec > 0) {
-                this.visible = true;
+                //this.visible = true;
                 this.updateTitle("Next mission");
                 this.progressText.text = `In ${remainingSec}s`;
                 this.progressBar.update(0);
                 this.setClaimState(false);
                 this.visible = false;
+                this.alpha = 0;
             } else if (!MissionManager.instance.activeMissionDef) {
                 this.visible = false;
             }
@@ -173,10 +176,17 @@ export class MissionHUD extends PIXI.Container {
         }
 
         this.visible = true;
+        MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.Drop)
         this.updateTitle(def.title);
 
+
         if (def.iconTextureId) {
-            this.icon.texture = PIXI.Texture.from(def.iconTextureId);
+            console.log(def.iconTextureId, PIXI.Assets.cache)
+            let tex = PIXI.Assets.cache.get(def.iconTextureId)
+            if (!tex) {
+                tex = TextureBaker.getTexture(def.iconTextureId)
+            }
+            this.icon.texture = tex;
             this.icon.visible = true;
         } else {
             this.icon.visible = false;

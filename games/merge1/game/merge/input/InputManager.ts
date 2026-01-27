@@ -69,6 +69,7 @@ export class InputManager {
                 this.onOver(null);
                 this.onRelease(e.global);
                 MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.Drop)
+                MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.Meow)
             }
         };
 

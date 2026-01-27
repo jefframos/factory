@@ -53,10 +53,11 @@ export class MergeEgg extends PIXI.Container {
 
 
         // 2. Sprite
-        this.sprite = PIXI.Sprite.from('BorderFrame_Round24');
-        this.sprite.anchor.set(0.5, 1);
+        //this.sprite = PIXI.Sprite.from('BorderFrame_Round24');
+        this.sprite = PIXI.Sprite.from(MergeAssets.Textures.Icons.Gift2);
+        this.sprite.anchor.set(0.5, 0.9);
 
-        this.setupGooglyEyes(['eye', 'eye'])
+        //this.setupGooglyEyes(['eye', 'eye'])
 
         this.eyesContainer.x = 0;
         this.eyesContainer.y = -this.sprite.height * 0.7;
@@ -79,10 +80,10 @@ export class MergeEgg extends PIXI.Container {
         this.isLanding = true;
         this.angle = 0;
 
-        if (level > 2 && level < MergeAssets.Colors.length) {
-            this.sprite.tint = MergeAssets.Colors[level - 1][0]
+        if (level > 2) {
+            this.sprite.texture = PIXI.Texture.from(MergeAssets.Textures.Icons.ChestGold)
         } else {
-            this.sprite.tint = 0xFFFFFF
+            this.sprite.texture = PIXI.Texture.from(MergeAssets.Textures.Icons.Gift2)
         }
         // Setup initial "in-air" pose
         this.sprite.y = -120;

@@ -1,5 +1,6 @@
 import { Game } from "@core/Game";
 import * as PIXI from "pixi.js";
+import MergeAssets from "../../MergeAssets";
 import { LevelUpInterstitialView } from "./LevelUpInterstitialView";
 import { NotificationRegistry } from "./NotificationRegistry";
 import {
@@ -142,6 +143,7 @@ export class NotificationCenter extends PIXI.Container {
     public toastPrize(data: PrizeToastData, opts?: ToastOptions): void {
         const v = new PrizeToastView(this.registry, this.stack.width, this.stack.height);
         v.setData(data);
+        MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.Notification);
         this.pushToast("prize_toast", v, opts);
     }
 

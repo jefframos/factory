@@ -53,12 +53,16 @@ export default class MergeScene extends GameScene {
         SoundManager.instance.setMasterSfxVolume(0.7)
         this.patternBackground = new PatternBackground({
             background: 0x26C6DA,
-            patternAlpha: 0.2,
-            patternPath: 'game4/images/non-preload/jiggy-pattern.png'
+            patternAlpha: 1,
+            patternPath: 'grass-patch-1',
+            tileSpeedX: 0,
+            tileSpeedY: 0
         });
         this.addChild(this.patternBackground);
         this.patternBackground.init();
-
+        if (this.patternBackground.tiledTexture) {
+            this.patternBackground.tiledTexture.alpha = 0.75
+        }
         // 2. Gameplay
         this.addChild(this.gameplayContainer);
 

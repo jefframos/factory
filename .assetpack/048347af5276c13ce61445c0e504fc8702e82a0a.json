@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769184584609,
-                "duration": 1.008700000000033,
+                "date": 1769531465196,
+                "duration": 11.551600000000008,
                 "success": true
             }
         },
@@ -88,6 +88,86 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Bubbles.mp3": {
             "isFolder": false,
             "transformParent": ".assetpack/ffmpeg/Bubbles.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Cat Meow 01.mp4": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769531465198,
+                "duration": 12.959400000000073,
+                "success": true
+            },
+            "hash": "x6M_Og"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Cat Meow 01.mp4": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Cat Meow 01.mp4",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Cat Meow 02.mp4": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769531465201,
+                "duration": 9.717300000000023,
+                "success": true
+            },
+            "hash": "RqNp4A"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Cat Meow 02.mp4": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Cat Meow 02.mp4",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Cat Meow Angry 01.mp4": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769531465204,
+                "duration": 7.1784999999999854,
+                "success": true
+            },
+            "hash": "dgHbuw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Cat Meow Angry 01.mp4": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Cat Meow Angry 01.mp4",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Cat Meow Angry 02.mp4": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769531465206,
+                "duration": 4.407600000000002,
+                "success": true
+            },
+            "hash": "Ju0NzA"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Cat Meow Angry 02.mp4": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Cat Meow Angry 02.mp4",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

@@ -79,7 +79,58 @@ export class BaseMergeEntity extends PIXI.Container {
         this.levelText.y = 0;
         this.sprite.addChild(this.levelText);
     }
+    /**
+        * Generic function to add facial features like eyes, ears, or mouths.
+        */
+    protected addFeature(
+        targetContainer: PIXI.Container,
+        textureIds: string[],
+        config: {
+            count: number,
+            widthFactor: number,
+            yOffset: number,
+            spacing: number,
+            tint?: number,
+            randomize: boolean
+        }
+    ): void {
+        targetContainer.removeChildren().forEach(child => child.destroy());
 
+        const targetFeatureWidth = (this.sprite.width * config.widthFactor) / (config.count || 1);
+
+        for (let i = 0; i < config.count; i++) {
+            const tex = textureIds[i % textureIds.length];
+            const feature = PIXI.Sprite.from(tex);
+            feature.anchor.set(0.5);
+
+            feature.tint = config.tint || 0xFFFFFF
+
+            // Scale based on desired width
+            const scaleBase = targetFeatureWidth / feature.texture.width;
+            const variation = config.randomize ? (0.9 + Math.random() * 0.2) : 1;
+            feature.scale.set(scaleBase * variation);
+
+            // X Positioning
+            let posX = 0;
+            if (config.count > 1) {
+                const totalSpacing = targetFeatureWidth * config.spacing;
+                posX = (i === 0) ? -totalSpacing / 2 : totalSpacing / 2;
+            }
+
+            // Wonky randomness for juice
+            const noiseX = config.randomize ? (Math.random() - 0.5) * 4 : 0;
+            const noiseY = config.randomize ? (Math.random() - 0.5) * 4 : 0;
+
+            feature.x = posX + noiseX;
+            feature.y = config.yOffset + noiseY;
+
+            if (config.randomize) {
+                feature.rotation = (Math.random() - 0.5) * 0.2;
+            }
+
+            targetContainer.addChild(feature);
+        }
+    }
     public init(level: number, spriteId: string, animationId: string): void {
         this.visible = true;
         this.level = level;

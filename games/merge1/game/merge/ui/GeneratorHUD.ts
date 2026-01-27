@@ -22,14 +22,14 @@ export default class GeneratorHUD extends PIXI.Container {
         this.progressBar = new NineSliceProgressBar({
             width: this.BAR_WIDTH,
             height: this.BAR_HEIGHT,
-            bgTexture: PIXI.Texture.from('Slider_Basic01_Bg_Single'), // Replace with your actual asset key
-            barTexture: PIXI.Texture.from('Slider_Basic03_FillMask'),  // Replace with your actual asset key
+            bgTexture: PIXI.Texture.from(MergeAssets.Textures.UI.BarBg), // Replace with your actual asset key
+            barTexture: PIXI.Texture.from(MergeAssets.Textures.UI.BarFill),  // Replace with your actual asset key
             leftWidth: 8,
             topHeight: 8,
             rightWidth: 8,
             bottomHeight: 8,
             //bgColor: 0x444444, // Darker backdrop
-            barColor: 0x00FF00,  // Default green
+            barColor: MergeAssets.Textures.UI.FillColor,  // Default green
             padding: 4
 
         });
@@ -40,7 +40,7 @@ export default class GeneratorHUD extends PIXI.Container {
         this.addChild(this.progressBar);
 
         // 2. Status Label (Now using your LemonMilk style)
-        this.statusLabel = new PIXI.Text("NEXT EGG", { ...MergeAssets.MainFont });
+        this.statusLabel = new PIXI.Text(MergeAssets.Labels.NextEntity, { ...MergeAssets.MainFont });
         this.statusLabel.anchor.set(0.5, 1);
         this.statusLabel.position.set(this.BAR_WIDTH / 2, -20);
         this.addChild(this.statusLabel);
@@ -80,7 +80,7 @@ export default class GeneratorHUD extends PIXI.Container {
         if (this.isFull) {
             this.progressBar.setTintColor(0xFF4444); // Red when blocked
         } else {
-            this.progressBar.setTintColor(0x00FF00); // Green when working
+            this.progressBar.setTintColor(MergeAssets.Textures.UI.FillColor); // Green when working
         }
     }
 

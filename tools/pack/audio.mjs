@@ -4,7 +4,7 @@ import { ffmpeg } from "@assetpack/core/ffmpeg";
 export default {
     pipes: [
         ffmpeg({
-            inputs: ['.mp3', '.ogg', '.wav', '.m4a'],
+            inputs: ['.mp3', '.ogg', '.wav', '.m4a', '.mp4'],
             outputs: [
                 {
                     formats: ['.mp3'],

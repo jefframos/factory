@@ -14,7 +14,7 @@ export interface IShopItemConfig {
 export const SHOP_CONFIG: IShopItemConfig[] = Array.from({ length: 24 }, (_, i) => {
     const level = i + 1;
     //const priceIncreaseCoef = 1.15;
-    const unlockAtLevel = level === 1 ? 1 : level + 4; // Level 1 is always available
+    const unlockAtLevel = level === 1 ? 1 : level + 1; // Level 1 is always available
 
     // Price math: 500 * (2.5 ^ (level - 1))
     const basePrice = 500 * Math.pow(2.5, i);

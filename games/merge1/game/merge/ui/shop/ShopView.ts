@@ -79,7 +79,7 @@ export default class ShopView extends PIXI.Container {
             click: { callback: () => this.showTab("animals") }
         });
 
-        tabAnimals.setLabel("Creatures")
+        tabAnimals.setLabel(MergeAssets.Labels.EntityShop)
         const tabMods = new BaseButton({
             standard: { fontStyle: font, width: tabWidth, height: cfg.TAB_HEIGHT, texture: PIXI.Texture.from(cfg.Textures.TabActive) },
             click: { callback: () => this.showTab("mods") }

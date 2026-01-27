@@ -49,7 +49,7 @@ export default class ShopItemView extends PIXI.Container {
         thumb.position.set(s.HEIGHT / 2 + 10, s.HEIGHT / 2);
         this.unlockedPanel.addChild(thumb);
 
-        this.titleText = new PIXI.Text(`Creature ${this.config.level}`, { ...MergeAssets.MainFont, fontSize: 22, fill: 0xffffff });
+        this.titleText = new PIXI.Text(`${MergeAssets.Labels.EntityCardPrefix} ${this.config.level}`, { ...MergeAssets.MainFont, fontSize: 22, fill: 0xffffff });
         this.titleText.position.set(s.TEXT_OFFSET_X, s.HEIGHT * 0.25);
         this.unlockedPanel.addChild(this.titleText);
 

@@ -42,7 +42,7 @@ export class MergeMediator {
     private readonly MAX_COINS_PER_ENTITY: number = 3;
     private readonly MERGE_RADIUS_PX: number = 100;
 
-    private autoCollectCoins: boolean = false;
+    private autoCollectCoins: boolean = true;
 
     private shopView!: ShopView;
     private input!: InputManager;

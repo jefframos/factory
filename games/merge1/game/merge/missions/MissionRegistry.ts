@@ -25,9 +25,9 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
                 templateId: "t1_merge", // Crucial for re-binding
                 k,
                 tier: 1,
-                iconTextureId: MergeAssets.Textures.Icons.Critter, // Changing this now works!
+                iconTextureId: `ENTITY_${1}`, // Changing this now works!
                 chestTextureId: MergeAssets.Textures.Icons.Coin,
-                title: `Merge ${target} creatures`,
+                title: `Merge ${target} cats`,
                 type: "merge_creatures",
                 target,
                 reward: { currencies: { [CurrencyType.GEMS]: Math.max(1, 2 + Math.floor(k / 2)) } }
@@ -47,7 +47,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
                 tier: 1,
                 iconTextureId: MergeAssets.Textures.Icons.Finger,
                 chestTextureId: MergeAssets.Textures.Icons.Coin,
-                title: `Tap creatures ${target} times`,
+                title: `Tap cats ${target} times`,
                 type: "tap_creature",
                 target,
                 reward: { currencies: { [CurrencyType.MONEY]: 100 + 25 * k } }
@@ -65,9 +65,9 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
                 templateId: "t1_hatch",
                 k,
                 tier: 1,
-                iconTextureId: MergeAssets.Textures.Icons.Egg,
+                iconTextureId: MergeAssets.Textures.Icons.Gift2,
                 chestTextureId: MergeAssets.Textures.Icons.Coin,
-                title: `Hatch ${target} eggs`,
+                title: `Rescue ${target} cats`,
                 type: "hatch_eggs",
                 target,
                 reward: { currencies: { [CurrencyType.MONEY]: 120 + 30 * k } }

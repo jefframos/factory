@@ -89,10 +89,23 @@ export default class MergeAssets {
     }
     static readonly Sounds = {
         Game: {
+            Notification: {
+                // soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
+                soundId: ['Bonus Highlights'],
+                volumeMinMax: 0.2,
+                pitchMinMax: [0.9, 1]
+            },
             Yay: {
-                soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
-                volumeMinMax: 0.07,
-                pitchMinMax: [0.8, 1.1]
+                // soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
+                soundId: ['Cat Meow Angry 01', 'Cat Meow Angry 02'],
+                volumeMinMax: 0.7,
+                pitchMinMax: [0.8, 1.2]
+            },
+            Meow: {
+                // soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
+                soundId: ['Cat Meow 01', 'Cat Meow 02'],
+                volumeMinMax: 0.2,
+                pitchMinMax: [0.8, 1]
             },
             Egg: {
                 soundId: ['hpp-increase20'],
@@ -202,33 +215,64 @@ export default class MergeAssets {
     static readonly Labels = {
         Hot: 'Popular',
         New: 'New!',
+        NextEntity: 'Next Cat',
+        EntityShop: 'Cats',
+        EntityCardPrefix: 'Cat'
     }
+    // static readonly Colors = [
+    //     ["#ED1C24"], // 1: Red (Primary)
+    //     ["#F7941D"], // 2: Orange (Primary)
+    //     ["#FFF200"], // 3: Yellow (Primary)
+    //     ["#00A651"], // 4: Green (Square)
+    //     ["#2E3192"], // 5: Blue (Star)
+    //     ["#8C6239", "#FFFFFF"], // 6: Purple/Indigo (Dice spots)
+    //     ["#ED1C24", "#F7941D", "#FFF200", "#00A651", "#2E3192", "#662D91"], // 7: Rainbow
+    //     ["#FF7BAC"], // 8: Pink (Octoblock)
+    //     ["#92278F"], // 9: Light Purple (Square)
+    //     ["#FFFFFF", "#ED1C24"], // 10: White with Red border
+    //     ["#ED1C24", "#FBB03B"], // 11: Red/Gold (Football/Soccer theme)
+    //     ["#F7941D", "#FBB03B"], // 12: Orange/Yellow (The Rectangle)
+    //     ["#FFF200", "#000000"], // 13: Yellow/Black (Unlucky/Cleansweep)
+    //     ["#00A651", "#ED1C24"], // 14: Green/Red (Skater)
+    //     ["#2E3192", "#FFFFFF", "#ED1C24"], // 15: Blue/White/Red (Agent)
+    //     ["#00A651", "#FFFFFF"], // 16: Square (Green tints)
+    //     ["#FFFF00", "#ED1C24"], // 17: Painting theme (Yellow/Red)
+    //     ["#FF7BAC", "#2E3192"], // 18: Pink/Blue (Super Speed)
+    //     ["#92278F", "#FFFFFF"], // 19: Purple/White (Artist)
+    //     ["#F7941D", "#FFFFFF"], // 20: Orange/White (Large base)
+    //     ["#ED1C24", "#FFD700"], // 21: Red/Gold (Explorer)
+    //     ["#F7941D", "#2E3192"], // 22: Orange/Blue
+    //     ["#FFF200", "#662D91"], // 23: Yellow/Purple
+    //     ["#00A651", "#F7941D"]  // 24: Green/Orange (Super Rectangle)
+    // ]
+
     static readonly Colors = [
-        ["#ED1C24"], // 1: Red (Primary)
-        ["#F7941D"], // 2: Orange (Primary)
-        ["#FFF200"], // 3: Yellow (Primary)
-        ["#00A651"], // 4: Green (Square)
-        ["#2E3192"], // 5: Blue (Star)
-        ["#8C6239", "#FFFFFF"], // 6: Purple/Indigo (Dice spots)
-        ["#ED1C24", "#F7941D", "#FFF200", "#00A651", "#2E3192", "#662D91"], // 7: Rainbow
-        ["#FF7BAC"], // 8: Pink (Octoblock)
-        ["#92278F"], // 9: Light Purple (Square)
-        ["#FFFFFF", "#ED1C24"], // 10: White with Red border
-        ["#ED1C24", "#FBB03B"], // 11: Red/Gold (Football/Soccer theme)
-        ["#F7941D", "#FBB03B"], // 12: Orange/Yellow (The Rectangle)
-        ["#FFF200", "#000000"], // 13: Yellow/Black (Unlucky/Cleansweep)
-        ["#00A651", "#ED1C24"], // 14: Green/Red (Skater)
-        ["#2E3192", "#FFFFFF", "#ED1C24"], // 15: Blue/White/Red (Agent)
-        ["#00A651", "#FFFFFF"], // 16: Square (Green tints)
-        ["#FFFF00", "#ED1C24"], // 17: Painting theme (Yellow/Red)
-        ["#FF7BAC", "#2E3192"], // 18: Pink/Blue (Super Speed)
-        ["#92278F", "#FFFFFF"], // 19: Purple/White (Artist)
-        ["#F7941D", "#FFFFFF"], // 20: Orange/White (Large base)
-        ["#ED1C24", "#FFD700"], // 21: Red/Gold (Explorer)
-        ["#F7941D", "#2E3192"], // 22: Orange/Blue
-        ["#FFF200", "#662D91"], // 23: Yellow/Purple
-        ["#00A651", "#F7941D"]  // 24: Green/Orange (Super Rectangle)
-    ]
+        ["#ffffff", "#a8e5ff"], // 1: Red Tabby (Primary Red + White paws)
+        ["#fb7378", "#FFFFFF"], // 1: Red Tabby (Primary Red + White paws)
+        ["#F7941D", "#8C6239"], // 2: Ginger Marmalade (Orange + Dark Brown stripes)
+        ["#FFF200", "#F7941D"], // 3: Calico Base (Yellowish-Cream + Orange patches)
+        ["#00A651", "#FFFFFF"], // 4: Lucky Jade Cat (Green + White belly)
+        ["#2E3192", "#92278F"], // 5: Blue Russian (Deep Blue + Purple sheen)
+        ["#8C6239", "#fffdfd", "#4f4f4f"], // 6: Siamese (Brown + White + Black points)
+        ["#ED1C24", "#F7941D", "#FFF200", "#00A651", "#2E3192", "#662D91"], // 7: Prism/Rainbow Cat
+        ["#FF7BAC", "#FFFFFF"], // 8: Pink Sphynx (Soft Pink + White wrinkles)
+        ["#92278F", "#2E3192"], // 9: Galaxy Cat (Purple + Deep Blue swirls)
+        ["#FFFFFF", "#ED1C24"], // 10: White Van Cat (White + Red tail/ears)
+        ["#ED1C24", "#FBB03B", "#565656"], // 11: Bengal Tiger (Red-Orange + Gold + Black stripes)
+        ["#F7941D", "#FBB03B"], // 12: Golden Abyssinian (Orange + Gold ticked fur)
+        ["#FFF200", "#5e5e5e"], // 13: "Bad Luck" Black Cat (Yellow eyes + Black fur)
+        ["#00A651", "#ED1C24", "#FFFFFF"], // 14: Wild Jungle Cat (Green + Red camo + White)
+        ["#2E3192", "#FFFFFF", "#ED1C24"], // 15: Tuxedo Agent (Blue-Black + White chest + Red bowtie)
+        ["#00A651", "#FFFFFF", "#FBB03B"], // 16: Emerald-Eyed Birman (Green + White + Gold)
+        ["#FFFF00", "#ED1C24", "#8C6239"], // 17: Tortoiseshell (Yellow + Red + Brown patches)
+        ["#FF7BAC", "#2E3192", "#FFFFFF"], // 18: Bubblegum Maine Coon (Pink + Blue + White mane)
+        ["#92278F", "#FFFFFF"], // 19: Lavender Persian (Soft Purple + White fluff)
+        ["#F7941D", "#FFFFFF", "#8C6239"], // 20: Patchwork Chimera (Orange + White + Brown)
+        ["#ED1C24", "#FFD700"], // 21: Royal Egyptian Mau (Crimson + Gold jewelry)
+        ["#F7941D", "#2E3192", "#686868"], // 22: Sunset Jaguar (Orange + Blue-tinted spots)
+        ["#FFF200", "#662D91"], // 23: Mystic Moon Cat (Bright Yellow + Deep Purple aura)
+        ["#00A651", "#F7941D", "#FFD700"]  // 24: Celestial Lion (Green + Orange mane + Gold flecks)
+    ];
     static readonly Textures = {
         Buttons: {
             Gold: "ResourceBar_Single_Btn_Yellow1",
@@ -251,6 +295,7 @@ export default class MergeAssets {
             Down: "down",
             Gift1: "ItemIcon_Gift_Blue",
             Gift2: "ItemIcon_Gift_Green",
+            ChestGold: "ItemIcon_Chest_Gold",
             Shop: "ItemIcon_Shop",
             Back: "Icon_Back",
             Check: "Icon_Check03_s",

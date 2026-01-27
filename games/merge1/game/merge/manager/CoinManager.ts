@@ -186,7 +186,7 @@ export class CoinManager {
         const initValue = type === CurrencyType.GEMS ? 1 : value;
         coin.init(ox, oy, initValue);
 
-        if (this.autoCollectCoinsGetter() && !isLoading) {
+        if (this.autoCollectCoinsGetter()) {//} && !isLoading) {
             this.collectCoin(coin, true);
             this.recycleCoin(coin);
         } else {

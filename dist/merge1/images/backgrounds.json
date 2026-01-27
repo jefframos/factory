@@ -1,23 +1,23 @@
 {
   "frames": {
-    "main-bg": {
+    "grass-patch-1": {
       "frame": {
         "x": 2,
         "y": 2,
-        "w": 1024,
-        "h": 1024
+        "w": 256,
+        "h": 256
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 1024,
-        "h": 1024
+        "w": 256,
+        "h": 256
       },
       "sourceSize": {
-        "w": 1024,
-        "h": 1024
+        "w": 256,
+        "h": 256
       }
     }
   },
@@ -27,8 +27,8 @@
     "image": "backgrounds.png",
     "format": "RGBA8888",
     "size": {
-      "w": 1028,
-      "h": 1028
+      "w": 260,
+      "h": 260
     },
     "scale": 1,
     "related_multi_packs": []

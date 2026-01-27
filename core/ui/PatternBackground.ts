@@ -11,7 +11,7 @@ export interface PatternConfig {
 
 export default class PatternBackground extends Container {
     private backgroundSprite: Sprite;
-    private tilingJigsaw?: TilingSprite;
+    public tiledTexture?: TilingSprite;
     private config: Required<PatternConfig>;
 
     constructor(config: PatternConfig) {
@@ -68,20 +68,20 @@ export default class PatternBackground extends Container {
     /** Helper to keep code DRY and ensure correct layering */
     private createTilingSprite(tex: Texture) {
         // Prevent double creation if init is called twice
-        if (this.tilingJigsaw) return;
+        if (this.tiledTexture) return;
 
-        this.tilingJigsaw = new TilingSprite(
+        this.tiledTexture = new TilingSprite(
             tex,
             Game.gameScreenData?.width ?? 800,
             Game.gameScreenData?.height ?? 600
         );
-        this.tilingJigsaw.anchor.set(0.5);
+        this.tiledTexture.anchor.set(0.5);
 
         // If it was cached, maybe skip the fade-in? 
         // Here we keep it 0 for consistency with your update logic.
-        this.tilingJigsaw.alpha = 0;
+        this.tiledTexture.alpha = 0;
 
-        this.addChildAt(this.tilingJigsaw, 1);
+        this.addChildAt(this.tiledTexture, 1);
     }
 
     public update(delta: number) {
@@ -91,17 +91,17 @@ export default class PatternBackground extends Container {
         this.backgroundSprite.width = screenWidth;
         this.backgroundSprite.height = screenHeight;
 
-        if (this.tilingJigsaw) {
-            this.tilingJigsaw.width = screenWidth;
-            this.tilingJigsaw.height = screenHeight;
+        if (this.tiledTexture) {
+            this.tiledTexture.width = screenWidth;
+            this.tiledTexture.height = screenHeight;
 
-            this.tilingJigsaw.tilePosition.x += this.config.tileSpeedX * delta;
-            this.tilingJigsaw.tilePosition.y += this.config.tileSpeedY * delta;
+            this.tiledTexture.tilePosition.x += this.config.tileSpeedX * delta;
+            this.tiledTexture.tilePosition.y += this.config.tileSpeedY * delta;
 
-            if (this.tilingJigsaw.alpha < this.config.patternAlpha) {
-                this.tilingJigsaw.alpha += 0.2 * delta;
-                if (this.tilingJigsaw.alpha > this.config.patternAlpha) {
-                    this.tilingJigsaw.alpha = this.config.patternAlpha;
+            if (this.tiledTexture.alpha < this.config.patternAlpha) {
+                this.tiledTexture.alpha += 0.2 * delta;
+                if (this.tiledTexture.alpha > this.config.patternAlpha) {
+                    this.tiledTexture.alpha = this.config.patternAlpha;
                 }
             }
         }

@@ -13,6 +13,14 @@
         },
         {
           "alias": [
+            "Bonus Highlights.wav"
+          ],
+          "src": [
+            "Bonus Highlights.mp3"
+          ]
+        },
+        {
+          "alias": [
             "brittle-rille.mp3"
           ],
           "src": [
@@ -25,6 +33,38 @@
           ],
           "src": [
             "Bubbles.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Cat Meow 01.mp4"
+          ],
+          "src": [
+            "Cat Meow 01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Cat Meow 02.mp4"
+          ],
+          "src": [
+            "Cat Meow 02.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Cat Meow Angry 01.mp4"
+          ],
+          "src": [
+            "Cat Meow Angry 01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Cat Meow Angry 02.mp4"
+          ],
+          "src": [
+            "Cat Meow Angry 02.mp3"
           ]
         },
         {
