@@ -128,6 +128,10 @@ export class TimedRewardService {
         return Math.max(0, target - this.elapsedSec);
     }
 
+    public getTotalTimer(): number {
+        return Math.max(0, this.elapsedSec);
+    }
+
     public isMilestoneClaimed(milestoneIndex: number): boolean {
         return milestoneIndex < this.claimIndex;
     }
@@ -152,7 +156,7 @@ export class TimedRewardService {
         // this naturally moves the 'target time' for the next reward forward.
         this.claimIndex++;
 
-        this.onRewardClaimed.dispatch(exec.result);
+        this.onRewardClaimed.dispatch(exec.result, m);
         return true;
     }
 

@@ -1,3 +1,4 @@
+import { Signal } from "signals";
 import { CurrencyType, InGameEconomy } from "../data/InGameEconomy";
 import { InGameProgress } from "../data/InGameProgress";
 import GameStorage from "../storage/GameStorage";
@@ -30,7 +31,8 @@ export const SHOP_CONFIG: IShopItemConfig[] = Array.from({ length: 24 }, (_, i) 
 export class ShopManager {
     private static _instance: ShopManager;
     private _purchaseHistory: Map<string, number> = new Map();
-
+    public readonly onAvailabilityChanged: Signal = new Signal();
+    private _lastAvailabilityState: boolean = false;
     private priceIncreaseCoef = 1.35;
     public static get instance(): ShopManager {
         return this._instance || (this._instance = new ShopManager());
@@ -38,6 +40,13 @@ export class ShopManager {
 
     private constructor() {
         this.loadHistory();
+
+        InGameEconomy.instance.onCurrencyChanged.add(() => {
+            this.refreshAvailability();
+        });
+        InGameProgress.instance.onLevelUp.add(() => {
+            this.refreshAvailability();
+        });
     }
 
     private loadHistory(): void {
@@ -91,12 +100,31 @@ export class ShopManager {
             // 3. Save Shop State
             this.saveHistory();
 
+            this.refreshAvailability();
+
             return config.level;
         }
 
         return null;
     }
+    public hasAffordableItems(): boolean {
+        const money = InGameEconomy.instance.getAmount(CurrencyType.MONEY);
 
+        return SHOP_CONFIG.some(config => {
+            if (!this.isUnlocked(config.id)) return false;
+            const price = this.getPrice(config.id);
+            return money >= price;
+        });
+    }
+
+    public refreshAvailability(): void {
+        const currentState = this.hasAffordableItems();
+        if (currentState !== this._lastAvailabilityState) {
+            this._lastAvailabilityState = currentState;
+            // Dispatch true if something new can be bought, false if not
+            this.onAvailabilityChanged.dispatch(currentState);
+        }
+    }
     private saveHistory(): void {
         // We convert the Map to a plain Object so localStorage can read it
         const historyObj = Object.fromEntries(this._purchaseHistory);

@@ -309,7 +309,7 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
             cardTitleStyle,
             cardCompletionStyle,
 
-            completionPillTexture: MergeAssets.getTexture(T.Icons.Pill),
+            completionPillTexture: MergeAssets.getTexture(T.Icons.BadgeMain),
             completionPillNineSlice: { left: 0, top: 0, right: 0, bottom: 0 },
             completionPillPadding: { x: 10, y: 6 },
         },

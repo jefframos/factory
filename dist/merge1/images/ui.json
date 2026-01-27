@@ -3500,7 +3500,7 @@
         "h": 71
       }
     },
-    "Icon_Exclamation": {
+    "Icon_Exclamation_old": {
       "frame": {
         "x": 39,
         "y": 118,
@@ -3518,6 +3518,26 @@
       "sourceSize": {
         "w": 15,
         "h": 29
+      }
+    },
+    "Icon_Exclamation": {
+      "frame": {
+        "x": 726,
+        "y": 535,
+        "w": 21,
+        "h": 35
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 21,
+        "h": 35
+      },
+      "sourceSize": {
+        "w": 21,
+        "h": 35
       }
     },
     "Icon_Close02": {

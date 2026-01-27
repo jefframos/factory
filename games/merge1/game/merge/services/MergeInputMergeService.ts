@@ -100,7 +100,7 @@ export class MergeInputMergeService {
                     const coin = this.deps.coins.dropCoin(
                         (this.activeEntity as any).x + offset.x,
                         (this.activeEntity as any).y + offset.y,
-                        config.coinValue,
+                        data.data.level,
                         data.data.id,
                         false
                     );

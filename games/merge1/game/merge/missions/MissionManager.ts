@@ -7,6 +7,21 @@ import { MISSION_TEMPLATES } from "./MissionRegistry";
 import { MissionStats } from "./MissionStats";
 import { MissionDefinition } from "./MissionTypes";
 
+export interface MissionClaimResult {
+    success: boolean;
+
+    missionId?: string;
+    templateId?: string;
+
+    rewards?: {
+        currencies?: Partial<Record<CurrencyType, number>>;
+        // later:
+        // items?: ItemReward[];
+        // xp?: number;
+    };
+}
+
+
 export class MissionManager {
     private static _instance: MissionManager;
     public static get instance(): MissionManager {
@@ -69,6 +84,12 @@ export class MissionManager {
     public update(dtSec: number): void {
         const nextAt = this._save.nextMissionAtMs || 0;
 
+        // If nothing active and no cooldown, pick immediately
+        if (!this._save.activeMissionId && nextAt === 0) {
+            this.tryPickMissionNow();
+            return;
+        }
+
         if (!this._save.activeMissionId && nextAt > 0) {
             const remMs = nextAt - Date.now();
             const remSec = Math.max(0, Math.ceil(remMs / 1000));
@@ -81,6 +102,7 @@ export class MissionManager {
             }
         }
     }
+
 
     private tryPickMissionNow(): void {
         if (this._save.activeMissionId) return;
@@ -135,16 +157,23 @@ export class MissionManager {
 
     // ----- Claiming -----
 
-    public claimActive(): boolean {
+    public claimActive(): MissionClaimResult {
         const def = this.activeMissionDef;
         const st = this.activeMissionState;
-        if (!def || !st || !st.completed || st.claimed) return false;
+
+        if (!def || !st || !st.completed || st.claimed) {
+            return { success: false };
+        }
+
+        const claimedCurrencies: Partial<Record<CurrencyType, number>> = {};
 
         // Grant rewards
         if (def.reward.currencies) {
             for (const [type, amt] of Object.entries(def.reward.currencies)) {
                 if (amt && amt > 0) {
-                    InGameEconomy.instance.add(type as CurrencyType, amt);
+                    const currency = type as CurrencyType;
+                    InGameEconomy.instance.add(currency, amt);
+                    claimedCurrencies[currency] = amt;
                 }
             }
         }
@@ -152,7 +181,7 @@ export class MissionManager {
         st.claimed = true;
         st.claimedAt = Date.now();
 
-        // Clear references
+        // Clear active mission refs
         this._save.activeMissionId = null;
         this._save.activeTemplateId = undefined;
         this._save.activeK = undefined;
@@ -160,7 +189,8 @@ export class MissionManager {
 
         // Cooldown
         const delaySec = this.factory.nextDelaySec;
-        this._save.nextMissionAtMs = delaySec <= 0 ? 0 : (Date.now() + delaySec * 1000);
+        this._save.nextMissionAtMs =
+            delaySec <= 0 ? 0 : Date.now() + delaySec * 1000;
 
         this.sync();
         this.onActiveMissionChanged.dispatch(null, null);
@@ -171,7 +201,16 @@ export class MissionManager {
             this.onNextMissionTimerChanged.dispatch(delaySec);
         }
 
-        return true;
+        return {
+            success: true,
+            missionId: def.id,
+            templateId: def.templateId,
+            rewards: {
+                currencies: Object.keys(claimedCurrencies).length
+                    ? claimedCurrencies
+                    : undefined
+            }
+        };
     }
 
     // ----- Calculations -----
@@ -225,9 +264,24 @@ export class MissionManager {
     // ----- Getters & Helpers -----
 
     public get activeMissionDef(): MissionDefinition | null {
-        if (!this._save.activeMissionId) return null;
-        return this._defsById.get(this._save.activeMissionId) || null;
+        const id = this._save.activeMissionId;
+        if (!id) return null;
+
+        const def = this._defsById.get(id) || null;
+
+        // HEAL: saved activeMissionId but no definition available (old save / missing template)
+        if (!def) {
+            this._save.activeMissionId = null;
+            this._save.activeTemplateId = undefined;
+            this._save.activeK = undefined;
+            this._save.activeDef = null;
+            this.sync();
+            return null;
+        }
+
+        return def;
     }
+
 
     public get activeMissionState(): IMissionState | null {
         if (!this._save.activeMissionId) return null;

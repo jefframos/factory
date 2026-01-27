@@ -168,7 +168,7 @@ export class CoinManager {
 
         let type = savedType;
         if (type === undefined) {
-            type = Math.random() < 0.05 ? CurrencyType.GEMS : CurrencyType.MONEY;
+            type = CurrencyType.MONEY;//Math.random() < 0.05 ? CurrencyType.GEMS : CurrencyType.MONEY;
         }
 
         coin.setCurrencySprite(type);

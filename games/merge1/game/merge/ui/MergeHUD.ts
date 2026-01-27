@@ -2,24 +2,31 @@ import { Game } from "@core/Game";
 import PlatformHandler from "@core/platforms/PlatformHandler";
 import BaseButton from "@core/ui/BaseButton";
 import SoundToggleButton from "@core/ui/SoundToggleButton";
+import { NumberConverter } from "@core/utils/NumberConverter";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
 import MergeAssets from "../MergeAssets";
 import { CurrencyType } from "../data/InGameEconomy";
 import { InGameProgress } from "../data/InGameProgress";
+import { MissionClaimResult } from "../missions/MissionManager";
 import { RoomId } from "../rooms/RoomRegistry";
 import { ProgressionType } from "../storage/GameStorage";
 import { TimedRewardService } from "../timedRewards/TimedRewardService";
+import { TimedRewardClaimResult, TimedRewardMilestone } from "../timedRewards/TimedRewardTypes";
 import { TimedRewardsBar } from "../timedRewards/ui/TimedRewardsBar ";
 import { CoinEffectLayer } from "../vfx/CoinEffectLayer";
 import { CurrencyBox } from "./CurrencyBox";
 import GeneratorHUD from "./GeneratorHUD";
 import { MissionHUD } from "./MissionHUD";
 import { ProgressHUD } from "./ProgressHUD";
+import { NotificationCenter } from "./notifications/NotificationCenter";
+import { NotificationRegistry } from "./notifications/NotificationRegistry";
 import { RoomSelector } from "./room/RoomSelector";
+import { ShopNotificationIcon } from "./shop/ShopNotificationIcon";
 import ShopView from "./shop/ShopView";
 
 export default class MergeHUD extends PIXI.Container {
+
     private timedRewards!: TimedRewardService;
     private timedRewardsBar!: TimedRewardsBar;
 
@@ -30,10 +37,16 @@ export default class MergeHUD extends PIXI.Container {
     private readonly topLayer = new PIXI.Container();
     private readonly hintLayer = new PIXI.Container();
 
+    private readonly notificationLayer: PIXI.Container = new PIXI.Container();
+
+    public notifications!: NotificationCenter;
+    public notificationRegistry!: NotificationRegistry;
+
+
     // --- Components ---
     public generator: GeneratorHUD;
-    public currencyHUD: CurrencyBox;
-    public currencyHUDGem: CurrencyBox;
+    public currencyHUD!: CurrencyBox;
+    public currencyHUDGem!: CurrencyBox;
     public progressHUD: ProgressHUD;
     public shopView: ShopView;
     public missionHUD: MissionHUD;
@@ -52,6 +65,8 @@ export default class MergeHUD extends PIXI.Container {
     public readonly onUiClose: Signal = new Signal();
     public readonly onFocusChanged: Signal = new Signal();
     public readonly onRoomSelected: Signal = new Signal();
+
+    private shopNotificationIcon: ShopNotificationIcon = new ShopNotificationIcon()
 
     public get isAnyUiOpen(): boolean { return this.uiOpenCount > 0; }
 
@@ -86,6 +101,10 @@ export default class MergeHUD extends PIXI.Container {
         });
         this.hudLayer.addChild(this.shopButton);
 
+        this.shopButton.addChild(this.shopNotificationIcon)
+        this.shopNotificationIcon.x = 10
+        this.shopNotificationIcon.y = 10
+
         // 3. Currency
         this.initCurrency();
 
@@ -104,10 +123,28 @@ export default class MergeHUD extends PIXI.Container {
         this.missionHUD = new MissionHUD(350, 86);
         this.hudLayer.addChild(this.missionHUD);
 
+        this.missionHUD.onClaim.add((claim: MissionClaimResult) => {
+            if (claim.rewards && claim.rewards.currencies) {
+                for (const currencyType in claim.rewards.currencies) {
+                    const amount = claim.rewards.currencies[currencyType as CurrencyType];
+                    if (amount) {
+                        // Handle currency reward
+                        let icon: string = MergeAssets.Textures.Icons.CoinPileSmall
+                        if (currencyType == CurrencyType.GEMS) {
+                            icon = MergeAssets.Textures.Icons.GemPile
+                        }
+                        this.notifications.toastPrize({ title: "+" + NumberConverter.format(amount), subtitle: "", iconTexture: icon });
+
+
+                    }
+                }
+            }
+        })
+
         // 5. Room Selector Integration
         this.roomSelector = new RoomSelector(["room_0", "room_1"]);
         this.roomSelector.onRoomSelected.add((id: RoomId) => this.onRoomSelected.dispatch(id));
-        this.hudLayer.addChild(this.roomSelector);
+        //this.hudLayer.addChild(this.roomSelector);
 
         // Debug button
         const t = new BaseButton({
@@ -121,6 +158,8 @@ export default class MergeHUD extends PIXI.Container {
         InGameProgress.instance.onProgressChanged.add(this.handleProgressUpdate, this);
         InGameProgress.instance.onLevelUp.add(this.handleLevelUp, this);
         this.refreshRoomButtons();
+
+        this.setUpNotifications();
     }
 
     private setupLayers(): void {
@@ -129,6 +168,89 @@ export default class MergeHUD extends PIXI.Container {
         this.addChild(this.hintLayer);
         this.addChild(this.modalLayer);
         this.addChild(this.topLayer);
+
+        this.addChild(this.notificationLayer);
+    }
+
+    setFtueState(ftueEnabled: boolean) {
+
+        this.hudLayer.visible = ftueEnabled
+
+    }
+
+
+    private setUpNotifications() {
+        // -------------------------
+        // Notifications setup
+        // -------------------------
+        this.notificationRegistry = new NotificationRegistry();
+
+
+        this.notifications = new NotificationCenter(this.notificationRegistry);
+        this.notificationLayer.addChild(this.notifications);
+        this.notifications.setStack({
+            anchor: "topRight",
+            marginX: 18,
+            marginY: 140,
+            offsetX: 50,
+            width: 320,
+            height: 85,
+            spacing: 10,
+            direction: "down"
+        });
+
+
+        this.notifications.onOverlayChanged(Game.gameScreenData);
+        // Example skins (swap to your own MergeAssets textures)
+        this.notificationRegistry.setSkin("prize_toast", {
+            bgTexture: MergeAssets.Textures.UI.NitificationPanel, // replace with your toast bg
+            bgNineSlice: { left: 14, top: 14, right: 14, bottom: 14 },
+            //shinyTexture: MergeAssets.Textures.UI.Shine, // replace with shiny sprite
+            shinyAlpha: 0.12,
+            defaultDurationSeconds: 2.4,
+            padding: 12,
+            iconSize: 64,
+            titleStyle: { ...MergeAssets.MainFont, fontSize: 32 },
+            subtitleStyle: { ...MergeAssets.MainFont, fontSize: 18 }
+        });
+
+        this.notificationRegistry.setSkin("achievement_toast", {
+            bgTexture: MergeAssets.Textures.UI.CurrencyPanel,
+            bgNineSlice: { left: 14, top: 14, right: 14, bottom: 14 },
+            shinyAlpha: 0.10,
+            defaultDurationSeconds: 3.0,
+            padding: 12,
+            iconSize: 64,
+            titleStyle: { ...MergeAssets.MainFont, fontSize: 24 },
+            subtitleStyle: { ...MergeAssets.MainFont, fontSize: 18 }
+        });
+
+        this.notificationRegistry.setSkin("shop_item_toast", {
+            bgTexture: MergeAssets.Textures.UI.CurrencyPanel,
+            bgNineSlice: { left: 14, top: 14, right: 14, bottom: 14 },
+            defaultDurationSeconds: 3.2,
+            padding: 12,
+            iconSize: 64,
+            titleStyle: { ...MergeAssets.MainFont, fontSize: 24 },
+            subtitleStyle: { ...MergeAssets.MainFont, fontSize: 18 }
+        });
+
+        this.notificationRegistry.setSkin("levelup_interstitial", {
+            bgTexture: MergeAssets.Textures.UI.CurrencyPanel, // replace with a big panel bg
+            bgNineSlice: { left: 20, top: 20, right: 20, bottom: 20 },
+            shinyAlpha: 0.10,
+            padding: 18,
+            iconSize: 120,
+            titleStyle: { ...MergeAssets.MainFont, fontSize: 44 },
+            subtitleStyle: { ...MergeAssets.MainFont, fontSize: 28 },
+            blackoutAlpha: 0.70
+        });
+
+        // setTimeout(() => {
+
+        //     this.notifications.toastPrize({ title: "Level Up!", subtitle: "Level " + 2, iconTexture: MergeAssets.Textures.Icons.BadgeMain });
+        // }, 100);
+
     }
 
     private initCurrency(): void {
@@ -146,7 +268,7 @@ export default class MergeHUD extends PIXI.Container {
         this.currencyHUDList.set(CurrencyType.MONEY, this.currencyHUD);
         this.currencyHUDList.set(CurrencyType.GEMS, this.currencyHUDGem);
 
-        this.topLayer.addChild(this.currencyHUD, this.currencyHUDGem);
+        this.hudLayer.addChild(this.currencyHUD, this.currencyHUDGem);
     }
 
     // --- Public API Methods (Restored) ---
@@ -173,8 +295,20 @@ export default class MergeHUD extends PIXI.Container {
 
     public setTimeRewards(timedRewards: TimedRewardService) {
         this.timedRewards = timedRewards;
+
+        this.timedRewards.onRewardClaimed.add((data: TimedRewardClaimResult, milestone: TimedRewardMilestone) => {
+            if (data.moneyAdded) {
+                this.notifications.toastPrize({ title: "+" + NumberConverter.format(data.moneyAdded), subtitle: "", iconTexture: milestone.definition.icon });
+            }
+            if (data.gemsAdded) {
+                this.notifications.toastPrize({ title: "+" + NumberConverter.format(data.gemsAdded), subtitle: "", iconTexture: milestone.definition.icon });
+            }
+            if (data.spawnedEntityLevel) {
+                this.notifications.toastPrize({ title: "Surprise Egg!", subtitle: "New Egg Dropped!", iconTexture: milestone.definition.icon });
+            }
+        })
         this.timedRewardsBar = new TimedRewardsBar(this.timedRewards, {
-            width: 400, height: 40,
+            width: 400, height: 30,
             barBg: { texture: PIXI.Texture.from(MergeAssets.Textures.UI.BarBg), left: 8, top: 8, right: 8, bottom: 8 },
             barFill: { texture: PIXI.Texture.from(MergeAssets.Textures.UI.BarFill), left: 8, top: 8, right: 8, bottom: 8 },
             barFillTint: MergeAssets.Textures.UI.FillColor,
@@ -188,7 +322,9 @@ export default class MergeHUD extends PIXI.Container {
         });
         this.addToHudLayer(this.timedRewardsBar);
     }
-
+    update(delta: number) {
+        this.notifications.update(delta);
+    }
     public updateLayout(): void {
         const padding = 20;
         const { topLeft, bottomRight, topRight } = Game.overlayScreenData;
@@ -199,7 +335,7 @@ export default class MergeHUD extends PIXI.Container {
         // Sound & Currency
         this.soundToggleButton.position.set(topRight.x - this.x - this.soundToggleButton.width / 2 - padding, padding + this.soundToggleButton.height / 2);
         this.currencyHUD.position.set(20, 20);
-        this.currencyHUDGem.position.set(20, 90);
+        this.currencyHUDGem.position.set(20, 80);
 
         // Top Center Items
         const centerX = (topRight.x - topLeft.x) / 2;
@@ -211,8 +347,8 @@ export default class MergeHUD extends PIXI.Container {
         this.entityCountText.position.set(this.generator.x + this.generator.width / 2, this.generator.y);
 
         // --- NEW LAYOUT: Bottom Right Column ---
-        this.shopButton.x = topRight.x - this.x - this.shopButton.width - padding;
-        this.shopButton.y = bottomRight.y - this.y - this.shopButton.height - padding;
+        this.shopButton.x = topRight.x - this.x - 80 - padding;
+        this.shopButton.y = bottomRight.y - this.y - 80 - padding;
 
         // Room Buttons stacked vertically ABOVE the shop button
         this.roomSelector.x = this.shopButton.x;
@@ -220,6 +356,11 @@ export default class MergeHUD extends PIXI.Container {
 
         this.missionHUD.position.set(20, 160);
         this.shopView.position.set(centerX, (bottomRight.y - topRight.y) / 2);
+
+        this.notifications.onOverlayChanged(Game.gameScreenData);
+
+        // this.missionHUD.x = 20
+        // this.missionHUD.y = bottomRight.y - this.y - 150
 
         this.refreshRoomButtons();
     }
@@ -235,7 +376,11 @@ export default class MergeHUD extends PIXI.Container {
     }
 
     private handleLevelUp(type: string, newLevel: number): void {
-        if (type === ProgressionType.MAIN) this.progressHUD.playLevelUpEffect(newLevel);
+        if (type === ProgressionType.MAIN) {
+            this.progressHUD.playLevelUpEffect(newLevel);
+            this.notifications.toastPrize({ title: "Level Up!", subtitle: "Level " + newLevel, iconTexture: MergeAssets.Textures.Icons.BadgeMain });
+
+        }
     }
 
     private notifyUiOpened(uiId: string): void {

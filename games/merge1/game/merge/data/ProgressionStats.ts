@@ -1,3 +1,4 @@
+// data/ProgressionStats.ts
 import GameStorage from "../storage/GameStorage";
 import { CurrencyType } from "./InGameEconomy";
 
@@ -45,6 +46,12 @@ const DEFAULT_STATS: IProgressionStats = {
     highestMergeLevel: 0
 };
 
+/**
+ * ProgressionStats
+ * - Owns lifetime stats (saved under GameStorage.state.stats)
+ * - Saves are guaranteed after any change (throttled) and flushed on tab hide/unload
+ * - Does NOT rely on update(dt) being called, but offers update(dt) for playtime tracking.
+ */
 export class ProgressionStats {
     private static _instance: ProgressionStats | null = null;
 
@@ -56,11 +63,31 @@ export class ProgressionStats {
     }
 
     private _stats: IProgressionStats = { ...DEFAULT_STATS };
+
+    // Persistence control
     private _dirty: boolean = false;
-    private _saveCooldown: number = 0;
+    private _flushTimer: number | null = null;
+    private _lastFlushAtMs: number = 0;
+
+    // Throttle LocalStorage writes (ms)
+    private readonly _minFlushIntervalMs: number = 150;
 
     private constructor() {
         this.load();
+
+        // Never lose stats on tab close/background
+        window.addEventListener("beforeunload", this.onBeforeUnload);
+        document.addEventListener("visibilitychange", this.onVisibilityChange);
+    }
+
+    public dispose(): void {
+        window.removeEventListener("beforeunload", this.onBeforeUnload);
+        document.removeEventListener("visibilitychange", this.onVisibilityChange);
+
+        if (this._flushTimer !== null) {
+            window.clearTimeout(this._flushTimer);
+            this._flushTimer = null;
+        }
     }
 
     public get snapshot(): Readonly<IProgressionStats> {
@@ -78,36 +105,75 @@ export class ProgressionStats {
         }
 
         this._dirty = false;
-        this._saveCooldown = 0;
+        this._lastFlushAtMs = 0;
+
+        if (this._flushTimer !== null) {
+            window.clearTimeout(this._flushTimer);
+            this._flushTimer = null;
+        }
     }
 
+    /**
+     * Optional. You can call recordPlaySeconds directly; this exists for convenience.
+     * Saving does not depend on update().
+     */
     public update(dtSeconds: number): void {
-        // Debounced saving (avoid writing every frame)
+        this.recordPlaySeconds(dtSeconds);
+    }
+
+    public flushNow(): void {
         if (!this._dirty) {
             return;
         }
 
-        this._saveCooldown -= dtSeconds;
-        if (this._saveCooldown > 0) {
-            return;
-        }
-
-        this.flushNow();
-    }
-
-    public flushNow(): void {
         this._dirty = false;
-        this._saveCooldown = 0;
+        this._lastFlushAtMs = Date.now();
 
+        // Persist a clone to avoid accidental reference sharing
         GameStorage.instance.updateState({
-            stats: this._stats
+            stats: { ...this._stats }
         });
+
+        if (this._flushTimer !== null) {
+            window.clearTimeout(this._flushTimer);
+            this._flushTimer = null;
+        }
     }
 
     private markDirty(): void {
         this._dirty = true;
-        this._saveCooldown = 0.35; // small debounce
+
+        const now = Date.now();
+        const elapsed = now - this._lastFlushAtMs;
+
+        // If enough time passed, flush immediately
+        if (elapsed >= this._minFlushIntervalMs) {
+            this.flushNow();
+            return;
+        }
+
+        // Otherwise schedule soonest flush (single timer)
+        if (this._flushTimer !== null) {
+            return;
+        }
+
+        const delay = Math.max(0, this._minFlushIntervalMs - elapsed);
+
+        this._flushTimer = window.setTimeout(() => {
+            this._flushTimer = null;
+            this.flushNow();
+        }, delay);
     }
+
+    private onBeforeUnload = (): void => {
+        this.flushNow();
+    };
+
+    private onVisibilityChange = (): void => {
+        if (document.visibilityState === "hidden") {
+            this.flushNow();
+        }
+    };
 
     // --- Recording helpers ---
 
@@ -141,9 +207,11 @@ export class ProgressionStats {
 
     public recordMerge(nextLevel: number): void {
         this._stats.mergesMade++;
+
         if (nextLevel > this._stats.highestMergeLevel) {
             this._stats.highestMergeLevel = nextLevel;
         }
+
         this.markDirty();
     }
 
@@ -175,5 +243,35 @@ export class ProgressionStats {
         }
 
         this.markDirty();
+    }
+
+    /**
+     * Optional helper for migrations / testing.
+     */
+    public resetToDefaults(flush: boolean = true): void {
+        this._stats = { ...DEFAULT_STATS };
+        this._dirty = true;
+        if (flush) {
+            this.flushNow();
+        } else {
+            this.markDirty();
+        }
+    }
+
+    public hardReset(): void {
+        // stop pending flush
+        if (this._flushTimer !== null) {
+            window.clearTimeout(this._flushTimer);
+            this._flushTimer = null;
+        }
+
+        this._stats = { ...DEFAULT_STATS };
+        this._dirty = false;
+        this._lastFlushAtMs = 0;
+
+        // write fresh defaults immediately (optional, but keeps memory+disk aligned)
+        GameStorage.instance.updateState({
+            stats: { ...this._stats }
+        });
     }
 }

@@ -85,7 +85,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
                 templateId: "t2_reach_player_level",
                 k,
                 tier: 2,
-                iconTextureId: MergeAssets.Textures.Icons.Badge1,
+                iconTextureId: MergeAssets.Textures.Icons.BadgeMain,
                 chestTextureId: MergeAssets.Textures.Icons.Coin,
                 title: `Reach player level ${target}`,
                 type: "reach_player_level",

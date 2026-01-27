@@ -75,9 +75,9 @@ export default class MergeScene extends GameScene {
         this.updateScore(0);
 
         const gameBounds = new PIXI.Rectangle(
-            100, 200,
+            100, 300,
             Game.DESIGN_WIDTH - 200,
-            Game.DESIGN_HEIGHT - 300
+            Game.DESIGN_HEIGHT - 400
         );
 
         const inputBounds = new PIXI.Rectangle(
@@ -121,6 +121,7 @@ export default class MergeScene extends GameScene {
     public update(delta: number): void {
         this.patternBackground.update(delta);
         this.layout();
+        this.hud.update(delta);
 
         if (this.paused) return;
 

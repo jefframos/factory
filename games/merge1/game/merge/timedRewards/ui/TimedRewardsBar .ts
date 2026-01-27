@@ -82,7 +82,7 @@ export class TimedRewardsBar extends PIXI.Container {
 
 
         this.timerText.anchor.set(0, 0.5);
-        this.timerText.position.set(14, 16);
+        this.timerText.position.set(14, h / 2 - 5);
         this.addChild(this.timerText);
 
         // Initialize reusable slots (positions will be updated in refresh)
@@ -108,7 +108,7 @@ export class TimedRewardsBar extends PIXI.Container {
         this.fillPlane.width = Math.max(minNineSliceWidth, maxFillWidth * p);
         this.fillPlane.visible = p > 0;
 
-        this.timerText.text = formatMMSS(this.service.getNextClaimRemainingSec());
+        this.timerText.text = formatMMSS(this.service.getTotalTimer());
 
         const visible = this.service.getVisibleMilestones();
         this.ticks.clear();

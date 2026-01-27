@@ -1,12 +1,15 @@
+import { Game } from "@core/Game";
 import BaseButton from "@core/ui/BaseButton";
 import { NineSliceProgressBar } from "@core/ui/NineSliceProgressBar";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
+import { Signal } from "signals";
 import MergeAssets from "../MergeAssets";
 import { MissionManager } from "../missions/MissionManager";
 import { MissionDefinition } from "../missions/MissionTypes";
 
 export class MissionHUD extends PIXI.Container {
+    public onClaim: Signal = new Signal();
     private bg: PIXI.NineSlicePlane;
     private icon: PIXI.Sprite;
     private titleText: PIXI.Text;
@@ -18,6 +21,8 @@ export class MissionHUD extends PIXI.Container {
     private checkIcon: PIXI.Sprite;
 
     private activeDef: MissionDefinition | null = null;
+
+    private scaleSin = 0;
 
     private readonly w: number;
     private readonly h: number;
@@ -91,30 +96,48 @@ export class MissionHUD extends PIXI.Container {
         // 7. Claim Button (Under the panel on the right)
         this.claimButton = new BaseButton({
             standard: {
-                width: 140,
-                height: 45,
+                width: 200,
+                height: 70,
                 texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Green || MergeAssets.Textures.Buttons.Blue),
-                fontStyle: new PIXI.TextStyle({ ...MergeAssets.MainFont, fontSize: 18 })
+                fontStyle: new PIXI.TextStyle({ ...MergeAssets.MainFont, fontSize: 25 }),
+                iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Gift2),
+                iconSize: { height: 100, width: 100 },
+                textOffset: { x: 45, y: 0 },
+                centerIconVertically: true
             },
             over: { tint: 0xeeeeee },
             click: {
                 callback: () => {
-                    if (MissionManager.instance.claimActive()) {
+                    const claim = MissionManager.instance.claimActive()
+                    if (claim) {
                         this.playClaimFx();
+
+                        this.onClaim.dispatch(claim)
                     }
                 }
             }
         });
         this.claimButton.setLabel('CLAIM');
         // Positioned under the right side of the main panel
-        this.claimButton.x = this.w - this.claimButton.width;
-        this.claimButton.y = this.h + 5;
+        this.claimButton.x = this.w / 2;
+        this.claimButton.y = this.h + this.claimButton.height / 2 + 5;
+
+        this.claimButton.pivot.x = this.claimButton.width / 2;
+        this.claimButton.pivot.y = this.claimButton.height / 2;
         this.addChild(this.claimButton);
 
         this.initEvents();
         this.syncInitialState();
     }
 
+    updateTransform(): void {
+        super.updateTransform();
+
+        if (this.claimButton.visible) {
+            this.scaleSin += Game.deltaTime * 3;
+            this.claimButton.scale.set(Math.sin(this.scaleSin) * 0.05 + 0.95)
+        }
+    }
     private initEvents(): void {
         MissionManager.instance.onActiveMissionChanged.add(this.applyMission, this);
         MissionManager.instance.onActiveMissionProgress.add(this.applyProgress, this);
@@ -187,12 +210,12 @@ export class MissionHUD extends PIXI.Container {
 
     private setClaimState(isCompleted: boolean): void {
         this.claimButton.visible = isCompleted;
-        this.checkIcon.visible = isCompleted;
 
-        if (isCompleted) {
+        if (isCompleted && !this.checkIcon.visible) {
             // Little bounce for the check icon
             gsap.fromTo(this.checkIcon.scale, { x: 0, y: 0 }, { x: 1, y: 1, duration: 0.4, ease: "back.out(2)" });
         }
+        this.checkIcon.visible = isCompleted;
     }
 
     private playClaimFx(): void {

@@ -40,6 +40,7 @@ export class TimedRewardSlot extends PIXI.Container {
         this.check.visible = isClaimed;
 
         this.icon.scale.set(ViewUtils.elementScaler(this.icon, 80, 60))
+        this.check.scale.set(ViewUtils.elementScaler(this.check, 30, 30))
 
         const alpha = 1//isClaimed ? 0.65 : 1.0;
         this.icon.alpha = alpha;

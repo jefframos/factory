@@ -18,7 +18,7 @@ export class CurrencyBox extends PIXI.Container {
     private background?: PIXI.NineSlicePlane;
 
     private currentValue: number = 0;
-    private readonly boxHeight: number = 60;
+    private readonly boxHeight: number = 50;
     private readonly padding: number = 10;  // Inner distance from left edge
     private readonly spacing: number = 2;  // Gap between icon and text
 

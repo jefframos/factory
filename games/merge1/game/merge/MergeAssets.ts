@@ -259,7 +259,7 @@ export default class MergeAssets {
             Speed: "ResourceBar_Single_Icon_Energy",
             // Check: "Toggle_Check_Single_Icon",
             CheckItem: "Icon_Check03_s",
-            Pill: "Label_Badge01_Yellow",
+            BadgeMain: "Label_Badge01_Yellow",
             SoundOn: "PictoIcon_Music_1",
             SoundOff: "PictoIcon_Music_1_Off",
             Badge1: "Label_Badge01_Red",
@@ -269,6 +269,7 @@ export default class MergeAssets {
         },
         UI: {
             CurrencyPanel: "BannerFrame03_Single",
+            NitificationPanel: "fade-shape",
             //NextCardBackground: "ItemFrame01_Single_Navy",
             EndRibbon: "BubbleFrame01_Hexagon_Bg_Green",
             Shine: "Image_Effect_Rotate",
@@ -277,6 +278,7 @@ export default class MergeAssets {
             FillColor: 0x3cf060,
             LevelBadge: "Label_Badge01_Yellow",
             Header: "ItemFrame01_Single_Hologram1",
+            Exclamation: "Icon_Exclamation",
             CardBg: "Button_SkillBtn_Blue",
             RowBg: "Button_SkillBtn_Orange",
             RowLock: "Button_SkillBtn_Dark",
@@ -339,7 +341,7 @@ export const SHOP_STYLE_CONFIG = {
         PADDING: { TOP: 20, BOTTOM: 20, LEFT: 20, RIGHT: 80 },
         Textures: {
             Background: MergeAssets.Textures.UI.RowLock,
-            TabActive: MergeAssets.Textures.Buttons.Blue,
+            TabActive: MergeAssets.Textures.Buttons.Orange,
             CloseBtn: MergeAssets.Textures.Buttons.Red,
             CloseIcon: "Icon_Close02",
             NavBtn: MergeAssets.Textures.Buttons.Blue,

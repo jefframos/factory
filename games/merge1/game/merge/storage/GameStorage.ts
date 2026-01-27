@@ -1,3 +1,4 @@
+import { IProgressionStats, ProgressionStats } from "../data/ProgressionStats";
 import { MissionDefinition } from "../missions/MissionTypes";
 
 export enum ProgressionType {
@@ -69,6 +70,8 @@ export interface IFarmSaveData {
     // OLD (keep for migration only):
     entities?: any[];
     coinsOnGround?: any[];
+
+    stats: IProgressionStats,
 
     // NEW:
     rooms?: Record<string, IRoomStateSaveData>;
@@ -154,10 +157,41 @@ export default class GameStorage {
         return {
             progressions: {},
             currencies: {},
+
+            // legacy (keep for migration only)
             entities: [],
             coinsOnGround: [],
+
+            stats: {
+                coinsCollected: 0,
+                gemsCollected: 0,
+                eggsHatched: 0,
+                mergesMade: 0,
+                animalsSpawned: 0,
+                eggsSpawned: 0,
+                sessionsStarted: 0,
+                totalPlaySeconds: 0,
+                coinsSpent: 0,
+                gemsSpent: 0,
+                highestMergeLevel: 0
+            },
+
+            rooms: {},
+            activeRoomId: undefined,
+
             shopHistory: {},
             flags: {},
+
+            missions: {
+                activeMissionId: null,
+                states: {}
+            },
+            missionStats: {
+                tapsOnCreatures: 0,
+                mergesDone: 0,
+                eggsHatched: 0,
+                lifetimeEarned: {}
+            }
         };
     }
     public getBool(key: string, fallback: boolean = false): boolean {
@@ -179,7 +213,15 @@ export default class GameStorage {
      */
     public resetGameProgress(reload: boolean = false): void {
         localStorage.removeItem(this.STORAGE_KEY);
+
         this._cachedState = this.createEmptyState();
-        if (reload) window.location.reload();
+        this.persist();
+
+        // reset singleton in-memory state too (if it exists)
+        ProgressionStats.instance.hardReset();
+
+        if (reload) {
+            window.location.reload();
+        }
     }
 }

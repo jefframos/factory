@@ -154,6 +154,7 @@ export class MergeMediator {
         const p = InGameProgress.instance.getProgression("MAIN");
         if (p.xp <= 0) {
             this.entities.spawnEgg();
+            this.entities.spawnEgg();
         }
 
         this.eggGenerator = new EggGenerator(() => {
@@ -299,8 +300,14 @@ export class MergeMediator {
 
         ProgressionStats.instance.recordPlaySeconds(dtSeconds);
         ProgressionStats.instance.update(dtSeconds);
-        MissionManager.instance.update(dtSeconds);
-        this.timedRewards.update(dtSeconds);
+
+        if (!this.ftueService.ftueEnabled) {
+
+            MissionManager.instance.update(dtSeconds);
+            this.timedRewards.update(dtSeconds);
+        }
+
+        this.hud.setFtueState(this.ftueService.isCompleted)
 
         const inFocus = !this.hud.isAnyUiOpen;
 

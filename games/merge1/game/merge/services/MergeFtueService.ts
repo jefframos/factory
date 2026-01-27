@@ -29,13 +29,24 @@ export interface MergeFtueServiceConfig {
 export class MergeFtueService {
     private readonly ftue: MergeFTUE;
 
-    private ftueEnabled: boolean = true;
+    public ftueEnabled: boolean = true;
     private ftueDirty: boolean = true;
 
     private lastAllowEgg: boolean = false;
     private lastAllowMerge: boolean = false;
 
     private isInFocus: boolean = true;
+    private completed: boolean = false;
+
+    public get isCompleted(): boolean {
+        if (this.completed) {
+            return true;
+        }
+        const s = ProgressionStats.instance.snapshot;
+        //console.log(s)
+        this.completed = s.mergesMade >= 1
+        return this.completed; // keep consistent with your current hard-gate in handleFtueState()
+    }
 
     public constructor(cfg: MergeFtueServiceConfig) {
         this.ftue = new MergeFTUE(cfg.parentLayer, {
@@ -45,7 +56,6 @@ export class MergeFtueService {
             completeOnFirstMerge: cfg.completeOnFirstMerge ?? true
         });
 
-        // Start off hard-disabled; driver will enable when appropriate.
         this.ftue.setFocus(true);
         this.ftue.setAllowedHints(false, false);
     }
@@ -130,7 +140,7 @@ export class MergeFtueService {
         const s = ProgressionStats.instance.snapshot;
 
         // Hard gate: after 2 merges, FTUE is permanently disabled.
-        if (s.mergesMade >= 2) {
+        if (s.mergesMade >= 1) {
             if (this.ftueEnabled) {
                 this.ftueEnabled = false;
                 this.ftue.setAllowedHints(false, false);

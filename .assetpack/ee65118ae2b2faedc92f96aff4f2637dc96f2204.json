@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769468506687,
-                "duration": 10.695899999999938,
+                "date": 1769518717497,
+                "duration": 19.9061999999999,
                 "success": true
             }
         },
@@ -208,8 +208,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769468506687,
-                "duration": 2320.7682,
+                "date": 1769518717498,
+                "duration": 3862.4790000000003,
                 "success": true
             }
         },
@@ -843,6 +843,16 @@
             "hash": "bMHu_g"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/Icon_Exclamation.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "UEShNw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/Icon_Exclamation_old.png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons",
             "metaData": {},
