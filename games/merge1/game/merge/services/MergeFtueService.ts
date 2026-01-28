@@ -1,5 +1,5 @@
-// services/MergeFtueService.ts
 import * as PIXI from "pixi.js";
+import { Signal } from "signals";
 import { ProgressionStats } from "../data/ProgressionStats";
 import { BlockMergeEntity } from "../entity/BlockMergeEntity";
 import { MergeEgg } from "../entity/MergeEgg";
@@ -7,45 +7,32 @@ import { MergeFTUE } from "../ui/ftue/MergeFTUE";
 
 export interface MergeFtueServiceConfig {
     parentLayer: PIXI.Container;
-
     fingerTexture: PIXI.Texture;
-
-    // MergeFTUE config
     maxPairDistancePx?: number;
     eggHoverOffsetY?: number;
-    completeOnFirstMerge?: boolean;
 }
 
-/**
- * Owns MergeFTUE and the "stats-driven, gated" FTUE driver logic.
- *
- * Responsibilities:
- * - Keep MergeFTUE entity tracking fed (spawn/remove/hatch).
- * - Decide allowEgg/allowMerge from ProgressionStats + tracked counts.
- * - Disable permanently when mergesMade >= 2.
- * - Respect focus (UI open/closed).
- * - Provide cheap external hooks: markDirty(), setFocus(), update().
- */
 export class MergeFtueService {
     private readonly ftue: MergeFTUE;
 
     public ftueEnabled: boolean = true;
     private ftueDirty: boolean = true;
 
-    private lastAllowEgg: boolean = false;
-    private lastAllowMerge: boolean = false;
-
     private isInFocus: boolean = true;
     private completed: boolean = false;
 
+    // Signals for the Mediator to listen to
+    public readonly onStarted = new Signal();
+    public readonly onCompleted = new Signal();
+
+    private startedEmitted: boolean = false;
+
     public get isCompleted(): boolean {
-        if (this.completed) {
-            return true;
-        }
+        if (this.completed) return true;
         const s = ProgressionStats.instance.snapshot;
-        //console.log(s)
-        this.completed = s.mergesMade >= 1
-        return this.completed; // keep consistent with your current hard-gate in handleFtueState()
+        // Logic: Finish after 2 merges (Level 1 -> 2, Level 2 -> 3)
+        this.completed = s.mergesMade >= 2;
+        return this.completed;
     }
 
     public constructor(cfg: MergeFtueServiceConfig) {
@@ -53,20 +40,13 @@ export class MergeFtueService {
             fingerTexture: cfg.fingerTexture,
             maxPairDistancePx: cfg.maxPairDistancePx ?? 260,
             eggHoverOffsetY: cfg.eggHoverOffsetY ?? -70,
-            completeOnFirstMerge: cfg.completeOnFirstMerge ?? true
+            completeOnFirstMerge: false // We want to handle completion manually after 2 merges
         });
 
         this.ftue.setFocus(true);
-        this.ftue.setAllowedHints(false, false);
+        // Start by allowing only merges (skipping eggs)
+        this.ftue.setAllowedHints(false, true);
     }
-
-    public dispose(): void {
-        this.ftue.dispose();
-    }
-
-    // ---------------------------------
-    // External hooks
-    // ---------------------------------
 
     public markDirty(): void {
         this.ftueDirty = true;
@@ -77,10 +57,6 @@ export class MergeFtueService {
         this.ftue.setFocus(inFocus);
         this.ftueDirty = true;
     }
-
-    // ---------------------------------
-    // Entity feed (called by mediator)
-    // ---------------------------------
 
     public onEntitySpawned(view: any): void {
         this.ftue.onEntitySpawned(view);
@@ -97,79 +73,56 @@ export class MergeFtueService {
         this.ftueDirty = true;
     }
 
-    /**
-     * Optional compatibility hook.
-     * If your merge system emits an event, you can call this to allow FTUE completion effects,
-     * but the gating itself is driven by ProgressionStats (mergesMade).
-     */
     public onMerged(): void {
         this.ftue.onMerged();
         this.ftueDirty = true;
     }
 
-    // ---------------------------------
-    // Update
-    // ---------------------------------
-
     public update(dtSeconds: number): void {
-        // Decide allowEgg/allowMerge (stats-driven)
         this.handleFtueState();
 
-        // If not in focus, service should keep hints off.
         if (!this.isInFocus) {
             this.ftue.setAllowedHints(false, false);
             return;
         }
 
         if (this.ftueEnabled) {
+            if (!this.startedEmitted) {
+                this.onStarted.dispatch();
+                this.startedEmitted = true;
+            }
             this.ftue.update(dtSeconds);
         } else {
             this.ftue.setAllowedHints(false, false);
         }
     }
 
-    // ---------------------------------
-    // Driver (extracted from mediator)
-    // ---------------------------------
-
     private handleFtueState(): void {
-        if (!this.ftueDirty) {
-            return;
-        }
+        if (!this.ftueDirty) return;
 
         const s = ProgressionStats.instance.snapshot;
 
-        // Hard gate: after 2 merges, FTUE is permanently disabled.
-        if (s.mergesMade >= 1) {
+        // Sequence: 
+        // 1. MergesMade 0 -> Show Lvl 1 merge hint
+        // 2. MergesMade 1 -> Show Lvl 2 merge hint
+        // 3. MergesMade 2 -> Done
+        if (s.mergesMade >= 2) {
             if (this.ftueEnabled) {
                 this.ftueEnabled = false;
                 this.ftue.setAllowedHints(false, false);
+                this.onCompleted.dispatch();
             }
             this.ftueDirty = false;
             return;
         }
 
-        const eggsExist = this.ftue.getTrackedEggCount ? (this.ftue.getTrackedEggCount() > 0) : true;
         const blocksCount = this.ftue.getTrackedBlockCount ? this.ftue.getTrackedBlockCount() : 0;
 
-        const allowEgg = (s.eggsHatched === 0) && eggsExist;
+        // We only enable hints if we have enough blocks to actually perform the merge
+        const canMerge = blocksCount >= 2;
 
-        const allowMergePrefilter = (s.mergesMade === 0) && (blocksCount >= 2);
-        const allowMerge = allowMergePrefilter && !allowEgg;
-
-        if (allowEgg === this.lastAllowEgg && allowMerge === this.lastAllowMerge) {
-            this.ftueDirty = false;
-            return;
-        }
-
-        this.lastAllowEgg = allowEgg;
-        this.lastAllowMerge = allowMerge;
-
-        const anyAllowed = allowEgg || allowMerge;
-
-        this.ftueEnabled = anyAllowed;
-        this.ftue.setAllowedHints(allowEgg, allowMerge);
-
+        this.ftueEnabled = true;
+        this.ftue.setAllowedHints(false, canMerge);
         this.ftueDirty = false;
     }
 }

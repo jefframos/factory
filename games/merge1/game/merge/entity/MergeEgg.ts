@@ -32,6 +32,7 @@ export class MergeEgg extends PIXI.Container {
     private setupVisuals(): void {
 
         this.addChild(this.shadowContainer);
+        this.scale.set(0.9)
 
         // 1. Shadow (Added first to stay behind)
         let tex = TextureBaker.getTexture('___shadow')
@@ -57,10 +58,10 @@ export class MergeEgg extends PIXI.Container {
         this.sprite = PIXI.Sprite.from(MergeAssets.Textures.Icons.Gift2);
         this.sprite.anchor.set(0.5, 0.9);
 
-        //this.setupGooglyEyes(['eye', 'eye'])
+        this.setupGooglyEyes(['eye', 'eye'])
 
         this.eyesContainer.x = 0;
-        this.eyesContainer.y = -this.sprite.height * 0.7;
+        this.eyesContainer.y = -this.sprite.height * 0.5;
 
         this.addChild(this.sprite);
         this.sprite.addChild(this.eyesContainer);
@@ -81,9 +82,16 @@ export class MergeEgg extends PIXI.Container {
         this.angle = 0;
 
         if (level > 2) {
-            this.sprite.texture = PIXI.Texture.from(MergeAssets.Textures.Icons.ChestGold)
-        } else {
             this.sprite.texture = PIXI.Texture.from(MergeAssets.Textures.Icons.Gift2)
+        } else if (level > 5) {
+            this.sprite.texture = PIXI.Texture.from(MergeAssets.Textures.Icons.Gift3)
+        } else if (level > 10) {
+            this.sprite.texture = PIXI.Texture.from(MergeAssets.Textures.Icons.Gift4)
+        } else if (level > 20) {
+            this.sprite.texture = PIXI.Texture.from(MergeAssets.Textures.Icons.Gift5)
+        } else {
+            this.sprite.texture = PIXI.Texture.from(MergeAssets.Textures.Icons.Gift1)
+
         }
         // Setup initial "in-air" pose
         this.sprite.y = -120;
@@ -112,7 +120,7 @@ export class MergeEgg extends PIXI.Container {
         this.eyesContainer.removeChildren().forEach(child => child.destroy());
 
         // 2. Determine eye count (1 or 2)
-        const eyeCount = 1
+        const eyeCount = 2
 
         // 3. Define scaling logic
         // We want the eyes to fit within the sprite width. 
@@ -124,7 +132,7 @@ export class MergeEgg extends PIXI.Container {
         // If 1 eye, it can be large. If 2, they must be smaller to fit side-by-side.
         const targetEyeWidth = eyeCount === 1
             ? availableWidth * 0.6  // One big eye
-            : availableWidth * 0.4; // Two medium eyes
+            : availableWidth * 0.3; // Two medium eyes
 
         // 4. Position and Render
         for (let i = 0; i < eyeCount; i++) {
@@ -135,7 +143,7 @@ export class MergeEgg extends PIXI.Container {
             // --- SCALE ---
             // Scale = (Desired Pixel Size) / (Original Texture Pixel Size)
             const scaleBase = targetEyeWidth / eye.texture.width;
-            const randomVariation = 0.8 + Math.random() * 0.4; // 80% to 120% size
+            const randomVariation = 0.9 + Math.random() * 0.2; // 80% to 120% size
             eye.scale.set(scaleBase * randomVariation);
 
             // --- POSITIONING ---

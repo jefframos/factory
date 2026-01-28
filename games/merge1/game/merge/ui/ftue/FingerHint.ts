@@ -1,3 +1,4 @@
+import ViewUtils from "@core/utils/ViewUtils";
 import * as PIXI from "pixi.js";
 
 export type FingerMode = "hidden" | "hover" | "drag";
@@ -35,6 +36,7 @@ export class FingerHint extends PIXI.Container {
         this.addChild(this.finger);
 
         this.finger.anchor.set(-0.1, -0.1);
+        this.finger.scale.set(ViewUtils.elementScaler(this.finger, 100))
 
         this.visible = false;
         this.alpha = 0;

@@ -5,6 +5,7 @@ import SoundToggleButton from "@core/ui/SoundToggleButton";
 import { NumberConverter } from "@core/utils/NumberConverter";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
+import { DevGuiManager } from "../../utils/DevGuiManager";
 import MergeAssets from "../MergeAssets";
 import { CurrencyType } from "../data/InGameEconomy";
 import { InGameProgress } from "../data/InGameProgress";
@@ -56,7 +57,6 @@ export default class MergeHUD extends PIXI.Container {
 
     private soundToggleButton: SoundToggleButton;
     private shopButton!: BaseButton;
-    private entityCountText: PIXI.Text;
     private currencyHUDList: Map<CurrencyType, CurrencyBox> = new Map();
 
     // --- State & Signals ---
@@ -118,9 +118,6 @@ export default class MergeHUD extends PIXI.Container {
         this.generator.onSpeedUpRequested = () => this.onSpeedUpRequested();
         this.hudLayer.addChild(this.generator);
 
-        this.entityCountText = new PIXI.Text("0/0", { ...MergeAssets.MainFont, fontSize: 22 });
-        this.entityCountText.anchor.set(0.5);
-        this.hudLayer.addChild(this.entityCountText);
 
         this.missionHUD = new MissionHUD(320, 80);
         this.hudLayer.addChild(this.missionHUD);
@@ -151,23 +148,25 @@ export default class MergeHUD extends PIXI.Container {
                 }
             }
         });
-        // this.missionHUD.onClaim.add((claim: MissionClaimResult) => {
-        //     if (claim.rewards && claim.rewards.currencies) {
-        //         for (const currencyType in claim.rewards.currencies) {
-        //             const amount = claim.rewards.currencies[currencyType as CurrencyType];
-        //             if (amount) {
-        //                 // Handle currency reward
-        //                 let icon: string = MergeAssets.Textures.Icons.CoinPileSmall
-        //                 if (currencyType == CurrencyType.GEMS) {
-        //                     icon = MergeAssets.Textures.Icons.GemPile
-        //                 }
-        //                 this.notifications.toastPrize({ title: "+" + NumberConverter.format(amount), subtitle: "", iconTexture: icon });
 
-
-        //             }
-        //         }
-        //     }
-        // })
+        DevGuiManager.instance.addButton('rewardPopup', () => {
+            RewardManager.instance.showReward(
+                [
+                    {
+                        type: CurrencyType.GEMS,
+                        value: 5,
+                        tier: 1
+                    },
+                    {
+                        type: CurrencyType.MONEY,
+                        value: 250,
+                        tier: 1
+                    }
+                ],
+                this.coinEffects,
+                this
+            );
+        })
 
         // 5. Room Selector Integration
         this.roomSelector = new RoomSelector(["room_0", "room_1"]);
@@ -207,6 +206,7 @@ export default class MergeHUD extends PIXI.Container {
         this.missionHUD.visible = ftueEnabled
         this.timedRewardsBar.visible = ftueEnabled
         this.shopButton.visible = ftueEnabled
+        this.generator.visible = ftueEnabled
 
     }
 
@@ -377,8 +377,6 @@ export default class MergeHUD extends PIXI.Container {
 
         // Bottom Center (Generator)
         this.generator.position.set(bottomRight.x - this.generator.width - padding - this.x, bottomRight.y - 80 - this.y);
-        //this.generator.position.set(centerX - this.generator.width / 2, bottomRight.y - 80 - this.y);
-        this.entityCountText.position.set(this.generator.x + this.generator.width / 2, this.generator.y);
 
         // --- NEW LAYOUT: Bottom Right Column ---
         this.shopButton.x = topRight.x - this.x - 80 - padding;
@@ -432,12 +430,12 @@ export default class MergeHUD extends PIXI.Container {
     }
 
     public updateEntityCount(current: number, max: number): void {
-        this.entityCountText.text = `${current}/${max}`;
+        this.generator.setCountLabel(`${current}/${max}`)
     }
 
     public setGeneratorFullState(isFull: boolean): void {
         this.generator.setFullState(isFull);
-        (this.entityCountText.style as any).fill = isFull ? 0xff4444 : 0xffffff;
+        //(this.entityCountText.style as any).fill = isFull ? 0xff4444 : 0xffffff;
     }
 
     public updateProgress(ratio: number): void {

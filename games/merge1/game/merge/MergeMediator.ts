@@ -1,7 +1,7 @@
-// MergeMediator.ts
 import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
 import TiledContainer from "@core/tiled/TiledContainer";
 import * as PIXI from "pixi.js";
+import { DevGuiManager } from "../utils/DevGuiManager";
 import { GridBaker } from "./core/GridBaker";
 import { CurrencyType, InGameEconomy } from "./data/InGameEconomy";
 import { InGameProgress } from "./data/InGameProgress";
@@ -23,9 +23,9 @@ import { RoomId } from "./rooms/RoomRegistry";
 import { RoomService } from "./rooms/RoomService";
 import { MergeFtueService } from "./services/MergeFtueService";
 import { MergeInputMergeService } from "./services/MergeInputMergeService";
+import { ZoomService } from "./services/ZoomService";
 import { TimedRewardRegistry } from "./timedRewards/TimedRewardRegistry";
 import { TimedRewardService } from "./timedRewards/TimedRewardService";
-import { TimedRewardsBar } from "./timedRewards/ui/TimedRewardsBar ";
 import MergeHUD from "./ui/MergeHUD";
 import ShopView from "./ui/shop/ShopView";
 import { CoinEffectLayer } from "./vfx/CoinEffectLayer";
@@ -38,7 +38,6 @@ export class MergeMediator {
     private readonly coins: CoinManager;
     private readonly saver: GameSaveManager;
 
-    // Used only for gating room switches and UI rules. Owned by inputService.
     private activeEntity: BlockMergeEntity | MergeEgg | null = null;
 
     private readonly MAX_COINS_PER_ENTITY: number = 3;
@@ -51,13 +50,13 @@ export class MergeMediator {
 
     private readonly rooms: RoomService;
     private readonly inputService: MergeInputMergeService;
+    private readonly zoomService: ZoomService;
 
     private readonly eggGenerator: EggGenerator;
 
     private readonly ftueService: MergeFtueService;
 
     private readonly timedRewards: TimedRewardService;
-    private readonly timedRewardsBar: TimedRewardsBar;
 
     public constructor(
         private readonly container: PIXI.Container,
@@ -74,67 +73,20 @@ export class MergeMediator {
             fallbackTier: 1
         });
 
-
         this.gridView = new EntityGridView();
         this.container.addChild(this.gridView);
 
-        // const reward = (prizes: PrizeItem[]) => {
-        //     const coinRewardData: PrizePopupData = {
-        //         prizes: prizes,
-        //         waitForClaim: true,
-        //         effects: {
-        //             layer: this.coinEffects, // Your CoinEffectLayer instance
-        //             getHudTarget: (type: CurrencyType) => {
-        //                 // This pulls the global position from your actual HUD
-        //                 return this.hud.getCurrencyTargetGlobalPos(type);
-        //             }
-        //         },
-        //         claimCallback: async () => {
-        //             await PromiseUtils.await(750)
-        //             prizes.forEach(element => {
-        //                 if (element.type == CurrencyType.MONEY || element.type == CurrencyType.GEMS) {
-        //                     InGameEconomy.instance.add(element.type, element.value)
-        //                 }
-        //             });
-        //         }
-        //     }
-        //     PopupManager.instance.show('prize', coinRewardData);
-        // }
-        // DevGuiManager.instance.addButton('prizePopup', () => {
-        //     const data = StaticData.getAnimalData(2)
-        //     console.log(data)
-        //     reward([
-        //         { type: CurrencyType.ENTITY, value: 2, tier: 0 },
-        //     ])
-        //     // reward([
-        //     //     { type: CurrencyType.MONEY, value: 10000, tier: 2 },
-        //     //     { type: CurrencyType.GEMS, value: 5, tier: 3 }
-        //     // ])
-        // });
-
+        // Tiled Background Initialization
         if (ExtractTiledFile.TiledData) {
-            console.log(ExtractTiledFile.getTiledFrom('garden'))
-
-            const tiled = new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Background'])
-            // 1. Grab the top-level children (the containers you mentioned)
+            const tiled = new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Background']);
             const topLevelChildren = [...tiled.children];
 
             topLevelChildren.forEach((child) => {
-                // Check if this child is a Container (and not a Sprite or other object)
                 if (child instanceof PIXI.Container) {
-
-                    // 2. Loop through the content INSIDE this sub-container
-                    // We use a spread here too because we are removing them as we go
                     const subChildren = [...child.children];
-
                     subChildren.forEach((grandChild) => {
-                        // 3. Capture the global position before moving
                         const worldPos = grandChild.getGlobalPosition();
-
-                        // 4. Transfer to the gridView
                         this.gridView.addChild(grandChild);
-
-                        // 5. Convert back to gridView's local space to maintain position
                         const localPos = this.gridView.toLocal(worldPos);
                         grandChild.position.set(localPos.x, localPos.y);
                     });
@@ -142,8 +94,8 @@ export class MergeMediator {
             });
         }
 
-
         this.baker = new GridBaker(this.walkBounds, 90);
+        this.zoomService = new ZoomService(this.container);
 
         this.entities = new EntityManager(
             this.gridView,
@@ -165,15 +117,7 @@ export class MergeMediator {
 
         this.rooms = new RoomService({
             saver: this.saver,
-            canSwitchNow: () => {
-                if (this.activeEntity) {
-                    return false;
-                }
-                if (this.hud.isAnyUiOpen) {
-                    return false;
-                }
-                return true;
-            }
+            canSwitchNow: () => !this.activeEntity && !this.hud.isAnyUiOpen
         });
 
         this.inputService = new MergeInputMergeService({
@@ -186,43 +130,58 @@ export class MergeMediator {
             instantCollectCoinOnGrab: true
         });
 
-        // Dirty -> save
-        this.entities.onDirty.add(() => this.saver.markDirty());
-        this.coins.onDirty.add(() => this.saver.markDirty());
-
-        // Service -> mediator state
-        this.inputService.onActiveChanged.add((active: any) => {
-            this.activeEntity = active;
-        });
-
-        // FTUE service
+        // FTUE Service Initialization
         const hintLayer = (this.hud as any).getHintLayer ? (this.hud as any).getHintLayer() : this.hud;
         this.ftueService = new MergeFtueService({
             parentLayer: hintLayer,
             fingerTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Finger),
             maxPairDistancePx: 260,
-            eggHoverOffsetY: -70,
-            completeOnFirstMerge: true
+            eggHoverOffsetY: -70
         });
 
-        // Any gameplay interaction that changes entities/highlights should re-evaluate FTUE
-        this.inputService.onDirty.add(() => {
-            this.ftueService.markDirty();
+        // --- FTUE & ZOOM WIRING ---
+        let started = false;
+        this.ftueService.onStarted.add(() => {
+            this.zoomService.setZoom(1.3, 0.6);
+            started = true;
         });
+
+        this.ftueService.onCompleted.add(() => {
+            this.zoomService.setZoom(1.0, 0.8);
+            if (started) {
+                this.entities.spawnAnimal(1);
+                this.entities.spawnAnimal(1);
+                this.entities.spawnAnimal(2);
+            }
+        });
+
+        // Listen for merges to handle the "fast-track" spawns
+        this.inputService.onMergePerformed.add((resultLevel: number) => {
+            const s = ProgressionStats.instance.snapshot;
+            // After first merge (Lvl 1 -> 2), instantly spawn another Lvl 2 for the second merge
+            if (s.mergesMade === 1) {
+                this.entities.spawnAnimal(resultLevel);
+                this.ftueService.markDirty();
+            }
+        });
+
+        // Signal Wiring
+        this.entities.onDirty.add(() => this.saver.markDirty());
+        this.coins.onDirty.add(() => this.saver.markDirty());
+        this.inputService.onActiveChanged.add((active: any) => this.activeEntity = active);
+        this.inputService.onDirty.add(() => this.ftueService.markDirty());
 
         this.wireEntitySignals();
-
-        // Boot room system (restores active room into runtime)
         this.loadSave();
-
         this.setupInput();
         this.setupShop();
 
-        // Ensure at least one egg for brand-new player
-        const p = InGameProgress.instance.getProgression("MAIN");
-        if (p.xp <= 0) {
-            this.entities.spawnEgg();
-            this.entities.spawnEgg();
+        // --- START STATE LOGIC ---
+        const snap = ProgressionStats.instance.snapshot;
+        if (snap.mergesMade < 2 && this.entities.entitiesByView.size < 2) {
+            // New player: skip eggs, spawn 2 matching level 1 entities immediately
+            this.entities.spawnAnimal(1);
+            this.entities.spawnAnimal(1);
         }
 
         this.eggGenerator = new EggGenerator(() => {
@@ -234,56 +193,49 @@ export class MergeMediator {
             return false;
         });
 
-        // Rooms UI wiring
-        this.hud.onRoomSelected.add((roomId: RoomId) => {
-            this.rooms.requestSwitch(roomId);
-        });
-
+        // UI Wiring
+        this.hud.onRoomSelected.add((roomId: RoomId) => this.rooms.requestSwitch(roomId));
         this.rooms.onRoomChanged.add((roomId: RoomId) => {
             this.hud.setCurrentRoom(roomId);
-
-            // Ensure no dangling highlight/drag state after restore
             this.inputService.clearState();
-
             this.ftueService.markDirty();
         });
 
-        this.ftueService.markDirty();
-
+        // Timed Rewards
         const registry = TimedRewardRegistry.createDefault5m();
-
         this.timedRewards = new TimedRewardService({
             registry,
             context: {
                 getMoney: () => InGameEconomy.instance.getAmount(CurrencyType.MONEY),
                 addMoney: (amt) => InGameEconomy.instance.add(CurrencyType.MONEY, amt),
-
                 getGems: () => InGameEconomy.instance.getAmount(CurrencyType.GEMS),
                 addGems: (amt) => InGameEconomy.instance.add(CurrencyType.GEMS, amt),
-
                 getHighestEntityLevel: () => {
                     let highest = 1;
                     this.entities.forEach((logic) => {
-                        if (logic.data.type !== "animal") {
-                            return;
-                        }
-                        highest = Math.max(highest, logic.data.level);
+                        if (logic.data.type === "animal") highest = Math.max(highest, logic.data.level);
                     });
                     return highest;
                 },
-
-                spawnEntityAtLevel: (level) => {
-                    // If you later want “direct animal spawn”, replace this call.
-                    const egg = this.entities.spawnEgg(undefined, { level }, true);
-                    return !!egg;
-                }
+                spawnEntityAtLevel: (level) => !!this.entities.spawnEgg(undefined, { level }, true)
             },
             visibleWindowSize: 3
         });
 
-        this.hud.setTimeRewards(this.timedRewards)
+        this.hud.setTimeRewards(this.timedRewards);
+        this.hud.onSpeedUpRequested = () => {
+            this.eggGenerator.activateSpeedUp(100)
+        }
+        this.ftueService.markDirty();
 
 
+        DevGuiManager.instance.addButton('spawnHighEntity', () => {
+            const p = InGameProgress.instance.getProgression('MAIN');
+            //this.entities.spawnAnimal(Math.max(1, p.highestMergeLevel - 2));
+            this.entities.spawnEgg(undefined, {
+                level: Math.max(1, p.highestMergeLevel - 2)
+            }, true);
+        })
     }
 
     private loadSave(): void {
@@ -294,25 +246,17 @@ export class MergeMediator {
     private wireEntitySignals(): void {
         this.entities.onEntitySpawned.add((view: any) => {
             this.ftueService.onEntitySpawned(view);
-
             if (view instanceof MergeEgg) {
                 ProgressionStats.instance.recordEggSpawned(1);
-                return;
-            }
-
-            if (view instanceof BlockMergeEntity) {
+            } else if (view instanceof BlockMergeEntity) {
                 ProgressionStats.instance.recordAnimalSpawned(1);
             }
         });
 
-        this.entities.onEntityRemoved.add((view: any) => {
-            this.ftueService.onEntityRemoved(view);
-        });
-
+        this.entities.onEntityRemoved.add((view: any) => this.ftueService.onEntityRemoved(view));
         this.entities.onEggHatched.add((egg: any, spawned: any) => {
             ProgressionStats.instance.recordEggHatched(1);
             MissionManager.instance.reportEggHatched(1);
-
             this.ftueService.onEggHatched(egg, spawned);
         });
     }
@@ -332,27 +276,17 @@ export class MergeMediator {
 
     private setupShop(): void {
         this.shopView = this.hud.shopView;
-
         this.shopView.setBoardCallback(() => this.entities.size >= InGameProgress.instance.getMaxGridSlots() + 15);
-
         this.shopView.onBuyConfirmed.add((itemId: string) => {
             const confirmedLevel = ShopManager.instance.tryPurchase(itemId);
-            if (confirmedLevel === null) {
-                return;
+            if (confirmedLevel !== null) {
+                if (this.entities.spawnEgg(undefined, { level: confirmedLevel }, true)) {
+                    this.ftueService.markDirty();
+                    this.shopView.refreshStates();
+                }
             }
-
-            const egg = this.entities.spawnEgg(undefined, { level: confirmedLevel }, true);
-            if (!egg) {
-                return;
-            }
-
-            this.ftueService.markDirty();
-            this.shopView.refreshStates();
         });
-
-        InGameEconomy.instance.onCurrencyChanged.add(() => {
-            this.shopView.refreshStates();
-        });
+        InGameEconomy.instance.onCurrencyChanged.add(() => this.shopView.refreshStates());
     }
 
     private decrementPendingCoin(ownerId: string): void {
@@ -369,26 +303,22 @@ export class MergeMediator {
         ProgressionStats.instance.recordPlaySeconds(dtSeconds);
         ProgressionStats.instance.update(dtSeconds);
         this.inputService.update(dtSeconds);
+        this.zoomService.update(dtSeconds);
 
         if (!this.ftueService.ftueEnabled) {
-
             MissionManager.instance.update(dtSeconds);
             this.timedRewards.update(dtSeconds);
         }
 
-        this.hud.setFtueState(this.ftueService.isCompleted)
-
+        this.hud.setFtueState(this.ftueService.isCompleted);
         const inFocus = !this.hud.isAnyUiOpen;
-
-        // Keep FTUE focus in sync (service handles show/hide)
         this.ftueService.setFocus(inFocus);
 
-        // Generator / HUD
         if (inFocus) {
             const maxEntities = InGameProgress.instance.getMaxGridSlots();
             const isFull = this.entities.size >= maxEntities;
 
-            if (!isFull) {
+            if (!isFull && this.ftueService.isCompleted) {
                 this.eggGenerator.update(dtSeconds);
                 this.hud.updateProgress(this.eggGenerator.ratio);
             } else {
@@ -399,23 +329,15 @@ export class MergeMediator {
             this.hud.setGeneratorFullState(isFull);
         }
 
-        // Gameplay update
         this.gridView.update(dtSeconds, this.walkBounds);
 
-        // Coins from generators
+        // Coin Generation Logic
         this.entities.forEach((logic, view) => {
-            if (!logic.generator || logic.data.type !== "animal") {
-                return;
-            }
+            if (!logic.generator || logic.data.type !== "animal") return;
+            if (logic.data.pendingCoins >= this.MAX_COINS_PER_ENTITY) return;
 
-            if (logic.data.pendingCoins >= this.MAX_COINS_PER_ENTITY) {
-                return;
-            }
-
-            const willCoin = logic.generator.update(dtSeconds);
-            if (willCoin) {
+            if (logic.generator.update(dtSeconds)) {
                 logic.data.pendingCoins++;
-
                 const config = StaticData.getAnimalData(logic.data.level);
                 const offset = (view as BaseMergeEntity)?.coinOffset ?? new PIXI.Point();
 
@@ -429,10 +351,7 @@ export class MergeMediator {
             }
         });
 
-        // FTUE (driver + visuals inside the service)
         this.ftueService.update(dtSeconds);
-
-        // Save debounce
         this.saver.update(dtSeconds);
     }
 }

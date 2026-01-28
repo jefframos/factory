@@ -156,7 +156,10 @@ export default class MergeScene extends GameScene {
         const centerY = Game.DESIGN_HEIGHT / 2;
 
         this.patternBackground.position.set(centerX, centerY);
-        //this.gameplayContainer.position.set(centerX, centerY);
+
+
+        this.gameplayContainer.position.set(centerX, centerY);
+        this.gameplayContainer.pivot.set(centerX, centerY);
 
         this.background.anchor.set(0.5);
         this.background.position.set(centerX, centerY);

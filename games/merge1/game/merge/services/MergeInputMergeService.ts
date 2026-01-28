@@ -133,7 +133,7 @@ export class MergeInputMergeService {
             const merged = this.tryMergeOnRelease();
             if (merged) {
                 this.deps.gridView.setActive(null);
-                this.activeEntity = merged;
+                this.activeEntity = null//merged;
                 this.onActiveChanged.dispatch(null);
                 this.onDirty.dispatch();
                 return;

@@ -7,7 +7,6 @@
         "coinValue": 5,
         "spawnTimer": 10,
         "colors": [
-            "#ffffff",
             "#a8e5ff"
         ]
     },
@@ -17,10 +16,9 @@
         "spriteId": "Rabbit_Down",
         "animationId": "walk",
         "coinValue": 12,
-        "spawnTimer": 9.5,
+        "spawnTimer": 10,
         "colors": [
-            "#fb7378",
-            "#FFFFFF"
+            "#fb7378"
         ]
     },
     {
@@ -29,10 +27,9 @@
         "spriteId": "Pig_Down",
         "animationId": "walk",
         "coinValue": 30,
-        "spawnTimer": 9,
+        "spawnTimer": 10,
         "colors": [
-            "#F7941D",
-            "#8C6239"
+            "#F7941D"
         ]
     },
     {
@@ -41,10 +38,9 @@
         "spriteId": "Cat_Down",
         "animationId": "walk",
         "coinValue": 75,
-        "spawnTimer": 8.5,
+        "spawnTimer": 10,
         "colors": [
-            "#FFF200",
-            "#F7941D"
+            "#FFF200"
         ]
     },
     {
@@ -53,10 +49,9 @@
         "spriteId": "Fox_Down",
         "animationId": "walk",
         "coinValue": 180,
-        "spawnTimer": 8,
+        "spawnTimer": 10,
         "colors": [
-            "#00A651",
-            "#FFFFFF"
+            "#00A651"
         ]
     },
     {
@@ -65,7 +60,7 @@
         "spriteId": "Mouse_Down",
         "animationId": "walk",
         "coinValue": 450,
-        "spawnTimer": 7.5,
+        "spawnTimer": 10,
         "colors": [
             "#2E3192",
             "#92278F"
@@ -77,7 +72,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 1100,
-        "spawnTimer": 7,
+        "spawnTimer": 10,
         "colors": [
             "#8C6239",
             "#fffdfd",
@@ -90,9 +85,8 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 2800,
-        "spawnTimer": 6.5,
+        "spawnTimer": 10,
         "colors": [
-            "#ED1C24",
             "#F7941D",
             "#FFF200",
             "#00A651",
@@ -106,8 +100,10 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 7200,
-        "spawnTimer": 6,
+        "spawnTimer": 10,
         "colors": [
+            "#FFFFFF",
+            "#FF7BAC",
             "#FF7BAC",
             "#FFFFFF"
         ]
@@ -118,22 +114,25 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 18000,
-        "spawnTimer": 5.8,
+        "spawnTimer": 10,
         "colors": [
             "#92278F",
+            "#FF7BAC",
             "#2E3192"
         ]
     },
     {
         "level": 11,
-        "name": "White Van Cat",
+        "name": "Brazillian Ground Cat",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 45000,
-        "spawnTimer": 5.6,
+        "spawnTimer": 10,
         "colors": [
-            "#FFFFFF",
-            "#ED1C24"
+            "#89e261",
+            "#89e261",
+            "#f4e53b",
+            "#3b4df4"
         ]
     },
     {
@@ -142,7 +141,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 110000,
-        "spawnTimer": 5.4,
+        "spawnTimer": 10,
         "colors": [
             "#ED1C24",
             "#FBB03B",
@@ -155,7 +154,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 280000,
-        "spawnTimer": 5.2,
+        "spawnTimer": 10,
         "colors": [
             "#F7941D",
             "#FBB03B"
@@ -167,7 +166,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 700000,
-        "spawnTimer": 5,
+        "spawnTimer": 10,
         "colors": [
             "#FFF200",
             "#5e5e5e"
@@ -179,7 +178,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 1800000,
-        "spawnTimer": 4.8,
+        "spawnTimer": 10,
         "colors": [
             "#00A651",
             "#ED1C24",
@@ -192,7 +191,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 4500000,
-        "spawnTimer": 4.6,
+        "spawnTimer": 10,
         "colors": [
             "#2E3192",
             "#FFFFFF",
@@ -205,7 +204,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 12000000,
-        "spawnTimer": 4.4,
+        "spawnTimer": 10,
         "colors": [
             "#00A651",
             "#FFFFFF",
@@ -218,7 +217,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 30000000,
-        "spawnTimer": 4.2,
+        "spawnTimer": 10,
         "colors": [
             "#FFFF00",
             "#ED1C24",
@@ -231,7 +230,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 75000000,
-        "spawnTimer": 4,
+        "spawnTimer": 10,
         "colors": [
             "#FF7BAC",
             "#2E3192",
@@ -244,7 +243,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 200000000,
-        "spawnTimer": 3.8,
+        "spawnTimer": 10,
         "colors": [
             "#92278F",
             "#FFFFFF"
@@ -256,7 +255,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 500000000,
-        "spawnTimer": 3.6,
+        "spawnTimer": 10,
         "colors": [
             "#F7941D",
             "#FFFFFF",
@@ -269,7 +268,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 1200000000,
-        "spawnTimer": 3.4,
+        "spawnTimer": 10,
         "colors": [
             "#ED1C24",
             "#FFD700"
@@ -281,7 +280,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 3500000000,
-        "spawnTimer": 3.2,
+        "spawnTimer": 10,
         "colors": [
             "#F7941D",
             "#2E3192",
@@ -294,7 +293,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 10000000000,
-        "spawnTimer": 3,
+        "spawnTimer": 10,
         "colors": [
             "#FFF200",
             "#662D91"
@@ -306,7 +305,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 25000000000,
-        "spawnTimer": 2.9,
+        "spawnTimer": 10,
         "colors": [
             "#00A651",
             "#F7941D",
@@ -319,7 +318,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 65000000000,
-        "spawnTimer": 2.8,
+        "spawnTimer": 10,
         "colors": [
             "#39FF14",
             "#FF00FF",
@@ -332,7 +331,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 150000000000,
-        "spawnTimer": 2.7,
+        "spawnTimer": 10,
         "colors": [
             "#E0FFFF",
             "#00BFFF",
@@ -345,7 +344,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 400000000000,
-        "spawnTimer": 2.6,
+        "spawnTimer": 10,
         "colors": [
             "#FF4500",
             "#8B0000",
@@ -358,7 +357,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 1000000000000,
-        "spawnTimer": 2.5,
+        "spawnTimer": 10,
         "colors": [
             "#000000",
             "#4B0082",
@@ -371,7 +370,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 2800000000000,
-        "spawnTimer": 2.4,
+        "spawnTimer": 10,
         "colors": [
             "#B8860B",
             "#8B4513",
@@ -384,7 +383,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 7500000000000,
-        "spawnTimer": 2.3,
+        "spawnTimer": 10,
         "colors": [
             "#FFB7C5",
             "#FF69B4",
@@ -397,7 +396,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 20000000000000,
-        "spawnTimer": 2.2,
+        "spawnTimer": 10,
         "colors": [
             "#000080",
             "#008B8B",
@@ -410,7 +409,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 55000000000000,
-        "spawnTimer": 2.1,
+        "spawnTimer": 10,
         "colors": [
             "#FFD700",
             "#FF8C00",
@@ -423,7 +422,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 140000000000000,
-        "spawnTimer": 2.0,
+        "spawnTimer": 10,
         "colors": [
             "#ADFF2F",
             "#00FF00",
@@ -436,7 +435,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 350000000000000,
-        "spawnTimer": 1.9,
+        "spawnTimer": 10,
         "colors": [
             "#9932CC",
             "#8A2BE2",
@@ -449,7 +448,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 900000000000000,
-        "spawnTimer": 1.8,
+        "spawnTimer": 10,
         "colors": [
             "#708090",
             "#2F4F4F",
@@ -462,7 +461,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 2500000000000000,
-        "spawnTimer": 1.7,
+        "spawnTimer": 10,
         "colors": [
             "#FF0000",
             "#FFFFFF",
@@ -475,7 +474,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 6000000000000000,
-        "spawnTimer": 1.6,
+        "spawnTimer": 10,
         "colors": [
             "#FFFACD",
             "#E6E6FA",
@@ -488,7 +487,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 15000000000000000,
-        "spawnTimer": 1.5,
+        "spawnTimer": 10,
         "colors": [
             "#FF0000",
             "#FF4500",
@@ -501,7 +500,7 @@
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 50000000000000000,
-        "spawnTimer": 1.4,
+        "spawnTimer": 10,
         "colors": [
             "#FFFFFF",
             "#000000",

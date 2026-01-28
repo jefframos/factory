@@ -41,7 +41,8 @@ export class TextureBaker {
         renderer: PIXI.Renderer,
         direction: BakeDirection = BakeDirection.VERTICAL
     ): PIXI.Texture {
-        const cacheKey = `MergeAsset_Level_${level}_${direction === BakeDirection.VERTICAL ? 'V' : 'H'}`;
+        const cacheKey = `MergeAsset_Level_${level}_H'}`;
+        //const cacheKey = `MergeAsset_Level_${level}_${direction === BakeDirection.VERTICAL ? 'V' : 'H'}`;
 
         // 1. Check Cache
         if (this.cache.has(cacheKey)) {

@@ -13,7 +13,7 @@ export class EggGenerator {
     }
 
     public update(delta: number): void {
-        const multiplier = this.speedUpActive ? 5 : 1;
+        const multiplier = this.speedUpActive ? 10 : 1;
         this.progress += delta * multiplier;
 
         if (this.progress >= this.MAX_TIME) {

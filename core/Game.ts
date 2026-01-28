@@ -77,6 +77,7 @@ export class Game {
         this.app.ticker.add(this.loop, this);
 
         window.addEventListener('resize', this.onResize.bind(this));
+        window.addEventListener('orientationchange', () => this.handleResizeDebounced());
         this.onResize();
     }
 
@@ -95,7 +96,20 @@ export class Game {
     protected update(delta: number) {
         // override this
     }
-
+    private handleResizeDebounced() {
+        // A small delay (100-200ms) ensures the browser has finished 
+        // updating layout dimensions after rotation.
+        this.onResize();
+        setTimeout(() => {
+            this.onResize();
+        }, 50);
+        setTimeout(() => {
+            this.onResize();
+        }, 200);
+        setTimeout(() => {
+            this.onResize();
+        }, 500);
+    }
     protected onResize() {
         const screenWidth = window.innerWidth / Game.renderer.resolution;
         const screenHeight = window.innerHeight / Game.renderer.resolution;

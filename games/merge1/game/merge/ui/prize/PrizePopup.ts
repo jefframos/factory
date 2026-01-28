@@ -157,7 +157,7 @@ export class PrizePopup extends BasePopup {
             this.continueButton.setLabel('NO THANKS');
         } else {
             // Case: Only Claim
-            this.continueButton.y = 250;
+            this.continueButton.y = 150;
             this.continueButton.overrider(ButtonState.STANDARD, {
                 texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Gold)
             });

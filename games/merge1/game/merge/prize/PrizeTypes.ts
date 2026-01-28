@@ -36,7 +36,7 @@ export interface PrizePopupData extends PopupData {
 // Define the visual style for different tiers
 export const RewardRegistry = {
     Tiers: {
-        // 1: { bg: MergeAssets.Textures.UI.BgCommon, tint: 0xffffff },
+        1: { bg: MergeAssets.Textures.UI.BgCommon, tint: 0xffffff },
         2: { bg: MergeAssets.Textures.UI.BgRare, tint: 0x55ff55 },
         3: { bg: MergeAssets.Textures.UI.BgEpic, tint: 0xaa55ff },
         4: { bg: MergeAssets.Textures.UI.BgLegendary, tint: 0xffaa00 },

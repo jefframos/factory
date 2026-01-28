@@ -3,6 +3,7 @@ import ViewUtils from "@core/utils/ViewUtils";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
 import { StaticData } from "../data/StaticData";
+import MergeAssets from "../MergeAssets";
 import { BakeDirection, TextureBaker } from "../vfx/TextureBaker";
 import { BaseMergeEntity } from "./BaseMergeEntity";
 
@@ -22,9 +23,9 @@ export class BlockMergeEntity extends BaseMergeEntity {
         this.level = level;
         this.levelText.text = `${level}`;
 
-        const totalLevels = 24;
-        const minSize = 90;
-        const maxSize = 140;
+        const totalLevels = StaticData.entityCount;
+        const minSize = 85;
+        const maxSize = 120;
 
         const progress = (level - 1) / (totalLevels - 1);
         let targetWidth = minSize;
@@ -56,7 +57,7 @@ export class BlockMergeEntity extends BaseMergeEntity {
         const entityData = StaticData.getAnimalData(level)// MergeAssets.CatColors[level - 1];
         const bakedTexture = TextureBaker.getStripedTintedTexture(
             level,
-            'Button01_s_White_Bg',
+            MergeAssets.Textures.Extras.CatBody,
             entityData.colors,
             Game.renderer,
             BakeDirection.HORIZONTAL
@@ -112,7 +113,7 @@ export class BlockMergeEntity extends BaseMergeEntity {
 
         this.addFeature(this.mouthContainer, ['cat-mouth'], {
             count: 1,
-            widthFactor: 0.35,
+            widthFactor: 0.35 + Math.random() * 0.1,
             yOffset: targetHeight * 0.25,
             spacing: 0,
             randomize: false

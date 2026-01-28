@@ -8,9 +8,10 @@ export default class GeneratorHUD extends PIXI.Container {
     private progressBar: NineSliceProgressBar;
     private speedUpBtn: BaseButton;
     private statusLabel: PIXI.Text;
+    private countLabel: PIXI.Text;
 
     private isFull: boolean = false;
-    private readonly BAR_WIDTH = 300;
+    private readonly BAR_WIDTH = 250;
     private readonly BAR_HEIGHT = 35;
 
     public onSpeedUpRequested: () => void = () => { };
@@ -45,10 +46,15 @@ export default class GeneratorHUD extends PIXI.Container {
         this.statusLabel.position.set(this.BAR_WIDTH / 2, -20);
         this.addChild(this.statusLabel);
 
+        this.countLabel = new PIXI.Text('6/6', { ...MergeAssets.MainFont, fontSize: 20 });
+        this.countLabel.anchor.set(0.5, 0.5);
+        this.countLabel.position.set(this.BAR_WIDTH / 2, 0);
+        this.addChild(this.countLabel);
+
         // 3. Speed Up Button using BaseButton
         this.speedUpBtn = new BaseButton({
             standard: {
-                width: 100,
+                width: 80,
                 height: 80,
                 allPadding: 10,
                 texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Blue), // Using Blue for speed up
@@ -64,11 +70,12 @@ export default class GeneratorHUD extends PIXI.Container {
                 callback: () => this.onSpeedUpRequested()
             }
         });
-        this.speedUpBtn.visible = false
+        this.speedUpBtn.visible = true
         // Position button to the right of the bar
-        this.speedUpBtn.position.set(this.BAR_WIDTH + 15, -this.speedUpBtn.height + 15);
+        this.speedUpBtn.position.set(this.BAR_WIDTH + 15, -this.speedUpBtn.height / 2 - 5);
         this.addChild(this.speedUpBtn);
     }
+
 
     /**
      * Updates the visual progress
@@ -79,11 +86,14 @@ export default class GeneratorHUD extends PIXI.Container {
         // Dynamic coloring
         if (this.isFull) {
             this.progressBar.setTintColor(0xFF4444); // Red when blocked
+
         } else {
             this.progressBar.setTintColor(MergeAssets.Textures.UI.FillColor); // Green when working
         }
     }
-
+    public setCountLabel(value: string) {
+        this.countLabel.text = value;
+    }
     /**
      * Handles UI changes when the grid is full
      */
@@ -94,6 +104,7 @@ export default class GeneratorHUD extends PIXI.Container {
         if (isFull) {
             this.statusLabel.text = "FULL!";
             this.statusLabel.style.fill = 0xff4444;
+            this.countLabel.style.fill = 0xff4444;
 
             // Using BaseButton's inherent interactivity control
             this.speedUpBtn.disable()
@@ -101,8 +112,9 @@ export default class GeneratorHUD extends PIXI.Container {
             // "Denied" shake effect on the whole container
             gsap.to(this, { x: "+=4", duration: 0.05, repeat: 5, yoyo: true });
         } else {
-            this.statusLabel.text = "NEXT EGG";
+            this.statusLabel.text = MergeAssets.Labels.NextEntity;
             this.statusLabel.style.fill = 0xffffff;
+            this.countLabel.style.fill = 0xffffff;
             this.speedUpBtn.enable()
         }
     }

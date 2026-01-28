@@ -113,9 +113,12 @@ export class EntityManager {
     // Spawning
     // -------------------------
 
-    public spawnAnimal(level: number, pos: PIXI.Point, existingData?: IEntityData): BlockMergeEntity {
+    public spawnAnimal(level: number, pos?: PIXI.Point, existingData?: IEntityData): BlockMergeEntity {
         const animal = Pool.instance.getElement(BlockMergeEntity);
 
+        if (!pos) {
+            pos = this.baker.getNextPoint()
+        }
         const config = StaticData.getAnimalData(level);
         animal.init(level, config.spriteId, config.animationId);
         animal.position.copyFrom(pos);
@@ -146,10 +149,11 @@ export class EntityManager {
             (gen as any).timer = 0.1;
         } else {
             // Restore generator progress if present
-            const restoredTimer = (existingData as any).genTimer;
-            if (typeof restoredTimer === "number" && isFinite(restoredTimer)) {
-                (gen as any).timer = restoredTimer;
-            }
+            gen.timer += Math.random() * config.spawnTimer - 0.1
+            // const restoredTimer = (existingData as any).genTimer;
+            // if (typeof restoredTimer === "number" && isFinite(restoredTimer)) {
+            //     (gen as any).timer = restoredTimer;
+            // }
         }
 
         this.entitiesByView.set(animal, { data, generator: gen });
