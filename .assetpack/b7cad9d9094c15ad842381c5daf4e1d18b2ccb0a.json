@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769554684377,
-                "duration": 14.521900000050664,
+                "date": 1769606580370,
+                "duration": 8.298300000000381,
                 "success": true
             }
         },
@@ -20,8 +20,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769104731366,
-                "duration": 41.58540000009816,
+                "date": 1769606580372,
+                "duration": 5.786799999999857,
                 "success": true
             }
         },
@@ -34,11 +34,11 @@
             },
             "transformData": {},
             "stats": {
-                "date": 1769104731366,
-                "duration": 41.70519999996759,
+                "date": 1769606580372,
+                "duration": 7.867799999999988,
                 "success": true
             },
-            "hash": "pM9G8g"
+            "hash": "ZcpNrg"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/data/animals.json": {
             "isFolder": false,

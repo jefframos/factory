@@ -161,6 +161,7 @@ export class EntityManager {
     }
 
     public spawnEgg(existingData?: IEntityData, merge?: Partial<IEntityData>, force: boolean = false): MergeEgg | null {
+        console.log(force)
         if (!force && (!existingData && this.entitiesByView.size >= this.maxEntitiesGetter())) {
             return null;
         }

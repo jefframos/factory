@@ -1,6 +1,8 @@
+import Pool from '@core/Pool';
 import ViewUtils from '@core/utils/ViewUtils';
 import * as PIXI from 'pixi.js';
 import { CurrencyType } from '../../data/InGameEconomy';
+import { BlockMergeEntity } from '../../entity/BlockMergeEntity';
 import MergeAssets from '../../MergeAssets';
 import { PrizeItem, RewardRegistry } from '../../prize/PrizeTypes';
 
@@ -9,6 +11,7 @@ export default class PrizeViewContainer extends PIXI.Container {
     private icon: PIXI.Sprite;
     private background: PIXI.NineSlicePlane | null = null;
     private label: PIXI.Text;
+    private entity?: BlockMergeEntity;
 
     constructor() {
         super();
@@ -60,8 +63,16 @@ export default class PrizeViewContainer extends PIXI.Container {
             this.background.visible = false;
         }
 
+        if (this.entity) {
+            Pool.instance.returnElement(this.entity);
+            this.entity = undefined;
+        }
         // 2. Automatic Icon Logic
         if (prize.type === CurrencyType.ENTITY) {
+            console.log(prize)
+            this.entity = Pool.instance.getElement<BlockMergeEntity>(BlockMergeEntity);
+            this.entity.init(prize.value, '', '')
+            this.addChild(this.entity)
             // value is likely the cat level/id
             this.icon.texture = PIXI.Texture.from(RewardRegistry.Entities[prize.value as string] || MergeAssets.Textures.Icons.Badge1);
             this.label.text = prize.label || "NEW!";

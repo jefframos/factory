@@ -1,6 +1,6 @@
 import { Game } from "@core/Game";
 import * as PIXI from "pixi.js";
-import MergeAssets from "../MergeAssets";
+import { StaticData } from "../data/StaticData";
 import { BlockMergeEntity } from "../entity/BlockMergeEntity";
 import { BakeDirection, TextureBaker } from "../vfx/TextureBaker";
 
@@ -13,11 +13,11 @@ export class BakePreviewContainer extends PIXI.Container {
     public generatePieces(): void {
 
         const columns = 6;      // Number of sprites per row
-        const spacing = 200;    // Space between sprites
+        const spacing = 100;    // Space between sprites
         const startX = 50;
         const startY = 200;
 
-        for (let index = 0; index < 24; index++) {
+        for (let index = 0; index < StaticData.entityCount; index++) {
             const baseM = new BlockMergeEntity();
             baseM.init(index + 1, '', '')
 
@@ -25,6 +25,7 @@ export class BakePreviewContainer extends PIXI.Container {
             const col = index % columns;
             baseM.x = startX + col * spacing;
             baseM.y = startY + row * spacing;
+            baseM.scale.set(0.5)
 
             this.addChild(baseM);
 
@@ -37,17 +38,17 @@ export class BakePreviewContainer extends PIXI.Container {
         const startX = 50;
         const startY = 50;
 
-        // Iterate through all color sets defined in MergeAssets
-        MergeAssets.Colors.forEach((colors, index) => {
-            const level = index + 1;
+        for (let index = 1; index <= StaticData.entityCount; index++) {
+            const level = index
 
+            const data = StaticData.getAnimalData(level)
             // 1. Bake the texture (Testing Horizontal/Vertical here)
             const direction = BakeDirection.HORIZONTAL// level % 2 === 0 ? BakeDirection.HORIZONTAL : BakeDirection.VERTICAL;
 
             const bakedTexture = TextureBaker.getStripedTintedTexture(
                 level,
                 'BubbleFrame01_Bg',
-                colors,
+                data.colors,
                 Game.renderer,
                 direction
             );
@@ -75,7 +76,7 @@ export class BakePreviewContainer extends PIXI.Container {
             sprite.addChild(label);
 
             this.addChild(sprite);
-        });
+        }
 
 
         // Optional: Scale the whole preview to fit the screen

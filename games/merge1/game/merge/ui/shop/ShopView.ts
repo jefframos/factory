@@ -2,8 +2,8 @@ import BaseButton from "@core/ui/BaseButton";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
+import { ShopManager } from "../../data/ShopManager";
 import MergeAssets, { SHOP_STYLE_CONFIG } from "../../MergeAssets";
-import { SHOP_CONFIG } from "../../data/ShopManager";
 import ShopItemView from "./ShopItemView";
 
 
@@ -111,13 +111,13 @@ export default class ShopView extends PIXI.Container {
         this.btnUp = new BaseButton({
             standard: { width: 60, height: 60, texture: PIXI.Texture.from(cfg.Textures.NavBtn), iconTexture: PIXI.Texture.from('up'), centerIconHorizontally: true, centerIconVertically: true, iconSize: { height: 50, width: 50 } },
             disabled: { texture: PIXI.Texture.from(cfg.Textures.NavDisabled) },
-            click: { callback: () => this.stepScroll(SHOP_STYLE_CONFIG.Item.HEIGHT + SHOP_STYLE_CONFIG.Item.SPACING) }
+            click: { callback: () => this.stepScroll(SHOP_STYLE_CONFIG.Item.HEIGHT * 6 + SHOP_STYLE_CONFIG.Item.SPACING) }
         });
 
         this.btnDown = new BaseButton({
             standard: { width: 60, height: 60, texture: PIXI.Texture.from(cfg.Textures.NavBtn), iconTexture: PIXI.Texture.from('down'), centerIconHorizontally: true, centerIconVertically: true, iconSize: { height: 50, width: 50 } },
             disabled: { texture: PIXI.Texture.from(cfg.Textures.NavDisabled) },
-            click: { callback: () => this.stepScroll(-(SHOP_STYLE_CONFIG.Item.HEIGHT + SHOP_STYLE_CONFIG.Item.SPACING)) }
+            click: { callback: () => this.stepScroll(-(SHOP_STYLE_CONFIG.Item.HEIGHT * 6 + SHOP_STYLE_CONFIG.Item.SPACING)) }
         });
 
         this.btnUp.pivot.set(30);
@@ -148,7 +148,7 @@ export default class ShopView extends PIXI.Container {
         this.updateScrollPosition(0);
 
         if (type === "animals") {
-            SHOP_CONFIG.forEach((config, i) => {
+            ShopManager.instance.allConfigs.forEach((config, i) => {
                 const item = new ShopItemView(config, itemCfg);
                 item.x = cfg.PADDING.LEFT;
                 item.y = i * (itemCfg.HEIGHT + itemCfg.SPACING);

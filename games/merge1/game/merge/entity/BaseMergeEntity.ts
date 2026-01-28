@@ -137,7 +137,7 @@ export class BaseMergeEntity extends PIXI.Container {
         this.levelText.text = `${level}`;
 
         // Get the colors for this level (could be 1 or many)
-        const levelColors = MergeAssets.Colors[level - 1];
+        const levelColors = MergeAssets.CatColors[level - 1];
 
         this.sprite.texture = PIXI.Texture.from(spriteId);
 

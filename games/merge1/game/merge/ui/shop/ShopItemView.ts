@@ -6,6 +6,7 @@ import { Signal } from "signals";
 import MergeAssets, { SHOP_STYLE_CONFIG } from "../../MergeAssets";
 import { CurrencyType, InGameEconomy } from "../../data/InGameEconomy";
 import { IShopItemConfig, ShopManager } from "../../data/ShopManager";
+import { StaticData } from "../../data/StaticData";
 import { TextureBaker } from "../../vfx/TextureBaker";
 
 export default class ShopItemView extends PIXI.Container {
@@ -49,7 +50,9 @@ export default class ShopItemView extends PIXI.Container {
         thumb.position.set(s.HEIGHT / 2 + 10, s.HEIGHT / 2);
         this.unlockedPanel.addChild(thumb);
 
-        this.titleText = new PIXI.Text(`${MergeAssets.Labels.EntityCardPrefix} ${this.config.level}`, { ...MergeAssets.MainFont, fontSize: 22, fill: 0xffffff });
+        //console.log(this.config)
+        const staticData = StaticData.getAnimalData(this.config.level)
+        this.titleText = new PIXI.Text(`${staticData.name}`, { ...MergeAssets.MainFont, fontSize: 22, fill: 0xffffff, wordWrap: true, wordWrapWidth: 150 });
         this.titleText.position.set(s.TEXT_OFFSET_X, s.HEIGHT * 0.25);
         this.unlockedPanel.addChild(this.titleText);
 
@@ -82,7 +85,7 @@ export default class ShopItemView extends PIXI.Container {
 
         const lockText = new PIXI.Text(`UNLOCK AT LV. ${this.config.unlockAtLevel}`, { ...MergeAssets.MainFont, fontSize: 18, fill: 0xcccccc });
         lockText.anchor.set(0.5);
-        lockText.position.set(width / 2, s.HEIGHT / 2 + 25);
+        lockText.position.set(width / 2, s.HEIGHT / 2 + 35);
 
         this.lockedPanel.addChild(lockBg, lockIcon, lockText);
         this.addChild(this.lockedPanel);

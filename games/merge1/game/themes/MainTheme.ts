@@ -299,7 +299,7 @@ export function createDefaultLevelSelectTheme(): LevelSelectTheme {
 
         sectionCard: {
             useNineSliceCardBg: true,
-            cardBgTexture: MergeAssets.getTexture(T.UI.CardBg),
+            cardBgTexture: MergeAssets.getTexture(T.UI.ShopBgActive),
             cardBgNineSlice: { left: 62, top: 62, right: 62, bottom: 62 },
 
             coverHeightRatio: 0.90,

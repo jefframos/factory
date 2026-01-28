@@ -1,170 +1,512 @@
 [
     {
         "level": 1,
+        "name": "Cloud Kitten",
         "spriteId": "Chick_Down",
         "animationId": "idle",
         "coinValue": 5,
-        "spawnTimer": 10
+        "spawnTimer": 10,
+        "colors": [
+            "#ffffff",
+            "#a8e5ff"
+        ]
     },
     {
         "level": 2,
+        "name": "Red Tabby",
         "spriteId": "Rabbit_Down",
         "animationId": "walk",
         "coinValue": 12,
-        "spawnTimer": 9.5
+        "spawnTimer": 9.5,
+        "colors": [
+            "#fb7378",
+            "#FFFFFF"
+        ]
     },
     {
         "level": 3,
+        "name": "Ginger Marmalade",
         "spriteId": "Pig_Down",
         "animationId": "walk",
         "coinValue": 30,
-        "spawnTimer": 9
+        "spawnTimer": 9,
+        "colors": [
+            "#F7941D",
+            "#8C6239"
+        ]
     },
     {
         "level": 4,
+        "name": "Calico Base",
         "spriteId": "Cat_Down",
         "animationId": "walk",
         "coinValue": 75,
-        "spawnTimer": 8.5
+        "spawnTimer": 8.5,
+        "colors": [
+            "#FFF200",
+            "#F7941D"
+        ]
     },
     {
         "level": 5,
+        "name": "Lucky Jade Cat",
         "spriteId": "Fox_Down",
         "animationId": "walk",
         "coinValue": 180,
-        "spawnTimer": 8
+        "spawnTimer": 8,
+        "colors": [
+            "#00A651",
+            "#FFFFFF"
+        ]
     },
     {
         "level": 6,
+        "name": "Blue Russian",
         "spriteId": "Mouse_Down",
         "animationId": "walk",
         "coinValue": 450,
-        "spawnTimer": 7.5
+        "spawnTimer": 7.5,
+        "colors": [
+            "#2E3192",
+            "#92278F"
+        ]
     },
     {
         "level": 7,
+        "name": "Siamese",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 1100,
-        "spawnTimer": 7
+        "spawnTimer": 7,
+        "colors": [
+            "#8C6239",
+            "#fffdfd",
+            "#4f4f4f"
+        ]
     },
     {
         "level": 8,
+        "name": "Prism Cat",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 2800,
-        "spawnTimer": 6.5
+        "spawnTimer": 6.5,
+        "colors": [
+            "#ED1C24",
+            "#F7941D",
+            "#FFF200",
+            "#00A651",
+            "#2E3192",
+            "#662D91"
+        ]
     },
     {
         "level": 9,
+        "name": "Pink Sphynx",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 7200,
-        "spawnTimer": 6
+        "spawnTimer": 6,
+        "colors": [
+            "#FF7BAC",
+            "#FFFFFF"
+        ]
     },
     {
         "level": 10,
+        "name": "Galaxy Cat",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 18000,
-        "spawnTimer": 5.8
+        "spawnTimer": 5.8,
+        "colors": [
+            "#92278F",
+            "#2E3192"
+        ]
     },
     {
         "level": 11,
+        "name": "White Van Cat",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 45000,
-        "spawnTimer": 5.6
+        "spawnTimer": 5.6,
+        "colors": [
+            "#FFFFFF",
+            "#ED1C24"
+        ]
     },
     {
         "level": 12,
+        "name": "Bengal Tiger Cat",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 110000,
-        "spawnTimer": 5.4
+        "spawnTimer": 5.4,
+        "colors": [
+            "#ED1C24",
+            "#FBB03B",
+            "#565656"
+        ]
     },
     {
         "level": 13,
+        "name": "Golden Abyssinian",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 280000,
-        "spawnTimer": 5.2
+        "spawnTimer": 5.2,
+        "colors": [
+            "#F7941D",
+            "#FBB03B"
+        ]
     },
     {
         "level": 14,
+        "name": "Black Luck Cat",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 700000,
-        "spawnTimer": 5
+        "spawnTimer": 5,
+        "colors": [
+            "#FFF200",
+            "#5e5e5e"
+        ]
     },
     {
         "level": 15,
+        "name": "Wild Jungle Cat",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 1800000,
-        "spawnTimer": 4.8
+        "spawnTimer": 4.8,
+        "colors": [
+            "#00A651",
+            "#ED1C24",
+            "#FFFFFF"
+        ]
     },
     {
         "level": 16,
+        "name": "Tuxedo Agent",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 4500000,
-        "spawnTimer": 4.6
+        "spawnTimer": 4.6,
+        "colors": [
+            "#2E3192",
+            "#FFFFFF",
+            "#ED1C24"
+        ]
     },
     {
         "level": 17,
+        "name": "Emerald Birman",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 12000000,
-        "spawnTimer": 4.4
+        "spawnTimer": 4.4,
+        "colors": [
+            "#00A651",
+            "#FFFFFF",
+            "#FBB03B"
+        ]
     },
     {
         "level": 18,
+        "name": "Tortoiseshell",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 30000000,
-        "spawnTimer": 4.2
+        "spawnTimer": 4.2,
+        "colors": [
+            "#FFFF00",
+            "#ED1C24",
+            "#8C6239"
+        ]
     },
     {
         "level": 19,
+        "name": "Bubblegum Maine Coon",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 75000000,
-        "spawnTimer": 4
+        "spawnTimer": 4,
+        "colors": [
+            "#FF7BAC",
+            "#2E3192",
+            "#FFFFFF"
+        ]
     },
     {
         "level": 20,
+        "name": "Lavender Persian",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 200000000,
-        "spawnTimer": 3.8
+        "spawnTimer": 3.8,
+        "colors": [
+            "#92278F",
+            "#FFFFFF"
+        ]
     },
     {
         "level": 21,
+        "name": "Patchwork Chimera",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 500000000,
-        "spawnTimer": 3.6
+        "spawnTimer": 3.6,
+        "colors": [
+            "#F7941D",
+            "#FFFFFF",
+            "#8C6239"
+        ]
     },
     {
         "level": 22,
+        "name": "Royal Egyptian Mau",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 1200000000,
-        "spawnTimer": 3.4
+        "spawnTimer": 3.4,
+        "colors": [
+            "#ED1C24",
+            "#FFD700"
+        ]
     },
     {
         "level": 23,
+        "name": "Sunset Jaguar",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 3500000000,
-        "spawnTimer": 3.2
+        "spawnTimer": 3.2,
+        "colors": [
+            "#F7941D",
+            "#2E3192",
+            "#686868"
+        ]
     },
     {
         "level": 24,
+        "name": "Mystic Moon Cat",
         "spriteId": "ResourceBar_Single_Icon_Monster",
         "animationId": "walk",
         "coinValue": 10000000000,
-        "spawnTimer": 3
+        "spawnTimer": 3,
+        "colors": [
+            "#FFF200",
+            "#662D91"
+        ]
+    },
+    {
+        "level": 25,
+        "name": "Celestial Lion",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 25000000000,
+        "spawnTimer": 2.9,
+        "colors": [
+            "#00A651",
+            "#F7941D",
+            "#FFD700"
+        ]
+    },
+    {
+        "level": 26,
+        "name": "Cyberpunk Neon",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 65000000000,
+        "spawnTimer": 2.8,
+        "colors": [
+            "#39FF14",
+            "#FF00FF",
+            "#00FFFF"
+        ]
+    },
+    {
+        "level": 27,
+        "name": "Frozen Glarier",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 150000000000,
+        "spawnTimer": 2.7,
+        "colors": [
+            "#E0FFFF",
+            "#00BFFF",
+            "#4682B4"
+        ]
+    },
+    {
+        "level": 28,
+        "name": "Molten Magma",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 400000000000,
+        "spawnTimer": 2.6,
+        "colors": [
+            "#FF4500",
+            "#8B0000",
+            "#FFA500"
+        ]
+    },
+    {
+        "level": 29,
+        "name": "Void Stalker",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 1000000000000,
+        "spawnTimer": 2.5,
+        "colors": [
+            "#000000",
+            "#4B0082",
+            "#EE82EE"
+        ]
+    },
+    {
+        "level": 30,
+        "name": "Steampunk Brass",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 2800000000000,
+        "spawnTimer": 2.4,
+        "colors": [
+            "#B8860B",
+            "#8B4513",
+            "#C0C0C0"
+        ]
+    },
+    {
+        "level": 31,
+        "name": "Sakura Blossom",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 7500000000000,
+        "spawnTimer": 2.3,
+        "colors": [
+            "#FFB7C5",
+            "#FF69B4",
+            "#FFFFFF"
+        ]
+    },
+    {
+        "level": 32,
+        "name": "Abyssal Trench",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 20000000000000,
+        "spawnTimer": 2.2,
+        "colors": [
+            "#000080",
+            "#008B8B",
+            "#7FFFD4"
+        ]
+    },
+    {
+        "level": 33,
+        "name": "Solar Flare",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 55000000000000,
+        "spawnTimer": 2.1,
+        "colors": [
+            "#FFD700",
+            "#FF8C00",
+            "#FFFFFF"
+        ]
+    },
+    {
+        "level": 34,
+        "name": "Radioactive Mutant",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 140000000000000,
+        "spawnTimer": 2.0,
+        "colors": [
+            "#ADFF2F",
+            "#00FF00",
+            "#2F4F4F"
+        ]
+    },
+    {
+        "level": 35,
+        "name": "Royal Amethyst",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 350000000000000,
+        "spawnTimer": 1.9,
+        "colors": [
+            "#9932CC",
+            "#8A2BE2",
+            "#DDA0DD"
+        ]
+    },
+    {
+        "level": 36,
+        "name": "Ancient Golem",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 900000000000000,
+        "spawnTimer": 1.8,
+        "colors": [
+            "#708090",
+            "#2F4F4F",
+            "#B0C4DE"
+        ]
+    },
+    {
+        "level": 37,
+        "name": "Candy Cane",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 2500000000000000,
+        "spawnTimer": 1.7,
+        "colors": [
+            "#FF0000",
+            "#FFFFFF",
+            "#00FF00"
+        ]
+    },
+    {
+        "level": 38,
+        "name": "Stardust Dreamer",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 6000000000000000,
+        "spawnTimer": 1.6,
+        "colors": [
+            "#FFFACD",
+            "#E6E6FA",
+            "#F0F8FF"
+        ]
+    },
+    {
+        "level": 39,
+        "name": "Inferno Phoenix",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 15000000000000000,
+        "spawnTimer": 1.5,
+        "colors": [
+            "#FF0000",
+            "#FF4500",
+            "#FFFF00"
+        ]
+    },
+    {
+        "level": 40,
+        "name": "Omnipotent Entity",
+        "spriteId": "ResourceBar_Single_Icon_Monster",
+        "animationId": "walk",
+        "coinValue": 50000000000000000,
+        "spawnTimer": 1.4,
+        "colors": [
+            "#FFFFFF",
+            "#000000",
+            "#FFD700",
+            "#C0C0C0"
+        ]
     }
 ]

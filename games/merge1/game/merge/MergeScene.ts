@@ -9,6 +9,7 @@ import SoundManager from "@core/audio/SoundManager";
 import PatternBackground from "@core/ui/PatternBackground";
 import ViewUtils from "@core/utils/ViewUtils";
 import { DevGuiManager } from "../utils/DevGuiManager";
+import { CurrencyType, InGameEconomy } from "./data/InGameEconomy";
 import { StaticData } from "./data/StaticData";
 import MergeAssets from "./MergeAssets";
 import { MergeMediator } from "./MergeMediator";
@@ -35,8 +36,18 @@ export default class MergeScene extends GameScene {
         super(game);
         SoundManager.STORAGE_ID = "Merge1_";
 
-        const bked = new BakePreviewContainer()
-        bked.generatePieces()
+        const monsters = PIXI.Assets.get('data/animals.json')
+        StaticData.parseData(monsters)
+
+
+
+        setTimeout(() => {
+
+            const bked = new BakePreviewContainer()
+            bked.generatePieces()
+            //this.addChild(bked)
+        }, 10);
+
 
         this.setupPopups();
     }
@@ -44,8 +55,7 @@ export default class MergeScene extends GameScene {
     public build(): void {
         // 1. Backgrounds
 
-        const monsters = PIXI.Assets.get('data/animals.json')
-        StaticData.parseData(monsters)
+
 
 
 
@@ -74,8 +84,11 @@ export default class MergeScene extends GameScene {
         TextureBaker.bakeEntityTextures()
 
         // 3. HUD
-        this.hud = new MergeHUD();
+        const effects = new CoinEffectLayer();
+        this.hud = new MergeHUD(effects);
         this.addChild(this.hud);
+
+        this.hud.addEffects(effects)
 
         this.setupDevGui();
         this.setupAudio();
@@ -96,8 +109,7 @@ export default class MergeScene extends GameScene {
 
 
 
-        const effects = new CoinEffectLayer();
-        this.hud.addEffects(effects)
+
         // 4. Initialize Mediator
         this.mediator = new MergeMediator(
             this.gameplayContainer,
@@ -107,10 +119,6 @@ export default class MergeScene extends GameScene {
             this.hud
         );
 
-
-
-
-        //this.addChild(bked)
 
         // Optional: Spawn a starting animal
         //this.mediator.spawnAnimal(1, new PIXI.Point(Game.DESIGN_WIDTH / 2, Game.DESIGN_HEIGHT / 2));
@@ -125,7 +133,10 @@ export default class MergeScene extends GameScene {
         DevGuiManager.instance.addButton('erase', () => {
             GameStorage.instance.resetGameProgress(true)
         });
-        DevGuiManager.instance.addButton('addCoins', () => { });
+        DevGuiManager.instance.addButton('addCoins', () => {
+            InGameEconomy.instance.add(CurrencyType.MONEY, 1000000)
+            InGameEconomy.instance.add(CurrencyType.GEMS, 100)
+        });
     }
 
     public update(delta: number): void {

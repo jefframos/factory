@@ -2,7 +2,7 @@ import { Game } from "@core/Game";
 import ViewUtils from "@core/utils/ViewUtils";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
-import MergeAssets from "../MergeAssets";
+import { StaticData } from "../data/StaticData";
 import { BakeDirection, TextureBaker } from "../vfx/TextureBaker";
 import { BaseMergeEntity } from "./BaseMergeEntity";
 
@@ -53,11 +53,11 @@ export class BlockMergeEntity extends BaseMergeEntity {
         const minSpeed = 50;
         this.walkSpeed = maxSpeed - (progress * (maxSpeed - minSpeed));
 
-        const levelColors = MergeAssets.Colors[level - 1];
+        const entityData = StaticData.getAnimalData(level)// MergeAssets.CatColors[level - 1];
         const bakedTexture = TextureBaker.getStripedTintedTexture(
             level,
             'Button01_s_White_Bg',
-            levelColors,
+            entityData.colors,
             Game.renderer,
             BakeDirection.HORIZONTAL
         );
@@ -96,7 +96,7 @@ export class BlockMergeEntity extends BaseMergeEntity {
             yOffset: 0,
             spacing: 0.85,
             randomize: true,
-            tint: PIXI.utils.string2hex(levelColors[0])
+            tint: PIXI.utils.string2hex(entityData.colors[0])
         });
         this.earsContainer.x = targetWidth / 2;
         this.earsContainer.y = 0;

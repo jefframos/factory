@@ -9,6 +9,7 @@ import MergeAssets from "../MergeAssets";
 import { CurrencyType } from "../data/InGameEconomy";
 import { InGameProgress } from "../data/InGameProgress";
 import { MissionClaimResult } from "../missions/MissionManager";
+import { PrizeItem } from "../prize/PrizeTypes";
 import { RoomId } from "../rooms/RoomRegistry";
 import { ProgressionType } from "../storage/GameStorage";
 import { TimedRewardService } from "../timedRewards/TimedRewardService";
@@ -21,6 +22,7 @@ import { MissionHUD } from "./MissionHUD";
 import { ProgressHUD } from "./ProgressHUD";
 import { NotificationCenter } from "./notifications/NotificationCenter";
 import { NotificationRegistry } from "./notifications/NotificationRegistry";
+import { RewardManager } from "./prize/RewardManager";
 import { RoomSelector } from "./room/RoomSelector";
 import { ShopNotificationIcon } from "./shop/ShopNotificationIcon";
 import ShopView from "./shop/ShopView";
@@ -70,7 +72,7 @@ export default class MergeHUD extends PIXI.Container {
 
     public get isAnyUiOpen(): boolean { return this.uiOpenCount > 0; }
 
-    constructor() {
+    constructor(private coinEffects: CoinEffectLayer) {
         super();
         this.setupLayers();
 
@@ -125,21 +127,47 @@ export default class MergeHUD extends PIXI.Container {
 
         this.missionHUD.onClaim.add((claim: MissionClaimResult) => {
             if (claim.rewards && claim.rewards.currencies) {
+                const prizes: PrizeItem[] = [];
+
+                // 1. Map the mission currencies to PrizeItem format
                 for (const currencyType in claim.rewards.currencies) {
                     const amount = claim.rewards.currencies[currencyType as CurrencyType];
-                    if (amount) {
-                        // Handle currency reward
-                        let icon: string = MergeAssets.Textures.Icons.CoinPileSmall
-                        if (currencyType == CurrencyType.GEMS) {
-                            icon = MergeAssets.Textures.Icons.GemPile
-                        }
-                        this.notifications.toastPrize({ title: "+" + NumberConverter.format(amount), subtitle: "", iconTexture: icon });
-
-
+                    if (amount && amount > 0) {
+                        prizes.push({
+                            type: currencyType as CurrencyType,
+                            value: amount,
+                            tier: 0 // You can logic-gate tiers based on amount if desired
+                        });
                     }
                 }
+
+                // 2. Trigger the centralized RewardManager
+                if (prizes.length > 0) {
+                    RewardManager.instance.showReward(
+                        prizes,
+                        this.coinEffects,
+                        this
+                    );
+                }
             }
-        })
+        });
+        // this.missionHUD.onClaim.add((claim: MissionClaimResult) => {
+        //     if (claim.rewards && claim.rewards.currencies) {
+        //         for (const currencyType in claim.rewards.currencies) {
+        //             const amount = claim.rewards.currencies[currencyType as CurrencyType];
+        //             if (amount) {
+        //                 // Handle currency reward
+        //                 let icon: string = MergeAssets.Textures.Icons.CoinPileSmall
+        //                 if (currencyType == CurrencyType.GEMS) {
+        //                     icon = MergeAssets.Textures.Icons.GemPile
+        //                 }
+        //                 this.notifications.toastPrize({ title: "+" + NumberConverter.format(amount), subtitle: "", iconTexture: icon });
+
+
+        //             }
+        //         }
+        //     }
+        // })
 
         // 5. Room Selector Integration
         this.roomSelector = new RoomSelector(["room_0", "room_1"]);

@@ -246,7 +246,7 @@ export default class MergeAssets {
     //     ["#00A651", "#F7941D"]  // 24: Green/Orange (Super Rectangle)
     // ]
 
-    static readonly Colors = [
+    static CatColors = [
         ["#ffffff", "#a8e5ff"], // 1: Red Tabby (Primary Red + White paws)
         ["#fb7378", "#FFFFFF"], // 1: Red Tabby (Primary Red + White paws)
         ["#F7941D", "#8C6239"], // 2: Ginger Marmalade (Orange + Dark Brown stripes)
@@ -332,7 +332,8 @@ export default class MergeAssets {
             LevelBadge: "Label_Badge01_Yellow",
             Header: "ItemFrame01_Single_Hologram1",
             Exclamation: "Icon_Exclamation",
-            CardBg: "Button_SkillBtn_Blue",
+            ShopBgActive: "Button_SkillBtn_Blue",
+            ShopBgDisabled: "Button_SkillBtn_Dark",
             RowBg: "Button_SkillBtn_Orange",
             RowLock: "Button_SkillBtn_Dark",
             FadeShape: "Slider_Basic01_Bg_Single",
@@ -409,8 +410,8 @@ export const SHOP_STYLE_CONFIG = {
         BUTTON_HEIGHT: 60,
         TEXT_OFFSET_X: 130,
         Textures: {
-            RowBgActive: MergeAssets.Textures.UI.CardBg,
-            RowBg: MergeAssets.Textures.UI.CurrencyPanel,
+            RowBgActive: MergeAssets.Textures.UI.ShopBgActive,
+            RowBg: MergeAssets.Textures.UI.ShopBgDisabled,
             BuyBtn: MergeAssets.Textures.Buttons.Green,
             BuyDisabled: MergeAssets.Textures.Buttons.Grey,
             LockIcon: MergeAssets.Textures.Icons.Lock,
