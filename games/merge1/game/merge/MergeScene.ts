@@ -108,6 +108,8 @@ export default class MergeScene extends GameScene {
         );
 
 
+
+
         //this.addChild(bked)
 
         // Optional: Spawn a starting animal

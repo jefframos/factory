@@ -40,6 +40,7 @@ export class ConfettiEffect extends PIXI.Container {
             p.tint = this.colors[Math.floor(Math.random() * this.colors.length)];
 
             this.container.addChild(p);
+            p.alpha = 0;
 
             this.particles.push({
                 sprite: p,
@@ -57,7 +58,7 @@ export class ConfettiEffect extends PIXI.Container {
         this.particles.forEach(p => {
             // Randomize starting position above the view
             p.sprite.x = Math.random() * screenW - screenW / 2;
-            p.sprite.y = -(Math.random() * 800 + 100);
+            p.sprite.y = -(Math.random() * 1200 + 100);
             p.sprite.alpha = 1;
             p.sprite.scale.y = 1; // Reset flip
         });

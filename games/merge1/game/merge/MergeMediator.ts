@@ -1,7 +1,10 @@
 // MergeMediator.ts
+import { PopupManager } from "@core/popup/PopupManager";
 import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
 import TiledContainer from "@core/tiled/TiledContainer";
+import PromiseUtils from "@core/utils/PromiseUtils";
 import * as PIXI from "pixi.js";
+import { DevGuiManager } from "../utils/DevGuiManager";
 import { GridBaker } from "./core/GridBaker";
 import { CurrencyType, InGameEconomy } from "./data/InGameEconomy";
 import { InGameProgress } from "./data/InGameProgress";
@@ -19,6 +22,7 @@ import { EntityManager } from "./manager/EntityManager";
 import { GameSaveManager } from "./manager/GameSaveManager";
 import MergeAssets from "./MergeAssets";
 import { MissionManager } from "./missions/MissionManager";
+import { PrizeItem, PrizePopupData } from "./prize/PrizeTypes";
 import { RoomId } from "./rooms/RoomRegistry";
 import { RoomService } from "./rooms/RoomService";
 import { MergeFtueService } from "./services/MergeFtueService";
@@ -76,6 +80,40 @@ export class MergeMediator {
 
         this.gridView = new EntityGridView();
         this.container.addChild(this.gridView);
+
+        const reward = (prizes: PrizeItem[]) => {
+
+            // prizes: [
+            //     { type: CurrencyType.MONEY, value: 100, tier: 2 },
+            //     { type: CurrencyType.GEMS, value: 5, tier: 3 }
+            // ],
+            const coinRewardData: PrizePopupData = {
+                prizes: prizes,
+                waitForClaim: true,
+                effects: {
+                    layer: this.coinEffects, // Your CoinEffectLayer instance
+                    getHudTarget: (type: CurrencyType) => {
+                        // This pulls the global position from your actual HUD
+                        return this.hud.getCurrencyTargetGlobalPos(type);
+                    }
+                },
+                claimCallback: async () => {
+                    await PromiseUtils.await(750)
+                    prizes.forEach(element => {
+                        if (element.type == CurrencyType.MONEY || element.type == CurrencyType.GEMS) {
+                            InGameEconomy.instance.add(element.type, element.value)
+                        }
+                    });
+                }
+            }
+            PopupManager.instance.show('prize', coinRewardData);
+        }
+        DevGuiManager.instance.addButton('prizePopup', () => {
+            reward([
+                { type: CurrencyType.MONEY, value: 10000, tier: 2 },
+                { type: CurrencyType.GEMS, value: 5, tier: 3 }
+            ])
+        });
 
         if (ExtractTiledFile.TiledData) {
             console.log(ExtractTiledFile.getTiledFrom('garden'))

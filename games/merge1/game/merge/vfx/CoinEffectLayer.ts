@@ -18,8 +18,8 @@ export class CoinEffectLayer extends PIXI.Container {
         targetX: number,
         targetY: number,
         source: string | PIXI.Sprite,
-        value: number,
-        onComplete: () => void
+        value?: number,
+        onComplete?: () => void
     ): void {
         const coin = this.setupSprite(source);
         coin.position.set(startX, startY);
@@ -30,7 +30,9 @@ export class CoinEffectLayer extends PIXI.Container {
         coin.scale.set(0);
         coin.alpha = 1;
 
-        this.popValueLabel(startX, startY, value);
+        if (value) {
+            this.popValueLabel(startX, startY, value);
+        }
 
         // --- RANDOMIZED BEZIER MATH ---
         // 1. Randomly choose left (-1) or right (1) arch
@@ -83,7 +85,7 @@ export class CoinEffectLayer extends PIXI.Container {
         }, "-=0.2");
 
         tl.call(() => {
-            onComplete();
+            onComplete?.();
             this.recycleSprite(coin);
         });
     }

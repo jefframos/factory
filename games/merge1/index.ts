@@ -10,6 +10,7 @@ import * as PIXI from 'pixi.js';
 import MergeLoader from './game/loader/MergeLoader';
 import MergeAssets from './game/merge/MergeAssets';
 import MergeScene from './game/merge/MergeScene';
+import { PrizePopup } from './game/merge/ui/prize/PrizePopup';
 import { DevGuiManager } from './game/utils/DevGuiManager';
 import audioManifest from './manifests/audio.json'; // adjust path
 import fontManifest from './manifests/fonts.json'; // adjust path
@@ -137,6 +138,7 @@ export default class MyGame extends Game {
         this.overlayContainer.addChild(this.popupManager)
         // this.popupManager.registerPopup('confirm', new ConfirmationPopup(), false);
         // this.popupManager.registerPopup('gameOver', new GameOverPopup(), false);
+        this.popupManager.registerPopup('prize', new PrizePopup(), false);
 
 
 

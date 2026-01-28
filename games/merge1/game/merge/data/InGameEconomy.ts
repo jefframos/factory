@@ -5,7 +5,8 @@ import GameStorage from "../storage/GameStorage";
 export enum CurrencyType {
     MONEY = "money",
     GEMS = "gems",
-    ENERGY = "energy"
+    ENERGY = "energy",
+    ENTITY = "entity",
 }
 
 export class InGameEconomy {
