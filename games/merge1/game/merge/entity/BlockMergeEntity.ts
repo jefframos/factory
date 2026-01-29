@@ -24,7 +24,7 @@ export class BlockMergeEntity extends BaseMergeEntity {
         this.levelText.text = `${level}`;
 
         const totalLevels = StaticData.entityCount;
-        const minSize = 85;
+        const minSize = 100;
         const maxSize = 120;
 
         const progress = (level - 1) / (totalLevels - 1);
@@ -57,16 +57,17 @@ export class BlockMergeEntity extends BaseMergeEntity {
         const entityData = StaticData.getAnimalData(level)// MergeAssets.CatColors[level - 1];
         const bakedTexture = TextureBaker.getStripedTintedTexture(
             level,
-            MergeAssets.Textures.Extras.CatBody,
+            MergeAssets.Textures.Extras.CatBody,//CatBodies[level % MergeAssets.Textures.Extras.CatBodies.length],
             entityData.colors,
             Game.renderer,
-            BakeDirection.HORIZONTAL
+            BakeDirection.HORIZONTAL,
+            //MergeAssets.Textures.Extras.CatLines
         );
 
         // Reset Containers
         if (this.sprite instanceof PIXI.Sprite) {
             this.sprite.destroy();
-            this.sprite = new PIXI.NineSlicePlane(PIXI.Texture.WHITE, 20, 20, 20, 20);
+            this.sprite = new PIXI.NineSlicePlane(PIXI.Texture.WHITE, 40, 70, 30, 35);
 
             this.spriteContainer.removeChildren(); // Clear to ensure clean snapshot
             this.spriteContainer.addChild(this.earsContainer);
@@ -96,7 +97,7 @@ export class BlockMergeEntity extends BaseMergeEntity {
             count: 2,
             widthFactor: 0.8,
             yOffset: 0,
-            spacing: 0.85,
+            spacing: 0.95,
             randomize: true,
             tint: PIXI.utils.string2hex(entityData.colors[0])
         });
@@ -104,17 +105,17 @@ export class BlockMergeEntity extends BaseMergeEntity {
         this.earsContainer.y = 0;
         this.earsContainer.visible = false
         // Eyes & Mouth
-        this.addFeature(this.eyesContainer, ['eye', 'eye'], {
+        this.addFeature(this.eyesContainer, ['cat-eye', 'cat-eye'], {
             count: 2,
-            widthFactor: 0.65,
-            yOffset: 0,
-            spacing: 1.1,
+            widthFactor: 0.7,
+            yOffset: 2,
+            spacing: 1.2,
             randomize: true
         });
 
-        this.addFeature(this.mouthContainer, ['cat-mouth'], {
+        this.addFeature(this.mouthContainer, ['cat-mouth-1'], {
             count: 1,
-            widthFactor: 0.35 + Math.random() * 0.1,
+            widthFactor: 0.22 + Math.random() * 0.1,
             yOffset: targetHeight * 0.25,
             spacing: 0,
             randomize: false
@@ -129,18 +130,18 @@ export class BlockMergeEntity extends BaseMergeEntity {
         this.levelText.alpha = 1;
 
         // Highlight & Shadow (Hide shadow for shop snapshot usually)
-        if (this.highlight instanceof PIXI.Sprite) {
-            this.highlight.destroy();
-            this.highlight = new PIXI.NineSlicePlane(PIXI.Texture.from('BubbleFrame01_White'), 20, 20, 20, 20);
-            this.highlight.visible = false;
-            this.spriteContainer.addChildAt(this.highlight, 0);
-            this.spriteContainer.addChildAt(this.shadowContainer, 0);
-        }
+        // if (this.highlight instanceof PIXI.Sprite) {
+        //     this.highlight.destroy();
+        //     this.highlight = new PIXI.NineSlicePlane(PIXI.Texture.from('BubbleFrame01_White'), 20, 20, 20, 20);
+        //     this.highlight.visible = false;
+        //     this.spriteContainer.addChildAt(this.highlight, 0);
+        //     this.spriteContainer.addChildAt(this.shadowContainer, 0);
+        // }
 
-        this.highlight.width = targetWidth + 10;
-        this.highlight.height = targetHeight + 10;
-        this.highlight.pivot.set(0, 0);
-        this.highlight.position.set(-5, -5);
+        // this.highlight.width = targetWidth + 10;
+        // this.highlight.height = targetHeight + 10;
+        // this.highlight.pivot.set(0, 0);
+        // this.highlight.position.set(-5, -5);
 
         this.shadowContainer.visible = false;
         this.levelText.visible = false

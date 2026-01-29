@@ -39,7 +39,8 @@ export class TextureBaker {
         baseKey: string,
         colors: string[],
         renderer: PIXI.Renderer,
-        direction: BakeDirection = BakeDirection.VERTICAL
+        direction: BakeDirection = BakeDirection.VERTICAL,
+        overlay?: string
     ): PIXI.Texture {
         const cacheKey = `MergeAsset_Level_${level}_H'}`;
         //const cacheKey = `MergeAsset_Level_${level}_${direction === BakeDirection.VERTICAL ? 'V' : 'H'}`;
@@ -84,6 +85,11 @@ export class TextureBaker {
             });
         }
 
+
+        if (overlay) {
+            const sprite = PIXI.Sprite.from(overlay);
+            container.addChild(sprite);
+        }
         // 4. Bake to RenderTexture
         const renderTexture = PIXI.RenderTexture.create({ width, height });
         renderer.render(container, { renderTexture });

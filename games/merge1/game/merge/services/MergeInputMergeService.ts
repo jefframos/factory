@@ -278,7 +278,7 @@ export class MergeInputMergeService {
         this.onMergePerformed.dispatch(level);
     }
 
-    private findMergeTargetFor(source: BlockMergeEntity): BlockMergeEntity | null {
+    protected findMergeTargetFor(source: BlockMergeEntity): BlockMergeEntity | null {
         let best: BlockMergeEntity | null = null;
         let bestD2 = Number.POSITIVE_INFINITY;
 

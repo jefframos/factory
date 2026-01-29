@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769642392706,
-                "duration": 9.16450000000009,
+                "date": 1769723304678,
+                "duration": 1.7567999998573214,
                 "success": true
             }
         },
@@ -487,8 +487,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769642392706,
-                "duration": 3102.4107000000004,
+                "date": 1769723304678,
+                "duration": 3351.590599999996,
                 "success": true
             }
         },
@@ -942,7 +942,7 @@
             "transformData": {},
             "hash": "GhR7sw"
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cat-mouth.png": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cat-mouth-old.png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
             "metaData": {},
@@ -951,6 +951,26 @@
             },
             "transformData": {},
             "hash": "l6JdNA"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cat-mouth.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "U0ZHJw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cat-shape-1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "pFce9A"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/doge.png": {
             "isFolder": false,
@@ -1010,7 +1030,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "ldPTUA"
+            "hash": "FHnnqg"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/fade-shape.png": {
             "isFolder": false,
@@ -2480,6 +2500,66 @@
             },
             "transformData": {},
             "hash": "a2pmOQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cat-eye.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "iuZGFw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cat-shape-2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "IXjppw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cat-shape-4.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "scxS4g"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cat-shape-3.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "xTf6zg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cat-lines.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "lPUNLg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cat-mouth-1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "ZHjgaA"
         },
         ".assetpack/multi-pipe-1/ui.png": {
             "isFolder": false,

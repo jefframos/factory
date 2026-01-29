@@ -107,7 +107,7 @@ export class BaseMergeEntity extends PIXI.Container {
 
             // Scale based on desired width
             const scaleBase = targetFeatureWidth / feature.texture.width;
-            const variation = config.randomize ? (0.9 + Math.random() * 0.2) : 1;
+            const variation = config.randomize ? (0.95 + Math.random() * 0.1) : 1;
             feature.scale.set(scaleBase * variation);
 
             // X Positioning

@@ -11,10 +11,12 @@ export interface TileData {
 export class MergeTile extends PIXI.Graphics {
     public data!: TileData;
 
-    constructor(size: number) {
+    constructor() {
         super();
+    }
+    public init(size: number) {
         // Visual representation
-        this.beginFill(0x000000, 0.1);
+        this.beginFill(0x000000, 0.15);
         this.drawRoundedRect(-size / 2 + 5, -size / 2 + 5, size - 10, size - 10, 15);
         this.endFill();
     }

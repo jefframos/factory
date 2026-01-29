@@ -30,6 +30,7 @@ import ShopView from "./ui/shop/ShopView";
 import { CoinEffectLayer } from "./vfx/CoinEffectLayer";
 
 // New Grid Imports
+import { DevGuiManager } from "../utils/DevGuiManager";
 import { EntityGridView2 } from "./grid/EntityGridView2";
 import { EntityManagerGrid } from "./grid/EntityManagerGrid";
 import { MergeInputMergeGridService } from "./grid/MergeInputMergeGridService";
@@ -60,6 +61,9 @@ export class MergeMediator {
     private readonly ftueService: MergeFtueService;
     private timedRewards!: TimedRewardService;
 
+    private entityContainer: PIXI.Container = new PIXI.Container()
+    private tilesContainer: PIXI.Container = new PIXI.Container()
+
     public constructor(
         private readonly container: PIXI.Container,
         private readonly inputBounds: PIXI.Rectangle,
@@ -70,10 +74,13 @@ export class MergeMediator {
     ) {
         if (mode == "Grid") {
             this.walkBounds.pad(1500, 1500)
+            this.walkBounds.y -= 60
             this.inputBounds.pad(1500, 1500)
         }
 
 
+        this.container.addChild(this.tilesContainer)
+        this.container.addChild(this.entityContainer)
         ProgressionStats.instance.recordSessionStart();
 
 
@@ -86,15 +93,24 @@ export class MergeMediator {
         });
 
         // 1. Initialize the correct Grid View
+
         if (this.mode === 'Grid') {
+            const w = 700
+            const h = 700
+            let add = 0
+            DevGuiManager.instance.addButton('addSlot', () => {
+                add++
+            })
             this.gridView = new EntityGridView2(
-                () => InGameProgress.instance.getMaxGridSlots(),
-                this.walkBounds // Pass walkBounds here
+                () => InGameProgress.instance.getMaxGridSlots() + add,
+                this.walkBounds,
+                new PIXI.Rectangle(-w / 2, -h / 2, w, h),
+                this.tilesContainer
             );
         } else {
             this.gridView = new EntityGridView();
         }
-        this.container.addChild(this.gridView);
+        this.entityContainer.addChild(this.gridView);
 
         // Background setup
         this.setupBackground();
@@ -275,7 +291,7 @@ export class MergeMediator {
 
     private setupInput(): void {
         this.input = new InputManager(
-            this.container,
+            this.entityContainer,
             this.inputBounds,
             this.gridView,
             (ent, pos) => this.inputService.handleGrab(ent, pos),
@@ -345,7 +361,12 @@ export class MergeMediator {
         this.zoomService.update(delta);
         this.entities.update(delta);
 
-        this.zoomService.update(delta);
+
+        const view = this.gridView as EntityGridView2;
+        // Use the calculated targetScale to zoom the entire game container
+        this.gridView.zIndex = -1000000;
+
+        this.zoomService.setZoom(view.targetScale);
 
         if (this.mode === 'Grid') {
             this.updateDynamicZoom();
@@ -435,7 +456,7 @@ export class MergeMediator {
         // 5. Apply to service
         // Use a longer duration (1.5s) so the camera move is smooth as slots unlock
         if (Math.abs(this.zoomService.target - finalTarget) > 0.05) {
-            this.zoomService.setZoom(finalTarget, 1.5);
+            //this.zoomService.setZoom(finalTarget, 1.5);
         }
     }
 }

@@ -46,6 +46,7 @@ export default class MergeScene extends GameScene {
             const bked = new BakePreviewContainer()
             bked.generatePieces()
             //this.addChild(bked)
+            // bked.scale.set(2)
         }, 10);
 
 

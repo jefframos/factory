@@ -27,6 +27,14 @@ export class EntityManagerGrid extends EntityManager {
 
         return board;
     }
+    public getTileIndexAt(x: number, y: number): number {
+        const view = this.gridView as EntityGridView2;
+
+        // Use the method we added to the GridView to find the tile via collision
+        const tile = view.getTileAt(new Point(x, y));
+
+        return tile ? tile.data.index : -1;
+    }
     public getSlotOfEntity(entity: any): number {
         for (const [slotIndex, ent] of this.tileMap.entries()) {
             if (ent === entity) return slotIndex;

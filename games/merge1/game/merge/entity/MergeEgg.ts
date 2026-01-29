@@ -58,7 +58,7 @@ export class MergeEgg extends PIXI.Container {
         this.sprite = PIXI.Sprite.from(MergeAssets.Textures.Icons.Gift2);
         this.sprite.anchor.set(0.5, 1);
 
-        this.setupGooglyEyes(['eye', 'eye'])
+        //this.setupGooglyEyes(['eye', 'eye'])
 
         this.eyesContainer.x = 0;
         this.eyesContainer.y = -this.sprite.height * 0.5;
@@ -93,13 +93,14 @@ export class MergeEgg extends PIXI.Container {
             this.sprite.texture = PIXI.Texture.from(MergeAssets.Textures.Icons.Gift1)
 
         }
+        this.sprite.scale.set(1); // Stretched thin
+        this.shadow.scale.set(ViewUtils.elementScaler(this.shadow, this.sprite.width, this.sprite.width))
+        this.shadow.scale.y /= 2;
         // Setup initial "in-air" pose
         this.sprite.y = -120;
         this.sprite.scale.set(0.7, 1.3); // Stretched thin
         this.shadowContainer.alpha = 0;
 
-        this.shadow.scale.set(ViewUtils.elementScaler(this.shadow, this.sprite.width, this.sprite.width))
-        this.shadow.scale.y /= 2;
 
         // Landing Animation
         this.landingTimeline = gsap.timeline({
