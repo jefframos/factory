@@ -18,6 +18,7 @@ export default class ShopItemView extends PIXI.Container {
     // Panel Containers
     private unlockedPanel: PIXI.Container;
     private lockedPanel: PIXI.Container;
+    private fullBoardLabel: PIXI.Text;
 
     constructor(private config: IShopItemConfig, private style: typeof SHOP_STYLE_CONFIG.Item) {
         super();
@@ -29,33 +30,30 @@ export default class ShopItemView extends PIXI.Container {
         const s = this.style;
         const maskWidth = SHOP_STYLE_CONFIG.Window.WIDTH - SHOP_STYLE_CONFIG.Window.PADDING.LEFT - SHOP_STYLE_CONFIG.Window.PADDING.RIGHT;
 
-        // 1. Background (Common)
+        // 1. Background
         const bg = new PIXI.NineSlicePlane(PIXI.Texture.from(s.Textures.RowBgActive), 20, 20, 20, 20);
         bg.width = maskWidth;
         bg.height = s.HEIGHT;
-        //bg.tint = 0x222222;
-        //bg.alpha = 0.8;
         this.addChild(bg);
 
-        // 2. Unlocked Panel (Purchasable state)
+        // 2. Unlocked Panel
         this.unlockedPanel = new PIXI.Container();
         this.addChild(this.unlockedPanel);
 
         const tex = TextureBaker.getTexture(`${this.config.thumb}`);
         const thumb = new PIXI.Sprite(tex);
-        const ratio = ViewUtils.elementScaler(thumb, s.HEIGHT * 0.8); // Scale to 80% of row height
+        const ratio = ViewUtils.elementScaler(thumb, s.HEIGHT * 0.8);
         thumb.scale.set(ratio);
-        // FIX: Centered vertically and offset from the left edge
         thumb.anchor.set(0.5);
         thumb.position.set(s.HEIGHT / 2 + 10, s.HEIGHT / 2);
         this.unlockedPanel.addChild(thumb);
 
-        //console.log(this.config)
-        const staticData = StaticData.getAnimalData(this.config.level)
+        const staticData = StaticData.getAnimalData(this.config.level);
         this.titleText = new PIXI.Text(`${staticData.name}`, { ...MergeAssets.MainFont, fontSize: 22, fill: 0xffffff, wordWrap: true, wordWrapWidth: 150 });
         this.titleText.position.set(s.TEXT_OFFSET_X, s.HEIGHT * 0.25);
         this.unlockedPanel.addChild(this.titleText);
 
+        // Buy Button setup
         this.buyButton = new BaseButton({
             standard: { width: s.BUTTON_WIDTH, height: s.BUTTON_HEIGHT, texture: PIXI.Texture.from(s.Textures.BuyBtn), fontStyle: new PIXI.TextStyle({ ...MergeAssets.MainFont, fontSize: 24 }) },
             disabled: { texture: PIXI.Texture.from(s.Textures.BuyDisabled) },
@@ -64,7 +62,23 @@ export default class ShopItemView extends PIXI.Container {
         this.buyButton.position.set(maskWidth - s.BUTTON_WIDTH - 20, (s.HEIGHT - s.BUTTON_HEIGHT) / 2);
         this.unlockedPanel.addChild(this.buyButton);
 
-        // 3. Locked Panel (Requirement state)
+        // --- ADDED: Board Full Label ---
+        this.fullBoardLabel = new PIXI.Text("BOARD FULL", {
+            ...MergeAssets.MainFont,
+            fontSize: 14,
+            fill: 0xff4444, // Reddish color for warning
+            fontWeight: 'bold'
+        });
+        this.fullBoardLabel.anchor.set(0.5, 0);
+        // Positioned horizontally centered with the button, and slightly below it
+        this.fullBoardLabel.position.set(
+            this.buyButton.x + (s.BUTTON_WIDTH / 2),
+            this.buyButton.y + s.BUTTON_HEIGHT - 2
+        );
+        this.fullBoardLabel.visible = false;
+        this.unlockedPanel.addChild(this.fullBoardLabel);
+        // -------------------------------
+
         this.setupLockedPanel(maskWidth);
     }
 
@@ -96,14 +110,16 @@ export default class ShopItemView extends PIXI.Container {
         const price = ShopManager.instance.getPrice(this.config.id);
         const canAfford = InGameEconomy.instance.getAmount(CurrencyType.MONEY) >= price;
 
-        // Toggle Panels
         this.lockedPanel.visible = !unlocked;
         this.unlockedPanel.visible = unlocked;
 
         if (unlocked) {
-            // Manage button interaction state
+            // Button is disabled if you can't afford OR the board is full
             (!canAfford || isBoardFull) ? this.buyButton.disable() : this.buyButton.enable();
             this.buyButton.setLabel(NumberConverter.format(price));
+
+            // Toggle the full board label based on the flag
+            this.fullBoardLabel.visible = isBoardFull;
         }
     }
 }

@@ -56,7 +56,7 @@ export class MergeEgg extends PIXI.Container {
         // 2. Sprite
         //this.sprite = PIXI.Sprite.from('BorderFrame_Round24');
         this.sprite = PIXI.Sprite.from(MergeAssets.Textures.Icons.Gift2);
-        this.sprite.anchor.set(0.5, 0.9);
+        this.sprite.anchor.set(0.5, 1);
 
         this.setupGooglyEyes(['eye', 'eye'])
 

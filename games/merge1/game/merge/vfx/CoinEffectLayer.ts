@@ -95,8 +95,9 @@ export class CoinEffectLayer extends PIXI.Container {
      */
     public popAndFade(x: number, y: number, value: number, source: string | PIXI.Sprite): void {
         const coin = this.setupSprite(source);
-        const targetScaleX = coin.scale.x;
-        const targetScaleY = coin.scale.y;
+        //console.log(coin.worldTransform)
+        const targetScaleX = coin.scale.x * 0.5;
+        const targetScaleY = coin.scale.y * 0.5;
 
         coin.position.set(x, y);
         coin.scale.set(0);

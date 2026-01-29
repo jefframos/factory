@@ -57,12 +57,12 @@ export default class GeneratorHUD extends PIXI.Container {
                 width: 80,
                 height: 80,
                 allPadding: 10,
-                texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Blue), // Using Blue for speed up
-                iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Speed), // Using Blue for speed up
+                texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Green), // Using Blue for speed up
+                iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Gift1), // Using Blue for speed up
                 fontStyle: new PIXI.TextStyle({ ...MergeAssets.MainFont }),
                 centerIconHorizontally: true,
                 centerIconVertically: true,
-                iconSize: { height: 50, width: 50 }
+                iconSize: { height: 60, width: 60 }
             },
             over: { tint: 0xeeeeee },
             disabled: { texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Grey) },

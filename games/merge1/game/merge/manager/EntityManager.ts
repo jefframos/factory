@@ -32,10 +32,10 @@ export class EntityManager {
     public readonly entitiesByView: Map<PIXI.DisplayObject, IEntityLogic> = new Map();
 
     public constructor(
-        private readonly gridView: EntityGridView,
-        private readonly baker: GridBaker,
-        private readonly walkBounds: PIXI.Rectangle,
-        private readonly maxEntitiesGetter: () => number,
+        protected readonly gridView: EntityGridView,
+        protected readonly baker: GridBaker,
+        protected readonly walkBounds: PIXI.Rectangle,
+        protected readonly maxEntitiesGetter: () => number,
     ) { }
 
     public get size(): number {
@@ -49,7 +49,8 @@ export class EntityManager {
     public getLogic(view: PIXI.DisplayObject): IEntityLogic | undefined {
         return this.entitiesByView.get(view);
     }
-
+    public update(delta: number): void {
+    }
     // -------------------------
     // Room support: export/import
     // -------------------------
@@ -124,6 +125,7 @@ export class EntityManager {
         animal.position.copyFrom(pos);
         this.gridView.addEntity(animal);
 
+
         if (!existingData) {
             MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.Yay);
         }
@@ -165,7 +167,6 @@ export class EntityManager {
     }
 
     public spawnEgg(existingData?: IEntityData, merge?: Partial<IEntityData>, force: boolean = false): MergeEgg | null {
-        console.log(force)
         if (!force && (!existingData && this.entitiesByView.size >= this.maxEntitiesGetter())) {
             return null;
         }
@@ -215,6 +216,7 @@ export class EntityManager {
         const clampedY = Math.max(this.walkBounds.top, Math.min(y, this.walkBounds.bottom));
 
         view.position.set(clampedX, clampedY);
+
 
         const logic = this.entitiesByView.get(view);
         if (logic) {
@@ -291,6 +293,7 @@ export class EntityManager {
             this.onDirty.dispatch();
         }
     }
+
 
     /**
      * Legacy API. Keeps behavior.

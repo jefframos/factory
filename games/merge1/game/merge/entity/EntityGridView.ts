@@ -12,7 +12,9 @@ export class EntityGridView extends PIXI.Container {
         super();
         this.sortableChildren = true; // required for zIndex sorting
     }
-
+    public getTileAt(localPos: PIXI.Point): any | null {
+        return null;
+    }
     private static distSq(a: PIXI.Point, b: PIXI.Point): number {
         const dx = a.x - b.x;
         const dy = a.y - b.y;
@@ -134,6 +136,7 @@ export class EntityGridView extends PIXI.Container {
 
     public update(delta: number, bounds: PIXI.Rectangle): void {
         // Update pickables
+        // console.log(bounds)
         for (let i = 0; i < this.entities.length; i++) {
             const ent = this.entities[i] as any;
             if (typeof ent.update === "function") {

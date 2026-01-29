@@ -9,6 +9,7 @@ import { BaseMergeEntity } from "../entity/BaseMergeEntity";
 import { BlockMergeEntity } from "../entity/BlockMergeEntity";
 import { EntityGridView } from "../entity/EntityGridView";
 import { MergeEgg } from "../entity/MergeEgg";
+import { EntityManagerGrid } from "../grid/EntityManagerGrid";
 import { CoinManager } from "../manager/CoinManager";
 import { EntityManager } from "../manager/EntityManager";
 import { MissionManager } from "../missions/MissionManager";
@@ -17,7 +18,7 @@ export type MergeInputEntity = BlockMergeEntity | MergeEgg;
 
 export interface MergeInputMergeServiceDeps {
     gridView: EntityGridView;
-    entities: EntityManager;
+    entities: EntityManager | EntityManagerGrid;
     coins: CoinManager;
 
     // External policy hooks (mediator supplies these)
@@ -37,16 +38,16 @@ export class MergeInputMergeService {
     public readonly onMergePerformed: Signal = new Signal(); // dispatch(nextLevel: number)
     public readonly onEggHatchedByInput: Signal = new Signal(); // dispatch(level: number)
 
-    private readonly mergeRadiusPx: number;
-    private readonly eggHoverRadiusPx: number;
-    private readonly instantCollectOnGrab: boolean;
+    protected readonly mergeRadiusPx: number;
+    protected readonly eggHoverRadiusPx: number;
+    protected readonly instantCollectOnGrab: boolean;
 
-    private activeEntity: MergeInputEntity | null = null;
-    private currentHighlightedEntity: BlockMergeEntity | null = null;
+    protected activeEntity: MergeInputEntity | null = null;
+    protected currentHighlightedEntity: BlockMergeEntity | null = null;
 
-    private dirtyCats: Map<MergeInputEntity, number> = new Map();
+    protected dirtyCats: Map<MergeInputEntity, number> = new Map();
 
-    public constructor(private readonly deps: MergeInputMergeServiceDeps) {
+    public constructor(protected readonly deps: MergeInputMergeServiceDeps) {
         this.mergeRadiusPx = deps.mergeRadiusPx ?? 90;
         this.eggHoverRadiusPx = deps.eggHoverRadiusPx ?? 60;
         this.instantCollectOnGrab = deps.instantCollectCoinOnGrab ?? true;
@@ -88,7 +89,6 @@ export class MergeInputMergeService {
         if (this.activeEntity) {
             this.deps.gridView.addChild(this.activeEntity);
             (this.activeEntity as any)?.startGrab?.();
-
             // Bring to front
             this.deps.gridView.setActive(this.activeEntity);
 
@@ -258,18 +258,24 @@ export class MergeInputMergeService {
 
         const mergeData = this.deps.entities.merge(source, target);
 
-        MissionManager.instance.reportMergeDone(1);
-        ProgressionStats.instance.recordMerge(mergeData.nextLevel);
-        InGameProgress.instance.addXP(mergeData.nextLevel);
-        InGameProgress.instance.reportMergeLevel(mergeData.nextLevel);
-
-        this.onMergePerformed.dispatch(mergeData.nextLevel);
+        if (mergeData && mergeData.nextLevel) {
+            this.finalizeMerge(mergeData.mergeEntity, mergeData.nextLevel)
+        }
 
         if (mergeData.mergeEntity) {
             this.setEntityDirty(mergeData.mergeEntity)
         }
 
         return mergeData.mergeEntity;
+    }
+
+    protected finalizeMerge(entity: BaseMergeEntity, level: number) {
+        MissionManager.instance.reportMergeDone(1);
+        ProgressionStats.instance.recordMerge(level);
+        InGameProgress.instance.addXP(level);
+        InGameProgress.instance.reportMergeLevel(level);
+
+        this.onMergePerformed.dispatch(level);
     }
 
     private findMergeTargetFor(source: BlockMergeEntity): BlockMergeEntity | null {

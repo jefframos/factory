@@ -86,6 +86,7 @@ export class BlockMergeEntity extends BaseMergeEntity {
         this.sprite.tint = 0xFFFFFF;
 
         // Neutral Pivots for Snapshot
+        this.sprite.scale.set(1);
         this.sprite.pivot.set(0, 0);
         this.sprite.position.set(0, 0);
 
@@ -161,6 +162,7 @@ export class BlockMergeEntity extends BaseMergeEntity {
 
         this.sprite.pivot.set(w / 2, h);
         this.sprite.position.set(0, 0);
+        this.sprite.scale.set(1);
 
         this.highlight.pivot.set((w + 10) / 2, h + 5);
         this.highlight.position.set(0, 0);

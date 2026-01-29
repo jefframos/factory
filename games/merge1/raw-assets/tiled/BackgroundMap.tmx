@@ -664,11 +664,11 @@
  <objectgroup id="3" name="Background">
   <object id="87" gid="16" x="4" y="105.004" width="71.0805" height="119.799"/>
   <object id="88" gid="16" x="110.488" y="68.7987" width="71.0805" height="119.799"/>
-  <object id="89" gid="16" x="506.157" y="128.512" width="71.0805" height="119.799"/>
-  <object id="92" gid="19" x="12.2304" y="302.315" width="119" height="195.671"/>
-  <object id="93" gid="21" x="8.74497" y="787.349" width="75.0738" height="52.7114"/>
-  <object id="94" gid="21" x="620.047" y="806.414" width="75.0738" height="52.7114"/>
-  <object id="95" gid="11" x="535.233" y="260.597" width="161.329" height="142.161"/>
+  <object id="89" gid="16" x="603.49" y="55.1787" width="71.0805" height="119.799"/>
+  <object id="92" gid="19" x="166.897" y="102.315" width="119" height="195.671"/>
+  <object id="93" gid="21" x="-45.9217" y="791.349" width="75.0738" height="52.7114"/>
+  <object id="94" gid="21" x="658.714" y="782.414" width="75.0738" height="52.7114"/>
+  <object id="95" gid="11" x="576.566" y="132.597" width="161.329" height="142.161"/>
   <object id="96" gid="12" x="653.177" y="310.593" width="74.2752" height="52.7114"/>
   <object id="97" gid="12" x="629.57" y="891.774" width="74.2752" height="52.7114"/>
   <object id="98" gid="9" x="-72.4362" y="1051.18" width="97.4362" height="77.4698"/>
@@ -677,7 +677,7 @@
   <object id="121" gid="9" x="684.092" y="1050.79" width="97.4362" height="77.4698"/>
   <object id="122" gid="9" x="676.092" y="538.794" width="97.4362" height="77.4698"/>
   <object id="123" gid="9" x="-81.9083" y="496.794" width="97.4362" height="77.4698"/>
-  <object id="101" gid="10" x="-5" y="439" width="139" height="141"/>
+  <object id="101" gid="10" x="-37" y="153.667" width="139" height="141"/>
   <object id="102" gid="26" x="-72" y="443" width="100" height="306"/>
   <object id="103" gid="26" x="696" y="531" width="100" height="306"/>
   <object id="104" gid="28" x="668" y="760" width="188" height="256"/>
@@ -723,9 +723,8 @@
   <object id="114" gid="28" x="-156" y="1026" width="188" height="256"/>
   <object id="115" gid="28" x="-190" y="1244" width="188" height="256"/>
   <object id="116" gid="28" x="694" y="1254" width="188" height="256"/>
-  <object id="117" gid="24" x="604" y="163" width="124" height="197"/>
+  <object id="117" gid="24" x="630.667" y="89.6667" width="124" height="197"/>
   <object id="118" gid="24" x="24" y="71" width="124" height="197"/>
-  <object id="119" gid="23" x="33" y="200" width="187" height="152"/>
   <object id="147" gid="20" x="333" y="87" width="58" height="57"/>
   <object id="148" gid="13" x="333" y="85" width="159" height="98"/>
  </objectgroup>

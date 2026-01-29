@@ -27,7 +27,7 @@ export class BaseMergeEntity extends PIXI.Container {
 
     protected stateTimer: number = 0;
     protected moveDir: PIXI.Point = new PIXI.Point(0, 0);
-    protected walkSpeed: number = 80;
+    public walkSpeed: number = 80;
     protected walkAnimTime: number = 0;
 
 

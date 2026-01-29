@@ -9,6 +9,8 @@ export class ZoomService {
     private zoomDuration: number = 0;
     private isZooming: boolean = false;
 
+    public get target(): number { return this.targetScale; }
+
     constructor(private readonly container: PIXI.Container) {
         this.currentScale = container.scale.x;
         this.targetScale = this.currentScale;
@@ -20,10 +22,12 @@ export class ZoomService {
      * @param duration Seconds for the transition
      */
     public setZoom(scale: number, duration: number = 0.5): void {
+        if (Math.abs(this.targetScale - scale) < 0.01) return; // Prevent redundant restarts
         this.targetScale = scale;
         this.startScale = this.currentScale;
         this.zoomDuration = duration;
         this.zoomTimer = 0;
+        this.isZooming = true;
 
         if (duration <= 0) {
             this.applyScale(scale);

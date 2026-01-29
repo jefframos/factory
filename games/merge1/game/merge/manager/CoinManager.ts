@@ -244,18 +244,25 @@ export class CoinManager {
         const val = coin.value;
         const ownerId = (coin as any).ownerId as string;
 
-        this.coinEffects.popAndFlyToTarget(
-            effectStart.x,
-            effectStart.y,
-            effectTarget.x,
-            effectTarget.y,
-            coin.coinSprite,
-            val,
-            () => {
-                ProgressionStats.instance.recordCurrencyGained(type, val);
-                InGameEconomy.instance.add(type, val);
-            }
-        );
+
+        this.coinEffects.popAndFade(effectStart.x,
+            effectStart.y, val, coin.coinSprite)
+
+        ProgressionStats.instance.recordCurrencyGained(type, val);
+        InGameEconomy.instance.add(type, val);
+
+        // this.coinEffects.popAndFlyToTarget(
+        //     effectStart.x,
+        //     effectStart.y,
+        //     effectTarget.x,
+        //     effectTarget.y,
+        //     coin.coinSprite,
+        //     val,
+        //     () => {
+        //         ProgressionStats.instance.recordCurrencyGained(type, val);
+        //         InGameEconomy.instance.add(type, val);
+        //     }
+        // );
 
         const idx = this.coins.indexOf(coin);
         if (idx >= 0) {
