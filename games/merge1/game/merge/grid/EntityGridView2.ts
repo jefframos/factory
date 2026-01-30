@@ -20,8 +20,8 @@ export class EntityGridView2 extends EntityGridView {
     private readonly COL_LIMIT = 5;
     private readonly START_COLS = 3;
     private readonly MAX_HEIGHT_BEFORE_WIDEN = 5;
-    private readonly TILE_SIZE = 120;
-    private readonly SPACING = 15;
+    private readonly TILE_SIZE = 140;
+    private readonly SPACING = 0;
     private gr: PIXI.Graphics;
     constructor(
         private maxSlotsGetter: () => number,

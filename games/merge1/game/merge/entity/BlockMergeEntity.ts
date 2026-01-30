@@ -99,6 +99,7 @@ export class BlockMergeEntity extends BaseMergeEntity {
             yOffset: 0,
             spacing: 0.95,
             randomize: true,
+            rotation: false,
             tint: PIXI.utils.string2hex(entityData.colors[0])
         });
         this.earsContainer.x = targetWidth / 2;
@@ -110,7 +111,8 @@ export class BlockMergeEntity extends BaseMergeEntity {
             widthFactor: 0.7,
             yOffset: 2,
             spacing: 1.2,
-            randomize: true
+            randomize: true,
+            rotation: true,
         });
 
         this.addFeature(this.mouthContainer, ['cat-mouth-1'], {
@@ -118,33 +120,36 @@ export class BlockMergeEntity extends BaseMergeEntity {
             widthFactor: 0.22 + Math.random() * 0.1,
             yOffset: targetHeight * 0.25,
             spacing: 0,
-            randomize: false
+            randomize: false,
+            rotation: false,
         });
 
         this.faceContainer.x = targetWidth / 2;
         this.faceContainer.y = targetHeight * 0.35;
 
         // Level Text
-        this.levelText.x = targetWidth / 2;
+        //this.levelText.anchor.x = 1
+        this.levelText.x = targetWidth;
         this.levelText.y = targetHeight * 0.7;
         this.levelText.alpha = 1;
+        this.levelText.visible = false;
 
-        // Highlight & Shadow (Hide shadow for shop snapshot usually)
-        // if (this.highlight instanceof PIXI.Sprite) {
-        //     this.highlight.destroy();
-        //     this.highlight = new PIXI.NineSlicePlane(PIXI.Texture.from('BubbleFrame01_White'), 20, 20, 20, 20);
-        //     this.highlight.visible = false;
-        //     this.spriteContainer.addChildAt(this.highlight, 0);
-        //     this.spriteContainer.addChildAt(this.shadowContainer, 0);
-        // }
+        //Highlight & Shadow (Hide shadow for shop snapshot usually)
+        if (this.highlight instanceof PIXI.Sprite) {
+            this.highlight.destroy();
+            this.highlight = new PIXI.NineSlicePlane(PIXI.Texture.from('BubbleFrame01_White'), 20, 20, 20, 20);
+            this.highlight.visible = false;
+            this.spriteContainer.addChildAt(this.highlight, 0);
+            this.spriteContainer.addChildAt(this.shadowContainer, 0);
+        }
 
-        // this.highlight.width = targetWidth + 10;
-        // this.highlight.height = targetHeight + 10;
-        // this.highlight.pivot.set(0, 0);
-        // this.highlight.position.set(-5, -5);
+        this.highlight.width = targetWidth + 10;
+        this.highlight.height = targetHeight + 10;
+        this.highlight.pivot.set(0, 0);
+        this.highlight.position.set(-5, -5);
 
         this.shadowContainer.visible = false;
-        this.levelText.visible = false
+        //this.levelText.visible = false
     }
 
     /**
@@ -176,7 +181,8 @@ export class BlockMergeEntity extends BaseMergeEntity {
         this.faceContainer.y = -h * 0.65;
 
         this.levelText.x = 0;
-        this.levelText.y = -h * 0.3;
+        this.levelText.y = -h * 0.1;
+        this.levelText.visible = true;
 
         this.coinOffset.set(0, -h - 20);
 
@@ -198,7 +204,21 @@ export class BlockMergeEntity extends BaseMergeEntity {
             .to(this.shadowContainer, { alpha: 1, duration: 0.5, ease: "bounce.out" }, 0)
             .to(this.spriteContainer.scale, { x: 1, y: 1, duration: 0.7, ease: "elastic.out" }, 0.1);
     }
+    complete() {
+        if (this.landingTimeline) this.landingTimeline.kill();
+        this.spriteContainer.y = 0
+        this.earsContainer.visible = true
+        this.spriteContainer.scale.set(1)
 
+    }
+    public update(delta: number, bounds: PIXI.Rectangle): void {
+        super.update(delta, bounds)
+
+        //console.log(this.spriteContainer.scale.x)
+
+        // this.levelText.text = this.scale.x.toFixed(2)
+        // this.levelText.text = this.sprite.width.toFixed(2)
+    }
     protected updateHop(hop: number) {
         this.faceContainer.pivot.y = hop * 12;
         this.earsContainer.pivot.y = hop * 5; // Ears bounce slightly too!

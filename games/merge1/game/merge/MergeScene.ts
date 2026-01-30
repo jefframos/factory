@@ -48,6 +48,20 @@ export default class MergeScene extends GameScene {
 
             const bked = new BakePreviewContainer()
             bked.generatePieces()
+            bked.generateFramesGrid([
+                'frame-1',
+                'frame-2',
+                'frame-3'
+            ], [
+                'portrait-1',
+                'portrait-2',
+                'portrait-3',
+                'portrait-4',
+                'portrait-5',
+                'portrait-6',
+                'portrait-7',
+                'portrait-8'
+            ])
             //this.addChild(bked)
             // bked.scale.set(2)
         }, 10);

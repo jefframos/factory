@@ -20,7 +20,7 @@ export class BakePreviewContainer extends PIXI.Container {
         for (let index = 0; index < StaticData.entityCount; index++) {
             const baseM = new BlockMergeEntity();
             baseM.init(index + 1, '', '')
-
+            baseM.complete()
             const row = Math.floor(index / columns);
             const col = index % columns;
             baseM.x = startX + col * spacing;
@@ -32,6 +32,58 @@ export class BakePreviewContainer extends PIXI.Container {
 
         }
     }
+
+    public generateFramesGrid(frameKeys: string[], portraits: string[]): void {
+        const columns = 6;      // Number of frames per row
+        const spacing = 150;    // Increased spacing for frames
+        const startX = 75;
+        const startY = 75;
+
+        for (let index = 1; index <= StaticData.entityCount; index++) {
+            const level = index;
+
+            // 1. Get the frame key (cycle through list if fewer frames than levels)
+            const frameKey = frameKeys[(index - 1) % frameKeys.length];
+            const portraitKey = portraits[(index - 1) % portraits.length];
+
+            // 2. Bake the texture using our new method
+            const bakedFrameTexture = TextureBaker.bakeFramedEntity(
+                level,
+                frameKey,
+                Game.renderer,
+                portraitKey
+            );
+
+            const lockTex = TextureBaker.getTexture(`Entity_${level}_Frame_LOCKED`)
+            console.log(lockTex)
+            // 3. Create and position the Sprite
+            //const sprite = new PIXI.Sprite(bakedFrameTexture);
+            const sprite = new PIXI.Sprite(lockTex);
+            sprite.anchor.set(0.5);
+
+            const row = Math.floor((index - 1) / columns);
+            const col = (index - 1) % columns;
+
+            sprite.x = startX + col * spacing;
+            sprite.y = startY + row * spacing;
+            sprite.scale.set(0.8); // Adjust scale if they are too big for the screen
+
+            // // 4. Label for Level/Frame info
+            // const label = new PIXI.Text(`Lvl ${level}`, {
+            //     fill: 0xffffff,
+            //     fontSize: 16,
+            //     fontWeight: 'bold',
+            //     stroke: 0x000000,
+            //     strokeThickness: 4
+            // });
+            // label.anchor.set(0.5);
+            // label.y = (sprite.height / 2) + 20;
+            // sprite.addChild(label);
+
+            this.addChild(sprite);
+        }
+    }
+
     public generateGrid(): void {
         const columns = 6;      // Number of sprites per row
         const spacing = 110;    // Space between sprites

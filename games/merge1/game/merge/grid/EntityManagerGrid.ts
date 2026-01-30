@@ -60,11 +60,10 @@ export class EntityManagerGrid extends EntityManager {
         for (const [slotIndex, entity] of currentOccupants) {
             const tile = view.tiles[slotIndex];
             if (tile) {
-                if ((entity as any).isDragging) continue;
+                if ((entity as any).isDragging && !(entity instanceof MergeEgg)) continue;
                 // Force the entity to the new centered tile position
                 entity.position.set(tile.x, tile.y);
                 entity.zIndex = tile.y;
-
                 // Update the logical data so saving/loading is accurate
                 const logic = this.getLogic(entity);
                 if (logic) {

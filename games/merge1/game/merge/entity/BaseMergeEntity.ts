@@ -96,17 +96,20 @@ export class BaseMergeEntity extends PIXI.Container {
             yOffset: number,
             spacing: number,
             tint?: number,
-            randomize: boolean
+            randomize: boolean,
+            rotation: boolean
         }
     ): void {
         targetContainer.removeChildren().forEach(child => child.destroy());
 
         const targetFeatureWidth = (this.sprite.width * config.widthFactor) / (config.count || 1);
 
+        const angle = config.rotation ? Math.random() * 3.14 : 0
         for (let i = 0; i < config.count; i++) {
             const tex = textureIds[i % textureIds.length];
             const feature = PIXI.Sprite.from(tex);
             feature.anchor.set(0.5);
+
 
             feature.tint = config.tint || 0xFFFFFF
 
@@ -130,7 +133,10 @@ export class BaseMergeEntity extends PIXI.Container {
             feature.y = config.yOffset + noiseY;
 
             if (config.randomize) {
-                feature.rotation = (Math.random() - 0.5) * 0.2;
+                feature.rotation = (Math.random() - 0.5) * 0.2 + angle;
+            } else {
+                feature.rotation = angle
+
             }
 
             targetContainer.addChild(feature);
@@ -216,6 +222,9 @@ export class BaseMergeEntity extends PIXI.Container {
     }
     public stopGrab() {
         this.state = EntityState.IDLE;
+
+        this.spriteContainer.scale.x = 1;
+        this.spriteContainer.scale.y = 1;
     }
     public update(delta: number, bounds: PIXI.Rectangle): void {
         // If landing, let GSAP handle the sprite. We just block logic.
@@ -363,8 +372,8 @@ export class BaseMergeEntity extends PIXI.Container {
         const targetSide = this.spriteContainer.scale.x > 0 ? 1 : -1;
 
         // 2. Smoothly lerp scale to exactly 1 (or -1)
-        this.spriteContainer.scale.x += (targetSide - this.spriteContainer.scale.x) * lerpSpeed;
-        this.spriteContainer.scale.y += (1 - this.spriteContainer.scale.y) * lerpSpeed;
+        //this.spriteContainer.scale.x += (targetSide - this.spriteContainer.scale.x) * lerpSpeed;
+        //this.spriteContainer.scale.y += (1 - this.spriteContainer.scale.y) * lerpSpeed;
 
         // 3. Lift the sprite and shadowContainer logic
         // We lift the sprite relative to the container to show it's "in the air"
