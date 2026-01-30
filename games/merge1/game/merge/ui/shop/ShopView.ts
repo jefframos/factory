@@ -1,3 +1,4 @@
+import PlatformHandler from "@core/platforms/PlatformHandler";
 import BaseButton from "@core/ui/BaseButton";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
@@ -211,6 +212,8 @@ export default class ShopView extends PIXI.Container {
     public show(): void {
         if (this.visible) return;
 
+        PlatformHandler.instance.platform.gameplayStop();
+
         this.visible = true;
         this.alpha = 0;
         this.windowContainer.scale.set(0.8);
@@ -225,6 +228,7 @@ export default class ShopView extends PIXI.Container {
     public hide(): void {
         if (!this.visible) return;
 
+        PlatformHandler.instance.platform.gameplayStart();
         gsap.to(this, {
             alpha: 0,
             duration: 0.2,

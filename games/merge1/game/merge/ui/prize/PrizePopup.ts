@@ -1,3 +1,4 @@
+import PlatformHandler from '@core/platforms/PlatformHandler';
 import Pool from '@core/Pool';
 import { BasePopup } from '@core/popup/BasePopup';
 import BaseButton, { ButtonState } from '@core/ui/BaseButton';
@@ -135,6 +136,8 @@ export class PrizePopup extends BasePopup {
                 this.autoHideTimeout = setTimeout(() => this.onClaim(), data.autoHideTimer * 1000);
             }
         });
+
+        PlatformHandler.instance.platform.gameplayStop();
     }
 
     private setupButtons(): void {
@@ -192,6 +195,8 @@ export class PrizePopup extends BasePopup {
             this.currentCallback = null;
         }
         this.popupManager.hideCurrent();
+
+        PlatformHandler.instance.platform.gameplayStart();
     }
 
     private triggerPhysicalEffects(): void {
