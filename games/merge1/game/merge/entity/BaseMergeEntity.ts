@@ -47,10 +47,15 @@ export class BaseMergeEntity extends PIXI.Container {
         if (!tex) {
             const shadowC = new PIXI.Container();
 
-            const shadow = new PIXI.Graphics();
-            shadow.beginFill(0x000000, 0.2);
-            shadow.drawEllipse(120, 120, 120, 120);
-            shadow.endFill();
+            // const shadow = new PIXI.Graphics();
+            // shadow.beginFill(0x000000, 0.2);
+            // shadow.drawEllipse(120, 120, 120, 120);
+            // shadow.endFill();
+            // shadowC.addChild(shadow);
+            const shadow = PIXI.Sprite.from('particle');
+            shadow.tint = 0
+            shadow.alpha = 0.2
+            //shadow.anchor.set(0.5)
             shadowC.addChild(shadow);
             tex = TextureBaker.bakeContainer('___shadow', shadowC, Game.renderer);
         }

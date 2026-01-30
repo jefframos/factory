@@ -110,6 +110,35 @@ export class EntityManagerGrid extends EntityManager {
         return -1;
     }
 
+
+    public getRandomEmptyIndex(): number {
+        const max = this.maxEntitiesGetter();
+        const view = this.gridView as EntityGridView2;
+
+        // Ensure the grid is built to match the max capacity
+        if (view.tiles.length < max) {
+            view.rebuildGrid();
+        }
+
+        const emptyIndices: number[] = [];
+
+        // 1. Collect all indices that don't have an entity
+        for (let i = 0; i < max; i++) {
+            if (!this.tileMap.has(i)) {
+                emptyIndices.push(i);
+            }
+        }
+
+        // 2. If no slots are empty, return -1
+        if (emptyIndices.length === 0) {
+            return -1;
+        }
+
+        // 3. Pick a random index from the pool of empty slots
+        const randomIndex = Math.floor(Math.random() * emptyIndices.length);
+        return emptyIndices[randomIndex];
+    }
+
     /**
      * Overridden to handle Slot-based positioning from saved data
      */
@@ -149,7 +178,7 @@ export class EntityManagerGrid extends EntityManager {
         let targetSlot = (existingData as any)?.slot;
 
         if (targetSlot === undefined) {
-            targetSlot = this.getFirstEmptyIndex();
+            targetSlot = this.getRandomEmptyIndex();
         }
 
         if (targetSlot !== -1) {

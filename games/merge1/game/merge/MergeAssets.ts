@@ -286,6 +286,7 @@ export default class MergeAssets {
             CatBody: "cat-body",
             CatLines: "cat-lines",
             CatBodies: ["cat-shape-1", "cat-shape-2", "cat-shape-3", "cat-shape-4"],
+            Mats: ["mat-1", "mat-2", "mat-3", "mat-4"],
         },
         Icons: {
             Video: "ItemIcon_Video",

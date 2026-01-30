@@ -276,6 +276,8 @@ export class MergeInputMergeService {
         InGameProgress.instance.reportMergeLevel(level);
 
         this.onMergePerformed.dispatch(level);
+
+        entity.stopGrab();
     }
 
     protected findMergeTargetFor(source: BlockMergeEntity): BlockMergeEntity | null {

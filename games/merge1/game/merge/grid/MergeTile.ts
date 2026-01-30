@@ -1,4 +1,6 @@
+import ViewUtils from "@core/utils/ViewUtils";
 import * as PIXI from "pixi.js";
+import MergeAssets from "../MergeAssets";
 
 export interface TileData {
     id: string;      // Unique ID for saving/loading
@@ -8,16 +10,22 @@ export interface TileData {
     occupantId: string | null; // ID of the BlockMergeEntity or Egg
 }
 
-export class MergeTile extends PIXI.Graphics {
+export class MergeTile extends PIXI.Container {
     public data!: TileData;
+
+    static COUNTER = Math.floor(Math.random() * MergeAssets.Textures.Extras.Mats.length);
+
+    private sprite = PIXI.Sprite.from('mat-1')
 
     constructor() {
         super();
     }
     public init(size: number) {
-        // Visual representation
-        this.beginFill(0x000000, 0.15);
-        this.drawRoundedRect(-size / 2 + 5, -size / 2 + 5, size - 10, size - 10, 15);
-        this.endFill();
+
+        const id = MergeTile.COUNTER++ % MergeAssets.Textures.Extras.Mats.length
+        this.sprite.texture = PIXI.Texture.from(MergeAssets.Textures.Extras.Mats[id])
+        this.addChild(this.sprite);
+        this.sprite.scale.set(ViewUtils.elementScaler(this.sprite, size))
+        this.sprite.anchor.set(0.5)
     }
 }

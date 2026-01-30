@@ -1,9 +1,169 @@
 {
   "frames": {
-    "grass-patch-1": {
+    "toy3": {
       "frame": {
         "x": 2,
         "y": 2,
+        "w": 308,
+        "h": 184
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 308,
+        "h": 184
+      },
+      "sourceSize": {
+        "w": 308,
+        "h": 184
+      }
+    },
+    "toy2": {
+      "frame": {
+        "x": 2,
+        "y": 188,
+        "w": 158,
+        "h": 158
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 158,
+        "h": 158
+      },
+      "sourceSize": {
+        "w": 158,
+        "h": 158
+      }
+    },
+    "toy1": {
+      "frame": {
+        "x": 312,
+        "y": 2,
+        "w": 250,
+        "h": 173
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 250,
+        "h": 173
+      },
+      "sourceSize": {
+        "w": 250,
+        "h": 173
+      }
+    },
+    "tower-toy": {
+      "frame": {
+        "x": 2,
+        "y": 348,
+        "w": 367,
+        "h": 615
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 367,
+        "h": 615
+      },
+      "sourceSize": {
+        "w": 367,
+        "h": 615
+      }
+    },
+    "top-plant-2": {
+      "frame": {
+        "x": 619,
+        "y": 2,
+        "w": 313,
+        "h": 737
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 313,
+        "h": 737
+      },
+      "sourceSize": {
+        "w": 313,
+        "h": 737
+      }
+    },
+    "top-plant-1": {
+      "frame": {
+        "x": 2,
+        "y": 741,
+        "w": 321,
+        "h": 742
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 321,
+        "h": 742
+      },
+      "sourceSize": {
+        "w": 321,
+        "h": 742
+      }
+    },
+    "tiles": {
+      "frame": {
+        "x": 934,
+        "y": 2,
+        "w": 256,
+        "h": 256
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 256,
+        "h": 256
+      },
+      "sourceSize": {
+        "w": 256,
+        "h": 256
+      }
+    },
+    "table": {
+      "frame": {
+        "x": 746,
+        "y": 741,
+        "w": 173,
+        "h": 277
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 173,
+        "h": 277
+      },
+      "sourceSize": {
+        "w": 173,
+        "h": 277
+      }
+    },
+    "grass-patch-1": {
+      "frame": {
+        "x": 934,
+        "y": 260,
         "w": 256,
         "h": 256
       },
@@ -22,8 +182,8 @@
     },
     "grass-patch-1-old2": {
       "frame": {
-        "x": 260,
-        "y": 2,
+        "x": 934,
+        "y": 518,
         "w": 256,
         "h": 256
       },
@@ -42,8 +202,8 @@
     },
     "grass-patch-1-old": {
       "frame": {
-        "x": 2,
-        "y": 260,
+        "x": 921,
+        "y": 776,
         "w": 256,
         "h": 256
       },
@@ -59,6 +219,106 @@
         "w": 256,
         "h": 256
       }
+    },
+    "full-background": {
+      "frame": {
+        "x": 2,
+        "y": 1064,
+        "w": 2115,
+        "h": 1500
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 2115,
+        "h": 1500
+      },
+      "sourceSize": {
+        "w": 2115,
+        "h": 1500
+      }
+    },
+    "couch2": {
+      "frame": {
+        "x": 1192,
+        "y": 2,
+        "w": 373,
+        "h": 298
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 373,
+        "h": 298
+      },
+      "sourceSize": {
+        "w": 373,
+        "h": 298
+      }
+    },
+    "couch": {
+      "frame": {
+        "x": 1192,
+        "y": 377,
+        "w": 405,
+        "h": 243
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 405,
+        "h": 243
+      },
+      "sourceSize": {
+        "w": 405,
+        "h": 243
+      }
+    },
+    "cat-tower-2": {
+      "frame": {
+        "x": 1504,
+        "y": 2,
+        "w": 423,
+        "h": 830
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 423,
+        "h": 830
+      },
+      "sourceSize": {
+        "w": 423,
+        "h": 830
+      }
+    },
+    "carpet": {
+      "frame": {
+        "x": 1929,
+        "y": 2,
+        "w": 999,
+        "h": 453
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 999,
+        "h": 453
+      },
+      "sourceSize": {
+        "w": 999,
+        "h": 453
+      }
     }
   },
   "meta": {
@@ -67,8 +327,8 @@
     "image": "backgrounds.png",
     "format": "RGBA8888",
     "size": {
-      "w": 518,
-      "h": 518
+      "w": 2384,
+      "h": 3181
     },
     "scale": 1,
     "related_multi_packs": []

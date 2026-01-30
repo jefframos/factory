@@ -201,6 +201,21 @@ export class MergeMediator {
         });
 
         this.ftueService.markDirty();
+
+        // setTimeout(() => {
+        //     this.updateDebugRect()
+        // }, 500);
+    }
+
+    public updateDebugRect(): void {
+        const gr = new PIXI.Graphics()
+        gr.clear();
+        gr.beginFill(0xFF0000, 0.25);
+        // Note: gridFit is likely in "world" or "parent" space
+        gr.drawRect(this.walkBounds.x, this.walkBounds.y, this.walkBounds.width, this.walkBounds.height);
+        gr.endFill();
+
+        this.container.addChild(gr)
     }
 
     private setupBackground(): void {
@@ -274,7 +289,10 @@ export class MergeMediator {
         });
 
         this.ftueService.onStarted.add(() => this.zoomService.setZoom(1.3, 0.6));
-        this.ftueService.onCompleted.add(() => this.zoomService.setZoom(1.0, 0.8));
+        this.ftueService.onCompleted.add(() => {
+            this.zoomService.setZoom(1.0, 0.8)
+            this.eggGenerator.progress = EggGenerator.MAX_TIME * 0.85;
+        });
 
         // setTimeout(() => {
 
@@ -362,14 +380,12 @@ export class MergeMediator {
         this.entities.update(delta);
 
 
-        const view = this.gridView as EntityGridView2;
-        // Use the calculated targetScale to zoom the entire game container
-        this.gridView.zIndex = -1000000;
-
-        this.zoomService.setZoom(view.targetScale);
 
         if (this.mode === 'Grid') {
             this.updateDynamicZoom();
+            const view = this.gridView as EntityGridView2;
+
+            this.zoomService.setZoom(view.targetScale);
         }
 
         if (!this.ftueService.ftueEnabled) {
@@ -404,7 +420,10 @@ export class MergeMediator {
             if (logic.data.pendingCoins >= this.MAX_COINS_PER_ENTITY) return;
 
             if (logic.generator.update(delta)) {
-                logic.data.pendingCoins++;
+
+                if (!this.autoCollectCoins) {
+                    logic.data.pendingCoins++;
+                }
                 const config = StaticData.getAnimalData(logic.data.level);
                 const offset = (view as BaseMergeEntity)?.coinOffset ?? new PIXI.Point();
 

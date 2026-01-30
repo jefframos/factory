@@ -19,7 +19,7 @@ export class EntityGridView2 extends EntityGridView {
     // Grid Layout Constants
     private readonly COL_LIMIT = 5;
     private readonly START_COLS = 3;
-    private readonly MAX_HEIGHT_BEFORE_WIDEN = 6;
+    private readonly MAX_HEIGHT_BEFORE_WIDEN = 5;
     private readonly TILE_SIZE = 120;
     private readonly SPACING = 15;
     private gr: PIXI.Graphics;
@@ -136,7 +136,7 @@ export class EntityGridView2 extends EntityGridView {
 
         const scaleX = this.gridFit.width / this.gridLogicalSize.x;
         const scaleY = this.gridFit.height / this.gridLogicalSize.y;
-        this.targetScale = Math.min(Math.min(scaleX, scaleY), 1.5);
+        this.targetScale = Math.min(Math.min(scaleX, scaleY), 1.25);
 
         // 5. RE-POSITION ALL TILES
         const gridFitCenterX = this.gridFit.x + this.gridFit.width / 2;

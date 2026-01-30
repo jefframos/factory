@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="12" nextobjectid="157">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="14" nextobjectid="173">
  <editorsettings>
   <export target="../json/tiled.json" format="json"/>
  </editorsettings>
- <tileset firstgid="1" name="Background" tilewidth="270" tileheight="320" tilecount="21" columns="0">
+ <tileset firstgid="1" name="Background" tilewidth="2115" tileheight="1500" tilecount="33" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="6">
    <image source="images/ui/Image_Effect_Rotate.png" width="270" height="275"/>
@@ -68,8 +68,44 @@
   <tile id="27">
    <image source="images/garden/tree1.png" width="188" height="256"/>
   </tile>
+  <tile id="29">
+   <image source="images/backgrounds/carpet.png" width="999" height="453"/>
+  </tile>
+  <tile id="30">
+   <image source="images/backgrounds/top-plant-1.png" width="321" height="742"/>
+  </tile>
+  <tile id="31">
+   <image source="images/backgrounds/top-plant-2.png" width="313" height="737"/>
+  </tile>
+  <tile id="32">
+   <image source="images/backgrounds/couch.png" width="405" height="243"/>
+  </tile>
+  <tile id="33">
+   <image source="images/backgrounds/table.png" width="173" height="277"/>
+  </tile>
+  <tile id="34">
+   <image source="images/backgrounds/tower-toy.png" width="367" height="615"/>
+  </tile>
+  <tile id="35">
+   <image source="images/backgrounds/toy1.png" width="250" height="173"/>
+  </tile>
+  <tile id="36">
+   <image source="images/backgrounds/toy2.png" width="158" height="158"/>
+  </tile>
+  <tile id="37">
+   <image source="images/backgrounds/toy3.png" width="308" height="184"/>
+  </tile>
+  <tile id="38">
+   <image source="images/backgrounds/couch2.png" width="373" height="298"/>
+  </tile>
+  <tile id="39">
+   <image source="images/backgrounds/cat-tower-2.png" width="423" height="830"/>
+  </tile>
+  <tile id="41">
+   <image source="images/full/full-background.png" width="2115" height="1500"/>
+  </tile>
  </tileset>
- <tileset firstgid="29" name="UI" tilewidth="609" tileheight="601" tilecount="139" columns="0">
+ <tileset firstgid="43" name="UI" tilewidth="609" tileheight="601" tilecount="139" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="20">
    <properties>
@@ -661,74 +697,22 @@
    <image source="images/ui/handHud.png" width="80" height="80"/>
   </tile>
  </tileset>
- <objectgroup id="3" name="Background">
-  <object id="87" gid="16" x="4" y="105.004" width="71.0805" height="119.799"/>
-  <object id="88" gid="16" x="110.488" y="68.7987" width="71.0805" height="119.799"/>
-  <object id="89" gid="16" x="603.49" y="55.1787" width="71.0805" height="119.799"/>
-  <object id="92" gid="19" x="166.897" y="102.315" width="119" height="195.671"/>
-  <object id="93" gid="21" x="-45.9217" y="791.349" width="75.0738" height="52.7114"/>
-  <object id="94" gid="21" x="658.714" y="782.414" width="75.0738" height="52.7114"/>
-  <object id="95" gid="11" x="576.566" y="132.597" width="161.329" height="142.161"/>
-  <object id="96" gid="12" x="653.177" y="310.593" width="74.2752" height="52.7114"/>
-  <object id="97" gid="12" x="629.57" y="891.774" width="74.2752" height="52.7114"/>
-  <object id="98" gid="9" x="-72.4362" y="1051.18" width="97.4362" height="77.4698"/>
-  <object id="99" gid="9" x="-41.3669" y="1114.35" width="97.4362" height="77.4698"/>
-  <object id="100" gid="9" x="632.092" y="1114.79" width="97.4362" height="77.4698"/>
-  <object id="121" gid="9" x="684.092" y="1050.79" width="97.4362" height="77.4698"/>
-  <object id="122" gid="9" x="676.092" y="538.794" width="97.4362" height="77.4698"/>
-  <object id="123" gid="9" x="-81.9083" y="496.794" width="97.4362" height="77.4698"/>
-  <object id="101" gid="10" x="-37" y="153.667" width="139" height="141"/>
-  <object id="102" gid="26" x="-72" y="443" width="100" height="306"/>
-  <object id="103" gid="26" x="696" y="531" width="100" height="306"/>
-  <object id="104" gid="28" x="668" y="760" width="188" height="256"/>
-  <object id="124" gid="28" x="710" y="663.319" width="258" height="351.319"/>
-  <object id="125" gid="28" x="826" y="837.319" width="258" height="351.319"/>
-  <object id="126" gid="28" x="788" y="1075.32" width="258" height="351.319"/>
-  <object id="127" gid="28" x="844" y="1255.32" width="258" height="351.319"/>
-  <object id="128" gid="28" x="804" y="451.319" width="258" height="351.319"/>
-  <object id="129" gid="28" x="858" y="281.319" width="258" height="351.319"/>
-  <object id="130" gid="28" x="-386" y="247.319" width="258" height="351.319"/>
-  <object id="131" gid="28" x="-346" y="473.319" width="258" height="351.319"/>
-  <object id="132" gid="28" x="-394" y="727.319" width="258" height="351.319"/>
-  <object id="133" gid="28" x="-362" y="947.319" width="258" height="351.319"/>
-  <object id="134" gid="28" x="-372" y="1179.32" width="258" height="351.319"/>
-  <object id="135" gid="28" x="-617" y="1271.32" width="305" height="415.319"/>
-  <object id="136" gid="28" x="-571" y="1057.32" width="305" height="415.319"/>
-  <object id="137" gid="28" x="-633" y="837.319" width="305" height="415.319"/>
-  <object id="138" gid="28" x="-571" y="591.319" width="305" height="415.319"/>
-  <object id="139" gid="28" x="-605" y="365.319" width="305" height="415.319"/>
-  <object id="140" gid="28" x="959" y="657.319" width="305" height="415.319"/>
-  <object id="152" gid="28" x="1323" y="415.136" width="400.525" height="545.396"/>
-  <object id="141" gid="28" x="1039" y="453.319" width="305" height="415.319"/>
-  <object id="153" gid="28" x="-959.944" y="1319.24" width="400.525" height="545.396"/>
-  <object id="146" gid="28" x="1087" y="313.319" width="305" height="415.319"/>
-  <object id="154" gid="28" x="-932.911" y="1047.4" width="400.525" height="545.396"/>
-  <object id="155" gid="28" x="-872.911" y="695.396" width="400.525" height="545.396"/>
-  <object id="156" gid="28" x="-904.911" y="399.396" width="400.525" height="545.396"/>
-  <object id="142" gid="28" x="1035" y="885.319" width="305" height="415.319"/>
-  <object id="151" gid="28" x="1294.8" y="754.545" width="400.525" height="545.396"/>
-  <object id="143" gid="28" x="991" y="1089.32" width="305" height="415.319"/>
-  <object id="150" gid="28" x="1273.02" y="1006.44" width="400.525" height="545.396"/>
-  <object id="144" gid="28" x="1071" y="1277.32" width="305" height="415.319"/>
-  <object id="149" gid="28" x="1318.08" y="1313.32" width="400.525" height="545.396"/>
-  <object id="105" gid="28" x="702" y="882" width="188" height="256"/>
-  <object id="106" gid="28" x="664" y="1020" width="188" height="256"/>
-  <object id="107" gid="28" x="670" y="396" width="188" height="256"/>
-  <object id="108" gid="28" x="686" y="240" width="188" height="256"/>
-  <object id="109" gid="28" x="-184" y="196" width="188" height="256"/>
-  <object id="110" gid="28" x="-154" y="348" width="188" height="256"/>
-  <object id="111" gid="28" x="-232" y="554" width="188" height="256"/>
-  <object id="112" gid="28" x="-178" y="714" width="188" height="256"/>
-  <object id="113" gid="28" x="-192" y="850" width="188" height="256"/>
-  <object id="114" gid="28" x="-156" y="1026" width="188" height="256"/>
-  <object id="115" gid="28" x="-190" y="1244" width="188" height="256"/>
-  <object id="116" gid="28" x="694" y="1254" width="188" height="256"/>
-  <object id="117" gid="24" x="630.667" y="89.6667" width="124" height="197"/>
-  <object id="118" gid="24" x="24" y="71" width="124" height="197"/>
-  <object id="147" gid="20" x="333" y="87" width="58" height="57"/>
-  <object id="148" gid="13" x="333" y="85" width="159" height="98"/>
+ <objectgroup draworder="index" id="12" name="Floor">
+  <object id="172" gid="42" x="-711" y="1180" width="2115" height="1500"/>
+  <object id="158" gid="30" x="-164.727" y="1044.18" width="1042.7" height="713.303"/>
+ </objectgroup>
+ <objectgroup draworder="index" id="3" name="Background">
+  <object id="169" gid="40" x="181.882" y="315.006" width="220.387" height="432.437"/>
+  <object id="171" gid="34" x="396" y="312" width="135" height="216.156"/>
+ </objectgroup>
+ <objectgroup id="13" name="Foreground">
+  <object id="159" gid="31" x="-13.9837" y="132.333" width="238.567" height="551.455"/>
+  <object id="161" gid="31" x="-369.984" y="220.333" width="238.567" height="551.455"/>
+  <object id="160" gid="32" x="548.422" y="180.83" width="232.622" height="547.739"/>
+  <object id="162" gid="32" x="952.422" y="206.83" width="232.622" height="547.739"/>
  </objectgroup>
  <objectgroup id="4" name="Settings" locked="1">
   <object id="17" name="Screen" x="0" y="0" width="720" height="1080"/>
+  <object id="163" name="WalkArea" x="22" y="398" width="676" height="588"/>
  </objectgroup>
 </map>

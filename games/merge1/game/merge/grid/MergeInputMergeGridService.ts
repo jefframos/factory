@@ -77,6 +77,8 @@ export class MergeInputMergeGridService extends MergeInputMergeService {
 
                 // Add tiny "cat dirty" cooldown from old service
                 (this as any).setEntityDirty?.(mergeData.mergeEntity);
+
+
             }
 
             this.finalizeRelease();
@@ -86,8 +88,11 @@ export class MergeInputMergeGridService extends MergeInputMergeService {
         // 5. RESOLVE SWAP OR MOVE
         if (occupant && occupant !== this.active) {
             mgr.swap(this.startTileIndex, targetIdx);
+            this.active.stopGrab()
+            occupant.stopGrab()
         } else {
             mgr.assignToTile(this.active, targetIdx);
+            this.active.stopGrab()
         }
 
         this.finalizeRelease();

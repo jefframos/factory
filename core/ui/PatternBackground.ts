@@ -88,12 +88,18 @@ export default class PatternBackground extends Container {
         const screenWidth = Game.gameScreenData?.width ?? 800;
         const screenHeight = Game.gameScreenData?.height ?? 600;
 
-        this.backgroundSprite.width = screenWidth;
-        this.backgroundSprite.height = screenHeight;
+        const parentScale = this.scale || { x: 1, y: 1 };
+        //console.log(parentScale)
+        this.backgroundSprite.width = screenWidth / parentScale.x;
+        this.backgroundSprite.height = screenHeight / parentScale.y;
 
         if (this.tiledTexture) {
-            this.tiledTexture.width = screenWidth;
-            this.tiledTexture.height = screenHeight;
+            this.tiledTexture.width = screenWidth / parentScale.x;
+            this.tiledTexture.height = screenHeight / parentScale.y;
+
+            const containerScale = this.scale;
+
+            this.tiledTexture.tileScale.set(containerScale.x !== 0 ? 1 / containerScale.x : 1, containerScale.y !== 0 ? 1 / containerScale.y : 1)
 
             this.tiledTexture.tilePosition.x += this.config.tileSpeedX * delta;
             this.tiledTexture.tilePosition.y += this.config.tileSpeedY * delta;

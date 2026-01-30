@@ -6,6 +6,8 @@ import * as PIXI from "pixi.js";
 import { Signal } from "signals";
 
 import SoundManager from "@core/audio/SoundManager";
+import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
+import TiledContainer from "@core/tiled/TiledContainer";
 import PatternBackground from "@core/ui/PatternBackground";
 import ViewUtils from "@core/utils/ViewUtils";
 import { DevGuiManager } from "../utils/DevGuiManager";
@@ -23,10 +25,11 @@ export default class MergeScene extends GameScene {
     public readonly onQuit: Signal = new Signal();
 
     public readonly gameplayContainer: PIXI.Container = new PIXI.Container();
+    public readonly foreGround: PIXI.Container = new PIXI.Container();
     public hud!: MergeHUD;
 
     private background: PIXI.Sprite = PIXI.Sprite.from('main-bg');
-    private patternBackground!: PatternBackground;
+    private patternBackground?: PatternBackground;
 
     private highScore: number = 0;
     private paused: boolean = false;
@@ -62,24 +65,31 @@ export default class MergeScene extends GameScene {
 
 
         SoundManager.instance.setMasterSfxVolume(0.7)
-        this.patternBackground = new PatternBackground({
-            background: 0x26C6DA,
-            patternAlpha: 1,
-            //patternPath: 'grass-patch-1',
-            patternPath: 'grass-patch-1-old',
-            tileSpeedX: 0,
-            tileSpeedY: 0
-        });
-        this.addChild(this.patternBackground);
-        this.patternBackground.init();
-        if (this.patternBackground.tiledTexture) {
-            this.patternBackground.tiledTexture.alpha = 0.75
+        // this.patternBackground = new PatternBackground({
+        //     background: 0x26C6DA,
+        //     patternAlpha: 1,
+        //     //patternPath: 'grass-patch-1',
+        //     patternPath: 'tiles',
+        //     tileSpeedX: 0,
+        //     tileSpeedY: 0
+        // });
+        // this.gameplayContainer.addChild(this.patternBackground);
+        this.patternBackground?.init();
+        if (this.patternBackground?.tiledTexture) {
+            this.patternBackground.tiledTexture.alpha = 1
         }
+
+
+        const floor = new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Floor']);
+        const foreground = new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Foreground']);
+        this.foreGround.addChild(foreground);
+        this.gameplayContainer.addChild(floor);
 
 
 
         // 2. Gameplay
         this.addChild(this.gameplayContainer);
+        this.addChild(this.foreGround);
 
 
         TextureBaker.bakeEntityTextures()
@@ -110,6 +120,17 @@ export default class MergeScene extends GameScene {
 
 
 
+        const settings = ExtractTiledFile.getTiledFrom('garden')
+        const walkArea = settings?.settings?.objects?.find(v => v.name == 'WalkArea')
+        if (walkArea) {
+            gameBounds.x = walkArea.x
+            gameBounds.y = walkArea.y
+            gameBounds.width = walkArea.width
+            gameBounds.height = walkArea.height
+        }
+
+
+
 
         // 4. Initialize Mediator
         this.mediator = new MergeMediator(
@@ -117,7 +138,8 @@ export default class MergeScene extends GameScene {
             inputBounds,
             gameBounds,
             effects,
-            this.hud
+            this.hud,
+            "Grid"
         );
 
 
@@ -141,7 +163,21 @@ export default class MergeScene extends GameScene {
     }
 
     public update(delta: number): void {
-        this.patternBackground.update(delta);
+        this.patternBackground?.update(delta);
+
+        // Calculate the inverse scale
+        const containerScale = this.gameplayContainer.scale;
+
+        // We use 1 / scale to get the inverse. 
+        // Added a small check to prevent division by zero just in case.
+        this.patternBackground?.scale?.set(
+            2, 2
+        );
+        // this.patternBackground.scale.set(
+        //     containerScale.x !== 0 ? 1 / containerScale.x : 1 + 0.1,
+        //     containerScale.y !== 0 ? 1 / containerScale.y : 1 + 0.1
+        // );
+
         this.layout();
         this.hud.update(delta);
 
@@ -156,11 +192,15 @@ export default class MergeScene extends GameScene {
         const centerX = Game.DESIGN_WIDTH / 2;
         const centerY = Game.DESIGN_HEIGHT / 2;
 
-        this.patternBackground.position.set(centerX, centerY);
+        this.patternBackground?.position?.set(centerX, centerY);
 
 
         this.gameplayContainer.position.set(centerX, centerY);
         this.gameplayContainer.pivot.set(centerX, centerY);
+
+        this.foreGround.position.copyFrom(this.gameplayContainer.position)
+        this.foreGround.pivot.copyFrom(this.gameplayContainer.pivot)
+        this.foreGround.scale.copyFrom(this.gameplayContainer.scale)
 
         this.background.anchor.set(0.5);
         this.background.position.set(centerX, centerY);

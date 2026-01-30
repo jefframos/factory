@@ -12,6 +12,7 @@ export class EntityGridView extends PIXI.Container {
         super();
         this.sortableChildren = true; // required for zIndex sorting
     }
+
     public getTileAt(localPos: PIXI.Point): any | null {
         return null;
     }

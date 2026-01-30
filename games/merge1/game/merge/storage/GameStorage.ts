@@ -85,7 +85,7 @@ export interface IFarmSaveData {
 
 export default class GameStorage {
     private static _instance: GameStorage;
-    private readonly STORAGE_KEY: string = "farm_game_state_v4";
+    private readonly STORAGE_KEY: string = "farm_game_state_v5";
 
     // Internal cache to ensure all systems share the same object in memory
     private _cachedState: IFarmSaveData | null = null;

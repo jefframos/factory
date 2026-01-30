@@ -28,7 +28,7 @@ export class MergeEgg extends PIXI.Container {
         this.level = level;
         this.setupVisuals();
     }
-
+    public stopGrab() { }
     private setupVisuals(): void {
 
         this.addChild(this.shadowContainer);

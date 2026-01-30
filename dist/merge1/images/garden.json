@@ -220,50 +220,90 @@
         "h": 150
       }
     },
-    "mat-3": {
+    "mat-5": {
       "frame": {
         "x": 473,
         "y": 324,
-        "w": 202,
-        "h": 112
+        "w": 155,
+        "h": 102
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 202,
-        "h": 112
+        "w": 155,
+        "h": 102
       },
       "sourceSize": {
-        "w": 202,
-        "h": 112
+        "w": 155,
+        "h": 102
+      }
+    },
+    "mat-4": {
+      "frame": {
+        "x": 473,
+        "y": 428,
+        "w": 140,
+        "h": 99
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 140,
+        "h": 99
+      },
+      "sourceSize": {
+        "w": 140,
+        "h": 99
+      }
+    },
+    "mat-3": {
+      "frame": {
+        "x": 2,
+        "y": 556,
+        "w": 173,
+        "h": 106
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 173,
+        "h": 106
+      },
+      "sourceSize": {
+        "w": 173,
+        "h": 106
       }
     },
     "mat-2": {
       "frame": {
-        "x": 473,
-        "y": 438,
-        "w": 189,
-        "h": 106
+        "x": 310,
+        "y": 529,
+        "w": 172,
+        "h": 114
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 189,
-        "h": 106
+        "w": 172,
+        "h": 114
       },
       "sourceSize": {
-        "w": 189,
-        "h": 106
+        "w": 172,
+        "h": 114
       }
     },
     "mat-1": {
       "frame": {
-        "x": 2,
-        "y": 556,
+        "x": 484,
+        "y": 529,
         "w": 159,
         "h": 98
       },
@@ -282,7 +322,7 @@
     },
     "lineyeard": {
       "frame": {
-        "x": 163,
+        "x": 177,
         "y": 556,
         "w": 93,
         "h": 66
@@ -303,7 +343,7 @@
     "chair": {
       "frame": {
         "x": 2,
-        "y": 656,
+        "y": 664,
         "w": 202,
         "h": 178
       },
@@ -322,8 +362,8 @@
     },
     "cat-poop-stuff": {
       "frame": {
-        "x": 310,
-        "y": 510,
+        "x": 484,
+        "y": 629,
         "w": 139,
         "h": 141
       },
@@ -347,7 +387,7 @@
         "w": 187,
         "h": 152
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -362,8 +402,8 @@
     },
     "bush2": {
       "frame": {
-        "x": 395,
-        "y": 651,
+        "x": 360,
+        "y": 645,
         "w": 126,
         "h": 120
       },
@@ -382,12 +422,12 @@
     },
     "bush": {
       "frame": {
-        "x": 453,
-        "y": 546,
+        "x": 677,
+        "y": 2,
         "w": 122,
         "h": 97
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -407,8 +447,8 @@
     "image": "garden.png",
     "format": "RGBA8888",
     "size": {
-      "w": 677,
-      "h": 836
+      "w": 776,
+      "h": 844
     },
     "scale": 1,
     "related_multi_packs": []
