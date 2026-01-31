@@ -13,10 +13,26 @@
         },
         {
           "alias": [
+            "Bonus Fly Anim.wav"
+          ],
+          "src": [
+            "Bonus Fly Anim.mp3"
+          ]
+        },
+        {
+          "alias": [
             "Bonus Highlights.wav"
           ],
           "src": [
             "Bonus Highlights.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Bonus Screen Popup.wav"
+          ],
+          "src": [
+            "Bonus Screen Popup.mp3"
           ]
         },
         {

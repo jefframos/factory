@@ -34,6 +34,7 @@ import { DevGuiManager } from "../utils/DevGuiManager";
 import { EntityGridView2 } from "./grid/EntityGridView2";
 import { EntityManagerGrid } from "./grid/EntityManagerGrid";
 import { MergeInputMergeGridService } from "./grid/MergeInputMergeGridService";
+import { ModifierManager, ModifierType } from "./modifiers/ModifierManager";
 
 export type MergeMode = 'Free' | 'Grid';
 
@@ -402,7 +403,7 @@ export class MergeMediator {
             const isFull = this.entities.size >= max;
 
             if (!isFull && this.ftueService.isCompleted) {
-                this.eggGenerator.update(delta);
+                this.eggGenerator.update(delta * ModifierManager.instance.getNormalizedValue(ModifierType.SpawnSpeed));
                 this.hud.updateProgress(this.eggGenerator.ratio);
             } else {
                 this.hud.updateProgress(1);
@@ -419,7 +420,7 @@ export class MergeMediator {
             if (!logic.generator || logic.data.type !== "animal") return;
             if (logic.data.pendingCoins >= this.MAX_COINS_PER_ENTITY) return;
 
-            if (logic.generator.update(delta)) {
+            if (logic.generator.update(delta * ModifierManager.instance.getNormalizedValue(ModifierType.SpeedGeneration))) {
 
                 if (!this.autoCollectCoins) {
                     logic.data.pendingCoins++;
@@ -430,7 +431,7 @@ export class MergeMediator {
                 this.coins.dropCoin(
                     (view as any).x + offset.x,
                     (view as any).y + offset.y,
-                    config.coinValue,
+                    Math.ceil(config.coinValue * ModifierManager.instance.getNormalizedValue(ModifierType.PassiveIncome)),
                     logic.data.id,
                     false
                 );

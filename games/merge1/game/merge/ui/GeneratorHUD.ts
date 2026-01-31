@@ -1,5 +1,6 @@
 import BaseButton from "@core/ui/BaseButton";
 import { NineSliceProgressBar } from "@core/ui/NineSliceProgressBar";
+import { TweenUtil } from "@core/utils/TweenUtility";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
 import MergeAssets from "../MergeAssets";
@@ -57,22 +58,27 @@ export default class GeneratorHUD extends PIXI.Container {
                 width: 80,
                 height: 80,
                 allPadding: 10,
-                texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Green), // Using Blue for speed up
-                iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Gift1), // Using Blue for speed up
+                texture: PIXI.Texture.EMPTY, // Using Blue for speed up
+                iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.GiftFast), // Using Blue for speed up
                 fontStyle: new PIXI.TextStyle({ ...MergeAssets.MainFont }),
                 centerIconHorizontally: true,
                 centerIconVertically: true,
-                iconSize: { height: 60, width: 60 }
+                iconSize: { height: 100, width: 100 }
             },
             over: { tint: 0xeeeeee },
-            disabled: { texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Grey) },
+            disabled: { texture: PIXI.Texture.EMPTY },
             click: {
-                callback: () => this.onSpeedUpRequested()
+                callback: () => {
+                    this.speedUpBtn.scale.set(1.1, 0.9)
+                    this.onSpeedUpRequested()
+                }
             }
         });
         this.speedUpBtn.visible = true
+
+        this.speedUpBtn.pivot.set(40, 40)
         // Position button to the right of the bar
-        this.speedUpBtn.position.set(this.BAR_WIDTH + 15, -this.speedUpBtn.height / 2 - 5);
+        this.speedUpBtn.position.set(this.BAR_WIDTH + 15 + 40, -this.speedUpBtn.height / 2 - 5 + 40);
         this.addChild(this.speedUpBtn);
     }
 
@@ -81,6 +87,8 @@ export default class GeneratorHUD extends PIXI.Container {
      * Updates the visual progress
      */
     public updateProgress(ratio: number): void {
+        this.speedUpBtn.scale.x = TweenUtil.lerp(this.speedUpBtn.scale.x, 1, 0.2);
+        this.speedUpBtn.scale.y = TweenUtil.lerp(this.speedUpBtn.scale.y, 1, 0.1);
         this.progressBar.update(ratio);
 
         // Dynamic coloring

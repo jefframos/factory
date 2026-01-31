@@ -13,6 +13,7 @@ import { EntityManagerGrid } from "../grid/EntityManagerGrid";
 import { CoinManager } from "../manager/CoinManager";
 import { EntityManager } from "../manager/EntityManager";
 import { MissionManager } from "../missions/MissionManager";
+import { ModifierManager, ModifierType } from "../modifiers/ModifierManager";
 
 export type MergeInputEntity = BlockMergeEntity | MergeEgg;
 
@@ -102,7 +103,7 @@ export class MergeInputMergeService {
                     const coin = this.deps.coins.dropCoin(
                         (this.activeEntity as any).x + offset.x,
                         (this.activeEntity as any).y + offset.y,
-                        data.data.level,
+                        Math.ceil(data.data.level * ModifierManager.instance.getNormalizedValue(ModifierType.TapIncome)),
                         data.data.id,
                         false
                     );
@@ -258,6 +259,21 @@ export class MergeInputMergeService {
 
         const mergeData = this.deps.entities.merge(source, target);
 
+        if (mergeData.mergeEntity) {
+            const config = StaticData.getAnimalData(mergeData.nextLevel);
+            const offset = mergeData.mergeEntity.coinOffset;
+
+            // console.log(config.coinValue * ModifierManager.instance.getNormalizedValue(ModifierType.MergeIncome))
+            this.deps.coins.dropCoin(
+                mergeData.mergeEntity.x + offset.x,
+                mergeData.mergeEntity.y + offset.y,
+                config.coinValue * ModifierManager.instance.getNormalizedValue(ModifierType.MergeIncome),
+                '',
+                false
+            );
+
+        }
+
         if (mergeData && mergeData.nextLevel) {
             this.finalizeMerge(mergeData.mergeEntity, mergeData.nextLevel)
         }
@@ -276,6 +292,22 @@ export class MergeInputMergeService {
         InGameProgress.instance.reportMergeLevel(level);
 
         this.onMergePerformed.dispatch(level);
+
+
+        if (entity) {
+            const config = StaticData.getAnimalData(level);
+            const offset = entity.coinOffset;
+
+            // console.log(config.coinValue * ModifierManager.instance.getNormalizedValue(ModifierType.MergeIncome))
+            this.deps.coins.dropCoin(
+                entity.x + offset.x,
+                entity.y + offset.y,
+                config.coinValue * ModifierManager.instance.getNormalizedValue(ModifierType.MergeIncome),
+                '',
+                false
+            );
+
+        }
 
         entity.stopGrab();
     }

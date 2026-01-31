@@ -110,7 +110,7 @@ export class ShopManager {
         const config = this._shopConfigs.find(c => c.id === itemId);
         if (!config) return false;
 
-        const userLevel = InGameProgress.instance.getProgression("MAIN").level;
+        const userLevel = Math.max(1, InGameProgress.instance.getProgression("MAIN").highestMergeLevel - 2);
         return userLevel >= config.unlockAtLevel;
     }
 

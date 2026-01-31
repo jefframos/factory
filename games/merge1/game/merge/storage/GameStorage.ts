@@ -79,13 +79,14 @@ export interface IFarmSaveData {
     flags: any;
     missions?: IMissionsSaveData;
     missionStats?: IMissionStatsSaveData;
+    modifierLevels: Record<string, number>;
 }
 
 
 
 export default class GameStorage {
     private static _instance: GameStorage;
-    private readonly STORAGE_KEY: string = "farm_game_state_v5";
+    public static readonly STORAGE_KEY: string = "farm_game_state_v6";
 
     // Internal cache to ensure all systems share the same object in memory
     private _cachedState: IFarmSaveData | null = null;
@@ -106,7 +107,7 @@ export default class GameStorage {
     public getFullState(): IFarmSaveData {
         if (!this._cachedState) {
             try {
-                const data = localStorage.getItem(this.STORAGE_KEY);
+                const data = localStorage.getItem(GameStorage.STORAGE_KEY);
                 if (data) {
                     this._cachedState = JSON.parse(data);
                 } else {
@@ -148,7 +149,7 @@ export default class GameStorage {
      */
     private persist(): void {
         if (!this._cachedState) return;
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this._cachedState));
+        localStorage.setItem(GameStorage.STORAGE_KEY, JSON.stringify(this._cachedState));
     }
 
     public createEmptyState(): IFarmSaveData {
@@ -159,7 +160,7 @@ export default class GameStorage {
             // legacy (keep for migration only)
             entities: [],
             coinsOnGround: [],
-
+            modifierLevels: {},
             stats: {
                 coinsCollected: 0,
                 gemsCollected: 0,
@@ -210,7 +211,7 @@ export default class GameStorage {
      * Wipes data. Reload is recommended to clear all Singleton memory.
      */
     public resetGameProgress(reload: boolean = false): void {
-        localStorage.removeItem(this.STORAGE_KEY);
+        localStorage.removeItem(GameStorage.STORAGE_KEY);
 
         this._cachedState = this.createEmptyState();
         this.persist();

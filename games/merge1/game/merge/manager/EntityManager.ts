@@ -146,9 +146,11 @@ export class EntityManager {
 
         const gen = new CoinGenerator(data.lastCoinTimestamp, config.spawnTimer);
 
+
+
         if (!existingData) {
             // New spawn -> quick first coin
-            (gen as any).timer = 0.1;
+            //(gen as any).timer = 0.1;
         } else {
             // Restore generator progress if present
             gen.timer += Math.random() * config.spawnTimer - 0.1
@@ -254,6 +256,9 @@ export class EntityManager {
         this.recycleEntity(target);
 
         const mergeEntity = this.spawnAnimal(nextLevel, spawnPos);
+
+
+
 
         this.onMerged.dispatch(source, target, nextLevel, spawnPos, sourceData, targetData);
         this.onDirty.dispatch();

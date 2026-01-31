@@ -7,9 +7,13 @@ import * as PIXI from "pixi.js";
 import { Signal } from "signals";
 import { DevGuiManager } from "../../utils/DevGuiManager";
 import MergeAssets from "../MergeAssets";
+import { CollectionDataManager } from "../collections/CollectionDataManager";
+import { CollectionPanel } from "../collections/CollectionPanel";
 import { CurrencyType } from "../data/InGameEconomy";
 import { InGameProgress } from "../data/InGameProgress";
+import { ShopManager } from "../data/ShopManager";
 import { MissionClaimResult } from "../missions/MissionManager";
+import { ModifierManager, ModifierType } from "../modifiers/ModifierManager";
 import { PrizeItem } from "../prize/PrizeTypes";
 import { RoomId } from "../rooms/RoomRegistry";
 import { ProgressionType } from "../storage/GameStorage";
@@ -25,7 +29,7 @@ import { NotificationCenter } from "./notifications/NotificationCenter";
 import { NotificationRegistry } from "./notifications/NotificationRegistry";
 import { RewardManager } from "./prize/RewardManager";
 import { RoomSelector } from "./room/RoomSelector";
-import { ShopNotificationIcon } from "./shop/ShopNotificationIcon";
+import { NotificationIcon } from "./shop/NotificationIcon";
 import ShopView from "./shop/ShopView";
 
 export default class MergeHUD extends PIXI.Container {
@@ -59,6 +63,9 @@ export default class MergeHUD extends PIXI.Container {
     private shopButton!: BaseButton;
     private currencyHUDList: Map<CurrencyType, CurrencyBox> = new Map();
 
+    private collectionButton!: BaseButton;
+    private collectionPanel!: CollectionPanel;
+
     // --- State & Signals ---
     private uiOpenCount: number = 0;
     private currentRoomId: RoomId = "room_0";
@@ -68,7 +75,16 @@ export default class MergeHUD extends PIXI.Container {
     public readonly onFocusChanged: Signal = new Signal();
     public readonly onRoomSelected: Signal = new Signal();
 
-    private shopNotificationIcon: ShopNotificationIcon = new ShopNotificationIcon()
+    private shopNotificationIcon: NotificationIcon = new NotificationIcon(
+        () => ShopManager.instance.hasAffordableItems(),
+        ShopManager.instance.onAvailabilityChanged
+    );
+
+    private collectionNotificationIcon: NotificationIcon = new NotificationIcon(
+        () => CollectionDataManager.instance.hasUnclaimedRewards(),
+        CollectionDataManager.instance.onNotificationChanged
+    );
+
 
     public get isAnyUiOpen(): boolean { return this.uiOpenCount > 0; }
 
@@ -107,6 +123,9 @@ export default class MergeHUD extends PIXI.Container {
         this.shopNotificationIcon.x = 10
         this.shopNotificationIcon.y = 10
 
+
+
+
         // 3. Currency
         this.initCurrency();
 
@@ -130,10 +149,12 @@ export default class MergeHUD extends PIXI.Container {
                 for (const currencyType in claim.rewards.currencies) {
                     const amount = claim.rewards.currencies[currencyType as CurrencyType];
                     if (amount && amount > 0) {
+
+                        console.log(amount, Math.ceil(amount * ModifierManager.instance.getNormalizedValue(ModifierType.MissionRewards)))
                         prizes.push({
                             type: currencyType as CurrencyType,
-                            value: amount,
-                            tier: 0 // You can logic-gate tiers based on amount if desired
+                            value: Math.ceil(amount * ModifierManager.instance.getNormalizedValue(ModifierType.MissionRewards)),
+                            tier: currencyType == CurrencyType.GEMS ? 2 : 0 // You can logic-gate tiers based on amount if desired
                         });
                     }
                 }
@@ -184,6 +205,59 @@ export default class MergeHUD extends PIXI.Container {
         // Initial Sync
         InGameProgress.instance.onProgressChanged.add(this.handleProgressUpdate, this);
         InGameProgress.instance.onLevelUp.add(this.handleLevelUp, this);
+
+
+        // Add the Panel to modal layer
+        this.collectionPanel = new CollectionPanel(); // Assuming 12 cats
+        this.modalLayer.addChild(this.collectionPanel);
+        this.collectionPanel.onClaim.add((level: number) => {
+
+
+            const prizes: PrizeItem[] = [];
+
+            // 1. Map the mission currencies to PrizeItem format
+            prizes.push({
+                type: CurrencyType.GEMS,
+                value: level,
+                tier: 2 // You can logic-gate tiers based on amount if desired
+            });
+
+
+
+            // 2. Trigger the centralized RewardManager
+            if (prizes.length > 0) {
+                RewardManager.instance.showReward(
+                    prizes,
+                    this.coinEffects,
+                    this
+                );
+            }
+
+        })
+        this.collectionPanel.onHidden.add(() => this.notifyUiClosed("collection"));
+
+        // Add the Button
+        this.collectionButton = new BaseButton({
+            standard: {
+                width: 80, height: 80, allPadding: 10,
+                texture: PIXI.Texture.EMPTY,
+                iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.CollectionIcon), // Replace with your icon
+                iconSize: { height: 80, width: 80 },
+                centerIconHorizontally: true, centerIconVertically: true,
+            },
+            click: {
+                callback: () => {
+                    this.collectionPanel.show();
+                    this.notifyUiOpened("collection");
+                }
+            }
+        });
+        this.hudLayer.addChild(this.collectionButton);
+
+        this.collectionButton.addChild(this.collectionNotificationIcon)
+        this.collectionNotificationIcon.x = 10
+        this.collectionNotificationIcon.y = 10
+
         this.refreshRoomButtons();
 
         this.setUpNotifications();
@@ -206,6 +280,7 @@ export default class MergeHUD extends PIXI.Container {
         this.missionHUD.visible = ftueEnabled
         this.timedRewardsBar.visible = ftueEnabled
         this.shopButton.visible = ftueEnabled
+        this.collectionButton.visible = ftueEnabled
         this.generator.visible = ftueEnabled
 
     }
@@ -390,6 +465,13 @@ export default class MergeHUD extends PIXI.Container {
         this.shopView.position.set(centerX, (bottomRight.y - topRight.y) / 2);
 
         this.notifications.onOverlayChanged(Game.gameScreenData);
+
+        // Position it below the shop button
+        this.collectionButton.x = this.shopButton.x;
+        this.collectionButton.y = this.shopButton.y + this.shopButton.height + 10;
+
+        // Position the panel center
+        this.collectionPanel.position.set(centerX, (bottomRight.y - topRight.y) / 2);
 
         // this.missionHUD.x = 20
         // this.missionHUD.y = bottomRight.y - this.y - 150

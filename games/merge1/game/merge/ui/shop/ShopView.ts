@@ -5,6 +5,9 @@ import * as PIXI from "pixi.js";
 import { Signal } from "signals";
 import { ShopManager } from "../../data/ShopManager";
 import MergeAssets, { SHOP_STYLE_CONFIG } from "../../MergeAssets";
+import { ModifierManager } from "../../modifiers/ModifierManager";
+import ModifierItemView from "./ModifierItemView";
+import { NotificationIcon } from "./NotificationIcon";
 import ShopItemView from "./ShopItemView";
 
 
@@ -27,10 +30,6 @@ export default class ShopView extends PIXI.Container {
     private isDragging: boolean = false;
     private startY: number = 0;
     private startScrollY: number = 0;
-
-
-
-
     private readonly CONTENT_TOP = SHOP_STYLE_CONFIG.Window.PADDING.TOP + SHOP_STYLE_CONFIG.Window.TAB_HEIGHT + 20;
 
     constructor(private isBoardFull: () => boolean) {
@@ -76,20 +75,40 @@ export default class ShopView extends PIXI.Container {
         const font = new PIXI.TextStyle({ ...MergeAssets.MainFontTitle, fontSize: 24 })
 
         const tabAnimals = new BaseButton({
-            standard: { fontStyle: font, width: tabWidth, height: cfg.TAB_HEIGHT, texture: PIXI.Texture.from(cfg.Textures.TabActive) },
+            standard: {
+                fontStyle: font, width: tabWidth, height: cfg.TAB_HEIGHT, texture: PIXI.Texture.from(cfg.Textures.TabActive),
+                iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Coin),
+                centerIconVertically: true,
+                iconSize: { width: cfg.TAB_HEIGHT * 0.8, height: cfg.TAB_HEIGHT * 0.8 },
+                iconOffset: new PIXI.Point(20, 0)
+            },
             click: { callback: () => this.showTab("animals") }
         });
 
         tabAnimals.setLabel(MergeAssets.Labels.EntityShop)
+
+        const shopNotificationIcon: NotificationIcon = new NotificationIcon(
+            () => ShopManager.instance.hasAffordableItems(),
+            ShopManager.instance.onAvailabilityChanged
+        );
+
+        tabAnimals.addChild(shopNotificationIcon)
+
         const tabMods = new BaseButton({
-            standard: { fontStyle: font, width: tabWidth, height: cfg.TAB_HEIGHT, texture: PIXI.Texture.from(cfg.Textures.TabActive) },
+            standard: {
+                fontStyle: font, width: tabWidth, height: cfg.TAB_HEIGHT, texture: PIXI.Texture.from(cfg.Textures.TabActive),
+                iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Gem),
+                centerIconVertically: true,
+                iconSize: { width: cfg.TAB_HEIGHT * 0.8, height: cfg.TAB_HEIGHT * 0.8 },
+                iconOffset: new PIXI.Point(20, 0)
+            },
             click: { callback: () => this.showTab("mods") }
         });
         tabMods.setLabel("MODS")
 
         tabAnimals.position.set(cfg.PADDING.LEFT, cfg.PADDING.TOP);
         tabMods.position.set(cfg.PADDING.LEFT + tabWidth + 10, cfg.PADDING.TOP);
-        //this.windowContainer.addChild(tabAnimals, tabMods);
+        this.windowContainer.addChild(tabAnimals, tabMods);
         this.windowContainer.addChild(tabAnimals);
     }
 
@@ -145,7 +164,7 @@ export default class ShopView extends PIXI.Container {
         const itemCfg = SHOP_STYLE_CONFIG.Item;
 
         this.contentScroll.removeChildren();
-        this.items = [];
+        this.items = []; // Clears the list
         this.updateScrollPosition(0);
 
         if (type === "animals") {
@@ -160,24 +179,28 @@ export default class ShopView extends PIXI.Container {
                 });
 
                 this.contentScroll.addChild(item);
-                this.items.push(item);
+                this.items.push(item as any); // Push to array
+            });
+        } else {
+            ModifierManager.instance.getAllConfigs().forEach((cfgMod, i) => {
+                const item = new ModifierItemView(cfgMod.type);
+                item.x = SHOP_STYLE_CONFIG.Window.PADDING.LEFT;
+                item.y = i * (itemCfg.HEIGHT + itemCfg.SPACING);
+
+                this.contentScroll.addChild(item);
+                this.items.push(item as any); // <--- ADD THIS LINE
             });
         }
 
-        // Deterministic content height (independent of PIXI bounds timing)
+        // Now 'this.items.length' will be correct for both tabs
         const count = this.items.length;
-        const contentHeight =
-            count <= 0
-                ? 0
-                : (count * itemCfg.HEIGHT) + ((count - 1) * itemCfg.SPACING);
+        const contentHeight = count <= 0 ? 0 : (count * itemCfg.HEIGHT) + ((count - 1) * itemCfg.SPACING);
 
         this.maxScroll = Math.max(0, contentHeight - cfg.SCROLL_AREA_HEIGHT);
 
-        // Reset scroll & refresh button states after maxScroll is valid
         this.updateScrollPosition(0);
         this.refreshStates();
     }
-
 
     private stepScroll(delta: number): void {
         const target = Math.max(-this.maxScroll, Math.min(0, this.scrollY + delta));
@@ -243,6 +266,15 @@ export default class ShopView extends PIXI.Container {
 
     public refreshStates(): void {
         const full = this.isBoardFull();
-        this.items.forEach(item => item.updateState(full));
+        this.items.forEach(item => {
+            // Check if the item is a ShopItemView (which has updateState)
+            if ('updateState' in item) {
+                (item as ShopItemView).updateState(full);
+            } else if ('refresh' in item) {
+                // If it's a ModifierItemView, call refresh instead
+                (item as any).refresh();
+            }
+        });
     }
+
 }

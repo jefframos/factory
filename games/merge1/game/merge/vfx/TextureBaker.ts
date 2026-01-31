@@ -11,7 +11,7 @@ export enum BakeDirection {
 }
 
 export class TextureBaker {
-    private static cache: Map<string, PIXI.Texture> = new Map();
+    public static cache: Map<string, PIXI.Texture> = new Map();
 
     public static getTexture(cacheKey: string): PIXI.Texture | undefined {
         if (this.cache.has(cacheKey)) {

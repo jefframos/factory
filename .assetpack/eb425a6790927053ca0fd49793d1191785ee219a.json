@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769532689393,
-                "duration": 0.9905999999999722,
+                "date": 1769880713017,
+                "duration": 1.1236999999999853,
                 "success": true
             }
         },
@@ -38,6 +38,33 @@
             "inheritedMetaData": {},
             "transformData": {}
         },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Bonus Fly Anim.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769880713018,
+                "duration": 2755.6522,
+                "success": true
+            },
+            "hash": "nWdLLA"
+        },
+        ".assetpack/ffmpeg/Bonus Fly Anim.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Bonus Fly Anim.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Bonus Fly Anim.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Bonus Fly Anim.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Bonus Highlights.wav": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
@@ -61,6 +88,33 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Bonus Highlights.mp3": {
             "isFolder": false,
             "transformParent": ".assetpack/ffmpeg/Bonus Highlights.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Bonus Screen Popup.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769880713019,
+                "duration": 2766.6126999999997,
+                "success": true
+            },
+            "hash": "mOF0hQ"
+        },
+        ".assetpack/ffmpeg/Bonus Screen Popup.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Bonus Screen Popup.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Bonus Screen Popup.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Bonus Screen Popup.mp3",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

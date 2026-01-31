@@ -6,7 +6,16 @@ export interface SoundAsset {
     pitchMinMax?: [number, number] | number
 }
 
-
+// export const SHOP_STYLE_CONFIG = {
+//     Window: {
+//         WIDTH: 540,
+//         HEIGHT: 700,
+//         Textures: {
+//             CloseBtn: "btn_red_circle", // Replace with actual keys
+//             CloseIcon: "icon_close"      // Replace with actual keys
+//         }
+//     }
+// };
 export default class MergeAssets {
     // 1. Textures Registry (Central point for all images)
 
@@ -198,6 +207,16 @@ export default class MergeAssets {
                 soundId: 'Hover',
                 volumeMinMax: [0.15, 0.2],
                 pitchMinMax: [0.8, 1],
+            },
+            OpenPopup: {
+                soundId: 'Bonus Screen Popup',
+                volumeMinMax: [0.15, 0.2],
+                pitchMinMax: [0.8, 1],
+            },
+            FlyAnim: {
+                soundId: 'Bonus Fly Anim',
+                volumeMinMax: [0.15, 0.2],
+                pitchMinMax: [0.8, 1],
             }
         }
     } satisfies Record<string, Record<string, SoundAsset>>;
@@ -300,6 +319,7 @@ export default class MergeAssets {
             GemPile: "ShopItem_s_GemPack_1",
             Up: "up",
             Down: "down",
+            GiftFast: "presentFast",
             Gift1: "present1",
             Gift2: "present2",
             Gift3: "present3",
@@ -320,9 +340,21 @@ export default class MergeAssets {
             Badge1: "Label_Badge01_Red",
             Badge2: "Label_Badge01_Purple",
             Home: "PictoIcon_Home_1",
+            ArrowLeft: "arrow-left",
+            ArrowRight: "arrow-right",
             Eye: "eye",
+            CollectionIcon: "ItemIcon_MemoPad",
+        },
+        Modifiers: {
+            CoinFast: "speedModifier",
+            SpawnFast: "modifier-faster",
+            PassiveInconme: "moreCoin",
+            TapGold: "goldenTap",
+            MergeBonus: "goldMerge",
+            MissionBonus: "missionUp",
         },
         UI: {
+            CollectionPanel: "ItemFrame01_Single_Navy",
             BgLegendary: "Button01_s_Yellow",
             BgEpic: "Button01_s_PInk",
             BgRare: "Button01_s_Green",
@@ -333,6 +365,7 @@ export default class MergeAssets {
             NotificationPanel: "ItemFrame01_Single_Purple",
             //NextCardBackground: "ItemFrame01_Single_Navy",
             EndRibbon: "Title_Ribbon01_Plum",
+            CollectionRibbon: "Title_Ribbon01_Sky",
             Shine: "Image_Effect_Rotate",
             BarBg: "Slider_Basic01_Bg_Single",
             BarFill: "Slider_Basic03_FillMask",
@@ -395,9 +428,9 @@ export default class MergeAssets {
 
 export const SHOP_STYLE_CONFIG = {
     Window: {
-        WIDTH: 600,
+        WIDTH: 680,
         HEIGHT: 900,
-        TAB_HEIGHT: 60,
+        TAB_HEIGHT: 70,
         SCROLL_AREA_HEIGHT: 760,
         CORNER_SIZE: 24,
         PADDING: { TOP: 20, BOTTOM: 20, LEFT: 20, RIGHT: 80 },
@@ -411,7 +444,7 @@ export const SHOP_STYLE_CONFIG = {
         }
     },
     Item: {
-        HEIGHT: 120,
+        HEIGHT: 150,
         SPACING: 15,
         THUMB_SIZE: 90,
         BUTTON_WIDTH: 140,

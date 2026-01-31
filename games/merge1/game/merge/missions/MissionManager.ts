@@ -195,8 +195,15 @@ export class MissionManager {
             for (const [type, amt] of Object.entries(def.reward.currencies)) {
                 if (amt && amt > 0) {
                     const currency = type as CurrencyType;
-                    InGameEconomy.instance.add(currency, amt);
-                    claimedCurrencies[currency] = amt;
+                    let amount = InGameEconomy.instance.currencies[currency]
+                    amount *= amt
+                    if (currency == CurrencyType.MONEY) {
+                        amount = Math.max(amount, 100)
+                    } else if (currency == CurrencyType.GEMS) {
+                        amount = Math.max(amount, 1)
+                    }
+                    InGameEconomy.instance.add(currency, amount);
+                    claimedCurrencies[currency] = amount;
                 }
             }
         }

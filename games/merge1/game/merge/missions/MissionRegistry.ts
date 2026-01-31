@@ -1,15 +1,29 @@
-// missions/MissionRegistry.ts
 import { CurrencyType } from "../data/InGameEconomy";
 import MergeAssets from "../MergeAssets";
 import { MissionGenContext } from "./MissionFactory";
 import { MissionDefinition } from "./MissionTypes";
+
+/**
+ * REWARD PERCENTAGE CONFIGURATION
+ */
+const START_PCT = 0.05; // 5%
+const MAX_PCT = 0.20;   // 20%
+const K_AT_MAX = 50;    // Mission 'k' level where percentage hits the cap
+
+/**
+ * Returns the percentage value (0.05 to 0.20) based on mission difficulty k.
+ * This is intended to be multiplied by player currency elsewhere in the engine.
+ */
+const getRewardPercentage = (k: number): number => {
+    const progress = Math.min(k / K_AT_MAX, 1);
+    return START_PCT + (MAX_PCT - START_PCT) * progress;
+};
 
 export interface MissionTemplate {
     templateId: string;
     tier: number;
     weight: number;
     isEligible?: (ctx: MissionGenContext) => boolean;
-    // We now pass k explicitly so we can rebuild the mission from save data
     build: (ctx: MissionGenContext, k: number) => MissionDefinition;
 }
 
@@ -22,14 +36,15 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
             const target = 6 + 2 * k;
             return {
                 id: `m_merge_${k}`,
-                templateId: "t1_merge", // Crucial for re-binding
+                templateId: "t1_merge",
                 k,
                 tier: 1,
-                iconTextureId: `ENTITY_${1}`, // Changing this now works!
+                iconTextureId: `ENTITY_${1}`,
                 chestTextureId: MergeAssets.Textures.Icons.Coin,
                 title: `Merge ${target} cats`,
                 type: "merge_creatures",
                 target,
+                // Gems remain fixed/flat
                 reward: { currencies: { [CurrencyType.GEMS]: Math.max(1, 2 + Math.floor(k / 2)) } }
             };
         }
@@ -50,7 +65,11 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
                 title: `Tap cats ${target} times`,
                 type: "tap_creature",
                 target,
-                reward: { currencies: { [CurrencyType.MONEY]: 100 + 25 * k } }
+                reward: {
+                    currencies: {
+                        [CurrencyType.MONEY]: getRewardPercentage(k)
+                    }
+                }
             };
         }
     },
@@ -70,7 +89,11 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
                 title: `Rescue ${target} cats`,
                 type: "hatch_eggs",
                 target,
-                reward: { currencies: { [CurrencyType.MONEY]: 120 + 30 * k } }
+                reward: {
+                    currencies: {
+                        [CurrencyType.MONEY]: getRewardPercentage(k)
+                    }
+                }
             };
         }
     },
