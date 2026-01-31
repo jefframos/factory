@@ -86,6 +86,12 @@ export class PrizePopup extends BasePopup {
             },
             click: { callback: () => this.onClaim() }
         });
+
+        this.continueButton.overrider(ButtonState.DOWN, {
+            callback: () => {
+                MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.Claim)
+            }
+        });
         this.continueButton.setLabel('CLAIM');
         this.continueButton.pivot.x = 280 / 2;
         this.continueButton.visible = false;
@@ -98,6 +104,8 @@ export class PrizePopup extends BasePopup {
         this.visible = true;
         this.alpha = 1;
         this.lastData = data;
+        MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.OpenPopupPrize)
+
 
         // Setup Ribbon
         if (data.customRibbon) {
@@ -125,7 +133,11 @@ export class PrizePopup extends BasePopup {
             view.x = (index - (data.prizes.length - 1) / 2) * 260;
             view.scale.set(0);
             this.prizeContainer.addChild(view);
-            tl.to(view.scale, { x: 1, y: 1, duration: 0.5, ease: "back.out" }, "-=0.3");
+            tl.to(view.scale, {
+                x: 1, y: 1, duration: 0.5, ease: "back.out", onStart: () => {
+                    MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.FlyAnim)
+                }
+            }, "-=0.3");
         });
 
         tl.add(() => {
@@ -155,8 +167,9 @@ export class PrizePopup extends BasePopup {
             // Claim Button goes below and turns Grey
             this.continueButton.y = 310;
             this.continueButton.overrider(ButtonState.STANDARD, {
-                texture: PIXI.Texture.EMPTY
+                texture: PIXI.Texture.EMPTY,
             });
+
             this.continueButton.setLabel('NO THANKS');
         } else {
             // Case: Only Claim

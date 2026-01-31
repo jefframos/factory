@@ -85,6 +85,14 @@
         },
         {
           "alias": [
+            "Claim.wav"
+          ],
+          "src": [
+            "Claim.mp3"
+          ]
+        },
+        {
+          "alias": [
             "Coin1.wav"
           ],
           "src": [
@@ -201,6 +209,14 @@
           ],
           "src": [
             "Pitched-Tapping-Glass.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "PopupOpen.wav"
+          ],
+          "src": [
+            "PopupOpen.mp3"
           ]
         },
         {

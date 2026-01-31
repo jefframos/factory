@@ -12,9 +12,9 @@ import { PortraitItem } from "./PortraitItem";
 /** Specific configuration for the Collection UI */
 const COLLECTION_STYLE = {
     Window: {
-        WIDTH: 720,
+        WIDTH: 700,
         HEIGHT: 850,
-        CORNER_SIZE: 30,
+        CORNER_SIZE: 35,
         PADDING: { LEFT: 40, RIGHT: 40, TOP: 120, BOTTOM: 120 },
         Textures: {
             Background: MergeAssets.Textures.UI.CollectionPanel,
@@ -70,7 +70,7 @@ export class CollectionPanel extends PIXI.Container {
         const cfg = COLLECTION_STYLE.Window;
 
         // 1. Overlay Blocker
-        this.blocker = new PIXI.Graphics().beginFill(0x000000, 0.85).drawRect(-2000, -2000, 4000, 4000).endFill();
+        this.blocker = new PIXI.Graphics().beginFill(0x333366, 0.8).drawRect(-2000, -2000, 4000, 4000).endFill();
         this.blocker.interactive = true;
         this.addChild(this.blocker);
 
@@ -79,7 +79,7 @@ export class CollectionPanel extends PIXI.Container {
 
         const bg = new PIXI.NineSlicePlane(
             PIXI.Texture.from(cfg.Textures.Background),
-            cfg.CORNER_SIZE, cfg.CORNER_SIZE, cfg.CORNER_SIZE, cfg.CORNER_SIZE
+            cfg.CORNER_SIZE, cfg.CORNER_SIZE * 2, cfg.CORNER_SIZE, cfg.CORNER_SIZE
         );
         bg.width = cfg.WIDTH;
         bg.height = cfg.HEIGHT;
@@ -155,11 +155,17 @@ export class CollectionPanel extends PIXI.Container {
 
         this.maxScroll = Math.max(0, contentWidth - maskWidth);
     }
-
+    private get columnStepWidth(): number {
+        const { portraitWidth, spacing } = COLLECTION_STYLE.Grid;
+        return portraitWidth + spacing;
+    }
     private setupNavButtons(): void {
         const cfg = COLLECTION_STYLE.Window;
         const centerY = cfg.HEIGHT - 50;
         const centerX = cfg.WIDTH / 2;
+
+        const columnsToMove = 3;
+        const scrollDistance = this.columnStepWidth * columnsToMove;
 
         this.btnLeft = new BaseButton({
             standard: {
@@ -170,7 +176,13 @@ export class CollectionPanel extends PIXI.Container {
                 iconSize: { height: 40, width: 40 }
             },
             disabled: { texture: PIXI.Texture.from(cfg.Textures.NavDisabled) },
-            click: { callback: () => this.stepScroll(436) }
+            down: {
+                callback: () => {
+                    MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.Drop)
+                }
+
+            },
+            click: { callback: () => this.stepScroll(scrollDistance) }
         });
 
         this.btnRight = new BaseButton({
@@ -182,7 +194,13 @@ export class CollectionPanel extends PIXI.Container {
                 iconSize: { height: 40, width: 40 }
             },
             disabled: { texture: PIXI.Texture.from(cfg.Textures.NavDisabled) },
-            click: { callback: () => this.stepScroll(-436) }
+            down: {
+                callback: () => {
+                    MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.Drop)
+                }
+
+            },
+            click: { callback: () => this.stepScroll(-scrollDistance) }
         });
 
         this.btnLeft.pivot.set(30);
@@ -244,6 +262,7 @@ export class CollectionPanel extends PIXI.Container {
     private handleClaim(level: number): void {
         const gems = CollectionDataManager.instance.claim(level);
         if (gems > 0) {
+            MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.Claim)
             // Optimized state update instead of rebuild
             this.items.forEach(i => i.updateState());
             this.onClaim.dispatch(level);
@@ -254,6 +273,8 @@ export class CollectionPanel extends PIXI.Container {
         this.build();
         this.createGrid(); // Build items from pool on show
         this.visible = true;
+
+        MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.OpenPopup)
         this.alpha = 0;
         this.windowContainer.scale.set(0.8);
 
@@ -265,6 +286,8 @@ export class CollectionPanel extends PIXI.Container {
     }
 
     public hide(): void {
+
+        MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.ClosePopup)
         gsap.to(this, {
             alpha: 0,
             duration: 0.2,

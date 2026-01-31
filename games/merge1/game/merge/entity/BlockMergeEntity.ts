@@ -212,6 +212,7 @@ export class BlockMergeEntity extends BaseMergeEntity {
 
     }
     public update(delta: number, bounds: PIXI.Rectangle): void {
+        delta = Math.max(delta, 1 / 120)
         super.update(delta, bounds)
 
         //console.log(this.spriteContainer.scale.x)

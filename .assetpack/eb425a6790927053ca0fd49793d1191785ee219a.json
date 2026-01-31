@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769880713017,
-                "duration": 1.1236999999999853,
+                "date": 1769884832979,
+                "duration": 1.026299999999992,
                 "success": true
             }
         },
@@ -277,6 +277,33 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Cat Meow Angry 02.mp3": {
             "isFolder": false,
             "transformParent": ".assetpack/ffmpeg/Cat Meow Angry 02.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Claim.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769884832980,
+                "duration": 489.1529,
+                "success": true
+            },
+            "hash": "khQ5vQ"
+        },
+        ".assetpack/ffmpeg/Claim.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Claim.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Claim.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Claim.mp3",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}
@@ -682,6 +709,33 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Pitched-Tapping-Glass.mp3": {
             "isFolder": false,
             "transformParent": ".assetpack/ffmpeg/Pitched-Tapping-Glass.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/PopupOpen.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769884710704,
+                "duration": 2523.0932999999995,
+                "success": true
+            },
+            "hash": "nvQ6-Q"
+        },
+        ".assetpack/ffmpeg/PopupOpen.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/PopupOpen.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/PopupOpen.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/PopupOpen.mp3",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

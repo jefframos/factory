@@ -82,6 +82,12 @@ export default class ShopView extends PIXI.Container {
                 iconSize: { width: cfg.TAB_HEIGHT * 0.8, height: cfg.TAB_HEIGHT * 0.8 },
                 iconOffset: new PIXI.Point(20, 0)
             },
+            down: {
+                callback: () => {
+                    MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.Drop)
+                }
+
+            },
             click: { callback: () => this.showTab("animals") }
         });
 
@@ -102,9 +108,21 @@ export default class ShopView extends PIXI.Container {
                 iconSize: { width: cfg.TAB_HEIGHT * 0.8, height: cfg.TAB_HEIGHT * 0.8 },
                 iconOffset: new PIXI.Point(20, 0)
             },
+            down: {
+                callback: () => {
+                    MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.Drop)
+                }
+            },
             click: { callback: () => this.showTab("mods") }
         });
         tabMods.setLabel("MODS")
+
+        const modsNotificationIcon: NotificationIcon = new NotificationIcon(
+            () => ModifierManager.instance.hasAffordableItems(),
+            ModifierManager.instance.onAvailabilityChanged
+        );
+
+        tabMods.addChild(modsNotificationIcon)
 
         tabAnimals.position.set(cfg.PADDING.LEFT, cfg.PADDING.TOP);
         tabMods.position.set(cfg.PADDING.LEFT + tabWidth + 10, cfg.PADDING.TOP);
@@ -131,12 +149,22 @@ export default class ShopView extends PIXI.Container {
         this.btnUp = new BaseButton({
             standard: { width: 60, height: 60, texture: PIXI.Texture.from(cfg.Textures.NavBtn), iconTexture: PIXI.Texture.from('up'), centerIconHorizontally: true, centerIconVertically: true, iconSize: { height: 50, width: 50 } },
             disabled: { texture: PIXI.Texture.from(cfg.Textures.NavDisabled) },
+            down: {
+                callback: () => {
+                    MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.Drop)
+                }
+            },
             click: { callback: () => this.stepScroll(SHOP_STYLE_CONFIG.Item.HEIGHT * 6 + SHOP_STYLE_CONFIG.Item.SPACING) }
         });
 
         this.btnDown = new BaseButton({
             standard: { width: 60, height: 60, texture: PIXI.Texture.from(cfg.Textures.NavBtn), iconTexture: PIXI.Texture.from('down'), centerIconHorizontally: true, centerIconVertically: true, iconSize: { height: 50, width: 50 } },
             disabled: { texture: PIXI.Texture.from(cfg.Textures.NavDisabled) },
+            down: {
+                callback: () => {
+                    MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.Drop)
+                }
+            },
             click: { callback: () => this.stepScroll(-(SHOP_STYLE_CONFIG.Item.HEIGHT * 6 + SHOP_STYLE_CONFIG.Item.SPACING)) }
         });
 
@@ -235,6 +263,9 @@ export default class ShopView extends PIXI.Container {
     public show(): void {
         if (this.visible) return;
 
+
+        MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.OpenPopup)
+
         PlatformHandler.instance.platform.gameplayStop();
 
         this.visible = true;
@@ -252,6 +283,8 @@ export default class ShopView extends PIXI.Container {
         if (!this.visible) return;
 
         PlatformHandler.instance.platform.gameplayStart();
+        MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.ClosePopup)
+
         gsap.to(this, {
             alpha: 0,
             duration: 0.2,

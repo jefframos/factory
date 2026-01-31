@@ -53,6 +53,9 @@ export class PortraitItem extends PIXI.Container {
         this.currentLevel = level;
         this.claimButton.overrider(ButtonState.CLICK, { callback: () => onClaimCallback(this.currentLevel) });
         this.updateState();
+
+        this.frame.y = this.frame.height / 2 - this.frame.height * 0.95 + Math.sin(level / 10) * 5;
+        this.frame.angle = Math.sin((level * 2 - 1) * Math.PI / 2) * 1;
     }
 
     public updateState(): void {
@@ -64,8 +67,7 @@ export class PortraitItem extends PIXI.Container {
         this.frame.texture = TextureBaker.getTexture(texKey) || PIXI.Texture.WHITE;
 
         // Randomize tilt/position slightly for that "gallery" look
-        this.frame.y = this.frame.height / 2 - this.frame.height * 0.95 + Math.random() * 5;
-        this.frame.angle = Math.sin((Math.random() * 2 - 1) * Math.PI / 2) * 1;
+
 
         // 2. Toggle visibility based on state
         if (!isDiscovered) {

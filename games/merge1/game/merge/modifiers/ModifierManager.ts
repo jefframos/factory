@@ -18,20 +18,22 @@ export interface IModifierConfig {
     icon: string;
     description: string;
     maxLevel: number;
-    // --- NEW PRICE PROPERTIES ---
-    priceSteps: number[]; // e.g., [10, 25, 50]
-    maxPrice: number;     // e.g., 5000
-    // ----------------------------
+    priceSteps: number[];
+    maxPrice: number;
     unit: "%" | "x" | "s";
     calculateValue: (level: number) => number;
 }
 
 export class ModifierManager {
     private static _instance: ModifierManager;
+
+    // Signals
     public readonly onModifierUpgraded: Signal = new Signal();
+    public readonly onAvailabilityChanged: Signal = new Signal();
 
     private _levels: Map<ModifierType, number> = new Map();
-    private _configs: Record<ModifierType, IModifierConfig>;
+    private _configs!: Record<ModifierType, IModifierConfig>;
+    private _lastAvailabilityState: boolean = false;
 
     public static get instance(): ModifierManager {
         return this._instance || (this._instance = new ModifierManager());
@@ -40,10 +42,17 @@ export class ModifierManager {
     private constructor() {
         this.setupConfigs();
         this.loadLevels();
+
+        // Listen for currency changes to update notification dots/states
+        InGameEconomy.instance.onCurrencyChanged.add(() => {
+            this.refreshAvailability();
+        });
+
+        // Initial check
+        this.refreshAvailability();
     }
 
     private setupConfigs(): void {
-        // Helper to keep the object clean
         this._configs = {
             [ModifierType.SpawnSpeed]: {
                 type: ModifierType.SpawnSpeed,
@@ -51,7 +60,7 @@ export class ModifierManager {
                 icon: MergeAssets.Textures.Modifiers.SpawnFast,
                 description: "Cats spawn faster",
                 maxLevel: 10,
-                priceSteps: [5, 15, 30], // First 3 levels cost this
+                priceSteps: [5, 15, 30],
                 maxPrice: 2500,
                 unit: "%",
                 calculateValue: (lvl) => lvl * 10
@@ -115,33 +124,76 @@ export class ModifierManager {
     }
 
     /**
-     * Calculates price using fixed steps, then an exponential curve 
-     * that hits exactly maxPrice at maxLevel.
+     * Logic to determine if at least one upgrade is affordable
      */
+    public hasAffordableItems(): boolean {
+        const gems = InGameEconomy.instance.getAmount(CurrencyType.GEMS);
+
+        return Object.values(this._configs).some(cfg => {
+            const currentLvl = this.getLevel(cfg.type);
+            if (currentLvl >= cfg.maxLevel) return false;
+
+            const price = this.getUpgradePrice(cfg.type);
+            return gems >= price;
+        });
+    }
+
+    /**
+     * Checks state and dispatches signal only if state flipped
+     */
+    public refreshAvailability(): void {
+        const currentState = this.hasAffordableItems();
+        if (currentState !== this._lastAvailabilityState) {
+            this._lastAvailabilityState = currentState;
+            this.onAvailabilityChanged.dispatch(currentState);
+        }
+    }
+
     public getUpgradePrice(type: ModifierType): number {
         const cfg = this._configs[type];
-        const lvl = this.getLevel(type); // Current level (index 0 for first purchase)
+        const lvl = this.getLevel(type);
 
-        // 1. Check if we have a predefined step for this level
+        if (lvl >= cfg.maxLevel) return Infinity;
+
+        // 1. Fixed Steps
         if (lvl < cfg.priceSteps.length) {
             return cfg.priceSteps[lvl];
         }
 
-        // 2. If we are beyond steps, calculate the curve
-        // We start the curve from the last step value
+        // 2. Exponential Curve
         const lastStepVal = cfg.priceSteps[cfg.priceSteps.length - 1];
         const stepsRemaining = cfg.maxLevel - cfg.priceSteps.length;
         const currentStepInCurve = lvl - (cfg.priceSteps.length - 1);
 
         if (stepsRemaining <= 0) return cfg.maxPrice;
 
-        // Formula: lastVal * (multiplier ^ steps)
-        // To find the multiplier that reaches maxPrice:
-        // multiplier = (maxPrice / lastVal) ^ (1 / stepsRemaining)
         const multiplier = Math.pow(cfg.maxPrice / lastStepVal, 1 / stepsRemaining);
-
         const price = lastStepVal * Math.pow(multiplier, currentStepInCurve);
+
         return Math.floor(price);
+    }
+
+    public tryUpgrade(type: ModifierType): boolean {
+        const lvl = this.getLevel(type);
+        const cfg = this._configs[type];
+
+        if (lvl >= cfg.maxLevel) return false;
+
+        const price = this.getUpgradePrice(type);
+        const economy = InGameEconomy.instance;
+
+        if (economy.getAmount(CurrencyType.GEMS) >= price) {
+            economy.spend(CurrencyType.GEMS, price);
+
+            this._levels.set(type, lvl + 1);
+            this.saveLevels();
+
+            this.onModifierUpgraded.dispatch(type, lvl + 1);
+            this.refreshAvailability();
+
+            return true;
+        }
+        return false;
     }
 
     public getLevel(type: ModifierType): number {
@@ -156,33 +208,17 @@ export class ModifierManager {
         return Object.values(this._configs);
     }
 
-    public getNormalizedValue(type: ModifierType): number {
-        return 1 + this.getValue(type) / 100;
-    }
-
     public getValue(type: ModifierType): number {
         return this._configs[type].calculateValue(this.getLevel(type));
     }
 
-    public tryUpgrade(type: ModifierType): boolean {
-        const lvl = this.getLevel(type);
-        const cfg = this._configs[type];
-
-        if (lvl >= cfg.maxLevel) return false;
-
-        const price = this.getUpgradePrice(type);
-        if (InGameEconomy.instance.getAmount(CurrencyType.GEMS) >= price) {
-            InGameEconomy.instance.spend(CurrencyType.GEMS, price);
-            this._levels.set(type, lvl + 1);
-            this.saveLevels();
-            this.onModifierUpgraded.dispatch(type, lvl + 1);
-            return true;
-        }
-        return false;
+    public getNormalizedValue(type: ModifierType): number {
+        return 1 + this.getValue(type) / 100;
     }
 
     private loadLevels(): void {
-        const saved = GameStorage.instance.getFullState().modifierLevels || {};
+        const state = GameStorage.instance.getFullState();
+        const saved = (state as any).modifierLevels || {};
         Object.keys(saved).forEach(k => this._levels.set(k as ModifierType, saved[k]));
     }
 

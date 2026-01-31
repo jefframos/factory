@@ -114,6 +114,7 @@ export default class ModifierItemView extends PIXI.Container {
     private onUpgradeClicked(): void {
         const success = ModifierManager.instance.tryUpgrade(this.type);
         if (success) {
+            MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.Purchase)
             this.refresh();
         }
     }

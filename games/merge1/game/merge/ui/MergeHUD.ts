@@ -107,11 +107,11 @@ export default class MergeHUD extends PIXI.Container {
 
         this.shopButton = new BaseButton({
             standard: {
-                width: 80, height: 80, allPadding: 10,
+                width: 100, height: 100, allPadding: 10,
                 texture: PIXI.Texture.EMPTY,
                 iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Shop),
                 centerIconHorizontally: true, centerIconVertically: true,
-                iconSize: { height: 80, width: 80 },
+                iconSize: { height: 100, width: 100 },
                 fontStyle: new PIXI.TextStyle({ ...MergeAssets.MainFont, fontSize: 20 })
             },
             over: { tint: 0xeeeeee },
@@ -239,10 +239,10 @@ export default class MergeHUD extends PIXI.Container {
         // Add the Button
         this.collectionButton = new BaseButton({
             standard: {
-                width: 80, height: 80, allPadding: 10,
+                width: 100, height: 100, allPadding: 10,
                 texture: PIXI.Texture.EMPTY,
                 iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.CollectionIcon), // Replace with your icon
-                iconSize: { height: 80, width: 80 },
+                iconSize: { height: 100, width: 100 },
                 centerIconHorizontally: true, centerIconVertically: true,
             },
             click: {
@@ -454,8 +454,8 @@ export default class MergeHUD extends PIXI.Container {
         this.generator.position.set(bottomRight.x - this.generator.width - padding - this.x, bottomRight.y - 80 - this.y);
 
         // --- NEW LAYOUT: Bottom Right Column ---
-        this.shopButton.x = topRight.x - this.x - 80 - padding;
-        this.shopButton.y = topRight.y - this.y + 80 + padding;
+        this.shopButton.x = topRight.x - this.x - 90 - padding;
+        this.shopButton.y = topRight.y - this.y + 90 + padding;
 
         // Room Buttons stacked vertically ABOVE the shop button
         this.roomSelector.x = this.shopButton.x;

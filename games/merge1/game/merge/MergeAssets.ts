@@ -167,6 +167,10 @@ export default class MergeAssets {
                 soundId: 'ScoreUpdate',
                 volumeMinMax: 0.1,
             },
+            Claim: {
+                soundId: 'Claim',
+                volumeMinMax: 0.1,
+            },
             StartLevel: {
                 soundId: 'Whoosh',
                 volumeMinMax: 0.15,
@@ -209,6 +213,16 @@ export default class MergeAssets {
                 pitchMinMax: [0.8, 1],
             },
             OpenPopup: {
+                soundId: 'PopupOpen',
+                volumeMinMax: [0.15, 0.2],
+                pitchMinMax: [0.8, 1],
+            },
+            ClosePopup: {
+                soundId: 'PopupOpen',
+                volumeMinMax: [0.15, 0.2],
+                pitchMinMax: [0.6, 0.7],
+            },
+            OpenPopupPrize: {
                 soundId: 'Bonus Screen Popup',
                 volumeMinMax: [0.15, 0.2],
                 pitchMinMax: [0.8, 1],
@@ -354,7 +368,7 @@ export default class MergeAssets {
             MissionBonus: "missionUp",
         },
         UI: {
-            CollectionPanel: "ItemFrame01_Single_Navy",
+            CollectionPanel: "Button01_s_Purple",
             BgLegendary: "Button01_s_Yellow",
             BgEpic: "Button01_s_PInk",
             BgRare: "Button01_s_Green",
