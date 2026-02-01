@@ -8,6 +8,7 @@ interface AudioAsset {
   howlInstance?: Howl;
   bundleName?: string;
 }
+
 interface AudioManifest {
   bundles: Array<{
     name: string;
@@ -17,17 +18,24 @@ interface AudioManifest {
     }>;
   }>;
 }
-// SoundLoadManager class for loading and managing audio assets
+
 export default class SoundLoadManager {
   private static _instance: SoundLoadManager | null = null;
   private soundMap: { [key: string]: AudioAsset } = {};
-  private loadingQueue: Promise<void>[] = [];
-  private supportsOgg: string;
+
+  /**
+   * loadingPromises tracks sounds currently in flight.
+   * This prevents multiple Howl instances from being created 
+   * if a sound is requested twice before the first one finishes.
+   */
+  private loadingPromises: Map<string, Promise<void>> = new Map();
+  private supportsOgg: boolean;
 
   private constructor() {
     // Check for OGG support
     const audio = document.createElement("audio");
-    this.supportsOgg = audio.canPlayType('audio/ogg; codecs="vorbis"');
+    const canPlayOgg = audio.canPlayType('audio/ogg; codecs="vorbis"');
+    this.supportsOgg = canPlayOgg === "probably" || canPlayOgg === "maybe";
   }
 
   public static get instance(): SoundLoadManager {
@@ -37,20 +45,15 @@ export default class SoundLoadManager {
     return SoundLoadManager._instance;
   }
 
-  removeExtension(fileName: string): string {
+  private removeExtension(fileName: string): string {
     const lastDotIndex = fileName.lastIndexOf(".");
-    if (lastDotIndex === -1) {
-      // If there's no dot in the fileName, return the fileName as is
-      return fileName;
-    }
-    return fileName.substring(0, lastDotIndex);
+    return lastDotIndex === -1 ? fileName : fileName.substring(0, lastDotIndex);
   }
 
-  // Setup manifests to map audio assets
-  public setUpManifests(
-    manifests: AudioManifest[],
-    bundleNames: string[],
-  ): void {
+  /**
+   * Maps manifest data into the internal soundMap.
+   */
+  public setUpManifests(manifests: AudioManifest[], bundleNames: string[]): void {
     manifests.forEach((manifest) => {
       manifest.bundles.forEach((bundle) => {
         if (bundleNames.includes(bundle.name)) {
@@ -66,75 +69,117 @@ export default class SoundLoadManager {
             });
 
             audioAsset.bundleName = bundle.name;
-            this.soundMap[this.removeExtension(asset.alias[0])] = audioAsset;
+            // Use the first alias as the key
+            const key = this.removeExtension(asset.alias[0]);
+            this.soundMap[key] = audioAsset;
           });
         }
       });
     });
   }
 
-  // Load sound by name asynchronously using Howler
+  /**
+   * Core loading logic with duplicate prevention.
+   */
   public async loadSoundByName(name: string): Promise<void> {
     const audioAsset = this.soundMap[name];
-    if (!audioAsset || audioAsset.isLoaded) {
+
+    if (!audioAsset) {
+      console.warn(`SoundLoadManager: Sound "${name}" not found in manifest.`);
       return;
     }
 
-    // Check for OGG support
-    const soundFilePath = false//this.supportsOgg
+    if (audioAsset.isLoaded) return;
+
+    // If already loading, return the existing promise
+    if (this.loadingPromises.has(name)) {
+      return this.loadingPromises.get(name);
+    }
+
+    const soundFilePath = this.supportsOgg && audioAsset.oggPath
       ? audioAsset.oggPath
       : audioAsset.mp3Path;
 
     if (!soundFilePath) {
+      console.error(`SoundLoadManager: No valid source path for "${name}"`);
       return;
     }
-    return new Promise<void>((resolve) => {
+
+    const loadPromise = new Promise<void>((resolve, reject) => {
       const howl = new Howl({
         src: [soundFilePath],
+        preload: true,
         onload: () => {
           audioAsset.isLoaded = true;
           audioAsset.howlInstance = howl;
+          this.loadingPromises.delete(name);
           resolve();
         },
+        onloaderror: (id, error) => {
+          this.loadingPromises.delete(name);
+          console.error(`SoundLoadManager: Failed to load "${name}"`, error);
+          reject(error);
+        }
       });
     });
+
+    this.loadingPromises.set(name, loadPromise);
+    return loadPromise;
   }
 
-  // Load all sounds in a bundle
+  /**
+   * Loads all sounds defined in the map in the background.
+   */
+  public async loadAllSoundsBackground(): Promise<void> {
+    const allKeys = Object.keys(this.soundMap);
+    // Use allSettled so one 404 doesn't break the entire batch
+    await Promise.allSettled(allKeys.map(key => this.loadSoundByName(key)));
+    console.log("SoundLoadManager: All sounds in map have been processed.");
+  }
+
+  /**
+   * Loads sounds belonging to a specific bundle.
+   */
   public async loadSoundsByBundle(bundleName: string): Promise<void> {
     const soundsToLoad = Object.keys(this.soundMap).filter(
       (key) => this.soundMap[key].bundleName === bundleName,
     );
 
-    for (const sound of soundsToLoad) {
-      await this.loadSoundByName(sound);
-    }
+    await Promise.allSettled(soundsToLoad.map(key => this.loadSoundByName(key)));
   }
 
-  // Load sound in the background
-  public loadSoundInBackground(name: string): void {
-    const loadPromise = this.loadSoundByName(name);
-    this.loadingQueue.push(loadPromise);
+  /**
+   * Synchronously kicks off a load without forcing the caller to await.
+   */
+  public loadInBackground(name: string): void {
+    this.loadSoundByName(name).catch(() => {
+      /* Error handled in loadSoundByName */
+    });
   }
 
-  // Wait for all background loads to complete
-  public async waitForBackgroundLoads(): Promise<void> {
-    await Promise.all(this.loadingQueue);
-    this.loadingQueue = [];
-  }
-
-  // Retrieve sound by name
+  /**
+   * Safely retrieves a sound. If not loaded, it triggers a load.
+   */
   public getSound(name: string): AudioAsset | undefined {
-    if (!this.soundMap[name]) {
-      console.warn("sound doesnt exist " + name);
-      return;
+    const asset = this.soundMap[name];
+    if (!asset) {
+      console.warn("SoundLoadManager: Sound doesn't exist " + name);
+      return undefined;
     }
-    this.loadSoundByName(name);
-    return this.soundMap[name];
+
+    if (!asset.isLoaded) {
+      this.loadInBackground(name);
+    }
+
+    return asset;
   }
 
-  // Clear sound map
   public clearSounds(): void {
+    // Unload Howler instances to free memory
+    Object.values(this.soundMap).forEach(asset => {
+      asset.howlInstance?.unload();
+    });
     this.soundMap = {};
+    this.loadingPromises.clear();
   }
 }

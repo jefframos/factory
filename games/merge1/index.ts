@@ -94,7 +94,7 @@ export default class MyGame extends Game {
 
         });
 
-
+        console.log(bundles)
         await PIXI.Assets.loadBundle('images', (p) => {
             this.loaderScene.updateLoader(p * 1 / bundles.length);
         })

@@ -5,18 +5,10 @@
       "assets": [
         {
           "alias": [
-            "animals"
-          ],
-          "src": [
-            "animals.json"
-          ]
-        },
-        {
-          "alias": [
             "backgrounds"
           ],
           "src": [
-            "backgrounds.json"
+            "backgrounds.webp.json"
           ]
         },
         {
@@ -24,7 +16,7 @@
             "garden"
           ],
           "src": [
-            "garden.json"
+            "garden.webp.json"
           ]
         },
         {
@@ -32,7 +24,7 @@
             "ui"
           ],
           "src": [
-            "ui.json"
+            "ui.webp.json"
           ]
         }
       ]

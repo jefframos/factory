@@ -113,7 +113,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
                 title: `Reach player level ${target}`,
                 type: "reach_player_level",
                 target,
-                reward: { currencies: { [CurrencyType.GEMS]: 5 } }
+                reward: { currencies: { [CurrencyType.GEMS]: 0.05 } }
             };
         }
     }

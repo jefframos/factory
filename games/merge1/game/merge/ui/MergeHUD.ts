@@ -258,6 +258,8 @@ export default class MergeHUD extends PIXI.Container {
         });
         this.hudLayer.addChild(this.collectionButton);
 
+        this.collectionButton.pivot.set(50)
+
         this.collectionButton.addChild(this.collectionNotificationIcon)
         this.collectionNotificationIcon.x = 10
         this.collectionNotificationIcon.y = 10
@@ -494,8 +496,8 @@ export default class MergeHUD extends PIXI.Container {
         this.notifications.onOverlayChanged(Game.gameScreenData);
 
         // Position it below the shop button
-        this.collectionButton.x = this.shopButton.x;
-        this.collectionButton.y = this.shopButton.y + this.shopButton.height + 10;
+        this.collectionButton.x = this.shopButton.x + this.collectionButton.pivot.x;
+        this.collectionButton.y = this.shopButton.y + this.shopButton.height + 10 + this.collectionButton.pivot.y;
 
         // Position the panel center
         this.collectionPanel.position.set(centerX, (bottomRight.y - topRight.y) / 2);

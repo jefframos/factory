@@ -1,6 +1,8 @@
 import { AssetPack } from '@assetpack/core';
+import { compress } from '@assetpack/core/image';
 import { pixiManifest } from '@assetpack/core/manifest';
 import { pixiPipes } from '@assetpack/core/pixi';
+import { texturePackerCompress } from '@assetpack/core/texture-packer';
 import dotenv from 'dotenv';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -34,7 +36,7 @@ ensureFolderExists(outputImages)
 const options = {
     jpg: {},
     png: false,
-    webp: { quality: 100, alphaQuality: 100, },
+    webp: { quality: 80, alphaQuality: 100, },
     avif: false,
     bc7: false,
     astc: false,
@@ -60,8 +62,8 @@ const pack = new AssetPack({
 
         //texturePackerCacheBuster(),
         //cacheBuster(),
-        // compress(options),
-        // texturePackerCompress(options),
+        compress(options),
+        texturePackerCompress(options),
         pixiManifest({
             output: `${outputManifest}/images.json`,
             createShortcuts: false,
@@ -84,14 +86,13 @@ const packNonPreload = new AssetPack({
                 texturePacker: {
                     nameStyle: "short",
                     removeFileExtension: true,
-                    textureFormat: 'webp'
                 },
             },
         }),
 
         // texturePackerCacheBuster(),
         // cacheBuster(),
-        // compress(options),
+        compress(options),
         // texturePackerCompress(options),
 
     ],
@@ -104,7 +105,7 @@ if (WATCH) {
         console.log('✅ Rebuilt image assets');
     });
 } else {
-    await packNonPreload.run();
     await pack.run();
+    await packNonPreload.run();
     console.log('✅ Built image assets');
 }

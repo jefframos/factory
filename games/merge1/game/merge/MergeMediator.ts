@@ -30,6 +30,7 @@ import ShopView from "./ui/shop/ShopView";
 import { CoinEffectLayer } from "./vfx/CoinEffectLayer";
 
 // New Grid Imports
+import PromiseUtils from "@core/utils/PromiseUtils";
 import { DevGuiManager } from "../utils/DevGuiManager";
 import { EntityGridView2 } from "./grid/EntityGridView2";
 import { EntityManagerGrid } from "./grid/EntityManagerGrid";
@@ -190,11 +191,8 @@ export class MergeMediator {
         this.setupTimedRewards();
 
         // Initial Start State
-        const snap = ProgressionStats.instance.snapshot;
-        if (snap.mergesMade < 2 && this.entities.size < 2) {
-            this.entities.spawnAnimal(1);
-            this.entities.spawnAnimal(1);
-        }
+        this.setUpFTUE();
+
 
         this.eggGenerator = new EggGenerator(() => {
             const egg = this.entities.spawnEgg();
@@ -211,7 +209,20 @@ export class MergeMediator {
         //     this.updateDebugRect()
         // }, 500);
     }
+    private async setUpFTUE() {
+        const snap = ProgressionStats.instance.snapshot;
+        if (snap.mergesMade < 2 && this.entities.size < 2) {
+            await PromiseUtils.await(200)
 
+            const centerX = this.walkBounds.x + this.walkBounds.width / 2
+            const centerY = this.walkBounds.y + this.walkBounds.height / 2
+            const entity1 = this.entities.spawnAnimal(1, new PIXI.Point(centerX + 80, centerY));
+            entity1.walkSpeed = 0
+            await PromiseUtils.await(500)
+            const entity2 = this.entities.spawnAnimal(1, new PIXI.Point(centerX - 80, centerY));
+            entity2.walkSpeed = 0
+        }
+    }
     public updateDebugRect(): void {
         const gr = new PIXI.Graphics()
         gr.clear();
@@ -295,12 +306,15 @@ export class MergeMediator {
 
         this.inputService.onMergePerformed.add((resultLevel: number) => {
             if (ProgressionStats.instance.snapshot.mergesMade === 1) {
-                this.entities.spawnAnimal(resultLevel);
+
+                const centerX = this.walkBounds.x + this.walkBounds.width / 2
+                const centerY = this.walkBounds.y + this.walkBounds.height / 2
+                this.entities.spawnAnimal(resultLevel, new PIXI.Point(centerX, centerY - 150));
                 this.ftueService.markDirty();
             }
         });
 
-        this.ftueService.onStarted.add(() => this.zoomService.setZoom(1.3, 0.6));
+        this.ftueService.onStarted.add(() => this.zoomService.setZoom(1.1, 0.6));
         this.ftueService.onCompleted.add(() => {
             this.zoomService.setZoom(1.0, 0.8)
             this.eggGenerator.progress = EggGenerator.MAX_TIME * 0.85;

@@ -5,6 +5,7 @@ import { GameScene } from "@core/scene/GameScene";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
 
+import SoundLoadManager from "@core/audio/SoundLoaderManager";
 import SoundManager from "@core/audio/SoundManager";
 import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
 import TiledContainer from "@core/tiled/TiledContainer";
@@ -81,7 +82,7 @@ export default class MergeScene extends GameScene {
 
 
 
-
+        SoundLoadManager.instance.loadAllSoundsBackground();
 
 
         SoundManager.instance.setMasterSfxVolume(0.7)
