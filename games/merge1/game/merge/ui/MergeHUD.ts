@@ -16,11 +16,13 @@ import { MissionClaimResult } from "../missions/MissionManager";
 import { ModifierManager, ModifierType } from "../modifiers/ModifierManager";
 import { PrizeItem } from "../prize/PrizeTypes";
 import { RoomId } from "../rooms/RoomRegistry";
+import SpinningWheel, { Prize as WheelPrize } from "../spinningWheel/SpinningWheel";
 import { ProgressionType } from "../storage/GameStorage";
 import { TimedRewardService } from "../timedRewards/TimedRewardService";
 import { TimedRewardsBar } from "../timedRewards/ui/TimedRewardsBar ";
 import { CoinEffectLayer } from "../vfx/CoinEffectLayer";
 import { NewEntityDiscoveredView } from "../vfx/NewEntityDiscoveredView";
+import { TextureBaker } from "../vfx/TextureBaker";
 import { CurrencyBox } from "./CurrencyBox";
 import GeneratorHUD from "./GeneratorHUD";
 import { MissionHUD } from "./MissionHUD";
@@ -174,6 +176,9 @@ export default class MergeHUD extends PIXI.Container {
             }
         });
 
+        DevGuiManager.instance.addButton('discoverPopup', () => {
+            this.playNewDiscovery(5)
+        })
         DevGuiManager.instance.addButton('rewardPopup', () => {
             RewardManager.instance.showReward(
                 [
@@ -271,6 +276,72 @@ export default class MergeHUD extends PIXI.Container {
         this.refreshRoomButtons();
 
         this.setUpNotifications();
+
+
+
+        const prizes = [
+            { prizeType: CurrencyType.MONEY, amount: 500 },
+            { prizeType: CurrencyType.ENTITY, id: '3', level: 3, amount: 1 },
+            { prizeType: CurrencyType.ENTITY, id: '1', level: 3, amount: 1 },
+            { prizeType: CurrencyType.ENTITY, id: '2', level: 3, amount: 1 },
+            { prizeType: CurrencyType.MONEY, amount: 500 },
+            { prizeType: CurrencyType.GEMS, amount: 5 },
+            { prizeType: CurrencyType.MONEY, amount: 500 },
+            // ... more prizes
+        ];
+        ///////////////////////HERE
+        const wheel = new SpinningWheel(
+            prizes,
+            [0x117bff, 0x00c1f9],
+            (id) => {
+                return TextureBaker.getTexture('ENTITY_' + id)
+                //PIXI.Texture.from(id)
+            }, // Fetch your cat texture here
+            PIXI.Texture.from('Slider_Basic02_Fill_Green'),
+            PIXI.Texture.from('Slider_Basic02_Fill_Green'),
+            PIXI.Texture.from('Slider_Handle_Fill_Pink')
+        );
+
+        this.addChild(wheel);
+
+        wheel.x = 500
+        wheel.y = 500
+        wheel.visible = false;
+        DevGuiManager.instance.addButton('spin', () => {
+            wheel.visible = true;
+            wheel.spin(0);
+        })
+        // Example: Trigger the spin to land on the 0th item (Jade Cat)
+
+        wheel.onSpinComplete.add((prize: WheelPrize) => {
+            console.log("Player won:", prize);
+            wheel.visible = false;
+
+
+            const prizes: PrizeItem[] = [];
+
+
+            //console.log(amount, Math.ceil(amount * ModifierManager.instance.getNormalizedValue(ModifierType.MissionRewards)))
+            prizes.push({
+                type: prize.prizeType,
+                value: prize.level || prize.amount,
+                tier: prize.prizeType == CurrencyType.GEMS ? 2 : 0 // You can logic-gate tiers based on amount if desired
+            });
+
+
+
+            // 2. Trigger the centralized RewardManager
+            if (prizes.length > 0) {
+                RewardManager.instance.showReward(
+                    prizes,
+                    this.coinEffects,
+                    this
+                );
+            }
+
+
+            // Show your "New Discovery" popup here
+        });
     }
 
     private setupLayers(): void {
@@ -363,10 +434,7 @@ export default class MergeHUD extends PIXI.Container {
             blackoutAlpha: 0.70
         });
 
-        setTimeout(() => {
 
-            //this.notifications.toastPrize({ title: "Level Up!", subtitle: "Level " + 2, iconTexture: MergeAssets.Textures.Icons.BadgeMain });
-        }, 100);
 
     }
 
@@ -455,7 +523,7 @@ export default class MergeHUD extends PIXI.Container {
         }
         const { topLeft, bottomRight, topRight } = Game.overlayScreenData;
         const centerX = (topRight.x - topLeft.x) / 2;
-        const centerY = (bottomRight.y - topRight.y) / 4;
+        const centerY = (bottomRight.y - topRight.y) / 4 + 50;
         this.newDiscovery.x = centerX;
         this.newDiscovery.y = centerY;
         const data = StaticData.getAnimalData(newLevel)

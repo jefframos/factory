@@ -167,8 +167,11 @@ export class TextureBaker {
 
         // 3. Layer 1: Background (White texture tinted light blue)
         const bg = PIXI.Sprite.from(portraitKey ? portraitKey : PIXI.Texture.WHITE);
-        bg.width = width;
-        bg.height = height;
+        const pd = 15
+        bg.width = width - pd;
+        bg.height = height - pd;
+        bg.x = pd / 2
+        bg.y = pd / 2
         bg.tint = portraitKey ? 0xFFFFFF : 0x3498db; // Example Blue Tint
         container.addChild(bg);
 

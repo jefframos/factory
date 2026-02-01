@@ -344,65 +344,65 @@
       "frame": {
         "x": 934,
         "y": 2,
-        "w": 139,
-        "h": 167
+        "w": 145,
+        "h": 173
       },
       "rotated": false,
-      "trimmed": false,
+      "trimmed": true,
       "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 139,
-        "h": 167
+        "x": 2,
+        "y": 5,
+        "w": 145,
+        "h": 173
       },
       "sourceSize": {
-        "w": 139,
-        "h": 167
+        "w": 149,
+        "h": 179
       }
     },
     "frame-2": {
       "frame": {
         "x": 934,
-        "y": 171,
-        "w": 121,
-        "h": 157
+        "y": 177,
+        "w": 125,
+        "h": 161
       },
       "rotated": false,
-      "trimmed": false,
+      "trimmed": true,
       "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 121,
-        "h": 157
+        "x": 1,
+        "y": 4,
+        "w": 125,
+        "h": 161
       },
       "sourceSize": {
-        "w": 121,
-        "h": 157
+        "w": 127,
+        "h": 165
       }
     },
     "frame-1": {
       "frame": {
         "x": 2,
         "y": 1064,
-        "w": 160,
-        "h": 162
+        "w": 165,
+        "h": 167
       },
       "rotated": true,
-      "trimmed": false,
+      "trimmed": true,
       "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 160,
-        "h": 162
+        "x": 3,
+        "y": 6,
+        "w": 165,
+        "h": 167
       },
       "sourceSize": {
-        "w": 160,
-        "h": 162
+        "w": 172,
+        "h": 174
       }
     },
     "couch2": {
       "frame": {
-        "x": 1075,
+        "x": 1081,
         "y": 2,
         "w": 373,
         "h": 298
@@ -443,7 +443,7 @@
     "cat-tower-2": {
       "frame": {
         "x": 2,
-        "y": 1226,
+        "y": 1231,
         "w": 423,
         "h": 830
       },
@@ -462,7 +462,7 @@
     },
     "carpet": {
       "frame": {
-        "x": 1375,
+        "x": 1381,
         "y": 2,
         "w": 999,
         "h": 453
@@ -487,8 +487,8 @@
     "image": "backgrounds.webp",
     "format": "RGBA8888",
     "size": {
-      "w": 1830,
-      "h": 1651
+      "w": 1836,
+      "h": 1656
     },
     "scale": 1,
     "related_multi_packs": []

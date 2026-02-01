@@ -34,7 +34,6 @@ export class StaticData {
     }
 
     public static getAnimalData(level: number): IAnimalStaticData {
-        console.log()
         const data = this._animals.get(level);
         if (!data) {
             console.error(`No static data found for level ${level}`);

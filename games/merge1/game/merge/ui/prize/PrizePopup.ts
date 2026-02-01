@@ -35,7 +35,7 @@ export class PrizePopup extends BasePopup {
     constructor() {
         super();
 
-        this.blackout = new PIXI.Graphics().beginFill(0x000000, 0.7).drawRect(-2000, -2000, 4000, 4000).endFill();
+        this.blackout = new PIXI.Graphics().beginFill(MergeAssets.Textures.UI.BlockerColor, 0.8).drawRect(-2000, -2000, 4000, 4000).endFill();
         this.addChild(this.blackout);
 
         this.shine = PIXI.Sprite.from(MergeAssets.Textures.UI.Shine);

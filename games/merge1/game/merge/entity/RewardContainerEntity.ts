@@ -15,9 +15,11 @@ export class RewardContainerEntity extends BaseMergeEntity {
 
     private confetti: ConfettiBurst;
 
+
     constructor() {
         super();
 
+        this.priority = 0;
         // 1. Setup Rotating Shine (placed behind the sprite)
         this.shine = PIXI.Sprite.from(MergeAssets.Textures.UI.Shine); // Ensure you have a shine texture
         this.shine.anchor.set(0.5);
@@ -68,6 +70,8 @@ export class RewardContainerEntity extends BaseMergeEntity {
         this.coinOffset.y = -150
 
         this.backChest.y = -this.frontChest.height * 0.9
+
+        this.offsetY = - this.frontChest.height / 2
 
 
 

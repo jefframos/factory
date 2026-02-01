@@ -86,7 +86,6 @@ export class MergeInputMergeService {
 
                     this.OnRewardOpen.dispatch({ logic, view: entity })
                     setTimeout(() => {
-
                         this.deps.entities.recycleEntity(entity);
                     }, 2000);
                 }
@@ -169,7 +168,7 @@ export class MergeInputMergeService {
 
         // Hover hatch only when NOT dragging
         if (!this.activeEntity) {
-            this.checkEggHover(localPos);
+            //this.checkEggHover(localPos);
         }
     }
 
@@ -286,13 +285,13 @@ export class MergeInputMergeService {
             const offset = mergeData.mergeEntity.coinOffset;
 
             // console.log(config.coinValue * ModifierManager.instance.getNormalizedValue(ModifierType.MergeIncome))
-            this.deps.coins.dropCoin(
-                mergeData.mergeEntity.x + offset.x,
-                mergeData.mergeEntity.y + offset.y,
-                config.coinValue * ModifierManager.instance.getNormalizedValue(ModifierType.MergeIncome),
-                '',
-                false
-            );
+            // this.deps.coins.dropCoin(
+            //     mergeData.mergeEntity.x + offset.x,
+            //     mergeData.mergeEntity.y + offset.y,
+            //     config.coinValue * ModifierManager.instance.getNormalizedValue(ModifierType.MergeIncome),
+            //     '',
+            //     false
+            // );
 
         }
 

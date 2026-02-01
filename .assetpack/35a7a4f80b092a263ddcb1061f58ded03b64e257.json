@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769972305802,
-                "duration": 9.124699999999962,
+                "date": 1769981821125,
+                "duration": 2.3984999998938292,
                 "success": true
             }
         },
@@ -20,8 +20,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769972305802,
-                "duration": 3226.8066999999996,
+                "date": 1769981187983,
+                "duration": 1275.069199999998,
                 "success": true
             }
         },
@@ -73,7 +73,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "IE4xrQ"
+            "hash": "uHw3Qw"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/backgrounds{tps}/frame-2.png": {
             "isFolder": false,
@@ -83,7 +83,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "2HvQ5w"
+            "hash": "IFodhA"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/backgrounds{tps}/frame-3.png": {
             "isFolder": false,
@@ -93,7 +93,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "LquwgQ"
+            "hash": "O8LkxA"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/backgrounds{tps}/portrait-1.png": {
             "isFolder": false,
@@ -664,8 +664,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769972305813,
-                "duration": 4190.7486,
+                "date": 1769981821125,
+                "duration": 3680.4396000000415,
                 "success": true
             }
         },
@@ -677,9 +677,29 @@
                 "tps": true
             },
             "transformData": {},
+            "hash": "If8m1w"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/arrow-left_.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
             "hash": "KEZFPA"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/arrow-right.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "EE0PJA"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/arrow-right_.png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
             "metaData": {},
@@ -1276,6 +1296,26 @@
             },
             "transformData": {},
             "hash": "o_WE4w"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/Glow_Circle01.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "3eaaBg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/Glow_Circle02.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "RA7czg"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/handHud.png": {
             "isFolder": false,
@@ -2134,7 +2174,17 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "iiVTRA"
+            "hash": "Ne-dag"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/PictoIcon_Star_1.Png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "wKGkgQ"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/Image_Effect_Light02.png": {
             "isFolder": false,

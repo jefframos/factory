@@ -1,60 +1,99 @@
-import PromiseUtils from '@core/utils/PromiseUtils';
 import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
+import { StarBurst } from '../entity/StarBurst';
 import MergeAssets from '../MergeAssets';
 import { TextureBaker } from './TextureBaker';
 
 export class NewEntityDiscoveredView extends PIXI.Container {
+    private dimmer: PIXI.Sprite;
     private shine: PIXI.Sprite;
     private portrait: PIXI.Sprite;
+    private stars: StarBurst;
+
+    // New Text Container Elements
+    private titleContainer: PIXI.Container;
+    private titleBg: PIXI.NineSlicePlane;
+    private textContainer: PIXI.Container;
+    private textBg: PIXI.NineSlicePlane;
     private titleText: PIXI.Text;
     private nameText: PIXI.Text;
+
     private isAnimating: boolean = false;
 
     constructor() {
         super();
 
-        // 1. Setup Background Shine
+        // 1. Shine
         this.shine = PIXI.Sprite.from(MergeAssets.Textures.UI.Shine);
         this.shine.anchor.set(0.5);
         this.shine.alpha = 0;
         this.addChild(this.shine);
+        // 0. Dimmer (Darken the area)
+        // Using a 1x1 white texture tinted black, or a specific dark texture
+        this.dimmer = PIXI.Sprite.from('Label_Badge01_Purple');
+        //  this.dimmer.tint = MergeAssets.Textures.UI.BlockerColor;
+        this.dimmer.anchor.set(0.5);
+        this.dimmer.width = 200; // Large enough to cover screen
+        this.dimmer.height = 200;
+        this.dimmer.alpha = 0;
+        this.addChild(this.dimmer);
 
-        // 2. Setup Portrait
+
+        // 2. Stars
+        this.stars = new StarBurst(PIXI.Texture.from(MergeAssets.Textures.Particles.Star));
+        this.addChild(this.stars);
+
+        // 3. Portrait
         this.portrait = new PIXI.Sprite();
         this.portrait.anchor.set(0.5);
         this.portrait.scale.set(0);
         this.addChild(this.portrait);
 
-        // 3. Setup Title Text ("You Discovered")
-        this.titleText = new PIXI.Text('YOU DISCOVERED', {
-            ...MergeAssets.MainFontTitle,
-            fontSize: 24,
-            fill: 0xffffff,
-            align: 'center',
-        });
-        this.titleText.anchor.set(0.5, 1);
-        this.titleText.y = -70; // Kept your original position
-        this.titleText.alpha = 0;
-        this.addChild(this.titleText);
+        // 4. Title Container
+        this.titleContainer = new PIXI.Container();
+        this.titleBg = new PIXI.NineSlicePlane(PIXI.Texture.from('ItemFrame01_Single_Gray'), 30, 30, 30, 30);
+        this.titleText = new PIXI.Text('NEW DISCOVERY!', { ...MergeAssets.MainFontTitle, fontSize: 28, fill: 0xffffff });
+        this.titleText.anchor.set(0.5, 0);
+        this.titleContainer.addChild(this.titleBg, this.titleText);
+        this.addChild(this.titleContainer);
+        this.titleContainer.pivot.y = this.titleContainer.height / 2
 
-        // 4. Setup Name Text (The Entity Name)
-        this.nameText = new PIXI.Text('', {
-            ...MergeAssets.MainFontTitle,
-            fontSize: 32,
-            align: 'center',
-        });
+        // 5. Name Container
+        this.textContainer = new PIXI.Container();
+        this.textBg = new PIXI.NineSlicePlane(PIXI.Texture.from('ItemFrame01_Single_Green'), 30, 30, 30, 30);
+        this.nameText = new PIXI.Text('', { ...MergeAssets.MainFontTitle, fontSize: 32, stroke: 0xFFFFFF });
         this.nameText.anchor.set(0.5, 0);
-        this.nameText.y = 80; // Positioned below the portrait
-        this.nameText.alpha = 0;
-        this.addChild(this.nameText);
+        this.textContainer.addChild(this.textBg, this.nameText);
+        this.addChild(this.textContainer);
+        this.textContainer.pivot.y = this.textContainer.height / 2
 
         this.visible = false;
     }
 
+    private updateTextLayout(): void {
+        const paddingH = 60;
+        const paddingV = 20;
+
+        // Title Layout
+        this.titleBg.width = this.titleText.width + paddingH;
+        this.titleBg.height = this.titleText.height + paddingV;
+        this.titleBg.x = -this.titleBg.width / 2;
+        this.titleText.y = paddingV / 2;
+
+        // Name Layout
+        this.textBg.width = this.nameText.width + paddingH;
+        this.textBg.height = this.nameText.height + paddingV;
+        this.textBg.x = -this.textBg.width / 2;
+        this.nameText.y = paddingV / 2;
+
+        this.titleContainer.y = -110;
+        this.textContainer.y = 170;
+    }
+
     public update(delta: number): void {
-        if (this.visible && this.shine) {
-            this.shine.rotation += 0.01 * delta;
+        if (this.visible) {
+            this.shine.rotation += 0.5 * delta;
+            this.stars.update(delta * 25);
         }
     }
 
@@ -62,39 +101,64 @@ export class NewEntityDiscoveredView extends PIXI.Container {
         if (this.isAnimating) return;
         this.isAnimating = true;
 
-        // Reset and Prepare
-        const texture = TextureBaker.getTexture(`ENTITY_${entityId}`);
-        this.portrait.texture = texture;
-
+        this.portrait.texture = TextureBaker.getTexture(`ENTITY_${entityId}`);
         this.nameText.text = entityName.toUpperCase();
-        this.nameText.style.fill = entityColor;
+        this.nameText.style.fill = 0x252525//entityColor;
 
+        this.updateTextLayout();
+
+        MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.NewDiscovery)
+
+        // RESET
         this.visible = true;
+        this.dimmer.alpha = 0;
+        this.shine.alpha = 0;
+        this.portrait.scale.set(0);
+        this.titleContainer.alpha = 0;
+        this.titleContainer.scale.set(0.5);
+        this.textContainer.alpha = 0;
+        this.textContainer.scale.set(0.5);
 
-        // 1. POP APPEARANCE
-        gsap.set([this.shine, this.titleText, this.nameText], { alpha: 0 });
-        gsap.set(this.portrait.scale, { x: 0, y: 0 });
+        this.portrait.alpha = 1
+        this.portrait.y = -10
 
-        const timeline = gsap.timeline();
+        const tl = gsap.timeline();
 
-        timeline.to(this.shine, { alpha: 0.6, duration: 0.5 });
-        timeline.to(this.portrait.scale, { x: 1.2, y: 1.2, duration: 0.4, ease: "back.out(2)" }, 0);
+        // 1. Entrance
+        tl.to(this.dimmer, { alpha: 1, duration: 0.2 });
 
-        // Stagger the text appearance slightly
-        timeline.to(this.titleText, { alpha: 1, duration: 0.3 }, "-=0.2");
-        timeline.to(this.nameText, { alpha: 1, duration: 0.3 }, "-=0.1");
+        // Correct scale tweening for PIXI
+        tl.to(this.portrait.scale, { x: 1, y: 1, duration: 0.8, ease: "elastic.out(1, 0.5)" }, "-=0.2");
 
-        // 2. WAIT
-        await PromiseUtils.await(1500);
+        // 2. Effects
+        tl.to(this.shine, { alpha: 0.6, duration: 1.2, ease: "power2.out" }, "-=0.6");
+        tl.to(this.shine.scale, { x: 2, y: 2, duration: 1.2, ease: "power2.out" }, "<");
+        tl.add(() => this.stars.burst(), "-=1.5");
 
-        // 3. FLY TO TARGET
+        // 3. Text Boxes
+        tl.to(this.titleContainer, { alpha: 1, duration: 0.5 }, "-=0.7");
+        tl.to(this.titleContainer.scale, { onStart: () => { MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.Grab) }, x: 1, y: 1, duration: 0.5, ease: "back.out(1.7)" }, "<");
+
+        tl.to(this.textContainer, { alpha: 1, duration: 0.5 }, "-=0.5");
+        tl.to(this.textContainer.scale, { onStart: () => { MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.Grab) }, x: 1, y: 1, duration: 0.5, ease: "back.out(1.7)" }, "<");
+
+        tl.to({}, { duration: 1.5 }); // HOLD
+
+        // 4. Clean Fade Out
+        tl.to([this.dimmer, this.shine, this.titleContainer, this.textContainer], {
+            alpha: 0,
+            duration: 0.15,
+
+        });
+
         const globalTarget = targetContainer.getGlobalPosition();
         const localTarget = this.parent.toLocal(globalTarget);
 
-        // Hide text and shine before flying
-        gsap.to([this.titleText, this.nameText, this.shine], { alpha: 0, duration: 0.2 });
+        tl.to(this, {
+            onStart: () => {
+                MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.FlyAnim)
 
-        timeline.to(this, {
+            },
             x: localTarget.x,
             y: localTarget.y,
             duration: 0.8,
@@ -104,13 +168,16 @@ export class NewEntityDiscoveredView extends PIXI.Container {
             }
         });
     }
-
     private hitTarget(targetContainer: PIXI.Container) {
+
+        MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.MeowAngry)
+
         gsap.to(this.portrait.scale, {
             x: 0,
             y: 0,
             duration: 0.3,
             ease: "back.in(2)",
+            // 4. Clean Fade Out       
             onComplete: () => {
                 this.visible = false;
                 this.isAnimating = false;

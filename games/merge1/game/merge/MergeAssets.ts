@@ -98,6 +98,12 @@ export default class MergeAssets {
     }
     static readonly Sounds = {
         Game: {
+            NewDiscovery: {
+                // soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
+                soundId: ['diamond-sparkle'],
+                volumeMinMax: 0.2,
+                pitchMinMax: 1
+            },
             Notification: {
                 // soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
                 soundId: ['Bonus Highlights'],
@@ -322,6 +328,9 @@ export default class MergeAssets {
         ["#00A651", "#F7941D", "#FFD700"]  // 24: Celestial Lion (Green + Orange mane + Gold flecks)
     ];
     static readonly Textures = {
+        Particles: {
+            Star: 'PictoIcon_Star_1'
+        },
         Buttons: {
             Gold: "ResourceBar_Single_Btn_Yellow1",
             Blue: "ResourceBar_Single_Btn_Blue1",
@@ -396,9 +405,13 @@ export default class MergeAssets {
             EndRibbon: "Title_Ribbon01_Plum",
             CollectionRibbon: "Title_Ribbon01_Sky",
             Shine: "Image_Effect_Rotate",
+            RadialBlur1: "Glow_Circle01",
+            RadialBlur2: "Glow_Circle02",
+            GoldenFrame: "BubbleFrame01_Hexagon_Bg_Yellow",
             BarBg: "Slider_Basic01_Bg_Single",
             BarFill: "Slider_Basic03_FillMask",
             FillColor: 0x3cf060,
+            BlockerColor: 0x333366,
             LevelBadge: "Label_Badge01_Yellow",
             Header: "ItemFrame01_Single_Hologram1",
             Exclamation: "Icon_Exclamation",
@@ -475,10 +488,10 @@ export const SHOP_STYLE_CONFIG = {
     Item: {
         HEIGHT: 150,
         SPACING: 15,
-        THUMB_SIZE: 90,
+        THUMB_SIZE: 80,
         BUTTON_WIDTH: 140,
         BUTTON_HEIGHT: 60,
-        TEXT_OFFSET_X: 130,
+        TEXT_OFFSET_X: 150,
         Textures: {
             RowBgActive: MergeAssets.Textures.UI.ShopBgActive,
             RowBg: MergeAssets.Textures.UI.ShopBgDisabled,

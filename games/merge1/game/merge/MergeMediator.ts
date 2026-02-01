@@ -314,10 +314,18 @@ export class MergeMediator {
             }
         });
 
-        this.ftueService.onStarted.add(() => this.zoomService.setZoom(1.1, 0.6));
+        let ftueStarted = false;
+        this.ftueService.onStarted.add(() => {
+            ftueStarted = true;
+            this.zoomService.setZoom(1.1, 0.6)
+        });
         this.ftueService.onCompleted.add(() => {
             this.zoomService.setZoom(1.0, 0.8)
-            this.eggGenerator.progress = EggGenerator.MAX_TIME * 0.85;
+
+            if (ftueStarted) {
+                this.eggGenerator.progress = EggGenerator.MAX_TIME * 0.85;
+                this.entities.spawnRewardContainer(Math.random() * 100 + 'ft', 50, CurrencyType.MONEY)
+            }
         });
 
         // setTimeout(() => {
@@ -386,7 +394,10 @@ export class MergeMediator {
         });
         this.timedRewards.autoClaim = false;
         this.hud.setTimeRewards(this.timedRewards);
-        this.hud.onSpeedUpRequested = () => this.eggGenerator.activateSpeedUp(100);
+        this.hud.onSpeedUpRequested = () => {
+            this.eggGenerator.activateSpeedUp(100);
+            MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.Hold)
+        }
 
         this.timedRewards.onRewardClaimed.add((data: TimedRewardClaimResult, milestone: TimedRewardMilestone) => {
             const id = Math.random() * 10000 + '_chest' + Math.random() * 10000

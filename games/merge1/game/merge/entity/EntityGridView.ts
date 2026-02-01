@@ -83,8 +83,23 @@ export class EntityGridView extends PIXI.Container {
 
             if (ent === ignore || !ent.visible) continue;
 
-            if (ent.getBounds().contains(globalPos.x, globalPos.y)) {
-                hits.push(ent);
+            // Check if the entity has a radius property
+            if (ent.radius) {
+                const worldPos = ent.getGlobalPosition();
+
+                const dx = worldPos.x - globalPos.x;
+                const dy = worldPos.y - globalPos.y + ent.offsetY;
+                const distanceSq = dx * dx + dy * dy;
+                const radiusSq = ent.radius * ent.radius;
+
+                if (distanceSq <= radiusSq) {
+                    hits.push(ent);
+                }
+            } else {
+                // Fallback to bounding box if no radius is defined
+                if (ent.getBounds().contains(globalPos.x, globalPos.y)) {
+                    hits.push(ent);
+                }
             }
         }
 
@@ -92,12 +107,12 @@ export class EntityGridView extends PIXI.Container {
         if (hits.length === 1) return hits[0];
 
         hits.sort((a, b) => {
-            const aIsEgg = a instanceof MergeEgg;
-            const bIsEgg = b instanceof MergeEgg;
+            // Sort by priority first (0 is highest)
+            if (a.priority !== b.priority) {
+                return a.priority - b.priority;
+            }
 
-            if (aIsEgg && !bIsEgg) return -1;
-            if (!aIsEgg && bIsEgg) return 1;
-
+            // Tie-breaker: Y-position for visual depth
             return b.y - a.y;
         });
 

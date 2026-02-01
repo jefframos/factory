@@ -64,6 +64,8 @@ export class BlockMergeEntity extends BaseMergeEntity {
             //MergeAssets.Textures.Extras.CatLines
         );
 
+        this.offsetY = - targetHeight / 4
+        this.radius = 0
         // Reset Containers
         if (this.sprite instanceof PIXI.Sprite) {
             this.sprite.destroy();

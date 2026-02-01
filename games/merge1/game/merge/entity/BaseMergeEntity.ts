@@ -10,6 +10,8 @@ export class BaseMergeEntity extends PIXI.Container {
     public state: EntityState = EntityState.IDLE;
     public level: number = 1;
 
+    public priority = 5;
+
     public coinOffset: PIXI.Point = new PIXI.Point();
 
 
@@ -37,6 +39,9 @@ export class BaseMergeEntity extends PIXI.Container {
     protected isLanding: boolean = false;
     protected landingTimeline?: gsap.core.Timeline;
     protected flipSides: boolean = true;
+
+    public radius: number = 40;
+    public offsetY: number = 40;
 
 
     constructor() {

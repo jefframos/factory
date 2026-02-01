@@ -70,7 +70,7 @@ export class CollectionPanel extends PIXI.Container {
         const cfg = COLLECTION_STYLE.Window;
 
         // 1. Overlay Blocker
-        this.blocker = new PIXI.Graphics().beginFill(0x333366, 0.8).drawRect(-2000, -2000, 4000, 4000).endFill();
+        this.blocker = new PIXI.Graphics().beginFill(MergeAssets.Textures.UI.BlockerColor, 0.8).drawRect(-2000, -2000, 4000, 4000).endFill();
         this.blocker.interactive = true;
         this.addChild(this.blocker);
 
@@ -105,7 +105,7 @@ export class CollectionPanel extends PIXI.Container {
         this.flag.width = 550;
         this.flag.pivot.set(this.flag.width / 2, 0);
         this.flag.x = cfg.WIDTH / 2;
-        this.flag.y = -80;
+        this.flag.y = -60;
         this.windowContainer.addChild(this.flag);
 
         const title = new PIXI.Text("CAT COLLECTION", {

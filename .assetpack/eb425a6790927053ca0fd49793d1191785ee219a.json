@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769959480396,
-                "duration": 1.421199999999999,
+                "date": 1769984134167,
+                "duration": 0.9580999999999449,
                 "success": true
             }
         },
@@ -412,6 +412,33 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Coin2.mp3": {
             "isFolder": false,
             "transformParent": ".assetpack/ffmpeg/Coin2.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/diamond-sparkle.mp3": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769984134168,
+                "duration": 34.155899999999974,
+                "success": true
+            },
+            "hash": "fQvc3w"
+        },
+        ".assetpack/ffmpeg/diamond-sparkle.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/diamond-sparkle.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/diamond-sparkle.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/diamond-sparkle.mp3",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

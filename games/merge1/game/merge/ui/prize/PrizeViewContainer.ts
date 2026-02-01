@@ -2,6 +2,7 @@ import Pool from '@core/Pool';
 import ViewUtils from '@core/utils/ViewUtils';
 import * as PIXI from 'pixi.js';
 import { CurrencyType } from '../../data/InGameEconomy';
+import { StaticData } from '../../data/StaticData';
 import { BlockMergeEntity } from '../../entity/BlockMergeEntity';
 import MergeAssets from '../../MergeAssets';
 import { PrizeItem, RewardRegistry } from '../../prize/PrizeTypes';
@@ -69,13 +70,14 @@ export default class PrizeViewContainer extends PIXI.Container {
         }
         // 2. Automatic Icon Logic
         if (prize.type === CurrencyType.ENTITY) {
-            console.log(prize)
+            const level = parseInt(prize.value)
+            const test = StaticData.getAnimalData(level)
             this.entity = Pool.instance.getElement<BlockMergeEntity>(BlockMergeEntity);
-            this.entity.init(prize.value, '', '')
+            this.entity.init(level, '', '')
             this.addChild(this.entity)
             // value is likely the cat level/id
             this.icon.texture = PIXI.Texture.from(RewardRegistry.Entities[prize.value as string] || MergeAssets.Textures.Icons.Badge1);
-            this.label.text = prize.label || "NEW!";
+            this.label.text = prize.label || test.name;
         } else {
             // Currency Icons
             this.icon.texture = prize.type === CurrencyType.MONEY ?

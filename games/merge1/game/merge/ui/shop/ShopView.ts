@@ -48,7 +48,7 @@ export default class ShopView extends PIXI.Container {
         this.blocker = new PIXI.Graphics().beginFill(0xffffff, 0.8).drawRect(-2000, -2000, 4000, 4000).endFill();
         this.blocker.interactive = true;
         this.addChild(this.blocker);
-        this.blocker.tint = 0x333366
+        this.blocker.tint = MergeAssets.Textures.UI.BlockerColor
 
         this.windowContainer = new PIXI.Container();
         this.addChild(this.windowContainer);

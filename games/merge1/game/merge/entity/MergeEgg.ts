@@ -21,6 +21,11 @@ export class MergeEgg extends PIXI.Container {
     private isLanding: boolean = false;
     private landingTimeline?: gsap.core.Timeline;
 
+    public radius: number = 40;
+    public offsetY: number = 40;
+
+    public priority: number = 3;
+
     protected shadow!: PIXI.Sprite | PIXI.NineSlicePlane;
 
 
@@ -102,6 +107,8 @@ export class MergeEgg extends PIXI.Container {
         this.sprite.scale.set(0.7, 1.3); // Stretched thin
         this.shadowContainer.alpha = 0;
 
+        this.offsetY = - this.sprite.height / 2
+        this.radius = 0
 
         // Landing Animation
         this.landingTimeline = gsap.timeline({

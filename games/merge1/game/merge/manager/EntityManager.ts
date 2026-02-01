@@ -118,7 +118,8 @@ export class EntityManager {
                 this.spawnRewardContainer(
                     data.rewardId || "default",
                     data.rewardValue || 0,
-                    data.rewardType || CurrencyType.MONEY
+                    data.rewardType || CurrencyType.MONEY,
+                    data // Pass the full data object here
                 );
             }
             else {
@@ -135,22 +136,26 @@ export class EntityManager {
     // -------------------------
     // manager/EntityManager.ts
 
-    public spawnRewardContainer(rewardId: string, value: number, currencyType: CurrencyType): RewardContainerEntity {
+    public spawnRewardContainer(
+        rewardId: string,
+        value: number,
+        currencyType: CurrencyType,
+        existingData?: IEntityData // Add this
+    ): RewardContainerEntity {
         const container = Pool.instance.getElement(RewardContainerEntity);
 
-        const point = this.baker.getNextPoint();
-        // Pick a random point within the walking bounds, ignoring the grid tiles
-        const x = point.x;
-        const y = point.y;
+        // Use saved position if it exists, otherwise get next point
+        const x = existingData ? existingData.x : this.baker.getNextPoint().x;
+        const y = existingData ? existingData.y : this.baker.getNextPoint().y;
 
         container.initContainer(MergeAssets.Textures.Icons.Gift5);
         container.position.set(x, y);
-        // Give it a very high zIndex so it's always above tiles/animals
         container.zIndex = y + 500;
 
         this.gridView.addEntity(container);
 
-        const data: IEntityData = {
+        // Use existing data or create new
+        const data: IEntityData = existingData ?? {
             id: Math.random().toString(36).substring(2, 9),
             type: "reward_container" as any,
             level: 1,
