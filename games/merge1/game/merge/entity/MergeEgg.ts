@@ -13,6 +13,7 @@ export class MergeEgg extends PIXI.Container {
     protected shadowContainer: PIXI.Container = new PIXI.Container();
     protected eyesContainer: PIXI.Container = new PIXI.Container();
 
+    public coinOffset: PIXI.Point = new PIXI.Point();
 
     private timer: number = 0;
     private animElapsed: number = 0;

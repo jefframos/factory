@@ -25,6 +25,8 @@ export class RewardContainerEntity extends BaseMergeEntity {
         this.shine.blendMode = PIXI.BLEND_MODES.ADD;
         this.shine.scale.set(0.8);
 
+
+        this.idleTimeRange = [1, 2]
         // Add shine to the view, but below the spriteContainer
         this.view.addChildAt(this.shine, 0);
 
@@ -59,9 +61,15 @@ export class RewardContainerEntity extends BaseMergeEntity {
         this.lidOpen.anchor.set(0.5, 1)
         this.lidOpen.alpha = 0;
         this.lidClose.anchor.set(0.5, 0.8)
+        this.lidClose.alpha = 1
+        this.lidClose.visible = true
         //this.lidClose.y = -15
 
+        this.coinOffset.y = -150
+
         this.backChest.y = -this.frontChest.height * 0.9
+
+
 
         if (this.highlight.parent) {
             this.highlight.parent.removeChild(this.highlight)
@@ -75,9 +83,9 @@ export class RewardContainerEntity extends BaseMergeEntity {
         this.shine.visible = false;
         this.state = EntityState.GRABBED;
 
-        MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.Yay);
+        MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.OpenChest);
 
-        const tl = gsap.timeline({ onComplete });
+        const tl = gsap.timeline({});
 
         // 1. Jiggle and Shrink (Anticipation)
         tl.to(this.spriteContainer, { x: -3, duration: 0.05, repeat: 4, yoyo: true })
@@ -86,6 +94,7 @@ export class RewardContainerEntity extends BaseMergeEntity {
             // 2. Explode
             .add(() => {
                 this.confetti.burst();
+                MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.Yay);
                 MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.Drop);
             })
             .to(this.lidOpen, {
@@ -93,15 +102,16 @@ export class RewardContainerEntity extends BaseMergeEntity {
                     this.lidClose.visible = false
                     this.lidOpen.visible = true
                     this.lidOpen.alpha = 1
+                    onComplete?.()
                 },
-                y: -150,
-                x: 40,
-                rotation: 1.2,
+                y: -2,
+                x: 8,
+                rotation: 0,
 
-                duration: 0.5,
+                duration: 0.1,
                 ease: "power2.out"
             }, "-=0.05")
-
+            .to(this.spriteContainer.scale, { x: 1, y: 1, duration: 0.55, ease: "elastic.out" })
             // 3. Disappear
             .to(this.spriteContainer, {
                 y: -20,

@@ -85,7 +85,10 @@ export class MergeInputMergeService {
                     (this.deps.entities as any).claimReward?.(logic.data);
 
                     this.OnRewardOpen.dispatch({ logic, view: entity })
-                    this.deps.entities.recycleEntity(entity);
+                    setTimeout(() => {
+
+                        this.deps.entities.recycleEntity(entity);
+                    }, 2000);
                 }
             });
             this.onDirty.dispatch();
@@ -309,6 +312,7 @@ export class MergeInputMergeService {
         ProgressionStats.instance.recordMerge(level);
         InGameProgress.instance.addXP(level);
         InGameProgress.instance.reportMergeLevel(level);
+
 
         this.onMergePerformed.dispatch(level);
 

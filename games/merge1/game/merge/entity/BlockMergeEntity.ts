@@ -130,7 +130,7 @@ export class BlockMergeEntity extends BaseMergeEntity {
         // Level Text
         //this.levelText.anchor.x = 1
         this.levelText.x = targetWidth;
-        this.levelText.y = targetHeight * 0.7;
+        this.levelText.y = targetHeight * 0.6;
         this.levelText.alpha = 1;
         this.levelText.visible = false;
 
@@ -158,6 +158,7 @@ export class BlockMergeEntity extends BaseMergeEntity {
     public init(level: number, spriteId: string, animationId: string): void {
         this.initView(level, spriteId, animationId);
 
+        this.flipSides = false;
         this.shadowContainer.visible = true
         this.earsContainer.visible = true
         this.shadow.scale.set(ViewUtils.elementScaler(this.shadow, this.sprite.width))
@@ -180,8 +181,8 @@ export class BlockMergeEntity extends BaseMergeEntity {
         this.faceContainer.x = 0;
         this.faceContainer.y = -h * 0.65;
 
-        this.levelText.x = 0;
-        this.levelText.y = -h * 0.1;
+        this.levelText.x = w / 2 - this.levelText.width;
+        this.levelText.y = -h * 0.25;
         this.levelText.visible = true;
 
         this.coinOffset.set(0, -h - 20);
@@ -227,7 +228,8 @@ export class BlockMergeEntity extends BaseMergeEntity {
     }
 
     protected updateDirectionScale(side: number) {
-        this.faceContainer.scale.x = -side;
-        this.earsContainer.scale.x = -side;
+        this.faceContainer.scale.x = side;
+        this.earsContainer.scale.x = side;
+        //this.spriteContainer.scale.x = side
     }
 }

@@ -2,7 +2,6 @@ import { Game } from "@core/Game";
 import PlatformHandler from "@core/platforms/PlatformHandler";
 import BaseButton from "@core/ui/BaseButton";
 import SoundToggleButton from "@core/ui/SoundToggleButton";
-import { NumberConverter } from "@core/utils/NumberConverter";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
 import { DevGuiManager } from "../../utils/DevGuiManager";
@@ -18,9 +17,9 @@ import { PrizeItem } from "../prize/PrizeTypes";
 import { RoomId } from "../rooms/RoomRegistry";
 import { ProgressionType } from "../storage/GameStorage";
 import { TimedRewardService } from "../timedRewards/TimedRewardService";
-import { TimedRewardClaimResult, TimedRewardMilestone } from "../timedRewards/TimedRewardTypes";
 import { TimedRewardsBar } from "../timedRewards/ui/TimedRewardsBar ";
 import { CoinEffectLayer } from "../vfx/CoinEffectLayer";
+import { NewEntityDiscoveredView } from "../vfx/NewEntityDiscoveredView";
 import { CurrencyBox } from "./CurrencyBox";
 import GeneratorHUD from "./GeneratorHUD";
 import { MissionHUD } from "./MissionHUD";
@@ -51,6 +50,7 @@ export default class MergeHUD extends PIXI.Container {
 
 
     // --- Components ---
+    public newDiscovery: NewEntityDiscoveredView;
     public generator: GeneratorHUD;
     public currencyHUD!: CurrencyBox;
     public currencyHUDGem!: CurrencyBox;
@@ -136,6 +136,9 @@ export default class MergeHUD extends PIXI.Container {
         this.generator = new GeneratorHUD();
         this.generator.onSpeedUpRequested = () => this.onSpeedUpRequested();
         this.hudLayer.addChild(this.generator);
+
+
+
 
 
         this.missionHUD = new MissionHUD(320, 80);
@@ -257,6 +260,10 @@ export default class MergeHUD extends PIXI.Container {
         this.collectionButton.addChild(this.collectionNotificationIcon)
         this.collectionNotificationIcon.x = 10
         this.collectionNotificationIcon.y = 10
+
+
+        this.newDiscovery = new NewEntityDiscoveredView()
+        this.hudLayer.addChild(this.newDiscovery);
 
         this.refreshRoomButtons();
 
@@ -403,17 +410,17 @@ export default class MergeHUD extends PIXI.Container {
     public setTimeRewards(timedRewards: TimedRewardService) {
         this.timedRewards = timedRewards;
 
-        this.timedRewards.onRewardClaimed.add((data: TimedRewardClaimResult, milestone: TimedRewardMilestone) => {
-            if (data.moneyAdded) {
-                this.notifications.toastPrize({ title: "+" + NumberConverter.format(data.moneyAdded), subtitle: "", iconTexture: milestone.definition.icon });
-            }
-            if (data.gemsAdded) {
-                this.notifications.toastPrize({ title: "+" + NumberConverter.format(data.gemsAdded), subtitle: "", iconTexture: milestone.definition.icon });
-            }
-            if (data.spawnedEntityLevel) {
-                this.notifications.toastPrize({ title: "Surprise Egg!", subtitle: "New Egg Dropped!", iconTexture: milestone.definition.icon });
-            }
-        })
+        // this.timedRewards.onRewardClaimed.add((data: TimedRewardClaimResult, milestone: TimedRewardMilestone) => {
+        //     if (data.moneyAdded) {
+        //         this.notifications.toastPrize({ title: "+" + NumberConverter.format(data.moneyAdded), subtitle: "", iconTexture: milestone.definition.icon });
+        //     }
+        //     if (data.gemsAdded) {
+        //         this.notifications.toastPrize({ title: "+" + NumberConverter.format(data.gemsAdded), subtitle: "", iconTexture: milestone.definition.icon });
+        //     }
+        //     if (data.spawnedEntityLevel) {
+        //         this.notifications.toastPrize({ title: "Surprise Egg!", subtitle: "New Egg Dropped!", iconTexture: milestone.definition.icon });
+        //     }
+        // })
         this.timedRewardsBar = new TimedRewardsBar(this.timedRewards, {
             width: 400, height: 30,
             barBg: { texture: PIXI.Texture.from(MergeAssets.Textures.UI.BarBg), left: 8, top: 8, right: 8, bottom: 8 },
@@ -525,6 +532,9 @@ export default class MergeHUD extends PIXI.Container {
     }
 
     public getCurrencyTargetGlobalPos(currency: CurrencyType): PIXI.Point {
+        if (currency == CurrencyType.ENTITY) {
+            return this.collectionButton.getGlobalPosition();
+        }
         return this.currencyHUDList.get(currency)!.getIconGlobalPosition();
     }
 }

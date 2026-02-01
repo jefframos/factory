@@ -29,6 +29,8 @@ export class TimedRewardService {
     // window start index (controls displayed 3 prizes and bar span)
     private windowStartIndex: number = 0;
 
+    public autoClaim: boolean = true
+
     public constructor(cfg: TimedRewardServiceConfig) {
         this.registry = cfg.registry;
         this.ctx = cfg.context;
@@ -146,11 +148,14 @@ export class TimedRewardService {
 
     private tryAutoClaimOne(): boolean {
         const m = this.buildMilestone(this.claimIndex);
+        m.definition.reward
+        m.definition.reward
 
         const exec = this.executeReward(m);
         if (!exec.ok) {
             return false;
         }
+
 
         // Advance the index. Because buildMilestone uses (index + 1) * step,
         // this naturally moves the 'target time' for the next reward forward.
@@ -205,7 +210,7 @@ export class TimedRewardService {
                     const money = this.ctx.getMoney();
                     const raw = Math.floor(money * reward.percent);
                     moneyAdded = Math.max(reward.minMoney, raw);
-                    if (moneyAdded > 0) {
+                    if (moneyAdded > 0 && this.autoClaim) {
                         this.ctx.addMoney(moneyAdded);
                     }
                     break;
@@ -214,7 +219,7 @@ export class TimedRewardService {
             case "gems_fixed":
                 {
                     gemsAdded = Math.max(0, reward.gems);
-                    if (gemsAdded > 0) {
+                    if (gemsAdded > 0 && this.autoClaim) {
                         this.ctx.addGems(gemsAdded);
                     }
                     break;
@@ -228,12 +233,12 @@ export class TimedRewardService {
 
                     const raw = Math.floor(money * pct);
                     moneyAdded = Math.max(min, raw);
-                    if (moneyAdded > 0) {
+                    if (moneyAdded > 0 && this.autoClaim) {
                         this.ctx.addMoney(moneyAdded);
                     }
 
                     gemsAdded = Math.max(0, reward.gems ?? 0);
-                    if (gemsAdded > 0) {
+                    if (gemsAdded > 0 && this.autoClaim) {
                         this.ctx.addGems(gemsAdded);
                     }
                     break;

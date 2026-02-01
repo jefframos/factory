@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769884832979,
-                "duration": 1.026299999999992,
+                "date": 1769959480396,
+                "duration": 1.421199999999999,
                 "success": true
             }
         },
@@ -277,6 +277,60 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Cat Meow Angry 02.mp3": {
             "isFolder": false,
             "transformParent": ".assetpack/ffmpeg/Cat Meow Angry 02.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Chest Appear.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769959480397,
+                "duration": 417.8383,
+                "success": true
+            },
+            "hash": "tt7vfw"
+        },
+        ".assetpack/ffmpeg/Chest Appear.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Chest Appear.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Chest Appear.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Chest Appear.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Chest Open.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1769959306745,
+                "duration": 2007.2059000000002,
+                "success": true
+            },
+            "hash": "TASA"
+        },
+        ".assetpack/ffmpeg/Chest Open.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Chest Open.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/Chest Open.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Chest Open.mp3",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

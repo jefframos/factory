@@ -10,6 +10,7 @@ export class InGameProgress {
     public readonly onLevelUp: Signal = new Signal();
     // Dispatches: (newMaxSlots)
     public readonly onMaxEntitiesChanged: Signal = new Signal();
+    public readonly onMaxEntitiesShopChanged: Signal = new Signal();
 
     private _dataMap: Map<string, IProgressionData> = new Map();
     private _lastCalculatedMax: number = 6;
@@ -82,13 +83,13 @@ export class InGameProgress {
 
         if (level > data.highestMergeLevel) {
             data.highestMergeLevel = level;
-
             // Check if this new level unlocks a slot
             const newMax = this.calculateMaxFromLevel(level);
             if (newMax > this._lastCalculatedMax) {
                 this._lastCalculatedMax = newMax;
-                this.onMaxEntitiesChanged.dispatch(newMax);
+                this.onMaxEntitiesShopChanged.dispatch(newMax);
             }
+            this.onMaxEntitiesChanged.dispatch(level);
 
             this.sync(type);
         }

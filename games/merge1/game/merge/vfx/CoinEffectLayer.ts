@@ -80,7 +80,7 @@ export class CoinEffectLayer extends PIXI.Container {
         }, "-=0.3");
 
         tl.to(coin, {
-            alpha: 0.5,
+            alpha: 1,
             duration: 0.2
         }, "-=0.2");
 

@@ -182,7 +182,7 @@ export class EntityManager {
 
 
         if (!existingData) {
-            MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.Yay);
+            MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.MeowAngry);
         }
 
         const data: IEntityData = existingData ?? {

@@ -30,9 +30,13 @@ export class BaseMergeEntity extends PIXI.Container {
     public walkSpeed: number = 80;
     protected walkAnimTime: number = 0;
 
+    public idleTimeRange: [number, number] = [3, 6]
+    public walkTimeRange: [number, number] = [4, 7]
+
 
     protected isLanding: boolean = false;
     protected landingTimeline?: gsap.core.Timeline;
+    protected flipSides: boolean = true;
 
 
     constructor() {
@@ -266,7 +270,7 @@ export class BaseMergeEntity extends PIXI.Container {
 
     protected enterIdle(): void {
         this.state = EntityState.IDLE;
-        this.stateTimer = 4 + Math.random() * 5;
+        this.stateTimer = MergeAssets.getRange(this.idleTimeRange) || 4;
     }
 
     protected enterWalk(): void {
@@ -274,7 +278,7 @@ export class BaseMergeEntity extends PIXI.Container {
 
 
         this.state = EntityState.WALK;
-        this.stateTimer = 2 + Math.random() * 3;
+        this.stateTimer = MergeAssets.getRange(this.walkTimeRange) || 4;
         const angle = Math.random() * Math.PI * 2;
         this.moveDir.set(Math.cos(angle), Math.sin(angle));
     }
@@ -287,7 +291,7 @@ export class BaseMergeEntity extends PIXI.Container {
 
 
         const lerpSpeed = 10 * delta;
-        const targetSide = this.moveDir.x >= 0 ? 1 : -1;
+        const targetSide = !this.flipSides ? 1 : this.moveDir.x >= 0 ? 1 : -1;
 
         // Calculate Breath Offset
         // sin(timer) gives us -1 to 1. We map it to a positive expansion/contraction.

@@ -159,7 +159,7 @@ export default class MergeScene extends GameScene {
             gameBounds,
             effects,
             this.hud,
-            "Grid"
+            "Free"
         );
 
         this.mediator.setupBackground(new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Background-' + MergeScene.MAP_ID]))

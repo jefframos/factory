@@ -85,6 +85,22 @@
         },
         {
           "alias": [
+            "Chest Appear.wav"
+          ],
+          "src": [
+            "Chest Appear.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Chest Open.wav"
+          ],
+          "src": [
+            "Chest Open.mp3"
+          ]
+        },
+        {
+          "alias": [
             "Claim.wav"
           ],
           "src": [

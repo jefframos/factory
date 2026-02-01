@@ -30,11 +30,14 @@ import ShopView from "./ui/shop/ShopView";
 import { CoinEffectLayer } from "./vfx/CoinEffectLayer";
 
 // New Grid Imports
+import { Game } from "@core/Game";
 import { DevGuiManager } from "../utils/DevGuiManager";
 import { EntityGridView2 } from "./grid/EntityGridView2";
 import { EntityManagerGrid } from "./grid/EntityManagerGrid";
 import { MergeInputMergeGridService } from "./grid/MergeInputMergeGridService";
 import { ModifierManager, ModifierType } from "./modifiers/ModifierManager";
+import { TimedRewardClaimResult, TimedRewardMilestone } from "./timedRewards/TimedRewardTypes";
+import { NewEntityDiscoveredView } from "./vfx/NewEntityDiscoveredView";
 
 export type MergeMode = 'Free' | 'Grid';
 
@@ -114,6 +117,8 @@ export class MergeMediator {
         this.entityContainer.addChild(this.gridView);
 
         DevGuiManager.instance.addButton('addChest', () => {
+            MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.DropChest);
+
             this.entities.spawnRewardContainer('test', 20, CurrencyType.MONEY)
         })
 
@@ -238,29 +243,6 @@ export class MergeMediator {
     private setupGridSpawning(): void {
         if (this.mode !== 'Grid') return;
 
-        const gridEnt = this.entities as EntityManagerGrid;
-
-        // // Wrap spawnAnimal
-        // const originalSpawnAnimal = gridEnt.spawnAnimal.bind(gridEnt);
-        // gridEnt.spawnAnimal = (level: number, pos?: PIXI.Point, data?: any) => {
-        //     const animal = originalSpawnAnimal(level, pos, data);
-        //     const slot = gridEnt.getFirstEmptyIndex();
-        //     if (slot !== -1) gridEnt.assignToTile(animal, slot);
-        //     return animal;
-        // };
-
-        // Wrap spawnEgg
-        // const originalSpawnEgg = gridEnt.spawnEgg.bind(gridEnt);
-        // gridEnt.spawnEgg = (data?: any, merge?: any, force?: boolean) => {
-        //     const egg = originalSpawnEgg(data, merge, force);
-        //     if (egg) {
-        //         const slot = gridEnt.getFirstEmptyIndex();
-        //         if (slot !== -1) {
-        //             gridEnt.assignToTile(egg, slot);
-        //         }
-        //     }
-        //     return egg;
-        // };
     }
 
     private wireSignals(): void {
@@ -285,8 +267,8 @@ export class MergeMediator {
 
                 // 3. Fire!
                 this.coinEffects.popAndFlyToTarget(
-                    startPos.x,
-                    startPos.y,
+                    startPos.x + view.coinOffset.x,
+                    startPos.y + view.coinOffset.y,
                     targetPos.x,
                     targetPos.y,
                     MergeAssets.Textures.Icons.Coin, // Add this helper to PrizeViewContainer
@@ -336,6 +318,28 @@ export class MergeMediator {
             this.hud.setCurrentRoom(roomId);
             this.inputService.clearState();
             this.ftueService.markDirty();
+        });
+
+        InGameProgress.instance.onMaxEntitiesChanged.add(async (newLevel: number) => {
+            const spawnGlobalPos = new PIXI.Point(Game.DESIGN_WIDTH / 2, 0);
+            const hudGlobalPos = this.hud.getCurrencyTargetGlobalPos(CurrencyType.ENTITY);
+
+            // 2. Initialize the component
+            const discoveryView = new NewEntityDiscoveredView(
+                newLevel,
+                this.coinEffects,
+                hudGlobalPos
+            );
+
+            // 3. Position the component where the spawn happens
+            // Converting global spawn point to the coinEffects layer local space
+            const startPos = this.coinEffects.toLocal(spawnGlobalPos);
+            discoveryView.position.set(startPos.x, startPos.y);
+
+            // 4. Fire and forget
+            discoveryView.playAnimation();
+
+
         });
     }
 
@@ -388,8 +392,25 @@ export class MergeMediator {
             },
             visibleWindowSize: 3
         });
+        this.timedRewards.autoClaim = false;
         this.hud.setTimeRewards(this.timedRewards);
         this.hud.onSpeedUpRequested = () => this.eggGenerator.activateSpeedUp(100);
+
+        this.timedRewards.onRewardClaimed.add((data: TimedRewardClaimResult, milestone: TimedRewardMilestone) => {
+            const id = Math.random() * 10000 + '_chest' + Math.random() * 10000
+            MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.DropChest);
+
+            if (data.moneyAdded) {
+                this.entities.spawnRewardContainer(id, data.moneyAdded, CurrencyType.MONEY)
+                //this.notifications.toastPrize({ title: "+" + NumberConverter.format(data.moneyAdded), subtitle: "", iconTexture: milestone.definition.icon });
+            }
+            if (data.gemsAdded) {
+                //this.notifications.toastPrize({ title: "+" + NumberConverter.format(data.gemsAdded), subtitle: "", iconTexture: milestone.definition.icon });
+            }
+            if (data.spawnedEntityLevel) {
+                //this.notifications.toastPrize({ title: "Surprise Egg!", subtitle: "New Egg Dropped!", iconTexture: milestone.definition.icon });
+            }
+        })
     }
 
     private loadSave(): void {

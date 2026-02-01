@@ -63,7 +63,7 @@ export default class MergeAssets {
     //         FadeShape: "fade-shape",
     //     }
     // } as const;
-    private static getRange(value?: number | [number, number]): number | undefined {
+    public static getRange(value?: number | [number, number]): number | undefined {
         if (value === undefined) return 1;
         if (typeof value === "number") return value;
 
@@ -105,6 +105,11 @@ export default class MergeAssets {
                 pitchMinMax: [0.9, 1]
             },
             Yay: {
+                soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
+                volumeMinMax: 0.1,
+                pitchMinMax: [0.8, 1.2]
+            },
+            MeowAngry: {
                 // soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
                 soundId: ['Cat Meow Angry 01', 'Cat Meow Angry 02'],
                 volumeMinMax: 0.7,
@@ -138,6 +143,16 @@ export default class MergeAssets {
             },
             Coin: {
                 soundId: 'Coin2',
+                volumeMinMax: [0.1, 0.15],
+                pitchMinMax: [0.8, 1.2],
+            },
+            OpenChest: {
+                soundId: 'Chest Open',
+                volumeMinMax: [0.1, 0.15],
+                pitchMinMax: [0.8, 1.2],
+            },
+            DropChest: {
+                soundId: 'Chest Appear',
                 volumeMinMax: [0.1, 0.15],
                 pitchMinMax: [0.8, 1.2],
             },
