@@ -13,9 +13,9 @@ export class BaseMergeEntity extends PIXI.Container {
     public coinOffset: PIXI.Point = new PIXI.Point();
 
 
-    public breathIntensity: number = 0.05; // 0 is off, 0.05 is subtle (5% scale change)
+    public breathIntensity: number = 0.035; // 0 is off, 0.05 is subtle (5% scale change)
     protected breathTimer: number = Math.random();
-    protected breathSpeed: number = 4; // Frequency of the breath
+    protected breathSpeed: number = 1; // Frequency of the breath
 
     protected view: PIXI.Container = new PIXI.Container();
     protected sprite: PIXI.Sprite | PIXI.NineSlicePlane;
@@ -142,7 +142,7 @@ export class BaseMergeEntity extends PIXI.Container {
             targetContainer.addChild(feature);
         }
     }
-    public init(level: number, spriteId: string, animationId: string): void {
+    public init(level: number, spriteId: string | PIXI.Texture, animationId: string): void {
         this.visible = true;
         this.level = level;
         this.levelText.text = `${level}`;
@@ -150,7 +150,7 @@ export class BaseMergeEntity extends PIXI.Container {
         // Get the colors for this level (could be 1 or many)
         const levelColors = MergeAssets.CatColors[level - 1];
 
-        this.sprite.texture = PIXI.Texture.from(spriteId);
+        this.sprite.texture = spriteId instanceof PIXI.Texture ? spriteId : PIXI.Texture.from(spriteId);
 
         // IMPORTANT: Reset the tint to white because the color is now part of the texture pixels!
         this.sprite.tint = 0xFFFFFF;
@@ -227,10 +227,18 @@ export class BaseMergeEntity extends PIXI.Container {
         this.spriteContainer.scale.y = 1;
     }
     public update(delta: number, bounds: PIXI.Rectangle): void {
+        delta = Math.max(delta, 1 / 120)
         // If landing, let GSAP handle the sprite. We just block logic.
         this.levelText.scale.x = this.spriteContainer.scale.x < 0 ? -1 : 1;
 
         if (this.isLanding) return;
+
+        if (this.spriteContainer.scale.x < 0) {
+            this.spriteContainer.scale.x = Math.max(-1.5, this.spriteContainer.scale.x)
+        } else {
+            this.spriteContainer.scale.x = Math.min(1.5, this.spriteContainer.scale.x)
+        }
+        this.spriteContainer.scale.y = Math.min(1.5, this.spriteContainer.scale.y)
 
         if (this.breathIntensity > 0) {
             this.breathTimer += delta * this.breathSpeed;
@@ -299,12 +307,7 @@ export class BaseMergeEntity extends PIXI.Container {
         this.spriteContainer.scale.x += (targetScaleX - this.spriteContainer.scale.x) * lerpSpeed;
         this.spriteContainer.scale.y += (targetScaleY - this.spriteContainer.scale.y) * lerpSpeed;
 
-        if (this.spriteContainer.scale.x < 0) {
-            this.spriteContainer.scale.x = Math.max(-1.5, this.spriteContainer.scale.x)
-        } else {
-            this.spriteContainer.scale.x = Math.min(1.5, this.spriteContainer.scale.x)
-        }
-        this.spriteContainer.scale.y = Math.min(1.5, this.spriteContainer.scale.y)
+
 
         this.spriteContainer.y += (0 - this.spriteContainer.y) * lerpSpeed;
         this.shadowContainer.scale.set(1 + breathX * 0.5); // Shadow reacts slightly to breath
@@ -352,9 +355,9 @@ export class BaseMergeEntity extends PIXI.Container {
         this.updateDirectionScale(side);
     }
     protected updateHop(hop: number) {
-        this.spriteContainer.y = -hop * 15;
-        this.spriteContainer.scale.y = 1 + hop * 0.15;
-        this.spriteContainer.scale.x = (1 - hop * 0.1);
+        this.spriteContainer.y = -hop * 10;
+        this.spriteContainer.scale.y = 1 + hop * 0.1;
+        this.spriteContainer.scale.x = (1 - hop * 0.05);
         this.shadowContainer.scale.set(1 - hop * 0.3);
     }
     protected updateDirectionScale(side: number) {

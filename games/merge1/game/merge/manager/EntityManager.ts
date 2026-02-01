@@ -3,14 +3,16 @@ import * as PIXI from "pixi.js";
 import { Signal } from "signals";
 import { CoinGenerator } from "../core/CoinGenerator";
 import { GridBaker } from "../core/GridBaker";
+import { CurrencyType } from "../data/InGameEconomy";
 import { IEntityData } from "../data/MergeSaveTypes";
 import { StaticData } from "../data/StaticData";
 import { BlockMergeEntity } from "../entity/BlockMergeEntity";
 import { EntityGridView } from "../entity/EntityGridView";
 import { MergeEgg } from "../entity/MergeEgg";
+import { RewardContainerEntity } from "../entity/RewardContainerEntity";
 import MergeAssets from "../MergeAssets";
 
-export type EntityView = BlockMergeEntity | MergeEgg;
+export type EntityView = BlockMergeEntity | MergeEgg | RewardContainerEntity;
 
 export interface IEntityLogic {
     data: IEntityData;
@@ -29,7 +31,7 @@ export class EntityManager {
     public readonly onMerged: Signal = new Signal();
     public readonly onDirty: Signal = new Signal();
 
-    public readonly entitiesByView: Map<PIXI.DisplayObject, IEntityLogic> = new Map();
+    public readonly entitiesByView: Map<EntityView, IEntityLogic> = new Map();
 
     public constructor(
         protected readonly gridView: EntityGridView,
@@ -38,15 +40,24 @@ export class EntityManager {
         protected readonly maxEntitiesGetter: () => number,
     ) { }
 
+    // Inside EntityManager.ts
+
     public get size(): number {
-        return this.entitiesByView.size;
+        let count = 0;
+        this.entitiesByView.forEach((logic) => {
+            // Only count eggs and animals toward the "population" size
+            if (logic.data.type === "animal" || logic.data.type === "egg") {
+                count++;
+            }
+        });
+        return count;
     }
 
-    public forEach(cb: (logic: IEntityLogic, view: PIXI.DisplayObject) => void): void {
+    public forEach(cb: (logic: IEntityLogic, view: EntityView) => void): void {
         this.entitiesByView.forEach(cb);
     }
 
-    public getLogic(view: PIXI.DisplayObject): IEntityLogic | undefined {
+    public getLogic(view: EntityView): IEntityLogic | undefined {
         return this.entitiesByView.get(view);
     }
     public update(delta: number): void {
@@ -78,8 +89,10 @@ export class EntityManager {
      * Import entities from save data.
      * If shufflePositions is true, ignores saved x/y and assigns new baked positions.
      */
+    /**
+     * Import entities from save data.
+     */
     public importEntities(list: IEntityData[], opts: ImportEntitiesOptions): void {
-        // Clear current without spamming dirty/signals (room switching)
         this.clearAll({ silent: true });
 
         if (!list || list.length <= 0) {
@@ -98,22 +111,64 @@ export class EntityManager {
             data.y = pos.y;
 
             if (data.type === "egg") {
-                // spawnEgg(existingData) will not enforce max-cap and won't play sounds
                 this.spawnEgg(data);
-            } else {
+            }
+            // --- ADD THIS CHECK ---
+            else if (data.type === "reward_container") {
+                this.spawnRewardContainer(
+                    data.rewardId || "default",
+                    data.rewardValue || 0,
+                    data.rewardType || CurrencyType.MONEY
+                );
+            }
+            else {
                 // animals
                 this.spawnAnimal(data.level, pos, data);
             }
         }
 
-        // Do one dirty dispatch at end (optional)
         this.onDirty.dispatch();
     }
 
     // -------------------------
     // Spawning
     // -------------------------
+    // manager/EntityManager.ts
 
+    public spawnRewardContainer(rewardId: string, value: number, currencyType: CurrencyType): RewardContainerEntity {
+        const container = Pool.instance.getElement(RewardContainerEntity);
+
+        const point = this.baker.getNextPoint();
+        // Pick a random point within the walking bounds, ignoring the grid tiles
+        const x = point.x;
+        const y = point.y;
+
+        container.initContainer(MergeAssets.Textures.Icons.Gift5);
+        container.position.set(x, y);
+        // Give it a very high zIndex so it's always above tiles/animals
+        container.zIndex = y + 500;
+
+        this.gridView.addEntity(container);
+
+        const data: IEntityData = {
+            id: Math.random().toString(36).substring(2, 9),
+            type: "reward_container" as any,
+            level: 1,
+            x: x,
+            y: y,
+            rewardId,
+            rewardValue: value,
+            rewardType: currencyType,
+            lastCoinTimestamp: Date.now(),
+            pendingCoins: 0
+        };
+
+        this.entitiesByView.set(container, { data, generator: null });
+        this.onEntitySpawned.dispatch(container, data);
+        this.onDirty.dispatch();
+
+        return container;
+    }
     public spawnAnimal(level: number, pos?: PIXI.Point, existingData?: IEntityData): BlockMergeEntity {
         const animal = Pool.instance.getElement(BlockMergeEntity);
 
@@ -256,9 +311,6 @@ export class EntityManager {
         this.recycleEntity(target);
 
         const mergeEntity = this.spawnAnimal(nextLevel, spawnPos);
-
-
-
 
         this.onMerged.dispatch(source, target, nextLevel, spawnPos, sourceData, targetData);
         this.onDirty.dispatch();

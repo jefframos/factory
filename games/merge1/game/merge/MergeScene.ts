@@ -36,6 +36,8 @@ export default class MergeScene extends GameScene {
     private paused: boolean = false;
     private mediator!: MergeMediator;
 
+    static MAP_ID = 'Garden'
+
     constructor(game: Game) {
         super(game);
         SoundManager.STORAGE_ID = "Merge1_";
@@ -83,23 +85,23 @@ export default class MergeScene extends GameScene {
 
 
         SoundManager.instance.setMasterSfxVolume(0.7)
-        // this.patternBackground = new PatternBackground({
-        //     background: 0x26C6DA,
-        //     patternAlpha: 1,
-        //     //patternPath: 'grass-patch-1',
-        //     patternPath: 'tiles',
-        //     tileSpeedX: 0,
-        //     tileSpeedY: 0
-        // });
-        // this.gameplayContainer.addChild(this.patternBackground);
+        this.patternBackground = new PatternBackground({
+            background: 0x5a7856,
+            patternAlpha: 1,
+            //patternPath: 'grass-patch-1',
+            //patternPath: 'tiles',
+            tileSpeedX: 0,
+            tileSpeedY: 0
+        });
+        this.gameplayContainer.addChild(this.patternBackground);
         this.patternBackground?.init();
         if (this.patternBackground?.tiledTexture) {
             this.patternBackground.tiledTexture.alpha = 1
         }
 
 
-        const floor = new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Floor']);
-        const foreground = new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Foreground']);
+        const floor = new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Floor-' + MergeScene.MAP_ID]);
+        const foreground = new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Foreground-' + MergeScene.MAP_ID]);
         this.foreGround.addChild(foreground);
         this.gameplayContainer.addChild(floor);
 
@@ -159,6 +161,8 @@ export default class MergeScene extends GameScene {
             this.hud,
             "Grid"
         );
+
+        this.mediator.setupBackground(new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Background-' + MergeScene.MAP_ID]))
 
 
         // Optional: Spawn a starting animal

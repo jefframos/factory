@@ -5,7 +5,7 @@
         {
          "draworder":"index",
          "id":12,
-         "name":"Floor",
+         "name":"Floor-LivingRoom",
          "objects":[
                 {
                  "gid":42,
@@ -17,19 +17,19 @@
                  "visible":true,
                  "width":2115,
                  "x":-711,
-                 "y":1180
+                 "y":1115
                 }, 
                 {
                  "gid":30,
-                 "height":713.30303030303,
+                 "height":810.272696969697,
                  "id":158,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":1042.69696969697,
-                 "x":-164.727272727273,
-                 "y":1044.18181818182
+                 "width":1042.7,
+                 "x":-164.727,
+                 "y":1076.1496969697
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -40,23 +40,23 @@
         {
          "draworder":"index",
          "id":3,
-         "name":"Background",
+         "name":"Background-LivingRoom",
          "objects":[
                 {
                  "gid":40,
-                 "height":432.437137330754,
+                 "height":432.437,
                  "id":169,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":220.386637458927,
-                 "x":181.882438846294,
-                 "y":315.006447453256
+                 "width":220.387,
+                 "x":181.882,
+                 "y":250.006
                 }, 
                 {
                  "gid":34,
-                 "height":216.156069364162,
+                 "height":216.156,
                  "id":171,
                  "name":"",
                  "rotation":0,
@@ -64,7 +64,7 @@
                  "visible":true,
                  "width":135,
                  "x":396,
-                 "y":312
+                 "y":247
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -75,55 +75,160 @@
         {
          "draworder":"topdown",
          "id":13,
-         "name":"Foreground",
+         "name":"Foreground-LivingRoom",
          "objects":[
                 {
                  "gid":31,
-                 "height":551.455036328265,
+                 "height":551.455,
                  "id":159,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":238.567475284869,
-                 "x":-13.983661605133,
-                 "y":132.333333333333
+                 "width":238.567,
+                 "x":-13.9837,
+                 "y":132.333
                 }, 
                 {
                  "gid":31,
-                 "height":551.455036328265,
+                 "height":551.455,
                  "id":161,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":238.567475284869,
-                 "x":-369.983661605133,
-                 "y":220.333333333333
+                 "width":238.567,
+                 "x":-369.984,
+                 "y":220.333
                 }, 
                 {
                  "gid":32,
-                 "height":547.739032040338,
+                 "height":547.739,
                  "id":160,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":232.621868424187,
-                 "x":548.422399241552,
-                 "y":180.829941131247
+                 "width":232.622,
+                 "x":548.422,
+                 "y":180.83
                 }, 
                 {
                  "gid":32,
-                 "height":547.739032040338,
+                 "height":547.739,
                  "id":162,
                  "name":"",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":232.621868424187,
-                 "x":952.422399241552,
-                 "y":206.829941131247
+                 "width":232.622,
+                 "x":952.422,
+                 "y":206.83
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":14,
+         "name":"Floor-Garden",
+         "objects":[
+                {
+                 "gid":43,
+                 "height":1500,
+                 "id":173,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":2056,
+                 "x":-682.545454545455,
+                 "y":1096.33333333333
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":16,
+         "name":"Background-Garden",
+         "objects":[
+                {
+                 "gid":35,
+                 "height":615,
+                 "id":179,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":367,
+                 "x":176.393939393939,
+                 "y":250.484848484848
+                }, 
+                {
+                 "gid":45,
+                 "height":173,
+                 "id":183,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":181,
+                 "x":42,
+                 "y":-468.69696969697
+                }, 
+                {
+                 "gid":36,
+                 "height":111.666666666667,
+                 "id":184,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":175.333333333333,
+                 "x":467.60606060606,
+                 "y":-493.606060606061
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":15,
+         "name":"Foreground-Garden",
+         "objects":[
+                {
+                 "gid":32,
+                 "height":737,
+                 "id":174,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":313,
+                 "x":-165.575757575758,
+                 "y":224.151515151515
+                }, 
+                {
+                 "gid":32,
+                 "height":737,
+                 "id":175,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":313,
+                 "x":609.939393939394,
+                 "y":205.242424242424
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -149,7 +254,7 @@
                  "y":0
                 }, 
                 {
-                 "height":588,
+                 "height":636.484848484848,
                  "id":163,
                  "name":"WalkArea",
                  "rotation":0,
@@ -157,7 +262,7 @@
                  "visible":true,
                  "width":676,
                  "x":22,
-                 "y":398
+                 "y":349.515151515152
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -165,8 +270,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":14,
- "nextobjectid":173,
+ "nextlayerid":17,
+ "nextobjectid":185,
  "orientation":"orthogonal",
  "renderorder":"left-up",
  "tiledversion":"1.11.2",
@@ -184,7 +289,7 @@
          "margin":0,
          "name":"Background",
          "spacing":0,
-         "tilecount":33,
+         "tilecount":37,
          "tileheight":1500,
          "tiles":[
                 {
@@ -226,14 +331,14 @@
                 {
                  "id":13,
                  "image":"..\/tiled\/images\/garden\/mat-2.png",
-                 "imageheight":106,
-                 "imagewidth":189
+                 "imageheight":114,
+                 "imagewidth":172
                 }, 
                 {
                  "id":14,
                  "image":"..\/tiled\/images\/garden\/mat-3.png",
-                 "imageheight":112,
-                 "imagewidth":202
+                 "imageheight":106,
+                 "imagewidth":173
                 }, 
                 {
                  "id":15,
@@ -383,15 +488,39 @@
             
                 {
                  "id":41,
-                 "image":"..\/tiled\/images\/full\/full-background.png",
+                 "image":"..\/tiled\/images\/backgrounds\/full-background.png",
                  "imageheight":1500,
                  "imagewidth":2115
+                }, 
+                {
+                 "id":42,
+                 "image":"..\/tiled\/images\/garden\/garden-bg.png",
+                 "imageheight":1500,
+                 "imagewidth":2056
+                }, 
+                {
+                 "id":43,
+                 "image":"..\/tiled\/images\/garden\/big-cushion.png",
+                 "imageheight":129,
+                 "imagewidth":212
+                }, 
+                {
+                 "id":44,
+                 "image":"..\/tiled\/images\/garden\/cat-f.png",
+                 "imageheight":173,
+                 "imagewidth":181
+                }, 
+                {
+                 "id":45,
+                 "image":"..\/tiled\/images\/garden\/fish-1.png",
+                 "imageheight":106,
+                 "imagewidth":173
                 }],
          "tilewidth":2115
         }, 
         {
          "columns":0,
-         "firstgid":43,
+         "firstgid":47,
          "grid":
             {
              "height":1,
@@ -1487,8 +1616,8 @@
                 {
                  "id":142,
                  "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_MemoPad.Png",
-                 "imageheight":128,
-                 "imagewidth":128
+                 "imageheight":84,
+                 "imagewidth":80
                 }, 
                 {
                  "id":143,

@@ -2,7 +2,7 @@ import { Game } from "@core/Game";
 import { Assets, Container, Sprite, Texture, TilingSprite } from "pixi.js";
 
 export interface PatternConfig {
-    patternPath: string;
+    patternPath?: string;
     background: number | string;
     patternAlpha?: number;
     tileSpeedX?: number;
@@ -51,6 +51,9 @@ export default class PatternBackground extends Container {
         }
 
         // 2. Pattern Logic
+        if (!this.config.patternPath) {
+            return
+        }
         const patKey = this.config.patternPath;
         if (Assets.cache.has(patKey)) {
             this.createTilingSprite(Assets.get(patKey));

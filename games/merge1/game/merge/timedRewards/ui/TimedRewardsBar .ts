@@ -84,8 +84,8 @@ export class TimedRewardsBar extends PIXI.Container {
         });
 
 
-        this.timerText.anchor.set(0, 0.5);
-        this.timerText.position.set(14, h / 2 - 5);
+        this.timerText.anchor.set(1, 0.5);
+        this.timerText.position.set(-30, h / 2 - 5);
         this.addChild(this.timerText);
 
 

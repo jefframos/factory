@@ -173,8 +173,17 @@ export class TimedRewardService {
     }
 
     // -------- Internal helpers --------
-
     private buildMilestone(milestoneIndex: number): TimedRewardMilestone {
+        // Use the registry's new logic to determine the time
+        const sec = this.registry.getSecondsForMilestone(milestoneIndex);
+
+        return {
+            milestoneIndex,
+            milestoneSeconds: sec,
+            definition: this.registry.getDefinitionForMilestoneIndex(milestoneIndex)
+        };
+    }
+    private buildMilestone2(milestoneIndex: number): TimedRewardMilestone {
         const sec = (milestoneIndex + 1) * this.registry.stepSeconds;
         return {
             milestoneIndex,

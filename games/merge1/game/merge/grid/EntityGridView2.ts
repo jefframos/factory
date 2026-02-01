@@ -136,7 +136,7 @@ export class EntityGridView2 extends EntityGridView {
 
         const scaleX = this.gridFit.width / this.gridLogicalSize.x;
         const scaleY = this.gridFit.height / this.gridLogicalSize.y;
-        this.targetScale = Math.min(Math.min(scaleX, scaleY), 1.25);
+        this.targetScale = Math.min(Math.min(scaleX, scaleY), 1.15);
 
         // 5. RE-POSITION ALL TILES
         const gridFitCenterX = this.gridFit.x + this.gridFit.width / 2;

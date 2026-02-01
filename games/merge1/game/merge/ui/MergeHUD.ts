@@ -150,7 +150,7 @@ export default class MergeHUD extends PIXI.Container {
                     const amount = claim.rewards.currencies[currencyType as CurrencyType];
                     if (amount && amount > 0) {
 
-                        console.log(amount, Math.ceil(amount * ModifierManager.instance.getNormalizedValue(ModifierType.MissionRewards)))
+                        //console.log(amount, Math.ceil(amount * ModifierManager.instance.getNormalizedValue(ModifierType.MissionRewards)))
                         prizes.push({
                             type: currencyType as CurrencyType,
                             value: Math.ceil(amount * ModifierManager.instance.getNormalizedValue(ModifierType.MissionRewards)),

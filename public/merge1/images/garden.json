@@ -340,14 +340,54 @@
         "h": 66
       }
     },
-    "chair": {
+    "garden-bg": {
       "frame": {
         "x": 2,
         "y": 664,
+        "w": 2056,
+        "h": 1500
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 2056,
+        "h": 1500
+      },
+      "sourceSize": {
+        "w": 2056,
+        "h": 1500
+      }
+    },
+    "fish-1": {
+      "frame": {
+        "x": 630,
+        "y": 324,
+        "w": 173,
+        "h": 106
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 173,
+        "h": 106
+      },
+      "sourceSize": {
+        "w": 173,
+        "h": 106
+      }
+    },
+    "chair": {
+      "frame": {
+        "x": 677,
+        "y": 2,
         "w": 202,
         "h": 178
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -362,12 +402,12 @@
     },
     "cat-poop-stuff": {
       "frame": {
-        "x": 484,
-        "y": 629,
+        "x": 645,
+        "y": 499,
         "w": 139,
         "h": 141
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -380,10 +420,30 @@
         "h": 141
       }
     },
+    "cat-f": {
+      "frame": {
+        "x": 738,
+        "y": 206,
+        "w": 181,
+        "h": 173
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 181,
+        "h": 173
+      },
+      "sourceSize": {
+        "w": 181,
+        "h": 173
+      }
+    },
     "bush3": {
       "frame": {
-        "x": 206,
-        "y": 651,
+        "x": 857,
+        "y": 2,
         "w": 187,
         "h": 152
       },
@@ -402,8 +462,8 @@
     },
     "bush2": {
       "frame": {
-        "x": 360,
-        "y": 645,
+        "x": 786,
+        "y": 389,
         "w": 126,
         "h": 120
       },
@@ -422,8 +482,8 @@
     },
     "bush": {
       "frame": {
-        "x": 677,
-        "y": 2,
+        "x": 786,
+        "y": 517,
         "w": 122,
         "h": 97
       },
@@ -439,6 +499,26 @@
         "w": 122,
         "h": 97
       }
+    },
+    "big-cushion": {
+      "frame": {
+        "x": 885,
+        "y": 517,
+        "w": 212,
+        "h": 129
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 212,
+        "h": 129
+      },
+      "sourceSize": {
+        "w": 212,
+        "h": 129
+      }
     }
   },
   "meta": {
@@ -447,8 +527,8 @@
     "image": "garden.png",
     "format": "RGBA8888",
     "size": {
-      "w": 776,
-      "h": 844
+      "w": 1504,
+      "h": 2722
     },
     "scale": 1,
     "related_multi_packs": []

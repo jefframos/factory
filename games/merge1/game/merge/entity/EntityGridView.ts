@@ -1,10 +1,10 @@
 import * as PIXI from "pixi.js";
-import { BlockMergeEntity } from "./BlockMergeEntity";
+import { EntityView } from "../manager/EntityManager";
 import { MergeEgg } from "./MergeEgg";
 
 export class EntityGridView extends PIXI.Container {
     // Only "pickable" entities (for raycast / merge checks). Coins are not included here.
-    private entities: (BlockMergeEntity | MergeEgg)[] = [];
+    private entities: (EntityView)[] = [];
 
     private active?: PIXI.DisplayObject;
 
@@ -36,7 +36,7 @@ export class EntityGridView extends PIXI.Container {
         }
     }
 
-    public addEntity(entity: BlockMergeEntity | MergeEgg): void {
+    public addEntity(entity: EntityView): void {
         this.entities.push(entity);
         this.addChild(entity);
 
@@ -44,7 +44,7 @@ export class EntityGridView extends PIXI.Container {
         entity.zIndex = entity.y;
     }
 
-    public removeEntity(entity: BlockMergeEntity | MergeEgg): void {
+    public removeEntity(entity: EntityView): void {
         const index = this.entities.indexOf(entity);
         if (index > -1) {
             this.entities.splice(index, 1);

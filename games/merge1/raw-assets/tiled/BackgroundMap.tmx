@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="14" nextobjectid="173">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="17" nextobjectid="185">
  <editorsettings>
   <export target="../json/tiled.json" format="json"/>
  </editorsettings>
- <tileset firstgid="1" name="Background" tilewidth="2115" tileheight="1500" tilecount="33" columns="0">
+ <tileset firstgid="1" name="Background" tilewidth="2115" tileheight="1500" tilecount="37" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="6">
    <image source="images/ui/Image_Effect_Rotate.png" width="270" height="275"/>
@@ -24,10 +24,10 @@
    <image source="images/garden/mat-1.png" width="159" height="98"/>
   </tile>
   <tile id="13">
-   <image source="images/garden/mat-2.png" width="189" height="106"/>
+   <image source="images/garden/mat-2.png" width="172" height="114"/>
   </tile>
   <tile id="14">
-   <image source="images/garden/mat-3.png" width="202" height="112"/>
+   <image source="images/garden/mat-3.png" width="173" height="106"/>
   </tile>
   <tile id="15">
    <image source="images/garden/plant-1.png" width="89" height="150"/>
@@ -102,10 +102,22 @@
    <image source="images/backgrounds/cat-tower-2.png" width="423" height="830"/>
   </tile>
   <tile id="41">
-   <image source="images/full/full-background.png" width="2115" height="1500"/>
+   <image source="images/backgrounds/full-background.png" width="2115" height="1500"/>
+  </tile>
+  <tile id="42">
+   <image source="images/garden/garden-bg.png" width="2056" height="1500"/>
+  </tile>
+  <tile id="43">
+   <image source="images/garden/big-cushion.png" width="212" height="129"/>
+  </tile>
+  <tile id="44">
+   <image source="images/garden/cat-f.png" width="181" height="173"/>
+  </tile>
+  <tile id="45">
+   <image source="images/garden/fish-1.png" width="173" height="106"/>
   </tile>
  </tileset>
- <tileset firstgid="43" name="UI" tilewidth="609" tileheight="601" tilecount="139" columns="0">
+ <tileset firstgid="47" name="UI" tilewidth="609" tileheight="601" tilecount="139" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="20">
    <properties>
@@ -643,7 +655,7 @@
    <image source="images/ui/icons/ItemIcon_Medalstand.Png" width="128" height="128"/>
   </tile>
   <tile id="142">
-   <image source="images/ui/icons/ItemIcon_MemoPad.Png" width="128" height="128"/>
+   <image source="images/ui/icons/ItemIcon_MemoPad.Png" width="80" height="84"/>
   </tile>
   <tile id="143">
    <image source="images/ui/icons/ItemIcon_Money_Coin.Png" width="160" height="158"/>
@@ -697,22 +709,34 @@
    <image source="images/ui/handHud.png" width="80" height="80"/>
   </tile>
  </tileset>
- <objectgroup draworder="index" id="12" name="Floor">
-  <object id="172" gid="42" x="-711" y="1180" width="2115" height="1500"/>
-  <object id="158" gid="30" x="-164.727" y="1044.18" width="1042.7" height="713.303"/>
+ <objectgroup draworder="index" id="12" name="Floor-LivingRoom">
+  <object id="172" gid="42" x="-711" y="1115" width="2115" height="1500"/>
+  <object id="158" gid="30" x="-164.727" y="1076.15" width="1042.7" height="810.273"/>
  </objectgroup>
- <objectgroup draworder="index" id="3" name="Background">
-  <object id="169" gid="40" x="181.882" y="315.006" width="220.387" height="432.437"/>
-  <object id="171" gid="34" x="396" y="312" width="135" height="216.156"/>
+ <objectgroup draworder="index" id="3" name="Background-LivingRoom">
+  <object id="169" gid="40" x="181.882" y="250.006" width="220.387" height="432.437"/>
+  <object id="171" gid="34" x="396" y="247" width="135" height="216.156"/>
  </objectgroup>
- <objectgroup id="13" name="Foreground">
+ <objectgroup id="13" name="Foreground-LivingRoom">
   <object id="159" gid="31" x="-13.9837" y="132.333" width="238.567" height="551.455"/>
   <object id="161" gid="31" x="-369.984" y="220.333" width="238.567" height="551.455"/>
   <object id="160" gid="32" x="548.422" y="180.83" width="232.622" height="547.739"/>
   <object id="162" gid="32" x="952.422" y="206.83" width="232.622" height="547.739"/>
  </objectgroup>
+ <objectgroup id="14" name="Floor-Garden">
+  <object id="173" gid="43" x="-682.545" y="1096.33" width="2056" height="1500"/>
+ </objectgroup>
+ <objectgroup id="16" name="Background-Garden">
+  <object id="179" gid="35" x="176.394" y="250.485" width="367" height="615"/>
+  <object id="183" gid="45" x="42" y="-468.697" width="181" height="173"/>
+  <object id="184" gid="36" x="467.606" y="-493.606" width="175.333" height="111.667"/>
+ </objectgroup>
+ <objectgroup id="15" name="Foreground-Garden">
+  <object id="174" gid="32" x="-165.576" y="224.152" width="313" height="737"/>
+  <object id="175" gid="32" x="609.939" y="205.242" width="313" height="737"/>
+ </objectgroup>
  <objectgroup id="4" name="Settings" locked="1">
   <object id="17" name="Screen" x="0" y="0" width="720" height="1080"/>
-  <object id="163" name="WalkArea" x="22" y="398" width="676" height="588"/>
+  <object id="163" name="WalkArea" x="22" y="349.515" width="676" height="636.485"/>
  </objectgroup>
 </map>

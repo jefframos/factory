@@ -1,8 +1,10 @@
 import { Point } from "pixi.js";
+import { CurrencyType } from "../data/InGameEconomy";
 import { IEntityData } from "../data/MergeSaveTypes";
 import { BlockMergeEntity } from "../entity/BlockMergeEntity";
 import { EntityGridView } from "../entity/EntityGridView";
 import { MergeEgg } from "../entity/MergeEgg";
+import { RewardContainerEntity } from "../entity/RewardContainerEntity";
 import { EntityManager, EntityView } from "../manager/EntityManager";
 import { EntityGridView2 } from "./EntityGridView2";
 
@@ -138,6 +140,15 @@ export class EntityManagerGrid extends EntityManager {
         return emptyIndices[randomIndex];
     }
 
+    override spawnRewardContainer(rewardId: string, value: number, currencyType: CurrencyType): RewardContainerEntity {
+        const reward = super.spawnRewardContainer(rewardId, value, currencyType)
+
+        const view = this.gridView as EntityGridView2;
+        reward.x = view.gridLogicalSize.x * Math.random() - view.gridLogicalSize.x / 2
+        reward.y = view.gridLogicalSize.y * Math.random() - view.gridLogicalSize.y / 2
+
+        return reward
+    }
     /**
      * Overridden to handle Slot-based positioning from saved data
      */

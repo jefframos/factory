@@ -9,9 +9,10 @@ import { BaseMergeEntity } from "../entity/BaseMergeEntity";
 import { BlockMergeEntity } from "../entity/BlockMergeEntity";
 import { EntityGridView } from "../entity/EntityGridView";
 import { MergeEgg } from "../entity/MergeEgg";
+import { RewardContainerEntity } from "../entity/RewardContainerEntity";
 import { EntityManagerGrid } from "../grid/EntityManagerGrid";
 import { CoinManager } from "../manager/CoinManager";
-import { EntityManager } from "../manager/EntityManager";
+import { EntityManager, EntityView } from "../manager/EntityManager";
 import { MissionManager } from "../missions/MissionManager";
 import { ModifierManager, ModifierType } from "../modifiers/ModifierManager";
 
@@ -38,6 +39,7 @@ export class MergeInputMergeService {
     public readonly onActiveChanged: Signal = new Signal(); // dispatch(active: MergeInputEntity | null)
     public readonly onMergePerformed: Signal = new Signal(); // dispatch(nextLevel: number)
     public readonly onEggHatchedByInput: Signal = new Signal(); // dispatch(level: number)
+    public readonly OnRewardOpen: Signal = new Signal(); // dispatch(level: number)
 
     protected readonly mergeRadiusPx: number;
     protected readonly eggHoverRadiusPx: number;
@@ -66,12 +68,29 @@ export class MergeInputMergeService {
     // Input handlers (wire from InputManager)
     // -------------------------
 
-    public handleGrab(entity: any, _localPos: PIXI.Point): void {
+    public handleGrab(entity: EntityView, _localPos: PIXI.Point): void {
         if (this.deps.isUiBlocked()) {
             return;
         }
 
         PlatformHandler.instance.platform.gameplayStart();
+
+        if (entity instanceof RewardContainerEntity) {
+            // We don't set this.activeEntity because we don't want to drag it
+            entity.open(() => {
+                const logic = this.deps.entities.getLogic(entity);
+                if (logic) {
+                    // Here we call the logic to actually grant the reward
+                    // Assuming you added this method to your EntityManager as discussed previously
+                    (this.deps.entities as any).claimReward?.(logic.data);
+
+                    this.OnRewardOpen.dispatch({ logic, view: entity })
+                    this.deps.entities.recycleEntity(entity);
+                }
+            });
+            this.onDirty.dispatch();
+            return; // Stop here so it doesn't get "picked up"
+        }
 
         // Hatch egg only when not currently dragging anything.
         if (!this.activeEntity && entity instanceof MergeEgg) {

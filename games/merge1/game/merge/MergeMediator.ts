@@ -14,7 +14,7 @@ import { EntityGridView } from "./entity/EntityGridView";
 import { MergeEgg } from "./entity/MergeEgg";
 import { InputManager } from "./input/InputManager";
 import { CoinManager } from "./manager/CoinManager";
-import { EntityManager } from "./manager/EntityManager";
+import { EntityManager, EntityView } from "./manager/EntityManager";
 import { GameSaveManager } from "./manager/GameSaveManager";
 import MergeAssets from "./MergeAssets";
 import { MissionManager } from "./missions/MissionManager";
@@ -113,8 +113,9 @@ export class MergeMediator {
         }
         this.entityContainer.addChild(this.gridView);
 
-        // Background setup
-        this.setupBackground();
+        DevGuiManager.instance.addButton('addChest', () => {
+            this.entities.spawnRewardContainer('test', 20, CurrencyType.MONEY)
+        })
 
         this.baker = new GridBaker(this.walkBounds, 90);
         this.zoomService = new ZoomService(this.container);
@@ -219,9 +220,8 @@ export class MergeMediator {
         this.container.addChild(gr)
     }
 
-    private setupBackground(): void {
+    public setupBackground(tiled: TiledContainer): void {
         if (ExtractTiledFile.TiledData) {
-            const tiled = new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Background']);
             [...tiled.children].forEach((child) => {
                 if (child instanceof PIXI.Container) {
                     [...child.children].forEach((grandChild) => {
@@ -268,6 +268,37 @@ export class MergeMediator {
         this.coins.onDirty.add(() => this.saver.markDirty());
         this.inputService.onActiveChanged.add((active: any) => this.activeEntity = active);
         this.inputService.onDirty.add(() => this.ftueService.markDirty());
+
+        this.inputService.OnRewardOpen.add((reward) => {
+            const data = reward.logic.data
+            const view = reward.view as EntityView
+
+            if (data.rewardType === CurrencyType.MONEY || data.rewardType === CurrencyType.GEMS) {
+
+                // 1. Get Start Position (Global to Local of Effect Layer)
+                const globalPos = view.toGlobal(new PIXI.Point(0, 0));
+                const startPos = this.coinEffects.toLocal(globalPos);
+
+                // 2. Get Target Position (HUD target Global to Local)
+                const hudGlobal = this.hud.getCurrencyTargetGlobalPos(data.rewardType);
+                const targetPos = this.coinEffects.toLocal(hudGlobal);
+
+                // 3. Fire!
+                this.coinEffects.popAndFlyToTarget(
+                    startPos.x,
+                    startPos.y,
+                    targetPos.x,
+                    targetPos.y,
+                    MergeAssets.Textures.Icons.Coin, // Add this helper to PrizeViewContainer
+                    undefined,
+                    () => {
+                        // This internal callback triggers when the coin hits the HUD
+                        //console.log(`${prize.type} hit the HUD!`);
+                    }
+                );
+            }
+            //this.coi
+        });
 
         this.entities.onEntitySpawned.add((view: any) => {
             this.ftueService.onEntitySpawned(view);
