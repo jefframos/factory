@@ -30,14 +30,12 @@ import ShopView from "./ui/shop/ShopView";
 import { CoinEffectLayer } from "./vfx/CoinEffectLayer";
 
 // New Grid Imports
-import { Game } from "@core/Game";
 import { DevGuiManager } from "../utils/DevGuiManager";
 import { EntityGridView2 } from "./grid/EntityGridView2";
 import { EntityManagerGrid } from "./grid/EntityManagerGrid";
 import { MergeInputMergeGridService } from "./grid/MergeInputMergeGridService";
 import { ModifierManager, ModifierType } from "./modifiers/ModifierManager";
 import { TimedRewardClaimResult, TimedRewardMilestone } from "./timedRewards/TimedRewardTypes";
-import { NewEntityDiscoveredView } from "./vfx/NewEntityDiscoveredView";
 
 export type MergeMode = 'Free' | 'Grid';
 
@@ -320,27 +318,7 @@ export class MergeMediator {
             this.ftueService.markDirty();
         });
 
-        InGameProgress.instance.onMaxEntitiesChanged.add(async (newLevel: number) => {
-            const spawnGlobalPos = new PIXI.Point(Game.DESIGN_WIDTH / 2, 0);
-            const hudGlobalPos = this.hud.getCurrencyTargetGlobalPos(CurrencyType.ENTITY);
 
-            // 2. Initialize the component
-            const discoveryView = new NewEntityDiscoveredView(
-                newLevel,
-                this.coinEffects,
-                hudGlobalPos
-            );
-
-            // 3. Position the component where the spawn happens
-            // Converting global spawn point to the coinEffects layer local space
-            const startPos = this.coinEffects.toLocal(spawnGlobalPos);
-            discoveryView.position.set(startPos.x, startPos.y);
-
-            // 4. Fire and forget
-            discoveryView.playAnimation();
-
-
-        });
     }
 
     private setupInput(): void {

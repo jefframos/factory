@@ -1,19 +1,21 @@
 import PromiseUtils from '@core/utils/PromiseUtils';
 import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
+import MergeAssets from '../MergeAssets';
 import { TextureBaker } from './TextureBaker';
 
 export class NewEntityDiscoveredView extends PIXI.Container {
     private shine: PIXI.Sprite;
     private portrait: PIXI.Sprite;
-    private messageText: PIXI.Text;
+    private titleText: PIXI.Text;
+    private nameText: PIXI.Text;
     private isAnimating: boolean = false;
 
     constructor() {
         super();
 
         // 1. Setup Background Shine
-        this.shine = PIXI.Sprite.from('shine_effect'); // Replace with your shine asset key
+        this.shine = PIXI.Sprite.from(MergeAssets.Textures.UI.Shine);
         this.shine.anchor.set(0.5);
         this.shine.alpha = 0;
         this.addChild(this.shine);
@@ -24,62 +26,73 @@ export class NewEntityDiscoveredView extends PIXI.Container {
         this.portrait.scale.set(0);
         this.addChild(this.portrait);
 
-        // 3. Setup Text
-        this.messageText = new PIXI.Text('', {
-            fontFamily: 'Arial',
+        // 3. Setup Title Text ("You Discovered")
+        this.titleText = new PIXI.Text('YOU DISCOVERED', {
+            ...MergeAssets.MainFontTitle,
             fontSize: 24,
             fill: 0xffffff,
             align: 'center',
-            stroke: 0x000000,
-            strokeThickness: 4
         });
-        this.messageText.anchor.set(0.5, -2); // Position below the portrait
-        this.messageText.alpha = 0;
-        this.addChild(this.messageText);
+        this.titleText.anchor.set(0.5, 1);
+        this.titleText.y = -70; // Kept your original position
+        this.titleText.alpha = 0;
+        this.addChild(this.titleText);
+
+        // 4. Setup Name Text (The Entity Name)
+        this.nameText = new PIXI.Text('', {
+            ...MergeAssets.MainFontTitle,
+            fontSize: 32,
+            align: 'center',
+        });
+        this.nameText.anchor.set(0.5, 0);
+        this.nameText.y = 80; // Positioned below the portrait
+        this.nameText.alpha = 0;
+        this.addChild(this.nameText);
 
         this.visible = false;
     }
 
-    /**
-     * Call this from your main loop: discoveryView.update(delta)
-     */
     public update(delta: number): void {
         if (this.visible && this.shine) {
             this.shine.rotation += 0.01 * delta;
         }
     }
 
-    public async playNew(entityId: number, entityName: string, targetContainer: PIXI.Container) {
-        if (this.isAnimating) return; // Prevent overlapping plays
+    public async playNew(entityId: number, entityName: string, entityColor: number, targetContainer: PIXI.Container) {
+        if (this.isAnimating) return;
         this.isAnimating = true;
 
         // Reset and Prepare
-        const texture = TextureBaker.getTexture(`Entity_${entityId}_Frame`);
+        const texture = TextureBaker.getTexture(`ENTITY_${entityId}`);
         this.portrait.texture = texture;
-        this.messageText.text = `You Discovered\n${entityName}`;
+
+        this.nameText.text = entityName.toUpperCase();
+        this.nameText.style.fill = entityColor;
+
         this.visible = true;
 
         // 1. POP APPEARANCE
-        gsap.set([this.shine, this.messageText], { alpha: 0 });
+        gsap.set([this.shine, this.titleText, this.nameText], { alpha: 0 });
         gsap.set(this.portrait.scale, { x: 0, y: 0 });
 
         const timeline = gsap.timeline();
 
-        // Animation: Shine and Portrait Pop
         timeline.to(this.shine, { alpha: 0.6, duration: 0.5 });
         timeline.to(this.portrait.scale, { x: 1.2, y: 1.2, duration: 0.4, ease: "back.out(2)" }, 0);
-        timeline.to(this.messageText, { alpha: 1, duration: 0.3 }, "-=0.2");
+
+        // Stagger the text appearance slightly
+        timeline.to(this.titleText, { alpha: 1, duration: 0.3 }, "-=0.2");
+        timeline.to(this.nameText, { alpha: 1, duration: 0.3 }, "-=0.1");
 
         // 2. WAIT
         await PromiseUtils.await(1500);
 
         // 3. FLY TO TARGET
-        // Convert the target container's global position to our parent's local space
         const globalTarget = targetContainer.getGlobalPosition();
         const localTarget = this.parent.toLocal(globalTarget);
 
         // Hide text and shine before flying
-        gsap.to([this.messageText, this.shine], { alpha: 0, duration: 0.2 });
+        gsap.to([this.titleText, this.nameText, this.shine], { alpha: 0, duration: 0.2 });
 
         timeline.to(this, {
             x: localTarget.x,
@@ -93,7 +106,6 @@ export class NewEntityDiscoveredView extends PIXI.Container {
     }
 
     private hitTarget(targetContainer: PIXI.Container) {
-        // 4. ARRIVE EFFECT
         gsap.to(this.portrait.scale, {
             x: 0,
             y: 0,
@@ -103,7 +115,6 @@ export class NewEntityDiscoveredView extends PIXI.Container {
                 this.visible = false;
                 this.isAnimating = false;
 
-                // Pop the target (the HUD icon)
                 gsap.fromTo(targetContainer.scale,
                     { x: 1, y: 1 },
                     { x: 1.4, y: 1.4, duration: 0.1, yoyo: true, repeat: 1 }

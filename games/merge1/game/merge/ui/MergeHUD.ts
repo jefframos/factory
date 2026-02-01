@@ -11,6 +11,7 @@ import { CollectionPanel } from "../collections/CollectionPanel";
 import { CurrencyType } from "../data/InGameEconomy";
 import { InGameProgress } from "../data/InGameProgress";
 import { ShopManager } from "../data/ShopManager";
+import { StaticData } from "../data/StaticData";
 import { MissionClaimResult } from "../missions/MissionManager";
 import { ModifierManager, ModifierType } from "../modifiers/ModifierManager";
 import { PrizeItem } from "../prize/PrizeTypes";
@@ -435,9 +436,28 @@ export default class MergeHUD extends PIXI.Container {
             checkIcon: PIXI.Texture.from(MergeAssets.Textures.Icons.Check)
         });
         this.addToHudLayer(this.timedRewardsBar);
+
+        InGameProgress.instance.onMaxEntitiesChanged.add(async (newLevel: number) => {
+            this.playNewDiscovery(newLevel)
+        });
+
     }
     update(delta: number) {
         this.notifications.update(delta);
+        this.newDiscovery.update(delta);
+    }
+    public playNewDiscovery(newLevel: number): void {
+        console.log(newLevel)
+        if (newLevel <= 3) {
+            return;
+        }
+        const { topLeft, bottomRight, topRight } = Game.overlayScreenData;
+        const centerX = (topRight.x - topLeft.x) / 2;
+        const centerY = (bottomRight.y - topRight.y) / 4;
+        this.newDiscovery.x = centerX;
+        this.newDiscovery.y = centerY;
+        const data = StaticData.getAnimalData(newLevel)
+        this.newDiscovery.playNew(newLevel, data.name, data.colors[0], this.collectionButton)
     }
     public updateLayout(): void {
         const padding = 20;
