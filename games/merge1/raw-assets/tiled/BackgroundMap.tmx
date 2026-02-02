@@ -117,7 +117,7 @@
    <image source="images/garden/fish-1.png" width="173" height="106"/>
   </tile>
  </tileset>
- <tileset firstgid="47" name="UI" tilewidth="609" tileheight="601" tilecount="139" columns="0">
+ <tileset firstgid="48" name="UI" tilewidth="609" tileheight="601" tilecount="139" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="20">
    <properties>

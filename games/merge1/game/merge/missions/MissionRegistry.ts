@@ -45,7 +45,8 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
                 type: "merge_creatures",
                 target,
                 // Gems remain fixed/flat
-                reward: { currencies: { [CurrencyType.GEMS]: Math.max(1, 2 + Math.floor(k / 2)) } }
+                //reward: { currencies: { [CurrencyType.GEMS]: Math.max(1, 2 + Math.floor(k / 2)) } }
+                reward: { currencies: { [CurrencyType.GEMS]: 0.05 } }
             };
         }
     },

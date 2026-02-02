@@ -71,8 +71,8 @@ export default class MergeScene extends GameScene {
                 'portrait-8'
             ])
 
-            //this.addChild(bked)
-            // bked.scale.set(2)
+            // this.addChild(bked)
+            // bked.scale.set(1)
         }, 10);
 
 

@@ -200,7 +200,7 @@ export class MissionManager {
                     if (currency == CurrencyType.MONEY) {
                         amount = Math.max(amount, 100)
                     } else if (currency == CurrencyType.GEMS) {
-                        amount = Math.max(amount, 1)
+                        amount = Math.max(amount, 2)
                     }
                     InGameEconomy.instance.add(currency, amount);
                     claimedCurrencies[currency] = amount;

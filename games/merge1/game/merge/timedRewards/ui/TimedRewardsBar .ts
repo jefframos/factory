@@ -144,7 +144,8 @@ export class TimedRewardsBar extends PIXI.Container {
             const texture = m.definition.icon || pickIcon(m.definition, this.theme);
             const claimed = this.service.isMilestoneClaimed(m.milestoneIndex);
 
-            comp.setup(texture, formatShort(m.milestoneSeconds), claimed);
+            comp.setup(texture, formatMSS(m.milestoneSeconds), claimed);
+            //comp.setup(texture, formatShort(m.milestoneSeconds), claimed);
 
             // Draw ticks relative to the background/container
             const tx = Math.floor(comp.x);
@@ -177,6 +178,17 @@ function formatMMSS(totalSeconds: number): string {
     const ss = s % 60;
 
     const mmStr = mm < 10 ? `0${mm}` : `${mm}`;
+    const ssStr = ss < 10 ? `0${ss}` : `${ss}`;
+
+    return `${mmStr}:${ssStr}`;
+}
+
+function formatMSS(totalSeconds: number): string {
+    const s = Math.max(0, Math.floor(totalSeconds));
+    const mm = Math.floor(s / 60);
+    const ss = s % 60;
+
+    const mmStr = mm < 10 ? `${mm}` : `${mm}`;
     const ssStr = ss < 10 ? `0${ss}` : `${ss}`;
 
     return `${mmStr}:${ssStr}`;

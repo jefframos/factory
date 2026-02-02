@@ -54,7 +54,7 @@ export class BakePreviewContainer extends PIXI.Container {
                 portraitKey
             );
 
-            const lockTex = TextureBaker.getTexture(`Entity_${level}_Frame_LOCKED`)
+            const lockTex = TextureBaker.getTexture(`Entity_${level}_Frame`)
             //console.log(lockTex)
             // 3. Create and position the Sprite
             //const sprite = new PIXI.Sprite(bakedFrameTexture);

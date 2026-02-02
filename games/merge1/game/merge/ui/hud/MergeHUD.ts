@@ -283,6 +283,11 @@ export default class MergeHUD extends PIXI.Container {
 
     private initRoomSelector(): void {
         this.roomSelector.onRoomSelected.add((id: RoomId) => this.onRoomSelected.dispatch(id));
+
+        if (Game.debugParams.r) {
+
+            this.hudLayer.addChild(this.roomSelector);
+        }
         //this.hudLayer.addChild(this.roomSelector);
     }
 

@@ -591,7 +591,7 @@ export class MergeMediator {
             startPos.y + view.coinOffset.y,
             targetPos.x,
             targetPos.y,
-            MergeAssets.Textures.Icons.Coin
+            data.rewardType == CurrencyType.MONEY ? MergeAssets.Textures.Icons.Coin : MergeAssets.Textures.Icons.Gem
         );
     }
 
@@ -632,6 +632,8 @@ export class MergeMediator {
 
         if (data.gemsAdded) {
             // optional: spawn gems reward container when you add a view for it
+
+            this.entities.spawnRewardContainer(id, data.gemsAdded, CurrencyType.GEMS);
         }
 
         if (data.spawnedEntityLevel) {

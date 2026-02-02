@@ -221,14 +221,6 @@
         },
         {
           "alias": [
-            "peace-be-with-you.mp3"
-          ],
-          "src": [
-            "peace-be-with-you.mp3"
-          ]
-        },
-        {
-          "alias": [
             "Pitched-Tapping-Glass.wav"
           ],
           "src": [
@@ -257,6 +249,22 @@
           ],
           "src": [
             "ScoreUpdate.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "soundtrack/longnight.mp3"
+          ],
+          "src": [
+            "soundtrack/longnight.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "soundtrack/peace-be-with-you.mp3"
+          ],
+          "src": [
+            "soundtrack/peace-be-with-you.mp3"
           ]
         },
         {
