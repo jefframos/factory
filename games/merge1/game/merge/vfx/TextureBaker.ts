@@ -10,6 +10,14 @@ export enum BakeDirection {
     HORIZONTAL
 }
 
+export interface PatternConfig {
+    textureId: string;
+    color?: string;
+    blendMode?: PIXI.BLEND_MODES;
+    alpha?: number;
+}
+
+
 export class TextureBaker {
     public static cache: Map<string, PIXI.Texture> = new Map();
 
@@ -37,16 +45,17 @@ export class TextureBaker {
 
         }
     }
+
     public static getStripedTintedTexture(
         level: number,
         baseKey: string,
         colors: string[],
         renderer: PIXI.Renderer,
         direction: BakeDirection = BakeDirection.VERTICAL,
-        overlay?: string
+        overlay?: string,
+        patterns: PatternConfig[] = [] // New patterns parameter
     ): PIXI.Texture {
         const cacheKey = `MergeAsset_Level_${level}_H`;
-        //const cacheKey = `MergeAsset_Level_${level}_${direction === BakeDirection.VERTICAL ? 'V' : 'H'}`;
 
         // 1. Check Cache
         if (this.cache.has(cacheKey)) {
@@ -57,15 +66,13 @@ export class TextureBaker {
         const { width, height } = baseTexture;
         const container = new PIXI.Container();
 
+        // 2. Base Tinting Logic
         if (colors.length === 1) {
-            // SINGLE COLOR TINT
             const sprite = new PIXI.Sprite(baseTexture);
             sprite.tint = PIXI.utils.string2hex(colors[0]);
             container.addChild(sprite);
         } else {
-            // STRIPED TINTING
             const count = colors.length;
-
             colors.forEach((color, i) => {
                 const slice = new PIXI.Sprite(baseTexture);
                 slice.tint = PIXI.utils.string2hex(color);
@@ -88,16 +95,44 @@ export class TextureBaker {
             });
         }
 
+        // 3. Apply Patterns (In order)
+        patterns.forEach((config) => {
+            const patternSprite = PIXI.Sprite.from(config.textureId);
 
+            // Apply optional color tint
+            if (config.color) {
+                patternSprite.tint = PIXI.utils.string2hex(config.color);
+            }
+
+            // Apply optional blend mode (e.g., MULTIPLY, OVERLAY)
+            if (config.blendMode !== undefined) {
+                patternSprite.blendMode = config.blendMode;
+            }
+
+            // Apply optional alpha
+            if (config.alpha !== undefined) {
+                patternSprite.alpha = config.alpha;
+            }
+
+            patternSprite.anchor.set(0.5, 0)
+
+            patternSprite.height = container.height
+            patternSprite.x = container.width / 2
+
+            container.addChild(patternSprite);
+        });
+
+        // 4. Final Overlay
         if (overlay) {
             const sprite = PIXI.Sprite.from(overlay);
             container.addChild(sprite);
         }
-        // 4. Bake to RenderTexture
+
+        // 5. Bake to RenderTexture
         const renderTexture = PIXI.RenderTexture.create({ width, height });
         renderer.render(container, { renderTexture });
 
-        // Cleanup: Slices and masks aren't needed once the photo is taken
+        // Cleanup
         container.destroy({ children: true });
 
         this.cache.set(cacheKey, renderTexture);

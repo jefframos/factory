@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769969380694,
-                "duration": 24.657799999999952,
+                "date": 1770034554085,
+                "duration": 31.67629999993369,
                 "success": true
             }
         },
@@ -20,8 +20,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769642548511,
-                "duration": 27.218799999915063,
+                "date": 1770034554085,
+                "duration": 31.559099999722093,
                 "success": true
             }
         },
@@ -34,11 +34,11 @@
             },
             "transformData": {},
             "stats": {
-                "date": 1769642548511,
-                "duration": 27.228600000031292,
+                "date": 1770034554085,
+                "duration": 31.561599999666214,
                 "success": true
             },
-            "hash": "xq-ggA"
+            "hash": "y96_qg"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/data/animals.json": {
             "isFolder": false,
@@ -56,11 +56,11 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769969380696,
-                "duration": 25.80670000000009,
+                "date": 1770032173389,
+                "duration": 25.938300000000027,
                 "success": true
             },
-            "hash": "ZKyEYQ"
+            "hash": "FXH8"
         },
         ".assetpack/json/tiled.json": {
             "isFolder": false,

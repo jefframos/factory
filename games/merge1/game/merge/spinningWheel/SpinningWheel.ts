@@ -6,7 +6,7 @@ import { CurrencyType } from "../data/InGameEconomy";
 import MergeAssets from "../MergeAssets";
 import WheelSlice from "./WheelSlice";
 
-export interface Prize {
+export interface WheelPrize {
     prizeType: CurrencyType;
     amount: number;
     level?: number;
@@ -23,7 +23,7 @@ export default class SpinningWheel extends PIXI.Container {
     private isSpinning: boolean = false;
 
     constructor(
-        private prizes: Prize[],
+        private prizes: WheelPrize[],
         private colors: number[],
         private getEntityTexture: (id: string) => PIXI.Texture,
         private frameTexture: PIXI.Texture,
@@ -69,7 +69,7 @@ export default class SpinningWheel extends PIXI.Container {
         this.addChild(this.flap);
     }
 
-    private getPrizeTexture(prize: Prize): PIXI.Texture {
+    private getPrizeTexture(prize: WheelPrize): PIXI.Texture {
         if (prize.prizeType === CurrencyType.ENTITY && prize.id) {
             // This uses the callback you passed in the constructor
             return this.getEntityTexture(prize.id);

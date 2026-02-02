@@ -7,7 +7,14 @@
         "coinValue": 5,
         "spawnTimer": 10,
         "colors": [
-            "#a8e5ff"
+            "#d6eaf8"
+        ],
+        "patterns": [
+            {
+                "type": "belly",
+                "color": "#ffffff",
+                "alpha": 0.8
+            }
         ]
     },
     {
@@ -18,7 +25,14 @@
         "coinValue": 12,
         "spawnTimer": 10,
         "colors": [
-            "#fb7378"
+            "#e9967a"
+        ],
+        "patterns": [
+            {
+                "type": "tabby",
+                "color": "#c06c5e",
+                "alpha": 0.7
+            }
         ]
     },
     {
@@ -29,7 +43,14 @@
         "coinValue": 30,
         "spawnTimer": 10,
         "colors": [
-            "#F7941D"
+            "#e67e22"
+        ],
+        "patterns": [
+            {
+                "type": "tiger",
+                "color": "#ba4a00",
+                "alpha": 0.6
+            }
         ]
     },
     {
@@ -40,7 +61,19 @@
         "coinValue": 75,
         "spawnTimer": 10,
         "colors": [
-            "#FFF200"
+            "#fdf5e6"
+        ],
+        "patterns": [
+            {
+                "type": "singleStripe",
+                "color": "#e67e22",
+                "alpha": 0.6
+            },
+            {
+                "type": "jaguar",
+                "color": "#3d2b1f",
+                "alpha": 0.8
+            }
         ]
     },
     {
@@ -51,7 +84,14 @@
         "coinValue": 180,
         "spawnTimer": 10,
         "colors": [
-            "#00A651"
+            "#2d5a27"
+        ],
+        "patterns": [
+            {
+                "type": "bellyFluff",
+                "color": "#ffffff",
+                "alpha": 0.6
+            }
         ]
     },
     {
@@ -62,9 +102,9 @@
         "coinValue": 450,
         "spawnTimer": 10,
         "colors": [
-            "#2E3192",
-            "#92278F"
-        ]
+            "#5d6d7e"
+        ],
+        "patterns": []
     },
     {
         "level": 7,
@@ -74,9 +114,14 @@
         "coinValue": 1100,
         "spawnTimer": 10,
         "colors": [
-            "#8C6239",
-            "#fffdfd",
-            "#4f4f4f"
+            "#f5f5dc"
+        ],
+        "patterns": [
+            {
+                "type": "jaguar",
+                "color": "#3e2723",
+                "alpha": 0.6
+            }
         ]
     },
     {
@@ -87,11 +132,14 @@
         "coinValue": 2800,
         "spawnTimer": 10,
         "colors": [
-            "#F7941D",
-            "#FFF200",
-            "#00A651",
-            "#2E3192",
-            "#662D91"
+            "#aed6f1"
+        ],
+        "patterns": [
+            {
+                "type": "singleStripe",
+                "color": "#f1948a",
+                "alpha": 0.5
+            }
         ]
     },
     {
@@ -102,10 +150,14 @@
         "coinValue": 7200,
         "spawnTimer": 10,
         "colors": [
-            "#FFFFFF",
-            "#FF7BAC",
-            "#FF7BAC",
-            "#FFFFFF"
+            "#f5b7b1"
+        ],
+        "patterns": [
+            {
+                "type": "belly",
+                "color": "#fad1d1",
+                "alpha": 1.0
+            }
         ]
     },
     {
@@ -116,9 +168,17 @@
         "coinValue": 18000,
         "spawnTimer": 10,
         "colors": [
-            "#92278F",
-            "#FF7BAC",
-            "#2E3192"
+            "#2e4053",
+            "#2e4053",
+            "#ffffff",
+            "#ffffff"
+        ],
+        "patterns": [
+            {
+                "type": "jaguar",
+                "color": "#8effad",
+                "alpha": 0.4
+            }
         ]
     },
     {
@@ -129,10 +189,14 @@
         "coinValue": 45000,
         "spawnTimer": 10,
         "colors": [
-            "#89e261",
-            "#89e261",
-            "#f4e53b",
-            "#3b4df4"
+            "#7d6608"
+        ],
+        "patterns": [
+            {
+                "type": "bellyFluff",
+                "color": "#f4d03f",
+                "alpha": 0.5
+            }
         ]
     },
     {
@@ -143,9 +207,19 @@
         "coinValue": 110000,
         "spawnTimer": 10,
         "colors": [
-            "#ED1C24",
-            "#FBB03B",
-            "#565656"
+            "#cd853f"
+        ],
+        "patterns": [
+            {
+                "type": "belly",
+                "color": "#ffffff",
+                "alpha": 0.4
+            },
+            {
+                "type": "tiger",
+                "color": "#212f3c",
+                "alpha": 0.8
+            }
         ]
     },
     {
@@ -156,8 +230,14 @@
         "coinValue": 280000,
         "spawnTimer": 10,
         "colors": [
-            "#F7941D",
-            "#FBB03B"
+            "#b7950b"
+        ],
+        "patterns": [
+            {
+                "type": "tabby",
+                "color": "#9a7d0a",
+                "alpha": 0.3
+            }
         ]
     },
     {
@@ -168,8 +248,14 @@
         "coinValue": 700000,
         "spawnTimer": 10,
         "colors": [
-            "#FFF200",
-            "#5e5e5e"
+            "#1c2833"
+        ],
+        "patterns": [
+            {
+                "type": "singleStripe",
+                "color": "#f1c40f",
+                "alpha": 0.6
+            }
         ]
     },
     {
@@ -180,9 +266,14 @@
         "coinValue": 1800000,
         "spawnTimer": 10,
         "colors": [
-            "#00A651",
-            "#ED1C24",
-            "#FFFFFF"
+            "#1e8449"
+        ],
+        "patterns": [
+            {
+                "type": "tiger",
+                "color": "#145a32",
+                "alpha": 0.7
+            }
         ]
     },
     {
@@ -193,9 +284,14 @@
         "coinValue": 4500000,
         "spawnTimer": 10,
         "colors": [
-            "#2E3192",
-            "#FFFFFF",
-            "#ED1C24"
+            "#2c3e50"
+        ],
+        "patterns": [
+            {
+                "type": "bellyFluff",
+                "color": "#ffffff",
+                "alpha": 1.0
+            }
         ]
     },
     {
@@ -206,9 +302,14 @@
         "coinValue": 12000000,
         "spawnTimer": 10,
         "colors": [
-            "#00A651",
-            "#FFFFFF",
-            "#FBB03B"
+            "#a9dfbf"
+        ],
+        "patterns": [
+            {
+                "type": "jaguar",
+                "color": "#1e8449",
+                "alpha": 0.4
+            }
         ]
     },
     {
@@ -219,9 +320,22 @@
         "coinValue": 30000000,
         "spawnTimer": 10,
         "colors": [
-            "#FFFF00",
-            "#ED1C24",
-            "#8C6239"
+            "#212f3c",
+            "#212f3c",
+            "#ffffff",
+            "#212f3c"
+        ],
+        "patterns": [
+            {
+                "type": "jaguar",
+                "color": "#d35400",
+                "alpha": 0.7
+            },
+            {
+                "type": "tabby",
+                "color": "#f4d03f",
+                "alpha": 0.5
+            }
         ]
     },
     {
@@ -232,9 +346,14 @@
         "coinValue": 75000000,
         "spawnTimer": 10,
         "colors": [
-            "#FF7BAC",
-            "#2E3192",
-            "#FFFFFF"
+            "#f48fb1"
+        ],
+        "patterns": [
+            {
+                "type": "bellyFluff",
+                "color": "#fce4ec",
+                "alpha": 0.8
+            }
         ]
     },
     {
@@ -245,8 +364,14 @@
         "coinValue": 200000000,
         "spawnTimer": 10,
         "colors": [
-            "#92278F",
-            "#FFFFFF"
+            "#d7bde2"
+        ],
+        "patterns": [
+            {
+                "type": "tabby",
+                "color": "#af7ac5",
+                "alpha": 0.5
+            }
         ]
     },
     {
@@ -257,9 +382,19 @@
         "coinValue": 500000000,
         "spawnTimer": 10,
         "colors": [
-            "#F7941D",
-            "#FFFFFF",
-            "#8C6239"
+            "#ebedef"
+        ],
+        "patterns": [
+            {
+                "type": "jaguar",
+                "color": "#8c6239",
+                "alpha": 0.8
+            },
+            {
+                "type": "tabby",
+                "color": "#dc7633",
+                "alpha": 0.6
+            }
         ]
     },
     {
@@ -270,8 +405,14 @@
         "coinValue": 1200000000,
         "spawnTimer": 10,
         "colors": [
-            "#ED1C24",
-            "#FFD700"
+            "#566573"
+        ],
+        "patterns": [
+            {
+                "type": "jaguar",
+                "color": "#2c3e50",
+                "alpha": 0.9
+            }
         ]
     },
     {
@@ -282,9 +423,14 @@
         "coinValue": 3500000000,
         "spawnTimer": 10,
         "colors": [
-            "#F7941D",
-            "#2E3192",
-            "#686868"
+            "#d35400"
+        ],
+        "patterns": [
+            {
+                "type": "jaguar",
+                "color": "#1c2833",
+                "alpha": 0.8
+            }
         ]
     },
     {
@@ -295,8 +441,14 @@
         "coinValue": 10000000000,
         "spawnTimer": 10,
         "colors": [
-            "#FFF200",
-            "#662D91"
+            "#34495e"
+        ],
+        "patterns": [
+            {
+                "type": "singleStripe",
+                "color": "#f4d03f",
+                "alpha": 0.4
+            }
         ]
     },
     {
@@ -307,9 +459,14 @@
         "coinValue": 25000000000,
         "spawnTimer": 10,
         "colors": [
-            "#00A651",
-            "#F7941D",
-            "#FFD700"
+            "#f1c40f"
+        ],
+        "patterns": [
+            {
+                "type": "bellyFluff",
+                "color": "#ffffff",
+                "alpha": 0.6
+            }
         ]
     },
     {
@@ -320,9 +477,14 @@
         "coinValue": 65000000000,
         "spawnTimer": 10,
         "colors": [
-            "#39FF14",
-            "#FF00FF",
-            "#00FFFF"
+            "#212f3c"
+        ],
+        "patterns": [
+            {
+                "type": "tiger",
+                "color": "#39ff14",
+                "alpha": 0.4
+            }
         ]
     },
     {
@@ -333,9 +495,14 @@
         "coinValue": 150000000000,
         "spawnTimer": 10,
         "colors": [
-            "#E0FFFF",
-            "#00BFFF",
-            "#4682B4"
+            "#eaf2f8"
+        ],
+        "patterns": [
+            {
+                "type": "tabby",
+                "color": "#aed6f1",
+                "alpha": 0.7
+            }
         ]
     },
     {
@@ -346,9 +513,14 @@
         "coinValue": 400000000000,
         "spawnTimer": 10,
         "colors": [
-            "#FF4500",
-            "#8B0000",
-            "#FFA500"
+            "#7b241c"
+        ],
+        "patterns": [
+            {
+                "type": "tiger",
+                "color": "#e67e22",
+                "alpha": 0.5
+            }
         ]
     },
     {
@@ -359,9 +531,14 @@
         "coinValue": 1000000000000,
         "spawnTimer": 10,
         "colors": [
-            "#000000",
-            "#4B0082",
-            "#EE82EE"
+            "#17202a"
+        ],
+        "patterns": [
+            {
+                "type": "jaguar",
+                "color": "#5b2c6f",
+                "alpha": 0.3
+            }
         ]
     },
     {
@@ -372,9 +549,14 @@
         "coinValue": 2800000000000,
         "spawnTimer": 10,
         "colors": [
-            "#B8860B",
-            "#8B4513",
-            "#C0C0C0"
+            "#9a7d0a"
+        ],
+        "patterns": [
+            {
+                "type": "tiger",
+                "color": "#514105",
+                "alpha": 0.6
+            }
         ]
     },
     {
@@ -385,9 +567,14 @@
         "coinValue": 7500000000000,
         "spawnTimer": 10,
         "colors": [
-            "#FFB7C5",
-            "#FF69B4",
-            "#FFFFFF"
+            "#fadbd8"
+        ],
+        "patterns": [
+            {
+                "type": "belly",
+                "color": "#ffffff",
+                "alpha": 0.9
+            }
         ]
     },
     {
@@ -398,9 +585,14 @@
         "coinValue": 20000000000000,
         "spawnTimer": 10,
         "colors": [
-            "#000080",
-            "#008B8B",
-            "#7FFFD4"
+            "#1b2631"
+        ],
+        "patterns": [
+            {
+                "type": "jaguar",
+                "color": "#5dade2",
+                "alpha": 0.3
+            }
         ]
     },
     {
@@ -411,9 +603,14 @@
         "coinValue": 55000000000000,
         "spawnTimer": 10,
         "colors": [
-            "#FFD700",
-            "#FF8C00",
-            "#FFFFFF"
+            "#f39c12"
+        ],
+        "patterns": [
+            {
+                "type": "singleStripe",
+                "color": "#ffffff",
+                "alpha": 0.4
+            }
         ]
     },
     {
@@ -424,9 +621,14 @@
         "coinValue": 140000000000000,
         "spawnTimer": 10,
         "colors": [
-            "#ADFF2F",
-            "#00FF00",
-            "#2F4F4F"
+            "#1d8348"
+        ],
+        "patterns": [
+            {
+                "type": "tabby",
+                "color": "#abebc6",
+                "alpha": 0.2
+            }
         ]
     },
     {
@@ -437,9 +639,14 @@
         "coinValue": 350000000000000,
         "spawnTimer": 10,
         "colors": [
-            "#9932CC",
-            "#8A2BE2",
-            "#DDA0DD"
+            "#633974"
+        ],
+        "patterns": [
+            {
+                "type": "tiger",
+                "color": "#a569bd",
+                "alpha": 0.4
+            }
         ]
     },
     {
@@ -450,9 +657,14 @@
         "coinValue": 900000000000000,
         "spawnTimer": 10,
         "colors": [
-            "#708090",
-            "#2F4F4F",
-            "#B0C4DE"
+            "#566e7a"
+        ],
+        "patterns": [
+            {
+                "type": "jaguar",
+                "color": "#263238",
+                "alpha": 0.5
+            }
         ]
     },
     {
@@ -463,9 +675,14 @@
         "coinValue": 2500000000000000,
         "spawnTimer": 10,
         "colors": [
-            "#FF0000",
-            "#FFFFFF",
-            "#00FF00"
+            "#ecf0f1"
+        ],
+        "patterns": [
+            {
+                "type": "tiger",
+                "color": "#c0392b",
+                "alpha": 0.8
+            }
         ]
     },
     {
@@ -476,9 +693,14 @@
         "coinValue": 6000000000000000,
         "spawnTimer": 10,
         "colors": [
-            "#FFFACD",
-            "#E6E6FA",
-            "#F0F8FF"
+            "#f7f9f9"
+        ],
+        "patterns": [
+            {
+                "type": "jaguar",
+                "color": "#d7bde2",
+                "alpha": 0.4
+            }
         ]
     },
     {
@@ -489,9 +711,14 @@
         "coinValue": 15000000000000000,
         "spawnTimer": 10,
         "colors": [
-            "#FF0000",
-            "#FF4500",
-            "#FFFF00"
+            "#943126"
+        ],
+        "patterns": [
+            {
+                "type": "singleStripe",
+                "color": "#f1c40f",
+                "alpha": 0.5
+            }
         ]
     },
     {
@@ -502,10 +729,19 @@
         "coinValue": 50000000000000000,
         "spawnTimer": 10,
         "colors": [
-            "#FFFFFF",
-            "#000000",
-            "#FFD700",
-            "#C0C0C0"
+            "#ffffff"
+        ],
+        "patterns": [
+            {
+                "type": "jaguar",
+                "color": "#d5dbdb",
+                "alpha": 0.4
+            },
+            {
+                "type": "singleStripe",
+                "color": "#f1c40f",
+                "alpha": 0.3
+            }
         ]
     }
 ]

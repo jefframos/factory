@@ -6,7 +6,7 @@ import { ICoinData } from "../data/MergeSaveTypes";
 import { ProgressionStats } from "../data/ProgressionStats";
 import { Coin } from "../entity/Coin";
 import MergeAssets from "../MergeAssets";
-import MergeHUD from "../ui/MergeHUD";
+import MergeHUD from "../ui/hud/MergeHUD";
 import { CoinEffectLayer } from "../vfx/CoinEffectLayer";
 
 export interface ClearCoinsOptions {

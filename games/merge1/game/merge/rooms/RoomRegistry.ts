@@ -1,24 +1,40 @@
 // rooms/RoomRegistry.ts
 export type RoomId = "room_0" | "room_1";
 
-export interface RoomDefinition {
+export interface IRoomConfig {
     id: RoomId;
-    name: string;
     unlockLevel: number;
+    mapId: string;     // e.g., 'garden', 'kitchen'
+    icon: string;      // e.g., 'cats', 'dogs'
+    entityType: string;      // e.g., 'cats', 'dogs'
+    displayName: string;
 }
 
 export class RoomRegistry {
-    public static readonly rooms: RoomDefinition[] = [
-        { id: "room_0", name: "Room 1", unlockLevel: 1 },
-        { id: "room_1", name: "Room 2", unlockLevel: 1 }
-    ];
+    private static readonly ROOMS: Record<RoomId, IRoomConfig> = {
+        "room_0": {
+            id: "room_0",
+            unlockLevel: 0,
+            mapId: 'Garden',
+            entityType: 'cats',
+            icon: 'garden-icon',
+            displayName: "The Garden"
+        },
+        "room_1": {
+            id: "room_1",
+            unlockLevel: 5,
+            mapId: 'LivingRoom',
+            entityType: 'dogs',
+            icon: 'livin-room-icon',
+            displayName: "The Kitchen"
+        }
+    };
 
-    public static get(id: RoomId): RoomDefinition {
-        const r = this.rooms.find((x) => x.id === id);
-        return r ?? this.rooms[0];
+    public static get(id: RoomId): IRoomConfig {
+        return this.ROOMS[id];
     }
 
-    public static isUnlocked(id: RoomId, playerLevel: number): boolean {
-        return playerLevel >= this.get(id).unlockLevel;
+    public static isUnlocked(id: RoomId, currentLevel: number): boolean {
+        return currentLevel >= this.ROOMS[id].unlockLevel;
     }
 }

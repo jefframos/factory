@@ -17,8 +17,9 @@ import { CurrencyType, InGameEconomy } from "./data/InGameEconomy";
 import { StaticData } from "./data/StaticData";
 import MergeAssets from "./MergeAssets";
 import { MergeMediator } from "./MergeMediator";
+import { EnvironmentManager } from "./rooms/EnvironmentManager";
 import GameStorage from "./storage/GameStorage";
-import MergeHUD from "./ui/MergeHUD"; // Import your new component
+import MergeHUD from "./ui/hud/MergeHUD"; // Import your new component
 import { BakePreviewContainer } from "./vfx/BakePreviewContainer";
 import { CoinEffectLayer } from "./vfx/CoinEffectLayer";
 import { TextureBaker } from "./vfx/TextureBaker";
@@ -27,7 +28,8 @@ export default class MergeScene extends GameScene {
     public readonly onQuit: Signal = new Signal();
 
     public readonly gameplayContainer: PIXI.Container = new PIXI.Container();
-    public readonly foreGround: PIXI.Container = new PIXI.Container();
+    public readonly floorContainer: PIXI.Container = new PIXI.Container();
+    public readonly foregroundContainer: PIXI.Container = new PIXI.Container();
     public hud!: MergeHUD;
 
     private background: PIXI.Sprite = PIXI.Sprite.from('main-bg');
@@ -36,7 +38,7 @@ export default class MergeScene extends GameScene {
     private highScore: number = 0;
     private paused: boolean = false;
     private mediator!: MergeMediator;
-
+    private envManager!: EnvironmentManager;
     static MAP_ID = 'Garden'
 
     constructor(game: Game) {
@@ -101,25 +103,24 @@ export default class MergeScene extends GameScene {
         }
 
 
+
+
+
         const floor = new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Floor-' + MergeScene.MAP_ID]);
+        this.floorContainer.addChild(floor);
         const foreground = new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Foreground-' + MergeScene.MAP_ID]);
-        this.foreGround.addChild(foreground);
-        this.gameplayContainer.addChild(floor);
 
-
-
+        this.foregroundContainer.addChild(foreground);
+        this.gameplayContainer.addChild(this.floorContainer);
         // 2. Gameplay
         this.addChild(this.gameplayContainer);
-        this.addChild(this.foreGround);
-
+        this.addChild(this.foregroundContainer);
 
         TextureBaker.bakeEntityTextures()
-
         // 3. HUD
         const effects = new CoinEffectLayer();
         this.hud = new MergeHUD(effects);
         this.addChild(this.hud);
-
         this.hud.addEffects(effects)
 
         this.setupDevGui();
@@ -139,20 +140,21 @@ export default class MergeScene extends GameScene {
             Game.DESIGN_HEIGHT * 2
         );
 
-
-
         const settings = ExtractTiledFile.getTiledFrom('garden')
         const walkArea = settings?.settings?.objects?.find(v => v.name == 'WalkArea')
+
+        this.envManager = new EnvironmentManager(
+            this.floorContainer,
+            this.foregroundContainer,
+            (bg) => this.mediator?.setupBackground(bg) // Use your existing method
+        );
+
         if (walkArea) {
             gameBounds.x = walkArea.x
             gameBounds.y = walkArea.y
             gameBounds.width = walkArea.width
             gameBounds.height = walkArea.height
         }
-
-
-
-
         // 4. Initialize Mediator
         this.mediator = new MergeMediator(
             this.gameplayContainer,
@@ -160,15 +162,21 @@ export default class MergeScene extends GameScene {
             gameBounds,
             effects,
             this.hud,
+            this.envManager,
             "Free"
         );
 
-        this.mediator.setupBackground(new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Background-' + MergeScene.MAP_ID]))
+        this.mediator.updateRoom();
+        //this.mediator.setupBackground(new TiledContainer(ExtractTiledFile.getTiledFrom('garden'), ['Background-' + MergeScene.MAP_ID]))
 
 
         // Optional: Spawn a starting animal
         //this.mediator.spawnAnimal(1, new PIXI.Point(Game.DESIGN_WIDTH / 2, Game.DESIGN_HEIGHT / 2));
+
+
     }
+
+
 
     private setupAudio(): void {
         SoundManager.instance.playBackgroundSound(MergeAssets.AmbientSound.AmbientSoundId, 0);
@@ -222,9 +230,9 @@ export default class MergeScene extends GameScene {
         this.gameplayContainer.position.set(centerX, centerY);
         this.gameplayContainer.pivot.set(centerX, centerY);
 
-        this.foreGround.position.copyFrom(this.gameplayContainer.position)
-        this.foreGround.pivot.copyFrom(this.gameplayContainer.pivot)
-        this.foreGround.scale.copyFrom(this.gameplayContainer.scale)
+        this.foregroundContainer.position.copyFrom(this.gameplayContainer.position)
+        this.foregroundContainer.pivot.copyFrom(this.gameplayContainer.pivot)
+        this.foregroundContainer.scale.copyFrom(this.gameplayContainer.scale)
 
         this.background.anchor.set(0.5);
         this.background.position.set(centerX, centerY);

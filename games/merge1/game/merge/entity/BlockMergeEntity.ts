@@ -2,6 +2,7 @@ import { Game } from "@core/Game";
 import ViewUtils from "@core/utils/ViewUtils";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
+import { PatternRegistry } from "../data/PatternRegistry";
 import { StaticData } from "../data/StaticData";
 import MergeAssets from "../MergeAssets";
 import { BakeDirection, TextureBaker } from "../vfx/TextureBaker";
@@ -11,6 +12,7 @@ export class BlockMergeEntity extends BaseMergeEntity {
     // Face Hierarchy
     protected faceContainer: PIXI.Container = new PIXI.Container();
     protected earsContainer: PIXI.Container = new PIXI.Container();
+    protected patternsContainer: PIXI.Container = new PIXI.Container();
     protected eyesContainer: PIXI.Container = new PIXI.Container();
     protected mouthContainer: PIXI.Container = new PIXI.Container();
 
@@ -61,6 +63,7 @@ export class BlockMergeEntity extends BaseMergeEntity {
             entityData.colors,
             Game.renderer,
             BakeDirection.HORIZONTAL,
+            undefined,
             //MergeAssets.Textures.Extras.CatLines
         );
 
@@ -69,11 +72,12 @@ export class BlockMergeEntity extends BaseMergeEntity {
         // Reset Containers
         if (this.sprite instanceof PIXI.Sprite) {
             this.sprite.destroy();
-            this.sprite = new PIXI.NineSlicePlane(PIXI.Texture.WHITE, 40, 70, 30, 35);
+            this.sprite = new PIXI.NineSlicePlane(PIXI.Texture.WHITE, 33, 33, 33, 33);
 
             this.spriteContainer.removeChildren(); // Clear to ensure clean snapshot
             this.spriteContainer.addChild(this.earsContainer);
             this.spriteContainer.addChild(this.sprite);
+            this.spriteContainer.addChild(this.patternsContainer);
 
             this.faceContainer.removeChildren();
             this.faceContainer.addChild(this.eyesContainer);
@@ -94,7 +98,32 @@ export class BlockMergeEntity extends BaseMergeEntity {
         this.sprite.position.set(0, 0);
 
         // --- Feature Setup ---
-        // Ears: Positioned at top of sprite
+        this.patternsContainer.removeChildren().forEach(child => child.destroy());
+
+        this.patternsContainer.x = targetWidth / 2
+        this.patternsContainer.y = targetHeight
+
+        if (entityData.patterns) {
+
+            entityData.patterns.forEach(pattern => {
+                const patternTex = PatternRegistry[pattern.type]
+                this.addFeature(this.patternsContainer, [patternTex.texture], {
+                    count: 1,
+                    randomize: false,
+                    rotation: false,
+                    tint: pattern.color || 0xFFFFFF,
+                    alpha: pattern.alpha || 1,
+                    spacing: 0,
+                    widthFactor: 1,
+                    skipClean: true,
+                    ...patternTex.data,
+                    yOffset: -targetHeight / 2 + (patternTex.data?.yOffset || 0),
+                });
+            });
+        }
+
+
+
         this.addFeature(this.earsContainer, ['ear-left', 'ear-right'], {
             count: 2,
             widthFactor: 0.8,
@@ -104,23 +133,39 @@ export class BlockMergeEntity extends BaseMergeEntity {
             rotation: false,
             tint: PIXI.utils.string2hex(entityData.colors[0])
         });
+        //this.patternsContainer.x = targetWidth / 2;
         this.earsContainer.x = targetWidth / 2;
         this.earsContainer.y = 0;
         this.earsContainer.visible = false
+
+        const eyeNumber = ((level - 1) % 11) + 1;
+
+        // Pad the number to be 2 digits (e.g., "01", "11")
+        const paddedId = eyeNumber.toString().padStart(2, '0');
+
+        // Construct the final sprite string
+        const eyeSpriteId = `cat-eye00${paddedId}`;
+
         // Eyes & Mouth
-        this.addFeature(this.eyesContainer, ['cat-eye', 'cat-eye'], {
+        this.addFeature(this.eyesContainer, [eyeSpriteId, eyeSpriteId], {
             count: 2,
             widthFactor: 0.7,
             yOffset: 2,
             spacing: 1.2,
             randomize: true,
-            rotation: true,
+            rotation: false,
         });
 
-        this.addFeature(this.mouthContainer, ['cat-mouth-1'], {
+        const mouthNumber = ((level - 1 + 5) % 6) + 1;
+
+
+        // Construct the final sprite string
+        const mouthSpriteId = `cat-mouth-00${mouthNumber.toString().padStart(2, '0')}`;
+
+        this.addFeature(this.mouthContainer, [mouthSpriteId], {
             count: 1,
-            widthFactor: 0.22 + Math.random() * 0.1,
-            yOffset: targetHeight * 0.25,
+            widthFactor: 0.4 + Math.random() * 0.1,
+            yOffset: targetHeight * 0.30,
             spacing: 0,
             randomize: false,
             rotation: false,
@@ -168,6 +213,9 @@ export class BlockMergeEntity extends BaseMergeEntity {
         // Switch to Gameplay Pivots (Bottom-Center)
         const w = this.sprite.width;
         const h = this.sprite.height;
+
+        this.patternsContainer.x = 0
+        this.patternsContainer.y = 0
 
         this.sprite.pivot.set(w / 2, h);
         this.sprite.position.set(0, 0);

@@ -5,6 +5,18 @@ import MergeAssets from "../MergeAssets";
 import { TextureBaker } from "../vfx/TextureBaker";
 
 export enum EntityState { IDLE, WALK, GRABBED }
+export interface IFeatureConfig {
+    count: number,
+    widthFactor: number,
+    yOffset: number,
+    spacing: number,
+    tint?: number,
+    randomize: boolean,
+    rotation: boolean,
+    skipClean?: boolean,
+    blendMode?: PIXI.BLEND_MODES
+    alpha?: number
+}
 
 export class BaseMergeEntity extends PIXI.Container {
     public state: EntityState = EntityState.IDLE;
@@ -99,17 +111,12 @@ export class BaseMergeEntity extends PIXI.Container {
     protected addFeature(
         targetContainer: PIXI.Container,
         textureIds: string[],
-        config: {
-            count: number,
-            widthFactor: number,
-            yOffset: number,
-            spacing: number,
-            tint?: number,
-            randomize: boolean,
-            rotation: boolean
-        }
+        config: IFeatureConfig
     ): void {
-        targetContainer.removeChildren().forEach(child => child.destroy());
+        if (!config.skipClean) {
+
+            targetContainer.removeChildren().forEach(child => child.destroy());
+        }
 
         const targetFeatureWidth = (this.sprite.width * config.widthFactor) / (config.count || 1);
 
@@ -118,6 +125,10 @@ export class BaseMergeEntity extends PIXI.Container {
             const tex = textureIds[i % textureIds.length];
             const feature = PIXI.Sprite.from(tex);
             feature.anchor.set(0.5);
+
+            feature.blendMode = config.blendMode || PIXI.BLEND_MODES.NORMAL;
+
+            feature.alpha = config.alpha || 1;
 
 
             feature.tint = config.tint || 0xFFFFFF

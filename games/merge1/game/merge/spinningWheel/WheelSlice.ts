@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { Prize } from "./SpinningWheel";
+import { WheelPrize } from "./SpinningWheel";
 
 export default class WheelSlice extends PIXI.Container {
     private bg: PIXI.Graphics;
@@ -20,7 +20,7 @@ export default class WheelSlice extends PIXI.Container {
     }
 
     public setup(
-        prize: Prize,
+        prize: WheelPrize,
         color: number,
         angleDeg: number,
         sliceAngle: number,

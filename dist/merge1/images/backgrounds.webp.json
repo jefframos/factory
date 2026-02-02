@@ -340,14 +340,34 @@
         "h": 62
       }
     },
-    "frame-3": {
+    "full-background": {
       "frame": {
         "x": 934,
         "y": 2,
+        "w": 2115,
+        "h": 1500
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 2115,
+        "h": 1500
+      },
+      "sourceSize": {
+        "w": 2115,
+        "h": 1500
+      }
+    },
+    "frame-3": {
+      "frame": {
+        "x": 746,
+        "y": 1020,
         "w": 145,
         "h": 173
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 2,
@@ -362,8 +382,8 @@
     },
     "frame-2": {
       "frame": {
-        "x": 934,
-        "y": 177,
+        "x": 2,
+        "y": 1167,
         "w": 125,
         "h": 161
       },
@@ -383,11 +403,11 @@
     "frame-1": {
       "frame": {
         "x": 2,
-        "y": 1064,
+        "y": 1330,
         "w": 165,
         "h": 167
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 3,
@@ -402,12 +422,12 @@
     },
     "couch2": {
       "frame": {
-        "x": 1081,
-        "y": 2,
+        "x": 169,
+        "y": 1167,
         "w": 373,
         "h": 298
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -422,8 +442,8 @@
     },
     "couch": {
       "frame": {
-        "x": 934,
-        "y": 377,
+        "x": 2,
+        "y": 1504,
         "w": 405,
         "h": 243
       },
@@ -443,7 +463,7 @@
     "cat-tower-2": {
       "frame": {
         "x": 2,
-        "y": 1231,
+        "y": 1749,
         "w": 423,
         "h": 830
       },
@@ -462,12 +482,12 @@
     },
     "carpet": {
       "frame": {
-        "x": 1381,
-        "y": 2,
+        "x": 834,
+        "y": 1504,
         "w": 999,
         "h": 453
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -487,8 +507,8 @@
     "image": "backgrounds.webp",
     "format": "RGBA8888",
     "size": {
-      "w": 1836,
-      "h": 1656
+      "w": 3051,
+      "h": 2174
     },
     "scale": 1,
     "related_multi_packs": []

@@ -1,71 +1,120 @@
-import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
 import TiledContainer from "@core/tiled/TiledContainer";
+import PromiseUtils from "@core/utils/PromiseUtils";
 import * as PIXI from "pixi.js";
+
 import { GridBaker } from "./core/GridBaker";
 import { CurrencyType, InGameEconomy } from "./data/InGameEconomy";
 import { InGameProgress } from "./data/InGameProgress";
 import { ProgressionStats } from "./data/ProgressionStats";
 import { ShopManager } from "./data/ShopManager";
 import { StaticData } from "./data/StaticData";
+
 import { BaseMergeEntity } from "./entity/BaseMergeEntity";
 import { BlockMergeEntity } from "./entity/BlockMergeEntity";
 import { EggGenerator } from "./entity/EggGenerator";
 import { EntityGridView } from "./entity/EntityGridView";
 import { MergeEgg } from "./entity/MergeEgg";
+
 import { InputManager } from "./input/InputManager";
 import { CoinManager } from "./manager/CoinManager";
-import { EntityManager, EntityView } from "./manager/EntityManager";
+import { EntityManager } from "./manager/EntityManager";
 import { GameSaveManager } from "./manager/GameSaveManager";
+
 import MergeAssets from "./MergeAssets";
 import { MissionManager } from "./missions/MissionManager";
 import { RoomId } from "./rooms/RoomRegistry";
 import { RoomService } from "./rooms/RoomService";
+
 import { MergeFtueService } from "./services/MergeFtueService";
 import { MergeInputMergeService } from "./services/MergeInputMergeService";
 import { ZoomService } from "./services/ZoomService";
+
 import { TimedRewardRegistry } from "./timedRewards/TimedRewardRegistry";
 import { TimedRewardService } from "./timedRewards/TimedRewardService";
-import MergeHUD from "./ui/MergeHUD";
+import { TimedRewardClaimResult, TimedRewardMilestone } from "./timedRewards/TimedRewardTypes";
+
+import MergeHUD from "./ui/hud/MergeHUD";
 import ShopView from "./ui/shop/ShopView";
 import { CoinEffectLayer } from "./vfx/CoinEffectLayer";
 
-// New Grid Imports
-import PromiseUtils from "@core/utils/PromiseUtils";
+// Grid mode
 import { DevGuiManager } from "../utils/DevGuiManager";
 import { EntityGridView2 } from "./grid/EntityGridView2";
 import { EntityManagerGrid } from "./grid/EntityManagerGrid";
 import { MergeInputMergeGridService } from "./grid/MergeInputMergeGridService";
-import { ModifierManager, ModifierType } from "./modifiers/ModifierManager";
-import { TimedRewardClaimResult, TimedRewardMilestone } from "./timedRewards/TimedRewardTypes";
 
-export type MergeMode = 'Free' | 'Grid';
+import { ModifierManager, ModifierType } from "./modifiers/ModifierManager";
+import { EnvironmentManager } from "./rooms/EnvironmentManager";
+
+export type MergeMode = "Free" | "Grid";
+
+type ActiveEntity = BlockMergeEntity | MergeEgg | null;
+
+type InputServiceDeps = {
+    gridView: EntityGridView;
+    entities: EntityManager;
+    coins: CoinManager;
+    isUiBlocked: () => boolean;
+    mergeRadiusPx: number;
+    eggHoverRadiusPx: number;
+    instantCollectCoinOnGrab: boolean;
+};
+
+const MEDIATOR_CFG = {
+    maxCoinsPerEntity: 3,
+    mergeRadiusPx: 100,
+    eggHoverRadiusPx: 60,
+
+    gridPad: 1500,
+    gridYOffset: 60,
+
+    // grid view area for tiles
+    gridTilesRectW: 700,
+    gridTilesRectH: 700,
+
+    // FTUE defaults
+    ftue: {
+        maxPairDistancePx: 260,
+        eggHoverOffsetY: -70
+    },
+
+    // timed rewards
+    timedRewardsVisibleWindow: 3,
+
+    // shop
+    freeModeExtraSlots: 15
+};
 
 export class MergeMediator {
-    // These act as the "Active" references used by the rest of the class
+    // Containers
+    private readonly tilesContainer: PIXI.Container = new PIXI.Container();
+    private readonly entityContainer: PIXI.Container = new PIXI.Container();
+
+    // Core
+    private readonly baker: GridBaker;
+    private readonly zoomService: ZoomService;
+
+    // Active (these become either Grid or Free implementations)
     private readonly gridView: EntityGridView;
     private readonly entities: EntityManager;
     private readonly inputService: MergeInputMergeService;
 
-    private readonly baker: GridBaker;
+    // Managers / Services
     private readonly coins: CoinManager;
     private readonly saver: GameSaveManager;
-    private activeEntity: BlockMergeEntity | MergeEgg | null = null;
+    private readonly rooms: RoomService;
+    private readonly ftueService: MergeFtueService;
 
-    private readonly MAX_COINS_PER_ENTITY: number = 3;
-    private readonly MERGE_RADIUS_PX: number = 100;
-
-    private autoCollectCoins: boolean = true;
+    private timedRewards!: TimedRewardService;
     private shopView!: ShopView;
     private input!: InputManager;
+    private eggGenerator!: EggGenerator;
 
-    private readonly rooms: RoomService;
-    private readonly zoomService: ZoomService;
-    private readonly eggGenerator: EggGenerator;
-    private readonly ftueService: MergeFtueService;
-    private timedRewards!: TimedRewardService;
+    // State
+    private activeEntity: ActiveEntity = null;
+    private autoCollectCoins: boolean = true;
 
-    private entityContainer: PIXI.Container = new PIXI.Container()
-    private tilesContainer: PIXI.Container = new PIXI.Container()
+    private backgroundTiles: PIXI.Container[] = [];
 
     public constructor(
         private readonly container: PIXI.Container,
@@ -73,67 +122,95 @@ export class MergeMediator {
         private readonly walkBounds: PIXI.Rectangle,
         private readonly coinEffects: CoinEffectLayer,
         private readonly hud: MergeHUD,
-        private readonly mode: MergeMode = 'Grid' // Defaulting to Grid
+        private readonly envManager: EnvironmentManager,
+        private readonly mode: MergeMode = "Grid"
     ) {
-        if (mode == "Grid") {
-            this.walkBounds.pad(1500, 1500)
-            this.walkBounds.y -= 60
-            this.inputBounds.pad(1500, 1500)
+        this.applyModeBoundsTweaks();
+
+        this.container.addChild(this.tilesContainer);
+        this.container.addChild(this.entityContainer);
+
+        ProgressionStats.instance.recordSessionStart();
+        this.initMissions();
+
+        this.gridView = this.createGridView();
+        this.entityContainer.addChild(this.gridView);
+
+        this.baker = new GridBaker(this.walkBounds, 90);
+        this.zoomService = new ZoomService(this.container);
+
+        this.entities = this.createEntityManager();
+        this.coins = this.createCoinManager();
+
+        this.inputService = this.createInputService();
+
+        this.saver = new GameSaveManager(this.entities, this.coins);
+        this.rooms = this.createRoomService();
+
+        this.ftueService = this.createFtueService();
+
+        this.wireSignals();
+
+        this.loadSave();
+        this.setupInput();
+        this.setupShop();
+        this.setupTimedRewards();
+
+        this.initEggGenerator();
+        this.bootstrapFTUE();
+
+        this.ftueService.markDirty();
+
+        this.setupDevButtons();
+    }
+
+    // ---------------------------------------------------------------------
+    // Init helpers
+    // ---------------------------------------------------------------------
+
+    private applyModeBoundsTweaks(): void {
+        if (this.mode !== "Grid") {
+            return;
         }
 
+        this.walkBounds.pad(MEDIATOR_CFG.gridPad, MEDIATOR_CFG.gridPad);
+        this.walkBounds.y -= MEDIATOR_CFG.gridYOffset;
+        this.inputBounds.pad(MEDIATOR_CFG.gridPad, MEDIATOR_CFG.gridPad);
+    }
 
-        this.container.addChild(this.tilesContainer)
-        this.container.addChild(this.entityContainer)
-        ProgressionStats.instance.recordSessionStart();
-
-
-        //console.log(this.walkBounds)
-
+    private initMissions(): void {
         MissionManager.instance.initDynamic({
             nextMissionDelaySec: 20,
             cadence: [1, 1, 1, 1, 2],
             fallbackTier: 1
         });
+    }
 
-        // 1. Initialize the correct Grid View
-
-        if (this.mode === 'Grid') {
-            const w = 700
-            const h = 700
-            let add = 0
-            DevGuiManager.instance.addButton('addSlot', () => {
-                add++
-            })
-            this.gridView = new EntityGridView2(
-                () => InGameProgress.instance.getMaxGridSlots() + add,
-                this.walkBounds,
-                new PIXI.Rectangle(-w / 2, -h / 2, w, h),
-                this.tilesContainer
-            );
-        } else {
-            this.gridView = new EntityGridView();
+    private createGridView(): EntityGridView {
+        if (this.mode !== "Grid") {
+            return new EntityGridView();
         }
-        this.entityContainer.addChild(this.gridView);
 
-        DevGuiManager.instance.addButton('addChest', () => {
-            MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.DropChest);
+        const w = MEDIATOR_CFG.gridTilesRectW;
+        const h = MEDIATOR_CFG.gridTilesRectH;
 
-            this.entities.spawnRewardContainer('test', 20, CurrencyType.MONEY)
-        })
+        // Optional dev add-on slot
+        let add = 0;
+        DevGuiManager.instance.addButton("addSlot", () => {
+            add++;
+        });
 
-        this.baker = new GridBaker(this.walkBounds, 90);
-        this.zoomService = new ZoomService(this.container);
+        return new EntityGridView2(
+            () => InGameProgress.instance.getMaxGridSlots() + add,
+            this.walkBounds,
+            new PIXI.Rectangle(-w / 2, -h / 2, w, h),
+            this.tilesContainer
+        );
+    }
 
-        // 2. Initialize the correct Entity Manager
-        if (this.mode === 'Grid') {
-            this.entities = new EntityManagerGrid(
-                this.gridView,
-                this.baker,
-                this.walkBounds,
-                () => InGameProgress.instance.getMaxGridSlots()
-            );
-        } else {
-            this.entities = new EntityManager(
+    private createEntityManager(): EntityManager {
+        if (this.mode === "Grid") {
+            return new EntityManagerGrid(
                 this.gridView,
                 this.baker,
                 this.walkBounds,
@@ -141,7 +218,16 @@ export class MergeMediator {
             );
         }
 
-        this.coins = new CoinManager(
+        return new EntityManager(
+            this.gridView,
+            this.baker,
+            this.walkBounds,
+            () => InGameProgress.instance.getMaxGridSlots()
+        );
+    }
+
+    private createCoinManager(): CoinManager {
+        return new CoinManager(
             this.gridView,
             this.walkBounds,
             this.coinEffects,
@@ -149,51 +235,45 @@ export class MergeMediator {
             (ownerId) => this.decrementPendingCoin(ownerId),
             () => this.autoCollectCoins
         );
+    }
 
-        // 3. Initialize the correct Input Service
-        const serviceDeps = {
+    private createInputService(): MergeInputMergeService {
+        const deps: InputServiceDeps = {
             gridView: this.gridView,
             entities: this.entities,
             coins: this.coins,
             isUiBlocked: () => this.hud.isAnyUiOpen,
-            mergeRadiusPx: this.MERGE_RADIUS_PX,
-            eggHoverRadiusPx: 60,
+            mergeRadiusPx: MEDIATOR_CFG.mergeRadiusPx,
+            eggHoverRadiusPx: MEDIATOR_CFG.eggHoverRadiusPx,
             instantCollectCoinOnGrab: true
         };
 
-        if (this.mode === 'Grid') {
-            this.inputService = new MergeInputMergeGridService(serviceDeps);
-        } else {
-            this.inputService = new MergeInputMergeService(serviceDeps);
+        if (this.mode === "Grid") {
+            return new MergeInputMergeGridService(deps);
         }
 
-        // Standard logic continues using the 'active' versions
-        this.saver = new GameSaveManager(this.entities, this.coins);
-        this.rooms = new RoomService({
+        return new MergeInputMergeService(deps);
+    }
+
+    private createRoomService(): RoomService {
+        return new RoomService({
             saver: this.saver,
             canSwitchNow: () => !this.activeEntity && !this.hud.isAnyUiOpen
         });
+    }
 
-        // FTUE
+    private createFtueService(): MergeFtueService {
         const hintLayer = (this.hud as any).getHintLayer ? (this.hud as any).getHintLayer() : this.hud;
-        this.ftueService = new MergeFtueService({
+
+        return new MergeFtueService({
             parentLayer: hintLayer,
             fingerTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Finger),
-            maxPairDistancePx: 260,
-            eggHoverOffsetY: -70
+            maxPairDistancePx: MEDIATOR_CFG.ftue.maxPairDistancePx,
+            eggHoverOffsetY: MEDIATOR_CFG.ftue.eggHoverOffsetY
         });
+    }
 
-        this.wireSignals();
-        this.setupGridSpawning(); // Wraps functions if in Grid mode
-        this.loadSave();
-        this.setupInput();
-        this.setupShop();
-        this.setupTimedRewards();
-
-        // Initial Start State
-        this.setUpFTUE();
-
-
+    private initEggGenerator(): void {
         this.eggGenerator = new EggGenerator(() => {
             const egg = this.entities.spawnEgg();
             if (egg) {
@@ -202,145 +282,121 @@ export class MergeMediator {
             }
             return false;
         });
-
-        this.ftueService.markDirty();
-
-        // setTimeout(() => {
-        //     this.updateDebugRect()
-        // }, 500);
     }
-    private async setUpFTUE() {
-        const snap = ProgressionStats.instance.snapshot;
-        if (snap.mergesMade < 2 && this.entities.size < 2) {
-            await PromiseUtils.await(200)
 
-            const centerX = this.walkBounds.x + this.walkBounds.width / 2
-            const centerY = this.walkBounds.y + this.walkBounds.height / 2
+    private async bootstrapFTUE(): Promise<void> {
+        const snap = ProgressionStats.instance.snapshot;
+
+        if (snap.mergesMade < 2 && this.entities.size < 2) {
+            await PromiseUtils.await(200);
+
+            const centerX = this.walkBounds.x + this.walkBounds.width / 2;
+            const centerY = this.walkBounds.y + this.walkBounds.height / 2;
+
             const entity1 = this.entities.spawnAnimal(1, new PIXI.Point(centerX + 80, centerY));
-            entity1.walkSpeed = 0
-            await PromiseUtils.await(500)
+            entity1.walkSpeed = 0;
+
+            await PromiseUtils.await(500);
+
             const entity2 = this.entities.spawnAnimal(1, new PIXI.Point(centerX - 80, centerY));
-            entity2.walkSpeed = 0
+            entity2.walkSpeed = 0;
         }
     }
-    public updateDebugRect(): void {
-        const gr = new PIXI.Graphics()
-        gr.clear();
-        gr.beginFill(0xFF0000, 0.25);
-        // Note: gridFit is likely in "world" or "parent" space
-        gr.drawRect(this.walkBounds.x, this.walkBounds.y, this.walkBounds.width, this.walkBounds.height);
-        gr.endFill();
 
-        this.container.addChild(gr)
+    // ---------------------------------------------------------------------
+    // Public API
+    // ---------------------------------------------------------------------
+
+    public updateRoom(): void {
+        this.hud.setCurrentRoom(this.rooms.activeRoomId);
+
+        const newBounds = this.envManager.updateEnvironment(this.rooms.activeRoomId);
+        this.walkBounds.copyFrom(newBounds);
     }
 
     public setupBackground(tiled: TiledContainer): void {
-        if (ExtractTiledFile.TiledData) {
-            [...tiled.children].forEach((child) => {
-                if (child instanceof PIXI.Container) {
-                    [...child.children].forEach((grandChild) => {
-                        const worldPos = grandChild.getGlobalPosition();
-                        this.gridView.addChild(grandChild);
-                        const localPos = this.gridView.toLocal(worldPos);
-                        grandChild.position.set(localPos.x, localPos.y);
-                    });
-                }
-            });
+        // Cleanup old
+        this.backgroundTiles.forEach((tile) => {
+            if (tile.parent) {
+                tile.parent.removeChild(tile);
+            }
+            tile.destroy();
+        });
+        this.backgroundTiles = [];
+
+        if (!tiled) {
+            return;
         }
+
+        // Copy tiles into gridView space
+        [...tiled.children].forEach((layer) => {
+            if (!(layer instanceof PIXI.Container)) {
+                return;
+            }
+
+            [...layer.children].forEach((tile) => {
+                const posX = layer.x + tile.x;
+                const posY = layer.y + tile.y;
+
+                this.gridView.addChild(tile);
+                this.backgroundTiles.push(tile as any);
+
+                tile.position.set(posX, posY);
+            });
+        });
     }
 
-    private setupGridSpawning(): void {
-        if (this.mode !== 'Grid') return;
-
+    public update(delta: number): void {
+        this.updateCore(delta);
+        this.updateGameplay(delta);
+        this.updateCoinGeneration(delta);
+        this.updateUiAndFtue(delta);
+        this.updateSaving(delta);
     }
+
+    // ---------------------------------------------------------------------
+    // Wiring / Setup
+    // ---------------------------------------------------------------------
 
     private wireSignals(): void {
         this.entities.onDirty.add(() => this.saver.markDirty());
         this.coins.onDirty.add(() => this.saver.markDirty());
-        this.inputService.onActiveChanged.add((active: any) => this.activeEntity = active);
+
+        this.inputService.onActiveChanged.add((active: any) => {
+            this.activeEntity = active;
+        });
+
         this.inputService.onDirty.add(() => this.ftueService.markDirty());
 
+        this.rooms.onRoomChanged.add((roomId: RoomId) => {
+            this.onRoomChanged(roomId);
+        });
+
+        this.hud.onRoomSelected.add((roomId: RoomId) => {
+            this.rooms.requestSwitch(roomId);
+        });
+
         this.inputService.OnRewardOpen.add((reward) => {
-            const data = reward.logic.data
-            const view = reward.view as EntityView
-
-            if (data.rewardType === CurrencyType.MONEY || data.rewardType === CurrencyType.GEMS) {
-
-                // 1. Get Start Position (Global to Local of Effect Layer)
-                const globalPos = view.toGlobal(new PIXI.Point(0, 0));
-                const startPos = this.coinEffects.toLocal(globalPos);
-
-                // 2. Get Target Position (HUD target Global to Local)
-                const hudGlobal = this.hud.getCurrencyTargetGlobalPos(data.rewardType);
-                const targetPos = this.coinEffects.toLocal(hudGlobal);
-
-                // 3. Fire!
-                this.coinEffects.popAndFlyToTarget(
-                    startPos.x + view.coinOffset.x,
-                    startPos.y + view.coinOffset.y,
-                    targetPos.x,
-                    targetPos.y,
-                    MergeAssets.Textures.Icons.Coin, // Add this helper to PrizeViewContainer
-                    undefined,
-                    () => {
-                        // This internal callback triggers when the coin hits the HUD
-                        //console.log(`${prize.type} hit the HUD!`);
-                    }
-                );
-            }
-            //this.coi
+            this.onRewardOpened(reward);
         });
 
         this.entities.onEntitySpawned.add((view: any) => {
-            this.ftueService.onEntitySpawned(view);
-            if (view instanceof MergeEgg) ProgressionStats.instance.recordEggSpawned(1);
-            else if (view instanceof BlockMergeEntity) ProgressionStats.instance.recordAnimalSpawned(1);
+            this.onEntitySpawned(view);
         });
 
-        this.entities.onEntityRemoved.add((view: any) => this.ftueService.onEntityRemoved(view));
+        this.entities.onEntityRemoved.add((view: any) => {
+            this.ftueService.onEntityRemoved(view);
+        });
+
         this.entities.onEggHatched.add((egg: any, spawned: any) => {
-            ProgressionStats.instance.recordEggHatched(1);
-            MissionManager.instance.reportEggHatched(1);
-            this.ftueService.onEggHatched(egg, spawned);
+            this.onEggHatched(egg, spawned);
         });
 
         this.inputService.onMergePerformed.add((resultLevel: number) => {
-            if (ProgressionStats.instance.snapshot.mergesMade === 1) {
-
-                const centerX = this.walkBounds.x + this.walkBounds.width / 2
-                const centerY = this.walkBounds.y + this.walkBounds.height / 2
-                this.entities.spawnAnimal(resultLevel, new PIXI.Point(centerX, centerY - 150));
-                this.ftueService.markDirty();
-            }
+            this.onMergePerformed(resultLevel);
         });
 
-        let ftueStarted = false;
-        this.ftueService.onStarted.add(() => {
-            ftueStarted = true;
-            this.zoomService.setZoom(1.1, 0.6)
-        });
-        this.ftueService.onCompleted.add(() => {
-            this.zoomService.setZoom(1.0, 0.8)
-
-            if (ftueStarted) {
-                this.eggGenerator.progress = EggGenerator.MAX_TIME * 0.85;
-                this.entities.spawnRewardContainer(Math.random() * 100 + 'ft', 50, CurrencyType.MONEY)
-            }
-        });
-
-        // setTimeout(() => {
-
-        //     this.zoomService.setZoom(0.8, 0.8)
-        // }, 10);
-
-        this.hud.onRoomSelected.add((roomId: RoomId) => this.rooms.requestSwitch(roomId));
-        this.rooms.onRoomChanged.add((roomId: RoomId) => {
-            this.hud.setCurrentRoom(roomId);
-            this.inputService.clearState();
-            this.ftueService.markDirty();
-        });
-
-
+        this.wireFtueZoomCallbacks();
     }
 
     private setupInput(): void {
@@ -357,23 +413,33 @@ export class MergeMediator {
     }
 
     private setupShop(): void {
-        const maxGridAdd = this.mode === "Free" ? 15 : 0
+        const maxGridAdd = this.mode === "Free" ? MEDIATOR_CFG.freeModeExtraSlots : 0;
+
         this.shopView = this.hud.shopView;
-        this.shopView.setBoardCallback(() => this.entities.size >= InGameProgress.instance.getMaxGridSlots() + maxGridAdd);
+        this.shopView.setBoardCallback(() => {
+            return this.entities.size >= InGameProgress.instance.getMaxGridSlots() + maxGridAdd;
+        });
+
         this.shopView.onBuyConfirmed.add((itemId: string) => {
             const level = ShopManager.instance.tryPurchase(itemId);
-            if (level !== null) {
-                if (this.entities.spawnEgg(undefined, { level }, true)) {
-                    this.ftueService.markDirty();
-                    this.shopView.refreshStates();
-                }
+            if (level === null) {
+                return;
+            }
+
+            if (this.entities.spawnEgg(undefined, { level }, true)) {
+                this.ftueService.markDirty();
+                this.shopView.refreshStates();
             }
         });
-        InGameEconomy.instance.onCurrencyChanged.add(() => this.shopView.refreshStates());
+
+        InGameEconomy.instance.onCurrencyChanged.add(() => {
+            this.shopView.refreshStates();
+        });
     }
 
     private setupTimedRewards(): void {
         const registry = TimedRewardRegistry.createDefault5m();
+
         this.timedRewards = new TimedRewardService({
             registry,
             context: {
@@ -381,44 +447,219 @@ export class MergeMediator {
                 addMoney: (amt) => InGameEconomy.instance.add(CurrencyType.MONEY, amt),
                 getGems: () => InGameEconomy.instance.getAmount(CurrencyType.GEMS),
                 addGems: (amt) => InGameEconomy.instance.add(CurrencyType.GEMS, amt),
-                getHighestEntityLevel: () => {
-                    let highest = 1;
-                    this.entities.forEach((logic) => {
-                        if (logic.data.type === "animal") highest = Math.max(highest, logic.data.level);
-                    });
-                    return highest;
-                },
+                getHighestEntityLevel: () => this.getHighestAnimalLevel(),
                 spawnEntityAtLevel: (level) => !!this.entities.spawnEgg(undefined, { level }, true)
             },
-            visibleWindowSize: 3
+            visibleWindowSize: MEDIATOR_CFG.timedRewardsVisibleWindow
         });
+
         this.timedRewards.autoClaim = false;
+
         this.hud.setTimeRewards(this.timedRewards);
         this.hud.onSpeedUpRequested = () => {
             this.eggGenerator.activateSpeedUp(100);
-            MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.Hold)
-        }
+            MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.Hold);
+        };
 
         this.timedRewards.onRewardClaimed.add((data: TimedRewardClaimResult, milestone: TimedRewardMilestone) => {
-            const id = Math.random() * 10000 + '_chest' + Math.random() * 10000
-            MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.DropChest);
-
-            if (data.moneyAdded) {
-                this.entities.spawnRewardContainer(id, data.moneyAdded, CurrencyType.MONEY)
-                //this.notifications.toastPrize({ title: "+" + NumberConverter.format(data.moneyAdded), subtitle: "", iconTexture: milestone.definition.icon });
-            }
-            if (data.gemsAdded) {
-                //this.notifications.toastPrize({ title: "+" + NumberConverter.format(data.gemsAdded), subtitle: "", iconTexture: milestone.definition.icon });
-            }
-            if (data.spawnedEntityLevel) {
-                //this.notifications.toastPrize({ title: "Surprise Egg!", subtitle: "New Egg Dropped!", iconTexture: milestone.definition.icon });
-            }
-        })
+            this.onTimedRewardClaimed(data, milestone);
+        });
     }
 
     private loadSave(): void {
         this.rooms.boot();
     }
+
+    // ---------------------------------------------------------------------
+    // Update slices
+    // ---------------------------------------------------------------------
+
+    private updateCore(delta: number): void {
+        ProgressionStats.instance.recordPlaySeconds(delta);
+        ProgressionStats.instance.update(delta);
+
+        this.inputService.update(delta);
+        this.zoomService.update(delta);
+        this.entities.update(delta);
+
+        if (this.mode === "Grid") {
+            this.applyGridTargetZoom();
+        }
+
+        this.gridView.update(delta, this.walkBounds);
+    }
+
+    private updateGameplay(delta: number): void {
+        if (!this.ftueService.ftueEnabled) {
+            MissionManager.instance.update(delta);
+            this.timedRewards.update(delta);
+        }
+
+        const inFocus = !this.hud.isAnyUiOpen;
+        this.ftueService.setFocus(inFocus);
+
+        if (!inFocus) {
+            return;
+        }
+
+        const maxSlots = InGameProgress.instance.getMaxGridSlots();
+        const isFull = this.entities.size >= maxSlots;
+
+        if (!isFull && this.ftueService.isCompleted) {
+            const speedMul = ModifierManager.instance.getNormalizedValue(ModifierType.SpawnSpeed);
+            this.eggGenerator.update(delta * speedMul);
+            this.hud.updateProgress(this.eggGenerator.ratio);
+        } else {
+            this.hud.updateProgress(1);
+        }
+
+        this.hud.updateEntityCount(this.entities.size, maxSlots);
+        this.hud.setGeneratorFullState(isFull);
+    }
+
+    private updateCoinGeneration(delta: number): void {
+        this.entities.forEach((logic, view) => {
+            if (!logic.generator || logic.data.type !== "animal") {
+                return;
+            }
+
+            if (logic.data.pendingCoins >= MEDIATOR_CFG.maxCoinsPerEntity) {
+                return;
+            }
+
+            const genMul = ModifierManager.instance.getNormalizedValue(ModifierType.SpeedGeneration);
+
+            if (logic.generator.update(delta * genMul)) {
+                if (!this.autoCollectCoins) {
+                    logic.data.pendingCoins++;
+                }
+
+                const animal = StaticData.getAnimalData(logic.data.level);
+                const offset = (view as BaseMergeEntity)?.coinOffset ?? new PIXI.Point();
+                const passiveMul = ModifierManager.instance.getNormalizedValue(ModifierType.PassiveIncome);
+
+                this.coins.dropCoin(
+                    (view as any).x + offset.x,
+                    (view as any).y + offset.y,
+                    Math.ceil(animal.coinValue * passiveMul),
+                    logic.data.id,
+                    false
+                );
+            }
+        });
+    }
+
+    private updateUiAndFtue(_delta: number): void {
+        this.hud.setFtueState(this.ftueService.isCompleted);
+        this.ftueService.update(_delta);
+    }
+
+    private updateSaving(delta: number): void {
+        this.saver.update(delta);
+    }
+
+    // ---------------------------------------------------------------------
+    // Event handlers
+    // ---------------------------------------------------------------------
+
+    private onRoomChanged(roomId: RoomId): void {
+        this.hud.setCurrentRoom(roomId);
+        this.inputService.clearState();
+
+        const newBounds = this.envManager.updateEnvironment(roomId);
+        this.walkBounds.copyFrom(newBounds);
+
+        this.ftueService.markDirty();
+    }
+
+    private onRewardOpened(reward: any): void {
+        const data = reward.logic.data;
+        const view = reward.view as any;
+
+        if (data.rewardType !== CurrencyType.MONEY && data.rewardType !== CurrencyType.GEMS) {
+            return;
+        }
+
+        const globalPos = view.toGlobal(new PIXI.Point(0, 0));
+        const startPos = this.coinEffects.toLocal(globalPos);
+
+        const hudGlobal = this.hud.getCurrencyTargetGlobalPos(data.rewardType);
+        const targetPos = this.coinEffects.toLocal(hudGlobal);
+
+        this.coinEffects.popAndFlyToTarget(
+            startPos.x + view.coinOffset.x,
+            startPos.y + view.coinOffset.y,
+            targetPos.x,
+            targetPos.y,
+            MergeAssets.Textures.Icons.Coin
+        );
+    }
+
+    private onEntitySpawned(view: any): void {
+        this.ftueService.onEntitySpawned(view);
+
+        if (view instanceof MergeEgg) {
+            ProgressionStats.instance.recordEggSpawned(1);
+        } else if (view instanceof BlockMergeEntity) {
+            ProgressionStats.instance.recordAnimalSpawned(1);
+        }
+    }
+
+    private onEggHatched(egg: any, spawned: any): void {
+        ProgressionStats.instance.recordEggHatched(1);
+        MissionManager.instance.reportEggHatched(1);
+        this.ftueService.onEggHatched(egg, spawned);
+    }
+
+    private onMergePerformed(resultLevel: number): void {
+        if (ProgressionStats.instance.snapshot.mergesMade === 1) {
+            const centerX = this.walkBounds.x + this.walkBounds.width / 2;
+            const centerY = this.walkBounds.y + this.walkBounds.height / 2;
+
+            this.entities.spawnAnimal(resultLevel, new PIXI.Point(centerX, centerY - 150));
+            this.ftueService.markDirty();
+        }
+    }
+
+    private onTimedRewardClaimed(data: TimedRewardClaimResult, _milestone: TimedRewardMilestone): void {
+        const id = `${Math.random() * 10000}_chest_${Math.random() * 10000}`;
+
+        MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.DropChest);
+
+        if (data.moneyAdded) {
+            this.entities.spawnRewardContainer(id, data.moneyAdded, CurrencyType.MONEY);
+        }
+
+        if (data.gemsAdded) {
+            // optional: spawn gems reward container when you add a view for it
+        }
+
+        if (data.spawnedEntityLevel) {
+            // optional: toast / animation
+        }
+    }
+
+    private wireFtueZoomCallbacks(): void {
+        let ftueStarted = false;
+
+        this.ftueService.onStarted.add(() => {
+            ftueStarted = true;
+            this.zoomService.setZoom(1.1, 0.6);
+        });
+
+        this.ftueService.onCompleted.add(() => {
+            this.zoomService.setZoom(1.0, 0.8);
+
+            if (ftueStarted) {
+                this.eggGenerator.progress = EggGenerator.MAX_TIME * 0.85;
+                this.entities.spawnRewardContainer(`${Math.random() * 100}_ft`, 50, CurrencyType.MONEY);
+            }
+        });
+    }
+
+    // ---------------------------------------------------------------------
+    // Small utilities
+    // ---------------------------------------------------------------------
 
     private decrementPendingCoin(ownerId: string): void {
         this.entities.forEach((logic) => {
@@ -428,110 +669,45 @@ export class MergeMediator {
         });
     }
 
-    public update(delta: number): void {
-        ProgressionStats.instance.recordPlaySeconds(delta);
-        ProgressionStats.instance.update(delta);
-        this.inputService.update(delta);
-        this.zoomService.update(delta);
-        this.entities.update(delta);
+    private getHighestAnimalLevel(): number {
+        let highest = 1;
 
-
-
-        if (this.mode === 'Grid') {
-            this.updateDynamicZoom();
-            const view = this.gridView as EntityGridView2;
-
-            this.zoomService.setZoom(view.targetScale);
-        }
-
-        if (!this.ftueService.ftueEnabled) {
-            MissionManager.instance.update(delta);
-            this.timedRewards.update(delta);
-        }
-
-        this.hud.setFtueState(this.ftueService.isCompleted);
-        const inFocus = !this.hud.isAnyUiOpen;
-        this.ftueService.setFocus(inFocus);
-
-        if (inFocus) {
-            const max = InGameProgress.instance.getMaxGridSlots();
-            const isFull = this.entities.size >= max;
-
-            if (!isFull && this.ftueService.isCompleted) {
-                this.eggGenerator.update(delta * ModifierManager.instance.getNormalizedValue(ModifierType.SpawnSpeed));
-                this.hud.updateProgress(this.eggGenerator.ratio);
-            } else {
-                this.hud.updateProgress(1);
-            }
-
-            this.hud.updateEntityCount(this.entities.size, max);
-            this.hud.setGeneratorFullState(isFull);
-        }
-
-        this.gridView.update(delta, this.walkBounds);
-
-        // Coin Gen
-        this.entities.forEach((logic, view) => {
-            if (!logic.generator || logic.data.type !== "animal") return;
-            if (logic.data.pendingCoins >= this.MAX_COINS_PER_ENTITY) return;
-
-            if (logic.generator.update(delta * ModifierManager.instance.getNormalizedValue(ModifierType.SpeedGeneration))) {
-
-                if (!this.autoCollectCoins) {
-                    logic.data.pendingCoins++;
-                }
-                const config = StaticData.getAnimalData(logic.data.level);
-                const offset = (view as BaseMergeEntity)?.coinOffset ?? new PIXI.Point();
-
-                this.coins.dropCoin(
-                    (view as any).x + offset.x,
-                    (view as any).y + offset.y,
-                    Math.ceil(config.coinValue * ModifierManager.instance.getNormalizedValue(ModifierType.PassiveIncome)),
-                    logic.data.id,
-                    false
-                );
+        this.entities.forEach((logic) => {
+            if (logic.data.type === "animal") {
+                highest = Math.max(highest, logic.data.level);
             }
         });
 
-        this.ftueService.update(delta);
-        this.saver.update(delta);
+        return highest;
     }
 
-    private updateDynamicZoom(): void {
-        const view = this.gridView as EntityGridView2;
-        if (!view.tiles || view.tiles.length === 0) return;
-
-        // 1. Get the current bounds of the tiles
-        // We want to know how tall the grid actually is
-        let minY = Infinity;
-        let maxY = -Infinity;
-
-        view.tiles.forEach(tile => {
-            minY = Math.min(minY, tile.y);
-            maxY = Math.max(maxY, tile.y);
-        });
-
-        const gridHeight = (maxY - minY) + 200; // Total height + some padding
-
-        // 2. Define our "Ideal" height (the height where zoom should be 1.0)
-        // You can use inputBounds.height or a fixed value like 800
-        const idealHeight = 900;
-
-        // 3. Calculate necessary scale
-        let calculatedScale = idealHeight / gridHeight;
-
-        // 4. Clamp the scale
-        // Min 0.5 (very zoomed out), Max 1.0 (never zoom in more than original)
-        // Based on your requirement: "When I have all pieces, the zoom is 0.8"
-        const minZoom = 0.8;
-        const maxZoom = 1.0;
-
-        const finalTarget = Math.max(minZoom, Math.min(maxZoom, calculatedScale));
-
-        // 5. Apply to service
-        // Use a longer duration (1.5s) so the camera move is smooth as slots unlock
-        if (Math.abs(this.zoomService.target - finalTarget) > 0.05) {
-            //this.zoomService.setZoom(finalTarget, 1.5);
+    private applyGridTargetZoom(): void {
+        const view = this.gridView as any as EntityGridView2;
+        if (!view || typeof view.targetScale !== "number") {
+            return;
         }
+
+        this.zoomService.setZoom(view.targetScale);
+    }
+
+    // ---------------------------------------------------------------------
+    // Dev / Debug (optional)
+    // ---------------------------------------------------------------------
+
+    private setupDevButtons(): void {
+        DevGuiManager.instance.addButton("addChest", () => {
+            MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.DropChest);
+            this.entities.spawnRewardContainer("test", 20, CurrencyType.MONEY);
+        });
+    }
+
+    public updateDebugRect(): void {
+        const gr = new PIXI.Graphics();
+        gr.clear();
+        gr.beginFill(0xff0000, 0.25);
+        gr.drawRect(this.walkBounds.x, this.walkBounds.y, this.walkBounds.width, this.walkBounds.height);
+        gr.endFill();
+
+        this.container.addChild(gr);
     }
 }
