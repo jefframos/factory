@@ -86,7 +86,7 @@ export interface IFarmSaveData {
 
 export default class GameStorage {
     private static _instance: GameStorage;
-    public static readonly STORAGE_KEY: string = "farm_game_state_v7";
+    public static readonly STORAGE_KEY: string = "farm_game_state_v8";
 
     // Internal cache to ensure all systems share the same object in memory
     private _cachedState: IFarmSaveData | null = null;
@@ -222,5 +222,51 @@ export default class GameStorage {
         if (reload) {
             window.location.reload();
         }
+    }
+
+    /**
+ * Returns the number of entities currently saved in a specific room.
+ * @param roomId The ID of the room (e.g., "room_0", "room_1")
+ */
+    public getRoomEntityCount(roomId: string): number {
+        const state = this.getFullState();
+
+        // 1. Check if the rooms record exists
+        if (!state.rooms) {
+            return 0;
+        }
+
+        // 2. Look up the specific room data
+        const roomData = state.rooms[roomId];
+
+        // 3. Return entity count if room and entities array exist
+        return roomData?.entities?.length ?? 0;
+    }
+
+    /**
+ * Filters out "animal" types and returns the count and highest level
+ * found among the remaining entities in a specific room.
+ */
+    public getRoomAnimalStats(roomId: string): { count: number, highestLevel: number } {
+        const state = this.getFullState();
+
+        // 1. Safety check for room data
+        const roomData = state.rooms?.[roomId];
+        if (!roomData || !roomData.entities) {
+            return { count: 0, highestLevel: 0 };
+        }
+
+        // 2. Filter and calculate in one pass
+        // We only want entities where type IS "animal" (based on your request to exclude non-animals)
+        // If you meant you want to count everything EXCEPT animals, change to !== "animal"
+        return roomData.entities.reduce((stats, e) => {
+            if (e.type === "animal") {
+                stats.count++;
+                if (e.level > stats.highestLevel) {
+                    stats.highestLevel = e.level;
+                }
+            }
+            return stats;
+        }, { count: 0, highestLevel: 0 });
     }
 }

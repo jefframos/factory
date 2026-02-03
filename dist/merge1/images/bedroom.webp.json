@@ -1,0 +1,156 @@
+{
+  "frames": {
+    "toy-table": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 373,
+        "h": 344
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 373,
+        "h": 344
+      },
+      "sourceSize": {
+        "w": 373,
+        "h": 344
+      }
+    },
+    "toy-duck": {
+      "frame": {
+        "x": 2,
+        "y": 348,
+        "w": 51,
+        "h": 50
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 51,
+        "h": 50
+      },
+      "sourceSize": {
+        "w": 51,
+        "h": 50
+      }
+    },
+    "toy-ball": {
+      "frame": {
+        "x": 377,
+        "y": 2,
+        "w": 74,
+        "h": 74
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 74,
+        "h": 74
+      },
+      "sourceSize": {
+        "w": 74,
+        "h": 74
+      }
+    },
+    "toy-ball-2": {
+      "frame": {
+        "x": 55,
+        "y": 348,
+        "w": 39,
+        "h": 38
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 39,
+        "h": 38
+      },
+      "sourceSize": {
+        "w": 39,
+        "h": 38
+      }
+    },
+    "star-cushion": {
+      "frame": {
+        "x": 2,
+        "y": 400,
+        "w": 128,
+        "h": 77
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 77
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 77
+      }
+    },
+    "kids-carpet": {
+      "frame": {
+        "x": 453,
+        "y": 2,
+        "w": 546,
+        "h": 275
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 546,
+        "h": 275
+      },
+      "sourceSize": {
+        "w": 546,
+        "h": 275
+      }
+    },
+    "bedrromBg": {
+      "frame": {
+        "x": 2,
+        "y": 550,
+        "w": 2056,
+        "h": 1500
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 2056,
+        "h": 1500
+      },
+      "sourceSize": {
+        "w": 2056,
+        "h": 1500
+      }
+    }
+  },
+  "meta": {
+    "app": "http://github.com/pixijs/assetpack",
+    "version": "1.0",
+    "image": "bedroom.webp",
+    "format": "RGBA8888",
+    "size": {
+      "w": 1504,
+      "h": 2608
+    },
+    "scale": 1,
+    "related_multi_packs": []
+  }
+}

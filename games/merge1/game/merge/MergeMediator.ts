@@ -22,7 +22,7 @@ import { GameSaveManager } from "./manager/GameSaveManager";
 
 import MergeAssets from "./MergeAssets";
 import { MissionManager } from "./missions/MissionManager";
-import { RoomId } from "./rooms/RoomRegistry";
+import { RoomId, RoomRegistry } from "./rooms/RoomRegistry";
 import { RoomService } from "./rooms/RoomService";
 
 import { MergeFtueService } from "./services/MergeFtueService";
@@ -45,6 +45,7 @@ import { MergeInputMergeGridService } from "./grid/MergeInputMergeGridService";
 
 import { ModifierManager, ModifierType } from "./modifiers/ModifierManager";
 import { EnvironmentManager } from "./rooms/EnvironmentManager";
+import { ProgressionType } from "./storage/GameStorage";
 
 export type MergeMode = "Free" | "Grid";
 
@@ -362,6 +363,8 @@ export class MergeMediator {
         this.entities.onDirty.add(() => this.saver.markDirty());
         this.coins.onDirty.add(() => this.saver.markDirty());
 
+        InGameProgress.instance.onLevelUp.add(this.handleLevelUp, this);
+
         this.inputService.onActiveChanged.add((active: any) => {
             this.activeEntity = active;
         });
@@ -572,6 +575,54 @@ export class MergeMediator {
         this.ftueService.markDirty();
     }
 
+    private handleLevelUp(type: string, newLevel: number): void {
+        if (type !== ProgressionType.MAIN) {
+            return;
+        }
+
+        // 1. Identify newly unlocked rooms
+        // We check the registry against the level the player just left (newLevel - 1)
+        const previousLevel = newLevel - 1;
+        const allRoomIds: RoomId[] = ["room_0", "room_1", "room_2"]; // Add your Room IDs here or get from RoomRegistry
+
+        const newlyUnlockedRooms = allRoomIds.filter(id => {
+            const wasLocked = !RoomRegistry.isUnlocked(id, previousLevel);
+            const isUnlocked = RoomRegistry.isUnlocked(id, newLevel);
+            return wasLocked && isUnlocked;
+        });
+
+        // 2. Play Effects
+        //this.hud.playLevelUpEffect(newLevel);
+
+        // // 3. Show Notification
+        // this.notifications.toastPrize({
+        //     title: "Level Up!",
+        //     subtitle: "Level " + newLevel,
+        //     iconTexture: MergeAssets.Textures.Icons.BadgeMain
+        // });
+
+        // 4. Handle Room Unlocks
+        if (newlyUnlockedRooms.length > 0) {
+            this.onRoomsUnlocked(newlyUnlockedRooms);
+        }
+    }
+
+    private onRoomsUnlocked(roomIds: RoomId[]): void {
+        console.log("New rooms available:", roomIds);
+
+        // Refresh the HUD so the lock icons disappear or the "New" badge appears
+        //this.hud.refreshRoomList(); 
+
+        // Optional: Show a specific toast for the room
+        // roomIds.forEach(id => {
+        //     this.notifications.toastPrize({
+        //         title: "New Room Unlocked!",
+        //         subtitle: "You can now enter " + id,
+        //         iconTexture: MergeAssets.Textures.Icons.Door // Use your room icon
+        //     });
+        // });
+    }
+
     private onRewardOpened(reward: any): void {
         const data = reward.logic.data;
         const view = reward.view as any;
@@ -700,6 +751,10 @@ export class MergeMediator {
         DevGuiManager.instance.addButton("addChest", () => {
             MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.DropChest);
             this.entities.spawnRewardContainer("test", 20, CurrencyType.MONEY);
+        });
+
+        DevGuiManager.instance.addButton("addXp", () => {
+            InGameProgress.instance.addXP(10)
         });
     }
 

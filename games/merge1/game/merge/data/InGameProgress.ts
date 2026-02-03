@@ -8,6 +8,7 @@ export class InGameProgress {
     public readonly onProgressChanged: Signal = new Signal();
     // Dispatches: (type, newLevel)
     public readonly onLevelUp: Signal = new Signal();
+    public readonly onXpChange: Signal = new Signal();
     // Dispatches: (newMaxSlots)
     public readonly onMaxEntitiesChanged: Signal = new Signal();
     public readonly onMaxEntitiesShopChanged: Signal = new Signal();
@@ -72,6 +73,7 @@ export class InGameProgress {
             required = this.getXPRequiredForNextLevel(data.level);
         }
 
+        this.onXpChange.dispatch();
         this.sync(type);
     }
 

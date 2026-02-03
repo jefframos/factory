@@ -33,6 +33,7 @@ import ShopView from "../shop/ShopView";
 import GeneratorHUD from "./GeneratorHUD";
 import { MissionHUD } from "./MissionHUD";
 import { ProgressHUD } from "./ProgressHUD";
+import { RoomTransition } from "./RoomTransition";
 
 type UiId = "shop" | "collection";
 
@@ -52,8 +53,8 @@ export default class MergeHUD extends PIXI.Container {
     private readonly topLayer: PIXI.Container = new PIXI.Container();
     private readonly hintLayer: PIXI.Container = new PIXI.Container();
     private readonly notificationLayer: PIXI.Container = new PIXI.Container();
+    private readonly roomTransition: RoomTransition = new RoomTransition(PIXI.Texture.from("YourPattern"));
 
-    // -------------------------
     // Notifications
     // -------------------------
     public notifications!: NotificationCenter;
@@ -80,7 +81,7 @@ export default class MergeHUD extends PIXI.Container {
     public readonly shopView: ShopView = new ShopView((() => true));
     public readonly missionHUD: MissionHUD = new MissionHUD(320, 80);
 
-    private readonly roomSelector: RoomSelector = new RoomSelector(["room_0", "room_1"]);
+    private readonly roomSelector: RoomSelector = new RoomSelector(["room_0", "room_1", "room_2"]);
     private spinningWheel!: SpinningWheel;
 
     private readonly soundToggleButton: SoundToggleButton = new SoundToggleButton(
@@ -142,8 +143,9 @@ export default class MergeHUD extends PIXI.Container {
         this.addChild(this.effectsLayer);
         this.addChild(this.hintLayer);
         this.addChild(this.modalLayer);
-        this.addChild(this.topLayer);
         this.addChild(this.notificationLayer);
+        this.addChild(this.topLayer);
+        this.addChild(this.roomTransition);
     }
 
     private initShop(): void {
@@ -282,13 +284,17 @@ export default class MergeHUD extends PIXI.Container {
     }
 
     private initRoomSelector(): void {
-        this.roomSelector.onRoomSelected.add((id: RoomId) => this.onRoomSelected.dispatch(id));
+        this.roomSelector.onRoomSelected.add(async (id: RoomId) => {
+            // 1. Wait for the curtain to fully cover the screen
+            await this.roomTransition.start();
 
-        if (Game.debugParams.r) {
+            // 2. Change the room while the screen is black/covered
+            this.onRoomSelected.dispatch(id);
 
-            this.hudLayer.addChild(this.roomSelector);
-        }
-        //this.hudLayer.addChild(this.roomSelector);
+            this.roomTransition.exit()
+        });
+
+        this.hudLayer.addChild(this.roomSelector);
     }
 
     private initDebugButtons(): void {
@@ -447,6 +453,7 @@ export default class MergeHUD extends PIXI.Container {
         this.shopButton.visible = ftueEnabled;
         this.collectionButton.visible = ftueEnabled;
         this.generator.visible = ftueEnabled;
+        this.roomSelector.visible = ftueEnabled;
     }
 
     public setTimeRewards(timedRewards: TimedRewardService): void {
@@ -489,6 +496,7 @@ export default class MergeHUD extends PIXI.Container {
     public update(delta: number): void {
         this.notifications.update(delta);
         this.newDiscovery.update(delta);
+        this.roomTransition.update(delta);
     }
 
     public playNewDiscovery(newLevel: number): void {

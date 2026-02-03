@@ -370,6 +370,7 @@ export default class MergeAssets {
             Back: "Icon_Back",
             Check: "Icon_Check03_s",
             Lock: "Icon_Lock01_s",
+            Close: "Icon_Close02",
             Finger: "handHud",
             Speed: "ResourceBar_Single_Icon_Energy",
             // Check: "Toggle_Check_Single_Icon",
@@ -395,6 +396,7 @@ export default class MergeAssets {
             MissionBonus: "missionUp",
         },
         UI: {
+            MapPanel: "backMap",
             CollectionPanel: "Button01_s_Purple",
             BgLegendary: "Button01_s_Yellow",
             BgEpic: "Button01_s_PInk",

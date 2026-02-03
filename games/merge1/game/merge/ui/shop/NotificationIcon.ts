@@ -24,7 +24,7 @@ export class NotificationIcon extends PIXI.Container {
         // If a signal is provided, bind it
         if (changeSignal) {
             changeSignal.add((isAvailable: boolean) => {
-                this.visible = isAvailable;
+                this.visible = isAvailable || this._checkCondition();
                 if (isAvailable) this._elapsedTime = 0;
             });
         }

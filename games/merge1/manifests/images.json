@@ -26,6 +26,14 @@
           "src": [
             "ui.webp.json"
           ]
+        },
+        {
+          "alias": [
+            "bedroom"
+          ],
+          "src": [
+            "bedroom.webp.json"
+          ]
         }
       ]
     }

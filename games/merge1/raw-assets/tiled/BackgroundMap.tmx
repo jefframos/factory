@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="17" nextobjectid="185">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="left-up" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="20" nextobjectid="194">
  <editorsettings>
   <export target="../json/tiled.json" format="json"/>
  </editorsettings>
- <tileset firstgid="1" name="Background" tilewidth="2115" tileheight="1500" tilecount="37" columns="0">
+ <tileset firstgid="1" name="Background" tilewidth="2115" tileheight="1500" tilecount="43" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="6">
    <image source="images/ui/Image_Effect_Rotate.png" width="270" height="275"/>
@@ -37,9 +37,6 @@
   </tile>
   <tile id="17">
    <image source="images/garden/plant-3.png" width="95" height="160"/>
-  </tile>
-  <tile id="18">
-   <image source="images/garden/tower-toy.png" width="149" height="245"/>
   </tile>
   <tile id="19">
    <image source="images/garden/toy.png" width="58" height="57"/>
@@ -116,8 +113,29 @@
   <tile id="45">
    <image source="images/garden/fish-1.png" width="173" height="106"/>
   </tile>
+  <tile id="46">
+   <image source="images/bedroom/bedrromBg.png" width="2056" height="1500"/>
+  </tile>
+  <tile id="47">
+   <image source="images/bedroom/star-cushion.png" width="128" height="77"/>
+  </tile>
+  <tile id="48">
+   <image source="images/bedroom/toy-ball.png" width="74" height="74"/>
+  </tile>
+  <tile id="49">
+   <image source="images/bedroom/toy-ball-2.png" width="39" height="38"/>
+  </tile>
+  <tile id="50">
+   <image source="images/bedroom/toy-duck.png" width="51" height="50"/>
+  </tile>
+  <tile id="51">
+   <image source="images/bedroom/toy-table.png" width="373" height="344"/>
+  </tile>
+  <tile id="53">
+   <image source="images/bedroom/kids-carpet.png" width="546" height="275"/>
+  </tile>
  </tileset>
- <tileset firstgid="48" name="UI" tilewidth="609" tileheight="601" tilecount="139" columns="0">
+ <tileset firstgid="55" name="UI" tilewidth="415" tileheight="288" tilecount="137" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="20">
    <properties>
@@ -461,9 +479,6 @@
   <tile id="80">
    <image source="images/ui/particle.png" width="24" height="24"/>
   </tile>
-  <tile id="81">
-   <image source="images/ui/Popup06_Pattern.png" width="609" height="601"/>
-  </tile>
   <tile id="82">
    <properties>
     <property name="nineSliced" type="int" value="10"/>
@@ -481,9 +496,6 @@
     <property name="nineSliced" type="int" value="10"/>
    </properties>
    <image source="images/ui/ResourceBar_Single_Btn_Yellow1.png" width="60" height="62"/>
-  </tile>
-  <tile id="85">
-   <image source="images/ui/ResourceBar_Single_Icon_Coin.png" width="104" height="103"/>
   </tile>
   <tile id="86">
    <image source="images/ui/ResourceBar_Single_Icon_Energy.png" width="57" height="79"/>
@@ -723,19 +735,32 @@
   <object id="160" gid="32" x="548.422" y="180.83" width="232.622" height="547.739"/>
   <object id="162" gid="32" x="952.422" y="206.83" width="232.622" height="547.739"/>
  </objectgroup>
- <objectgroup id="14" name="Floor-Garden">
+ <objectgroup id="14" name="Floor-Garden" visible="0">
   <object id="173" gid="43" x="-682.545" y="1096.33" width="2056" height="1500"/>
  </objectgroup>
- <objectgroup id="16" name="Background-Garden">
+ <objectgroup id="16" name="Background-Garden" visible="0">
   <object id="179" gid="35" x="176.394" y="250.485" width="367" height="615"/>
   <object id="183" gid="45" x="42" y="-468.697" width="181" height="173"/>
   <object id="184" gid="36" x="467.606" y="-493.606" width="175.333" height="111.667"/>
  </objectgroup>
- <objectgroup id="15" name="Foreground-Garden">
+ <objectgroup id="15" name="Foreground-Garden" visible="0">
   <object id="174" gid="32" x="-165.576" y="224.152" width="313" height="737"/>
   <object id="175" gid="32" x="609.939" y="205.242" width="313" height="737"/>
  </objectgroup>
- <objectgroup id="4" name="Settings">
+ <objectgroup draworder="index" id="19" name="Floor-Bedroom">
+  <object id="185" gid="47" x="-691.636" y="1119.7" width="2080.24" height="1512.12"/>
+  <object id="192" gid="54" x="-223" y="852" width="1174" height="491"/>
+ </objectgroup>
+ <objectgroup id="17" name="Background-Bedroom">
+  <object id="186" gid="49" x="177" y="403.061" width="106" height="106"/>
+  <object id="187" gid="52" x="408.424" y="331.636" width="373" height="344"/>
+  <object id="188" gid="48" x="86" y="297" width="128" height="77"/>
+  <object id="189" gid="50" x="629" y="499" width="39" height="38"/>
+  <object id="190" gid="51" x="105" y="433" width="51" height="50"/>
+  <object id="193" gid="44" x="544" y="1023" width="212" height="129"/>
+ </objectgroup>
+ <objectgroup id="18" name="Foreground-Bedroom"/>
+ <objectgroup id="4" name="Settings" locked="1">
   <object id="17" name="Screen" x="0" y="0" width="720" height="1080"/>
   <object id="163" name="WalkArea" x="49.2727" y="349.515" width="621.455" height="636.485"/>
  </objectgroup>

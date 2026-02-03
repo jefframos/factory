@@ -150,7 +150,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -197,7 +197,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -232,6 +232,135 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"index",
+         "id":19,
+         "name":"Floor-Bedroom",
+         "objects":[
+                {
+                 "gid":47,
+                 "height":1512.12121212121,
+                 "id":185,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":2080.24242424242,
+                 "x":-691.636363636364,
+                 "y":1119.69696969697
+                }, 
+                {
+                 "gid":54,
+                 "height":491,
+                 "id":192,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":1174,
+                 "x":-223,
+                 "y":852
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":17,
+         "name":"Background-Bedroom",
+         "objects":[
+                {
+                 "gid":49,
+                 "height":106,
+                 "id":186,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":106,
+                 "x":177,
+                 "y":403.060606060606
+                }, 
+                {
+                 "gid":52,
+                 "height":344,
+                 "id":187,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":373,
+                 "x":408.424242424242,
+                 "y":331.636363636364
+                }, 
+                {
+                 "gid":48,
+                 "height":77,
+                 "id":188,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":128,
+                 "x":86,
+                 "y":297
+                }, 
+                {
+                 "gid":50,
+                 "height":38,
+                 "id":189,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":39,
+                 "x":629,
+                 "y":499
+                }, 
+                {
+                 "gid":51,
+                 "height":50,
+                 "id":190,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":51,
+                 "x":105,
+                 "y":433
+                }, 
+                {
+                 "gid":44,
+                 "height":129,
+                 "id":193,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":212,
+                 "x":544,
+                 "y":1023
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":18,
+         "name":"Foreground-Bedroom",
+         "objects":[],
+         "opacity":1,
+         "type":"objectgroup",
          "visible":true,
          "x":0,
          "y":0
@@ -239,6 +368,7 @@
         {
          "draworder":"topdown",
          "id":4,
+         "locked":true,
          "name":"Settings",
          "objects":[
                 {
@@ -269,8 +399,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":17,
- "nextobjectid":185,
+ "nextlayerid":20,
+ "nextobjectid":194,
  "orientation":"orthogonal",
  "renderorder":"left-up",
  "tiledversion":"1.11.2",
@@ -288,7 +418,7 @@
          "margin":0,
          "name":"Background",
          "spacing":0,
-         "tilecount":37,
+         "tilecount":43,
          "tileheight":1500,
          "tiles":[
                 {
@@ -358,12 +488,6 @@
                  "imagewidth":95
                 }, 
                 {
-                 "id":18,
-                 "image":"..\/tiled\/images\/garden\/tower-toy.png",
-                 "imageheight":245,
-                 "imagewidth":149
-                }, 
-                {
                  "id":19,
                  "image":"..\/tiled\/images\/garden\/toy.png",
                  "imageheight":57,
@@ -386,14 +510,14 @@
                  "image":"..\/tiled\/images\/garden\/bush3.png",
                  "imageheight":152,
                  "imagewidth":187
-                },
-            
+                }, 
                 {
                  "id":23,
                  "image":"..\/tiled\/images\/garden\/pot2.png",
                  "imageheight":197,
                  "imagewidth":124
-                }, 
+                },
+            
                 {
                  "id":24,
                  "image":"..\/tiled\/images\/garden\/pot-tree-1.png",
@@ -483,14 +607,14 @@
                  "image":"..\/tiled\/images\/backgrounds\/cat-tower-2.png",
                  "imageheight":830,
                  "imagewidth":423
-                },
-            
+                }, 
                 {
                  "id":41,
                  "image":"..\/tiled\/images\/backgrounds\/full-background.png",
                  "imageheight":1500,
                  "imagewidth":2115
-                }, 
+                },
+            
                 {
                  "id":42,
                  "image":"..\/tiled\/images\/garden\/garden-bg.png",
@@ -514,12 +638,54 @@
                  "image":"..\/tiled\/images\/garden\/fish-1.png",
                  "imageheight":106,
                  "imagewidth":173
+                }, 
+                {
+                 "id":46,
+                 "image":"..\/tiled\/images\/bedroom\/bedrromBg.png",
+                 "imageheight":1500,
+                 "imagewidth":2056
+                }, 
+                {
+                 "id":47,
+                 "image":"..\/tiled\/images\/bedroom\/star-cushion.png",
+                 "imageheight":77,
+                 "imagewidth":128
+                }, 
+                {
+                 "id":48,
+                 "image":"..\/tiled\/images\/bedroom\/toy-ball.png",
+                 "imageheight":74,
+                 "imagewidth":74
+                }, 
+                {
+                 "id":49,
+                 "image":"..\/tiled\/images\/bedroom\/toy-ball-2.png",
+                 "imageheight":38,
+                 "imagewidth":39
+                }, 
+                {
+                 "id":50,
+                 "image":"..\/tiled\/images\/bedroom\/toy-duck.png",
+                 "imageheight":50,
+                 "imagewidth":51
+                }, 
+                {
+                 "id":51,
+                 "image":"..\/tiled\/images\/bedroom\/toy-table.png",
+                 "imageheight":344,
+                 "imagewidth":373
+                }, 
+                {
+                 "id":53,
+                 "image":"..\/tiled\/images\/bedroom\/kids-carpet.png",
+                 "imageheight":275,
+                 "imagewidth":546
                 }],
          "tilewidth":2115
         }, 
         {
          "columns":0,
-         "firstgid":47,
+         "firstgid":55,
          "grid":
             {
              "height":1,
@@ -529,8 +695,8 @@
          "margin":0,
          "name":"UI",
          "spacing":0,
-         "tilecount":139,
-         "tileheight":601,
+         "tilecount":137,
+         "tileheight":288,
          "tiles":[
                 {
                  "id":20,
@@ -1220,12 +1386,6 @@
                  "imagewidth":24
                 }, 
                 {
-                 "id":81,
-                 "image":"..\/tiled\/images\/ui\/Popup06_Pattern.png",
-                 "imageheight":601,
-                 "imagewidth":609
-                }, 
-                {
                  "id":82,
                  "image":"..\/tiled\/images\/ui\/ResourceBar_Single_Btn_Blue1.png",
                  "imageheight":62,
@@ -1248,8 +1408,7 @@
                          "type":"int",
                          "value":10
                         }]
-                },
-            
+                }, 
                 {
                  "id":84,
                  "image":"..\/tiled\/images\/ui\/ResourceBar_Single_Btn_Yellow1.png",
@@ -1261,13 +1420,8 @@
                          "type":"int",
                          "value":10
                         }]
-                }, 
-                {
-                 "id":85,
-                 "image":"..\/tiled\/images\/ui\/ResourceBar_Single_Icon_Coin.png",
-                 "imageheight":103,
-                 "imagewidth":104
-                }, 
+                },
+            
                 {
                  "id":86,
                  "image":"..\/tiled\/images\/ui\/ResourceBar_Single_Icon_Energy.png",
@@ -1362,8 +1516,7 @@
                  "image":"..\/tiled\/images\/ui\/Title_Ribbon01_Purple.png",
                  "imageheight":143,
                  "imagewidth":304
-                },
-            
+                }, 
                 {
                  "id":101,
                  "image":"..\/tiled\/images\/ui\/Title_Ribbon01_Red.png",
@@ -1375,7 +1528,8 @@
                  "image":"..\/tiled\/images\/ui\/Title_Ribbon01_Sky.png",
                  "imageheight":143,
                  "imagewidth":304
-                }, 
+                },
+            
                 {
                  "id":103,
                  "image":"..\/tiled\/images\/ui\/Title_Tapered01.png",
@@ -1459,8 +1613,7 @@
                  "image":"..\/tiled\/images\/ui\/icons\/Icon_Megaphone.png",
                  "imageheight":56,
                  "imagewidth":59
-                },
-            
+                }, 
                 {
                  "id":117,
                  "image":"..\/tiled\/images\/ui\/icons\/Icon_Menu_Hamburger.png",
@@ -1472,7 +1625,8 @@
                  "image":"..\/tiled\/images\/ui\/icons\/Icon_Pause.png",
                  "imageheight":64,
                  "imagewidth":61
-                }, 
+                },
+            
                 {
                  "id":119,
                  "image":"..\/tiled\/images\/ui\/icons\/Icon_Property.png",
@@ -1556,8 +1710,7 @@
                  "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Chest_Gold.Png",
                  "imageheight":128,
                  "imagewidth":128
-                },
-            
+                }, 
                 {
                  "id":133,
                  "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Chest_Premium.Png",
@@ -1569,7 +1722,8 @@
                  "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Chest_Skull.png",
                  "imageheight":128,
                  "imagewidth":128
-                }, 
+                },
+            
                 {
                  "id":135,
                  "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Chest_Wood.Png",
@@ -1653,8 +1807,7 @@
                  "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Star_Purple.Png",
                  "imageheight":128,
                  "imagewidth":128
-                },
-            
+                }, 
                 {
                  "id":149,
                  "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Star_Red.Png",
@@ -1666,7 +1819,8 @@
                  "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Star_Silver.Png",
                  "imageheight":128,
                  "imagewidth":128
-                }, 
+                },
+            
                 {
                  "id":151,
                  "image":"..\/tiled\/images\/ui\/icons\/ItemIcon_Ticket_Gold.Png",
@@ -1721,7 +1875,7 @@
                  "imageheight":80,
                  "imagewidth":80
                 }],
-         "tilewidth":609
+         "tilewidth":415
         }],
  "tilewidth":32,
  "type":"map",
