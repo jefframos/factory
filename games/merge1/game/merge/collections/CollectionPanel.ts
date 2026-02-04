@@ -1,3 +1,4 @@
+import PlatformHandler from "@core/platforms/PlatformHandler";
 import Pool from "@core/Pool";
 import BaseButton from "@core/ui/BaseButton";
 import ViewUtils from "@core/utils/ViewUtils";
@@ -285,8 +286,9 @@ export class CollectionPanel extends PIXI.Container {
         gsap.to(this.windowContainer.scale, { x: 1, y: 1, duration: 0.3, ease: "back.out(1.7)" });
     }
 
-    public hide(): void {
+    public async hide(): Promise<void> {
 
+        await PlatformHandler.instance.platform.showCommercialBreak();
         MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.ClosePopup)
         gsap.to(this, {
             alpha: 0,

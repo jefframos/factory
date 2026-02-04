@@ -10,6 +10,7 @@ import { CurrencyType } from '../../data/InGameEconomy';
 import MergeAssets from '../../MergeAssets';
 import { PrizePopupData } from '../../prize/PrizeTypes';
 import PrizeViewContainer from './PrizeViewContainer';
+
 export class PrizePopup extends BasePopup {
 
     transitionInComplete(): void {
@@ -27,11 +28,13 @@ export class PrizePopup extends BasePopup {
     private prizeContainer: PIXI.Container;
     private lastData!: PrizePopupData;
 
-    private videoButton: BaseButton; // New Button
+    private videoButton: BaseButton;
     private currentDoubleCallback: (() => void) | null = null;
 
     private autoHideTimeout: any;
-    private currentCallback: (() => void) | null = null;
+    private currentCallback: ((multiplier: number) => void) | null = null;
+    private appliedMultiplier: number = 1; // Track if video was watched
+
     constructor() {
         super();
 
@@ -59,16 +62,16 @@ export class PrizePopup extends BasePopup {
         this.prizeContainer = new PIXI.Container();
         this.addChild(this.prizeContainer);
 
-        // 1. Double/Video Button (Starts as Gold)
+        // 1. Double/Video Button
         this.videoButton = new BaseButton({
             standard: {
                 width: 320, height: 90,
                 texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Gold),
-                fontStyle: new PIXI.TextStyle({ ...MergeAssets.MainFont }),
+                fontStyle: new PIXI.TextStyle({ ...MergeAssets.MainFont, fontSize: 45 }),
                 iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Video),
                 centerIconVertically: true,
                 iconSize: { width: 120, height: 120 },
-                textOffset: { x: 50, y: 0 }
+                textOffset: { x: 30, y: 0 }
             },
             click: { callback: () => this.onDouble() }
         });
@@ -100,12 +103,13 @@ export class PrizePopup extends BasePopup {
         this.confetti = new ConfettiEffect(150);
         this.addChild(this.confetti);
     }
+
     async transitionIn(data: PrizePopupData): Promise<void> {
         this.visible = true;
         this.alpha = 1;
         this.lastData = data;
+        this.appliedMultiplier = 1; // Reset multiplier
         MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.OpenPopupPrize)
-
 
         // Setup Ribbon
         if (data.customRibbon) {
@@ -156,21 +160,23 @@ export class PrizePopup extends BasePopup {
         this.videoButton.visible = false;
         this.continueButton.visible = false;
 
-        if (this.currentDoubleCallback) {
-            // Case: Double + Claim
-            // Video Button takes prime spot (Center Top)
+        const hasMultiplier = this.lastData.multiplier && this.lastData.multiplier > 1;
+
+        if (hasMultiplier && this.currentDoubleCallback) {
+            // Case: Multiplier + Claim
+            const multiplierText = `x${this.lastData.multiplier}`;
+            this.videoButton.setLabel(multiplierText);
             this.videoButton.y = 150;
             this.videoButton.overrider(ButtonState.STANDARD, {
                 texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Gold)
             });
 
-            // Claim Button goes below and turns Grey
+            // Claim Button goes below
             this.continueButton.y = 310;
             this.continueButton.overrider(ButtonState.STANDARD, {
                 texture: PIXI.Texture.EMPTY,
             });
-
-            this.continueButton.setLabel('NO THANKS');
+            this.continueButton.setLabel('CLAIM');
         } else {
             // Case: Only Claim
             this.continueButton.y = 150;
@@ -182,7 +188,11 @@ export class PrizePopup extends BasePopup {
     }
 
     private showButtons(): void {
-        const buttons = this.currentDoubleCallback ? [this.videoButton, this.continueButton] : [this.continueButton];
+        const hasMultiplier = this.lastData.multiplier && this.lastData.multiplier > 1;
+        const buttons = (hasMultiplier && this.currentDoubleCallback)
+            ? [this.videoButton, this.continueButton]
+            : [this.continueButton];
+
         buttons.forEach(btn => {
             btn.visible = true;
             btn.alpha = 0;
@@ -190,30 +200,105 @@ export class PrizePopup extends BasePopup {
         });
     }
 
-    private onDouble(): void {
+    private async onDouble(): Promise<void> {
         this.clearTimer();
-        this.currentDoubleCallback?.();
+
+        this.videoButton.visible = false;
+        this.continueButton.visible = false;
+
+        // Execute video callback
+        if (this.currentDoubleCallback) {
+            await this.currentDoubleCallback();
+        }
+
+        this.videoButton.visible = false;
+        this.continueButton.visible = false;
+        // Apply multiplier and animate
+        this.appliedMultiplier = this.lastData.multiplier || 1;
+        this.animateMultiplier();
+
+        setTimeout(() => {
+            this.onClaim();
+            this.currentDoubleCallback = null;
+            this.hide();
+        }, 1000);
+        // Hide video button and show only claim
+        // this.videoButton.visible = false;
+        // this.continueButton.y = 150;
+        // this.continueButton.overrider(ButtonState.STANDARD, {
+        //     texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Gold)
+        // });
+        // this.continueButton.setLabel('CLAIM');
+
         this.currentDoubleCallback = null;
-        this.popupManager.hideCurrent();
+        this.hide();
     }
 
-    private onClaim(): void {
+    private async animateMultiplier(): Promise<void> {
+        const multiplier = this.lastData.multiplier || 1;
+
+        this.videoButton.visible = false;
+
+        return new Promise<void>((resolve) => {
+            this.prizeContainer.children.forEach((child, index) => {
+                const view = child as PrizeViewContainer;
+                const prize = this.lastData.prizes[index];
+
+                // Only animate currencies
+                if (prize.type === CurrencyType.MONEY || prize.type === CurrencyType.GEMS) {
+                    const originalValue = prize.value;
+                    const newValue = Math.ceil(originalValue * multiplier);
+
+                    // Animate value
+                    const valueObj = { value: originalValue };
+                    gsap.to(valueObj, {
+                        value: newValue,
+                        duration: 1,
+                        ease: "power2.out",
+                        onUpdate: () => {
+                            MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.Coin1);
+                            view.updateValue(NumberConverter.format(Math.ceil(valueObj.value)));
+                        },
+                        onComplete: () => {
+                            // Make text yellow and bigger
+                            view.setValueStyle(0xFFFF00, 1.2);
+                            resolve();
+                        }
+                    });
+
+                    // Scale animation
+                    gsap.to(view.scale, {
+                        x: 1.15,
+                        y: 1.15,
+                        duration: 0.3,
+                        yoyo: true,
+                        repeat: 1,
+                        ease: "power2.inOut"
+                    });
+                }
+            });
+        });
+    }
+
+    private async onClaim(): Promise<void> {
         this.clearTimer();
 
         // Trigger flying effects BEFORE hiding/destroying containers
         this.triggerPhysicalEffects();
 
         if (this.currentCallback) {
-            this.currentCallback();
+            this.currentCallback(this.appliedMultiplier);
             this.currentCallback = null;
         }
+
+        await PlatformHandler.instance.platform.showCommercialBreak();
         this.popupManager.hideCurrent();
 
         PlatformHandler.instance.platform.gameplayStart();
     }
 
     private triggerPhysicalEffects(): void {
-        const data = this.lastData; // Store 'data' in transitionIn to access here
+        const data = this.lastData;
         if (!data?.effects || !data.prizes) return;
 
         this.prizeContainer.children.forEach((child, index) => {
@@ -237,11 +322,10 @@ export class PrizePopup extends BasePopup {
                     startPos.y,
                     targetPos.x,
                     targetPos.y,
-                    view.getIconSprite(), // Add this helper to PrizeViewContainer
+                    view.getIconSprite(),
                     undefined,
                     () => {
                         // This internal callback triggers when the coin hits the HUD
-                        //console.log(`${prize.type} hit the HUD!`);
                     }
                 );
 
@@ -250,6 +334,7 @@ export class PrizePopup extends BasePopup {
             }
         });
     }
+
     private clearTimer(): void {
         if (this.autoHideTimeout) {
             clearTimeout(this.autoHideTimeout);
@@ -270,8 +355,10 @@ export class PrizePopup extends BasePopup {
         await gsap.to(this, { alpha: 0, duration: 0.15 });
         this.clearPrizeContainer();
         this.visible = false;
-        this.currentCallback = null; // Safety cleanup
+        this.currentCallback = null;
+        this.appliedMultiplier = 1;
     }
+
     override update(delta: number): void {
         if (this.visible) {
             this.shine.rotation += delta;

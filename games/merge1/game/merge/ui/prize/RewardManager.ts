@@ -1,3 +1,4 @@
+import PlatformHandler from "@core/platforms/PlatformHandler";
 import { PopupManager } from "@core/popup/PopupManager";
 import PromiseUtils from "@core/utils/PromiseUtils";
 import { CurrencyType, InGameEconomy } from "../../data/InGameEconomy";
@@ -13,23 +14,33 @@ export class RewardManager {
     /**
      * Standard method to trigger the prize popup and update economy
      */
-    public showReward(prizes: PrizeItem[], coinEffectsLayer: any, hudReference: any) {
+    public showReward(prizes: PrizeItem[], coinEffectsLayer: any, hudReference: any, multiplier: number = 0) {
         const coinRewardData: PrizePopupData = {
             prizes: prizes,
             waitForClaim: true,
+            multiplier: multiplier, // Pass multiplier (0 = no video button)
+
+            doubleCallback: async () => {
+                await PlatformHandler.instance.platform.showRewardedVideo();
+                await PromiseUtils.await(750);
+                // Video watched - popup will handle multiplier animation
+            },
+
             effects: {
                 layer: coinEffectsLayer,
                 getHudTarget: (type: CurrencyType) => {
                     return hudReference.getCurrencyTargetGlobalPos(type);
                 }
             },
-            claimCallback: async () => {
+
+            claimCallback: async (appliedMultiplier: number) => {
                 // Buffer for animation timing
                 await PromiseUtils.await(750);
 
                 prizes.forEach(element => {
                     if (element.type === CurrencyType.MONEY || element.type === CurrencyType.GEMS) {
-                        InGameEconomy.instance.add(element.type, element.value);
+                        const finalValue = Math.ceil(element.value * appliedMultiplier);
+                        InGameEconomy.instance.add(element.type, finalValue);
                     }
                     // Add logic here for CurrencyType.ENTITY if needed
                 });

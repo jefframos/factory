@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770125323550,
-                "duration": 15.257700000074692,
+                "date": 1770211754443,
+                "duration": 25.176800000015646,
                 "success": true
             }
         },
@@ -20,10 +20,34 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770070828361,
-                "duration": 43.14919999986887,
+                "date": 1770211754443,
+                "duration": 25.086400000029244,
                 "success": true
             }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/data{copy}/animals-old.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/data{copy}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1770211456183,
+                "duration": 28.99499999999898,
+                "success": true
+            },
+            "hash": "-B35qw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/data/animals-old.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/data{copy}/animals-old.json",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/json/data{copy}/animals.json": {
             "isFolder": false,
@@ -34,11 +58,11 @@
             },
             "transformData": {},
             "stats": {
-                "date": 1770070828361,
-                "duration": 43.168500000145286,
+                "date": 1770211754443,
+                "duration": 25.12380000000121,
                 "success": true
             },
-            "hash": "-B35qw"
+            "hash": "E_1iIw"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/json/data/animals.json": {
             "isFolder": false,

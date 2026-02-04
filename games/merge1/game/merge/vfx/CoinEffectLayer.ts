@@ -96,8 +96,8 @@ export class CoinEffectLayer extends PIXI.Container {
     public popAndFade(x: number, y: number, value: number, source: string | PIXI.Sprite): void {
         const coin = this.setupSprite(source);
         //console.log(coin.worldTransform)
-        const targetScaleX = coin.scale.x * 0.5;
-        const targetScaleY = coin.scale.y * 0.5;
+        const targetScaleX = coin.scale.x * 0.85;
+        const targetScaleY = coin.scale.y * 0.85;
 
         coin.position.set(x, y);
         coin.scale.set(0);
@@ -109,7 +109,8 @@ export class CoinEffectLayer extends PIXI.Container {
         gsap.to(coin, {
             y: y - 60,
             alpha: 0,
-            duration: 0.8,
+            delay: 0.5,
+            duration: 0.3,
             ease: "power1.out",
             onComplete: () => this.recycleSprite(coin)
         });

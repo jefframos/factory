@@ -1,4 +1,3 @@
-import { PopupData } from "@core/popup/BasePopup";
 import * as PIXI from 'pixi.js';
 import { CurrencyType } from "../data/InGameEconomy";
 import MergeAssets from "../MergeAssets";
@@ -20,17 +19,19 @@ export interface PrizePopupEffects {
     getHudTarget: (type: CurrencyType) => PIXI.Point;
 }
 
-export interface PrizePopupData extends PopupData {
-    // ... previous properties (prizes, callbacks, etc)
-}
-export interface PrizePopupData extends PopupData {
+
+export interface PrizePopupData {
     prizes: PrizeItem[];
-    waitForClaim: boolean;
-    effects?: PrizePopupEffects;
+    waitForClaim?: boolean;
     autoHideTimer?: number;
-    claimCallback?: () => void;
-    doubleCallback?: () => void; // Video button callback
-    customRibbon?: string;       // Texture name override
+    customRibbon?: string;
+    multiplier?: number; // NEW: e.g., 2, 3, 5
+    doubleCallback?: () => Promise<void>;
+    claimCallback?: (multiplier: number) => void; // NEW: receives multiplier
+    effects?: {
+        layer: any;
+        getHudTarget: (type: CurrencyType) => PIXI.Point;
+    };
 }
 
 // Define the visual style for different tiers

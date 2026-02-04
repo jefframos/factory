@@ -5,7 +5,7 @@ import MergeAssets from '../MergeAssets';
 import { TextureBaker } from './TextureBaker';
 
 export class NewEntityDiscoveredView extends PIXI.Container {
-    private dimmer: PIXI.Sprite;
+    private badge: PIXI.Sprite;
     private shine: PIXI.Sprite;
     private portrait: PIXI.Sprite;
     private stars: StarBurst;
@@ -20,23 +20,34 @@ export class NewEntityDiscoveredView extends PIXI.Container {
 
     private isAnimating: boolean = false;
 
+    private dimmer: PIXI.Graphics;
+
     constructor() {
         super();
 
+
+        this.dimmer = new PIXI.Graphics();
+        this.dimmer.beginFill(MergeAssets.Textures.UI.BlockerColor, 0.5); // Black with 70% opacity
+        // Using a very large size to ensure it covers all screen ratios
+        this.dimmer.drawRect(-2000, -2000, 4000, 4000);
+        this.dimmer.endFill();
+        this.dimmer.alpha = 0;
+        this.addChild(this.dimmer);
         // 1. Shine
         this.shine = PIXI.Sprite.from(MergeAssets.Textures.UI.Shine);
         this.shine.anchor.set(0.5);
         this.shine.alpha = 0;
+        this.shine.scale.set(2)
         this.addChild(this.shine);
         // 0. Dimmer (Darken the area)
         // Using a 1x1 white texture tinted black, or a specific dark texture
-        this.dimmer = PIXI.Sprite.from('Label_Badge01_Purple');
+        this.badge = PIXI.Sprite.from('Label_Badge01_Purple');
         //  this.dimmer.tint = MergeAssets.Textures.UI.BlockerColor;
-        this.dimmer.anchor.set(0.5);
-        this.dimmer.width = 200; // Large enough to cover screen
-        this.dimmer.height = 200;
-        this.dimmer.alpha = 0;
-        this.addChild(this.dimmer);
+        this.badge.anchor.set(0.5);
+        this.badge.width = 200; // Large enough to cover screen
+        this.badge.height = 200;
+        this.badge.alpha = 0;
+        this.addChild(this.badge);
 
 
         // 2. Stars
@@ -111,8 +122,9 @@ export class NewEntityDiscoveredView extends PIXI.Container {
 
         // RESET
         this.visible = true;
-        this.dimmer.alpha = 0;
+        this.badge.alpha = 0;
         this.shine.alpha = 0;
+        this.dimmer.alpha = 0;
         this.portrait.scale.set(0);
         this.titleContainer.alpha = 0;
         this.titleContainer.scale.set(0.5);
@@ -125,7 +137,9 @@ export class NewEntityDiscoveredView extends PIXI.Container {
         const tl = gsap.timeline();
 
         // 1. Entrance
-        tl.to(this.dimmer, { alpha: 1, duration: 0.2 });
+        tl.to(this.dimmer, { alpha: 1, duration: 0.2, ease: "power2.out" });
+        tl.to(this.badge, { alpha: 1, duration: 0.2 });
+
 
         // Correct scale tweening for PIXI
         tl.to(this.portrait.scale, { x: 1, y: 1, duration: 0.8, ease: "elastic.out(1, 0.5)" }, "-=0.2");
@@ -145,10 +159,16 @@ export class NewEntityDiscoveredView extends PIXI.Container {
         tl.to({}, { duration: 1.5 }); // HOLD
 
         // 4. Clean Fade Out
-        tl.to([this.dimmer, this.shine, this.titleContainer, this.textContainer], {
+        tl.to([this.badge, this.shine, this.titleContainer, this.textContainer], {
             alpha: 0,
             duration: 0.15,
 
+        });
+
+        tl.to([this.dimmer, this.shine, this.titleContainer, this.textContainer], {
+            alpha: 0,
+            duration: 0.4,
+            ease: "power2.inOut"
         });
 
         const globalTarget = targetContainer.getGlobalPosition();

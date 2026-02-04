@@ -1,3 +1,4 @@
+import SoundManager from "@core/audio/SoundManager";
 import { IPlatformConnection } from "./IPlatformConnection";
 
 export default class PokiPlatform implements IPlatformConnection {
@@ -57,7 +58,9 @@ export default class PokiPlatform implements IPlatformConnection {
         console.debug("Poki Platform: Showing commercial break...");
         // Example Poki SDK commercial break
         if (window['PokiSDK']) {
+            SoundManager.instance.muteAllSounds()
             await window['PokiSDK'].commercialBreak();
+            SoundManager.instance.restoreSound()
         } else {
             await Promise.resolve();
         }
@@ -67,7 +70,10 @@ export default class PokiPlatform implements IPlatformConnection {
         console.debug("Poki Platform: Showing rewarded video...");
         // Example Poki SDK rewarded video
         if (window['PokiSDK']) {
+            SoundManager.instance.muteAllSounds()
             await window['PokiSDK'].rewardedBreak();
+            SoundManager.instance.restoreSound()
+
         } else {
             await Promise.resolve();
         }

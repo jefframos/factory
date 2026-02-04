@@ -45,7 +45,6 @@ export class RoomRegistry {
         // Get all Room IDs defined in the record
         const roomIds = Object.keys(this.ROOMS) as RoomId[];
 
-        console.log(roomIds)
         // Return true if any room satisfies the condition and isn't ignored
         return roomIds.some(id => {
             const roomId = id as RoomId;
@@ -116,5 +115,17 @@ export class RoomRegistry {
 
     public static getAllRoomIds(): RoomId[] {
         return Object.keys(this.ROOMS) as RoomId[];
+    }
+    /**
+     * Gets the room that becomes unlocked at the specified level.
+     * @param level - The level to check for newly unlocked room
+     * @returns The room config that unlocks at this level, or null if no room unlocks
+     */
+    public static getRoomUnlockedAtLevel(level: number): IRoomConfig | null {
+        const roomEntry = Object.entries(this.ROOMS).find(
+            ([_, room]) => room.unlockLevel === level
+        );
+
+        return roomEntry ? roomEntry[1] : null;
     }
 }

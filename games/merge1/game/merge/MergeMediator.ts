@@ -610,6 +610,10 @@ export class MergeMediator {
     private onRoomsUnlocked(roomIds: RoomId[]): void {
         console.log("New rooms available:", roomIds);
 
+        if (roomIds.length) {
+            this.hud.showNewRooms(RoomRegistry.get(roomIds[0]));
+        }
+
         // Refresh the HUD so the lock icons disappear or the "New" badge appears
         //this.hud.refreshRoomList(); 
 
@@ -754,7 +758,11 @@ export class MergeMediator {
         });
 
         DevGuiManager.instance.addButton("addXp", () => {
-            InGameProgress.instance.addXP(10)
+            InGameProgress.instance.addXP(80)
+        });
+
+        DevGuiManager.instance.addButton("add High", () => {
+            this.entities.spawnAnimal(InGameProgress.instance.getProgression('MAIN').highestMergeLevel)
         });
     }
 

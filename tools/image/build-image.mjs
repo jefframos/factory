@@ -57,6 +57,7 @@ const pack = new AssetPack({
                     removeFileExtension: true,
                     textureFormat: 'webp'
                 },
+                compress: options,
             },
         }),
 

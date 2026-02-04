@@ -5,6 +5,14 @@
       "assets": [
         {
           "alias": [
+            "data/animals-old.json"
+          ],
+          "src": [
+            "data/animals-old.json"
+          ]
+        },
+        {
+          "alias": [
             "data/animals.json"
           ],
           "src": [

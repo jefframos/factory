@@ -14,7 +14,7 @@ export class RoomSelector extends PIXI.Container {
 
     private mapWindow: PIXI.Container;
     private mapButton: BaseButton;
-    private closeButton: BaseButton; // Added Close Button reference
+    private closeButton: BaseButton;
     private roomListContainer: PIXI.Container;
     private bg!: PIXI.NineSlicePlane;
     private isOpened: boolean = false;
@@ -57,7 +57,7 @@ export class RoomSelector extends PIXI.Container {
     private setupMapWindow(): void {
         this.mapWindow = new PIXI.Container();
         this.mapWindow.visible = false;
-        this.mapWindow.x = 50;
+        this.mapWindow.x = 0; // Start at left edge
 
         this.bg = new PIXI.NineSlicePlane(PIXI.Texture.from(MergeAssets.Textures.UI.MapPanel), 32, 32, 32, 32);
         this.mapWindow.addChild(this.bg);
@@ -67,18 +67,17 @@ export class RoomSelector extends PIXI.Container {
         title.name = "windowTitle";
         this.mapWindow.addChild(title);
 
-        // --- ADDED: Close Button ---
+        // Close Button
         this.closeButton = new BaseButton({
             standard: {
                 width: 60, height: 60,
-                texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Red), // Ensure this asset key exists
-                iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Close), // Ensure this asset key exists
+                texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Red),
+                iconTexture: PIXI.Texture.from(MergeAssets.Textures.Icons.Close),
                 iconSize: { width: 40, height: 40 },
                 centerIconHorizontally: true, centerIconVertically: true
             },
             click: { callback: () => this.toggleMap(false) }
         });
-        // Positioned at the top right of the background
         this.mapWindow.addChild(this.closeButton);
 
         this.roomListContainer = new PIXI.Container();
@@ -112,26 +111,33 @@ export class RoomSelector extends PIXI.Container {
         // Background sizing
         this.bg.width = itemWidth;
         this.bg.height = (this.roomIds.length * itemHeight) + topPadding + 30;
-        this.bg.y = -this.bg.height / 2;
+        // Position background at top-left (0, 0)
+        this.bg.y = 0;
 
         // Position Title
         const title = this.mapWindow.getChildByName("windowTitle") as PIXI.Text;
-        title.position.set(this.bg.width / 2, this.bg.y + 25);
+        title.position.set(this.bg.width / 2, 25);
 
-        // --- Position Close Button ---
-        this.closeButton.position.set(10, this.bg.y + 10);
+        // Position Close Button at top-right
+        this.closeButton.position.set(this.bg.width - 70, 10);
 
-        this.roomListContainer.position.set(sidePadding, this.bg.y + topPadding + (itemHeight / 2));
+        this.roomListContainer.position.set(sidePadding, topPadding + (itemHeight / 2));
     }
 
     public toggleMap(show: boolean): void {
         this.isOpened = show;
-        const targetX = show ? -this.bg.width - 20 : 50;
+        // When closed: move off-screen to the left (-width - offset)
+        // When open: move to x = 0 (visible)
+        const targetX = show ? 0 : -(this.bg.width + 20);
 
         if (show) {
+            MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.OpenPopup)
             // Optional: Bring to front when opened
             if (this.parent) this.parent.addChild(this);
             this.mapWindow.visible = true;
+        } else {
+
+            MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.ClosePopup)
         }
 
         gsap.to(this.mapWindow, {

@@ -44,7 +44,7 @@ export class TimedRewardRegistry {
     // --- FIXED STATIC METHOD ---
     public static createDefault5m(): TimedRewardRegistry {
         return new TimedRewardRegistry({
-            stepSeconds: 5 * 60, // 300s
+            stepSeconds: 3 * 60, // 300s
             // Example: First reward at 10s, second at 30s, then every 5m (300s)
             initialStepSeconds: [60, 180],
             cycle: [

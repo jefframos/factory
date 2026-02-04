@@ -13,6 +13,14 @@
         },
         {
           "alias": [
+            "bedroom"
+          ],
+          "src": [
+            "bedroom.webp.json"
+          ]
+        },
+        {
+          "alias": [
             "garden"
           ],
           "src": [
@@ -25,14 +33,6 @@
           ],
           "src": [
             "ui.webp.json"
-          ]
-        },
-        {
-          "alias": [
-            "bedroom"
-          ],
-          "src": [
-            "bedroom.webp.json"
           ]
         }
       ]

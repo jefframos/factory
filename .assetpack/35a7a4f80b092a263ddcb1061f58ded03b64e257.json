@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770125388749,
-                "duration": 2.21100000012666,
+                "date": 1770211825846,
+                "duration": 8.927999999999884,
                 "success": true
             }
         },
@@ -323,6 +323,156 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/images/backgrounds.webp.json": {
             "isFolder": false,
             "transformParent": ".assetpack/texture-packer-compress/backgrounds.webp.json",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {
+                "page": 0
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images",
+            "metaData": {
+                "tps": true
+            },
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770153493781,
+                "duration": 2166.1139000000003,
+                "success": true
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}/bedrromBg.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "qbKzrA"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}/kids-carpet.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "kMcpWg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}/star-cushion.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "lDfAKA"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}/toy-ball - Copy.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "72akIQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}/toy-ball-2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "rzRKBw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}/toy-ball.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "72akIQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}/toy-duck.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "8p9z4w"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}/toy-table.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "wx8pNQ"
+        },
+        ".assetpack/multi-pipe-1/bedroom.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
+            "metaData": {
+                "mIgnore": true,
+                "nomip": true
+            },
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/images/bedroom.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/bedroom.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true,
+                "mIgnore": true,
+                "nomip": true
+            },
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-1/bedroom.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {
+                "page": 0
+            }
+        },
+        ".assetpack/texture-packer-compress/bedroom.webp.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/bedroom.json",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {
+                "page": 0
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/images/bedroom.webp.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/texture-packer-compress/bedroom.webp.json",
             "metaData": {},
             "inheritedMetaData": {
                 "tps": true
@@ -674,8 +824,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770124531858,
-                "duration": 4082.154000000097,
+                "date": 1770211825846,
+                "duration": 3995.9842999999996,
                 "success": true
             }
         },
@@ -1136,7 +1286,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "hVq4lg"
+            "hash": "8ir12g"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-eye0002.png": {
             "isFolder": false,
@@ -1146,7 +1296,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "NbC5vQ"
+            "hash": "mzp9"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-eye0003.png": {
             "isFolder": false,
@@ -1156,7 +1306,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "byaIyQ"
+            "hash": "dcRLxQ"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-eye0004.png": {
             "isFolder": false,
@@ -1166,7 +1316,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "qG59zg"
+            "hash": "xz8clg"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-eye0005.png": {
             "isFolder": false,
@@ -1176,7 +1326,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "3Yv22Q"
+            "hash": "7L-g6A"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-eye0006.png": {
             "isFolder": false,
@@ -1186,7 +1336,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "MbGkIA"
+            "hash": "d62sAQ"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-eye0007.png": {
             "isFolder": false,
@@ -1196,7 +1346,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "wwc_nA"
+            "hash": "bdTqHA"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-eye0008.png": {
             "isFolder": false,
@@ -1206,7 +1356,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "x_pP"
+            "hash": "aG4sIA"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-eye0009.png": {
             "isFolder": false,
@@ -1216,7 +1366,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "vfbOxQ"
+            "hash": "RRuF7w"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-eye0010.png": {
             "isFolder": false,
@@ -1226,7 +1376,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "R8iUlA"
+            "hash": "MftHNg"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-eye0011.png": {
             "isFolder": false,
@@ -1236,7 +1386,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "VXj2lg"
+            "hash": "FEBpEg"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-lines.png": {
             "isFolder": false,
@@ -1256,7 +1406,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "4x4V8g"
+            "hash": "aZKbkA"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-mouth-0002.png": {
             "isFolder": false,
@@ -1266,7 +1416,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "5rZteg"
+            "hash": "cS5bvA"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-mouth-0003.png": {
             "isFolder": false,
@@ -1276,7 +1426,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "YaFgUg"
+            "hash": "ORfSzg"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-mouth-0004.png": {
             "isFolder": false,
@@ -1286,7 +1436,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "QpnjCg"
+            "hash": "HVo1qQ"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-mouth-0005.png": {
             "isFolder": false,
@@ -1296,7 +1446,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "EdFy-Q"
+            "hash": "u3Iv2Q"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-mouth-0006.png": {
             "isFolder": false,
@@ -1306,7 +1456,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "sutGQA"
+            "hash": "lpT-kA"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/cats/cat-mouth-1.png": {
             "isFolder": false,
@@ -1585,6 +1735,16 @@
                 "tps": true
             },
             "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/bedroom-icon.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "VzHMJg"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/coin-pile.png": {
             "isFolder": false,
@@ -2466,16 +2626,6 @@
             "transformData": {},
             "hash": "Ne-dag"
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/bedroom-icon.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "VzHMJg"
-        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/Image_Effect_Light02.png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}",
@@ -3144,146 +3294,6 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/images/ui.webp.json": {
             "isFolder": false,
             "transformParent": ".assetpack/texture-packer-compress/ui.webp.json",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {
-                "page": 0
-            }
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}": {
-            "isFolder": true,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images",
-            "metaData": {
-                "tps": true
-            },
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1770125388749,
-                "duration": 1882.2955000000075,
-                "success": true
-            }
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}/bedrromBg.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "qbKzrA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}/star-cushion.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "lDfAKA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}/toy-ball.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "72akIQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}/toy-ball-2.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "rzRKBw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}/toy-duck.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "8p9z4w"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}/toy-table.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "wx8pNQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}/kids-carpet.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "kMcpWg"
-        },
-        ".assetpack/multi-pipe-1/bedroom.png": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
-            "metaData": {
-                "mIgnore": true,
-                "nomip": true
-            },
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/images/bedroom.png": {
-            "isFolder": false,
-            "transformParent": ".assetpack/multi-pipe-1/bedroom.png",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true,
-                "mIgnore": true,
-                "nomip": true
-            },
-            "transformData": {}
-        },
-        ".assetpack/multi-pipe-1/bedroom.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/bedroom{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {
-                "page": 0
-            }
-        },
-        ".assetpack/texture-packer-compress/bedroom.webp.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/multi-pipe-1/bedroom.json",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {
-                "page": 0
-            }
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/images/bedroom.webp.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/texture-packer-compress/bedroom.webp.json",
             "metaData": {},
             "inheritedMetaData": {
                 "tps": true

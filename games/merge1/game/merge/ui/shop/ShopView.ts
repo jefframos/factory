@@ -279,9 +279,10 @@ export default class ShopView extends PIXI.Container {
         gsap.to(this.windowContainer.scale, { x: 1, y: 1, duration: 0.3, ease: "back.out(1.7)" });
     }
 
-    public hide(): void {
+    public async hide(): Promise<void> {
         if (!this.visible) return;
 
+        await PlatformHandler.instance.platform.showCommercialBreak();
         PlatformHandler.instance.platform.gameplayStart();
         MergeAssets.tryToPlaySound(MergeAssets.Sounds.UI.ClosePopup)
 

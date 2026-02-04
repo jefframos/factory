@@ -80,6 +80,26 @@
         "h": 38
       }
     },
+    "toy-ball - Copy": {
+      "frame": {
+        "x": 377,
+        "y": 78,
+        "w": 74,
+        "h": 74
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 74,
+        "h": 74
+      },
+      "sourceSize": {
+        "w": 74,
+        "h": 74
+      }
+    },
     "star-cushion": {
       "frame": {
         "x": 2,

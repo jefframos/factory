@@ -2,6 +2,7 @@ import { Game } from "@core/Game";
 import PlatformHandler from "@core/platforms/PlatformHandler";
 import BaseButton from "@core/ui/BaseButton";
 import SoundToggleButton from "@core/ui/SoundToggleButton";
+import PromiseUtils from "@core/utils/PromiseUtils";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
 import { DevGuiManager } from "../../../utils/DevGuiManager";
@@ -15,12 +16,13 @@ import { StaticData } from "../../data/StaticData";
 import { MissionClaimResult } from "../../missions/MissionManager";
 import { ModifierManager, ModifierType } from "../../modifiers/ModifierManager";
 import { PrizeItem } from "../../prize/PrizeTypes";
-import { RoomId } from "../../rooms/RoomRegistry";
+import { IRoomConfig, RoomId, RoomRegistry } from "../../rooms/RoomRegistry";
 import SpinningWheel, { WheelPrize } from "../../spinningWheel/SpinningWheel";
 import { ProgressionType } from "../../storage/GameStorage";
 import { TimedRewardService } from "../../timedRewards/TimedRewardService";
 import { TimedRewardsBar } from "../../timedRewards/ui/TimedRewardsBar ";
 import { CoinEffectLayer } from "../../vfx/CoinEffectLayer";
+import { NewAreaUnlockedView } from "../../vfx/NewAreaUnlockedView";
 import { NewEntityDiscoveredView } from "../../vfx/NewEntityDiscoveredView";
 import { TextureBaker } from "../../vfx/TextureBaker";
 import { CurrencyBox } from "../CurrencyBox";
@@ -74,6 +76,7 @@ export default class MergeHUD extends PIXI.Container {
     // HUD components
     // -------------------------
     public readonly newDiscovery: NewEntityDiscoveredView = new NewEntityDiscoveredView();
+    public readonly newAreaDiscovery: NewAreaUnlockedView = new NewAreaUnlockedView();
     public readonly generator: GeneratorHUD = new GeneratorHUD();
     public currencyHUD!: CurrencyBox;
     public currencyHUDGem!: CurrencyBox;
@@ -217,7 +220,7 @@ export default class MergeHUD extends PIXI.Container {
         this.missionHUD.onClaim.add((claim: MissionClaimResult) => {
             const prizes = this.mapMissionClaimToPrizes(claim);
             if (prizes.length > 0) {
-                RewardManager.instance.showReward(prizes, this.coinEffects, this);
+                RewardManager.instance.showReward(prizes, this.coinEffects, this, 5);
             }
         });
 
@@ -232,7 +235,8 @@ export default class MergeHUD extends PIXI.Container {
                     { type: CurrencyType.MONEY, value: 250, tier: 1 }
                 ],
                 this.coinEffects,
-                this
+                this,
+                5
             );
         });
     }
@@ -246,7 +250,7 @@ export default class MergeHUD extends PIXI.Container {
                 { type: CurrencyType.GEMS, value: level, tier: 2 }
             ];
 
-            RewardManager.instance.showReward(prizes, this.coinEffects, this);
+            RewardManager.instance.showReward(prizes, this.coinEffects, this, 5);
         });
 
         this.collectionPanel.onHidden.add(() => this.notifyUiClosed("collection"));
@@ -281,8 +285,24 @@ export default class MergeHUD extends PIXI.Container {
 
     private initNewDiscovery(): void {
         this.hudLayer.addChild(this.newDiscovery);
+        this.hudLayer.addChild(this.newAreaDiscovery);
     }
 
+    public showNewRooms(room: IRoomConfig) {
+        const { topLeft, bottomRight, topRight } = Game.overlayScreenData;
+
+        // Use the exact same math as playNewDiscovery
+        const centerX = (topRight.x - topLeft.x) / 2;
+        // Divide by 2 to get the vertical center, matching the entity discovery
+        const centerY = (bottomRight.y - topRight.y) / 2;
+
+        // Ensure the view is at the top of the display stack so it's not behind HUD items
+        this.hudLayer.setChildIndex(this.newAreaDiscovery, this.hudLayer.children.length - 1);
+        this.newAreaDiscovery.play(room, this.roomSelector)
+
+        this.newAreaDiscovery.x = centerX;
+        this.newAreaDiscovery.y = centerY - 150;
+    }
     private initRoomSelector(): void {
         this.roomSelector.onRoomSelected.add(async (id: RoomId) => {
             // 1. Wait for the curtain to fully cover the screen
@@ -290,6 +310,8 @@ export default class MergeHUD extends PIXI.Container {
 
             // 2. Change the room while the screen is black/covered
             this.onRoomSelected.dispatch(id);
+
+            await PromiseUtils.await(500)
 
             this.roomTransition.exit()
         });
@@ -413,7 +435,7 @@ export default class MergeHUD extends PIXI.Container {
 
             const prizesToShow = this.mapWheelPrizeToPrizes(prize);
             if (prizesToShow.length > 0) {
-                RewardManager.instance.showReward(prizesToShow, this.coinEffects, this);
+                RewardManager.instance.showReward(prizesToShow, this.coinEffects, this, 5);
             }
         });
     }
@@ -491,11 +513,16 @@ export default class MergeHUD extends PIXI.Container {
         InGameProgress.instance.onMaxEntitiesChanged.add(async (newLevel: number) => {
             this.playNewDiscovery(newLevel);
         });
+
+        InGameProgress.instance.onLevelUp.add((level: number) => {
+            console.log(RoomRegistry.getRoomUnlockedAtLevel(level))
+        })
     }
 
     public update(delta: number): void {
         this.notifications.update(delta);
         this.newDiscovery.update(delta);
+        this.newAreaDiscovery.update(delta);
         this.roomTransition.update(delta);
     }
 
@@ -511,6 +538,8 @@ export default class MergeHUD extends PIXI.Container {
 
         this.newDiscovery.x = centerX;
         this.newDiscovery.y = centerY;
+
+
 
         const data = StaticData.getAnimalData(newLevel);
         this.newDiscovery.playNew(newLevel, data.name, data.colors[0], this.collectionButton);
@@ -568,8 +597,8 @@ export default class MergeHUD extends PIXI.Container {
         this.collectionButton.x = this.shopButton.x + this.collectionButton.pivot.x;
         this.collectionButton.y = this.shopButton.y + 100 + this.collectionButton.pivot.y;
 
-        this.roomSelector.x = this.shopButton.x + 50;
-        this.roomSelector.y = this.collectionButton.y + 110;
+        this.roomSelector.x = 70;
+        this.roomSelector.y = this.shopButton.y + 160;
 
         // Panel center
         this.collectionPanel.position.set(centerX, (bottomRight.y - topRight.y) / 2);

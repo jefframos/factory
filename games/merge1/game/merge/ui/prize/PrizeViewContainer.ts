@@ -91,4 +91,22 @@ export default class PrizeViewContainer extends PIXI.Container {
         // 3. Optional Tinting based on Tier
         if (tierData?.tint) this.icon.tint = 0xffffff; // Reset or apply specific tint
     }
+    public updateValue(newValue: string): void {
+        // Update the value text
+        if (this.label) {
+            this.label.text = newValue;
+        }
+    }
+
+    public setValueStyle(color: number, scale: number): void {
+        if (this.label) {
+            this.label.tint = color;
+            gsap.to(this.label.scale, {
+                x: scale,
+                y: scale,
+                duration: 0.3,
+                ease: "back.out"
+            });
+        }
+    }
 }
