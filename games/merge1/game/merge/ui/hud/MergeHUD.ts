@@ -55,7 +55,7 @@ export default class MergeHUD extends PIXI.Container {
     private readonly topLayer: PIXI.Container = new PIXI.Container();
     private readonly hintLayer: PIXI.Container = new PIXI.Container();
     private readonly notificationLayer: PIXI.Container = new PIXI.Container();
-    private readonly roomTransition: RoomTransition = new RoomTransition(PIXI.Texture.from("YourPattern"));
+    private readonly roomTransition: RoomTransition = new RoomTransition();
 
     // Notifications
     // -------------------------
@@ -118,6 +118,7 @@ export default class MergeHUD extends PIXI.Container {
 
     public constructor(private readonly coinEffects: CoinEffectLayer) {
         super();
+
 
         this.setupLayers();
 

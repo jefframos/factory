@@ -13,7 +13,6 @@ export class EnvironmentManager {
 
     public updateEnvironment(roomId: RoomId): PIXI.Rectangle {
         const config = RoomRegistry.get(roomId);
-        console.log(config)
         const mapKey = config.mapId;
         const tiledData = ExtractTiledFile.getTiledFrom('garden');
 

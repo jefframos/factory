@@ -148,8 +148,6 @@ export class TimedRewardService {
 
     private tryAutoClaimOne(): boolean {
         const m = this.buildMilestone(this.claimIndex);
-        m.definition.reward
-        m.definition.reward
 
         const exec = this.executeReward(m);
         if (!exec.ok) {

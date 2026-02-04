@@ -13,7 +13,7 @@ export class RoomTransition extends PIXI.Container {
 
 
 
-    constructor(texture: PIXI.Texture) {
+    constructor() {
         super();
         this.addChild(this.bg);
 

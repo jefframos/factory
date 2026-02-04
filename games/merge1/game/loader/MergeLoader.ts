@@ -29,6 +29,7 @@ export default class MergeLoader extends LoaderScene {
 
         // Build UI on top
         //super.build();
+
     }
     public updateLoader(percent: number) {
         this.progress.update(percent);

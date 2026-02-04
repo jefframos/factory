@@ -1,10 +1,5 @@
 import * as PIXI from "pixi.js";
 
-export interface TimedRewardDefinition {
-    id: string;
-    reward: any; // Keep your existing reward structure
-    icon?: PIXI.Texture; // Optional override
-}
 export type TimedRewardKind =
     | "money_percent_or_min"
     | "gems_fixed"
@@ -44,6 +39,7 @@ export type TimedReward =
 export interface TimedRewardDefinition {
     id: string;
     reward: TimedReward;
+    icon?: PIXI.Texture; // Optional override
 }
 
 export interface TimedRewardMilestone {

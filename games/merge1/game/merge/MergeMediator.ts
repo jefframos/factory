@@ -631,6 +631,9 @@ export class MergeMediator {
         const data = reward.logic.data;
         const view = reward.view as any;
 
+        console.log(reward)
+
+
         if (data.rewardType !== CurrencyType.MONEY && data.rewardType !== CurrencyType.GEMS) {
             return;
         }
@@ -641,12 +644,21 @@ export class MergeMediator {
         const hudGlobal = this.hud.getCurrencyTargetGlobalPos(data.rewardType);
         const targetPos = this.coinEffects.toLocal(hudGlobal);
 
+        if (data.rewardType == CurrencyType.MONEY) {
+            data.rewardValue *= InGameProgress.instance.getProgression('MAIN').level;
+        } else if (data.rewardType == CurrencyType.GEMS) {
+            data.rewardValue += InGameProgress.instance.getProgression('MAIN').level;
+        }
         this.coinEffects.popAndFlyToTarget(
             startPos.x + view.coinOffset.x,
             startPos.y + view.coinOffset.y,
             targetPos.x,
             targetPos.y,
-            data.rewardType == CurrencyType.MONEY ? MergeAssets.Textures.Icons.Coin : MergeAssets.Textures.Icons.Gem
+            data.rewardType == CurrencyType.MONEY ? MergeAssets.Textures.Icons.Coin : MergeAssets.Textures.Icons.Gem,
+            data.rewardValue,
+            () => {
+                InGameEconomy.instance.add(data.rewardType, data.rewardValue)
+            }
         );
     }
 
@@ -681,12 +693,14 @@ export class MergeMediator {
 
         MergeAssets.tryToPlaySound(MergeAssets.Sounds.Game.DropChest);
 
+
         if (data.moneyAdded) {
             this.entities.spawnRewardContainer(id, data.moneyAdded, CurrencyType.MONEY);
         }
 
         if (data.gemsAdded) {
             // optional: spawn gems reward container when you add a view for it
+            console.log('onTimedRewardClaimed', data)
 
             this.entities.spawnRewardContainer(id, data.gemsAdded, CurrencyType.GEMS);
         }

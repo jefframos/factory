@@ -79,10 +79,12 @@ export class MergeInputMergeService {
             // We don't set this.activeEntity because we don't want to drag it
             entity.open(() => {
                 const logic = this.deps.entities.getLogic(entity);
+                console.log(logic)
                 if (logic) {
+
                     // Here we call the logic to actually grant the reward
                     // Assuming you added this method to your EntityManager as discussed previously
-                    (this.deps.entities as any).claimReward?.(logic.data);
+                    //this.deps.entities.claimReward?.(logic.data);
 
                     this.OnRewardOpen.dispatch({ logic, view: entity })
                     setTimeout(() => {

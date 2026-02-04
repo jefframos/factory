@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770211825846,
-                "duration": 8.927999999999884,
+                "date": 1770243861950,
+                "duration": 9.037100000001374,
                 "success": true
             }
         },
@@ -824,8 +824,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770211825846,
-                "duration": 3995.9842999999996,
+                "date": 1770243861950,
+                "duration": 3288.735199999999,
                 "success": true
             }
         },
@@ -2016,26 +2016,6 @@
             "transformData": {},
             "hash": "egHgZQ"
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/Icon_Star_Off.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "peLg9w"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/Icon_Star_On.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "XqmUFw"
-        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/Icon_Ticket01.png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons",
@@ -2056,26 +2036,6 @@
             "transformData": {},
             "hash": "dYz2mg"
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/Icon_Ticket_Gold.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "TJwagA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/Icon_Ticket_Silver.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "4ShsPw"
-        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/Icon_Timer.png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons",
@@ -2085,16 +2045,6 @@
             },
             "transformData": {},
             "hash": "lyoS_A"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/Icon_Trophy02.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "6L3nuA"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}/icons/ItemIcon_Bag_Brown.Png": {
             "isFolder": false,

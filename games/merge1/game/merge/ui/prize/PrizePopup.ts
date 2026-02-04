@@ -291,6 +291,7 @@ export class PrizePopup extends BasePopup {
             this.currentCallback = null;
         }
 
+
         await PlatformHandler.instance.platform.showCommercialBreak();
         this.popupManager.hideCurrent();
 

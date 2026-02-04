@@ -24,7 +24,6 @@ export class StaticData {
     public static parseData(jsonData: any[]): void {
         this._animals.clear();
         jsonData.forEach(item => {
-            console.log(item.patterns)
             this._animals.set(item.level, {
                 level: item.level,
                 spriteId: item.spriteId,

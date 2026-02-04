@@ -8,6 +8,7 @@ import MergeAssets from "../../MergeAssets";
 import { MissionManager } from "../../missions/MissionManager";
 import { MissionDefinition } from "../../missions/MissionTypes";
 import { TextureBaker } from "../../vfx/TextureBaker";
+import { NotificationIcon } from "../shop/NotificationIcon";
 
 export class MissionHUD extends PIXI.Container {
     public onClaim: Signal = new Signal();
@@ -123,6 +124,11 @@ export class MissionHUD extends PIXI.Container {
         // Positioned under the right side of the main panel
         this.claimButton.x = this.w / 2;
         this.claimButton.y = - this.claimButton.height / 2 - 5;
+
+        const notification = new NotificationIcon(() => true)
+        this.claimButton.addChild(notification)
+        notification.x = 190
+        notification.y = 0
 
         this.claimButton.pivot.x = this.claimButton.width / 2;
         this.claimButton.pivot.y = this.claimButton.height / 2;

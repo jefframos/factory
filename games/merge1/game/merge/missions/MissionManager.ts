@@ -2,6 +2,7 @@
 import { Signal } from "signals";
 import { CurrencyType, InGameEconomy } from "../data/InGameEconomy";
 import { InGameProgress } from "../data/InGameProgress";
+import { ModifierManager, ModifierType } from "../modifiers/ModifierManager";
 import GameStorage, { IMissionState, IMissionsSaveData, ProgressionType } from "../storage/GameStorage";
 import { MissionFactory, MissionFactoryConfig } from "./MissionFactory";
 import { MISSION_TEMPLATES } from "./MissionRegistry";
@@ -50,6 +51,8 @@ export class MissionManager {
         delete (s as any).activeDef;
 
         this._save = s;
+
+        //simulateRewards()
     }
 
     /**
@@ -192,18 +195,44 @@ export class MissionManager {
 
         // Grant rewards
         if (def.reward.currencies) {
-            for (const [type, amt] of Object.entries(def.reward.currencies)) {
-                if (amt && amt > 0) {
+            const progress = InGameProgress.instance.getProgression('MAIN');
+            const highestLvl = progress.highestMergeLevel;
+            const playerLvl = progress.level;
+
+            // Get the modifier bonus (e.g., 1.1 for a 10% boost)
+            const missionBonus = ModifierManager.instance.getNormalizedValue(ModifierType.MissionRewards);
+
+            for (const [type, percentage] of Object.entries(def.reward.currencies)) {
+                if (percentage && percentage > 0) {
                     const currency = type as CurrencyType;
-                    let amount = InGameEconomy.instance.currencies[currency]
-                    amount *= amt
-                    if (currency == CurrencyType.MONEY) {
-                        amount = Math.max(amount, 100)
-                    } else if (currency == CurrencyType.GEMS) {
-                        amount = Math.max(InGameProgress.instance.getProgression('MAIN').level, 2)
+                    let amount = 0;
+
+                    if (currency === CurrencyType.MONEY) {
+                        // 1. Scale based on the shop price of the player's best piece
+                        // Using your ShopManager formula: 500 * 2.5^(lvl-1)
+                        const index = Math.max(0, highestLvl - 1);
+                        const referencePrice = index === 0 ? 50 : 500 * Math.pow(2.5, index);
+
+                        amount = referencePrice * percentage;
+                        amount = Math.max(amount, 100); // Minimum 100 coins
+
+                    } else if (currency === CurrencyType.GEMS) {
+                        // 2. Scale gems linearly based on player level (3 to 50 range)
+                        // Base pot grows as player levels up
+                        const gemPot = 20 + (playerLvl * 5);
+                        amount = gemPot * percentage;
+
+                        // Clamp between 3 and 50 as per your requirements
+                        amount = Math.max(3, Math.min(amount, 50));
                     }
-                    InGameEconomy.instance.add(currency, amount);
-                    claimedCurrencies[currency] = amount;
+
+                    // 3. Apply the "Bounty Hunter" modifier bonus
+                    amount *= missionBonus;
+
+                    // 4. Finalize
+                    const finalAmount = Math.floor(amount);
+                    InGameEconomy.instance.add(currency, finalAmount);
+                    claimedCurrencies[currency] = finalAmount;
                 }
             }
         }

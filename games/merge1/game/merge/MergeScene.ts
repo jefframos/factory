@@ -32,7 +32,7 @@ export default class MergeScene extends GameScene {
     public readonly foregroundContainer: PIXI.Container = new PIXI.Container();
     public hud!: MergeHUD;
 
-    private background: PIXI.Sprite = PIXI.Sprite.from('main-bg');
+    private background: PIXI.Sprite = new PIXI.Sprite();
     private patternBackground?: PatternBackground;
 
     private highScore: number = 0;
