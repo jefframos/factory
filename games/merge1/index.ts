@@ -27,7 +27,7 @@ export default class MyGame extends Game {
 
 
     constructor() {
-        super({ resolution: 1.5 }, false);
+        super({ resolution: Math.max(2, (devicePixelRatio || 1)) }, false);
 
         PIXI.Ticker.shared.maxFPS = 100;
 
