@@ -1,0 +1,41 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "backgrounds"
+          ],
+          "src": [
+            "backgrounds.webp.json"
+          ]
+        },
+        {
+          "alias": [
+            "bedroom"
+          ],
+          "src": [
+            "bedroom.webp.json"
+          ]
+        },
+        {
+          "alias": [
+            "garden"
+          ],
+          "src": [
+            "garden.webp.json"
+          ]
+        },
+        {
+          "alias": [
+            "ui"
+          ],
+          "src": [
+            "ui.webp.json"
+          ]
+        }
+      ]
+    }
+  ]
+}

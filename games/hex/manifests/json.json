@@ -1,0 +1,33 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "data/animals-old.json"
+          ],
+          "src": [
+            "data/animals-old.json"
+          ]
+        },
+        {
+          "alias": [
+            "data/animals.json"
+          ],
+          "src": [
+            "data/animals.json"
+          ]
+        },
+        {
+          "alias": [
+            "tiled.json"
+          ],
+          "src": [
+            "tiled.json"
+          ]
+        }
+      ]
+    }
+  ]
+}

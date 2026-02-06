@@ -217,6 +217,7 @@ export class TimedRewardService {
             case "gems_fixed":
                 {
                     gemsAdded = Math.max(0, reward.gems);
+
                     if (gemsAdded > 0 && this.autoClaim) {
                         this.ctx.addGems(gemsAdded);
                     }

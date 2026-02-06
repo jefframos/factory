@@ -1,0 +1,1026 @@
+{
+    "assets": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio": {
+            "isFolder": true,
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387479249,
+                "duration": 2.7946000000000026,
+                "success": true
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Applause Cheering.mp3": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387479251,
+                "duration": 38.96550000000002,
+                "success": true
+            },
+            "hash": "-0GfyQ"
+        },
+        ".assetpack/ffmpeg/Applause Cheering.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Applause Cheering.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Applause Cheering.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Applause Cheering.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Bonus Fly Anim.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387479252,
+                "duration": 2900.3759,
+                "success": true
+            },
+            "hash": "nWdLLA"
+        },
+        ".assetpack/ffmpeg/Bonus Fly Anim.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Bonus Fly Anim.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Bonus Fly Anim.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Bonus Fly Anim.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Bonus Highlights.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387479253,
+                "duration": 2910.4291,
+                "success": true
+            },
+            "hash": "z8nNcQ"
+        },
+        ".assetpack/ffmpeg/Bonus Highlights.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Bonus Highlights.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Bonus Highlights.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Bonus Highlights.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Bonus Screen Popup.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387479253,
+                "duration": 2923.2251,
+                "success": true
+            },
+            "hash": "mOF0hQ"
+        },
+        ".assetpack/ffmpeg/Bonus Screen Popup.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Bonus Screen Popup.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Bonus Screen Popup.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Bonus Screen Popup.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/brittle-rille.mp3": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387479253,
+                "duration": 259.5043,
+                "success": true
+            },
+            "hash": "Th0R"
+        },
+        ".assetpack/ffmpeg/brittle-rille.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/brittle-rille.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/brittle-rille.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/brittle-rille.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Bubbles.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387479290,
+                "duration": 2817.6877999999997,
+                "success": true
+            },
+            "hash": "OyElJg"
+        },
+        ".assetpack/ffmpeg/Bubbles.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Bubbles.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Bubbles.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Bubbles.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Cat Meow 01.mp4": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387479514,
+                "duration": 2624.0288,
+                "success": true
+            },
+            "hash": "x6M_Og"
+        },
+        ".assetpack/ffmpeg/Cat Meow 01.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Cat Meow 01.mp4",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Cat Meow 01.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Cat Meow 01.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Cat Meow 02.mp4": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482108,
+                "duration": 245.4443000000001,
+                "success": true
+            },
+            "hash": "RqNp4A"
+        },
+        ".assetpack/ffmpeg/Cat Meow 02.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Cat Meow 02.mp4",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Cat Meow 02.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Cat Meow 02.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Cat Meow Angry 01.mp4": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482138,
+                "duration": 280.2683000000002,
+                "success": true
+            },
+            "hash": "dgHbuw"
+        },
+        ".assetpack/ffmpeg/Cat Meow Angry 01.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Cat Meow Angry 01.mp4",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Cat Meow Angry 01.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Cat Meow Angry 01.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Cat Meow Angry 02.mp4": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482153,
+                "duration": 284.75509999999986,
+                "success": true
+            },
+            "hash": "Ju0NzA"
+        },
+        ".assetpack/ffmpeg/Cat Meow Angry 02.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Cat Meow Angry 02.mp4",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Cat Meow Angry 02.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Cat Meow Angry 02.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Chest Appear.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482163,
+                "duration": 323.9513000000002,
+                "success": true
+            },
+            "hash": "tt7vfw"
+        },
+        ".assetpack/ffmpeg/Chest Appear.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Chest Appear.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Chest Appear.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Chest Appear.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Chest Open.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482176,
+                "duration": 305.5988000000002,
+                "success": true
+            },
+            "hash": "TASA"
+        },
+        ".assetpack/ffmpeg/Chest Open.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Chest Open.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Chest Open.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Chest Open.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Claim.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482354,
+                "duration": 267.97569999999996,
+                "success": true
+            },
+            "hash": "khQ5vQ"
+        },
+        ".assetpack/ffmpeg/Claim.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Claim.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Claim.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Claim.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Coin1.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482419,
+                "duration": 254.9672999999998,
+                "success": true
+            },
+            "hash": "sPfZuQ"
+        },
+        ".assetpack/ffmpeg/Coin1.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Coin1.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Coin1.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Coin1.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Coin2.mp3": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482438,
+                "duration": 34.83210000000008,
+                "success": true
+            },
+            "hash": "_YCHfw"
+        },
+        ".assetpack/ffmpeg/Coin2.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Coin2.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Coin2.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Coin2.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/diamond-sparkle.mp3": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482473,
+                "duration": 32.60370000000012,
+                "success": true
+            },
+            "hash": "fQvc3w"
+        },
+        ".assetpack/ffmpeg/diamond-sparkle.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/diamond-sparkle.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/diamond-sparkle.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/diamond-sparkle.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/drop.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482482,
+                "duration": 275.7945999999997,
+                "success": true
+            },
+            "hash": "gZGdKw"
+        },
+        ".assetpack/ffmpeg/drop.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/drop.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/drop.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/drop.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/grab (1).wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482487,
+                "duration": 250.18600000000015,
+                "success": true
+            },
+            "hash": "3Ggp6A"
+        },
+        ".assetpack/ffmpeg/grab (1).mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/grab (1).wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/grab (1).mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/grab (1).mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/grab (2).wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482506,
+                "duration": 260.97220000000016,
+                "success": true
+            },
+            "hash": "riagIQ"
+        },
+        ".assetpack/ffmpeg/grab (2).mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/grab (2).wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/grab (2).mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/grab (2).mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/grab (3).wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482622,
+                "duration": 234.22980000000007,
+                "success": true
+            },
+            "hash": "y5kj5g"
+        },
+        ".assetpack/ffmpeg/grab (3).mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/grab (3).wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/grab (3).mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/grab (3).mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/grab (4).wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482674,
+                "duration": 241.19619999999986,
+                "success": true
+            },
+            "hash": "HLuKDw"
+        },
+        ".assetpack/ffmpeg/grab (4).mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/grab (4).wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/grab (4).mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/grab (4).mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Hover.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482737,
+                "duration": 231.99429999999984,
+                "success": true
+            },
+            "hash": "c3xLug"
+        },
+        ".assetpack/ffmpeg/Hover.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Hover.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Hover.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Hover.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/hpp-increase20.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482758,
+                "duration": 256.4878999999996,
+                "success": true
+            },
+            "hash": "FXBiNg"
+        },
+        ".assetpack/ffmpeg/hpp-increase20.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/hpp-increase20.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/hpp-increase20.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/hpp-increase20.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/hpp-yay1.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482767,
+                "duration": 270.4676000000004,
+                "success": true
+            },
+            "hash": "VnWhCA"
+        },
+        ".assetpack/ffmpeg/hpp-yay1.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/hpp-yay1.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/hpp-yay1.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/hpp-yay1.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/hpp-yay2.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482856,
+                "duration": 265.11339999999973,
+                "success": true
+            },
+            "hash": "IR2P8g"
+        },
+        ".assetpack/ffmpeg/hpp-yay2.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/hpp-yay2.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/hpp-yay2.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/hpp-yay2.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/hpp-yay3.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482915,
+                "duration": 244.4350999999997,
+                "success": true
+            },
+            "hash": "qTPL"
+        },
+        ".assetpack/ffmpeg/hpp-yay3.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/hpp-yay3.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/hpp-yay3.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/hpp-yay3.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/hpp-yay4.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387482969,
+                "duration": 247.3689000000004,
+                "success": true
+            },
+            "hash": "GKga6w"
+        },
+        ".assetpack/ffmpeg/hpp-yay4.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/hpp-yay4.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/hpp-yay4.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/hpp-yay4.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Pitched-Tapping-Glass.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387483014,
+                "duration": 257.10049999999956,
+                "success": true
+            },
+            "hash": "jeZOtA"
+        },
+        ".assetpack/ffmpeg/Pitched-Tapping-Glass.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Pitched-Tapping-Glass.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Pitched-Tapping-Glass.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Pitched-Tapping-Glass.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/PopupOpen.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387483037,
+                "duration": 270.7418000000007,
+                "success": true
+            },
+            "hash": "nvQ6-Q"
+        },
+        ".assetpack/ffmpeg/PopupOpen.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/PopupOpen.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/PopupOpen.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/PopupOpen.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Positive Open.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387483121,
+                "duration": 303.3704000000007,
+                "success": true
+            },
+            "hash": "PXg3Lg"
+        },
+        ".assetpack/ffmpeg/Positive Open.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Positive Open.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Positive Open.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Positive Open.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/ScoreUpdate.mp3": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387483159,
+                "duration": 20.229299999999967,
+                "success": true
+            },
+            "hash": "G27fgA"
+        },
+        ".assetpack/ffmpeg/ScoreUpdate.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/ScoreUpdate.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/ScoreUpdate.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/ScoreUpdate.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/soundtrack": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387483180,
+                "duration": 0.04849999999987631,
+                "success": true
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/soundtrack/longnight.mp3": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/soundtrack",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387483180,
+                "duration": 33.04160000000047,
+                "success": true
+            },
+            "hash": "qhDh3A"
+        },
+        ".assetpack/ffmpeg/soundtrack/longnight.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/soundtrack/longnight.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/soundtrack/longnight.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/soundtrack/longnight.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/soundtrack/peace-be-with-you.mp3": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/soundtrack",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387483213,
+                "duration": 55.01350000000002,
+                "success": true
+            },
+            "hash": "zZ1XAw"
+        },
+        ".assetpack/ffmpeg/soundtrack/peace-be-with-you.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/soundtrack/peace-be-with-you.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/soundtrack/peace-be-with-you.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/soundtrack/peace-be-with-you.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Synth-Appear-01.m4a": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387483217,
+                "duration": 296.5435000000007,
+                "success": true
+            },
+            "hash": "Hme6Lg"
+        },
+        ".assetpack/ffmpeg/Synth-Appear-01.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Synth-Appear-01.m4a",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Synth-Appear-01.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Synth-Appear-01.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Synth-Whoosh-Small-01.m4a": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387483268,
+                "duration": 268.2483000000002,
+                "success": true
+            },
+            "hash": "UGUDoQ"
+        },
+        ".assetpack/ffmpeg/Synth-Whoosh-Small-01.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Synth-Whoosh-Small-01.m4a",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Synth-Whoosh-Small-01.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Synth-Whoosh-Small-01.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Tap.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387483272,
+                "duration": 253.61359999999968,
+                "success": true
+            },
+            "hash": "0fRURQ"
+        },
+        ".assetpack/ffmpeg/Tap.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Tap.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Tap.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Tap.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Whoosh.wav": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387483308,
+                "duration": 235.0582999999997,
+                "success": true
+            },
+            "hash": "RsdCOQ"
+        },
+        ".assetpack/ffmpeg/Whoosh.mp3": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/audio/Whoosh.wav",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/audio/Whoosh.mp3": {
+            "isFolder": false,
+            "transformParent": ".assetpack/ffmpeg/Whoosh.mp3",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        }
+    }
+}

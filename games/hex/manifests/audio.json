@@ -1,0 +1,305 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "Applause Cheering.mp3"
+          ],
+          "src": [
+            "Applause Cheering.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Bonus Fly Anim.wav"
+          ],
+          "src": [
+            "Bonus Fly Anim.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Bonus Highlights.wav"
+          ],
+          "src": [
+            "Bonus Highlights.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Bonus Screen Popup.wav"
+          ],
+          "src": [
+            "Bonus Screen Popup.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "brittle-rille.mp3"
+          ],
+          "src": [
+            "brittle-rille.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Bubbles.wav"
+          ],
+          "src": [
+            "Bubbles.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Cat Meow 01.mp4"
+          ],
+          "src": [
+            "Cat Meow 01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Cat Meow 02.mp4"
+          ],
+          "src": [
+            "Cat Meow 02.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Cat Meow Angry 01.mp4"
+          ],
+          "src": [
+            "Cat Meow Angry 01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Cat Meow Angry 02.mp4"
+          ],
+          "src": [
+            "Cat Meow Angry 02.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Chest Appear.wav"
+          ],
+          "src": [
+            "Chest Appear.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Chest Open.wav"
+          ],
+          "src": [
+            "Chest Open.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Claim.wav"
+          ],
+          "src": [
+            "Claim.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Coin1.wav"
+          ],
+          "src": [
+            "Coin1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Coin2.mp3"
+          ],
+          "src": [
+            "Coin2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "diamond-sparkle.mp3"
+          ],
+          "src": [
+            "diamond-sparkle.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "drop.wav"
+          ],
+          "src": [
+            "drop.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "grab (1).wav"
+          ],
+          "src": [
+            "grab (1).mp3"
+          ]
+        },
+        {
+          "alias": [
+            "grab (2).wav"
+          ],
+          "src": [
+            "grab (2).mp3"
+          ]
+        },
+        {
+          "alias": [
+            "grab (3).wav"
+          ],
+          "src": [
+            "grab (3).mp3"
+          ]
+        },
+        {
+          "alias": [
+            "grab (4).wav"
+          ],
+          "src": [
+            "grab (4).mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Hover.wav"
+          ],
+          "src": [
+            "Hover.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-increase20.wav"
+          ],
+          "src": [
+            "hpp-increase20.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay1.wav"
+          ],
+          "src": [
+            "hpp-yay1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay2.wav"
+          ],
+          "src": [
+            "hpp-yay2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay3.wav"
+          ],
+          "src": [
+            "hpp-yay3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay4.wav"
+          ],
+          "src": [
+            "hpp-yay4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Pitched-Tapping-Glass.wav"
+          ],
+          "src": [
+            "Pitched-Tapping-Glass.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "PopupOpen.wav"
+          ],
+          "src": [
+            "PopupOpen.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Positive Open.wav"
+          ],
+          "src": [
+            "Positive Open.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ScoreUpdate.mp3"
+          ],
+          "src": [
+            "ScoreUpdate.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "soundtrack/longnight.mp3"
+          ],
+          "src": [
+            "soundtrack/longnight.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "soundtrack/peace-be-with-you.mp3"
+          ],
+          "src": [
+            "soundtrack/peace-be-with-you.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Synth-Appear-01.m4a"
+          ],
+          "src": [
+            "Synth-Appear-01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Synth-Whoosh-Small-01.m4a"
+          ],
+          "src": [
+            "Synth-Whoosh-Small-01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Tap.wav"
+          ],
+          "src": [
+            "Tap.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Whoosh.wav"
+          ],
+          "src": [
+            "Whoosh.mp3"
+          ]
+        }
+      ]
+    }
+  ]
+}

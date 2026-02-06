@@ -1,0 +1,104 @@
+{
+    "assets": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json": {
+            "isFolder": true,
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387475921,
+                "duration": 124.16289999999992,
+                "success": true
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/data{copy}": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json",
+            "metaData": {
+                "copy": true
+            },
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387475923,
+                "duration": 122.39139999999998,
+                "success": true
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/data{copy}/animals-old.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/data{copy}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1770387475923,
+                "duration": 123.97220000000004,
+                "success": true
+            },
+            "hash": "-B35qw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/json/data/animals-old.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/data{copy}/animals-old.json",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/data{copy}/animals.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/data{copy}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {},
+            "stats": {
+                "date": 1770387475956,
+                "duration": 90.70860000000005,
+                "success": true
+            },
+            "hash": "E_1iIw"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/json/data/animals.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/data{copy}/animals.json",
+            "metaData": {},
+            "inheritedMetaData": {
+                "copy": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/tiled.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770387475993,
+                "duration": 53.740099999999984,
+                "success": true
+            },
+            "hash": "lQCHiA"
+        },
+        ".assetpack/json/tiled.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/tiled.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/json/tiled.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/tiled.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        }
+    }
+}
