@@ -1,3 +1,4 @@
+import gsap from "gsap";
 import * as PIXI from "pixi.js";
 import { HexGameMediator } from "./HexGameMediator";
 import { HexPos, HexUtils } from "./HexTypes";
@@ -21,6 +22,15 @@ export class HexInputService {
     private dragOffset: PIXI.Point = new PIXI.Point();
     private readonly HIT_RADIUS: number = 60;
 
+    private _enabled: boolean = true;
+    public get enabled(): boolean { return this._enabled; }
+    public set enabled(value: boolean) {
+        this._enabled = value;
+        // If we disable input while holding a piece, we must release it
+        if (!value && this.activePiece) {
+            this.forceResetHeldPiece();
+        }
+    }
     // Derived from HexUtils.offsetToPixel so snap math cannot drift.
     private stepX: number = 0;
     private stepY: number = 0;
@@ -42,8 +52,22 @@ export class HexInputService {
 
         this.cacheHexSteps();
     }
+    public forceResetHeldPiece(): void {
+        if (!this.activePiece) return;
 
+        const piece = this.activePiece;
+        this.activePiece = null; // Clear reference first to prevent event loops
+
+        this.mediator.Grid.clearPreview();
+        this.mediator.returnToTray(piece);
+    }
     private onPointerDown(e: PIXI.FederatedPointerEvent): void {
+        // 1. GLOBAL LOCK: Stop if HUD/Animations are running
+        if (!this._enabled) return;
+
+        // 2. DOUBLE-TAP PROTECTION: If already holding something, ignore new taps
+        if (this.activePiece) return;
+
         let closest: ClusterView | null = null;
         let minDist = this.HIT_RADIUS;
 
@@ -53,11 +77,11 @@ export class HexInputService {
         ];
 
         for (const child of targets) {
-            if (!(child instanceof ClusterView)) {
-                continue;
-            }
+            if (!(child instanceof ClusterView)) continue;
 
-            // visualCenter is fine for selection hit-test.
+            // 3. ANIMATION LOCK: Don't grab a piece that is currently tweening back to tray
+            if (gsap.isTweening(child) || gsap.isTweening(child.position)) continue;
+
             const globalCenter = child.toGlobal(child.visualCenter);
             const dist = Math.hypot(e.global.x - globalCenter.x, e.global.y - globalCenter.y);
 
@@ -67,25 +91,22 @@ export class HexInputService {
             }
         }
 
-        if (!closest) {
-            return;
-        }
+        if (!closest) return;
 
+        // 4. RESET STATE: If the piece was somehow stuck in a weird layer, force reset it
         this.activePiece = closest;
+        this.activePiece.eventMode = 'none'; // Prevent the piece itself from catching events during drag
 
-        // Clear occupancy if it was placed.
         this.mediator.Grid.removePiece(closest);
 
-        // Reparent to drag layer (shared coords).
         const posInLayer = this.mediator.GameLayer.toLocal(this.activePiece.getGlobalPosition());
         this.mediator.GameLayer.addChild(this.activePiece);
         this.activePiece.position.copyFrom(posInLayer);
 
-        // Match grid scale visually while dragging.
+
         const targetScale = this.mediator.Grid.scale.x;
         this.activePiece.scale.set(targetScale);
 
-        // Drag offset from pointer -> piece origin.
         const mouseInLayer = this.mediator.GameLayer.toLocal(e.global);
         this.dragOffset.set(
             mouseInLayer.x - this.activePiece.x,
@@ -94,9 +115,8 @@ export class HexInputService {
     }
 
     private onPointerMove(e: PIXI.FederatedPointerEvent): void {
-        if (!this.activePiece) {
-            return;
-        }
+        // BLOCK INPUT IF DISABLED
+        if (!this._enabled || !this.activePiece) return;
 
         const mouseInLayer = this.mediator.GameLayer.toLocal(e.global);
         this.activePiece.position.set(
@@ -105,12 +125,9 @@ export class HexInputService {
         );
 
         const grid = this.mediator.Grid;
-
         const anchor = this.getAnchorCellForActivePiece();
         const snapped = anchor ? this.buildSnappedCoords(anchor, this.activePiece.data.coords) : null;
 
-        // Optional but recommended: update cluster rendering to match absolute row parity.
-        // This prevents "different highlight patterns depending on row".
         if (anchor) {
             const parity = (anchor.r & 1) as 0 | 1;
             const anyPiece: any = this.activePiece as any;
@@ -127,33 +144,28 @@ export class HexInputService {
     }
 
     private onPointerUp(e: PIXI.FederatedPointerEvent): void {
-        if (!this.activePiece) {
+        // If input was disabled while holding, move logic is already handled by the setter
+        if (!this._enabled || !this.activePiece) {
+            this.activePiece = null;
             return;
         }
-
+        this.activePiece.eventMode = 'static';
         const grid = this.mediator.Grid;
-
         const anchor = this.getAnchorCellForActivePiece();
         const snapped = anchor ? this.buildSnappedCoords(anchor, this.activePiece.data.coords) : null;
 
         if (anchor && snapped && grid.canFit(snapped)) {
-            // Ensure final parity is applied (optional).
             const parity = (anchor.r & 1) as 0 | 1;
             const anyPiece: any = this.activePiece as any;
             if (typeof anyPiece.applyAnchorRowParity === "function") {
                 anyPiece.applyAnchorRowParity(parity);
             }
 
-            // Reparent into grid.
             grid.addChild(this.activePiece);
-
-            // Reset scale because grid is already scaled.
             this.activePiece.scale.set(1);
 
-            // Place using the anchor cell: piece local (0,0) tile aligns to offsetToPixel(anchor).
             const anchorPixel = HexUtils.offsetToPixel(anchor.q, anchor.r);
             this.activePiece.position.copyFrom(anchorPixel);
-
             grid.placePiece(this.activePiece, snapped);
         } else {
             this.mediator.returnToTray(this.activePiece);

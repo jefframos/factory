@@ -26,6 +26,14 @@
           "src": [
             "tiled.json"
           ]
+        },
+        {
+          "alias": [
+            "levels.json"
+          ],
+          "src": [
+            "levels.json"
+          ]
         }
       ]
     }

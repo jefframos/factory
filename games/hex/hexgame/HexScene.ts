@@ -12,9 +12,10 @@ import ViewUtils from "@core/utils/ViewUtils";
 import { DevGuiManager } from "../game/utils/DevGuiManager";
 import { ClusterManager } from "./cluster/ClusterManager";
 import { HexGameMediator } from "./HexGameMediator";
-import { HexGridBuilder } from "./HexGridBuilder";
 import { HexGridView } from "./HexGridView";
 import { Difficulty, GridMatrix } from "./HexTypes";
+import { LevelDataManager } from "./LevelDataManager";
+import { HexHUD } from "./ui/HexHud";
 
 export default class HexScene extends GameScene {
     public readonly onQuit: Signal = new Signal();
@@ -39,6 +40,7 @@ export default class HexScene extends GameScene {
 
     private mediator?: HexGameMediator;
     private gridView?: HexGridView;
+    private hexHUD?: HexHUD;
     private clusterManager: ClusterManager = new ClusterManager();
 
     constructor(game: Game) {
@@ -51,6 +53,8 @@ export default class HexScene extends GameScene {
     public build(): void {
         // 1. Backgrounds
         SoundLoadManager.instance.loadAllSoundsBackground();
+        const levelsJson = PIXI.Assets.get('levels.json') as any;
+        LevelDataManager.init(levelsJson);
 
         SoundManager.instance.setMasterSfxVolume(0.7)
         this.patternBackground = new PatternBackground({
@@ -98,7 +102,55 @@ export default class HexScene extends GameScene {
         this.updateScore(0);
     }
 
+
+
+
     private setupGameplay(): void {
+        // 1. If containers don't exist, create them
+
+        // 2. The Puzzle Matrix (This could be randomized later)
+
+        this.gridView = new HexGridView();
+        this.clusterManager = new ClusterManager();
+
+        this.gridView = new HexGridView();
+        this.gameplayContainer.addChild(this.gridView);
+
+        // 4. Build Pieces
+        this.clusterManager = new ClusterManager();
+        this.gameplayContainer.addChild(this.clusterManager);
+
+        // 5. Define Areas
+        const gridRect = new PIXI.Rectangle(50, 100, Game.DESIGN_WIDTH - 100, Game.DESIGN_HEIGHT * 0.5);
+        const piecesRect = new PIXI.Rectangle(50, Game.DESIGN_HEIGHT * 0.6, Game.DESIGN_WIDTH - 100, Game.DESIGN_HEIGHT * 0.4);
+
+        this.hexHUD = new HexHUD();
+        // 6. Setup HUD (Only once if possible, or clear it too)
+        this.hexHUD.y = 20;
+        this.hexHUD.x = (Game.DESIGN_WIDTH - (this.hexHUD.width || 0)) / 2;
+        this.foregroundContainer.addChild(this.hexHUD);
+
+        // 7. Initialize Mediator
+        this.mediator = new HexGameMediator(
+            gridRect,
+            piecesRect,
+            this.gridView,
+            this.clusterManager,
+            this.gameplayContainer,
+            this.gameplayContainer,
+            this.hexHUD
+        );
+
+        // 8. HOOK THE RESTART EVENT
+        this.mediator.onRestart.add(() => this.restartGame());
+
+        this.restartGame();
+        this.mediator.layout();
+
+    }
+
+    private restartGame(): void {
+        console.log("Cleaning up for new game...");
         const matrix: GridMatrix = [
             [1, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 1, 1],
@@ -107,31 +159,8 @@ export default class HexScene extends GameScene {
             [1, 1, 1, 1, 0, 1]
         ];
 
-        const { data, totalSize } = HexGridBuilder.buildFromMatrix(matrix);
-        this.gridView = new HexGridView(data, totalSize);
-        this.gameplayContainer.addChild(this.gridView);
-
-        this.clusterManager = new ClusterManager();
-        this.gameplayContainer.addChild(this.clusterManager);
-        this.clusterManager.initPuzzle(matrix, Difficulty.MEDIUM);
-
-        // Define Areas (Top 60% for Grid, Bottom 40% for Pieces)
-        const gridRect = new PIXI.Rectangle(50, 100, Game.DESIGN_WIDTH - 100, Game.DESIGN_HEIGHT * 0.5);
-        const piecesRect = new PIXI.Rectangle(50, Game.DESIGN_HEIGHT * 0.6, Game.DESIGN_WIDTH - 100, Game.DESIGN_HEIGHT * 0.4);
-
-        this.mediator = new HexGameMediator(
-            gridRect,
-            piecesRect,
-            this.gridView,
-            this.clusterManager,
-            this.gameplayContainer,
-            this.gameplayContainer,
-        );
-
-        this.mediator.layout();
-        this.mediator.drawDebugZones(); // Toggle this for debugging
-
-
+        const level = LevelDataManager.getRandomLevel();
+        this.mediator?.startLevel(level.matrix, Difficulty.MEDIUM);
     }
 
     private setupUI(): void {

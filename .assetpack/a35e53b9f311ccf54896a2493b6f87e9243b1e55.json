@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770387475921,
-                "duration": 124.16289999999992,
+                "date": 1770398552065,
+                "duration": 36.93420000001788,
                 "success": true
             }
         },
@@ -96,6 +96,33 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/json/tiled.json": {
             "isFolder": false,
             "transformParent": ".assetpack/json/tiled.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/levels.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770398552065,
+                "duration": 37.13519999998971,
+                "success": true
+            },
+            "hash": "3vSLpw"
+        },
+        ".assetpack/json/levels.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/levels.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/json/levels.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/levels.json",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

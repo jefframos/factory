@@ -1,4 +1,5 @@
 import Pool from "@core/Pool";
+import gsap from "gsap";
 import * as PIXI from "pixi.js";
 import { Difficulty } from "../HexTypes";
 import { ClusterGenerator } from "./ClusterGenerator";
@@ -12,6 +13,7 @@ export class ClusterManager extends PIXI.Container {
     }
 
     public initPuzzle(matrix: any, difficulty: Difficulty): void {
+        this.reset();
         const puzzleData = ClusterGenerator.generateFromGrid(matrix, difficulty);
         const maxWidth = 1200;
         const horizontalSpacing = 60;
@@ -105,5 +107,17 @@ export class ClusterManager extends PIXI.Container {
             child.scale.set(1); // Reset scale from the "drag lift"
             // re-center logic...
         });
+    }
+
+    public reset(): void {
+        this.removeChildren();
+        this.activeClusters.forEach(view => {
+            gsap.killTweensOf(view);
+            gsap.killTweensOf(view.scale);
+            Pool.instance.returnElement(view);
+        });
+        this.activeClusters = [];
+        this.position.set(0, 0);
+        this.scale.set(1);
     }
 }

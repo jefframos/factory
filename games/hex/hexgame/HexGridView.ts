@@ -5,14 +5,40 @@ import { ClusterView } from "./cluster/ClusterView";
 export class HexGridView extends PIXI.Container {
     // Stores the background "slots"
     private cellGraphics: Map<string, PIXI.Graphics> = new Map();
-    // Stores which pieces are currently locked into the grid
     private occupiedTiles: Map<string, ClusterView> = new Map();
 
-    constructor(gridData: Map<string, GridCellData>, bounds: PIXI.Rectangle) {
+    constructor() {
         super();
-        this.pivot.set(bounds.width / 2 - (HexUtils.WIDTH / 2), bounds.height / 2 - (HexUtils.HEIGHT / 2));
+    }
+
+    /**
+     * Completely rebuilds the grid for a new level.
+     */
+    public init(gridData: Map<string, GridCellData>): void {
+        this.reset(); // Clear logical pieces
+
+        // Clear visual background hexes
+        this.cellGraphics.forEach(hex => hex.destroy());
+        this.cellGraphics.clear();
+        this.removeChildren(); // Final sweep
+
+        // Render new grid
         this.renderGrid(gridData);
         this.calculateVisualPivot();
+    }
+
+    /**
+     * Clears logic and pieces, but keeps the background grid tiles.
+     */
+    public reset(): void {
+        this.occupiedTiles.clear();
+        this.clearPreview();
+        // Remove only ClusterViews, leave the background Graphics
+        this.children.forEach(child => {
+            if (child instanceof ClusterView) {
+                this.removeChild(child);
+            }
+        });
     }
 
     private renderGrid(gridData: Map<string, GridCellData>): void {
