@@ -1,4 +1,4 @@
-import { ClusterData, Difficulty, GridMatrix, HexPos } from "../HexTypes";
+import { ClusterData, Difficulty, GridMatrix, HexPos, PIECE_COLOR_PALETTE } from "../HexTypes";
 
 export class ClusterGenerator {
     // In Axial, neighbors are ALWAYS these 6 relative offsets
@@ -99,13 +99,18 @@ export class ClusterGenerator {
     }
 
     private static getRange(d: Difficulty) {
+        console.log("Generating clusters with difficulty:", d);
         if (d === Difficulty.EASY) return { min: 4, max: 7 };
         if (d === Difficulty.MEDIUM) return { min: 3, max: 5 };
         return { min: 2, max: 4 };
     }
 
     private static COLORID = 0
+
     private static getRandomColor(): number {
-        return [0xFF5733, 0x33FF57, 0x3357FF, 0xF333FF, 0xFFF333, 0x00CED1][this.COLORID++ % 6];
+        const list = PIECE_COLOR_PALETTE;
+        // rotate deterministically like before
+        const c = list[this.COLORID++ % list.length];
+        return c.value;
     }
 }

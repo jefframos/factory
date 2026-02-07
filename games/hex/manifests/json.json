@@ -29,10 +29,106 @@
         },
         {
           "alias": [
-            "levels.json"
+            "game/game-manifest.json"
           ],
           "src": [
-            "levels.json"
+            "game/game-manifest.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/world_1770482231656.json"
+          ],
+          "src": [
+            "game/world_1770482231656.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/world_1770483482861.json"
+          ],
+          "src": [
+            "game/world_1770483482861.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/world_1770499483750.json"
+          ],
+          "src": [
+            "game/world_1770499483750.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/world_1770499485258.json"
+          ],
+          "src": [
+            "game/world_1770499485258.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/world_1770499484823.json"
+          ],
+          "src": [
+            "game/world_1770499484823.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/world_1770499485617.json"
+          ],
+          "src": [
+            "game/world_1770499485617.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/world_1770499485874.json"
+          ],
+          "src": [
+            "game/world_1770499485874.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/world_1770499486338.json"
+          ],
+          "src": [
+            "game/world_1770499486338.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/world_1770499486099.json"
+          ],
+          "src": [
+            "game/world_1770499486099.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/world_1770499486795.json"
+          ],
+          "src": [
+            "game/world_1770499486795.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/world_1770499486547.json"
+          ],
+          "src": [
+            "game/world_1770499486547.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/world_1770499487065.json"
+          ],
+          "src": [
+            "game/world_1770499487065.json"
           ]
         }
       ]

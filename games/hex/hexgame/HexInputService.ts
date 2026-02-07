@@ -40,7 +40,7 @@ export class HexInputService {
     private static readonly CLUSTER_ANCHOR_LOCAL: PIXI.Point = new PIXI.Point(0, 0);
 
     constructor(private mediator: HexGameMediator) {
-        const stage = this.mediator.Root;
+        const stage = this.mediator.gameRoot;
 
         stage.eventMode = "static";
         stage.hitArea = new PIXI.Rectangle(-10000, -10000, 20000, 20000);
@@ -58,7 +58,7 @@ export class HexInputService {
         const piece = this.activePiece;
         this.activePiece = null; // Clear reference first to prevent event loops
 
-        this.mediator.Grid.clearPreview();
+        this.mediator.gridView.clearPreview();
         this.mediator.returnToTray(piece);
     }
     private onPointerDown(e: PIXI.FederatedPointerEvent): void {
@@ -72,8 +72,8 @@ export class HexInputService {
         let minDist = this.HIT_RADIUS;
 
         const targets = [
-            ...this.mediator.Grid.children,
-            ...this.mediator.Manager.children
+            ...this.mediator.gridView.children,
+            ...this.mediator.clusterManager.children
         ];
 
         for (const child of targets) {
@@ -97,17 +97,17 @@ export class HexInputService {
         this.activePiece = closest;
         this.activePiece.eventMode = 'none'; // Prevent the piece itself from catching events during drag
 
-        this.mediator.Grid.removePiece(closest);
+        this.mediator.gridView.removePiece(closest);
 
-        const posInLayer = this.mediator.GameLayer.toLocal(this.activePiece.getGlobalPosition());
-        this.mediator.GameLayer.addChild(this.activePiece);
+        const posInLayer = this.mediator.gameContainer.toLocal(this.activePiece.getGlobalPosition());
+        this.mediator.gameContainer.addChild(this.activePiece);
         this.activePiece.position.copyFrom(posInLayer);
 
 
-        const targetScale = this.mediator.Grid.scale.x;
+        const targetScale = this.mediator.gridView.scale.x;
         this.activePiece.scale.set(targetScale);
 
-        const mouseInLayer = this.mediator.GameLayer.toLocal(e.global);
+        const mouseInLayer = this.mediator.gameContainer.toLocal(e.global);
         this.dragOffset.set(
             mouseInLayer.x - this.activePiece.x,
             mouseInLayer.y - this.activePiece.y
@@ -118,13 +118,13 @@ export class HexInputService {
         // BLOCK INPUT IF DISABLED
         if (!this._enabled || !this.activePiece) return;
 
-        const mouseInLayer = this.mediator.GameLayer.toLocal(e.global);
+        const mouseInLayer = this.mediator.gameContainer.toLocal(e.global);
         this.activePiece.position.set(
             mouseInLayer.x - this.dragOffset.x,
             mouseInLayer.y - this.dragOffset.y
         );
 
-        const grid = this.mediator.Grid;
+        const grid = this.mediator.gridView;
         const anchor = this.getAnchorCellForActivePiece();
         const snapped = anchor ? this.buildSnappedCoords(anchor, this.activePiece.data.coords) : null;
 
@@ -143,36 +143,36 @@ export class HexInputService {
         }
     }
 
+    // Inside HexInputService.ts
+
     private onPointerUp(e: PIXI.FederatedPointerEvent): void {
-        // If input was disabled while holding, move logic is already handled by the setter
-        if (!this._enabled || !this.activePiece) {
-            this.activePiece = null;
-            return;
-        }
-        this.activePiece.eventMode = 'static';
-        const grid = this.mediator.Grid;
+        if (!this.activePiece) return;
+
+        const piece = this.activePiece;
+        const grid = this.mediator.gridView;
         const anchor = this.getAnchorCellForActivePiece();
-        const snapped = anchor ? this.buildSnappedCoords(anchor, this.activePiece.data.coords) : null;
+        const snapped = anchor ? this.buildSnappedCoords(anchor, piece.data.coords) : null;
 
         if (anchor && snapped && grid.canFit(snapped)) {
-            const parity = (anchor.r & 1) as 0 | 1;
-            const anyPiece: any = this.activePiece as any;
-            if (typeof anyPiece.applyAnchorRowParity === "function") {
-                anyPiece.applyAnchorRowParity(parity);
-            }
-
-            grid.addChild(this.activePiece);
-            this.activePiece.scale.set(1);
-
+            // 1. PLACE PIECE FIRST
+            grid.addChild(piece);
+            piece.scale.set(1);
             const anchorPixel = HexUtils.offsetToPixel(anchor.q, anchor.r);
-            this.activePiece.position.copyFrom(anchorPixel);
-            grid.placePiece(this.activePiece, snapped);
+            piece.position.copyFrom(anchorPixel);
+            grid.placePiece(piece, snapped);
+
+            // 2. CLEAR ACTIVE REFERENCE BEFORE NOTIFYING WIN
+            this.activePiece = null;
+
+            // 3. NOTIFY MEDIATOR
+            this.mediator.onMoveSuccess();
         } else {
-            this.mediator.returnToTray(this.activePiece);
+            // Return to tray logic
+            this.mediator.returnToTray(piece);
+            this.activePiece = null;
         }
 
         grid.clearPreview();
-        this.activePiece = null;
     }
 
     // ------------------------------------------------------------
@@ -184,7 +184,7 @@ export class HexInputService {
             return null;
         }
 
-        const grid = this.mediator.Grid;
+        const grid = this.mediator.gridView;
 
         // Anchor to the cluster's (0,0) tile center in global space.
         const anchorGlobal = this.activePiece.toGlobal(HexInputService.CLUSTER_ANCHOR_LOCAL);

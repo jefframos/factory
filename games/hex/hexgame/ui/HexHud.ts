@@ -7,6 +7,7 @@ export class HexHUD extends PIXI.Container {
     public readonly onNewPuzzle: Signal = new Signal();
     public readonly onAutoComplete: Signal = new Signal();
     public readonly onResetBoard: Signal = new Signal();
+    public readonly onHint: Signal = new Signal();
 
     private readonly buttons: BaseButton[] = [];
 
@@ -42,10 +43,11 @@ export class HexHUD extends PIXI.Container {
         // Instantiate Buttons
         const newBtn = new BaseButton(createCfg(HexAssets.Textures.Icons.ArrowRight, this.onNewPuzzle));
         const autoBtn = new BaseButton(createCfg(HexAssets.Textures.Icons.GiftFast, this.onAutoComplete));
+        const hintBtn = new BaseButton(createCfg(HexAssets.Textures.Icons.Badge2, this.onHint));
         const resetBtn = new BaseButton(createCfg(HexAssets.Textures.Icons.Back, this.onResetBoard));
 
         // Layout
-        [newBtn, autoBtn, resetBtn].forEach((btn, i) => {
+        [newBtn, autoBtn, hintBtn, resetBtn].forEach((btn, i) => {
             btn.x = i * 90;
             this.addChild(btn);
             this.buttons.push(btn);

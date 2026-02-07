@@ -1,0 +1,16 @@
+{
+  "id": "world_1770499486338",
+  "levels": [
+    {
+      "id": "level_1770499486338",
+      "name": "Level 1",
+      "gridType": "Shape",
+      "matrix": [
+        [
+          1
+        ]
+      ],
+      "difficulty": 1
+    }
+  ]
+}

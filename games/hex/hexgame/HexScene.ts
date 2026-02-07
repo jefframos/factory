@@ -9,12 +9,14 @@ import SoundLoadManager from "@core/audio/SoundLoaderManager";
 import SoundManager from "@core/audio/SoundManager";
 import PatternBackground from "@core/ui/PatternBackground";
 import ViewUtils from "@core/utils/ViewUtils";
+import gsap from "gsap";
 import { DevGuiManager } from "../game/utils/DevGuiManager";
 import { ClusterManager } from "./cluster/ClusterManager";
 import { HexGameMediator } from "./HexGameMediator";
 import { HexGridView } from "./HexGridView";
-import { Difficulty, GridMatrix } from "./HexTypes";
+import { Difficulty } from "./HexTypes";
 import { LevelDataManager } from "./LevelDataManager";
+import GameProgressionView from "./ui/GameProgressionView";
 import { HexHUD } from "./ui/HexHud";
 
 export default class HexScene extends GameScene {
@@ -30,11 +32,7 @@ export default class HexScene extends GameScene {
 
     private highScore: number = 0;
     private paused: boolean = false;
-
-    // UI Elements
-    private scoreText?: PIXI.Text;
-    private movesText?: PIXI.Text;
-    private progressText?: PIXI.Text;
+    private progressionView: GameProgressionView;
 
     static MAP_ID = 'Hex'
 
@@ -53,8 +51,8 @@ export default class HexScene extends GameScene {
     public build(): void {
         // 1. Backgrounds
         SoundLoadManager.instance.loadAllSoundsBackground();
-        const levelsJson = PIXI.Assets.get('levels.json') as any;
-        LevelDataManager.init(levelsJson);
+        const levelsJson = PIXI.Assets.get('game/game-manifest.json') as any;
+        LevelDataManager.initFromWorlds(levelsJson.worlds);
 
         SoundManager.instance.setMasterSfxVolume(0.7)
         this.patternBackground = new PatternBackground({
@@ -92,6 +90,12 @@ export default class HexScene extends GameScene {
 
         // 3. UI
         this.setupUI();
+
+        // 1. Start the game by showing the Map immediately
+        this.progressionView.show();
+
+        // 2. Ensure mediator starts in a "waiting" state
+        this.mediator.setInputEnabled(false);
 
         this.addChild(this.gameplayContainer);
         this.addChild(this.foregroundContainer);
@@ -142,70 +146,45 @@ export default class HexScene extends GameScene {
         );
 
         // 8. HOOK THE RESTART EVENT
-        this.mediator.onRestart.add(() => this.restartGame());
+        //this.mediator.onRestart.add(() => this.restartGame());
+        this.mediator.onQuit.add(() => this.progressionView.show());
 
-        this.restartGame();
+        // this.mediator.gameplayData.onLevelComplete.add((stats: LevelSessionStats) => {
+        //     console.log(`Level Cleared in ${stats.moves} moves!`);
+        //     // Example: show result popup or auto-load next level
+        //     setTimeout(() => {
+        //         this.restartGame();
+        //     }, 500);
+        // });
+
+        //this.restartGame();
         this.mediator.layout();
 
     }
 
-    private restartGame(): void {
-        console.log("Cleaning up for new game...");
-        const matrix: GridMatrix = [
-            [1, 1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 0, 1]
-        ];
 
+    private restartGame(): void {
         const level = LevelDataManager.getRandomLevel();
-        this.mediator?.startLevel(level.matrix, Difficulty.MEDIUM);
+        console.log('new level', level)
+        this.mediator?.startLevel(level.matrix, Difficulty.HARD, level.pieces);
+        // this.mediator?.startLevel(level.matrix, level.difficulty || Difficulty.HARD, level.pieces);
     }
 
     private setupUI(): void {
-        const textStyle = new PIXI.TextStyle({
-            fontFamily: 'Arial',
-            fontSize: 32,
-            fill: 0xFFFFFF,
-            stroke: 0x000000,
-            strokeThickness: 4,
-            dropShadow: true,
-            dropShadowDistance: 2,
-            dropShadowBlur: 2,
+        this.progressionView = new GameProgressionView(this.mediator);
+        this.foregroundContainer.addChild(this.progressionView);
+
+        // 3. Listen for Level Completion to bring the map back
+        this.mediator.gameplayData.onLevelComplete.add((stats) => {
+            console.log("Level Finished! Returning to map...");
+
+            // Wait a brief moment so the player sees the completed board
+            gsap.delayedCall(1.5, () => {
+                this.progressionView.show();
+            });
         });
-
-        // Score text
-        this.scoreText = new PIXI.Text('Score: 0', textStyle);
-        this.scoreText.anchor.set(0, 0);
-        this.foregroundContainer.addChild(this.scoreText);
-
-        // Moves text
-        this.movesText = new PIXI.Text('Moves: 0', textStyle);
-        this.movesText.anchor.set(0, 0);
-        this.foregroundContainer.addChild(this.movesText);
-
-        // Progress text
-        this.progressText = new PIXI.Text('Progress: 0%', textStyle);
-        this.progressText.anchor.set(1, 0);
-        this.foregroundContainer.addChild(this.progressText);
     }
 
-    private onLevelComplete = (data: { score: number; moves: number; stars: number }): void => {
-        console.log(`🎉 Level Complete! Score: ${data.score}, Moves: ${data.moves}, Stars: ${data.stars}`);
-
-
-    };
-
-    private onScoreChanged = (score: number, moves: number): void => {
-        if (this.scoreText) {
-            this.scoreText.text = `Score: ${score}`;
-        }
-        if (this.movesText) {
-            this.movesText.text = `Moves: ${moves}`;
-        }
-
-    };
 
     private setupAudio(): void {
         // SoundManager.instance.playBackgroundSound(MergeAssets.AmbientSound.AmbientSoundId, 0);
@@ -219,15 +198,6 @@ export default class HexScene extends GameScene {
         DevGuiManager.instance.addButton('Load Simple Level', () => {
         });
 
-        DevGuiManager.instance.addButton('erase', () => {
-            // CollectionDataManager.instance.wipeCollectionData()
-            // GameStorage.instance.resetGameProgress(true)
-        });
-
-        DevGuiManager.instance.addButton('addCoins', () => {
-            // InGameEconomy.instance.add(CurrencyType.MONEY, 1000000)
-            // InGameEconomy.instance.add(CurrencyType.GEMS, 1000)
-        });
     }
 
     public update(delta: number): void {
@@ -248,6 +218,7 @@ export default class HexScene extends GameScene {
         //this.mediator?.layout();
 
         this.patternBackground?.position?.set(centerX, centerY);
+        this.progressionView?.position?.set(centerX, centerY);
 
         // Center the gameplay container
         this.gameplayContainer.position.set(centerX, centerY);
@@ -261,16 +232,6 @@ export default class HexScene extends GameScene {
         this.background.position.set(centerX, centerY);
         this.background.scale.set(ViewUtils.elementEvelop(this.background, Game.gameScreenData.width, Game.gameScreenData.height));
 
-        // Position UI elements
-        if (this.scoreText) {
-            this.scoreText.position.set(20, 20);
-        }
-        if (this.movesText) {
-            this.movesText.position.set(20, 60);
-        }
-        if (this.progressText) {
-            this.progressText.position.set(Game.DESIGN_WIDTH - 20, 20);
-        }
     }
 
     // --- Logic & State ---

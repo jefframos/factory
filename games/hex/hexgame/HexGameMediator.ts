@@ -4,24 +4,30 @@ import { Signal } from "signals";
 import { DevGuiManager } from "../game/utils/DevGuiManager";
 import { ClusterManager } from "./cluster/ClusterManager";
 import { ClusterView } from "./cluster/ClusterView";
+import { GameplayData } from "./GameplayData";
 import { HexGridBuilder } from "./HexGridBuilder";
 import { HexGridView } from "./HexGridView";
 import { HexInputService } from "./HexInputService";
 import { Difficulty, HexPos, HexUtils } from "./HexTypes";
+import { LevelDataManager } from "./LevelDataManager";
 import { HexHUD } from "./ui/HexHud";
 
 export class HexGameMediator {
     private debugGraphics?: PIXI.Graphics;
     private inputService: HexInputService;
     private isAutoCompleting: boolean = false;
+
+    public gameplayData: GameplayData = new GameplayData();
+
     public readonly onRestart: Signal = new Signal();
+    public readonly onQuit: Signal = new Signal();
     constructor(
         private gridArea: PIXI.Rectangle,
         private piecesArea: PIXI.Rectangle,
-        public Grid: HexGridView,
-        public Manager: ClusterManager,
-        public GameLayer: PIXI.Container, // common parent for shared coordinates
-        public Root: PIXI.Container,       // stage for events
+        public gridView: HexGridView,
+        public clusterManager: ClusterManager,
+        public gameContainer: PIXI.Container, // common parent for shared coordinates
+        public gameRoot: PIXI.Container,       // stage for events
         private hud: HexHUD
     ) {
         this.layout();
@@ -39,12 +45,12 @@ export class HexGameMediator {
 
         // 2. Clear the Grid occupancy logic and views
         // Assuming your HexGridView has a reset/clear method
-        this.Grid.removeChildren();
+        this.gridView.removeChildren();
         // If your grid has a specific logic reset, call it here: 
         // this.Grid.resetLogic();
 
         // 3. Reset the Cluster Manager (returns pieces to pool)
-        this.Manager.reset();
+        this.clusterManager.reset();
 
         // 4. Reset state flags
         this.isAutoCompleting = false;
@@ -56,6 +62,9 @@ export class HexGameMediator {
         // ... existing signals ...
 
         // When the HUD or Main class triggers a restart
+        this.hud.onHint.add(() => {
+            this.showHint();
+        });
         this.hud.onNewPuzzle.add(() => {
             // Force reset of any piece currently in the air
             this.inputService.forceResetHeldPiece();
@@ -65,9 +74,10 @@ export class HexGameMediator {
 
             // Dispatch to Main class to generate a new matrix and call initPuzzle again
             this.onRestart.dispatch({});
+            this.onQuit.dispatch({});
 
             // Re-enable input
-            this.inputService.enabled = true;
+            //this.inputService.enabled = true;
         });
 
         // Auto Complete Logic
@@ -82,21 +92,29 @@ export class HexGameMediator {
             this.resetBoard();
         });
     }
-
-    public startLevel(matrix: any, difficulty: Difficulty): void {
-        // 1. Logic cleanup
+    public setInputEnabled(enabled: boolean): void {
         this.inputService.forceResetHeldPiece();
-        this.inputService.enabled = false;
+        this.inputService.enabled = enabled;
+    }
 
-        // 2. Re-init Grid (Visual Background + Logic)
+    public startLevel(matrix: any, difficulty: Difficulty, pieces?: any): void {
+        this.inputService.forceResetHeldPiece();
+        this.resetGame();
+
         const { data } = HexGridBuilder.buildFromMatrix(matrix);
-        this.Grid.init(data);
+        this.gridView.init(data);
+        this.clusterManager.initPuzzle(matrix, difficulty, pieces);
 
-        // 3. Re-init Pieces (Generate + Pool Setup)
-        this.Manager.initPuzzle(matrix, difficulty);
-
-        // 4. Refresh layout
         this.layout();
+
+        // Start session tracking
+        const info = LevelDataManager.getCurrentLevelInfo();
+        this.gameplayData.startSession(info.worldId, info.level?.id || "manual");
+
+        // Visual Polish: Fade the board in
+        this.gameContainer.alpha = 0;
+        gsap.to(this.gameContainer, { alpha: 1, duration: 0.5 });
+
         this.inputService.enabled = true;
     }
 
@@ -105,8 +123,8 @@ export class HexGameMediator {
      */
     public resetCurrentLevel(): void {
         this.inputService.forceResetHeldPiece();
-        this.Grid.reset(); // Clears pieces from grid
-        this.Manager.getPieces().forEach(p => this.returnToTray(p)); // Moves them to tray
+        this.gridView.reset(); // Clears pieces from grid
+        this.clusterManager.getPieces().forEach(p => this.returnToTray(p)); // Moves them to tray
     }
 
     public layout(): void {
@@ -118,19 +136,19 @@ export class HexGameMediator {
         const targetX = this.gridArea.x + this.gridArea.width / 2;
         const targetY = this.gridArea.y + this.gridArea.height / 2;
 
-        this.Grid.position.set(targetX, targetY);
+        this.gridView.position.set(targetX, targetY);
 
-        const bounds = this.Grid.getLocalBounds();
+        const bounds = this.gridView.getLocalBounds();
         const scaleX = (this.gridArea.width * 0.9) / bounds.width;
         const scaleY = (this.gridArea.height * 0.9) / bounds.height;
         const finalScale = Math.min(scaleX, scaleY, 1);
 
-        this.Grid.scale.set(finalScale);
+        this.gridView.scale.set(finalScale);
     }
 
     public showHint(): void {
         // 1. Get all pieces
-        const allPieces = this.Manager.getPieces(); // Assuming Manager has a way to return all ClusterViews
+        const allPieces = this.clusterManager.getPieces(); // Assuming Manager has a way to return all ClusterViews
 
         // 2. Filter for pieces that are NOT at their solution position
         const incorrectPieces = allPieces.filter(piece => {
@@ -151,7 +169,7 @@ export class HexGameMediator {
         }));
 
         // 5. Blink those tiles on the grid
-        this.Grid.blinkTiles(solutionCoords);
+        this.gridView.blinkTiles(solutionCoords);
     }
 
     public async autoComplete(): Promise<void> {
@@ -159,7 +177,7 @@ export class HexGameMediator {
         this.isAutoCompleting = true;
         this.inputService.enabled = false
 
-        const allPieces = this.Manager.getPieces();
+        const allPieces = this.clusterManager.getPieces();
 
         for (const piece of allPieces) {
             const currentGridPos = this.getGridPositionOfPiece(piece);
@@ -179,20 +197,20 @@ export class HexGameMediator {
 
     private async movePieceToCorrectSlot(piece: ClusterView): Promise<void> {
         // 1. Remove from current occupancy logic if it was on the grid
-        this.Grid.removePiece(piece);
+        this.gridView.removePiece(piece);
 
         // 2. Map the piece's current global position to the GameLayer (workspace)
         const startGlobalPos = piece.getGlobalPosition();
-        const startLocalPos = this.GameLayer.toLocal(startGlobalPos);
+        const startLocalPos = this.gameContainer.toLocal(startGlobalPos);
 
-        this.GameLayer.addChild(piece);
+        this.gameContainer.addChild(piece);
         piece.position.copyFrom(startLocalPos);
 
         // 3. Calculate target position in GameLayer
         // We find where the root axial coordinate is in Grid space, then map to GameLayer
         const targetGridPos = HexUtils.offsetToPixel(piece.data.rootPos.q, piece.data.rootPos.r);
-        const targetGlobalPos = this.Grid.toGlobal(targetGridPos);
-        const targetLayerPos = this.GameLayer.toLocal(targetGlobalPos);
+        const targetGlobalPos = this.gridView.toGlobal(targetGridPos);
+        const targetLayerPos = this.gameContainer.toLocal(targetGlobalPos);
 
         // 4. Animate!
         await gsap.to(piece, {
@@ -203,15 +221,15 @@ export class HexGameMediator {
             onStart: () => {
                 // Smoothly transition scale to match Grid scale
                 gsap.to(piece.scale, {
-                    x: this.Grid.scale.x,
-                    y: this.Grid.scale.y,
+                    x: this.gridView.scale.x,
+                    y: this.gridView.scale.y,
                     duration: 0.3
                 });
             }
         });
 
         // 5. Final Parenting to Grid
-        this.Grid.addChild(piece);
+        this.gridView.addChild(piece);
         piece.scale.set(1); // Scale becomes 1 relative to the already scaled Grid
         piece.position.copyFrom(targetGridPos);
 
@@ -220,16 +238,37 @@ export class HexGameMediator {
             q: piece.data.rootPos.q + c.q,
             r: piece.data.rootPos.r + c.r
         }));
-        this.Grid.placePiece(piece, snappedCoords);
+        this.gridView.placePiece(piece, snappedCoords);
     }
 
+    public onMoveSuccess(): void {
+        this.gameplayData.recordMove();
+
+        if (this.gridView.isGridFull()) {
+            // Use a tiny delay or wait for the next tick 
+            // to ensure the InputService finishes its current placement logic
+            setTimeout(() => {
+                this.inputService.enabled = false;
+                this.gameplayData.completeLevel();
+            }, 50);
+        }
+    }
+
+    public handleMovePerformed(): void {
+        this.gameplayData.recordMove();
+
+        if (this.gridView.isGridFull()) {
+            this.inputService.enabled = false; // Stop further interaction
+            this.gameplayData.completeLevel();
+        }
+    }
 
     public async solveOnePiece(): Promise<void> {
         if (this.isAutoCompleting) return;
         this.isAutoCompleting = true;
 
         // 1. Find all pieces not in their correct solution slot
-        const allPieces = this.Manager.getPieces();
+        const allPieces = this.clusterManager.getPieces();
         const incorrectPieces = allPieces.filter(piece => {
             const currentGridPos = this.getGridPositionOfPiece(piece);
             if (!currentGridPos) return true; // In tray
@@ -254,7 +293,7 @@ export class HexGameMediator {
         // 4. Evict any pieces currently occupying those specific coordinates
         const piecesToEvict = new Set<ClusterView>();
         neededCoords.forEach(coord => {
-            const occupant = this.Grid.getOccupantAt(coord.q, coord.r);
+            const occupant = this.gridView.getOccupantAt(coord.q, coord.r);
             if (occupant && occupant !== targetPiece) {
                 piecesToEvict.add(occupant);
             }
@@ -262,7 +301,7 @@ export class HexGameMediator {
 
         // 5. Return evicted pieces to tray
         for (const piece of piecesToEvict) {
-            this.Grid.removePiece(piece);
+            this.gridView.removePiece(piece);
             // Optional: Add a quick gsap tween to the tray instead of instant snap
             this.returnToTray(piece);
         }
@@ -273,13 +312,13 @@ export class HexGameMediator {
         this.isAutoCompleting = false;
     }
     public resetBoard(): void {
-        const allPieces = this.Manager.getPieces();
+        const allPieces = this.clusterManager.getPieces();
         this.inputService.forceResetHeldPiece();
         allPieces.forEach(piece => {
             // Only return pieces that are currently on the Grid
-            if (piece.parent === this.Grid) {
+            if (piece.parent === this.gridView) {
                 // 1. Tell the Grid logic the piece is no longer occupying tiles
-                this.Grid.removePiece(piece);
+                this.gridView.removePiece(piece);
 
                 // 2. Use your existing returnToTray logic for animation and re-parenting
                 this.returnToTray(piece);
@@ -288,24 +327,24 @@ export class HexGameMediator {
     }
 
     public clearBoardInstant(): void {
-        const allPieces = this.Manager.getPieces();
+        const allPieces = this.clusterManager.getPieces();
         this.inputService.forceResetHeldPiece();
         allPieces.forEach(piece => {
-            this.Grid.removePiece(piece);
+            this.gridView.removePiece(piece);
 
             // Instant snap
             piece.position.copyFrom(piece.homePosition);
             piece.scale.set(1);
-            this.Manager.addChild(piece);
+            this.clusterManager.addChild(piece);
         });
-        this.Grid.clearPreview();
+        this.gridView.clearPreview();
     }
 
     /**
      * Helper to check where a piece is currently snapped on the grid
      */
     private getGridPositionOfPiece(piece: ClusterView): HexPos | null {
-        if (piece.parent !== this.Grid) return null;
+        if (piece.parent !== this.gridView) return null;
 
         // Reverse math from pixel to axial
         const gridLocal = piece.position;
@@ -321,9 +360,9 @@ export class HexGameMediator {
         const targetX = this.piecesArea.x + this.piecesArea.width / 2;
         const targetY = this.piecesArea.y + this.piecesArea.height / 2;
 
-        this.Manager.position.set(targetX, targetY);
+        this.clusterManager.position.set(targetX, targetY);
 
-        const pBounds = this.Manager.getLocalBounds();
+        const pBounds = this.clusterManager.getLocalBounds();
         // prevent division by zero if manager is empty
         if (pBounds.width === 0 || pBounds.height === 0) return;
 
@@ -331,15 +370,15 @@ export class HexGameMediator {
         const scaleY = (this.piecesArea.height * 0.9) / pBounds.height;
         const scale = Math.min(scaleX, scaleY, 0.8);
 
-        this.Manager.scale.set(scale);
+        this.clusterManager.scale.set(scale);
     }
 
     public returnToTray(piece: ClusterView): void {
         // 1. Re-parent to the Manager
         const pos = piece.getGlobalPosition();
-        const localPos = this.Manager.toLocal(pos);
+        const localPos = this.clusterManager.toLocal(pos);
         piece.position.copyFrom(localPos);
-        this.Manager.addChild(piece);
+        this.clusterManager.addChild(piece);
 
         // 2. The piece's local scale must now be 1.0 relative to the Manager.
         // However, the Manager itself has a scale (calculated in layoutPieces).
@@ -359,7 +398,7 @@ export class HexGameMediator {
             ease: "power2.out"
         });
 
-        this.Grid.clearPreview();
+        this.gridView.clearPreview();
     }
 
     public drawDebugZones(): void {
@@ -377,6 +416,6 @@ export class HexGameMediator {
         this.debugGraphics.lineStyle(4, 0xFFAA00, 1);
         this.debugGraphics.drawRect(this.piecesArea.x, this.piecesArea.y, this.piecesArea.width, this.piecesArea.height);
 
-        this.Root.addChild(this.debugGraphics);
+        this.gameRoot.addChild(this.debugGraphics);
     }
 }

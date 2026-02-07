@@ -143,7 +143,11 @@ export class HexGridView extends PIXI.Container {
             this.occupiedTiles.set(`${pos.q},${pos.r}`, piece);
         });
     }
-
+    public isGridFull(): boolean {
+        // Check if every background cell has an entry in occupiedTiles
+        return this.occupiedTiles.size === this.cellGraphics.size;
+        //return this.cellGraphics.size > 0 && this.cellGraphics.size === this.occupiedTiles.size;
+    }
     public removePiece(piece: ClusterView): void {
         const toDelete: string[] = [];
         this.occupiedTiles.forEach((p, key) => {

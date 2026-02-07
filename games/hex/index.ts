@@ -11,6 +11,7 @@ import * as PIXI from 'pixi.js';
 import MergeLoader from './game/loader/MergeLoader';
 import { DevGuiManager } from './game/utils/DevGuiManager';
 import HexScene from './hexgame/HexScene';
+import LevelEditorScene from './hexgame/levelEditor/LevelEditorScene';
 import audioManifest from './manifests/audio.json'; // adjust path
 import fontManifest from './manifests/fonts.json'; // adjust path
 import imageManifest from './manifests/images.json'; // adjust path
@@ -149,7 +150,12 @@ export default class MyGame extends Game {
 
         DevGuiManager.instance.initialize(Game.debugParams.dev);
         const gameplay = this.sceneManager.register<HexScene>('game', HexScene, this);
-        this.sceneManager.changeScene(Game.debugParams.scene || 'game');
+        if (Game.debugParams.scene === 'level') {
+            const editor = this.sceneManager.register<LevelEditorScene>('level', LevelEditorScene, this);
+            this.sceneManager.changeScene('level');
+        } else {
+            this.sceneManager.changeScene(Game.debugParams.scene || 'game');
+        }
         this.sceneManager.resize();
     }
 

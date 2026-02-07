@@ -1,7 +1,7 @@
 import Pool from "@core/Pool";
 import gsap from "gsap";
 import * as PIXI from "pixi.js";
-import { Difficulty } from "../HexTypes";
+import { ClusterData, Difficulty } from "../HexTypes";
 import { ClusterGenerator } from "./ClusterGenerator";
 import { ClusterView } from "./ClusterView";
 
@@ -12,14 +12,18 @@ export class ClusterManager extends PIXI.Container {
         return this.activeClusters;
     }
 
-    public initPuzzle(matrix: any, difficulty: Difficulty): void {
+    public initPuzzle(matrix: any, difficulty: Difficulty, pieces?: ClusterData[]): void {
         this.reset();
-        const puzzleData = ClusterGenerator.generateFromGrid(matrix, difficulty);
+        const puzzleData = (pieces && pieces.length > 0)
+            ? pieces
+            : ClusterGenerator.generateFromGrid(matrix, difficulty);
         const maxWidth = 1200;
         const horizontalSpacing = 60;
         const rowGap = 50; // Extra buffer between rows
 
         const rows: ClusterView[][] = [[]];
+
+
         let currentRowIndex = 0;
         let currentRowWidth = 0;
 

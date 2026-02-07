@@ -1,0 +1,44 @@
+{
+  "worlds": [
+    {
+      "id": "world1",
+      "name": "World 1",
+      "levels": [
+        {
+          "name": "Level 1",
+          "gridType": "Shape",
+          "difficulty": "MEDIUM",
+          "matrix": [
+            [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              0
+            ],
+            [
+              1,
+              0,
+              1,
+              0,
+              1,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              0
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
