@@ -21,14 +21,6 @@
         },
         {
           "alias": [
-            "tiled.json"
-          ],
-          "src": [
-            "tiled.json"
-          ]
-        },
-        {
-          "alias": [
             "game/game-manifest.json"
           ],
           "src": [
@@ -61,18 +53,18 @@
         },
         {
           "alias": [
-            "game/world_1770499485258.json"
+            "game/world_1770499484823.json"
           ],
           "src": [
-            "game/world_1770499485258.json"
+            "game/world_1770499484823.json"
           ]
         },
         {
           "alias": [
-            "game/world_1770499484823.json"
+            "game/world_1770499485258.json"
           ],
           "src": [
-            "game/world_1770499484823.json"
+            "game/world_1770499485258.json"
           ]
         },
         {
@@ -93,14 +85,6 @@
         },
         {
           "alias": [
-            "game/world_1770499486338.json"
-          ],
-          "src": [
-            "game/world_1770499486338.json"
-          ]
-        },
-        {
-          "alias": [
             "game/world_1770499486099.json"
           ],
           "src": [
@@ -109,10 +93,10 @@
         },
         {
           "alias": [
-            "game/world_1770499486795.json"
+            "game/world_1770499486338.json"
           ],
           "src": [
-            "game/world_1770499486795.json"
+            "game/world_1770499486338.json"
           ]
         },
         {
@@ -125,10 +109,34 @@
         },
         {
           "alias": [
+            "game/world_1770499486795.json"
+          ],
+          "src": [
+            "game/world_1770499486795.json"
+          ]
+        },
+        {
+          "alias": [
             "game/world_1770499487065.json"
           ],
           "src": [
             "game/world_1770499487065.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/map-data.json"
+          ],
+          "src": [
+            "game/map-data.json"
+          ]
+        },
+        {
+          "alias": [
+            "tiled.json"
+          ],
+          "src": [
+            "tiled.json"
           ]
         }
       ]

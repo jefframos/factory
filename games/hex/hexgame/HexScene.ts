@@ -8,53 +8,130 @@ import { Signal } from "signals";
 import SoundLoadManager from "@core/audio/SoundLoaderManager";
 import SoundManager from "@core/audio/SoundManager";
 import PatternBackground from "@core/ui/PatternBackground";
-import ViewUtils from "@core/utils/ViewUtils";
-import gsap from "gsap";
 import { DevGuiManager } from "../game/utils/DevGuiManager";
 import { ClusterManager } from "./cluster/ClusterManager";
+import { GameplayProgressStorage } from "./GameplayProgressStorage";
+import HexAssets from "./HexAssets";
 import { HexGameMediator } from "./HexGameMediator";
 import { HexGridView } from "./HexGridView";
-import { Difficulty } from "./HexTypes";
+import { Difficulty, LevelData } from "./HexTypes";
 import { LevelDataManager } from "./LevelDataManager";
-import GameProgressionView from "./ui/GameProgressionView";
 import { HexHUD } from "./ui/HexHud";
+import { WorldHUD } from "./ui/WorldHUD";
+import { WorldMapView } from "./ui/WorldMapView";
 
 export default class HexScene extends GameScene {
     public readonly onQuit: Signal = new Signal();
 
+    // Containers
     public readonly gameplayContainer: PIXI.Container = new PIXI.Container();
     public readonly floorContainer: PIXI.Container = new PIXI.Container();
     public readonly foregroundContainer: PIXI.Container = new PIXI.Container();
 
-    private interactiveBackground?: PIXI.Graphics;
+    // Backgrounds
     private background: PIXI.Sprite = new PIXI.Sprite();
     private patternBackground?: PatternBackground;
+    private darkOverlay?: PIXI.Graphics;
 
+    // Logic
+    private mediator!: HexGameMediator;
+    private gridView!: HexGridView;
+    private clusterManager!: ClusterManager;
+    private readonly worldViewContainer: PIXI.Container = new PIXI.Container();
+    private worldMap!: WorldMapView;
+    private worldHUD!: WorldHUD;
+    private hexHUD!: HexHUD;
+
+    private isMapActive: boolean = true;
+
+    // State
     private highScore: number = 0;
     private paused: boolean = false;
-    private progressionView: GameProgressionView;
 
-    static MAP_ID = 'Hex'
-
-    private mediator?: HexGameMediator;
-    private gridView?: HexGridView;
-    private hexHUD?: HexHUD;
-    private clusterManager: ClusterManager = new ClusterManager();
+    // Layout Config
+    static readonly MAP_Y_OFFSET_PERCENT = 0.75; // Center level at 75% height
 
     constructor(game: Game) {
         super(game);
         SoundManager.STORAGE_ID = "Hex1_";
-
         this.setupPopups();
     }
 
     public build(): void {
-        // 1. Backgrounds
-        SoundLoadManager.instance.loadAllSoundsBackground();
+        // 1. Data Initialization
         const levelsJson = PIXI.Assets.get('game/game-manifest.json') as any;
         LevelDataManager.initFromWorlds(levelsJson.worlds);
 
-        SoundManager.instance.setMasterSfxVolume(0.7)
+        // 2. Background Layer
+        this.setupEnvironment();
+
+        // 3. Gameplay Systems
+        this.setupGameplay();
+
+        // 4. World Map (Top UI Layer)
+        // this.setupWorldMap();
+
+        // 5. Final Assembly
+        this.addChild(this.gameplayContainer);
+        this.addChild(this.foregroundContainer);
+
+        this.setupDevGui();
+        this.setupAudio();
+
+        this.setupWorldMapSystem();
+
+        this.addChild(this.gameplayContainer);
+        this.addChild(this.worldViewContainer); // Map and its HUD go here
+        this.addChild(this.foregroundContainer); // HexHUD stays here
+        // Initial State: Show map focused on progress
+        this.showMap();
+    }
+    private setupWorldMapSystem(): void {
+        const style = {
+            levelButtonTexture: HexAssets.Textures.Buttons.Blue,
+            levelButtonSize: 80,
+            backButtonTexture: HexAssets.Textures.Icons.Back,
+            backIconTexture: HexAssets.Textures.Icons.Back,
+            splineColor: 0x2196F3,
+            splineAlpha: 0.6,
+            splineWidth: 8,
+            titleFontSize: 36,
+            titleColor: 0xffffff,
+            titleY: 40
+        };
+
+        // 1. Create the panning map
+        this.worldMap = new WorldMapView({
+            parent: this.worldViewContainer,
+            worlds: LevelDataManager.getWorlds(),
+            mapData: PIXI.Assets.get('game/map-data.json'),
+            style: style,
+            onLevelSelected: (lvl, world) => {
+                this.worldHUD.setTitle(world.name); // Sync title
+                this.startLevel(lvl);
+            }
+        });
+        // 2. Create the fixed HUD
+        this.worldHUD = new WorldHUD(style, () => this.showMap());
+        this.worldViewContainer.addChild(this.worldHUD);
+
+        this.worldMap.onUpdateCurrentLevel.add((index) => {
+            // Sync HUD title with current level's world
+            const world = LevelDataManager.getWorldByLevelIndex(index);
+            if (world) {
+                this.worldHUD.setTitle(world.name);
+            }
+        });
+
+        const savedIndex = GameplayProgressStorage.getLatestLevelIndex();
+        this.worldMap.setCurrentLevelIndex(savedIndex);
+
+        // Snap camera to the level (false = no animation)
+        this.worldMap.centerOnLevel(savedIndex, false);
+
+    }
+    private setupEnvironment(): void {
+        // Patterned Background
         this.patternBackground = new PatternBackground({
             background: 0x5a7856,
             patternAlpha: 1,
@@ -62,203 +139,139 @@ export default class HexScene extends GameScene {
             tileSpeedY: 0
         });
         this.gameplayContainer.addChild(this.patternBackground);
-        this.patternBackground?.init();
-        if (this.patternBackground?.tiledTexture) {
-            this.patternBackground.tiledTexture.alpha = 1
-        }
+        this.patternBackground.init();
 
-        // Add a dark overlay
-        const gr = new PIXI.Graphics();
-        gr.beginFill(0x000000, 0.5);
-        gr.drawRect(0, 0, Game.DESIGN_WIDTH, Game.DESIGN_HEIGHT);
-        gr.endFill();
-        this.gameplayContainer.addChild(gr);
-
-        // Add interactive background for the game area
-        this.interactiveBackground = new PIXI.Graphics();
-        this.interactiveBackground.beginFill(0x000000, 0.01); // Almost transparent but interactive
-        this.interactiveBackground.drawRect(-Game.DESIGN_WIDTH / 2, -Game.DESIGN_HEIGHT / 2, Game.DESIGN_WIDTH, Game.DESIGN_HEIGHT);
-        this.interactiveBackground.endFill();
-        this.interactiveBackground.eventMode = 'static';
-        this.interactiveBackground.interactiveChildren = true;
-        this.floorContainer.addChild(this.interactiveBackground);
-
-        this.gameplayContainer.addChild(this.floorContainer);
-
-        // 2. Setup Gameplay Mediator
-        this.setupGameplay();
-
-        // 3. UI
-        this.setupUI();
-
-        // 1. Start the game by showing the Map immediately
-        this.progressionView.show();
-
-        // 2. Ensure mediator starts in a "waiting" state
-        this.mediator.setInputEnabled(false);
-
-        this.addChild(this.gameplayContainer);
-        this.addChild(this.foregroundContainer);
-
-        this.setupDevGui();
-        this.setupAudio();
-
-        this.updateScore(0);
+        // Dark Overlay for contrast
+        this.darkOverlay = new PIXI.Graphics();
+        this.darkOverlay.beginFill(0x000000, 0.5);
+        this.darkOverlay.drawRect(0, 0, Game.DESIGN_WIDTH, Game.DESIGN_HEIGHT);
+        this.darkOverlay.endFill();
+        this.gameplayContainer.addChild(this.darkOverlay);
     }
 
-
-
-
     private setupGameplay(): void {
-        // 1. If containers don't exist, create them
-
-        // 2. The Puzzle Matrix (This could be randomized later)
-
         this.gridView = new HexGridView();
         this.clusterManager = new ClusterManager();
+        this.hexHUD = new HexHUD();
 
-        this.gridView = new HexGridView();
+        this.gameplayContainer.addChild(this.floorContainer);
         this.gameplayContainer.addChild(this.gridView);
-
-        // 4. Build Pieces
-        this.clusterManager = new ClusterManager();
         this.gameplayContainer.addChild(this.clusterManager);
 
-        // 5. Define Areas
         const gridRect = new PIXI.Rectangle(50, 100, Game.DESIGN_WIDTH - 100, Game.DESIGN_HEIGHT * 0.5);
         const piecesRect = new PIXI.Rectangle(50, Game.DESIGN_HEIGHT * 0.6, Game.DESIGN_WIDTH - 100, Game.DESIGN_HEIGHT * 0.4);
 
-        this.hexHUD = new HexHUD();
-        // 6. Setup HUD (Only once if possible, or clear it too)
         this.hexHUD.y = 20;
-        this.hexHUD.x = (Game.DESIGN_WIDTH - (this.hexHUD.width || 0)) / 2;
         this.foregroundContainer.addChild(this.hexHUD);
 
-        // 7. Initialize Mediator
         this.mediator = new HexGameMediator(
-            gridRect,
-            piecesRect,
-            this.gridView,
-            this.clusterManager,
-            this.gameplayContainer,
-            this.gameplayContainer,
-            this.hexHUD
+            gridRect, piecesRect, this.gridView, this.clusterManager,
+            this.gameplayContainer, this.gameplayContainer, this.hexHUD
         );
 
-        // 8. HOOK THE RESTART EVENT
-        //this.mediator.onRestart.add(() => this.restartGame());
-        this.mediator.onQuit.add(() => this.progressionView.show());
+        // Inside setupGameplay()
+        this.mediator.gameplayData.onLevelComplete.add(() => {
+            const currentIndex = this.worldMap.getCurrentIndex(); // You'll need a getter for this
 
-        // this.mediator.gameplayData.onLevelComplete.add((stats: LevelSessionStats) => {
-        //     console.log(`Level Cleared in ${stats.moves} moves!`);
-        //     // Example: show result popup or auto-load next level
-        //     setTimeout(() => {
-        //         this.restartGame();
-        //     }, 500);
-        // });
+            // 1. Save Progress
+            GameplayProgressStorage.saveLevelComplete(currentIndex, 3);
 
-        //this.restartGame();
-        this.mediator.layout();
+            // 2. Return to map
+            this.showMap();
 
-    }
-
-
-    private restartGame(): void {
-        const level = LevelDataManager.getRandomLevel();
-        console.log('new level', level)
-        this.mediator?.startLevel(level.matrix, Difficulty.HARD, level.pieces);
-        // this.mediator?.startLevel(level.matrix, level.difficulty || Difficulty.HARD, level.pieces);
-    }
-
-    private setupUI(): void {
-        this.progressionView = new GameProgressionView(this.mediator);
-        this.foregroundContainer.addChild(this.progressionView);
-
-        // 3. Listen for Level Completion to bring the map back
-        this.mediator.gameplayData.onLevelComplete.add((stats) => {
-            console.log("Level Finished! Returning to map...");
-
-            // Wait a brief moment so the player sees the completed board
-            gsap.delayedCall(1.5, () => {
-                this.progressionView.show();
-            });
-        });
-    }
-
-
-    private setupAudio(): void {
-        // SoundManager.instance.playBackgroundSound(MergeAssets.AmbientSound.AmbientSoundId, 0);
-        // SoundManager.instance.setMasterAmbientVolume(MergeAssets.AmbientSound.AmbientMasterVolume);
-    }
-
-    private setupDevGui(): void {
-        DevGuiManager.instance.addButton('Reset Level', () => {
+            // 3. Update map visuals and animate to the next level
+            const nextIndex = currentIndex + 1;
+            this.worldMap.setCurrentLevelIndex(nextIndex);
+            this.worldMap.centerOnLevel(nextIndex, true); // Animate the scroll
         });
 
-        DevGuiManager.instance.addButton('Load Simple Level', () => {
-        });
-
+        // Handle Return to Map
+        this.mediator.onQuit.add(() => this.showMap());
     }
+
+
+    // --- Scene Logic ---
+
+    private showMap(): void {
+        this.isMapActive = true;
+        this.worldViewContainer.visible = true; // Hides/Shows both Map and WorldHUD
+        this.hexHUD.visible = false;
+        this.mediator.setInputEnabled(false);
+    }
+
+    private startLevel(level: LevelData): void {
+        this.isMapActive = false;
+        this.worldViewContainer.visible = false; // Completely cleans the screen
+        this.hexHUD.visible = true;
+
+        this.mediator.startLevel(level.matrix, level.difficulty || Difficulty.MEDIUM, level.pieces);
+        this.mediator.setInputEnabled(true);
+    }
+
+    // --- Main Loop ---
 
     public update(delta: number): void {
-        this.patternBackground?.update(delta);
-
-        this.patternBackground?.scale?.set(2, 2);
-
+        if (this.isMapActive) {
+            this.worldMap.update(delta);
+        }
         this.layout();
-
-        if (this.paused) return;
-
     }
 
     private layout(): void {
         const centerX = Game.DESIGN_WIDTH / 2;
         const centerY = Game.DESIGN_HEIGHT / 2;
 
-        //this.mediator?.layout();
-
-        this.patternBackground?.position?.set(centerX, centerY);
-        this.progressionView?.position?.set(centerX, centerY);
-
-        // Center the gameplay container
-        this.gameplayContainer.position.set(centerX, centerY);
+        // Gameplay positioning
+        this.gameplayContainer.setTransform(centerX, centerY);
         this.gameplayContainer.pivot.set(centerX, centerY);
 
-        this.foregroundContainer.position.copyFrom(this.gameplayContainer.position)
-        this.foregroundContainer.pivot.copyFrom(this.gameplayContainer.pivot)
-        this.foregroundContainer.scale.copyFrom(this.gameplayContainer.scale)
+        // World View Container is 0,0 (Fullscreen HUD layer)
+        this.worldViewContainer.position.set(0, 0);
 
-        this.background.anchor.set(0.5);
-        this.background.position.set(centerX, centerY);
-        this.background.scale.set(ViewUtils.elementEvelop(this.background, Game.gameScreenData.width, Game.gameScreenData.height));
+        // Internal Map Panning logic
+        if (this.worldMap) {
+            // We tell the map where the "center of the screen" is for its lerping
+            this.worldMap.position.set(centerX, Game.DESIGN_HEIGHT * 0.65);
+        }
 
+        // Fixed HUD positioning
+        this.worldHUD.layout();
+
+        // Game HUD
+        if (this.hexHUD) {
+            this.hexHUD.x = (Game.DESIGN_WIDTH - this.hexHUD.width) / 2;
+        }
     }
 
-    // --- Logic & State ---
+    // --- Utilities & Cleanup ---
 
-    private updateScore(points: number): void {
-        if (points > this.highScore) {
-            this.highScore = points;
-        }
+    private setupAudio(): void {
+        SoundLoadManager.instance.loadAllSoundsBackground();
+        SoundManager.instance.setMasterSfxVolume(0.7);
     }
 
     private setupPopups(): void {
-        PopupManager.instance.onPopupEnd.add(this._onPopupEnd);
-        PopupManager.instance.onPopupStart.add(this._onPopupStart);
+        PopupManager.instance.onPopupEnd.add((id) => id === "gameOver" ? (this.paused = false) : this.quitGameScene());
+        PopupManager.instance.onPopupStart.add((id) => id === "gameOver" && (this.paused = true));
     }
 
-    private readonly _onPopupEnd = (popupId: string) => {
-        if (popupId === "gameOver") {
-            this.paused = false;
-            this.updateScore(0);
-        } else {
-            this.quitGameScene();
-        }
-    };
+    private setupDevGui(): void {
+        DevGuiManager.instance.addButton('Unlock All Levels', () => {
+            // Assume 50 is the total levels, or get from sequence length
+            GameplayProgressStorage.unlockAll(50);
+            location.reload(); // Quickest way to refresh state
+        });
 
-    private readonly _onPopupStart = (popupId: string) => {
-        if (popupId === "gameOver") this.paused = true;
-    };
+        DevGuiManager.instance.addButton('Erase Progress', () => {
+            GameplayProgressStorage.clearData();
+            location.reload();
+        });
+
+        DevGuiManager.instance.addButton('Skip Current Level', () => {
+            this.mediator.gameplayData.onLevelComplete.dispatch();
+        });
+        DevGuiManager.instance.addButton('Toggle Map', () => this.isMapActive ? this.startLevel(LevelDataManager.getRandomLevel()) : this.showMap());
+    }
 
     private quitGameScene(): void {
         this.onQuit.dispatch();
@@ -266,7 +279,7 @@ export default class HexScene extends GameScene {
     }
 
     public destroy(): void {
-        PopupManager.instance.onPopupEnd.remove(this._onPopupEnd);
-        PopupManager.instance.onPopupStart.remove(this._onPopupStart);
+        super.destroy();
+        this.worldMap?.destroy();
     }
 }

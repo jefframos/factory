@@ -14,6 +14,7 @@ export class Game {
     private stats?: Stats;
     // Screen data
     static renderer: PIXI.Renderer;
+    static APP: PIXI.Application;
 
     static gameScreenData: {
         width: number,
@@ -52,6 +53,7 @@ export class Game {
             ...options,
         });
         Game.renderer = this.app.renderer
+        Game.APP = this.app;
         document.body.appendChild(this.app.view as HTMLCanvasElement);
 
         this.stageContainer = new PIXI.Container();

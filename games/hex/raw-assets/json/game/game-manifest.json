@@ -1,6 +1,15 @@
 {
   "worlds": [
     {
+      "id": "world_1770499484823",
+      "name": "Logan",
+      "icon": "icon_default",
+      "background": "bg_default",
+      "enabled": true,
+      "levelFile": "world_1770499484823.json",
+      "customData": {}
+    },
+    {
       "id": "world_1770482231656",
       "name": "Test",
       "icon": "icon_default",
@@ -16,15 +25,6 @@
       "background": "bg_default",
       "enabled": true,
       "levelFile": "world_1770483482861.json",
-      "customData": {}
-    },
-    {
-      "id": "world_1770499484823",
-      "name": "New World",
-      "icon": "icon_default",
-      "background": "bg_default",
-      "enabled": true,
-      "levelFile": "world_1770499484823.json",
       "customData": {}
     },
     {

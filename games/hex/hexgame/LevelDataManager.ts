@@ -27,7 +27,28 @@ export class LevelDataManager {
 
         this.initFromWorlds(worlds);
     }
+    public static getLevelAt(index: number): LevelData | null {
+        if (index < 0 || index >= this.flatLevels.length) return null;
+        return this.flatLevels[index];
+    }
 
+    /** * Finds the WorldData that contains the level at the given global index.
+     * Useful for updating UI titles when moving through the flat list.
+     */
+    public static getWorldByLevelIndex(index: number): WorldData | null {
+        const level = this.getLevelAt(index);
+        if (!level) return null;
+
+        const worldId = this.levelToWorldMap.get(level.id);
+        return worldId ? this.getWorld(worldId) : null;
+    }
+
+    /**
+     * Total count of levels across all worlds
+     */
+    public static getTotalLevelCount(): number {
+        return this.flatLevels.length;
+    }
     /**
      * Direct init from an array of full WorldData objects.
      * Use this when the server sends the fully merged data.

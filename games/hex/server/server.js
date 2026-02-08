@@ -10,8 +10,8 @@ const __dirname = path.dirname(__filename);
 
 const PORT = Number(process.env.PORT || 3031);
 const CONFIG_FILE = path.join(__dirname, "config.json");
-
 // --- Helper Functions ---
+
 
 const readJson = (filePath) => {
     return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -53,6 +53,8 @@ const loadConfig = () => {
 
     return cfg;
 };
+
+
 const loadConfig2 = () => {
     const cfg = {
         levelDataPath: process.env.LEVEL_DATA_PATH || "",
@@ -72,6 +74,7 @@ const loadConfig2 = () => {
     }
     return cfg;
 };
+
 
 const saveConfig = (cfg) => writeJson(CONFIG_FILE, cfg);
 
@@ -107,6 +110,57 @@ const makeBackup = (cfg, reason) => {
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
+
+const MAP_DATA_FILE = path.join(loadConfig().dataDir, "map-data.json");
+app.get("/api/loadMap", (req, res) => {
+    try {
+        if (!fs.existsSync(MAP_DATA_FILE)) {
+            return res.json({ ok: true, data: { points: [] } });
+        }
+        const data = readJson(MAP_DATA_FILE);
+        res.json({ ok: true, data });
+    } catch (err) {
+        res.status(500).json({ ok: false, error: String(err) });
+    }
+});
+
+app.post("/api/saveMap", (req, res) => {
+    const { data } = req.body || {};
+    try {
+        writeJson(MAP_DATA_FILE, data);
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ ok: false, error: String(err) });
+    }
+});
+
+
+// Add to server.js
+const ASSETS_DIR = path.resolve(__dirname, "../raw-assets/images"); // Adjust to your path
+
+app.get("/api/assets", (req, res) => {
+    const getFiles = (dir) => {
+        const results = [];
+        const list = fs.readdirSync(dir);
+        list.forEach((file) => {
+            const filePath = path.join(dir, file);
+            const stat = fs.statSync(filePath);
+            if (stat && stat.isDirectory()) {
+                results.push({ name: file, type: "directory", children: getFiles(filePath) });
+            } else if (/\.(png|jpe?g|webp)$/i.test(file)) {
+                // Create a web-friendly URL
+                const relativePath = path.relative(path.resolve(__dirname, "../public"), filePath);
+                results.push({ name: file, type: "file", url: "/" + relativePath.replace(/\\/g, '/') });
+            }
+        });
+        return results;
+    };
+    try {
+        res.json({ ok: true, tree: getFiles(ASSETS_DIR) });
+    } catch (e) {
+        res.status(500).json({ ok: false, error: e.message });
+    }
+});
 
 // --- Routes ---
 
