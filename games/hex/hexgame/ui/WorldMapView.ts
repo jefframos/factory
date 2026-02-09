@@ -8,6 +8,7 @@ import { Point, SplineUtils } from "../mapEditor/SplineUtils";
 import { VisualLayer } from "../mapEditor/VisualEditorLogic";
 import { VisualViewController } from "../mapEditor/VisualViewController";
 import { PathRope } from "./PathRope";
+import { PinState, WorldMapPin } from "./WorldMapPin";
 
 // ---------- Map-data types ----------
 export interface WorldMapPoint {
@@ -16,12 +17,19 @@ export interface WorldMapPoint {
     y: number;
     order: number;
 }
-
+export interface WorldMapBoundary {
+    id: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
 export interface WorldMapData {
     points: WorldMapPoint[];
     visuals?: {
         layers: VisualLayer[];
     };
+    worldBoundaries?: WorldMapBoundary[];
 }
 
 export interface WorldMapViewStyle {
@@ -56,6 +64,11 @@ type AssignedPoint = {
 
 export class WorldMapView extends PIXI.Container {
 
+    private boundaries: WorldMapBoundary[] = [];
+    private viewportRect: PIXI.Rectangle = new PIXI.Rectangle(0, 0, 800, 600); // Default size
+    private combinedBounds: PIXI.Rectangle | null = null;
+    private viewportAnchor: PIXI.Point = new PIXI.Point(0, 0);
+
     public readonly onUpdateCurrentLevel: Signal = new Signal();
     private readonly opts: WorldMapViewOptions;
     private readonly backgroundShape: PIXI.Graphics = new PIXI.Graphics();
@@ -77,6 +90,20 @@ export class WorldMapView extends PIXI.Container {
 
     private targetPosition: PIXI.Point = new PIXI.Point(0, 0);
     private lerpSpeed: number = 0.1; // Adjust for smoothness
+
+    private readonly debugGraphics: PIXI.Graphics = new PIXI.Graphics();
+    public showDebug: boolean = false; // Toggle this to see boundaries
+
+    private static readonly ACTIVATION_DISTANCE: number = 20; // Pixels
+    public readonly onUpdatePinPosition: Signal = new Signal();
+
+    private isAnimatingPath: boolean = false;
+    private pathProgress: number = 0; // 0 to 1
+    private currentSplinePoints: Point[] = [];
+    private moveDuration: number = 1000; // ms
+    private moveStartTime: number = 0;
+
+    private pinComponent: WorldMapPin | null = null;
 
     constructor(opts: WorldMapViewOptions) {
         super();
@@ -110,8 +137,12 @@ export class WorldMapView extends PIXI.Container {
         gr.beginFill(0xff0000);
         gr.drawCircle(0, 0, 10);
         gr.endFill();
-        this.addChild(gr)
+        //this.addChild(gr)
+
+        this.addChild(this.debugGraphics);
+
     }
+
 
     private setupBackground(): void {
         const size = 100000;
@@ -158,6 +189,10 @@ export class WorldMapView extends PIXI.Container {
 
         this.assigned = [];
 
+        if (mapData.worldBoundaries) {
+            this.setBoundaries(mapData.worldBoundaries);
+        }
+
         // 3. Separate Layers by Depth logic
         const allLayers = mapData.visuals?.layers ?? [];
         const bgLayers = allLayers.filter(l => (l as any).belowSpline === true);
@@ -195,7 +230,7 @@ export class WorldMapView extends PIXI.Container {
         // 9. Initial View State
         if (this.assigned.length > 0) {
             this.setSelected(0);
-            this.centerOnLevel(0);
+            this.centerOnLevel(0, false);
         }
     }
 
@@ -254,6 +289,22 @@ export class WorldMapView extends PIXI.Container {
         return btn;
     }
 
+    public setPin(pin: WorldMapPin): void {
+        this.pinComponent = pin;
+        this.pointsContainer.addChild(this.pinComponent);
+        this.syncPinToCurrentLevel();
+    }
+
+    private syncPinToCurrentLevel(): void {
+        if (!this.pinComponent || this.assigned.length === 0) return;
+
+        const currentPoint = this.assigned[this.currentLevelIndex].point;
+        this.pinComponent.position.set(currentPoint.x, currentPoint.y);
+        this.pinComponent.zIndex = currentPoint.y + 1000;
+
+        // Notify external listeners if needed
+        this.onUpdatePinPosition.dispatch(currentPoint.x, currentPoint.y);
+    }
     public setSelected(index: number): void {
         if (index < 0 || index >= this.assigned.length) return;
         const selected = this.assigned[index];
@@ -275,27 +326,157 @@ export class WorldMapView extends PIXI.Container {
         this.targetPosition.set(-point.x, -point.y);
 
         if (!animate) {
-            this.rootWorldContainer.position.copyFrom(this.targetPosition);
+            const constrained = this.getConstrainedPosition(this.targetPosition.x, this.targetPosition.y);
+            this.rootWorldContainer.x = constrained.x;
+            this.rootWorldContainer.y = constrained.y;
         }
     }
 
-    public update(delta: number): void {
-        // Smoothly lerp the container position towards the target level point
-        // This makes the current level point move to the 0,0 of the map container
-        this.rootWorldContainer.x += (this.targetPosition.x - this.rootWorldContainer.x) * this.lerpSpeed;
-        this.rootWorldContainer.y += (this.targetPosition.y - this.rootWorldContainer.y) * this.lerpSpeed;
+    public animateToLevel(index: number): void {
+        const prevIndex = this.currentLevelIndex;
+        this.currentLevelIndex = index;
+
+        // 1. Get the segment of the spline between these two points
+        const control: Point[] = this.controlPointsSorted.map(p => ({ x: p.x, y: p.y }));
+
+        // Generate the specific segment for the animation
+        // segmentPoints: 50 for high resolution movement
+        const fullSpline = SplineUtils.generateCatmullRomSpline(control, 50, 0.5);
+
+        const segmentPoints = 50;
+        const startIndex = prevIndex * segmentPoints;
+        const endIndex = index * segmentPoints;
+
+        this.currentSplinePoints = fullSpline.slice(
+            Math.min(startIndex, endIndex),
+            Math.max(startIndex, endIndex) + 1
+        );
+
+        // If moving backwards, reverse the points
+        if (prevIndex > index) {
+            this.currentSplinePoints.reverse();
+        }
+
+        this.isAnimatingPath = true;
+        this.pathProgress = 0;
+        this.moveStartTime = performance.now();
+
+        // Update buttons state
+        //this.updateButtonStates(index);
+        this.refreshButtonVisuals(index);
+        this.onUpdateCurrentLevel.dispatch(index);
     }
+    private refreshButtonVisuals(targetIndex: number): void {
+        this.assigned.forEach((entry, i) => {
+            if (i <= targetIndex) {
+                entry.button.renderable = true;
+                // We set interaction to false initially if it's the target level 
+                // and we are currently animating.
+                if (i === targetIndex && this.isAnimatingPath) {
+                    entry.button.disable();
+                } else {
+                    entry.button.enable();
+                }
+            } else {
+                entry.button.disable();
+            }
+        });
+    }
+
+    /**
+     * Checks distance between pin and level buttons.
+     * Activates interaction once the pin is within the threshold.
+     */
+    private checkButtonActivation(pinPos: Point): void {
+        const targetEntry = this.assigned[this.currentLevelIndex];
+        if (!targetEntry) return;
+
+        const dx = pinPos.x - targetEntry.point.x;
+        const dy = pinPos.y - targetEntry.point.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < WorldMapView.ACTIVATION_DISTANCE) {
+            targetEntry.button.enable();
+        }
+    }
+    public update(delta: number): void {
+        if (this.isAnimatingPath) {
+            const elapsed = performance.now() - this.moveStartTime;
+            this.pathProgress = Math.min(elapsed / this.moveDuration, 1);
+
+            const pointIndex = Math.floor(this.pathProgress * (this.currentSplinePoints.length - 1));
+            const currentPos = this.currentSplinePoints[pointIndex];
+
+            if (currentPos && this.pinComponent) {
+                // This is fine, but setState has a guard (if this.state === state return)
+                // so it won't reset the timer every frame anymore.
+                this.pinComponent.setState(PinState.MOVING);
+
+                this.pinComponent.position.set(currentPos.x, currentPos.y);
+                this.pinComponent.zIndex = currentPos.y + 1000;
+
+                this.onUpdatePinPosition.dispatch(currentPos.x, currentPos.y);
+                this.targetPosition.set(-currentPos.x, -currentPos.y);
+                this.checkButtonActivation(currentPos);
+            }
+
+            if (this.pathProgress >= 1) {
+                this.isAnimatingPath = false;
+                this.pinComponent?.setState(PinState.IDLE); // Or REACHED
+                this.drawSpline(this.controlPointsSorted);
+            }
+        } else {
+            // Ensure that if we aren't animating, the pin knows it's idle
+            this.pinComponent?.setState(PinState.IDLE);
+        }
+
+        if (this.pinComponent) {
+            this.pinComponent.update(delta);
+        }
+
+        // Camera logic...
+        const constrained = this.getConstrainedPosition(this.targetPosition.x, this.targetPosition.y);
+        this.rootWorldContainer.x += (constrained.x - this.rootWorldContainer.x) * this.lerpSpeed;
+        this.rootWorldContainer.y += (constrained.y - this.rootWorldContainer.y) * this.lerpSpeed;
+
+        this.rootWorldContainer.x = Math.round(this.rootWorldContainer.x);
+        this.rootWorldContainer.y = Math.round(this.rootWorldContainer.y);
+
+
+        if (this.showDebug) this.drawDebug();
+    }
+
+    private updateButtonStates(index: number): void {
+        this.assigned.forEach((entry, i) => {
+            if (i <= index) entry.button.enable();
+            else entry.button.disable();
+        });
+    }
+
+    // public update(delta: number): void {
+    //     const constrained = this.getConstrainedPosition(this.targetPosition.x, this.targetPosition.y);
+
+    //     // DEBUG: Is targetPosition actually changing? 
+    //     // If targetPosition is always (0,0), the map won't move.
+    //     // console.log(this.targetPosition.x, constrained.x);
+
+    //     this.rootWorldContainer.x += (constrained.x - this.rootWorldContainer.x) * this.lerpSpeed;
+    //     this.rootWorldContainer.y += (constrained.y - this.rootWorldContainer.y) * this.lerpSpeed;
+
+    //     if (this.showDebug) this.drawDebug();
+    // }
 
     public setCurrentLevelIndex(index: number): void {
         this.currentLevelIndex = index;
-        this.assigned.forEach((entry, i) => {
-            if (i <= index) {
-                entry.button.enable()
-            } else {
-                entry.button.disable()
+        this.isAnimatingPath = false;
 
-            }
+        this.assigned.forEach((entry, i) => {
+            if (i <= index) entry.button.enable();
+            else entry.button.disable();
         });
+
+        // Ensure pin snaps to the new level immediately
+        this.syncPinToCurrentLevel();
 
         this.onUpdateCurrentLevel.dispatch(index);
         this.drawSpline(this.controlPointsSorted);
@@ -315,5 +496,104 @@ export class WorldMapView extends PIXI.Container {
             if (w.enabled) w.levels?.forEach(lvl => sequence.push({ level: lvl, world: w }));
         });
         return sequence;
+    }
+
+    public setViewport(width: number, height: number, anchorX: number, anchorY: number): void {
+        this.viewportRect.width = width;
+        this.viewportRect.height = height;
+        this.viewportAnchor.set(anchorX, anchorY);
+    }
+
+    public setBoundaries(boundaries: WorldMapBoundary[]): void {
+        // Basic check to avoid recalculating if the data is identical (by ID and count)
+        const isSame = this.boundaries.length === boundaries.length &&
+            this.boundaries.every((b, i) => b.id === boundaries[i].id);
+
+        if (isSame) return;
+
+        this.boundaries = boundaries;
+
+        if (this.boundaries.length === 0) {
+            this.combinedBounds = null;
+            return;
+        }
+
+        // Calculate the total area covered by all boundary boxes
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+        this.boundaries.forEach(b => {
+            minX = Math.min(minX, b.x);
+            minY = Math.min(minY, b.y);
+            maxX = Math.max(maxX, b.x + b.width);
+            maxY = Math.max(maxY, b.y + b.height);
+        });
+
+        this.combinedBounds = new PIXI.Rectangle(minX, minY, maxX - minX, maxY - minY);
+    }
+    private getConstrainedPosition(targetX: number, targetY: number): PIXI.Point {
+        if (!this.combinedBounds) return new PIXI.Point(targetX, targetY);
+
+        const bounds = this.combinedBounds;
+
+        // 1. Calculate where the WORLD edges are relative to THIS container's (0,0)
+        // When rootWorldContainer is at (0,0), the left edge is bounds.x
+        // When rootWorldContainer is at (targetX), the left edge is targetX + bounds.x
+
+        // We want: (ThisContainer.x + targetX + bounds.x) <= 0 (Screen Left)
+        // And: (ThisContainer.x + targetX + bounds.x + bounds.width) >= ViewportWidth (Screen Right)
+
+        // Solve for targetX:
+        const maxAllowedX = -bounds.x - this.x;
+        const minAllowedX = (this.viewportRect.width - (bounds.x + bounds.width)) - this.x;
+
+        const maxAllowedY = -bounds.y - this.y;
+        const minAllowedY = (this.viewportRect.height - (bounds.y + bounds.height)) - this.y;
+
+        // 2. Apply the clamp
+        let finalX = Math.max(minAllowedX, Math.min(maxAllowedX, targetX));
+        let finalY = Math.max(minAllowedY, Math.min(maxAllowedY, targetY));
+
+        // 3. Handle "Small Map" logic: If map is thinner than screen, center it
+        if (bounds.width < this.viewportRect.width) {
+            finalX = (this.viewportRect.width / 2) - (bounds.x + bounds.width / 2) - this.x;
+        }
+        // If map is shorter than screen, center it
+        if (bounds.height < this.viewportRect.height) {
+            finalY = (this.viewportRect.height / 2) - (bounds.y + bounds.height / 2) - this.y;
+        }
+
+        return new PIXI.Point(finalX, finalY);
+    }
+
+    private drawDebug(): void {
+        this.debugGraphics.clear();
+
+        // The Green Box: The World Boundaries
+        // Since rootWorldContainer is a child of 'this', we draw its bounds relative to 'this'
+        if (this.combinedBounds) {
+            this.debugGraphics.lineStyle(4, 0x00ff00, 0.5);
+            this.debugGraphics.drawRect(
+                this.rootWorldContainer.x + this.combinedBounds.x,
+                this.rootWorldContainer.y + this.combinedBounds.y,
+                this.combinedBounds.width,
+                this.combinedBounds.height
+            );
+        }
+
+        // The Red Box: The Viewport (Screen)
+        // The viewport starts at Screen(0,0). Since 'this' is at (this.x, this.y),
+        // the screen's (0,0) relative to 'this' is (-this.x, -this.y)
+        this.debugGraphics.lineStyle(2, 0xff0000, 1);
+        this.debugGraphics.drawRect(
+            -this.x,
+            -this.y,
+            this.viewportRect.width,
+            this.viewportRect.height
+        );
+
+        // Blue Circle: The "Camera Lens" (where we want the level to be)
+        // This is the anchor we passed in: (centerX, anchorY) -> relative to 'this' is (0,0)
+        // this.debugGraphics.lineStyle(2, 0x0000ff);
+        // this.debugGraphics.drawCircle(0, 0, 15);
     }
 }

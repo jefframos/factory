@@ -137,6 +137,17 @@
             "r": 3
           }
         }
+      ],
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true
+        },
+        {
+          "id": "PieceRotation",
+          "enabled": false,
+          "value": ""
+        }
       ]
     },
     {
@@ -225,7 +236,13 @@
           ]
         }
       ],
-      "id": "level_1770487226246_163"
+      "id": "level_1770487226246_163",
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true
+        }
+      ]
     },
     {
       "name": "Level 2",
@@ -495,7 +512,13 @@
           }
         }
       ],
-      "id": "level_1770487226246_354"
+      "id": "level_1770487226246_354",
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true
+        }
+      ]
     },
     {
       "id": "level_1770487098465",
@@ -566,7 +589,13 @@
           0
         ]
       ],
-      "difficulty": 2
+      "difficulty": 2,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true
+        }
+      ]
     },
     {
       "id": "level_1770498840007",
@@ -622,7 +651,13 @@
           0
         ]
       ],
-      "difficulty": 2
+      "difficulty": 2,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true
+        }
+      ]
     },
     {
       "id": "level_1770498854228",
@@ -885,6 +920,12 @@
             "r": 1
           }
         }
+      ],
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true
+        }
       ]
     },
     {
@@ -957,185 +998,10 @@
         ]
       ],
       "difficulty": 1,
-      "pieces": [
+      "features": [
         {
-          "coords": [
-            {
-              "q": 1,
-              "r": 1
-            },
-            {
-              "q": 2,
-              "r": 1
-            },
-            {
-              "q": 2,
-              "r": 0
-            },
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 1
-            },
-            {
-              "q": 1,
-              "r": 2
-            }
-          ],
-          "color": 3815996,
-          "rootPos": {
-            "q": 0,
-            "r": 4
-          }
-        },
-        {
-          "coords": [
-            {
-              "q": 1,
-              "r": 1
-            },
-            {
-              "q": 2,
-              "r": 1
-            },
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 1,
-              "r": 2
-            },
-            {
-              "q": 0,
-              "r": 0
-            }
-          ],
-          "color": 9334355,
-          "rootPos": {
-            "q": 3,
-            "r": 0
-          }
-        },
-        {
-          "coords": [
-            {
-              "q": 1,
-              "r": 1
-            },
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 0
-            }
-          ],
-          "color": 15938559,
-          "rootPos": {
-            "q": 1,
-            "r": 0
-          }
-        },
-        {
-          "coords": [
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 2,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 1
-            }
-          ],
-          "color": 16734003,
-          "rootPos": {
-            "q": 3,
-            "r": 3
-          }
-        },
-        {
-          "coords": [
-            {
-              "q": 2,
-              "r": 1
-            },
-            {
-              "q": 1,
-              "r": 1
-            },
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 1
-            }
-          ],
-          "color": 3407703,
-          "rootPos": {
-            "q": 0,
-            "r": 2
-          }
-        },
-        {
-          "coords": [
-            {
-              "q": 1,
-              "r": 1
-            },
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 1
-            }
-          ],
-          "color": 3364863,
-          "rootPos": {
-            "q": -2,
-            "r": 3
-          }
-        },
-        {
-          "coords": [
-            {
-              "q": 0,
-              "r": 1
-            },
-            {
-              "q": 1,
-              "r": 1
-            },
-            {
-              "q": 1,
-              "r": 0
-            }
-          ],
-          "color": 16773939,
-          "rootPos": {
-            "q": -2,
-            "r": 5
-          }
-        },
-        {
-          "coords": [],
-          "color": 16723285,
-          "rootPos": {
-            "q": 0,
-            "r": 0
-          }
+          "id": "PiecePlacement",
+          "enabled": true
         }
       ]
     },
@@ -1185,7 +1051,13 @@
           1
         ]
       ],
-      "difficulty": 2
+      "difficulty": 2,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true
+        }
+      ]
     },
     {
       "id": "level_1770498983133",
@@ -1256,7 +1128,13 @@
           0
         ]
       ],
-      "difficulty": 1
+      "difficulty": 1,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true
+        }
+      ]
     },
     {
       "id": "level_1770498985166",
@@ -1304,7 +1182,13 @@
           1
         ]
       ],
-      "difficulty": 1
+      "difficulty": 1,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true
+        }
+      ]
     }
   ]
 }

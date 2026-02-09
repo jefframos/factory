@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { ClusterData, HexUtils } from "../HexTypes";
+import { ClusterData, getColorValueById, HexUtils } from "../HexTypes";
 
 export class PieceOverlayView extends PIXI.Container {
     private g: PIXI.Graphics = new PIXI.Graphics();
@@ -15,40 +15,37 @@ export class PieceOverlayView extends PIXI.Container {
 
     }
 
-    public setPieces(pieces: ClusterData[], selectedIndex: number): void {
-        this.g.clear();
 
-        for (let i = 0; i < pieces.length; i++) {
-            const p = pieces[i];
+    public setPieces(pieces: ClusterData[], selectedIndex: number) {
+        this.g.clear();
+        pieces.forEach((p, i) => {
             const alpha = (i === selectedIndex) ? 0.75 : 0.25;
-            const color = p.color ?? 0xffffff;
 
-            for (const c of p.coords) {
-                const aq = p.rootPos.q + c.q; // absolute axial
-                const ar = p.rootPos.r + c.r;
+            // --- THE FIX: Resolve ID to Number ---
+            // If p.color is "color_6", this turns it into 0x00CED1
+            const hexColor = getColorValueById(p.color);
 
-                //const off = LevelMatrixCodec.axialToOffset(aq, ar);
-                //const pos = HexUtils.offsetToPixel(off.q, off.r);
-                const pos = HexUtils.offsetToPixel(aq, ar);
-
-                this.drawHex(pos.x, pos.y, HexUtils.HEX_SIZE, color, alpha);
-            }
-        }
+            p.coords.forEach(c => {
+                const pos = HexUtils.offsetToPixel(p.rootPos.q + c.q, p.rootPos.r + c.r);
+                // Use hexColor here, NOT p.color
+                this.drawHex(pos.x, pos.y, HexUtils.HEX_SIZE, hexColor, alpha);
+            });
+        });
     }
 
-    public clear(): void {
-        this.g.clear();
-    }
-
-    private drawHex(x: number, y: number, size: number, color: number, alpha: number): void {
+    private drawHex(x: number, y: number, size: number, color: number, alpha: number) {
         const pts: number[] = [];
         for (let i = 0; i < 6; i++) {
             const angle = (Math.PI / 180) * (60 * i - 30);
             pts.push(x + size * Math.cos(angle), y + size * Math.sin(angle));
         }
-
-        this.g.beginFill(color, alpha);
-        this.g.drawPolygon(pts);
-        this.g.endFill();
+        // PIXI now receives a valid number (color), not a string ("color_6")
+        this.g.beginFill(color, alpha).drawPolygon(pts).endFill();
     }
+
+
+    public clear(): void {
+        this.g.clear();
+    }
+
 }

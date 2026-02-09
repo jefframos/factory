@@ -33,7 +33,29 @@ export class LevelMatrixCodec {
 
         return set;
     }
+    // Add to LevelMatrixCodec or a new Validator class
+    public static validateLevel(lvl: LevelData): { ok: boolean; msg: string } {
+        if (!lvl.matrix || lvl.matrix.length === 0) return { ok: false, msg: "No grid" };
 
+        // If it's procedural (no baked pieces), we assume it's valid for now
+        if (!lvl.pieces || lvl.pieces.length === 0) return { ok: true, msg: "Procedural" };
+
+        const gridSet = this.fromMatrix(lvl.matrix);
+        const seen = new Set<string>();
+
+        for (const p of lvl.pieces) {
+            for (const c of p.coords) {
+                const k = this.key(p.rootPos.q + c.q, p.rootPos.r + c.r);
+                if (!gridSet.has(k)) return { ok: false, msg: "Out of bounds" };
+                if (seen.has(k)) return { ok: false, msg: "Overlap" };
+                seen.add(k);
+            }
+        }
+
+        return seen.size === gridSet.size
+            ? { ok: true, msg: "Valid" }
+            : { ok: false, msg: "Incomplete" };
+    }
     public static toMatrix(axialTiles: Set<string>): GridMatrix {
         if (axialTiles.size === 0) {
             return [[1]];

@@ -246,7 +246,6 @@ app.get("/api/load", (req, res) => {
 // POST /api/save - Receives the full state and splits it back into files
 app.post("/api/save", (req, res) => {
     const cfg = loadConfig();
-    console.log(cfg)
     const { manifest, worldsData } = req.body || {};
 
     if (!manifest || !worldsData) {
@@ -258,13 +257,32 @@ app.post("/api/save", (req, res) => {
         const manifestPath = path.join(cfg.dataDir, cfg.manifestName);
         writeJson(manifestPath, manifest);
 
-        // 2. Save each world file mentioned in the worldsData object
+        // 2. Identify which files we ARE keeping
+        const activeFiles = new Set(Object.keys(worldsData));
+        activeFiles.add(cfg.manifestName);
+        // Add map-data if you use it in the same dir
+        activeFiles.add("map-data.json");
+
+        // 3. CLEANUP: Delete files that are no longer in the manifest
+        const filesOnDisk = fs.readdirSync(cfg.dataDir);
+        filesOnDisk.forEach(file => {
+            // Only target .json files to avoid deleting assets/configs
+            if (path.extname(file) === ".json") {
+                if (!activeFiles.has(file)) {
+                    const deletePath = path.join(cfg.dataDir, file);
+                    fs.unlinkSync(deletePath);
+                    console.log(`[Server] Deleted orphaned world file: ${file}`);
+                }
+            }
+        });
+
+        // 4. Save/Update each world file currently in the editor
         for (const [fileName, content] of Object.entries(worldsData)) {
             const worldPath = path.join(cfg.dataDir, fileName);
             writeJson(worldPath, content);
         }
 
-        res.json({ ok: true, message: "Manifest and World files updated." });
+        res.json({ ok: true, message: "Manifest updated and orphans cleaned." });
     } catch (err) {
         console.error(err);
         res.status(500).json({ ok: false, error: String(err) });

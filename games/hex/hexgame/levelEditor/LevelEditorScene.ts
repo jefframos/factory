@@ -6,7 +6,7 @@ import * as PIXI from "pixi.js";
 import { ClusterManager } from "../cluster/ClusterManager";
 import { HexGameMediator } from "../HexGameMediator";
 import { HexGridView } from "../HexGridView";
-import { ClusterData, Difficulty, HexUtils, LevelData, WorldData, WorldManifestEntry } from "../HexTypes";
+import { ClusterData, Difficulty, getColorIdByValue, getColorValueById, HexUtils, LevelData, LevelFeature, WorldData, WorldManifestEntry } from "../HexTypes";
 import { HexHUD } from "../ui/HexHud";
 
 import { LevelDataManager } from "../LevelDataManager";
@@ -89,6 +89,7 @@ export default class LevelEditorScene extends GameScene {
                 this.applyWorkingPiecesAbsToSelectedLevelLocal();
                 this.refreshPieceOverlay();
                 this.updateValidityLabel();
+                this.refreshUi();
                 return;
             }
 
@@ -144,12 +145,17 @@ export default class LevelEditorScene extends GameScene {
         const world = this.getSelectedWorld();
         if (!world) return;
 
+        const selectedDiff = this.ui ?
+            Difficulty[this.ui.difficultySelect.value as keyof typeof Difficulty] :
+            Difficulty.MEDIUM;
+
         const lvl: LevelData = {
             id: `level_${Date.now()}`,
             name: `Level ${world.levels.length + 1}`,
             gridType: "Shape",
             matrix: LevelMatrixCodec.toMatrix(new Set([LevelMatrixCodec.key(0, 0)])),
-            difficulty: Difficulty.MEDIUM
+            difficulty: selectedDiff,
+            features: [{ id: LevelFeature.PIECE_PLACEMENT, enabled: true, value: "" }]
         };
 
         // This pushes to the array inside LevelDataManager's Map
@@ -177,6 +183,28 @@ export default class LevelEditorScene extends GameScene {
     }
     private setupDomUi(): void {
         this.ui = new LevelEditorDomUI();
+
+        this.ui.onFeatureToggle = (fId, enabled, val) => {
+            const lvl = this.getSelectedLevel();
+            if (!lvl) return;
+
+            if (!lvl.features) lvl.features = [];
+
+            let feat = lvl.features.find(f => f.id === fId);
+            if (!feat) {
+                feat = { id: fId, enabled: enabled, value: val };
+                lvl.features.push(feat);
+            } else {
+                feat.enabled = enabled;
+                feat.value = val;
+            }
+
+            // Always ensure PiecePlacement is correct
+            const placement = lvl.features.find(f => f.id === LevelFeature.PIECE_PLACEMENT);
+            if (!placement) lvl.features.push({ id: LevelFeature.PIECE_PLACEMENT, enabled: true });
+
+            this.refreshUi(); // Update the sidebar badge count
+        };
 
         this.worldEditorUi = new WorldEditorDomUI(this.ui.root);
 
@@ -226,6 +254,7 @@ export default class LevelEditorScene extends GameScene {
             LevelDataManager.moveWorld(worldId, direction);
             this.refreshUi(); // This passes this.currentWorldId, keeping the accordion open
         };
+        this.ui.onDeletePiece = this.deleteSelectedPiece.bind(this);
         this.ui.onMoveLevel = (worldId, index, direction) => {
             // 1. Update the data in the manager
             const newIndex = LevelDataManager.moveLevel(worldId, index, direction);
@@ -291,7 +320,11 @@ export default class LevelEditorScene extends GameScene {
         this.ui.onTogglePieceMode = (en) => this.setPieceEditMode(en);
         this.ui.onAddPiece = (c) => this.addNewPieceAbs(c);
         this.ui.onSelectPiece = (i) => this.selectPieceAbs(i);
-        this.ui.onSelectedPieceColorChanged = (c) => this.setSelectedPieceColorAbs(c);
+        //this.ui.onSelectedPieceColorChanged = (c) => this.setSelectedPieceColorAbs(c);
+
+        this.ui.onSelectedPieceColorChanged = (colorId: string) => {
+            this.setSelectedPieceColorAbs(colorId);
+        };
     }
 
     private manifestData: { worlds: WorldManifestEntry[] } = { worlds: [] };
@@ -340,6 +373,12 @@ export default class LevelEditorScene extends GameScene {
 
         if (!lvl || !world) return;
 
+        if (lvl) {
+            // Ensure PiecePlacement exists
+            if (!lvl.features) lvl.features = [{ id: LevelFeature.PIECE_PLACEMENT, enabled: true }];
+            this.ui?.refreshFeatureUI(lvl.features);
+        }
+
         // Populate the floating world editor with current world data
         this.worldEditorUi?.setData(world);
 
@@ -353,6 +392,7 @@ export default class LevelEditorScene extends GameScene {
         this.refreshEditorRender();
         this.refreshLivePreview();
         this.refreshUi();
+        console.log(this.validatePiecesAbs());
     }
 
 
@@ -361,9 +401,13 @@ export default class LevelEditorScene extends GameScene {
         const lvl = this.getSelectedLevel();
         if (!lvl) return;
 
+        // We map the pieces and ensure the 'color' property becomes a string ID
         const localPieces = this.clusterManager.getPieces().map(p => ({
             coords: p.data.coords.map(c => ({ q: c.q, r: c.r })),
-            color: p.data.color,
+            // FIX: Convert the numeric color from the manager into a Palette ID string
+            color: typeof p.data.color === "number"
+                ? getColorIdByValue(p.data.color)
+                : p.data.color,
             rootPos: { q: p.data.rootPos.q, r: p.data.rootPos.r }
         }));
 
@@ -416,30 +460,70 @@ export default class LevelEditorScene extends GameScene {
         this.ui?.setPiecesList(this.workingPiecesAbs.map(p => ({ color: p.color })), this.editingPieceIndex);
     }
 
-    private selectPieceAbs(index: number): void {
-        if (index < 0 || index >= this.workingPiecesAbs.length) return;
-        this.editingPieceIndex = index;
+
+    private addNewPieceAbs(colorId: string): void {
+        if (!this.isPieceEditMode) return;
+
+        // 1. Add new data entry
+        this.workingPiecesAbs.push({
+            coords: [],
+            color: colorId,
+            rootPos: { q: 0, r: 0 }
+        });
+
+        // 2. Set index to the new piece
+        this.editingPieceIndex = this.workingPiecesAbs.length - 1;
+
+        // 3. CRITICAL: Clear the cell buffer so the new piece starts empty
         this.editingCellsAbs.clear();
 
-        const p = this.workingPiecesAbs[index];
-        p.coords.forEach(c => this.editingCellsAbs.add(LevelMatrixCodec.key(p.rootPos.q + c.q, p.rootPos.r + c.r)));
-
-        this.ui?.setSelectedPiece(index);
-        this.refreshPieceOverlay();
-        this.updateValidityLabel();
-    }
-
-    private addNewPieceAbs(color: number): void {
-        if (!this.isPieceEditMode) return;
-        this.workingPiecesAbs.push({ coords: [], color, rootPos: { q: 0, r: 0 } });
-        this.editingPieceIndex = this.workingPiecesAbs.length - 1;
         this.syncUiPieceListFromWorking();
         this.selectPieceAbs(this.editingPieceIndex);
     }
+    private selectPieceAbs(index: number): void {
+        if (index < 0 || index >= this.workingPiecesAbs.length) return;
+        this.editingPieceIndex = index;
 
-    private setSelectedPieceColorAbs(color: number): void {
+        // Clear and refill the absolute cell buffer from the piece's data
+        this.editingCellsAbs.clear();
+        const p = this.workingPiecesAbs[index];
+        p.coords.forEach(c => {
+            this.editingCellsAbs.add(LevelMatrixCodec.key(p.rootPos.q + c.q, p.rootPos.r + c.r));
+        });
+
+        this.ui?.setSelectedPiece(index);
+        this.ui?.setSelectedPieceColorDropdown(p.color as any);
+        this.refreshPieceOverlay();
+        this.updateValidityLabel();
+    }
+    private deleteSelectedPiece(): void {
+        if (!this.isPieceEditMode || this.workingPiecesAbs.length === 0) return;
+
+        this.workingPiecesAbs.splice(this.editingPieceIndex, 1);
+        this.editingPieceIndex = Math.max(0, this.editingPieceIndex - 1);
+
+        if (this.workingPiecesAbs.length > 0) {
+            this.selectPieceAbs(this.editingPieceIndex);
+        } else {
+            this.editingCellsAbs.clear();
+            this.refreshPieceOverlay();
+        }
+
+        this.syncUiPieceListFromWorking();
+        this.applyWorkingPiecesAbsToSelectedLevelLocal();
+        this.refreshLivePreview();
+        this.updateValidityLabel();
+    }
+    private setSelectedPieceColorAbs(colorId: string): void {
         if (!this.isPieceEditMode || !this.workingPiecesAbs[this.editingPieceIndex]) return;
-        this.workingPiecesAbs[this.editingPieceIndex].color = color;
+
+        // 1. Update the working data with the ID string
+        this.workingPiecesAbs[this.editingPieceIndex].color = colorId;
+
+        // 2. Refresh the UI swatches so they match the new color
+        this.syncUiPieceListFromWorking();
+
+        // 3. Save to the local level object and refresh the visuals
         this.applyWorkingPiecesAbsToSelectedLevelLocal();
         this.refreshPieceOverlay();
         this.refreshLivePreview();
@@ -470,7 +554,10 @@ export default class LevelEditorScene extends GameScene {
 
     private updateValidityLabel(): void {
         if (!this.ui) return;
-        const res = this.validatePiecesAbs();
+        const lvl = this.getSelectedLevel();
+        if (!lvl) return;
+
+        const res = LevelMatrixCodec.validateLevel(lvl);
         this.ui.validityLabel.innerText = `Validity: ${res.ok ? "OK" : "INVALID"} — ${res.msg}`;
         this.ui.validityLabel.style.background = res.ok ? "rgba(0,160,80,0.35)" : "rgba(200,60,60,0.35)";
     }
@@ -547,10 +634,14 @@ export default class LevelEditorScene extends GameScene {
         });
     }
 
-    private cellsToCluster(cells: { q: number, r: number }[], color: number): ClusterData {
+    private cellsToCluster(cells: { q: number, r: number }[], color: any): ClusterData {
         if (cells.length === 0) return { color, rootPos: { q: 0, r: 0 }, coords: [] };
         const minQ = Math.min(...cells.map(c => c.q)), minR = Math.min(...cells.map(c => c.r));
-        return { color, rootPos: { q: minQ, r: minR }, coords: cells.map(c => ({ q: c.q - minQ, r: c.r - minR })) };
+        return {
+            color,
+            rootPos: { q: minQ, r: minR },
+            coords: cells.map(c => ({ q: c.q - minQ, r: c.r - minR }))
+        };
     }
 
     private applyMatrixToSelectedLevel() {
@@ -673,40 +764,43 @@ export default class LevelEditorScene extends GameScene {
     private async saveToServer(): Promise<void> {
         if (!this.ui) return;
 
-        // 1. Get the source of truth from the Manager
         const worlds = LevelDataManager.getWorlds();
-
-        // 2. Build the Manifest structure
-        const manifest = {
-            worlds: worlds.map(w => ({
-                id: w.id,
-                name: w.name,
-                icon: (w as any).icon || "icon_default",
-                background: (w as any).background || "bg_default",
-                enabled: (w as any).enabled !== false, // default true
-                levelFile: (w as any).levelFile || `${w.id}.json`,
-                customData: (w as any).customData || {}
-            }))
-        };
-
-        // 3. Build the individual World Files structure
         const worldsData: Record<string, any> = {};
-        worlds.forEach(w => {
-            w.levels.forEach(element => {
-                if (!element.id) {
-                    element.id = `level_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-                }
-            });
-            const fileName = (w as any).levelFile || `${w.id}.json`;
-            worldsData[fileName] = {
-                id: w.id,
-                levels: w.levels // This contains the actual LevelData[]
-            };
-        });
+
+        // 1. Build the Manifest and World Files with indexed names
+        const manifest = {
+            worlds: worlds.map((w, index) => {
+                // Create a padded index (01, 02, etc.)
+                const orderPrefix = (index + 1).toString().padStart(2, '0');
+
+                // Generate the new filename: "01_world_id.json"
+                const newFileName = `${orderPrefix}_${w.id}.json`;
+
+                // Assign IDs to levels if they don't have them
+                w.levels.forEach(lvl => {
+                    if (!lvl.id) lvl.id = `level_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                });
+
+                // Map content for this specific file
+                worldsData[newFileName] = {
+                    id: w.id,
+                    levels: w.levels
+                };
+
+                return {
+                    id: w.id,
+                    name: w.name,
+                    icon: (w as any).icon || "icon_default",
+                    background: (w as any).background || "bg_default",
+                    enabled: (w as any).enabled !== false,
+                    levelFile: newFileName, // This now includes the order!
+                    customData: (w as any).customData || {}
+                };
+            })
+        };
 
         try {
             this.ui.setServerStatus("Saving...", true);
-
             const res = await fetch(`${API_BASE}/api/save`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -715,13 +809,12 @@ export default class LevelEditorScene extends GameScene {
 
             const result = await res.json();
             if (result.ok) {
-                this.ui.setServerStatus("Saved All Files ✅", true);
-            } else {
-                this.ui.setServerStatus("Save Error ❌", false);
+                this.ui.setServerStatus("Saved & Reordered ✅", true);
+                // Optional: Reload to sync local names with new indexed names
+                void this.loadJsonAndPopulate();
             }
         } catch (err) {
             this.ui.setServerStatus("Server Offline", false);
-            console.error("Save failed:", err);
         }
     }
 
@@ -761,12 +854,17 @@ class PieceOverlayView extends PIXI.Container {
             });
         });
     }
-    private drawHex(x: number, y: number, size: number, color: number, alpha: number) {
+    private drawHex(x: number, y: number, size: number, color: any, alpha: number) {
         const pts: number[] = [];
         for (let i = 0; i < 6; i++) {
+            // Standard Hexagon Math
             const angle = (Math.PI / 180) * (60 * i - 30);
             pts.push(x + size * Math.cos(angle), y + size * Math.sin(angle));
         }
-        this.g.beginFill(color, alpha).drawPolygon(pts).endFill();
+
+        // RESOLVE: This ensures 'color' is always a number before PIXI sees it
+        const finalColor = getColorValueById(color);
+
+        this.g.beginFill(finalColor, alpha).drawPolygon(pts).endFill();
     }
 }

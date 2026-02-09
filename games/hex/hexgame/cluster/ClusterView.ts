@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { ClusterData, HexUtils } from "../HexTypes";
+import { ClusterData, getColorValueById, HexUtils } from "../HexTypes";
 
 export class ClusterView extends PIXI.Container {
     public data!: ClusterData;
@@ -17,10 +17,13 @@ export class ClusterView extends PIXI.Container {
         this.data = data;
         //this.scale.set(0.6); // Clusters are usually smaller than the main grid
 
+        const hexColor = typeof data.color === 'string' ? getColorValueById(data.color) : data.color;
+
+
         data.coords.forEach(coord => {
             const pos = HexUtils.offsetToPixel(coord.q, coord.r);
             this.graphics.lineStyle(2, 0x000000, 0.5);
-            this.graphics.beginFill(data.color);
+            this.graphics.beginFill(hexColor);
 
             const points = [];
             for (let i = 0; i < 6; i++) {

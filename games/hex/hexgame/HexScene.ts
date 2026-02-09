@@ -18,6 +18,7 @@ import { Difficulty, LevelData } from "./HexTypes";
 import { LevelDataManager } from "./LevelDataManager";
 import { HexHUD } from "./ui/HexHud";
 import { WorldHUD } from "./ui/WorldHUD";
+import { WorldMapPin } from "./ui/WorldMapPin";
 import { WorldMapView } from "./ui/WorldMapView";
 
 export default class HexScene extends GameScene {
@@ -122,12 +123,22 @@ export default class HexScene extends GameScene {
                 this.worldHUD.setTitle(world.name);
             }
         });
-
+        this.layoutMap();
         const savedIndex = GameplayProgressStorage.getLatestLevelIndex();
         this.worldMap.setCurrentLevelIndex(savedIndex);
 
         // Snap camera to the level (false = no animation)
         this.worldMap.centerOnLevel(savedIndex, false);
+
+
+
+        const pin = new WorldMapPin(PIXI.Texture.from('toy-ball'));
+        this.worldMap.setPin(pin);
+        this.worldMap.onUpdatePinPosition.add((x, y) => {
+            pin.position.set(x, y);
+            pin.zIndex = y + 1000; // Ensure it stays on top of buttons/props
+        });
+
 
     }
     private setupEnvironment(): void {
@@ -181,8 +192,10 @@ export default class HexScene extends GameScene {
 
             // 3. Update map visuals and animate to the next level
             const nextIndex = currentIndex + 1;
-            this.worldMap.setCurrentLevelIndex(nextIndex);
-            this.worldMap.centerOnLevel(nextIndex, true); // Animate the scroll
+            // this.worldMap.setCurrentLevelIndex(nextIndex);
+            // this.worldMap.centerOnLevel(nextIndex, true); // Animate the scroll
+
+            this.worldMap.animateToLevel(nextIndex);
         });
 
         // Handle Return to Map
@@ -217,6 +230,18 @@ export default class HexScene extends GameScene {
         this.layout();
     }
 
+    private layoutMap() {
+        const centerX = Game.DESIGN_WIDTH / 2;
+        const centerY = Game.DESIGN_HEIGHT / 2;
+        if (this.worldMap) {
+            const mapAnchorY = Game.DESIGN_HEIGHT * 0.65;
+            this.worldMap.position.set(centerX, mapAnchorY);
+            this.worldMap.setViewport(Game.DESIGN_WIDTH, Game.DESIGN_HEIGHT, centerX, mapAnchorY);
+        }
+
+        // Fixed HUD positioning
+        this.worldHUD.layout();
+    }
     private layout(): void {
         const centerX = Game.DESIGN_WIDTH / 2;
         const centerY = Game.DESIGN_HEIGHT / 2;
@@ -229,13 +254,7 @@ export default class HexScene extends GameScene {
         this.worldViewContainer.position.set(0, 0);
 
         // Internal Map Panning logic
-        if (this.worldMap) {
-            // We tell the map where the "center of the screen" is for its lerping
-            this.worldMap.position.set(centerX, Game.DESIGN_HEIGHT * 0.65);
-        }
-
-        // Fixed HUD positioning
-        this.worldHUD.layout();
+        this.layoutMap();
 
         // Game HUD
         if (this.hexHUD) {
@@ -270,6 +289,14 @@ export default class HexScene extends GameScene {
         DevGuiManager.instance.addButton('Skip Current Level', () => {
             this.mediator.gameplayData.onLevelComplete.dispatch();
         });
+
+        DevGuiManager.instance.addButton('MoveLevel', () => {
+            let index = this.worldMap.getCurrentIndex(); // You'll need a getter for this
+            this.worldMap.setCurrentLevelIndex(index + 1);
+
+            console.log(index)
+        });
+
         DevGuiManager.instance.addButton('Toggle Map', () => this.isMapActive ? this.startLevel(LevelDataManager.getRandomLevel()) : this.showMap());
     }
 

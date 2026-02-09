@@ -29,6 +29,7 @@ export class MapEditorDomUI {
     public onToggleLevelEdit?: (enabled: boolean) => void;
     public onToggleDeleteMode?: (enabled: boolean) => void;
     public onLayerSelected?: (id: string) => void;
+    public onToggleBoundaries?: (enabled: boolean) => void;
     constructor() {
         this.root = document.createElement("div");
         this.root.style.cssText = `
@@ -254,16 +255,16 @@ export class MapEditorDomUI {
     private setupMapHUD() {
         const toolbar = document.createElement("div");
         toolbar.style.cssText = `
-            background: rgba(20, 20, 20, 0.85); 
-            border-radius: 12px; 
-            padding: 12px 18px; 
-            pointer-events: auto; 
-            display: flex; 
-            gap: 20px; 
-            align-items: center; 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            backdrop-filter: blur(10px);
-        `;
+        background: rgba(20, 20, 20, 0.85); 
+        border-radius: 12px; 
+        padding: 12px 18px; 
+        pointer-events: auto; 
+        display: flex; 
+        gap: 20px; 
+        align-items: center; 
+        border: 1px solid rgba(255, 255, 255, 0.1); 
+        backdrop-filter: blur(10px);
+    `;
 
         // 1. Toggles
         const editToggleData = this.createToggle("Edit Mode", "levelEdit", "#4CAF50");
@@ -273,6 +274,10 @@ export class MapEditorDomUI {
         const deleteToggleData = this.createToggle("Delete Mode", "deleteMode", "#ff4c4c");
         this.deleteModeToggle = deleteToggleData.input;
         this.deleteModeToggle.onchange = () => this.onToggleDeleteMode?.(this.deleteModeToggle.checked);
+
+        // --- NEW: Boundary Toggle ---
+        const boundToggleData = this.createToggle("Boundaries", "boundMode", "#FF00FF");
+        boundToggleData.input.onchange = () => this.onToggleBoundaries?.(boundToggleData.input.checked);
 
         // 2. Save Button
         const saveBtn = document.createElement("button");
@@ -289,9 +294,11 @@ export class MapEditorDomUI {
         this.coordinatesLabel.style.cssText = `font-size: 11px; font-family: monospace; padding: 6px 12px; background: rgba(0,0,0,0.3); border-radius: 6px; margin-left: auto;`;
         this.coordinatesLabel.innerText = "X: 0, Y: 0";
 
+        // Add everything to toolbar (Notice boundToggleData.container is added here)
         toolbar.append(
             editToggleData.container,
             deleteToggleData.container,
+            boundToggleData.container, // <--- New line
             saveBtn,
             this.serverStatusLabel,
             this.coordinatesLabel

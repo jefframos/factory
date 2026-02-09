@@ -3,6 +3,8 @@ import { GameScene } from "@core/scene/GameScene";
 import PatternBackground from "@core/ui/PatternBackground";
 import * as PIXI from "pixi.js";
 import { AssetBrowser } from "./AssetBrowser";
+import { BoundaryController } from "./BoundaryController";
+import { MapBoundaryLogic } from "./MapBoundaryLogic";
 import { MapEditorDomUI } from "./MapEditorDomUI";
 import { Point, SplineUtils } from "./SplineUtils";
 import { VisualEditorLogic, VisualLayer } from "./VisualEditorLogic";
@@ -26,12 +28,19 @@ interface MapMeta {
     cameraY: number;
     zoom: number;
 }
-
+interface WorldBoundary {
+    id: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
 interface MapData {
     points: LevelPoint[];
     visuals: {
         layers: VisualLayer[];
     };
+    worldBoundaries: WorldBoundary[];
 }
 const STORAGE_KEY = "map_editor_meta";
 export default class MapEditorScene extends GameScene {
@@ -70,6 +79,11 @@ export default class MapEditorScene extends GameScene {
     private selectedSpriteData: { sprite: PIXI.Sprite, layer: VisualLayer, data: VisualImage } | null = null;
     private latestSelectedSpriteData: { sprite: PIXI.Sprite, layer: VisualLayer, data: VisualImage } | null = null;
     private spriteDragOffset: PIXI.Point = new PIXI.Point();
+
+    private boundaryLogic!: MapBoundaryLogic;
+    private boundaryController!: BoundaryController;
+    private worldBoundaries: any[] = [];
+
     public build(): void {
         // Background
         this.patternBackground = new PatternBackground({
@@ -104,6 +118,16 @@ export default class MapEditorScene extends GameScene {
         this.assetBrowser.setVisible(false);
 
         this.setupDropZone();
+
+        this.boundaryController = new BoundaryController(this.worldContainer);
+        this.boundaryLogic = new MapBoundaryLogic(this.ui!.root);
+
+        this.boundaryLogic.onBoundariesChanged = (data) => {
+            this.worldBoundaries = data; // Keep local ref
+            this.boundaryController.render(data, (id, updates) => {
+                this.boundaryLogic.updateBoundary(id, updates);
+            });
+        };
 
         // Load map data
         void this.loadMapData();
@@ -170,6 +194,16 @@ export default class MapEditorScene extends GameScene {
     private setupDomUI(): void {
         this.ui = new MapEditorDomUI();
 
+        this.ui.onToggleBoundaries = (enabled) => {
+            this.boundaryLogic.setEnabled(enabled);
+            this.boundaryController.setVisible(enabled);
+
+            // If enabled and empty, create a default box
+            if (enabled && this.worldBoundaries.length === 0) {
+                this.boundaryLogic.setData([{ id: 'init', x: -500, y: -500, width: 1000, height: 1000 }]);
+                this.boundaryLogic.onBoundariesChanged!(this.worldBoundaries);
+            }
+        };
         this.ui.onSelectedScaleChanged = (scale) => {
             if (!this.latestSelectedSpriteData) return;
 
@@ -687,6 +721,12 @@ export default class MapEditorScene extends GameScene {
 
                 // 3. Render the existing images from the data
                 this.visualController.deserialize(this.layers);
+
+                this.worldBoundaries = result.data.worldBoundaries || [];
+                this.boundaryLogic.setData(this.worldBoundaries);
+                // and trigger the initial render
+                this.boundaryLogic.onBoundariesChanged?.(this.worldBoundaries);
+
                 // Create graphics for all points
                 this.levelPoints.forEach(point => {
                     this.createPointGraphics(point);
@@ -733,7 +773,8 @@ export default class MapEditorScene extends GameScene {
                 points: this.levelPoints,
                 visuals: {
                     layers: this.layers // Save the layer stack here
-                }
+                },
+                worldBoundaries: this.worldBoundaries
             };
 
             const response = await fetch(`${API_BASE}/api/saveMap`, {

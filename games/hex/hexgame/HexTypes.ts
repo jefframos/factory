@@ -4,7 +4,17 @@ export interface HexPos {
     q: number; // Column
     r: number; // Row
 }
+export enum LevelFeature {
+    PIECE_PLACEMENT = "PiecePlacement",
+    PIECE_ROTATION = "PieceRotation",
+    SPARE_PIECES = "SparePieces"
+}
 
+export interface LevelFeatureData {
+    id: LevelFeature;
+    enabled: boolean;
+    value?: string | number;
+}
 export interface LevelData {
     id: string;
     name: string;
@@ -12,6 +22,7 @@ export interface LevelData {
     matrix: number[][];
     pieces?: ClusterData[];
     difficulty?: Difficulty;
+    features?: LevelFeatureData[];
 }
 
 export interface WorldManifestEntry {
@@ -38,7 +49,7 @@ export type GridMatrix = number[][];
 
 export interface ClusterData {
     coords: HexPos[]; // Relative to (0,0)
-    color: number;
+    color: number | string;
     rootPos: HexPos;
 }
 
@@ -50,22 +61,42 @@ export type PieceColorEntry = {
     value: number;  // 0xRRGGBB
 };
 
+
 // IMPORTANT:
 // First 6 match your ClusterGenerator current colors EXACTLY.
 export const PIECE_COLOR_PALETTE: PieceColorEntry[] = [
-    { id: "coral", name: "Coral", value: 0xFF5733 },
-    { id: "lime", name: "Lime", value: 0x33FF57 },
-    { id: "blue", name: "Blue", value: 0x3357FF },
-    { id: "magenta", name: "Magenta", value: 0xF333FF },
-    { id: "yellow", name: "Yellow", value: 0xFFF333 },
-    { id: "cyan", name: "Cyan", value: 0x00CED1 },
+    { id: "color_1", name: "Coral", value: 0xFF5733 },
+    { id: "color_2", name: "Lime", value: 0x33FF57 },
+    { id: "color_3", name: "Blue", value: 0x3357FF },
+    { id: "color_4", name: "Magenta", value: 0xF333FF },
+    { id: "color_5", name: "Yellow", value: 0xFFF333 },
+    { id: "color_6", name: "Cyan", value: 0x00CED1 },
 
-    { id: "white", name: "White", value: 0xFFFFFF },
-    { id: "darkGrey", name: "Dark Grey", value: 0x3A3A3C },
-    { id: "brown", name: "Brown", value: 0x8E6E53 },
-    { id: "pink", name: "Pink", value: 0xFF2D55 },
+    { id: "color_7", name: "White", value: 0xFFFFFF },
+    { id: "color_8", name: "Dark Grey", value: 0x3A3A3C },
+    { id: "color_9", name: "Brown", value: 0x8E6E53 },
+    { id: "color_10", name: "Pink", value: 0xFF2D55 },
 ];
 
+export function getColorIdByValue(value: number): string {
+    const entry = PIECE_COLOR_PALETTE.find(c => c.value === value);
+    // Fallback to a default ID (like 'color_1') if not found in palette
+    return entry ? entry.id : PIECE_COLOR_PALETTE[0].id;
+}
+
+export function getColorValueById(color: string | number): number {
+    // If it's already a number (old data), return it 
+    // (or find its ID if you want to be strict)
+    if (typeof color === 'number') {
+        return color;
+    }
+
+    // If it's a string ID, find the matching hex value
+    const entry = PIECE_COLOR_PALETTE.find(c => c.id === color);
+
+    // Fallback to a default color (e.g., White) if the ID is missing
+    return entry ? entry.value : 0xFFFFFF;
+}
 export function colorToHex6(value: number): string {
     // returns "RRGGBB"
     return (value >>> 0).toString(16).padStart(6, "0").toUpperCase();

@@ -1,5 +1,6 @@
-import { colorToHex6, Difficulty, PIECE_COLOR_PALETTE } from "../HexTypes";
+import { colorToHex6, Difficulty, getColorValueById, LevelFeature, LevelFeatureData, PIECE_COLOR_PALETTE } from "../HexTypes";
 import { WorldData } from "../LevelDataManager";
+import { LevelMatrixCodec } from "./LevelMatrixCodec";
 
 export type PieceUiData = { color: number };
 
@@ -32,8 +33,9 @@ export class LevelEditorDomUI {
     public readonly validityLabel: HTMLDivElement;
     public readonly worldEnabledToggle: HTMLInputElement;
     public readonly worldBackgroundInput: HTMLInputElement;
-
+    public readonly featureContainer: HTMLDivElement;
     // Callbacks
+    public onFeatureToggle?: (featureId: LevelFeature, enabled: boolean, value: string) => void;
     public onMoveLevel?: (worldId: string, levelIndex: number, direction: -1 | 1) => void;
     public onMoveWorld?: (worldId: string, direction: -1 | 1) => void;
     public onRerollGrid?: () => void;
@@ -49,7 +51,8 @@ export class LevelEditorDomUI {
     public onTogglePieceMode?: (enabled: boolean) => void;
     public onAddPiece?: (color: number) => void;
     public onSelectPiece?: (index: number) => void;
-    public onSelectedPieceColorChanged?: (color: number) => void;
+    public onSelectedPieceColorChanged?: (color: string) => void;
+    public onDeletePiece?: () => void;
 
     private pieceItems: HTMLDivElement[] = [];
 
@@ -112,6 +115,20 @@ export class LevelEditorDomUI {
         // Piece Editor Section
         const pieceSection = document.createElement("div");
         pieceSection.style.cssText = `border-top:1px solid rgba(255,255,255,0.1); padding-top:10px; display:flex; flex-direction:column; gap:8px;`;
+
+        const featureSection = document.createElement("div");
+        featureSection.style.cssText = `border-top:1px solid rgba(255,255,255,0.1); padding-top:10px; display:flex; flex-direction:column; gap:8px;`;
+
+        const featureTitle = document.createElement("div");
+        featureTitle.innerText = "Level Features";
+        featureTitle.style.cssText = `font-size:11px; opacity:0.7; margin-bottom:4px;`;
+        featureSection.appendChild(featureTitle);
+
+        this.featureContainer = document.createElement("div");
+        this.featureContainer.style.cssText = `display:flex; flex-direction:column; gap:6px;`;
+        featureSection.appendChild(this.featureContainer);
+
+        this.editorPanel.appendChild(featureSection);
 
         const rowMode = this.makeRow();
         this.pieceModeToggle = document.createElement("input");
@@ -186,18 +203,30 @@ export class LevelEditorDomUI {
         this.deleteLevelBtn.onclick = () => this.onDeleteLevel?.();
         this.bakePiecesBtn.onclick = () => this.onBakePieces?.();
         this.erasePiecesBtn.onclick = () => this.onErasePieces?.();
-        this.addPieceBtn.onclick = () => this.onAddPiece?.(parseInt(this.pieceColorSelect.value, 16));
+        this.addPieceBtn.onclick = () => {
+            const selectedId = this.pieceColorSelect.value;
+            this.onAddPiece?.(selectedId as any); // Type cast to any or update your onAddPiece signature
+        };
+
+        this.pieceColorSelect.onchange = () => {
+            this.onSelectedPieceColorChanged?.(this.pieceColorSelect.value);
+        };
         this.pieceModeToggle.onchange = () => this.onTogglePieceMode?.(this.pieceModeToggle.checked);
         this.difficultySelect.onchange = () => this.onDifficultyChanged?.(Difficulty[this.difficultySelect.value as keyof typeof Difficulty]);
-        this.pieceColorSelect.onchange = () => this.onSelectedPieceColorChanged?.(parseInt(this.pieceColorSelect.value, 16));
+
     }
 
     public refreshAccordion(worlds: WorldData[], activeWorldId: string, activeLevelIdx: number) {
         this.worldContainer.innerHTML = "";
 
+        let globalCounter = 1;
+
         worlds.forEach((world, worldIdx) => {
             const worldBox = document.createElement("div");
             const isWorldActive = world.id === activeWorldId;
+
+            const levelStatuses = world.levels.map(l => LevelMatrixCodec.validateLevel(l).ok);
+            const isWorldValid = levelStatuses.every(status => status === true);
 
             const header = document.createElement("div");
             header.style.cssText = `padding:10px; background:rgba(255,255,255,0.05); border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border: 1px solid ${isWorldActive ? '#4CAF50' : 'transparent'};`;
@@ -207,7 +236,10 @@ export class LevelEditorDomUI {
             titleSpan.innerHTML = `${world.name} <span style="font-size:10px; opacity:0.6">(${world.levels.length})</span>`;
             header.appendChild(titleSpan);
 
+            const worldBg = isWorldValid ? "rgba(76, 175, 80, 0.2)" : "rgba(244, 67, 54, 0.2)";
+            const worldBorder = isWorldActive ? (isWorldValid ? "#4CAF50" : "#f44336") : "transparent";
 
+            header.style.cssText = `padding:10px; background:${worldBg}; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border: 1px solid ${worldBorder}; margin-bottom: 2px;`;
             // --- WORLD MOVE BUTTONS ---
             const worldControls = document.createElement("div");
             worldControls.style.cssText = `display:flex; gap:4px; align-items:center;`;
@@ -260,10 +292,20 @@ export class LevelEditorDomUI {
                 const itemContainer = document.createElement("div");
                 itemContainer.style.cssText = `display:flex; align-items:center; gap:4px; width: 100%;`;
 
+                const globalOrderLabel = `<span style="opacity:0.5; font-family:monospace; margin-right:5px;">#${globalCounter}</span>`;
                 const item = document.createElement("div");
+                const validation = LevelMatrixCodec.validateLevel(lvl);
                 const isSelected = isWorldActive && idx === activeLevelIdx;
-                item.style.cssText = `flex:1; padding:6px; font-size:13px; cursor:pointer; border-radius:4px; background:${isSelected ? 'rgba(76,175,80,0.3)' : 'transparent'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
-                item.innerText = lvl.name || `Level ${idx + 1}`;
+
+                const textColor = validation.ok ? "white" : "#ff5252";
+                const itemBg = isSelected ? 'rgba(255,255,255,0.1)' : 'transparent';
+
+                //item.style.cssText = `flex:1; padding:6px; font-size:13px; cursor:pointer; border-radius:4px; background:${isSelected ? 'rgba(76,175,80,0.3)' : 'transparent'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
+                item.style.cssText = `flex:1; padding:6px; font-size:13px; cursor:pointer; border-radius:4px; background:${itemBg}; color:${textColor}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
+
+                const featureCount = (lvl.features?.filter(f => f.enabled && f.id !== LevelFeature.PIECE_PLACEMENT).length || 0);
+                const featureBadge = featureCount > 0 ? ` <span style="color:#64B5F6;">(${featureCount})</span>` : "";
+                item.innerHTML = `[${globalOrderLabel}] - ${validation.ok ? "" : "⚠️ "}${lvl.name || `Level ${idx + 1}`}${featureBadge}`;
 
                 // Double click to rename
                 item.ondblclick = (e) => {
@@ -304,6 +346,8 @@ export class LevelEditorDomUI {
                 itemContainer.appendChild(upBtn);
                 itemContainer.appendChild(downBtn);
                 levelList.appendChild(itemContainer);
+
+                globalCounter++;
             });
 
             const addLvl = document.createElement("div");
@@ -317,11 +361,53 @@ export class LevelEditorDomUI {
             this.worldContainer.appendChild(worldBox);
         });
     }
-    public setPiecesList(pieces: PieceUiData[], selectedIndex: number): void {
+    public refreshFeatureUI(features: LevelFeatureData[]) {
+        this.featureContainer.innerHTML = "";
+
+        Object.values(LevelFeature).forEach(fId => {
+            const featData = features.find(f => f.id === fId) || { id: fId, enabled: false, value: "" };
+            const isMandatory = fId === LevelFeature.PIECE_PLACEMENT;
+
+            const row = document.createElement("div");
+            row.style.cssText = `display:flex; align-items:center; gap:8px; font-size:12px;`;
+
+            const chk = document.createElement("input");
+            chk.type = "checkbox";
+            chk.checked = isMandatory || featData.enabled;
+            chk.disabled = isMandatory; // Can't untoggle PiecePlacement
+
+            const label = document.createElement("span");
+            label.innerText = fId;
+            label.style.flex = "1";
+
+            const valInput = document.createElement("input");
+            valInput.placeholder = "Value";
+            valInput.value = featData.value?.toString() || "";
+            valInput.style.cssText = `width:60px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:white; padding:2px;`;
+
+            // Hide value field for PiecePlacement if not needed, or keep for consistency
+            valInput.style.visibility = isMandatory ? "hidden" : "visible";
+
+            const handleChange = () => {
+                this.onFeatureToggle?.(fId, chk.checked, valInput.value);
+            };
+
+            chk.onchange = handleChange;
+            valInput.oninput = handleChange;
+
+            row.appendChild(chk);
+            row.appendChild(label);
+            row.appendChild(valInput);
+            this.featureContainer.appendChild(row);
+        });
+    }
+    public setPiecesList(pieces: { color: string | number }[], selectedIndex: number): void {
         this.pieceList.innerHTML = "";
         this.pieceItems = [];
         pieces.forEach((p, i) => {
-            const el = this.createPieceItem(i, p.color);
+            // We need the hex value just for the UI swatch
+            const hexValue = getColorValueById(p.color);
+            const el = this.createPieceItem(i, hexValue);
             this.pieceItems.push(el);
             this.pieceList.appendChild(el);
         });
@@ -336,29 +422,39 @@ export class LevelEditorDomUI {
         });
     }
 
-    public setSelectedPieceColorDropdown(color: number): void {
-        const hex = colorToHex6(color);
+    public setSelectedPieceColorDropdown(colorId: string): void {
         const options = Array.from(this.pieceColorSelect.options);
-        const index = options.findIndex(o => o.value.toLowerCase() === hex.toLowerCase());
+        const index = options.findIndex(o => o.value === colorId);
 
         if (index !== -1) {
             this.pieceColorSelect.selectedIndex = index;
-            // Trigger the styling update
             const opt = this.pieceColorSelect.options[index];
             this.pieceColorSelect.style.backgroundColor = opt.style.backgroundColor;
             this.pieceColorSelect.style.color = opt.style.color;
         }
     }
+
     private createPieceItem(index: number, color: number): HTMLDivElement {
         const el = document.createElement("div");
-        el.style.cssText = `display:flex; align-items:center; gap:5px; padding:4px 8px; border-radius:6px; cursor:pointer; background:rgba(255,255,255,0.1); transition: transform 0.1s;`;
+        el.style.cssText = `display:flex; align-items:center; gap:5px; padding:4px 8px; border-radius:6px; cursor:pointer; background:rgba(255,255,255,0.1); position:relative;`;
+
         const swatch = document.createElement("div");
         swatch.style.cssText = `width:14px; height:14px; border-radius:3px; background:#${colorToHex6(color)}`;
+
         const label = document.createElement("div");
         label.innerText = `P${index + 1}`;
-        label.style.fontSize = "11px";
+
+        const delBtn = document.createElement("div");
+        delBtn.innerHTML = "×";
+        delBtn.style.cssText = `margin-left:5px; color:#ff5252; font-weight:bold; padding:0 2px;`;
+        delBtn.onclick = (e) => {
+            e.stopPropagation(); // Don't trigger 'select'
+            this.onDeletePiece?.();
+        };
+
         el.appendChild(swatch);
         el.appendChild(label);
+        el.appendChild(delBtn);
         el.onclick = () => this.onSelectPiece?.(index);
         return el;
     }
@@ -378,42 +474,18 @@ export class LevelEditorDomUI {
 
     private populatePieceColors(sel: HTMLSelectElement): void {
         sel.innerHTML = "";
-        sel.style.fontWeight = "bold";
-
         for (const entry of PIECE_COLOR_PALETTE) {
             const opt = document.createElement("option");
-            const hex = colorToHex6(entry.value);
-
-            opt.value = hex;
+            opt.value = entry.id; // Store ID "color_1"
             opt.text = entry.name.toUpperCase();
 
-            // Apply the color to the option background
+            // Use the actual hex for the UI preview
+            const hex = colorToHex6(entry.value);
             opt.style.backgroundColor = `#${hex}`;
-
-            // Contrast check: if the color is light, use black text; if dark, use white
-            const r = (entry.value >> 16) & 0xff;
-            const g = (entry.value >> 8) & 0xff;
-            const b = entry.value & 0xff;
-            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-            opt.style.color = brightness > 125 ? "black" : "white";
-
+            // ... (contrast logic)
             sel.appendChild(opt);
         }
-
-        // Update the main select background whenever the value changes
-        sel.addEventListener("change", () => {
-            const selectedOption = sel.options[sel.selectedIndex];
-            sel.style.backgroundColor = selectedOption.style.backgroundColor;
-            sel.style.color = selectedOption.style.color;
-        });
-
-        // Set initial style
-        if (sel.options.length > 0) {
-            sel.style.backgroundColor = sel.options[0].style.backgroundColor;
-            sel.style.color = sel.options[0].style.color;
-        }
     }
-
     private makeRow() {
         const d = document.createElement("div");
         d.style.display = "flex"; d.style.gap = "8px"; d.style.alignItems = "center";
