@@ -21,22 +21,6 @@
         },
         {
           "alias": [
-            "game/game-manifest.json"
-          ],
-          "src": [
-            "game/game-manifest.json"
-          ]
-        },
-        {
-          "alias": [
-            "game/map-data.json"
-          ],
-          "src": [
-            "game/map-data.json"
-          ]
-        },
-        {
-          "alias": [
             "game/01_world_1770499484823.json"
           ],
           "src": [
@@ -57,6 +41,22 @@
           ],
           "src": [
             "game/03_world_1770631526350.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/game-manifest.json"
+          ],
+          "src": [
+            "game/game-manifest.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/map-data.json"
+          ],
+          "src": [
+            "game/map-data.json"
           ]
         },
         {

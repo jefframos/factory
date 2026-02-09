@@ -29,6 +29,14 @@
         },
         {
           "alias": [
+            "tiles"
+          ],
+          "src": [
+            "tiles.webp.json"
+          ]
+        },
+        {
+          "alias": [
             "ui"
           ],
           "src": [

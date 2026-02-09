@@ -86,8 +86,12 @@ export default class HexScene extends GameScene {
         this.addChild(this.foregroundContainer); // HexHUD stays here
         // Initial State: Show map focused on progress
         this.showMap();
+
+        if (Game.debugParams.auto) {
+            this.startLevel(LevelDataManager.getRandomLevel())
+        }
     }
-    private setupWorldMapSystem(): void {
+    private async setupWorldMapSystem(): Promise<void> {
         const style = {
             levelButtonTexture: HexAssets.Textures.Buttons.Blue,
             levelButtonSize: 80,
@@ -102,7 +106,9 @@ export default class HexScene extends GameScene {
         };
 
         // 1. Create the panning map
-        this.worldMap = new WorldMapView({
+        this.worldMap = new WorldMapView();
+
+        await this.worldMap.initialize({
             parent: this.worldViewContainer,
             worlds: LevelDataManager.getWorlds(),
             mapData: PIXI.Assets.get('game/map-data.json'),
@@ -296,6 +302,7 @@ export default class HexScene extends GameScene {
 
             console.log(index)
         });
+
 
         DevGuiManager.instance.addButton('Toggle Map', () => this.isMapActive ? this.startLevel(LevelDataManager.getRandomLevel()) : this.showMap());
     }

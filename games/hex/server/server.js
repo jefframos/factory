@@ -136,7 +136,7 @@ app.post("/api/saveMap", (req, res) => {
 
 
 // Add to server.js
-const ASSETS_DIR = path.resolve(__dirname, "../raw-assets/images"); // Adjust to your path
+const ASSETS_DIR = path.resolve(__dirname, "../raw-assets/non-preload/maps"); // Adjust to your path
 
 app.get("/api/assets", (req, res) => {
     const getFiles = (dir) => {

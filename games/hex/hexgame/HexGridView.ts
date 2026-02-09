@@ -1,5 +1,5 @@
 import * as PIXI from "pixi.js";
-import { GridCellData, HexPos, HexUtils } from "./HexTypes";
+import { getColorValueById, GridCellData, HexPos, HexUtils } from "./HexTypes";
 import { ClusterView } from "./cluster/ClusterView";
 
 export class HexGridView extends PIXI.Container {
@@ -112,12 +112,12 @@ export class HexGridView extends PIXI.Container {
         this.pivot.set(centerX, centerY);
     }
 
-    public highlight(coords: HexPos[], color: number): void {
+    public highlight(coords: HexPos[], color: string): void {
         this.clearPreview();
         coords.forEach(pos => {
             const hex = this.cellGraphics.get(`${pos.q},${pos.r}`);
             if (hex) {
-                hex.tint = color;
+                hex.tint = getColorValueById(color);
                 hex.alpha = 0.6;
             }
         });

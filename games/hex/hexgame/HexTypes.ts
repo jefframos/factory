@@ -58,6 +58,7 @@ export enum Difficulty { EASY, MEDIUM, HARD }
 export type PieceColorEntry = {
     id: string;     // stable id for UI/debug (optional)
     name: string;   // UI label
+    texture?: string;   // UI label
     value: number;  // 0xRRGGBB
 };
 
@@ -65,19 +66,22 @@ export type PieceColorEntry = {
 // IMPORTANT:
 // First 6 match your ClusterGenerator current colors EXACTLY.
 export const PIECE_COLOR_PALETTE: PieceColorEntry[] = [
-    { id: "color_1", name: "Coral", value: 0xFF5733 },
-    { id: "color_2", name: "Lime", value: 0x33FF57 },
-    { id: "color_3", name: "Blue", value: 0x3357FF },
-    { id: "color_4", name: "Magenta", value: 0xF333FF },
-    { id: "color_5", name: "Yellow", value: 0xFFF333 },
-    { id: "color_6", name: "Cyan", value: 0x00CED1 },
+    { id: "color_1", name: "Coral", value: 0xFF5733, texture: "coral" },
+    { id: "color_2", name: "Lime", value: 0x33FF57, texture: "green" },
+    { id: "color_3", name: "Blue", value: 0x3357FF, texture: "purple" },
+    { id: "color_4", name: "Magenta", value: 0xF333FF, texture: "pink" },
+    { id: "color_5", name: "Yellow", value: 0xFFF333, texture: "orange" },
+    { id: "color_6", name: "Cyan", value: 0x00CED1, texture: "blue" },
 
-    { id: "color_7", name: "White", value: 0xFFFFFF },
-    { id: "color_8", name: "Dark Grey", value: 0x3A3A3C },
-    { id: "color_9", name: "Brown", value: 0x8E6E53 },
-    { id: "color_10", name: "Pink", value: 0xFF2D55 },
+    { id: "color_7", name: "White", value: 0xFFFFFF, texture: "white" },
+    { id: "color_8", name: "Dark Grey", value: 0x3A3A3C, texture: "grey" },
+    { id: "color_9", name: "Brown", value: 0x8E6E53, texture: "brown" },
+    { id: "color_10", name: "Pink", value: 0xFF2D55, texture: "red" },
 ];
 
+export function getColorEntryById(id: string): PieceColorEntry | undefined {
+    return PIECE_COLOR_PALETTE.find(c => c.id === id);
+}
 export function getColorIdByValue(value: number): string {
     const entry = PIECE_COLOR_PALETTE.find(c => c.value === value);
     // Fallback to a default ID (like 'color_1') if not found in palette

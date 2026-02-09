@@ -70,11 +70,12 @@ export class WorldMapView extends PIXI.Container {
     private viewportAnchor: PIXI.Point = new PIXI.Point(0, 0);
 
     public readonly onUpdateCurrentLevel: Signal = new Signal();
-    private readonly opts: WorldMapViewOptions;
+    private opts!: WorldMapViewOptions;
     private readonly backgroundShape: PIXI.Graphics = new PIXI.Graphics();
     private readonly rootWorldContainer: PIXI.Container;
 
     // Bottom Layer: Floor visuals + Path Ropes
+    private readonly backgroundContainer: PIXI.Container = new PIXI.Container();
     private readonly splineContainer: PIXI.Container = new PIXI.Container();
 
     // Top Layer: Sorted props (Trees/Buildings) + Buttons
@@ -105,11 +106,10 @@ export class WorldMapView extends PIXI.Container {
 
     private pinComponent: WorldMapPin | null = null;
 
-    constructor(opts: WorldMapViewOptions) {
+    constructor() {
         super();
-        this.opts = opts;
-        this.setupBackground();
-        this.addChild(this.backgroundShape);
+        // this.setupBackground();
+        // this.addChild(this.backgroundShape);
 
         this.rootWorldContainer = new PIXI.Container();
         this.addChild(this.rootWorldContainer);
@@ -118,6 +118,7 @@ export class WorldMapView extends PIXI.Container {
 
         // 2. Setup Containers & Depth Sorting
         this.pointsContainer.sortableChildren = true;
+        this.rootWorldContainer.addChild(this.backgroundContainer);
         this.rootWorldContainer.addChild(this.splineContainer);
         this.rootWorldContainer.addChild(this.pointsContainer);
 
@@ -125,13 +126,8 @@ export class WorldMapView extends PIXI.Container {
         this.initRopes();
 
         // 4. Controller initialization
-        this.visualController = new VisualViewController(this.rootWorldContainer, this.splineContainer, this.pointsContainer);
+        this.visualController = new VisualViewController(this.backgroundContainer, this.splineContainer, this.pointsContainer);
 
-        // 5. UI Elements
-        opts.parent.addChild(this);
-
-        // 6. Initial Build
-        this.rebuildFromData(opts.mapData, opts.worldId);
 
         const gr = new PIXI.Graphics();
         gr.beginFill(0xff0000);
@@ -143,7 +139,16 @@ export class WorldMapView extends PIXI.Container {
 
     }
 
+    public async initialize(opts: WorldMapViewOptions): Promise<void> {
+        this.opts = opts;
+        // Any async initialization can go here if needed in the future
+        // 5. UI Elements
+        opts.parent.addChild(this);
 
+        // 6. Initial Build
+        await this.rebuildFromData(opts.mapData, opts.worldId);
+
+    }
     private setupBackground(): void {
         const size = 100000;
         this.backgroundShape.beginFill(0x1a1a1a);
@@ -175,7 +180,7 @@ export class WorldMapView extends PIXI.Container {
         this.splineContainer.addChild(this.pathRopeDone);
     }
 
-    public rebuildFromData(mapData: WorldMapData, worldId?: string): void {
+    public async rebuildFromData(mapData: WorldMapData, worldId?: string): Promise<void> {
         // 1. Clear Foreground (Buttons + Decorations)
         this.pointsContainer.removeChildren().forEach(c => c.destroy({ children: true }));
 
@@ -193,21 +198,31 @@ export class WorldMapView extends PIXI.Container {
             this.setBoundaries(mapData.worldBoundaries);
         }
 
-        // 3. Separate Layers by Depth logic
         const allLayers = mapData.visuals?.layers ?? [];
-        const bgLayers = allLayers.filter(l => (l as any).belowSpline === true);
-        const fgLayers = allLayers.filter(l => !(l as any).belowSpline);
+        const bgLayers = allLayers.filter(l => (l as VisualLayer).isBelowSpline === true);
+        const fgLayers = allLayers.filter(l => !(l as VisualLayer).isBelowSpline);
+
+        bgLayers.forEach(element => {
+            element.images.map(img => {
+                img.url = img.url.replace(/^.*raw-assets\//, 'hex/images/');
+            });
+        });
+
+        fgLayers.forEach(element => {
+            element.images.map(img => {
+                img.url = img.url.replace(/^.*raw-assets\//, 'hex/images/');
+            });
+        });
 
         // 4. Deserialize Background (below path)
-        this.visualController.deserialize(bgLayers);
+        await this.visualController.deserializeNoWipe(bgLayers);
 
+        await this.visualController.deserializeNoWipe(fgLayers);
         // 5. Draw the Path Spline
         this.controlPointsSorted = [...(mapData.points ?? [])].sort((a, b) => a.order - b.order);
         this.drawSpline(this.controlPointsSorted);
 
-        // 6. Deserialize Foreground (mixed with buttons)
-        this.visualController.deserialize(fgLayers);
-
+        // 6. Deserialize Foreground (mixed wit
         // 7. Map Levels to Buttons
         const sequence = this.buildLevelSequence(worldId);
         const count = Math.min(this.controlPointsSorted.length, sequence.length);

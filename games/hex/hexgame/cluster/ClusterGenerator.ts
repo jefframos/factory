@@ -107,10 +107,10 @@ export class ClusterGenerator {
 
     private static COLORID = 0
 
-    private static getRandomColor(): number {
+    private static getRandomColor(): string {
         const list = PIECE_COLOR_PALETTE;
         // rotate deterministically like before
         const c = list[this.COLORID++ % list.length];
-        return c.value;
+        return c.id;
     }
 }

@@ -20,24 +20,19 @@
       "difficulty": 1,
       "pieces": [
         {
-          "color": 15938559,
-          "rootPos": {
-            "q": 0,
-            "r": 0
-          },
           "coords": [
             {
               "q": 0,
               "r": 0
             }
-          ]
-        },
-        {
-          "color": "color_6",
+          ],
+          "color": "color_4",
           "rootPos": {
             "q": 0,
             "r": 0
-          },
+          }
+        },
+        {
           "coords": [
             {
               "q": 1,
@@ -55,7 +50,12 @@
               "q": 2,
               "r": 0
             }
-          ]
+          ],
+          "color": "color_6",
+          "rootPos": {
+            "q": 0,
+            "r": 0
+          }
         }
       ],
       "features": [
@@ -106,11 +106,6 @@
       "difficulty": 1,
       "pieces": [
         {
-          "color": 3407703,
-          "rootPos": {
-            "q": 0,
-            "r": 0
-          },
           "coords": [
             {
               "q": 0,
@@ -128,14 +123,14 @@
               "q": 0,
               "r": 2
             }
-          ]
+          ],
+          "color": "color_2",
+          "rootPos": {
+            "q": 0,
+            "r": 0
+          }
         },
         {
-          "color": 3364863,
-          "rootPos": {
-            "q": 2,
-            "r": 0
-          },
           "coords": [
             {
               "q": 0,
@@ -153,31 +148,31 @@
               "q": 2,
               "r": 0
             }
-          ]
+          ],
+          "color": "color_3",
+          "rootPos": {
+            "q": 2,
+            "r": 0
+          }
         },
         {
+          "coords": [
+            {
+              "q": 0,
+              "r": 0
+            },
+            {
+              "q": 0,
+              "r": 1
+            }
+          ],
           "color": "color_6",
           "rootPos": {
             "q": 4,
             "r": 1
-          },
-          "coords": [
-            {
-              "q": 0,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 1
-            }
-          ]
+          }
         },
         {
-          "color": "color_1",
-          "rootPos": {
-            "q": 1,
-            "r": 2
-          },
           "coords": [
             {
               "q": 2,
@@ -195,7 +190,12 @@
               "q": 0,
               "r": 1
             }
-          ]
+          ],
+          "color": "color_1",
+          "rootPos": {
+            "q": 1,
+            "r": 2
+          }
         }
       ],
       "features": [

@@ -12,7 +12,7 @@ export enum PinState {
 
 export class WorldMapPin extends PIXI.Container {
     // Values from your BaseMergeEntity
-    private readonly WALK_ANIM_SPEED = 10;
+    private readonly WALK_ANIM_SPEED = 20;
     private readonly HOP_MAX_HEIGHT = 10;
     private readonly SCALE_STRETCH_Y = 0.1;
     private readonly SCALE_SQUASH_X = 0.05;

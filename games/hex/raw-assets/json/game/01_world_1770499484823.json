@@ -119,55 +119,7 @@
           0
         ]
       ],
-      "difficulty": 1,
-      "pieces": [
-        {
-          "coords": [
-            {
-              "q": 0,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 1
-            },
-            {
-              "q": 0,
-              "r": 2
-            },
-            {
-              "q": 1,
-              "r": 2
-            }
-          ],
-          "color": "color_3",
-          "rootPos": {
-            "q": 0,
-            "r": 0
-          }
-        },
-        {
-          "coords": [
-            {
-              "q": 1,
-              "r": 1
-            },
-            {
-              "q": 2,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 2
-            }
-          ],
-          "color": "color_4",
-          "rootPos": {
-            "q": 2,
-            "r": 0
-          }
-        }
-      ],
+      "difficulty": 2,
       "features": [
         {
           "id": "PiecePlacement",

@@ -73,7 +73,7 @@ export class VisualViewController {
 
     // --- IMAGE & LAYER CRUD ---
 
-    public addImageToLayer(layerId: string, url: string, worldX: number, worldY: number): VisualImage | null {
+    public async addImageToLayer(layerId: string, url: string, worldX: number, worldY: number): Promise<VisualImage | null> {
         let layerInfo = this.layerDataRef.find(l => l.id === layerId);
         let container = this.layerContainers.get(layerId);
 
@@ -85,7 +85,7 @@ export class VisualViewController {
         };
 
         layerInfo.images.push(imgData);
-        const sprite = this.createSprite(imgData);
+        const sprite = await this.createSprite(imgData);
         container.addChild(sprite);
 
         this.sortLayer(container, layerInfo);
@@ -163,13 +163,41 @@ export class VisualViewController {
 
     // --- INITIALIZATION & SORTING ---
 
-    private createSprite(data: VisualImage): PIXI.Sprite {
-        const sprite = PIXI.Sprite.from(data.url);
+    private async createSprite(data: VisualImage): Promise<PIXI.Sprite> {
+        let texture: PIXI.Texture;
+
+        if (PIXI.utils.TextureCache[data.url]) {
+            texture = PIXI.utils.TextureCache[data.url];
+        } else {
+            console.warn(`Loading texture asynchronously: ${data.url}`);
+            // Assets.load is the modern (Pixi v7+) way to ensure the image is ready
+            texture = await PIXI.Assets.load(data.url);
+
+            console.log(texture)
+        }
+
+        const sprite = new PIXI.Sprite(texture);
         (sprite as any).imageId = data.id;
         sprite.anchor.set(0.5, 1);
         sprite.position.set(data.x, data.y);
         sprite.scale.set(data.scaleX ?? 1, data.scaleY ?? 1);
+
+        console.log(sprite.x, sprite.y, sprite.width, sprite.height);
+
         return sprite;
+    }
+
+    public async deserializeNoWipe(layers: VisualLayer[]) {
+        this.updateLayers(layers);
+        layers.forEach(layer => {
+            const container = this.layerContainers.get(layer.id);
+            if (!container) return;
+            layer.images.forEach(async (img): Promise<void> => {
+                const sprite = await this.createSprite(img);
+                container.addChild(sprite)
+                this.sortLayer(container, layer);
+            });
+        });
     }
 
     public deserialize(layers: VisualLayer[]) {
@@ -179,8 +207,11 @@ export class VisualViewController {
         layers.forEach(layer => {
             const container = this.layerContainers.get(layer.id);
             if (!container) return;
-            layer.images.forEach(img => container.addChild(this.createSprite(img)));
-            this.sortLayer(container, layer);
+            layer.images.forEach(async (img): Promise<void> => {
+                const sprite = await this.createSprite(img);
+                container.addChild(sprite)
+                this.sortLayer(container, layer);
+            });
         });
     }
 

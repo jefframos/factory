@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770387467155,
-                "duration": 29.65399999999954,
+                "date": 1770674453587,
+                "duration": 19.12409999999909,
                 "success": true
             }
         },
@@ -130,6 +130,346 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/jiggy-pattern.webp": {
             "isFolder": false,
             "transformParent": ".assetpack/multi-pipe-2/jiggy-pattern.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770674453588,
+                "duration": 18.838999999999942,
+                "success": true
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/bedrromBg.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770674453591,
+                "duration": 2913.2742,
+                "success": true
+            },
+            "hash": "qbKzrA"
+        },
+        ".assetpack/multi-pipe-2/maps/bedrromBg.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/bedrromBg.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/bedrromBg.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/bedrromBg.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/bedrromBg.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/bedrromBg.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/bedrromBg.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/bedrromBg.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/kids-carpet.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770674453602,
+                "duration": 224.88350000000173,
+                "success": true
+            },
+            "hash": "kMcpWg"
+        },
+        ".assetpack/multi-pipe-2/maps/kids-carpet.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/kids-carpet.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/kids-carpet.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/kids-carpet.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/kids-carpet.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/kids-carpet.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/kids-carpet.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/kids-carpet.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/star-cushion.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770674453604,
+                "duration": 250.97010000000046,
+                "success": true
+            },
+            "hash": "lDfAKA"
+        },
+        ".assetpack/multi-pipe-2/maps/star-cushion.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/star-cushion.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/star-cushion.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/star-cushion.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/star-cushion.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/star-cushion.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/star-cushion.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/star-cushion.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/toy-ball - Copy.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770674453606,
+                "duration": 278.8695000000007,
+                "success": true
+            },
+            "hash": "72akIQ"
+        },
+        ".assetpack/multi-pipe-2/maps/toy-ball - Copy.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/toy-ball - Copy.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/toy-ball - Copy.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/toy-ball - Copy.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/toy-ball - Copy.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/toy-ball - Copy.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/toy-ball - Copy.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/toy-ball - Copy.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/toy-ball-2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770674453613,
+                "duration": 292.8639999999996,
+                "success": true
+            },
+            "hash": "rzRKBw"
+        },
+        ".assetpack/multi-pipe-2/maps/toy-ball-2.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/toy-ball-2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/toy-ball-2.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/toy-ball-2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/toy-ball-2.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/toy-ball-2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/toy-ball-2.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/toy-ball-2.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/toy-ball.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770674453827,
+                "duration": 282.2978999999996,
+                "success": true
+            },
+            "hash": "72akIQ"
+        },
+        ".assetpack/multi-pipe-2/maps/toy-ball.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/toy-ball.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/toy-ball.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/toy-ball.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/toy-ball.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/toy-ball.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/toy-ball.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/toy-ball.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/toy-duck.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770674453856,
+                "duration": 281.836299999999,
+                "success": true
+            },
+            "hash": "8p9z4w"
+        },
+        ".assetpack/multi-pipe-2/maps/toy-duck.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/toy-duck.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/toy-duck.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/toy-duck.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/toy-duck.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/toy-duck.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/toy-duck.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/toy-duck.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/toy-table.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770674453885,
+                "duration": 529.4333000000006,
+                "success": true
+            },
+            "hash": "wx8pNQ"
+        },
+        ".assetpack/multi-pipe-2/maps/toy-table.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/toy-table.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/toy-table.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/toy-table.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/toy-table.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/toy-table.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/toy-table.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/toy-table.webp",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}
