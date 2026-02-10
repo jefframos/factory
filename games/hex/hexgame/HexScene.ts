@@ -7,7 +7,6 @@ import { Signal } from "signals";
 
 import SoundLoadManager from "@core/audio/SoundLoaderManager";
 import SoundManager from "@core/audio/SoundManager";
-import PatternBackground from "@core/ui/PatternBackground";
 import { DevGuiManager } from "../game/utils/DevGuiManager";
 import { ClusterManager } from "./cluster/ClusterManager";
 import { GameplayProgressStorage } from "./GameplayProgressStorage";
@@ -20,6 +19,7 @@ import { HexHUD } from "./ui/HexHud";
 import { WorldHUD } from "./ui/WorldHUD";
 import { WorldMapPin } from "./ui/WorldMapPin";
 import { WorldMapView } from "./ui/WorldMapView";
+import { BackgroundManager } from "./view/background/BackgroundManager";
 
 export default class HexScene extends GameScene {
     public readonly onQuit: Signal = new Signal();
@@ -29,10 +29,6 @@ export default class HexScene extends GameScene {
     public readonly floorContainer: PIXI.Container = new PIXI.Container();
     public readonly foregroundContainer: PIXI.Container = new PIXI.Container();
 
-    // Backgrounds
-    private background: PIXI.Sprite = new PIXI.Sprite();
-    private patternBackground?: PatternBackground;
-    private darkOverlay?: PIXI.Graphics;
 
     // Logic
     private mediator!: HexGameMediator;
@@ -45,9 +41,7 @@ export default class HexScene extends GameScene {
 
     private isMapActive: boolean = true;
 
-    // State
-    private highScore: number = 0;
-    private paused: boolean = false;
+    private backgroundManager!: BackgroundManager;
 
     // Layout Config
     static readonly MAP_Y_OFFSET_PERCENT = 0.75; // Center level at 75% height
@@ -148,22 +142,9 @@ export default class HexScene extends GameScene {
 
     }
     private setupEnvironment(): void {
-        // Patterned Background
-        this.patternBackground = new PatternBackground({
-            background: 0x5a7856,
-            patternAlpha: 1,
-            tileSpeedX: 0,
-            tileSpeedY: 0
-        });
-        this.gameplayContainer.addChild(this.patternBackground);
-        this.patternBackground.init();
-
-        // Dark Overlay for contrast
-        this.darkOverlay = new PIXI.Graphics();
-        this.darkOverlay.beginFill(0x000000, 0.5);
-        this.darkOverlay.drawRect(0, 0, Game.DESIGN_WIDTH, Game.DESIGN_HEIGHT);
-        this.darkOverlay.endFill();
-        this.gameplayContainer.addChild(this.darkOverlay);
+        this.backgroundManager = new BackgroundManager();
+        // Add it as the very first child so it stays behind everything
+        this.addChildAt(this.backgroundManager, 0);
     }
 
     private setupGameplay(): void {
@@ -233,6 +214,8 @@ export default class HexScene extends GameScene {
         if (this.isMapActive) {
             this.worldMap.update(delta);
         }
+        this.backgroundManager.update(delta);
+
         this.layout();
     }
 
@@ -251,6 +234,7 @@ export default class HexScene extends GameScene {
     private layout(): void {
         const centerX = Game.DESIGN_WIDTH / 2;
         const centerY = Game.DESIGN_HEIGHT / 2;
+
 
         // Gameplay positioning
         this.gameplayContainer.setTransform(centerX, centerY);

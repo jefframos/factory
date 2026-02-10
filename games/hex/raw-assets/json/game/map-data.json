@@ -160,26 +160,50 @@
         "opacity": 1,
         "images": [
           {
-            "id": "img_1770675294855_hn00h",
-            "url": "/../raw-assets/non-preload/maps/toy-duck.png",
-            "x": -421.21703129488856,
-            "y": -320.47181776879165,
+            "id": "img_1770721701127_7zqmc",
+            "url": "/../raw-assets/non-preload/maps/rocks-1.png",
+            "x": -653.095950345798,
+            "y": 161.37715377502957,
             "scaleX": 1,
             "scaleY": 1
           },
           {
-            "id": "img_1770675296895_q9cj8",
-            "url": "/../raw-assets/non-preload/maps/toy-table.png",
-            "x": 133.6018490563738,
-            "y": -379.74733917384106,
+            "id": "img_1770721707167_19ke8",
+            "url": "/../raw-assets/non-preload/maps/tree-1.png",
+            "x": -646.3216050423637,
+            "y": -165.48500711567124,
             "scaleX": 1,
             "scaleY": 1
           },
           {
-            "id": "img_1770675303624_sj3dj",
-            "url": "/../raw-assets/non-preload/maps/toy-ball - Copy.png",
-            "x": 230.81370416065465,
-            "y": -14.610127318736886,
+            "id": "img_1770721709938_52ti7",
+            "url": "/../raw-assets/non-preload/maps/tree-2.png",
+            "x": 49.74237488550193,
+            "y": -75.72493184516816,
+            "scaleX": 1,
+            "scaleY": 1
+          },
+          {
+            "id": "img_1770721714797_a4vut",
+            "url": "/../raw-assets/non-preload/maps/tree-3.png",
+            "x": 381.6852947537784,
+            "y": 240.97571109038176,
+            "scaleX": 1,
+            "scaleY": 1
+          },
+          {
+            "id": "img_1770721729723_3clgr",
+            "url": "/../raw-assets/non-preload/maps/tree-4.png",
+            "x": 171.68059034731778,
+            "y": -370.4089525445563,
+            "scaleX": 1,
+            "scaleY": 1
+          },
+          {
+            "id": "img_1770721737625_p9g0h",
+            "url": "/../raw-assets/non-preload/maps/rocks-2.png",
+            "x": 625.5617256774103,
+            "y": -77.41851817102656,
             "scaleX": 1,
             "scaleY": 1
           }

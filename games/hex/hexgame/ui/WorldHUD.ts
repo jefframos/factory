@@ -19,7 +19,7 @@ export class WorldHUD extends PIXI.Container {
             standard: {
                 width: style.levelButtonSize,
                 height: style.levelButtonSize,
-                texture: PIXI.Texture.from(style.backButtonTexture),
+                texture: PIXI.Texture.EMPTY,
                 iconTexture: PIXI.Texture.from(style.backIconTexture),
                 centerIconHorizontally: true,
                 centerIconVertically: true

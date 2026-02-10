@@ -204,13 +204,13 @@ export class WorldMapView extends PIXI.Container {
 
         bgLayers.forEach(element => {
             element.images.map(img => {
-                img.url = img.url.replace(/^.*raw-assets\//, 'hex/images/');
+                img.url = img.url.replace(/^.*raw-assets\//, 'hex/images/').replace(/\.png$/, '.webp');
             });
         });
 
         fgLayers.forEach(element => {
             element.images.map(img => {
-                img.url = img.url.replace(/^.*raw-assets\//, 'hex/images/');
+                img.url = img.url.replace(/^.*raw-assets\//, 'hex/images/').replace(/\.png$/, '.webp');;
             });
         });
 

@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770674453587,
-                "duration": 19.12409999999909,
+                "date": 1770721771413,
+                "duration": 10.928899999999999,
                 "success": true
             }
         },
@@ -141,8 +141,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770674453588,
-                "duration": 18.838999999999942,
+                "date": 1770721771413,
+                "duration": 10.712699999999927,
                 "success": true
             }
         },
@@ -187,6 +187,47 @@
             "inheritedMetaData": {},
             "transformData": {}
         },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/grass.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770716287306,
+                "duration": 165.71319999999992,
+                "success": true
+            },
+            "hash": "Gor3qw"
+        },
+        ".assetpack/multi-pipe-2/maps/grass.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/grass.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/grass.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/grass.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/grass.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/grass.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/grass.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/grass.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/kids-carpet.png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
@@ -224,6 +265,334 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/kids-carpet.webp": {
             "isFolder": false,
             "transformParent": ".assetpack/multi-pipe-2/maps/kids-carpet.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770721771413,
+                "duration": 183.39700000000005,
+                "success": true
+            },
+            "hash": "_SgkMw"
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-1.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-1.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-1.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-1.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-1.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770721771417,
+                "duration": 185.20679999999993,
+                "success": true
+            },
+            "hash": "PKBpLw"
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-2.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-2.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-2.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-2.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-2.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-3.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770721771419,
+                "duration": 212.29099999999994,
+                "success": true
+            },
+            "hash": "0TvLdw"
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-3.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-3.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-3.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-3.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-3.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-3.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-3.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-3.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-4.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770721771424,
+                "duration": 236.8505,
+                "success": true
+            },
+            "hash": "d1y36w"
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-4.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-4.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-4.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-4.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-4.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-4.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-4.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-4.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-5.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770721771426,
+                "duration": 305.9338,
+                "success": true
+            },
+            "hash": "Tqe1yQ"
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-5.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-5.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-5.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-5.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-5.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-5.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-5.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-5.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-6.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770721771597,
+                "duration": 172.75739999999996,
+                "success": true
+            },
+            "hash": "9iTxIA"
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-6.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-6.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-6.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-6.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-6.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-6.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-6.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-6.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-7.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770721771603,
+                "duration": 193.54610000000002,
+                "success": true
+            },
+            "hash": "W5VJ5g"
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-7.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-7.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-7.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-7.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-7.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-7.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-7.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-7.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-8.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770721771632,
+                "duration": 223.96529999999984,
+                "success": true
+            },
+            "hash": "vqNWhQ"
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-8.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-8.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-8.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-8.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/rocks-8.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/rocks-8.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/rocks-8.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/rocks-8.webp",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}
@@ -470,6 +839,252 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/toy-table.webp": {
             "isFolder": false,
             "transformParent": ".assetpack/multi-pipe-2/maps/toy-table.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770721771661,
+                "duration": 269.2194999999999,
+                "success": true
+            },
+            "hash": "Q4tjhA"
+        },
+        ".assetpack/multi-pipe-2/maps/tree-1.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/tree-1.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/tree-1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/tree-1.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/tree-1.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/tree-1.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770721771732,
+                "duration": 226.8345999999999,
+                "success": true
+            },
+            "hash": "WfjArQ"
+        },
+        ".assetpack/multi-pipe-2/maps/tree-2.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/tree-2.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/tree-2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/tree-2.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/tree-2.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/tree-2.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-3.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770721771770,
+                "duration": 222.96360000000004,
+                "success": true
+            },
+            "hash": "uV2MVA"
+        },
+        ".assetpack/multi-pipe-2/maps/tree-3.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-3.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/tree-3.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/tree-3.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/tree-3.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-3.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/tree-3.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/tree-3.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-4.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770721771796,
+                "duration": 222.81409999999983,
+                "success": true
+            },
+            "hash": "zl31-Q"
+        },
+        ".assetpack/multi-pipe-2/maps/tree-4.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-4.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/tree-4.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/tree-4.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/tree-4.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-4.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/tree-4.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/tree-4.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-5.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770721771856,
+                "duration": 233.37040000000002,
+                "success": true
+            },
+            "hash": "OM-hRA"
+        },
+        ".assetpack/multi-pipe-2/maps/tree-5.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-5.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/tree-5.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/tree-5.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/tree-5.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-5.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/tree-5.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/tree-5.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-6.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770721771930,
+                "duration": 204.8248000000001,
+                "success": true
+            },
+            "hash": "8FV9lQ"
+        },
+        ".assetpack/multi-pipe-2/maps/tree-6.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-6.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/tree-6.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/tree-6.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/tree-6.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/tree-6.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/tree-6.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/tree-6.webp",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

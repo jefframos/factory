@@ -169,11 +169,9 @@ export class VisualViewController {
         if (PIXI.utils.TextureCache[data.url]) {
             texture = PIXI.utils.TextureCache[data.url];
         } else {
-            console.warn(`Loading texture asynchronously: ${data.url}`);
+            //console.warn(`Loading texture asynchronously: ${data.url}`);
             // Assets.load is the modern (Pixi v7+) way to ensure the image is ready
             texture = await PIXI.Assets.load(data.url);
-
-            console.log(texture)
         }
 
         const sprite = new PIXI.Sprite(texture);

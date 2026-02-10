@@ -1,11 +1,5 @@
-export interface VisualLayer {
-    id: string;
-    name: string;
-    visible: boolean;
-    isBelowSpline: boolean; // The new checkbox property
-    opacity: number;
-    images: any[];
-}
+import { VisualLayer } from "./VisualViewController";
+
 
 export class VisualEditorLogic {
     private layers: VisualLayer[] = [];

@@ -235,34 +235,15 @@
         ]
       ],
       "difficulty": 2,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true
+        }
+      ],
       "pieces": [
         {
           "coords": [
-            {
-              "q": 0,
-              "r": 1
-            },
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 2
-            }
-          ],
-          "color": "color_7",
-          "rootPos": {
-            "q": -1,
-            "r": 1
-          }
-        },
-        {
-          "coords": [
-            {
-              "q": 0,
-              "r": 1
-            },
             {
               "q": 1,
               "r": 1
@@ -272,11 +253,11 @@
               "r": 0
             },
             {
-              "q": 1,
-              "r": 2
+              "q": 0,
+              "r": 1
             }
           ],
-          "color": "color_8",
+          "color": "color_3",
           "rootPos": {
             "q": 1,
             "r": 0
@@ -286,24 +267,43 @@
           "coords": [
             {
               "q": 0,
-              "r": 0
+              "r": 1
             },
             {
               "q": 1,
               "r": 0
+            },
+            {
+              "q": 0,
+              "r": 2
+            },
+            {
+              "q": 1,
+              "r": 2
             }
           ],
-          "color": "color_9",
+          "color": "color_4",
           "rootPos": {
-            "q": 0,
-            "r": 3
+            "q": -1,
+            "r": 1
           }
-        }
-      ],
-      "features": [
+        },
         {
-          "id": "PiecePlacement",
-          "enabled": true
+          "coords": [
+            {
+              "q": 1,
+              "r": 0
+            },
+            {
+              "q": 0,
+              "r": 1
+            }
+          ],
+          "color": "color_5",
+          "rootPos": {
+            "q": 1,
+            "r": 2
+          }
         }
       ]
     },
@@ -604,20 +604,26 @@
         ]
       ],
       "difficulty": 1,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true
+        }
+      ],
       "pieces": [
         {
           "coords": [
             {
               "q": 1,
-              "r": 2
-            },
-            {
-              "q": 1,
               "r": 1
             },
             {
-              "q": 0,
-              "r": 2
+              "q": 2,
+              "r": 1
+            },
+            {
+              "q": 2,
+              "r": 0
             },
             {
               "q": 1,
@@ -626,48 +632,42 @@
             {
               "q": 0,
               "r": 1
+            },
+            {
+              "q": 0,
+              "r": 0
             }
           ],
           "color": "color_6",
           "rootPos": {
-            "q": 1,
-            "r": 1
+            "q": 0,
+            "r": 2
           }
         },
         {
           "coords": [
             {
-              "q": 0,
-              "r": 3
-            },
-            {
-              "q": 0,
-              "r": 2
-            },
-            {
               "q": 1,
               "r": 1
             },
             {
-              "q": 0,
+              "q": 2,
               "r": 1
             },
             {
               "q": 1,
               "r": 0
+            },
+            {
+              "q": 0,
+              "r": 1
             }
           ],
-          "color": "color_7",
+          "color": "color_10",
           "rootPos": {
             "q": 0,
             "r": 0
           }
-        }
-      ],
-      "features": [
-        {
-          "id": "PiecePlacement",
-          "enabled": true
         }
       ]
     },
@@ -708,61 +708,70 @@
         ]
       ],
       "difficulty": 1,
-      "pieces": [
-        {
-          "coords": [
-            {
-              "q": 3,
-              "r": 1
-            },
-            {
-              "q": 4,
-              "r": 1
-            },
-            {
-              "q": 3,
-              "r": 0
-            },
-            {
-              "q": 2,
-              "r": 1
-            },
-            {
-              "q": 2,
-              "r": 2
-            },
-            {
-              "q": 3,
-              "r": 2
-            },
-            {
-              "q": 0,
-              "r": 4
-            },
-            {
-              "q": 1,
-              "r": 3
-            },
-            {
-              "q": 2,
-              "r": 0
-            },
-            {
-              "q": 1,
-              "r": 1
-            }
-          ],
-          "color": "color_8",
-          "rootPos": {
-            "q": -1,
-            "r": 0
-          }
-        }
-      ],
       "features": [
         {
           "id": "PiecePlacement",
           "enabled": true
+        }
+      ],
+      "pieces": [
+        {
+          "coords": [
+            {
+              "q": 1,
+              "r": 1
+            },
+            {
+              "q": 2,
+              "r": 0
+            },
+            {
+              "q": 0,
+              "r": 2
+            },
+            {
+              "q": 3,
+              "r": 0
+            }
+          ],
+          "color": "color_1",
+          "rootPos": {
+            "q": -1,
+            "r": 2
+          }
+        },
+        {
+          "coords": [
+            {
+              "q": 2,
+              "r": 1
+            },
+            {
+              "q": 3,
+              "r": 1
+            },
+            {
+              "q": 2,
+              "r": 0
+            },
+            {
+              "q": 1,
+              "r": 1
+            },
+            {
+              "q": 1,
+              "r": 0
+            },
+            {
+              "q": 0,
+              "r": 1
+            }
+          ],
+          "color": "color_2",
+          "rootPos": {
+            "q": 0,
+            "r": 0
+          }
         }
       ]
     },
@@ -794,13 +803,40 @@
         ]
       ],
       "difficulty": 1,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true
+        }
+      ],
       "pieces": [
         {
           "coords": [
             {
               "q": 0,
-              "r": 2
+              "r": 1
             },
+            {
+              "q": 1,
+              "r": 1
+            },
+            {
+              "q": 1,
+              "r": 0
+            },
+            {
+              "q": 1,
+              "r": 2
+            }
+          ],
+          "color": "color_3",
+          "rootPos": {
+            "q": 2,
+            "r": 0
+          }
+        },
+        {
+          "coords": [
             {
               "q": 1,
               "r": 1
@@ -810,46 +846,19 @@
               "r": 1
             },
             {
-              "q": 2,
-              "r": 1
+              "q": 0,
+              "r": 2
             },
             {
               "q": 0,
               "r": 0
             }
           ],
-          "color": "color_9",
+          "color": "color_4",
           "rootPos": {
             "q": 0,
             "r": 0
           }
-        },
-        {
-          "coords": [
-            {
-              "q": 0,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 1
-            },
-            {
-              "q": 0,
-              "r": 2
-            }
-          ],
-          "color": "color_10",
-          "rootPos": {
-            "q": 3,
-            "r": 0
-          }
-        }
-      ],
-      "features": [
-        {
-          "id": "PiecePlacement",
-          "enabled": true
         }
       ]
     },

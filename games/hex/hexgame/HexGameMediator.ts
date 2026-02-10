@@ -102,7 +102,7 @@ export class HexGameMediator {
         this.resetGame();
 
         const { data } = HexGridBuilder.buildFromMatrix(matrix);
-        this.gridView.init(data);
+        this.gridView.init(data, PIXI.Texture.from("slot"));
         this.clusterManager.initPuzzle(matrix, difficulty, pieces);
 
         this.layout();
