@@ -1,8 +1,8 @@
 import SoundLoadManager from '@core/audio/SoundLoaderManager';
 import { Game } from '@core/Game';
 import { ManifestHelper } from '@core/loader/ManifestHelper';
+import CrazyGamesPlatform from '@core/platforms/CrazyGamesPlatform';
 import PlatformHandler from '@core/platforms/PlatformHandler';
-import PokiPlatform from '@core/platforms/PokiPlatform';
 import { PopupManager } from '@core/popup/PopupManager';
 import { SceneManager } from '@core/scene/SceneManager';
 import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
@@ -16,6 +16,7 @@ import audioManifest from './manifests/audio.json'; // adjust path
 import fontManifest from './manifests/fonts.json'; // adjust path
 import imageManifest from './manifests/images.json'; // adjust path
 import jsonManifest from './manifests/json.json'; // adjust path
+
 
 export default class MyGame extends Game {
     private gameContainer = new PIXI.Container();
@@ -33,7 +34,7 @@ export default class MyGame extends Game {
 
         this.folderPath = 'merge1';
 
-        PlatformHandler.instance.initialize(new PokiPlatform())
+        PlatformHandler.instance.initialize(new CrazyGamesPlatform())
 
         PlatformHandler.instance.platform.startLoad();
         this.stageContainer.addChild(this.gameContainer);

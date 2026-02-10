@@ -1,0 +1,138 @@
+{
+    "assets": {
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/non-preload": {
+            "isFolder": true,
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770763404186,
+                "duration": 5.702099999999518,
+                "success": true
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/non-preload/bg_loader.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/non-preload",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770763404186,
+                "duration": 41.49250000000029,
+                "success": true
+            },
+            "hash": "eygBxA"
+        },
+        ".assetpack/multi-pipe-2/bg_loader.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/non-preload/bg_loader.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/images/non-preload/bg_loader.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/bg_loader.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/bg_loader.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/non-preload/bg_loader.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/images/non-preload/bg_loader.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/bg_loader.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/non-preload/fill_loader.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/non-preload",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770763404188,
+                "duration": 68.81880000000001,
+                "success": true
+            },
+            "hash": "TwWiBw"
+        },
+        ".assetpack/multi-pipe-2/fill_loader.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/non-preload/fill_loader.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/images/non-preload/fill_loader.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/fill_loader.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/fill_loader.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/non-preload/fill_loader.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/images/non-preload/fill_loader.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/fill_loader.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/non-preload/jiggy-pattern.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/non-preload",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770763404190,
+                "duration": 94.14469999999983,
+                "success": true
+            },
+            "hash": "Y_ZuzA"
+        },
+        ".assetpack/multi-pipe-2/jiggy-pattern.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/non-preload/jiggy-pattern.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/images/non-preload/jiggy-pattern.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/jiggy-pattern.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/jiggy-pattern.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/non-preload/jiggy-pattern.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/images/non-preload/jiggy-pattern.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/jiggy-pattern.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        }
+    }
+}

@@ -1,4 +1,4 @@
-import PlatformHandler from "@core/platforms/PlatformHandler";
+import PlatformHandler, { ENABLE_VIDEO_ADS } from "@core/platforms/PlatformHandler";
 import { PopupManager } from "@core/popup/PopupManager";
 import PromiseUtils from "@core/utils/PromiseUtils";
 import { CurrencyType, InGameEconomy } from "../../data/InGameEconomy";
@@ -18,7 +18,7 @@ export class RewardManager {
         const coinRewardData: PrizePopupData = {
             prizes: prizes,
             waitForClaim: true,
-            multiplier: multiplier, // Pass multiplier (0 = no video button)
+            multiplier: !ENABLE_VIDEO_ADS ? 0 : multiplier, // Pass multiplier (0 = no video button)
 
             doubleCallback: async () => {
                 await PlatformHandler.instance.platform.showRewardedVideo();

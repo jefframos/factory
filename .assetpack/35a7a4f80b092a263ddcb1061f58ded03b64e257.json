@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770243861950,
-                "duration": 9.037100000001374,
+                "date": 1770762546875,
+                "duration": 10.277199999999993,
                 "success": true
             }
         },
@@ -20,8 +20,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770028929648,
-                "duration": 2688.4351000000024,
+                "date": 1770762546875,
+                "duration": 4037.3247,
                 "success": true
             }
         },
@@ -340,8 +340,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770153493781,
-                "duration": 2166.1139000000003,
+                "date": 1770762546885,
+                "duration": 3706.246,
                 "success": true
             }
         },
@@ -490,8 +490,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769972305811,
-                "duration": 1.7199000000000524,
+                "date": 1770762546887,
+                "duration": 1.3103999999999587,
                 "success": true
             }
         },
@@ -504,8 +504,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769972305811,
-                "duration": 4257.8609,
+                "date": 1770762546887,
+                "duration": 4137.7638,
                 "success": true
             }
         },
@@ -815,6 +815,18 @@
                 "page": 0
             }
         },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/New folder": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770762546888,
+                "duration": 1.0885000000000673,
+                "success": true
+            }
+        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images/ui{tps}": {
             "isFolder": true,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/images",
@@ -824,8 +836,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770243861950,
-                "duration": 3288.735199999999,
+                "date": 1770762546888,
+                "duration": 4368.6649,
                 "success": true
             }
         },

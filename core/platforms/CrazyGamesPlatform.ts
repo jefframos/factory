@@ -1,93 +1,37 @@
-import SoundManager from "../../../src/assets/SoundManager";
+import SoundManager from "@core/audio/SoundManager";
 import { IPlatformConnection } from "./IPlatformConnection";
 
 export default class CrazyGamesPlatform implements IPlatformConnection {
     public isGameplayActive = false;
+    private crazygamesSDK: any = null;
 
-    constructor() { }
+    constructor() {
+    }
+
     public happyTime(): Promise<void> {
-        window.CrazyGames.SDK.game.happytime();
+        if (this.crazygamesSDK) {
+            this.crazygamesSDK.game.happytime();
+        }
         return Promise.resolve();
     }
 
-    public async showBanner(position: 'up' | 'down' | 'bottomLeft' = 'down'): Promise<void> {
-        let bannerContainer = document.getElementById("banner-container");
-
-        // Create the banner container if it doesn't exist
-        if (!bannerContainer) {
-            bannerContainer = document.createElement("div");
-            bannerContainer.id = "banner-container";
-            bannerContainer.style.width = "100%";
-            bannerContainer.style.height = "90px";
-            bannerContainer.style.position = "fixed";
-
-            // Position the banner based on the passed parameter
-            if (position === "up") {
-                bannerContainer.style.left = "50%";
-                bannerContainer.style.transform = "translateX(-50%)";
-                bannerContainer.style.top = "0";
-            } else if (position === "bottomLeft") {
-                bannerContainer.style.left = "0";
-                bannerContainer.style.bottom = "0";
-                bannerContainer.style.width = "250px";
-                bannerContainer.style.height = "250px";
-                // No centering transform needed for bottom left.
-                bannerContainer.style.transform = "";
-            } else {
-                // Default is "down"
-                bannerContainer.style.left = "50%";
-                bannerContainer.style.transform = "translateX(-50%)";
-                bannerContainer.style.bottom = "0";
-            }
-            document.body.appendChild(bannerContainer);
-        } else {
-            // Update the container's style if it already exists
-            bannerContainer.style.position = "fixed";
-            if (position === "up") {
-                bannerContainer.style.left = "50%";
-                bannerContainer.style.transform = "translateX(-50%)";
-                bannerContainer.style.top = "0";
-                bannerContainer.style.bottom = "";
-            } else if (position === "bottomLeft") {
-                bannerContainer.style.width = "300px";
-                bannerContainer.style.height = "250px";
-                bannerContainer.style.left = "0";
-                bannerContainer.style.bottom = "0";
-                bannerContainer.style.top = "";
-                bannerContainer.style.transform = "";
-            } else {
-                // Default is "down"
-                bannerContainer.style.left = "50%";
-                bannerContainer.style.transform = "translateX(-50%)";
-                bannerContainer.style.bottom = "0";
-                bannerContainer.style.top = "";
-            }
+    public showBanner(): Promise<void> {
+        if (this.crazygamesSDK) {
+            this.crazygamesSDK.banner.show();
         }
-
-        try {
-            await window.CrazyGames.SDK.banner.requestResponsiveBanner("banner-container");
-            console.log("Banner displayed successfully");
-        } catch (e) {
-            console.error("Banner request error", e);
-        }
+        return Promise.resolve();
     }
 
     public hideBanner(): Promise<void> {
-        const bannerContainer = document.getElementById("banner-container");
-        if (bannerContainer) {
-            // Remove the banner container from the DOM to hide it
-            bannerContainer.parentElement?.removeChild(bannerContainer);
-            console.log("Banner hidden successfully");
-        } else {
-            console.warn("Banner container not found.");
+        if (this.crazygamesSDK) {
+            this.crazygamesSDK.banner.hide();
         }
-        return Promise.resolve()
+        return Promise.resolve();
     }
 
     public async startLoadSDK(): Promise<void> {
         return new Promise((resolve, reject) => {
             const script = document.createElement("script");
-            // Updated SDK URL for CrazyGames
             script.src = "https://sdk.crazygames.com/crazygames-sdk-v3.js";
             script.async = true;
 
@@ -107,70 +51,112 @@ export default class CrazyGamesPlatform implements IPlatformConnection {
 
     public async startLoad(): Promise<void> {
         console.debug("CrazyGames Platform: Starting load...");
-        window.CrazyGames.SDK.game.loadingStart();
         await Promise.resolve();
     }
 
     public async loadFinished(): Promise<void> {
         console.debug("CrazyGames Platform: Load finished.");
-        // Call the CrazyGames function that marks game load completion
-        window.CrazyGames.SDK.game.loadingStop();
+        if (this.crazygamesSDK) {
+            this.crazygamesSDK.game.sdkGameLoadingStop();
+        }
         await Promise.resolve();
     }
 
     public async initialize(): Promise<void> {
         console.debug("CrazyGames Platform: Initializing...");
+
         await this.startLoadSDK();
-        return window.CrazyGames.SDK.init();
+
+        // Wait for SDK to be available on window
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Initialize the SDK properly
+        if (window['CrazyGames'] && window['CrazyGames'].SDK) {
+            try {
+                // Call init() to initialize the SDK
+                await window['CrazyGames'].SDK.init();
+                this.crazygamesSDK = window['CrazyGames'].SDK;
+                console.log("CrazyGames SDK initialized successfully");
+            } catch (error) {
+                console.error("Failed to initialize CrazyGames SDK:", error);
+                throw error;
+            }
+        } else {
+            console.error("CrazyGames SDK not found on window object");
+            throw new Error("CrazyGames SDK not found");
+        }
+
+        return Promise.resolve();
     }
 
     public async showCommercialBreak(): Promise<void> {
-
-
-        SoundManager.instance.muteAllSounds();
         console.debug("CrazyGames Platform: Showing commercial break...");
-        const ad = window.CrazyGames.SDK.ad;
-        const callbacks = {
-            adFinished: () => {
-                SoundManager.instance.restoreSound();
-                Promise.resolve()
-            },
-            adError: (error) => console.log("Error midgame ad", error),
-            adStarted: () => console.log("Start midgame ad"),
-        };
-        ad.requestAd("midgame", callbacks);
+
+        if (this.crazygamesSDK) {
+            SoundManager.instance.muteAllSounds();
+
+            return new Promise((resolve) => {
+                this.crazygamesSDK.ad.requestAd("midgame", {
+                    adFinished: () => {
+                        console.log("Ad finished");
+                        SoundManager.instance.restoreSound();
+                        resolve();
+                    },
+                    adError: (error: any) => {
+                        console.error("Ad error:", error);
+                        SoundManager.instance.restoreSound();
+                        resolve();
+                    },
+                    adStarted: () => {
+                        console.log("Ad started");
+                    }
+                });
+            });
+        } else {
+            await Promise.resolve();
+        }
     }
 
     public async showRewardedVideo(): Promise<void> {
-        SoundManager.instance.muteAllSounds();
         console.debug("CrazyGames Platform: Showing rewarded video...");
-        const ad = window.CrazyGames.SDK.ad;
-        const callbacks = {
-            adFinished: () => {
-                SoundManager.instance.restoreSound();
-                Promise.resolve()
-            },
-            adError: (error) => console.log("Error midgame ad", error),
-            adStarted: () => console.log("Start midgame ad"),
-        };
-        ad.requestAd("rewarded", callbacks);
+
+        if (this.crazygamesSDK) {
+            SoundManager.instance.muteAllSounds();
+
+            return new Promise((resolve, reject) => {
+                this.crazygamesSDK.ad.requestAd("rewarded", {
+                    adFinished: () => {
+                        console.log("Rewarded ad finished - granting reward");
+                        SoundManager.instance.restoreSound();
+                        resolve();
+                    },
+                    adError: (error: any) => {
+                        console.error("Rewarded ad error:", error);
+                        SoundManager.instance.restoreSound();
+                        reject(error);
+                    },
+                    adStarted: () => {
+                        console.log("Rewarded ad started");
+                    }
+                });
+            });
+        } else {
+            await Promise.resolve();
+        }
     }
 
     public async setPlayerScore(score: number): Promise<void> {
         console.debug("CrazyGames Platform: Setting player score:", score);
-        // Insert logic to save the player's score, if CrazyGames provides such functionality
         await Promise.resolve();
     }
 
     public async getLeaderboard(): Promise<void> {
         console.debug("CrazyGames Platform: Getting leaderboard...");
-        // Insert CrazyGames SDK leaderboard logic if available
         return await Promise.resolve();
     }
 
     public async getFriends(): Promise<void> {
         console.debug("CrazyGames Platform: Getting friends list...");
-        // Insert CrazyGames SDK friend list logic if available
         return await Promise.resolve();
     }
 
@@ -178,7 +164,11 @@ export default class CrazyGamesPlatform implements IPlatformConnection {
         if (!this.isGameplayActive) {
             console.debug("CrazyGames Platform: Starting gameplay...");
             this.isGameplayActive = true;
-            window.CrazyGames.SDK.game.gameplayStart();
+
+            if (this.crazygamesSDK) {
+                this.crazygamesSDK.game.gameplayStart();
+            }
+
             await Promise.resolve();
         } else {
             console.debug("CrazyGames Platform: Gameplay already active.");
@@ -189,7 +179,11 @@ export default class CrazyGamesPlatform implements IPlatformConnection {
         if (this.isGameplayActive) {
             console.debug("CrazyGames Platform: Stopping gameplay...");
             this.isGameplayActive = false;
-            window.CrazyGames.SDK.game.gameplayStop();
+
+            if (this.crazygamesSDK) {
+                this.crazygamesSDK.game.gameplayStop();
+            }
+
             await Promise.resolve();
         } else {
             console.debug("CrazyGames Platform: Gameplay already inactive.");

@@ -37,14 +37,6 @@
         },
         {
           "alias": [
-            "brittle-rille.mp3"
-          ],
-          "src": [
-            "brittle-rille.mp3"
-          ]
-        },
-        {
-          "alias": [
             "Bubbles.wav"
           ],
           "src": [
@@ -257,14 +249,6 @@
           ],
           "src": [
             "soundtrack/longnight.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "soundtrack/peace-be-with-you.mp3"
-          ],
-          "src": [
-            "soundtrack/peace-be-with-you.mp3"
           ]
         },
         {

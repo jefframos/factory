@@ -34,9 +34,9 @@ ensureFolderExists(outputManifest)
 ensureFolderExists(outputImagesN)
 ensureFolderExists(outputImages)
 const options = {
-    jpg: {},
+    jpg: false,
     png: false,
-    webp: { quality: 80, alphaQuality: 100, },
+    webp: { quality: 70, alphaQuality: 100, },
     avif: false,
     bc7: false,
     astc: false,

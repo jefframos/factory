@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770070548634,
-                "duration": 1.5714000000000397,
+                "date": 1770763678177,
+                "duration": 0.34559999999999036,
                 "success": true
             }
         },
@@ -18,8 +18,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531605348,
-                "duration": 36.234699999999975,
+                "date": 1770762568038,
+                "duration": 55.184699999999964,
                 "success": true
             },
             "hash": "-0GfyQ"
@@ -45,8 +45,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769880713018,
-                "duration": 2755.6522,
+                "date": 1770762568039,
+                "duration": 2924.7195,
                 "success": true
             },
             "hash": "nWdLLA"
@@ -72,8 +72,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769532689394,
-                "duration": 428.97439999999995,
+                "date": 1770762568039,
+                "duration": 2950.2068999999997,
                 "success": true
             },
             "hash": "z8nNcQ"
@@ -99,8 +99,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769880713019,
-                "duration": 2766.6126999999997,
+                "date": 1770762568039,
+                "duration": 2983.662,
                 "success": true
             },
             "hash": "mOF0hQ"
@@ -119,33 +119,6 @@
             "inheritedMetaData": {},
             "transformData": {}
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/brittle-rille.mp3": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1769531605349,
-                "duration": 279.7462,
-                "success": true
-            },
-            "hash": "Th0R"
-        },
-        ".assetpack/ffmpeg/brittle-rille.mp3": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/brittle-rille.mp3",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/brittle-rille.mp3": {
-            "isFolder": false,
-            "transformParent": ".assetpack/ffmpeg/brittle-rille.mp3",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Bubbles.wav": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
@@ -153,8 +126,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531605349,
-                "duration": 3239.3325999999997,
+                "date": 1770762568093,
+                "duration": 2797.1128000000003,
                 "success": true
             },
             "hash": "OyElJg"
@@ -180,8 +153,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531605349,
-                "duration": 3243.0427999999997,
+                "date": 1770762568343,
+                "duration": 2585.6213000000002,
                 "success": true
             },
             "hash": "x6M_Og"
@@ -207,8 +180,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531605349,
-                "duration": 3224.5693,
+                "date": 1770762570891,
+                "duration": 230.85360000000037,
                 "success": true
             },
             "hash": "RqNp4A"
@@ -234,8 +207,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531605384,
-                "duration": 3244.887,
+                "date": 1770762570929,
+                "duration": 247.96389999999974,
                 "success": true
             },
             "hash": "dgHbuw"
@@ -261,8 +234,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531605630,
-                "duration": 2924.6252999999997,
+                "date": 1770762570964,
+                "duration": 250.54569999999967,
                 "success": true
             },
             "hash": "Ju0NzA"
@@ -288,8 +261,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769959480397,
-                "duration": 417.8383,
+                "date": 1770762570989,
+                "duration": 257.54930000000013,
                 "success": true
             },
             "hash": "tt7vfw"
@@ -315,8 +288,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769959306745,
-                "duration": 2007.2059000000002,
+                "date": 1770762571023,
+                "duration": 255.2163999999998,
                 "success": true
             },
             "hash": "TASA"
@@ -342,8 +315,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769884832980,
-                "duration": 489.1529,
+                "date": 1770762571122,
+                "duration": 303.57529999999997,
                 "success": true
             },
             "hash": "khQ5vQ"
@@ -369,8 +342,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531608558,
-                "duration": 305.49670000000015,
+                "date": 1770762571177,
+                "duration": 254.9666000000002,
                 "success": true
             },
             "hash": "sPfZuQ"
@@ -396,8 +369,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531608574,
-                "duration": 39.46379999999999,
+                "date": 1770762571214,
+                "duration": 23.42599999999993,
                 "success": true
             },
             "hash": "_YCHfw"
@@ -423,8 +396,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769984134168,
-                "duration": 34.155899999999974,
+                "date": 1770762571238,
+                "duration": 34.27149999999983,
                 "success": true
             },
             "hash": "fQvc3w"
@@ -450,8 +423,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531608588,
-                "duration": 287.1950999999999,
+                "date": 1770762571247,
+                "duration": 304.8793999999998,
                 "success": true
             },
             "hash": "gZGdKw"
@@ -477,8 +450,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531608592,
-                "duration": 289.0185999999999,
+                "date": 1770762571272,
+                "duration": 269.2361000000001,
                 "success": true
             },
             "hash": "3Ggp6A"
@@ -504,8 +477,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531608613,
-                "duration": 272.09029999999984,
+                "date": 1770762571278,
+                "duration": 278.07490000000007,
                 "success": true
             },
             "hash": "riagIQ"
@@ -531,8 +504,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531608629,
-                "duration": 271.0407,
+                "date": 1770762571426,
+                "duration": 237.54240000000027,
                 "success": true
             },
             "hash": "y5kj5g"
@@ -558,8 +531,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531608864,
-                "duration": 267.00120000000015,
+                "date": 1770762571432,
+                "duration": 243.98529999999982,
                 "success": true
             },
             "hash": "HLuKDw"
@@ -585,8 +558,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531608876,
-                "duration": 260.8144000000002,
+                "date": 1770762571541,
+                "duration": 237.90419999999995,
                 "success": true
             },
             "hash": "c3xLug"
@@ -612,8 +585,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531608881,
-                "duration": 296.34940000000006,
+                "date": 1770762571552,
+                "duration": 268.2773999999995,
                 "success": true
             },
             "hash": "FXBiNg"
@@ -639,8 +612,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531608886,
-                "duration": 296.4591000000005,
+                "date": 1770762571556,
+                "duration": 275.7407999999996,
                 "success": true
             },
             "hash": "VnWhCA"
@@ -666,8 +639,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531608900,
-                "duration": 328.1386000000002,
+                "date": 1770762571663,
+                "duration": 263.4200999999998,
                 "success": true
             },
             "hash": "IR2P8g"
@@ -693,8 +666,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531609131,
-                "duration": 251.2460000000001,
+                "date": 1770762571676,
+                "duration": 256.7189000000003,
                 "success": true
             },
             "hash": "qTPL"
@@ -720,8 +693,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531609137,
-                "duration": 224.01640000000043,
+                "date": 1770762571779,
+                "duration": 296.34469999999965,
                 "success": true
             },
             "hash": "GKga6w"
@@ -747,8 +720,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531609182,
-                "duration": 276.33070000000043,
+                "date": 1770762571820,
+                "duration": 259.91589999999997,
                 "success": true
             },
             "hash": "jeZOtA"
@@ -774,8 +747,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769884710704,
-                "duration": 2523.0932999999995,
+                "date": 1770762571832,
+                "duration": 286.0109999999995,
                 "success": true
             },
             "hash": "nvQ6-Q"
@@ -801,8 +774,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531609222,
-                "duration": 341.9444999999996,
+                "date": 1770762571927,
+                "duration": 355.8751000000002,
                 "success": true
             },
             "hash": "PXg3Lg"
@@ -828,8 +801,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531609228,
-                "duration": 24.266599999999926,
+                "date": 1770762571933,
+                "duration": 23.912000000000262,
                 "success": true
             },
             "hash": "G27fgA"
@@ -855,8 +828,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770070548635,
-                "duration": 2.7051999999999907,
+                "date": 1770763678179,
+                "duration": 0.06400000000002137,
                 "success": true
             }
         },
@@ -867,8 +840,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770070548635,
-                "duration": 49.86220000000003,
+                "date": 1770762571957,
+                "duration": 45.17839999999978,
                 "success": true
             },
             "hash": "qhDh3A"
@@ -887,33 +860,6 @@
             "inheritedMetaData": {},
             "transformData": {}
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/soundtrack/peace-be-with-you.mp3": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/soundtrack",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1770070548636,
-                "duration": 106.77539999999999,
-                "success": true
-            },
-            "hash": "zZ1XAw"
-        },
-        ".assetpack/ffmpeg/soundtrack/peace-be-with-you.mp3": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/soundtrack/peace-be-with-you.mp3",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/merge1/audio/soundtrack/peace-be-with-you.mp3": {
-            "isFolder": false,
-            "transformParent": ".assetpack/ffmpeg/soundtrack/peace-be-with-you.mp3",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio/Synth-Appear-01.m4a": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/merge1/raw-assets/audio",
@@ -921,8 +867,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531609253,
-                "duration": 274.2528000000002,
+                "date": 1770762572072,
+                "duration": 264.90969999999925,
                 "success": true
             },
             "hash": "Hme6Lg"
@@ -948,8 +894,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531609361,
-                "duration": 242.0673999999999,
+                "date": 1770762572076,
+                "duration": 249.83650000000034,
                 "success": true
             },
             "hash": "UGUDoQ"
@@ -975,8 +921,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531609382,
-                "duration": 198.27520000000004,
+                "date": 1770762572080,
+                "duration": 260.0111999999999,
                 "success": true
             },
             "hash": "0fRURQ"
@@ -1002,8 +948,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1769531609458,
-                "duration": 214.66769999999997,
+                "date": 1770762572118,
+                "duration": 249.72559999999976,
                 "success": true
             },
             "hash": "RsdCOQ"
