@@ -11,6 +11,8 @@ export interface PathRopeOptions {
     // Catmull tension (0.5 = your default)
     tension?: number; // default 0.5
 
+
+
     // If set, resample to evenly spaced points (recommended for rope)
     // Example: 10..20 depending on world scale
     spacing?: number; // default undefined (no resample)
@@ -19,6 +21,8 @@ export interface PathRopeOptions {
     alpha?: number; // default 1
     tint?: number;  // default 0xFFFFFF
 
+    tileScale?: number;
+    textureScale?: number;
     // If true, rope uses uvs that stretch across the whole rope (default SimpleRope behaviour)
     // Leave it alone unless you want custom tiling.
 }
@@ -28,6 +32,9 @@ export class PathRope extends PIXI.Container {
 
     private rope: PIXI.SimpleRope | null = null;
     private ropePoints: PIXI.Point[] = [];
+
+    private uvOffset: number = 0;
+    public velocity: number = 0;
 
     private lastHash: string = "";
 
@@ -40,7 +47,9 @@ export class PathRope extends PIXI.Container {
             tension: options.tension ?? 0.5,
             alpha: options.alpha ?? 1,
             tint: options.tint ?? 0xffffff,
-            spacing: options.spacing
+            spacing: options.spacing,
+            tileScale: options.tileScale || 1,
+            textureScale: options.textureScale || 1,
         };
     }
     public setSampledPoints(points: Point[]): void {
@@ -58,28 +67,79 @@ export class PathRope extends PIXI.Container {
             spline = SplineUtils.getEvenlySpacedPoints(spline, this.opts.spacing);
         }
 
-        // Check if the number of points changed before syncing
         const lengthChanged = this.ropePoints.length !== spline.length;
-
         this.syncRopePoints(spline);
 
-        // If length changed, we MUST re-create the rope to rebuild geometry
         if (lengthChanged && this.rope) {
             this.rope.destroy();
             this.rope = null;
         }
 
         if (!this.rope) {
-            this.rope = new PIXI.SimpleRope(this.opts.texture, this.ropePoints);
+            // Ensure wrap mode is set before creating the rope
+            this.opts.texture.baseTexture.wrapMode = PIXI.WRAP_MODES.REPEAT;
+            this.rope = new PIXI.SimpleRope(this.opts.texture, this.ropePoints, this.opts.textureScale);
             this.rope.alpha = this.opts.alpha;
             this.rope.tint = this.opts.tint;
             this.addChild(this.rope);
         } else {
-            // Just updating positions of existing points
             (this.rope as any).geometry?.getBuffer('aVertexPosition')?.update();
         }
-    }
 
+        // MANDATORY: Update tiling every time points change
+        if (this.opts.tileScale) {
+            this.updateTiling();
+        }
+    }
+    public update(delta: number): void {
+        if (this.velocity === 0 || !this.rope) return;
+
+        // Update the offset based on velocity
+        this.uvOffset -= (this.velocity * delta) / this.opts.tileScale;
+
+        // Wrap the offset to keep it within a reasonable range (0 to 1)
+        // This prevents floating point precision issues over long play sessions
+        this.uvOffset %= 1;
+
+        // Refresh the UVs
+        this.updateTiling();
+    }
+    private updateTiling(): void {
+        if (!this.rope || !this.opts.tileScale) return;
+
+        const geometry = this.rope.geometry;
+        const uvs = geometry.getBuffer('aTextureCoord').data as Float32Array;
+        const points = this.ropePoints;
+
+        let totalDistance = 0;
+
+        // Apply the offset to the starting point
+        uvs[0] = this.uvOffset;
+        uvs[1] = 0;
+        uvs[2] = this.uvOffset;
+        uvs[3] = 1;
+
+        for (let i = 1; i < points.length; i++) {
+            const p1 = points[i - 1];
+            const p2 = points[i];
+
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            totalDistance += dist;
+
+            // Include uvOffset in the calculation for all points
+            const u = (totalDistance / this.opts.tileScale) + this.uvOffset;
+
+            const index = i * 4;
+            uvs[index] = u;
+            uvs[index + 1] = 0;
+            uvs[index + 2] = u;
+            uvs[index + 3] = 1;
+        }
+
+        geometry.getBuffer('aTextureCoord').update();
+    }
     /**
      * Update rope to match the given CONTROL points (not the sampled spline).
      * Call this whenever your map points change.
@@ -115,12 +175,17 @@ export class PathRope extends PIXI.Container {
         if (!this.rope) {
             this.rope = new PIXI.SimpleRope(this.opts.texture, this.ropePoints);
             this.rope.alpha = this.opts.alpha;
+            this.opts.texture.baseTexture.wrapMode = PIXI.WRAP_MODES.REPEAT;
             this.rope.tint = this.opts.tint;
             this.addChild(this.rope);
         } else {
             // In Pixi v7, SimpleRope keeps reference to points array.
             // Updating point objects is enough; then mark geometry dirty.
             (this.rope as any).geometry?.invalidate?.();
+        }
+
+        if (this.opts.tileScale) {
+            this.updateTiling();
         }
     }
 

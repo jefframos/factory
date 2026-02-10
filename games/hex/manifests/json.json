@@ -37,14 +37,6 @@
         },
         {
           "alias": [
-            "game/03_world_1770631526350.json"
-          ],
-          "src": [
-            "game/03_world_1770631526350.json"
-          ]
-        },
-        {
-          "alias": [
             "game/game-manifest.json"
           ],
           "src": [
@@ -57,6 +49,22 @@
           ],
           "src": [
             "game/map-data.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/03_world_1770731080309.json"
+          ],
+          "src": [
+            "game/03_world_1770731080309.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/04_world_1770631526350.json"
+          ],
+          "src": [
+            "game/04_world_1770631526350.json"
           ]
         },
         {

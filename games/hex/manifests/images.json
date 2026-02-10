@@ -42,6 +42,14 @@
           "src": [
             "ui.webp.json"
           ]
+        },
+        {
+          "alias": [
+            "path1"
+          ],
+          "src": [
+            "path1.webp.json"
+          ]
         }
       ]
     }

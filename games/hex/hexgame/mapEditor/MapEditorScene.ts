@@ -194,6 +194,38 @@ export default class MapEditorScene extends GameScene {
     private setupDomUI(): void {
         this.ui = new MapEditorDomUI();
 
+        this.ui.onTypeChanged = async (newType) => {
+            if (!this.latestSelectedSpriteData) return;
+            const { layer, data, sprite } = this.latestSelectedSpriteData;
+
+            // 1. Update the data type
+            data.type = newType;
+            if (newType !== "sprite") {
+                data.width = data.width || 100;
+                data.height = data.height || 100;
+            }
+
+            // 2. Remove old sprite from PIXI
+            const container = sprite.parent as PIXI.Container;
+            sprite.destroy();
+
+            // 3. Create the new correct PIXI object using your controller
+            // Note: You'll need to expose a method or use deserialize to refresh
+            const newSprite = await (this.visualController as any).createSprite(data);
+            container.addChild(newSprite);
+
+            // 4. Update the reference
+            this.latestSelectedSpriteData.sprite = newSprite;
+        };
+
+        this.ui.onSizeChanged = (w, h) => {
+            if (!this.latestSelectedSpriteData) return;
+            const { sprite, data } = this.latestSelectedSpriteData;
+
+            if (w !== null) { data.width = w; sprite.width = w; }
+            if (h !== null) { data.height = h; sprite.height = h; }
+        };
+
         this.ui.onToggleBoundaries = (enabled) => {
             this.boundaryLogic.setEnabled(enabled);
             this.boundaryController.setVisible(enabled);

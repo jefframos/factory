@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770721062384,
-                "duration": 2.1579999999376014,
+                "date": 1770730994433,
+                "duration": 1.5948999989777803,
                 "success": true
             }
         },
@@ -20,8 +20,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770718885820,
-                "duration": 700.5788,
+                "date": 1770729554896,
+                "duration": 1155.0120999999344,
                 "success": true
             }
         },
@@ -74,6 +74,16 @@
             },
             "transformData": {},
             "hash": "iBl72g"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/backgrounds{tps}/puzzle-bg-2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/backgrounds{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "3bMSAg"
         },
         ".assetpack/multi-pipe-1/backgrounds.png": {
             "isFolder": false,
@@ -629,16 +639,6 @@
                 "success": true
             }
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/tiles{tps}/blue.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/tiles{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "3wFDeA"
-        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/tiles{tps}/brown.png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/tiles{tps}",
@@ -648,16 +648,6 @@
             },
             "transformData": {},
             "hash": "XxaYZw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/tiles{tps}/cyan.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/tiles{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "d7TMjg"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/tiles{tps}/green.png": {
             "isFolder": false,
@@ -739,6 +729,26 @@
             "transformData": {},
             "hash": "29ijcg"
         },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/tiles{tps}/cyan.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/tiles{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "d7TMjg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/tiles{tps}/blue.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/tiles{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "3wFDeA"
+        },
         ".assetpack/multi-pipe-1/tiles.png": {
             "isFolder": false,
             "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/tiles{tps}",
@@ -804,8 +814,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770387460764,
-                "duration": 6266.0359,
+                "date": 1770730994433,
+                "duration": 4432.629399999976,
                 "success": true
             }
         },
@@ -3176,6 +3186,84 @@
             "transformData": {},
             "hash": "a2pmOQ"
         },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/map": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/map/easy-level.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/map",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "aoJJVQ"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/map/medium-level.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/map",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "uyj4Ng"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/map/hard-level.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/map",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "a0cJqg"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/map/grey-level.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/map",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "527S2g"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/chars": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/chars/char-1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/chars",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "bVNj4A"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/spinner.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "tcBkzQ"
+        },
         ".assetpack/multi-pipe-1/ui.png": {
             "isFolder": false,
             "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}",
@@ -3230,6 +3318,100 @@
             },
             "transformData": {
                 "page": 0
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/path1{tps}": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images",
+            "metaData": {
+                "tps": true
+            },
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770725628519,
+                "duration": 43.95860000047833,
+                "success": true
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/path1{tps}/path-1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/path1{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "FV4Z"
+        },
+        ".assetpack/multi-pipe-1/path1.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/path1{tps}",
+            "metaData": {
+                "mIgnore": true,
+                "nomip": true
+            },
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/path1.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/path1.png",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true,
+                "mIgnore": true,
+                "nomip": true
+            },
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-1/path1.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/path1{tps}",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {
+                "page": 0
+            }
+        },
+        ".assetpack/texture-packer-compress/path1.webp.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-1/path1.json",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {
+                "page": 0
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/path1.webp.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/texture-packer-compress/path1.webp.json",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {
+                "page": 0
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/path2{tps}": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images",
+            "metaData": {
+                "tps": true
+            },
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770725211291,
+                "duration": 3.1479000002145767,
+                "success": true
             }
         }
     }

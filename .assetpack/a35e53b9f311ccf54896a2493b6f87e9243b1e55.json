@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770721752965,
-                "duration": 6.94539999961853,
+                "date": 1770731138055,
+                "duration": 26.389000000432134,
                 "success": true
             }
         },
@@ -80,8 +80,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770721752966,
-                "duration": 6.535299999639392,
+                "date": 1770731138055,
+                "duration": 26.031199999153614,
                 "success": true
             }
         },
@@ -92,8 +92,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770714861637,
-                "duration": 25.534200000000055,
+                "date": 1770731138055,
+                "duration": 40.06749999895692,
                 "success": true
             },
             "hash": "gOs6yQ"
@@ -119,8 +119,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770714861648,
-                "duration": 14.126299999999901,
+                "date": 1770731138060,
+                "duration": 34.86930000036955,
                 "success": true
             },
             "hash": "ciessA"
@@ -139,33 +139,6 @@
             "inheritedMetaData": {},
             "transformData": {}
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/game/03_world_1770631526350.json": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/game",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {},
-            "stats": {
-                "date": 1770678629745,
-                "duration": 15.986899999901652,
-                "success": true
-            },
-            "hash": "qYbfAQ"
-        },
-        ".assetpack/json/game/03_world_1770631526350.json": {
-            "isFolder": false,
-            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/game/03_world_1770631526350.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/json/game/03_world_1770631526350.json": {
-            "isFolder": false,
-            "transformParent": ".assetpack/json/game/03_world_1770631526350.json",
-            "metaData": {},
-            "inheritedMetaData": {},
-            "transformData": {}
-        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/game/game-manifest.json": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/game",
@@ -173,11 +146,11 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770678629757,
-                "duration": 3.4484999999403954,
+                "date": 1770731138069,
+                "duration": 26.611500000581145,
                 "success": true
             },
-            "hash": "kzj1_Q"
+            "hash": "QRHVqA"
         },
         ".assetpack/json/game/game-manifest.json": {
             "isFolder": false,
@@ -200,11 +173,11 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770721752966,
-                "duration": 7.157700000330806,
+                "date": 1770728749094,
+                "duration": 7.180300001055002,
                 "success": true
             },
-            "hash": "VZiCQw"
+            "hash": "cYejYQ"
         },
         ".assetpack/json/game/map-data.json": {
             "isFolder": false,
@@ -216,6 +189,60 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/json/game/map-data.json": {
             "isFolder": false,
             "transformParent": ".assetpack/json/game/map-data.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/game/03_world_1770731080309.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/game",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770731138081,
+                "duration": 14.07010000012815,
+                "success": true
+            },
+            "hash": "O1RhRw"
+        },
+        ".assetpack/json/game/03_world_1770731080309.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/game/03_world_1770731080309.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/json/game/03_world_1770731080309.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/game/03_world_1770731080309.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/game/04_world_1770631526350.json": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/game",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770731138083,
+                "duration": 12.199199998751283,
+                "success": true
+            },
+            "hash": "I8-tCw"
+        },
+        ".assetpack/json/game/04_world_1770631526350.json": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/json/game/04_world_1770631526350.json",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/json/game/04_world_1770631526350.json": {
+            "isFolder": false,
+            "transformParent": ".assetpack/json/game/04_world_1770631526350.json",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

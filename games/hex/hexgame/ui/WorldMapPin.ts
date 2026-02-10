@@ -1,3 +1,4 @@
+import ViewUtils from "@core/utils/ViewUtils";
 import * as PIXI from "pixi.js";
 
 export enum PinState {
@@ -36,10 +37,14 @@ export class WorldMapPin extends PIXI.Container {
     constructor(texture: PIXI.Texture, shadowTexture: PIXI.Texture) {
         super();
         // Setup shadow
+        this.interactive = false;
+        this.interactiveChildren = false;
         this.shadow = new PIXI.Sprite(shadowTexture);
         this.shadow.anchor.set(0.5);
         this.shadow.alpha = 0.2;
         this.shadow.tint = 0;
+        this.shadow.scale.set(ViewUtils.elementScaler(this.shadow, 100))
+        this.shadow.scale.y = this.shadow.scale.x / 2
         this.shadowContainer.addChild(this.shadow);
         this.addChild(this.shadowContainer);
 
@@ -47,6 +52,7 @@ export class WorldMapPin extends PIXI.Container {
         this.sprite = new PIXI.Sprite(texture);
         this.sprite.anchor.set(0.5, 1);
         this.spriteContainer.addChild(this.sprite);
+        this.sprite.scale.set(ViewUtils.elementScaler(this.sprite, 100))
         this.addChild(this.spriteContainer);
 
         this.lastX = this.x;

@@ -1,3 +1,5 @@
+import { VisualImage } from "./VisualViewController";
+
 export class MapEditorDomUI {
     public readonly root: HTMLDivElement;
 
@@ -18,6 +20,16 @@ export class MapEditorDomUI {
     private resetScaleBtn!: HTMLButtonElement;
     private orderActionsRow!: HTMLDivElement;
 
+    private typeGroup!: HTMLDivElement;
+    private sizeDrawer!: HTMLDivElement;
+    private tilingDrawer!: HTMLDivElement;
+    private nineSliceDrawer!: HTMLDivElement;
+
+
+    public onTypeChanged?: (type: "sprite" | "tiling" | "nineslice") => void;
+    public onSizeChanged?: (w: number | null, h: number | null) => void;
+    public onTilingChanged?: (settings: { scale?: number, offsetX?: number, offsetY?: number }) => void;
+    public onPaddingChanged?: (padding: { left?: number, top?: number, right?: number, bottom?: number }) => void;
     public onMoveSelectedImage?: (direction: "up" | "down" | "top" | "bottom") => void;
 
     public onSelectedScaleChanged?: (scale: number) => void;
@@ -149,8 +161,113 @@ export class MapEditorDomUI {
         this.scaleSlider = slider;
         this.scaleValueLabel = valueText;
         this.visualEditorHUD.appendChild(panel);
+
+
+        // 1. Type Selection (Checkboxes acting like Radios)
+        this.typeGroup = this.createSection("OBJECT TYPE");
+        const tilingCheck = this.createInlineCheckbox("Tiling", "typeTiling");
+        const nineSliceCheck = this.createInlineCheckbox("9-Slice", "typeNineSlice");
+        this.typeGroup.append(tilingCheck.container, nineSliceCheck.container);
+
+        // 2. Size Drawer (Width/Height)
+        this.sizeDrawer = this.createSection("DIMENSIONS");
+        this.sizeDrawer.style.display = "none";
+        const wInput = this.createNumberInput("Width", (v) => this.onSizeChanged?.(v, null));
+        const hInput = this.createNumberInput("Height", (v) => this.onSizeChanged?.(null, v));
+        this.sizeDrawer.append(wInput, hInput);
+
+        // 3. Tiling Drawer
+        this.tilingDrawer = this.createSection("TILING SETTINGS");
+        this.tilingDrawer.style.display = "none";
+        const tScale = this.createNumberInput("Tile Scale", (v) => this.onTilingChanged?.({ scale: v }));
+        this.tilingDrawer.append(tScale);
+
+        // 4. Nine Slice Drawer
+        this.nineSliceDrawer = this.createSection("9-SLICE PADDING");
+        this.nineSliceDrawer.style.display = "none";
+        const padding = this.createNumberInput("Padding (All)", (v) => this.onPaddingChanged?.(v));
+        this.nineSliceDrawer.append(padding);
+
+        tilingCheck.input.onchange = () => {
+            if (tilingCheck.input.checked) nineSliceCheck.input.checked = false;
+            const newType = tilingCheck.input.checked ? "tiling" : "sprite";
+            this.refreshDrawers(newType);
+            this.onTypeChanged?.(newType);
+        };
+
+        nineSliceCheck.input.onchange = () => {
+            if (nineSliceCheck.input.checked) tilingCheck.input.checked = false;
+            const newType = nineSliceCheck.input.checked ? "nineslice" : "sprite";
+            this.refreshDrawers(newType);
+            this.onTypeChanged?.(newType);
+        };
+
+        this.selectedSpritePanel.append(this.typeGroup, this.sizeDrawer, this.tilingDrawer, this.nineSliceDrawer);
+    }
+    private refreshDrawers(type: string) {
+        const isTiling = type === "tiling";
+        const isNine = type === "nineslice";
+
+        this.sizeDrawer.style.display = (isTiling || isNine) ? "block" : "none";
+        this.tilingDrawer.style.display = isTiling ? "block" : "none";
+        this.nineSliceDrawer.style.display = isNine ? "block" : "none";
+    }
+    private createNumberInput(label: string, onChange: (val: number) => void): HTMLDivElement {
+        const container = document.createElement("div");
+        container.style.cssText = "display: flex; align-items: center; justify-content: space-between; gap: 5px; margin-bottom: 4px;";
+
+        const lbl = document.createElement("span");
+        lbl.innerText = label;
+        lbl.style.fontSize = "10px";
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.style.cssText = "width: 60px; background: #222; color: white; border: 1px solid #444; font-size: 10px; padding: 2px;";
+        input.oninput = () => onChange(parseFloat(input.value) || 0);
+
+        container.append(lbl, input);
+        return container;
     }
 
+    private createInlineCheckbox(text: string, id: string) {
+        const container = document.createElement("div");
+        container.style.cssText = "display: flex; align-items: center; gap: 4px; font-size: 11px;";
+
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.id = id;
+        input.style.cursor = "pointer";
+
+        const label = document.createElement("label");
+        label.innerText = text;
+        label.htmlFor = id;
+        label.style.cursor = "pointer";
+
+        container.append(input, label);
+        return { container, input };
+    }
+    public updateSelectedObjectUI(data: VisualImage) {
+        const isTiling = data.type === "tiling";
+        const isNine = data.type === "nineslice";
+
+        this.sizeDrawer.style.display = (isTiling || isNine) ? "block" : "none";
+        this.tilingDrawer.style.display = isTiling ? "block" : "none";
+        this.nineSliceDrawer.style.display = isNine ? "block" : "none";
+
+        // Set checkbox states
+        (this.root.querySelector("#typeTiling") as HTMLInputElement).checked = isTiling;
+        (this.root.querySelector("#typeNineSlice") as HTMLInputElement).checked = isNine;
+    }
+
+    private createSection(titleText: string) {
+        const div = document.createElement("div");
+        div.style.cssText = "margin-top: 10px; border-top: 1px solid #333; padding-top: 8px;";
+        const t = document.createElement("div");
+        t.innerText = titleText;
+        t.style.cssText = "font-size: 9px; color: #888; margin-bottom: 5px;";
+        div.appendChild(t);
+        return div;
+    }
 
     public setActiveLayerUI(id: string) {
         const items = this.root.querySelectorAll('.layer-item');

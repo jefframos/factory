@@ -70,7 +70,7 @@ export class HexGameMediator {
             this.inputService.forceResetHeldPiece();
 
             // Clean up the current board
-            this.resetGame();
+            //this.resetGame();
 
             // Dispatch to Main class to generate a new matrix and call initPuzzle again
             this.onRestart.dispatch({});

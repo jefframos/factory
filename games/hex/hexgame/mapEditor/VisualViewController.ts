@@ -1,5 +1,7 @@
 import * as PIXI from "pixi.js";
 
+export type VisualImageType = "sprite" | "tiling" | "nineslice";
+
 export interface VisualImage {
     id: string;
     url: string;
@@ -7,6 +9,17 @@ export interface VisualImage {
     y: number;
     scaleX?: number;
     scaleY?: number;
+    // New Fields
+    type: VisualImageType;
+    width?: number;  // Required for Tiling/NineSlice
+    height?: number; // Required for Tiling/NineSlice
+    tileScale?: number;
+    tileOffsetX?: number;
+    tileOffsetY?: number;
+    leftMargin?: number;
+    topMargin?: number;
+    rightMargin?: number;
+    bottomMargin?: number;
 }
 
 export interface VisualLayer {
@@ -80,6 +93,7 @@ export class VisualViewController {
         if (!container || !layerInfo) return null;
 
         const imgData: VisualImage = {
+            type: "sprite",
             id: `img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
             url, x: worldX, y: worldY, scaleX: 1, scaleY: 1
         };
@@ -136,7 +150,7 @@ export class VisualViewController {
 
     // --- HIT DETECTION ---
 
-    public getSpriteAtGlobal(globalPos: PIXI.PointData): { sprite: PIXI.Sprite, layer: VisualLayer, data: VisualImage } | null {
+    public getSpriteAtGlobal(globalPos: PIXI.Point): { sprite: PIXI.Sprite, layer: VisualLayer, data: VisualImage } | null {
         const searchOrder = [this.objectsContainer, this.backgroundContainer];
         for (const root of searchOrder) {
             for (let i = root.children.length - 1; i >= 0; i--) {
@@ -163,39 +177,60 @@ export class VisualViewController {
 
     // --- INITIALIZATION & SORTING ---
 
-    private async createSprite(data: VisualImage): Promise<PIXI.Sprite> {
-        let texture: PIXI.Texture;
+    // VisualViewController.ts -> createSprite()
+    private async createSprite(data: VisualImage): Promise<PIXI.Container> {
+        const texture = await PIXI.Assets.load(data.url);
+        let displayObject: PIXI.Sprite | PIXI.TilingSprite | PIXI.NineSlicePlane;
 
-        if (PIXI.utils.TextureCache[data.url]) {
-            texture = PIXI.utils.TextureCache[data.url];
+        if (data.type === "tiling") {
+            displayObject = new PIXI.TilingSprite(texture, data.width || 100, data.height || 100);
+            (displayObject as PIXI.TilingSprite).tileScale.set(data.tileScale || 1);
+        } else if (data.type === "nineslice") {
+            // Default 20px margins if not set
+            const m = data.leftMargin || 20;
+            displayObject = new PIXI.NineSlicePlane(texture, m, m, m, m);
+            displayObject.width = data.width || 100;
+            displayObject.height = data.height || 100;
         } else {
-            //console.warn(`Loading texture asynchronously: ${data.url}`);
-            // Assets.load is the modern (Pixi v7+) way to ensure the image is ready
-            texture = await PIXI.Assets.load(data.url);
+            displayObject = new PIXI.Sprite(texture);
         }
 
-        const sprite = new PIXI.Sprite(texture);
-        (sprite as any).imageId = data.id;
-        sprite.anchor.set(0.5, 1);
-        sprite.position.set(data.x, data.y);
-        sprite.scale.set(data.scaleX ?? 1, data.scaleY ?? 1);
+        // Common setup
+        (displayObject as any).imageId = data.id;
+        // Note: NineSlicePlane doesn't have an anchor property in some PIXI versions
+        if (displayObject instanceof PIXI.Sprite || displayObject instanceof PIXI.TilingSprite) {
+            displayObject.anchor.set(0.5, 1);
+        }
 
-        console.log(sprite.x, sprite.y, sprite.width, sprite.height);
+        displayObject.position.set(data.x, data.y);
+        displayObject.scale.set(data.scaleX ?? 1, data.scaleY ?? 1);
 
-        return sprite;
+        return displayObject;
     }
 
-    public async deserializeNoWipe(layers: VisualLayer[]) {
+    public async deserializeAsync(layers: VisualLayer[]): Promise<void> {
         this.updateLayers(layers);
-        layers.forEach(layer => {
+
+        // Create a list of all layer processing promises
+        const layerPromises = layers.map(async (layer) => {
             const container = this.layerContainers.get(layer.id);
             if (!container) return;
-            layer.images.forEach(async (img): Promise<void> => {
+
+            // Map each image to a createSprite promise
+            const imagePromises = layer.images.map(async (img) => {
                 const sprite = await this.createSprite(img);
-                container.addChild(sprite)
-                this.sortLayer(container, layer);
+                container.addChild(sprite);
             });
+
+            // Wait for all images in THIS layer to finish loading
+            await Promise.all(imagePromises);
+
+            // Sort once after all images are added to this container
+            this.sortLayer(container, layer);
         });
+
+        // Wait for ALL layers to finish loading
+        await Promise.all(layerPromises);
     }
 
     public deserialize(layers: VisualLayer[]) {

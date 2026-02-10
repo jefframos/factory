@@ -1,0 +1,571 @@
+{
+  "id": "world_1770731080309",
+  "levels": [
+    {
+      "id": "level_1770731080309",
+      "name": "Level 1",
+      "gridType": "Shape",
+      "matrix": [
+        [
+          1,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0
+        ]
+      ],
+      "difficulty": 1,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true,
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "level_1770731092380",
+      "name": "Level 2",
+      "gridType": "Shape",
+      "matrix": [
+        [
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ]
+      ],
+      "difficulty": 1,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true,
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "level_1770731095566",
+      "name": "Level 3",
+      "gridType": "Shape",
+      "matrix": [
+        [
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1,
+          0
+        ]
+      ],
+      "difficulty": 1,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true,
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "level_1770731123003",
+      "name": "Level 4",
+      "gridType": "Shape",
+      "matrix": [
+        [
+          1,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1
+        ]
+      ],
+      "difficulty": 1,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true,
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "level_1770731125115",
+      "name": "Level 5",
+      "gridType": "Shape",
+      "matrix": [
+        [
+          0,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          0
+        ]
+      ],
+      "difficulty": 1,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true,
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "level_1770731126859",
+      "name": "Level 6",
+      "gridType": "Shape",
+      "matrix": [
+        [
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      ],
+      "difficulty": 1,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true,
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "level_1770731128502",
+      "name": "Level 7",
+      "gridType": "Shape",
+      "matrix": [
+        [
+          0,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          0,
+          1,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ]
+      ],
+      "difficulty": 1,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true,
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "level_1770731130694",
+      "name": "Level 8",
+      "gridType": "Shape",
+      "matrix": [
+        [
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      ],
+      "difficulty": 1,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true,
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "level_1770731132793",
+      "name": "Level 9",
+      "gridType": "Shape",
+      "matrix": [
+        [
+          0,
+          0,
+          0,
+          1,
+          1
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          0,
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          0,
+          0
+        ]
+      ],
+      "difficulty": 1,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true,
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "level_1770731134565",
+      "name": "Level 10",
+      "gridType": "Shape",
+      "matrix": [
+        [
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          1
+        ]
+      ],
+      "difficulty": 1,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true,
+          "value": ""
+        }
+      ]
+    }
+  ]
+}

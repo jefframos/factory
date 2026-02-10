@@ -1,13 +1,33 @@
 {
   "frames": {
-    "puzzle-bg-1": {
+    "puzzle-bg-2": {
       "frame": {
         "x": 2,
+        "y": 2,
+        "w": 667,
+        "h": 1000
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 667,
+        "h": 1000
+      },
+      "sourceSize": {
+        "w": 667,
+        "h": 1000
+      }
+    },
+    "puzzle-bg-1": {
+      "frame": {
+        "x": 671,
         "y": 2,
         "w": 1130,
         "h": 921
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -23,7 +43,7 @@
     "cloud-overlay": {
       "frame": {
         "x": 2,
-        "y": 925,
+        "y": 1134,
         "w": 147,
         "h": 150
       },
@@ -42,8 +62,8 @@
     },
     "cloud-3": {
       "frame": {
-        "x": 2,
-        "y": 1074,
+        "x": 154,
+        "y": 1004,
         "w": 402,
         "h": 179
       },
@@ -62,12 +82,12 @@
     },
     "cloud-2": {
       "frame": {
-        "x": 406,
-        "y": 925,
+        "x": 2,
+        "y": 1283,
         "w": 305,
         "h": 162
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -82,12 +102,12 @@
     },
     "cloud-1": {
       "frame": {
-        "x": 570,
-        "y": 925,
+        "x": 309,
+        "y": 1185,
         "w": 319,
         "h": 186
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -107,8 +127,8 @@
     "image": "backgrounds.webp",
     "format": "RGBA8888",
     "size": {
-      "w": 1134,
-      "h": 1255
+      "w": 1594,
+      "h": 1447
     },
     "scale": 1,
     "related_multi_packs": []

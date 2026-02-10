@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770721771413,
-                "duration": 10.928899999999999,
+                "date": 1770725769852,
+                "duration": 10.937099999999191,
                 "success": true
             }
         },
@@ -141,8 +141,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770721771413,
-                "duration": 10.712699999999927,
+                "date": 1770725769853,
+                "duration": 10.574799999998504,
                 "success": true
             }
         },
@@ -265,6 +265,100 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/kids-carpet.webp": {
             "isFolder": false,
             "transformParent": ".assetpack/multi-pipe-2/maps/kids-carpet.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/paths": {
+            "isFolder": true,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770725769853,
+                "duration": 10.436099999998987,
+                "success": true
+            }
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/paths/sand-path-1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/paths",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770725769853,
+                "duration": 81.76959999999963,
+                "success": true
+            },
+            "hash": "FV4Z"
+        },
+        ".assetpack/multi-pipe-2/maps/paths/sand-path-1.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/paths/sand-path-1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/paths/sand-path-1.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/paths/sand-path-1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/paths/sand-path-1.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/paths/sand-path-1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/paths/sand-path-1.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/paths/sand-path-1.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/paths/sand-path-2.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/paths",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770725769860,
+                "duration": 83.6906999999992,
+                "success": true
+            },
+            "hash": "FV4Z"
+        },
+        ".assetpack/multi-pipe-2/maps/paths/sand-path-2.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/paths/sand-path-2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/paths/sand-path-2.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/paths/sand-path-2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/paths/sand-path-2.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/paths/sand-path-2.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/paths/sand-path-2.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/paths/sand-path-2.webp",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

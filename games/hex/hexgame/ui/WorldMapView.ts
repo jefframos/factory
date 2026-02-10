@@ -5,8 +5,7 @@ import HexAssets from "../HexAssets";
 import { LevelData, WorldData } from "../HexTypes";
 import { LevelDataManager } from "../LevelDataManager";
 import { Point, SplineUtils } from "../mapEditor/SplineUtils";
-import { VisualLayer } from "../mapEditor/VisualEditorLogic";
-import { VisualViewController } from "../mapEditor/VisualViewController";
+import { VisualLayer, VisualViewController } from "../mapEditor/VisualViewController";
 import { PathRope } from "./PathRope";
 import { PinState, WorldMapPin } from "./WorldMapPin";
 
@@ -104,6 +103,8 @@ export class WorldMapView extends PIXI.Container {
     private moveDuration: number = 1000; // ms
     private moveStartTime: number = 0;
 
+    private isBeingDragged: boolean = false;
+
     private pinComponent: WorldMapPin | null = null;
 
     constructor() {
@@ -123,7 +124,7 @@ export class WorldMapView extends PIXI.Container {
         this.rootWorldContainer.addChild(this.pointsContainer);
 
         // 3. Initialize Ropes (Permanent objects)
-        this.initRopes();
+
 
         // 4. Controller initialization
         this.visualController = new VisualViewController(this.backgroundContainer, this.splineContainer, this.pointsContainer);
@@ -138,7 +139,29 @@ export class WorldMapView extends PIXI.Container {
         this.addChild(this.debugGraphics);
 
     }
+    public startDragging(): void {
+        this.isBeingDragged = true;
+        this.isAnimatingPath = false; // Stop auto-walk if user intervenes
+    }
 
+    public stopDragging(): void {
+        this.isBeingDragged = false;
+        // Sync targetPosition to current location so Lerp doesn't jump back
+        this.targetPosition.set(this.rootWorldContainer.x, this.rootWorldContainer.y);
+    }
+
+    public applyManualMove(dx: number, dy: number): void {
+        // 1. Calculate the intended new position
+        const nextX = this.rootWorldContainer.x + dx;
+        const nextY = this.rootWorldContainer.y + dy;
+
+        // 2. Use your existing constraint logic to keep it in bounds
+        const constrained = this.getConstrainedPosition(nextX, nextY);
+
+        // 3. Apply directly for 1:1 movement
+        this.rootWorldContainer.x = constrained.x;
+        this.rootWorldContainer.y = constrained.y;
+    }
     public async initialize(opts: WorldMapViewOptions): Promise<void> {
         this.opts = opts;
         // Any async initialization can go here if needed in the future
@@ -157,23 +180,37 @@ export class WorldMapView extends PIXI.Container {
         this.backgroundShape.interactive = false;
     }
 
-    private initRopes(): void {
+    private async initRopes(): Promise<void> {
+        const todoTextureUrl = 'hex/images/non-preload/maps/paths/sand-path-2.webp';
+        let todoTexture: PIXI.Texture;
+
+        try {
+            // Attempt to load the specific texture
+            todoTexture = await PIXI.Assets.load(todoTextureUrl);
+        } catch (e) {
+            console.warn(`Failed to load rope texture: ${todoTextureUrl}. Falling back to WHITE.`);
+            todoTexture = PIXI.Texture.WHITE;
+        }
+
         this.pathRopeDone = new PathRope({
-            texture: PIXI.Texture.WHITE,
+            texture: todoTexture,
             segmentPoints: 25,
             tension: 0.5,
             spacing: 12,
             alpha: 1,
-            tint: 0xffff00
+            tint: 0xffff99,
+            textureScale: 0.5
         });
 
         this.pathRopeTodo = new PathRope({
-            texture: PIXI.Texture.WHITE,
+            texture: todoTexture,
             segmentPoints: 25,
             tension: 0.5,
-            spacing: 12,
+            spacing: 20,
             alpha: 1,
-            tint: 0xffffff
+            tileScale: 200,
+            tint: 0xffffff,
+            textureScale: 0.5
         });
 
         this.splineContainer.addChild(this.pathRopeTodo);
@@ -181,10 +218,10 @@ export class WorldMapView extends PIXI.Container {
     }
 
     public async rebuildFromData(mapData: WorldMapData, worldId?: string): Promise<void> {
-        // 1. Clear Foreground (Buttons + Decorations)
+        // 1. Clear Foreground
         this.pointsContainer.removeChildren().forEach(c => c.destroy({ children: true }));
 
-        // 2. Clear Spline Container visuals ONLY (Preserving Ropes)
+        // 2. Clear Spline Container visuals
         for (let i = this.splineContainer.children.length - 1; i >= 0; i--) {
             const child = this.splineContainer.children[i];
             if (child !== this.pathRopeTodo && child !== this.pathRopeDone) {
@@ -199,30 +236,32 @@ export class WorldMapView extends PIXI.Container {
         }
 
         const allLayers = mapData.visuals?.layers ?? [];
-        const bgLayers = allLayers.filter(l => (l as VisualLayer).isBelowSpline === true);
-        const fgLayers = allLayers.filter(l => !(l as VisualLayer).isBelowSpline);
+        const bgLayers = allLayers.filter(l => l.isBelowSpline === true);
+        const fgLayers = allLayers.filter(l => !l.isBelowSpline);
 
-        bgLayers.forEach(element => {
-            element.images.map(img => {
-                img.url = img.url.replace(/^.*raw-assets\//, 'hex/images/').replace(/\.png$/, '.webp');
+        // 3. Process URLs (synchronous mapping is fine here)
+        const fixUrls = (layers: VisualLayer[]) => {
+            layers.forEach(layer => {
+                layer.images.forEach(img => {
+                    img.url = img.url.replace(/^.*raw-assets\//, 'hex/images/').replace(/\.png$/, '.webp');
+                });
             });
-        });
+        };
 
-        fgLayers.forEach(element => {
-            element.images.map(img => {
-                img.url = img.url.replace(/^.*raw-assets\//, 'hex/images/').replace(/\.png$/, '.webp');;
-            });
-        });
+        fixUrls(bgLayers);
+        fixUrls(fgLayers);
 
-        // 4. Deserialize Background (below path)
-        await this.visualController.deserializeNoWipe(bgLayers);
+        // 4. Deserialize (Now properly awaiting the async calls)
+        await this.visualController.deserializeAsync(bgLayers);
+        await this.visualController.deserializeAsync(fgLayers);
 
-        await this.visualController.deserializeNoWipe(fgLayers);
-        // 5. Draw the Path Spline
+        // 5. Initialize Ropes (Awaiting texture load)
+        await this.initRopes();
+
+        // 6. Draw Path
         this.controlPointsSorted = [...(mapData.points ?? [])].sort((a, b) => a.order - b.order);
         this.drawSpline(this.controlPointsSorted);
 
-        // 6. Deserialize Foreground (mixed wit
         // 7. Map Levels to Buttons
         const sequence = this.buildLevelSequence(worldId);
         const count = Math.min(this.controlPointsSorted.length, sequence.length);
@@ -236,7 +275,7 @@ export class WorldMapView extends PIXI.Container {
             this.assigned.push({ point, level, world, button: btn });
         }
 
-        // 8. Apply Global Y-Sorting for FG
+        // 8. Sorting
         this.pointsContainer.children.forEach(child => {
             child.zIndex = child.y;
         });
@@ -279,15 +318,16 @@ export class WorldMapView extends PIXI.Container {
         const size = this.opts.style.levelButtonSize;
         const btn = new BaseButton({
             standard: {
-                width: size,
-                height: size,
+                width: 105,
+                height: 84,
                 fontStyle: new PIXI.TextStyle({ ...HexAssets.MainFont }),
-                texture: PIXI.Texture.from(this.opts.style.levelButtonTexture),
+                texture: PIXI.Texture.from('easy-level'),
+                textOffset: new PIXI.Point(0, 35),
                 centerIconHorizontally: true,
                 centerIconVertically: true
             },
             disabled: {
-                texture: PIXI.Texture.from(HexAssets.Textures.Buttons.Grey)
+                texture: PIXI.Texture.from('grey-level')
             },
             click: {
                 callback: () => {
@@ -302,6 +342,17 @@ export class WorldMapView extends PIXI.Container {
         btn.setLabel(String(index + 1))
 
         return btn;
+    }
+
+    public applyDrag(dx: number, dy: number): void {
+        if (this.isAnimatingPath) return; // Optional: disable drag while walking path
+
+        // We add the delta to the current target
+        this.targetPosition.x += dx;
+        this.targetPosition.y += dy;
+    }
+    public recenter(): void {
+        this.centerOnLevel(this.currentLevelIndex, true);
     }
 
     public setPin(pin: WorldMapPin): void {
@@ -449,37 +500,34 @@ export class WorldMapView extends PIXI.Container {
             this.pinComponent.update(delta);
         }
 
-        // Camera logic...
-        const constrained = this.getConstrainedPosition(this.targetPosition.x, this.targetPosition.y);
-        this.rootWorldContainer.x += (constrained.x - this.rootWorldContainer.x) * this.lerpSpeed;
-        this.rootWorldContainer.y += (constrained.y - this.rootWorldContainer.y) * this.lerpSpeed;
+        if (!this.isBeingDragged) {
+            // Only run camera Lerp if the user isn't touching the screen
+            const constrained = this.getConstrainedPosition(this.targetPosition.x, this.targetPosition.y);
 
-        this.rootWorldContainer.x = Math.round(this.rootWorldContainer.x);
-        this.rootWorldContainer.y = Math.round(this.rootWorldContainer.y);
+            this.rootWorldContainer.x += (constrained.x - this.rootWorldContainer.x) * this.lerpSpeed;
+            this.rootWorldContainer.y += (constrained.y - this.rootWorldContainer.y) * this.lerpSpeed;
 
+            this.rootWorldContainer.x = Math.round(this.rootWorldContainer.x);
+            this.rootWorldContainer.y = Math.round(this.rootWorldContainer.y);
+        }
+
+
+        if (this.pathRopeDone) {
+            // Example: Move the "done" path texture slowly
+            this.pathRopeDone.velocity = 0.5;
+            this.pathRopeDone.update(delta);
+        }
+
+        if (this.pathRopeTodo) {
+            // Maybe the "todo" path doesn't move, or moves differently
+            //this.pathRopeTodo.velocity = 5;
+            this.pathRopeTodo.update(delta);
+        }
 
         if (this.showDebug) this.drawDebug();
     }
 
-    private updateButtonStates(index: number): void {
-        this.assigned.forEach((entry, i) => {
-            if (i <= index) entry.button.enable();
-            else entry.button.disable();
-        });
-    }
 
-    // public update(delta: number): void {
-    //     const constrained = this.getConstrainedPosition(this.targetPosition.x, this.targetPosition.y);
-
-    //     // DEBUG: Is targetPosition actually changing? 
-    //     // If targetPosition is always (0,0), the map won't move.
-    //     // console.log(this.targetPosition.x, constrained.x);
-
-    //     this.rootWorldContainer.x += (constrained.x - this.rootWorldContainer.x) * this.lerpSpeed;
-    //     this.rootWorldContainer.y += (constrained.y - this.rootWorldContainer.y) * this.lerpSpeed;
-
-    //     if (this.showDebug) this.drawDebug();
-    // }
 
     public setCurrentLevelIndex(index: number): void {
         this.currentLevelIndex = index;
