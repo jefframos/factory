@@ -9,6 +9,15 @@ export interface VisualImage {
     y: number;
     scaleX?: number;
     scaleY?: number;
+    zIndex?: number;
+    alpha?: number;
+    tint?: number;
+    rotation?: number;
+    flipX?: boolean;
+    flipY?: boolean;
+
+    anchorX?: number; // default 0.5
+    anchorY?: number; // default 1 (bottom-center)
     // New Fields
     type: VisualImageType;
     width?: number;  // Required for Tiling/NineSlice
@@ -94,8 +103,14 @@ export class VisualViewController {
 
         const imgData: VisualImage = {
             type: "sprite",
-            id: `img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-            url, x: worldX, y: worldY, scaleX: 1, scaleY: 1
+            id: `img_${Date.now()}`,
+            url, x: worldX, y: worldY,
+            scaleX: 1, scaleY: 1,
+            anchorX: 0.5, // Initialize with defaults
+            anchorY: 1.0,
+            rotation: 0,
+            alpha: 1,
+            tint: 0xFFFFFF
         };
 
         layerInfo.images.push(imgData);
@@ -103,6 +118,7 @@ export class VisualViewController {
         container.addChild(sprite);
 
         this.sortLayer(container, layerInfo);
+
         return imgData;
     }
 
@@ -204,6 +220,32 @@ export class VisualViewController {
 
         displayObject.position.set(data.x, data.y);
         displayObject.scale.set(data.scaleX ?? 1, data.scaleY ?? 1);
+        displayObject.alpha = data.alpha ?? 1; // Add this line
+        displayObject.angle = data.rotation ?? 0; // Add this line
+        (displayObject as any).tint = data.tint ?? 0xFFFFFF;
+
+
+        const ax = data.anchorX ?? 0.5;
+        const ay = data.anchorY ?? 1.0;
+
+        if (displayObject instanceof PIXI.Sprite || displayObject instanceof PIXI.TilingSprite) {
+            displayObject.anchor.set(ax, ay);
+        } else {
+            // NineSlice handles origin via pivot
+            // Note: Width/Height must be set BEFORE setting pivot
+            displayObject.width = data.width || 100;
+            displayObject.height = data.height || 100;
+            displayObject.pivot.set(ax * displayObject.width, ay * displayObject.height);
+        }
+
+
+        const baseSX = data.scaleX ?? 1;
+        const baseSY = data.scaleY ?? 1;
+
+        displayObject.scale.x = data.flipX ? -baseSX : baseSX;
+        displayObject.scale.y = data.flipY ? -baseSY : baseSY;
+
+        displayObject.position.set(data.x, data.y);
 
         return displayObject;
     }
@@ -244,12 +286,21 @@ export class VisualViewController {
                 const sprite = await this.createSprite(img);
                 container.addChild(sprite)
                 this.sortLayer(container, layer);
+
             });
         });
     }
 
     private sortLayer(container: PIXI.Container, info: VisualLayer) {
-        if (!info.isBelowSpline) {
+        if (info.isBelowSpline) {
+            // Sort by zIndex for background/below-spine layers
+            container.children.sort((a, b) => {
+                const dataA = info.images.find(img => img.id === (a as any).imageId);
+                const dataB = info.images.find(img => img.id === (b as any).imageId);
+                return (dataB?.zIndex ?? 0) - (dataA?.zIndex ?? 0);
+            });
+        } else {
+            // Standard Y-sorting for object layers
             container.children.sort((a, b) => a.y - b.y);
         }
     }

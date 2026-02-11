@@ -299,7 +299,6 @@ export default class MapEditorScene extends GameScene {
         };
 
         this.ui.onMoveSelectedImage = (direction) => {
-            // We need a selected sprite and its associated layer/data
             if (!this.latestSelectedSpriteData) return;
 
             const { layer, data } = this.latestSelectedSpriteData;
@@ -310,16 +309,11 @@ export default class MapEditorScene extends GameScene {
 
             let targetIndex = currentIndex;
 
-            if (direction === "up") {
-                // "Up" in visual terms means moving it towards the end of the array (drawn last)
-                if (currentIndex < imageList.length - 1) {
-                    targetIndex = currentIndex + 1;
-                }
-            } else if (direction === "down") {
-                // "Down" means moving it towards the start of the array (drawn first)
-                if (currentIndex > 0) {
-                    targetIndex = currentIndex - 1;
-                }
+            // Determine target index based on UI click
+            if (direction === "down") {
+                if (currentIndex < imageList.length - 1) targetIndex = currentIndex + 1;
+            } else if (direction === "up") {
+                if (currentIndex > 0) targetIndex = currentIndex - 1;
             } else if (direction === "top") {
                 targetIndex = imageList.length - 1;
             } else if (direction === "bottom") {
@@ -327,24 +321,43 @@ export default class MapEditorScene extends GameScene {
             }
 
             if (targetIndex !== currentIndex) {
-                // 1. Swap/Move in the data array
+                // 1. Move item in the data array
                 const [movedItem] = imageList.splice(currentIndex, 1);
                 imageList.splice(targetIndex, 0, movedItem);
 
-                // 2. Refresh the PIXI containers to reflect the new array order
-                // We use deserialize to force a full re-ordering of children inside the containers
+                // 2. CRITICAL FIX: If below spine, update zIndex values based on new array order
+                if (layer.isBelowSpline) {
+                    imageList.forEach((img, idx) => {
+                        img.zIndex = idx; // Assign zIndex based on its new position in the list
+                    });
+                }
+
+                // 3. Refresh PIXI
                 this.visualController.deserialize(this.layers);
 
-                // 3. Re-sync the selection reference 
-                // After deserialize, the PIXI.Sprite instance changes, so we find the new one
-                // const hit = this.visualController.getSpriteAtGlobal(this.lastMouseGlobal || { x: 0, y: 0 });
-                // if (hit) this.latestSelectedSpriteData = hit;
+                this.visualEditor?.renderLayers();
+                // 4. Important: Re-select the item
+                // Since deserialize recreates the sprite, our old reference 'latestSelectedSpriteData.sprite' is dead.
+                // We find the new one so the UI stays attached to the object.
+                const container = (this.visualController as any).layerContainers.get(layer.id);
+                const newSprite = container?.children.find((c: any) => c.imageId === data.id);
+                if (newSprite) {
+                    this.latestSelectedSpriteData.sprite = newSprite;
+                }
 
-                console.log(`Moved image ${data.id} to index ${targetIndex}`);
-
-                // Optional: Auto-save if desired
-                // void this.saveMapData();
+                console.log(`Moved ${data.id} to index ${targetIndex} (isBelow: ${layer.isBelowSpline})`);
             }
+        };
+        this.ui.onAlphaChanged = (alpha) => {
+            if (!this.latestSelectedSpriteData) return;
+
+            const { sprite, data } = this.latestSelectedSpriteData;
+
+            // Apply to PIXI
+            sprite.alpha = alpha;
+
+            // Save to data
+            data.alpha = alpha;
         };
         this.ui.onModeChange = (mode) => {
             this.currentMode = mode;
@@ -363,7 +376,29 @@ export default class MapEditorScene extends GameScene {
             if (this.currentMode !== "map") return;
             this.isLevelEditMode = enabled;
         };
+        this.ui.onRotationChanged = (deg) => {
+            if (!this.latestSelectedSpriteData) return;
 
+            const { sprite, data } = this.latestSelectedSpriteData;
+
+            // Apply to PIXI (angle property automatically handles deg-to-rad conversion in PIXI v6/v7)
+            // If using older PIXI, use: sprite.rotation = deg * (Math.PI / 180);
+            sprite.angle = deg;
+
+            // Save to data
+            data.rotation = deg;
+        };
+        this.ui.onTintChanged = (hex) => {
+            if (!this.latestSelectedSpriteData) return;
+
+            const { sprite, data } = this.latestSelectedSpriteData;
+
+            // Apply to PIXI (Works on Sprite, TilingSprite, and NineSlice)
+            (sprite as any).tint = hex;
+
+            // Save to data
+            data.tint = hex;
+        };
         this.ui.onToggleDeleteMode = (enabled) => {
             this.isDeleteMode = enabled;
         }; if (this.isLevelEditMode) {
@@ -380,11 +415,40 @@ export default class MapEditorScene extends GameScene {
                 return;
             }
         }
+        this.ui.onAnchorChanged = (ax, ay) => {
+            if (!this.latestSelectedSpriteData) return;
+            const { sprite, data } = this.latestSelectedSpriteData;
+
+            data.anchorX = ax;
+            data.anchorY = ay;
+
+            if (sprite instanceof PIXI.Sprite || sprite instanceof PIXI.TilingSprite) {
+                sprite.anchor.set(ax, ay);
+            } else {
+                // NineSlice Logic: Use pixel-based pivot
+                sprite.pivot.set(ax * sprite.width, ay * sprite.height);
+            }
+        };
         this.ui.onToggleLevelEdit = (enabled) => {
             this.isLevelEditMode = enabled;
             console.log("Level Edit Mode:", enabled);
         };
+        this.ui.onFlipChanged = (fx, fy) => {
+            if (!this.latestSelectedSpriteData) return;
+            const { sprite, data } = this.latestSelectedSpriteData;
 
+            data.flipX = fx;
+            data.flipY = fy;
+
+            // Use absolute values of the current scale to avoid shrinking the object
+            const baseScaleX = Math.abs(data.scaleX || 1);
+            const baseScaleY = Math.abs(data.scaleY || 1);
+
+            sprite.scale.x = fx ? -baseScaleX : baseScaleX;
+            sprite.scale.y = fy ? -baseScaleY : baseScaleY;
+        };
+
+        // Inside onPointerDown selection sync:
         this.ui.onSaveMap = () => {
             void this.saveMapData();
         };
@@ -493,9 +557,23 @@ export default class MapEditorScene extends GameScene {
                     hit.sprite.x - worldPos.x,
                     hit.sprite.y - worldPos.y
                 );
+                const currentTint = hit.data.tint ?? 0xFFFFFF;
+                this.ui?.setSelectedSpriteTint(currentTint);
+                const opacity = hit.data.alpha ?? 1;
+                this.ui?.setSelectedSpriteAlpha(opacity);
+
+                this.ui?.setSelectedSpriteRotation(hit.data.rotation ?? 0);
 
                 this.activeLayerId = hit.layer.id;
                 this.ui?.setActiveLayerUI(hit.layer.id);
+
+                this.ui?.setSelectedFlip(hit.data.flipX ?? false, hit.data.flipY ?? false);
+
+
+                const ax = hit.data.anchorX ?? 0.5; // Default to Center
+                const ay = hit.data.anchorY ?? 1.0; // Default to Bottom
+                this.ui?.setSelectedSpriteAnchor(ax, ay);
+
                 return;
             } else {
                 this.latestSelectedSpriteData = null;
@@ -540,9 +618,7 @@ export default class MapEditorScene extends GameScene {
             data.y = sprite.y;
 
             // Sort if foreground
-            if (!layer.isBelowSpline) {
-                sprite.parent.children.sort((a, b) => a.y - b.y);
-            }
+            this.visualController.sortAll();
             return;
         }
         // Updated Panning Logic

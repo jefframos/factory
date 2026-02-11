@@ -25,7 +25,25 @@ export class MapEditorDomUI {
     private tilingDrawer!: HTMLDivElement;
     private nineSliceDrawer!: HTMLDivElement;
 
+    private alphaSlider!: HTMLInputElement;
+    private alphaValueLabel!: HTMLDivElement;
+    private tintInput!: HTMLInputElement;
+    private rotationSlider!: HTMLInputElement;
+    private rotationValueLabel!: HTMLDivElement;
 
+    private anchorXSlider!: HTMLInputElement;
+    private anchorYSlider!: HTMLInputElement;
+
+    private flipX: boolean = false;
+    private flipY: boolean = false;
+    private flipHBtn!: HTMLButtonElement;
+    private flipVBtn!: HTMLButtonElement;
+
+    public onFlipChanged?: (flipX: boolean, flipY: boolean) => void;
+    public onAnchorChanged?: (ax: number, ay: number) => void;
+    public onRotationChanged?: (deg: number) => void;
+    public onTintChanged?: (tint: number) => void;
+    public onAlphaChanged?: (alpha: number) => void;
     public onTypeChanged?: (type: "sprite" | "tiling" | "nineslice") => void;
     public onSizeChanged?: (w: number | null, h: number | null) => void;
     public onTilingChanged?: (settings: { scale?: number, offsetX?: number, offsetY?: number }) => void;
@@ -74,11 +92,199 @@ export class MapEditorDomUI {
             pointer-events: auto;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 5px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
-            width: 220px;
+            width: 250px;
+            max-height: 300px; /* Adjust 'x' height here */
+            overflow-y: auto;
+            overflow-x: hidden;
         `;
+
+        const alphaLabel = document.createElement("div");
+        alphaLabel.innerText = "Opacity";
+        alphaLabel.style.cssText = "font-size: 10px; opacity: 0.7; margin-top: 8px;";
+
+        const alphaRow = document.createElement("div");
+        alphaRow.style.cssText = "display: flex; align-items: center; gap: 8px;";
+
+        this.alphaSlider = document.createElement("input");
+        this.alphaSlider.type = "range";
+        this.alphaSlider.min = "0";
+        this.alphaSlider.max = "1";
+        this.alphaSlider.step = "0.01";
+        this.alphaSlider.value = "1";
+        this.alphaSlider.style.cssText = "flex: 1; cursor: pointer;";
+
+        this.alphaValueLabel = document.createElement("div");
+        this.alphaValueLabel.style.cssText = "font-family: monospace; font-size: 10px; min-width: 40px;";
+        this.alphaValueLabel.innerText = "100%";
+
+        this.alphaSlider.oninput = () => {
+            const a = parseFloat(this.alphaSlider.value);
+            this.alphaValueLabel.innerText = `${Math.round(a * 100)}%`;
+            this.onAlphaChanged?.(a);
+        };
+
+
+
+        alphaRow.append(this.alphaSlider, this.alphaValueLabel);
+        // Append to panel (before or after scale)
+        panel.append(alphaLabel, alphaRow);
+
+        // --- Rotation Setup ---
+        const rotHeader = document.createElement("div");
+        rotHeader.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-top: 8px;";
+
+        const rotLabel = document.createElement("div");
+        rotLabel.innerText = "Rotation";
+        rotLabel.style.cssText = "font-size: 10px; opacity: 0.7;";
+
+        // 1. Initialize the Rotation Slider
+        this.rotationSlider = document.createElement("input");
+        this.rotationSlider.type = "range";
+        this.rotationSlider.min = "0";
+        this.rotationSlider.max = "360";
+        this.rotationSlider.step = "1";
+        this.rotationSlider.value = "0";
+        this.rotationSlider.style.cssText = "flex: 1; cursor: pointer;";
+
+        // 2. Initialize the Value Label
+        this.rotationValueLabel = document.createElement("div");
+        this.rotationValueLabel.style.cssText = "font-family: monospace; font-size: 10px; min-width: 40px;";
+        this.rotationValueLabel.innerText = "0°";
+
+        // 3. Slider Input Event
+        this.rotationSlider.oninput = () => {
+            const deg = parseFloat(this.rotationSlider.value);
+            this.rotationValueLabel.innerText = `${deg}°`;
+            this.onRotationChanged?.(deg);
+        };
+
+        // 4. Round Button logic (now this.rotationSlider exists!)
+        const roundBtn = document.createElement("button");
+        roundBtn.innerText = "🎯 Round";
+        roundBtn.style.cssText = "font-size: 9px; padding: 2px 6px; background: #333; color: #aaa; border: 1px solid #555; border-radius: 3px; cursor: pointer;";
+        roundBtn.onclick = () => {
+            const current = parseFloat(this.rotationSlider.value);
+            const rounded = Math.round(current / 45) * 45;
+            const final = rounded >= 360 ? 0 : rounded;
+
+            this.rotationSlider.value = String(final);
+            this.rotationValueLabel.innerText = `${final}°`;
+            this.onRotationChanged?.(final);
+        };
+
+        // 5. Build the rows
+        rotHeader.append(rotLabel, roundBtn);
+
+        const rotRow = document.createElement("div");
+        rotRow.style.cssText = "display: flex; align-items: center; gap: 8px;";
+        rotRow.append(this.rotationSlider, this.rotationValueLabel);
+
+        // 6. Append to panel
+        panel.append(rotHeader, rotRow);
+        // (Add your existing rotationSlider and rotRow here)
+
+        // --- 2. Flip Controls ---
+        const flipLabel = document.createElement("div");
+        flipLabel.innerText = "Flip Image";
+        flipLabel.style.cssText = "font-size: 10px; opacity: 0.7; margin-top: 8px;";
+
+        const flipRow = document.createElement("div");
+        flipRow.style.cssText = "display: flex; gap: 4px;";
+
+        const createFlipBtn = (label: string) => {
+            const btn = document.createElement("button");
+            btn.innerText = label;
+            btn.style.cssText = "flex: 1; padding: 4px; font-size: 10px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; cursor: pointer;";
+            return btn;
+        };
+
+        const flipHBtn = createFlipBtn("↔ Flip H");
+        const flipVBtn = createFlipBtn("↕ Flip V");
+
+        // Store them in the class properties
+        this.flipHBtn = flipHBtn;
+        this.flipVBtn = flipVBtn;
+
+        let flipX = false;
+        let flipY = false;
+
+        this.flipHBtn.onclick = () => {
+            this.flipX = !this.flipX; // Use 'this'
+            this.flipHBtn.style.background = this.flipX ? "#2196F3" : "rgba(255,255,255,0.05)";
+            this.onFlipChanged?.(this.flipX, this.flipY);
+        };
+
+        this.flipVBtn.onclick = () => {
+            this.flipY = !this.flipY; // Use 'this'
+            this.flipVBtn.style.background = this.flipY ? "#2196F3" : "rgba(255,255,255,0.05)";
+            this.onFlipChanged?.(this.flipX, this.flipY);
+        };
+
+        flipRow.append(flipHBtn, flipVBtn);
+        panel.append(rotHeader, rotRow, flipLabel, flipRow);
+
+        const anchorLabel = document.createElement("div");
+        anchorLabel.innerText = "Anchor / Origin";
+        anchorLabel.style.cssText = "font-size: 10px; opacity: 0.7; margin-top: 8px;";
+
+        const createAnchorSlider = (label: string, isY: boolean) => {
+            const row = document.createElement("div");
+            row.style.cssText = "display: flex; align-items: center; gap: 8px; margin-bottom: 4px;";
+            const lbl = document.createElement("span");
+            lbl.innerText = label; lbl.style.fontSize = "9px; min-width: 15px;";
+
+            const slider = document.createElement("input");
+            slider.type = "range"; slider.min = "0"; slider.max = "1"; slider.step = "0.1";
+            slider.style.flex = "1";
+
+            slider.oninput = () => {
+                const ax = parseFloat(this.anchorXSlider.value);
+                const ay = parseFloat(this.anchorYSlider.value);
+                this.onAnchorChanged?.(ax, ay);
+            };
+            row.append(lbl, slider);
+            return { row, slider };
+        };
+
+        const xData = createAnchorSlider("X", false);
+        const yData = createAnchorSlider("Y", true);
+        this.anchorXSlider = xData.slider;
+        this.anchorYSlider = yData.slider;
+
+        panel.append(anchorLabel, xData.row, yData.row);
+
+        const tintSection = this.createSection("APPEARANCE");
+
+        const tintRow = document.createElement("div");
+        tintRow.style.cssText = "display: flex; align-items: center; justify-content: space-between; gap: 8px;";
+
+        const tintLabel = document.createElement("span");
+        tintLabel.innerText = "Tint Color";
+        tintLabel.style.fontSize = "10px";
+
+        this.tintInput = document.createElement("input");
+        this.tintInput.type = "color";
+        this.tintInput.value = "#ffffff";
+        this.tintInput.style.cssText = `
+    width: 40px; 
+    height: 20px; 
+    border: none; 
+    background: none; 
+    cursor: pointer;
+`;
+
+        this.tintInput.oninput = () => {
+            // Convert hex string #ffffff to hex number 0xffffff
+            const hexNum = parseInt(this.tintInput.value.replace("#", "0x"), 16);
+            this.onTintChanged?.(hexNum);
+        };
+
+        tintRow.append(tintLabel, this.tintInput);
+        tintSection.append(tintRow);
+        panel.append(tintSection);
 
         // 1. Title
         const title = document.createElement("div");
@@ -94,7 +300,7 @@ export class MapEditorDomUI {
         sliderRow.style.cssText = "display: flex; align-items: center; gap: 8px;";
 
         const slider = document.createElement("input");
-        slider.type = "range"; slider.min = "0.1"; slider.max = "3"; slider.step = "0.05"; slider.value = "1";
+        slider.type = "range"; slider.min = "0.1"; slider.max = "15"; slider.step = "0.05"; slider.value = "1";
         slider.style.cssText = "flex: 1; cursor: pointer;";
 
         const valueText = document.createElement("div");
@@ -204,6 +410,26 @@ export class MapEditorDomUI {
 
         this.selectedSpritePanel.append(this.typeGroup, this.sizeDrawer, this.tilingDrawer, this.nineSliceDrawer);
     }
+    public setSelectedFlip(fx: boolean, fy: boolean) {
+        this.flipX = fx;
+        this.flipY = fy;
+
+        // Now these variables exist at the class level
+        this.flipHBtn.style.background = fx ? "#2196F3" : "rgba(255,255,255,0.05)";
+        this.flipVBtn.style.background = fy ? "#2196F3" : "rgba(255,255,255,0.05)";
+    }
+    public setSelectedSpriteAnchor(ax: number, ay: number) {
+        this.anchorXSlider.value = String(ax);
+        this.anchorYSlider.value = String(ay);
+    }
+    public setSelectedSpriteRotation(deg: number) {
+        this.rotationSlider.value = String(deg);
+        this.rotationValueLabel.innerText = `${Math.round(deg)}°`;
+    }
+    public setSelectedSpriteTint(hex: number) {
+        // Convert 0xffffff back to #ffffff for the input
+        this.tintInput.value = "#" + hex.toString(16).padStart(6, '0');
+    }
     private refreshDrawers(type: string) {
         const isTiling = type === "tiling";
         const isNine = type === "nineslice";
@@ -246,6 +472,10 @@ export class MapEditorDomUI {
         container.append(input, label);
         return { container, input };
     }
+    public setSelectedSpriteAlpha(alpha: number) {
+        this.alphaSlider.value = String(alpha);
+        this.alphaValueLabel.innerText = `${Math.round(alpha * 100)}%`;
+    }
     public updateSelectedObjectUI(data: VisualImage) {
         const isTiling = data.type === "tiling";
         const isNine = data.type === "nineslice";
@@ -253,6 +483,10 @@ export class MapEditorDomUI {
         this.sizeDrawer.style.display = (isTiling || isNine) ? "block" : "none";
         this.tilingDrawer.style.display = isTiling ? "block" : "none";
         this.nineSliceDrawer.style.display = isNine ? "block" : "none";
+
+        const alpha = data.alpha || 1
+        this.alphaSlider.value = String(alpha);
+        this.alphaValueLabel.innerText = `${Math.round(alpha * 100)}%`;
 
         // Set checkbox states
         (this.root.querySelector("#typeTiling") as HTMLInputElement).checked = isTiling;
@@ -286,7 +520,7 @@ export class MapEditorDomUI {
         }
 
         this.selectedSpritePanel.style.display = "flex";
-        const clamped = Math.max(0.1, Math.min(3, scale));
+        const clamped = Math.max(0.1, Math.min(15, scale));
         this.scaleSlider.value = String(clamped);
         this.scaleValueLabel.innerText = `${clamped.toFixed(2)}x`;
     }

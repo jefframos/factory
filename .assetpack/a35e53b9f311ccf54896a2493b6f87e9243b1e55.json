@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770764851589,
-                "duration": 59.16700000000003,
+                "date": 1770818129193,
+                "duration": 6.061499999836087,
                 "success": true
             }
         },
@@ -80,8 +80,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770764851647,
-                "duration": 23.54079999999999,
+                "date": 1770818129193,
+                "duration": 6.037200000137091,
                 "success": true
             }
         },
@@ -227,11 +227,11 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770764851753,
-                "duration": 47.434200000000146,
+                "date": 1770818129193,
+                "duration": 6.033599999733269,
                 "success": true
             },
-            "hash": "cYejYQ"
+            "hash": "aMVdHg"
         },
         ".assetpack/json/game/map-data.json": {
             "isFolder": false,

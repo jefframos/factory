@@ -383,15 +383,45 @@
         "opacity": 1,
         "images": [
           {
+            "type": "sprite",
+            "id": "img_1770815404484_9u0rw",
+            "url": "/../raw-assets/non-preload/maps/gradient-1.png",
+            "x": 80.72527022511576,
+            "y": 487.43793233985275,
+            "scaleX": 8.55,
+            "scaleY": 8.55,
+            "zIndex": 0,
+            "alpha": 0.29,
+            "tint": 16676588,
+            "anchorX": 0.5,
+            "anchorY": 0.5,
+            "rotation": 0
+          },
+          {
             "type": "tiling",
             "id": "img_1770722867237_m5d6r",
             "url": "/../raw-assets/non-preload/maps/grass.png",
-            "x": -14.613905497123142,
-            "y": 857.4411337028952,
+            "x": -34.20278095056938,
+            "y": 772.5560067379618,
             "scaleX": 1,
             "scaleY": 1,
             "width": 5000,
-            "height": 5000
+            "height": 5000,
+            "zIndex": 1
+          },
+          {
+            "type": "sprite",
+            "id": "img_1770817467505_vth2u",
+            "url": "/../raw-assets/non-preload/maps/gradient-1.png",
+            "x": 86.71943405946831,
+            "y": -2407.2483345256755,
+            "scaleX": 6.45,
+            "scaleY": 6.45,
+            "rotation": 0,
+            "tint": 7077791,
+            "alpha": 0.69,
+            "flipX": false,
+            "flipY": true
           }
         ]
       },

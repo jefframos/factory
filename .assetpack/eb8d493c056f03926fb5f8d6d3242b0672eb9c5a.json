@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770764843229,
-                "duration": 8.173000000000684,
+                "date": 1770815538896,
+                "duration": 8.095099999998638,
                 "success": true
             }
         },
@@ -141,8 +141,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770764843237,
-                "duration": 0.051300000000082946,
+                "date": 1770815538897,
+                "duration": 7.405500000000757,
                 "success": true
             }
         },
@@ -183,6 +183,47 @@
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/bedrromBg.webp": {
             "isFolder": false,
             "transformParent": ".assetpack/multi-pipe-2/maps/bedrromBg.webp",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/gradient-1.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {},
+            "stats": {
+                "date": 1770815538897,
+                "duration": 140.56490000000122,
+                "success": true
+            },
+            "hash": "tiu0qg"
+        },
+        ".assetpack/multi-pipe-2/maps/gradient-1.png": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/gradient-1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/gradient-1.png": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/gradient-1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        ".assetpack/multi-pipe-2/maps/gradient-1.webp": {
+            "isFolder": false,
+            "transformParent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/non-preload/maps/gradient-1.png",
+            "metaData": {},
+            "inheritedMetaData": {},
+            "transformData": {}
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/public/hex/images/non-preload/maps/gradient-1.webp": {
+            "isFolder": false,
+            "transformParent": ".assetpack/multi-pipe-2/maps/gradient-1.webp",
             "metaData": {},
             "inheritedMetaData": {},
             "transformData": {}

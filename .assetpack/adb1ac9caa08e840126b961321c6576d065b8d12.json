@@ -1490,6 +1490,16 @@
             "transformData": {},
             "hash": "Z1GgcA"
         },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/eye.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "KkmhxA"
+        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/goldenTap.png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
@@ -2209,16 +2219,6 @@
             },
             "transformData": {},
             "hash": "Ne-dag"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/eye.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "KkmhxA"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/Image_Effect_Light02.png": {
             "isFolder": false,

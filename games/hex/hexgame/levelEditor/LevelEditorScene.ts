@@ -2,6 +2,7 @@ import { Game } from "@core/Game";
 import { GameScene } from "@core/scene/GameScene";
 import PatternBackground from "@core/ui/PatternBackground";
 import * as PIXI from "pixi.js";
+import { Signal } from "signals";
 
 import { ClusterManager } from "../cluster/ClusterManager";
 import { HexGameMediator } from "../HexGameMediator";
@@ -78,7 +79,7 @@ export default class LevelEditorScene extends GameScene {
             this.clusterManager,
             this.gameplayContainer,
             this.gameplayContainer,
-            new HexHUD()
+            new HexHUD(new Signal(), new Signal())
         );
 
         this.editorGridView.onTileToggle = (key: string, mode: TileMode) => {
