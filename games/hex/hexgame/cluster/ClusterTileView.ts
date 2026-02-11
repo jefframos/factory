@@ -31,8 +31,9 @@ export class ClusterTileView extends PIXI.Container {
                 this.sprite.texture = texture;
             }
 
-            this.sprite.width = targetWidth + 5;
-            this.sprite.height = targetHeight;
+            this.sprite.width = targetWidth //+ 2;
+            this.sprite.height = targetHeight - 4;
+            this.sprite.x = 0//-5
             this.sprite.visible = true;
         } else {
             // Fallback: Draw the hexagon graphics

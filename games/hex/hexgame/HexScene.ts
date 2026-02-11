@@ -17,7 +17,7 @@ import { HexGameMediator } from "./HexGameMediator";
 import { HexGridView } from "./HexGridView";
 import { Difficulty, LevelData } from "./HexTypes";
 import { LevelDataManager } from "./LevelDataManager";
-import { HexHUD } from "./ui/HexHud";
+import { HexHUD, HUDMode } from "./ui/HexHud";
 import { WorldHUD } from "./ui/WorldHUD";
 import { WorldMapDragHandler } from "./ui/WorldMapDragHandler";
 import { WorldMapPin } from "./ui/WorldMapPin";
@@ -30,7 +30,7 @@ export default class HexScene extends GameScene {
     // Containers
     public readonly gameplayContainer: PIXI.Container = new PIXI.Container();
     public readonly floorContainer: PIXI.Container = new PIXI.Container();
-    public readonly foregroundContainer: PIXI.Container = new PIXI.Container();
+    public readonly hudContainer: PIXI.Container = new PIXI.Container();
 
 
     // Logic
@@ -74,8 +74,6 @@ export default class HexScene extends GameScene {
         this.addChild(this.levelBackground);
         this.levelBackground.texture = PIXI.Texture.from('puzzle-bg-2')
         this.levelBackground.tint = 0xaaaaff
-        this.addChild(this.gameplayContainer);
-        this.addChild(this.foregroundContainer);
 
         this.setupDevGui();
         this.setupAudio();
@@ -83,16 +81,19 @@ export default class HexScene extends GameScene {
 
         this.addChild(this.gameplayContainer);
         this.addChild(this.worldViewContainer); // Map and its HUD go here
-        this.addChild(this.foregroundContainer); // HexHUD stays here
+        this.addChild(this.hudContainer); // HexHUD stays here
         // Initial State: Show map focused on progress
 
         this.setupScreenTransitions();
         this.setupWorldMapSystem();
 
 
-        if (Game.debugParams.auto) {
-            this.startLevel(LevelDataManager.getRandomLevel())
-        }
+        setTimeout(() => {
+
+            if (Game.debugParams.auto) {
+                this.startLevel(LevelDataManager.getRandomLevel())
+            }
+        }, 500);
     }
     private async setupWorldMapSystem(): Promise<void> {
         const style = {
@@ -121,7 +122,7 @@ export default class HexScene extends GameScene {
             mapData: PIXI.Assets.get('game/map-data.json'),
             style: style,
             onLevelSelected: (lvl, world) => {
-                this.worldHUD.setTitle(world.name); // Sync title
+                this.worldHUD?.setTitle(world.name); // Sync title
                 this.startLevel(lvl);
             }
         });
@@ -139,8 +140,8 @@ export default class HexScene extends GameScene {
 
         //this.backgroundManager.open();
         // 2. Create the fixed HUD
-        this.worldHUD = new WorldHUD(style, () => this.showMap());
-        this.worldViewContainer.addChild(this.worldHUD);
+        // this.worldHUD = new WorldHUD(style, () => this.showMap());
+        // this.worldViewContainer.addChild(this.worldHUD);
 
         const dragHandler = new WorldMapDragHandler(this.worldMap);
 
@@ -148,7 +149,7 @@ export default class HexScene extends GameScene {
             // Sync HUD title with current level's world
             const world = LevelDataManager.getWorldByLevelIndex(index);
             if (world) {
-                this.worldHUD.setTitle(world.name);
+                //this.worldHUD.setTitle(world.name);
             }
         });
         this.layoutMap();
@@ -186,23 +187,27 @@ export default class HexScene extends GameScene {
     private setupGameplay(): void {
         this.gridView = new HexGridView();
         this.clusterManager = new ClusterManager();
-        this.hexHUD = new HexHUD();
+        this.hexHUD = new HexHUD(new Signal(), new Signal());
 
         this.gameplayContainer.addChild(this.floorContainer);
         this.gameplayContainer.addChild(this.gridView);
         this.gameplayContainer.addChild(this.clusterManager);
 
-        const gridRect = new PIXI.Rectangle(50, 100, Game.DESIGN_WIDTH - 100, Game.DESIGN_HEIGHT * 0.5);
-        const piecesRect = new PIXI.Rectangle(50, Game.DESIGN_HEIGHT * 0.6, Game.DESIGN_WIDTH - 100, Game.DESIGN_HEIGHT * 0.4);
+        const gridRect = new PIXI.Rectangle(50, 0, Game.DESIGN_WIDTH - 100, Game.DESIGN_HEIGHT * 0.5);
+        const piecesRect = new PIXI.Rectangle(20, Game.DESIGN_HEIGHT * 0.6 - 100, Game.DESIGN_WIDTH - 40, Game.DESIGN_HEIGHT * 0.4);
 
-        this.hexHUD.y = 20;
-        this.foregroundContainer.addChild(this.hexHUD);
+
+        this.hudContainer.addChild(this.hexHUD);
+
+        this.hexHUD.onCenterMap.add(() => {
+            this.worldMap.recenter()
+        })
 
         this.mediator = new HexGameMediator(
             gridRect, piecesRect, this.gridView, this.clusterManager,
             this.gameplayContainer, this.gameplayContainer, this.hexHUD
         );
-
+        // this.mediator.drawDebugZones()
         // Inside setupGameplay()
         this.mediator.gameplayData.onLevelComplete.add(async () => {
             const currentIndex = this.worldMap.getCurrentIndex(); // You'll need a getter for this
@@ -232,9 +237,11 @@ export default class HexScene extends GameScene {
         await this.transition.close();
         await PromiseUtils.await(500)
 
+        this.hexHUD.setMode(HUDMode.WORLDMAP)
+        this.transition.setTargetWidth(Game.overlayScreenData.width)
+
         this.isMapActive = true;
         this.worldViewContainer.visible = true; // Hides/Shows both Map and WorldHUD
-        this.hexHUD.visible = false;
         this.mediator.setInputEnabled(false);
         this.transition.open();
     }
@@ -242,9 +249,10 @@ export default class HexScene extends GameScene {
     private async startLevel(level: LevelData): Promise<void> {
         await this.transition.close();
         await PromiseUtils.await(500)
+        this.transition.setTargetWidth(Game.DESIGN_WIDTH)
         this.isMapActive = false;
         this.worldViewContainer.visible = false; // Completely cleans the screen
-        this.hexHUD.visible = true;
+        this.hexHUD.setMode(HUDMode.GAMEPLAY)
 
         this.mediator.startLevel(level.matrix, level.difficulty || Difficulty.MEDIUM, level.pieces);
         this.mediator.setInputEnabled(true);
@@ -259,7 +267,10 @@ export default class HexScene extends GameScene {
         }
         this.transition.update(delta);
 
+
+        //this.hexHUD?.update(delta);
         this.layout();
+
     }
 
     private layoutMap() {
@@ -278,25 +289,37 @@ export default class HexScene extends GameScene {
         const centerX = Game.DESIGN_WIDTH / 2;
         const centerY = Game.DESIGN_HEIGHT / 2;
 
-
-        // Gameplay positioning
+        // 1. Gameplay positioning
         this.gameplayContainer.setTransform(centerX, centerY);
         this.gameplayContainer.pivot.set(centerX, centerY);
 
+        // 2. Background positioning
         this.levelBackground.setTransform(centerX, centerY);
-        this.levelBackground.anchor.set(0.5)
-        //this.levelBackground.pivot.set(centerX, centerY);
-        this.levelBackground.scale.set(ViewUtils.elementEvelop(this.levelBackground, Game.overlayScreenData.width, Game.overlayScreenData.height))
+        this.levelBackground.anchor.set(0.5);
+        this.levelBackground.scale.set(
+            ViewUtils.elementEvelop(this.levelBackground, Game.overlayScreenData.width, Game.overlayScreenData.height)
+        );
 
-        // World View Container is 0,0 (Fullscreen HUD layer)
+        // 3. World View Container (Fullscreen HUD layer)
         this.worldViewContainer.position.set(0, 0);
 
-        // Internal Map Panning logic
+        // 4. Internal Map Panning logic
         this.layoutMap();
 
-        // Game HUD
-        if (this.hexHUD) {
-            this.hexHUD.x = (Game.DESIGN_WIDTH - this.hexHUD.width) / 2;
+        // 5. HUD positioning
+        this.hexHUD.layout();
+
+        // 6. DYNAMIC RESOLUTION ADAPTATION FOR TRANSITION
+        // We update this every layout pass to ensure that if the window resizes, 
+        // the clouds know their new "edge of screen" target.
+        if (this.transition) {
+            if (this.isMapActive) {
+                // In Map mode, we use the actual screen width (Overlay)
+                this.transition.setTargetWidth(Game.overlayScreenData.width);
+            } else {
+                // In Gameplay mode, we lock it to the DESIGN_WIDTH
+                this.transition.setTargetWidth(Game.DESIGN_WIDTH);
+            }
         }
     }
 

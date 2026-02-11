@@ -65,7 +65,7 @@ export class HexGameMediator {
         this.hud.onHint.add(() => {
             this.showHint();
         });
-        this.hud.onNewPuzzle.add(() => {
+        this.hud.onClose.add(() => {
             // Force reset of any piece currently in the air
             this.inputService.forceResetHeldPiece();
 
@@ -81,13 +81,13 @@ export class HexGameMediator {
         });
 
         // Auto Complete Logic
-        this.hud.onAutoComplete.add(() => {
-            console.log("HUD: Requesting Auto Complete");
-            this.autoComplete();
-        });
+        // this.hud.onAutoComplete.add(() => {
+        //     console.log("HUD: Requesting Auto Complete");
+        //     this.autoComplete();
+        // });
 
         // Reset Board Logic
-        this.hud.onResetBoard.add(() => {
+        this.hud.onErase.add(() => {
             console.log("HUD: Requesting Reset");
             this.resetBoard();
         });

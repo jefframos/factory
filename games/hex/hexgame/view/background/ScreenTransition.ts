@@ -19,7 +19,11 @@ export class ScreenTransition extends PIXI.Container {
 
     private leftCloudBelt!: CloudBelt;
     private rightCloudBelt!: CloudBelt;
-    private readonly OFFSET = 200;
+
+    private progress: number = 0; // 0 = Open (Invisible), 1 = Closed (Covering screen)
+    private standardWidth: number = Game.DESIGN_WIDTH;
+    private targetWidth: number = Game.DESIGN_WIDTH;
+    private readonly CLOSED_OFFSET = 200;
 
     constructor() {
         super();
@@ -33,6 +37,11 @@ export class ScreenTransition extends PIXI.Container {
         this.setupForeground();
         this.setupLoadingUI();
         this.resetTransition();
+    }
+
+    public setTargetWidth(width: number): void {
+        this.targetWidth = width;
+        this.applyProgress();
     }
 
     private setupLoadingUI(): void {
@@ -79,34 +88,58 @@ export class ScreenTransition extends PIXI.Container {
     // --- Transition Logic ---
 
     public async close(): Promise<void> {
-        await Promise.all([
-            gsap.to(this.leftGroup, { x: this.OFFSET, duration: 0.7, ease: "power2.in" }),
-            gsap.to(this.rightGroup, {
-                x: -this.OFFSET, duration: 0.7, ease: "power2.in", onComplete: () => {
-                    this.rightCloudBelt.alpha = 0;
-                    this.leftCloudBelt.alpha = 0;
-                }
-            })
-        ]);
+        // We animate the 'progress' property to 1
+        await gsap.to(this, {
+            progress: 1,
+            duration: 0.7,
+            ease: "power2.in",
+            onUpdate: () => this.applyProgress()
+        });
     }
 
     public forceClose() {
-        this.leftGroup.x = this.OFFSET;
-        this.rightGroup.x = -this.OFFSET;
+        this.progress = 1;
         this.rightCloudBelt.alpha = 0;
         this.leftCloudBelt.alpha = 0;
+        this.applyProgress();
     }
 
     public async open(): Promise<void> {
         this.rightCloudBelt.alpha = 1;
         this.leftCloudBelt.alpha = 1;
 
-        await Promise.all([
-            gsap.to(this.leftGroup, { x: -Game.DESIGN_WIDTH / 2, duration: 0.8, ease: "power2.out" }),
-            gsap.to(this.rightGroup, { x: Game.DESIGN_WIDTH / 2, duration: 0.8, ease: "power2.out" })
-        ]);
+        // We animate the 'progress' property back to 0
+        await gsap.to(this, {
+            progress: 0,
+            duration: 0.8,
+            ease: "power2.out",
+            onUpdate: () => this.applyProgress()
+        });
     }
+    private resetTransition(): void {
+        this.progress = 0;
+        this.applyProgress();
+    }
+    private applyProgress(): void {
+        const halfWidth = this.targetWidth / 2;
 
+        // Linear interpolation: StartPos + (EndPos - StartPos) * progress
+        const leftX = -halfWidth + (this.CLOSED_OFFSET + halfWidth) * this.progress;
+        const rightX = halfWidth + (-this.CLOSED_OFFSET - halfWidth) * this.progress;
+
+        this.leftGroup.x = leftX;
+        this.rightGroup.x = rightX;
+
+        // Visual feedback: Hide belts if fully open to save performance
+        const isFullyOpen = this.progress >= 0.98;
+        if (isFullyOpen) {
+            this.leftCloudBelt.alpha = 0;
+            this.rightCloudBelt.alpha = 0;
+        } else {
+            this.leftCloudBelt.alpha = 1;
+            this.rightCloudBelt.alpha = 1;
+        }
+    }
     private setupForeground(): void {
         const cloudTextures = [PIXI.Texture.from('cloud-1'), PIXI.Texture.from('cloud-2')];
         const gradientTexture = PIXI.Texture.from('cloud-overlay');
@@ -148,14 +181,16 @@ export class ScreenTransition extends PIXI.Container {
         this.rightGroup.addChild(rightWhite, this.rightCloudBelt, rightGradient);
     }
 
-    private resetTransition(): void {
-        this.leftGroup.x = -Game.DESIGN_WIDTH / 2;
-        this.rightGroup.x = Game.DESIGN_WIDTH / 2;
-    }
+
 
     public update(delta: number): void {
+        // Center the transition container itself
         this.position.set(Game.DESIGN_WIDTH / 2, Game.DESIGN_HEIGHT / 2);
+
         this.leftCloudBelt.update(delta);
         this.rightCloudBelt.update(delta);
+
+        // Ensure layout stays consistent if targetWidth changes mid-animation
+        this.applyProgress();
     }
 }

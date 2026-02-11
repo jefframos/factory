@@ -10,6 +10,7 @@ import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
 import * as PIXI from 'pixi.js';
 import MergeLoader from './game/loader/MergeLoader';
 import { DevGuiManager } from './game/utils/DevGuiManager';
+import HexAssets from './hexgame/HexAssets';
 import HexScene from './hexgame/HexScene';
 import LevelEditorScene from './hexgame/levelEditor/LevelEditorScene';
 import MapEditorScene from './hexgame/mapEditor/MapEditorScene';
@@ -125,14 +126,14 @@ export default class MyGame extends Game {
         //     ExtractTiledFile.parseTiledData(memeUi, 'memeUi')
         // }
 
-        // PIXI.BitmapFont.from(MergeAssets.MainFont.fontFamily as string, {
-        //     ...MergeAssets.MainFont,
-        //     strokeThickness: 6,
-        //     //resolution: 2,
-        //     letterSpacing: 10,
-        // }, {
-        //     chars: ['0123456789: ?!{}()@#$%^&*-+,./', ['a', 'z'], ['A', 'Z']]
-        // });
+        PIXI.BitmapFont.from(HexAssets.MainFont.fontFamily as string, {
+            ...HexAssets.MainFont,
+            strokeThickness: 6,
+            //resolution: 2,
+            letterSpacing: 10,
+        }, {
+            chars: ['0123456789: ?!{}()@#$%^&*-+,./', ['a', 'z'], ['A', 'Z']]
+        });
 
 
 

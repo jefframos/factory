@@ -147,7 +147,7 @@ export class HexGridView extends PIXI.Container {
             const hex = this.cellGraphics.get(`${pos.q},${pos.r}`);
             if (hex) {
                 hex.tint = getColorValueById(color);
-                hex.alpha = 0.6;
+                hex.alpha = 0.8;
             }
         });
     }

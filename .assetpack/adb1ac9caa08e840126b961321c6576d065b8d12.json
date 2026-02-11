@@ -6,8 +6,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770764838280,
-                "duration": 11.533700000000067,
+                "date": 1770804774764,
+                "duration": 3.469400000059977,
                 "success": true
             }
         },
@@ -728,8 +728,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770764838302,
-                "duration": 818.7279000000001,
+                "date": 1770804408605,
+                "duration": 401.72849999996834,
                 "success": true
             }
         },
@@ -831,7 +831,7 @@
                 "tps": true
             },
             "transformData": {},
-            "hash": "WnLBbg"
+            "hash": "321Ubw"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/tiles{tps}/white.png": {
             "isFolder": false,
@@ -908,8 +908,8 @@
             "inheritedMetaData": {},
             "transformData": {},
             "stats": {
-                "date": 1770764838942,
-                "duration": 4175.3775000000005,
+                "date": 1770804774765,
+                "duration": 3670.318800000008,
                 "success": true
             }
         },
@@ -1323,385 +1323,6 @@
             "transformData": {},
             "hash": "zhUlwQ"
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats": {
-            "isFolder": true,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {}
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-body.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "slFiGw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-ears.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "GhR7sw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-eye.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "iuZGFw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-eye0001.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "8ir12g"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-eye0002.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "mzp9"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-eye0003.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "dcRLxQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-eye0004.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "xz8clg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-eye0005.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "7L-g6A"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-eye0006.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "d62sAQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-eye0007.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "bdTqHA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-eye0008.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "aG4sIA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-eye0009.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "RRuF7w"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-eye0010.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "MftHNg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-eye0011.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "FEBpEg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-lines.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "lPUNLg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-mouth-0001.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "aZKbkA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-mouth-0002.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "cS5bvA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-mouth-0003.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "ORfSzg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-mouth-0004.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "HVo1qQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-mouth-0005.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "u3Iv2Q"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-mouth-0006.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "lpT-kA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-mouth-1.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "ZHjgaA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-mouth-old.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "l6JdNA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-mouth.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "U0ZHJw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-shape-1.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "pFce9A"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-shape-2.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "IXjppw"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-shape-3.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "xTf6zg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/cat-shape-4.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "scxS4g"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/ear-left.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "UeeS"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/ear-right.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "321xmA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/eye.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "FHnnqg"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/patterns0001.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "46Uk3Q"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/patterns0002.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "yEOTEA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/patterns0003.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "zc6gyA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/patterns0004.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "wM1R5Q"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/patterns0005.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "ry3qOA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats/patterns0006.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/cats",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "671_2w"
-        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/chars": {
             "isFolder": true,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}",
@@ -1839,16 +1460,6 @@
             },
             "transformData": {}
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/bedroom-icon.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "VzHMJg"
-        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/coin-pile.png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
@@ -1879,46 +1490,6 @@
             "transformData": {},
             "hash": "Z1GgcA"
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/critter-up.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "iS-E"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/critter.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "SucMag"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/egg.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "MqhoiQ"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/garden-icon.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "O8P94w"
-        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/goldenTap.png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
@@ -1928,16 +1499,6 @@
             },
             "transformData": {},
             "hash": "3erw4Q"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/goldMerge.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "dLMFow"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/Icon_Back.png": {
             "isFolder": false,
@@ -2329,16 +1890,6 @@
             "transformData": {},
             "hash": "Ru3m7Q"
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/ItemIcon_Money_Coin.Png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "GcZVjw"
-        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/ItemIcon_Shop.Png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
@@ -2489,16 +2040,6 @@
             "transformData": {},
             "hash": "yf1BCQ"
         },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/livin-room-icon.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "Vsi0mw"
-        },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/missionUp.png": {
             "isFolder": false,
             "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
@@ -2508,16 +2049,6 @@
             },
             "transformData": {},
             "hash": "ywmAwA"
-        },
-        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/modifier-faster.png": {
-            "isFolder": false,
-            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
-            "metaData": {},
-            "inheritedMetaData": {
-                "tps": true
-            },
-            "transformData": {},
-            "hash": "6ZUBGw"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/moreCoin.png": {
             "isFolder": false,
@@ -2678,6 +2209,16 @@
             },
             "transformData": {},
             "hash": "Ne-dag"
+        },
+        "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons/eye.png": {
+            "isFolder": false,
+            "parent": "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/icons",
+            "metaData": {},
+            "inheritedMetaData": {
+                "tps": true
+            },
+            "transformData": {},
+            "hash": "KkmhxA"
         },
         "C:/Users/jeff.ramos/Documents/projects/hyper/factory/games/hex/raw-assets/images/ui{tps}/Image_Effect_Light02.png": {
             "isFolder": false,
