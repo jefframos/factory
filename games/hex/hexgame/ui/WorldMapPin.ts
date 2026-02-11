@@ -58,6 +58,10 @@ export class WorldMapPin extends PIXI.Container {
         this.lastX = this.x;
     }
 
+    updateTexture(texture: PIXI.Texture) {
+        this.sprite.texture = texture;
+        this.sprite.scale.set(ViewUtils.elementScaler(this.sprite, 100))
+    }
     public setState(state: PinState): void {
         if (this.state === state) return; // Important: prevents resetting walkAnimTime every frame
         this.state = state;

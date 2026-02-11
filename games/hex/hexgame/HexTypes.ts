@@ -53,7 +53,7 @@ export interface ClusterData {
     rootPos: HexPos;
 }
 
-export enum Difficulty { EASY, MEDIUM, HARD }
+export enum Difficulty { VERY_EASY, EASY, MEDIUM, HARD, VERY_HARD }
 
 export type PieceColorEntry = {
     id: string;     // stable id for UI/debug (optional)

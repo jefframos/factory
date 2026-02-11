@@ -10,6 +10,8 @@ import SoundManager from "@core/audio/SoundManager";
 import PromiseUtils from "@core/utils/PromiseUtils";
 import ViewUtils from "@core/utils/ViewUtils";
 import { DevGuiManager } from "../game/utils/DevGuiManager";
+import { AvatarManager } from "./avatar/AvatarManager";
+import { AvatarRegistry } from "./avatar/AvatarRegistry";
 import { ClusterManager } from "./cluster/ClusterManager";
 import { GameplayProgressStorage } from "./GameplayProgressStorage";
 import HexAssets from "./HexAssets";
@@ -167,6 +169,14 @@ export default class HexScene extends GameScene {
             pin.position.set(x, y);
             pin.zIndex = y + 1000; // Ensure it stays on top of buttons/props
         });
+
+        AvatarManager.instance.onAvatarChanged.add((data: any) => {
+            const avatar = AvatarRegistry.getAvatar(data.id);
+            pin.updateTexture(PIXI.Texture.from(avatar.texture));
+        });
+
+        const avatar = AvatarRegistry.getAvatar(AvatarManager.instance.currentAvatar.id);
+        pin.updateTexture(PIXI.Texture.from(avatar.texture));
 
 
     }

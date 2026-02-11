@@ -7,74 +7,25 @@
       "gridType": "Shape",
       "matrix": [
         [
+          0,
           1,
-          1,
+          0,
           1
         ],
         [
+          1,
           1,
           1,
           1
         ],
         [
           0,
+          0,
           1,
-          1
+          0
         ]
       ],
-      "difficulty": 1,
-      "pieces": [
-        {
-          "color": "color_4",
-          "rootPos": {
-            "q": 0,
-            "r": 0
-          },
-          "coords": [
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 2,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 0
-            }
-          ]
-        },
-        {
-          "color": "color_6",
-          "rootPos": {
-            "q": 0,
-            "r": 1
-          },
-          "coords": [
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 2,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 0
-            },
-            {
-              "q": 1,
-              "r": 1
-            },
-            {
-              "q": 0,
-              "r": 1
-            }
-          ]
-        }
-      ],
+      "difficulty": 0,
       "features": [
         {
           "id": "PiecePlacement",
@@ -106,8 +57,8 @@
         ],
         [
           1,
-          0,
-          0,
+          1,
+          1,
           1,
           0
         ],
@@ -119,7 +70,7 @@
           0
         ]
       ],
-      "difficulty": 2,
+      "difficulty": 1,
       "features": [
         {
           "id": "PiecePlacement",
@@ -134,51 +85,43 @@
       "matrix": [
         [
           0,
+          0,
           1,
-          1
+          1,
+          0
         ],
         [
+          1,
+          1,
           1,
           1,
           1
         ],
         [
           0,
+          0,
           1,
-          1
+          1,
+          0
         ]
       ],
-      "difficulty": 2,
+      "difficulty": 1,
+      "features": [
+        {
+          "id": "PiecePlacement",
+          "enabled": true
+        }
+      ],
       "pieces": [
         {
-          "coords": [
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 0
-            }
-          ],
-          "color": "color_5",
+          "color": "color_2",
           "rootPos": {
-            "q": 1,
+            "q": 0,
             "r": 0
-          }
-        },
-        {
+          },
           "coords": [
             {
-              "q": 0,
-              "r": 0
-            },
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 0,
+              "q": 2,
               "r": 1
             },
             {
@@ -186,21 +129,43 @@
               "r": 0
             },
             {
+              "q": 0,
+              "r": 1
+            },
+            {
               "q": 1,
               "r": 1
+            },
+            {
+              "q": 1,
+              "r": 2
             }
-          ],
-          "color": "color_6",
-          "rootPos": {
-            "q": 0,
-            "r": 1
-          }
-        }
-      ],
-      "features": [
+          ]
+        },
         {
-          "id": "PiecePlacement",
-          "enabled": true
+          "color": "color_1",
+          "rootPos": {
+            "q": 2,
+            "r": 0
+          },
+          "coords": [
+            {
+              "q": 2,
+              "r": 1
+            },
+            {
+              "q": 1,
+              "r": 1
+            },
+            {
+              "q": 1,
+              "r": 0
+            },
+            {
+              "q": 0,
+              "r": 2
+            }
+          ]
         }
       ]
     },
@@ -234,76 +199,11 @@
           0
         ]
       ],
-      "difficulty": 2,
+      "difficulty": 1,
       "features": [
         {
           "id": "PiecePlacement",
           "enabled": true
-        }
-      ],
-      "pieces": [
-        {
-          "coords": [
-            {
-              "q": 1,
-              "r": 1
-            },
-            {
-              "q": 2,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 1
-            }
-          ],
-          "color": "color_3",
-          "rootPos": {
-            "q": 1,
-            "r": 0
-          }
-        },
-        {
-          "coords": [
-            {
-              "q": 0,
-              "r": 1
-            },
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 2
-            },
-            {
-              "q": 1,
-              "r": 2
-            }
-          ],
-          "color": "color_4",
-          "rootPos": {
-            "q": -1,
-            "r": 1
-          }
-        },
-        {
-          "coords": [
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 1
-            }
-          ],
-          "color": "color_5",
-          "rootPos": {
-            "q": 1,
-            "r": 2
-          }
         }
       ]
     },
@@ -707,7 +607,7 @@
           0
         ]
       ],
-      "difficulty": 1,
+      "difficulty": 2,
       "features": [
         {
           "id": "PiecePlacement",
@@ -900,84 +800,7 @@
           1
         ]
       ],
-      "difficulty": 1,
-      "pieces": [
-        {
-          "coords": [
-            {
-              "q": 0,
-              "r": 1
-            },
-            {
-              "q": 1,
-              "r": 1
-            },
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 2,
-              "r": 1
-            },
-            {
-              "q": 2,
-              "r": 0
-            }
-          ],
-          "color": "color_1",
-          "rootPos": {
-            "q": 0,
-            "r": 1
-          }
-        },
-        {
-          "coords": [
-            {
-              "q": 1,
-              "r": 1
-            },
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 1
-            },
-            {
-              "q": 0,
-              "r": 0
-            }
-          ],
-          "color": "color_2",
-          "rootPos": {
-            "q": 3,
-            "r": 2
-          }
-        },
-        {
-          "coords": [
-            {
-              "q": 2,
-              "r": 0
-            },
-            {
-              "q": 1,
-              "r": 0
-            },
-            {
-              "q": 0,
-              "r": 0
-            }
-          ],
-          "color": "color_3",
-          "rootPos": {
-            "q": 0,
-            "r": 0
-          }
-        }
-      ],
+      "difficulty": 3,
       "features": [
         {
           "id": "PiecePlacement",

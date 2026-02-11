@@ -1,4 +1,3 @@
-import HexAssets from "../HexAssets";
 
 export interface AvatarItem {
     id: number;
@@ -9,11 +8,11 @@ export interface AvatarItem {
 
 export class AvatarRegistry {
     public static readonly AVATARS: AvatarItem[] = [
-        { id: 0, name: "Default", texture: HexAssets.Textures.Icons.Critter, cost: 0 },
-        { id: 1, name: "Star", texture: HexAssets.Textures.Icons.Star, cost: 100 },
-        { id: 2, name: "Helper", texture: HexAssets.Textures.Icons.Hint, cost: 200 },
-        { id: 3, name: "Ghost", texture: HexAssets.Textures.Icons.Close, cost: 300 },
-        { id: 4, name: "Gear", texture: HexAssets.Textures.Icons.Settings, cost: 400 },
+        { id: 0, name: "avatar1", texture: "avatar1", cost: 0 },
+        { id: 1, name: "avatar2", texture: "avatar2", cost: 0 },
+        { id: 2, name: "avatar3", texture: "avatar3", cost: 200 },
+        { id: 3, name: "avatar4", texture: "avatar4", cost: 300 },
+        { id: 4, name: "avatar5", texture: "avatar5", cost: 400 },
     ];
 
     public static getAvatar(id: number): AvatarItem {

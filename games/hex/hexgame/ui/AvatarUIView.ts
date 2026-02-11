@@ -11,14 +11,14 @@ export class AvatarUIView extends PIXI.Container {
     private levelBadge: PIXI.Container;
     private levelText: PIXI.BitmapText;
 
-    private readonly SIZE = 85;
+    private readonly SIZE = 120;
 
     constructor() {
         super();
 
         // 1. Background Container
         this.containerBg = new PIXI.NineSlicePlane(
-            PIXI.Texture.from(HexAssets.Textures.UI.BarBg),
+            PIXI.Texture.from('ItemFrame03_Single_Blue'),
             15, 15, 15, 15
         );
         this.containerBg.width = this.SIZE;
@@ -26,7 +26,7 @@ export class AvatarUIView extends PIXI.Container {
         this.addChild(this.containerBg);
 
         // 2. Masked Avatar Logic
-        const maskSize = this.SIZE - 10;
+        const maskSize = this.SIZE - 5;
         this.avatarSprite = PIXI.Sprite.from(HexAssets.Textures.Icons.Critter);
         this.avatarSprite.anchor.set(0.5);
         this.avatarSprite.position.set(this.SIZE / 2, this.SIZE / 2);
@@ -34,7 +34,7 @@ export class AvatarUIView extends PIXI.Container {
 
         this.avatarMask = new PIXI.Graphics();
         this.avatarMask.beginFill(0xffffff);
-        this.avatarMask.drawCircle(this.SIZE / 2, this.SIZE / 2, maskSize / 2);
+        this.avatarMask.drawRoundedRect(0, 0, maskSize, maskSize, 5);
         this.avatarMask.endFill();
 
         this.avatarSprite.mask = this.avatarMask;
@@ -54,7 +54,7 @@ export class AvatarUIView extends PIXI.Container {
         // Position at the bottom of the avatar container
         this.levelBar.pivot.set(this.levelBar.width / 2, barHeight / 2);
         this.levelBar.position.set(this.SIZE / 2, this.SIZE);
-        this.addChild(this.levelBar);
+        //this.addChild(this.levelBar);
 
         // 4. Level Badge
         this.levelBadge = new PIXI.Container();
@@ -75,7 +75,7 @@ export class AvatarUIView extends PIXI.Container {
         // Position badge at the start of the bar
         this.levelBadge.position.set(this.levelBar.x - (this.levelBar.width / 2), this.levelBar.y);
 
-        this.addChild(this.levelBadge);
+        //this.addChild(this.levelBadge);
     }
 
     public updateAvatarTexture(texture: PIXI.Texture) {

@@ -8,8 +8,9 @@ import { AvatarRegistry } from "../avatar/AvatarRegistry";
 import HexAssets from "../HexAssets";
 import { ItemBeltButton } from "./ItemBeltButton";
 import { PanelManager } from "./panel/PanelManager";
+import { SettingsPanel } from "./panel/SettingsPanel";
 import { ShopPanel } from "./panel/ShopPanel";
-import { TopBar } from "./TopBar"; // Your new component
+import { TopBar } from "./TopBar";
 
 export enum HUDMode {
     WORLDMAP = "worldmap",
@@ -17,27 +18,29 @@ export enum HUDMode {
 }
 
 export class HexHUD extends PIXI.Container {
-    // Signals
     public readonly onClose: Signal = new Signal();
     public readonly onSettings: Signal = new Signal();
     public readonly onHint: Signal = new Signal();
     public readonly onErase: Signal = new Signal();
+    public readonly onSkip: Signal = new Signal(); // Added missing signal
     public readonly onToggleSound: Signal = new Signal();
 
-    // World Map Signals
     public readonly onCenterMap: Signal = new Signal();
     public readonly onRankings: Signal = new Signal();
     public readonly onFriends: Signal = new Signal();
     public readonly onShop: Signal = new Signal();
 
-    // UI Groups
     private readonly gameplayLayer: PIXI.Container = new PIXI.Container();
     private readonly worldLayer: PIXI.Container = new PIXI.Container();
 
-    // Components
-    private topBar!: TopBar; // The new shared UI
+    private topBar!: TopBar;
     private soundBtn!: SoundToggleButton;
-    private itemBelt!: PIXI.Container;
+
+    // New references for layout
+    private gameplayCloseBtn!: ItemBeltButton;
+    private gameplayToolsContainer!: PIXI.Container;
+    private gameplaySkipBtn!: ItemBeltButton;
+
     private worldSideBelt!: PIXI.Container;
     private centerMapBtn!: BaseButton;
 
@@ -46,7 +49,6 @@ export class HexHUD extends PIXI.Container {
     constructor(starSignal: Signal, gemSignal: Signal) {
         super();
 
-        // 1. Build the shared TopBar first so it's behind/above layers as needed
         this.topBar = new TopBar(
             starSignal,
             gemSignal,
@@ -54,7 +56,6 @@ export class HexHUD extends PIXI.Container {
         );
         this.addChild(this.topBar);
 
-        // 2. Add the mode-specific layers
         this.addChild(this.gameplayLayer);
         this.addChild(this.worldLayer);
 
@@ -62,7 +63,6 @@ export class HexHUD extends PIXI.Container {
         this.buildWorldUI();
 
         this.setMode(HUDMode.WORLDMAP);
-
         this.addChild(PanelManager.instance);
 
         AvatarManager.instance.onAvatarChanged.add((data: any) => {
@@ -74,66 +74,89 @@ export class HexHUD extends PIXI.Container {
             PanelManager.instance.openPanel("shop", ShopPanel);
         });
 
+        this.onSettings.add(() => {
+            PanelManager.instance.openPanel("settings", SettingsPanel);
+        });
+
         const current = AvatarManager.instance.currentAvatar;
         this.topBar.updateAvatar(PIXI.Texture.from(current.texture));
     }
 
     private buildGameplayUI(): void {
-        // Sound Button stays in Gameplay Layer
         this.soundBtn = new SoundToggleButton(
             HexAssets.Textures.Icons.SoundOn,
             HexAssets.Textures.Icons.SoundOff
         );
         this.gameplayLayer.addChild(this.soundBtn);
 
-        this.itemBelt = new PIXI.Container();
-        const beltConfig = [
-            { icon: HexAssets.Textures.Icons.Close, signal: this.onClose, isTool: false, blockAds: true },
-            { icon: HexAssets.Textures.Icons.Close, signal: this.onErase, isTool: false, blockAds: true },
-            { icon: HexAssets.Textures.Icons.Hint, signal: this.onHint, isTool: true, qty: 3 },
+        const BUTTON_SPACING = 110;
+
+        // 1. Close Button (Left)
+        this.gameplayCloseBtn = new ItemBeltButton({
+            icon: 'PictoIcon_Home_1',
+            amount: -1,
+            isLocked: false,
+            blockAds: true,
+            onUse: () => this.onClose.dispatch(),
+            onWatchAd: () => { }
+        });
+        this.gameplayLayer.addChild(this.gameplayCloseBtn);
+
+        // 2. Tools Group (Centered)
+        this.gameplayToolsContainer = new PIXI.Container();
+        const toolsConfig = [
+            { icon: 'PictoIcon_Refresh_3', signal: this.onErase, qty: -1, blockAds: true },
+            { icon: 'PictoIcon_Bulb', signal: this.onHint, qty: 3, blockAds: true },
         ];
 
-        beltConfig.forEach((cfg, i) => {
+        toolsConfig.forEach((cfg, i) => {
             const btn = new ItemBeltButton({
                 icon: cfg.icon,
-                amount: cfg.qty || 0,
+                amount: cfg.qty,
                 isLocked: false,
-                blockAds: cfg.blockAds || false,
+                blockAds: cfg.blockAds,
                 onUse: () => cfg.signal.dispatch(),
                 onWatchAd: () => { }
             });
-            if (!cfg.isTool) btn.refreshAmount(-1);
-            btn.x = i * 110;
-            this.itemBelt.addChild(btn);
+            const totalToolsWidth = (toolsConfig.length - 1) * BUTTON_SPACING;
+            btn.x = (i * BUTTON_SPACING) - (totalToolsWidth / 2) - 90 / 2;
+            this.gameplayToolsContainer.addChild(btn);
         });
-        this.gameplayLayer.addChild(this.itemBelt);
+        this.gameplayLayer.addChild(this.gameplayToolsContainer);
+
+        // 3. Skip Button (Right)
+        this.gameplaySkipBtn = new ItemBeltButton({
+            icon: 'Icon_Skip',
+            amount: -1,
+            isLocked: false,
+            blockAds: false,
+            onUse: () => this.onSkip.dispatch(),
+            onWatchAd: () => { }
+        });
+        //this.gameplayLayer.addChild(this.gameplaySkipBtn);
     }
 
     private buildWorldUI(): void {
-        // StarBox and Settings are now inside TopBar, so we don't build them here.
-
         this.worldSideBelt = new PIXI.Container();
         const sideConfig = [
-            { icon: HexAssets.Textures.Icons.Shop, signal: this.onRankings },
-            { icon: HexAssets.Textures.Icons.Shop, signal: this.onFriends },
+            { icon: 'ItemIcon_Medalstand', signal: this.onRankings },
+            { icon: 'Icon_MapPoint', signal: this.onFriends },
+            { icon: HexAssets.Textures.Icons.CollectionIcon, signal: this.onFriends },
             { icon: HexAssets.Textures.Icons.Shop, signal: this.onShop },
         ];
 
         sideConfig.forEach((cfg, i) => {
             const btn = new BaseButton({
-                standard: { width: 80, height: 80, iconTexture: PIXI.Texture.from(cfg.icon) },
+                standard: { width: 100, height: 100, iconSize: { height: 100, width: 100 }, iconTexture: PIXI.Texture.from(cfg.icon) },
                 click: { callback: () => cfg.signal.dispatch() }
             });
-            btn.y = i * 90;
+            btn.y = i * 120;
             this.worldSideBelt.addChild(btn);
         });
         this.worldLayer.addChild(this.worldSideBelt);
 
         this.centerMapBtn = new BaseButton({
-            standard: {
-                width: 70, height: 70,
-                iconTexture: PIXI.Texture.from(HexAssets.Textures.Icons.Shop)
-            },
+            standard: { width: 70, height: 70, iconTexture: PIXI.Texture.from('eye') },
             click: { callback: () => this.onCenterMap.dispatch() }
         });
         this.worldLayer.addChild(this.centerMapBtn);
@@ -144,9 +167,6 @@ export class HexHUD extends PIXI.Container {
         this.gameplayLayer.visible = (mode === HUDMode.GAMEPLAY);
         this.worldLayer.visible = (mode === HUDMode.WORLDMAP);
         this.topBar.visible = (mode === HUDMode.WORLDMAP);
-
-        // The TopBar logic can change based on mode if you want 
-        // (e.g., hide gems in gameplay), but usually it stays visible.
         this.layout();
     }
 
@@ -155,21 +175,34 @@ export class HexHUD extends PIXI.Container {
         const topY = Game.overlayScreenData.topLeft.y;
         const bottomY = Game.overlayScreenData.bottomLeft.y;
         const rightX = Game.overlayScreenData.topRight.x;
+        const leftX = Game.overlayScreenData.topLeft.x;
+        const centerX = Game.DESIGN_WIDTH / 2;
 
-        // 1. Shared Layout: TopBar
+        // TopBar Layout
         this.topBar.y = topY;
         this.topBar.layout(Game.overlayScreenData.width);
-        this.topBar.pivot.x = Game.overlayScreenData.width / 2
-        this.topBar.x = Game.DESIGN_WIDTH / 2
+        this.topBar.pivot.x = Game.overlayScreenData.width / 2;
+        this.topBar.x = centerX;
 
-        // 2. Mode Specific Layout
         if (this.currentMode === HUDMode.GAMEPLAY) {
-            // Sound Button: Positioned below the TopBar or in a custom spot
-            // Adjusting it to sit just below the TopBar background (90px)
-            this.soundBtn.position.set(Game.DESIGN_WIDTH - this.soundBtn.width / 2 - padding, topY + this.soundBtn.width / 2);
+            // Sound Button
+            this.soundBtn.position.set(rightX - this.soundBtn.width / 2 - padding, topY + this.soundBtn.height / 2 + padding);
 
-            this.itemBelt.x = (Game.DESIGN_WIDTH - this.itemBelt.width) / 2;
-            this.itemBelt.y = bottomY - 110;
+            // Gameplay Elements Y Position (Bottom alignment)
+            const beltY = bottomY - 100; // 60 is roughly half the button height
+
+            // 1. Close Button (Left)
+            this.gameplayCloseBtn.x = 40;
+            this.gameplayCloseBtn.y = beltY;
+
+            // 2. Tools (Center)
+            this.gameplayToolsContainer.x = centerX;
+            this.gameplayToolsContainer.y = beltY;
+            this.gameplayToolsContainer.pivot.x = 0;
+            // 3. Skip Button (Right)
+            this.gameplaySkipBtn.x = Game.DESIGN_WIDTH - 60 - 80;
+            this.gameplaySkipBtn.y = beltY;
+
         } else {
             this.worldSideBelt.x = rightX - this.worldSideBelt.width - padding;
             this.worldSideBelt.y = (Game.DESIGN_HEIGHT - this.worldSideBelt.height) / 2;
@@ -179,7 +212,6 @@ export class HexHUD extends PIXI.Container {
         }
     }
 
-    // Helper to update player stats from outside
     public updatePlayer(level: number, progress: number): void {
         this.topBar.updateLevel(level, progress);
     }

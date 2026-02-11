@@ -140,8 +140,9 @@ export class WorldMapView extends PIXI.Container {
 
     }
     public startDragging(): void {
+        if (this.isAnimatingPath) return;
+
         this.isBeingDragged = true;
-        this.isAnimatingPath = false; // Stop auto-walk if user intervenes
     }
 
     public stopDragging(): void {
@@ -345,7 +346,10 @@ export class WorldMapView extends PIXI.Container {
     }
 
     public applyDrag(dx: number, dy: number): void {
-        if (this.isAnimatingPath) return; // Optional: disable drag while walking path
+        if (this.isAnimatingPath) {
+            this.isBeingDragged = false;
+            return;
+        }
 
         // We add the delta to the current target
         this.targetPosition.x += dx;

@@ -375,6 +375,7 @@ export default class LevelEditorScene extends GameScene {
         if (!lvl || !world) return;
 
         if (lvl) {
+            this.ui?.setDifficultyDropdown(lvl.difficulty);
             // Ensure PiecePlacement exists
             if (!lvl.features) lvl.features = [{ id: LevelFeature.PIECE_PLACEMENT, enabled: true }];
             this.ui?.refreshFeatureUI(lvl.features);

@@ -371,6 +371,12 @@
       "x": -902.5949556486994,
       "y": -986.6003464953709,
       "order": 61
+    },
+    {
+      "id": "point_1770849008835_pd27ex570",
+      "x": -1011.750937109761,
+      "y": -910.6601184652604,
+      "order": 62
     }
   ],
   "visuals": {
@@ -422,6 +428,20 @@
             "alpha": 0.69,
             "flipX": false,
             "flipY": true
+          },
+          {
+            "type": "sprite",
+            "id": "img_1770848971726",
+            "url": "/../raw-assets/non-preload/maps/rocks-8.png",
+            "x": -552.1764690246548,
+            "y": -555.8415953113181,
+            "scaleX": 1,
+            "scaleY": 1,
+            "anchorX": 0.5,
+            "anchorY": 1,
+            "rotation": 0,
+            "alpha": 1,
+            "tint": 16777215
           }
         ]
       },

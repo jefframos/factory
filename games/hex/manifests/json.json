@@ -69,6 +69,14 @@
         },
         {
           "alias": [
+            "game/05_world_1770850269742.json"
+          ],
+          "src": [
+            "game/05_world_1770850269742.json"
+          ]
+        },
+        {
+          "alias": [
             "tiled.json"
           ],
           "src": [

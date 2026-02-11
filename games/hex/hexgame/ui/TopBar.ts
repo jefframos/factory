@@ -18,8 +18,8 @@ export class TopBar extends PIXI.Container {
 
         // 1. Main Background
         this.background = new PIXI.NineSlicePlane(
-            PIXI.Texture.from(HexAssets.Textures.UI.BarBg),
-            20, 20, 20, 20
+            PIXI.Texture.from('ItemFrame01_Single_Navy'),
+            30, 30, 30, 30
         );
         this.addChild(this.background);
 

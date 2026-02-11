@@ -212,10 +212,23 @@ export class LevelEditorDomUI {
             this.onSelectedPieceColorChanged?.(this.pieceColorSelect.value);
         };
         this.pieceModeToggle.onchange = () => this.onTogglePieceMode?.(this.pieceModeToggle.checked);
-        this.difficultySelect.onchange = () => this.onDifficultyChanged?.(Difficulty[this.difficultySelect.value as keyof typeof Difficulty]);
-
+        this.difficultySelect.onchange = () => {
+            const val = this.difficultySelect.value;
+            // Safely cast or find the enum value
+            const difficultyValue = Difficulty[val as keyof typeof Difficulty] ?? val;
+            this.onDifficultyChanged?.(difficultyValue as any);
+        };
     }
+    public setDifficultyDropdown(difficulty: string | number): void {
+        // If it's a number (from enum), convert to string key, otherwise use as is
+        const val = typeof difficulty === 'number' ? Difficulty[difficulty] : difficulty;
 
+        if (val) {
+            this.difficultySelect.value = val.toUpperCase();
+            // Optional: Update dropdown color to match the difficulty
+            this.difficultySelect.style.color = this.getDifficultyColor(val);
+        }
+    }
     public refreshAccordion(worlds: WorldData[], activeWorldId: string, activeLevelIdx: number) {
         this.worldContainer.innerHTML = "";
 
@@ -297,16 +310,22 @@ export class LevelEditorDomUI {
                 const validation = LevelMatrixCodec.validateLevel(lvl);
                 const isSelected = isWorldActive && idx === activeLevelIdx;
 
+                // --- NEW DIFFICULTY LABEL LOGIC ---
+                const diffKey = lvl.difficulty !== undefined ? (typeof lvl.difficulty === 'string' ? lvl.difficulty : Difficulty[lvl.difficulty]) : "EASY";
+                const diffColor = this.getDifficultyColor(diffKey);
+                const diffName = diffKey.replace("_", " ").toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+                const difficultyBadge = `<span style="color:${diffColor}; font-weight:bold; font-size:10px; margin-left:5px;">[${diffName}]</span>`;
+
                 const textColor = validation.ok ? "white" : "#ff5252";
                 const itemBg = isSelected ? 'rgba(255,255,255,0.1)' : 'transparent';
 
-                //item.style.cssText = `flex:1; padding:6px; font-size:13px; cursor:pointer; border-radius:4px; background:${isSelected ? 'rgba(76,175,80,0.3)' : 'transparent'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
                 item.style.cssText = `flex:1; padding:6px; font-size:13px; cursor:pointer; border-radius:4px; background:${itemBg}; color:${textColor}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`;
 
                 const featureCount = (lvl.features?.filter(f => f.enabled && f.id !== LevelFeature.PIECE_PLACEMENT).length || 0);
                 const featureBadge = featureCount > 0 ? ` <span style="color:#64B5F6;">(${featureCount})</span>` : "";
-                item.innerHTML = `[${globalOrderLabel}] - ${validation.ok ? "" : "⚠️ "}${lvl.name || `Level ${idx + 1}`}${featureBadge}`;
 
+                // Apply the difficulty badge to the innerHTML
+                item.innerHTML = `[${globalOrderLabel}] ${lvl.name || `Level ${idx + 1}`}${difficultyBadge}${featureBadge}${validation.ok ? "" : " ⚠️"}`;
                 // Double click to rename
                 item.ondblclick = (e) => {
                     e.stopPropagation();
@@ -463,11 +482,25 @@ export class LevelEditorDomUI {
         this.serverStatusLabel.innerText = text;
         this.serverStatusLabel.style.color = ok ? "#a0ffb4" : "#ffb4b4";
     }
-
+    private getDifficultyColor(difficulty: string | Difficulty): string {
+        const diff = typeof difficulty === 'string' ? difficulty : Difficulty[difficulty];
+        switch (diff?.toUpperCase()) {
+            case "VERY_EASY": return "#90EE90"; // Light Green
+            case "EASY": return "#4CAF50"; // Green
+            case "MEDIUM": return "#FFD700"; // Gold/Yellow
+            case "HARD": return "#FF8C00"; // Dark Orange
+            case "VERY_HARD": return "#F44336"; // Red
+            default: return "#FFFFFF"; // Default White
+        }
+    }
     private populateDifficulty(sel: HTMLSelectElement) {
-        ["EASY", "MEDIUM", "HARD"].forEach(k => {
+        const difficulties = ["VERY_EASY", "EASY", "MEDIUM", "HARD", "VERY_HARD"];
+        difficulties.forEach(k => {
             const opt = document.createElement("option");
-            opt.value = opt.text = k;
+            opt.value = k;
+            // Format text: "VERY_EASY" -> "Very Easy"
+            opt.text = k.replace("_", " ").toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+            opt.style.color = "black"; // Ensure text is visible in dropdown
             sel.appendChild(opt);
         });
     }
