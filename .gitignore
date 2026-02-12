@@ -12,6 +12,9 @@ dist-ssr
 *.local
 
 .assetpack/*/*
+.assetpack/
+public/assets/
+dist/
 
 # Editor directories and files
 .vscode/*
