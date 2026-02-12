@@ -110,11 +110,9 @@ export class LevelSelectMediator {
     }
 
     public confirmPurchase(levelId: string): void {
-        console.log('purchase', levelId)
         if (this.isLevelUnlocked(levelId)) {
             return;
         }
-        console.log('purchase2', levelId)
 
         // 1. REFRESH: Pull the progress from the store again.
         // This ensures we have the deducted currency from the InGameEconomy. purchase call.

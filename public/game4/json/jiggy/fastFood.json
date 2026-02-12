@@ -1,0 +1,53 @@
+{
+    "section": {
+        "id": "fastFood",
+        "name": "Fast Food",
+        "coverLevelId": "fastFood_01",
+        "type": 1,
+        "levels": [
+            {
+                "id": "fastFood_01",
+                "name": "Puzzle 1",
+                "thumb": "fast_food_1",
+                "isSpecial": false,
+                "cost": 0,
+                "image": "fast-food/fast_food_1.png"
+            },
+            {
+                "id": "fastFood_02",
+                "name": "Puzzle 2",
+                "thumb": "fast_food_2",
+                "cost": 40,
+                "image": "fast-food/fast_food_2.png"
+            },
+            {
+                "id": "fastFood_03",
+                "name": "Puzzle 3",
+                "thumb": "fast_food_3",
+                "cost": 60,
+                "image": "fast-food/fast_food_3.png"
+            },
+            {
+                "id": "fastFood_04",
+                "name": "Puzzle 4",
+                "thumb": "fast_food_4",
+                "cost": 80,
+                "image": "fast-food/fast_food_4.png"
+            },
+            {
+                "id": "fastFood_05",
+                "name": "Puzzle 5",
+                "thumb": "fast_food_5",
+                "cost": 100,
+                "image": "fast-food/fast_food_5.png"
+            },
+            {
+                "id": "fastFood_06",
+                "name": "Puzzle 6",
+                "thumb": "fast_food_6",
+                "cost": 2000,
+                "image": "fast-food/fast_food_6.png"
+            }
+        ]
+    }
+}

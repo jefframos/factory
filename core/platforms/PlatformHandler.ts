@@ -1,7 +1,7 @@
 import { IPlatformConnection } from "./IPlatformConnection";
 
-export let ENABLE_VIDEO_ADS = false;
 export default class PlatformHandler {
+    public static ENABLE_VIDEO_ADS = true;
     public isGameplayActive = false;
 
     private static _instance: PlatformHandler;

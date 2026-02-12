@@ -1,8 +1,8 @@
 import SoundLoadManager from '@core/audio/SoundLoaderManager';
 import { Game } from '@core/Game';
 import { ManifestHelper } from '@core/loader/ManifestHelper';
+import GameDistributionPlatform from '@core/platforms/GameDistributionPlatform';
 import PlatformHandler from '@core/platforms/PlatformHandler';
-import PokiPlatform from '@core/platforms/PokiPlatform';
 import { PopupManager } from '@core/popup/PopupManager';
 import { SceneManager } from '@core/scene/SceneManager';
 import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
@@ -32,7 +32,8 @@ export default class MyGame extends Game {
 
         this.folderPath = 'game4';
 
-        PlatformHandler.instance.initialize(new PokiPlatform())
+        GameDistributionPlatform.GAME_ID = 'c09f291b142940e8811cb235f114628c'
+        PlatformHandler.instance.initialize(new GameDistributionPlatform())
 
         PlatformHandler.instance.platform.startLoad();
         this.stageContainer.addChild(this.gameContainer);

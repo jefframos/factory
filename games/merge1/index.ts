@@ -1,7 +1,7 @@
 import SoundLoadManager from '@core/audio/SoundLoaderManager';
 import { Game } from '@core/Game';
 import { ManifestHelper } from '@core/loader/ManifestHelper';
-import GamePixPlatform from '@core/platforms/GamePixPlatform';
+import GameDistributionPlatform from '@core/platforms/GameDistributionPlatform';
 import PlatformHandler from '@core/platforms/PlatformHandler';
 import { PopupManager } from '@core/popup/PopupManager';
 import { SceneManager } from '@core/scene/SceneManager';
@@ -34,7 +34,9 @@ export default class MyGame extends Game {
 
         this.folderPath = 'merge1';
 
-        PlatformHandler.instance.initialize(new GamePixPlatform()).then(() => {
+        PlatformHandler.ENABLE_VIDEO_ADS = true;
+        GameDistributionPlatform.GAME_ID = 'f7cdc30e8fd14e50a3170c485f207936';
+        PlatformHandler.instance.initialize(new GameDistributionPlatform()).then(() => {
             PlatformHandler.instance.platform.startLoad();
             this.stageContainer.addChild(this.gameContainer);
             this.sceneManager = new SceneManager(this.gameContainer);

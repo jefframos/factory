@@ -26,6 +26,7 @@ import { ProgressCookieStore } from "./data/ProgressCookieStore";
 import { PuzzleDataBuilder, PuzzleMasterJson } from "./data/PuzzleCatalogParser";
 import StaticData from "./data/StaticData";
 import { LevelSelectMediator, PlayLevelRequest, PurchaseLevelRequest } from "./progress/LevelSelectMediator";
+
 import { CurrencyHud } from "./ui/CurrencyHud";
 import { LevelSelectView } from "./ui/LevelSelectView";
 import { createDefaultLevelSelectTheme } from "./ui/LevelSelectViewElements";
@@ -120,14 +121,14 @@ export default class GameplayJigsawScene extends GameScene {
 
         const built = PuzzleDataBuilder.buildSections(master, this.game.folderPath + '/images/non-preload/puzzles');
 
-        console.log(built)
+        // console.log(built)
         const sections = built.sections;
 
         const sectionMeta = built.meta;
 
         StaticData.setData(built.sections);
 
-        // console.log(sections, sectionMeta)
+        // // console.log(sections, sectionMeta)
 
         //const store = new ProgressCookieStore("jg_progress_v1", 1);
         DevGuiManager.instance.addButton('erase', () => {
@@ -167,7 +168,7 @@ export default class GameplayJigsawScene extends GameScene {
         this.levelSelectMenu.headerView.root.addChild(this.currencyHud);
         this.currencyHud.y = theme.headerHeight / 2 - this.currencyHud.height / 2 + Assets.Offsets.UI.Header.y;
 
-        // console.log(this.levelSelectMenu.headerView)
+        // // console.log(this.levelSelectMenu.headerView)
 
 
         this.mediator.onPurchaseLevel.add((req: PurchaseLevelRequest) => {
@@ -182,7 +183,7 @@ export default class GameplayJigsawScene extends GameScene {
         this.mediator.onPlayLevel.add((req) => {
             // req.levelId, req.difficulty, req.level.payload etc.
             // Start your jigsaw game scene with that data.
-            // console.log("PLAY", req);
+            // // console.log("PLAY", req);
             Assets.tryToPlaySound(Assets.Sounds.UI.StartLevel)
 
             this.startMatch(req);
@@ -241,7 +242,7 @@ export default class GameplayJigsawScene extends GameScene {
         sections.forEach(section => {
             section.levels.forEach(level => {
                 if (level.unlockCost === 0) {
-                    console.log(level)
+                    // console.log(level)
 
                     this.mediator.confirmPurchase(level.id);
                 }
@@ -390,13 +391,13 @@ export default class GameplayJigsawScene extends GameScene {
         let rewardAmount = 0;
 
 
-        console.log(this.currentLevel, this.currentLevel?.levelId, this.store)
+        // console.log(this.currentLevel, this.currentLevel?.levelId, this.store)
 
 
 
         if (this.currentLevel) {
 
-            //console.log(this.currentLevel.level)
+            // //console.log(this.currentLevel.level)
             // 1. Determine the prize amount based on difficulty
             const prizes = !this.currentLevel.level.isSpecial ? this.currentLevel.level.prize : this.currentLevel.level.prizesSpecial;
             const diffMapping: Record<string, number> = { "easy": 0, "medium": 1, "hard": 2 };
@@ -413,7 +414,7 @@ export default class GameplayJigsawScene extends GameScene {
             // 3. Award the currency via the Economy Singleton
             if (rewardAmount > 0) {
                 InGameEconomy.instance.addCurrency(rewardAmount, false);
-                //console.log(`Awarded ${rewardAmount} coins for ${this.currentLevel.difficulty} difficulty.`);
+                // //console.log(`Awarded ${rewardAmount} coins for ${this.currentLevel.difficulty} difficulty.`);
             }
         }
 
@@ -423,7 +424,7 @@ export default class GameplayJigsawScene extends GameScene {
         });
 
         if (nextToPlay) {
-            console.log("Redirecting player to:", nextToPlay);
+            // console.log("Redirecting player to:", nextToPlay);
         }
 
         await this.jigsawBoardView.snapCompletedPuzzleToSolvedPose({ duration: 0.8, ease: "power4.out" });

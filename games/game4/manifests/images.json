@@ -8,7 +8,7 @@
             "backgrounds"
           ],
           "src": [
-            "backgrounds.json"
+            "backgrounds.webp.json"
           ]
         },
         {
@@ -16,7 +16,7 @@
             "thumbs"
           ],
           "src": [
-            "thumbs.json"
+            "thumbs.webp.json"
           ]
         },
         {
@@ -24,7 +24,7 @@
             "ui"
           ],
           "src": [
-            "ui.json"
+            "ui.webp.json"
           ]
         }
       ]

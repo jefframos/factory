@@ -1,6 +1,5 @@
 import { BasePopup, PopupData } from '@core/popup/BasePopup';
 import BaseButton from '@core/ui/BaseButton';
-import { CurrencyHud } from '@core/ui/CurrencyHud';
 import { TimerConversionUtils } from '@core/utils/TimeConversionUtils';
 import { LevelDefinition } from 'games/game4/types';
 import { gsap } from 'gsap';
@@ -9,6 +8,7 @@ import { ConfettiEffect } from '../../../../core/ui/ConfettiEffect';
 import MatchManager from '../2048/scene/MatchManager';
 import Assets from '../jigsaw/Assets';
 import GameplayJigsawScene from '../jigsaw/GameplayJigsawScene';
+import { CurrencyHud } from '../jigsaw/ui/CurrencyHud';
 import { NextLevelCard } from '../jigsaw/ui/NextLevelCard';
 import { CoinEffect } from '../jigsaw/vfx/CoinEffect';
 
