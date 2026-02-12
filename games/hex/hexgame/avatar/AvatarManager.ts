@@ -1,103 +1,131 @@
 import { Signal } from "signals";
-import { GameplayProgressStorage } from "../GameplayProgressStorage";
+import { CurrencyType, EconomyStorage } from "../data/EconomyStorage";
+import { GameplayProgressStorage } from "../data/GameplayProgressStorage";
 import { AvatarItem, AvatarRegistry } from "./AvatarRegistry";
 
 export class AvatarManager {
     private static _instance: AvatarManager;
 
     public readonly onAvatarChanged = new Signal();
-    public readonly onAvatarUnlocked = new Signal(); // Notify UI when a new skin is unlocked
+    public readonly onAvatarUnlocked = new Signal();
 
     private _currentAvatarId: number = 0;
+    private _isInitialized: boolean = false;
 
-    private constructor() {
-        const savedData = GameplayProgressStorage.getData();
-        this._currentAvatarId = savedData.currentAvatarId !== undefined ? savedData.currentAvatarId : 0;
-
-        // Auto-unlock free avatars on startup
-        this.checkFreeAvatars();
-    }
+    private constructor() { }
 
     public static get instance(): AvatarManager {
         return this._instance || (this._instance = new AvatarManager());
     }
 
     /**
-     * Loops through registry and unlocks anything with 0 cost 
-     * that isn't already in the unlocked list.
+     * Call this during your game's boot sequence.
      */
-    private checkFreeAvatars(): void {
-        const freeAvatars = AvatarRegistry.AVATARS.filter(a => a.cost === 0);
-        freeAvatars.forEach(a => {
-            if (!this.isUnlocked(a.id)) {
-                this.unlockAvatar(a.id, 0); // Cost is 0
-            }
-        });
+    public async initialize(): Promise<void> {
+        if (this._isInitialized) return;
+
+        const savedData = await GameplayProgressStorage.getData();
+        this._currentAvatarId = savedData.currentAvatarId !== undefined ? savedData.currentAvatarId : 0;
+
+        // Auto-unlock free avatars on startup
+        await this.checkFreeAvatars();
+
+        this._isInitialized = true;
     }
 
-    public get currentAvatar(): AvatarItem {
-        return AvatarRegistry.getAvatar(this._currentAvatarId);
+    private async checkFreeAvatars(): Promise<void> {
+        const freeAvatars = AvatarRegistry.AVATARS.filter(a => a.cost === 0);
+
+        for (const a of freeAvatars) {
+            const unlocked = await this.isUnlocked(a.id);
+            if (!unlocked) {
+                // Free avatars don't need economy checks, just unlock them
+                await this.unlockAvatar(a.id);
+            }
+        }
     }
 
     /**
-     * Checks if ID exists in the storage array
+     * Checks if the user has enough currency to buy a specific avatar.
      */
-    public isUnlocked(id: number): boolean {
-        const data = GameplayProgressStorage.getData();
-        if (!data.unlockedAvatars) return id === 0; // Default fallback
+    public async canAfford(id: number, currency: CurrencyType = CurrencyType.COINS): Promise<boolean> {
+        const avatar = AvatarRegistry.getAvatar(id);
+        if (!avatar) return false;
+
+        const balance = await EconomyStorage.getBalance(currency);
+        return balance >= avatar.cost;
+    }
+
+    /**
+     * Checks if ID exists in the unlocked list in GameplayProgressStorage.
+     */
+    public async isUnlocked(id: number): Promise<boolean> {
+        const data = await GameplayProgressStorage.getData();
+        if (!data.unlockedAvatars) return id === 0;
         return data.unlockedAvatars.includes(id);
     }
 
     /**
-     * Unlocks an avatar, deducts cost, and saves to storage
+     * The main purchase function. 
+     * Uses EconomyStorage to handle the transaction.
      */
-    public unlockAvatar(id: number, cost: number): boolean {
-        const data = GameplayProgressStorage.getData();
+    public async buyAvatar(id: number, currency: CurrencyType = CurrencyType.COINS): Promise<boolean> {
+        const avatar = AvatarRegistry.getAvatar(id);
+        if (!avatar) return false;
 
-        // Initialize the array if it doesn't exist
-        if (!data.unlockedAvatars) {
-            data.unlockedAvatars = [0]; // Ensure default is there
+        const alreadyUnlocked = await this.isUnlocked(id);
+        if (alreadyUnlocked) return true;
+
+        // Use the EconomyStorage to try and purchase the permanent ID
+        // We use a prefix like "avatar_" to keep economy IDs unique
+        const purchaseSuccess = await EconomyStorage.tryPurchaseItem(
+            `avatar_${id}`,
+            avatar.cost,
+            currency
+        );
+
+        if (purchaseSuccess) {
+            return await this.unlockAvatar(id);
         }
 
-        // Prevent double unlocking
+        console.warn(`AvatarManager: Purchase failed for ID ${id}. Insufficient ${currency}.`);
+        return false;
+    }
+
+    /**
+     * Internally adds the avatar to the unlocked list and persists state.
+     */
+    public async unlockAvatar(id: number): Promise<boolean> {
+        const data = await GameplayProgressStorage.getData();
+
+        if (!data.unlockedAvatars) {
+            data.unlockedAvatars = [0];
+        }
+
         if (data.unlockedAvatars.includes(id)) return true;
 
-        // Logic for currency deduction (assuming data.currency exists)
-        if (data.currency !== undefined && data.currency < cost) {
-            console.warn("Not enough currency to unlock avatar");
-            return false;
-        }
-
-        // 1. Deduct cost and add to list
-        if (data.currency !== undefined) data.currency -= cost;
         data.unlockedAvatars.push(id);
+        await GameplayProgressStorage.updateData({ unlockedAvatars: data.unlockedAvatars });
 
-        // 2. Persist to LocalStorage
-        this.saveToStorage(data);
-
-        // 3. Notify listeners
         this.onAvatarUnlocked.dispatch(id);
-
         return true;
     }
 
-    public setAvatar(id: number): void {
-        if (!this.isUnlocked(id)) {
-            console.error("Cannot set locked avatar!");
+    public async setAvatar(id: number): Promise<void> {
+        const unlocked = await this.isUnlocked(id);
+        if (!unlocked) {
+            console.error("AvatarManager: Cannot set locked avatar!");
             return;
         }
 
         this._currentAvatarId = id;
-        const data = GameplayProgressStorage.getData();
-        data.currentAvatarId = id;
-
-        this.saveToStorage(data);
+        await GameplayProgressStorage.updateData({ currentAvatarId: id });
 
         const avatarData = AvatarRegistry.getAvatar(id);
         this.onAvatarChanged.dispatch(avatarData);
     }
 
-    private saveToStorage(data: any): void {
-        localStorage.setItem("HEX_GAME_PROGRESS", JSON.stringify(data));
+    public get currentAvatar(): AvatarItem {
+        return AvatarRegistry.getAvatar(this._currentAvatarId);
     }
 }

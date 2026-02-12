@@ -1,7 +1,7 @@
 import SoundLoadManager from '@core/audio/SoundLoaderManager';
 import { Game } from '@core/Game';
 import { ManifestHelper } from '@core/loader/ManifestHelper';
-import CrazyGamesPlatform from '@core/platforms/CrazyGamesPlatform';
+import GamePixPlatform from '@core/platforms/GamePixPlatform';
 import PlatformHandler from '@core/platforms/PlatformHandler';
 import { PopupManager } from '@core/popup/PopupManager';
 import { SceneManager } from '@core/scene/SceneManager';
@@ -34,14 +34,15 @@ export default class MyGame extends Game {
 
         this.folderPath = 'merge1';
 
-        PlatformHandler.instance.initialize(new CrazyGamesPlatform())
+        PlatformHandler.instance.initialize(new GamePixPlatform()).then(() => {
+            PlatformHandler.instance.platform.startLoad();
+            this.stageContainer.addChild(this.gameContainer);
+            this.sceneManager = new SceneManager(this.gameContainer);
+            this.loaderScene = this.sceneManager.register('loader', MergeLoader);
+            this.sceneManager.changeScene('loader');
+            this.loadAssets();
+        })
 
-        PlatformHandler.instance.platform.startLoad();
-        this.stageContainer.addChild(this.gameContainer);
-        this.sceneManager = new SceneManager(this.gameContainer);
-        this.loaderScene = this.sceneManager.register('loader', MergeLoader);
-        this.sceneManager.changeScene('loader');
-        this.loadAssets();
     }
 
 
@@ -49,6 +50,7 @@ export default class MyGame extends Game {
     protected async loadAssets() {
         // initial sizing
         await PIXI.Assets.init();
+        //await GameStorage.instance.getFullState();
 
         const bundles = []
         const images = ManifestHelper.patchPaths(imageManifest, `${this.folderPath}/images/`);

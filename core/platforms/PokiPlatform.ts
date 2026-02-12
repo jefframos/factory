@@ -6,6 +6,20 @@ export default class PokiPlatform implements IPlatformConnection {
 
     constructor() {
     }
+    public async setItem(key: string, value: string): Promise<void> {
+        localStorage.setItem(key, value);
+        return Promise.resolve();
+    }
+
+    public async getItem(key: string): Promise<string | null> {
+        const value = localStorage.getItem(key);
+        return Promise.resolve(value);
+    }
+    public async removeItem(key: string): Promise<void> {
+        console.debug(`Platform: Removing item ${key}`);
+        localStorage.removeItem(key);
+        return Promise.resolve();
+    }
     public happyTime(): Promise<void> {
         return Promise.resolve();
     }

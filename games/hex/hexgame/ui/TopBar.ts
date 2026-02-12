@@ -1,6 +1,7 @@
 import BaseButton from "@core/ui/BaseButton";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
+import { CurrencyType, EconomyStorage } from "../data/EconomyStorage"; // Import your economy
 import HexAssets from "../HexAssets";
 import { AvatarUIView } from "./AvatarUIView";
 import { StarBox } from "./StarBox";
@@ -23,7 +24,7 @@ export class TopBar extends PIXI.Container {
         );
         this.addChild(this.background);
 
-        // 2. Avatar & Level System (Consolidated)
+        // 2. Avatar & Level System
         this.avatarView = new AvatarUIView();
         this.addChild(this.avatarView);
 
@@ -54,6 +55,30 @@ export class TopBar extends PIXI.Container {
             click: { callback: onSettings }
         });
         this.addChild(this.settingsBtn);
+
+        // --- NEW: Hook into Economy ---
+        this.initEconomy();
+    }
+
+    private async initEconomy(): Promise<void> {
+        // 1. Listen for future changes
+        EconomyStorage.onCurrencyChanged.add(this.onCurrencyUpdate, this);
+
+        // 2. Initial value fetch (since storage is async)
+        const currentStars = await EconomyStorage.getBalance(CurrencyType.STARS);
+        const currentCoins = await EconomyStorage.getBalance(CurrencyType.COINS);
+
+        this.starBox.valueUpdate(currentStars);
+        this.gemBox.valueUpdate(currentCoins);
+    }
+
+    private onCurrencyUpdate(type: CurrencyType, newValue: number): void {
+        if (type === CurrencyType.STARS) {
+            this.starBox.valueUpdate(newValue);
+        } else if (type === CurrencyType.COINS) {
+            // Assuming your gemBox displays the Coin/Pink currency
+            this.gemBox.valueUpdate(newValue);
+        }
     }
 
     public updateAvatar(texture: PIXI.Texture): void {
@@ -64,24 +89,24 @@ export class TopBar extends PIXI.Container {
         this.avatarView.update(level, progress);
     }
 
-    /**
-     * Handles responsive positioning for the top bar elements
-     */
     public layout(width: number): void {
         const padding = 15;
         this.background.width = width;
         this.background.height = 80;
 
-        // Avatar on the left (Level bar is attached to it)
         this.avatarView.position.set(20, 5);
 
-        // Currencies centered
         const center = width / 2;
         this.starBox.position.set(center - this.starBox.width - 10, 15);
         this.gemBox.position.set(center + 10, 15);
 
-        // Settings on the right
         this.settingsBtn.x = width - this.settingsBtn.width - padding;
         this.settingsBtn.y = 12;
+    }
+
+    // Clean up signal when top bar is destroyed
+    public destroy(options?: any): void {
+        EconomyStorage.onCurrencyChanged.remove(this.onCurrencyUpdate, this);
+        super.destroy(options);
     }
 }

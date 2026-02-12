@@ -25,13 +25,10 @@ export class StarBox extends PIXI.Container {
     private readonly padding: number = 10;
     private readonly spacing: number = 2;
 
-    // Store the signal reference so we can unsubscribe later
-    private updateSignal: any;
 
-    constructor(config: ICurrencyBoxConfig, updateSignal: any) {
+    constructor(config: ICurrencyBoxConfig) {
         super();
 
-        this.updateSignal = updateSignal;
         this.currentValue = config.initialValue || 0;
 
         // 1. Optional Background
@@ -63,15 +60,12 @@ export class StarBox extends PIXI.Container {
         this.label.y = this.boxHeight / 2 - 5;
         this.addChild(this.label);
 
-        // 4. Hook External Signal
-        // This assumes the signal sends the new value as the first argument
-        this.updateSignal.add(this.onValueUpdate, this);
     }
 
     /**
      * Listener for the External Signal
      */
-    private onValueUpdate(newValue: number): void {
+    public valueUpdate(newValue: number): void {
         this.animateValue(newValue);
     }
 
@@ -113,7 +107,7 @@ export class StarBox extends PIXI.Container {
     public destroy(options?: any): void {
         // Unsubscribe from the external signal
         if (this.updateSignal) {
-            this.updateSignal.remove(this.onValueUpdate, this);
+            this.updateSignal.remove(this.valueUpdate, this);
         }
 
         gsap.killTweensOf(this.label);

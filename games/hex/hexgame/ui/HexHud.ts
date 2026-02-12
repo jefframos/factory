@@ -7,9 +7,9 @@ import { AvatarManager } from "../avatar/AvatarManager";
 import { AvatarRegistry } from "../avatar/AvatarRegistry";
 import HexAssets from "../HexAssets";
 import { ItemBeltButton } from "./ItemBeltButton";
+import { AvatarShopPanel } from "./panel/AvatarShopPanel";
 import { PanelManager } from "./panel/PanelManager";
 import { SettingsPanel } from "./panel/SettingsPanel";
-import { ShopPanel } from "./panel/ShopPanel";
 import { TopBar } from "./TopBar";
 
 export enum HUDMode {
@@ -71,7 +71,7 @@ export class HexHUD extends PIXI.Container {
         });
 
         this.onShop.add(() => {
-            PanelManager.instance.openPanel("shop", ShopPanel);
+            PanelManager.instance.openPanel("shop", AvatarShopPanel);
         });
 
         this.onSettings.add(() => {

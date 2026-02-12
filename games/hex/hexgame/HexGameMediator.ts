@@ -4,11 +4,13 @@ import { Signal } from "signals";
 import { DevGuiManager } from "../game/utils/DevGuiManager";
 import { ClusterManager } from "./cluster/ClusterManager";
 import { ClusterView } from "./cluster/ClusterView";
-import { GameplayData } from "./GameplayData";
+import { GameplayData } from "./data/GameplayData";
+import { EndGameService } from "./EndGameService";
 import { HexGridBuilder } from "./HexGridBuilder";
 import { HexGridView } from "./HexGridView";
 import { HexInputService } from "./HexInputService";
 import { Difficulty, HexPos, HexUtils } from "./HexTypes";
+import { HintService } from "./HintService";
 import { LevelDataManager } from "./LevelDataManager";
 import { HexHUD } from "./ui/HexHud";
 
@@ -16,9 +18,9 @@ export class HexGameMediator {
     private debugGraphics?: PIXI.Graphics;
     private inputService: HexInputService;
     private isAutoCompleting: boolean = false;
-
+    private hintService: HintService;
     public gameplayData: GameplayData = new GameplayData();
-
+    private endGameService: EndGameService;
     public readonly onRestart: Signal = new Signal();
     public readonly onQuit: Signal = new Signal();
     constructor(
@@ -33,9 +35,12 @@ export class HexGameMediator {
         this.layout();
         this.inputService = new HexInputService(this);
 
-        DevGuiManager.instance.addButton("Show Hint", () => this.showHint());
+        DevGuiManager.instance.addButton("Show Hint", () => this.hintService.showHint());
         DevGuiManager.instance.addButton("Auto Complete", () => this.autoComplete());
         DevGuiManager.instance.addButton("Complete 1", () => this.solveOnePiece());
+
+        this.hintService = new HintService(this.clusterManager, this.gridView);
+        this.endGameService = new EndGameService(this.gameRoot, this.gridView);
 
         this.wireSignals();
     }
@@ -63,14 +68,11 @@ export class HexGameMediator {
 
         // When the HUD or Main class triggers a restart
         this.hud.onHint.add(() => {
-            this.showHint();
+            this.hintService.showHint();
         });
         this.hud.onClose.add(() => {
             // Force reset of any piece currently in the air
             this.inputService.forceResetHeldPiece();
-
-            // Clean up the current board
-            //this.resetGame();
 
             // Dispatch to Main class to generate a new matrix and call initPuzzle again
             this.onRestart.dispatch({});
@@ -146,32 +148,6 @@ export class HexGameMediator {
         this.gridView.scale.set(finalScale);
     }
 
-    public showHint(): void {
-        // 1. Get all pieces
-        const allPieces = this.clusterManager.getPieces(); // Assuming Manager has a way to return all ClusterViews
-
-        // 2. Filter for pieces that are NOT at their solution position
-        const incorrectPieces = allPieces.filter(piece => {
-            const currentPos = this.getGridPositionOfPiece(piece);
-            if (!currentPos) return true; // In tray = incorrect
-            return currentPos.q !== piece.data.rootPos.q || currentPos.r !== piece.data.rootPos.r;
-        });
-
-        if (incorrectPieces.length === 0) return;
-
-        // 3. Pick a random piece from the "wrong" ones
-        const hintPiece = incorrectPieces[Math.floor(Math.random() * incorrectPieces.length)];
-
-        // 4. Calculate the absolute grid coordinates where it belongs
-        const solutionCoords = hintPiece.data.coords.map(c => ({
-            q: hintPiece.data.rootPos.q + c.q,
-            r: hintPiece.data.rootPos.r + c.r
-        }));
-
-        // 5. Blink those tiles on the grid
-        this.gridView.blinkTiles(solutionCoords);
-    }
-
     public async autoComplete(): Promise<void> {
         if (this.isAutoCompleting) return;
         this.isAutoCompleting = true;
@@ -241,12 +217,17 @@ export class HexGameMediator {
         this.gridView.placePiece(piece, snappedCoords);
     }
 
-    public onMoveSuccess(): void {
+    public async onMoveSuccess(): Promise<void> {
         this.gameplayData.recordMove();
 
         if (this.gridView.isGridFull()) {
             // Use a tiny delay or wait for the next tick 
             // to ensure the InputService finishes its current placement logic
+            this.hintService.stopHint();
+
+            // 2. Trigger the endgame sequence
+            // Total animation time set to 2.5 seconds
+            await this.endGameService.execute(2.5);
             setTimeout(() => {
                 this.inputService.enabled = false;
                 this.gameplayData.completeLevel();

@@ -13,7 +13,8 @@ import { DevGuiManager } from "../game/utils/DevGuiManager";
 import { AvatarManager } from "./avatar/AvatarManager";
 import { AvatarRegistry } from "./avatar/AvatarRegistry";
 import { ClusterManager } from "./cluster/ClusterManager";
-import { GameplayProgressStorage } from "./GameplayProgressStorage";
+import { CurrencyType, EconomyStorage } from "./data/EconomyStorage";
+import { GameplayProgressStorage } from "./data/GameplayProgressStorage";
 import HexAssets from "./HexAssets";
 import { HexGameMediator } from "./HexGameMediator";
 import { HexGridView } from "./HexGridView";
@@ -59,10 +60,13 @@ export default class HexScene extends GameScene {
         this.setupPopups();
     }
 
-    public build(): void {
+    public async build(): Promise<void> {
         // 1. Data Initialization
         const levelsJson = PIXI.Assets.get('game/game-manifest.json') as any;
         LevelDataManager.initFromWorlds(levelsJson.worlds);
+
+
+        await AvatarManager.instance.initialize();
 
         // 2. Background Layer
 
@@ -98,6 +102,8 @@ export default class HexScene extends GameScene {
         }, 500);
     }
     private async setupWorldMapSystem(): Promise<void> {
+
+
         const style = {
             levelButtonTexture: HexAssets.Textures.Buttons.Blue,
             levelButtonSize: 80,
@@ -155,12 +161,12 @@ export default class HexScene extends GameScene {
             }
         });
         this.layoutMap();
-        const savedIndex = GameplayProgressStorage.getLatestLevelIndex();
+        const savedIndex = await GameplayProgressStorage.getLatestLevelIndex();
+        console.log(savedIndex)
         this.worldMap.setCurrentLevelIndex(savedIndex);
 
         // Snap camera to the level (false = no animation)
         this.worldMap.centerOnLevel(savedIndex, false);
-
 
 
         const pin = new WorldMapPin(PIXI.Texture.from('char-1'), PIXI.Texture.from('particle'));
@@ -223,7 +229,8 @@ export default class HexScene extends GameScene {
             const currentIndex = this.worldMap.getCurrentIndex(); // You'll need a getter for this
 
             // 1. Save Progress
-            GameplayProgressStorage.saveLevelComplete(currentIndex, 3);
+            await EconomyStorage.addCurrency(CurrencyType.STARS, 3)
+            await GameplayProgressStorage.saveLevelComplete(currentIndex, 3);
 
             // 2. Return to map
             await this.showMap();

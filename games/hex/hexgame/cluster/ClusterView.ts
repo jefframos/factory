@@ -1,3 +1,4 @@
+import Pool from "@core/Pool";
 import * as PIXI from "pixi.js";
 import { ClusterData, getColorEntryById, getColorValueById, HexUtils } from "../HexTypes";
 import { ClusterTileView } from "./ClusterTileView"; // Import the new class
@@ -12,15 +13,13 @@ export class ClusterView extends PIXI.Container {
         this.data = data;
         const hexColor = typeof data.color === 'string' ? getColorValueById(data.color) : data.color;
 
-
-        // Ensure we have enough TileView instances (Object Pooling Lite)
+        // Fetch from pool instead of 'new'
         while (this.tiles.length < data.coords.length) {
-            const tile = new ClusterTileView();
+            const tile = Pool.instance.getElement(ClusterTileView);
             this.addChild(tile);
             this.tiles.push(tile);
         }
 
-        // Hide unused tiles if data size decreased
         this.tiles.forEach((tile, index) => {
             if (index >= data.coords.length) {
                 tile.visible = false;
@@ -32,10 +31,11 @@ export class ClusterView extends PIXI.Container {
 
             tile.visible = true;
             tile.position.set(pos.x, pos.y);
-            const colorData = getColorEntryById(data.color)
+            tile.scale.set(1);
+            tile.alpha = 1;
+
+            const colorData = getColorEntryById(data.color);
             tile.setup(hexColor, colorData?.texture ? PIXI.Texture.from(colorData.texture) : undefined);
-            tile.zIndex = 100 + pos.y; // Pass the texture here if available
-            //tile.setup(hexColor, PIXI.Texture.from(getColorEntryById(data.color))); // Pass the texture here if available
         });
 
         this.sortChildren();
@@ -44,8 +44,15 @@ export class ClusterView extends PIXI.Container {
         this.visualCenter.set(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
     }
 
+    // Inside ClusterView.ts
     public reset(): void {
-        this.tiles.forEach(t => t.visible = false);
+        // Return all internal tiles to the pool
+        this.tiles.forEach(tile => {
+            tile.reset();
+            Pool.instance.returnElement(tile);
+        });
+        this.tiles = []; // Clear the array so setup() creates/fetches fresh ones
         this.position.set(0);
+        this.visible = false;
     }
 }

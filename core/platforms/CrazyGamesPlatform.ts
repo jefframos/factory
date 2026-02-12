@@ -8,6 +8,20 @@ export default class CrazyGamesPlatform implements IPlatformConnection {
     constructor() {
     }
 
+    public async setItem(key: string, value: string): Promise<void> {
+        localStorage.setItem(key, value);
+        return Promise.resolve();
+    }
+
+    public async getItem(key: string): Promise<string | null> {
+        const value = localStorage.getItem(key);
+        return Promise.resolve(value);
+    }
+    public async removeItem(key: string): Promise<void> {
+        localStorage.removeItem(key);
+        return Promise.resolve();
+    }
+
     public happyTime(): Promise<void> {
         if (this.crazygamesSDK) {
             this.crazygamesSDK.game.happytime();
@@ -55,9 +69,8 @@ export default class CrazyGamesPlatform implements IPlatformConnection {
     }
 
     public async loadFinished(): Promise<void> {
-        console.debug("CrazyGames Platform: Load finished.");
         if (this.crazygamesSDK) {
-            this.crazygamesSDK.game.sdkGameLoadingStop();
+            this.crazygamesSDK.game.loadingStop();
         }
         await Promise.resolve();
     }

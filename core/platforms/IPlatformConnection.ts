@@ -14,4 +14,7 @@ export interface IPlatformConnection {
     showBanner(type: any): Promise<void>;
     hideBanner(): Promise<void>;
     happyTime(): Promise<void>;
+    setItem(key: string, value: string): Promise<void>;
+    getItem(key: string): Promise<string | null>;
+    removeItem(key: string): Promise<void>;
 }

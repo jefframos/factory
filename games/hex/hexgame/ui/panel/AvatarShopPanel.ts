@@ -7,7 +7,7 @@ import HexAssets from "../../HexAssets";
 import { BasePanel } from "./BasePanel";
 import { ShopItem, ShopItemState } from "./ShopItem";
 
-export class ShopPanel extends BasePanel {
+export class AvatarShopPanel extends BasePanel {
     private gridContainer: PIXI.Container;
     private maskGraphic: PIXI.Graphics;
     private prevBtn!: BaseButton;
@@ -75,7 +75,7 @@ export class ShopPanel extends BasePanel {
         // Offset to ensure the 4x4 group is centered around the container's 0,0
         const totalGridOffset = ((this.GRID_SIZE - 1) * this.ITEM_SPACING) / 2;
 
-        AvatarRegistry.AVATARS.forEach((data, i) => {
+        AvatarRegistry.AVATARS.forEach(async (data, i) => {
             const page = Math.floor(i / this.ITEMS_PER_PAGE);
             const indexInPage = i % this.ITEMS_PER_PAGE;
             const col = indexInPage % this.GRID_SIZE;
@@ -88,7 +88,7 @@ export class ShopPanel extends BasePanel {
             item.y = (row * this.ITEM_SPACING) - totalGridOffset;
 
             // Check current ownership and selection state
-            const isOwned = AvatarManager.instance.isUnlocked(data.id);
+            const isOwned = await AvatarManager.instance.isUnlocked(data.id);
             const isActive = AvatarManager.instance.currentAvatar.id === data.id;
 
             if (!isOwned) {

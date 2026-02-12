@@ -3,14 +3,22 @@ import * as PIXI from "pixi.js";
 import { getColorValueById, GridCellData, HexPos, HexUtils } from "./HexTypes";
 import { ClusterView } from "./cluster/ClusterView";
 
+
 export class HexGridView extends PIXI.Container {
+
+    private readonly Z_BACKGROUND = 0;
+    private readonly Z_PIECES = 10;
+    private readonly Z_HINT = 100;
+
     // Stores the background "slots" - can be either Graphics or Sprites
     private cellGraphics: Map<string, PIXI.Graphics | PIXI.Sprite> = new Map();
     private occupiedTiles: Map<string, ClusterView> = new Map();
     private gridTexture?: PIXI.Texture;
+    private hintLayer: PIXI.Container = new PIXI.Container();
 
     constructor() {
         super();
+        this.sortableChildren = true;
     }
 
     /**
@@ -43,24 +51,49 @@ export class HexGridView extends PIXI.Container {
             }
         });
     }
+    /**
+     * Iterates through all ClusterViews and extracts their individual TileViews
+     */
+    public getAllTiles(): PIXI.Container[] {
+        const allTiles: PIXI.Container[] = [];
 
+        this.children.forEach(child => {
+            if (child instanceof ClusterView) {
+                // We access the internal 'tiles' array from ClusterView
+                // Use (child as any) if the tiles property is private, 
+                // but making it public or adding a getter is cleaner.
+                const cluster = child as any;
+                if (cluster.tiles) {
+                    cluster.tiles.forEach((tile: PIXI.Container) => {
+                        if (tile.visible) {
+                            allTiles.push(tile);
+                        }
+                    });
+                }
+            }
+        });
+
+        return allTiles;
+    }
     private renderGrid(gridData: Map<string, GridCellData>): void {
         gridData.forEach((cell, key) => {
             const [q, r] = key.split(',').map(Number);
             const pos = HexUtils.offsetToPixel(q, r);
 
+            const hex = this.gridTexture
+                ? new PIXI.Sprite(this.gridTexture)
+                : new PIXI.Graphics();
+
             if (this.gridTexture) {
                 // Use Sprite-based rendering
-                const sprite = new PIXI.Sprite(this.gridTexture);
-                sprite.anchor.set(0.5, 0.5); // Center the sprite on the position
-                sprite.scale.set(ViewUtils.elementScaler(sprite, HexUtils.HEX_SIZE * 2))
-                sprite.position.set(pos.x, pos.y);
+                hex.anchor.set(0.5, 0.5); // Center the sprite on the position
+                hex.scale.set(ViewUtils.elementScaler(hex, HexUtils.HEX_SIZE * 2))
+                hex.position.set(pos.x, pos.y); hex
 
-                this.addChild(sprite);
-                this.cellGraphics.set(key, sprite);
+                this.addChild(hex);
+                this.cellGraphics.set(key, hex);
             } else {
                 // Use Graphics-based rendering (original approach)
-                const hex = new PIXI.Graphics();
                 hex.lineStyle(2, 0xFFFFFF, 0.1);
                 hex.beginFill(0xFFFFFF, 0.5);
 
@@ -77,32 +110,69 @@ export class HexGridView extends PIXI.Container {
                 this.addChild(hex);
                 this.cellGraphics.set(key, hex);
             }
+            hex.zIndex = this.Z_BACKGROUND; // Base layer
+            this.addChild(hex);
+            this.cellGraphics.set(key, hex);
         });
     }
     public getOccupantAt(q: number, r: number): ClusterView | null {
         return this.occupiedTiles.get(`${q},${r}`) || null;
     }
+    // Inside HexGridView.ts
 
-    public blinkTiles(coords: HexPos[], color: number = 0x00AAFF): void {
+    public blinkTiles(coords: HexPos[], color: number = 0xFF00FF): any {
+        const affectedHexes: { hex: PIXI.Graphics | PIXI.Sprite }[] = [];
+
         coords.forEach(pos => {
-            const hex = this.cellGraphics.get(`${pos.q},${pos.r}`);
-            if (!hex) return;
-
-            // Simple blink animation using PIXI.Ticker or a timeout loop
-            let count = 0;
-            const interval = setInterval(() => {
-                hex.tint = (count % 2 === 0) ? color : 0xFFFFFF;
-                hex.alpha = (count % 2 === 0) ? 0.8 : 1;
-                count++;
-                if (count > 5) {
-                    clearInterval(interval);
-                    hex.tint = 0xFFFFFF;
-                    hex.alpha = 1;
-                }
-            }, 200);
+            const hex = this.cellGraphics.get(`${pos.q},${pos.r}`) as PIXI.Graphics | PIXI.Sprite;
+            if (hex) {
+                affectedHexes.push({ hex });
+                hex.zIndex = this.Z_HINT; // Move to the very top
+            }
         });
+
+        this.sortChildren(); // Apply the high z-index immediately
+
+        let count = 0;
+        const intervalId = setInterval(() => {
+            if (!affectedHexes.length) {
+                clearInterval(intervalId);
+                return;
+            }
+
+            affectedHexes.forEach(item => {
+                if (item.hex && !item.hex.destroyed) {
+                    item.hex.tint = (count % 2 === 0) ? color : 0xFFFFFF;
+                }
+            });
+
+            count++;
+            if (count > 10) {
+                this.stopBlink({ interval: intervalId, affectedHexes });
+            }
+        }, 250);
+
+        return { interval: intervalId, affectedHexes };
     }
 
+    public stopBlink(hintObj: any): void {
+        if (!hintObj || !hintObj.affectedHexes) return;
+
+        if (hintObj.interval) {
+            clearInterval(hintObj.interval);
+        }
+
+        hintObj.affectedHexes.forEach((item: any) => {
+            if (item.hex && !item.hex.destroyed) {
+                item.hex.tint = 0xFFFFFF;
+                item.hex.alpha = 1;
+                item.hex.zIndex = this.Z_BACKGROUND; // Move back to bottom
+            }
+        });
+
+        this.sortChildren(); // Re-sort so background goes back behind pieces
+        hintObj.affectedHexes = [];
+    }
     private calculateVisualPivot(): void {
         if (this.cellGraphics.size === 0) return;
 
@@ -168,9 +238,11 @@ export class HexGridView extends PIXI.Container {
     }
 
     public placePiece(piece: ClusterView, coords: HexPos[]): void {
+        piece.zIndex = this.Z_PIECES; // Above background, below hint
         coords.forEach(pos => {
             this.occupiedTiles.set(`${pos.q},${pos.r}`, piece);
         });
+        this.sortChildren();
     }
 
     public isGridFull(): boolean {
