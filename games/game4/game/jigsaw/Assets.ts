@@ -182,6 +182,7 @@ export default class Assets {
             Coin: "ResourceBar_Single_Icon_Coin",
             Gem: "ResourceBar_Single_Icon_Gem",
             Up: "up",
+            Video: "ItemIcon_Video",
             Down: "down",
             Back: "Icon_Back",
             Check: "Icon_Check03_s",

@@ -1,8 +1,8 @@
 import ViewUtils from '@core/utils/ViewUtils';
-import Assets from 'games/game4/game/jigsaw/Assets';
-import { InGameEconomy } from 'games/game4/game/jigsaw/data/InGameEconomy';
 import { gsap } from 'gsap'; // or your preferred tweening library
 import * as PIXI from 'pixi.js';
+import Assets from '../Assets';
+import { InGameEconomy } from '../data/InGameEconomy';
 
 export class CurrencyHud extends PIXI.Container {
     private coinLabel: PIXI.Text;

@@ -68,8 +68,10 @@ export default class GameplayJigsawScene extends GameScene {
             this.paused = false;
             this.resetMatch();
             if (GameplayJigsawScene.FLOATING_LEVEL) {
-                this.startMatchFromLevel(GameplayJigsawScene.FLOATING_LEVEL)
-                GameplayJigsawScene.FLOATING_LEVEL = undefined
+                PlatformHandler.instance.platform.showCommercialBreak().then(() => {
+                    this.startMatchFromLevel(GameplayJigsawScene.FLOATING_LEVEL)
+                    GameplayJigsawScene.FLOATING_LEVEL = undefined
+                })
             } else {
 
                 this.quitGameScene();
@@ -96,7 +98,9 @@ export default class GameplayJigsawScene extends GameScene {
 
     }
 
-    public build(): void {
+    public async build(): Promise<void> {
+
+        await InGameEconomy.instance.initialize();
         this.updateScoreUi(0);
 
         //const color = 0x00BFA5
@@ -140,6 +144,7 @@ export default class GameplayJigsawScene extends GameScene {
         })
 
         this.mediator = new LevelSelectMediator(this.store);
+        await this.mediator.initialize()
         this.mediator.setSections(sections);
 
 
@@ -186,7 +191,10 @@ export default class GameplayJigsawScene extends GameScene {
             // // console.log("PLAY", req);
             Assets.tryToPlaySound(Assets.Sounds.UI.StartLevel)
 
-            this.startMatch(req);
+            PlatformHandler.instance.platform.showCommercialBreak().then(() => {
+                this.startMatch(req);
+            })
+
         });
 
 
@@ -196,7 +204,8 @@ export default class GameplayJigsawScene extends GameScene {
 
 
 
-        if (ProgressCookieStore.isFirstTime() || Game.debugParams.first) {
+        const first = await ProgressCookieStore.isFirstTime()
+        if (first || Game.debugParams.first) {
 
             const s = 0
             const l = 0
@@ -353,7 +362,10 @@ export default class GameplayJigsawScene extends GameScene {
             confirmLabel: "Cancel",
             onCancel: () => {
                 this.resetMatch();
-                this.startMatch(this.currentLevel);
+
+                PlatformHandler.instance.platform.showCommercialBreak().then(() => {
+                    this.startMatch(this.currentLevel);
+                })
             },
             onConfirm: () => {
             },
@@ -378,6 +390,10 @@ export default class GameplayJigsawScene extends GameScene {
         });
 
         this.jigsawBoardView.onPuzzleCompleted.add(async () => {
+            this.completePuzzle();
+        })
+
+        DevGuiManager.instance.addButton('complete', () => {
             this.completePuzzle();
         })
 
@@ -440,6 +456,7 @@ export default class GameplayJigsawScene extends GameScene {
 
 
     private async startMatch(data?: PlayLevelRequest, isFirst: boolean = false): Promise<void> {
+
         this.matchManager.start();
 
         //SoundManager.instance.playBackgroundSound(Assets.AmbientSound.AmbientSoundGameplay, 0)

@@ -1,0 +1,134 @@
+{
+    "poki": {
+        "main_icon": {
+            "width": 628,
+            "height": 628,
+            "formats": [
+                "png"
+            ],
+            "description": "Text-free, full-bleed gameplay visual. Corners are rounded by the platform."
+        },
+        "video_trailer": {
+            "width": 1920,
+            "height": 1080,
+            "formats": [
+                "mp4"
+            ],
+            "description": "High-quality 16:9 gameplay footage."
+        }
+    },
+    "crazygames": {
+        "icon": {
+            "width": 512,
+            "height": 512,
+            "formats": [
+                "png"
+            ],
+            "description": "Square game icon for the standard grid."
+        },
+        "cover_banner": {
+            "width": 800,
+            "height": 450,
+            "formats": [
+                "png",
+                "jpg",
+                "jpeg"
+            ],
+            "description": "Landscape banner for featured placements."
+        },
+        "featured_image": {
+            "width": 1200,
+            "height": 675,
+            "formats": [
+                "png",
+                "jpg",
+                "jpeg"
+            ],
+            "description": "Large high-definition promotional asset."
+        },
+        "screenshot": {
+            "width": 1280,
+            "height": 720,
+            "formats": [
+                "png",
+                "jpg",
+                "jpeg"
+            ],
+            "description": "Gameplay capture showing the UI and mechanics."
+        }
+    },
+    "gamedistribution": {
+        "small_icon": {
+            "width": 200,
+            "height": 120,
+            "formats": [
+                "jpg",
+                "jpeg"
+            ],
+            "description": "Small thumbnail for sidebars and recommendations."
+        },
+        "medium_icon": {
+            "width": 512,
+            "height": 340,
+            "formats": [
+                "jpg",
+                "jpeg"
+            ],
+            "description": "Legacy grid thumbnail."
+        },
+        "standard_icon": {
+            "width": 512,
+            "height": 384,
+            "formats": [
+                "jpg",
+                "jpeg"
+            ],
+            "description": "Main portal catalog thumbnail."
+        },
+        "high_res_icon": {
+            "width": 512,
+            "height": 512,
+            "formats": [
+                "jpg",
+                "jpeg"
+            ],
+            "description": "Square icon for mobile and modern grid layouts."
+        },
+        "small_cover": {
+            "width": 1280,
+            "height": 550,
+            "formats": [
+                "jpg",
+                "jpeg"
+            ],
+            "description": "Slim horizontal banner; keep title centered."
+        },
+        "large_cover": {
+            "width": 1280,
+            "height": 720,
+            "formats": [
+                "jpg",
+                "jpeg"
+            ],
+            "description": "Main landing page header image."
+        }
+    },
+    "gamepix": {
+        "main_thumbnail": {
+            "width": 250,
+            "height": 250,
+            "formats": [
+                "png"
+            ],
+            "description": "Standard square thumbnail."
+        },
+        "small_thumbnail": {
+            "width": 100,
+            "height": 100,
+            "formats": [
+                "png"
+            ],
+            "description": "Miniature icon for mobile lists."
+        }
+    }
+}

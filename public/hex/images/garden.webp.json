@@ -1,0 +1,516 @@
+{
+  "frames": {
+    "water-bowl": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 94,
+        "h": 66
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 94,
+        "h": 66
+      },
+      "sourceSize": {
+        "w": 94,
+        "h": 66
+      }
+    },
+    "tree1": {
+      "frame": {
+        "x": 2,
+        "y": 70,
+        "w": 188,
+        "h": 256
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 188,
+        "h": 256
+      },
+      "sourceSize": {
+        "w": 188,
+        "h": 256
+      }
+    },
+    "toy": {
+      "frame": {
+        "x": 98,
+        "y": 2,
+        "w": 58,
+        "h": 57
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 58,
+        "h": 57
+      },
+      "sourceSize": {
+        "w": 58,
+        "h": 57
+      }
+    },
+    "pot2": {
+      "frame": {
+        "x": 192,
+        "y": 2,
+        "w": 124,
+        "h": 197
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 124,
+        "h": 197
+      },
+      "sourceSize": {
+        "w": 124,
+        "h": 197
+      }
+    },
+    "pot-tree-3": {
+      "frame": {
+        "x": 318,
+        "y": 2,
+        "w": 114,
+        "h": 270
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 114,
+        "h": 270
+      },
+      "sourceSize": {
+        "w": 114,
+        "h": 270
+      }
+    },
+    "pot-tree-2": {
+      "frame": {
+        "x": 2,
+        "y": 328,
+        "w": 100,
+        "h": 306
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 100,
+        "h": 306
+      },
+      "sourceSize": {
+        "w": 100,
+        "h": 306
+      }
+    },
+    "pot-tree-1": {
+      "frame": {
+        "x": 2,
+        "y": 430,
+        "w": 216,
+        "h": 320
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 216,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 216,
+        "h": 320
+      }
+    },
+    "plant-3": {
+      "frame": {
+        "x": 324,
+        "y": 274,
+        "w": 95,
+        "h": 160
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 95,
+        "h": 160
+      },
+      "sourceSize": {
+        "w": 95,
+        "h": 160
+      }
+    },
+    "plant-2": {
+      "frame": {
+        "x": 324,
+        "y": 436,
+        "w": 70,
+        "h": 184
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 70,
+        "h": 184
+      },
+      "sourceSize": {
+        "w": 70,
+        "h": 184
+      }
+    },
+    "plant-1": {
+      "frame": {
+        "x": 434,
+        "y": 2,
+        "w": 89,
+        "h": 150
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 89,
+        "h": 150
+      },
+      "sourceSize": {
+        "w": 89,
+        "h": 150
+      }
+    },
+    "mat-5": {
+      "frame": {
+        "x": 421,
+        "y": 274,
+        "w": 155,
+        "h": 102
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 155,
+        "h": 102
+      },
+      "sourceSize": {
+        "w": 155,
+        "h": 102
+      }
+    },
+    "mat-4": {
+      "frame": {
+        "x": 421,
+        "y": 431,
+        "w": 140,
+        "h": 99
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 140,
+        "h": 99
+      },
+      "sourceSize": {
+        "w": 140,
+        "h": 99
+      }
+    },
+    "mat-3": {
+      "frame": {
+        "x": 525,
+        "y": 2,
+        "w": 173,
+        "h": 106
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 173,
+        "h": 106
+      },
+      "sourceSize": {
+        "w": 173,
+        "h": 106
+      }
+    },
+    "mat-2": {
+      "frame": {
+        "x": 633,
+        "y": 2,
+        "w": 172,
+        "h": 114
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 172,
+        "h": 114
+      },
+      "sourceSize": {
+        "w": 172,
+        "h": 114
+      }
+    },
+    "mat-1": {
+      "frame": {
+        "x": 633,
+        "y": 176,
+        "w": 159,
+        "h": 98
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 159,
+        "h": 98
+      },
+      "sourceSize": {
+        "w": 159,
+        "h": 98
+      }
+    },
+    "lineyeard": {
+      "frame": {
+        "x": 434,
+        "y": 177,
+        "w": 93,
+        "h": 66
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 93,
+        "h": 66
+      },
+      "sourceSize": {
+        "w": 93,
+        "h": 66
+      }
+    },
+    "garden-bg": {
+      "frame": {
+        "x": 2,
+        "y": 648,
+        "w": 2056,
+        "h": 1500
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 2056,
+        "h": 1500
+      },
+      "sourceSize": {
+        "w": 2056,
+        "h": 1500
+      }
+    },
+    "fish-1": {
+      "frame": {
+        "x": 525,
+        "y": 177,
+        "w": 173,
+        "h": 106
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 173,
+        "h": 106
+      },
+      "sourceSize": {
+        "w": 173,
+        "h": 106
+      }
+    },
+    "chair": {
+      "frame": {
+        "x": 522,
+        "y": 431,
+        "w": 202,
+        "h": 178
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 202,
+        "h": 178
+      },
+      "sourceSize": {
+        "w": 202,
+        "h": 178
+      }
+    },
+    "cat-poop-stuff": {
+      "frame": {
+        "x": 702,
+        "y": 337,
+        "w": 139,
+        "h": 141
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 139,
+        "h": 141
+      },
+      "sourceSize": {
+        "w": 139,
+        "h": 141
+      }
+    },
+    "cat-f": {
+      "frame": {
+        "x": 749,
+        "y": 2,
+        "w": 181,
+        "h": 173
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 181,
+        "h": 173
+      },
+      "sourceSize": {
+        "w": 181,
+        "h": 173
+      }
+    },
+    "bush3": {
+      "frame": {
+        "x": 702,
+        "y": 480,
+        "w": 187,
+        "h": 152
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 187,
+        "h": 152
+      },
+      "sourceSize": {
+        "w": 187,
+        "h": 152
+      }
+    },
+    "bush2": {
+      "frame": {
+        "x": 733,
+        "y": 185,
+        "w": 126,
+        "h": 120
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 126,
+        "h": 120
+      },
+      "sourceSize": {
+        "w": 126,
+        "h": 120
+      }
+    },
+    "bush": {
+      "frame": {
+        "x": 192,
+        "y": 201,
+        "w": 122,
+        "h": 97
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 122,
+        "h": 97
+      },
+      "sourceSize": {
+        "w": 122,
+        "h": 97
+      }
+    },
+    "big-cushion": {
+      "frame": {
+        "x": 843,
+        "y": 313,
+        "w": 212,
+        "h": 129
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 212,
+        "h": 129
+      },
+      "sourceSize": {
+        "w": 212,
+        "h": 129
+      }
+    }
+  },
+  "meta": {
+    "app": "http://github.com/pixijs/assetpack",
+    "version": "1.0",
+    "image": "garden.webp",
+    "format": "RGBA8888",
+    "size": {
+      "w": 1504,
+      "h": 2706
+    },
+    "scale": 1,
+    "related_multi_packs": []
+  }
+}

@@ -33,9 +33,11 @@ export class LevelSelectMediator {
 
     public constructor(store: ProgressCookieStore) {
         this.store = store;
-        this.progress = this.store.load();
-    }
 
+    }
+    public async initialize() {
+        this.progress = await this.store.load();
+    }
     public setSections(sections: SectionDefinition[]): void {
         this.sections = sections;
         this.levelIndex.clear();
@@ -82,13 +84,13 @@ export class LevelSelectMediator {
         this.onPlayLevel.dispatch(req);
     }
 
-    public reportLevelCompleted(levelId: string, difficulty: Difficulty, timeMs: number): void {
-        this.progress = this.store.markCompleted(this.progress, levelId, difficulty, timeMs);
-        this.store.save(this.progress);
+    public async reportLevelCompleted(levelId: string, difficulty: Difficulty, timeMs: number): Promise<void> {
+        this.progress = await this.store.markCompleted(this.progress, levelId, difficulty, timeMs);
+        await this.store.save(this.progress);
         this.onProgressChanged.dispatch(this.progress);
     }
 
-    public requestPurchase(levelId: string): void {
+    public async requestPurchase(levelId: string): Promise<void> {
         const hit = this.levelIndex.get(levelId);
         if (!hit || this.isLevelUnlocked(levelId)) return;
 
@@ -99,7 +101,8 @@ export class LevelSelectMediator {
         // Check economy
         const economy = InGameEconomy.instance;
 
-        if (economy.purchase(normalCost, specialCost)) {
+        const p = await economy.purchase(normalCost, specialCost)
+        if (p) {
 
             Assets.tryToPlaySound(Assets.Sounds.UI.Purchase)
             // Economy handles the money, Mediator handles the unlock state
@@ -109,20 +112,20 @@ export class LevelSelectMediator {
         }
     }
 
-    public confirmPurchase(levelId: string): void {
+    public async confirmPurchase(levelId: string): Promise<void> {
         if (this.isLevelUnlocked(levelId)) {
             return;
         }
 
         // 1. REFRESH: Pull the progress from the store again.
         // This ensures we have the deducted currency from the InGameEconomy. purchase call.
-        this.progress = this.store.load();
+        this.progress = await this.store.load();
 
         // 2. MODIFY: Mark the level as unlocked on the fresh progress object.
         this.progress = this.store.markLevelUnlocked(this.progress, levelId);
 
         // 3. SAVE: Now save the object that has BOTH the new currency and the new unlock.
-        this.store.save(this.progress);
+        await this.store.save(this.progress);
 
 
 

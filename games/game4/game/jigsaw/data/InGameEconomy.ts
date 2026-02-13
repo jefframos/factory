@@ -4,12 +4,16 @@ import { ProgressCookieStore } from "./ProgressCookieStore";
 export class InGameEconomy {
     private static _instance: InGameEconomy;
 
-    // Signals for UI updates
-    public readonly onCoinsChanged: Signal = new Signal(); // dispatch(newTotal)
-    public readonly onGemsChanged: Signal = new Signal();  // dispatch(newTotal)
-    public readonly onPurchaseFailed: Signal = new Signal(); // dispatch(reason)
+    public readonly onCoinsChanged: Signal = new Signal();
+    public readonly onGemsChanged: Signal = new Signal();
+    public readonly onPurchaseFailed: Signal = new Signal();
 
     private store: ProgressCookieStore;
+
+    // Local cache to allow synchronous access
+    private _coins: number = 0;
+    private _gems: number = 0;
+    private _isInitialized: boolean = false;
 
     private constructor() {
         this.store = new ProgressCookieStore();
@@ -22,58 +26,75 @@ export class InGameEconomy {
         return InGameEconomy._instance;
     }
 
-    // Getters
+    /**
+     * Call this once at game start (e.g., in your Boot or Preloader scene)
+     */
+    public async initialize(): Promise<void> {
+        const progress = await this.store.load();
+        this._coins = progress.coins ?? 0;
+        this._gems = progress.gems ?? 0;
+        this._isInitialized = true;
+
+        // Notify any listeners (like the UI Hud) of the initial values
+        this.onCoinsChanged.dispatch(this._coins);
+        this.onGemsChanged.dispatch(this._gems);
+    }
+
+    // Getters now return the cached value instantly
     public get coins(): number {
-        return this.store.load().coins ?? 0;
+        return this._coins;
     }
 
     public get gems(): number {
-        return this.store.load().gems ?? 0;
+        return this._gems;
     }
 
-    /**
-     * Attempts to spend currency. Returns true if successful.
-     */
-    public purchase(normalCost: number, specialCost: number = 0): boolean {
-        const progress = this.store.load();
-        const currentCoins = progress.coins ?? 0;
-        const currentGems = progress.gems ?? 0;
+    public async purchase(normalCost: number, specialCost: number = 0): Promise<boolean> {
+        if (!this._isInitialized) await this.initialize();
 
-
-        // Check if user can afford both
-        if (currentCoins < normalCost) {
+        if (this._coins < normalCost) {
             this.onPurchaseFailed.dispatch("Not enough coins");
             return false;
         }
-        if (currentGems < specialCost) {
+        if (this._gems < specialCost) {
             this.onPurchaseFailed.dispatch("Not enough gems");
             return false;
         }
 
-        // Deduct currency
-        progress.coins = currentCoins - normalCost;
-        progress.gems = currentGems - specialCost;
+        // Update local cache
+        this._coins -= normalCost;
+        this._gems -= specialCost;
 
-        // Save and Notify
-        this.store.save(progress);
-        this.onCoinsChanged.dispatch(progress.coins);
-        this.onGemsChanged.dispatch(progress.gems);
+        // Save to store and Notify
+        await this.syncWithStore();
 
-        console.log(progress)
+        this.onCoinsChanged.dispatch(this._coins);
+        this.onGemsChanged.dispatch(this._gems);
 
         return true;
     }
 
-    public addCurrency(amount: number, isSpecial: boolean = false): void {
-        const progress = this.store.load();
+    public async addCurrency(amount: number, isSpecial: boolean = false): Promise<void> {
+        if (!this._isInitialized) await this.initialize();
+
         if (isSpecial) {
-            progress.gems = (progress.gems ?? 0) + amount;
-            this.store.save(progress);
-            this.onGemsChanged.dispatch(progress.gems);
+            this._gems += amount;
+            this.onGemsChanged.dispatch(this._gems);
         } else {
-            progress.coins = (progress.coins ?? 0) + amount;
-            this.store.save(progress);
-            this.onCoinsChanged.dispatch(progress.coins);
+            this._coins += amount;
+            this.onCoinsChanged.dispatch(this._coins);
         }
+
+        await this.syncWithStore();
+    }
+
+    /**
+     * Internal helper to write the current local state back to the cookie/store
+     */
+    private async syncWithStore(): Promise<void> {
+        const progress = await this.store.load();
+        progress.coins = this._coins;
+        progress.gems = this._gems;
+        this.store.save(progress);
     }
 }

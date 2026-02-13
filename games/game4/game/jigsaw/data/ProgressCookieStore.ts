@@ -1,3 +1,4 @@
+import PlatformHandler from "@core/platforms/PlatformHandler";
 import { Difficulty, GameProgress, LevelProgress } from "games/game4/types";
 
 export class ProgressCookieStore {
@@ -19,8 +20,8 @@ export class ProgressCookieStore {
      * Now considers "First Time" as someone who has never saved 
      * OR someone who hasn't finished a single level yet.
      */
-    public static isFirstTime(storageKey = "jg_progress_v1"): boolean {
-        const noData = localStorage.getItem(storageKey) === null;
+    public static async isFirstTime(storageKey = "jg_progress_v1"): Promise<boolean> {
+        const noData = await PlatformHandler.instance.platform.getItem(storageKey) === null;
         return noData || ProgressCookieStore.totalCompletedLevels === 0;
     }
 
@@ -28,8 +29,8 @@ export class ProgressCookieStore {
      * Calculates how many levels have at least one difficulty completed
      * and updates the static variable.
      */
-    private syncCompletionCount(): void {
-        const progress = this.load();
+    private async syncCompletionCount(): Promise<void> {
+        const progress = await this.load();
         let count = 0;
 
         for (const levelId in progress.levels) {
@@ -46,9 +47,9 @@ export class ProgressCookieStore {
     /**
      * Loads progress from localStorage.
      */
-    public load(): GameProgress {
+    public async load(): Promise<GameProgress> {
         try {
-            const raw = localStorage.getItem(this.storageKey);
+            const raw = await PlatformHandler.instance.platform.getItem(this.storageKey);
             if (!raw) return this.createEmpty();
 
             const parsed = JSON.parse(raw) as Partial<GameProgress>;
@@ -80,7 +81,7 @@ export class ProgressCookieStore {
             };
 
             const str = JSON.stringify(safe);
-            localStorage.setItem(this.storageKey, str);
+            PlatformHandler.instance.platform.setItem(this.storageKey, str);
 
             // Update the counter whenever we save
             this.syncCompletionCount();
@@ -112,12 +113,12 @@ export class ProgressCookieStore {
     /**
      * Records level completion and updates best times.
      */
-    public markCompleted(
+    public async markCompleted(
         progress: GameProgress,
         levelId: string,
         difficulty: Difficulty,
         timeMs: number
-    ): GameProgress {
+    ): Promise<GameProgress> {
         const next = this.clone(progress);
 
         if (!next.levels[levelId]) {
@@ -135,7 +136,7 @@ export class ProgressCookieStore {
             entry.bestTimeMs = timeMs;
         }
 
-        this.save(next); // This will trigger syncCompletionCount()
+        await this.save(next); // This will trigger syncCompletionCount()
         return next;
     }
 
