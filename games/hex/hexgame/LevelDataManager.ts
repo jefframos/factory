@@ -27,6 +27,11 @@ export class LevelDataManager {
 
         this.initFromWorlds(worlds);
     }
+    public static getLevelIndex(level: LevelData): number {
+        if (!level) return -1;
+        // Finding by ID is safer than object reference
+        return this.flatLevels.findIndex(l => l.id === level.id);
+    }
     public static getLevelAt(index: number): LevelData | null {
         if (index < 0 || index >= this.flatLevels.length) return null;
         return this.flatLevels[index];

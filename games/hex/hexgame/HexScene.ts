@@ -14,6 +14,7 @@ import { AvatarManager } from "./avatar/AvatarManager";
 import { AvatarRegistry } from "./avatar/AvatarRegistry";
 import { ClusterManager } from "./cluster/ClusterManager";
 import { CurrencyType, EconomyStorage } from "./data/EconomyStorage";
+import { LevelSessionStats } from "./data/GameplayData";
 import { GameplayProgressStorage } from "./data/GameplayProgressStorage";
 import HexAssets from "./HexAssets";
 import { HexGameMediator } from "./HexGameMediator";
@@ -50,6 +51,7 @@ export default class HexScene extends GameScene {
     private isMapActive: boolean = true;
 
     private transition!: ScreenTransition;
+    private activeLevelIndex: number = 0;
 
     // Layout Config
     static readonly MAP_Y_OFFSET_PERCENT = 0.75; // Center level at 75% height
@@ -225,22 +227,31 @@ export default class HexScene extends GameScene {
         );
         // this.mediator.drawDebugZones()
         // Inside setupGameplay()
-        this.mediator.gameplayData.onLevelComplete.add(async () => {
-            const currentIndex = this.worldMap.getCurrentIndex(); // You'll need a getter for this
+        this.mediator.gameplayData.onLevelComplete.add(async (level: LevelSessionStats) => {
+            // Use our tracked index, NOT the map's current focus
+            const playedIndex = this.activeLevelIndex;
+            const latestReached = await GameplayProgressStorage.getLatestLevelIndex();
 
-            // 1. Save Progress
-            await EconomyStorage.addCurrency(CurrencyType.STARS, 3)
-            await GameplayProgressStorage.saveLevelComplete(currentIndex, 3);
+            // 1. Save Progress (returns difference)
+            const starGain = await GameplayProgressStorage.saveLevelComplete(playedIndex, level.stars);
+
+            if (starGain > 0) {
+                await EconomyStorage.addCurrency(CurrencyType.STARS, starGain);
+            }
 
             // 2. Return to map
             await this.showMap();
 
-            // 3. Update map visuals and animate to the next level
-            const nextIndex = currentIndex + 1;
-            // this.worldMap.setCurrentLevelIndex(nextIndex);
-            // this.worldMap.centerOnLevel(nextIndex, true); // Animate the scroll
-
-            this.worldMap.animateToLevel(nextIndex);
+            // 3. Navigation Logic
+            // Only move forward if we just completed the "farthest" level
+            if (playedIndex === latestReached) {
+                const nextIndex = playedIndex + 1;
+                this.worldMap.animateToLevel(nextIndex);
+                //this.worldMap.setCurrentLevelIndex(nextIndex);
+            } else {
+                //this.worldMap.setCurrentLevelIndex(playedIndex);
+                //this.worldMap.centerOnLevel(playedIndex, true);
+            }
         });
 
         // Handle Return to Map
@@ -264,6 +275,7 @@ export default class HexScene extends GameScene {
     }
 
     private async startLevel(level: LevelData): Promise<void> {
+        this.activeLevelIndex = LevelDataManager.getLevelIndex(level);
         await this.transition.close();
         await PromiseUtils.await(500)
         this.transition.setTargetWidth(Game.DESIGN_WIDTH)

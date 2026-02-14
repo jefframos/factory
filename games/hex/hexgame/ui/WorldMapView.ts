@@ -1,11 +1,12 @@
 import BaseButton from "@core/ui/BaseButton";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
-import HexAssets from "../HexAssets";
+import { GameplayProgressStorage } from "../data/GameplayProgressStorage";
 import { LevelData, WorldData } from "../HexTypes";
 import { LevelDataManager } from "../LevelDataManager";
 import { Point, SplineUtils } from "../mapEditor/SplineUtils";
 import { VisualLayer, VisualViewController } from "../mapEditor/VisualViewController";
+import { LevelButtonView } from "./LevelButtonView";
 import { PathRope } from "./PathRope";
 import { PinState, WorldMapPin } from "./WorldMapPin";
 
@@ -315,33 +316,32 @@ export class WorldMapView extends PIXI.Container {
         else this.pathRopeTodo.clearRope();
     }
 
-    private createLevelButton(index: number, point: WorldMapPoint, level: LevelData, world: WorldData): BaseButton {
-        const size = this.opts.style.levelButtonSize;
-        const btn = new BaseButton({
-            standard: {
-                width: 105,
-                height: 84,
-                fontStyle: new PIXI.TextStyle({ ...HexAssets.MainFont }),
-                texture: PIXI.Texture.from('easy-level'),
-                textOffset: new PIXI.Point(0, 35),
-                centerIconHorizontally: true,
-                centerIconVertically: true
-            },
-            disabled: {
-                texture: PIXI.Texture.from('grey-level')
-            },
-            click: {
-                callback: () => {
+    // Inside WorldMapView.ts
+
+    private createLevelButton(index: number, point: WorldMapPoint, level: LevelData, world: WorldData): LevelButtonView {
+        // 1. Get the star data
+        const levelData = GameplayProgressStorage.getLevelData(index);
+        const stars = levelData ? levelData.stars : 0;
+
+        // 2. Check if unlocked using your storage's currentProgressIndex
+        // We can access the cached data safely here because the map is built after initialization
+        const latestUnlocked = GameplayProgressStorage.getDataSync().currentProgressIndex;
+        const isUnlocked = index <= latestUnlocked;
+
+        const btn = new LevelButtonView(
+            index,
+            level,
+            stars,
+            isUnlocked,
+            () => {
+                if (isUnlocked) {
                     this.setSelected(index);
                     this.opts.onLevelSelected?.(level, world);
                 }
             }
-        });
+        );
 
         btn.position.set(point.x, point.y);
-        btn.pivot.set(size * 0.5, size * 0.5);
-        btn.setLabel(String(index + 1))
-
         return btn;
     }
 

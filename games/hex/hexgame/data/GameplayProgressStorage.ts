@@ -62,17 +62,36 @@ export class GameplayProgressStorage {
         return this._cachedData!;
     }
 
-    public static async saveLevelComplete(index: number, stars: number = 3): Promise<void> {
+    public static async saveLevelComplete(index: number, stars: number = 3): Promise<number> {
         const data = await this.ensureLoaded();
 
         const existingStars = data.levels[index]?.stars || 0;
-        data.levels[index] = { stars: Math.max(existingStars, stars) };
 
+        // Calculate how many NEW stars were earned
+        const starGain = Math.max(0, stars - existingStars);
+
+        // Only update if the new score is higher
+        if (stars > existingStars) {
+            data.levels[index] = { stars: stars };
+        }
+
+        // Logic: Only increment the "Current Progress" if this is the highest level they've reached
         if (index === data.currentProgressIndex) {
             data.currentProgressIndex++;
         }
 
         await this.persist(data);
+
+        // Return the gain so the Economy system knows how much to add
+        return starGain;
+    }
+
+    public static getLevelData(index: number): ILevelData | null {
+        if (!this._cachedData) {
+            console.error("GameplayProgressStorage: Attempted to get level data before storage was loaded.");
+            return null;
+        }
+        return this._cachedData.levels[index] || null;
     }
 
     public static async getLatestLevelIndex(): Promise<number> {
@@ -88,7 +107,10 @@ export class GameplayProgressStorage {
         this._cachedData = this.createDefaultData();
         await PlatformHandler.instance.platform.removeItem(this.KEY);
     }
-
+    // Add this to GameplayProgressStorage
+    public static getDataSync(): IGameplaySaveData {
+        return this._cachedData || this.createDefaultData();
+    }
     public static async unlockAll(count: number): Promise<void> {
         const data = await this.ensureLoaded();
         data.currentProgressIndex = count;
