@@ -68,6 +68,7 @@ export class HexGameMediator {
 
         // When the HUD or Main class triggers a restart
         this.hud.onHint.add(() => {
+            this.gameplayData.recordHint();
             this.hintService.showHint();
         });
         this.hud.onClose.add(() => {
@@ -83,10 +84,10 @@ export class HexGameMediator {
         });
 
         // Auto Complete Logic
-        // this.hud.onAutoComplete.add(() => {
-        //     console.log("HUD: Requesting Auto Complete");
-        //     this.autoComplete();
-        // });
+        this.hud.onSkip.add(() => {
+            console.log("HUD: Requesting Auto Complete");
+            this.autoComplete();
+        });
 
         // Reset Board Logic
         this.hud.onErase.add(() => {
@@ -111,7 +112,7 @@ export class HexGameMediator {
 
         // Start session tracking
         const info = LevelDataManager.getCurrentLevelInfo();
-        this.gameplayData.startSession(info.worldId, info.level?.id || "manual");
+        this.gameplayData.startSession(info.levelData, info.level?.id || "manual", info.levelData?.difficulty);
 
         // Visual Polish: Fade the board in
         this.gameContainer.alpha = 0;
@@ -153,13 +154,15 @@ export class HexGameMediator {
         this.isAutoCompleting = true;
         this.inputService.enabled = false
 
+        this.hud.visible = false;
+
         const allPieces = this.clusterManager.getPieces();
 
         for (const piece of allPieces) {
             const currentGridPos = this.getGridPositionOfPiece(piece);
             const isCorrect = currentGridPos &&
                 currentGridPos.q === piece.data.rootPos.q &&
-                currentPos.r === piece.data.rootPos.r;
+                currentGridPos.r === piece.data.rootPos.r;
 
             if (!isCorrect) {
                 await this.movePieceToCorrectSlot(piece);
@@ -168,7 +171,13 @@ export class HexGameMediator {
 
         this.isAutoCompleting = false;
         this.inputService.enabled = true
-        console.log("Puzzle Auto-Completed!");
+        this.gameplayData.addSkipLevel();
+
+        const choice = await this.endGameService.execute(2, this.gameplayData.getSnapshot());
+        setTimeout(() => {
+            this.inputService.enabled = false;
+            this.gameplayData.completeLevel(choice);
+        }, 50);
     }
 
     private async movePieceToCorrectSlot(piece: ClusterView): Promise<void> {
@@ -216,7 +225,9 @@ export class HexGameMediator {
         }));
         this.gridView.placePiece(piece, snappedCoords);
     }
-
+    public update(delta: number) {
+        this.endGameService.update(delta)
+    }
     public async onMoveSuccess(): Promise<void> {
         this.gameplayData.recordMove();
 
@@ -227,22 +238,23 @@ export class HexGameMediator {
 
             // 2. Trigger the endgame sequence
             // Total animation time set to 2.5 seconds
-            await this.endGameService.execute(2.5);
+            this.hud.visible = false;
+            const choice = await this.endGameService.execute(2, this.gameplayData.getSnapshot());
             setTimeout(() => {
                 this.inputService.enabled = false;
-                this.gameplayData.completeLevel();
+                this.gameplayData.completeLevel(choice);
             }, 50);
         }
     }
 
-    public handleMovePerformed(): void {
-        this.gameplayData.recordMove();
+    // public handleMovePerformed(): void {
+    //     this.gameplayData.recordMove();
 
-        if (this.gridView.isGridFull()) {
-            this.inputService.enabled = false; // Stop further interaction
-            this.gameplayData.completeLevel();
-        }
-    }
+    //     if (this.gridView.isGridFull()) {
+    //         this.inputService.enabled = false; // Stop further interaction
+    //         this.gameplayData.completeLevel();
+    //     }
+    // }
 
     public async solveOnePiece(): Promise<void> {
         if (this.isAutoCompleting) return;

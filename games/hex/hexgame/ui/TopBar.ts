@@ -26,7 +26,7 @@ export class TopBar extends PIXI.Container {
 
         // 2. Avatar & Level System
         this.avatarView = new AvatarUIView();
-        this.addChild(this.avatarView);
+        //this.addChild(this.avatarView);
 
         // 3. Currencies
         this.starBox = new StarBox({

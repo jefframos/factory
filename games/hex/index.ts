@@ -135,6 +135,15 @@ export default class MyGame extends Game {
             chars: ['0123456789: ?!{}()@#$%^&*-+,./', ['a', 'z'], ['A', 'Z']]
         });
 
+        PIXI.BitmapFont.from(HexAssets.MainFontTitle.fontFamily as string, {
+            ...HexAssets.MainFontTitle,
+            strokeThickness: 6,
+            //resolution: 2,
+            letterSpacing: 10,
+        }, {
+            chars: ['0123456789: ?!{}()@#$%^&*-+,./', ['a', 'z'], ['A', 'Z']]
+        });
+
 
 
         this.overlayContainer.addChild(this.popupManager)

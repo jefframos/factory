@@ -129,11 +129,11 @@ export class HexHUD extends PIXI.Container {
             icon: 'Icon_Skip',
             amount: -1,
             isLocked: false,
-            blockAds: false,
+            blockAds: true,
             onUse: () => this.onSkip.dispatch(),
             onWatchAd: () => { }
         });
-        //this.gameplayLayer.addChild(this.gameplaySkipBtn);
+        this.gameplayLayer.addChild(this.gameplaySkipBtn);
     }
 
     private buildWorldUI(): void {
@@ -153,7 +153,7 @@ export class HexHUD extends PIXI.Container {
             btn.y = i * 120;
             this.worldSideBelt.addChild(btn);
         });
-        this.worldLayer.addChild(this.worldSideBelt);
+        //this.worldLayer.addChild(this.worldSideBelt);
 
         this.centerMapBtn = new BaseButton({
             standard: { width: 70, height: 70, iconTexture: PIXI.Texture.from('eye') },

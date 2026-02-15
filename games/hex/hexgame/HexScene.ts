@@ -19,7 +19,7 @@ import { GameplayProgressStorage } from "./data/GameplayProgressStorage";
 import HexAssets from "./HexAssets";
 import { HexGameMediator } from "./HexGameMediator";
 import { HexGridView } from "./HexGridView";
-import { Difficulty, LevelData } from "./HexTypes";
+import { Choice, Difficulty, LevelData } from "./HexTypes";
 import { LevelDataManager } from "./LevelDataManager";
 import { HexHUD, HUDMode } from "./ui/HexHud";
 import { WorldHUD } from "./ui/WorldHUD";
@@ -227,7 +227,7 @@ export default class HexScene extends GameScene {
         );
         // this.mediator.drawDebugZones()
         // Inside setupGameplay()
-        this.mediator.gameplayData.onLevelComplete.add(async (level: LevelSessionStats) => {
+        this.mediator.gameplayData.onLevelComplete.add(async (level: LevelSessionStats, choice: Choice) => {
             // Use our tracked index, NOT the map's current focus
             const playedIndex = this.activeLevelIndex;
             const latestReached = await GameplayProgressStorage.getLatestLevelIndex();
@@ -239,6 +239,8 @@ export default class HexScene extends GameScene {
                 await EconomyStorage.addCurrency(CurrencyType.STARS, starGain);
             }
 
+            console.log(playedIndex)
+
             // 2. Return to map
             await this.showMap();
 
@@ -246,11 +248,28 @@ export default class HexScene extends GameScene {
             // Only move forward if we just completed the "farthest" level
             if (playedIndex === latestReached) {
                 const nextIndex = playedIndex + 1;
-                this.worldMap.animateToLevel(nextIndex);
-                //this.worldMap.setCurrentLevelIndex(nextIndex);
+                //this.worldMap.animateToLevel(nextIndex);
+                this.hexHUD.visible = false;
+
+
+                await this.worldMap.animateToLevel(nextIndex);
+
+                const nextLevel = await LevelDataManager.getLevelAt(nextIndex)
+
+                const latestReached = await GameplayProgressStorage.getLatestLevelIndex();
+
+                // 2. Tell the map to update all buttons (stars and locks) and focus the index
+                this.worldMap.setCurrentLevelIndex(latestReached);
+
+                if (choice == "next") {
+                    if (nextLevel) {
+                        this.startLevel(nextLevel)
+                    }
+                } else {
+                    this.hexHUD.visible = true;
+                }
             } else {
-                //this.worldMap.setCurrentLevelIndex(playedIndex);
-                //this.worldMap.centerOnLevel(playedIndex, true);
+                this.worldMap.recenter()
             }
         });
 
@@ -262,11 +281,14 @@ export default class HexScene extends GameScene {
     // --- Scene Logic ---
 
     private async showMap(): Promise<void> {
+        this.hexHUD.visible = false;
         await this.transition.close();
         await PromiseUtils.await(500)
-
+        this.hexHUD.visible = true;
         this.hexHUD.setMode(HUDMode.WORLDMAP)
         this.transition.setTargetWidth(Game.overlayScreenData.width)
+
+
 
         this.isMapActive = true;
         this.worldViewContainer.visible = true; // Hides/Shows both Map and WorldHUD
@@ -276,8 +298,10 @@ export default class HexScene extends GameScene {
 
     private async startLevel(level: LevelData): Promise<void> {
         this.activeLevelIndex = LevelDataManager.getLevelIndex(level);
+        this.hexHUD.visible = false;
         await this.transition.close();
         await PromiseUtils.await(500)
+        this.hexHUD.visible = true;
         this.transition.setTargetWidth(Game.DESIGN_WIDTH)
         this.isMapActive = false;
         this.worldViewContainer.visible = false; // Completely cleans the screen
@@ -295,7 +319,7 @@ export default class HexScene extends GameScene {
             this.worldMap.update(delta);
         }
         this.transition.update(delta);
-
+        this.mediator?.update(delta);
 
         //this.hexHUD?.update(delta);
         this.layout();
@@ -397,7 +421,6 @@ export default class HexScene extends GameScene {
     }
 
     public destroy(): void {
-        super.destroy();
         this.worldMap?.destroy();
     }
 }

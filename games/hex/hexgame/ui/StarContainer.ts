@@ -9,7 +9,7 @@ export class StarContainer extends PIXI.Container {
         for (let i = 0; i < 3; i++) {
             const star = new PIXI.Sprite();
             star.anchor.set(0.5);
-            star.x = (i - 1) * 28; // Increased spacing slightly for the arc look
+            star.x = (i - 1) * 32; // Increased spacing slightly for the arc look
 
             // ARC LOGIC: If it's the middle star (index 1), move it lower
             if (i === 1) {
@@ -31,10 +31,10 @@ export class StarContainer extends PIXI.Container {
         this.visible = true;
         // Star config mapping: [Texture, Tint]
         const config = [
-            { tex: 'ItemIcon_Star_Red', tint: 0xffffff },  // 0 stars
-            { tex: 'ItemIcon_Star_Bronze', tint: 0xffffff },       // 1 star (Bronze)
-            { tex: 'ItemIcon_Star_Silver', tint: 0xffffff },       // 2 stars (Silver)
-            { tex: 'ItemIcon_Star_Gold', tint: 0xffffff }        // 3 stars (Gold)
+            { tex: 'Star-empty-small', tint: 0xffffff },  // 0 stars
+            { tex: 'ItemIcon_Star_Bronze-small', tint: 0xffffff },       // 1 star (Bronze)
+            { tex: 'ItemIcon_Star_Silver-small', tint: 0xffffff },       // 2 stars (Silver)
+            { tex: 'ItemIcon_Star_Gold-small', tint: 0xffffff }        // 3 stars (Gold)
         ];
 
         this.stars.forEach((star, i) => {

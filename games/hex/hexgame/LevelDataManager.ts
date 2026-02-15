@@ -130,7 +130,7 @@ export class LevelDataManager {
     }
     public static getCurrentLevelInfo() {
         return {
-            worldId: this._currentLevel,
+            levelData: this._currentLevel,
             level: this._currentWorldId
         };
     }

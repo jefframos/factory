@@ -1,13 +1,17 @@
 import BaseButton from "@core/ui/BaseButton";
 import * as PIXI from "pixi.js";
+import { Signal } from "signals";
 import HexAssets from "../HexAssets";
 import { Difficulty, LevelData } from "../HexTypes";
 import { StarContainer } from "./StarContainer";
 
-export class LevelButtonView extends BaseButton {
-    private starDisplay: StarContainer;
+export class LevelButtonView extends PIXI.Container {
+    public readonly onSelected: Signal = new Signal();
 
-    // Texture Lookup Table
+    private button: BaseButton;
+    private starDisplay: StarContainer;
+    private levelLabel: PIXI.BitmapText;
+
     private static readonly TEXTURE_MAP: Record<Difficulty, { normal: string, locked: string }> = {
         [Difficulty.VERY_EASY]: { normal: 'easy-button', locked: 'easy-locked' },
         [Difficulty.EASY]: { normal: 'easy-button', locked: 'easy-locked' },
@@ -16,52 +20,66 @@ export class LevelButtonView extends BaseButton {
         [Difficulty.VERY_HARD]: { normal: 'hard-button', locked: 'hard-locked' },
     };
 
-    constructor(index: number, level: LevelData, starsEarned: number, isUnlocked: boolean, onSelect: () => void) {
+    constructor(index: number, level: LevelData, starsEarned: number, isUnlocked: boolean) {
+        super();
+
         const difficulty = level.difficulty ?? Difficulty.MEDIUM;
         const textures = LevelButtonView.TEXTURE_MAP[difficulty];
+        const normalTex = PIXI.Texture.from(textures.normal);
 
-        super({
+        // 1. Initialize the Button Background
+        // We no longer pass fontStyle or textOffset here as we handle text manually
+        this.button = new BaseButton({
             standard: {
-                texture: PIXI.Texture.from(textures.normal),
-                width: 109,
-                height: 84,
-                fontStyle: new PIXI.TextStyle({
-                    ...HexAssets.MainFont,
-                    dropShadowDistance: 2
-                }),
-                // Move text slightly UP to balance the stars at the bottom
-                textOffset: new PIXI.Point(0, -15),
+                texture: normalTex,
+                width: normalTex.width,
+                height: normalTex.height,
             },
             disabled: {
                 texture: PIXI.Texture.from(textures.locked)
             },
-            click: { callback: onSelect }
+            click: { callback: () => this.onSelected.dispatch(index) }
         });
 
-        this.setLabel(String(index + 1));
+        this.button.pivot.set(normalTex.width / 2, normalTex.height / 2);
+        this.addChild(this.button);
+        this.button.scale.set(0.5);
 
-        // Ensure pivot is centered
-        this.pivot.x = 109 / 2;
-        this.pivot.y = 84 / 2;
+        // 2. Initialize Bitmap Text
+        // Replace 'MainFont_Bitmap' with your actual bitmap font name from HexAssets
+        this.levelLabel = new PIXI.BitmapText(String(index + 1), {
+            fontName: HexAssets.MainFontTitle.fontFamily,
+            fontSize: 28,
+            align: 'center'
+        });
+        this.levelLabel.interactive = false;
+        this.levelLabel.interactiveChildren = false;
+        // Center the text; adjust Y offset (-15) to match your previous design
+        this.levelLabel.anchor.set(0.5);
+        this.levelLabel.position.set(0, -15);
+        this.addChild(this.levelLabel);
 
-        // 2. Stars positioning
+        // 3. Initialize Stars
         this.starDisplay = new StarContainer();
-
-        // Since height is 84 and pivot.y is 42:
-        // y = 0 is center. 
-        // y = 42 is the very bottom edge.
-        // We set it to 32 to give it a little padding from the edge.
-        this.starDisplay.x = this.pivot.x;
-        this.starDisplay.y = 78;
-
+        this.starDisplay.y = 36;
         this.addChild(this.starDisplay);
+        this.starDisplay.interactive = false;
+        this.starDisplay.interactiveChildren = false;
 
-        // 3. Update State
+        this.updateState(isUnlocked, starsEarned);
+    }
+    // Inside LevelButtonView.ts
+
+    public updateState(isUnlocked: boolean, starsEarned: number): void {
         if (isUnlocked) {
-            this.enable();
+            this.button.enable();
+            this.levelLabel.alpha = 1.0;
+            this.starDisplay.visible = true;
             this.starDisplay.setStars(starsEarned);
         } else {
-            this.disable();
+            this.button.disable();
+            // Dim the text or hide it when locked
+            // this.levelLabel.alpha = 0.5;
             this.starDisplay.visible = false;
         }
     }

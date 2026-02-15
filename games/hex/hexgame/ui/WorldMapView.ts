@@ -108,6 +108,9 @@ export class WorldMapView extends PIXI.Container {
 
     private pinComponent: WorldMapPin | null = null;
 
+    // Add this to your class properties
+    private animationResolver: ((value: void | PromiseLike<void>) => void) | null = null;
+
     constructor() {
         super();
         // this.setupBackground();
@@ -274,7 +277,7 @@ export class WorldMapView extends PIXI.Container {
 
             const btn = this.createLevelButton(i, point, level, world);
             this.pointsContainer.addChild(btn);
-            this.assigned.push({ point, level, world, button: btn });
+            this.assigned.push({ point, level, world, button: btn.button });
         }
 
         // 8. Sorting
@@ -332,14 +335,16 @@ export class WorldMapView extends PIXI.Container {
             index,
             level,
             stars,
-            isUnlocked,
-            () => {
-                if (isUnlocked) {
-                    this.setSelected(index);
-                    this.opts.onLevelSelected?.(level, world);
-                }
-            }
+            isUnlocked
         );
+
+        btn.onSelected.add(() => {
+            if (isUnlocked) {
+                this.setSelected(index);
+                this.opts.onLevelSelected?.(level, world);
+            }
+
+        })
 
         btn.position.set(point.x, point.y);
         return btn;
@@ -379,9 +384,9 @@ export class WorldMapView extends PIXI.Container {
         if (index < 0 || index >= this.assigned.length) return;
         const selected = this.assigned[index];
 
-        this.assigned.forEach((entry, i) => {
-            entry.button.scale.set(i === index ? 1.08 : 1);
-        });
+        // this.assigned.forEach((entry, i) => {
+        //     entry.button.scale.set(i === index ? 1.08 : 1);
+        // });
     }
     public getCurrentIndex(): number {
         return this.currentLevelIndex;
@@ -402,15 +407,17 @@ export class WorldMapView extends PIXI.Container {
         }
     }
 
-    public animateToLevel(index: number): void {
+    public async animateToLevel(index: number): Promise<void> {
+        // If already animating, you might want to resolve the previous one immediately
+        if (this.animationResolver) {
+            this.animationResolver();
+            this.animationResolver = null;
+        }
+
         const prevIndex = this.currentLevelIndex;
         this.currentLevelIndex = index;
 
-        // 1. Get the segment of the spline between these two points
         const control: Point[] = this.controlPointsSorted.map(p => ({ x: p.x, y: p.y }));
-
-        // Generate the specific segment for the animation
-        // segmentPoints: 50 for high resolution movement
         const fullSpline = SplineUtils.generateCatmullRomSpline(control, 50, 0.5);
 
         const segmentPoints = 50;
@@ -422,7 +429,6 @@ export class WorldMapView extends PIXI.Container {
             Math.max(startIndex, endIndex) + 1
         );
 
-        // If moving backwards, reverse the points
         if (prevIndex > index) {
             this.currentSplinePoints.reverse();
         }
@@ -431,11 +437,31 @@ export class WorldMapView extends PIXI.Container {
         this.pathProgress = 0;
         this.moveStartTime = performance.now();
 
-        // Update buttons state
-        //this.updateButtonStates(index);
         this.refreshButtonVisuals(index);
         this.onUpdateCurrentLevel.dispatch(index);
+
+        // Return a promise that resolves when the update loop finishes the path
+        return new Promise((resolve) => {
+            this.animationResolver = resolve;
+        });
     }
+    public refreshAllButtons(): void {
+        const latestUnlocked = GameplayProgressStorage.getDataSync().currentProgressIndex;
+
+        this.assigned.forEach((entry, index) => {
+            const progress = GameplayProgressStorage.getLevelData(index);
+            const stars = progress ? progress.stars : 0;
+            const isUnlocked = index <= latestUnlocked;
+
+            // Cast to LevelButtonView to access our new updateProgress method
+            const view = entry.button.parent as LevelButtonView;
+            if (view && view.updateState) {
+                view.updateState(isUnlocked, stars);
+            }
+        });
+    }
+
+
     private refreshButtonVisuals(targetIndex: number): void {
         this.assigned.forEach((entry, i) => {
             if (i <= targetIndex) {
@@ -494,6 +520,12 @@ export class WorldMapView extends PIXI.Container {
                 this.isAnimatingPath = false;
                 this.pinComponent?.setState(PinState.IDLE); // Or REACHED
                 this.drawSpline(this.controlPointsSorted);
+
+                if (this.animationResolver) {
+                    this.animationResolver();
+                    this.animationResolver = null; // Clear it so it's not called twice
+                }
+
             }
         } else {
             // Ensure that if we aren't animating, the pin knows it's idle
@@ -542,6 +574,7 @@ export class WorldMapView extends PIXI.Container {
             else entry.button.disable();
         });
 
+        this.refreshAllButtons();
         // Ensure pin snaps to the new level immediately
         this.syncPinToCurrentLevel();
 
