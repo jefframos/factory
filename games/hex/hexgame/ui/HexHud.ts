@@ -93,7 +93,7 @@ export class HexHUD extends PIXI.Container {
 
         // 1. Close Button (Left)
         this.gameplayCloseBtn = new ItemBeltButton({
-            icon: 'PictoIcon_Home_1',
+            icon: HexAssets.Textures.Icons.Home,
             amount: -1,
             isLocked: false,
             blockAds: true,
@@ -105,7 +105,7 @@ export class HexHUD extends PIXI.Container {
         // 2. Tools Group (Centered)
         this.gameplayToolsContainer = new PIXI.Container();
         const toolsConfig = [
-            { icon: 'PictoIcon_Refresh_3', signal: this.onErase, qty: -1, blockAds: true },
+            { icon: HexAssets.Textures.Icons.Refresh, signal: this.onErase, qty: -1, blockAds: true },
             { icon: 'PictoIcon_Bulb', signal: this.onHint, qty: 3, blockAds: true },
         ];
 

@@ -1,6 +1,8 @@
-import BaseButton from "@core/ui/BaseButton";
+import BaseButton, { ButtonState } from "@core/ui/BaseButton";
 import SoundToggleLargeButton from "@core/ui/SoundToggleLargeButton";
 import * as PIXI from "pixi.js";
+import { EconomyStorage } from "../../data/EconomyStorage";
+import { GameplayProgressStorage } from "../../data/GameplayProgressStorage";
 import HexAssets from "../../HexAssets";
 import { BasePanel } from "./BasePanel";
 
@@ -20,31 +22,26 @@ export class SettingsPanel extends BasePanel {
         this.content.addChild(container);
 
         // Common text style for settings buttons
-        const buttonTextStyle = new PIXI.TextStyle({
-            fill: "#ffffff",
-            fontSize: 24,
-            fontWeight: "bold",
-            // Assuming your project has a MainFont asset, otherwise use 'Arial'
-            fontFamily: "Arial"
-        });
+        const buttonTextStyle = new PIXI.TextStyle({ ...HexAssets.MainFont });
 
         // 1. Define the buttons configuration
         const configs = [
-            { text: "Account Settings", icon: "Icon_MapPoint", callback: () => console.log("Account clicked") },
-            { text: "Notifications", icon: "PictoIcon_Home_1", callback: () => console.log("Notifications clicked") },
-            { text: "Privacy Policy", icon: "Icon_Skip", callback: () => console.log("Privacy clicked") },
+            // { text: "Account Settings", icon: "Icon_MapPoint", callback: () => console.log("Account clicked") },
+            // { text: "Notifications", icon: "PictoIcon_Home_1", callback: () => console.log("Notifications clicked") },
+            // { text: "Privacy Policy", icon: "Icon_Skip", callback: () => console.log("Privacy clicked") },
         ];
 
         const soundBtn = new SoundToggleLargeButton(this.BUTTON_WIDTH, this.BUTTON_HEIGHT, PIXI.Texture.from(HexAssets.Textures.Icons.SoundOn), PIXI.Texture.from(HexAssets.Textures.Icons.SoundOff));
         soundBtn.y = 0; // First position
         container.addChild(soundBtn);
+        soundBtn.overrider(ButtonState.STANDARD, { texture: PIXI.Texture.from(HexAssets.Textures.Buttons.Blue), fontStyle: buttonTextStyle })
         // 2. Create Mock Buttons
         configs.forEach((cfg, i) => {
             const btn = new BaseButton({
                 standard: {
                     width: this.BUTTON_WIDTH,
                     height: this.BUTTON_HEIGHT,
-                    texture: PIXI.Texture.from("Button_SkillBtn_Blue"), // Using shop blue texture
+                    texture: PIXI.Texture.from(HexAssets.Textures.Buttons.Blue), // Using shop blue texture
                     fontStyle: buttonTextStyle,
                     text: cfg.text,
                     iconTexture: PIXI.Texture.from(cfg.icon),
@@ -65,7 +62,7 @@ export class SettingsPanel extends BasePanel {
             standard: {
                 width: this.BUTTON_WIDTH,
                 height: this.BUTTON_HEIGHT,
-                texture: PIXI.Texture.from("Button_SkillBtn_Dark"), // Use dark texture for "danger" action
+                texture: PIXI.Texture.from(HexAssets.Textures.Buttons.Red), // Use dark texture for "danger" action
                 fontStyle: buttonTextStyle,
                 text: "Clear Cache",
                 iconTexture: PIXI.Texture.from(HexAssets.Textures.Icons.Close),
@@ -76,7 +73,8 @@ export class SettingsPanel extends BasePanel {
             },
             click: {
                 callback: () => {
-                    localStorage.clear();
+                    EconomyStorage.clearEconomy();
+                    GameplayProgressStorage.clearData();
                     window.location.reload();
                 }
             }

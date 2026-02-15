@@ -55,4 +55,45 @@ export class ClusterView extends PIXI.Container {
         this.position.set(0);
         this.visible = false;
     }
+
+    /**
+     * Creates a visual-only clone of the piece for FTUE or effects.
+     * This clone does not use the Pool to avoid interfering with game logic.
+     */
+    public cloneVisual(): PIXI.Container {
+        const ghost = new PIXI.Container();
+
+        // We iterate through the existing tiles and replicate their visual state
+        this.tiles.forEach((tile) => {
+            if (!tile.visible) return;
+
+            // Create a simple Graphics or Sprite representation of the tile
+            // If ClusterTileView has a specific sprite internally, we clone its texture.
+            // Assuming ClusterTileView is a Container with visuals:
+            const tileClone = new PIXI.Container();
+            tileClone.position.copyFrom(tile.position);
+            tileClone.scale.copyFrom(tile.scale);
+            tileClone.alpha = 0.6; // Ghostly effect
+
+            // Deep clone visual children (Sprites/Graphics)
+            tile.children.forEach(child => {
+                if (child instanceof PIXI.Sprite) {
+                    const s = new PIXI.Sprite(child.texture);
+                    s.anchor.copyFrom(child.anchor);
+                    s.tint = child.tint;
+                    s.width = tile.width
+                    s.height = tile.height
+                    tileClone.addChild(s);
+                } else if (child instanceof PIXI.Graphics) {
+                    const g = new PIXI.Graphics(child.geometry);
+                    g.tint = child.tint;
+                    tileClone.addChild(g);
+                }
+            });
+
+            ghost.addChild(tileClone);
+        });
+
+        return ghost;
+    }
 }

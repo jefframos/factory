@@ -1,11 +1,14 @@
+import { PopupManager } from "@core/popup/PopupManager";
 import gsap from "gsap";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
+import { ConfirmationPopupData } from "../game/popup/ConfirmationPopup";
 import { DevGuiManager } from "../game/utils/DevGuiManager";
 import { ClusterManager } from "./cluster/ClusterManager";
 import { ClusterView } from "./cluster/ClusterView";
 import { GameplayData } from "./data/GameplayData";
 import { EndGameService } from "./EndGameService";
+import { FTUEMode, FTUEService } from "./ftue/FTUEService";
 import { HexGridBuilder } from "./HexGridBuilder";
 import { HexGridView } from "./HexGridView";
 import { HexInputService } from "./HexInputService";
@@ -19,6 +22,7 @@ export class HexGameMediator {
     private inputService: HexInputService;
     private isAutoCompleting: boolean = false;
     private hintService: HintService;
+    private ftueService: FTUEService;
     public gameplayData: GameplayData = new GameplayData();
     private endGameService: EndGameService;
     public readonly onRestart: Signal = new Signal();
@@ -73,11 +77,26 @@ export class HexGameMediator {
         });
         this.hud.onClose.add(() => {
             // Force reset of any piece currently in the air
-            this.inputService.forceResetHeldPiece();
 
-            // Dispatch to Main class to generate a new matrix and call initPuzzle again
-            this.onRestart.dispatch({});
-            this.onQuit.dispatch({});
+            const popupData: ConfirmationPopupData = {
+                title: 'Back to Map?',
+                description: 'Leave the puzzle and return to the map?',
+                onConfirm: () => { },
+                confirmLabel: 'Stay',
+                cancelLabel: 'Exit',
+                onCancel: () => {
+                    setTimeout(() => {
+                        this.inputService.forceResetHeldPiece();
+
+                        // Dispatch to Main class to generate a new matrix and call initPuzzle again
+                        this.onRestart.dispatch({});
+                        this.onQuit.dispatch({});
+                    }, 800);
+                }
+            }
+            PopupManager.instance.show('confirm', popupData)
+            console.log("HUD: Requesting Auto Complete");
+
 
             // Re-enable input
             //this.inputService.enabled = true;
@@ -85,8 +104,21 @@ export class HexGameMediator {
 
         // Auto Complete Logic
         this.hud.onSkip.add(() => {
+
+            const popupData: ConfirmationPopupData = {
+                title: 'Skip Level?',
+                description: 'Feeling stuck? You can skip to the next level.',
+                onCancel: () => { },
+                confirmLabel: 'Skip',
+                cancelLabel: 'Stay',
+                onConfirm: () => {
+                    setTimeout(() => {
+                        this.autoComplete();
+                    }, 800);
+                }
+            }
+            PopupManager.instance.show('confirm', popupData)
             console.log("HUD: Requesting Auto Complete");
-            this.autoComplete();
         });
 
         // Reset Board Logic
@@ -94,6 +126,12 @@ export class HexGameMediator {
             console.log("HUD: Requesting Reset");
             this.resetBoard();
         });
+    }
+    public startFirstTimeTutorial(): void {
+        if (!this.ftueService) {
+            this.ftueService = new FTUEService(this);
+        }
+        this.ftueService.startFTUE(FTUEMode.FIRST_TIME);
     }
     public setInputEnabled(enabled: boolean): void {
         this.inputService.forceResetHeldPiece();
@@ -226,12 +264,15 @@ export class HexGameMediator {
         this.gridView.placePiece(piece, snappedCoords);
     }
     public update(delta: number) {
-        this.endGameService.update(delta)
+        this.endGameService?.update(delta)
+        this.ftueService?.update(delta);
     }
     public async onMoveSuccess(): Promise<void> {
         this.gameplayData.recordMove();
 
         if (this.gridView.isGridFull()) {
+
+            this.ftueService.stop();
             // Use a tiny delay or wait for the next tick 
             // to ensure the InputService finishes its current placement logic
             this.hintService.stopHint();

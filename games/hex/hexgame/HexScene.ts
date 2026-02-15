@@ -132,6 +132,7 @@ export default class HexScene extends GameScene {
             mapData: PIXI.Assets.get('game/map-data.json'),
             style: style,
             onLevelSelected: (lvl, world) => {
+                console.log('onLevelSelected')
                 this.worldHUD?.setTitle(world.name); // Sync title
                 this.startLevel(lvl);
             }
@@ -145,13 +146,15 @@ export default class HexScene extends GameScene {
         if (remaining > 0) {
             // await PromiseUtils.await(remaining); // Assuming your util takes seconds
         }
-        await this.showMap();
-        this.transition.hideLoading();
+        const savedIndex = await GameplayProgressStorage.getLatestLevelIndex();
 
-        //this.backgroundManager.open();
-        // 2. Create the fixed HUD
-        // this.worldHUD = new WorldHUD(style, () => this.showMap());
-        // this.worldViewContainer.addChild(this.worldHUD);
+        if (savedIndex <= 0) {
+            this.startLevel(LevelDataManager.getLevelAt(0));
+        } else {
+
+            await this.showMap();
+        }
+        this.transition.hideLoading();
 
         const dragHandler = new WorldMapDragHandler(this.worldMap);
 
@@ -163,8 +166,6 @@ export default class HexScene extends GameScene {
             }
         });
         this.layoutMap();
-        const savedIndex = await GameplayProgressStorage.getLatestLevelIndex();
-        console.log(savedIndex)
         this.worldMap.setCurrentLevelIndex(savedIndex);
 
         // Snap camera to the level (false = no animation)
@@ -241,6 +242,16 @@ export default class HexScene extends GameScene {
 
             console.log(playedIndex)
 
+            if (choice == "replay") {
+                const current = await LevelDataManager.getLevelAt(playedIndex);
+                if (current) {
+                    this.startLevel(current)
+                } else {
+                    await this.showMap();
+                }
+                return
+            }
+
             // 2. Return to map
             await this.showMap();
 
@@ -248,28 +259,27 @@ export default class HexScene extends GameScene {
             // Only move forward if we just completed the "farthest" level
             if (playedIndex === latestReached) {
                 const nextIndex = playedIndex + 1;
-                //this.worldMap.animateToLevel(nextIndex);
                 this.hexHUD.visible = false;
 
-
+                // 1. Wait for the pin to physically reach the new spot
                 await this.worldMap.animateToLevel(nextIndex);
 
-                const nextLevel = await LevelDataManager.getLevelAt(nextIndex)
+                // 2. IMPORTANT: Update the internal index and refresh visuals
+                // This ensures the button at nextIndex becomes 'enabled'
+                this.worldMap.setCurrentLevelIndex(nextIndex);
 
-                const latestReached = await GameplayProgressStorage.getLatestLevelIndex();
+                const nextLevel = await LevelDataManager.getLevelAt(nextIndex);
+                this.worldMap.refreshAllButtons();
 
-                // 2. Tell the map to update all buttons (stars and locks) and focus the index
-                this.worldMap.setCurrentLevelIndex(latestReached);
-
-                if (choice == "next") {
-                    if (nextLevel) {
-                        this.startLevel(nextLevel)
-                    }
+                if (choice == "next" && nextLevel) {
+                    this.startLevel(nextLevel);
                 } else {
+                    // If we stay on the map, make sure HUD is back and map is interactive
                     this.hexHUD.visible = true;
+                    // The buttons are now enabled because of setCurrentLevelIndex + refreshAllButtons
                 }
             } else {
-                this.worldMap.recenter()
+                this.worldMap.refreshAllButtons();
             }
         });
 
@@ -308,6 +318,10 @@ export default class HexScene extends GameScene {
         this.hexHUD.setMode(HUDMode.GAMEPLAY)
 
         this.mediator.startLevel(level.matrix, level.difficulty || Difficulty.MEDIUM, level.pieces);
+        if (this.activeLevelIndex == 0) {
+
+            this.mediator.startFirstTimeTutorial()
+        }
         this.mediator.setInputEnabled(true);
         this.transition.open();
     }

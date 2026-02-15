@@ -1,12 +1,9 @@
-
 import SoundManager from '@core/audio/SoundManager';
 import { BasePopup, PopupData } from '@core/popup/BasePopup';
-import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
-import TiledLayerObject from '@core/tiled/TiledLayerObject';
 import BaseButton from '@core/ui/BaseButton';
 import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
-import MergeAssets from '../merge/MergeAssets';
+import HexAssets from '../../hexgame/HexAssets';
 
 export interface ConfirmationPopupData extends PopupData {
     title: string;
@@ -18,88 +15,69 @@ export interface ConfirmationPopupData extends PopupData {
 }
 
 export class ConfirmationPopup extends BasePopup {
+    transitionInComplete(): void {
+
+    }
+    private container: PIXI.Container = new PIXI.Container();
+    private background: PIXI.Graphics = new PIXI.Graphics();
+
     private titleText!: PIXI.Text;
     private descriptionText!: PIXI.Text;
 
-    private confirmButton: BaseButton;
-    private cancelButton: BaseButton;
+    private confirmButton!: BaseButton;
+    private cancelButton!: BaseButton;
 
     private onConfirm?: () => void;
     private onCancel?: () => void;
 
-    private layout: TiledLayerObject = new TiledLayerObject();
-
     constructor() {
         super();
 
-        this.layout.build(ExtractTiledFile.getTiledFrom('2048'), ['ConfirmationPopup'])
-        this.addChild(this.layout);
+        this.addChild(this.container);
 
+        // 1. Background
+        const width = 500;
+        const height = 400;
+        this.background.beginFill(HexAssets.Textures.UI.BlockerColor, 0.9);
+        this.background.lineStyle(4, 0xffffff, 1);
+        this.background.drawRoundedRect(0, 0, width, height, 20);
+        this.background.endFill();
+        this.background.pivot.set(width / 2, height / 2);
+        this.container.addChild(this.background);
 
-        const title = this.layout.findAndGetFromProperties('id', 'title-label');
-        if (title) {
-            this.titleText = new PIXI.Text('', new PIXI.TextStyle({ ...MergeAssets.MainFont, fontSize: 32 }))
-            this.titleText.anchor.set(0.5); // PIXI v7+ only
-            title.view?.addChild(this.titleText);
-            this.titleText.position.set(title.object.width / 2, title.object.height / 2);
-        }
+        // 2. Title
+        this.titleText = new PIXI.Text('', new PIXI.TextStyle({
+            ...HexAssets.MainFont,
+            fontSize: 42,
+            fill: 0xffffff
+        }));
+        this.titleText.anchor.set(0.5);
+        this.titleText.position.set(0, -120);
+        this.container.addChild(this.titleText);
 
-        const description = this.layout.findAndGetFromProperties('id', 'description-label');
-        if (description) {
-            this.descriptionText = new PIXI.Text('', new PIXI.TextStyle({ ...MergeAssets.MainFont }))
-            this.descriptionText.anchor.set(0.5); // PIXI v7+ only
-            description.view?.addChild(this.descriptionText);
-            this.descriptionText.position.set(description.object.width / 2, description.object.height / 2);
-        }
+        // 3. Description
+        this.descriptionText = new PIXI.Text('', new PIXI.TextStyle({
+            ...HexAssets.MainFont,
+            fontSize: 24,
+            fill: 0xcccccc,
+            align: 'center',
+            wordWrap: true,
+            wordWrapWidth: 400
+        }));
+        this.descriptionText.anchor.set(0.5);
+        this.descriptionText.position.set(0, -20);
+        this.container.addChild(this.descriptionText);
 
+        // 4. Buttons
+        const buttonY = 100;
+        const buttonSpacing = 120;
 
-
-        const right = this.layout.findAndGetFromProperties('id', 'button-right');
-        this.confirmButton = new BaseButton({
-            standard: {
-                width: right?.object.width,
-                height: right?.object.height,
-                allPadding: 35,
-                texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Green),
-                fontStyle: new PIXI.TextStyle({ ...MergeAssets.MainFont }),
-                fitText: 0.8
-            },
-            over: {
-                tint: 0xcccccc,
-                texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Green),
-                callback: () => {
-                    SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
-                },
-            },
-            click: {
-                callback: () => {
-                    this.onConfirm?.();
-                    this.popupManager.hideCurrent();
-                }
-            }
-        });
-
-        this.confirmButton.setLabel('Confirm')
-        this.layout.addAtId(this.confirmButton, 'button-right')
-
-
-
-        const left = this.layout.findAndGetFromProperties('id', 'button-left');
         this.cancelButton = new BaseButton({
             standard: {
-                width: left?.object.width,
-                height: left?.object.height,
-                allPadding: 35,
-                texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Red),
-                fontStyle: new PIXI.TextStyle({ ...MergeAssets.MainFont }),
-                fitText: 0.8
-            },
-            over: {
-                tint: 0xcccccc,
-                texture: PIXI.Texture.from(MergeAssets.Textures.Buttons.Red),
-                callback: () => {
-                    SoundManager.instance.playSoundById('Hover', { volume: 0.1, pitch: 0.7 + Math.random() * 0.3 })
-                },
+                width: 180,
+                height: 70,
+                texture: PIXI.Texture.from(HexAssets.Textures.Buttons.Red),
+                fontStyle: new PIXI.TextStyle({ ...HexAssets.MainFont, fontSize: 24 }),
             },
             click: {
                 callback: () => {
@@ -108,45 +86,56 @@ export class ConfirmationPopup extends BasePopup {
                 }
             }
         });
+        this.cancelButton.position.set(-buttonSpacing, buttonY);
+        this.cancelButton.pivot.set(90, 35);
+        this.container.addChild(this.cancelButton);
 
-        this.cancelButton.setLabel('Cancel')
-        this.layout.addAtId(this.cancelButton, 'button-left')
+        this.confirmButton = new BaseButton({
+            standard: {
+                width: 180,
+                height: 70,
+                texture: PIXI.Texture.from(HexAssets.Textures.Buttons.Green),
+                fontStyle: new PIXI.TextStyle({ ...HexAssets.MainFont, fontSize: 24 }),
+            },
+            click: {
+                callback: () => {
+                    this.onConfirm?.();
+                    this.popupManager.hideCurrent();
+                }
+            }
+        });
+        this.confirmButton.position.set(buttonSpacing, buttonY);
+        this.confirmButton.pivot.set(90, 35);
+        this.container.addChild(this.confirmButton);
 
+        // Center the whole popup on screen
+        //this.container.position.set(Game.DESIGN_WIDTH / 2, Game.DESIGN_HEIGHT / 2);
     }
 
     async transitionIn(data?: ConfirmationPopupData): Promise<void> {
         if (!data) return;
 
-        SoundManager.instance.playSoundById('Synth-Appear-01', { volume: 0.05 })
-        this.titleText.text = data.title || '';
+        SoundManager.instance.playSoundById('Synth-Appear-01', { volume: 0.05 });
+
+        this.titleText.text = data.title.toUpperCase() || 'CONFIRMATION';
         this.descriptionText.text = data.description || '';
-        this.confirmButton.setLabel(data.confirmLabel || 'Confirm');
-        this.cancelButton.setLabel(data.cancelLabel || 'Cancel');
+        this.confirmButton.setLabel(data.confirmLabel || 'CONFIRM');
+        this.cancelButton.setLabel(data.cancelLabel || 'CANCEL');
+
         this.onConfirm = data.onConfirm;
         this.onCancel = data.onCancel;
 
-        const title = this.layout.findAndGetFromProperties('id', 'title-label');
-        if (title) {
-            this.titleText.position.set(title.object.width / 2, title.object.height / 2);
-        }
-
-        const description = this.layout.findAndGetFromProperties('id', 'description-label');
-        if (description) {
-            this.descriptionText.position.set(description.object.width / 2, description.object.height / 2);
-        }
-
-
         this.visible = true;
+        this.container.scale.set(0.5);
         this.alpha = 0;
-        await gsap.to(this, { alpha: 1, duration: 0.3 });
-    }
 
-    transitionInComplete(): void {
-        // Could play sound or dispatch an event here if needed
+        gsap.to(this, { alpha: 1, duration: 0.2 });
+        await gsap.to(this.container.scale, { x: 1, y: 1, duration: 0.4, ease: 'back.out(1.7)' });
     }
 
     async transitionOut(): Promise<void> {
-        await gsap.to(this, { alpha: 0, duration: 0.3 });
+        gsap.to(this, { alpha: 0, duration: 0.2 });
+        await gsap.to(this.container.scale, { x: 0.8, y: 0.8, duration: 0.2, ease: 'power2.in' });
     }
 
     hide(): void {
@@ -154,7 +143,5 @@ export class ConfirmationPopup extends BasePopup {
         this.alpha = 0;
     }
 
-    update(delta: number): void {
-        // Not needed for this popup, but required by interface
-    }
+    update(delta: number): void { }
 }

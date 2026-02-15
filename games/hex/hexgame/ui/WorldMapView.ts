@@ -203,8 +203,8 @@ export class WorldMapView extends PIXI.Container {
             tension: 0.5,
             spacing: 12,
             alpha: 1,
-            tint: 0xffff99,
-            textureScale: 0.5
+            tint: 0xffffff,
+            textureScale: 0.25
         });
 
         this.pathRopeTodo = new PathRope({
@@ -215,7 +215,7 @@ export class WorldMapView extends PIXI.Container {
             alpha: 1,
             tileScale: 200,
             tint: 0xffffff,
-            textureScale: 0.5
+            textureScale: 0.25
         });
 
         this.splineContainer.addChild(this.pathRopeTodo);
@@ -258,10 +258,10 @@ export class WorldMapView extends PIXI.Container {
 
         // 4. Deserialize (Now properly awaiting the async calls)
         await this.visualController.deserializeAsync(bgLayers);
-        await this.visualController.deserializeAsync(fgLayers);
 
         // 5. Initialize Ropes (Awaiting texture load)
         await this.initRopes();
+        this.visualController.deserializeAsync(fgLayers);
 
         // 6. Draw Path
         this.controlPointsSorted = [...(mapData.points ?? [])].sort((a, b) => a.order - b.order);
@@ -339,12 +339,16 @@ export class WorldMapView extends PIXI.Container {
         );
 
         btn.onSelected.add(() => {
-            if (isUnlocked) {
+            const latestUnlocked = GameplayProgressStorage.getDataSync().currentProgressIndex;
+
+            // Check if this specific button's index is within the allowed range
+            if (index <= latestUnlocked) {
                 this.setSelected(index);
                 this.opts.onLevelSelected?.(level, world);
+            } else {
+                console.log("Level still locked!");
             }
-
-        })
+        });
 
         btn.position.set(point.x, point.y);
         return btn;
@@ -518,14 +522,18 @@ export class WorldMapView extends PIXI.Container {
 
             if (this.pathProgress >= 1) {
                 this.isAnimatingPath = false;
-                this.pinComponent?.setState(PinState.IDLE); // Or REACHED
+                this.pinComponent?.setState(PinState.IDLE);
                 this.drawSpline(this.controlPointsSorted);
+
+                // Final check to enable the button we just landed on
+                if (this.pinComponent) {
+                    this.checkButtonActivation(this.pinComponent.position);
+                }
 
                 if (this.animationResolver) {
                     this.animationResolver();
-                    this.animationResolver = null; // Clear it so it's not called twice
+                    this.animationResolver = null;
                 }
-
             }
         } else {
             // Ensure that if we aren't animating, the pin knows it's idle

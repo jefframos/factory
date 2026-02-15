@@ -52,7 +52,7 @@ export interface ClusterData {
     color: number | string;
     rootPos: HexPos;
 }
-export type Choice = "home" | "next"
+export type Choice = "home" | "next" | "replay"
 export enum Difficulty { VERY_EASY, EASY, MEDIUM, HARD, VERY_HARD }
 export const DIFFICULTY_MULTIPLIER: Record<Difficulty, number> = {
     [Difficulty.VERY_EASY]: 1,

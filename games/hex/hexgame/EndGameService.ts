@@ -2,6 +2,7 @@ import { Game } from "@core/Game";
 import BaseButton from "@core/ui/BaseButton";
 import { NineSliceProgressBar } from "@core/ui/NineSliceProgressBar";
 import ViewUtils from "@core/utils/ViewUtils";
+import { ColorGradient } from "@core/vfx/ColorGradient";
 import gsap from "gsap";
 import { MotionPathPlugin } from "gsap/MotionPathPlugin";
 import * as PIXI from "pixi.js";
@@ -26,6 +27,7 @@ export class EndGameService {
     // Persistent UI Elements
     private homeButton!: BaseButton;
     private nextButton!: BaseButton;
+    private replay!: BaseButton;
     private buttonContainer!: PIXI.Container;
     private stars: PIXI.Sprite[] = [];
     private starShine!: PIXI.Sprite;
@@ -38,7 +40,7 @@ export class EndGameService {
     ) {
         // 1. Setup Stage Layers
         this.dimmer = new PIXI.Graphics();
-        this.dimmer.beginFill(0x000000, 0.7);
+        this.dimmer.beginFill(HexAssets.Textures.UI.BlockerColor, 0.7);
         this.dimmer.drawRect(-Game.DESIGN_WIDTH, -Game.DESIGN_HEIGHT, Game.DESIGN_WIDTH * 3, Game.DESIGN_HEIGHT * 3);
         this.dimmer.endFill();
         this.dimmer.alpha = 0;
@@ -59,13 +61,15 @@ export class EndGameService {
     }
 
     private setupProgressElements(): void {
+
+        const healthGradient = new ColorGradient([0x3357FF, 0xFF69B4, 0xFF2D55]);
         this.progressBar = new NineSliceProgressBar({
             width: 400,
             height: 40,
             bgTexture: PIXI.Texture.from(HexAssets.Textures.UI.BarBg),
             barTexture: PIXI.Texture.from(HexAssets.Textures.UI.BarFill),
             leftWidth: 10, topHeight: 10, rightWidth: 10, bottomHeight: 10,
-            barColor: 0x07b4fc,
+            gradient: healthGradient,
             padding: 4
         });
         this.progressBar.position.set(Game.DESIGN_WIDTH / 2, Game.DESIGN_HEIGHT / 2 + 180);
@@ -74,7 +78,7 @@ export class EndGameService {
 
         this.chest = new EndGameChest();
         this.chest.position.set(Game.DESIGN_WIDTH / 2, Game.DESIGN_HEIGHT / 2 - 20);
-        this.chest.pivot.y = -50;
+        this.chest.pivot.y = -20;
         this.chest.visible = false;
         this.uiContainer.addChild(this.chest);
     }
@@ -107,33 +111,54 @@ export class EndGameService {
         this.buttonContainer.visible = false;
         this.uiContainer.addChild(this.buttonContainer);
 
+        // Row 1: Square Buttons (Home and Replay)
         this.homeButton = new BaseButton({
             standard: {
                 width: 90, height: 90,
                 texture: PIXI.Texture.from(HexAssets.Textures.Buttons.Blue),
-                iconTexture: PIXI.Texture.from(HexAssets.Textures.Icons.Back),
+                iconTexture: PIXI.Texture.from(HexAssets.Textures.Icons.Home),
                 iconSize: { width: 60, height: 60 },
                 centerIconHorizontally: true, centerIconVertically: true,
             },
             click: { callback: () => this.resolveChoice?.("home") }
         });
         this.homeButton.pivot.set(45, 45);
-        this.homeButton.x = -85;
+        this.homeButton.position.set(-55, 0); // Left of center
 
+        this.replay = new BaseButton({
+            standard: {
+                width: 90, height: 90,
+                texture: PIXI.Texture.from(HexAssets.Textures.Buttons.Blue),
+                iconTexture: PIXI.Texture.from(HexAssets.Textures.Icons.Refresh), // Replay icon
+                iconSize: { width: 60, height: 60 },
+                centerIconHorizontally: true, centerIconVertically: true,
+            },
+            click: { callback: () => this.resolveChoice?.("replay") }
+        });
+        this.replay.pivot.set(45, 45);
+        this.replay.position.set(55, 0); // Right of center
+
+        // Row 2: Large Horizontal Button (Next Level)
         this.nextButton = new BaseButton({
             standard: {
-                width: 110, height: 110,
+                width: 300, height: 110, // Slightly wider for text
                 texture: PIXI.Texture.from(HexAssets.Textures.Buttons.Gold),
-                iconTexture: PIXI.Texture.from(HexAssets.Textures.Icons.ArrowRight),
+                //iconTexture: PIXI.Texture.from(HexAssets.Textures.Icons.ArrowRight),
                 iconSize: { width: 70, height: 70 },
-                centerIconHorizontally: true, centerIconVertically: true,
+                centerIconHorizontally: false, centerIconVertically: true,
+                fontStyle: new PIXI.TextStyle({ ...HexAssets.MainFont })
             },
             click: { callback: () => this.resolveChoice?.("next") }
         });
-        this.nextButton.pivot.set(55, 55);
-        this.nextButton.x = 85;
+        // Pivot 150 (half of 300) and 55 (half of 110)
+        this.nextButton.pivot.set(150, 55);
+        this.nextButton.position.set(0, 160); // Center below the squares
+        this.nextButton.setLabel('Next Level');
 
-        this.buttonContainer.addChild(this.homeButton, this.nextButton);
+        // Add all to container
+        this.buttonContainer.addChild(this.homeButton, this.replay, this.nextButton);
+
+        // Position the whole group on screen
         this.buttonContainer.position.set(Game.DESIGN_WIDTH / 2, Game.DESIGN_HEIGHT / 2 + 180);
     }
 
@@ -195,6 +220,7 @@ export class EndGameService {
 
         const targetGlobal = this.chest.getGlobalPosition();
         const targetLocal = this.particleContainer.toLocal(targetGlobal);
+        targetLocal.y -= 80
         let collected = 0;
 
         const animationPromises = tiles.map((tile, index) => {
@@ -235,8 +261,8 @@ export class EndGameService {
     }
 
     private async showStarsRoutine(starCount: number): Promise<void> {
-        const targetScale = 1.2;
-        const popMultiplier = 1.5;
+        const targetScale = 1.1;
+        const popMultiplier = 1.25;
         const centerY = Game.DESIGN_HEIGHT / 2;
         const textures = ["ItemIcon_Star_Bronze", "ItemIcon_Star_Silver", "ItemIcon_Star_Gold"];
 
@@ -248,10 +274,10 @@ export class EndGameService {
             star.y = centerY + 40;
             star.scale.set(targetScale);
 
-            gsap.to(star, { alpha: 1, y: centerY, duration: 0.5, delay: i * 0.1, ease: "back.out(1.5)" });
+            gsap.to(star, { alpha: 1, y: centerY, duration: 0.25, delay: i * 0.1, ease: "back.out(1.5)" });
         }
 
-        await new Promise(r => setTimeout(r, 400));
+        await new Promise(r => setTimeout(r, 200));
 
         for (let i = 0; i < starCount; i++) {
             const star = this.stars[i];
@@ -264,7 +290,7 @@ export class EndGameService {
             }
             await gsap.to(star.scale, { x: targetScale * popMultiplier, y: targetScale * popMultiplier, duration: 0.15, ease: "power2.out" });
             star.texture = PIXI.Texture.from(textures[i]);
-            await gsap.to(star.scale, { x: targetScale, y: targetScale, duration: 0.4, ease: "back.out(2)" });
+            await gsap.to(star.scale, { x: targetScale, y: targetScale, duration: 0.14, ease: "back.out(2)" });
         }
     }
 
@@ -274,18 +300,26 @@ export class EndGameService {
             this.buttonContainer.visible = true;
             this.buttonContainer.alpha = 1;
 
-            gsap.killTweensOf([this.homeButton.scale, this.nextButton.scale]);
-            this.homeButton.scale.set(0);
-            this.nextButton.scale.set(0);
+            // Reset scales for all buttons
+            const allButtons = [this.homeButton, this.replay, this.nextButton];
+            gsap.killTweensOf(allButtons.map(b => b.scale));
+
+            allButtons.forEach(b => b.scale.set(0));
 
             const tl = gsap.timeline();
-            tl.to([this.homeButton.scale, this.nextButton.scale], {
-                x: 1, y: 1, duration: 0.5, stagger: 0.1, ease: "back.out(1.7)",
+
+            // Pop in Home and Replay first, then Next Level
+            tl.to(allButtons.map(b => b.scale), {
+                x: 1,
+                y: 1,
+                duration: 0.5,
+                stagger: 0.1,
+                ease: "back.out(1.7)",
                 onComplete: () => {
-                    // Start Pulse (0.95 to 1.05)
+                    // Pulse the "Next Level" button as the primary call to action
                     gsap.fromTo(this.nextButton.scale,
-                        { x: 0.95, y: 0.95 },
-                        { x: 1.05, y: 1.05, duration: 0.8, repeat: -1, yoyo: true, ease: "sine.inOut" }
+                        { x: 0.97, y: 0.97 },
+                        { x: 1.03, y: 1.03, duration: 0.8, repeat: -1, yoyo: true, ease: "sine.inOut" }
                     );
                 }
             });

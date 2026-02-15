@@ -43,7 +43,7 @@ export class LevelButtonView extends PIXI.Container {
 
         this.button.pivot.set(normalTex.width / 2, normalTex.height / 2);
         this.addChild(this.button);
-        this.button.scale.set(0.5);
+        //this.button.scale.set(0.5);
 
         // 2. Initialize Bitmap Text
         // Replace 'MainFont_Bitmap' with your actual bitmap font name from HexAssets

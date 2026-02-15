@@ -28,12 +28,17 @@ export class BasePanel extends PIXI.Container {
 
         // 3. Close Button - Call the Manager, DO NOT destroy
         this.closeBtn = new BaseButton({
-            standard: { width: 50, height: 50, iconTexture: PIXI.Texture.from(HexAssets.Textures.Icons.Close) },
+            standard: {
+                texture: PIXI.Texture.from(HexAssets.Textures.Buttons.Red),
+                width: 80, height: 80, iconTexture: PIXI.Texture.from(HexAssets.Textures.Icons.Close),
+                iconSize: { height: 50, width: 50 }, centerIconHorizontally: true, centerIconVertically: true
+            },
+
             click: { callback: () => PanelManager.instance.closePanel() }
         });
 
         // Position relative to the top-right corner of the BG
-        this.closeBtn.position.set(width - 40, 40);
+        this.closeBtn.position.set(width - 50, -25);
         this.bg.addChild(this.closeBtn);
     }
 }

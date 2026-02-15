@@ -1,3 +1,4 @@
+import { ColorGradient } from '@core/vfx/ColorGradient';
 import * as PIXI from 'pixi.js';
 
 export interface NineSliceProgressBarOptions {
@@ -16,6 +17,7 @@ export interface NineSliceProgressBarOptions {
     bgColor?: number;
     barColor?: number;
     padding?: number;
+    gradient?: ColorGradient;
 }
 
 export class NineSliceProgressBar extends PIXI.Container {
@@ -82,6 +84,13 @@ export class NineSliceProgressBar extends PIXI.Container {
 
         // Calculate target width based on total width
         const targetWidth = clampedPercent * available;
+
+        // --- Evaluation Logic ---
+        if (this.opts.gradient) {
+            this.bar.tint = this.opts.gradient.evaluate(clampedPercent);
+        } else if (this.opts.barColor !== undefined) {
+            this.bar.tint = this.opts.barColor;
+        }
 
         // Logic: If the width is less than the corners, we hide it or 
         // cap it to the minVisualWidth to prevent texture folding.

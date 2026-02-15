@@ -9,6 +9,7 @@ import { SceneManager } from '@core/scene/SceneManager';
 import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
 import * as PIXI from 'pixi.js';
 import MergeLoader from './game/loader/MergeLoader';
+import { ConfirmationPopup } from './game/popup/ConfirmationPopup';
 import { DevGuiManager } from './game/utils/DevGuiManager';
 import HexAssets from './hexgame/HexAssets';
 import HexScene from './hexgame/HexScene';
@@ -147,6 +148,9 @@ export default class MyGame extends Game {
 
 
         this.overlayContainer.addChild(this.popupManager)
+        this.popupManager.registerPopup('confirm', new ConfirmationPopup(), false);
+
+
         // this.popupManager.registerPopup('confirm', new ConfirmationPopup(), false);
         // this.popupManager.registerPopup('gameOver', new GameOverPopup(), false);
         // this.popupManager.registerPopup('prize', new PrizePopup(), false);
