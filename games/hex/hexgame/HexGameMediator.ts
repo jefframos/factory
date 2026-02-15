@@ -1,3 +1,4 @@
+import PlatformHandler from "@core/platforms/PlatformHandler";
 import { PopupManager } from "@core/popup/PopupManager";
 import gsap from "gsap";
 import * as PIXI from "pixi.js";
@@ -7,8 +8,10 @@ import { DevGuiManager } from "../game/utils/DevGuiManager";
 import { ClusterManager } from "./cluster/ClusterManager";
 import { ClusterView } from "./cluster/ClusterView";
 import { GameplayData } from "./data/GameplayData";
+import { GameplayProgressStorage } from "./data/GameplayProgressStorage";
 import { EndGameService } from "./EndGameService";
 import { FTUEMode, FTUEService } from "./ftue/FTUEService";
+import HexAssets from "./HexAssets";
 import { HexGridBuilder } from "./HexGridBuilder";
 import { HexGridView } from "./HexGridView";
 import { HexInputService } from "./HexInputService";
@@ -72,6 +75,7 @@ export class HexGameMediator {
 
         // When the HUD or Main class triggers a restart
         this.hud.onHint.add(() => {
+            HexAssets.tryToPlaySound(HexAssets.Sounds.Game.NewDiscovery)
             this.gameplayData.recordHint();
             this.hintService.showHint();
         });
@@ -202,16 +206,23 @@ export class HexGameMediator {
                 currentGridPos.q === piece.data.rootPos.q &&
                 currentGridPos.r === piece.data.rootPos.r;
 
+            HexAssets.tryToPlaySound(HexAssets.Sounds.UI.Hold)
+
             if (!isCorrect) {
                 await this.movePieceToCorrectSlot(piece);
+                HexAssets.tryToPlaySound(HexAssets.Sounds.UI.Drop)
             }
         }
+
+        HexAssets.tryToPlaySound(HexAssets.Sounds.UI.OpenPopupPrize)
 
         this.isAutoCompleting = false;
         this.inputService.enabled = true
         this.gameplayData.addSkipLevel();
 
+
         const choice = await this.endGameService.execute(2, this.gameplayData.getSnapshot());
+        PlatformHandler.instance.platform.gameplayStop();
         setTimeout(() => {
             this.inputService.enabled = false;
             this.gameplayData.completeLevel(choice);
@@ -272,7 +283,9 @@ export class HexGameMediator {
 
         if (this.gridView.isGridFull()) {
 
-            this.ftueService.stop();
+            HexAssets.tryToPlaySound(HexAssets.Sounds.UI.OpenPopupPrize)
+
+            this.ftueService?.stop();
             // Use a tiny delay or wait for the next tick 
             // to ensure the InputService finishes its current placement logic
             this.hintService.stopHint();
@@ -280,7 +293,16 @@ export class HexGameMediator {
             // 2. Trigger the endgame sequence
             // Total animation time set to 2.5 seconds
             this.hud.visible = false;
+            const snapshot = this.gameplayData.getSnapshot()
+
+            const info = LevelDataManager.getCurrentLevelInfo();
+            if (info.levelData) {
+                const level = LevelDataManager.getLevelIndex(info.levelData)
+                await GameplayProgressStorage.saveLevelComplete(level, snapshot.stars);
+            }
+
             const choice = await this.endGameService.execute(2, this.gameplayData.getSnapshot());
+            PlatformHandler.instance.platform.gameplayStop();
             setTimeout(() => {
                 this.inputService.enabled = false;
                 this.gameplayData.completeLevel(choice);
@@ -409,6 +431,7 @@ export class HexGameMediator {
 
     public returnToTray(piece: ClusterView): void {
         // 1. Re-parent to the Manager
+
         const pos = piece.getGlobalPosition();
         const localPos = this.clusterManager.toLocal(pos);
         piece.position.copyFrom(localPos);

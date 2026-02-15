@@ -32,7 +32,7 @@ export default class MyGame extends Game {
 
         this.folderPath = 'game4';
 
-        GameDistributionPlatform.GAME_ID = 'c09f291b142940e8811cb235f114628c'
+        PlatformHandler.GAME_ID = 'c09f291b142940e8811cb235f114628c'
         PlatformHandler.instance.initialize(new GameDistributionPlatform())
 
         PlatformHandler.instance.platform.startLoad();

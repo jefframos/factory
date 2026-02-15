@@ -35,7 +35,7 @@ export default class MyGame extends Game {
         this.folderPath = 'merge1';
 
         PlatformHandler.ENABLE_VIDEO_ADS = true;
-        GameDistributionPlatform.GAME_ID = 'f7cdc30e8fd14e50a3170c485f207936';
+        GameDistributionPlatform.KAKAKAKAKAKA = 'f7cdc30e8fd14e50a3170c485f207936';
         PlatformHandler.instance.initialize(new GameDistributionPlatform()).then(() => {
             PlatformHandler.instance.platform.startLoad();
             this.stageContainer.addChild(this.gameContainer);

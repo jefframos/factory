@@ -37,50 +37,10 @@
         },
         {
           "alias": [
-            "brittle-rille.mp3"
-          ],
-          "src": [
-            "brittle-rille.mp3"
-          ]
-        },
-        {
-          "alias": [
             "Bubbles.wav"
           ],
           "src": [
             "Bubbles.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Cat Meow 01.mp4"
-          ],
-          "src": [
-            "Cat Meow 01.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Cat Meow 02.mp4"
-          ],
-          "src": [
-            "Cat Meow 02.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Cat Meow Angry 01.mp4"
-          ],
-          "src": [
-            "Cat Meow Angry 01.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Cat Meow Angry 02.mp4"
-          ],
-          "src": [
-            "Cat Meow Angry 02.mp3"
           ]
         },
         {
@@ -129,6 +89,22 @@
           ],
           "src": [
             "diamond-sparkle.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Doppler Whoosh 10.mp4"
+          ],
+          "src": [
+            "Doppler Whoosh 10.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Doppler Whoosh 13.mp4"
+          ],
+          "src": [
+            "Doppler Whoosh 13.mp3"
           ]
         },
         {
@@ -257,14 +233,6 @@
           ],
           "src": [
             "soundtrack/longnight.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "soundtrack/peace-be-with-you.mp3"
-          ],
-          "src": [
-            "soundtrack/peace-be-with-you.mp3"
           ]
         },
         {

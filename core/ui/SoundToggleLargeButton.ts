@@ -1,5 +1,5 @@
 import SoundManager from "@core/audio/SoundManager";
-import BaseButton from "@core/ui/BaseButton";
+import BaseButton, { ButtonState } from "@core/ui/BaseButton";
 import * as PIXI from "pixi.js";
 
 export default class SoundToggleLargeButton extends BaseButton {
@@ -46,7 +46,9 @@ export default class SoundToggleLargeButton extends BaseButton {
         // Accessing the internal icon sprite from BaseButton (assuming standard property names)
         // If your BaseButton doesn't expose the icon/label directly, you may need a public update method in BaseButton
         if (this.icon) {
-            this.icon.texture = targetIcon;
+            this.overrider(ButtonState.STANDARD, {
+                iconTexture: targetIcon
+            })
         }
 
         this.setLabel(targetText)

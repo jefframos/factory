@@ -103,6 +103,7 @@ export default class HexScene extends GameScene {
             }
         }, 500);
     }
+
     private async setupWorldMapSystem(): Promise<void> {
 
 
@@ -242,15 +243,17 @@ export default class HexScene extends GameScene {
 
             console.log(playedIndex)
 
+            this.worldMap.inputEnabled = false;
             if (choice == "replay") {
                 const current = await LevelDataManager.getLevelAt(playedIndex);
                 if (current) {
-                    this.startLevel(current)
+                    await this.startLevel(current)
                 } else {
                     await this.showMap();
                 }
                 return
             }
+
 
             // 2. Return to map
             await this.showMap();
@@ -262,24 +265,34 @@ export default class HexScene extends GameScene {
                 this.hexHUD.visible = false;
 
                 // 1. Wait for the pin to physically reach the new spot
+                const nextLevel = await LevelDataManager.getLevelAt(nextIndex);
+                this.worldMap.refreshAllButtons();
                 await this.worldMap.animateToLevel(nextIndex);
+                this.worldMap.inputEnabled = false;
+
+                HexAssets.tryToPlaySound(HexAssets.Sounds.Game.Yay)
 
                 // 2. IMPORTANT: Update the internal index and refresh visuals
                 // This ensures the button at nextIndex becomes 'enabled'
                 this.worldMap.setCurrentLevelIndex(nextIndex);
 
-                const nextLevel = await LevelDataManager.getLevelAt(nextIndex);
-                this.worldMap.refreshAllButtons();
+
+                await PromiseUtils.await(600);
 
                 if (choice == "next" && nextLevel) {
-                    this.startLevel(nextLevel);
+                    await this.startLevel(nextLevel);
+
+                    this.worldMap.inputEnabled = true;
                 } else {
                     // If we stay on the map, make sure HUD is back and map is interactive
                     this.hexHUD.visible = true;
+
+                    this.worldMap.inputEnabled = true;
                     // The buttons are now enabled because of setCurrentLevelIndex + refreshAllButtons
                 }
             } else {
                 this.worldMap.refreshAllButtons();
+                this.worldMap.inputEnabled = true;
             }
         });
 
@@ -307,8 +320,11 @@ export default class HexScene extends GameScene {
     }
 
     private async startLevel(level: LevelData): Promise<void> {
+
         this.activeLevelIndex = LevelDataManager.getLevelIndex(level);
         this.hexHUD.visible = false;
+
+        this.worldMap.inputEnabled = false;
         await this.transition.close();
         await PromiseUtils.await(500)
         this.hexHUD.visible = true;
@@ -323,7 +339,8 @@ export default class HexScene extends GameScene {
             this.mediator.startFirstTimeTutorial()
         }
         this.mediator.setInputEnabled(true);
-        this.transition.open();
+        await this.transition.open();
+        this.worldMap.inputEnabled = true;
     }
 
     // --- Main Loop ---
@@ -393,8 +410,17 @@ export default class HexScene extends GameScene {
     // --- Utilities & Cleanup ---
 
     private setupAudio(): void {
+
         SoundLoadManager.instance.loadAllSoundsBackground();
-        SoundManager.instance.setMasterSfxVolume(0.7);
+
+
+
+        SoundManager.instance.playBackgroundSound(HexAssets.AmbientSound.AmbientSoundId, 0);
+        SoundManager.instance.setMasterAmbientVolume(HexAssets.AmbientSound.AmbientMasterVolume);
+
+        console.log('SOUND')
+
+        // SoundManager.instance.setMasterSfxVolume(0.7);
     }
 
     private setupPopups(): void {

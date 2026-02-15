@@ -186,7 +186,7 @@ export class HexHUD extends PIXI.Container {
 
         if (this.currentMode === HUDMode.GAMEPLAY) {
             // Sound Button
-            this.soundBtn.position.set(rightX - this.soundBtn.width / 2 - padding, topY + this.soundBtn.height / 2 + padding);
+            this.soundBtn.position.set(Game.DESIGN_WIDTH - this.soundBtn.width / 2 - padding, topY + this.soundBtn.height / 2 + padding);
 
             // Gameplay Elements Y Position (Bottom alignment)
             const beltY = bottomY - 100; // 60 is roughly half the button height

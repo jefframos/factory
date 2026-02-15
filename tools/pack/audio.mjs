@@ -5,6 +5,7 @@ export default {
     pipes: [
         ffmpeg({
             inputs: ['.mp3', '.ogg', '.wav', '.m4a', '.mp4'],
+            deleteOriginals: true,
             outputs: [
                 {
                     formats: ['.mp3'],

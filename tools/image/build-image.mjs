@@ -4,6 +4,8 @@ import { pixiManifest } from '@assetpack/core/manifest';
 import { pixiPipes } from '@assetpack/core/pixi';
 import { texturePackerCompress } from '@assetpack/core/texture-packer';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import { globSync } from 'glob';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { ensureFolderExists } from '../folderUtils/folderUtils.mjs';
@@ -33,10 +35,12 @@ ensureFolderExists(rawImagesN)
 ensureFolderExists(outputManifest)
 ensureFolderExists(outputImagesN)
 ensureFolderExists(outputImages)
-const options = {
+
+// ✅ Use 'skip' to delete originals after conversion
+const compressOptions = {
     jpg: false,
     png: false,
-    webp: { quality: 70, alphaQuality: 100, },
+    webp: { quality: 70, alphaQuality: 100 },
     avif: false,
     bc7: false,
     astc: false,
@@ -48,23 +52,32 @@ const pack = new AssetPack({
     entry: rawImages,
     output: outputImages,
     pipes: [
+        // ✅ pixiPipes FIRST - it handles the conversion
         pixiPipes({
             cacheBust: false,
             resolutions: { default: 1 },
+            formats: [
+                { identifier: 'webp', encoder: 'webp' }
+            ],
             texturePacker: {
                 texturePacker: {
                     nameStyle: "short",
                     removeFileExtension: true,
-                    textureFormat: 'webp'
+                    textureFormat: 'webp',
                 },
-                compress: options,
-            },
-        }),
+                formats: [
+                    { identifier: 'webp', encoder: 'webp' }
+                ],
+                // ✅ Compress options inside texturePacker
+                compression: compressOptions,
 
-        //texturePackerCacheBuster(),
-        //cacheBuster(),
-        compress(options),
-        texturePackerCompress(options),
+            },
+            // ✅ Compress options for non-packed images
+            compression: compressOptions,
+        }),
+        // ✅ Then apply compress pipe for any remaining images
+        compress(compressOptions),
+        texturePackerCompress(compressOptions),
         pixiManifest({
             output: `${outputManifest}/images.json`,
             createShortcuts: false,
@@ -75,7 +88,6 @@ const pack = new AssetPack({
     ],
 });
 
-
 const packNonPreload = new AssetPack({
     entry: rawImagesN,
     output: outputImagesN,
@@ -83,19 +95,18 @@ const packNonPreload = new AssetPack({
         pixiPipes({
             cacheBust: false,
             resolutions: { default: 1 },
+            formats: ['webp'],
             texturePacker: {
+                formats: ['webp'],
                 texturePacker: {
                     nameStyle: "short",
                     removeFileExtension: true,
                 },
+                compress: compressOptions,
             },
+            compress: compressOptions,
         }),
-
-        // texturePackerCacheBuster(),
-        // cacheBuster(),
-        compress(options),
-        // texturePackerCompress(options),
-
+        compress(compressOptions),
     ],
 });
 
@@ -108,5 +119,13 @@ if (WATCH) {
 } else {
     await pack.run();
     await packNonPreload.run();
-    console.log('✅ Built image assets');
+    console.log('✅ Built image assets (WebP only)');
+
+    const pngs = globSync(`${outputImages}/**/*.png`);
+    pngs.forEach(file => {
+        fs.unlinkSync(file);
+    });
+
+    console.log(`🧹 Cleaned up ${pngs.length} legacy PNG files.`);
+    console.log('✅ Built image assets (WebP only)');
 }

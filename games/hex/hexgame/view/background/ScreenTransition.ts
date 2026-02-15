@@ -89,6 +89,7 @@ export class ScreenTransition extends PIXI.Container {
 
     public async close(): Promise<void> {
         // We animate the 'progress' property to 1
+        HexAssets.tryToPlaySound(HexAssets.Sounds.UI.TransitionClose)
         await gsap.to(this, {
             progress: 1,
             duration: 0.7,
@@ -107,6 +108,8 @@ export class ScreenTransition extends PIXI.Container {
     public async open(): Promise<void> {
         this.rightCloudBelt.alpha = 1;
         this.leftCloudBelt.alpha = 1;
+
+        HexAssets.tryToPlaySound(HexAssets.Sounds.UI.TransitionOpen)
 
         // We animate the 'progress' property back to 0
         await gsap.to(this, {

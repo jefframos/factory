@@ -3,7 +3,6 @@ import { Game } from '@core/Game';
 import LoaderScene from '@core/loader/LoaderScene';
 import { ManifestHelper } from '@core/loader/ManifestHelper';
 import PlatformHandler from '@core/platforms/PlatformHandler';
-import PokiPlatform from '@core/platforms/PokiPlatform';
 import { PopupManager } from '@core/popup/PopupManager';
 import { SceneManager } from '@core/scene/SceneManager';
 import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
@@ -20,6 +19,9 @@ import fontManifest from './manifests/fonts.json'; // adjust path
 import imageManifest from './manifests/images.json'; // adjust path
 import jsonManifest from './manifests/json.json'; // adjust path
 
+import { getPlatformInstance } from '@core/platforms/PlatformFactory';
+import platformConfig from './platforms.config.json';
+
 export default class MyGame extends Game {
     private gameContainer = new PIXI.Container();
     private sceneManager!: SceneManager;
@@ -35,17 +37,44 @@ export default class MyGame extends Game {
         PIXI.Ticker.shared.maxFPS = 100;
 
         this.folderPath = 'hex';
+        this.initialize();
 
-        PlatformHandler.instance.initialize(new PokiPlatform())
-
-        PlatformHandler.instance.platform.startLoad();
-        this.stageContainer.addChild(this.gameContainer);
-        this.sceneManager = new SceneManager(this.gameContainer);
-        this.loaderScene = this.sceneManager.register('loader', LoaderScene);
-        this.sceneManager.changeScene('loader');
-        this.loadAssets();
     }
+    protected async initialize() {
+        // 1. Determine platform (fallback to 'local')
+        const platformName = import.meta.env.VITE_PLATFORM || 'local';
+        const config = platformConfig[platformName];
 
+        // 2. Set dynamic paths from config (if defined, else keep 'hex' as default)
+        this.folderPath = config?.folder || 'hex';
+
+        try {
+
+            PlatformHandler.GAME_ID = config?.gameId || '';
+            PlatformHandler.ENABLE_VIDEO_ADS = config?.enableAds ?? true;
+
+            // 3. Wait for the platform instance
+            const plat = await getPlatformInstance(platformName);
+
+
+
+            // 4. Initialize the Handler
+            await PlatformHandler.instance.initialize(plat);
+
+            // 5. Setup Game Flow
+            PlatformHandler.instance.platform.startLoad();
+            this.stageContainer.addChild(this.gameContainer);
+            this.sceneManager = new SceneManager(this.gameContainer);
+            this.loaderScene = this.sceneManager.register('loader', LoaderScene);
+            this.sceneManager.changeScene('loader');
+
+            // 6. Proceed to assets
+            this.loadAssets();
+        } catch (error) {
+            console.error("Failed to initialize platform:", error);
+            // Optional: Fallback logic if a platform SDK fails to load
+        }
+    }
 
 
     protected async loadAssets() {
@@ -79,7 +108,7 @@ export default class MyGame extends Game {
 
         const aliases = ManifestHelper.getAliasesWithoutExtension(fontManifest)
 
-        aliases.forEach(async element => {
+        for (const element of aliases) {
             const font = PIXI.Assets.get(element)
             const style = document.createElement('style');
             style.textContent = `
@@ -95,7 +124,7 @@ export default class MyGame extends Game {
             await document.fonts.ready;
             await document.fonts.load('16px ' + element);
 
-        });
+        };
 
         console.log(bundles)
         await PIXI.Assets.loadBundle('images', (p) => {

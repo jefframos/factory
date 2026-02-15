@@ -13,7 +13,7 @@ export class StarContainer extends PIXI.Container {
 
             // ARC LOGIC: If it's the middle star (index 1), move it lower
             if (i === 1) {
-                //star.y = 8;
+                star.y = 8;
             } else {
                 star.y = 0;
             }

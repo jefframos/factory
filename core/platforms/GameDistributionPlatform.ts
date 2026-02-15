@@ -1,10 +1,9 @@
 import SoundManager from "@core/audio/SoundManager";
 import { IPlatformConnection } from "./IPlatformConnection";
+import PlatformHandler from "./PlatformHandler";
 
 export default class GameDistributionPlatform implements IPlatformConnection {
     public isGameplayActive = false;
-    public static GAME_ID = "YOUR_GAME_ID_HERE"; // Replace with your actual Game ID
-
     constructor() {
     }
 
@@ -42,7 +41,7 @@ export default class GameDistributionPlatform implements IPlatformConnection {
         return new Promise((resolve, reject) => {
             // GD requires global options to be set before the script loads
             window["GD_OPTIONS"] = {
-                gameId: GameDistributionPlatform.GAME_ID,
+                gameId: PlatformHandler.GAME_ID,
                 onEvent: (event: any) => {
                     switch (event.name) {
                         case "SDK_READY":

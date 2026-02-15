@@ -1,5 +1,6 @@
 import { Game } from "@core/Game";
 import BaseButton from "@core/ui/BaseButton";
+import { ConfettiEffect } from "@core/ui/ConfettiEffect";
 import { NineSliceProgressBar } from "@core/ui/NineSliceProgressBar";
 import ViewUtils from "@core/utils/ViewUtils";
 import { ColorGradient } from "@core/vfx/ColorGradient";
@@ -31,6 +32,7 @@ export class EndGameService {
     private buttonContainer!: PIXI.Container;
     private stars: PIXI.Sprite[] = [];
     private starShine!: PIXI.Sprite;
+    private confetti!: ConfettiEffect;
 
     private resolveChoice: ((value: Choice) => void) | null = null;
 
@@ -58,6 +60,9 @@ export class EndGameService {
         this.setupProgressElements();
         this.setupStars();
         this.setupButtons();
+
+        this.confetti = new ConfettiEffect(150);
+        this.gameRoot.addChild(this.confetti);
     }
 
     private setupProgressElements(): void {
@@ -120,7 +125,12 @@ export class EndGameService {
                 iconSize: { width: 60, height: 60 },
                 centerIconHorizontally: true, centerIconVertically: true,
             },
-            click: { callback: () => this.resolveChoice?.("home") }
+            click: {
+                callback: () => {
+                    HexAssets.tryToPlaySound(HexAssets.Sounds.Game.Notification);
+                    this.resolveChoice?.("home")
+                }
+            }
         });
         this.homeButton.pivot.set(45, 45);
         this.homeButton.position.set(-55, 0); // Left of center
@@ -133,7 +143,12 @@ export class EndGameService {
                 iconSize: { width: 60, height: 60 },
                 centerIconHorizontally: true, centerIconVertically: true,
             },
-            click: { callback: () => this.resolveChoice?.("replay") }
+            click: {
+                callback: () => {
+                    HexAssets.tryToPlaySound(HexAssets.Sounds.Game.Notification);
+                    this.resolveChoice?.("replay")
+                }
+            }
         });
         this.replay.pivot.set(45, 45);
         this.replay.position.set(55, 0); // Right of center
@@ -148,7 +163,12 @@ export class EndGameService {
                 centerIconHorizontally: false, centerIconVertically: true,
                 fontStyle: new PIXI.TextStyle({ ...HexAssets.MainFont })
             },
-            click: { callback: () => this.resolveChoice?.("next") }
+            click: {
+                callback: () => {
+                    HexAssets.tryToPlaySound(HexAssets.Sounds.Game.Notification);
+                    this.resolveChoice?.("next")
+                }
+            }
         });
         // Pivot 150 (half of 300) and 55 (half of 110)
         this.nextButton.pivot.set(150, 55);
@@ -164,6 +184,12 @@ export class EndGameService {
 
     public update(dt: number): void {
         if (this.chest?.visible) this.chest.update(dt);
+
+        if (this.confetti) {
+
+            this.confetti.x = Game.DESIGN_WIDTH / 2
+            this.confetti?.update(dt);
+        }
     }
 
     public async execute(totalTime: number = 2.0, levelStats: LevelSessionStats): Promise<Choice> {
@@ -179,8 +205,10 @@ export class EndGameService {
         const multiplier = DIFFICULTY_MULTIPLIER[levelStats.difficulty] || 1;
         const totalReward = levelStats.stars * 10 * multiplier;
         EconomyStorage.addCurrency(CurrencyType.COINS, totalReward);
-        await new Promise<void>(res => this.chest.open('+' + totalReward, res));
 
+        HexAssets.tryToPlaySound(HexAssets.Sounds.Game.OpenChest)
+        await new Promise<void>(res => this.chest.open('+' + totalReward, res));
+        HexAssets.tryToPlaySound(HexAssets.Sounds.Game.Notification)
         await new Promise(r => setTimeout(r, 500));
         await gsap.to([this.chest, this.progressBar], { alpha: 0, duration: 0.3 });
 
@@ -190,6 +218,10 @@ export class EndGameService {
         // Show Stars
         await this.showStarsRoutine(levelStats.stars);
 
+
+        HexAssets.tryToPlaySound(HexAssets.Sounds.UI.GameOverAppear)
+
+        this.confetti.start()
         // Wait for User Choice
         const choice = await this.waitForUserChoice();
 
@@ -240,7 +272,16 @@ export class EndGameService {
                     onComplete: () => {
                         collected++;
                         this.progressBar.update(collected / tiles.length);
-                        gsap.fromTo(this.chest.scale, { x: 1.05, y: 0.95 }, { x: 1, y: 1, duration: 0.1 });
+                        HexAssets.tryToPlaySound(HexAssets.Sounds.Game.Coin)
+                        gsap.fromTo(this.chest.scale, {
+                            x: 1.05, y: 0.95,
+                            onStart: () => {
+                                if (Math.random() > 0.8)
+                                    HexAssets.tryToPlaySound(HexAssets.Sounds.Game.Coin)
+                            }
+                        }, {
+                            x: 1, y: 1, duration: 0.1
+                        });
                         this.returnSprite(sprite);
                         resolve();
                     }
@@ -288,6 +329,7 @@ export class EndGameService {
                 gsap.to(this.starShine, { alpha: 0.6, scale: targetScale * 1.8, duration: 0.5 });
                 gsap.to(this.starShine, { rotation: Math.PI * 2, duration: 10, repeat: -1, ease: "none" });
             }
+            HexAssets.tryToPlaySound(HexAssets.Sounds.Game.StarAppear)
             await gsap.to(star.scale, { x: targetScale * popMultiplier, y: targetScale * popMultiplier, duration: 0.15, ease: "power2.out" });
             star.texture = PIXI.Texture.from(textures[i]);
             await gsap.to(star.scale, { x: targetScale, y: targetScale, duration: 0.14, ease: "back.out(2)" });

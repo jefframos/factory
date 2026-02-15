@@ -1,4 +1,3 @@
-import SoundManager from '@core/audio/SoundManager';
 import { BasePopup, PopupData } from '@core/popup/BasePopup';
 import BaseButton from '@core/ui/BaseButton';
 import { gsap } from 'gsap';
@@ -115,7 +114,7 @@ export class ConfirmationPopup extends BasePopup {
     async transitionIn(data?: ConfirmationPopupData): Promise<void> {
         if (!data) return;
 
-        SoundManager.instance.playSoundById('Synth-Appear-01', { volume: 0.05 });
+        HexAssets.tryToPlaySound(HexAssets.Sounds.UI.OpenPopup)
 
         this.titleText.text = data.title.toUpperCase() || 'CONFIRMATION';
         this.descriptionText.text = data.description || '';
@@ -134,6 +133,7 @@ export class ConfirmationPopup extends BasePopup {
     }
 
     async transitionOut(): Promise<void> {
+        HexAssets.tryToPlaySound(HexAssets.Sounds.UI.ClosePopup)
         gsap.to(this, { alpha: 0, duration: 0.2 });
         await gsap.to(this.container.scale, { x: 0.8, y: 0.8, duration: 0.2, ease: 'power2.in' });
     }

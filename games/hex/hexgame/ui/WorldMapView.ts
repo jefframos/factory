@@ -81,6 +81,8 @@ export class WorldMapView extends PIXI.Container {
     // Top Layer: Sorted props (Trees/Buildings) + Buttons
     private readonly pointsContainer: PIXI.Container = new PIXI.Container();
 
+
+
     private pathRopeDone!: PathRope;
     private pathRopeTodo!: PathRope;
 
@@ -107,6 +109,8 @@ export class WorldMapView extends PIXI.Container {
     private isBeingDragged: boolean = false;
 
     private pinComponent: WorldMapPin | null = null;
+
+    public inputEnabled: boolean = true;
 
     // Add this to your class properties
     private animationResolver: ((value: void | PromiseLike<void>) => void) | null = null;
@@ -339,6 +343,9 @@ export class WorldMapView extends PIXI.Container {
         );
 
         btn.onSelected.add(() => {
+            if (!this.inputEnabled) {
+                return;
+            }
             const latestUnlocked = GameplayProgressStorage.getDataSync().currentProgressIndex;
 
             // Check if this specific button's index is within the allowed range
@@ -418,6 +425,7 @@ export class WorldMapView extends PIXI.Container {
             this.animationResolver = null;
         }
 
+        this.inputEnabled = false;
         const prevIndex = this.currentLevelIndex;
         this.currentLevelIndex = index;
 
@@ -531,6 +539,7 @@ export class WorldMapView extends PIXI.Container {
                 }
 
                 if (this.animationResolver) {
+                    this.inputEnabled = true;
                     this.animationResolver();
                     this.animationResolver = null;
                 }

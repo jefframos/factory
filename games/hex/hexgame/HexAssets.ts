@@ -91,20 +91,16 @@ export default class HexAssets {
     static readonly AmbientSound = {
 
         AmbientSoundId: 'soundtrack/longnight',
-        AmbientMasterVolume: 0.05,
+        AmbientMasterVolume: 0.02,
 
-        AmbientSoundId2: 'soundtrack/peace-be-with-you',
-        AmbientMasterVolume2: 0.05,
 
-        AmbientSoundGameplay: 'brittle-rille',
-        AmbientMasterVolumeGameplay: 0.1,
     }
     static readonly Sounds = {
         Game: {
             NewDiscovery: {
                 // soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
                 soundId: ['diamond-sparkle'],
-                volumeMinMax: 0.2,
+                volumeMinMax: 0.15,
                 pitchMinMax: 1
             },
             Notification: {
@@ -118,18 +114,7 @@ export default class HexAssets {
                 volumeMinMax: 0.1,
                 pitchMinMax: [0.8, 1.2]
             },
-            MeowAngry: {
-                // soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
-                soundId: ['Cat Meow Angry 01', 'Cat Meow Angry 02'],
-                volumeMinMax: 0.7,
-                pitchMinMax: [0.8, 1.2]
-            },
-            Meow: {
-                // soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
-                soundId: ['Cat Meow 01', 'Cat Meow 02'],
-                volumeMinMax: 0.2,
-                pitchMinMax: [0.8, 1]
-            },
+
             Egg: {
                 soundId: ['hpp-increase20'],
                 volumeMinMax: 0.07,
@@ -165,8 +150,23 @@ export default class HexAssets {
                 volumeMinMax: [0.1, 0.15],
                 pitchMinMax: [0.8, 1.2],
             },
+            StarAppear: {
+                soundId: 'hpp-increase20',
+                volumeMinMax: [0.1, 0.15],
+                pitchMinMax: [0.8, 1.2],
+            },
         },
         UI: {
+            TransitionOpen: {
+                soundId: 'Doppler Whoosh 13',
+                volumeMinMax: 0.1,
+                pitchMinMax: [0.9, 1]
+            },
+            TransitionClose: {
+                soundId: 'Doppler Whoosh 13',
+                volumeMinMax: 0.1,
+                pitchMinMax: [0.75, 0.85]
+            },
             Tap: {
                 soundId: 'Tap',
                 volumeMinMax: 0.3,
@@ -196,7 +196,7 @@ export default class HexAssets {
                 volumeMinMax: 0.1,
             },
             StartLevel: {
-                soundId: 'Whoosh',
+                soundId: 'ScoreUpdate',
                 volumeMinMax: 0.15,
             },
             Coin1: {
@@ -215,7 +215,7 @@ export default class HexAssets {
             },
             GameOverAppear: {
                 soundId: 'Applause Cheering',
-                volumeMinMax: 0.1,
+                volumeMinMax: 0.05,
             },
             PreviewOverAppear: {
                 soundId: 'Synth-Appear-01',

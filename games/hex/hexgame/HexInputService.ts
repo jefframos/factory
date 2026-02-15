@@ -1,8 +1,10 @@
+import PlatformHandler from "@core/platforms/PlatformHandler";
 import gsap from "gsap";
 import * as PIXI from "pixi.js";
+import { ClusterView } from "./cluster/ClusterView";
+import HexAssets from "./HexAssets";
 import { HexGameMediator } from "./HexGameMediator";
 import { HexPos, HexUtils } from "./HexTypes";
-import { ClusterView } from "./cluster/ClusterView";
 
 type AnchorCell = { q: number; r: number };
 
@@ -68,6 +70,8 @@ export class HexInputService {
         // 2. DOUBLE-TAP PROTECTION: If already holding something, ignore new taps
         if (this.activePiece) return;
 
+        PlatformHandler.instance.platform.gameplayStart();
+
         let closest: ClusterView | null = null;
         let minDist = this.HIT_RADIUS;
 
@@ -106,6 +110,8 @@ export class HexInputService {
 
         const targetScale = this.mediator.gridView.scale.x;
         this.activePiece.scale.set(targetScale);
+
+        HexAssets.tryToPlaySound(HexAssets.Sounds.UI.PieceRotate)
 
         const mouseInLayer = this.mediator.gameContainer.toLocal(e.global);
         this.dragOffset.set(
@@ -164,10 +170,12 @@ export class HexInputService {
             // 2. CLEAR ACTIVE REFERENCE BEFORE NOTIFYING WIN
             this.activePiece = null;
 
+            HexAssets.tryToPlaySound(HexAssets.Sounds.Game.Drop)
             // 3. NOTIFY MEDIATOR
             this.mediator.onMoveSuccess();
         } else {
             // Return to tray logic
+            HexAssets.tryToPlaySound(HexAssets.Sounds.Game.Drop)
             this.mediator.returnToTray(piece);
             this.activePiece = null;
         }

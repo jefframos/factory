@@ -2,6 +2,7 @@ import { IPlatformConnection } from "./IPlatformConnection";
 
 export default class PlatformHandler {
     public static ENABLE_VIDEO_ADS = true;
+    public static GAME_ID = "YOUR_GAME_ID_HERE";
     public isGameplayActive = false;
 
     private static _instance: PlatformHandler;
