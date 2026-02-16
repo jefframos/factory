@@ -29,6 +29,7 @@ export default class GameProgressionView extends PIXI.Container {
         this.blocker.interactive = true;
         this.addChild(this.blocker);
 
+
         this.windowContainer = new PIXI.Container();
         this.addChild(this.windowContainer);
 

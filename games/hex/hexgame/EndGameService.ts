@@ -46,7 +46,8 @@ export class EndGameService {
         this.dimmer.drawRect(-Game.DESIGN_WIDTH, -Game.DESIGN_HEIGHT, Game.DESIGN_WIDTH * 3, Game.DESIGN_HEIGHT * 3);
         this.dimmer.endFill();
         this.dimmer.alpha = 0;
-        this.dimmer.interactive = true;
+        this.dimmer.interactive = false;
+        this.dimmer.visible = false;
         this.gameRoot.addChild(this.dimmer);
 
         this.particleContainer = new PIXI.Container();
@@ -194,7 +195,6 @@ export class EndGameService {
 
     public async execute(totalTime: number = 2.0, levelStats: LevelSessionStats): Promise<Choice> {
         this.prepareSequence();
-
         // Start Sequence
         gsap.to(this.dimmer, { alpha: 1, duration: 0.4 });
         gsap.from(this.chest, { y: "+=100", alpha: 0, duration: 0.6, ease: "back.out" });
@@ -228,13 +228,16 @@ export class EndGameService {
         // Final Outro
         await gsap.to([this.dimmer, this.uiContainer], { alpha: 0, duration: 0.4 });
         this.buttonContainer.visible = false;
-
+        this.dimmer.interactive = false;
         return choice;
     }
 
     private prepareSequence(): void {
         this.uiContainer.alpha = 1;
         this.uiContainer.visible = true;
+        this.dimmer.interactive = true;
+
+        this.dimmer.visible = true;
         this.buttonContainer.visible = false;
         this.starShine.visible = false;
         this.stars.forEach(s => { s.visible = false; s.alpha = 0; });

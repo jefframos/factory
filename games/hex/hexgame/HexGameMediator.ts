@@ -47,7 +47,7 @@ export class HexGameMediator {
         DevGuiManager.instance.addButton("Complete 1", () => this.solveOnePiece());
 
         this.hintService = new HintService(this.clusterManager, this.gridView);
-        this.endGameService = new EndGameService(this.gameRoot, this.gridView);
+        //this.endGameService = new EndGameService(this.gameRoot, this.gridView);
 
         this.wireSignals();
     }

@@ -89,38 +89,51 @@ export class LevelEditorGridView extends PIXI.Container {
 
     private drawTile(key: string, mode: TileMode): void {
         const { q, r } = LevelMatrixCodec.parseKey(key);
-
-        // ✅ In this project, HexUtils.offsetToPixel is actually AXIAL -> pixel
         const pos = HexUtils.offsetToPixel(q, r);
 
-
         const g = new PIXI.Graphics();
+
+        // Set the position of the Graphics object itself
+        g.x = pos.x;
+        g.y = pos.y;
 
         const alpha = mode === "active" ? 0.25 : 0.12;
         const lineAlpha = mode === "active" ? 0.30 : 0.18;
 
-        g.lineStyle(2, 0xffffff, lineAlpha);
+        g.lineStyle(8, 0xffffff, lineAlpha);
         g.beginFill(0xffffff, alpha);
+
 
         const size = HexUtils.HEX_SIZE;
         const points: number[] = [];
+
+        // DRAW AROUND (0,0)
         for (let i = 0; i < 6; i++) {
             const angle = (Math.PI / 180) * (60 * i - 30);
-            points.push(pos.x + size * Math.cos(angle), pos.y + size * Math.sin(angle));
+            points.push(size * Math.cos(angle), size * Math.sin(angle));
         }
+
         g.drawPolygon(points);
         g.endFill();
 
-        // ✅ explicit hitArea avoids weird stale bounds when pivot changes
+        // Now the hitArea is relative to the Graphics object's position (pos.x, pos.y)
         g.hitArea = new PIXI.Polygon(points);
 
+        // PIXI v7+ uses eventMode instead of interactive
         g.eventMode = "static";
         g.cursor = "pointer";
-        g.on("pointertap", () => {
+
+        g.on("pointertap", (e) => {
+            // Stop propagation to prevent multiple triggers if containers overlap
+            e.stopPropagation();
+            console.log("Tile tapped:", key);
             this.onTileToggle?.(key, mode);
         });
 
         this.tilesContainer.addChild(g);
+
+        this.tilesContainer.eventMode = "passive"; // children can receive events
+        this.tilesContainer.interactiveChildren = true;
     }
 
     private centerPivotFromBounds(): void {

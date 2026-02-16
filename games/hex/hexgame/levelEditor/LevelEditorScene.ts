@@ -50,8 +50,48 @@ export default class LevelEditorScene extends GameScene {
         { q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 },
         { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 }
     ];
-
+    private getHierarchyPath(obj: any): string {
+        let path = obj.constructor.name;
+        let parent = obj.parent;
+        while (parent) {
+            path = (parent.constructor.name || "Unnamed") + " > " + path;
+            parent = parent.parent;
+        }
+        return path;
+    }
     public build(): void {
+
+        window.addEventListener('mousedown', (e: MouseEvent) => {
+            // 1. Get the screen coordinates
+            const x = e.clientX;
+            const y = e.clientY;
+
+            // 2. Access the event system from the renderer
+            const events = Game.renderer.events;
+
+            // 3. hitTest returns the top-most interactive object at that point
+            const hit = events.rootBoundary.hitTest(x, y);
+
+            if (hit) {
+                console.log("%c --- RAYCAST HIT ---", "color: #00ff00; font-weight: bold;");
+                console.log("Object:", hit);
+                console.log("Type:", hit.constructor.name);
+                console.log("Name:", hit.name || "Unnamed");
+                console.log("Interactive:", (hit as any).interactive || (hit as any).eventMode);
+
+                // This will print the parent list so you can see if a HUD is blocking it
+                let path = hit.constructor.name;
+                let p = hit.parent;
+                while (p) {
+                    path = `${p.constructor.name} > ${path}`;
+                    p = p.parent;
+                }
+                console.log("Hierarchy:", path);
+            } else {
+                console.log("Raycast Hit: Nothing (or non-interactive space)");
+            }
+        });
+
         this.patternBackground = new PatternBackground({
             background: 0x2b2b2b,
             patternAlpha: 1,
@@ -830,6 +870,7 @@ export default class LevelEditorScene extends GameScene {
 
         this.patternBackground?.position?.set(centerX, centerY);
         this.editorGridView.update(delta);
+
 
         // Force the overlay to match the grid exactly every frame if needed
         this.pieceOverlay.pivot.copyFrom(this.editorGridView.pivot);
