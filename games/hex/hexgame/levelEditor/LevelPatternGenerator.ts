@@ -1,3 +1,4 @@
+import { Difficulty } from "../HexTypes";
 import { LevelMatrixCodec } from "./LevelMatrixCodec";
 
 export class LevelPatternGenerator {
@@ -5,19 +6,51 @@ export class LevelPatternGenerator {
      * Generates a random "nice" pattern matrix.
      * @param targetSize Number of hexes to aim for (e.g., 15-30)
      */
-    public static generateRandomPattern(targetSize: number = 20): number[][] {
-        const types: Array<() => Set<string>> = [
+    // public static generateRandomPattern(targetSize: number = 20): number[][] {
+    //     const types: Array<() => Set<string>> = [
+    //         () => this.generateBlob(targetSize),
+    //         () => this.generateRadial(targetSize),
+    //         () => this.generateSymmetric(targetSize)
+    //     ];
+
+    //     const selectedType = types[Math.floor(Math.random() * types.length)];
+    //     const tileSet = selectedType();
+
+    //     return LevelMatrixCodec.toMatrix(tileSet);
+    // }
+    public static getTargetSizeByDifficulty(diff: Difficulty): number {
+        switch (diff) {
+            case Difficulty.VERY_EASY: return 12;
+            case Difficulty.EASY: return 18;
+            case Difficulty.MEDIUM: return 25;
+            case Difficulty.HARD: return 35;
+            case Difficulty.VERY_HARD: return 50;
+            default: return 20;
+        }
+    }
+    public static generateRandomPattern(difficulty: Difficulty): number[][] {
+        const targetSize = this.getTargetSizeByDifficulty(difficulty);
+        const types = [
             () => this.generateBlob(targetSize),
             () => this.generateRadial(targetSize),
             () => this.generateSymmetric(targetSize)
         ];
 
         const selectedType = types[Math.floor(Math.random() * types.length)];
-        const tileSet = selectedType();
-
-        return LevelMatrixCodec.toMatrix(tileSet);
+        return LevelMatrixCodec.toMatrix(selectedType());
     }
-
+    public static generateRectangle(width: number, height: number): number[][] {
+        const tiles = new Set<string>();
+        for (let r = 0; r < height; r++) {
+            for (let q = 0; q < width; q++) {
+                // Convert offset coordinates to axial
+                const axialQ = q - Math.floor(r / 2);
+                const axialR = r;
+                tiles.add(LevelMatrixCodec.key(axialQ, axialR));
+            }
+        }
+        return LevelMatrixCodec.toMatrix(tiles);
+    }
     private static generateBlob(size: number): Set<string> {
         const tiles = new Set<string>();
         let q = 0, r = 0;

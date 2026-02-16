@@ -11,11 +11,12 @@ import { GameplayData } from "./data/GameplayData";
 import { GameplayProgressStorage } from "./data/GameplayProgressStorage";
 import { EndGameService } from "./EndGameService";
 import { FTUEMode, FTUEService } from "./ftue/FTUEService";
+import { GameStepProgressionService } from "./GameStepProgressionService";
 import HexAssets from "./HexAssets";
 import { HexGridBuilder } from "./HexGridBuilder";
 import { HexGridView } from "./HexGridView";
 import { HexInputService } from "./HexInputService";
-import { Difficulty, HexPos, HexUtils } from "./HexTypes";
+import { Difficulty, HexPos, HexUtils, LevelData } from "./HexTypes";
 import { HintService } from "./HintService";
 import { LevelDataManager } from "./LevelDataManager";
 import { HexHUD } from "./ui/HexHud";
@@ -28,6 +29,10 @@ export class HexGameMediator {
     private ftueService: FTUEService;
     public gameplayData: GameplayData = new GameplayData();
     private endGameService: EndGameService;
+    private stepProgressionService: GameStepProgressionService;
+    private currentStepIndex: number = 0;
+    private levelData?: LevelData;
+
     public readonly onRestart: Signal = new Signal();
     public readonly onQuit: Signal = new Signal();
     constructor(
@@ -47,7 +52,8 @@ export class HexGameMediator {
         DevGuiManager.instance.addButton("Complete 1", () => this.solveOnePiece());
 
         this.hintService = new HintService(this.clusterManager, this.gridView);
-        //this.endGameService = new EndGameService(this.gameRoot, this.gridView);
+        this.endGameService = new EndGameService(this.gameRoot, this.gridView);
+        this.stepProgressionService = new GameStepProgressionService(this.hud);
 
         this.wireSignals();
     }
@@ -91,7 +97,7 @@ export class HexGameMediator {
                 onCancel: () => {
                     setTimeout(() => {
                         this.inputService.forceResetHeldPiece();
-
+                        this.stepProgressionService.hide();
                         // Dispatch to Main class to generate a new matrix and call initPuzzle again
                         this.onRestart.dispatch({});
                         this.onQuit.dispatch({});
@@ -141,8 +147,55 @@ export class HexGameMediator {
         this.inputService.forceResetHeldPiece();
         this.inputService.enabled = enabled;
     }
+    public startLevel(level: LevelData): void {
+        this.levelData = level;
+        this.currentStepIndex = 0;
 
-    public startLevel(matrix: any, difficulty: Difficulty, pieces?: any): void {
+        const totalSteps = level.steps?.length || 1;
+        this.stepProgressionService.initLevel(totalSteps);
+
+        this.inputService.forceResetHeldPiece();
+
+        this.loadStep(this.currentStepIndex);
+
+        // Start session tracking
+        const info = LevelDataManager.getCurrentLevelInfo();
+        this.gameplayData.startSession(this.levelData, level.id || "manual", level.difficulty);
+
+        this.gameContainer.alpha = 0;
+        gsap.to(this.gameContainer, { alpha: 1, duration: 0.5 });
+        this.inputService.enabled = true;
+    }
+
+    private loadStep(index: number): void {
+        if (!this.levelData) return;
+        this.resetGame();
+
+        let matrix: any;
+        let pieces: any;
+
+        if (this.levelData.steps && this.levelData.steps.length > 0) {
+            const step = this.levelData.steps[index];
+            matrix = step.matrix;
+            pieces = step.pieces;
+        } else {
+            matrix = this.levelData.matrix;
+            pieces = this.levelData.pieces;
+        }
+
+        if (!matrix) return;
+
+        const { data } = HexGridBuilder.buildFromMatrix(matrix);
+        this.gridView.init(data, PIXI.Texture.from("slot"));
+
+        // If pieces are empty/undefined, the manager might generate random ones.
+        // In our "Bake-Only" world, we want to ensure it uses what we give it.
+        this.clusterManager.initPuzzle(matrix, this.levelData.difficulty || Difficulty.MEDIUM, pieces);
+
+        this.layout();
+    }
+
+    public startLevelOLD(matrix: any, difficulty: Difficulty, pieces?: any): void {
         this.inputService.forceResetHeldPiece();
         this.resetGame();
 
@@ -278,7 +331,66 @@ export class HexGameMediator {
         this.endGameService?.update(delta)
         this.ftueService?.update(delta);
     }
+
     public async onMoveSuccess(): Promise<void> {
+        this.gameplayData.recordMove();
+
+        if (this.gridView.isGridFull()) {
+            this.ftueService?.stop();
+            const totalSteps = this.levelData?.steps?.length || 1;
+
+            if (this.currentStepIndex < totalSteps - 1) {
+                // --- STEP COMPLETION ---
+                this.inputService.enabled = false;
+
+                // 1. Animate pieces to the TOP progress bar
+                const tiles = this.gridView.getAllTiles();
+                await this.stepProgressionService.animateStepCompletion(
+                    tiles,
+                    this.currentStepIndex,
+                    totalSteps
+                );
+
+                // 2. Load Next Step
+                this.currentStepIndex++;
+                await gsap.to(this.gameContainer, { alpha: 0, duration: 0.3 });
+                this.loadStep(this.currentStepIndex);
+                await gsap.to(this.gameContainer, { alpha: 1, duration: 0.3 });
+
+                this.inputService.enabled = true;
+            } else {
+                // --- FINAL LEVEL COMPLETION ---
+                // Hide step bar and show full end game screen
+                this.stepProgressionService.hide();
+                this.handleFinalWin();
+            }
+        }
+    }
+
+    private async handleFinalWin(): Promise<void> {
+        HexAssets.tryToPlaySound(HexAssets.Sounds.UI.OpenPopupPrize);
+        this.ftueService?.stop();
+        this.hintService.stopHint();
+        this.hud.visible = false;
+
+        const snapshot = this.gameplayData.getSnapshot();
+        const info = LevelDataManager.getCurrentLevelInfo();
+
+        if (info.levelData) {
+            const levelIdx = LevelDataManager.getLevelIndex(info.levelData);
+            await GameplayProgressStorage.saveLevelComplete(levelIdx, snapshot.stars);
+        }
+
+        const choice = await this.endGameService.execute(2, snapshot);
+        PlatformHandler.instance.platform.gameplayStop();
+
+        setTimeout(() => {
+            this.inputService.enabled = false;
+            this.gameplayData.completeLevel(choice);
+        }, 50);
+    }
+
+    public async onMoveSuccessOLD(): Promise<void> {
         this.gameplayData.recordMove();
 
         if (this.gridView.isGridFull()) {

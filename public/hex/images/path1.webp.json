@@ -5,15 +5,15 @@
         "x": 2,
         "y": 2,
         "w": 128,
-        "h": 110
+        "h": 63
       },
       "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
-        "y": 9,
+        "y": 32,
         "w": 128,
-        "h": 110
+        "h": 63
       },
       "sourceSize": {
         "w": 128,
@@ -28,7 +28,7 @@
     "format": "RGBA8888",
     "size": {
       "w": 132,
-      "h": 114
+      "h": 67
     },
     "scale": 1,
     "related_multi_packs": []

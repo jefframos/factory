@@ -253,7 +253,7 @@ export default class HexAssets {
             },
             FlyAnim: {
                 soundId: 'Bonus Fly Anim',
-                volumeMinMax: [0.15, 0.2],
+                volumeMinMax: [0.05, 0.1],
                 pitchMinMax: [0.8, 1],
             }
         }

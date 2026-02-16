@@ -122,7 +122,7 @@ export default class HexScene extends GameScene {
 
         this.transition.forceClose();
         const startTime = performance.now();
-        this.transition.showLoading("");
+        this.transition.showLoading("Preparing World...");
         //this.transition.showLoading("Preparing Level...");
         // 1. Create the panning map
         this.worldMap = new WorldMapView();
@@ -213,7 +213,7 @@ export default class HexScene extends GameScene {
         this.gameplayContainer.addChild(this.gridView);
         this.gameplayContainer.addChild(this.clusterManager);
 
-        const gridRect = new PIXI.Rectangle(50, 0, Game.DESIGN_WIDTH - 100, Game.DESIGN_HEIGHT * 0.5);
+        const gridRect = new PIXI.Rectangle(50, 20, Game.DESIGN_WIDTH - 100, Game.DESIGN_HEIGHT * 0.5);
         const piecesRect = new PIXI.Rectangle(20, Game.DESIGN_HEIGHT * 0.6 - 100, Game.DESIGN_WIDTH - 40, Game.DESIGN_HEIGHT * 0.4);
 
 
@@ -241,7 +241,6 @@ export default class HexScene extends GameScene {
                 await EconomyStorage.addCurrency(CurrencyType.STARS, starGain);
             }
 
-            console.log(playedIndex)
 
             this.worldMap.inputEnabled = false;
             if (choice == "replay") {
@@ -254,7 +253,13 @@ export default class HexScene extends GameScene {
                 return
             }
 
-
+            if (choice == "next") {
+                const nextIndex = playedIndex + 1;
+                const nextLevel = await LevelDataManager.getLevelAt(nextIndex);
+                this.worldMap.setCurrentLevelIndex(nextIndex);
+                this.startLevel(nextLevel);
+                return
+            }
             // 2. Return to map
             await this.showMap();
 
@@ -297,7 +302,10 @@ export default class HexScene extends GameScene {
         });
 
         // Handle Return to Map
-        this.mediator.onQuit.add(() => this.showMap());
+        this.mediator.onQuit.add(async () => {
+            await this.showMap()
+            this.worldMap.recenter();
+        });
     }
 
 
@@ -318,8 +326,32 @@ export default class HexScene extends GameScene {
         this.mediator.setInputEnabled(false);
         this.transition.open();
     }
-
     private async startLevel(level: LevelData): Promise<void> {
+        this.activeLevelIndex = LevelDataManager.getLevelIndex(level);
+        this.hexHUD.visible = false;
+
+        this.worldMap.inputEnabled = false;
+        await this.transition.close();
+        await PromiseUtils.await(500);
+
+        this.hexHUD.visible = true;
+        this.transition.setTargetWidth(Game.DESIGN_WIDTH);
+        this.isMapActive = false;
+        this.worldViewContainer.visible = false;
+        this.hexHUD.setMode(HUDMode.GAMEPLAY);
+
+        // FIX: Pass the entire level object
+        this.mediator.startLevel(level);
+
+        if (this.activeLevelIndex === 0) {
+            this.mediator.startFirstTimeTutorial();
+        }
+
+        this.mediator.setInputEnabled(true);
+        await this.transition.open();
+        this.worldMap.inputEnabled = true;
+    }
+    private async startLevelOLD(level: LevelData): Promise<void> {
 
         this.activeLevelIndex = LevelDataManager.getLevelIndex(level);
         this.hexHUD.visible = false;

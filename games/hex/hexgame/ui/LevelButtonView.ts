@@ -61,7 +61,7 @@ export class LevelButtonView extends PIXI.Container {
 
         // 3. Initialize Stars
         this.starDisplay = new StarContainer();
-        this.starDisplay.y = 36;
+        this.starDisplay.y = 45;
         this.addChild(this.starDisplay);
         this.starDisplay.interactive = false;
         this.starDisplay.interactiveChildren = false;

@@ -58,8 +58,8 @@ export class FTUEService {
         // 3. Align Ghost to the real piece's current state
         this.ghostPiece.position.copyFrom(startPos);
         // Important: Match the world scale (the tray/manager scale)
-        const worldScale = this.activePiece.worldTransform.decompose(new PIXI.Transform()).scale;
-        this.ghostPiece.scale.copyFrom(worldScale);
+        const worldScale = this.activePiece.scale//worldTransform.decompose(new PIXI.Transform()).scale;
+        //this.ghostPiece.scale.copyFrom(worldScale);
         this.ghostPiece.alpha = 0;
 
         this.handCursor.position.copyFrom(startPos);

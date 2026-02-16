@@ -46,6 +46,8 @@ export default class LevelEditorScene extends GameScene {
 
     private worldEditorUi?: WorldEditorDomUI;
 
+    private currentStepIndex: number = 0;
+
     private readonly axialNeighbors = [
         { q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 },
         { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 }
@@ -59,38 +61,49 @@ export default class LevelEditorScene extends GameScene {
         }
         return path;
     }
+
+    private isCtrlDown: boolean = false;
+
     public build(): void {
 
-        window.addEventListener('mousedown', (e: MouseEvent) => {
-            // 1. Get the screen coordinates
-            const x = e.clientX;
-            const y = e.clientY;
-
-            // 2. Access the event system from the renderer
-            const events = Game.renderer.events;
-
-            // 3. hitTest returns the top-most interactive object at that point
-            const hit = events.rootBoundary.hitTest(x, y);
-
-            if (hit) {
-                console.log("%c --- RAYCAST HIT ---", "color: #00ff00; font-weight: bold;");
-                console.log("Object:", hit);
-                console.log("Type:", hit.constructor.name);
-                console.log("Name:", hit.name || "Unnamed");
-                console.log("Interactive:", (hit as any).interactive || (hit as any).eventMode);
-
-                // This will print the parent list so you can see if a HUD is blocking it
-                let path = hit.constructor.name;
-                let p = hit.parent;
-                while (p) {
-                    path = `${p.constructor.name} > ${path}`;
-                    p = p.parent;
-                }
-                console.log("Hierarchy:", path);
-            } else {
-                console.log("Raycast Hit: Nothing (or non-interactive space)");
-            }
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Control' || e.key === 'Meta') this.isCtrlDown = true;
         });
+        addEventListener('keyup', (e) => {
+            if (e.key === 'Control' || e.key === 'Meta') this.isCtrlDown = false;
+        });
+        // Also reset if window loses focus to prevent "stuck" keys
+        window.addEventListener('blur', () => this.isCtrlDown = false);
+        // window.addEventListener('mousedown', (e: MouseEvent) => {
+        //     // 1. Get the screen coordinates
+        //     const x = e.clientX;
+        //     const y = e.clientY;
+
+        //     // 2. Access the event system from the renderer
+        //     const events = Game.renderer.events;
+
+        //     // 3. hitTest returns the top-most interactive object at that point
+        //     const hit = events.rootBoundary.hitTest(x, y);
+
+        //     if (hit) {
+        //         console.log("%c --- RAYCAST HIT ---", "color: #00ff00; font-weight: bold;");
+        //         console.log("Object:", hit);
+        //         console.log("Type:", hit.constructor.name);
+        //         console.log("Name:", hit.name || "Unnamed");
+        //         console.log("Interactive:", (hit as any).interactive || (hit as any).eventMode);
+
+        //         // This will print the parent list so you can see if a HUD is blocking it
+        //         let path = hit.constructor.name;
+        //         let p = hit.parent;
+        //         while (p) {
+        //             path = `${p.constructor.name} > ${path}`;
+        //             p = p.parent;
+        //         }
+        //         console.log("Hierarchy:", path);
+        //     } else {
+        //         console.log("Raycast Hit: Nothing (or non-interactive space)");
+        //     }
+        // });
 
         this.patternBackground = new PatternBackground({
             background: 0x2b2b2b,
@@ -123,25 +136,34 @@ export default class LevelEditorScene extends GameScene {
         );
 
         this.editorGridView.onTileToggle = (key: string, mode: TileMode) => {
-            if (this.isPieceEditMode) {
+            const lvl = this.getSelectedLevel();
+            if (!lvl) return;
+
+            if (this.isCtrlDown) {
+                // --- PAINT MODE ---
                 if (mode !== "active") return;
                 this.editingCellsAbs.has(key) ? this.editingCellsAbs.delete(key) : this.editingCellsAbs.add(key);
                 this.commitEditingCellsToWorkingPieceAbs();
                 this.applyWorkingPiecesAbsToSelectedLevelLocal();
-                this.refreshPieceOverlay();
-                this.updateValidityLabel();
-                this.refreshUi();
-                return;
+            } else {
+                // --- GRID MODE ---
+                if (mode === "preview") {
+                    this.activeTiles.add(key);
+                } else {
+                    this.activeTiles.delete(key);
+                    this.removeCoordinateFromAllPieces(key);
+                }
+
+                // 1. Normalization (Updates data and internal Sets)
+                this.normalizeGridCoordinates();
+
+                // 2. Refresh the Matrix string based on new normalized set
+                this.applyMatrixToSelectedLevel();
             }
 
-            if (mode === "preview") this.activeTiles.add(key);
-            else if (this.activeTiles.size > 1) this.activeTiles.delete(key);
+            // ALWAYS sync the visual pieces to the data after any change
+            this.syncEditorToData();
 
-            this.normalizeGridCoordinates();
-            const lvl = this.getSelectedLevel();
-            if (lvl) delete (lvl as any).pieces;
-
-            this.applyMatrixToSelectedLevel();
             this.rebuildPreview();
             this.refreshEditorRender();
             this.refreshLivePreview();
@@ -150,6 +172,32 @@ export default class LevelEditorScene extends GameScene {
         this.setupDomUi();
         void this.loadJsonAndPopulate();
     }
+
+    private removeCoordinateFromAllPieces(key: string): void {
+        const lvl = this.getSelectedLevel();
+        if (!lvl) return;
+
+        // We modify the workingPiecesAbs directly
+        this.workingPiecesAbs.forEach(p => {
+            // Calculate the absolute key for each coordinate in the piece
+            const filteredCoords = p.coords.filter(c => {
+                const pieceCellKey = LevelMatrixCodec.key(p.rootPos.q + c.q, p.rootPos.r + c.r);
+                return pieceCellKey !== key;
+            });
+
+            if (filteredCoords.length !== p.coords.length) {
+                p.coords = filteredCoords;
+                // Re-center the piece root if necessary
+                const cells = p.coords.map(c => ({ q: p.rootPos.q + c.q, r: p.rootPos.r + c.r }));
+                const newCluster = this.cellsToCluster(cells, p.color);
+                p.rootPos = newCluster.rootPos;
+                p.coords = newCluster.coords;
+            }
+        });
+
+        this.applyWorkingPiecesAbsToSelectedLevelLocal();
+    }
+
     private getSelectedWorld(): WorldData | null {
         return LevelDataManager.getWorld(this.currentWorldId);
     }
@@ -190,21 +238,33 @@ export default class LevelEditorScene extends GameScene {
             Difficulty[this.ui.difficultySelect.value as keyof typeof Difficulty] :
             Difficulty.MEDIUM;
 
+        // Default matrix: a single tile at 0,0
+        const defaultMatrix = LevelMatrixCodec.toMatrix(new Set([LevelMatrixCodec.key(0, 0)]));
+
         const lvl: LevelData = {
             id: `level_${Date.now()}`,
             name: `Level ${world.levels.length + 1}`,
             gridType: "Shape",
-            matrix: LevelMatrixCodec.toMatrix(new Set([LevelMatrixCodec.key(0, 0)])),
+            matrix: defaultMatrix,
             difficulty: selectedDiff,
-            features: [{ id: LevelFeature.PIECE_PLACEMENT, enabled: true, value: "" }]
+            features: [{ id: LevelFeature.PIECE_PLACEMENT, enabled: true, value: "" }],
+            // Initialize with one step containing one piece
+            steps: [{
+                id: `step_${Date.now()}`,
+                matrix: defaultMatrix,
+                pieces: [{
+                    color: "color_1",
+                    rootPos: { q: 0, r: 0 },
+                    coords: [{ q: 0, r: 0 }]
+                }]
+            }]
         };
 
-        // This pushes to the array inside LevelDataManager's Map
         world.levels.push(lvl);
         this.currentLevelIndex = world.levels.length - 1;
+        this.currentStepIndex = 0; // Reset step index for new level
         this.loadSelectedLevelIntoEditor();
     }
-
     // 5. Fix deleteSelectedLevel to use DataManager source
     private deleteSelectedLevel() {
         const world = this.getSelectedWorld();
@@ -222,8 +282,80 @@ export default class LevelEditorScene extends GameScene {
         }
         this.refreshUi();
     }
+
+
+    // Update applyMatrixToSelectedLevel to save to step
+    private applyMatrixToSelectedLevel() {
+        const lvl = this.getSelectedLevel();
+        if (!lvl) return;
+
+        const matrix = LevelMatrixCodec.toMatrix(this.activeTiles);
+
+        if (lvl.steps && lvl.steps.length > 0) {
+            lvl.steps[this.currentStepIndex].matrix = matrix;
+        } else {
+            lvl.matrix = matrix;
+        }
+    }
+
+    // Update applyWorkingPiecesAbsToSelectedLevelLocal
+    // private applyWorkingPiecesAbsToSelectedLevelLocal(): void {
+    //     const lvl = this.getSelectedLevel();
+    //     if (!lvl || !this.isPieceEditMode) return;
+
+    //     const localPieces = this.piecesAbsToLocal(this.workingPiecesAbs);
+
+    //     if (lvl.steps && lvl.steps.length > 0) {
+    //         lvl.steps[this.currentStepIndex].pieces = localPieces;
+    //     } else {
+    //         lvl.pieces = localPieces;
+    //     }
+    // }
     private setupDomUi(): void {
         this.ui = new LevelEditorDomUI();
+
+        this.ui.onRerollGrid = () => {
+            this.rerollCurrentLevelPattern();
+        };
+
+        this.ui.onGenerateRect = (w, h) => {
+            this.generateRectGrid(w, h);
+        };
+
+        this.ui.onAddStep = () => {
+            const lvl = this.getSelectedLevel();
+            if (!lvl) return;
+
+            if (!lvl.steps) {
+                lvl.steps = [{ id: "step_1", matrix: lvl.matrix || "", pieces: lvl.pieces || [] }];
+            }
+
+            // Use current matrix as template but start with EMPTY pieces
+            lvl.steps.push({
+                id: `step_${Date.now()}`,
+                matrix: lvl.steps[this.currentStepIndex].matrix,
+                pieces: [] // Ensure pieces are empty so it doesn't break the game logic
+            });
+
+            this.currentStepIndex = lvl.steps.length - 1;
+            this.loadSelectedLevelIntoEditor();
+            this.syncEditorToData();
+        };
+
+        this.ui.onSelectStep = (index: number) => {
+            this.currentStepIndex = index;
+            this.loadSelectedLevelIntoEditor();
+            this.syncEditorToData();
+        };
+
+        this.ui.onDeleteStep = (index: number) => {
+            const lvl = this.getSelectedLevel();
+            if (!lvl || !lvl.steps || lvl.steps.length <= 1) return;
+            lvl.steps.splice(index, 1);
+            this.currentStepIndex = Math.max(0, index - 1);
+            this.loadSelectedLevelIntoEditor();
+            this.syncEditorToData();
+        };
 
         this.ui.onFeatureToggle = (fId, enabled, val) => {
             const lvl = this.getSelectedLevel();
@@ -408,69 +540,123 @@ export default class LevelEditorScene extends GameScene {
     }
 
     private loadSelectedLevelIntoEditor(): void {
-        this.forceExitPieceEditor();
         const lvl = this.getSelectedLevel();
         const world = this.getSelectedWorld();
 
         if (!lvl || !world) return;
 
-        if (lvl) {
-            this.ui?.setDifficultyDropdown(lvl.difficulty);
-            // Ensure PiecePlacement exists
-            if (!lvl.features) lvl.features = [{ id: LevelFeature.PIECE_PLACEMENT, enabled: true }];
-            this.ui?.refreshFeatureUI(lvl.features);
+        // 1. --- STEP & DATA LOGIC ---
+        let activeMatrix = lvl.matrix;
+        let stepPieces: any[] = lvl.pieces || [];
+
+        if (lvl.steps && lvl.steps.length > 0) {
+            if (this.currentStepIndex >= lvl.steps.length) this.currentStepIndex = 0;
+            const step = lvl.steps[this.currentStepIndex];
+            activeMatrix = step.matrix;
+            stepPieces = step.pieces || [];
+            this.ui?.refreshSteps(lvl.steps, this.currentStepIndex);
+        } else {
+            this.ui?.refreshSteps([], 0);
         }
 
-        // Populate the floating world editor with current world data
+        // 2. --- STATE INITIALIZATION ---
+        // Force the editor into permanent Edit Mode
+        this.isPieceEditMode = true;
+        this.pieceOverlay.visible = true;
+        this.clusterManager.visible = false;
+        this.mediator?.setInputEnabled?.(false);
+
+        // 3. --- SYNC GRID ---
+        this.activeTiles = LevelMatrixCodec.fromMatrix(activeMatrix || "");
+
+        // 4. --- SYNC PIECE BUFFERS ---
+        // Convert local level coordinates to absolute editor coordinates
+        this.workingPiecesAbs = this.piecesLocalToAbs(stepPieces);
+        this.syncUiPieceListFromWorking();
+
+        // Select the first piece by default so the user can start painting immediately
+        if (this.workingPiecesAbs.length > 0) {
+            this.selectPieceAbs(0);
+        } else {
+            this.editingCellsAbs.clear();
+            this.editingPieceIndex = 0;
+        }
+
+        // 5. --- UI & STORAGE ---
+        if (lvl.features) {
+            this.ui?.refreshFeatureUI(lvl.features);
+        }
+        this.ui?.setDifficultyDropdown(lvl.difficulty);
         this.worldEditorUi?.setData(world);
 
-        this.activeTiles = LevelMatrixCodec.fromMatrix(lvl.matrix);
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
             worldId: this.currentWorldId,
-            levelIndex: this.currentLevelIndex
+            levelIndex: this.currentLevelIndex,
+            stepIndex: this.currentStepIndex // Good to track step too!
         }));
 
+        // 6. --- RENDER ---
         this.rebuildPreview();
         this.refreshEditorRender();
         this.refreshLivePreview();
         this.refreshUi();
-        console.log(this.validatePiecesAbs());
     }
-
-
-
     private bakeCurrentPreviewPiecesToLevel(): void {
         const lvl = this.getSelectedLevel();
         if (!lvl) return;
 
-        // We map the pieces and ensure the 'color' property becomes a string ID
+        // 1. Get the current pieces from the ClusterManager (procedural or existing)
+        const piecesFromManager = this.clusterManager.getPieces();
+
+        // 2. If the manager is empty (procedural hasn't run), force a generation 
+        // based on the current matrix in the editor
+        if (piecesFromManager.length === 0) {
+            const matrix = LevelMatrixCodec.toMatrix(this.activeTiles);
+            const diff = lvl.difficulty ?? Difficulty.MEDIUM;
+            this.clusterManager.initPuzzle(matrix, diff); // This forces generation
+        }
+
         const localPieces = this.clusterManager.getPieces().map(p => ({
             coords: p.data.coords.map(c => ({ q: c.q, r: c.r })),
-            // FIX: Convert the numeric color from the manager into a Palette ID string
             color: typeof p.data.color === "number"
                 ? getColorIdByValue(p.data.color)
                 : p.data.color,
             rootPos: { q: p.data.rootPos.q, r: p.data.rootPos.r }
         }));
 
-        if (localPieces.length === 0) return;
+        // 3. Save explicitly to the active step
+        if (lvl.steps && lvl.steps.length > 0) {
+            lvl.steps[this.currentStepIndex].pieces = JSON.parse(JSON.stringify(localPieces));
+        } else {
+            lvl.pieces = JSON.parse(JSON.stringify(localPieces));
+        }
 
-        lvl.pieces = JSON.parse(JSON.stringify(localPieces));
-
+        // 4. Update the piece edit mode buffer
         if (this.isPieceEditMode) {
-            this.workingPiecesAbs = this.piecesLocalToAbs(lvl.pieces!);
+            this.workingPiecesAbs = this.piecesLocalToAbs(localPieces);
             this.syncUiPieceListFromWorking();
-            this.selectPieceAbs(0);
+            this.refreshPieceOverlay();
         }
 
         this.refreshLivePreview();
     }
-
     private erasePiecesFromLevel(): void {
         const lvl = this.getSelectedLevel();
-        if (lvl) delete (lvl as any).pieces;
-        this.forceExitPieceEditor();
+        if (!lvl) return;
+
+        // Repurpose: Generate new random pieces for the CURRENT grid
+        const matrix = LevelMatrixCodec.toMatrix(this.activeTiles);
+        const diff = lvl.difficulty ?? Difficulty.MEDIUM;
+
+        // Force the cluster manager to generate data
+        this.clusterManager.initPuzzle(matrix, diff);
+
+        // Immediately "Bake" this new generation into our static data
+        this.bakeCurrentPreviewPiecesToLevel();
+
+        // Refresh visuals
         this.refreshLivePreview();
+        this.refreshPieceOverlay();
     }
 
     private setPieceEditMode(enabled: boolean): void {
@@ -488,14 +674,20 @@ export default class LevelEditorScene extends GameScene {
             return;
         }
 
-        if (!lvl.pieces || lvl.pieces.length === 0) {
-            this.bakeCurrentPreviewPiecesToLevel();
-        }
+        // Check if we have pieces in the current step/root
+        const currentPieces = (lvl.steps && lvl.steps.length > 0)
+            ? lvl.steps[this.currentStepIndex].pieces
+            : lvl.pieces;
 
-        this.workingPiecesAbs = this.piecesLocalToAbs(lvl.pieces ?? []);
-        this.editingPieceIndex = 0;
-        this.syncUiPieceListFromWorking();
-        this.selectPieceAbs(0);
+        // If no pieces exist and we enter edit mode, 
+        // we "Bake" automatically to give the user a starting point
+        if (!currentPieces || currentPieces.length === 0) {
+            this.bakeCurrentPreviewPiecesToLevel();
+        } else {
+            this.workingPiecesAbs = this.piecesLocalToAbs(currentPieces);
+            this.syncUiPieceListFromWorking();
+            this.selectPieceAbs(0);
+        }
     }
 
     private syncUiPieceListFromWorking(): void {
@@ -585,8 +777,14 @@ export default class LevelEditorScene extends GameScene {
 
     private applyWorkingPiecesAbsToSelectedLevelLocal(): void {
         const lvl = this.getSelectedLevel();
-        if (lvl && this.isPieceEditMode) {
-            lvl.pieces = this.piecesAbsToLocal(this.workingPiecesAbs);
+        if (!lvl || !this.isPieceEditMode) return;
+
+        const localPieces = this.piecesAbsToLocal(this.workingPiecesAbs);
+
+        if (lvl.steps && lvl.steps.length > 0) {
+            lvl.steps[this.currentStepIndex].pieces = localPieces;
+        } else {
+            lvl.pieces = localPieces;
         }
     }
 
@@ -627,7 +825,7 @@ export default class LevelEditorScene extends GameScene {
 
         this.activeTiles.forEach(key => {
             const { q, r } = LevelMatrixCodec.parseKey(key);
-            const pos = HexUtils.offsetToPixel(q, r);
+            const pos = HexUtils.offsetToPixel(q, r); // Use offsetToPixel to match your GridView
             minX = Math.min(minX, pos.x);
             maxX = Math.max(maxX, pos.x);
             minY = Math.min(minY, pos.y);
@@ -637,7 +835,7 @@ export default class LevelEditorScene extends GameScene {
         const centerX = (minX + maxX) / 2;
         const centerY = (minY + maxY) / 2;
 
-        // Set the pivot to the center of the actual hexagons
+        // Apply the pivot to both visual layers
         this.editorGridView.pivot.set(centerX, centerY);
         this.pieceOverlay.pivot.set(centerX, centerY);
     }
@@ -686,10 +884,10 @@ export default class LevelEditorScene extends GameScene {
         };
     }
 
-    private applyMatrixToSelectedLevel() {
-        const lvl = this.getSelectedLevel();
-        if (lvl) lvl.matrix = LevelMatrixCodec.toMatrix(this.activeTiles);
-    }
+    // private applyMatrixToSelectedLevel() {
+    //     const lvl = this.getSelectedLevel();
+    //     if (lvl) lvl.matrix = LevelMatrixCodec.toMatrix(this.activeTiles);
+    // }
 
     private rebuildPreview() {
         const next = new Set<string>();
@@ -704,20 +902,19 @@ export default class LevelEditorScene extends GameScene {
     }
     private refreshEditorRender() {
         this.editorGridView.setState(this.activeTiles, this.previewTiles);
-        this.syncGridPivots(); // Ensure the overlay and grid stay aligned
+        // Add this to make sure the "ghost" pieces update when changing steps
+        this.refreshPieceOverlay();
+        this.syncGridPivots();
     }
     private refreshLivePreview(): void {
         if (!this.mediator) return;
 
         const lvl = this.getSelectedLevel();
-        const matrix = LevelMatrixCodec.toMatrix(this.activeTiles);
-        const diff = lvl?.difficulty ?? Difficulty.MEDIUM;
+        if (!lvl) return;
 
-        // If lvl.pieces is undefined, the mediator/generator will create random ones.
-        // If lvl.pieces exists (is baked), the mediator will use those exact pieces.
-        const piecesLocal = (lvl?.pieces && lvl.pieces.length > 0) ? lvl.pieces : undefined;
-
-        this.mediator.startLevel(matrix, diff, piecesLocal);
+        // We no longer pass matrix/diff/pieces separately.
+        // We pass the whole lvl object so the mediator can handle the steps.
+        this.mediator.startLevel(lvl);
         this.mediator.layout();
     }
     private forceExitPieceEditor(): void {
@@ -743,55 +940,104 @@ export default class LevelEditorScene extends GameScene {
         const lvl = this.getSelectedLevel();
         if (!lvl) return;
 
+
+        // Use difficulty to determine size
+        const diff = lvl.difficulty ?? Difficulty.MEDIUM;
+        const newMatrix = LevelPatternGenerator.generateRandomPattern(diff);
+
         this.erasePiecesFromLevel();
 
-        // Generate
-        const newMatrix = LevelPatternGenerator.generateRandomPattern(15);
+
+        this.applyNewMatrix(newMatrix);
+    }
+
+    // New method for rectangular grids
+    public generateRectGrid(w: number, h: number): void {
+        const lvl = this.getSelectedLevel();
+        if (!lvl) return;
+
+
+        const newMatrix = LevelPatternGenerator.generateRectangle(w, h);
+        this.applyNewMatrix(newMatrix);
+        this.erasePiecesFromLevel();
+    }
+
+    // Helper to keep logic DRY
+    private applyNewMatrix(newMatrix: number[][]): void {
         this.activeTiles = LevelMatrixCodec.fromMatrix(newMatrix);
-
-        // --- NEW: Normalize immediately after generation ---
         this.normalizeGridCoordinates();
-
         this.applyMatrixToSelectedLevel();
         this.rebuildPreview();
         this.refreshEditorRender();
         this.refreshLivePreview();
     }
-    private normalizeGridCoordinates(): void {
-        if (this.activeTiles.size === 0) return;
+    private normalizeGridCoordinates(): { dq: number, dr: number } {
+        if (this.activeTiles.size === 0) return { dq: 0, dr: 0 };
 
-        // 1. Find the minimum bounds in axial coordinates
-        let minQ = Infinity;
-        let minR = Infinity;
-
+        let minQ = Infinity, minR = Infinity;
         this.activeTiles.forEach(key => {
             const { q, r } = LevelMatrixCodec.parseKey(key);
             if (q < minQ) minQ = q;
             if (r < minR) minR = r;
         });
 
-        // 2. If already normalized, stop to avoid unnecessary work
-        if (minQ === 0 && minR === 0) return;
+        if (minQ === 0 && minR === 0) return { dq: 0, dr: 0 };
 
-        // 3. Create a new set with shifted coordinates
+        // 1. Shift the Active Tiles Set (The Editor Grid)
         const normalizedSet = new Set<string>();
         this.activeTiles.forEach(key => {
             const { q, r } = LevelMatrixCodec.parseKey(key);
             normalizedSet.add(LevelMatrixCodec.key(q - minQ, r - minR));
         });
-
-        // 4. Update the activeTiles
         this.activeTiles = normalizedSet;
 
-        // 5. IMPORTANT: If pieces existed, they must be shifted by the same amount 
-        // to stay aligned with the new grid origin
+        // 2. Shift the Painting Buffer (The current piece being drawn)
+        const shiftedEditingBuffer = new Set<string>();
+        this.editingCellsAbs.forEach(key => {
+            const { q, r } = LevelMatrixCodec.parseKey(key);
+            shiftedEditingBuffer.add(LevelMatrixCodec.key(q - minQ, r - minR));
+        });
+        this.editingCellsAbs = shiftedEditingBuffer;
+
+        // 3. Shift ALL Level Data (Steps and Legacy Root)
         const lvl = this.getSelectedLevel();
-        if (lvl && lvl.pieces) {
-            lvl.pieces.forEach(p => {
-                p.rootPos.q -= minQ;
-                p.rootPos.r -= minR;
+        if (lvl) {
+            if (lvl.pieces) {
+                lvl.pieces.forEach(p => { p.rootPos.q -= minQ; p.rootPos.r -= minR; });
+            }
+            if (lvl.steps) {
+                lvl.steps.forEach(step => {
+                    step.pieces?.forEach(p => { p.rootPos.q -= minQ; p.rootPos.r -= minR; });
+                });
+            }
+        }
+
+        return { dq: minQ, dr: minR };
+    }
+    private syncEditorToData(): void {
+        const lvl = this.getSelectedLevel();
+        if (!lvl) return;
+
+        // 1. Get step pieces
+        const stepPieces = (lvl.steps && lvl.steps.length > 0)
+            ? (lvl.steps[this.currentStepIndex].pieces || [])
+            : (lvl.pieces || []);
+
+        // 2. Sync working buffer
+        this.workingPiecesAbs = this.piecesLocalToAbs(stepPieces);
+
+        // 3. Sync the painting buffer for the currently selected piece
+        this.editingCellsAbs.clear();
+        const p = this.workingPiecesAbs[this.editingPieceIndex];
+        if (p) {
+            p.coords.forEach(c => {
+                this.editingCellsAbs.add(LevelMatrixCodec.key(p.rootPos.q + c.q, p.rootPos.r + c.r));
             });
         }
+
+        this.refreshPieceOverlay();
+        this.syncUiPieceListFromWorking();
+        this.updateValidityLabel();
     }
     private async tryLoadFromServer(): Promise<any> {
         try {

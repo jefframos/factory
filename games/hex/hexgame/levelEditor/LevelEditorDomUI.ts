@@ -34,6 +34,16 @@ export class LevelEditorDomUI {
     public readonly worldEnabledToggle: HTMLInputElement;
     public readonly worldBackgroundInput: HTMLInputElement;
     public readonly featureContainer: HTMLDivElement;
+
+    // Add to LevelEditorDomUI class properties
+    public readonly stepToolbar: HTMLDivElement;
+    public readonly addStepBtn: HTMLButtonElement;
+    public readonly stepContainer: HTMLDivElement;
+
+    // Add to LevelEditorDomUI callbacks
+    public onAddStep?: () => void;
+    public onSelectStep?: (index: number) => void;
+    public onDeleteStep?: (index: number) => void;
     // Callbacks
     public onFeatureToggle?: (featureId: LevelFeature, enabled: boolean, value: string) => void;
     public onMoveLevel?: (worldId: string, levelIndex: number, direction: -1 | 1) => void;
@@ -53,7 +63,7 @@ export class LevelEditorDomUI {
     public onSelectPiece?: (index: number) => void;
     public onSelectedPieceColorChanged?: (color: string) => void;
     public onDeletePiece?: () => void;
-
+    public onGenerateRect?: (w: number, h: number) => void;
     private pieceItems: HTMLDivElement[] = [];
 
     public constructor() {
@@ -105,6 +115,23 @@ export class LevelEditorDomUI {
         this.bakePiecesBtn = document.createElement("button");
         this.bakePiecesBtn.innerText = "Bake";
         this.bakePiecesBtn.style.flex = "1";
+
+        this.bakePiecesBtn.innerText = "Auto-Bake: OFF";
+        this.bakePiecesBtn.style.background = "#444";
+
+        this.bakePiecesBtn.onclick = () => {
+            const isCurrentlyAuto = this.bakePiecesBtn.innerText.includes("ON");
+            if (isCurrentlyAuto) {
+                this.bakePiecesBtn.innerText = "Auto-Bake: OFF";
+                this.bakePiecesBtn.style.background = "#444";
+            } else {
+                this.bakePiecesBtn.innerText = "Auto-Bake: ON";
+                this.bakePiecesBtn.style.background = "#27ae60";
+                // Trigger one initial bake when turned on
+                this.onBakePieces?.();
+            }
+        };
+
         this.erasePiecesBtn = document.createElement("button");
         this.erasePiecesBtn.innerText = "Erase";
         this.erasePiecesBtn.style.background = "#e67e22";
@@ -191,11 +218,99 @@ export class LevelEditorDomUI {
         // Add it to one of your rows
         rowBake.appendChild(this.rerollGridBtn);
 
+
+        this.stepToolbar = document.createElement("div");
+        this.stepToolbar.style.cssText = `position:absolute; top:12px; left:50%; transform:translateX(-50%); background:rgba(20,20,20,0.85); border-radius:12px; padding:8px 15px; pointer-events:auto; display:flex; align-items:center; gap:12px; border:1px solid rgba(255,255,255,0.1); backdrop-filter:blur(10px);`;
+
+        const stepLabel = document.createElement("div");
+        stepLabel.innerText = "STEPS:";
+        stepLabel.style.fontSize = "11px";
+        stepLabel.style.opacity = "0.7";
+
+        this.stepContainer = document.createElement("div");
+        this.stepContainer.style.cssText = `display:flex; gap:6px; align-items:center;`;
+
+        this.addStepBtn = document.createElement("button");
+        this.addStepBtn.innerText = "+";
+        this.addStepBtn.style.cssText = `width:24px; height:24px; border-radius:50%; border:none; background:#4CAF50; color:white; cursor:pointer; font-weight:bold;`;
+        this.addStepBtn.onclick = () => this.onAddStep?.();
+
+        this.stepToolbar.appendChild(stepLabel);
+        this.stepToolbar.appendChild(this.stepContainer);
+        this.stepToolbar.appendChild(this.addStepBtn);
+        this.root.appendChild(this.stepToolbar);
         // In initEvents
+
+        const gridShapeSection = document.createElement("div");
+        gridShapeSection.style.cssText = `border-top:1px solid rgba(255,255,255,0.1); padding-top:10px; display:flex; flex-direction:column; gap:5px;`;
+
+        const gridLabel = document.createElement("div");
+        gridLabel.innerText = "Quick Grids";
+        gridLabel.style.fontSize = "11px";
+        gridLabel.style.opacity = "0.7";
+        gridShapeSection.appendChild(gridLabel);
+
+        const gridBtnContainer = document.createElement("div");
+        gridBtnContainer.style.cssText = `display:grid; grid-template-columns: repeat(3, 1fr); gap:4px;`;
+
+        const sizes = [[3, 3], [4, 4], [5, 5], [6, 6], [6, 7], [6, 8]];
+        sizes.forEach(([w, h]) => {
+            const btn = document.createElement("button");
+            btn.innerText = `${w}x${h}`;
+            btn.style.fontSize = "10px";
+            btn.onclick = () => this.onGenerateRect?.(w, h);
+            gridBtnContainer.appendChild(btn);
+        });
+
+        gridShapeSection.appendChild(gridBtnContainer);
+        this.editorPanel.appendChild(gridShapeSection); // Add to the panel
 
         this.initEvents();
     }
 
+    public refreshSteps(steps: any[], activeIndex: number) {
+        this.stepContainer.innerHTML = "";
+        steps.forEach((_, i) => {
+            const btnWrapper = document.createElement("div");
+            btnWrapper.style.cssText = `position:relative; display:flex; align-items:center;`;
+
+            const btn = document.createElement("button");
+            btn.innerText = (i + 1).toString();
+            const isActive = i === activeIndex;
+
+            btn.style.cssText = `
+            width: 32px; height: 32px; border-radius: 6px; 
+            border: 1px solid ${isActive ? '#4CAF50' : 'rgba(255,255,255,0.2)'};
+            background: ${isActive ? 'rgba(76, 175, 80, 0.4)' : 'rgba(255,255,255,0.1)'};
+            color: white; cursor: pointer; font-weight: bold;
+            transition: all 0.2s;
+        `;
+
+            // Click to select
+            btn.onclick = () => this.onSelectStep?.(i);
+
+            // Delete button (Small x on the top right of each step)
+            const del = document.createElement("div");
+            del.innerHTML = "×";
+            del.style.cssText = `
+            position:absolute; top:-5px; right:-5px; width:14px; height:14px;
+            background:#f44336; border-radius:50%; display:flex; align-items:center;
+            justify-content:center; font-size:10px; cursor:pointer; font-weight:bold;
+            border: 1px solid rgba(0,0,0,0.5); visibility: ${steps.length > 1 ? 'visible' : 'hidden'};
+        `;
+
+            del.onclick = (e) => {
+                e.stopPropagation(); // Don't select the step when deleting
+                if (confirm(`Delete Step ${i + 1}?`)) {
+                    this.onDeleteStep?.(i);
+                }
+            };
+
+            btnWrapper.appendChild(btn);
+            btnWrapper.appendChild(del);
+            this.stepContainer.appendChild(btnWrapper);
+        });
+    }
     private initEvents() {
         this.rerollGridBtn.onclick = () => this.onRerollGrid?.();
         this.addWorldBtn.onclick = () => this.onAddWorld?.();
@@ -218,6 +333,17 @@ export class LevelEditorDomUI {
             const difficultyValue = Difficulty[val as keyof typeof Difficulty] ?? val;
             this.onDifficultyChanged?.(difficultyValue as any);
         };
+
+        // Inside LevelEditorDomUI.ts constructor
+
+        // Remove or hide these:
+        this.pieceModeToggle.parentElement!.style.display = "none";
+        this.bakePiecesBtn.style.display = "none";
+
+        // Repurpose the Erase button
+        this.erasePiecesBtn.innerText = "🔄 Regenerate Pieces";
+        this.erasePiecesBtn.style.background = "#3498db"; // Change to a "blue" action color
+        this.erasePiecesBtn.style.width = "100%";
     }
     public setDifficultyDropdown(difficulty: string | number): void {
         // If it's a number (from enum), convert to string key, otherwise use as is

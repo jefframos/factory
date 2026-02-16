@@ -12,6 +12,7 @@ export class ScreenTransition extends PIXI.Container {
 
     // Loading UI (Separated)
     private loadingContainer: PIXI.Container = new PIXI.Container();
+    private labelContainer: PIXI.Container = new PIXI.Container();
     private spinnerIcon!: PIXI.Sprite;
     private loadingText!: PIXI.Text;
     private pulseTween?: gsap.core.Tween;
@@ -49,6 +50,10 @@ export class ScreenTransition extends PIXI.Container {
         this.loadingContainer.visible = false;
         this.addChild(this.loadingContainer);
 
+        this.labelContainer.alpha = 0;
+        this.labelContainer.visible = false;
+        this.addChild(this.labelContainer);
+
         this.spinnerIcon = PIXI.Sprite.from('spinner');
         this.spinnerIcon.anchor.set(0.5);
         this.loadingContainer.addChild(this.spinnerIcon);
@@ -60,8 +65,8 @@ export class ScreenTransition extends PIXI.Container {
         });
         this.loadingText = new PIXI.Text("", textStyle);
         this.loadingText.anchor.set(0.5);
-        this.loadingText.y = 90;
-        this.loadingContainer.addChild(this.loadingText);
+        this.loadingText.y = 0;
+        this.labelContainer.addChild(this.loadingText);
     }
 
     // --- Loading Logic (Independent) ---
@@ -69,18 +74,22 @@ export class ScreenTransition extends PIXI.Container {
     public async showLoading(text: string = "Loading..."): Promise<void> {
         this.loadingText.text = text;
         this.loadingContainer.visible = true;
+        this.labelContainer.visible = true;
 
         // Start animations
         this.rotateTween = gsap.to(this.spinnerIcon, { rotation: Math.PI * 2, duration: 1.5, repeat: -1, ease: "none" });
         this.pulseTween = gsap.to(this.loadingContainer.scale, { x: 1.05, y: 1.05, duration: 0.8, repeat: -1, yoyo: true, ease: "sine.inOut" });
 
+        gsap.to(this.labelContainer, { alpha: 1, duration: 0.3 });
         await gsap.to(this.loadingContainer, { alpha: 1, duration: 0.3 });
     }
 
     public async hideLoading(): Promise<void> {
+        gsap.to(this.labelContainer, { alpha: 0, duration: 0.3 });
         await gsap.to(this.loadingContainer, { alpha: 0, duration: 0.3 });
 
         this.loadingContainer.visible = false;
+        this.labelContainer.visible = false;
         this.rotateTween?.kill();
         this.pulseTween?.kill();
     }
@@ -192,6 +201,8 @@ export class ScreenTransition extends PIXI.Container {
 
         this.leftCloudBelt.update(delta);
         this.rightCloudBelt.update(delta);
+
+        this.labelContainer.y = Game.overlayScreenData.bottomLeft.y - 80 - Game.DESIGN_HEIGHT / 2
 
         // Ensure layout stays consistent if targetWidth changes mid-animation
         this.applyProgress();

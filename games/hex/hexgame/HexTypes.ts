@@ -9,7 +9,11 @@ export enum LevelFeature {
     PIECE_ROTATION = "PieceRotation",
     SPARE_PIECES = "SparePieces"
 }
-
+export interface LevelStepData {
+    id: string;
+    pieces?: ClusterData[];
+    matrix: GridMatrix;
+}
 export interface LevelFeatureData {
     id: LevelFeature;
     enabled: boolean;
@@ -19,10 +23,11 @@ export interface LevelData {
     id: string;
     name: string;
     gridType: string;
-    matrix: number[][];
+    matrix?: GridMatrix;
     pieces?: ClusterData[];
     difficulty?: Difficulty;
     features?: LevelFeatureData[];
+    steps?: LevelStepData[];
 }
 
 export interface WorldManifestEntry {

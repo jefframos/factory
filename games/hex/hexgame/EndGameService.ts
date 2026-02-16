@@ -216,7 +216,8 @@ export class EndGameService {
         this.progressBar.visible = false;
 
         // Show Stars
-        await this.showStarsRoutine(levelStats.stars);
+        // await 
+        this.showStarsRoutine(levelStats.stars);
 
 
         HexAssets.tryToPlaySound(HexAssets.Sounds.UI.GameOverAppear)
@@ -272,6 +273,7 @@ export class EndGameService {
             return new Promise<void>((resolve) => {
                 gsap.timeline({
                     delay: (index / tiles.length) * (totalTime * 0.5),
+
                     onComplete: () => {
                         collected++;
                         this.progressBar.update(collected / tiles.length);
@@ -279,6 +281,11 @@ export class EndGameService {
                         gsap.fromTo(this.chest.scale, {
                             x: 1.05, y: 0.95,
                             onStart: () => {
+                                if (Math.random() < 0.2) {
+                                    HexAssets.tryToPlaySound(HexAssets.Sounds.UI.FlyAnim);
+                                }
+                            },
+                            onComplete: () => {
                                 if (Math.random() > 0.8)
                                     HexAssets.tryToPlaySound(HexAssets.Sounds.Game.Coin)
                             }
@@ -316,9 +323,12 @@ export class EndGameService {
             star.alpha = 0;
             star.visible = true;
             star.y = centerY + 40;
-            star.scale.set(targetScale);
+            if (i == 1) {
+                star.y += 20
+            }
 
-            gsap.to(star, { alpha: 1, y: centerY, duration: 0.25, delay: i * 0.1, ease: "back.out(1.5)" });
+            star.scale.set(targetScale);
+            gsap.to(star, { alpha: 1, y: i == 1 ? centerY + 20 : centerY, duration: 0.25, delay: i * 0.1, ease: "back.out(1.5)" });
         }
 
         await new Promise(r => setTimeout(r, 200));

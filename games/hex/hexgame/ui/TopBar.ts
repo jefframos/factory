@@ -22,6 +22,7 @@ export class TopBar extends PIXI.Container {
             PIXI.Texture.from('ItemFrame01_Single_Navy'),
             30, 30, 30, 30
         );
+        this.background.visible = false
         this.addChild(this.background);
 
         // 2. Avatar & Level System
