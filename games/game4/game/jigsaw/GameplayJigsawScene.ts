@@ -109,7 +109,7 @@ export default class GameplayJigsawScene extends GameScene {
             this.store.resetGameProgress()
         }
 
-        this.patternBackground = new PatternBackground({ background: 0x26C6DA, patternAlpha: 0.2, patternPath: 'game4/images/non-preload/jiggy-pattern.png' });
+        this.patternBackground = new PatternBackground({ background: 0x26C6DA, patternAlpha: 0.2, patternPath: 'game4/images/non-preload/jiggy-pattern.webp' });
         this.addChild(this.patternBackground);
         this.patternBackground.init()
 
@@ -465,7 +465,7 @@ export default class GameplayJigsawScene extends GameScene {
 
         this.currentLevel = data;
 
-        const image = await PIXI.Assets.load(data?.level.imageSrc || this.game.folderPath + '/images/non-preload/puzzles/meme1.png')
+        const image = await PIXI.Assets.load(data?.level.imageSrc || this.game.folderPath + '/images/non-preload/puzzles/meme1.webp')
         const srcSprite = PIXI.Sprite.from(image);
 
         // 2-4) render to RT and get a new sprite that *has* a 300x300 texture

@@ -16,7 +16,7 @@ This project demonstrates how to create a basic HTML5 canvas game with OGP integ
 - `index.html` - Main HTML file
 - `style.css` - CSS styles for the game
 - `game.js` - Game logic and OGP integration
-- `icon.png` - Game icon (placeholder file, needs to be replaced with an actual PNG)
+- `icon.webp` - Game icon (placeholder file, needs to be replaced with an actual PNG)
 
 ## Game Features
 
@@ -61,7 +61,7 @@ The game uses the Open Game Protocol SDK to:
 
 ## Setup
 
-1. Replace the `icon.png` placeholder with an actual PNG image
+1. Replace the `icon.webp` placeholder with an actual PNG image
 2. Ensure the OGP SDK is properly loaded from the CDN
 3. Update the OGP game ID and key if necessary
 

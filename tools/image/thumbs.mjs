@@ -5,7 +5,7 @@ import path from 'path';
 import sharp from 'sharp';
 
 const SUPPORTED_EXTENSIONS = new Set([
-    '.png',
+    '.webp',
     '.jpg',
     '.jpeg',
     '.webp',
@@ -41,7 +41,7 @@ async function processImage(srcPath, dstPath, width, height, quality) {
             fit: 'inside',
             withoutEnlargement: true
         })
-        .png({
+        .webp({
             quality: qualityValue,
             palette: qualityValue < 100 // Use palette-based compression if quality < 1
         })
@@ -70,7 +70,7 @@ async function processFolder(inputDir, outputDir, width, height, quality) {
         }
 
         const baseName = path.basename(entry.name, ext);
-        const dstPath = path.join(outputDir, `${baseName}.png`);
+        const dstPath = path.join(outputDir, `${baseName}.webp`);
 
         await processImage(srcPath, dstPath, width, height, quality);
     }
@@ -104,7 +104,7 @@ async function main() {
 
     await processFolder(absInput, absOutput, width, height, quality);
 
-    console.log(`✔ All images converted to .png (Quality: ${quality}) and resized to max ${width}x${height}`);
+    console.log(`✔ All images converted to .webp (Quality: ${quality}) and resized to max ${width}x${height}`);
 }
 
 main().catch(err => {

@@ -36,7 +36,7 @@ export default class MergeScene extends GameScene {
         this.patternBackground = new PatternBackground({
             background: 0x26C6DA,
             patternAlpha: 0.2,
-            patternPath: 'game4/images/non-preload/jiggy-pattern.png'
+            patternPath: 'game4/images/non-preload/jiggy-pattern.webp'
         });
         this.addChild(this.patternBackground);
         this.patternBackground.init();

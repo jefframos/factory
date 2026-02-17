@@ -252,7 +252,7 @@ export class WorldMapView extends PIXI.Container {
         const fixUrls = (layers: VisualLayer[]) => {
             layers.forEach(layer => {
                 layer.images.forEach(img => {
-                    img.url = img.url.replace(/^.*raw-assets\//, 'hex/images/').replace(/\.png$/, '.webp');
+                    img.url = img.url.replace(/^.*raw-assets\//, 'hex/images/').replace(/\.webp$/, '.webp');
                 });
             });
         };

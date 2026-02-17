@@ -19,9 +19,10 @@ async function processIcons() {
 
     // 3. Read input images
     const files = fs.readdirSync(inputDir).filter(file =>
-        ['.png', '.jpg', '.jpeg'].includes(path.extname(file).toLowerCase())
+        ['.webp', '.jpg', '.jpeg', '.png'].includes(path.extname(file).toLowerCase())
     );
 
+    console.log(`🚀 Processing: ${inputDir}...${files.length}`);
     for (const file of files) {
         const fileNameNoExt = path.parse(file).name;
         const imagePath = path.join(inputDir, file);
@@ -44,7 +45,7 @@ async function processIcons() {
                 const format = details.formats[0]; // Take the first preferred format
 
                 // Construct the descriptive filename
-                // format: cat-icon-crazygames-main_icon-628x628.png
+                // format: cat-icon-crazygames-main_icon-628x628.webp
                 const outputFileName = `${fileNameNoExt}-${platform}-${assetKey.replace(/_/g, '-')}-${targetWidth}x${targetHeight}.${format}`;
                 const outputPath = path.join(imageOutputDir, outputFileName);
 
@@ -58,7 +59,7 @@ async function processIcons() {
                         })
                         // If output is JPEG, ensure high quality to prevent "crunchy" icons
                         .jpeg({ quality: 90, progressive: true })
-                        .png({ compressionLevel: 9 })
+                        .webp({ compressionLevel: 9 })
                         .toFormat(format)
                         .toFile(outputPath);
 

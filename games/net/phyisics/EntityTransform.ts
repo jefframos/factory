@@ -15,6 +15,7 @@ export class EntityTransform {
         };
     }
 
+    
     public setPosition(x: number, y: number) {
         Body.setPosition(this.entity.body, { x, y });
     }

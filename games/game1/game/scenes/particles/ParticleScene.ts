@@ -15,7 +15,7 @@ export default class ParticleScene extends BaseDemoScene {
         this.destroyEmitters();
 
         const descriptor: ParticleDescriptor = {
-            texture: PIXI.Texture.from('particle.png'),
+            texture: PIXI.Texture.from('particle.webp'),
             blendMode: PIXI.BLEND_MODES.OVERLAY,
             anchor: { x: 0.5, y: 0.5 },
             spawnShape: { type: 'circle', radius: 8 },

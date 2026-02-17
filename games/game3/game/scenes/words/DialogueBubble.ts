@@ -15,7 +15,7 @@ export default class DialogueBubble extends PIXI.Container {
         this.maxWidth = maxWidth;
 
         this.background = new PIXI.NineSlicePlane(
-            PIXI.Texture.from('ItemFrame01_Single_Hologram1.png'),
+            PIXI.Texture.from('ItemFrame01_Single_Hologram1.webp'),
             30, 30, 30, 30
         );
         this.background.width = maxWidth;

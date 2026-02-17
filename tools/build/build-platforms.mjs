@@ -20,7 +20,7 @@ const __dirname = dirname(__filename);
 const projectRoot = resolve(__dirname, '../../');
 const gameRoot = resolve(projectRoot, `games/${GAME}`);
 const configPath = resolve(gameRoot, 'platforms.config.json');
-const distRoot = resolve(projectRoot, 'dist');
+const distRoot = resolve(projectRoot, `dist/${GAME}`);
 
 const platforms = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 

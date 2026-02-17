@@ -11,7 +11,7 @@ export default class BaseDemoScene extends GameScene {
         this.closeButton = new BaseButton({
             standard: {
                 allPadding: 35,
-                texture: PIXI.Texture.from('Button01_s_Red.png'),
+                texture: PIXI.Texture.from('Button01_s_Red.webp'),
                 width: 80,
                 height: 80,
                 fontStyle: new PIXI.TextStyle({
@@ -22,7 +22,7 @@ export default class BaseDemoScene extends GameScene {
                 }),
             },
             over: {
-                texture: PIXI.Texture.from('Button01_s_Red.png'),
+                texture: PIXI.Texture.from('Button01_s_Red.webp'),
             },
             click: {
                 callback: () => {

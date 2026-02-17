@@ -35,7 +35,7 @@ export default class MainMenuScene extends GameScene {
             const button = new BaseButton({
                 standard: {
                     allPadding: 35,
-                    texture: PIXI.Texture.from('Button01_s_Blue.png'),
+                    texture: PIXI.Texture.from('Button01_s_Blue.webp'),
                     width: buttonWidth,
                     height: buttonHeight,
                     fontStyle: new PIXI.TextStyle({
@@ -46,7 +46,7 @@ export default class MainMenuScene extends GameScene {
                     }),
                 },
                 over: {
-                    texture: PIXI.Texture.from('Button01_s_Purple.png'),
+                    texture: PIXI.Texture.from('Button01_s_Purple.webp'),
                 },
                 click: {
                     callback: () => {

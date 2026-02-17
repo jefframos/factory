@@ -188,7 +188,7 @@ export default class ScoreUi extends AutoPositionTiledContainer {
         // }, 1);
 
         // ShortcutManager.registerDevShortcut(['alt', 'o'], () => {
-        //     PixiExportUtils.exportContainerAsImage(this.highestPiece, this.highestPiece.width, this.highestPiece.height, 'my-export.png');
+        //     PixiExportUtils.exportContainerAsImage(this.highestPiece, this.highestPiece.width, this.highestPiece.height, 'my-export.webp');
 
         // }, '')
     }

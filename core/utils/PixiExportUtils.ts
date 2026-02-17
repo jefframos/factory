@@ -2,7 +2,7 @@ import { Game } from '@core/Game';
 import * as PIXI from 'pixi.js';
 
 export class PixiExportUtils {
-    static exportContainerAsImage(container: PIXI.Container, width: number, height: number, fileName = 'image.png'): void {
+    static exportContainerAsImage(container: PIXI.Container, width: number, height: number, fileName = 'image.webp'): void {
         const renderer = Game.renderer;
 
         // Create an off-screen render texture

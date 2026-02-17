@@ -115,8 +115,16 @@
     },
     "gamepix": {
         "main_thumbnail": {
-            "width": 250,
-            "height": 250,
+            "width": 256,
+            "height": 256,
+            "formats": [
+                "png"
+            ],
+            "description": "Standard square thumbnail."
+        },
+        "cover": {
+            "width": 1360,
+            "height": 850,
             "formats": [
                 "png"
             ],

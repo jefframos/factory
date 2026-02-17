@@ -399,7 +399,7 @@
           {
             "type": "sprite",
             "id": "img_1771253908463",
-            "url": "/../raw-assets/non-preload/maps/textures/puzzle-bg-1.png",
+            "url": "/../raw-assets/non-preload/maps/textures/puzzle-bg-1.webp",
             "x": -64.83588660493365,
             "y": 713.1220354913057,
             "scaleX": 3.3,
@@ -422,7 +422,7 @@
           {
             "type": "sprite",
             "id": "img_1771184358377",
-            "url": "/../raw-assets/non-preload/maps/textures/round-blur.png",
+            "url": "/../raw-assets/non-preload/maps/textures/round-blur.webp",
             "x": -642.4101073863794,
             "y": 394.52345924729866,
             "scaleX": 1,

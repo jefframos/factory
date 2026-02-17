@@ -58,12 +58,12 @@ class OGPManager {
             console.log('Initializing OGP SDK...');
             this.ogp = new OpenGameSDK({
                 ui: {
-                    gameIcon: 'https://dpid.github.io/flappy-test/icon.png'
+                    gameIcon: 'https://dpid.github.io/flappy-test/icon.webp'
                 },
                 useCustomAuth: false
             });
 
-            this.ogp.init({ gameId: 'flappy-bird', playerId: 'player-123'})
+            this.ogp.init({ gameId: 'flappy-bird', playerId: 'player-123' })
                 .then(() => {
                     console.log('OGP SDK initialized successfully');
                     this.isInitialized = true;
@@ -74,7 +74,7 @@ class OGPManager {
                     console.error('Failed to initialize OGP SDK:', error);
                     this.handleInitError();
                 });
-            
+
             // Call gameReadyToPlay outside the init chain
             this.ogp.gameReadyToPlay();
         } catch (error) {
@@ -146,7 +146,7 @@ class FlappyBirdGame {
             e.preventDefault();
             this.jump();
         });
-        
+
         // Add keyboard support
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
@@ -158,23 +158,23 @@ class FlappyBirdGame {
     startGame() {
         DOM.startScreen.style.display = 'none';
         DOM.gameOverScreen.style.display = 'none';
-        
+
         gameState.birdY = CONFIG.birdInitialY;
         gameState.birdVelocity = 0;
         gameState.obstacleX = CONFIG.canvasWidth;
         gameState.score = 0;
         gameState.gameRunning = true;
-        
+
         this.resetObstacle();
         this.gameLoop();
     }
 
     gameLoop() {
         if (!gameState.gameRunning) return;
-        
+
         this.update();
         this.render();
-        
+
         gameState.animationFrameId = requestAnimationFrame(() => this.gameLoop());
     }
 
@@ -185,7 +185,7 @@ class FlappyBirdGame {
 
         // Update obstacle position
         gameState.obstacleX -= CONFIG.obstacleSpeed;
-        
+
         // Check if obstacle passed
         if (gameState.obstacleX < -CONFIG.obstacleWidth) {
             this.resetObstacle();
@@ -198,7 +198,7 @@ class FlappyBirdGame {
 
     render() {
         const { ctx } = gameState;
-        
+
         // Clear canvas
         ctx.clearRect(0, 0, CONFIG.canvasWidth, CONFIG.canvasHeight);
 
@@ -210,9 +210,9 @@ class FlappyBirdGame {
         ctx.fillStyle = CONFIG.obstacleColor;
         ctx.fillRect(gameState.obstacleX, 0, CONFIG.obstacleWidth, gameState.obstacleHeight);
         ctx.fillRect(
-            gameState.obstacleX, 
-            gameState.obstacleHeight + gameState.gap, 
-            CONFIG.obstacleWidth, 
+            gameState.obstacleX,
+            gameState.obstacleHeight + gameState.gap,
+            CONFIG.obstacleWidth,
             CONFIG.canvasHeight - gameState.obstacleHeight - gameState.gap
         );
 
@@ -234,12 +234,12 @@ class FlappyBirdGame {
         const birdRight = CONFIG.birdX + CONFIG.birdWidth;
         const birdBottom = gameState.birdY + CONFIG.birdHeight;
         const obstacleRight = gameState.obstacleX + CONFIG.obstacleWidth;
-        
+
         if (
-            birdRight > gameState.obstacleX && 
+            birdRight > gameState.obstacleX &&
             CONFIG.birdX < obstacleRight &&
-            (gameState.birdY < gameState.obstacleHeight || 
-             birdBottom > gameState.obstacleHeight + gameState.gap)
+            (gameState.birdY < gameState.obstacleHeight ||
+                birdBottom > gameState.obstacleHeight + gameState.gap)
         ) {
             this.endGame();
         }
@@ -252,7 +252,7 @@ class FlappyBirdGame {
 
     endGame() {
         gameState.gameRunning = false;
-        
+
         if (gameState.animationFrameId) {
             cancelAnimationFrame(gameState.animationFrameId);
             gameState.animationFrameId = null;

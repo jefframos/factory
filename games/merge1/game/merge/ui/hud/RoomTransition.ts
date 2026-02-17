@@ -19,7 +19,7 @@ export class RoomTransition extends PIXI.Container {
 
 
 
-        this.pattern = new PIXI.TilingSprite(PIXI.Texture.from('merge1/images/non-preload/jiggy-pattern.png'), 128, 128);
+        this.pattern = new PIXI.TilingSprite(PIXI.Texture.from('merge1/images/non-preload/jiggy-pattern.webp'), 128, 128);
         this.pattern.alpha = 0.15;
         this.addChild(this.pattern);
 

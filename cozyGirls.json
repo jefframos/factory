@@ -11,7 +11,7 @@
                 "thumb": "cozy_girls_6",
                 "isSpecial": false,
                 "cost": 0,
-                "image": "raw/puzzles/cozy_girls/cozy_girls_6.png"
+                "image": "raw/puzzles/cozy_girls/cozy_girls_6.webp"
             },
             {
                 "id": "cozyGirls_02",
@@ -19,7 +19,7 @@
                 "thumb": "cozy_girls_5",
                 "isSpecial": false,
                 "cost": 40,
-                "image": "raw/puzzles/cozy_girls/cozy_girls_5.png"
+                "image": "raw/puzzles/cozy_girls/cozy_girls_5.webp"
             },
             {
                 "id": "cozyGirls_03",
@@ -27,7 +27,7 @@
                 "thumb": "cozy_girls_4",
                 "isSpecial": false,
                 "cost": 60,
-                "image": "raw/puzzles/cozy_girls/cozy_girls_4.png"
+                "image": "raw/puzzles/cozy_girls/cozy_girls_4.webp"
             },
             {
                 "id": "cozyGirls_04",
@@ -35,7 +35,7 @@
                 "thumb": "cozy_girls_3",
                 "isSpecial": false,
                 "cost": 100,
-                "image": "raw/puzzles/cozy_girls/cozy_girls_3.png"
+                "image": "raw/puzzles/cozy_girls/cozy_girls_3.webp"
             },
             {
                 "id": "cozyGirls_05",
@@ -43,7 +43,7 @@
                 "thumb": "cozy_girls_2",
                 "isSpecial": false,
                 "cost": 100,
-                "image": "raw/puzzles/cozy_girls/cozy_girls_2.png"
+                "image": "raw/puzzles/cozy_girls/cozy_girls_2.webp"
             },
             {
                 "id": "cozyGirls_06",
@@ -51,7 +51,7 @@
                 "thumb": "cozy_girls_1",
                 "isSpecial": false,
                 "cost": 200,
-                "image": "raw/puzzles/cozy_girls/cozy_girls_1.png"
+                "image": "raw/puzzles/cozy_girls/cozy_girls_1.webp"
             }
         ]
     }

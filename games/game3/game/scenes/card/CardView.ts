@@ -9,14 +9,14 @@ export default class CardView extends PIXI.Container {
         super();
 
         this.background = new PIXI.NineSlicePlane(
-            PIXI.Texture.from('ItemFrame01_Single_Purple.png'),
+            PIXI.Texture.from('ItemFrame01_Single_Purple.webp'),
             35, 35, 35, 35
         );
         this.background.width = 150;
         this.background.height = 220;
         this.addChild(this.background);
 
-        this.image = new PIXI.Sprite(PIXI.Texture.from('ItemIcon_Heart_Red.Png'));
+        this.image = new PIXI.Sprite(PIXI.Texture.from('ItemIcon_Heart_Red.webp'));
         this.image.anchor.set(0.5);
         this.image.x = this.background.width / 2;
         this.image.y = this.background.height / 2;

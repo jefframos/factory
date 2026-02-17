@@ -26,7 +26,7 @@ export default class CardScene extends BaseDemoScene {
         mainAnchor.x = this.offset
         mainAnchor.y = Game.gameScreenData.center.y;
         mainAnchor.setCardIcon(PIXI.Texture.EMPTY);
-        mainAnchor.setCardTexture(PIXI.Texture.from('ItemFrame01_Single_Navy.png'));
+        mainAnchor.setCardTexture(PIXI.Texture.from('ItemFrame01_Single_Navy.webp'));
         this.mainStack.anchor = mainAnchor.position;
         this.addChild(mainAnchor);
 
@@ -34,14 +34,14 @@ export default class CardScene extends BaseDemoScene {
         stashAnchor.x = Game.gameScreenData.bottomRight.x - mainAnchor.width - this.offset
         stashAnchor.y = Game.gameScreenData.center.y;
         stashAnchor.setCardIcon(PIXI.Texture.EMPTY);
-        stashAnchor.setCardTexture(PIXI.Texture.from('ItemFrame01_Single_Navy.png'));
+        stashAnchor.setCardTexture(PIXI.Texture.from('ItemFrame01_Single_Navy.webp'));
         this.stashStack.anchor = stashAnchor.position;
         this.addChild(stashAnchor);
     }
 
     public build(): void {
 
-        const icons = ['ItemIcon_Clover_Green.Png', 'ItemIcon_Gem_Star_Blue.Png', 'ItemIcon_Heart_Red.Png', 'ItemIcon_Star_Gold.Png']
+        const icons = ['ItemIcon_Clover_Green.webp', 'ItemIcon_Gem_Star_Blue.webp', 'ItemIcon_Heart_Red.webp', 'ItemIcon_Star_Gold.webp']
         for (let i = 0; i < 144; i++) {
             const card = Pool.instance.getElement<CardView>(CardView);
             const offset = this.mainStack.cards.length * -1;
