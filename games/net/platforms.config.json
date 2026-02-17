@@ -1,0 +1,37 @@
+{
+    "poki": {
+        "className": "PokiPlatform",
+        "importPath": "@core/platforms/PokiPlatform",
+        "gameId": "poki-game-123",
+        "enableAds": true,
+        "folderPath": "hex"
+    },
+    "crazygames": {
+        "className": "CrazyGamesPlatform",
+        "importPath": "@core/platforms/CrazyGamesPlatform",
+        "gameId": "cg-456",
+        "enableAds": true,
+        "folderPath": "hex-cg"
+    },
+    "crazygames-no-ads": {
+        "className": "CrazyGamesPlatform",
+        "importPath": "@core/platforms/CrazyGamesPlatform",
+        "gameId": "cg-456",
+        "enableAds": false,
+        "folderPath": "hex-cg"
+    },
+    "gamepix": {
+        "className": "GamePixPlatform",
+        "importPath": "@core/platforms/GamePixPlatform",
+        "gameId": "cg-456",
+        "enableAds": true,
+        "folderPath": "hex-cg"
+    },
+    "gamedis": {
+        "className": "GameDistributionPlatform",
+        "importPath": "@core/platforms/GameDistributionPlatform",
+        "gameId": "cg-456",
+        "enableAds": true,
+        "folderPath": "hex-cg"
+    }
+}

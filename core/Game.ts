@@ -5,6 +5,19 @@ import Stats from 'stats.js';
 export class Game {
     static DESIGN_WIDTH = 720;
     static DESIGN_HEIGHT = 1080;
+
+    // --- Physics Timing Config ---
+    private static _fixedFps = 60;
+    private static _fixedDeltaTime = 1000 / 60;
+    private accumulator: number = 0;
+
+    /** * Adjust the Fixed Update frequency (e.g., 30, 60, 120)
+     */
+    public static setFPS(value: number) {
+        this._fixedFps = value;
+        this._fixedDeltaTime = 1000 / value;
+    }
+
     public app: PIXI.Application;
     public stageContainer: PIXI.Container;
     public overlayContainer: PIXI.Container;
@@ -12,6 +25,7 @@ export class Game {
     static debugParams: Record<string, any> = {};
     private lastTime: number = performance.now();
     private stats?: Stats;
+
     // Screen data
     static renderer: PIXI.Renderer;
     static APP: PIXI.Application;
@@ -35,8 +49,10 @@ export class Game {
         bottomLeft: PIXI.Point,
         bottomRight: PIXI.Point
     };
+
     static deltaTime: number;
     static scale: number;
+
     private static extractDebugParams() {
         const urlParams = new URLSearchParams(window.location.search);
         urlParams.forEach((value, key) => {
@@ -45,6 +61,7 @@ export class Game {
             }
         });
     }
+
     constructor(options?: Partial<PIXI.IApplicationOptions>, showStats?: boolean) {
         Game.extractDebugParams();
         this.app = new PIXI.Application({
@@ -52,7 +69,7 @@ export class Game {
             resizeTo: window,
             ...options,
         });
-        Game.renderer = this.app.renderer
+        Game.renderer = this.app.renderer;
         Game.APP = this.app;
         document.body.appendChild(this.app.view as HTMLCanvasElement);
 
@@ -61,7 +78,6 @@ export class Game {
 
         this.app.stage.addChild(this.stageContainer);
         this.app.stage.addChild(this.overlayContainer);
-
 
         if (showStats) {
             this.stats = new Stats();
@@ -91,43 +107,57 @@ export class Game {
 
         const deltaSeconds = deltaMS / 1000;
         Game.deltaTime = deltaSeconds;
+
+        // --- Fixed Update Accumulator Logic ---
+        this.accumulator += deltaMS;
+
+        // Run as many fixed updates as needed to "catch up" to real time
+        // We pass the fixed step in seconds (e.g., 0.01666 for 60fps)
+        while (this.accumulator >= Game._fixedDeltaTime) {
+            this.fixedUpdate(Game._fixedDeltaTime / 1000);
+            this.accumulator -= Game._fixedDeltaTime;
+        }
+
+        // Standard variable update for visuals/animations
         this.update(deltaSeconds);
+
         this.stats?.end();
     }
 
+    /**
+     * Override this for Physics calculations (Matter.js)
+     */
+    protected fixedUpdate(delta: number) {
+        // To be overridden in NetScene
+    }
+
+    /**
+     * Override this for visual updates and PIXI sync
+     */
     protected update(delta: number) {
-        // override this
+        // To be overridden in NetScene
     }
+
     private handleResizeDebounced() {
-        // A small delay (100-200ms) ensures the browser has finished 
-        // updating layout dimensions after rotation.
         this.onResize();
-        setTimeout(() => {
-            this.onResize();
-        }, 50);
-        setTimeout(() => {
-            this.onResize();
-        }, 200);
-        setTimeout(() => {
-            this.onResize();
-        }, 500);
+        setTimeout(() => this.onResize(), 50);
+        setTimeout(() => this.onResize(), 200);
+        setTimeout(() => this.onResize(), 500);
     }
+
     protected onResize() {
         const screenWidth = window.innerWidth / Game.renderer.resolution;
         const screenHeight = window.innerHeight / Game.renderer.resolution;
 
-        // Calculate scale factor to contain the design resolution
         const scaleX = screenWidth / Game.DESIGN_WIDTH;
         const scaleY = screenHeight / Game.DESIGN_HEIGHT;
         const scale = Math.min(scaleX, scaleY);
 
-        // Scale containers
         this.stageContainer.scale.set(scale);
         this.overlayContainer.scale.set(scale);
 
         Game.scale = scale;
 
-        // Center the containers
         const offsetX = (screenWidth - Game.DESIGN_WIDTH * scale) / 2;
         const offsetY = (screenHeight - Game.DESIGN_HEIGHT * scale) / 2;
         this.stageContainer.x = offsetX;
@@ -135,7 +165,6 @@ export class Game {
         this.overlayContainer.x = offsetX;
         this.overlayContainer.y = offsetY;
 
-        // Resize the renderer
         this.app.renderer.resize(screenWidth, screenHeight);
 
         const gameTopLeft = this.stageContainer.toLocal(new PIXI.Point(0, 0), this.app.stage);
@@ -151,7 +180,6 @@ export class Game {
             height: gameBottomRight.y - gameTopLeft.y,
         };
 
-        // Convert screen corners into overlayContainer space
         const overlayTopLeft = this.overlayContainer.toLocal(new PIXI.Point(0, 0), this.app.stage);
         const overlayBottomRight = this.overlayContainer.toLocal(new PIXI.Point(screenWidth, screenHeight), this.app.stage);
 
@@ -165,5 +193,4 @@ export class Game {
             height: overlayBottomRight.y - overlayTopLeft.y,
         };
     }
-
 }

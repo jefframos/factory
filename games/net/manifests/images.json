@@ -1,0 +1,57 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "backgrounds"
+          ],
+          "src": [
+            "backgrounds.webp.json"
+          ]
+        },
+        {
+          "alias": [
+            "bedroom"
+          ],
+          "src": [
+            "bedroom.webp.json"
+          ]
+        },
+        {
+          "alias": [
+            "garden"
+          ],
+          "src": [
+            "garden.webp.json"
+          ]
+        },
+        {
+          "alias": [
+            "path1"
+          ],
+          "src": [
+            "path1.webp.json"
+          ]
+        },
+        {
+          "alias": [
+            "tiles"
+          ],
+          "src": [
+            "tiles.webp.json"
+          ]
+        },
+        {
+          "alias": [
+            "ui"
+          ],
+          "src": [
+            "ui.webp.json"
+          ]
+        }
+      ]
+    }
+  ]
+}

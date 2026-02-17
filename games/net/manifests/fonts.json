@@ -1,0 +1,27 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "Ourland.otf",
+            "Ourland"
+          ],
+          "src": [
+            "Ourland.woff2"
+          ]
+        },
+        {
+          "alias": [
+            "Sniglet-Regular.ttf",
+            "Sniglet-Regular"
+          ],
+          "src": [
+            "Sniglet-Regular.woff2"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+﻿{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "BackgroundMap.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "fileStates": {
+        "": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 0.33
+        },
+        "Background.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 0.125,
+            "scaleInEditor": 0.33
+        },
+        "BackgroundMap.tmx": {
+            "scale": 0.5,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 959,
+                "y": 538
+            }
+        },
+        "BackgroundMap.tmx#Background": {
+            "dynamicWrapping": true,
+            "scaleInDock": 0.33
+        }
+    },
+    "last.exportedFilePath": "C:/Users/jeff.ramos/Documents/projects/_tiles/raw-assets/json/background",
+    "last.imagePath": "C:/Users/jeff.ramos/Documents/projects/_tiles/raw-assets/images/game/animation1/tile-explosion",
+    "lastUsedTilesetExportFilter": "All Files (*)",
+    "map.fixedSize": false,
+    "map.lastUsedExportFilter": "All Files (*)",
+    "map.lastUsedFormat": "tmx",
+    "map.renderOrder": null,
+    "openFiles": [
+        "BackgroundMap.tmx"
+    ],
+    "project": "background.tiled-project",
+    "property.type": "int",
+    "recentFiles": [
+        "BackgroundMap.tmx",
+        "Background.tsx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.type": 1
+}
+

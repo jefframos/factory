@@ -1,0 +1,532 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.2" orientation="staggered" renderorder="right-down" width="30" height="20" tilewidth="128" tileheight="64" infinite="1" staggeraxis="y" staggerindex="odd" nextlayerid="10" nextobjectid="100">
+ <editorsettings>
+  <export target="../json/memeWorld.json" format="json"/>
+ </editorsettings>
+ <tileset firstgid="1" name="Background" tilewidth="256" tileheight="256" tilecount="1" columns="0">
+  <grid orientation="orthogonal" width="1" height="1"/>
+  <tile id="16">
+   <properties>
+    <property name="isTiled" type="float" value="256"/>
+   </properties>
+   <image width="256" height="256" source="images/terrain/grass-patch-1.png"/>
+  </tile>
+ </tileset>
+ <tileset firstgid="18" name="MemeUI" tilewidth="609" tileheight="601" tilecount="96" columns="0">
+  <grid orientation="orthogonal" width="1" height="1"/>
+  <tile id="0">
+   <image width="338" height="114" source="images/ui/BannerFrame03_Single.png"/>
+  </tile>
+  <tile id="1">
+   <image width="44" height="46" source="images/ui/BorderFrame_Round20_Single_Dark.png"/>
+  </tile>
+  <tile id="2">
+   <image width="44" height="48" source="images/ui/BorderFrame_Round20_Single_Yellow.png"/>
+  </tile>
+  <tile id="3">
+   <image width="44" height="46" source="images/ui/BorderFrame_Round20_White_Bg.png"/>
+  </tile>
+  <tile id="4">
+   <image width="62" height="62" source="images/ui/BorderFrame_Round24.png"/>
+  </tile>
+  <tile id="5">
+   <image width="64" height="75" source="images/ui/BorderFrame_Round30.png"/>
+  </tile>
+  <tile id="6">
+   <image width="35" height="38" source="images/ui/BorderFrame_Squrare_Bg.png"/>
+  </tile>
+  <tile id="7">
+   <image width="27" height="27" source="images/ui/BorderFrame_Squrare_Inner.png"/>
+  </tile>
+  <tile id="8">
+   <image width="72" height="78" source="images/ui/BubbleFrame01_Bg.png"/>
+  </tile>
+  <tile id="9">
+   <image width="250" height="243" source="images/ui/BubbleFrame01_Hexagon_Bg_Blue.png"/>
+  </tile>
+  <tile id="10">
+   <image width="250" height="243" source="images/ui/BubbleFrame01_Hexagon_Bg_Green.png"/>
+  </tile>
+  <tile id="11">
+   <image width="250" height="243" source="images/ui/BubbleFrame01_Hexagon_Bg_Yellow.png"/>
+  </tile>
+  <tile id="12">
+   <image width="128" height="107" source="images/ui/Button_SkillBtn_Blue.png"/>
+  </tile>
+  <tile id="13">
+   <image width="128" height="107" source="images/ui/Button_SkillBtn_Dark.png"/>
+  </tile>
+  <tile id="14">
+   <image width="128" height="107" source="images/ui/Button_SkillBtn_Orange.png"/>
+  </tile>
+  <tile id="15">
+   <image width="128" height="107" source="images/ui/Button_SkillBtn_Red.png"/>
+  </tile>
+  <tile id="16">
+   <image width="185" height="194" source="images/ui/Button_Tapered_Yellow.png"/>
+  </tile>
+  <tile id="17">
+   <image width="70" height="114" source="images/ui/Button01_s_Blue.png"/>
+  </tile>
+  <tile id="18">
+   <image width="70" height="114" source="images/ui/Button01_s_DarkGray.png"/>
+  </tile>
+  <tile id="19">
+   <image width="70" height="114" source="images/ui/Button01_s_Gray.png"/>
+  </tile>
+  <tile id="20">
+   <image width="70" height="114" source="images/ui/Button01_s_Green.png"/>
+  </tile>
+  <tile id="21">
+   <image width="70" height="114" source="images/ui/Button01_s_Mint.png"/>
+  </tile>
+  <tile id="22">
+   <image width="70" height="114" source="images/ui/Button01_s_PInk.png"/>
+  </tile>
+  <tile id="23">
+   <image width="70" height="114" source="images/ui/Button01_s_Purple.png"/>
+  </tile>
+  <tile id="24">
+   <image width="70" height="114" source="images/ui/Button01_s_Red.png"/>
+  </tile>
+  <tile id="25">
+   <image width="70" height="114" source="images/ui/Button01_s_Sky.png"/>
+  </tile>
+  <tile id="26">
+   <image width="70" height="114" source="images/ui/Button01_s_White_Bg.png"/>
+  </tile>
+  <tile id="27">
+   <image width="62" height="96" source="images/ui/Button01_s_White_Light1.png"/>
+  </tile>
+  <tile id="28">
+   <image width="70" height="114" source="images/ui/Button01_s_Yellow.png"/>
+  </tile>
+  <tile id="29">
+   <image width="56" height="56" source="images/ui/CardFrame02_n_Light.png"/>
+  </tile>
+  <tile id="30">
+   <image width="108" height="108" source="images/ui/CardFrame04_FocusGlow.png"/>
+  </tile>
+  <tile id="31">
+   <image width="174" height="174" source="images/ui/doge.png"/>
+  </tile>
+  <tile id="32">
+   <image width="128" height="128" source="images/ui/equal.Png"/>
+  </tile>
+  <tile id="33">
+   <image width="80" height="80" source="images/ui/handHud.png"/>
+  </tile>
+  <tile id="34">
+   <image width="411" height="183" source="images/ui/Image_Effect_Light02.png"/>
+  </tile>
+  <tile id="35">
+   <image width="322" height="129" source="images/ui/Image_Effect_Light03.png"/>
+  </tile>
+  <tile id="36">
+   <image width="270" height="275" source="images/ui/Image_Effect_Rotate.png"/>
+  </tile>
+  <tile id="37">
+   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Blue.png"/>
+  </tile>
+  <tile id="38">
+   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Gray.png"/>
+  </tile>
+  <tile id="39">
+   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Green.png"/>
+  </tile>
+  <tile id="40">
+   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Hologram1.png"/>
+  </tile>
+  <tile id="41">
+   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Navy.png"/>
+  </tile>
+  <tile id="42">
+   <image width="60" height="122" source="images/ui/ItemFrame01_Single_OffWhite.png"/>
+  </tile>
+  <tile id="43">
+   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Purple.png"/>
+  </tile>
+  <tile id="44">
+   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Red.png"/>
+  </tile>
+  <tile id="45">
+   <image width="60" height="122" source="images/ui/ItemFrame01_Single_Yellow.png"/>
+  </tile>
+  <tile id="46">
+   <image width="128" height="130" source="images/ui/ItemFrame03_Single_Blue.png"/>
+  </tile>
+  <tile id="47">
+   <image width="128" height="130" source="images/ui/ItemFrame03_Single_Gray.png"/>
+  </tile>
+  <tile id="48">
+   <image width="128" height="130" source="images/ui/ItemFrame03_Single_Green.png"/>
+  </tile>
+  <tile id="49">
+   <image width="128" height="130" source="images/ui/ItemFrame03_Single_Navy.png"/>
+  </tile>
+  <tile id="50">
+   <image width="128" height="130" source="images/ui/ItemFrame03_Single_Purple.png"/>
+  </tile>
+  <tile id="51">
+   <image width="128" height="130" source="images/ui/ItemFrame03_Single_Red.png"/>
+  </tile>
+  <tile id="52">
+   <image width="128" height="130" source="images/ui/ItemFrame03_Single_Yellow.png"/>
+  </tile>
+  <tile id="53">
+   <image width="129" height="132" source="images/ui/Label_Badge01_Green.png"/>
+  </tile>
+  <tile id="54">
+   <image width="129" height="132" source="images/ui/Label_Badge01_Purple.png"/>
+  </tile>
+  <tile id="55">
+   <image width="129" height="132" source="images/ui/Label_Badge01_Red.png"/>
+  </tile>
+  <tile id="56">
+   <image width="129" height="132" source="images/ui/Label_Badge01_Yellow.png"/>
+  </tile>
+  <tile id="57">
+   <image width="99" height="102" source="images/ui/Label_Badge02.png"/>
+  </tile>
+  <tile id="58">
+   <image width="67" height="66" source="images/ui/Label_Parallelogram_Blue.png"/>
+  </tile>
+  <tile id="59">
+   <image width="67" height="66" source="images/ui/Label_Parallelogram_Gray.png"/>
+  </tile>
+  <tile id="60">
+   <image width="67" height="66" source="images/ui/Label_Parallelogram_Green.png"/>
+  </tile>
+  <tile id="61">
+   <image width="67" height="66" source="images/ui/Label_Parallelogram_Hologram.png"/>
+  </tile>
+  <tile id="62">
+   <image width="67" height="66" source="images/ui/Label_Parallelogram_Purple.png"/>
+  </tile>
+  <tile id="63">
+   <image width="67" height="66" source="images/ui/Label_Parallelogram_Red.png"/>
+  </tile>
+  <tile id="64">
+   <image width="69" height="66" source="images/ui/Label_Parallelogram_Yellow.png"/>
+  </tile>
+  <tile id="65">
+   <image width="80" height="83" source="images/ui/ListFrame04_Single_f_Blue.png"/>
+  </tile>
+  <tile id="66">
+   <image width="24" height="24" source="images/ui/particle.png"/>
+  </tile>
+  <tile id="67">
+   <image width="128" height="128" source="images/ui/PictoIcon_Plus_1.Png"/>
+  </tile>
+  <tile id="68">
+   <image width="609" height="601" source="images/ui/Popup06_Pattern.png"/>
+  </tile>
+  <tile id="69">
+   <image width="60" height="62" source="images/ui/ResourceBar_Single_Btn_Blue1.png"/>
+  </tile>
+  <tile id="70">
+   <image width="60" height="62" source="images/ui/ResourceBar_Single_Btn_Purple1.png"/>
+  </tile>
+  <tile id="71">
+   <image width="60" height="62" source="images/ui/ResourceBar_Single_Btn_Yellow1.png"/>
+  </tile>
+  <tile id="72">
+   <image width="67" height="75" source="images/ui/ResourceBar_Single_Icon_Coin.png"/>
+  </tile>
+  <tile id="73">
+   <image width="57" height="79" source="images/ui/ResourceBar_Single_Icon_Energy.png"/>
+  </tile>
+  <tile id="74">
+   <image width="77" height="69" source="images/ui/ResourceBar_Single_Icon_Gem.png"/>
+  </tile>
+  <tile id="75">
+   <image width="79" height="67" source="images/ui/ResourceBar_Single_Icon_Monster.png"/>
+  </tile>
+  <tile id="76">
+   <image width="174" height="174" source="images/ui/shark.png"/>
+  </tile>
+  <tile id="77">
+   <image width="24" height="56" source="images/ui/Slider_Basic01_Bg_Single.png"/>
+  </tile>
+  <tile id="78">
+   <image width="8" height="35" source="images/ui/Slider_Basic02_Fill_Green.png"/>
+  </tile>
+  <tile id="79">
+   <image width="17" height="35" source="images/ui/Slider_Basic03_FillMask.png"/>
+  </tile>
+  <tile id="80">
+   <image width="18" height="30" source="images/ui/Slider_Handle_Fill_Pink.png"/>
+  </tile>
+  <tile id="81">
+   <image width="54" height="64" source="images/ui/Slider_Level02_Icon_Up_Green.png"/>
+  </tile>
+  <tile id="82">
+   <image width="54" height="64" source="images/ui/Slider_Level02_Icon_Up_White.png"/>
+  </tile>
+  <tile id="83">
+   <image width="64" height="54" source="images/ui/Slider_Level02_Icon_Up_White-side.png"/>
+  </tile>
+  <tile id="84">
+   <image width="304" height="143" source="images/ui/Title_Ribbon01_Blue.png"/>
+  </tile>
+  <tile id="85">
+   <image width="304" height="143" source="images/ui/Title_Ribbon01_Gray.png"/>
+  </tile>
+  <tile id="86">
+   <image width="304" height="143" source="images/ui/Title_Ribbon01_Green.png"/>
+  </tile>
+  <tile id="87">
+   <image width="304" height="143" source="images/ui/Title_Ribbon01_Magenta.png"/>
+  </tile>
+  <tile id="88">
+   <image width="304" height="143" source="images/ui/Title_Ribbon01_Plum.png"/>
+  </tile>
+  <tile id="89">
+   <image width="304" height="143" source="images/ui/Title_Ribbon01_Purple.png"/>
+  </tile>
+  <tile id="90">
+   <image width="304" height="143" source="images/ui/Title_Ribbon01_Red.png"/>
+  </tile>
+  <tile id="91">
+   <image width="304" height="143" source="images/ui/Title_Ribbon01_Sky.png"/>
+  </tile>
+  <tile id="92">
+   <image width="108" height="115" source="images/ui/Title_Tapered01.png"/>
+  </tile>
+  <tile id="93">
+   <image width="54" height="48" source="images/ui/Toggle_Check_Single_Icon.png"/>
+  </tile>
+  <tile id="94">
+   <image width="54" height="48" source="images/ui/Toggle_Check_White_Icon.png"/>
+  </tile>
+  <tile id="95">
+   <image width="128" height="128" source="images/ui/tutorial_hand_2.png"/>
+  </tile>
+ </tileset>
+ <tileset firstgid="114" name="Cafe" tilewidth="256" tileheight="256" tilecount="15" columns="0">
+  <grid orientation="orthogonal" width="1" height="1"/>
+  <tile id="0">
+   <properties>
+    <property name="anchorX" type="float" value="0.5"/>
+    <property name="anchorY" type="float" value="1"/>
+   </properties>
+   <image width="64" height="64" source="images/scene/blender.png"/>
+  </tile>
+  <tile id="1">
+   <properties>
+    <property name="anchorX" type="float" value="0.5"/>
+    <property name="anchorY" type="float" value="1"/>
+   </properties>
+   <image width="64" height="64" source="images/scene/cashier.png"/>
+  </tile>
+  <tile id="2">
+   <image width="64" height="64" source="images/scene/chair.png"/>
+  </tile>
+  <tile id="3">
+   <image width="64" height="64" source="images/scene/display1.png"/>
+  </tile>
+  <tile id="4">
+   <image width="64" height="64" source="images/scene/expresso1.png"/>
+  </tile>
+  <tile id="5">
+   <image width="64" height="64" source="images/scene/expresso2.png"/>
+  </tile>
+  <tile id="6">
+   <image width="64" height="64" source="images/scene/expresso3.png"/>
+  </tile>
+  <tile id="7">
+   <image width="64" height="64" source="images/scene/grind.png"/>
+  </tile>
+  <tile id="8">
+   <image width="64" height="64" source="images/scene/plant1.png"/>
+   <objectgroup draworder="index" id="2">
+    <object id="1" x="22.5455" y="41.5455" width="19" height="19">
+     <ellipse/>
+    </object>
+   </objectgroup>
+  </tile>
+  <tile id="9">
+   <image width="64" height="64" source="images/scene/plant2.png"/>
+   <objectgroup draworder="index" id="2">
+    <object id="1" x="22.5" y="42.3182" width="19" height="19">
+     <ellipse/>
+    </object>
+   </objectgroup>
+  </tile>
+  <tile id="10">
+   <image width="64" height="64" source="images/scene/plant3.png"/>
+   <objectgroup draworder="index" id="2">
+    <object id="1" x="22.3182" y="41.7727" width="19" height="19">
+     <ellipse/>
+    </object>
+   </objectgroup>
+  </tile>
+  <tile id="11">
+   <image width="64" height="64" source="images/scene/sink.png"/>
+  </tile>
+  <tile id="12">
+   <image width="64" height="64" source="images/scene/stand.png"/>
+  </tile>
+  <tile id="13">
+   <image width="128" height="128" source="images/scene/table.png"/>
+   <objectgroup draworder="index" id="2">
+    <object id="1" x="12.5455" y="87.2727">
+     <polygon points="0,0 60.3636,35.2727 102.727,11.6364 43.0909,-19.6364"/>
+    </object>
+   </objectgroup>
+  </tile>
+  <tile id="14">
+   <properties>
+    <property name="anchorX" type="float" value="0.5"/>
+    <property name="anchorY" type="float" value="0.4"/>
+   </properties>
+   <image width="128" height="128" source="images/scene/bench.png"/>
+   <objectgroup draworder="index" id="2">
+    <object id="3" x="56" y="66">
+     <polygon points="3.81818,-5.27273 52.3636,22.8182 13.6364,47.4545 -35,18.7273"/>
+    </object>
+   </objectgroup>
+  </tile>
+ </tileset>
+ <objectgroup draworder="index" id="4" name="Floor" locked="1">
+  <object id="36" gid="17" x="-79.5152" y="1591.64" width="2174.18" height="1656"/>
+ </objectgroup>
+ <objectgroup id="6" name="Colliders">
+  <object id="48" x="6.06061" y="345.455">
+   <polygon points="-248.485,1321.21 433.333,1300 33.3333,-272.727 -333.333,-269.697"/>
+  </object>
+  <object id="49" x="-9.09091" y="218.182">
+   <polygon points="0,0 2215.15,12.1212 2151.52,-339.394 -127.273,-351.515"/>
+  </object>
+  <object id="50" x="1703.03" y="193.939">
+   <polygon points="0,0 339.394,1384.85 503.03,1163.64 454.545,-78.7879"/>
+  </object>
+  <object id="51" x="-118.182" y="1421.21">
+   <polygon points="0,0 2254.55,-66.6667 2236.36,245.455 24.2424,242.424"/>
+  </object>
+ </objectgroup>
+ <objectgroup draworder="index" id="3" name="Background">
+  <object id="7" name="Player" x="951.515" y="496.97" width="60.6061" height="60.6061">
+   <properties>
+    <property name="id" value="player"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="54" gid="124" x="1197.66" y="275" width="128" height="128"/>
+  <object id="61" gid="122" x="366.667" y="985.333" width="128" height="128"/>
+  <object id="63" gid="128" x="1313" y="405.334" width="128" height="128"/>
+  <object id="73" gid="128" x="1415" y="463.334" width="128" height="128"/>
+  <object id="65" name="cashier-bench" gid="2147483776" x="1155.67" y="782.001" width="128" height="128">
+   <properties>
+    <property name="belongsTo" value="cashier-1"/>
+   </properties>
+  </object>
+  <object id="80" name="cashier-bench" gid="2147483776" x="1210.67" y="751.001" width="128" height="128">
+   <properties>
+    <property name="belongsTo" value="cashier-1"/>
+   </properties>
+  </object>
+  <object id="81" name="cashier-bench" gid="2147483776" x="1100.67" y="814.001" width="128" height="128">
+   <properties>
+    <property name="belongsTo" value="cashier-1"/>
+   </properties>
+  </object>
+  <object id="69" name="coffee-bench" gid="2147483776" x="938" y="357.334" width="128" height="128">
+   <properties>
+    <property name="belongsTo" value="coffee-1"/>
+   </properties>
+  </object>
+  <object id="67" name="expresso2" gid="2147483767" x="968" y="291" width="64" height="64">
+   <properties>
+    <property name="belongsTo" value="coffee-1"/>
+   </properties>
+  </object>
+  <object id="72" gid="128" x="1364" y="433.334" width="128" height="128"/>
+  <object id="64" gid="114" x="1296" y="301.667" width="64" height="64"/>
+  <object id="66" gid="119" x="1457" y="384.667" width="64" height="64"/>
+  <object id="71" gid="122" x="1493" y="474" width="64" height="64"/>
+  <object id="79" gid="115" x="1189" y="714" width="64" height="64">
+   <properties>
+    <property name="belongsTo" value="cashier-1"/>
+   </properties>
+  </object>
+  <object id="83" name="cashier-money" x="1002" y="765.333" width="114.667" height="114.667">
+   <properties>
+    <property name="belongsTo" value="cashier-1"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="84" name="cashier-dispenser" x="1218" y="630" width="53.3333" height="53.3333">
+   <properties>
+    <property name="belongsTo" value="cashier-1"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="85" name="cashier-coffee-dispenser" x="1266" y="654.666" width="14.6666" height="14.6666">
+   <properties>
+    <property name="belongsTo" value="cashier-1"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="86" gid="126" x="1592.67" y="556" width="64" height="64">
+   <properties>
+    <property name="belongsTo" value="bin-1"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="9" name="Tables">
+  <object id="97" gid="127" x="947.333" y="1116.67" width="128" height="128">
+   <properties>
+    <property name="belongsTo" value="table-1"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="8" name="ClientQueue1">
+  <object id="87" x="1368" y="798">
+   <ellipse/>
+  </object>
+  <object id="95" x="1860" y="1049.33">
+   <ellipse/>
+  </object>
+ </objectgroup>
+ <objectgroup id="7" name="Gameplay">
+  <object id="74" name="cashier-1" x="1136" y="672.667" width="62.6667" height="62.6667">
+   <properties>
+    <property name="states" value="[&quot;build&quot;, &quot;playerTrigger&quot;]"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="78" name="clientDispenser-1" x="1330.67" y="602" width="60" height="60">
+   <properties>
+    <property name="states" value="[&quot;playerTrigger&quot;]"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="75" name="coffee-1" x="1026" y="321.667" width="60" height="60">
+   <properties>
+    <property name="states" value="[&quot;build&quot;, &quot;playerTrigger&quot;]"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="76" name="table-1" x="941.333" y="983.333" width="138.667" height="138.667">
+   <properties>
+    <property name="states" value="[&quot;build&quot;, &quot;clientTrigger&quot;]"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="77" name="bin-1" x="1568" y="522" width="60" height="60">
+   <properties>
+    <property name="states" value="[&quot;build&quot;, &quot;playerTrigger&quot;]"/>
+   </properties>
+   <ellipse/>
+  </object>
+ </objectgroup>
+ <objectgroup id="5" name="HUD">
+  <object id="38" gid="88" x="1918.48" y="118.879" width="60" height="62"/>
+  <object id="39" gid="88" x="1824.55" y="115.848" width="60" height="62"/>
+  <object id="40" gid="88" x="963.939" y="188.576" width="60" height="62"/>
+ </objectgroup>
+ <objectgroup id="2" name="Settings" locked="1">
+  <object id="1" name="Screen" x="0" y="0" width="2029.09" height="1507.27"/>
+ </objectgroup>
+</map>

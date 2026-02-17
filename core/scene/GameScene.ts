@@ -16,4 +16,5 @@ export abstract class GameScene extends PIXI.Container {
     public hide(): void { };
     public abstract destroy(): void;
     public abstract update(delta: number): void;
+    public fixedUpdate(delta: number): void { };
 }

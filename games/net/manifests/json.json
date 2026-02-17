@@ -1,0 +1,89 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "data/animals-old.json"
+          ],
+          "src": [
+            "data/animals-old.json"
+          ]
+        },
+        {
+          "alias": [
+            "data/animals.json"
+          ],
+          "src": [
+            "data/animals.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/01_world_1770499484823.json"
+          ],
+          "src": [
+            "game/01_world_1770499484823.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/02_world_1770482231656.json"
+          ],
+          "src": [
+            "game/02_world_1770482231656.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/03_world_1770731080309.json"
+          ],
+          "src": [
+            "game/03_world_1770731080309.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/04_world_1770631526350.json"
+          ],
+          "src": [
+            "game/04_world_1770631526350.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/05_world_1770850269742.json"
+          ],
+          "src": [
+            "game/05_world_1770850269742.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/game-manifest.json"
+          ],
+          "src": [
+            "game/game-manifest.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/map-data.json"
+          ],
+          "src": [
+            "game/map-data.json"
+          ]
+        },
+        {
+          "alias": [
+            "tiled.json"
+          ],
+          "src": [
+            "tiled.json"
+          ]
+        }
+      ]
+    }
+  ]
+}

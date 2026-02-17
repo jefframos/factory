@@ -49,6 +49,14 @@ export class SceneManager {
         const scene = this.scenes.get(this.currentKey)!;
         scene.update(delta);
     }
+
+    public fixedUpdate(delta: number): void {
+        if (!this.currentKey) return;
+        const scene = this.scenes.get(this.currentKey)!;
+        scene.fixedUpdate(delta);
+    }
+
+
     public resize(): void {
         if (!this.currentKey) return;
         const scene = this.scenes.get(this.currentKey)!;
