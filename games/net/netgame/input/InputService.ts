@@ -1,4 +1,4 @@
-import { TruckMover } from "games/net/phyisics/truck/TruckMover";
+import { TruckMover } from "games/net/netgame/services/TruckMover";
 
 export class InputService {
     private keys: Record<string, boolean> = {};

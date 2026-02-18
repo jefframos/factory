@@ -62,6 +62,10 @@ export class Game {
         });
     }
 
+    public get view(): HTMLCanvasElement {
+        return this.app.view as HTMLCanvasElement;
+    }
+
     constructor(options?: Partial<PIXI.IApplicationOptions>, showStats?: boolean) {
         Game.extractDebugParams();
         this.app = new PIXI.Application({
@@ -71,6 +75,11 @@ export class Game {
         });
         Game.renderer = this.app.renderer;
         Game.APP = this.app;
+
+        this.view.style.position = 'absolute';
+        this.view.style.top = '0';
+        this.view.style.left = '0';
+
         document.body.appendChild(this.app.view as HTMLCanvasElement);
 
         this.stageContainer = new PIXI.Container();
@@ -98,7 +107,9 @@ export class Game {
         window.addEventListener('orientationchange', () => this.handleResizeDebounced());
         this.onResize();
     }
-
+    public setCanvasZIndex(value: number) {
+        this.view.style.zIndex = value.toString();
+    }
     private loop() {
         this.stats?.begin();
         const now = performance.now();

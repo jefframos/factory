@@ -21,9 +21,9 @@ export default {
             },
             resolutionOptions: {
                 template: "@%%x",
-                resolutions: { default: 1 },
+                resolutions: { default: 1, low: 0.5 },
                 fixedResolution: "default",
-                maximumTextureSize: 4096,
+                maximumTextureSize: 8192,
             },
         }),
         //compress(options),

@@ -8,12 +8,11 @@ export default {
             deleteOriginals: true,
             outputs: [
                 {
-                    formats: ['.mp3'],
+                    formats: ['.webm'],
                     recompress: false,
                     options: {
                         audioBitrate: 96,
-                        audioChannels: 1,
-                        audioFrequency: 48000,
+                        audioCodec: 'libopus'
                     },
                 }
                 // ,

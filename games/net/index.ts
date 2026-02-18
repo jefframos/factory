@@ -29,7 +29,7 @@ export default class MyGame extends Game {
 
 
     constructor() {
-        super({ resolution: devicePixelRatio }, false);
+        super({ resolution: devicePixelRatio, backgroundAlpha: 0 }, false);
 
         PIXI.Ticker.shared.maxFPS = 100;
 
@@ -47,6 +47,7 @@ export default class MyGame extends Game {
 
         try {
 
+            this.setCanvasZIndex(8)
             PlatformHandler.GAME_ID = config?.gameId || '';
             PlatformHandler.ENABLE_VIDEO_ADS = config?.enableAds ?? true;
 
