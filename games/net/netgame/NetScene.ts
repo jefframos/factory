@@ -1,7 +1,6 @@
+import { Game } from "@core/Game";
 import { CollisionLayer } from "@core/phyisics/core/CollisionLayer";
 import { BasePhysicsEntity } from "@core/phyisics/entities/BaseEntity";
-import { BoxEntity } from "@core/phyisics/entities/BoxEntity";
-import { PolygonEntity } from "@core/phyisics/entities/PolygonEntity";
 import Physics from "@core/phyisics/Physics";
 import Pool from "@core/Pool";
 import { GameScene } from "@core/scene/GameScene";
@@ -10,14 +9,128 @@ import { DevGuiManager } from "@core/utils/DevGuiManager";
 import * as PIXI from 'pixi.js';
 import GameplayScene from "./GameplayScene";
 import { InputService } from "./input/InputService";
+import { LevelDataManager } from "./level/LevelDataManager";
+import { LevelConfig, ModifierTrigger } from "./level/LevelTypes";
 import { CameraService } from "./services/CameraService";
-import { LEVEL_1_CONFIG, LevelService } from "./services/LevelService";
+import { LevelService } from "./services/LevelService";
 import { ThreeCameraService } from "./services/ThreeCameraService";
 import { TruckMover } from "./services/TruckMover";
 import { TruckView3DService } from "./services/TruckView3DService";
 import { TruckViewService } from "./services/TruckViewService";
 import { TruckEntity, TruckPart } from "./truck/TruckEntity";
 import { TRUCK_ASSET_DATA } from "./truck/TruckTypes";
+
+
+export const LEVEL_1_DATA: LevelConfig = {
+    id: "level_one",
+    spawnPoint: { x: 200, y: 400 },
+    objects: [
+        // Ground
+        { type: 'box', x: 2500, y: 550, width: 5000, height: 100, isStatic: true },
+        // Ramp
+        {
+            type: 'polygon',
+            x: 800, y: 500,
+            vertices: [{ x: 0, y: 0 }, { x: 200, y: 0 }, { x: 200, y: -100 }],
+            isStatic: true
+        },
+        // Finish Line Sensor
+        {
+            type: 'sensor',
+            x: 4800, y: 400,
+            width: 100, height: 400,
+            label: 'finish_line'
+        }
+    ]
+};
+
+
+export const LEVELS = [
+    {
+        id: "The Gauntlet",
+        spawnPoint: { x: 150, y: 400 },
+        objects: [
+            // --- START ZONE ---
+            { type: 'box', x: 400, y: 550, width: 800, height: 100 }, // Starting platform
+            { type: 'sensor', x: 150, y: 450, width: 60, height: 200, label: 'start_node' },
+
+            // --- THE TRAMPOLINE JUMP ---
+            {
+                type: 'box', x: 750, y: 510, width: 120, height: 30,
+                modifier: { type: 'trampoline', force: 20 } // Upward launch
+            },
+
+            // --- MID-AIR BOUNCER OBSTACLES ---
+            // These will knock the player away if they hit them mid-jump
+            {
+                type: 'circle', x: 1100, y: 250, radius: 40,
+                modifier: { type: 'bouncer', force: 20 }
+            },
+            {
+                type: 'circle', x: 1300, y: 400, radius: 40,
+                modifier: { type: 'bouncer', force: 20 }
+            },
+
+            // --- THE LANDING & BOOST STRIP ---
+            //{ type: 'box', x: 200, y: 550, width: 1000, height: 100 }, // Landing platform
+            {
+                type: 'sensor', x: 500, y: 490, width: 300, height: 100,
+                modifier: {
+                    type: 'boost',
+                    force: 0.5,
+                    direction: { x: 1, y: 0 },
+                    trigger: ModifierTrigger.ON_ACTIVE
+                }
+            },
+
+            // --- FINAL HILL ---
+            {
+                type: 'polygon', x: 2500, y: 500,
+                vertices: [
+                    { x: 0, y: 0 },
+                    { x: 400, y: -150 },
+                    { x: 400, y: 0 }
+                ]
+            },
+
+            // --- FINISH LINE ---
+            { type: 'box', x: 3500, y: 550, width: 1000, height: 100 },
+            { type: 'sensor', x: 3800, y: 450, width: 60, height: 200, label: 'finish_node' }
+        ]
+    },
+    {
+        id: "Sprint",
+        spawnPoint: { x: 100, y: 450 },
+        objects: [
+            { type: 'circle', x: 600, y: 500, radius: 40, isStatic: false },
+            { type: 'box', x: 2500, y: 550, width: 5000, height: 100, isStatic: true }, // Floor
+            { type: 'sensor', x: 100, y: 450, width: 100, height: 200, label: 'start_node' },
+            { type: 'sensor', x: 4800, y: 450, width: 100, height: 200, label: 'finish_node' }
+        ]
+    },
+    {
+        id: "Hill Climb",
+        spawnPoint: { x: 100, y: 450 },
+        objects: [
+            { type: 'box', x: 500, y: 550, width: 1000, height: 100, isStatic: true },
+            { type: 'polygon', x: 1000, y: 550, vertices: [{ x: 0, y: 0 }, { x: 400, y: -200 }, { x: 400, y: 0 }] },
+            { type: 'box', x: 1650, y: 350, width: 500, height: 100 },
+            { type: 'sensor', x: 100, y: 450, width: 100, height: 200, label: 'start_node' },
+            { type: 'sensor', x: 1800, y: 250, width: 100, height: 200, label: 'finish_node' }
+        ]
+    },
+    {
+        id: "The Gap",
+        spawnPoint: { x: 100, y: 450 },
+        objects: [
+            { type: 'box', x: 400, y: 550, width: 800, height: 100, isStatic: true },
+            { type: 'box', x: 1600, y: 550, width: 800, height: 100 }, // The landing
+            { type: 'sensor', x: 100, y: 450, width: 100, height: 200, label: 'start_node' },
+            { type: 'sensor', x: 1800, y: 450, width: 100, height: 200, label: 'finish_node' }
+        ]
+    }
+];
+
 
 export default class NetScene extends GameScene {
     private entities: Set<BasePhysicsEntity> = new Set();
@@ -35,6 +148,9 @@ export default class NetScene extends GameScene {
     private gameplayScene!: GameplayScene;
 
     public async build(): Promise<void> {
+
+        const json = PIXI.Cache.get('game/worlds.json')
+        await LevelDataManager.instance.init('game/worlds.json');
         // 1. Initialize Global Physics
         Physics.init({ gravity: { x: 0, y: 0.5 }, enableSleep: true });
         this.addChild(this.worldContainer);
@@ -43,7 +159,6 @@ export default class NetScene extends GameScene {
         this.gameplayScene.build();
 
         // 2. Build World (Floor and Obstacles)
-        this.createEnvironment();
 
         // 3. Setup Truck Entity
         this.myTruck = Pool.instance.getElement(TruckEntity);
@@ -66,11 +181,17 @@ export default class NetScene extends GameScene {
 
         this.camera = new CameraService(this.worldContainer);
         this.camera.follow(this.myTruck.transform.position);
+        this.camera.offset.y = 300
 
-        this.levelService = new LevelService(this.myTruck, LEVEL_1_CONFIG, () => {
-            this.camera.teleport(LEVEL_1_CONFIG.spawnPoint);
-        });
+        this.levelService = new LevelService(this, this.myTruck, () => this.handleLevelComplete());
 
+        const worldIdx = 2; // "Medium" is the 3rd world (index 2)
+        const levelIdx = 0; // First level in that world
+
+        const config = LevelDataManager.instance.getLevel(worldIdx, levelIdx);
+        const globalId = LevelDataManager.instance.getGlobalId(worldIdx, levelIdx);
+
+        this.levelService.buildLevel(config);
 
         this.threeCameraService = new ThreeCameraService(this.gameplayScene.threeCamera, this.gameplayScene.threeScene, SetupThree.renderer);
 
@@ -140,26 +261,64 @@ export default class NetScene extends GameScene {
             "Lerp Smoothness",
             folder
         );
+
+        this.createUI()
     }
 
-    private createEnvironment(): void {
-        // Main Ground
-        const floor = Pool.instance.getElement(BoxEntity) as BoxEntity;
-        floor.build({ w: LEVEL_1_CONFIG.floorWidth, h: 50, layer: CollisionLayer.DEFAULT });
-        floor.transform.position.y = LEVEL_1_CONFIG.floorY;
-        floor.isStatic = true;
-        this.addEntity(floor);
+    private createUI(): void {
+        const uiContainer = new PIXI.Container();
+        this.addChild(uiContainer); // Add to scene, not worldContainer (so it stays fixed)
 
-        // Example Obstacle
-        const ramp = Pool.instance.getElement(PolygonEntity);
-        ramp.build({
-            x: 800, y: 460,
-            vertices: [{ x: 0, y: 0 }, { x: 200, y: 0 }, { x: 100, y: -60 }],
-            layer: CollisionLayer.DEFAULT
+        LEVELS.forEach((levelData, index) => {
+            const button = new PIXI.Container();
+            button.x = 20 + (index * 130);
+            button.y = 20;
+            button.eventMode = 'static';
+            button.cursor = 'pointer';
+
+            // Button Background
+            const bg = new PIXI.Graphics()
+                .beginFill(0x333333)
+                .drawRoundedRect(0, 0, 120, 40, 8)
+                .endFill();
+
+            // Button Text
+            const text = new PIXI.Text(levelData.id, {
+                fill: 0xffffff,
+                fontSize: 16,
+                fontWeight: 'bold'
+            });
+            text.anchor.set(0.5);
+            text.position.set(60, 20);
+
+            button.addChild(bg, text);
+
+            // Click Event
+            button.on('pointerdown', () => {
+                console.log(`Loading Level: ${levelData.id}`);
+                this.levelService.buildLevel(levelData);
+                this.camera.teleport(levelData.spawnPoint);
+            });
+
+            uiContainer.addChild(button);
         });
-        ramp.isStatic = true;
-        this.addEntity(ramp);
+
+        // Timer Display
+        const timerText = new PIXI.Text('Time: 0.00', { fill: 0xffffff, fontSize: 20 });
+        timerText.position.set(Game.DESIGN_WIDTH - 150, 25);
+        uiContainer.addChild(timerText);
+
+        // Update timer text in your main loop
+        //this.timerDisplay = timerText; 
     }
+
+    private handleLevelComplete() {
+        console.log("Goal Reached!");
+        this.myTruck.reset();
+        this.myTruck.teleport(LEVEL_1_DATA.spawnPoint.x, LEVEL_1_DATA.spawnPoint.y);
+        this.camera.teleport(LEVEL_1_DATA.spawnPoint);
+    }
+
 
     private setupTruckVisuals(): void {
         // Apply assets based on our Data Config
@@ -176,14 +335,11 @@ export default class NetScene extends GameScene {
     public update(delta: number): void {
         // Update Services
         this.inputService?.update();
-        this.levelService?.update();
+        // this.levelService?.update();
         this.camera?.update();
         this.gameplayScene?.update(delta);
         this.truckViewService?.update();
 
-        this.truck3D.update();
-
-        this.threeCameraService.update(this.myTruck.transform.position);
 
         // Sync all entities
         for (const entity of this.entities) {
@@ -197,6 +353,9 @@ export default class NetScene extends GameScene {
         for (const entity of this.entities) {
             entity.fixedUpdate(delta);
         }
+
+        this.truck3D.update();
+        this.threeCameraService.update(this.myTruck.transform.position);
     }
 
     public addEntity<T extends BasePhysicsEntity>(entity: T): T {

@@ -66,6 +66,7 @@ export class DevGuiManager {
      * @returns dat.GUI instance for the folder
      */
     private getOrCreateFolder(name: string): dat.GUI {
+
         if (!this.folders.has(name)) {
             const folder = this.gui.addFolder(name);
             folder.open(); // Optional: open folder by default
@@ -89,6 +90,7 @@ export class DevGuiManager {
         name?: string,
         folderName?: string
     ): void {
+        if (!this.isDev || !this.gui) return;
         const folder = folderName
             ? this.getOrCreateFolder(folderName)
             : this.gui;

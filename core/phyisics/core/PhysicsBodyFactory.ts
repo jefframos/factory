@@ -13,8 +13,11 @@ export class PhysicsBodyFactory {
         const body = Bodies.rectangle(x, y, w, h, options);
         const gfx = new PIXI.Graphics();
         gfx.lineStyle(2, this.DEBUG_COLOR);
-        // Draw centered because Matter bodies are centered
+
+        // Always draw relative to (0,0) because this graphic 
+        // will be childed to a container that we move to body.position
         gfx.drawRect(-w / 2, -h / 2, w, h);
+
         return { body, debugGraphic: gfx };
     }
 

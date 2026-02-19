@@ -5,6 +5,9 @@ export class CameraService {
     private stage: PIXI.Container;
     private target: { x: number, y: number } | null = null;
 
+    // The desired offset from the screen center (e.g., {x: 0, y: -100} to look "up")
+    public offset = { x: 0, y: 0 };
+
     // How fast the camera catches up (0.1 = slow/smooth, 1.0 = instant)
     public lerpFactor: number = 0.1;
 
@@ -22,23 +25,17 @@ export class CameraService {
         });
     }
 
-    /**
-     * Sets the object for the camera to follow
-     */
     public follow(target: { x: number, y: number }) {
         this.target = target;
     }
 
     /**
-     * Instantly snaps the camera to a specific world position
-     * @param worldPos The coordinates in the game world to center on
+     * Snap the camera to a world position, accounting for offset
      */
     public teleport(worldPos: { x: number, y: number }): void {
-        // We calculate the required stage position to center this world point
-        const targetX = this.screenCenter.x - worldPos.x;
-        const targetY = this.screenCenter.y - worldPos.y;
+        const targetX = this.screenCenter.x - worldPos.x + this.offset.x;
+        const targetY = this.screenCenter.y - worldPos.y + this.offset.y;
 
-        // Apply immediately without lerping
         this.stage.position.x = targetX;
         this.stage.position.y = targetY;
     }
@@ -46,12 +43,11 @@ export class CameraService {
     public update(): void {
         if (!this.target) return;
 
-        // Calculate where the stage needs to be to center the target
-        const targetX = this.screenCenter.x - this.target.x;
-        const targetY = this.screenCenter.y - this.target.y;
+        // Formula: ScreenCenter - WorldPosition + Offset
+        const targetX = this.screenCenter.x - this.target.x + this.offset.x;
+        const targetY = this.screenCenter.y - this.target.y + this.offset.y;
 
         // Smoothly interpolate current position to target position
-        // Equation: $Current + (Target - Current) * Factor$
         this.stage.position.x += (targetX - this.stage.position.x) * this.lerpFactor;
         this.stage.position.y += (targetY - this.stage.position.y) * this.lerpFactor;
     }

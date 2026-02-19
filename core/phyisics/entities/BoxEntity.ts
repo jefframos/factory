@@ -7,13 +7,12 @@ export class BoxEntity extends BasePhysicsEntity {
     public build(options: { w: number, h: number, layer: CollisionLayer }) {
         // 1. Create body via factory
         const desc = PhysicsBodyFactory.createRect(
-            200, 200,
+            0, 0,
             options.w, options.h,
             { friction: 0.5, restitution: 0.6 }
         );
 
         // 2. Set the layer
-
 
         // 3. Initialize the base with this body
         this.setBodyDescription(desc);

@@ -34,6 +34,7 @@ export abstract class BasePhysicsEntity {
     protected setBodyDescription(desc: BodyDescription): void {
         this.body = desc.body;
         this.view.addChild(desc.debugGraphic);
+        desc.debugGraphic.position.set(0, 0);
         Physics.addBody(this.body);
         this.syncView();
     }

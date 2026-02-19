@@ -5,18 +5,10 @@
       "assets": [
         {
           "alias": [
-            "data/animals-old.json"
+            "game/worlds.json"
           ],
           "src": [
-            "data/animals-old.json"
-          ]
-        },
-        {
-          "alias": [
-            "data/animals.json"
-          ],
-          "src": [
-            "data/animals.json"
+            "game/worlds.json"
           ]
         },
         {
@@ -41,38 +33,6 @@
           ],
           "src": [
             "game/03_world_1770731080309.json"
-          ]
-        },
-        {
-          "alias": [
-            "game/04_world_1770631526350.json"
-          ],
-          "src": [
-            "game/04_world_1770631526350.json"
-          ]
-        },
-        {
-          "alias": [
-            "game/05_world_1770850269742.json"
-          ],
-          "src": [
-            "game/05_world_1770850269742.json"
-          ]
-        },
-        {
-          "alias": [
-            "game/game-manifest.json"
-          ],
-          "src": [
-            "game/game-manifest.json"
-          ]
-        },
-        {
-          "alias": [
-            "game/map-data.json"
-          ],
-          "src": [
-            "game/map-data.json"
           ]
         },
         {

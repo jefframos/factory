@@ -3,13 +3,13 @@ import { Body, Events, IEventCollision } from 'matter-js';
 export type CollisionCallback = (otherBody: Body, pair: Matter.Pair) => void;
 
 export class PhysicsEventManager {
-    // Maps BodyID -> Callback List
     private startListeners = new Map<number, CollisionCallback[]>();
+    private activeListeners = new Map<number, CollisionCallback[]>(); // New
     private endListeners = new Map<number, CollisionCallback[]>();
 
     constructor(engine: Matter.Engine) {
-        // Global Matter.js listeners
         Events.on(engine, 'collisionStart', (e) => this.process(e, this.startListeners));
+        Events.on(engine, 'collisionActive', (e) => this.process(e, this.activeListeners)); // New
         Events.on(engine, 'collisionEnd', (e) => this.process(e, this.endListeners));
     }
 
@@ -29,10 +29,15 @@ export class PhysicsEventManager {
         if (!this.endListeners.has(body.id)) this.endListeners.set(body.id, []);
         this.endListeners.get(body.id)!.push(callback);
     }
+    public onActive(body: Body, callback: CollisionCallback) {
+        if (!this.activeListeners.has(body.id)) this.activeListeners.set(body.id, []);
+        this.activeListeners.get(body.id)!.push(callback);
+    }
 
     /** Clean up all events for a specific body */
     public clear(body: Body) {
         this.startListeners.delete(body.id);
         this.endListeners.delete(body.id);
+        this.activeListeners.delete(body.id);
     }
 }

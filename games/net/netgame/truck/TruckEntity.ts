@@ -6,6 +6,7 @@ import Physics from "@core/phyisics/Physics";
 import { Bodies, Body, Constraint } from "matter-js";
 import * as PIXI from "pixi.js";
 import { TruckCargoSystem } from "./TruckCargoSystem";
+import { TruckRegistry } from "./TruckRegistry";
 
 export interface ITruckAugmentations {
     mass?: number;
@@ -103,6 +104,13 @@ export class TruckEntity extends BasePhysicsEntity {
         // We pass the relative offset (-45, 15) and the world spawn point (options.x, options.y)
         this.addWheel(TruckPart.BACK_WHEEL, -45, 15, 0, 0, truckGroup);
         this.addWheel(TruckPart.FRONT_WHEEL, 45, 15, 0, 0, truckGroup);
+
+
+        const wheelBodies = [
+            this.parts.get(TruckPart.BACK_WHEEL)!.body,
+            this.parts.get(TruckPart.FRONT_WHEEL)!.body
+        ];
+        TruckRegistry.register(this.body, wheelBodies);
 
         // 3. Systems setup
         this.cargo = new TruckCargoSystem(this.body, this.view.parent || this.view);
