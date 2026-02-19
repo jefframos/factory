@@ -8,10 +8,19 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@core/*": ["core/*"]
+      "@core/*": [
+        "core/*"
+      ],
+      "three/*": [
+        "node_modules/three/*"
+      ]
     },
     "outDir": "dist",
     "strict": true
   },
-  "include": ["games", "core", "scripts"]
+  "include": [
+    "games",
+    "core",
+    "scripts"
+  ]
 }

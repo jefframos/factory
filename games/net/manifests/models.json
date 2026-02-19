@@ -1,0 +1,105 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "cars/armor.glb"
+          ],
+          "src": [
+            "cars/armor.glb"
+          ]
+        },
+        {
+          "alias": [
+            "cars/coupe.glb"
+          ],
+          "src": [
+            "cars/coupe.glb"
+          ]
+        },
+        {
+          "alias": [
+            "cars/fenyr.glb"
+          ],
+          "src": [
+            "cars/fenyr.glb"
+          ]
+        },
+        {
+          "alias": [
+            "cars/ghini.glb"
+          ],
+          "src": [
+            "cars/ghini.glb"
+          ]
+        },
+        {
+          "alias": [
+            "cars/italia.glb"
+          ],
+          "src": [
+            "cars/italia.glb"
+          ]
+        },
+        {
+          "alias": [
+            "cars/jeep.glb"
+          ],
+          "src": [
+            "cars/jeep.glb"
+          ]
+        },
+        {
+          "alias": [
+            "cars/kamaro.glb"
+          ],
+          "src": [
+            "cars/kamaro.glb"
+          ]
+        },
+        {
+          "alias": [
+            "cars/lamb.glb"
+          ],
+          "src": [
+            "cars/lamb.glb"
+          ]
+        },
+        {
+          "alias": [
+            "cars/mobil.glb"
+          ],
+          "src": [
+            "cars/mobil.glb"
+          ]
+        },
+        {
+          "alias": [
+            "cars/police.glb"
+          ],
+          "src": [
+            "cars/police.glb"
+          ]
+        },
+        {
+          "alias": [
+            "cars/rally.glb"
+          ],
+          "src": [
+            "cars/rally.glb"
+          ]
+        },
+        {
+          "alias": [
+            "cars/van.glb"
+          ],
+          "src": [
+            "cars/van.glb"
+          ]
+        }
+      ]
+    }
+  ]
+}

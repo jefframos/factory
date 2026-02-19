@@ -1,34 +1,110 @@
 import { Game } from '@core/Game';
 import { ThreeScene } from '@core/scene/ThreeScene';
 import * as THREE from 'three';
+import { MaterialUtils } from '../environment/MaterialUtils';
+import { SceneTheme, THEMES } from '../environment/SceneTheme';
+import { Water } from '../environment/Water';
 
 export default class GameplayScene extends ThreeScene {
-    private cube: THREE.Mesh;
+    private pulsingLight!: THREE.PointLight;
+    private keyLight!: THREE.DirectionalLight;
+    private fillLight!: THREE.DirectionalLight;
+    private ambientLight!: THREE.AmbientLight;
+
+    private time: number = 0;
+    private water!: Water;
+    private baseGroup: THREE.Group = new THREE.Group();
 
     constructor(game: Game) {
         super(game);
-
-        // Set 3D to render behind Pixi
         this.setThreeLayer(false);
 
-        // Add a simple 3D Cube
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const material = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
-        this.cube = new THREE.Mesh(geometry, material);
-        this.threeScene.add(this.cube);
+        // Initialize lights once so we can update them later
+        this.initLights();
 
-        // Add Light
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(1, 2, 4);
-        this.threeScene.add(light);
+        // Default to Night or Day
+        this.updateVisuals(THEMES.DRIVE_MAD);
     }
 
-    public update(delta: number): void {
-        // Rotate cube for visual feedback
-        this.cube.rotation.x += 0.01;
-        this.cube.rotation.y += 0.01;
+    private initLights(): void {
+        this.keyLight = new THREE.DirectionalLight(0xffffff, 1);
+        this.keyLight.position.set(5, 5, 5);
 
-        // Always call super.update to actually render the ThreeJS scene!
+        this.fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        this.fillLight.position.set(-5, 0, -5);
+
+        this.pulsingLight = new THREE.PointLight(0xffffff, 1, 10);
+        this.pulsingLight.position.set(0, 2, 0);
+
+        this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+
+        this.threeScene.add(this.keyLight, this.fillLight, this.pulsingLight, this.ambientLight);
+        this.threeScene.add(this.baseGroup);
+
+    }
+
+    public updateVisuals(data: SceneTheme): void {
+        // 1. Update Background Gradient
+        const canvas = document.createElement('canvas');
+        canvas.width = 2;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d')!;
+        const grad = ctx.createLinearGradient(0, 0, 0, 512);
+        grad.addColorStop(0, data.topColor);
+        grad.addColorStop(1, data.bottomColor);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 2, 512);
+
+        if (this.threeScene.background instanceof THREE.Texture) {
+            this.threeScene.background.dispose(); // Clean up memory
+        }
+        this.threeScene.background = new THREE.CanvasTexture(canvas);
+
+        // 2. Update Lights
+        this.keyLight.color.setHex(data.keyLightColor);
+        this.keyLight.intensity = data.intensity;
+
+        this.fillLight.color.setHex(data.fillLightColor);
+        this.fillLight.intensity = data.intensity * 0.5;
+
+        this.ambientLight.color.setHex(data.ambientColor);
+
+        // 3. Update or Create Water
+        if (!this.water) {
+            this.water = new Water(3000, 3000, data.waterColor);
+            this.water.mesh.scale.addScalar(5)
+            this.baseGroup.position.y = -600;
+            this.baseGroup.add(this.water.mesh);
+        } else {
+            // Assuming your Water class has a way to update color:
+            (this.water.mesh.material as THREE.MeshStandardMaterial).color.setHex(data.waterColor);
+        }
+
+
+        const box = this.createBox(5000, 300, 100)
+        box.position.y = -20
+        this.baseGroup.add(box);
+        MaterialUtils.applyToModel(box, MaterialUtils.convertToToon);
+    }
+    public createBox(width: number, height: number, depth: number, color: number = 0x7CFF01): THREE.Mesh {
+        const geometry = new THREE.BoxGeometry(width, height, depth);
+
+        // Using your new MaterialUtils for the material!
+        const material = new THREE.MeshBasicMaterial({ color: color });
+
+        const box = new THREE.Mesh(geometry, material);
+        this.threeScene.add(box);
+
+        return box;
+    }
+    public update(delta: number): void {
+        if (this.water) this.water.update(delta);
+
+        this.time += delta * 0.001;
+        if (this.pulsingLight) {
+            this.pulsingLight.intensity = 1 + Math.sin(this.time * 2) * 0.5;
+        }
+
         super.update(delta);
     }
 }

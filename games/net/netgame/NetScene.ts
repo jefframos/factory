@@ -7,6 +7,7 @@ import { GameScene } from "@core/scene/GameScene";
 import SetupThree from "@core/scene/SetupThree";
 import { DevGuiManager } from "@core/utils/DevGuiManager";
 import * as PIXI from 'pixi.js';
+import MODELS from "../registry/assetsRegistry/modelsRegistry";
 import GameplayScene from "./GameplayScene";
 import { InputService } from "./input/InputService";
 import { LevelDataManager } from "./level/LevelDataManager";
@@ -169,8 +170,37 @@ export default class NetScene extends GameScene {
 
         this.myTruck.teleport(0, 400)
 
+
         this.truck3D = new TruckView3DService(this.myTruck, this.gameplayScene.threeScene);
-        this.truck3D.buildStandardTruck();
+        this.truck3D.buildStandardTruck(MODELS.Italia, {
+
+            scale: 30,
+            wheelScale: 25,
+            visualRotationY: Math.PI / 2,
+
+            nodes: {
+                chassis: MODELS.Italia.nodes.Italia,
+                frontLeft: MODELS.Italia.nodes.Wheels022,
+                frontRight: MODELS.Italia.nodes.Wheels023,
+                backLeft: MODELS.Italia.nodes.Wheels036,
+                backRight: MODELS.Italia.nodes.Wheels037
+            }
+        });
+
+
+        // this.truck3D = new TruckView3DService(this.myTruck, this.gameplayScene.threeScene);
+        // this.truck3D.buildStandardTruck(MODELS.Jeep, {
+        //     scale: 30,
+        //     wheelScale: 25,
+        //     visualRotationY: Math.PI / 2,
+        //     nodes: {
+        //         chassis: MODELS.Jeep.nodes.Jeep,
+        //         frontLeft: MODELS.Jeep.nodes.Wheels016,
+        //         frontRight: MODELS.Jeep.nodes.Wheels017,
+        //         backLeft: MODELS.Jeep.nodes.Wheels042,
+        //         backRight: MODELS.Jeep.nodes.Wheels043
+        //     }
+        // });
 
         // 4. Initialize Services
         //this.truckViewService = new TruckViewService(this.myTruck, this.worldContainer);
@@ -183,7 +213,10 @@ export default class NetScene extends GameScene {
         this.camera.follow(this.myTruck.transform.position);
         this.camera.offset.y = 300
 
-        this.levelService = new LevelService(this, this.myTruck, () => this.handleLevelComplete());
+        this.levelService = new LevelService(this, this.myTruck);
+        this.levelService.onLevelEnded.add(() => {
+            this.handleLevelComplete()
+        })
 
         const worldIdx = 2; // "Medium" is the 3rd world (index 2)
         const levelIdx = 0; // First level in that world
@@ -199,8 +232,10 @@ export default class NetScene extends GameScene {
         this.threeCameraService.distance = 600;
         this.threeCameraService.orbitAngle = -0.52; // Slight angle so we see the side and front
         this.threeCameraService.elevationAngle = 0.52;
-
+        this.threeCameraService.renderDistance = 3000
         const folder = "3D Camera";
+
+
 
         // 1. Distance & Clipping (Large Ranges)
         DevGuiManager.instance.addProperties(
@@ -317,6 +352,7 @@ export default class NetScene extends GameScene {
         this.myTruck.reset();
         this.myTruck.teleport(LEVEL_1_DATA.spawnPoint.x, LEVEL_1_DATA.spawnPoint.y);
         this.camera.teleport(LEVEL_1_DATA.spawnPoint);
+        this.threeCameraService.teleport(LEVEL_1_DATA.spawnPoint);
     }
 
 
