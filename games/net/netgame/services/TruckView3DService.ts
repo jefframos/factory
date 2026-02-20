@@ -40,7 +40,8 @@ export class TruckView3DService {
         this.settings = { ...this.settings, ...customSettings };
         const fullModel = (await ModelLoaderManager.instance.loadModel(modelDef.fullPath, modelDef.id)).clone();
 
-        MaterialUtils.applyToModel(fullModel, MaterialUtils.convertToToon);
+        MaterialUtils.applyToModel(fullModel, MaterialUtils.convertToUnlit);
+
 
         // 1. Create the Master Pivot
         this.carPivot = new THREE.Group();

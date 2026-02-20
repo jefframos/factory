@@ -5,6 +5,7 @@ import Physics from "@core/phyisics/Physics";
 import Pool from "@core/Pool";
 import { GameScene } from "@core/scene/GameScene";
 import SetupThree from "@core/scene/SetupThree";
+import ModelLoaderManager from "@core/three/ModelLoaderManager";
 import { DevGuiManager } from "@core/utils/DevGuiManager";
 import * as PIXI from 'pixi.js';
 import MODELS from "../registry/assetsRegistry/modelsRegistry";
@@ -172,20 +173,40 @@ export default class NetScene extends GameScene {
 
 
         this.truck3D = new TruckView3DService(this.myTruck, this.gameplayScene.threeScene);
-        this.truck3D.buildStandardTruck(MODELS.Italia, {
+
+        ModelLoaderManager.instance.loadModel(MODELS.PoliceKenney.fullPath, MODELS.PoliceKenney.id).then((fullModel) => {
+
+            console.log(fullModel)
+        })
+
+        this.truck3D.buildStandardTruck(MODELS.PoliceKenney, {
 
             scale: 30,
-            wheelScale: 25,
+            wheelScale: 30,
             visualRotationY: Math.PI / 2,
 
             nodes: {
-                chassis: MODELS.Italia.nodes.Italia,
-                frontLeft: MODELS.Italia.nodes.Wheels022,
-                frontRight: MODELS.Italia.nodes.Wheels023,
-                backLeft: MODELS.Italia.nodes.Wheels036,
-                backRight: MODELS.Italia.nodes.Wheels037
+                chassis: MODELS.PoliceKenney.nodes.Body,
+                frontLeft: MODELS.PoliceKenney.nodes.WheelFrontLeft,
+                frontRight: MODELS.PoliceKenney.nodes.WheelFrontRight,
+                backLeft: MODELS.PoliceKenney.nodes.WheelBackLeft,
+                backRight: MODELS.PoliceKenney.nodes.WheelBackRight,
             }
         });
+        // this.truck3D.buildStandardTruck(MODELS.Italia, {
+
+        //     scale: 30,
+        //     wheelScale: 25,
+        //     visualRotationY: Math.PI / 2,
+
+        //     nodes: {
+        //         chassis: MODELS.Italia.nodes.Italia,
+        //         frontLeft: MODELS.Italia.nodes.Wheels022,
+        //         frontRight: MODELS.Italia.nodes.Wheels023,
+        //         backLeft: MODELS.Italia.nodes.Wheels036,
+        //         backRight: MODELS.Italia.nodes.Wheels037
+        //     }
+        // });
 
 
         // this.truck3D = new TruckView3DService(this.myTruck, this.gameplayScene.threeScene);
@@ -229,8 +250,8 @@ export default class NetScene extends GameScene {
         this.threeCameraService = new ThreeCameraService(this.gameplayScene.threeCamera, this.gameplayScene.threeScene, SetupThree.renderer);
 
         // Setup a classic 2.5D side-scrolling angle
-        this.threeCameraService.distance = 600;
-        this.threeCameraService.orbitAngle = -0.52; // Slight angle so we see the side and front
+        this.threeCameraService.distance = 300;
+        this.threeCameraService.orbitAngle = -1.12; // Slight angle so we see the side and front
         this.threeCameraService.elevationAngle = 0.52;
         this.threeCameraService.renderDistance = 3000
         const folder = "3D Camera";

@@ -38,7 +38,8 @@ export default class GameplayScene extends ThreeScene {
 
         this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 
-        this.threeScene.add(this.keyLight, this.fillLight, this.pulsingLight, this.ambientLight);
+        ///this.threeScene.add(this.keyLight, this.fillLight, this.pulsingLight, this.ambientLight);
+        this.threeScene.add(this.keyLight, this.fillLight, this.ambientLight);
         this.threeScene.add(this.baseGroup);
 
     }
