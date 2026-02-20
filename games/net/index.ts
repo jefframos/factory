@@ -30,9 +30,8 @@ export default class MyGame extends Game {
 
 
     constructor() {
-        super({ resolution: devicePixelRatio, backgroundAlpha: 0 }, false);
-
-        PIXI.Ticker.shared.maxFPS = 100;
+        super({ resolution: Math.min(2, devicePixelRatio), backgroundAlpha: 0 }, false);
+        PIXI.Ticker.shared.maxFPS = 60;
 
         this.folderPath = 'net';
         this.initialize();
