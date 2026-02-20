@@ -9,6 +9,7 @@ export interface LevelObject {
     isStatic?: boolean;
     label?: string;
     color?: number;
+    debugColor?: number;
     modifier?: ModifierDescriptor;
     layer?: number;
 }
@@ -36,6 +37,7 @@ export interface ModifierDescriptor {
 
 export interface LevelConfig {
     id: string;
+    name: string;
     spawnPoint: { x: number, y: number };
     objects: LevelObject[];
 }

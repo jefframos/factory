@@ -1,6 +1,5 @@
 import { Game } from "@core/Game";
 import { CollisionLayer } from "@core/phyisics/core/CollisionLayer";
-import { BasePhysicsEntity } from "@core/phyisics/entities/BaseEntity";
 import Physics from "@core/phyisics/Physics";
 import Pool from "@core/Pool";
 import { GameScene } from "@core/scene/GameScene";
@@ -8,19 +7,20 @@ import SetupThree from "@core/scene/SetupThree";
 import ModelLoaderManager from "@core/three/ModelLoaderManager";
 import { DevGuiManager } from "@core/utils/DevGuiManager";
 import * as PIXI from 'pixi.js';
-import MODELS from "../registry/assetsRegistry/modelsRegistry";
+import MODELS from "../../registry/assetsRegistry/modelsRegistry";
+import { InputService } from "../input/InputService";
+import { LevelDataManager } from "../level/LevelDataManager";
+import { LevelConfig, ModifierTrigger } from "../level/LevelTypes";
+import { CameraService } from "../services/CameraService";
+import { EntitySceneService } from "../services/EntitySceneService";
+import { LevelService } from "../services/LevelService";
+import { ThreeCameraService } from "../services/ThreeCameraService";
+import { TruckMover } from "../services/TruckMover";
+import { TruckView3DService } from "../services/TruckView3DService";
+import { TruckViewService } from "../services/TruckViewService";
+import { TruckEntity, TruckPart } from "../truck/TruckEntity";
+import { TRUCK_ASSET_DATA } from "../truck/TruckTypes";
 import GameplayScene from "./GameplayScene";
-import { InputService } from "./input/InputService";
-import { LevelDataManager } from "./level/LevelDataManager";
-import { LevelConfig, ModifierTrigger } from "./level/LevelTypes";
-import { CameraService } from "./services/CameraService";
-import { LevelService } from "./services/LevelService";
-import { ThreeCameraService } from "./services/ThreeCameraService";
-import { TruckMover } from "./services/TruckMover";
-import { TruckView3DService } from "./services/TruckView3DService";
-import { TruckViewService } from "./services/TruckViewService";
-import { TruckEntity, TruckPart } from "./truck/TruckEntity";
-import { TRUCK_ASSET_DATA } from "./truck/TruckTypes";
 
 
 export const LEVEL_1_DATA: LevelConfig = {
@@ -135,9 +135,8 @@ export const LEVELS = [
 
 
 export default class NetScene extends GameScene {
-    private entities: Set<BasePhysicsEntity> = new Set();
     private worldContainer: PIXI.Container = new PIXI.Container();
-
+    private entityService!: EntitySceneService;
     // Services
     private truckViewService!: TruckViewService;
     private levelService!: LevelService;
@@ -157,6 +156,9 @@ export default class NetScene extends GameScene {
         Physics.init({ gravity: { x: 0, y: 0.5 }, enableSleep: true });
         this.addChild(this.worldContainer);
 
+        this.entityService = new EntitySceneService(this.worldContainer);
+
+
         this.gameplayScene = new GameplayScene(this.game)
         this.gameplayScene.build();
 
@@ -167,9 +169,9 @@ export default class NetScene extends GameScene {
         this.myTruck.build({
             layer: CollisionLayer.PLAYER
         });
-        this.addEntity(this.myTruck);
+        this.entityService.addEntity(this.myTruck);
 
-        this.myTruck.teleport(0, 400)
+
 
 
         this.truck3D = new TruckView3DService(this.myTruck, this.gameplayScene.threeScene);
@@ -193,35 +195,6 @@ export default class NetScene extends GameScene {
                 backRight: MODELS.PoliceKenney.nodes.WheelBackRight,
             }
         });
-        // this.truck3D.buildStandardTruck(MODELS.Italia, {
-
-        //     scale: 30,
-        //     wheelScale: 25,
-        //     visualRotationY: Math.PI / 2,
-
-        //     nodes: {
-        //         chassis: MODELS.Italia.nodes.Italia,
-        //         frontLeft: MODELS.Italia.nodes.Wheels022,
-        //         frontRight: MODELS.Italia.nodes.Wheels023,
-        //         backLeft: MODELS.Italia.nodes.Wheels036,
-        //         backRight: MODELS.Italia.nodes.Wheels037
-        //     }
-        // });
-
-
-        // this.truck3D = new TruckView3DService(this.myTruck, this.gameplayScene.threeScene);
-        // this.truck3D.buildStandardTruck(MODELS.Jeep, {
-        //     scale: 30,
-        //     wheelScale: 25,
-        //     visualRotationY: Math.PI / 2,
-        //     nodes: {
-        //         chassis: MODELS.Jeep.nodes.Jeep,
-        //         frontLeft: MODELS.Jeep.nodes.Wheels016,
-        //         frontRight: MODELS.Jeep.nodes.Wheels017,
-        //         backLeft: MODELS.Jeep.nodes.Wheels042,
-        //         backRight: MODELS.Jeep.nodes.Wheels043
-        //     }
-        // });
 
         // 4. Initialize Services
         //this.truckViewService = new TruckViewService(this.myTruck, this.worldContainer);
@@ -234,18 +207,18 @@ export default class NetScene extends GameScene {
         this.camera.follow(this.myTruck.transform.position);
         this.camera.offset.y = 300
 
-        this.levelService = new LevelService(this, this.myTruck);
+        this.levelService = new LevelService(this.entityService, this.myTruck);
         this.levelService.onLevelEnded.add(() => {
             this.handleLevelComplete()
         })
 
-        const worldIdx = 2; // "Medium" is the 3rd world (index 2)
+        const worldIdx = 0; // "Medium" is the 3rd world (index 2)
         const levelIdx = 0; // First level in that world
 
         const config = LevelDataManager.instance.getLevel(worldIdx, levelIdx);
         const globalId = LevelDataManager.instance.getGlobalId(worldIdx, levelIdx);
-
         this.levelService.buildLevel(config);
+        this.myTruck.teleport(0, -100)
 
         this.threeCameraService = new ThreeCameraService(this.gameplayScene.threeCamera, this.gameplayScene.threeScene, SetupThree.renderer);
 
@@ -396,35 +369,22 @@ export default class NetScene extends GameScene {
         this.camera?.update();
         this.gameplayScene?.update(delta);
         this.truckViewService?.update();
+        this.entityService?.update(delta);
 
 
-        // Sync all entities
-        for (const entity of this.entities) {
-            entity.update(delta);
-            entity.syncView();
-        }
     }
 
     public fixedUpdate(delta: number): void {
         Physics.fixedUpdate(delta);
-        for (const entity of this.entities) {
-            entity.fixedUpdate(delta);
-        }
 
-        this.truck3D.update();
-        this.threeCameraService.update(this.myTruck.transform.position);
+        this.entityService?.fixedUpdate(delta);
+
+        this.threeCameraService?.update(this.myTruck.transform.position);
+        this.truck3D?.update();
     }
 
-    public addEntity<T extends BasePhysicsEntity>(entity: T): T {
-        this.entities.add(entity);
-        entity.view.alpha = 0.2
-        this.worldContainer.addChild(entity.view);
-        return entity;
-    }
 
     public destroy(): void {
-        this.entities.forEach(e => e.destroy());
-        this.entities.clear();
         this.truckViewService.destroy();
     }
 }

@@ -7,7 +7,7 @@ export class CircleEntity extends BasePhysicsEntity {
     /**
      * @param options { x, y, radius, layer }
      */
-    public build(options: { x?: number, y?: number, radius: number, layer: CollisionLayer }) {
+    public build(options: { x?: number, y?: number, radius: number, layer: CollisionLayer, debugColor?: number }) {
         // Create the body and debug view via factory
         const desc = PhysicsBodyFactory.createCircle(
             options.x ?? 0,
@@ -16,7 +16,8 @@ export class CircleEntity extends BasePhysicsEntity {
             {
                 restitution: 0.8, // Bouncy by default
                 friction: 0.1
-            }
+            },
+            options.debugColor
         );
 
         desc.body.collisionFilter.category = options.layer;

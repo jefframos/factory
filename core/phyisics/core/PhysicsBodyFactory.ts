@@ -7,69 +7,66 @@ export interface BodyDescription {
 }
 
 export class PhysicsBodyFactory {
-    private static DEBUG_COLOR = 0x00FF00; // Bright green for physics
+    private static DEFAULT_DEBUG_COLOR = 0x00FF00; // Bright green for physics
 
-    public static createRect(x: number, y: number, w: number, h: number, options?: any): BodyDescription {
+    public static createRect(x: number, y: number, w: number, h: number, options?: any, debugColor?: number): BodyDescription {
         const body = Bodies.rectangle(x, y, w, h, options);
         const gfx = new PIXI.Graphics();
-        gfx.lineStyle(2, this.DEBUG_COLOR);
+        const color = debugColor ?? this.DEFAULT_DEBUG_COLOR;
 
-        // Always draw relative to (0,0) because this graphic 
-        // will be childed to a container that we move to body.position
+        gfx.lineStyle(2, color);
+        // Added a slight fill so shapes are easier to see in the editor
+        gfx.beginFill(color, 0.1);
         gfx.drawRect(-w / 2, -h / 2, w, h);
+        gfx.endFill();
 
         return { body, debugGraphic: gfx };
     }
 
-    public static createCircle(x: number, y: number, radius: number, options?: any): BodyDescription {
+    public static createCircle(x: number, y: number, radius: number, options?: any, debugColor?: number): BodyDescription {
         const body = Bodies.circle(x, y, radius, options);
         const gfx = new PIXI.Graphics();
-        gfx.lineStyle(2, this.DEBUG_COLOR);
+        const color = debugColor ?? this.DEFAULT_DEBUG_COLOR;
+
+        gfx.lineStyle(2, color);
+        gfx.beginFill(color, 0.1);
         gfx.drawCircle(0, 0, radius);
-        // Add a line so we can see the rotation
-        gfx.moveTo(0, 0).lineTo(radius, 0);
+        gfx.moveTo(0, 0).lineTo(radius, 0); // Rotation indicator
+        gfx.endFill();
+
         return { body, debugGraphic: gfx };
     }
-    public static createPolygonFromVertices(x: number, y: number, vertexSets: any[], options: any): BodyDescription {
-        // 1. Create the body (poly-decomp will split this into parts)
+
+    public static createPolygonFromVertices(x: number, y: number, vertexSets: any[], options: any, debugColor?: number): BodyDescription {
         const body = Bodies.fromVertices(x, y, [vertexSets], options);
-
         const graphic = new PIXI.Graphics();
-        graphic.lineStyle(2, 0x00FF00); // Debug Green
-        graphic.beginFill(0x00FF00, 0.2);
+        const color = debugColor ?? this.DEFAULT_DEBUG_COLOR;
 
-        // 2. Matter.js structure: body.parts[0] is the body itself.
-        // body.parts[1...] are the convex shapes created by decomposition.
-        // We want to draw each individual part.
+        graphic.lineStyle(2, color);
+        graphic.beginFill(color, 0.2);
+
+        // Draw each convex part created by poly-decomp
         for (let i = 1; i < body.parts.length; i++) {
             const part = body.parts[i];
-
             const path = part.vertices.map(v => ({
                 x: v.x - body.position.x,
                 y: v.y - body.position.y
             }));
-
             graphic.drawPolygon(path);
         }
 
         graphic.endFill();
-
-        return {
-            body: body,
-            debugGraphic: graphic
-        };
+        return { body, debugGraphic: graphic };
     }
-    public static createPolygon(x: number, y: number, vertices: Vector[], options?: IBodyDefinition): BodyDescription {
-        // 1. Create the body
+
+    public static createPolygon(x: number, y: number, vertices: Vector[], options?: IBodyDefinition, debugColor?: number): BodyDescription {
         const body = Bodies.fromVertices(x, y, [vertices], options);
-
-        // 2. IMPORTANT: Matter might have re-centered the body. 
-        // We must use the vertices from the 'body' object itself to draw correctly.
         const gfx = new PIXI.Graphics();
-        gfx.lineStyle(2, this.DEBUG_COLOR);
-        gfx.beginFill(this.DEBUG_COLOR, 0.2);
+        const color = debugColor ?? this.DEFAULT_DEBUG_COLOR;
 
-        // We extract the points relative to the body's center
+        gfx.lineStyle(2, color);
+        gfx.beginFill(color, 0.2);
+
         const bodyVertices = body.vertices;
         const path = bodyVertices.flatMap(v => [
             v.x - body.position.x,
@@ -82,30 +79,25 @@ export class PhysicsBodyFactory {
         return { body, debugGraphic: gfx };
     }
 
-    public static createComposite(x: number, y: number, parts: Body[], options?: IBodyDefinition): BodyDescription {
-        // Create the main container body
+    public static createComposite(x: number, y: number, parts: Body[], options?: IBodyDefinition, debugColor?: number): BodyDescription {
         const mainBody = Body.create({
             ...options,
-            parts: parts, // Matter.js uses the first part in this array as the 'parent'
+            parts: parts,
             position: { x, y }
         });
 
         const gfx = new PIXI.Graphics();
-        gfx.lineStyle(2, this.DEBUG_COLOR);
+        const color = debugColor ?? this.DEFAULT_DEBUG_COLOR;
+        gfx.lineStyle(2, color);
 
-        // Draw each part's shape into the single debug graphic
         parts.forEach(part => {
-            // We draw vertices relative to the main body position
             const vertices = part.vertices;
-
-            // Matter.js vertices are absolute in world space after Body.create
-            // We subtract the mainBody position to draw them correctly inside the PIXI Container
             const path = vertices.flatMap(v => [
                 v.x - mainBody.position.x,
                 v.y - mainBody.position.y
             ]);
 
-            gfx.beginFill(this.DEBUG_COLOR, 0.2); // Light fill to see the parts
+            gfx.beginFill(color, 0.2);
             gfx.drawPolygon(path);
             gfx.endFill();
         });

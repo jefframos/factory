@@ -5,34 +5,26 @@
       "assets": [
         {
           "alias": [
+            "game/01_world_1771594701294.json"
+          ],
+          "src": [
+            "game/01_world_1771594701294.json"
+          ]
+        },
+        {
+          "alias": [
+            "game/02_world_1771594646887.json"
+          ],
+          "src": [
+            "game/02_world_1771594646887.json"
+          ]
+        },
+        {
+          "alias": [
             "game/worlds.json"
           ],
           "src": [
             "game/worlds.json"
-          ]
-        },
-        {
-          "alias": [
-            "game/01_world_1770499484823.json"
-          ],
-          "src": [
-            "game/01_world_1770499484823.json"
-          ]
-        },
-        {
-          "alias": [
-            "game/02_world_1770482231656.json"
-          ],
-          "src": [
-            "game/02_world_1770482231656.json"
-          ]
-        },
-        {
-          "alias": [
-            "game/03_world_1770731080309.json"
-          ],
-          "src": [
-            "game/03_world_1770731080309.json"
           ]
         },
         {

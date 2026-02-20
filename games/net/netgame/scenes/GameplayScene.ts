@@ -1,9 +1,9 @@
 import { Game } from '@core/Game';
 import { ThreeScene } from '@core/scene/ThreeScene';
 import * as THREE from 'three';
-import { MaterialUtils } from '../environment/MaterialUtils';
-import { SceneTheme, THEMES } from '../environment/SceneTheme';
-import { Water } from '../environment/Water';
+import { MaterialUtils } from '../../environment/MaterialUtils';
+import { SceneTheme, THEMES } from '../../environment/SceneTheme';
+import { Water } from '../../environment/Water';
 
 export default class GameplayScene extends ThreeScene {
     private pulsingLight!: THREE.PointLight;
@@ -74,7 +74,7 @@ export default class GameplayScene extends ThreeScene {
         if (!this.water) {
             this.water = new Water(3000, 3000, data.waterColor);
             this.water.mesh.scale.addScalar(5)
-            this.baseGroup.position.y = -600;
+            this.baseGroup.position.y = -78;
             this.baseGroup.add(this.water.mesh);
         } else {
             // Assuming your Water class has a way to update color:

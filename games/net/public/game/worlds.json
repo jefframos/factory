@@ -6,7 +6,7 @@
       "icon": "icon_default",
       "background": "bg_default",
       "enabled": true,
-      "levelFile": "game/01_world_1771594701294.json",
+      "levelFile": "01_world_1771594701294.json",
       "customData": {}
     },
     {
@@ -15,7 +15,7 @@
       "icon": "icon_default",
       "background": "bg_default",
       "enabled": true,
-      "levelFile": "game/02_world_1771594646887.json",
+      "levelFile": "02_world_1771594646887.json",
       "customData": {}
     }
   ]

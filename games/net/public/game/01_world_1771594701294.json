@@ -1,0 +1,23 @@
+{
+  "id": "world_1771594701294",
+  "levels": [
+    {
+      "id": "lvl_1771594702275",
+      "name": "New Level",
+      "spawnPoint": {
+        "x": 200,
+        "y": 400
+      },
+      "objects": []
+    },
+    {
+      "id": "lvl_1771594708449",
+      "name": "New Level",
+      "spawnPoint": {
+        "x": 200,
+        "y": 400
+      },
+      "objects": []
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import { Body } from "matter-js";
 import { Signal } from "signals"; // Assuming you use a standard Signal library
 import { LevelConfig, LevelSnapshot } from "../level/LevelTypes";
 import { TruckEntity } from "../truck/TruckEntity";
+import { EntitySceneService } from "./EntitySceneService";
 import { ModifierService } from "./ModifierService";
 
 export class LevelService {
@@ -24,8 +25,8 @@ export class LevelService {
     private isRunning: boolean = false;
 
     constructor(
-        private scene: any,
-        private truck: TruckEntity
+        private entitySceneService: EntitySceneService,
+        private truck?: TruckEntity
     ) { }
 
     /**
@@ -54,7 +55,7 @@ export class LevelService {
             }
 
             entity.syncView();
-            this.scene.addEntity(entity);
+            this.entitySceneService.addEntity(entity);
             this.spawnedEntities.add(entity);
         });
 
@@ -64,23 +65,24 @@ export class LevelService {
 
     private createEntity(obj: any): BasePhysicsEntity | null {
         const layer = obj.layer || CollisionLayer.DEFAULT;
+        const debugColor = obj.debugColor || obj.color;
 
         switch (obj.type) {
             case 'box':
             case 'sensor':
                 const box = Pool.instance.getElement(BoxEntity) as BoxEntity;
-                box.build({ w: obj.width || 100, h: obj.height || 100, layer });
+                box.build({ w: obj.width || 100, h: obj.height || 100, layer, debugColor });
                 if (obj.type === 'sensor') box.body.isSensor = true;
                 return box;
 
             case 'circle':
                 const circle = Pool.instance.getElement(CircleEntity) as CircleEntity;
-                circle.build({ radius: obj.radius || 30, layer });
+                circle.build({ radius: obj.radius || 30, layer, debugColor });
                 return circle;
 
             case 'polygon':
                 const poly = Pool.instance.getElement(PolygonEntity) as PolygonEntity;
-                poly.build({ x: 0, y: 0, vertices: obj.vertices || [], layer });
+                poly.build({ x: 0, y: 0, vertices: obj.vertices || [], layer, debugColor });
                 return poly;
 
             default:
@@ -88,16 +90,20 @@ export class LevelService {
                 return null;
         }
     }
-
+    public getCurrentConfig(): LevelConfig | null {
+        return this.currentLevelConfig;
+    }
     /**
      * Positions the player and ensures physics are ready
      */
     private preparePlayer(): void {
         if (!this.currentLevelConfig) return;
 
-        const spawn = this.currentLevelConfig.spawnPoint;
-        this.truck.teleport(spawn.x, spawn.y);
-        this.truck.reset(); // Zero out velocity and rotation
+        if (this.truck) {
+            const spawn = this.currentLevelConfig.spawnPoint;
+            this.truck.teleport(spawn.x, spawn.y);
+            this.truck.reset(); // Zero out velocity and rotation
+        }
     }
 
     private setupLevelTriggers(entity: BasePhysicsEntity, label: string): void {

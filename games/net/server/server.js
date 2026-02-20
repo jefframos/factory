@@ -4,331 +4,114 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// Recreate __dirname for ES Modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const PORT = Number(process.env.PORT || 3031);
-const CONFIG_FILE = path.join(__dirname, "config.json");
-// --- Helper Functions ---
-
-
-const readJson = (filePath) => {
-    return JSON.parse(fs.readFileSync(filePath, "utf8"));
-};
-
-const writeJson = (filePath, data) => {
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
-};
-const loadConfig = () => {
-    // 1. Set internal defaults
-    let cfg = {
-        dataDir: path.join(__dirname, "data"),
-        backupsDir: path.join(__dirname, "backups"),
-        manifestName: "game-manifest.json"
-    };
-
-    // 2. Try to read the config.json file
-    if (fs.existsSync(CONFIG_FILE)) {
-        try {
-            const disk = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
-
-            // Use path.resolve to turn "../raw-assets/json" into an absolute path
-            // relative to the server's directory
-            if (disk.LEVEL_DATA_PATH) {
-                cfg.dataDir = path.resolve(__dirname, disk.LEVEL_DATA_PATH);
-            }
-            if (disk.backupsDir) {
-                cfg.backupsDir = path.resolve(__dirname, disk.backupsDir);
-            }
-        } catch (e) {
-            console.error("Error reading config.json, using defaults.");
-        }
-    }
-
-    // 3. Ensure the directories actually exist on disk
-    if (!fs.existsSync(cfg.dataDir)) fs.mkdirSync(cfg.dataDir, { recursive: true });
-    if (!fs.existsSync(cfg.backupsDir)) fs.mkdirSync(cfg.backupsDir, { recursive: true });
-
-    return cfg;
-};
-
-
-const loadConfig2 = () => {
-    const cfg = {
-        levelDataPath: process.env.LEVEL_DATA_PATH || "",
-        backupsDir: path.join(__dirname, "backups")
-    };
-
-    if (fs.existsSync(CONFIG_FILE)) {
-        try {
-            const disk = readJson(CONFIG_FILE);
-            if (disk && typeof disk === "object") {
-                if (typeof disk.levelDataPath === "string") cfg.levelDataPath = disk.levelDataPath;
-                if (typeof disk.backupsDir === "string") cfg.backupsDir = disk.backupsDir;
-            }
-        } catch {
-            // ignore
-        }
-    }
-    return cfg;
-};
-
-
-const saveConfig = (cfg) => writeJson(CONFIG_FILE, cfg);
-
-const ensureConfigured = (cfg) => {
-    if (!cfg.levelDataPath) {
-        return {
-            ok: false,
-            error: "levelDataPath is not set. POST /api/config with { levelDataPath } or set env LEVEL_DATA_PATH."
-        };
-    }
-    return { ok: true };
-};
-
-const makeBackup = (cfg, reason) => {
-    fs.mkdirSync(cfg.backupsDir, { recursive: true });
-
-    const ext = path.extname(cfg.levelDataPath) || ".json";
-    const base = path.basename(cfg.levelDataPath, ext);
-    const name = `${base}_${Date.now()}${reason ? "_" + reason : ""}.backup${ext}`;
-    const outPath = path.join(cfg.backupsDir, name);
-
-    if (fs.existsSync(cfg.levelDataPath)) {
-        fs.copyFileSync(cfg.levelDataPath, outPath);
-    } else {
-        fs.writeFileSync(outPath, "{}", "utf8");
-    }
-
-    return { name, path: outPath };
-};
-
-// --- Server Setup ---
-
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+const PORT = 3031;
+
+// --- Load Config ---
+const CONFIG_PATH = path.join(__dirname, 'config.json');
+
+const loadServerConfig = () => {
+    const defaults = { LEVEL_DATA_PATH: "../raw-assets/json/game", WORLDS_FOLDER: "/game" };
+    if (fs.existsSync(CONFIG_PATH)) {
+        try { return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); }
+        catch (e) { console.error("Config error, using defaults."); }
+    }
+    return defaults;
+};
+
+const serverConfig = loadServerConfig();
+const ABSOLUTE_DATA_DIR = path.resolve(__dirname, serverConfig.LEVEL_DATA_PATH);
+const MANIFEST_NAME = 'worlds.json';
+
 app.use(cors());
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: '10mb' }));
 
-const MAP_DATA_FILE = path.join(loadConfig().dataDir, "map-data.json");
-app.get("/api/loadMap", (req, res) => {
-    try {
-        if (!fs.existsSync(MAP_DATA_FILE)) {
-            return res.json({ ok: true, data: { points: [] } });
-        }
-        const data = readJson(MAP_DATA_FILE);
-        res.json({ ok: true, data });
-    } catch (err) {
-        res.status(500).json({ ok: false, error: String(err) });
-    }
-});
+/**
+ * Normalizes a path to prevent /game/game/ level stacking.
+ * Returns the "Clean" filename for disk and the "Prefixed" path for manifest.
+ */
+const getSanitizedPaths = (inputPath) => {
+    // 1. Get just the filename (e.g., "01_world.json") regardless of how many slashes were sent
+    const fileName = path.basename(inputPath);
 
-app.post("/api/saveMap", (req, res) => {
-    const { data } = req.body || {};
-    try {
-        writeJson(MAP_DATA_FILE, data);
-        res.json({ ok: true });
-    } catch (err) {
-        res.status(500).json({ ok: false, error: String(err) });
-    }
-});
+    // 2. Clean the prefix from config (remove leading/trailing slashes for consistency)
+    const cleanPrefix = serverConfig.WORLDS_FOLDER.replace(/^\/|\/$/g, '');
 
-
-// Add to server.js
-const ASSETS_DIR = path.resolve(__dirname, "../raw-assets/non-preload/maps"); // Adjust to your path
-
-app.get("/api/assets", (req, res) => {
-    const getFiles = (dir) => {
-        const results = [];
-        const list = fs.readdirSync(dir);
-        list.forEach((file) => {
-            const filePath = path.join(dir, file);
-            const stat = fs.statSync(filePath);
-            if (stat && stat.isDirectory()) {
-                results.push({ name: file, type: "directory", children: getFiles(filePath) });
-            } else if (/\.(png|jpe?g|webp)$/i.test(file)) {
-                // Create a web-friendly URL
-                const relativePath = path.relative(path.resolve(__dirname, "../public"), filePath);
-                results.push({ name: file, type: "file", url: "/" + relativePath.replace(/\\/g, '/') });
-            }
-        });
-        return results;
+    return {
+        diskPath: path.join(ABSOLUTE_DATA_DIR, fileName),
+        manifestPath: `${cleanPrefix}/${fileName}`
     };
+};
+
+const readJson = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
+const writeJson = (p, d) => {
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    fs.writeFileSync(p, JSON.stringify(d, null, 2), 'utf8');
+};
+
+app.get('/api/load', (req, res) => {
     try {
-        res.json({ ok: true, tree: getFiles(ASSETS_DIR) });
-    } catch (e) {
-        res.status(500).json({ ok: false, error: e.message });
-    }
-});
-
-// --- Routes ---
-
-app.get("/api/config", (req, res) => {
-    res.json(loadConfig());
-});
-
-app.post("/api/config", (req, res) => {
-    const cfg = loadConfig();
-    const { levelDataPath, backupsDir } = req.body || {};
-
-    if (typeof levelDataPath === "string") cfg.levelDataPath = levelDataPath;
-    if (typeof backupsDir === "string") cfg.backupsDir = backupsDir;
-
-    saveConfig(cfg);
-    res.json(cfg);
-});
-
-// app.get("/api/load", (req, res) => {
-//     const cfg = loadConfig();
-//     const check = ensureConfigured(cfg);
-//     if (!check.ok) return res.status(400).json(check);
-
-//     try {
-//         const data = readJson(cfg.levelDataPath);
-//         res.json({ ok: true, data });
-//     } catch (err) {
-//         res.status(500).json({ ok: false, error: String(err) });
-//     }
-// });
-
-// app.post("/api/save", (req, res) => {
-//     const cfg = loadConfig();
-//     const check = ensureConfigured(cfg);
-//     if (!check.ok) return res.status(400).json(check);
-
-//     const { data } = req.body || {};
-//     if (data === undefined) {
-//         return res.status(400).json({ ok: false, error: "Missing body.data" });
-//     }
-
-//     try {
-//         const backup = makeBackup(cfg, "autosave");
-//         writeJson(cfg.levelDataPath, data);
-//         res.json({ ok: true, backup: backup.name, savedTo: cfg.levelDataPath });
-//     } catch (err) {
-//         res.status(500).json({ ok: false, error: String(err) });
-//     }
-// });
-app.get("/api/load", (req, res) => {
-    const cfg = loadConfig();
-    try {
-        const manifestPath = path.join(cfg.dataDir, cfg.manifestName);
-
-        // Ensure manifest exists, if not create a default one
-        if (!fs.existsSync(manifestPath)) {
-            writeJson(manifestPath, { worlds: [] });
-        }
+        const manifestPath = path.join(ABSOLUTE_DATA_DIR, MANIFEST_NAME);
+        if (!fs.existsSync(manifestPath)) writeJson(manifestPath, { worlds: [] });
 
         const manifest = readJson(manifestPath);
         const worldFiles = {};
 
         manifest.worlds.forEach(w => {
-            const worldPath = path.join(cfg.dataDir, w.levelFile);
-
-            if (fs.existsSync(worldPath)) {
-                worldFiles[w.levelFile] = readJson(worldPath);
+            const { diskPath } = getSanitizedPaths(w.levelFile);
+            if (fs.existsSync(diskPath)) {
+                worldFiles[w.levelFile] = readJson(diskPath);
             } else {
-                // AUTO-CREATE: The file is in manifest but missing on disk
-                const defaultWorldData = { id: w.id, levels: [] };
-                writeJson(worldPath, defaultWorldData);
-                worldFiles[w.levelFile] = defaultWorldData;
-                console.log(`[Server] Created missing world file: ${w.levelFile}`);
+                const defaultData = { id: w.id, levels: [] };
+                writeJson(diskPath, defaultData);
+                worldFiles[w.levelFile] = defaultData;
             }
         });
 
         res.json({ ok: true, manifest, worldFiles });
     } catch (err) {
-        res.status(500).json({ ok: false, error: String(err) });
+        res.status(500).json({ ok: false, error: err.message });
     }
 });
 
-// POST /api/save - Receives the full state and splits it back into files
-app.post("/api/save", (req, res) => {
-    const cfg = loadConfig();
-    const { manifest, worldsData } = req.body || {};
-
-    if (!manifest || !worldsData) {
-        return res.status(400).json({ ok: false, error: "Missing manifest or worldsData" });
-    }
-
+app.post('/api/save', (req, res) => {
+    const { manifest, worldsData } = req.body;
     try {
-        // 1. Save the manifest
-        const manifestPath = path.join(cfg.dataDir, cfg.manifestName);
-        writeJson(manifestPath, manifest);
+        const activeFilesOnDisk = new Set([MANIFEST_NAME]);
 
-        // 2. Identify which files we ARE keeping
-        const activeFiles = new Set(Object.keys(worldsData));
-        activeFiles.add(cfg.manifestName);
-        // Add map-data if you use it in the same dir
-        activeFiles.add("map-data.json");
+        // 1. Process Worlds and Patch Manifest
+        manifest.worlds.forEach(w => {
+            const { diskPath, manifestPath } = getSanitizedPaths(w.levelFile);
+            const oldKey = w.levelFile;
 
-        // 3. CLEANUP: Delete files that are no longer in the manifest
-        const filesOnDisk = fs.readdirSync(cfg.dataDir);
-        filesOnDisk.forEach(file => {
-            // Only target .json files to avoid deleting assets/configs
-            if (path.extname(file) === ".json") {
-                if (!activeFiles.has(file)) {
-                    const deletePath = path.join(cfg.dataDir, file);
-                    fs.unlinkSync(deletePath);
-                    console.log(`[Server] Deleted orphaned world file: ${file}`);
-                }
+            // Patch the manifest entry to ensure it has the correct SINGLE prefix
+            w.levelFile = manifestPath;
+
+            // Save the actual world content
+            if (worldsData[oldKey]) {
+                writeJson(diskPath, worldsData[oldKey]);
+                activeFilesOnDisk.add(path.basename(diskPath));
             }
         });
 
-        // 4. Save/Update each world file currently in the editor
-        for (const [fileName, content] of Object.entries(worldsData)) {
-            const worldPath = path.join(cfg.dataDir, fileName);
-            writeJson(worldPath, content);
-        }
+        // 2. Save the patched Manifest
+        writeJson(path.join(ABSOLUTE_DATA_DIR, MANIFEST_NAME), manifest);
 
-        res.json({ ok: true, message: "Manifest updated and orphans cleaned." });
+        // 3. Cleanup: Delete orphaned .json files not in manifest
+        const filesOnDisk = fs.readdirSync(ABSOLUTE_DATA_DIR);
+        filesOnDisk.forEach(file => {
+            if (file.endsWith('.json') && !activeFilesOnDisk.has(file)) {
+                fs.unlinkSync(path.join(ABSOLUTE_DATA_DIR, file));
+                console.log(`[Cleanup] Deleted orphaned file: ${file}`);
+            }
+        });
+
+        res.json({ ok: true, message: "Saved and Patched" });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ ok: false, error: String(err) });
-    }
-});
-app.get("/api/backups", (req, res) => {
-    const cfg = loadConfig();
-
-    try {
-        fs.mkdirSync(cfg.backupsDir, { recursive: true });
-        const backups = fs.readdirSync(cfg.backupsDir)
-            .filter(f => f.toLowerCase().includes(".backup"))
-            .sort()
-            .reverse();
-
-        res.json({ ok: true, backups });
-    } catch (err) {
-        res.status(500).json({ ok: false, error: String(err) });
+        res.status(500).json({ ok: false, error: err.message });
     }
 });
 
-app.post("/api/restore", (req, res) => {
-    const cfg = loadConfig();
-    const check = ensureConfigured(cfg);
-    if (!check.ok) return res.status(400).json(check);
-
-    const { name } = req.body || {};
-    if (typeof name !== "string" || !name.length) {
-        return res.status(400).json({ ok: false, error: "Missing body.name (backup filename)" });
-    }
-
-    const backupPath = path.join(cfg.backupsDir, name);
-    if (!fs.existsSync(backupPath)) {
-        return res.status(404).json({ ok: false, error: "Backup not found" });
-    }
-
-    try {
-        const before = makeBackup(cfg, "before_restore");
-        fs.copyFileSync(backupPath, cfg.levelDataPath);
-        res.json({ ok: true, restored: name, previous: before.name });
-    } catch (err) {
-        res.status(500).json({ ok: false, error: String(err) });
-    }
-});
-
-app.listen(PORT, () => {
-    console.log(`[level-editor-server] http://localhost:${PORT}`);
-    console.log(`[level-editor-server] config: ${CONFIG_FILE}`);
-});
+app.listen(PORT, () => console.log(`Editor Server active on port ${PORT}`));

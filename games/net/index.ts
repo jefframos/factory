@@ -16,7 +16,8 @@ import jsonManifest from './manifests/json.json'; // adjust path
 import { getPlatformInstance } from '@core/platforms/PlatformFactory';
 import { DevGuiManager } from '@core/utils/DevGuiManager';
 import Assets from './Assets';
-import NetScene from './netgame/NetScene';
+import LevelEditorScene from './netgame/editor/LevelEditorScene';
+import NetScene from './netgame/scenes/NetScene';
 import platformConfig from './platforms.config.json';
 
 export default class MyGame extends Game {
@@ -178,15 +179,12 @@ export default class MyGame extends Game {
 
         DevGuiManager.instance.initialize(Game.debugParams.dev);
         const gameplay = this.sceneManager.register<NetScene>('game', NetScene, this);
-        // if (Game.debugParams.scene === 'level') {
-        //     const editor = this.sceneManager.register<LevelEditorScene>('level', LevelEditorScene, this);
-        //     this.sceneManager.changeScene('level');
-        // } else if (Game.debugParams.scene === 'mapEditor') {
-        //     const editor = this.sceneManager.register<MapEditorScene>('mapEditor', MapEditorScene, this);
-        //     this.sceneManager.changeScene('mapEditor');
-        // } else {
-        this.sceneManager.changeScene(Game.debugParams.scene || 'game');
-        // }
+        if (Game.debugParams.scene === 'level') {
+            const editor = this.sceneManager.register<LevelEditorScene>('level', LevelEditorScene, this);
+            this.sceneManager.changeScene('level');
+        } else {
+            this.sceneManager.changeScene(Game.debugParams.scene || 'game');
+        }
         this.sceneManager.resize();
     }
 
