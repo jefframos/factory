@@ -1,7 +1,6 @@
 import { Game } from '@core/Game';
 import { ThreeScene } from '@core/scene/ThreeScene';
 import * as THREE from 'three';
-import { MaterialUtils } from '../../environment/MaterialUtils';
 import { SceneTheme, THEMES } from '../../environment/SceneTheme';
 import { Water } from '../../environment/Water';
 
@@ -15,10 +14,10 @@ export default class GameplayScene extends ThreeScene {
     private water!: Water;
     private baseGroup: THREE.Group = new THREE.Group();
 
+
     constructor(game: Game) {
         super(game);
         this.setThreeLayer(false);
-
         // Initialize lights once so we can update them later
         this.initLights();
 
@@ -82,10 +81,10 @@ export default class GameplayScene extends ThreeScene {
         }
 
 
-        const box = this.createBox(5000, 300, 100)
-        box.position.y = -20
-        this.baseGroup.add(box);
-        MaterialUtils.applyToModel(box, MaterialUtils.convertToToon);
+        // const box = this.createBox(5000, 300, 100)
+        // box.position.y = -20
+        // this.baseGroup.add(box);
+        // MaterialUtils.applyToModel(box, MaterialUtils.convertToToon);
     }
     public createBox(width: number, height: number, depth: number, color: number = 0x7CFF01): THREE.Mesh {
         const geometry = new THREE.BoxGeometry(width, height, depth);

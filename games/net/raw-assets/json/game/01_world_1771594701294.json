@@ -11,8 +11,36 @@
       "objects": [
         {
           "type": "box",
-          "x": 803,
-          "y": 76,
+          "x": 807,
+          "y": 5,
+          "width": 800,
+          "height": 40,
+          "isStatic": true,
+          "label": "editor_box"
+        },
+        {
+          "type": "polygon",
+          "x": 1728,
+          "y": -19,
+          "vertices": [
+            {
+              "x": 400,
+              "y": -100
+            },
+            {
+              "x": 400,
+              "y": 0
+            },
+            {
+              "x": 0,
+              "y": 0
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "x": 268,
+          "y": -84,
           "width": 800,
           "height": 40,
           "isStatic": true,
@@ -20,26 +48,17 @@
         },
         {
           "type": "box",
-          "x": 364,
-          "y": 34,
+          "x": -95,
+          "y": 87,
           "width": 800,
-          "height": 40,
-          "isStatic": true,
-          "label": "editor_box"
-        },
-        {
-          "type": "box",
-          "x": -144,
-          "y": -7,
-          "width": 800,
-          "height": 40,
+          "height": 400,
           "isStatic": true,
           "label": "editor_box"
         },
         {
           "type": "sensor",
-          "x": -305,
-          "y": -127,
+          "x": -307,
+          "y": -240,
           "width": 60,
           "height": 200,
           "label": "start_node",
@@ -47,12 +66,86 @@
         },
         {
           "type": "sensor",
-          "x": 1097,
-          "y": -16,
+          "x": 3121,
+          "y": -38,
           "width": 60,
           "height": 200,
           "label": "finish_node",
           "debugColor": 16720639
+        },
+        {
+          "type": "box",
+          "x": 1461,
+          "y": 33,
+          "width": 800,
+          "height": 40,
+          "isStatic": true,
+          "label": "editor_box"
+        },
+        {
+          "type": "box",
+          "x": 2688,
+          "y": 41,
+          "width": 800,
+          "height": 40,
+          "isStatic": true,
+          "label": "editor_box"
+        },
+        {
+          "type": "sensor",
+          "x": 500,
+          "y": 300,
+          "width": 10000,
+          "height": 200,
+          "label": "deadzone",
+          "debugColor": 16720418
+        },
+        {
+          "type": "box",
+          "x": 2345,
+          "y": 8,
+          "width": 120,
+          "height": 30,
+          "modifier": {
+            "type": "trampoline",
+            "force": 20
+          }
+        },
+        {
+          "type": "circle",
+          "x": 703,
+          "y": -44,
+          "radius": 40,
+          "modifier": {
+            "type": "bouncer",
+            "force": 20
+          }
+        },
+        {
+          "type": "circle",
+          "x": 2057,
+          "y": -43,
+          "radius": 40,
+          "modifier": {
+            "type": "bouncer",
+            "force": 20
+          }
+        },
+        {
+          "type": "sensor",
+          "x": 2,
+          "y": -167,
+          "width": 300,
+          "height": 100,
+          "modifier": {
+            "type": "boost",
+            "force": 0.5,
+            "direction": {
+              "x": 1,
+              "y": 0
+            },
+            "trigger": "active"
+          }
         }
       ]
     },

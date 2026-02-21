@@ -8,144 +8,77 @@ export interface ModelDefinition {
   readonly nodes: Record<string, string>;
 }
 
-const Armor = {
-  id: 'armor',
-  path: 'cars/armor',
-  fullPath: 'net/models/cars/armor.glb',
-  format: 'glb',
-  nodes: {
-  "Van": "van",
-  "Wheels010": "wheels.010",
-  "Wheels011": "wheels.011",
-  "Wheels048": "wheels.048",
-  "Wheels049": "wheels.049"
-}
-} as const;
-
-const Coupe = {
-  id: 'coupe',
-  path: 'cars/coupe',
-  fullPath: 'net/models/cars/coupe.glb',
-  format: 'glb',
-  nodes: {
-  "Coupe": "coupe",
-  "Wheels024": "wheels.024",
-  "Wheels025": "wheels.025",
-  "Wheels034": "wheels.034",
-  "Wheels035": "wheels.035"
-}
-} as const;
-
-const Fenyr = {
-  id: 'fenyr',
-  path: 'cars/fenyr',
-  fullPath: 'net/models/cars/fenyr.glb',
-  format: 'glb',
-  nodes: {
-  "Fenyr": "fenyr",
-  "Wheels020": "wheels.020",
-  "Wheels021": "wheels.021",
-  "Wheels038": "wheels.038",
-  "Wheels039": "wheels.039"
-}
-} as const;
-
-const Ghini = {
-  id: 'ghini',
-  path: 'cars/ghini',
-  fullPath: 'net/models/cars/ghini.glb',
-  format: 'glb',
-  nodes: {
-  "Ghini": "ghini",
-  "Wheels008": "wheels.008",
-  "Wheels009": "wheels.009",
-  "Wheels050": "wheels.050",
-  "Wheels051": "wheels.051"
-}
-} as const;
-
-const Italia = {
-  id: 'italia',
-  path: 'cars/italia',
-  fullPath: 'net/models/cars/italia.glb',
-  format: 'glb',
-  nodes: {
-  "Italia": "italia",
-  "Wheels022": "wheels.022",
-  "Wheels023": "wheels.023",
-  "Wheels036": "wheels.036",
-  "Wheels037": "wheels.037"
-}
-} as const;
-
-const Jeep = {
-  id: 'jeep',
-  path: 'cars/jeep',
-  fullPath: 'net/models/cars/jeep.glb',
-  format: 'glb',
-  nodes: {
-  "Jeep": "jeep",
-  "Wheels016": "wheels.016",
-  "Wheels017": "wheels.017",
-  "Wheels042": "wheels.042",
-  "Wheels043": "wheels.043"
-}
-} as const;
-
-const Kamaro = {
-  id: 'kamaro',
-  path: 'cars/kamaro',
-  fullPath: 'net/models/cars/kamaro.glb',
-  format: 'glb',
-  nodes: {
-  "Kamaro": "kamaro",
-  "Wheels002": "wheels.002",
-  "Wheels003": "wheels.003",
-  "Wheels058": "wheels.058",
-  "Wheels059": "wheels.059"
-}
-} as const;
-
-const Lamb = {
-  id: 'lamb',
-  path: 'cars/lamb',
-  fullPath: 'net/models/cars/lamb.glb',
-  format: 'glb',
-  nodes: {
-  "Lamb": "lamb",
-  "Wheels": "wheels",
-  "Wheels001": "wheels.001",
-  "Wheels056": "wheels.056",
-  "Wheels057": "wheels.057"
-}
-} as const;
-
-const Mobil = {
-  id: 'mobil',
-  path: 'cars/mobil',
-  fullPath: 'net/models/cars/mobil.glb',
-  format: 'glb',
-  nodes: {
-  "CarBase002": "car_base.002",
-  "Wheel1003": "wheel1.003",
-  "Wheel1007": "wheel1.007",
-  "Wheel2001": "wheel2.001",
-  "Wheel2003": "wheel2.003"
-}
-} as const;
-
-const Police = {
-  id: 'police',
-  path: 'cars/police',
-  fullPath: 'net/models/cars/police.glb',
+const DeliveryFlat = {
+  id: 'delivery-flat',
+  path: 'cars/delivery-flat',
+  fullPath: 'net/models/cars/delivery-flat.glb',
   format: 'glb',
   nodes: {
   "WheelBackLeft": "wheel-back-left",
+  "Body": "body",
   "WheelFrontLeft": "wheel-front-left",
   "WheelBackRight": "wheel-back-right",
+  "WheelFrontRight": "wheel-front-right"
+}
+} as const;
+
+const Delivery = {
+  id: 'delivery',
+  path: 'cars/delivery',
+  fullPath: 'net/models/cars/delivery.glb',
+  format: 'glb',
+  nodes: {
+  "Door": "door",
+  "WheelFrontRight": "wheel-front-right",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelBackRight": "wheel-back-right",
+  "WheelBackLeft": "wheel-back-left",
+  "Body": "body"
+}
+} as const;
+
+const Firetruck = {
+  id: 'firetruck',
+  path: 'cars/firetruck',
+  fullPath: 'net/models/cars/firetruck.glb',
+  format: 'glb',
+  nodes: {
   "Body": "body",
   "Grill": "grill",
-  "WheelFrontRight": "wheel-front-right"
+  "WheelFrontRight": "wheel-front-right",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelBackRight": "wheel-back-right",
+  "WheelBackLeft": "wheel-back-left"
+}
+} as const;
+
+const GarbageTruck = {
+  id: 'garbage-truck',
+  path: 'cars/garbage-truck',
+  fullPath: 'net/models/cars/garbage-truck.glb',
+  format: 'glb',
+  nodes: {
+  "Arm": "arm",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelFrontRight": "wheel-front-right",
+  "WheelBackRight": "wheel-back-right",
+  "WheelBackLeft": "wheel-back-left",
+  "Body": "body",
+  "Trash": "trash"
+}
+} as const;
+
+const HatchbackSports = {
+  id: 'hatchback-sports',
+  path: 'cars/hatchback-sports',
+  fullPath: 'net/models/cars/hatchback-sports.glb',
+  format: 'glb',
+  nodes: {
+  "WheelFrontRight": "wheel-front-right",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelBackRight": "wheel-back-right",
+  "WheelBackLeft": "wheel-back-left",
+  "Body": "body"
 }
 } as const;
 
@@ -164,31 +97,175 @@ const PoliceKenney = {
 }
 } as const;
 
-const PoliceOld = {
-  id: 'policeOld',
-  path: 'cars/policeOld',
-  fullPath: 'net/models/cars/policeOld.glb',
+const RaceFuture = {
+  id: 'race-future',
+  path: 'cars/race-future',
+  fullPath: 'net/models/cars/race-future.glb',
   format: 'glb',
   nodes: {
-  "Police": "police",
-  "Wheels028": "wheels.028",
-  "Wheels029": "wheels.029",
-  "Wheels030": "wheels.030",
-  "Wheels031": "wheels.031"
+  "Body": "body",
+  "WheelBackLeft": "wheel-back-left",
+  "WheelBackRight": "wheel-back-right",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelFrontRight": "wheel-front-right"
 }
 } as const;
 
-const Rally = {
-  id: 'rally',
-  path: 'cars/rally',
-  fullPath: 'net/models/cars/rally.glb',
+const Race = {
+  id: 'race',
+  path: 'cars/race',
+  fullPath: 'net/models/cars/race.glb',
   format: 'glb',
   nodes: {
-  "Rally": "rally",
-  "Wheels018": "wheels.018",
-  "Wheels019": "wheels.019",
-  "Wheels040": "wheels.040",
-  "Wheels041": "wheels.041"
+  "Body": "body",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelFrontRight": "wheel-front-right",
+  "WheelBackLeft": "wheel-back-left",
+  "WheelBackRight": "wheel-back-right"
+}
+} as const;
+
+const SedanSports = {
+  id: 'sedan-sports',
+  path: 'cars/sedan-sports',
+  fullPath: 'net/models/cars/sedan-sports.glb',
+  format: 'glb',
+  nodes: {
+  "WheelBackRight": "wheel-back-right",
+  "Body": "body",
+  "Spoiler": "spoiler",
+  "WheelBackLeft": "wheel-back-left",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelFrontRight": "wheel-front-right"
+}
+} as const;
+
+const Sedan = {
+  id: 'sedan',
+  path: 'cars/sedan',
+  fullPath: 'net/models/cars/sedan.glb',
+  format: 'glb',
+  nodes: {
+  "WheelFrontRight": "wheel-front-right",
+  "Body": "body",
+  "WheelBackLeft": "wheel-back-left",
+  "WheelBackRight": "wheel-back-right",
+  "WheelFrontLeft": "wheel-front-left"
+}
+} as const;
+
+const SuvLuxury = {
+  id: 'suv-luxury',
+  path: 'cars/suv-luxury',
+  fullPath: 'net/models/cars/suv-luxury.glb',
+  format: 'glb',
+  nodes: {
+  "WheelBackRight": "wheel-back-right",
+  "WheelFrontRight": "wheel-front-right",
+  "WheelFrontLeft": "wheel-front-left",
+  "Body": "body",
+  "WheelBackLeft": "wheel-back-left"
+}
+} as const;
+
+const Suv = {
+  id: 'suv',
+  path: 'cars/suv',
+  fullPath: 'net/models/cars/suv.glb',
+  format: 'glb',
+  nodes: {
+  "Body": "body",
+  "WheelBack": "wheel-back",
+  "WheelBackLeft": "wheel-back-left",
+  "WheelBackRight": "wheel-back-right",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelFrontRight": "wheel-front-right"
+}
+} as const;
+
+const Taxi = {
+  id: 'taxi',
+  path: 'cars/taxi',
+  fullPath: 'net/models/cars/taxi.glb',
+  format: 'glb',
+  nodes: {
+  "Body": "body",
+  "WheelFrontRight": "wheel-front-right",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelBackLeft": "wheel-back-left",
+  "WheelBackRight": "wheel-back-right"
+}
+} as const;
+
+const TractorPolice = {
+  id: 'tractor-police',
+  path: 'cars/tractor-police',
+  fullPath: 'net/models/cars/tractor-police.glb',
+  format: 'glb',
+  nodes: {
+  "WheelFrontRight": "wheel-front-right",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelBackRight": "wheel-back-right",
+  "WheelBackLeft": "wheel-back-left",
+  "Body": "body",
+  "Grill": "grill"
+}
+} as const;
+
+const TractorShovel = {
+  id: 'tractor-shovel',
+  path: 'cars/tractor-shovel',
+  fullPath: 'net/models/cars/tractor-shovel.glb',
+  format: 'glb',
+  nodes: {
+  "WheelBackLeft": "wheel-back-left",
+  "Body": "body",
+  "Shovel": "shovel",
+  "WheelBackRight": "wheel-back-right",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelFrontRight": "wheel-front-right"
+}
+} as const;
+
+const Tractor = {
+  id: 'tractor',
+  path: 'cars/tractor',
+  fullPath: 'net/models/cars/tractor.glb',
+  format: 'glb',
+  nodes: {
+  "WheelFrontRight": "wheel-front-right",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelBackRight": "wheel-back-right",
+  "WheelBackLeft": "wheel-back-left",
+  "Body": "body"
+}
+} as const;
+
+const TruckFlat = {
+  id: 'truck-flat',
+  path: 'cars/truck-flat',
+  fullPath: 'net/models/cars/truck-flat.glb',
+  format: 'glb',
+  nodes: {
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelFrontRight": "wheel-front-right",
+  "WheelBackRight": "wheel-back-right",
+  "WheelBackLeft": "wheel-back-left",
+  "Body": "body"
+}
+} as const;
+
+const Truck = {
+  id: 'truck',
+  path: 'cars/truck',
+  fullPath: 'net/models/cars/truck.glb',
+  format: 'glb',
+  nodes: {
+  "Body": "body",
+  "WheelFrontRight": "wheel-front-right",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelBackRight": "wheel-back-right",
+  "WheelBackLeft": "wheel-back-left"
 }
 } as const;
 
@@ -198,28 +275,33 @@ const Van = {
   fullPath: 'net/models/cars/van.glb',
   format: 'glb',
   nodes: {
-  "Van": "van",
-  "Wheel1001": "wheel1.001",
-  "Wheel1002": "wheel1.002",
-  "Wheel1005": "wheel1.005",
-  "Wheel1006": "wheel1.006"
+  "WheelFrontRight": "wheel-front-right",
+  "WheelFrontLeft": "wheel-front-left",
+  "WheelBackRight": "wheel-back-right",
+  "WheelBackLeft": "wheel-back-left",
+  "Body": "body"
 }
 } as const;
 
 export const MODELS = {
-  Armor,
-  Coupe,
-  Fenyr,
-  Ghini,
-  Italia,
-  Jeep,
-  Kamaro,
-  Lamb,
-  Mobil,
-  Police,
+  DeliveryFlat,
+  Delivery,
+  Firetruck,
+  GarbageTruck,
+  HatchbackSports,
   PoliceKenney,
-  PoliceOld,
-  Rally,
+  RaceFuture,
+  Race,
+  SedanSports,
+  Sedan,
+  SuvLuxury,
+  Suv,
+  Taxi,
+  TractorPolice,
+  TractorShovel,
+  Tractor,
+  TruckFlat,
+  Truck,
   Van
 } as const;
 

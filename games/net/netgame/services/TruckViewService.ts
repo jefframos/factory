@@ -1,18 +1,18 @@
 import * as PIXI from "pixi.js";
-import { TruckEntity, TruckPart } from "../truck/TruckEntity";
+import { CarEntity, CarPart } from "../truck/CarEntity";
 
 export class TruckViewService {
-    private spriteMap: Map<TruckPart, PIXI.Sprite> = new Map();
+    private spriteMap: Map<CarPart, PIXI.Sprite> = new Map();
 
     constructor(
-        private truck: TruckEntity,
+        private truck: CarEntity,
         private worldContainer: PIXI.Container
     ) { }
 
     /**
      * Assigns a specific texture to a truck part
      */
-    public setPartAsset(part: TruckPart, texture: PIXI.Texture, anchor = { x: 0.5, y: 0.5 }, size = { width: 0, height: 0 }): void {
+    public setPartAsset(part: CarPart, texture: PIXI.Texture, anchor = { x: 0.5, y: 0.5 }, size = { width: 0, height: 0 }): void {
         // Remove old sprite if it exists
         if (this.spriteMap.has(part)) {
             const old = this.spriteMap.get(part)!;

@@ -14,12 +14,14 @@ import { LevelConfig, ModifierTrigger } from "../level/LevelTypes";
 import { CameraService } from "../services/CameraService";
 import { EntitySceneService } from "../services/EntitySceneService";
 import { LevelService } from "../services/LevelService";
+import { LevelViewService3D } from "../services/LevelViewService3D";
 import { ThreeCameraService } from "../services/ThreeCameraService";
 import { TruckMover } from "../services/TruckMover";
 import { TruckView3DService } from "../services/TruckView3DService";
 import { TruckViewService } from "../services/TruckViewService";
-import { TruckEntity, TruckPart } from "../truck/TruckEntity";
-import { TRUCK_ASSET_DATA } from "../truck/TruckTypes";
+import { CarEntity, CarPart } from "../truck/CarEntity";
+import { CAR_ASSET_DATA } from "../truck/CarTypes";
+import { GameplayHUD } from "../ui/GameplayHUD";
 import GameplayScene from "./GameplayScene";
 
 
@@ -143,10 +145,13 @@ export default class NetScene extends GameScene {
     private inputService!: InputService;
     private camera!: CameraService;
 
-    private myTruck!: TruckEntity;
+    private myTruck!: CarEntity;
     private truck3D!: TruckView3DService;
     private threeCameraService!: ThreeCameraService;
     private gameplayScene!: GameplayScene;
+    private levelViewService!: LevelViewService3D;
+
+    private hud!: GameplayHUD;
 
     public async build(): Promise<void> {
 
@@ -165,10 +170,16 @@ export default class NetScene extends GameScene {
         // 2. Build World (Floor and Obstacles)
 
         // 3. Setup Truck Entity
-        this.myTruck = Pool.instance.getElement(TruckEntity);
+        this.myTruck = Pool.instance.getElement(CarEntity);
         this.myTruck.build({
             layer: CollisionLayer.PLAYER
         });
+        // this.myTruck.updateStats(
+        //     {
+        //         acceleration: 0,
+        //         maxSpeed: 50
+        //     }
+        // )
         this.entityService.addEntity(this.myTruck);
 
 
@@ -183,8 +194,8 @@ export default class NetScene extends GameScene {
 
         this.truck3D.buildStandardTruck(MODELS.PoliceKenney, {
 
-            scale: 30,
-            wheelScale: 30,
+            scale: 50,
+            wheelScale: 50,
             visualRotationY: Math.PI / 2,
 
             nodes: {
@@ -201,7 +212,18 @@ export default class NetScene extends GameScene {
         this.setupTruckVisuals();
 
         this.inputService = new InputService();
-        this.inputService.setMover(new TruckMover(this.myTruck));
+        const truckMover = new TruckMover(this.myTruck)
+        this.inputService.setMover(truckMover);
+
+        // Initialize HUD
+        this.hud = new GameplayHUD();
+        this.addChild(this.hud); // Add directly to scene to ignore camera scrolling
+
+        // Register HUD Signals to TruckMover actions
+        this.hud.onAccelerate.add(() => truckMover.moveForward());
+        this.hud.onReverse.add(() => truckMover.moveBackward());
+        this.hud.onJump.add(() => truckMover.jump());
+        this.hud.onRespawn.add(() => this.levelService.respawnPlayer());
 
         this.camera = new CameraService(this.worldContainer);
         this.camera.follow(this.myTruck.transform.position);
@@ -212,13 +234,21 @@ export default class NetScene extends GameScene {
             this.handleLevelComplete()
         })
 
+        this.levelViewService = new LevelViewService3D(this.gameplayScene.threeScene, this.myTruck);
+
+        this.levelService.onLevelBuilt.add((level) => {
+            this.levelViewService.buildLevel(level, this.myTruck)
+        })
+
         const worldIdx = 0; // "Medium" is the 3rd world (index 2)
         const levelIdx = 0; // First level in that world
 
+        this.myTruck.teleport(0, -100)
         const config = LevelDataManager.instance.getLevel(worldIdx, levelIdx);
         const globalId = LevelDataManager.instance.getGlobalId(worldIdx, levelIdx);
         this.levelService.buildLevel(config);
-        this.myTruck.teleport(0, -100)
+
+
 
         this.threeCameraService = new ThreeCameraService(this.gameplayScene.threeCamera, this.gameplayScene.threeScene, SetupThree.renderer);
 
@@ -226,6 +256,11 @@ export default class NetScene extends GameScene {
         this.threeCameraService.distance = 300;
         this.threeCameraService.orbitAngle = -1.12; // Slight angle so we see the side and front
         this.threeCameraService.elevationAngle = 0.52;
+        if (Game.debugParams.cam) {
+
+            this.threeCameraService.orbitAngle = 0//-1.12; // Slight angle so we see the side and front
+            this.threeCameraService.elevationAngle = 0//0.52;
+        }
         this.threeCameraService.renderDistance = 3000
         const folder = "3D Camera";
 
@@ -343,18 +378,21 @@ export default class NetScene extends GameScene {
 
     private handleLevelComplete() {
         console.log("Goal Reached!");
-        this.myTruck.reset();
-        this.myTruck.teleport(LEVEL_1_DATA.spawnPoint.x, LEVEL_1_DATA.spawnPoint.y);
-        this.camera.teleport(LEVEL_1_DATA.spawnPoint);
-        this.threeCameraService.teleport(LEVEL_1_DATA.spawnPoint);
+
+        const targetRespawn = this.levelService.respawnPlayer()
+        this.levelService.startLevel()
+        // this.myTruck.reset();
+        // this.myTruck.teleport(LEVEL_1_DATA.spawnPoint.x, LEVEL_1_DATA.spawnPoint.y);
+        // this.camera.teleport(LEVEL_1_DATA.spawnPoint);
+        this.threeCameraService.teleport(targetRespawn);
     }
 
 
     private setupTruckVisuals(): void {
         // Apply assets based on our Data Config
-        Object.entries(TRUCK_ASSET_DATA).forEach(([part, data]) => {
+        Object.entries(CAR_ASSET_DATA).forEach(([part, data]) => {
             this.truckViewService?.setPartAsset(
-                part as TruckPart,
+                part as CarPart,
                 PIXI.Texture.from(data.asset),
                 (data as any).anchor,
                 (data as any).size
@@ -366,8 +404,11 @@ export default class NetScene extends GameScene {
         // Update Services
         this.inputService?.update();
         // this.levelService?.update();
-        this.camera?.update();
+
+
+        this.hud?.update();
         this.gameplayScene?.update(delta);
+        this.levelViewService?.update(delta);
         this.truckViewService?.update();
         this.entityService?.update(delta);
 
@@ -379,6 +420,7 @@ export default class NetScene extends GameScene {
 
         this.entityService?.fixedUpdate(delta);
 
+        this.camera?.update();
         this.threeCameraService?.update(this.myTruck.transform.position);
         this.truck3D?.update();
     }

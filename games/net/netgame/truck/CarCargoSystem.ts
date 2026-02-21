@@ -7,7 +7,7 @@ export interface ICargoGridItem {
     size: { w: number, h: number };      // Grid units (e.g., 2x2)
     position: { x: number, y: number };  // Grid units (e.g., 0,0)
 }
-export class TruckCargoSystem {
+export class CarCargoSystem {
     private truck: Body;
     private gridUnit: number = 20;
     // Local offset: Where the "Zero" of your cargo grid is relative to the truck center

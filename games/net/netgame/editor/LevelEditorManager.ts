@@ -113,13 +113,17 @@ export class LevelEditorManager {
     private patchMandatoryNodes(config: LevelConfig): void {
         const hasStart = config.objects.some(o => o.label === 'start_node');
         const hasFinish = config.objects.some(o => o.label === 'finish_node');
+        const hasDeadzone = config.objects.some(o => o.label === 'deadzone');
 
 
         if (!hasStart) {
-            config.objects.push({ type: 'sensor', x: 150, y: 0, width: 60, height: 200, label: 'start_node', debugColor: 0xFF2222 });
+            config.objects.push({ type: 'sensor', x: 150, y: 0, width: 60, height: 200, label: 'start_node', debugColor: 0x22ff22 });
         }
         if (!hasFinish) {
             config.objects.push({ type: 'sensor', x: 500, y: 0, width: 60, height: 200, label: 'finish_node', debugColor: 0xFF22ff });
+        }
+        if (!hasDeadzone) {
+            config.objects.push({ type: 'sensor', x: 500, y: 300, width: 5000, height: 200, label: 'deadzone', debugColor: 0xFF2222 });
         }
     }
 }

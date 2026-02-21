@@ -1,7 +1,7 @@
 import { Body } from "matter-js";
 
 // TruckRegistry.ts
-export class TruckRegistry {
+export class CarRegistry {
     private static chassisMap = new Map<number, Body>(); // partBodyId -> chassisBody
 
     public static register(chassis: Body, parts: Body[]): void {

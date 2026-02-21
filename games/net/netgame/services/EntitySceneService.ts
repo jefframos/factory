@@ -12,7 +12,7 @@ export class EntitySceneService {
     public addEntity<T extends BasePhysicsEntity>(entity: T): T {
         this.entities.add(entity);
         // Applying the debug alpha as per your original code
-        entity.view.alpha = 0.2;
+        entity.view.alpha = 1;
         this.worldContainer.addChild(entity.view);
         return entity;
     }

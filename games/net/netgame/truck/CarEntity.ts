@@ -5,17 +5,27 @@ import { BasePhysicsEntity } from "@core/phyisics/entities/BaseEntity";
 import Physics from "@core/phyisics/Physics";
 import { Bodies, Body, Constraint } from "matter-js";
 import * as PIXI from "pixi.js";
-import { TruckCargoSystem } from "./TruckCargoSystem";
-import { TruckRegistry } from "./TruckRegistry";
+import { CarCargoSystem } from "./CarCargoSystem";
+import { CarRegistry } from "./CarRegistry";
 
-export interface ITruckAugmentations {
+export interface ICarAugmentations {
     mass?: number;
     acceleration?: number;
     maxSpeed?: number;
     capacity?: number;
 }
+export interface ICarPhysicsParts {
+    chassis: {
+        shapes: { x: number; y: number; w: number; h: number }[];
+    };
+    wheels: {
+        radius: number;
+        frontOffset: { x: number; y: number };
+        backOffset: { x: number; y: number };
+    };
+}
 
-export interface ITruckStats {
+export interface ICarStats {
     wheelSpeed: number;
     wheelTorque: number;
     friction: number;
@@ -28,34 +38,50 @@ export interface ITruckStats {
     suspensionDamping: number;
 }
 
-export const DEFAULT_TRUCK_STATS: ITruckStats = {
-    wheelSpeed: 5,
-    wheelTorque: 0.1,
-    friction: 1,
-    mass: 50,
+export const DEFAULT_TRUCK_STATS: ICarStats = {
+    wheelSpeed: 120,        // High cap — lets you actually build momentum down slopes
+    wheelTorque: 0.18,      // Stronger push per frame, wind-up still comes from the curve
+    friction: 0.001,
+    mass: 100,
     bounciness: 0,
     airFriction: 0.01,
-    wheelFriction: 1.8,
-    angularDamping: 0.1,
-    suspensionStiffness: 0.15, // Slightly increased for stability
-    suspensionDamping: 0.3     // Increased to prevent "bouncing" loop
+    wheelFriction: 6.0,     // Slightly higher — better grip = more speed transferred to chassis
+    angularDamping: 0.005,  // Lower — chassis rotates more naturally in the air
+    suspensionStiffness: 0.25,  // Stiffer — chassis stays planted, less bobbing
+    suspensionDamping: 0.9      // High damping — kills the bounce loop dead
 };
 
-export enum TruckPart {
+export const DEFAULT_CAR_PARTS: ICarPhysicsParts = {
+    chassis: {
+        shapes: [
+            { x: 20, y: 0, w: 160, h: 20 },
+            { x: 20, y: -28, w: 60, h: 36 }
+        ]
+    },
+    wheels: {
+        radius: 18,
+        frontOffset: { x: 42, y: 15 },
+        backOffset: { x: -42, y: 15 }
+    }
+};
+
+export enum CarPart {
     CHASSIS = "chassis",
     FRONT_WHEEL = "front_wheel",
     BACK_WHEEL = "back_wheel"
 }
 
-export class TruckEntity extends BasePhysicsEntity {
-    private stats: ITruckStats = DEFAULT_TRUCK_STATS;
-    private augments: ITruckAugmentations = {
+export class CarEntity extends BasePhysicsEntity {
+    private stats: ICarStats = DEFAULT_TRUCK_STATS;
+    private augments: ICarAugmentations = {
         mass: 0, acceleration: 0, maxSpeed: 0, capacity: 0
     };
 
-    private parts = new Map<TruckPart, { body: Body; transform: PhysicsTransform }>();
+    private parts = new Map<CarPart, { body: Body; transform: PhysicsTransform }>();
     private groundContactCount: number = 0;
-    public cargo!: TruckCargoSystem;
+    public cargo!: CarCargoSystem;
+
+    private constraints: Constraint[] = [];
 
     public get isGrounded(): boolean { return this.groundContactCount > 0; }
 
@@ -66,23 +92,27 @@ export class TruckEntity extends BasePhysicsEntity {
         };
     }
 
-    public getPart(part: TruckPart) {
+    public getPart(part: CarPart) {
         return this.parts.get(part);
     }
 
     /**
      * Build the truck at a specific world position
      */
-    public build(options: { layer: CollisionLayer, stats?: Partial<ITruckStats> }) {
+    public build(options: { layer: CollisionLayer, stats?: Partial<ICarStats>, physicsParts?: ICarPhysicsParts }) {
+        this.destroyExistingParts();
+
+        const config = options.physicsParts || DEFAULT_CAR_PARTS;
         if (options.stats) this.stats = { ...this.stats, ...options.stats };
 
         const truckGroup = Body.nextGroup(true);
 
         // 1. Create Chassis Shapes (Local coordinates relative to center)
-        const chassisParts = [
-            Bodies.rectangle(0, 0, 140, 20),
-            Bodies.rectangle(40, -28, 45, 36)
-        ];
+        const chassisParts = config.chassis.shapes.map(s =>
+            Bodies.rectangle(s.x, s.y, s.w, s.h, {
+                chamfer: 1
+            })
+        );
 
         const desc: BodyDescription = PhysicsBodyFactory.createComposite(0, 0, chassisParts, {
             collisionFilter: { group: truckGroup },
@@ -95,31 +125,64 @@ export class TruckEntity extends BasePhysicsEntity {
         Body.setInertia(this.body, this.body.inertia * 3);
 
         // Register Chassis
-        this.parts.set(TruckPart.CHASSIS, {
+        this.parts.set(CarPart.CHASSIS, {
             body: this.body,
             transform: new PhysicsTransform(this.body, desc.debugGraphic)
         });
 
         // 2. Add Wheels using local offsets
         // We pass the relative offset (-45, 15) and the world spawn point (options.x, options.y)
-        this.addWheel(TruckPart.BACK_WHEEL, -45, 15, 0, 0, truckGroup);
-        this.addWheel(TruckPart.FRONT_WHEEL, 45, 15, 0, 0, truckGroup);
+        this.addWheel(
+            CarPart.BACK_WHEEL,
+            config.wheels.backOffset,
+            config.wheels.radius,
+            truckGroup
+        );
+        this.addWheel(
+            CarPart.FRONT_WHEEL,
+            config.wheels.frontOffset,
+            config.wheels.radius,
+            truckGroup
+        );
 
 
         const wheelBodies = [
-            this.parts.get(TruckPart.BACK_WHEEL)!.body,
-            this.parts.get(TruckPart.FRONT_WHEEL)!.body
+            this.parts.get(CarPart.BACK_WHEEL)!.body,
+            this.parts.get(CarPart.FRONT_WHEEL)!.body
         ];
-        TruckRegistry.register(this.body, wheelBodies);
+        CarRegistry.register(this.body, wheelBodies);
 
         // 3. Systems setup
-        this.cargo = new TruckCargoSystem(this.body, this.view.parent || this.view);
+        this.cargo = new CarCargoSystem(this.body, this.view.parent || this.view);
         this.setCollisionCategory(options.layer);
     }
 
-    private addWheel(type: TruckPart, offsetX: number, offsetY: number, worldX: number, worldY: number, group: number) {
-        // Place wheel in world space
-        const wheelBody = Bodies.circle(worldX + offsetX, worldY + offsetY, 18, {
+    private destroyExistingParts() {
+        // Remove Constraints
+        this.constraints.forEach(c => Physics.removeConstraint(c));
+        this.constraints = [];
+
+        // Remove Wheels and Graphics
+        this.parts.forEach((part, type) => {
+            if (part.transform.view) {
+                this.view.removeChild(part.transform.view);
+            }
+            if (type !== CarPart.CHASSIS) {
+                Physics.removeBody(part.body);
+            }
+        });
+
+        this.parts.clear();
+        this.groundContactCount = 0;
+        // Note: BasePhysicsEntity usually handles its own main body cleanup 
+        // through setBodyDescription, but ensure your factory supports replacement.
+    }
+
+    private addWheel(type: CarPart, offset: { x: number, y: number }, radius: number, group: number) {
+        const worldX = this.body.position.x + offset.x;
+        const worldY = this.body.position.y + offset.y;
+
+        const wheelBody = Bodies.circle(worldX, worldY, radius, {
             collisionFilter: { group },
             friction: this.stats.wheelFriction,
             restitution: 0,
@@ -127,11 +190,10 @@ export class TruckEntity extends BasePhysicsEntity {
             density: 0.01
         });
 
-        // Anchor is the exact offset used to place it relative to chassis center
         const axle = Constraint.create({
             bodyA: this.body,
             bodyB: wheelBody,
-            pointA: { x: offsetX, y: offsetY },
+            pointA: { x: offset.x, y: offset.y },
             stiffness: this.stats.suspensionStiffness,
             damping: this.stats.suspensionDamping,
             length: 0
@@ -139,9 +201,13 @@ export class TruckEntity extends BasePhysicsEntity {
 
         Physics.addBody(wheelBody);
         Physics.addConstraint(axle);
+        this.constraints.push(axle);
 
-        // Visual Setup
-        const graphic = new PIXI.Graphics().lineStyle(2, 0x00FF00).drawCircle(0, 0, 18).lineTo(18, 0);
+        const graphic = new PIXI.Graphics()
+            .lineStyle(2, 0x00FF00)
+            .drawCircle(0, 0, radius)
+            .lineTo(radius, 0);
+
         this.view.addChild(graphic);
 
         this.parts.set(type, {
@@ -163,7 +229,7 @@ export class TruckEntity extends BasePhysicsEntity {
 
         // Move Wheels by relative delta
         this.parts.forEach((part, partType) => {
-            if (partType === TruckPart.CHASSIS) return;
+            if (partType === CarPart.CHASSIS) return;
             const newPos = {
                 x: part.body.position.x + dx,
                 y: part.body.position.y + dy
@@ -187,7 +253,7 @@ export class TruckEntity extends BasePhysicsEntity {
         const sin = Math.sin(-truckAngle);
 
         this.parts.forEach((data, partType) => {
-            if (partType === TruckPart.CHASSIS) return;
+            if (partType === CarPart.CHASSIS) return;
 
             const { body, transform } = data;
             const dx = body.position.x - truckPos.x;
@@ -205,8 +271,9 @@ export class TruckEntity extends BasePhysicsEntity {
     }
 
     public fixedUpdate(delta: number): void {
-        const wheelDamping = 0.92;
-        [TruckPart.BACK_WHEEL, TruckPart.FRONT_WHEEL].forEach(part => {
+        const wheelDamping = 0.99;
+
+        [CarPart.BACK_WHEEL, CarPart.FRONT_WHEEL].forEach(part => {
             const wheel = this.getPart(part)?.body;
             if (wheel) {
                 Body.setAngularVelocity(wheel, wheel.angularVelocity * wheelDamping);
@@ -229,7 +296,7 @@ export class TruckEntity extends BasePhysicsEntity {
         });
     }
 
-    public updateStats(newAugments: Partial<ITruckAugmentations>): void {
+    public updateStats(newAugments: Partial<ICarAugmentations>): void {
         this.augments.mass = (this.augments.mass || 0) + (newAugments.mass || 0);
         this.augments.acceleration = (this.augments.acceleration || 0) + (newAugments.acceleration || 0);
         this.augments.maxSpeed = (this.augments.maxSpeed || 0) + (newAugments.maxSpeed || 0);

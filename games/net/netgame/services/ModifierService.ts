@@ -2,7 +2,7 @@ import Physics from "@core/phyisics/Physics";
 import { BasePhysicsEntity } from "@core/phyisics/entities/BaseEntity";
 import { Body } from "matter-js";
 import { ModifierDescriptor, ModifierTrigger } from "../level/LevelTypes";
-import { TruckRegistry } from "../truck/TruckRegistry";
+import { CarRegistry } from "../truck/CarRegistry";
 
 export class ModifierService {
     /**
@@ -11,9 +11,9 @@ export class ModifierService {
     public static register(entity: BasePhysicsEntity, mod: ModifierDescriptor): void {
         const body = entity.body;
 
-        console.log(`Registering ${mod.type} on body ${entity.body.id}`);
 
         mod.trigger = mod.trigger ?? ModifierTrigger.ON_START;
+        console.log(`Registering ${mod.type} on body ${entity.body.id} - ${mod.trigger}`);
 
         switch (mod.trigger) {
             case ModifierTrigger.ON_START:
@@ -30,8 +30,9 @@ export class ModifierService {
 
     private static execute(source: BasePhysicsEntity, other: Body, mod: ModifierDescriptor): void {
         // Always target the main body (Chassis) if a part (Wheel) hits the modifier
-        const target = TruckRegistry.resolveToTruck(other);
+        const target = CarRegistry.resolveToTruck(other);
         const force = mod.force || 1;
+        console.log(force)
 
         switch (mod.type) {
             case 'boost':

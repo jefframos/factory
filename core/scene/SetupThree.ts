@@ -19,10 +19,10 @@ export default class SetupThree {
         this.container = container;
 
         // Create a Three.js Renderer
-        this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.sortObjects = true;
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
         // Append canvas to container
         this.container.appendChild(this.renderer.domElement);
 
