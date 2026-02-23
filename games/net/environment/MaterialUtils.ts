@@ -59,4 +59,37 @@ export class MaterialUtils {
             side: old.side
         });
     }
+
+    public static convertToToonNew(oldMat: THREE.Material, steps: number = 3): THREE.MeshToonMaterial {
+        const old = oldMat as any;
+
+        const size = 256;
+        const data = new Uint8Array(size);
+        for (let i = 0; i < size; i++) {
+            const step = Math.floor((i / size) * steps);
+            data[i] = (step / (steps - 1)) * 255;
+        }
+
+        const gradient = new THREE.DataTexture(data, size, 1, THREE.RedFormat);
+        gradient.minFilter = THREE.NearestFilter;
+        gradient.magFilter = THREE.NearestFilter;
+        gradient.generateMipmaps = false;
+        gradient.needsUpdate = true;
+
+        const toonMat = new THREE.MeshToonMaterial({
+            color: old.color || new THREE.Color(0xffffff),
+            map: old.map || null,
+            gradientMap: gradient,
+            transparent: old.transparent,
+            opacity: old.opacity,
+            alphaTest: old.alphaTest,
+            side: old.side,
+        });
+
+        // If TypeScript complains about flatShading, cast to any to force the bool.
+        // We want this FALSE for capsules so shadows wrap smoothly.
+        (toonMat as any).flatShading = false;
+
+        return toonMat;
+    }
 }

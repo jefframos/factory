@@ -82,6 +82,37 @@ export class TruckMover {
         });
     }
 
+    public rotateForward(): void {
+        this.applyAirRotation(1);
+    }
+
+    /**
+     * Tilts the truck nose-up (counter-clockwise)
+     */
+    public rotateBackward(): void {
+        this.applyAirRotation(-1);
+    }
+
+    /**
+     * Applies rotational torque to the chassis.
+     * @param direction 1 for forward (CW), -1 for backward (CCW)
+     */
+    private applyAirRotation(direction: number): void {
+        // We usually only want rotation in the air, or with reduced power on ground
+        // but for arcade feel, we'll allow it anytime or check !isGrounded
+        const rotationPower = 0.1; // Adjust this for "snappiness"
+        const chassis = this.truck.body;
+
+        // Apply torque proportional to mass so heavier trucks don't feel "stiff"
+        chassis.torque += direction * rotationPower * chassis.mass;
+
+        // Optional: Dampen existing angular velocity if trying to rotate the opposite way
+        // This makes the controls feel more responsive/snappy.
+        if (Math.sign(chassis.angularVelocity) !== Math.sign(direction)) {
+            Body.setAngularVelocity(chassis, chassis.angularVelocity * 0.95);
+        }
+    }
+
     public brake(): void {
         const bw = this.getPartBody(CarPart.BACK_WHEEL);
         const fw = this.getPartBody(CarPart.FRONT_WHEEL);

@@ -15,7 +15,9 @@ export class BendService {
      * Injects the bend logic into any Three.js material
      */
     public static applyBend(material: THREE.Material) {
+        const previousOnBeforeCompile = material.onBeforeCompile;
         material.onBeforeCompile = (shader) => {
+            previousOnBeforeCompile(shader);
             shader.uniforms.uBendOrigin = BendService.uniforms.uBendOrigin;
             shader.uniforms.uBendAmount = BendService.uniforms.uBendAmount;
 

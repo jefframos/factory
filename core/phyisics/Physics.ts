@@ -1,4 +1,5 @@
-import { Body, Constraint, Engine, World } from 'matter-js';
+import { Body, Common, Constraint, Engine, World } from 'matter-js';
+import * as decomp from 'poly-decomp';
 import { PhysicsEventManager } from './core/PhysicsEventManager';
 
 export interface IPhysicsSettings {
@@ -22,6 +23,7 @@ export default class Physics {
      */
     public static init(settings?: IPhysicsSettings): void {
         // Create engine with iteration/sleep settings
+        Common.setDecomp(decomp);
         this._engine = Engine.create({
             enableSleeping: settings?.enableSleep ?? true,
             positionIterations: settings?.positionIterations ?? 6,

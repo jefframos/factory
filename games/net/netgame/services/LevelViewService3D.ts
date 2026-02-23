@@ -1,9 +1,11 @@
-import { Bodies, Vertices } from 'matter-js';
+import { PhysicsBodyFactory } from '@core/phyisics/core/PhysicsBodyFactory';
 import * as THREE from 'three';
 import { MaterialUtils } from '../../environment/MaterialUtils';
 import { LevelConfig, LevelObject } from '../level/LevelTypes';
 import { CarEntity } from '../truck/CarEntity';
 import { BendService } from './BendService';
+import { GeometryFactory3D } from './GeometryFactory3D';
+import { StyleService } from './StyleService';
 
 export class LevelViewService3D {
     private meshes: Set<THREE.Mesh> = new Set();
@@ -45,97 +47,108 @@ export class LevelViewService3D {
 
         return false;
     }
-    private createMesh(obj: LevelObject): THREE.Mesh | null {
-        let geometry: THREE.BufferGeometry;
+    private createMesh(obj: LevelObject): THREE.Object3D | null {
+        let rootObject: THREE.Object3D;
         const color = obj.debugColor || obj.color || 0x7CFF01;
-
-        // Determine if it's a sensor for material properties later
         const isSensor = obj.type === 'sensor';
+
+        // Use a property from LevelObject, or default to smooth
+        const isSmooth = obj.isSmooth !== undefined ? obj.isSmooth : true;
 
         switch (obj.type) {
             case 'sensor':
-            case 'box':
-                const width = obj.width || 100;
-                const height = obj.height || 100;
-                const segmentsW = Math.max(1, Math.floor(width / this.SEGMENT_DENSITY));
-                const segmentsH = Math.max(1, Math.floor(height / this.SEGMENT_DENSITY));
-
-                geometry = new THREE.BoxGeometry(
-                    width, height, this.DEPTH,
-                    segmentsW, segmentsH, 1
-                );
+            case 'box': {
+                const geometry = GeometryFactory3D.createBox(obj.width || 100, obj.height || 100, this.DEPTH, isSmooth);
+                const material = new THREE.MeshStandardMaterial({ color, transparent: isSensor, opacity: isSensor ? 0.3 : 1.0 });
+                rootObject = new THREE.Mesh(geometry, material);
                 break;
+            }
 
-            case 'circle':
-                const depthSegments = Math.max(1, Math.floor(this.DEPTH / this.SEGMENT_DENSITY));
-                geometry = new THREE.CylinderGeometry(
-                    obj.radius || 30,
-                    obj.radius || 30,
-                    this.DEPTH,
-                    32,
-                    depthSegments
-                );
-                // Bake the rotation into geometry vertices so the bend shader
-                // sees them already oriented correctly in world space.
-                geometry.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI / 2));
+            case 'circle': {
+                const geometry = GeometryFactory3D.createCircle(obj.radius || 30, this.DEPTH, isSmooth);
+                const material = new THREE.MeshStandardMaterial({ color, transparent: isSensor, opacity: isSensor ? 0.3 : 1.0 });
+                rootObject = new THREE.Mesh(geometry, material);
                 break;
+            }
 
-            case 'polygon':
+            case 'polygon': {
                 if (!obj.vertices || obj.vertices.length < 3) return null;
+                const physicsData = PhysicsBodyFactory.createPolygon(obj.x, obj.y, obj.vertices);
+                const group = new THREE.Group();
 
-                // 1. Create a dummy body to get the Matter-calculated vertices
-                // Matter.js shifts vertices to center them around the mass center
-                const tempBody = Bodies.fromVertices(0, 0, [obj.vertices]);
-
-                // 2. Map those vertices to local coordinates relative to the body position
-                const centroid = Vertices.centre(obj.vertices as any);
-
-                const relativeVertices = tempBody.vertices.map(v => ({
-                    x: v.x - tempBody.position.x + centroid.x,
-                    y: v.y - tempBody.position.y + centroid.y
-                }));
-
-
-
-                // 3. Build geometry using these specific offsets
-                geometry = this.createPolygonGeometry(relativeVertices);
-
-                // CRITICAL: DO NOT use geometry.center() here anymore. 
-                // The vertices are already centered by Matter-js logic.
+                physicsData.decomposedParts.forEach(partVertices => {
+                    const geometry = GeometryFactory3D.createPolygon(partVertices, this.DEPTH, isSmooth);
+                    const material = new THREE.MeshStandardMaterial({ color, transparent: isSensor, opacity: isSensor ? 0.3 : 1.0 });
+                    group.add(new THREE.Mesh(geometry, material));
+                });
+                rootObject = group;
                 break;
-
-            default:
-                return null;
+            }
+            default: return null;
         }
 
-        const material = new THREE.MeshStandardMaterial({
-            color: color,
-            transparent: isSensor,
-            opacity: isSensor ? 0.3 : 1.0
-        });
-
-        const mesh = new THREE.Mesh(geometry, material);
-
-        // 1. APPLY TOON FIRST (This creates a new material)
-        MaterialUtils.applyToModel(mesh, MaterialUtils.convertToToon);
-
-        // 2. APPLY BEND TO THE NEW MATERIAL(S)
-        mesh.traverse((child) => {
+        // Apply Shaders
+        MaterialUtils.applyToModel(rootObject, MaterialUtils.convertToUnlit);
+        rootObject.traverse((child) => {
             if ((child as THREE.Mesh).isMesh) {
-                const m = child as THREE.Mesh;
-                if (Array.isArray(m.material)) {
-                    m.material.forEach(mat => BendService.applyBend(mat));
-                } else {
-                    BendService.applyBend(m.material);
-                }
+                const mat = (child as THREE.Mesh).material as THREE.Material;
+                StyleService.applyStyle(mat);
+                BendService.applyBend(mat);
             }
         });
 
-
-        return mesh;
+        return rootObject;
     }
 
-    private createPolygonGeometry(vertices: { x: number, y: number }[]): THREE.ExtrudeGeometry {
+    private createPolygonGeometry(vertices: { x: number, y: number }[], radius: number = 10): THREE.ExtrudeGeometry {
+        const shape = new THREE.Shape();
+        const len = vertices.length;
+
+        // We use a helper to draw the path with rounded corners
+        // Note: We flip Y to -Y to match your coordinate mapping
+        for (let i = 0; i < len; i++) {
+            const p1 = vertices[i];
+            const p2 = vertices[(i + 1) % len];
+            const p3 = vertices[(i + 2) % len];
+
+            // 1. Calculate the vectors for the two edges meeting at p2
+            const v1x = p1.x - p2.x;
+            const v1y = -p1.y - (-p2.y);
+            const v2x = p3.x - p2.x;
+            const v2y = -p3.y - (-p2.y);
+
+            // 2. Normalize and apply radius
+            const d1 = Math.sqrt(v1x * v1x + v1y * v1y);
+            const d2 = Math.sqrt(v2x * v2x + v2y * v2y);
+
+            // Ensure radius isn't larger than half the edge length
+            const r = Math.min(radius, d1 / 2, d2 / 2);
+
+            const startX = p2.x + (v1x / d1) * r;
+            const startY = -p2.y + (v1y / d1) * r;
+            const endX = p2.x + (v2x / d2) * r;
+            const endY = -p2.y + (v2y / d2) * r;
+
+            // 3. Draw to the start of the curve, then curve to the end of the corner
+            if (i === 0) shape.moveTo(startX, startY);
+            else shape.lineTo(startX, startY);
+
+            shape.quadraticCurveTo(p2.x, -p2.y, endX, endY);
+        }
+
+        shape.closePath();
+
+        const extrudeSteps = Math.max(1, Math.floor(this.DEPTH / this.SEGMENT_DENSITY));
+        return new THREE.ExtrudeGeometry(shape, {
+            depth: this.DEPTH,
+            steps: extrudeSteps,
+            bevelEnabled: true,
+            bevelThickness: 2,
+            bevelSize: 2,
+            bevelSegments: 3,
+        }).translate(0, 0, -this.DEPTH / 2);
+    }
+    private createPolygonGeometrySimple(vertices: { x: number, y: number }[]): THREE.ExtrudeGeometry {
         const shape = new THREE.Shape();
 
         // Vertices are already relative to the center of mass

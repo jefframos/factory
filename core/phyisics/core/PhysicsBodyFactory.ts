@@ -6,6 +6,7 @@ export interface BodyDescription {
     debugGraphic: PIXI.Graphics;
     centroidOffset?: Vector;
     correctedVertices?: Vector[];
+    decomposedParts?: Vector[][];
 }
 
 export class PhysicsBodyFactory {
@@ -63,39 +64,42 @@ export class PhysicsBodyFactory {
 
     // PhysicsBodyFactory.ts
 
+    /**
+ * Creates a Matter.js body from vertices (supporting concave shapes)
+ * and generates a matching PIXI.Graphics object.
+ */
+    /**
+ * Creates a Matter.js body from vertices with automatic 
+ * spawn-position compensation to keep the body at (x, y).
+ */
+
     public static createPolygon(x: number, y: number, vertices: Vector[], options?: any, debugColor?: number): BodyDescription {
+        // 1. Create the body at 0,0 first to find the Matter-calculated Center of Mass
+        const tempBody = Bodies.fromVertices(0, 0, [vertices], options);
+        const comOffset = { x: tempBody.position.x, y: tempBody.position.y };
 
-        // 1. Create at origin to measure what Matter does
-        const testBody = Bodies.fromVertices(0, 0, [vertices], options);
-
-        // 2. Matter moved the body from (0,0) to wherever the CoM is
-        //    This is the offset Matter ALWAYS applies to these vertices
-        const comOffsetX = testBody.position.x;
-        const comOffsetY = testBody.position.y;
-        // 3. To compensate: spawn at (x - comOffset) so Matter shifts it TO (x, y)
-        const spawnX = x - comOffsetX;
-        const spawnY = y - comOffsetY;
-
+        const spawnX = x - comOffset.x
+        const spawnY = y - comOffset.y
+        // 2. Create the real body at the compensated position so it 'lands' at (x,y)
         const body = Bodies.fromVertices(spawnX, spawnY, [vertices], options);
-
         const centroid = Vertices.centre(vertices as any);
 
         body.position.x = spawnX - centroid.x
         body.position.y = spawnY - centroid.y
+        // 3. Extract the 'Source of Truth' vertices
+        // We map every part (convex sub-polygon) to be relative to the body's center
+        const decomposedParts = body.parts.length > 1
+            ? body.parts.slice(1).map(part => part.vertices.map(v => ({ x: v.x - body.position.x, y: v.y - body.position.y })))
+            : [body.vertices.map(v => ({ x: v.x - body.position.x, y: v.y - body.position.y }))];
 
-        const correctedVertices = body.vertices.map(v => ({
-            x: v.x - body.position.x,
-            y: v.y - body.position.y
-        }));
-
-        const color = debugColor ?? options?.debugColor ?? 0x00FF00;
+        // 4. Create PIXI Debug Graphic (Optional, uses the same truth)
         const gfx = new PIXI.Graphics();
-        gfx.lineStyle(2, color);
-        gfx.beginFill(color, 0.2);
-        gfx.drawPolygon(correctedVertices.flatMap(v => [v.x, v.y]));
+        const color = debugColor ?? 0x00FF00;
+        gfx.lineStyle(2, color).beginFill(color, 0.2);
+        decomposedParts.forEach(path => gfx.drawPolygon(path));
         gfx.endFill();
 
-        return { body, debugGraphic: gfx, correctedVertices, centroidOffset: { x: comOffsetX, y: comOffsetY } };
+        return { body, debugGraphic: gfx, decomposedParts, centroidOffset: comOffset };
     }
     /**
      * Calculates the geometric centroid of a polygon from raw vertices.

@@ -26,6 +26,9 @@ export class Game {
     private lastTime: number = performance.now();
     private stats?: Stats;
 
+    private lastWindowWidth: number = 0;
+    private lastWindowHeight: number = 0;
+
     // Screen data
     static renderer: PIXI.Renderer;
     static APP: PIXI.Application;
@@ -101,6 +104,9 @@ export class Game {
             document.body.appendChild(this.stats.dom);
         }
 
+        this.lastWindowWidth = window.innerWidth;
+        this.lastWindowHeight = window.innerHeight;
+
         this.app.ticker.add(this.loop, this);
 
         window.addEventListener('resize', this.onResize.bind(this));
@@ -112,6 +118,13 @@ export class Game {
     }
     private loop() {
         this.stats?.begin();
+
+        if (window.innerWidth !== this.lastWindowWidth || window.innerHeight !== this.lastWindowHeight) {
+            this.lastWindowWidth = window.innerWidth;
+            this.lastWindowHeight = window.innerHeight;
+            this.onResize();
+        }
+
         const now = performance.now();
         const deltaMS = now - this.lastTime;
         this.lastTime = now;

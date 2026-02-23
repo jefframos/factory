@@ -1,38 +1,43 @@
-import { TruckMover } from "games/net/netgame/services/TruckMover";
+import { TruckMover } from "../services/TruckMover";
+import { InputBinder, InputMode } from "./InputBinder";
 
 export class InputService {
-    private keys: Record<string, boolean> = {};
-    private mover: TruckMover | null = null; // Target the mover instead
+    private binder: InputBinder;
+    private mover: TruckMover | null = null;
 
     constructor() {
-        window.addEventListener('keydown', (e) => this.keys[e.code] = true);
-        window.addEventListener('keyup', (e) => this.keys[e.code] = false);
+        this.binder = new InputBinder();
+
+        // Bindings are created once, but they check the current mover every frame
+        this.binder.bind(['ArrowUp', 'KeyW'], InputMode.HOLD, () => {
+            this.mover?.moveForward();
+        });
+
+        this.binder.bind(['ArrowDown', 'KeyS'], InputMode.HOLD, () => {
+            this.mover?.moveBackward();
+        });
+
+        this.binder.bind(['ArrowRight', 'KeyD'], InputMode.HOLD, () => {
+            this.mover?.rotateForward();
+        });
+
+        this.binder.bind(['ArrowLeft', 'KeyA'], InputMode.HOLD, () => {
+            this.mover?.rotateBackward();
+        });
+
+        this.binder.bind('Space', InputMode.PRESSED, () => {
+            this.mover?.jump();
+        });
     }
 
-    public setMover(mover: TruckMover) {
+    /**
+     * Re-inserts the ability to change the active entity
+     */
+    public setMover(mover: TruckMover): void {
         this.mover = mover;
     }
 
-    public update() {
-        if (!this.mover) return;
-
-        if (this.keys['ArrowRight'] || this.keys['KeyD']) {
-            this.mover.moveForward();
-        } else if (this.keys['ArrowLeft'] || this.keys['KeyA']) {
-            this.mover.moveBackward();
-        }
-
-        // Use a specific check for jump
-        if (this.keys['Space'] || this.keys['ArrowUp'] || this.keys['KeyW']) {
-            this.mover.jump();
-            // Optional: clear the key so they can't "fly" by holding space
-            this.keys['Space'] = false;
-            this.keys['ArrowUp'] = false;
-            this.keys['KeyW'] = false;
-        }
-
-        if (this.keys['KeyS']) {
-            this.mover.brake();
-        }
+    public update(): void {
+        this.binder.update();
     }
 }
