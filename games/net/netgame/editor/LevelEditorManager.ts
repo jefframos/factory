@@ -2,16 +2,21 @@ import * as PIXI from 'pixi.js';
 import { LevelDataManager } from "../level/LevelDataManager";
 import { LevelConfig, LevelObject } from "../level/LevelTypes";
 import { EditorEntityWrapper } from "./EditorEntityWrapper";
+import { EditorToolbarUI } from './EditorToolbarUI';
 import { LevelPropertiesUI } from "./LevelPropertiesUI";
 import { LevelEditorViewService } from "./service/LevelEditorViewService";
+import { PolygonEditorService } from './service/PolygonEditorService';
 import { TransformGizmoService } from "./service/TransformGizmoService";
 
 export class LevelEditorManager {
     private selectedObject: EditorEntityWrapper | null = null;
+    ;
     constructor(
         private viewService: LevelEditorViewService,
         private propsUI: LevelPropertiesUI,
-        private gizmo: TransformGizmoService
+        private toolbarUI: EditorToolbarUI,
+        private gizmo: TransformGizmoService,
+        private polyEditor: PolygonEditorService
     ) {
         this.registerCallbacks();
     }
@@ -27,9 +32,23 @@ export class LevelEditorManager {
         this.gizmo.onTransformUpdate = (data) => {
             this.propsUI.showObjectProperties(data);
         };
+        this.toolbarUI.onAddObject = (type) => this.handleAddObject(type);
         // Wire up the UI events directly to this manager's methods
         this.propsUI.onAddRandomBox = () => this.handleAddRandomBox();
         this.propsUI.onDeleteSelected = () => this.deleteCurrentObject();
+
+        this.propsUI.onPropertyChanged = (prop, value) => {
+            if (this.selectedObject) {
+                // Update the data object directly
+                (this.selectedObject.data as any)[prop] = value;
+
+                // Re-render the wrapper visuals instantly
+                this.selectedObject.refresh();
+
+                // Update Gizmo to match new size/pos
+                this.gizmo.draw();
+            }
+        };
 
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -42,8 +61,15 @@ export class LevelEditorManager {
     }
     private selectObject(wrapper: EditorEntityWrapper, event: PIXI.FederatedPointerEvent) {
         this.selectedObject = wrapper;
-        // CRITICAL: Pass 'event' here
-        this.gizmo.select(wrapper, event);
+
+        if (wrapper.data.type === 'polygon') {
+            this.gizmo.select(null); // Disable box gizmo
+            this.polyEditor.activate(wrapper, event);
+        } else {
+            this.polyEditor.activate(null); // Disable poly handles
+            this.gizmo.select(wrapper, event);
+        }
+
         this.propsUI.showObjectProperties(wrapper.data);
     }
     private deleteCurrentObject() {
@@ -67,6 +93,11 @@ export class LevelEditorManager {
         this.viewService.buildLevel(config);
 
         this.selectedObject = null;
+    }
+    public onSave() {
+        if (this.selectedObject && this.selectedObject.data.type === 'polygon') {
+            this.selectedObject.refresh();
+        }
     }
     /**
      * Called by the Scene when a selection changes
@@ -103,6 +134,30 @@ export class LevelEditorManager {
         config.objects.push(newBox);
         this.viewService.buildLevel(config);
         this.propsUI.updateStats(config.objects.length);
+    }
+
+    private handleAddObject(type: 'box' | 'circle' | 'polygon' | 'sensor'): void {
+        const config = this.viewService.getCurrentConfig();
+        if (!config) return;
+
+        const newObj: LevelObject = {
+            type: type,
+            x: 400, // Spawn in center
+            y: 300,
+            label: `new_${type}`,
+            isStatic: true
+        };
+
+        // Initialize type-specific defaults
+        if (type === 'circle') newObj.radius = 40;
+        else if (type === 'polygon') newObj.vertices = [{ x: 0, y: -50 }, { x: 50, y: 50 }, { x: -50, y: 50 }];
+        else {
+            newObj.width = 100;
+            newObj.height = 100;
+        }
+
+        config.objects.push(newObj);
+        this.viewService.buildLevel(config); // Rebuild visuals
     }
 
     public loadLevel(config: LevelConfig): void {

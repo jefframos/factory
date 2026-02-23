@@ -4,10 +4,12 @@ import * as PIXI from 'pixi.js';
 import { LevelDataManager, WorldDefinition } from "../level/LevelDataManager";
 import { EntitySceneService } from "../services/EntitySceneService";
 import { EditorDomUI } from "./EditorDomUI";
+import { EditorToolbarUI } from "./EditorToolbarUI";
 import { LevelEditorManager } from "./LevelEditorManager";
 import { LevelPropertiesUI } from "./LevelPropertiesUI";
 import { EditorCameraService } from "./service/EditorCameraService";
 import { LevelEditorViewService } from "./service/LevelEditorViewService";
+import { PolygonEditorService } from "./service/PolygonEditorService";
 import { TransformGizmoService } from "./service/TransformGizmoService";
 
 export default class LevelEditorScene extends GameScene {
@@ -17,6 +19,8 @@ export default class LevelEditorScene extends GameScene {
     private entityService!: EntitySceneService;
     private levelService!: LevelEditorViewService;
     private editorManager!: LevelEditorManager;
+    private toolbarUI!: EditorToolbarUI;
+
 
     // UIs
     private manifestUI!: EditorDomUI;
@@ -48,13 +52,17 @@ export default class LevelEditorScene extends GameScene {
         this.manifestUI = new EditorDomUI();
         // We nest the Properties UI root inside the manifest UI root for shared z-indexing
         this.propsUI = new LevelPropertiesUI(this.manifestUI.root);
+        this.toolbarUI = new EditorToolbarUI(this.manifestUI.root);
 
-        const gixmos = new TransformGizmoService(this.worldContainer)
+        const gizmos = new TransformGizmoService(this.worldContainer)
+        const polyEditor = new PolygonEditorService(this.worldContainer);
         // 4. Initialize the Manager (The Brain)
         this.editorManager = new LevelEditorManager(
             this.levelService,
             this.propsUI,
-            gixmos
+            this.toolbarUI,
+            gizmos,
+            polyEditor
         );
 
         // 5. Setup Event Listeners
@@ -177,8 +185,10 @@ export default class LevelEditorScene extends GameScene {
     private async handleSave() {
         this.manifestUI.setStatus("Saving...", 'rgba(35, 130, 199, 0.13)');
 
+        this.editorManager.onSave();
         const worlds = LevelDataManager.instance.worlds;
         const worldsData: Record<string, any> = {};
+
 
         // Prepare payload for the server
         const manifest = {

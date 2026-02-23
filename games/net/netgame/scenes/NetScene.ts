@@ -258,6 +258,7 @@ export default class NetScene extends GameScene {
         this.threeCameraService.elevationAngle = 0.52;
         if (Game.debugParams.cam) {
 
+            this.threeCameraService.distance = 800;
             this.threeCameraService.orbitAngle = 0//-1.12; // Slight angle so we see the side and front
             this.threeCameraService.elevationAngle = 0//0.52;
         }
@@ -271,7 +272,7 @@ export default class NetScene extends GameScene {
             this.threeCameraService,
             ['distance'],
             [100, 2000],
-            "Follow Distance",
+            "Distance ",
             folder
         );
 

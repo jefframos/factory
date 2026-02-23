@@ -1,74 +1,64 @@
-import Physics from "@core/phyisics/Physics";
 import { BasePhysicsEntity } from "@core/phyisics/entities/BaseEntity";
+import Physics from "@core/phyisics/Physics";
 import { Body } from "matter-js";
 import { ModifierDescriptor, ModifierTrigger } from "../level/LevelTypes";
 import { CarRegistry } from "../truck/CarRegistry";
 
 export class ModifierService {
-    /**
-     * Attaches logic to an entity based on its modifier descriptor
-     */
     public static register(entity: BasePhysicsEntity, mod: ModifierDescriptor): void {
         const body = entity.body;
+        const triggerMap = {
+            [ModifierTrigger.ON_START]: Physics.events.onStart,
+            [ModifierTrigger.ON_ACTIVE]: Physics.events.onActive,
+            [ModifierTrigger.ON_END]: Physics.events.onEnd,
+        };
 
-
-        mod.trigger = mod.trigger ?? ModifierTrigger.ON_START;
-        console.log(`Registering ${mod.type} on body ${entity.body.id} - ${mod.trigger}`);
-
-        switch (mod.trigger) {
-            case ModifierTrigger.ON_START:
-                Physics.events.onStart(body, (other) => this.execute(entity, other, mod));
-                break;
-            case ModifierTrigger.ON_ACTIVE:
-                Physics.events.onActive(body, (other) => this.execute(entity, other, mod));
-                break;
-            case ModifierTrigger.ON_END:
-                Physics.events.onEnd(body, (other) => this.execute(entity, other, mod));
-                break;
+        const registerFn = triggerMap[mod.trigger];
+        if (registerFn) {
+            registerFn(body, (other) => this.execute(entity, other, mod));
         }
     }
 
     private static execute(source: BasePhysicsEntity, other: Body, mod: ModifierDescriptor): void {
-        // Always target the main body (Chassis) if a part (Wheel) hits the modifier
         const target = CarRegistry.resolveToTruck(other);
-        const force = mod.force || 1;
-        console.log(force)
+        if (!target) return;
 
-        switch (mod.type) {
-            case 'boost':
-                const dir = mod.direction || { x: 1, y: 0 };
-                if (mod.trigger === ModifierTrigger.ON_ACTIVE) {
-                    // Instead of setting or applying force, we 'nudge' the velocity
-                    // every frame. This creates smooth, powerful acceleration.
-                    Body.setVelocity(target, {
-                        x: target.velocity.x + (dir.x * force),
-                        y: target.velocity.y + (dir.y * force)
-                    });
-                } else {
-                    // Instant kick for ON_START
-                    Body.setVelocity(target, {
-                        x: target.velocity.x + (dir.x * force * 10),
-                        y: target.velocity.y + (dir.y * force * 10)
-                    });
-                }
-                break;
+        let fx = mod.force.x;
+        let fy = mod.force.y;
+        const multiplier = mod.multiplier ?? 1;
 
-            case 'trampoline':
-                // Launch the whole assembly upward
+        // Handle Radial (Old "Bouncer" logic)
+        if (mod.useRadialDirection) {
+            const angle = Math.atan2(
+                target.position.y - source.body.position.y,
+                target.position.x - source.body.position.x
+            );
+            // We use the magnitude of the provided force vector
+            const magnitude = Math.sqrt(fx * fx + fy * fy);
+            fx = Math.cos(angle) * magnitude;
+            fy = Math.sin(angle) * magnitude;
+        }
+
+        const finalForce = {
+            x: fx * multiplier,
+            y: fy * multiplier
+        };
+
+        // Apply based on Mode
+        switch (mod.mode) {
+            case 'add':
                 Body.setVelocity(target, {
-                    x: target.velocity.x,
-                    y: -force
+                    x: target.velocity.x + finalForce.x,
+                    y: target.velocity.y + finalForce.y
                 });
                 break;
-
-            case 'bouncer':
-                const angle = Math.atan2(
-                    target.position.y - source.body.position.y,
-                    target.position.x - source.body.position.x
-                );
+            case 'set':
+                Body.setVelocity(target, finalForce);
+                break;
+            case 'multiply':
                 Body.setVelocity(target, {
-                    x: Math.cos(angle) * force,
-                    y: Math.sin(angle) * force
+                    x: target.velocity.x * finalForce.x,
+                    y: target.velocity.y * finalForce.y
                 });
                 break;
         }

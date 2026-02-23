@@ -160,7 +160,8 @@ export class LevelService {
                 return circle;
             case 'polygon':
                 const poly = Pool.instance.getElement(PolygonEntity) as PolygonEntity;
-                poly.build({ x: 0, y: 0, vertices: obj.vertices || [], layer, debugColor });
+                console.log(obj)
+                poly.build({ x: obj.x, y: obj.y, vertices: obj.vertices || [], layer, debugColor });
                 return poly;
             default:
                 return null;

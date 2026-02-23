@@ -1,4 +1,4 @@
-import { Bodies } from 'matter-js';
+import { Bodies, Vertices } from 'matter-js';
 import * as THREE from 'three';
 import { MaterialUtils } from '../../environment/MaterialUtils';
 import { LevelConfig, LevelObject } from '../level/LevelTypes';
@@ -88,10 +88,14 @@ export class LevelViewService3D {
                 const tempBody = Bodies.fromVertices(0, 0, [obj.vertices]);
 
                 // 2. Map those vertices to local coordinates relative to the body position
+                const centroid = Vertices.centre(obj.vertices as any);
+
                 const relativeVertices = tempBody.vertices.map(v => ({
-                    x: v.x - tempBody.position.x,
-                    y: v.y - tempBody.position.y
+                    x: v.x - tempBody.position.x + centroid.x,
+                    y: v.y - tempBody.position.y + centroid.y
                 }));
+
+
 
                 // 3. Build geometry using these specific offsets
                 geometry = this.createPolygonGeometry(relativeVertices);

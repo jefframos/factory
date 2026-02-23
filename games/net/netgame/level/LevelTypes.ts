@@ -20,7 +20,6 @@ export interface LevelSnapshot {
     // Future fields like: starCount: number, damageTaken: number, etc.
 }
 
-export type ModifierType = 'boost' | 'trampoline' | 'bouncer';
 
 export enum ModifierTrigger {
     ON_START = 'start',   // Once when entering
@@ -29,10 +28,15 @@ export enum ModifierTrigger {
 }
 
 export interface ModifierDescriptor {
-    type: 'boost' | 'trampoline' | 'bouncer';
     trigger: ModifierTrigger;
-    force?: number;
-    direction?: { x: number, y: number };
+    // How the force is applied
+    mode: 'add' | 'set' | 'multiply';
+    // The force vector to apply
+    force: { x: number; y: number };
+    // If true, we calculate the direction from the center of the modifier to the player
+    useRadialDirection?: boolean;
+    // Optional multiplier for specific triggers (like your old 10x kick)
+    multiplier?: number;
 }
 
 export interface LevelConfig {

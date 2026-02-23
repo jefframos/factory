@@ -1,43 +1,55 @@
-import { Body, Events, IEventCollision } from 'matter-js';
+import { Body, Engine, Events, IEventCollision, Pair } from 'matter-js';
 
-export type CollisionCallback = (otherBody: Body, pair: Matter.Pair) => void;
+export type CollisionCallback = (otherBody: Body, pair: Pair) => void;
 
 export class PhysicsEventManager {
     private startListeners = new Map<number, CollisionCallback[]>();
-    private activeListeners = new Map<number, CollisionCallback[]>(); // New
+    private activeListeners = new Map<number, CollisionCallback[]>();
     private endListeners = new Map<number, CollisionCallback[]>();
 
-    constructor(engine: Matter.Engine) {
+    constructor(engine: Engine) {
+        // We use arrow functions here in the constructor too 
+        // to ensure 'process' keeps its context.
         Events.on(engine, 'collisionStart', (e) => this.process(e, this.startListeners));
-        Events.on(engine, 'collisionActive', (e) => this.process(e, this.activeListeners)); // New
+        Events.on(engine, 'collisionActive', (e) => this.process(e, this.activeListeners));
         Events.on(engine, 'collisionEnd', (e) => this.process(e, this.endListeners));
     }
 
-    private process(event: IEventCollision<Matter.Engine>, registry: Map<number, CollisionCallback[]>) {
+    private process(event: IEventCollision<Engine>, registry: Map<number, CollisionCallback[]>) {
         event.pairs.forEach(pair => {
-            registry.get(pair.bodyA.id)?.forEach(cb => cb(pair.bodyB, pair));
-            registry.get(pair.bodyB.id)?.forEach(cb => cb(pair.bodyA, pair));
+            const callbacksA = registry.get(pair.bodyA.id);
+            if (callbacksA) callbacksA.forEach(cb => cb(pair.bodyB, pair));
+
+            const callbacksB = registry.get(pair.bodyB.id);
+            if (callbacksB) callbacksB.forEach(cb => cb(pair.bodyA, pair));
         });
     }
 
-    public onStart(body: Body, callback: CollisionCallback) {
-        if (!this.startListeners.has(body.id)) this.startListeners.set(body.id, []);
-        this.startListeners.get(body.id)!.push(callback);
+    // --- CHANGED TO ARROW FUNCTIONS BELOW ---
+    // This ensures 'this' always refers to the PhysicsEventManager instance
+
+    public onStart = (body: Body, callback: CollisionCallback) => {
+        this.addListener(this.startListeners, body, callback);
     }
 
-    public onEnd(body: Body, callback: CollisionCallback) {
-        if (!this.endListeners.has(body.id)) this.endListeners.set(body.id, []);
-        this.endListeners.get(body.id)!.push(callback);
-    }
-    public onActive(body: Body, callback: CollisionCallback) {
-        if (!this.activeListeners.has(body.id)) this.activeListeners.set(body.id, []);
-        this.activeListeners.get(body.id)!.push(callback);
+    public onActive = (body: Body, callback: CollisionCallback) => {
+        this.addListener(this.activeListeners, body, callback);
     }
 
-    /** Clean up all events for a specific body */
-    public clear(body: Body) {
+    public onEnd = (body: Body, callback: CollisionCallback) => {
+        this.addListener(this.endListeners, body, callback);
+    }
+
+    private addListener(map: Map<number, CollisionCallback[]>, body: Body, callback: CollisionCallback) {
+        if (!map.has(body.id)) {
+            map.set(body.id, []);
+        }
+        map.get(body.id)!.push(callback);
+    }
+
+    public clear = (body: Body) => {
         this.startListeners.delete(body.id);
-        this.endListeners.delete(body.id);
         this.activeListeners.delete(body.id);
+        this.endListeners.delete(body.id);
     }
 }
