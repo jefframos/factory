@@ -4,45 +4,97 @@ export class GeometryFactory3D {
     /**
      * Creates a box. If smooth is true, it uses an extruded rounded rect.
      */
-    public static createBox(w: number, h: number, depth: number, isSmooth: boolean): THREE.BufferGeometry {
-        if (!isSmooth) {
-            return new THREE.BoxGeometry(w, h, depth, Math.max(1, w / 50), Math.max(1, h / 50), 1);
-        }
+    public static createSubdividedBox(w: number, h: number, d: number, subdivisions: number = 40): THREE.BufferGeometry {
+        // BoxGeometry(width, height, depth, widthSegments, heightSegments, depthSegments)
+        // We subdivide the X and Y heavily because your shader bends those axes.
+        const geometry = new THREE.BoxGeometry(
+            w, h, d,
+            subdivisions, // Internal points along X
+            subdivisions, // Internal points along Y
+            1             // We usually don't need to bend the Z thickness for 2D-style play
+        );
 
-        const radius = Math.min(w, h) * 0.15; // 15% rounding
-        const shape = new THREE.Shape();
-        const x = -w / 2, y = -h / 2;
-
-        shape.moveTo(x, y + radius);
-        shape.lineTo(x, y + h - radius);
-        shape.quadraticCurveTo(x, y + h, x + radius, y + h);
-        shape.lineTo(x + w - radius, y + h);
-        shape.quadraticCurveTo(x + w, y + h, x + w, y + h - radius);
-        shape.lineTo(x + w, y + radius);
-        shape.quadraticCurveTo(x + w, y, x + w - radius, y);
-        shape.lineTo(x + radius, y);
-        shape.quadraticCurveTo(x, y, x, y + radius);
-
-        return new THREE.ExtrudeGeometry(shape, {
-            depth: depth,
-            bevelEnabled: true,
-            bevelThickness: 4,
-            bevelSize: 2,
-            bevelSegments: 3
-        }).translate(0, 0, -depth / 2);
+        return geometry;
     }
 
+    public static createBox(w: number, h: number, depth: number, isSmooth: boolean): THREE.BufferGeometry {
+        // 1. We ALWAYS use BoxGeometry to ensure we have a grid for the Bend Shader
+        const segmentsW = Math.max(30, Math.floor(w / 10));
+        const segmentsH = Math.max(30, Math.floor(h / 10));
+
+        const geo = new THREE.BoxGeometry(w, h, depth, segmentsW, segmentsH, 1);
+
+        if (isSmooth) {
+            const radius = Math.min(w, h) * 0.15;
+            const pos = geo.attributes.position;
+            const vec = new THREE.Vector3();
+
+            // 2. "Round" the vertices manually
+            // This keeps the internal grid intact but curves the outer edges
+            for (let i = 0; i < pos.count; i++) {
+                vec.fromBufferAttribute(pos, i);
+
+                // Calculate how far the vertex is from the center "core" of the box
+                const coreW = (w / 2) - radius;
+                const coreH = (h / 2) - radius;
+
+                const dx = Math.max(0, Math.abs(vec.x) - coreW);
+                const dy = Math.max(0, Math.abs(vec.y) - coreH);
+
+                if (dx > 0 && dy > 0) {
+                    // We are in a corner region - project onto a circle
+                    const angle = Math.atan2(dy, dx);
+                    vec.x = Math.sign(vec.x) * (coreW + Math.cos(angle) * radius);
+                    vec.y = Math.sign(vec.y) * (coreH + Math.sin(angle) * radius);
+                    pos.setXY(i, vec.x, vec.y);
+                }
+            }
+            pos.needsUpdate = true;
+        }
+
+        geo.computeVertexNormals();
+        return geo;
+    }
+    private static finalize(geo: THREE.BufferGeometry) {
+        geo.computeVertexNormals();
+        return geo;
+    }
     /**
      * Creates a circle. Smooth uses CapsuleGeometry, Sharp uses Cylinder.
      */
     public static createCircle(radius: number, depth: number, isSmooth: boolean): THREE.BufferGeometry {
+        // 1. Create the "Polygon" (a circular shape)
+        const shape = new THREE.Shape();
+        shape.absarc(0, 0, radius, 0, Math.PI * 2, false);
+
         let geo: THREE.BufferGeometry;
+
         if (isSmooth) {
-            geo = new THREE.CapsuleGeometry(radius, depth - (radius * 0.5), 10, 64);
+            // 2. Extrude with Bevel for the "Smooth" look
+            // The bevel gives those rounded edges you're looking for
+            const extrudeSettings = {
+                depth: depth,
+                bevelEnabled: true,
+                bevelSegments: 3,     // How many steps in the curve
+                steps: 1,
+                bevelSize: radius * 0.05,    // How far out the bevel goes
+                bevelThickness: radius * 0.05, // How "deep" the rounding is
+                curveSegments: 64     // The smoothness of the circle itself
+            };
+
+            geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+
+            // Center the geometry since Extrude starts from Z=0
+            geo.center();
+            geo.rotateX(Math.PI / 2);
         } else {
+            // 3. Standard Cylinder for the "Hard" look
             geo = new THREE.CylinderGeometry(radius, radius, depth, 64, 1);
         }
+
         geo.computeVertexNormals();
+
+        // Rotate to match your previous orientation (lying on the Z axis)
         return geo.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI / 2));
     }
 
@@ -81,7 +133,8 @@ export class GeometryFactory3D {
 
         return new THREE.ExtrudeGeometry(shape, {
             depth,
-            steps: 1,
+            steps: 1, // Increase this to allow the "sides" to bend smoothly
+            curveSegments: 32, // Ensures the rounded corners have enough vertices
             bevelEnabled: true,
             bevelThickness: 2,
             bevelSize: 2,

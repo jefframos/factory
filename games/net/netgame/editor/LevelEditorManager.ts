@@ -3,7 +3,7 @@ import { LevelDataManager } from "../level/LevelDataManager";
 import { LevelConfig, LevelObject } from "../level/LevelTypes";
 import { EditorEntityWrapper } from "./EditorEntityWrapper";
 import { EditorToolbarUI } from './EditorToolbarUI';
-import { LevelPropertiesUI } from "./LevelPropertiesUI";
+import { LevelPropertiesUI } from "./dom/LevelPropertiesUI";
 import { LevelEditorViewService } from "./service/LevelEditorViewService";
 import { PolygonEditorService } from './service/PolygonEditorService';
 import { TransformGizmoService } from "./service/TransformGizmoService";

@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { LevelConfig } from '../../level/LevelTypes';
+import { ColorPaletteService } from '../../services/ColorPaletteService';
 import { EditorEntityWrapper } from '../EditorEntityWrapper';
 
 export class LevelEditorViewService {
@@ -22,14 +23,40 @@ export class LevelEditorViewService {
 
         config.objects.forEach(obj => {
             const wrapper = new EditorEntityWrapper(obj);
+
+            // Initial color resolution
+            const initialColor = ColorPaletteService.resolveViewColor(obj.view3d || {}, obj.color || 0x7CFF01);
+            this.applyTint(wrapper.view, initialColor);
+
             this.worldContainer.addChild(wrapper.view);
             this.spawnedWrappers.add(wrapper);
             this.onWrapperCreated?.(wrapper);
         });
-
-        console.log(`[EditorView] Rendered ${config.objects.length} visual objects.`);
     }
 
+    public refreshColors(): void {
+        for (const wrapper of this.spawnedWrappers) {
+            const obj = wrapper.data; // Assuming wrapper stores the original object data
+            const view = obj.view3d || {};
+
+            // Resolve the color using our hierarchy logic
+            const finalColor = ColorPaletteService.resolveViewColor(view, obj.color || 0x7CFF01);
+
+            // Apply to PIXI view (recursive check in case the wrapper has multiple sprites)
+            this.applyTint(wrapper.view, finalColor);
+        }
+    }
+    private applyTint(displayObject: PIXI.DisplayObject, color: number): void {
+        // If it's a container, check children
+        if (displayObject instanceof PIXI.Container) {
+            displayObject.children.forEach(child => this.applyTint(child, color));
+        }
+
+        // Apply tint to Sprites or Graphics
+        if (displayObject instanceof PIXI.Sprite || displayObject instanceof PIXI.Graphics) {
+            displayObject.tint = color;
+        }
+    }
     public update(): void {
         for (const wrapper of this.spawnedWrappers) {
             wrapper.update();

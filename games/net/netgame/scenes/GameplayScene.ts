@@ -80,23 +80,8 @@ export default class GameplayScene extends ThreeScene {
             (this.water.mesh.material as THREE.MeshStandardMaterial).color.setHex(data.waterColor);
         }
 
-
-        // const box = this.createBox(5000, 300, 100)
-        // box.position.y = -20
-        // this.baseGroup.add(box);
-        // MaterialUtils.applyToModel(box, MaterialUtils.convertToToon);
     }
-    public createBox(width: number, height: number, depth: number, color: number = 0x7CFF01): THREE.Mesh {
-        const geometry = new THREE.BoxGeometry(width, height, depth);
 
-        // Using your new MaterialUtils for the material!
-        const material = new THREE.MeshBasicMaterial({ color: color });
-
-        const box = new THREE.Mesh(geometry, material);
-        this.threeScene.add(box);
-
-        return box;
-    }
     public update(delta: number): void {
         if (this.water) this.water.update(delta);
 

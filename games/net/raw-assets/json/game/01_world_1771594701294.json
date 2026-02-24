@@ -11,67 +11,172 @@
       "objects": [
         {
           "type": "box",
-          "x": 807,
-          "y": 5,
+          "x": 493,
+          "y": -16,
           "width": 800,
           "height": 40,
           "isStatic": true,
-          "label": "editor_box"
+          "label": "editor_box",
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 1,
+            "restitution": 0,
+            "density": 0.001
+          },
+          "bulk": null
         },
         {
           "type": "polygon",
-          "x": 1728,
-          "y": -19,
+          "x": 1632,
+          "y": -12,
           "vertices": [
             {
               "x": 133.33333333333326,
               "y": -66.66666666666666
             },
             {
-              "x": 133.33333333333326,
-              "y": 33.33333333333333
+              "x": 132,
+              "y": 71
             },
             {
-              "x": -266.66666666666674,
-              "y": 33.33333333333333
+              "x": -269,
+              "y": 59
+            },
+            {
+              "x": -179.75539699963429,
+              "y": 16.32253933406514
+            },
+            {
+              "x": -119.49195023783432,
+              "y": 2.49158433955364
+            },
+            {
+              "x": -37.49414562751599,
+              "y": -20.230698865715283
+            },
+            {
+              "x": 51.419136480058114,
+              "y": -44.928832784485905
             }
-          ]
+          ],
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": "3",
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 1,
+            "restitution": 0,
+            "density": 0.001
+          },
+          "bulk": null
         },
         {
           "type": "box",
-          "x": 178,
-          "y": -72,
+          "x": 114,
+          "y": -77,
           "width": 666.6344676180022,
           "height": 67.15038419319444,
           "isStatic": true,
-          "label": "editor_box"
+          "label": "editor_box",
+          "view3d": {
+            "isSmooth": true,
+            "colorId": "Main",
+            "colorSlot": "1"
+          },
+          "bulk": null,
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 1,
+            "restitution": 0,
+            "density": 0.001
+          }
         },
         {
           "type": "sensor",
-          "x": -50,
-          "y": -334,
+          "x": -128,
+          "y": -261,
           "width": 60,
           "height": 200,
           "label": "start_node",
-          "debugColor": 16720418
+          "debugColor": 16720418,
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": true,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          },
+          "bulk": null
         },
         {
           "type": "sensor",
-          "x": 3121,
-          "y": -38,
+          "x": 3085,
+          "y": -91,
           "width": 60,
           "height": 200,
           "label": "finish_node",
-          "debugColor": 16720639
+          "debugColor": 16720639,
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": true,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          },
+          "bulk": null
         },
         {
           "type": "box",
-          "x": 1461,
-          "y": 33,
+          "x": 1382,
+          "y": 26,
           "width": 800,
           "height": 40,
           "isStatic": true,
-          "label": "editor_box"
+          "label": "editor_box",
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 1,
+            "restitution": 0,
+            "density": 0.001
+          },
+          "bulk": null
         },
         {
           "type": "box",
@@ -80,7 +185,22 @@
           "width": 800,
           "height": 40,
           "isStatic": true,
-          "label": "editor_box"
+          "label": "editor_box",
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 1,
+            "restitution": 0,
+            "density": 0.001
+          },
+          "bulk": null
         },
         {
           "type": "sensor",
@@ -89,12 +209,27 @@
           "width": 10000,
           "height": 200,
           "label": "deadzone",
-          "debugColor": 16720418
+          "debugColor": 16720418,
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": true,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          },
+          "bulk": null
         },
         {
           "type": "box",
-          "x": 2,
-          "y": 8,
+          "x": -319,
+          "y": -333,
           "width": 120,
           "height": 30,
           "modifier": {
@@ -105,13 +240,27 @@
               "y": -20
             },
             "useRadialDirection": false
+          },
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
           }
         },
         {
           "type": "circle",
-          "x": 703,
-          "y": -44,
-          "radius": 40,
+          "x": 1213,
+          "y": -756,
+          "radius": 73.66183601253168,
           "modifier": {
             "trigger": "start",
             "mode": "set",
@@ -120,6 +269,19 @@
               "y": 20
             },
             "useRadialDirection": true
+          },
+          "view3d": {
+            "isSmooth": true,
+            "colorSlot": "1"
+          },
+          "bulk": null,
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
           }
         },
         {
@@ -135,14 +297,29 @@
               "y": 20
             },
             "useRadialDirection": true
-          }
+          },
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": "3",
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          },
+          "bulk": null
         },
         {
           "type": "sensor",
-          "x": 308,
-          "y": -168,
-          "width": 300,
-          "height": 100,
+          "x": -58,
+          "y": -761,
+          "width": 75.1284302963777,
+          "height": 103.31723380900121,
           "modifier": {
             "trigger": "active",
             "mode": "add",
@@ -151,38 +328,100 @@
               "y": 0
             },
             "useRadialDirection": false
+          },
+          "view3d": {
+            "isSmooth": true,
+            "colorSlot": "1"
+          },
+          "bulk": null,
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
           }
         },
         {
           "type": "circle",
-          "x": 865,
-          "y": -242,
+          "x": 672,
+          "y": -734,
           "label": "new_circle",
           "isStatic": true,
-          "radius": 75.0245692463096
+          "radius": 75.0245692463096,
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": "4",
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          },
+          "interaction": {
+            "trigger": "start",
+            "type": "scale_bounce",
+            "targetScale": 1.2,
+            "duration": 200
+          },
+          "bulk": null
         },
         {
           "type": "sensor",
-          "x": 1149,
-          "y": -56,
+          "x": 1543,
+          "y": -691,
           "label": "new_sensor",
           "isStatic": true,
           "width": 100,
-          "height": 100
+          "height": 100,
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": true,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          },
+          "bulk": null
         },
         {
           "type": "box",
-          "x": 738,
-          "y": -392,
+          "x": -429,
+          "y": 60,
           "label": "new_box",
-          "isStatic": true,
+          "isStatic": false,
           "width": 100,
-          "height": 100
+          "height": 100,
+          "view3d": {
+            "isSmooth": true,
+            "colorSlot": "1"
+          },
+          "bulk": null,
+          "physics": {
+            "isStatic": false,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.9,
+            "restitution": 0.1,
+            "density": 0.1
+          }
         },
         {
           "type": "polygon",
-          "x": -220,
-          "y": -71,
+          "x": -290,
+          "y": -67,
           "label": "new_polygon",
           "isStatic": true,
           "vertices": [
@@ -214,12 +453,27 @@
               "x": 64,
               "y": -66
             }
-          ]
+          ],
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": "1",
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "bulk": null,
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
         },
         {
           "type": "polygon",
-          "x": 513,
-          "y": -60,
+          "x": 389,
+          "y": -708,
           "label": "TRI",
           "isStatic": true,
           "vertices": [
@@ -235,12 +489,26 @@
               "x": -50,
               "y": 50
             }
-          ]
+          ],
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
         },
         {
           "type": "polygon",
-          "x": 111,
-          "y": -287,
+          "x": 388,
+          "y": 55,
           "label": "new_polygon",
           "isStatic": true,
           "vertices": [
@@ -256,7 +524,74 @@
               "x": -50,
               "y": 50
             }
-          ]
+          ],
+          "view3d": {
+            "isSmooth": true,
+            "opacity": 1,
+            "color": 14514296,
+            "colorSlot": "1"
+          },
+          "isSmooth": true,
+          "opacity": 0.5,
+          "interaction": {
+            "trigger": "start",
+            "type": "scale_bounce",
+            "targetScale": 1.2
+          },
+          "bulk": null,
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
+        },
+        {
+          "type": "circle",
+          "x": 634,
+          "y": 222,
+          "label": "new_circle",
+          "isStatic": true,
+          "radius": 191.72271575490961,
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
+        },
+        {
+          "type": "circle",
+          "x": -336,
+          "y": -423,
+          "label": "new_circle",
+          "isStatic": false,
+          "radius": 40,
+          "bulk": null,
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": "2",
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": false,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
         }
       ]
     },
@@ -275,7 +610,21 @@
           "width": 150,
           "height": 40,
           "isStatic": true,
-          "label": "editor_box"
+          "label": "editor_box",
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
         },
         {
           "type": "box",
@@ -284,7 +633,21 @@
           "width": 150,
           "height": 40,
           "isStatic": true,
-          "label": "editor_box"
+          "label": "editor_box",
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
         },
         {
           "type": "box",
@@ -293,7 +656,21 @@
           "width": 150,
           "height": 40,
           "isStatic": true,
-          "label": "editor_box"
+          "label": "editor_box",
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
         },
         {
           "type": "box",
@@ -302,7 +679,21 @@
           "width": 150,
           "height": 40,
           "isStatic": true,
-          "label": "editor_box"
+          "label": "editor_box",
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
         },
         {
           "type": "box",
@@ -311,7 +702,21 @@
           "width": 150,
           "height": 40,
           "isStatic": true,
-          "label": "editor_box"
+          "label": "editor_box",
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
         },
         {
           "type": "box",
@@ -320,7 +725,21 @@
           "width": 800,
           "height": 40,
           "isStatic": true,
-          "label": "editor_box"
+          "label": "editor_box",
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
         },
         {
           "type": "box",
@@ -329,7 +748,21 @@
           "width": 800,
           "height": 40,
           "isStatic": true,
-          "label": "editor_box"
+          "label": "editor_box",
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
         },
         {
           "type": "box",
@@ -338,7 +771,21 @@
           "width": 800,
           "height": 40,
           "isStatic": true,
-          "label": "editor_box"
+          "label": "editor_box",
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
         },
         {
           "type": "sensor",
@@ -347,7 +794,21 @@
           "width": 60,
           "height": 200,
           "label": "start_node",
-          "debugColor": 16720418
+          "debugColor": 16720418,
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
         },
         {
           "type": "sensor",
@@ -356,7 +817,21 @@
           "width": 60,
           "height": 200,
           "label": "finish_node",
-          "debugColor": 16720639
+          "debugColor": 16720639,
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
         },
         {
           "type": "box",
@@ -365,7 +840,146 @@
           "width": 800,
           "height": 40,
           "isStatic": true,
-          "label": "editor_box"
+          "label": "editor_box",
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
+        },
+        {
+          "type": "sensor",
+          "x": 500,
+          "y": 300,
+          "width": 5000,
+          "height": 200,
+          "label": "deadzone",
+          "debugColor": 16720418,
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
+        }
+      ]
+    },
+    {
+      "id": "lvl_1771963803731",
+      "name": "New Level",
+      "spawnPoint": {
+        "x": 0,
+        "y": 0
+      },
+      "objects": [
+        {
+          "type": "sensor",
+          "x": 150,
+          "y": 0,
+          "width": 60,
+          "height": 200,
+          "label": "start_node",
+          "debugColor": 2293538,
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
+        },
+        {
+          "type": "sensor",
+          "x": 500,
+          "y": 0,
+          "width": 60,
+          "height": 200,
+          "label": "finish_node",
+          "debugColor": 16720639,
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
+        },
+        {
+          "type": "sensor",
+          "x": 500,
+          "y": 300,
+          "width": 5000,
+          "height": 200,
+          "label": "deadzone",
+          "debugColor": 16720418,
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
+        },
+        {
+          "type": "box",
+          "x": 338,
+          "y": 121,
+          "label": "new_box",
+          "isStatic": true,
+          "width": 1479.009330406147,
+          "height": 96.35894621295279,
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          },
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
+            "mass": 1,
+            "friction": 0.1,
+            "restitution": 0.5,
+            "density": 0.001
+          }
         }
       ]
     }

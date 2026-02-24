@@ -1,3 +1,5 @@
+import { PaletteEditorUI } from "./dom/PaletteEditorUI";
+
 const TOOL_STYLES = {
     BAR: `
         position: absolute; 
@@ -35,6 +37,8 @@ export type EditorObjectType = 'box' | 'circle' | 'polygon' | 'sensor';
 export class EditorToolbarUI {
     public root: HTMLDivElement;
     public onAddObject?: (type: EditorObjectType) => void;
+    public onPaletteChanged?: () => void;
+    private paletteUI: PaletteEditorUI;
 
     constructor(parent: HTMLElement) {
         this.root = document.createElement("div");
@@ -44,6 +48,10 @@ export class EditorToolbarUI {
         this.createTool('circle', 'Circ');
         this.createTool('polygon', 'Poly');
         this.createTool('sensor', 'Sens');
+
+        this.paletteUI = new PaletteEditorUI(this.root, () => {
+            this.onPaletteChanged?.();
+        });
 
         parent.appendChild(this.root);
     }

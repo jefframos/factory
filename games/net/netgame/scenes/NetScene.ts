@@ -12,6 +12,7 @@ import { InputService } from "../input/InputService";
 import { LevelDataManager } from "../level/LevelDataManager";
 import { LevelConfig, ModifierTrigger } from "../level/LevelTypes";
 import { CameraService } from "../services/CameraService";
+import { ColorPaletteService } from "../services/ColorPaletteService";
 import { EntitySceneService } from "../services/EntitySceneService";
 import { LevelService } from "../services/LevelService";
 import { LevelViewService3D } from "../services/LevelViewService3D";
@@ -149,7 +150,7 @@ export default class NetScene extends GameScene {
     private truck3D!: TruckView3DService;
     private threeCameraService!: ThreeCameraService;
     private gameplayScene!: GameplayScene;
-    private levelViewService!: LevelViewService3D;
+    private levelViewService3D!: LevelViewService3D;
 
     private hud!: GameplayHUD;
 
@@ -157,6 +158,15 @@ export default class NetScene extends GameScene {
 
         const json = PIXI.Cache.get('game/worlds.json')
         await LevelDataManager.instance.init('game/worlds.json');
+
+        if (json) {
+            ColorPaletteService.init(
+                json.palettes || [],
+                json.activePaletteId || "Default"
+            );
+        }
+
+
         // 1. Initialize Global Physics
         Physics.init({ gravity: { x: 0, y: 0.5 }, enableSleep: true });
         this.addChild(this.worldContainer);
@@ -234,10 +244,10 @@ export default class NetScene extends GameScene {
             this.handleLevelComplete()
         })
 
-        this.levelViewService = new LevelViewService3D(this.gameplayScene.threeScene, this.myTruck);
+        this.levelViewService3D = new LevelViewService3D(this.gameplayScene.threeScene, this.myTruck);
 
         this.levelService.onLevelBuilt.add((level) => {
-            this.levelViewService.buildLevel(level, this.myTruck)
+            this.levelViewService3D.buildLevel(level, this.myTruck, this.levelService.spawnedEntities)
         })
 
         const worldIdx = 0; // "Medium" is the 3rd world (index 2)
@@ -254,6 +264,7 @@ export default class NetScene extends GameScene {
 
         // Setup a classic 2.5D side-scrolling angle
         this.threeCameraService.distance = 300;
+        this.threeCameraService.fogFar = 300000;
         this.threeCameraService.orbitAngle = -1.12; // Slight angle so we see the side and front
         this.threeCameraService.elevationAngle = 0.52;
         if (Game.debugParams.cam) {
@@ -263,6 +274,7 @@ export default class NetScene extends GameScene {
             this.threeCameraService.elevationAngle = 0//0.52;
         }
         this.threeCameraService.renderDistance = 3000
+        this.threeCameraService.renderDistance = 300000;
         const folder = "3D Camera";
 
 
@@ -409,7 +421,7 @@ export default class NetScene extends GameScene {
 
         this.hud?.update();
         this.gameplayScene?.update(delta);
-        this.levelViewService?.update(delta);
+        this.levelViewService3D?.update(delta);
         this.truckViewService?.update();
         this.entityService?.update(delta);
 

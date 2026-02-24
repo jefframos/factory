@@ -118,6 +118,7 @@ export class CarEntity extends BasePhysicsEntity {
             collisionFilter: { group: truckGroup },
             friction: this.stats.friction,
             restitution: this.stats.bounciness,
+            plugin: { isPlayer: true }
         });
 
         this.setBodyDescription(desc);
@@ -187,6 +188,7 @@ export class CarEntity extends BasePhysicsEntity {
             friction: this.stats.wheelFriction,
             restitution: 0,
             slop: 0.01,
+            plugin: { isPlayer: true },
             density: 0.01
         });
 

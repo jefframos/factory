@@ -1,16 +1,7 @@
 import * as PIXI from "pixi.js";
-import { LevelConfig } from "./LevelTypes";
+import { LevelConfig, WorldDefinition } from "./LevelTypes";
 
-export interface WorldDefinition {
-    id: string;
-    name: string;
-    icon: string;
-    background: string;
-    enabled: boolean;
-    levelFile: string;
-    customData: any;
-    levels?: LevelConfig[]; // Populated during load
-}
+
 
 export class LevelDataManager {
     private static _instance: LevelDataManager;

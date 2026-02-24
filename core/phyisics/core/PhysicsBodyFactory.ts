@@ -10,9 +10,13 @@ export interface BodyDescription {
 }
 
 export class PhysicsBodyFactory {
-    private static DEFAULT_DEBUG_COLOR = 0x00FF00; // Bright green for physics
+    public static DEFAULT_DEBUG_COLOR = 0x00FF00; // Bright green for physics
+    public static FORCE_DEBUG_COLOR: boolean;
 
     public static createRect(x: number, y: number, w: number, h: number, options?: any, debugColor?: number): BodyDescription {
+        if (PhysicsBodyFactory.FORCE_DEBUG_COLOR) {
+            debugColor = PhysicsBodyFactory.DEFAULT_DEBUG_COLOR;
+        }
         const body = Bodies.rectangle(x, y, w, h, options);
         const gfx = new PIXI.Graphics();
         const color = debugColor ?? this.DEFAULT_DEBUG_COLOR;
@@ -27,6 +31,9 @@ export class PhysicsBodyFactory {
     }
 
     public static createCircle(x: number, y: number, radius: number, options?: any, debugColor?: number): BodyDescription {
+        if (PhysicsBodyFactory.FORCE_DEBUG_COLOR) {
+            debugColor = PhysicsBodyFactory.DEFAULT_DEBUG_COLOR;
+        }
         const body = Bodies.circle(x, y, radius, options);
         const gfx = new PIXI.Graphics();
         const color = debugColor ?? this.DEFAULT_DEBUG_COLOR;
@@ -41,6 +48,9 @@ export class PhysicsBodyFactory {
     }
 
     public static createPolygonFromVertices(x: number, y: number, vertexSets: any[], options: any, debugColor?: number): BodyDescription {
+        if (PhysicsBodyFactory.FORCE_DEBUG_COLOR) {
+            debugColor = PhysicsBodyFactory.DEFAULT_DEBUG_COLOR;
+        }
         const body = Bodies.fromVertices(x, y, [vertexSets], options);
         const graphic = new PIXI.Graphics();
         const color = debugColor ?? this.DEFAULT_DEBUG_COLOR;
@@ -74,6 +84,9 @@ export class PhysicsBodyFactory {
  */
 
     public static createPolygon(x: number, y: number, vertices: Vector[], options?: any, debugColor?: number): BodyDescription {
+        if (PhysicsBodyFactory.FORCE_DEBUG_COLOR) {
+            debugColor = PhysicsBodyFactory.DEFAULT_DEBUG_COLOR;
+        }
         // 1. Create the body at 0,0 first to find the Matter-calculated Center of Mass
         const tempBody = Bodies.fromVertices(0, 0, [vertices], options);
         const comOffset = { x: tempBody.position.x, y: tempBody.position.y };
@@ -101,38 +114,16 @@ export class PhysicsBodyFactory {
 
         return { body, debugGraphic: gfx, decomposedParts, centroidOffset: comOffset };
     }
-    /**
-     * Calculates the geometric centroid of a polygon from raw vertices.
-     * This matches what Matter.js uses internally, so pre-applying it
-     * ensures fromVertices places the body exactly where intended.
-     */
-    private static calcCentroid(vertices: Vector[]): Vector {
-        let area = 0;
-        let cx = 0;
-        let cy = 0;
-        const n = vertices.length;
 
-        for (let i = 0; i < n; i++) {
-            const v0 = vertices[i];
-            const v1 = vertices[(i + 1) % n];
-            const cross = v0.x * v1.y - v1.x * v0.y;
-            area += cross;
-            cx += (v0.x + v1.x) * cross;
-            cy += (v0.y + v1.y) * cross;
-        }
-
-        area /= 2;
-        cx /= (6 * area);
-        cy /= (6 * area);
-
-        return { x: cx, y: cy };
-    }
     /**
      * EDITOR ONLY — No physics body, no centroid shift.
      * Vertices are stored and drawn exactly as-is, relative to (x, y).
      * Use this in the level editor so Matter.js never touches your coordinates.
      */
     public static createPolygonEditor(vertices: Vector[], debugColor?: number): BodyDescription {
+        if (PhysicsBodyFactory.FORCE_DEBUG_COLOR) {
+            debugColor = PhysicsBodyFactory.DEFAULT_DEBUG_COLOR;
+        }
         const color = debugColor ?? this.DEFAULT_DEBUG_COLOR;
         const gfx = new PIXI.Graphics();
 
@@ -149,6 +140,9 @@ export class PhysicsBodyFactory {
         };
     }
     public static createComposite(x: number, y: number, parts: Body[], options?: IBodyDefinition, debugColor?: number): BodyDescription {
+        if (PhysicsBodyFactory.FORCE_DEBUG_COLOR) {
+            debugColor = PhysicsBodyFactory.DEFAULT_DEBUG_COLOR;
+        }
         const mainBody = Body.create({
             ...options,
             parts: parts,

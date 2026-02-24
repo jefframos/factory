@@ -1,12 +1,15 @@
 import Physics from "@core/phyisics/Physics";
+import { PhysicsBodyFactory } from "@core/phyisics/core/PhysicsBodyFactory";
 import { GameScene } from "@core/scene/GameScene";
 import * as PIXI from 'pixi.js';
-import { LevelDataManager, WorldDefinition } from "../level/LevelDataManager";
+import { LevelDataManager } from "../level/LevelDataManager";
+import { WorldDefinition } from "../level/LevelTypes";
+import { ColorPaletteService } from "../services/ColorPaletteService";
 import { EntitySceneService } from "../services/EntitySceneService";
 import { EditorDomUI } from "./EditorDomUI";
 import { EditorToolbarUI } from "./EditorToolbarUI";
 import { LevelEditorManager } from "./LevelEditorManager";
-import { LevelPropertiesUI } from "./LevelPropertiesUI";
+import { LevelPropertiesUI } from "./dom/LevelPropertiesUI";
 import { EditorCameraService } from "./service/EditorCameraService";
 import { LevelEditorViewService } from "./service/LevelEditorViewService";
 import { PolygonEditorService } from "./service/PolygonEditorService";
@@ -34,7 +37,34 @@ export default class LevelEditorScene extends GameScene {
 
     private readonly API_BASE = "http://localhost:3031/api";
 
+    private async loadManifest(): Promise<any> {
+        try {
+            const res = await fetch(`${this.API_BASE}/load`);
+            const data = await res.json();
+            if (data.ok) {
+                return data.manifest;
+            }
+        } catch (e) {
+            console.error("Failed to load manifest from server:", e);
+        }
+        return null;
+    }
     public async build(): Promise<void> {
+        PhysicsBodyFactory.DEFAULT_DEBUG_COLOR = 0xFFFFFF
+        PhysicsBodyFactory.FORCE_DEBUG_COLOR = true;
+        const manifestData = await this.loadManifest();
+
+        // FIXED: Use the new structure (palettes and activePaletteId)
+        // We provide defaults (empty array and "Default") to prevent crashes
+        if (manifestData) {
+            ColorPaletteService.init(
+                manifestData.palettes || [],
+                manifestData.activePaletteId || "Default"
+            );
+        } else {
+            // Fallback if server fails entirely
+            ColorPaletteService.init([], "Default");
+        }
         Physics.init({ gravity: { x: 0, y: 0.5 }, enableSleep: true });
         LevelDataManager.instance.init('game/worlds.json');
         this.addChild(this.worldContainer);
@@ -53,6 +83,18 @@ export default class LevelEditorScene extends GameScene {
         // We nest the Properties UI root inside the manifest UI root for shared z-indexing
         this.propsUI = new LevelPropertiesUI(this.manifestUI.root);
         this.toolbarUI = new EditorToolbarUI(this.manifestUI.root);
+
+        this.toolbarUI.onPaletteChanged = () => {
+
+            // 1. Force the 3D meshes to re-resolve their colors
+            this.levelService.refreshColors();
+
+            // 2. Force the Properties UI to rebuild its dropdowns
+            // This ensures the new color ID shows up in the 'Palette ID' list immediately
+            if (this.propsUI) {
+                // this.propsUI.refreshCurrent();
+            }
+        };
 
         const gizmos = new TransformGizmoService(this.worldContainer)
         const polyEditor = new PolygonEditorService(this.worldContainer);
@@ -187,11 +229,14 @@ export default class LevelEditorScene extends GameScene {
 
         this.editorManager.onSave();
         const worlds = LevelDataManager.instance.worlds;
+        this.sanitizeLevelData(worlds);
         const worldsData: Record<string, any> = {};
 
 
         // Prepare payload for the server
         const manifest = {
+            palettes: ColorPaletteService.getAllPalettes(),
+            activePaletteId: ColorPaletteService.getActiveId(),
             worlds: worlds.map((w, index) => {
                 const prefix = (index + 1).toString().padStart(2, '0');
                 const fileName = `${prefix}_${w.id}.json`;
@@ -226,6 +271,34 @@ export default class LevelEditorScene extends GameScene {
         } catch (e) {
             this.manifestUI.setStatus("Server Offline", '#d82b2b');
         }
+    }
+
+    private sanitizeLevelData(worlds: WorldDefinition[]): void {
+        worlds.forEach(world => {
+            world.levels?.forEach(level => {
+                level.objects.forEach(obj => {
+                    // If view3d is missing, inject defaults
+                    if (!obj.physics) {
+                        obj.physics = {
+                            isStatic: obj.isStatic !== undefined ? obj.isStatic : true,
+                            isSensor: obj.isSensor !== undefined ? obj.isSensor : false,
+                            mass: 1,
+                            friction: 0.1,
+                            restitution: 0.5,
+                            density: 0.001
+                        };
+                    }
+                    if (!obj.view3d) {
+                        obj.view3d = {
+                            color: obj.color || 0x7CFF01, // Fallback to old color property
+                            colorSlot: 1,                 // Default to the first palette slot
+                            isSmooth: true,
+                            opacity: 1.0
+                        };
+                    }
+                });
+            });
+        });
     }
 
     private refresh() {
