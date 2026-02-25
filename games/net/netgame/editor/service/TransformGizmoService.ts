@@ -16,7 +16,6 @@ export class TransformGizmoService {
     constructor(private worldContainer: PIXI.Container) {
         this.worldContainer.addChild(this.gizmoLayer);
 
-        // Listen to the window for movement so it never "drops" the object
         window.addEventListener('mousemove', this.onGlobalMove);
         window.addEventListener('mouseup', () => this.isDragging = false);
     }
@@ -26,26 +25,30 @@ export class TransformGizmoService {
         this.activeWrapper = wrapper;
 
         if (this.activeWrapper) {
+            // This now triggers the moveToFront() logic we added to the Wrapper
             this.activeWrapper.setSelection(true);
 
             if (event) {
                 const localMouse = this.worldContainer.toLocal(event.global);
                 const d = this.activeWrapper.data;
 
+                // --- LOCK CHECK ---
+                // If it's a collectible, we force it to only allow 'move' logic
+                const isCollectible = !!d.collectible;
                 let isHandleClick = false;
 
-                if (d.type === 'circle') {
-                    // Handle is at [Center + Radius, Center]
-                    const handleX = d.x + (d.radius || 30);
-                    const handleY = d.y;
-                    const dist = Math.sqrt(Math.pow(localMouse.x - handleX, 2) + Math.pow(localMouse.y - handleY, 2));
-                    isHandleClick = dist < this.resizeHandleSize + 10;
-                } else {
-                    // Box handle at Bottom-Right
-                    const handleX = d.x + (d.width || 100) / 2;
-                    const handleY = d.y + (d.height || 100) / 2;
-                    const dist = Math.sqrt(Math.pow(localMouse.x - handleX, 2) + Math.pow(localMouse.y - handleY, 2));
-                    isHandleClick = dist < this.resizeHandleSize + 10;
+                if (!isCollectible) {
+                    if (d.type === 'circle') {
+                        const handleX = d.x + (d.radius || 30);
+                        const handleY = d.y;
+                        const dist = Math.sqrt(Math.pow(localMouse.x - handleX, 2) + Math.pow(localMouse.y - handleY, 2));
+                        isHandleClick = dist < this.resizeHandleSize + 10;
+                    } else if (d.type !== 'polygon') {
+                        const handleX = d.x + (d.width || 100) / 2;
+                        const handleY = d.y + (d.height || 100) / 2;
+                        const dist = Math.sqrt(Math.pow(localMouse.x - handleX, 2) + Math.pow(localMouse.y - handleY, 2));
+                        isHandleClick = dist < this.resizeHandleSize + 10;
+                    }
                 }
 
                 if (isHandleClick) {
@@ -69,13 +72,12 @@ export class TransformGizmoService {
         const d = this.activeWrapper.data;
 
         if (this.handleType === 'resize') {
+            // Safety check: handleType should never be 'resize' for collectibles due to logic in select()
             if (d.type === 'circle') {
-                // Distance from center to mouse is the new radius
                 const dx = localPos.x - d.x;
                 const dy = localPos.y - d.y;
                 d.radius = Math.max(10, Math.sqrt(dx * dx + dy * dy));
             } else {
-                // Standard box logic
                 d.width = Math.max(20, (localPos.x - d.x) * 2);
                 d.height = Math.max(20, (localPos.y - d.y) * 2);
             }
@@ -94,25 +96,31 @@ export class TransformGizmoService {
         if (!this.activeWrapper) return;
 
         const d = this.activeWrapper.data;
+        const isCollectible = !!d.collectible;
+
         this.gizmoLayer.lineStyle(2, 0x3498db, 0.5);
 
         if (d.type === 'circle') {
             const r = d.radius || 30;
-            // Circle guide
             this.gizmoLayer.drawCircle(d.x, d.y, r);
-            // Handle at Center-Right
-            this.gizmoLayer.beginFill(0xffffff);
-            this.gizmoLayer.drawCircle(d.x + r, d.y, 6);
-            this.gizmoLayer.endFill();
+
+            // Only draw resize handle if not a collectible
+            if (!isCollectible) {
+                this.gizmoLayer.beginFill(0xffffff);
+                this.gizmoLayer.drawCircle(d.x + r, d.y, 6);
+                this.gizmoLayer.endFill();
+            }
         } else {
             const w = (d.width || 100);
             const h = (d.height || 100);
-            // Box guide
             this.gizmoLayer.drawRect(d.x - w / 2, d.y - h / 2, w, h);
-            // Handle at Bottom-Right
-            this.gizmoLayer.beginFill(0xffffff);
-            this.gizmoLayer.drawCircle(d.x + w / 2, d.y + h / 2, 6);
-            this.gizmoLayer.endFill();
+
+            // Only draw resize handle if not a collectible
+            if (!isCollectible && d.type !== 'polygon') {
+                this.gizmoLayer.beginFill(0xffffff);
+                this.gizmoLayer.drawCircle(d.x + w / 2, d.y + h / 2, 6);
+                this.gizmoLayer.endFill();
+            }
         }
     }
 }

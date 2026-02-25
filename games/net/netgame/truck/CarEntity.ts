@@ -96,6 +96,7 @@ export class CarEntity extends BasePhysicsEntity {
         return this.parts.get(part);
     }
 
+
     /**
      * Build the truck at a specific world position
      */

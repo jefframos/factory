@@ -9,7 +9,6 @@
         "assets": "cross-env node tools/build-assets.mjs && npm run build:json",
         "json": "node tools/json/build-json.mjs",
         "zip": "ts-node scripts/zip-game.ts",
-        "build:all": "ts-node scripts/build-all.ts",
         "generate:index": "ts-node scripts/generate-index.ts",
         "image": "node tools/image/build-image.mjs",
         "image2": "npm run thumbs && npm run sizes && npm run image",

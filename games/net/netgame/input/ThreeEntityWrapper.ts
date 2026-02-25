@@ -11,13 +11,19 @@ export class ThreeEntityWrapper {
         this.sync();
     }
 
-    public sync(): void {
-        // Map 2D (x, y) to 3D (x, -y, 0)
-        // Matter.js Y grows down, Three.js Y grows up
-        this.mesh.position.set(this.body.position.x, -this.body.position.y, 0);
+    public get isAlive(): boolean {
+        return this.body &&
+            (this.body as any).world !== null && // Body is still in the physics world
+            this.body.id !== undefined &&
+            this.body.parts &&
+            this.body.parts.length > 0;
+    }
 
-        // Match the Z-rotation
-        // We negate the angle because of the Y-axis flip
+    public sync(): void {
+        // Prevent syncing if the body is in the process of being destroyed
+        if (!this.body || !this.body.position) return;
+
+        this.mesh.position.set(this.body.position.x, -this.body.position.y, 0);
         this.mesh.rotation.z = -this.body.angle;
     }
 

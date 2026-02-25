@@ -80,6 +80,8 @@ export default class GameplayScene extends ThreeScene {
             (this.water.mesh.material as THREE.MeshStandardMaterial).color.setHex(data.waterColor);
         }
 
+        //BendService.applyBend(this.water.mesh.material)
+
     }
 
     public update(delta: number): void {

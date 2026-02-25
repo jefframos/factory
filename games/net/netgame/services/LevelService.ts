@@ -7,6 +7,7 @@ import Physics from "@core/phyisics/Physics";
 import Pool from "@core/Pool";
 import { Body, Vector } from "matter-js";
 import { Signal } from "signals";
+import { CollectibleEntity } from "../entity/CollectibleEntity";
 import { LevelConfig, LevelSnapshot } from "../level/LevelTypes";
 import { CarEntity } from "../truck/CarEntity";
 import { EntitySceneService } from "./EntitySceneService";
@@ -110,6 +111,38 @@ export class LevelService {
         // HELPER: Checks if the body that collided belongs to the player
         const isPlayer = (otherBody: Body) => otherBody.plugin.isPlayer === true;
 
+        if (obj.collectible) {
+            Physics.events.onStart(entity.body, (otherBody) => {
+                if (!isPlayer(otherBody)) return;
+
+                // FIXED: Check if the entity is actually a CollectibleEntity
+                if (entity instanceof CollectibleEntity) {
+                    const coll = entity as CollectibleEntity;
+
+                    if (coll.isCollected) return;
+
+                    if (obj.collectible.type === 'coin') {
+                        coll.collect(otherBody);
+                        console.log("Coin collected!");
+                    }
+                    else if (obj.collectible.type === 'cargo') {
+                        coll.isCollected = true;
+                        if (this.truck) {
+                            this.truck.cargo.addCargoItem({
+                                id: obj.collectible.cargoId || "item",
+                                size: { w: 2, h: 2 }, // Your grid units
+                                position: { x: 0, y: 0 }
+                            });
+                        }
+                        entity.destroy();
+                    }
+                } else {
+                    console.error("Entity has collectible data but is not a CollectibleEntity instance!", entity);
+                }
+            });
+
+
+        }
         if (label === 'safe_point') {
             entity.body.isSensor = true;
             Physics.events.onStart(entity.body, (otherBody) => {
@@ -155,7 +188,6 @@ export class LevelService {
     }
 
     public respawnPlayer(): Vector {
-        console.trace()
         if (!this.truck) return this.lastSafePoint;
         console.log("respawnPlayer:", this.lastSafePoint);
         this.truck.teleport(this.lastSafePoint.x, this.lastSafePoint.y);
@@ -183,6 +215,12 @@ export class LevelService {
         const layer = obj.layer || CollisionLayer.DEFAULT;
         const debugColor = obj.debugColor || obj.color;
 
+        if (obj.collectible) {
+            const coll = Pool.instance.getElement(CollectibleEntity) as CollectibleEntity;
+            coll.build({ x: obj.x, y: obj.y, data: obj.collectible });
+            return coll;
+        }
+
         switch (obj.type) {
             case 'box':
             case 'sensor':
@@ -200,6 +238,10 @@ export class LevelService {
                 const poly = Pool.instance.getElement(PolygonEntity) as PolygonEntity;
                 poly.build({ x: obj.x, y: obj.y, vertices: obj.vertices || [], layer, debugColor });
                 return poly;
+            case 'collectible':
+                const coll = Pool.instance.getElement(CollectibleEntity) as CollectibleEntity;
+                coll.build({ x: obj.x, y: obj.y, data: obj.collectible });
+                return coll;
             default:
                 return null;
         }

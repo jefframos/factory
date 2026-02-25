@@ -1,13 +1,14 @@
-// EditorSchema.ts
 export const OBJECT_SCHEMA: Record<string, string[]> = {
     box: ['x', 'y', 'width', 'height', 'isStatic', 'label'],
-    sensor: ['x', 'y', 'width', 'height', 'label'],
     circle: ['x', 'y', 'radius', 'isStatic', 'label'],
-    polygon: ['x', 'y', 'label'] // Vertices are handled via specialized tool usually
+    // ...
+    // New schemas for the UI to recognize
+    coin: ['x', 'y', 'radius', 'label'],
+    cargo: ['x', 'y', 'width', 'height', 'label']
 };
 
-export const MODIFIER_SCHEMA = {
-    triggers: ['start', 'active', 'end'],
-    modes: ['add', 'set', 'multiply'],
-    fields: ['trigger', 'mode', 'force.x', 'force.y', 'useRadialDirection']
+// Add this to help the Properties UI render a specific "Collectible" section
+export const COLLECTIBLE_SCHEMA = {
+    types: ['coin', 'cargo'],
+    fields: ['collectible.type', 'collectible.cargoId', 'collectible.value']
 };

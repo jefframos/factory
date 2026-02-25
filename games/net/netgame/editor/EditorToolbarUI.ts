@@ -32,7 +32,8 @@ const TOOL_STYLES = {
     `
 };
 
-export type EditorObjectType = 'box' | 'circle' | 'polygon' | 'sensor';
+// Updated type to include collectibles
+export type EditorObjectType = 'box' | 'circle' | 'polygon' | 'sensor' | 'coin' | 'cargo';
 
 export class EditorToolbarUI {
     public root: HTMLDivElement;
@@ -44,10 +45,15 @@ export class EditorToolbarUI {
         this.root = document.createElement("div");
         this.root.style.cssText = TOOL_STYLES.BAR;
 
+        // Standard Physics Objects
         this.createTool('box', 'Rect');
         this.createTool('circle', 'Circ');
         this.createTool('polygon', 'Poly');
         this.createTool('sensor', 'Sens');
+
+        // --- NEW: Collectible Tools ---
+        this.createTool('coin', '🪙 Coin');
+        this.createTool('cargo', '📦 Cargo');
 
         this.paletteUI = new PaletteEditorUI(this.root, () => {
             this.onPaletteChanged?.();

@@ -35,8 +35,8 @@
         },
         {
           "type": "polygon",
-          "x": 1632,
-          "y": -12,
+          "x": 1635,
+          "y": -5,
           "vertices": [
             {
               "x": 133.33333333333326,
@@ -55,16 +55,16 @@
               "y": 16.32253933406514
             },
             {
-              "x": -119.49195023783432,
-              "y": 2.49158433955364
+              "x": -105,
+              "y": 7
             },
             {
-              "x": -37.49414562751599,
-              "y": -20.230698865715283
+              "x": -15,
+              "y": -14
             },
             {
-              "x": 51.419136480058114,
-              "y": -44.928832784485905
+              "x": 65,
+              "y": -36
             }
           ],
           "view3d": {
@@ -87,8 +87,8 @@
           "type": "box",
           "x": 114,
           "y": -77,
-          "width": 666.6344676180022,
-          "height": 67.15038419319444,
+          "width": 691.956092206367,
+          "height": 62.715697036224014,
           "isStatic": true,
           "label": "editor_box",
           "view3d": {
@@ -133,14 +133,14 @@
         {
           "type": "sensor",
           "x": 3085,
-          "y": -91,
+          "y": -92,
           "width": 60,
           "height": 200,
           "label": "finish_node",
           "debugColor": 16720639,
           "view3d": {
             "color": 8191745,
-            "colorSlot": 1,
+            "colorSlot": "3",
             "isSmooth": true,
             "opacity": 1
           },
@@ -156,8 +156,8 @@
         },
         {
           "type": "box",
-          "x": 1382,
-          "y": 26,
+          "x": 1381,
+          "y": 22,
           "width": 800,
           "height": 40,
           "isStatic": true,
@@ -204,8 +204,8 @@
         },
         {
           "type": "sensor",
-          "x": 712,
-          "y": 253,
+          "x": 714,
+          "y": 212,
           "width": 10000,
           "height": 200,
           "label": "deadzone",
@@ -316,8 +316,8 @@
         },
         {
           "type": "sensor",
-          "x": -58,
-          "y": -761,
+          "x": 1188,
+          "y": -50,
           "width": 75.1284302963777,
           "height": 103.31723380900121,
           "modifier": {
@@ -336,7 +336,7 @@
           "bulk": null,
           "physics": {
             "isStatic": true,
-            "isSensor": false,
+            "isSensor": true,
             "mass": 1,
             "friction": 0.1,
             "restitution": 0.5,
@@ -420,8 +420,8 @@
         },
         {
           "type": "polygon",
-          "x": -290,
-          "y": -67,
+          "x": -294,
+          "y": -49,
           "label": "new_polygon",
           "isStatic": true,
           "vertices": [
@@ -550,8 +550,8 @@
         },
         {
           "type": "circle",
-          "x": 634,
-          "y": 222,
+          "x": 647,
+          "y": 137,
           "label": "new_circle",
           "isStatic": true,
           "radius": 191.72271575490961,
@@ -591,6 +591,116 @@
             "friction": 0.1,
             "restitution": 0.5,
             "density": 0.001
+          }
+        },
+        {
+          "type": "circle",
+          "x": 186,
+          "y": -159,
+          "label": "collectible_coin",
+          "isStatic": true,
+          "radius": 20,
+          "collectible": {
+            "type": "coin",
+            "value": 1
+          },
+          "isSensor": true,
+          "physics": {
+            "isStatic": true,
+            "isSensor": true,
+            "mass": 1,
+            "friction": 1,
+            "restitution": 0.5,
+            "density": 0.001
+          },
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          }
+        },
+        {
+          "type": "circle",
+          "x": 254,
+          "y": -158,
+          "label": "collectible_coin",
+          "isStatic": true,
+          "radius": 20,
+          "collectible": {
+            "type": "coin",
+            "value": 1
+          },
+          "isSensor": true,
+          "physics": {
+            "isStatic": true,
+            "isSensor": true,
+            "mass": 1,
+            "friction": 1,
+            "restitution": 0.5,
+            "density": 0.001
+          },
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          }
+        },
+        {
+          "type": "box",
+          "x": 394,
+          "y": -134,
+          "label": "collectible_cargo",
+          "isStatic": true,
+          "width": 40,
+          "height": 40,
+          "collectible": {
+            "type": "cargo",
+            "cargoId": "crate_01"
+          },
+          "isSensor": true,
+          "physics": {
+            "isStatic": true,
+            "isSensor": true,
+            "mass": 1,
+            "friction": 1,
+            "restitution": 0.5,
+            "density": 0.001
+          },
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          }
+        },
+        {
+          "type": "box",
+          "x": 89,
+          "y": -132,
+          "label": "collectible_cargo",
+          "isStatic": true,
+          "width": 40,
+          "height": 40,
+          "collectible": {
+            "type": "cargo",
+            "cargoId": "crate_01"
+          },
+          "isSensor": true,
+          "physics": {
+            "isStatic": true,
+            "isSensor": true,
+            "mass": 1,
+            "friction": 1,
+            "restitution": 0.5,
+            "density": 0.001
+          },
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
           }
         }
       ]

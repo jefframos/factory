@@ -2,7 +2,7 @@ import * as PIXI from 'pixi.js';
 import { LevelDataManager } from "../level/LevelDataManager";
 import { LevelConfig, LevelObject } from "../level/LevelTypes";
 import { EditorEntityWrapper } from "./EditorEntityWrapper";
-import { EditorToolbarUI } from './EditorToolbarUI';
+import { EditorObjectType, EditorToolbarUI } from './EditorToolbarUI';
 import { LevelPropertiesUI } from "./dom/LevelPropertiesUI";
 import { LevelEditorViewService } from "./service/LevelEditorViewService";
 import { PolygonEditorService } from './service/PolygonEditorService';
@@ -136,30 +136,57 @@ export class LevelEditorManager {
         this.propsUI.updateStats(config.objects.length);
     }
 
-    private handleAddObject(type: 'box' | 'circle' | 'polygon' | 'sensor'): void {
+    private handleAddObject(type: EditorObjectType): void {
         const config = this.viewService.getCurrentConfig();
         if (!config) return;
 
-        const newObj: LevelObject = {
-            type: type,
-            x: 400, // Spawn in center
+        let newObj: LevelObject = {
+            type: 'box',
+            x: 400,
             y: 300,
             label: `new_${type}`,
             isStatic: true
         };
 
-        // Initialize type-specific defaults
-        if (type === 'circle') newObj.radius = 40;
-        else if (type === 'polygon') newObj.vertices = [{ x: 0, y: -50 }, { x: 50, y: 50 }, { x: -50, y: 50 }];
-        else {
-            newObj.width = 100;
-            newObj.height = 100;
+        switch (type) {
+            case 'coin':
+                newObj.type = 'circle';
+                newObj.radius = 20; // Fixed Radius
+                newObj.label = 'collectible_coin';
+                newObj.collectible = { type: 'coin', value: 1 };
+                // Ensure physics are sensors by default for collectibles
+                newObj.isSensor = true;
+                break;
+
+            case 'cargo':
+                newObj.type = 'box';
+                newObj.width = 40;  // Fixed Width
+                newObj.height = 40; // Fixed Height
+                newObj.label = 'collectible_cargo';
+                newObj.collectible = { type: 'cargo', cargoId: 'crate_01' };
+                newObj.isSensor = true;
+                break;
+
+            case 'circle':
+                newObj.type = 'circle';
+                newObj.radius = 40;
+                break;
+
+            case 'polygon':
+                newObj.type = 'polygon';
+                newObj.vertices = [{ x: 0, y: -50 }, { x: 50, y: 50 }, { x: -50, y: 50 }];
+                break;
+
+            default:
+                newObj.type = type as any;
+                newObj.width = 100;
+                newObj.height = 100;
+                break;
         }
 
         config.objects.push(newObj);
-        this.viewService.buildLevel(config); // Rebuild visuals
+        this.viewService.buildLevel(config);
     }
-
     public loadLevel(config: LevelConfig): void {
         this.patchMandatoryNodes(config);
         this.viewService.buildLevel(config);

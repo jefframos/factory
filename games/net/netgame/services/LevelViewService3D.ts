@@ -19,6 +19,9 @@ export class LevelViewService3D {
     private readonly SHOW_SENSORS = true;
     private readonly INVISIBLE_LABELS = new Set(['deadzone', 'start_node']);
 
+    private readonly COIN_DEPTH = 20; // Fixed depth for coins
+    private readonly CARGO_DEPTH = 40; // Fixed depth for cargo pickups
+
     constructor(private scene: THREE.Scene) {
         this.container = new THREE.Group();
         this.scene.add(this.container);
@@ -76,6 +79,24 @@ export class LevelViewService3D {
         const color = ColorPaletteService.resolveViewColor(view, obj.color || 0x7CFF01);
         const isSmooth = view.isSmooth ?? true;
         const isSensor = obj.type === 'sensor';
+
+        if (obj.collectible) {
+            if (obj.collectible.type === 'coin') {
+                const geometry = GeometryFactory3D.createCircle(obj.radius || 20, this.COIN_DEPTH, isSmooth);
+                const material = new THREE.MeshStandardMaterial({ color, metalness: 0.8, roughness: 0.2 });
+                rootObject = new THREE.Mesh(geometry, material);
+                // Mark for rotation in update loop
+                rootObject.userData.isCoin = true;
+                return this.applyShaders(rootObject);
+            }
+
+            if (obj.collectible.type === 'cargo') {
+                const geometry = GeometryFactory3D.createBox(obj.width || 40, obj.height || 40, this.CARGO_DEPTH, isSmooth);
+                const material = new THREE.MeshStandardMaterial({ color });
+                rootObject = new THREE.Mesh(geometry, material);
+                return this.applyShaders(rootObject);
+            }
+        }
 
         switch (obj.type) {
             case 'sensor':
@@ -135,17 +156,57 @@ export class LevelViewService3D {
         return rootObject;
     }
 
+    private applyShaders(rootObject: THREE.Object3D): THREE.Object3D {
+        rootObject.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+                const mat = (child as THREE.Mesh).material as THREE.Material;
+                StyleService.applyStyle(mat);
+                BendService.applyBend(mat);
+            }
+        });
+        return rootObject;
+    }
+
     /**
      * Call this in your main game loop
      */
     public update(delta: number): void {
-        // 1. Sync all mesh positions to physics bodies
-        this.wrappers.forEach(wrapper => wrapper.sync());
+        const toRemove: number[] = [];
 
-        // 2. Update Shader Origins for the "Bend" effect
+        this.wrappers.forEach((wrapper, bodyId) => {
+            // Matter.js safety check: 
+            // If the body exists but parts are momentarily empty during a build, don't kill it.
+            // We only kill it if the body specifically lacks the 'id' or has been destroyed.
+            if (!wrapper.isAlive) {
+                toRemove.push(bodyId);
+                return;
+            }
+
+            wrapper.sync();
+
+            if (wrapper.mesh.userData.isCoin) {
+                // Standard spinning (delta is usually in ms, so adjust speed)
+                wrapper.mesh.rotation.y += delta * 0.002;
+            }
+        });
+
+        // Remove dead meshes
+        for (const id of toRemove) {
+            this.removeWrapper(id);
+        }
+
         if (this.car) {
             const truckPos = this.car.body.position;
             BendService.updateOrigin(new THREE.Vector3(truckPos.x, -truckPos.y, 0));
+        }
+    }
+
+    private removeWrapper(bodyId: number): void {
+        const wrapper = this.wrappers.get(bodyId);
+        if (wrapper) {
+            wrapper.dispose(); // This handles Three.js cleanup
+            this.wrappers.delete(bodyId);
+            console.log(`[3D] Cleaned up mesh for destroyed body ${bodyId}`);
         }
     }
 

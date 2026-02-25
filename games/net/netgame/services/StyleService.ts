@@ -3,12 +3,12 @@ import * as THREE from 'three';
 export class StyleService {
     public static config = {
         colorTop: { value: new THREE.Color(0xffffff) },    // Light/White tint at top
-        colorBottom: { value: new THREE.Color(0x888888) }, // Darker/Muted tint at bottom
+        colorBottom: { value: new THREE.Color(0x2222bb) }, // Darker/Muted tint at bottom
         rimColor: { value: new THREE.Color(0xffffff) },    // Edge highlight color
-        gradStart: { value: -10.0 },
-        gradEnd: { value: 100.0 },
-        rimPower: { value: 2.5 },                          // Sharpness of the edge glow
-        gradIntensity: { value: 0.5 }                      // 0 = material color only, 1 = full gradient
+        gradStart: { value: -100.0 },
+        gradEnd: { value: 10.0 },
+        rimPower: { value: 20.5 },                          // Sharpness of the edge glow
+        gradIntensity: { value: 1 }                      // 0 = material color only, 1 = full gradient
     };
 
     public static applyStyle(material: THREE.Material) {

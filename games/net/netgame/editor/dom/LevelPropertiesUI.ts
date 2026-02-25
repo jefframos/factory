@@ -1,3 +1,4 @@
+import { CollectibleSection } from "./sections/CollectibleSection";
 import { InteractionSection } from "./sections/InteractionSection";
 import { MainSettingsSection } from "./sections/MainSettingsSection";
 import { ModifierSection } from "./sections/ModifierSection";
@@ -70,6 +71,7 @@ export class LevelPropertiesUI {
 
         this.sections = [
             new MainSettingsSection(this.dynamicContainer, updateCb),
+            new CollectibleSection(this.dynamicContainer, updateCb), // Add it here!
             new PhysicsSection(this.dynamicContainer, updateCb),
             new ModifierSection(this.dynamicContainer, updateCb),
             new View3DSection(this.dynamicContainer, updateCb),

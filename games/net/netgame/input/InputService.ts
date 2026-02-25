@@ -10,19 +10,19 @@ export class InputService {
 
         // Bindings are created once, but they check the current mover every frame
         this.binder.bind(['ArrowUp', 'KeyW'], InputMode.HOLD, () => {
-            this.mover?.moveForward();
-        });
-
-        this.binder.bind(['ArrowDown', 'KeyS'], InputMode.HOLD, () => {
-            this.mover?.moveBackward();
-        });
-
-        this.binder.bind(['ArrowRight', 'KeyD'], InputMode.HOLD, () => {
             this.mover?.rotateForward();
         });
 
-        this.binder.bind(['ArrowLeft', 'KeyA'], InputMode.HOLD, () => {
+        this.binder.bind(['ArrowDown', 'KeyS'], InputMode.HOLD, () => {
             this.mover?.rotateBackward();
+        });
+
+        this.binder.bind(['ArrowRight', 'KeyD'], InputMode.HOLD, () => {
+            this.mover?.moveForward();
+        });
+
+        this.binder.bind(['ArrowLeft', 'KeyA'], InputMode.HOLD, () => {
+            this.mover?.moveBackward();
         });
 
         this.binder.bind('Space', InputMode.PRESSED, () => {

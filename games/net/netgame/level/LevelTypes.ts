@@ -16,9 +16,17 @@ export interface LevelObject {
     layer?: number;
     view3d?: View3DDefinition;
     physics?: PhysicsDefinition;
+    collectible?: CollectibleDefinition;
     interaction?: InteractionDefinition;
 }
-
+export interface CollectibleDefinition {
+    type: 'coin' | 'cargo';
+    value?: number;
+    // For cargo specifically
+    cargoId?: string;
+    gridSize?: { w: number, h: number };
+    gridPos?: { x: number, y: number };
+}
 export interface WorldDefinition {
     id: string;
     name: string;

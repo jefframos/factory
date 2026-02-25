@@ -4,7 +4,7 @@ export class BendService {
     // Global uniforms that all materials will share
     public static uniforms = {
         uBendOrigin: { value: new THREE.Vector3(0, 0, 0) },
-        uBendAmount: { value: new THREE.Vector2(0.000075, 0.00001) } // x = horizontal bend, y = vertical drop
+        uBendAmount: { value: new THREE.Vector2(0.000175, 0.0000) } // x = horizontal bend, y = vertical drop
     };
 
     public static updateOrigin(position: THREE.Vector3) {
@@ -45,6 +45,7 @@ export class BendService {
                 // We modify transformed.y (vertical) and transformed.z (horizontal)
                 transformed.y -= distSq * uBendAmount.y; 
                 transformed.z -= distSq * uBendAmount.x;
+                //transformed.z -= sin(dist * 0.005) * 10.0;
                 `
             );
         };

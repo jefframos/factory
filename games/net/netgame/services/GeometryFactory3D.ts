@@ -132,7 +132,7 @@ export class GeometryFactory3D {
         shape.closePath();
 
         return new THREE.ExtrudeGeometry(shape, {
-            depth,
+            depth: depth + 0.001,
             steps: 1, // Increase this to allow the "sides" to bend smoothly
             curveSegments: 32, // Ensures the rounded corners have enough vertices
             bevelEnabled: true,

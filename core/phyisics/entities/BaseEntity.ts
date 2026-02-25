@@ -89,10 +89,16 @@ export abstract class BasePhysicsEntity {
         });
     }
     public destroy(): void {
-        if (this.body) Physics.removeBody(this.body);
+        if (this.body) {
+            Physics.removeBody(this.body);
+            // Explicitly nullify the world reference if your Physics helper doesn't
+            (this.body as any).world = null;
+        }
+
         this.reset();
         this.view.removeChildren();
         if (this.view.parent) this.view.parent.removeChild(this.view);
+
         Pool.instance.returnElement(this);
     }
 }
