@@ -104,6 +104,7 @@ export default class MyGame extends Game {
 
 
         const sounds = ManifestHelper.patchPaths(audioManifest, `${this.folderPath}/audio`);
+        console.log(sounds)
         SoundLoadManager.instance.setUpManifests([sounds], ["default"])
 
         PlatformHandler.instance.platform.loadFinished();

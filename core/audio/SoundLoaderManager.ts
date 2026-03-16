@@ -4,6 +4,7 @@ import { Howl } from "howler";
 interface AudioAsset {
   mp3Path?: string;
   oggPath?: string;
+  otherPath?: string;
   isLoaded?: boolean;
   howlInstance?: Howl;
   bundleName?: string;
@@ -65,6 +66,8 @@ export default class SoundLoadManager {
                 audioAsset.mp3Path = src;
               } else if (src.endsWith(".ogg")) {
                 audioAsset.oggPath = src;
+              } else {
+                audioAsset.otherPath = src;
               }
             });
 
@@ -95,10 +98,13 @@ export default class SoundLoadManager {
     if (this.loadingPromises.has(name)) {
       return this.loadingPromises.get(name);
     }
-
-    const soundFilePath = this.supportsOgg && audioAsset.oggPath
+    let soundFilePath = this.supportsOgg && audioAsset.oggPath
       ? audioAsset.oggPath
       : audioAsset.mp3Path;
+
+    if (!soundFilePath) {
+      soundFilePath = audioAsset.otherPath
+    }
 
     if (!soundFilePath) {
       console.error(`SoundLoadManager: No valid source path for "${name}"`);

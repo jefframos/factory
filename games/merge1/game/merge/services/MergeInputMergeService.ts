@@ -67,13 +67,14 @@ export class MergeInputMergeService {
     // -------------------------
     // Input handlers (wire from InputManager)
     // -------------------------
-
+    static preroll = false
     public handleGrab(entity: EntityView, _localPos: PIXI.Point): void {
         if (this.deps.isUiBlocked()) {
             return;
         }
 
         PlatformHandler.instance.platform.gameplayStart();
+
 
         if (entity instanceof RewardContainerEntity) {
             // We don't set this.activeEntity because we don't want to drag it
@@ -147,14 +148,14 @@ export class MergeInputMergeService {
         }
     }
 
-    public handleMove(globalPos: PIXI.Point, autoCollectCoins: boolean): void {
+    public async handleMove(globalPos: PIXI.Point, autoCollectCoins: boolean): Promise<void> {
         const localPos = this.deps.gridView.toLocal(globalPos);
 
         if (this.activeEntity) {
             this.deps.entities.setEntityPosition(this.activeEntity as any, localPos.x, localPos.y);
             this.updateMergeHighlight();
 
-            const merged = this.tryMergeOnRelease();
+            const merged = await this.tryMergeOnRelease();
             if (merged) {
                 this.deps.gridView.setActive(null);
                 this.activeEntity = null//merged;
@@ -174,12 +175,12 @@ export class MergeInputMergeService {
         }
     }
 
-    public handleRelease(_globalPos: PIXI.Point): void {
+    public async handleRelease(_globalPos: PIXI.Point): Promise<void> {
         if (!this.activeEntity) {
             return;
         }
 
-        const merged = this.tryMergeOnRelease();
+        const merged = await this.tryMergeOnRelease();
         if (merged) {
             this.deps.gridView.setActive(null);
             this.activeEntity = null;
@@ -261,7 +262,7 @@ export class MergeInputMergeService {
     // Merge logic
     // -------------------------
 
-    private tryMergeOnRelease(): BlockMergeEntity | undefined {
+    private async tryMergeOnRelease(): Promise<BlockMergeEntity | undefined> {
         if (!(this.activeEntity instanceof BlockMergeEntity)) {
             this.clearHighlight();
             return;
@@ -278,6 +279,10 @@ export class MergeInputMergeService {
             return;
         }
 
+        if (!MergeInputMergeService.preroll) {
+            MergeInputMergeService.preroll = true;
+            await PlatformHandler.instance.platform.showCommercialBreak();
+        }
         this.clearHighlight();
 
         const mergeData = this.deps.entities.merge(source, target);

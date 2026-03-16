@@ -202,7 +202,7 @@ export default class NetScene extends GameScene {
             console.log(fullModel)
         })
 
-        this.truck3D.buildStandardTruck(MODELS.PoliceKenney, {
+        this.truck3D?.buildStandardTruck(MODELS.PoliceKenney, {
 
             scale: 50,
             wheelScale: 50,
@@ -247,7 +247,7 @@ export default class NetScene extends GameScene {
         this.levelViewService3D = new LevelViewService3D(this.gameplayScene.threeScene, this.myTruck);
 
         this.levelService.onLevelBuilt.add((level) => {
-            this.levelViewService3D.buildLevel(level, this.myTruck, this.levelService.spawnedEntities)
+            this.levelViewService3D?.buildLevel(level, this.myTruck, this.levelService.spawnedEntities)
         })
 
         const worldIdx = 0; // "Medium" is the 3rd world (index 2)

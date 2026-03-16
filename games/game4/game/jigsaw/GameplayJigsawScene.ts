@@ -96,6 +96,8 @@ export default class GameplayJigsawScene extends GameScene {
 
         this.gameplayContainer.addChild(this.jigsawBoardView);
 
+
+
     }
 
     public async build(): Promise<void> {
@@ -231,7 +233,6 @@ export default class GameplayJigsawScene extends GameScene {
         }
         SoundManager.instance.playBackgroundSound(Assets.AmbientSound.AmbientSoundId, 0)
         SoundManager.instance.setMasterAmbientVolume(Assets.AmbientSound.AmbientMasterVolume)
-
         if (Game.debugParams.over) {
             setTimeout(() => {
                 this.completePuzzle()
@@ -482,7 +483,7 @@ export default class GameplayJigsawScene extends GameScene {
         const ratio = width / height;
 
         // 1. Define target total pieces instead of hardcoded grids
-        let targetPieces = 12; // Default (easy)
+        let targetPieces = 9; // Default (easy)
         const difficulty = data?.difficulty || "medium";
 
         if (difficulty === "medium") {

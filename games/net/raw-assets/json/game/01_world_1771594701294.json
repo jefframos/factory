@@ -108,8 +108,8 @@
         },
         {
           "type": "sensor",
-          "x": -128,
-          "y": -261,
+          "x": -167,
+          "y": -240,
           "width": 60,
           "height": 200,
           "label": "start_node",
@@ -228,8 +228,8 @@
         },
         {
           "type": "box",
-          "x": -319,
-          "y": -333,
+          "x": -331,
+          "y": -361,
           "width": 120,
           "height": 30,
           "modifier": {
@@ -472,8 +472,8 @@
         },
         {
           "type": "polygon",
-          "x": 389,
-          "y": -708,
+          "x": 77,
+          "y": -311,
           "label": "TRI",
           "isStatic": true,
           "vertices": [
@@ -622,8 +622,8 @@
         },
         {
           "type": "circle",
-          "x": 254,
-          "y": -158,
+          "x": 247,
+          "y": -206,
           "label": "collectible_coin",
           "isStatic": true,
           "radius": 20,
@@ -649,8 +649,8 @@
         },
         {
           "type": "box",
-          "x": 394,
-          "y": -134,
+          "x": -474,
+          "y": -291,
           "label": "collectible_cargo",
           "isStatic": true,
           "width": 40,
@@ -677,8 +677,8 @@
         },
         {
           "type": "box",
-          "x": 89,
-          "y": -132,
+          "x": -402,
+          "y": -252,
           "label": "collectible_cargo",
           "isStatic": true,
           "width": 40,
@@ -691,6 +691,29 @@
           "physics": {
             "isStatic": true,
             "isSensor": true,
+            "mass": 1,
+            "friction": 1,
+            "restitution": 0.5,
+            "density": 0.001
+          },
+          "view3d": {
+            "color": 8191745,
+            "colorSlot": 1,
+            "isSmooth": true,
+            "opacity": 1
+          }
+        },
+        {
+          "type": "box",
+          "x": 651,
+          "y": -188,
+          "label": "new_box",
+          "isStatic": true,
+          "width": 100,
+          "height": 100,
+          "physics": {
+            "isStatic": true,
+            "isSensor": false,
             "mass": 1,
             "friction": 1,
             "restitution": 0.5,
