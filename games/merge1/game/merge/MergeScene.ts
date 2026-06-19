@@ -239,7 +239,7 @@ export default class MergeScene extends GameScene {
         this.background.scale.set(ViewUtils.elementEvelop(this.background, Game.gameScreenData.width, Game.gameScreenData.height));
 
         // Let the HUD handle its own internal positioning
-        this.hud.updateLayout();
+        this.hud?.updateLayout();
     }
 
     // --- Logic & State ---

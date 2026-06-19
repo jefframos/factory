@@ -1,7 +1,14 @@
+PlatformHandler.ENABLE_VIDEO_ADS = true;
+PlatformHandler.GAME_ID = 'f7cdc30e8fd14e50a3170c485f207936';
+PlatformHandler.instance.initialize(new YouTubePlayablePlatform()).then(() => {
+    new MyGame();
+
+})
+
+
 import SoundLoadManager from '@core/audio/SoundLoaderManager';
 import { Game } from '@core/Game';
 import { ManifestHelper } from '@core/loader/ManifestHelper';
-import GameDistributionPlatform from '@core/platforms/GameDistributionPlatform';
 import PlatformHandler from '@core/platforms/PlatformHandler';
 import { PopupManager } from '@core/popup/PopupManager';
 import { SceneManager } from '@core/scene/SceneManager';
@@ -16,6 +23,7 @@ import audioManifest from './manifests/audio.json'; // adjust path
 import fontManifest from './manifests/fonts.json'; // adjust path
 import imageManifest from './manifests/images.json'; // adjust path
 import jsonManifest from './manifests/json.json'; // adjust path
+import YouTubePlayablePlatform from '@core/platforms/YouTubePlayablePlatform';
 
 
 export default class MyGame extends Game {
@@ -34,16 +42,12 @@ export default class MyGame extends Game {
 
         this.folderPath = 'merge1';
 
-        PlatformHandler.ENABLE_VIDEO_ADS = true;
-        PlatformHandler.GAME_ID = 'f7cdc30e8fd14e50a3170c485f207936';
-        PlatformHandler.instance.initialize(new GameDistributionPlatform()).then(() => {
-            PlatformHandler.instance.platform.startLoad();
-            this.stageContainer.addChild(this.gameContainer);
-            this.sceneManager = new SceneManager(this.gameContainer);
-            this.loaderScene = this.sceneManager.register('loader', MergeLoader);
-            this.sceneManager.changeScene('loader');
-            this.loadAssets();
-        })
+        PlatformHandler.instance.platform.startLoad();
+        this.stageContainer.addChild(this.gameContainer);
+        this.sceneManager = new SceneManager(this.gameContainer);
+        this.loaderScene = this.sceneManager.register('loader', MergeLoader);
+        this.sceneManager.changeScene('loader');
+        this.loadAssets();
 
     }
 
@@ -172,4 +176,3 @@ export default class MyGame extends Game {
 }
 
 // bootstrap
-new MyGame();
