@@ -141,23 +141,36 @@ export class WorkerEntity extends PIXI.Container {
     }
 
     public moveToMiningSpot(): void {
-        this.targetX = this.lane.laneDef.miningX;
-        this.targetY = this.lane.laneDef.miningY;
+        const position = this.lane.view.getMiningSpotPosition();
+
+        this.targetX = position.x;
+        this.targetY = position.y;
         this.state = WorkerState.MovingToMiningSpot;
     }
 
+    public refreshMiningSpotTarget(): void {
+        if (
+            this.state !== WorkerState.MovingToMiningSpot &&
+            this.state !== WorkerState.Mining
+        ) {
+            return;
+        }
+
+        const position = this.lane.view.getMiningSpotPosition();
+        this.targetX = position.x;
+        this.targetY = position.y;
+
+        if (this.state === WorkerState.Mining) {
+            this.position.set(position.x, position.y);
+        }
+    }
+
     public moveToDepositSpot(): void {
-        this.targetX = this.lane.laneDef.depositX;
-        this.targetY = this.lane.laneDef.depositY;
+        const position = this.lane.view.getDepositSpotPosition();
+
+        this.targetX = position.x;
+        this.targetY = position.y;
         this.state = WorkerState.MovingToDepositSpot;
-    }
-
-    public isReadyForMiningService(): boolean {
-        return this.state === WorkerState.WaitingInMiningQueue;
-    }
-
-    public isReadyForDepositService(): boolean {
-        return this.state === WorkerState.WaitingInDepositQueue;
     }
 
     public startMiningLoop(): void {
@@ -186,6 +199,7 @@ export class WorkerEntity extends PIXI.Container {
 
             this.carriedAmount += minedThisStep;
             this.mineTickAmount += minedThisStep;
+            this.lane.reportMinedAmount(minedThisStep);
 
             this.mineTickTimer += timeStep;
             remainingDelta -= timeStep;
@@ -215,10 +229,11 @@ export class WorkerEntity extends PIXI.Container {
     private showMinePop(amount: number): void {
         if (amount <= 0) return;
 
+        const worldPos = this.toGlobal(new PIXI.Point(0, -38));
         this.textPopSystem.show(
             `+${amount.toFixed(1)}`,
-            this.x,
-            this.y - 38
+            worldPos.x,
+            worldPos.y
         );
     }
 

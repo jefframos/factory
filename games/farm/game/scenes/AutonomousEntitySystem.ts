@@ -1,15 +1,9 @@
-import { LaneEntity } from "./LaneEntity";
+import { LaneManager } from "./LaneManager";
 
 export class AutonomousEntitySystem {
-    private readonly lanes: LaneEntity[] = [];
-
-    public addLane(lane: LaneEntity): void {
-        this.lanes.push(lane);
-    }
+    public constructor(private readonly laneManager: LaneManager) {}
 
     public update(delta: number): void {
-        for (const lane of this.lanes) {
-            lane.update(delta);
-        }
+        this.laneManager.update(delta);
     }
 }

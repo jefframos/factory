@@ -1,30 +1,37 @@
-# Mining Demo Stable FIFO Fix
+# Lane System Refactor
 
-This version removes the fragile queue promotion logic.
+This package is based on the uploaded source files and refactors the mining demo into:
 
-Important behavior:
-- Queue array is the source of truth for FIFO order.
-- Visual queue slots are only visual targets.
-- A worker can only start mining/depositing if:
-  1. it is first in the queue,
-  2. it has reached its visible queue slot,
-  3. a service slot is free.
-- When a worker leaves service, the next queued worker is started automatically.
-- Deposit works exactly like mining: queue -> deposit spot -> timed deposit -> next.
-- The collect button only collects lane storage into the persistent wallet.
-- Workers deposit into lane storage automatically after mining.
-- No `delta / 60`; all systems use `delta` directly.
+```txt
+BaseDemoScene
+  TextPopSystem
+  LaneManager
+    LaneEntity
+      LaneView
+      WorkerEntity[]
+```
 
-Changed files:
-- MiningDemoTypes.ts
-- TextPopSystem.ts
-- WorkerEntity.ts
-- LaneEntity.ts
-- AutonomousEntitySystem.ts
-- GameEconomyStorage.ts
-- BaseDemoScene.ts
+## Main changes
 
-Assumption:
-Your scene update receives delta in seconds.
-If your engine gives milliseconds, convert once before passing it here:
-`const dt = delta * 0.001`.
+- Lane positions are now local to each lane.
+- `LaneDefinition` no longer uses `entranceX`, `miningX`, `depositX`, etc.
+- Layout is handled by `LaneLayoutDefinition`.
+- `LaneView` owns all visual/local lane positions.
+- `LaneEntity` owns the simulation and its `LaneView`.
+- `LaneManager` stacks lanes vertically and handles lane unlock cost progression.
+- Multiple lane resource types are supported.
+- Economy supports `gold`, `iron`, `coal`, and `crystal`.
+- Mining popup shows one-second mining ticks plus the final remainder.
+- Queue behavior is preserved from the latest stable version.
+
+## Delta assumption
+
+All update methods expect `delta` in seconds.
+
+If your engine passes milliseconds, convert once before calling this system:
+
+```ts
+const dt = delta * 0.001;
+```
+
+Do not use `delta / 60`.

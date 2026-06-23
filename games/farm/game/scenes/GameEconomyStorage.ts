@@ -1,5 +1,11 @@
+import { ResourceType } from "./MiningDemoTypes";
+import { FarmSaveStorage } from "./FarmSaveStorage";
+
 export interface GameEconomyData {
     gold: number;
+    iron: number;
+    coal: number;
+    crystal: number;
 }
 
 export interface AsyncGameStorage {
@@ -7,32 +13,22 @@ export interface AsyncGameStorage {
     save(data: GameEconomyData): Promise<void>;
 }
 
-export class LocalStorageGameStorage implements AsyncGameStorage {
-    private readonly key = "mining-demo-economy";
+export class FarmEconomyStorage implements AsyncGameStorage {
+    public constructor(private readonly farmSaveStorage: FarmSaveStorage) { }
 
     public async load(): Promise<GameEconomyData> {
-        const raw = window.localStorage.getItem(this.key);
-
-        if (!raw) {
-            return { gold: 0 };
-        }
-
-        try {
-            return JSON.parse(raw) as GameEconomyData;
-        } catch {
-            return { gold: 0 };
-        }
+        return this.farmSaveStorage.loadEconomy();
     }
 
     public async save(data: GameEconomyData): Promise<void> {
-        window.localStorage.setItem(this.key, JSON.stringify(data));
+        await this.farmSaveStorage.saveEconomy(data);
     }
 }
 
 export class GameEconomy {
-    private data: GameEconomyData = { gold: 0 };
+    private data: GameEconomyData = createDefaultEconomyData();
 
-    public constructor(private readonly storage: AsyncGameStorage) {}
+    public constructor(private readonly storage: AsyncGameStorage) { }
 
     public async load(): Promise<void> {
         this.data = await this.storage.load();
@@ -42,8 +38,54 @@ export class GameEconomy {
         return this.data.gold;
     }
 
-    public async addGold(amount: number): Promise<void> {
-        this.data.gold += amount;
+    public getResourceAmount(resourceType: ResourceType): number {
+        return this.data[resourceType];
+    }
+
+    public canSpendGold(amount: number): boolean {
+        return this.data.gold >= amount;
+    }
+
+    public async spendGold(amount: number): Promise<boolean> {
+        if (!this.canSpendGold(amount)) {
+            return false;
+        }
+
+        this.data.gold -= amount;
+        await this.storage.save(this.data);
+
+        return true;
+    }
+
+    public async addResource(resourceType: ResourceType, amount: number): Promise<void> {
+        this.data[resourceType] += amount;
         await this.storage.save(this.data);
     }
+
+    public async addResources(resources: Partial<Record<ResourceType, number>>): Promise<void> {
+        for (const [resourceType, amount] of Object.entries(resources)) {
+            if (!amount) continue;
+            this.data[resourceType as ResourceType] += amount;
+        }
+
+        await this.storage.save(this.data);
+    }
+
+    public getDebugText(): string {
+        return [
+            `Gold: ${this.data.gold.toFixed(1)}`,
+            `Iron: ${this.data.iron.toFixed(1)}`,
+            `Coal: ${this.data.coal.toFixed(1)}`,
+            `Crystal: ${this.data.crystal.toFixed(1)}`,
+        ].join("\n");
+    }
+}
+
+function createDefaultEconomyData(): GameEconomyData {
+    return {
+        gold: 0,
+        iron: 0,
+        coal: 0,
+        crystal: 0,
+    };
 }

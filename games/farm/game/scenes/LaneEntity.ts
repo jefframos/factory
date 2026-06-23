@@ -2,9 +2,10 @@ import * as PIXI from "pixi.js";
 import { LaneDefinition, WorkerDefinition } from "./MiningDemoTypes";
 import { TextPopSystem } from "./TextPopSystem";
 import { WorkerEntity } from "./WorkerEntity";
+import { LaneView } from "./LaneView";
 
 export class LaneEntity extends PIXI.Container {
-    public readonly laneDef: LaneDefinition;
+    public readonly view: LaneView;
 
     private readonly workers: WorkerEntity[] = [];
 
@@ -17,19 +18,30 @@ export class LaneEntity extends PIXI.Container {
     private readonly activeDepositors: Set<WorkerEntity> = new Set();
 
     private depositedAmount = 0;
-
-    private readonly graphics = new PIXI.Graphics();
+    private totalMinedAmount = 0;
 
     public constructor(
-        laneDef: LaneDefinition,
-        private readonly textPopSystem: TextPopSystem
+        public readonly laneDef: LaneDefinition,
+        private readonly textPopSystem: TextPopSystem,
+        initialTotalMinedAmount = 0,
+        private readonly onTotalMinedChanged?: (laneId: string, totalMinedAmount: number) => void,
+        initialDepositAmount = 0,
+        private readonly onDepositChanged?: (laneId: string, amount: number) => void
     ) {
         super();
 
-        this.laneDef = laneDef;
+        this.view = new LaneView(laneDef.layout, laneDef.resourceType);
+        this.addChild(this.view);
 
-        this.addChild(this.graphics);
-        this.drawLane();
+        this.totalMinedAmount = Math.max(0, initialTotalMinedAmount);
+        this.depositedAmount = Math.max(0, Math.min(initialDepositAmount, laneDef.depositLimit));
+        this.applyMiningProgress();
+
+        this.refreshView();
+    }
+
+    public get resourceType() {
+        return this.laneDef.resourceType;
     }
 
     public get isDepositFull(): boolean {
@@ -48,7 +60,8 @@ export class LaneEntity extends PIXI.Container {
         const amount = this.depositedAmount;
 
         this.depositedAmount = 0;
-        this.drawLane();
+        this.refreshView();
+        this.onDepositChanged?.(this.laneDef.id, 0);
 
         return amount;
     }
@@ -59,10 +72,11 @@ export class LaneEntity extends PIXI.Container {
         }
 
         const worker = new WorkerEntity(workerDef, this, this.textPopSystem);
+        const entrance = this.view.getEntrancePosition();
 
         worker.position.set(
-            this.laneDef.entranceX,
-            this.laneDef.entranceY + this.workers.length * 34
+            entrance.x,
+            entrance.y + this.workers.length * 34
         );
 
         this.workers.push(worker);
@@ -105,8 +119,6 @@ export class LaneEntity extends PIXI.Container {
         this.miningReady.delete(worker);
         this.activeMiners.delete(worker);
 
-
-
         if (this.depositQueue.includes(worker) || this.activeDepositors.has(worker)) {
             return;
         }
@@ -137,13 +149,17 @@ export class LaneEntity extends PIXI.Container {
         const accepted = Math.min(amount, this.remainingDepositSpace);
 
         this.depositedAmount += accepted;
-        this.drawLane();
+        this.refreshView();
+        this.onDepositChanged?.(this.laneDef.id, this.depositedAmount);
 
         if (accepted > 0) {
+            const depositSpot = this.view.getDepositSpotPosition();
+            const worldPos = this.view.toGlobal(new PIXI.Point(depositSpot.x, depositSpot.y - 45));
+
             this.textPopSystem.show(
                 `+${accepted.toFixed(1)} ${this.laneDef.resourceType}`,
-                this.laneDef.depositX,
-                this.laneDef.depositY - 45
+                worldPos.x,
+                worldPos.y
             );
         }
 
@@ -157,6 +173,22 @@ export class LaneEntity extends PIXI.Container {
 
         this.tryStartMiningServices();
         this.tryStartDepositServices();
+    }
+
+    public reportMinedAmount(amount: number): void {
+        if (amount <= 0) {
+            return;
+        }
+
+        const previousProgress = this.getMiningProgress();
+        this.totalMinedAmount += amount;
+        const nextProgress = this.getMiningProgress();
+
+        if (nextProgress !== previousProgress) {
+            this.applyMiningProgress();
+        }
+
+        this.onTotalMinedChanged?.(this.laneDef.id, this.totalMinedAmount);
     }
 
     private tryStartMiningServices(): void {
@@ -227,66 +259,53 @@ export class LaneEntity extends PIXI.Container {
     }
 
     private rebuildMiningQueueTargets(): void {
-        this.miningQueue.forEach((worker, index) => {
+        for (let i = 0; i < this.miningQueue.length; i++) {
+            const worker = this.miningQueue[i];
+
             this.miningReady.delete(worker);
 
+            const queuePosition = this.view.getMiningQueuePosition(i);
+
             worker.moveToMiningQueueSlot(
-                this.laneDef.miningX - ((index + 1) * this.laneDef.miningQueueSpacing),
-                this.laneDef.miningY
-            );
-        });
-    }
-    private rebuildDepositQueueTargets(): void {
-        this.depositQueue.forEach((worker, index) => {
-            this.depositReady.delete(worker);
-
-            worker.moveToDepositQueueSlot(
-                this.laneDef.depositX + ((index + 1) * this.laneDef.depositQueueSpacing),
-                this.laneDef.depositY
-            );
-        });
-    }
-
-    private drawLane(): void {
-        this.graphics.clear();
-
-        this.graphics.lineStyle(6, 0xffffff, 0.35);
-        this.graphics.moveTo(this.laneDef.entranceX, this.laneDef.entranceY);
-        this.graphics.lineTo(this.laneDef.miningX, this.laneDef.miningY);
-
-        this.graphics.beginFill(0x5c3a1e);
-        this.graphics.drawCircle(this.laneDef.miningX, this.laneDef.miningY, 35);
-        this.graphics.endFill();
-
-        this.graphics.beginFill(this.isDepositFull ? 0xff3333 : 0xffcc00);
-        this.graphics.drawRect(
-            this.laneDef.depositX - 45,
-            this.laneDef.depositY + 35,
-            90,
-            25
-        );
-        this.graphics.endFill();
-
-        this.drawQueueMarkers();
-    }
-
-    private drawQueueMarkers(): void {
-        this.graphics.lineStyle(2, 0xffffff, 0.2);
-
-        for (let i = 0; i < this.laneDef.maxWorkers; i++) {
-            this.graphics.drawCircle(
-                this.laneDef.miningX -
-                ((i + 1) * this.laneDef.miningQueueSpacing),
-                this.laneDef.miningY,
-                18
-            );
-
-            this.graphics.drawCircle(
-                this.laneDef.depositX +
-                ((i + 1) * this.laneDef.depositQueueSpacing),
-                this.laneDef.depositY,
-                18
+                queuePosition.x,
+                queuePosition.y
             );
         }
+
+        for (const worker of this.activeMiners) {
+            worker.refreshMiningSpotTarget();
+        }
+    }
+
+    private rebuildDepositQueueTargets(): void {
+        for (let i = 0; i < this.depositQueue.length; i++) {
+            const worker = this.depositQueue[i];
+
+            this.depositReady.delete(worker);
+
+            const queuePosition = this.view.getDepositQueuePosition(i);
+
+            worker.moveToDepositQueueSlot(
+                queuePosition.x,
+                queuePosition.y
+            );
+        }
+    }
+
+    private refreshView(): void {
+        this.view.setStorageState(this.depositedAmount, this.isDepositFull);
+    }
+
+    private getMiningProgress(): number {
+        if (this.laneDef.miningProgressMaxAmount <= 0) {
+            return 1;
+        }
+
+        return Math.min(1, this.totalMinedAmount / this.laneDef.miningProgressMaxAmount);
+    }
+
+    private applyMiningProgress(): void {
+        this.view.setMiningProgress(this.getMiningProgress());
+        this.rebuildMiningQueueTargets();
     }
 }
