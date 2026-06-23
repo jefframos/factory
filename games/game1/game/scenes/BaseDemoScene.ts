@@ -1,19 +1,25 @@
 import { GameScene } from "@core/scene/GameScene";
 import BaseButton from "@core/ui/BaseButton";
-import * as PIXI from 'pixi.js';
 import { Signal } from "signals";
+import * as PIXI from 'pixi.js';
+
 export default class BaseDemoScene extends GameScene {
+    public destroy(): void {
+        throw new Error("Method not implemented.");
+    }
     public onButtonPressed: Signal = new Signal();
 
     private closeButton!: BaseButton;
-    constructor() {
-        super();
+    public async build(): Promise<void> {
+
+        const buttonWidth = 250;
+        const buttonHeight = 80;
         this.closeButton = new BaseButton({
             standard: {
                 allPadding: 35,
-                texture: PIXI.Texture.from('Button01_s_Red.webp'),
-                width: 80,
-                height: 80,
+                texture: PIXI.Texture.from('Button01_s_Purple.webp'),
+                width: buttonWidth,
+                height: buttonHeight,
                 fontStyle: new PIXI.TextStyle({
                     fontFamily: 'LEMONMILK-Bold',
                     fill: 0xffffff,
@@ -22,25 +28,15 @@ export default class BaseDemoScene extends GameScene {
                 }),
             },
             over: {
-                texture: PIXI.Texture.from('Button01_s_Red.webp'),
+                texture: PIXI.Texture.from('Button01_s_Purple.webp'),
             },
             click: {
                 callback: () => {
-                    this.onButtonPressed.dispatch();
+                    this.onButtonPressed.dispatch(data.id);
                 }
             }
         });
 
-        this.closeButton.setLabel('X')
-        this.addChild(this.closeButton)
-        this.closeButton.zIndex = 1000
-    }
-    public destroy() {
-    }
-    public resize(): void {
-        const global = this.toLocal(new PIXI.Point())
-        this.closeButton.x = global.x + 20
-        this.closeButton.y = global.y + 20
     }
     public update(delta: number) {
         this.sortChildren();
