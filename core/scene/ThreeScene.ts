@@ -1,5 +1,5 @@
-import { Game } from '@core/Game';
-import { GameScene } from '@core/scene/GameScene';
+import { Game } from 'core/Game';
+import { GameScene } from 'core/scene/GameScene';
 import * as THREE from 'three';
 import SetupThree from './SetupThree';
 
@@ -30,7 +30,7 @@ export abstract class ThreeScene extends GameScene {
 
     /**
      * Set the layer order of the 3D scene
-     * @param onTop If true, Three.js sits above Pixi. If false, below.
+     * param onTop If true, Three.js sits above Pixi. If false, below.
      */
     public setThreeLayer(onTop: boolean) {
         SetupThree.container.style.zIndex = onTop ? "10" : "1";

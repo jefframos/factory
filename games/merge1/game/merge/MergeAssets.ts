@@ -1,4 +1,4 @@
-import SoundManager from "@core/audio/SoundManager";
+import SoundManager from "core/audio/SoundManager";
 import * as PIXI from "pixi.js";
 export interface SoundAsset {
     soundId: string | string[];
@@ -109,7 +109,7 @@ export default class MergeAssets {
             },
             Notification: {
                 // soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
-                soundId: ['Bonus Highlights'],
+                soundId: ['Bonus-Highlights'],
                 volumeMinMax: 0.2,
                 pitchMinMax: [0.9, 1]
             },
@@ -120,13 +120,13 @@ export default class MergeAssets {
             },
             MeowAngry: {
                 // soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
-                soundId: ['Cat Meow Angry 01', 'Cat Meow Angry 02'],
+                soundId: ['Cat-Meow-Angry-01', 'Cat-Meow-Angry-02'],
                 volumeMinMax: 0.7,
                 pitchMinMax: [0.8, 1.2]
             },
             Meow: {
                 // soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
-                soundId: ['Cat Meow 01', 'Cat Meow 02'],
+                soundId: ['Cat-Meow-01', 'Cat-Meow-02'],
                 volumeMinMax: 0.2,
                 pitchMinMax: [0.8, 1]
             },
@@ -136,7 +136,7 @@ export default class MergeAssets {
                 pitchMinMax: [0.8, 1]
             },
             Grab: {
-                soundId: ['grab (1)', 'grab (2)', 'grab (3)', 'grab (4)'],
+                soundId: ['grab-1', 'grab-2', 'grab-3', 'grab-4'],
                 volumeMinMax: 0.1,
                 pitchMinMax: [0.8, 1]
             },
@@ -156,12 +156,12 @@ export default class MergeAssets {
                 pitchMinMax: [0.8, 1.2],
             },
             OpenChest: {
-                soundId: 'Chest Open',
+                soundId: 'Chest-Open',
                 volumeMinMax: [0.1, 0.15],
                 pitchMinMax: [0.8, 1.2],
             },
             DropChest: {
-                soundId: 'Chest Appear',
+                soundId: 'Chest-Appear',
                 volumeMinMax: [0.1, 0.15],
                 pitchMinMax: [0.8, 1.2],
             },
@@ -210,11 +210,11 @@ export default class MergeAssets {
                 pitchMinMax: [0.8, 1],
             },
             PuzzleCompleted: {
-                soundId: 'Positive Open',
+                soundId: 'Positive-Open',
                 volumeMinMax: 0.1,
             },
             GameOverAppear: {
-                soundId: 'Applause Cheering',
+                soundId: 'Applause-Cheering',
                 volumeMinMax: 0.1,
             },
             PreviewOverAppear: {
@@ -247,12 +247,12 @@ export default class MergeAssets {
                 pitchMinMax: [0.6, 0.7],
             },
             OpenPopupPrize: {
-                soundId: 'Bonus Screen Popup',
+                soundId: 'Bonus-Screen-Popup',
                 volumeMinMax: [0.15, 0.2],
                 pitchMinMax: [0.8, 1],
             },
             FlyAnim: {
-                soundId: 'Bonus Fly Anim',
+                soundId: 'Bonus-Fly-Anim',
                 volumeMinMax: [0.15, 0.2],
                 pitchMinMax: [0.8, 1],
             }
@@ -353,7 +353,7 @@ export default class MergeAssets {
             Critter: "critter",
             CritterUp: "critter-up",
             Egg: "egg",
-            Coin: "ResourceBar_Single_Icon_Coin - Copy",
+            Coin: "ResourceBar_Single_Icon_Coin-Copy",
             CoinPileSmall: "coin-small-pile",
             CoinPileLarge: "coin-pile",
             Gem: "ResourceBar_Single_Icon_Gem",

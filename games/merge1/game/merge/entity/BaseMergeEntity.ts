@@ -1,4 +1,4 @@
-import { Game } from "@core/Game";
+import { Game } from "core/Game";
 import { gsap } from "gsap"; // Ensure gsap is installed
 import * as PIXI from "pixi.js";
 import MergeAssets from "../MergeAssets";

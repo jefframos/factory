@@ -1,5 +1,5 @@
-import PlatformHandler from "@core/platforms/PlatformHandler";
-import BaseButton from "@core/ui/BaseButton";
+import PlatformHandler from "core/platforms/PlatformHandler";
+import BaseButton from "core/ui/BaseButton";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";

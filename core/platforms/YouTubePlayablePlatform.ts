@@ -1,4 +1,4 @@
-import SoundManager from "@core/audio/SoundManager";
+import SoundManager from "core/audio/SoundManager";
 import { IPlatformConnection } from "./IPlatformConnection";
 
 declare global {
@@ -8,7 +8,7 @@ declare global {
 }
 
 function log(event: string, ...args: any[]) {
-    console.log(`[YT_PLATFORM] ${event}`, ...args);
+    //console.log(`[YT_PLATFORM] ${event}`, ...args);
 }
 
 export default class YouTubePlayablePlatform implements IPlatformConnection {
@@ -18,6 +18,10 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
     private saveData: Record<string, string> = {};
 
     private first = false;
+
+    private isPlayablesEnv(): boolean {
+        return Boolean(window.ytgame?.IN_PLAYABLES_ENV);
+    }
 
     // -------------------------
     // SDK LOADING
@@ -62,6 +66,12 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
         log("initialize - start");
 
         // await this.startLoadSDK(); // intentionally disabled per your setup
+
+        if (!this.isPlayablesEnv()) {
+            log("Not in YouTube Playables environment - using browser localStorage backend");
+            this.saveData = {};
+            return;
+        }
 
         if (window.ytgame?.game?.loadData) {
             log("loadData available - requesting save state");
@@ -169,21 +179,33 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
     public async setItem(key: string, value: string): Promise<void> {
         log("setItem", key, value);
 
+        if (!this.isPlayablesEnv()) {
+            localStorage.setItem(key, value);
+            this.saveData[key] = value;
+            return;
+        }
+
         this.saveData[key] = value;
 
         await window.ytgame?.game?.saveData?.(
             JSON.stringify(this.saveData)
         );
 
-        log("saveData updated", this.saveData);
+        //log("saveData updated", this.saveData);
     }
 
     public async getItem(key: string): Promise<string | null> {
         log("getItem", key);
 
+        if (!this.isPlayablesEnv()) {
+            const localValue = localStorage.getItem(key);
+            log("getItem result (localStorage)", key, localValue);
+            return localValue;
+        }
+
         const value = this.saveData[key] ?? null;
 
-        log("getItem result", key, value);
+        //log("getItem result", key, value);
 
         return value;
     }
@@ -191,13 +213,19 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
     public async removeItem(key: string): Promise<void> {
         log("removeItem", key);
 
+        if (!this.isPlayablesEnv()) {
+            localStorage.removeItem(key);
+            delete this.saveData[key];
+            return;
+        }
+
         delete this.saveData[key];
 
         await window.ytgame?.game?.saveData?.(
             JSON.stringify(this.saveData)
         );
 
-        log("saveData updated after remove", this.saveData);
+        //log("saveData updated after remove", this.saveData);
     }
 
     // -------------------------
@@ -270,5 +298,9 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
 
     public async getFriends(): Promise<void> {
         log("getFriends (noop)");
+    }
+
+    public async setPlayerScore(_score: number): Promise<void> {
+        log("setPlayerScore (noop)");
     }
 }

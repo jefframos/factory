@@ -1,7 +1,7 @@
-import Collider, { ColliderOptions } from '@core/collision/Collider';
-import { ColliderDebugHelper } from '@core/collision/ColliderDebugHelper';
-import { CollisionSystem } from '@core/collision/CollisionSystem';
-import ViewUtils from '@core/utils/ViewUtils';
+import Collider, { ColliderOptions } from 'core/collision/Collider';
+import { ColliderDebugHelper } from 'core/collision/ColliderDebugHelper';
+import { CollisionSystem } from 'core/collision/CollisionSystem';
+import ViewUtils from 'core/utils/ViewUtils';
 import * as PIXI from 'pixi.js';
 import {
     createTextFromObject,

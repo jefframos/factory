@@ -3,7 +3,7 @@ import { Assets } from 'pixi.js';
 export class BundleLoader {
     /**
      * Registers bundles from raw manifest JSON data.
-     * @param manifestData The JSON object from the generated manifest.
+     * param manifestData The JSON object from the generated manifest.
      */
     static async registerBundles(manifestData: any, path: string) {
         if (!manifestData || !manifestData.bundles) {
@@ -30,7 +30,7 @@ export class BundleLoader {
 
     /**
      * Loads a registered bundle asynchronously.
-     * @param bundleName Name of the bundle to load.
+     * param bundleName Name of the bundle to load.
      */
     static async loadBundle(bundleName: string): Promise<void> {
         console.log(`📦 Loading bundle: ${bundleName}`);

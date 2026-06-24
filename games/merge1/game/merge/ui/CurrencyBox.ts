@@ -1,5 +1,5 @@
-import { NumberConverter } from "@core/utils/NumberConverter";
-import ViewUtils from "@core/utils/ViewUtils";
+import { NumberConverter } from "core/utils/NumberConverter";
+import ViewUtils from "core/utils/ViewUtils";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
 import { CurrencyType, InGameEconomy } from "../data/InGameEconomy";

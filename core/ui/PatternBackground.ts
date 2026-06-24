@@ -1,4 +1,4 @@
-import { Game } from "@core/Game";
+import { Game } from "core/Game";
 import { Assets, Container, Sprite, Texture, TilingSprite } from "pixi.js";
 
 export interface PatternConfig {

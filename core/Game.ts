@@ -1,4 +1,4 @@
-import '@core/style.css';
+import 'core/style.css';
 import * as PIXI from 'pixi.js';
 import Stats from 'stats.js';
 

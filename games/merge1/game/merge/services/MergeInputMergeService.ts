@@ -1,5 +1,5 @@
 // services/MergeInputMergeService.ts
-import PlatformHandler from "@core/platforms/PlatformHandler";
+import PlatformHandler from "core/platforms/PlatformHandler";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
 import { InGameProgress } from "../data/InGameProgress";

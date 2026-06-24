@@ -1,7 +1,7 @@
-import PlatformHandler from "@core/platforms/PlatformHandler";
-import Pool from "@core/Pool";
-import BaseButton from "@core/ui/BaseButton";
-import ViewUtils from "@core/utils/ViewUtils";
+import PlatformHandler from "core/platforms/PlatformHandler";
+import Pool from "core/Pool";
+import BaseButton from "core/ui/BaseButton";
+import ViewUtils from "core/utils/ViewUtils";
 import gsap from "gsap";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";

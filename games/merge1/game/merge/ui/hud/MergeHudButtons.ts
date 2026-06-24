@@ -1,5 +1,5 @@
-import BaseButton from "@core/ui/BaseButton";
-import SoundToggleButton from "@core/ui/SoundToggleButton";
+import BaseButton from "core/ui/BaseButton";
+import SoundToggleButton from "core/ui/SoundToggleButton";
 import * as PIXI from "pixi.js";
 import { CollectionDataManager } from "../../collections/CollectionDataManager";
 import { CollectionPanel } from "../../collections/CollectionPanel";

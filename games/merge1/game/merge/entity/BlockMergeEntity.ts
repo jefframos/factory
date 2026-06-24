@@ -1,5 +1,5 @@
-import { Game } from "@core/Game";
-import ViewUtils from "@core/utils/ViewUtils";
+import { Game } from "core/Game";
+import ViewUtils from "core/utils/ViewUtils";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
 import { PatternRegistry } from "../data/PatternRegistry";

@@ -1,6 +1,6 @@
-import BaseButton from "@core/ui/BaseButton";
-import { NineSliceProgressBar } from "@core/ui/NineSliceProgressBar";
-import ViewUtils from "@core/utils/ViewUtils";
+import BaseButton from "core/ui/BaseButton";
+import { NineSliceProgressBar } from "core/ui/NineSliceProgressBar";
+import ViewUtils from "core/utils/ViewUtils";
 import * as PIXI from "pixi.js";
 import MergeAssets, { SHOP_STYLE_CONFIG } from "../../MergeAssets";
 import { CurrencyType, InGameEconomy } from "../../data/InGameEconomy";

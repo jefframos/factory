@@ -1,6 +1,6 @@
-import { Game } from "@core/Game";
-import BaseButton from "@core/ui/BaseButton";
-import { NineSliceProgressBar } from "@core/ui/NineSliceProgressBar";
+import { Game } from "core/Game";
+import BaseButton from "core/ui/BaseButton";
+import { NineSliceProgressBar } from "core/ui/NineSliceProgressBar";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";

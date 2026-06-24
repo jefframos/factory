@@ -1,6 +1,7 @@
 import { Signal } from "signals";
 import { InGameProgress } from "../data/InGameProgress";
 import GameStorage from "../storage/GameStorage";
+import PlatformHandler from "core/platforms/PlatformHandler";
 
 export class CollectionDataManager {
     private static _instance: CollectionDataManager;
@@ -13,6 +14,10 @@ export class CollectionDataManager {
 
     private _lastNotificationState: boolean = false;
     private _lastHighestLevel: number = 0;
+    private _claimData: Record<number, boolean> = {};
+    private _isHydrated = false;
+    private _hydrationPromise: Promise<void> | null = null;
+    private _writeQueue: Promise<void> = Promise.resolve();
 
     public static get instance(): CollectionDataManager {
         return this._instance || (this._instance = new CollectionDataManager());
@@ -27,10 +32,37 @@ export class CollectionDataManager {
 
         // Initial check for notifications
         this.refreshNotificationState();
+        void this.ensureHydrated();
     }
 
     private get currentKey(): string {
         return `${this.BASE_PREFIX}${GameStorage.STORAGE_KEY}`;
+    }
+
+    private async ensureHydrated(): Promise<void> {
+        if (this._isHydrated) {
+            return;
+        }
+
+        if (!this._hydrationPromise) {
+            this._hydrationPromise = this.hydrateFromPlatform();
+        }
+
+        await this._hydrationPromise;
+    }
+
+    private async hydrateFromPlatform(): Promise<void> {
+        try {
+            const raw = await PlatformHandler.instance.platform.getItem(this.currentKey);
+            this._claimData = raw ? JSON.parse(raw) : {};
+        } catch (e) {
+            console.error("CollectionDataManager: Failed to hydrate claim data", e);
+            this._claimData = {};
+        } finally {
+            this._isHydrated = true;
+            this._hydrationPromise = null;
+            this.refreshNotificationState();
+        }
     }
 
     /**
@@ -99,27 +131,39 @@ export class CollectionDataManager {
      * Storage Logic
      */
     public wipeCollectionData(): void {
-        localStorage.removeItem(this.currentKey);
+        this._claimData = {};
+        this._writeQueue = this._writeQueue
+            .then(async () => {
+                await PlatformHandler.instance.platform.removeItem(this.currentKey);
+            })
+            .catch((e) => {
+                console.error("CollectionDataManager: Failed to wipe collection data", e);
+            });
         this.refreshNotificationState();
     }
 
     public hardWipeAllVersions(): void {
-        Object.keys(localStorage)
-            .filter(key => key.startsWith(this.BASE_PREFIX))
-            .forEach(key => localStorage.removeItem(key));
+        // Platform storage API is key-based, so remove the active key used by this build.
+        this.wipeCollectionData();
         this.refreshNotificationState();
     }
 
     private getClaimData(): Record<number, boolean> {
-        const raw = localStorage.getItem(this.currentKey);
-        try {
-            return raw ? JSON.parse(raw) : {};
-        } catch (e) {
-            return {};
+        if (!this._isHydrated) {
+            void this.ensureHydrated();
         }
+        return this._claimData;
     }
 
     private saveClaimData(data: Record<number, boolean>) {
-        localStorage.setItem(this.currentKey, JSON.stringify(data));
+        this._claimData = { ...data };
+        const serialized = JSON.stringify(this._claimData);
+        this._writeQueue = this._writeQueue
+            .then(async () => {
+                await PlatformHandler.instance.platform.setItem(this.currentKey, serialized);
+            })
+            .catch((e) => {
+                console.error("CollectionDataManager: Failed to save claim data", e);
+            });
     }
 }

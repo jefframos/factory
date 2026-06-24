@@ -1,7 +1,7 @@
-// @core/platforms/PlatformFactory.ts
+// core/platforms/PlatformFactory.ts
 import { IPlatformConnection } from "./IPlatformConnection";
 
-// @core/platforms/PlatformFactory.ts
+// core/platforms/PlatformFactory.ts
 export async function getPlatformInstance(name: string): Promise<IPlatformConnection> {
     switch (name) {
         case 'poki': {

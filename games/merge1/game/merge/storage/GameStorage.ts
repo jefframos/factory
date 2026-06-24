@@ -1,4 +1,5 @@
 import { IProgressionStats, ProgressionStats } from "../data/ProgressionStats";
+import PlatformHandler from "core/platforms/PlatformHandler";
 
 export enum ProgressionType {
     MAIN = "MAIN",
@@ -90,6 +91,10 @@ export default class GameStorage {
 
     // Internal cache to ensure all systems share the same object in memory
     private _cachedState: IFarmSaveData | null = null;
+    private _isHydrated = false;
+    private _hasMutatedBeforeHydration = false;
+    private _hydrationPromise: Promise<void> | null = null;
+    private _writeQueue: Promise<void> = Promise.resolve();
 
     public static get instance(): GameStorage {
         return this._instance || (this._instance = new GameStorage());
@@ -98,6 +103,51 @@ export default class GameStorage {
     private constructor() {
         // Pre-warm the cache
         this.getFullState();
+        void this.ensureHydrated();
+    }
+
+    public async ready(): Promise<void> {
+        await this.ensureHydrated();
+    }
+
+    private async ensureHydrated(): Promise<void> {
+        if (this._isHydrated) {
+            return;
+        }
+
+        if (!this._hydrationPromise) {
+            this._hydrationPromise = this.hydrateFromPlatform();
+        }
+
+        await this._hydrationPromise;
+    }
+
+    private async hydrateFromPlatform(): Promise<void> {
+        try {
+            const raw = await PlatformHandler.instance.platform.getItem(GameStorage.STORAGE_KEY);
+
+            if (!raw) {
+                if (!this._cachedState) {
+                    this._cachedState = this.createEmptyState();
+                }
+                return;
+            }
+
+            const parsed = JSON.parse(raw) as IFarmSaveData;
+
+            // If state changed locally before hydration completed, keep newest local state.
+            if (!this._cachedState || !this._hasMutatedBeforeHydration) {
+                this._cachedState = parsed;
+            }
+        } catch (e) {
+            console.error("GameStorage: Failed to hydrate save data from platform. Keeping local cache.", e);
+            if (!this._cachedState) {
+                this._cachedState = this.createEmptyState();
+            }
+        } finally {
+            this._isHydrated = true;
+            this._hydrationPromise = null;
+        }
     }
 
     /**
@@ -106,17 +156,8 @@ export default class GameStorage {
      */
     public getFullState(): IFarmSaveData {
         if (!this._cachedState) {
-            try {
-                const data = localStorage.getItem(GameStorage.STORAGE_KEY);
-                if (data) {
-                    this._cachedState = JSON.parse(data);
-                } else {
-                    this._cachedState = this.createEmptyState();
-                }
-            } catch (e) {
-                console.error("GameStorage: Failed to parse save data. Resetting to empty state.", e);
-                this._cachedState = this.createEmptyState();
-            }
+            this._cachedState = this.createEmptyState();
+            void this.ensureHydrated();
         }
         return this._cachedState!;
     }
@@ -130,9 +171,12 @@ export default class GameStorage {
 
         // Merge patch into state
         this._cachedState = { ...currentState, ...patch };
+        if (!this._isHydrated) {
+            this._hasMutatedBeforeHydration = true;
+        }
 
         // Commit to disk
-        this.persist();
+        void this.persist();
     }
 
     /**
@@ -141,15 +185,28 @@ export default class GameStorage {
      */
     public saveFullState(data: IFarmSaveData): void {
         this._cachedState = { ...data };
-        this.persist();
+        if (!this._isHydrated) {
+            this._hasMutatedBeforeHydration = true;
+        }
+        void this.persist();
     }
 
     /**
-     * Private helper to stringify and write to LocalStorage
+     * Private helper to stringify and write to platform storage
      */
-    private persist(): void {
+    private async persist(): Promise<void> {
         if (!this._cachedState) return;
-        localStorage.setItem(GameStorage.STORAGE_KEY, JSON.stringify(this._cachedState));
+
+        const serialized = JSON.stringify(this._cachedState);
+        this._writeQueue = this._writeQueue
+            .then(async () => {
+                await PlatformHandler.instance.platform.setItem(GameStorage.STORAGE_KEY, serialized);
+            })
+            .catch((e) => {
+                console.error("GameStorage: Failed to persist data", e);
+            });
+
+        await this._writeQueue;
     }
 
     public createEmptyState(): IFarmSaveData {
@@ -211,10 +268,10 @@ export default class GameStorage {
      * Wipes data. Reload is recommended to clear all Singleton memory.
      */
     public resetGameProgress(reload: boolean = false): void {
-        localStorage.removeItem(GameStorage.STORAGE_KEY);
-
         this._cachedState = this.createEmptyState();
-        this.persist();
+        this._hasMutatedBeforeHydration = false;
+        this._isHydrated = true;
+        void this.persist();
 
         // reset singleton in-memory state too (if it exists)
         ProgressionStats.instance.hardReset();
@@ -226,7 +283,7 @@ export default class GameStorage {
 
     /**
  * Returns the number of entities currently saved in a specific room.
- * @param roomId The ID of the room (e.g., "room_0", "room_1")
+ * param roomId The ID of the room (e.g., "room_0", "room_1")
  */
     public getRoomEntityCount(roomId: string): number {
         const state = this.getFullState();

@@ -1,4 +1,4 @@
-import { TiledLayer } from '@core/tiled/ExtractTiledFile';
+import { TiledLayer } from 'core/tiled/ExtractTiledFile';
 import * as PIXI from 'pixi.js';
 import Collider, { ColliderOptions } from './Collider';
 import { ColliderDebugHelper } from './ColliderDebugHelper';

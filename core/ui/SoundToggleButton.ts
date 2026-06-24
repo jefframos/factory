@@ -1,4 +1,4 @@
-import SoundManager from "@core/audio/SoundManager";
+import SoundManager from "core/audio/SoundManager";
 import * as PIXI from "pixi.js";
 
 export default class SoundToggleButton extends PIXI.Container {

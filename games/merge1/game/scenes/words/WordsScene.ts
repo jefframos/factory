@@ -1,5 +1,5 @@
-import { Game } from '@core/Game';
-import PromiseUtils from '@core/utils/PromiseUtils';
+import { Game } from 'core/Game';
+import PromiseUtils from 'core/utils/PromiseUtils';
 import * as PIXI from 'pixi.js';
 import BaseDemoScene from "../BaseDemoScene";
 import DialogueManager from './DialogueManager';

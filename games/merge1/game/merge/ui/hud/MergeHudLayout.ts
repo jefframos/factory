@@ -1,4 +1,4 @@
-import { Game } from "@core/Game";
+import { Game } from "core/Game";
 import type { MergeHudCoreViews } from "./MergeHudTypes";
 
 export function layoutMergeHud(rootX: number, rootY: number, views: MergeHudCoreViews): void {

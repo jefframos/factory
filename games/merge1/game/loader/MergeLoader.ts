@@ -1,6 +1,6 @@
-import LoaderScene from "@core/loader/LoaderScene";
-import { NineSliceProgressBarAsync } from "@core/ui/NineSliceProgressBarAsync";
-import PatternBackground from "@core/ui/PatternBackground";
+import LoaderScene from "core/loader/LoaderScene";
+import { NineSliceProgressBarAsync } from "core/ui/NineSliceProgressBarAsync";
+import PatternBackground from "core/ui/PatternBackground";
 
 export default class MergeLoader extends LoaderScene {
     private patternBg!: PatternBackground;

@@ -118,8 +118,8 @@ export class RoomRegistry {
     }
     /**
      * Gets the room that becomes unlocked at the specified level.
-     * @param level - The level to check for newly unlocked room
-     * @returns The room config that unlocks at this level, or null if no room unlocks
+        * param level - The level to check for newly unlocked room
+        * returns The room config that unlocks at this level, or null if no room unlocks
      */
     public static getRoomUnlockedAtLevel(level: number): IRoomConfig | null {
         const roomEntry = Object.entries(this.ROOMS).find(

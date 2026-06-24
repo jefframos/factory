@@ -1,4 +1,4 @@
-import ViewUtils from "@core/utils/ViewUtils";
+import ViewUtils from "core/utils/ViewUtils";
 import { BaseNotificationView } from "./BaseNotificationView";
 import { NotificationRegistry } from "./NotificationRegistry";
 import {

@@ -1,6 +1,6 @@
-import { Game } from "@core/Game";
-import Pool from "@core/Pool";
-import ViewUtils from "@core/utils/ViewUtils";
+import { Game } from "core/Game";
+import Pool from "core/Pool";
+import ViewUtils from "core/utils/ViewUtils";
 import * as PIXI from "pixi.js";
 import { StaticData } from "../data/StaticData";
 import { BlockMergeEntity } from "../entity/BlockMergeEntity";
@@ -141,10 +141,10 @@ export class TextureBaker {
 
     /**
      * Bakes any PIXI Container into a texture and saves it to the cache.
-     * @param id The unique identifier for the cached texture.
-     * @param container The PIXI container to bake.
-     * @param renderer The PIXI renderer.
-     * @returns The generated (or cached) PIXI.Texture.
+        * param id The unique identifier for the cached texture.
+        * param container The PIXI container to bake.
+        * param renderer The PIXI renderer.
+        * returns The generated (or cached) PIXI.Texture.
      */
     public static bakeContainer(id: string, container: PIXI.Container, renderer: PIXI.Renderer): PIXI.Texture {
         // Check if it already exists in cache

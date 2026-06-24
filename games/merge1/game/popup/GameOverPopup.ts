@@ -1,6 +1,6 @@
-import { BasePopup, PopupData } from '@core/popup/BasePopup';
-import BaseButton from '@core/ui/BaseButton';
-import { ConfettiEffect } from '@core/ui/ConfettiEffect';
+import { BasePopup, PopupData } from 'core/popup/BasePopup';
+import BaseButton from 'core/ui/BaseButton';
+import { ConfettiEffect } from 'core/ui/ConfettiEffect';
 import { LevelDefinition } from 'games/game4/types';
 import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';

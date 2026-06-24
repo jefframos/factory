@@ -6,7 +6,7 @@ import { BasePhysicsEntity } from "./BaseEntity";
 export class PolygonEntity extends BasePhysicsEntity {
 
     /**
-     * @param options { x, y, vertices, layer }
+     * param options { x, y, vertices, layer }
      * vertices should be an array of {x, y} points
      */
     public build(options: { x: number, y: number, vertices: Vector[], layer: CollisionLayer, debugColor?: number }) {

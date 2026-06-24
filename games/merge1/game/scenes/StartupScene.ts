@@ -1,5 +1,5 @@
-import { GameScene } from "@core/scene/GameScene";
-import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
+import { GameScene } from "core/scene/GameScene";
+import { ExtractTiledFile } from "core/tiled/ExtractTiledFile";
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
 import MainSceneUi from "./ui/MainSceneUi";

@@ -62,8 +62,8 @@ export class DevGuiManager {
 
     /**
      * Retrieves an existing folder or creates one if it doesn't exist.
-     * @param name - Folder name
-     * @returns dat.GUI instance for the folder
+     * param name - Folder name
+     * returns dat.GUI instance for the folder
      */
     private getOrCreateFolder(name: string): dat.GUI {
 
@@ -77,11 +77,11 @@ export class DevGuiManager {
 
     /**
  * Adds GUI controls for multiple properties on a given object.
- * @param owner - The object owning the property (used for display name and binding).
- * @param target - The actual object whose properties will be edited (e.g., position).
- * @param keys - Array of property keys (e.g., ['x', 'y', 'z']).
- * @param range - [min, max] range for sliders.
- * @param folderName - (Optional) Folder to group the controls.
+ * param owner - The object owning the property (used for display name and binding).
+ * param target - The actual object whose properties will be edited (e.g., position).
+ * param keys - Array of property keys (e.g., ['x', 'y', 'z']).
+ * param range - [min, max] range for sliders.
+ * param folderName - (Optional) Folder to group the controls.
  */
     public addProperties(
         owner: any,
@@ -110,12 +110,12 @@ export class DevGuiManager {
 
     /**
  * Adds GUI controls for a dynamic object and calls a callback when any value changes.
- * @param defaultValue - The initial object containing keys and default numeric values.
- * @param callback - Function to call when any property changes, receives the full object.
- * @param keys - The keys to expose in the GUI.
- * @param range - [min, max] range for sliders.
- * @param folderName - (Optional) folder name to group the controls.
- * @param name - (Optional) label prefix for each control.
+ * param defaultValue - The initial object containing keys and default numeric values.
+ * param callback - Function to call when any property changes, receives the full object.
+ * param keys - The keys to expose in the GUI.
+ * param range - [min, max] range for sliders.
+ * param folderName - (Optional) folder name to group the controls.
+ * param name - (Optional) label prefix for each control.
  */
     public addObjectTrigger(
         defaultValue: Record<string, number>,

@@ -1,4 +1,4 @@
-import { Game } from "@core/Game";
+import { Game } from "core/Game";
 import * as PIXI from "pixi.js";
 import MergeAssets from "../../MergeAssets";
 import { NotificationCenter } from "../notifications/NotificationCenter";

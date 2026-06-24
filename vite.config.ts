@@ -17,6 +17,7 @@ export default defineConfig({
     publicDir: resolve(__dirname, 'public'),
     resolve: {
         alias: {
+            'core': resolve(__dirname, 'core'),
             '@core': resolve(__dirname, 'core'),
         },
     },

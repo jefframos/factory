@@ -18,8 +18,8 @@ export class ZoomService {
 
     /**
      * Smoothly transitions the zoom level
-     * @param scale The target scale (e.g., 1.5 for 150%)
-     * @param duration Seconds for the transition
+        * param scale The target scale (e.g., 1.5 for 150%)
+        * param duration Seconds for the transition
      */
     public setZoom(scale: number, duration: number = 0.5): void {
         if (Math.abs(this.targetScale - scale) < 0.01) return; // Prevent redundant restarts

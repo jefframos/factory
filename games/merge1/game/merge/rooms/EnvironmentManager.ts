@@ -1,6 +1,6 @@
 // manager/EnvironmentManager.ts
-import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
-import TiledContainer from "@core/tiled/TiledContainer";
+import { ExtractTiledFile } from "core/tiled/ExtractTiledFile";
+import TiledContainer from "core/tiled/TiledContainer";
 import * as PIXI from "pixi.js";
 import { RoomId, RoomRegistry } from "../rooms/RoomRegistry";
 

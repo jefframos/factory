@@ -1,9 +1,9 @@
 
-import SoundManager from '@core/audio/SoundManager';
-import { BasePopup, PopupData } from '@core/popup/BasePopup';
-import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
-import TiledLayerObject from '@core/tiled/TiledLayerObject';
-import BaseButton from '@core/ui/BaseButton';
+import SoundManager from 'core/audio/SoundManager';
+import { BasePopup, PopupData } from 'core/popup/BasePopup';
+import { ExtractTiledFile } from 'core/tiled/ExtractTiledFile';
+import TiledLayerObject from 'core/tiled/TiledLayerObject';
+import BaseButton from 'core/ui/BaseButton';
 import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
 import MergeAssets from '../merge/MergeAssets';

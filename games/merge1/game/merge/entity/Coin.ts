@@ -1,5 +1,5 @@
-import { Game } from "@core/Game";
-import ViewUtils from "@core/utils/ViewUtils";
+import { Game } from "core/Game";
+import ViewUtils from "core/utils/ViewUtils";
 import * as PIXI from "pixi.js";
 import { CurrencyType } from "../data/InGameEconomy";
 import MergeAssets from "../MergeAssets";
@@ -24,7 +24,7 @@ export class Coin extends PIXI.Container {
 
     constructor() {
         super();
-        this.coinSprite = PIXI.Sprite.from('ResourceBar_Single_Icon_Coin - Copy');
+        this.coinSprite = PIXI.Sprite.from('ResourceBar_Single_Icon_Coin-Copy');
         this.coinSprite.anchor.set(0.5);
         this.addChild(this.coinSprite);
     }

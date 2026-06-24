@@ -1,8 +1,8 @@
-import AutoPositionTiledContainer from '@core/tiled/AutoPositionTiledContainer';
-import { ExtratedTiledTileData } from '@core/tiled/ExtractTiledFile';
-import { ScaleMode } from '@core/tiled/TiledAutoPositionObject';
-import { FoundTiledObject } from '@core/tiled/TiledLayerObject';
-import BaseButton from '@core/ui/BaseButton';
+import AutoPositionTiledContainer from 'core/tiled/AutoPositionTiledContainer';
+import { ExtratedTiledTileData } from 'core/tiled/ExtractTiledFile';
+import { ScaleMode } from 'core/tiled/TiledAutoPositionObject';
+import { FoundTiledObject } from 'core/tiled/TiledLayerObject';
+import BaseButton from 'core/ui/BaseButton';
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
 

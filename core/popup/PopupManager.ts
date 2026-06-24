@@ -1,4 +1,4 @@
-import { Game } from '@core/Game';
+import { Game } from 'core/Game';
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
 import { BasePopup, PopupData } from './BasePopup';

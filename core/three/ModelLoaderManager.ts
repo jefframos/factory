@@ -22,8 +22,8 @@ export default class ModelLoaderManager {
 
   /**
    * Loads a model from a path or returns a clone from cache.
-   * @param path The full URL/path to the model file.
-   * @param id Optional custom ID. If not provided, filename is used.
+   * param path The full URL/path to the model file.
+   * param id Optional custom ID. If not provided, filename is used.
    */
   public async loadModel(path: string, id?: string): Promise<THREE.Object3D> {
     // Generate cache key: Use provided ID or extract filename from path

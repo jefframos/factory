@@ -69,7 +69,7 @@ export class ProgressionStats {
     private _flushTimer: number | null = null;
     private _lastFlushAtMs: number = 0;
 
-    // Throttle LocalStorage writes (ms)
+    // Throttle platform storage writes (ms)
     private readonly _minFlushIntervalMs: number = 150;
 
     private constructor() {

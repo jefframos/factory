@@ -1,5 +1,5 @@
-import { GameScene } from "@core/scene/GameScene";
-import BaseButton from "@core/ui/BaseButton";
+import { GameScene } from "core/scene/GameScene";
+import BaseButton from "core/ui/BaseButton";
 import * as PIXI from 'pixi.js';
 import { Signal } from "signals";
 export default class BaseDemoScene extends GameScene {

@@ -1,7 +1,7 @@
 
-import InteractiveEventUtils from '@core/utils/InteractiveEventUtils';
-import ObjectCloner from '@core/utils/ObjectCloner';
-import ViewUtils from '@core/utils/ViewUtils';
+import InteractiveEventUtils from 'core/utils/InteractiveEventUtils';
+import ObjectCloner from 'core/utils/ObjectCloner';
+import ViewUtils from 'core/utils/ViewUtils';
 import * as PIXI from 'pixi.js';
 
 export enum ButtonState {

@@ -1,5 +1,5 @@
-import BaseButton, { ButtonState } from "@core/ui/BaseButton";
-import ViewUtils from "@core/utils/ViewUtils";
+import BaseButton, { ButtonState } from "core/ui/BaseButton";
+import ViewUtils from "core/utils/ViewUtils";
 import * as PIXI from "pixi.js";
 import MergeAssets from "../MergeAssets";
 import { TextureBaker } from "../vfx/TextureBaker";

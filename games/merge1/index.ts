@@ -6,24 +6,25 @@ PlatformHandler.instance.initialize(new YouTubePlayablePlatform()).then(() => {
 })
 
 
-import SoundLoadManager from '@core/audio/SoundLoaderManager';
-import { Game } from '@core/Game';
-import { ManifestHelper } from '@core/loader/ManifestHelper';
-import PlatformHandler from '@core/platforms/PlatformHandler';
-import { PopupManager } from '@core/popup/PopupManager';
-import { SceneManager } from '@core/scene/SceneManager';
-import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
+import SoundLoadManager from 'core/audio/SoundLoaderManager';
+import { Game } from 'core/Game';
+import { ManifestHelper } from 'core/loader/ManifestHelper';
+import PlatformHandler from 'core/platforms/PlatformHandler';
+import { PopupManager } from 'core/popup/PopupManager';
+import { SceneManager } from 'core/scene/SceneManager';
+import { ExtractTiledFile } from 'core/tiled/ExtractTiledFile';
 import * as PIXI from 'pixi.js';
 import MergeLoader from './game/loader/MergeLoader';
 import MergeAssets from './game/merge/MergeAssets';
 import MergeScene from './game/merge/MergeScene';
+import GameStorage from './game/merge/storage/GameStorage';
 import { PrizePopup } from './game/merge/ui/prize/PrizePopup';
 import { DevGuiManager } from './game/utils/DevGuiManager';
 import audioManifest from './manifests/audio.json'; // adjust path
 import fontManifest from './manifests/fonts.json'; // adjust path
 import imageManifest from './manifests/images.json'; // adjust path
 import jsonManifest from './manifests/json.json'; // adjust path
-import YouTubePlayablePlatform from '@core/platforms/YouTubePlayablePlatform';
+import YouTubePlayablePlatform from 'core/platforms/YouTubePlayablePlatform';
 
 
 export default class MyGame extends Game {
@@ -56,7 +57,7 @@ export default class MyGame extends Game {
     protected async loadAssets() {
         // initial sizing
         await PIXI.Assets.init();
-        //await GameStorage.instance.getFullState();
+        await GameStorage.instance.ready();
 
         const bundles = []
         const images = ManifestHelper.patchPaths(imageManifest, `${this.folderPath}/images/`);
@@ -86,18 +87,12 @@ export default class MyGame extends Game {
         const aliases = ManifestHelper.getAliasesWithoutExtension(fontManifest)
 
         aliases.forEach(async element => {
-            const font = PIXI.Assets.get(element)
-            const style = document.createElement('style');
-            style.textContent = `
-            @font-face {
-                font-family: ${element};
-                src: url('./${this.folderPath}/fonts/${element}.woff2') format('woff2');
-                font-weight: normal;
-                font-style: normal;
-            }
-            `;
-            document.head.appendChild(style);
-            document.fonts.add(font);
+            const face = new FontFace(
+                element,
+                `url('./${this.folderPath}/fonts/${element}.woff2') format('woff2')`
+            );
+            const loadedFace = await face.load();
+            document.fonts.add(loadedFace);
             await document.fonts.ready;
             await document.fonts.load('16px ' + element);
 
@@ -139,7 +134,7 @@ export default class MyGame extends Game {
             //resolution: 2,
             letterSpacing: 10,
         }, {
-            chars: ['0123456789: ?!{}()@#$%^&*-+,./', ['a', 'z'], ['A', 'Z']]
+            chars: ['0123456789: ?!{}()#$%^&*-+,./', ['a', 'z'], ['A', 'Z']]
         });
 
 

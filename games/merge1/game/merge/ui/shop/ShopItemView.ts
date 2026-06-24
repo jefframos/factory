@@ -1,6 +1,6 @@
-import BaseButton from "@core/ui/BaseButton";
-import { NumberConverter } from "@core/utils/NumberConverter";
-import ViewUtils from "@core/utils/ViewUtils";
+import BaseButton from "core/ui/BaseButton";
+import { NumberConverter } from "core/utils/NumberConverter";
+import ViewUtils from "core/utils/ViewUtils";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
 import MergeAssets, { SHOP_STYLE_CONFIG } from "../../MergeAssets";

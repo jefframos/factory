@@ -1,5 +1,6 @@
 import { Signal } from "signals";
 import SoundLoadManager from "./SoundLoaderManager";
+import PlatformHandler from "core/platforms/PlatformHandler";
 
 export interface SoundProperties {
 	volume?: number;
@@ -26,8 +27,53 @@ export default class SoundManager {
 
 	private constructor() {
 		// Load saved state (defaults to false if not found)
-		const savedMute = localStorage.getItem(SoundManager.STORAGE_ID + "muted") === "true";
-		this.setMuted(savedMute);
+		void this.loadMutedState();
+	}
+
+	private async loadMutedState(): Promise<void> {
+		const key = SoundManager.STORAGE_ID + "muted";
+		try {
+			const platform = (PlatformHandler.instance as any).platform;
+			if (platform?.getItem) {
+				const savedMute = await platform.getItem(key);
+				this._isMuted = savedMute === "true";
+				Howler.mute(this._isMuted);
+				this.onMuteChange.dispatch(this._isMuted);
+				return;
+			}
+		} catch (error) {
+			console.warn("SoundManager: platform mute read failed, falling back to localStorage", error);
+		}
+
+		const storage = this.getSafeLocalStorage();
+		const savedMute = storage?.getItem(key) === "true";
+		this._isMuted = savedMute;
+		Howler.mute(this._isMuted);
+		this.onMuteChange.dispatch(this._isMuted);
+	}
+
+	private getSafeLocalStorage(): Storage | null {
+		try {
+			return window.localStorage ?? null;
+		} catch {
+			return null;
+		}
+	}
+
+	private persistMutedState(mute: boolean): void {
+		const key = SoundManager.STORAGE_ID + "muted";
+
+		try {
+			const platform = (PlatformHandler.instance as any).platform;
+			if (platform?.setItem) {
+				void platform.setItem(key, String(mute));
+				return;
+			}
+		} catch (error) {
+			console.warn("SoundManager: platform mute write failed, falling back to localStorage", error);
+		}
+
+		this.getSafeLocalStorage()?.setItem(key, String(mute));
 	}
 
 	public static get instance(): SoundManager {
@@ -63,7 +109,7 @@ export default class SoundManager {
 		Howler.mute(mute);
 
 		// Persist the choice
-		localStorage.setItem(SoundManager.STORAGE_ID + "muted", String(mute));
+		this.persistMutedState(mute);
 
 		this.onMuteChange.dispatch(this._isMuted);
 	}

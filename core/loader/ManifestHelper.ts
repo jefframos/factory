@@ -5,9 +5,9 @@ export class ManifestHelper {
      * Adjusts all asset paths in the manifest by prepending a base path (like /game1).
      * This ensures PixiJS loads assets from the correct folder.
      * 
-     * @param manifest The manifest object
-     * @param basePath Path prefix (e.g. "/game1")
-     * @returns A new manifest with adjusted paths
+     * param manifest The manifest object
+     * param basePath Path prefix (e.g. "/game1")
+     * returns A new manifest with adjusted paths
      */
     static patchPaths(manifest: AssetsManifest, basePath: string): AssetsManifest {
         const patched = structuredClone(manifest); // avoid mutating original

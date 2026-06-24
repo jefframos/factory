@@ -1,4 +1,4 @@
-import SoundManager from "@core/audio/SoundManager";
+import SoundManager from "core/audio/SoundManager";
 import { IPlatformConnection } from "./IPlatformConnection";
 
 export default class PokiPlatform implements IPlatformConnection {

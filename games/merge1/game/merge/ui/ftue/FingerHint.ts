@@ -1,4 +1,4 @@
-import ViewUtils from "@core/utils/ViewUtils";
+import ViewUtils from "core/utils/ViewUtils";
 import * as PIXI from "pixi.js";
 
 export type FingerMode = "hidden" | "hover" | "drag";

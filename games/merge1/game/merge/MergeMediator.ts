@@ -1,5 +1,5 @@
-import TiledContainer from "@core/tiled/TiledContainer";
-import PromiseUtils from "@core/utils/PromiseUtils";
+import TiledContainer from "core/tiled/TiledContainer";
+import PromiseUtils from "core/utils/PromiseUtils";
 import * as PIXI from "pixi.js";
 
 import { GridBaker } from "./core/GridBaker";

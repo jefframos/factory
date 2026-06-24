@@ -1,4 +1,4 @@
-import ViewUtils from '@core/utils/ViewUtils';
+import ViewUtils from 'core/utils/ViewUtils';
 import { gsap } from 'gsap'; // or your preferred tweening library
 import * as PIXI from 'pixi.js';
 import Assets from '../Assets';

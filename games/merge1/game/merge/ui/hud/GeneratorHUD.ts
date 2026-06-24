@@ -1,6 +1,6 @@
-import BaseButton from "@core/ui/BaseButton";
-import { NineSliceProgressBar } from "@core/ui/NineSliceProgressBar";
-import { TweenUtil } from "@core/utils/TweenUtility";
+import BaseButton from "core/ui/BaseButton";
+import { NineSliceProgressBar } from "core/ui/NineSliceProgressBar";
+import { TweenUtil } from "core/utils/TweenUtility";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
 import MergeAssets from "../../MergeAssets";

@@ -9,6 +9,7 @@ import { globSync } from 'glob';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { ensureFolderExists } from '../folderUtils/folderUtils.mjs';
+import { sanitizeAssetNames } from '../folderUtils/sanitizeAssetNames.mjs';
 
 dotenv.config();
 
@@ -35,6 +36,13 @@ ensureFolderExists(rawImagesN)
 ensureFolderExists(outputManifest)
 ensureFolderExists(outputImagesN)
 ensureFolderExists(outputImages)
+
+const renamedPreloadImages = sanitizeAssetNames(rawImages, (msg) => console.log(msg));
+const renamedNonPreloadImages = sanitizeAssetNames(rawImagesN, (msg) => console.log(msg));
+const totalRenamedImages = renamedPreloadImages + renamedNonPreloadImages;
+if (totalRenamedImages > 0) {
+    console.log(`🧹 Sanitized ${totalRenamedImages} image filename(s) before build`);
+}
 
 // ✅ Use 'skip' to delete originals after conversion
 const compressOptions = {

@@ -1,4 +1,4 @@
-import { Game } from "@core/Game";
+import { Game } from "core/Game";
 
 export default class ShortcutManager {
     private static shortcuts: { [key: string]: () => void } = {};

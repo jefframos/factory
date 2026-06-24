@@ -1,5 +1,5 @@
 // LevelSelectViewElements.ts
-import { ButtonAttributes, ButtonData } from "@core/ui/BaseButton";
+import { ButtonAttributes, ButtonData } from "core/ui/BaseButton";
 import type { Difficulty } from "games/game4/types";
 import * as PIXI from "pixi.js";
 import MergeAssets from "../merge/MergeAssets";

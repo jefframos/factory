@@ -1,4 +1,4 @@
-import { Game } from "@core/Game";
+import { Game } from "core/Game";
 import * as PIXI from "pixi.js";
 import { StaticData } from "../data/StaticData";
 import { BlockMergeEntity } from "../entity/BlockMergeEntity";

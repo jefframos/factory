@@ -1,4 +1,4 @@
-import Pool from "@core/Pool";
+import Pool from "core/Pool";
 import { Back, gsap } from "gsap";
 import * as PIXI from "pixi.js";
 import MergeAssets from "../MergeAssets";

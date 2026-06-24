@@ -1,4 +1,4 @@
-import { Game } from '@core/Game';
+import { Game } from 'core/Game';
 import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
 

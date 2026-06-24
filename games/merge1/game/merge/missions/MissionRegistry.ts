@@ -29,8 +29,8 @@ export interface MissionTemplate {
 export class MissionRewardCalculator {
 
     /**
-     * @param missionValue A value between 0.05 and 0.2
-     * @param highestPieceLevel The highest level entity the player has (1-30)
+        * param missionValue A value between 0.05 and 0.2
+        * param highestPieceLevel The highest level entity the player has (1-30)
      */
     public static calculateCoinReward(missionValue: number, highestPieceLevel: number): number {
         // 1. Get the shop config for the highest piece the player can actually interact with
@@ -46,8 +46,8 @@ export class MissionRewardCalculator {
     }
 
     /**
-     * @param missionValue A value between 0.05 and 0.2
-     * @param highestPieceLevel Player progress (1-30)
+        * param missionValue A value between 0.05 and 0.2
+        * param highestPieceLevel Player progress (1-30)
      */
     public static calculateGemReward(missionValue: number, highestPieceLevel: number): number {
         // Goals: 3 gems is "low" (early game/low mission value), 50 gems is "high" (late game/high mission value)

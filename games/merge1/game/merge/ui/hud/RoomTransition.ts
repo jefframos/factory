@@ -1,5 +1,5 @@
 // RoomTransition.ts
-import { Game } from "@core/Game";
+import { Game } from "core/Game";
 import * as PIXI from "pixi.js";
 
 export class RoomTransition extends PIXI.Container {

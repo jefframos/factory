@@ -1,4 +1,4 @@
-import { ColorGradient } from '@core/vfx/ColorGradient';
+import { ColorGradient } from 'core/vfx/ColorGradient';
 import * as PIXI from 'pixi.js';
 
 export interface NineSliceProgressBarOptions {
@@ -75,7 +75,7 @@ export class NineSliceProgressBar extends PIXI.Container {
     }
     /**
      * Updates the progress bar
-     * @param percent value between 0 and 1
+     * param percent value between 0 and 1
      */
     public update(percent: number): void {
         const clampedPercent = Math.max(0, Math.min(1, percent));

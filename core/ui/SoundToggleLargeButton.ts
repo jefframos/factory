@@ -1,5 +1,5 @@
-import SoundManager from "@core/audio/SoundManager";
-import BaseButton, { ButtonState } from "@core/ui/BaseButton";
+import SoundManager from "core/audio/SoundManager";
+import BaseButton, { ButtonState } from "core/ui/BaseButton";
 import * as PIXI from "pixi.js";
 
 export default class SoundToggleLargeButton extends BaseButton {

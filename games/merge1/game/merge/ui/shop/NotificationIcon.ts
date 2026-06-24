@@ -1,4 +1,4 @@
-import { Game } from "@core/Game";
+import { Game } from "core/Game";
 import * as PIXI from "pixi.js";
 import MergeAssets from "../../MergeAssets";
 
@@ -8,8 +8,8 @@ export class NotificationIcon extends PIXI.Container {
     private _checkCondition: () => boolean;
 
     /**
-     * @param checkCondition A function that returns true if the icon should show
-     * @param changeSignal (Optional) An event/signal to listen to for immediate updates
+        * param checkCondition A function that returns true if the icon should show
+        * param changeSignal (Optional) An event/signal to listen to for immediate updates
      */
     constructor(checkCondition: () => boolean, changeSignal?: { add: (cb: (val: boolean) => void) => void }) {
         super();

@@ -5,7 +5,7 @@ import { BasePhysicsEntity } from "./BaseEntity";
 export class CircleEntity extends BasePhysicsEntity {
 
     /**
-     * @param options { x, y, radius, layer }
+     * param options { x, y, radius, layer }
      */
     public build(options: { x?: number, y?: number, radius: number, layer: CollisionLayer, debugColor?: number }) {
         // Create the body and debug view via factory

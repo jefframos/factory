@@ -1,5 +1,5 @@
 // ui/timedRewards/TimedRewardSlot.ts
-import ViewUtils from "@core/utils/ViewUtils";
+import ViewUtils from "core/utils/ViewUtils";
 import * as PIXI from "pixi.js";
 import MergeAssets from "../../MergeAssets";
 

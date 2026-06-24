@@ -1,4 +1,4 @@
-import PromiseUtils from '@core/utils/PromiseUtils';
+import PromiseUtils from 'core/utils/PromiseUtils';
 import * as PIXI from 'pixi.js';
 import DialogueBubble from './DialogueBubble';
 import { EmojiTextParser } from './EmojiTextParser';

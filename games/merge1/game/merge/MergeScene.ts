@@ -1,16 +1,16 @@
-import { Game } from "@core/Game";
-import PlatformHandler from "@core/platforms/PlatformHandler";
-import { PopupManager } from "@core/popup/PopupManager";
-import { GameScene } from "@core/scene/GameScene";
+import { Game } from "core/Game";
+import PlatformHandler from "core/platforms/PlatformHandler";
+import { PopupManager } from "core/popup/PopupManager";
+import { GameScene } from "core/scene/GameScene";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
 
-import SoundLoadManager from "@core/audio/SoundLoaderManager";
-import SoundManager from "@core/audio/SoundManager";
-import { ExtractTiledFile } from "@core/tiled/ExtractTiledFile";
-import TiledContainer from "@core/tiled/TiledContainer";
-import PatternBackground from "@core/ui/PatternBackground";
-import ViewUtils from "@core/utils/ViewUtils";
+import SoundLoadManager from "core/audio/SoundLoaderManager";
+import SoundManager from "core/audio/SoundManager";
+import { ExtractTiledFile } from "core/tiled/ExtractTiledFile";
+import TiledContainer from "core/tiled/TiledContainer";
+import PatternBackground from "core/ui/PatternBackground";
+import ViewUtils from "core/utils/ViewUtils";
 import { DevGuiManager } from "../utils/DevGuiManager";
 import { CollectionDataManager } from "./collections/CollectionDataManager";
 import { CurrencyType, InGameEconomy } from "./data/InGameEconomy";
@@ -211,7 +211,7 @@ export default class MergeScene extends GameScene {
         // );
 
         this.layout();
-        this.hud.update(delta);
+        this.hud?.update(delta);
 
         if (this.paused) return;
 

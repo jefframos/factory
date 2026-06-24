@@ -1,4 +1,4 @@
-import { NineSliceProgressBar } from "@core/ui/NineSliceProgressBar";
+import { NineSliceProgressBar } from "core/ui/NineSliceProgressBar";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
 import MergeAssets from "../../MergeAssets";

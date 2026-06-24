@@ -1,6 +1,6 @@
-import { Game } from "@core/Game";
-import { GameScene } from "@core/scene/GameScene";
-import BaseButton from "@core/ui/BaseButton";
+import { Game } from "core/Game";
+import { GameScene } from "core/scene/GameScene";
+import BaseButton from "core/ui/BaseButton";
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
 

@@ -1,8 +1,8 @@
-import { Game } from "@core/Game";
-import PlatformHandler from "@core/platforms/PlatformHandler";
-import BaseButton from "@core/ui/BaseButton";
-import SoundToggleButton from "@core/ui/SoundToggleButton";
-import PromiseUtils from "@core/utils/PromiseUtils";
+import { Game } from "core/Game";
+import PlatformHandler from "core/platforms/PlatformHandler";
+import BaseButton from "core/ui/BaseButton";
+import SoundToggleButton from "core/ui/SoundToggleButton";
+import PromiseUtils from "core/utils/PromiseUtils";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";
 import { DevGuiManager } from "../../../utils/DevGuiManager";

@@ -1,6 +1,6 @@
-import { Game } from "@core/Game";
-import { GameScene } from "@core/scene/GameScene";
-import { ProgressBar } from "@core/ui/ProgressBar";
+import { Game } from "core/Game";
+import { GameScene } from "core/scene/GameScene";
+import { ProgressBar } from "core/ui/ProgressBar";
 export default class LoaderScene extends GameScene {
     protected progressBar = new ProgressBar({ width: 300, height: 24 });
     public build() {

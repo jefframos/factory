@@ -1,4 +1,4 @@
-import Pool from '@core/Pool';
+import Pool from 'core/Pool';
 import { Body, Vector } from 'matter-js';
 import { Container } from 'pixi.js';
 import { BodyDescription } from '../core/PhysicsBodyFactory';

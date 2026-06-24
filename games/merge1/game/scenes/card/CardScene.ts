@@ -1,6 +1,6 @@
-import { Game } from "@core/Game";
-import Pool from "@core/Pool";
-import { easeOutQuad } from "@core/utils/Easing";
+import { Game } from "core/Game";
+import Pool from "core/Pool";
+import { easeOutQuad } from "core/utils/Easing";
 import * as PIXI from 'pixi.js';
 import BaseDemoScene from "../BaseDemoScene";
 import CardView from "./CardView";

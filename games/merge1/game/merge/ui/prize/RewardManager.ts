@@ -1,6 +1,6 @@
-import PlatformHandler from "@core/platforms/PlatformHandler";
-import { PopupManager } from "@core/popup/PopupManager";
-import PromiseUtils from "@core/utils/PromiseUtils";
+import PlatformHandler from "core/platforms/PlatformHandler";
+import { PopupManager } from "core/popup/PopupManager";
+import PromiseUtils from "core/utils/PromiseUtils";
 import { CurrencyType, InGameEconomy } from "../../data/InGameEconomy";
 import { PrizeItem, PrizePopupData } from "../../prize/PrizeTypes";
 

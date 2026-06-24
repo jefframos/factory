@@ -1,4 +1,4 @@
-import Pool from "@core/Pool";
+import Pool from "core/Pool";
 import { gsap } from "gsap";
 import * as PIXI from "pixi.js";
 import { Signal } from "signals";

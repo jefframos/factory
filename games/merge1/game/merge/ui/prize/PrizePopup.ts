@@ -1,9 +1,9 @@
-import PlatformHandler from '@core/platforms/PlatformHandler';
-import Pool from '@core/Pool';
-import { BasePopup } from '@core/popup/BasePopup';
-import BaseButton, { ButtonState } from '@core/ui/BaseButton';
-import { ConfettiEffect } from '@core/ui/ConfettiEffect';
-import { NumberConverter } from '@core/utils/NumberConverter';
+import PlatformHandler from 'core/platforms/PlatformHandler';
+import Pool from 'core/Pool';
+import { BasePopup } from 'core/popup/BasePopup';
+import BaseButton, { ButtonState } from 'core/ui/BaseButton';
+import { ConfettiEffect } from 'core/ui/ConfettiEffect';
+import { NumberConverter } from 'core/utils/NumberConverter';
 import gsap from 'gsap';
 import * as PIXI from 'pixi.js';
 import { CurrencyType } from '../../data/InGameEconomy';
