@@ -4,9 +4,9 @@ import { FloorBuilder } from "../builders/FloorBuilder";
 import type { AreaConfig } from "./AreaConfig";
 
 // ── Constants ────────────────────────────────────────────────────────────────
-const WALL_H   = 3.5;
-const WALL_D   = 1.2;
-const GATE_W   = 6.0;
+const WALL_H     = 3.5;
+const WALL_D     = 1.2;
+const GATE_W     = 6.0;
 const WALL_COLOR = 0x1e2d3d;
 const LOCKED_BG  = "#aa2222";
 const LOCKED_BD  = "#ff5555";
@@ -17,7 +17,6 @@ const PERM_BD    = "#444444";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Push a circle (player) out of an axis-aligned box in XZ. */
 function pushOut(
     pos: THREE.Vector3,
     radius: number,
@@ -48,7 +47,6 @@ function makeGateTexture(value: number, open: boolean, permanent = false): THREE
         ctx.strokeStyle = PERM_BD;
         ctx.lineWidth = 10;
         ctx.strokeRect(5, 5, px - 10, px - 10);
-        // Draw an X
         ctx.strokeStyle = "#555555";
         ctx.lineWidth = 16;
         ctx.beginPath();
@@ -98,6 +96,7 @@ export class Area {
 
     private solidWalls: WallBox[] = [];
     private gates: GateEntry[] = [];
+    private sceneMeshes: THREE.Mesh[] = []; // tracked for destroy()
 
     constructor(
         config: AreaConfig,
@@ -114,7 +113,8 @@ export class Area {
         const cx = centerX;
         const cz = centerZ;
 
-        FloorBuilder.build(scene, config.size, cx, cz);
+        const floorMesh = FloorBuilder.build(scene, config.size, cx, cz);
+        this.sceneMeshes.push(floorMesh);
 
         // North (z = cz+s)
         this.wall(scene, cx - (s + g) / 2, cz + s, s - g, WALL_D);
@@ -137,10 +137,7 @@ export class Area {
         this.gate(scene, cx - s, cz, WALL_D, GATE_W, config.gateValue, 'W');
     }
 
-    /**
-     * Permanently close a gate so it always blocks regardless of player value.
-     * Used to seal the entrance after the player advances to the next area.
-     */
+    /** Permanently close one gate — blocks re-entry after area transition. */
     lockGate(direction: CardinalDir): void {
         const g = this.gates.find(gate => gate.direction === direction);
         if (!g || g.permanentlyLocked) return;
@@ -181,6 +178,25 @@ export class Area {
         }
     }
 
+    /** Remove all meshes from the scene and free GPU memory. */
+    destroy(scene: THREE.Scene): void {
+        for (const m of this.sceneMeshes) {
+            scene.remove(m);
+            m.geometry.dispose();
+            const mats = Array.isArray(m.material) ? m.material : [m.material];
+            for (const mat of mats) (mat as THREE.Material).dispose();
+        }
+        this.sceneMeshes = [];
+
+        for (const g of this.gates) {
+            g.lockedTex.dispose();
+            g.openTex.dispose();
+            g.permTex.dispose();
+        }
+        this.solidWalls = [];
+        this.gates = [];
+    }
+
     // ── Builders ──────────────────────────────────────────────────────────
 
     private wall(
@@ -188,16 +204,15 @@ export class Area {
         cx: number, cz: number,
         sizeX: number, sizeZ: number,
     ): void {
-        // Subdivide so the radial bend deforms smoothly (~1 vertex per 2 world units).
         const segX = Math.max(1, Math.round(sizeX / 2));
-        const segY = 2;
         const segZ = Math.max(1, Math.round(sizeZ / 2));
-        const geo = new THREE.BoxGeometry(sizeX, WALL_H, sizeZ, segX, segY, segZ);
-        const mat = new THREE.MeshStandardMaterial({ color: WALL_COLOR, roughness: 0.9 });
+        const geo  = new THREE.BoxGeometry(sizeX, WALL_H, sizeZ, segX, 2, segZ);
+        const mat  = new THREE.MeshStandardMaterial({ color: WALL_COLOR, roughness: 0.9 });
         BendService.applyBend(mat);
         const mesh = new THREE.Mesh(geo, mat);
         mesh.position.set(cx, WALL_H / 2, cz);
         scene.add(mesh);
+        this.sceneMeshes.push(mesh);
         this.solidWalls.push({
             minX: cx - sizeX / 2, maxX: cx + sizeX / 2,
             minZ: cz - sizeZ / 2, maxZ: cz + sizeZ / 2,
@@ -217,8 +232,8 @@ export class Area {
 
         const segX = Math.max(1, Math.round(sizeX / 2));
         const segZ = Math.max(1, Math.round(sizeZ / 2));
-        const geo = new THREE.BoxGeometry(sizeX, WALL_H, sizeZ, segX, 2, segZ);
-        const mat = new THREE.MeshStandardMaterial({
+        const geo  = new THREE.BoxGeometry(sizeX, WALL_H, sizeZ, segX, 2, segZ);
+        const mat  = new THREE.MeshStandardMaterial({
             map: lockedTex,
             emissive: new THREE.Color(LOCKED_BD),
             emissiveIntensity: 0.25,
@@ -230,6 +245,7 @@ export class Area {
         const mesh = new THREE.Mesh(geo, mat);
         mesh.position.set(cx, WALL_H / 2, cz);
         scene.add(mesh);
+        this.sceneMeshes.push(mesh);
 
         this.gates.push({
             minX: cx - sizeX / 2, maxX: cx + sizeX / 2,

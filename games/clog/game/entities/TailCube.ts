@@ -3,6 +3,8 @@ import { CubeBuilder } from "../builders/CubeBuilder";
 import { BOUNCE_AMPLITUDE, BOUNCE_DURATION, sizeForValue } from "../ClogConstants";
 import { BlobShadow } from "./BlobShadow";
 
+const POP_DURATION = 0.45; // seconds for the spawn-pop animation
+
 export class TailCube {
     public value: number;
     public transform: THREE.Group;
@@ -16,6 +18,7 @@ export class TailCube {
     public isLocked = false;
 
     private bounceTimer = 0;
+    private popTimer    = 0;
     private shadow: BlobShadow;
 
     constructor(value: number, scene: THREE.Scene, position?: THREE.Vector3) {
@@ -50,9 +53,24 @@ export class TailCube {
         this.bounceTimer = BOUNCE_DURATION;
     }
 
+    /** Play an elastic pop-in from scale 0 — call immediately after spawning as a collectible. */
+    startSpawnPop(): void {
+        this.popTimer = POP_DURATION;
+        this.mesh.scale.setScalar(0);
+        this.mesh.position.y = 0;
+    }
+
     update(delta: number): void {
-        // Shadow always tracks current position and size
         this.shadow.update(this.position.x, this.position.z, sizeForValue(this.value));
+
+        if (this.popTimer > 0) {
+            this.popTimer = Math.max(0, this.popTimer - delta);
+            const t = 1 - this.popTimer / POP_DURATION;
+            const s = sizeForValue(this.value) * TailCube.elasticOut(t);
+            this.mesh.scale.setScalar(s);
+            this.mesh.position.y = s * 0.5;
+            return;
+        }
 
         if (this.bounceTimer <= 0) return;
         this.bounceTimer = Math.max(0, this.bounceTimer - delta);
@@ -61,6 +79,13 @@ export class TailCube {
         const s = sizeForValue(this.value) * punch;
         this.mesh.scale.setScalar(s);
         this.mesh.position.y = s * 0.5;
+    }
+
+    /** Elastic ease-out: starts at 0, overshoots to ~1.25×, settles at 1. */
+    private static elasticOut(t: number): number {
+        if (t <= 0) return 0;
+        if (t >= 1) return 1;
+        return Math.pow(2, -8 * t) * Math.sin((t * 4 - 0.5) * Math.PI) + 1;
     }
 
     destroy(): void {

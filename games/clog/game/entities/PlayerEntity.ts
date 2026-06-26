@@ -196,11 +196,6 @@ export class PlayerEntity {
         this.mergeQueue.update(delta);
     }
 
-    /**
-     * Called when the player collides with a collectible.
-     * Appends the cube to the tail and schedules new merges without
-     * interrupting any merge animations already in progress.
-     */
     /** Dev-only: instantly double the player's value. */
     debugDoubleValue(): void {
         this.value *= 2;
@@ -209,40 +204,44 @@ export class PlayerEntity {
         this.startBounce();
     }
 
+    /** Smallest value across the player head and all tail cubes. */
+    get minTailValue(): number {
+        if (this.tail.length === 0) return this.value;
+        return Math.min(this.value, ...this.tail.map(c => c.value));
+    }
+
+    /** Total value: head + every tail cube combined. Used as the .io score. */
+    get score(): number {
+        return this.tail.reduce((sum, c) => sum + c.value, this.value);
+    }
+
+    /**
+     * Called when the player collides with a collectible.
+     * Inserts the cube at its sorted position (descending by value) so it
+     * merges with an equal neighbour instead of being discarded.
+     * The cube stays at its current world position — snake-follow pulls it
+     * smoothly to its tail slot over the next few frames.
+     */
     collect(cube: TailCube): void {
         dbg("collect", { value: cube.value, tailLen: this.tail.length });
 
-        // Trim trailing tail cubes that are lower-value than the new pickup.
-        // They can never merge upward past a higher-value cube — discard them
-        // before they permanently stall the merge chain.
-        for (let i = this.tail.length - 1; i >= 0; i--) {
-            const c = this.tail[i];
-            if (c.value >= cube.value) break;
-            if (c.isMerging || c.isScheduled) break; // don't interrupt live animations
-            c.destroy();
-            this.tail.splice(i, 1);
-        }
+        const insertIdx = this.findInsertIdx(cube.value);
+        this.tail.splice(insertIdx, 0, cube);
+        cube.startBounce();
 
-        // Place the new cube at its eventual spline position so it doesn't
-        // teleport; if history is too short yet, fall back to the tail end.
-        const newIdx = this.tail.length;
-        const newDist = newIdx === 0
-            ? followDist(this.value, cube.value)
-            : this.tailSlotDist(newIdx - 1) + followDist(this.tail[newIdx - 1].value, cube.value);
-        const anchor = this.historyPositionAt(newDist)
-            ?? (this.tail.length > 0
-                ? this.tail[this.tail.length - 1].position.clone()
-                : this.transform.position.clone());
-        cube.transform.position.copy(anchor);
-
-        this.tail.push(cube);
-
-        // Let the cube travel to its spline slot before merging starts
         this.mergeQueue.enqueue({
             duration: SETTLE_DELAY,
-            onProgress: () => { /* just wait */ },
+            onProgress: () => {},
             onDone: () => this.scheduleMerges(),
         });
+    }
+
+    /** Returns the first tail index where tail[i].value < value (descending order). */
+    private findInsertIdx(value: number): number {
+        for (let i = 0; i < this.tail.length; i++) {
+            if (this.tail[i].value < value) return i;
+        }
+        return this.tail.length;
     }
 
     // ── Merge logic ────────────────────────────────────────────────────────────

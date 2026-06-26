@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import ShootingStarEffect, { type ShootingStarSettings } from './ShootingStarEffect';
-import type { BoundsInput, Vector2Input, Vector3Input } from '@core/types/CommonTypes';
-import { Game } from '@core/app/Engine';
-import type { TimeEasing } from '@core/runtime/time/TimeManager';
+
+type BoundsInput  = { width: number; height: number };
+type Vector2Input = { x: number; y: number };
+type Vector3Input = { x: number; y: number; z: number };
 
 type StarfieldMotionConfig = {
     angleDeg: number;
@@ -44,8 +45,6 @@ export default class StarfieldBackground {
 
     private starPositions?: Float32Array;
     private starDepths?: Float32Array;
-    private angleEventId?: number;
-    private speedEventId?: number;
 
     public build(config: StarfieldBackgroundBuildConfig): void {
         this.target = config.target;
@@ -74,15 +73,8 @@ export default class StarfieldBackground {
         this.createStars(config.colorA ?? 0x9fd3ff, config.colorB ?? 0xe1f4ff);
         this.shootingStarEffect.build({
             target: this.target,
-            position: {
-                x: this.position.x,
-                y: this.position.y,
-                z: this.position.z,
-            },
-            bounds: {
-                width: this.visibleWidth,
-                height: this.visibleHeight,
-            },
+            position: { x: this.position.x, y: this.position.y, z: this.position.z },
+            bounds: { width: this.visibleWidth, height: this.visibleHeight },
             resolveTint: () => this.getCurrentStarTint(),
             settings: config.shootingStar,
         });
@@ -124,49 +116,12 @@ export default class StarfieldBackground {
         this.syncVelocityFromMotion();
     }
 
-    public tweenMotionAngle(angleDeg: number, duration: number, easing?: TimeEasing): void {
-        this.clearAngleTween();
-        this.angleEventId = Game.registerTimedValue({
-            currentValue: this.motionAngleDeg,
-            targetValue: angleDeg,
-            duration,
-            easing,
-            isAngle: true,
-            onUpdate: (value) => {
-                this.motionAngleDeg = value;
-                this.syncVelocityFromMotion();
-            },
-            onComplete: () => {
-                this.angleEventId = undefined;
-            },
-        });
-    }
-
-    public tweenMotionSpeed(speed: number, duration: number, easing?: TimeEasing): void {
-        this.clearSpeedTween();
-        this.speedEventId = Game.registerTimedValue({
-            currentValue: this.motionSpeed,
-            targetValue: Math.max(0, speed),
-            duration,
-            easing,
-            onUpdate: (value) => {
-                this.motionSpeed = Math.max(0, value);
-                this.syncVelocityFromMotion();
-            },
-            onComplete: () => {
-                this.speedEventId = undefined;
-            },
-        });
-    }
-
     public resize(): void {
         this.applyTransforms();
     }
 
     public update(delta: number): void {
-        if (!this.pointsGeometry || !this.pointsMaterial || !this.starPositions || !this.starDepths) {
-            return;
-        }
+        if (!this.pointsGeometry || !this.pointsMaterial || !this.starPositions || !this.starDepths) return;
 
         this.colorPhase += delta * this.colorTransitionSpeed;
         this.pointsMaterial.uniforms.uColorMix.value = (Math.sin(this.colorPhase) + 1) * 0.5;
@@ -182,20 +137,14 @@ export default class StarfieldBackground {
             const depth = this.starDepths[i];
             const speedScale = THREE.MathUtils.lerp(0.2, 1.15, depth);
 
-            this.starPositions[index] += this.velocity.x * speedScale * delta;
+            this.starPositions[index]     += this.velocity.x * speedScale * delta;
             this.starPositions[index + 1] += this.velocity.y * speedScale * delta;
 
-            if (this.starPositions[index] > maxX) {
-                this.starPositions[index] = minX;
-            } else if (this.starPositions[index] < minX) {
-                this.starPositions[index] = maxX;
-            }
+            if (this.starPositions[index] > maxX)       this.starPositions[index] = minX;
+            else if (this.starPositions[index] < minX)  this.starPositions[index] = maxX;
 
-            if (this.starPositions[index + 1] > maxY) {
-                this.starPositions[index + 1] = minY;
-            } else if (this.starPositions[index + 1] < minY) {
-                this.starPositions[index + 1] = maxY;
-            }
+            if (this.starPositions[index + 1] > maxY)       this.starPositions[index + 1] = minY;
+            else if (this.starPositions[index + 1] < minY)  this.starPositions[index + 1] = maxY;
         }
 
         this.pointsGeometry.attributes.position.needsUpdate = true;
@@ -203,8 +152,6 @@ export default class StarfieldBackground {
     }
 
     public destroy(): void {
-        this.clearAngleTween();
-        this.clearSpeedTween();
         this.dispose();
         this.target = undefined;
         this.starPositions = undefined;
@@ -213,80 +160,50 @@ export default class StarfieldBackground {
 
     private syncVelocityFromMotion(): void {
         const angleRad = THREE.MathUtils.degToRad(this.motionAngleDeg);
-        this.velocity.set(
-            Math.cos(angleRad) * this.motionSpeed,
-            Math.sin(angleRad) * this.motionSpeed,
-        );
-    }
-
-    private clearAngleTween(): void {
-        if (this.angleEventId === undefined) {
-            return;
-        }
-
-        Game.clearTimedEvent(this.angleEventId);
-        this.angleEventId = undefined;
-    }
-
-    private clearSpeedTween(): void {
-        if (this.speedEventId === undefined) {
-            return;
-        }
-
-        Game.clearTimedEvent(this.speedEventId);
-        this.speedEventId = undefined;
+        this.velocity.set(Math.cos(angleRad) * this.motionSpeed, Math.sin(angleRad) * this.motionSpeed);
     }
 
     private applyTransforms(): void {
-        if (this.points) {
-            this.points.position.copy(this.position);
-        }
+        if (this.points) this.points.position.copy(this.position);
     }
 
     private createStars(colorA: number, colorB: number): void {
-        if (!this.target) {
-            return;
-        }
+        if (!this.target) return;
 
         const positions = new Float32Array(this.starCount * 3);
-        const sizes = new Float32Array(this.starCount);
-        const depths = new Float32Array(this.starCount);
+        const sizes     = new Float32Array(this.starCount);
+        const depths    = new Float32Array(this.starCount);
 
         for (let i = 0; i < this.starCount; i += 1) {
             const index = i * 3;
-
-            positions[index] = THREE.MathUtils.randFloatSpread(this.visibleWidth);
+            positions[index]     = THREE.MathUtils.randFloatSpread(this.visibleWidth);
             positions[index + 1] = THREE.MathUtils.randFloatSpread(this.visibleHeight);
             positions[index + 2] = 0;
 
             const depth = Math.random();
             depths[i] = depth;
-            sizes[i] = THREE.MathUtils.lerp(1.0, 5.0, depth);
+            sizes[i]  = THREE.MathUtils.lerp(1.0, 5.0, depth);
         }
 
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
-        geometry.setAttribute('aDepth', new THREE.BufferAttribute(depths, 1));
+        geometry.setAttribute('aSize',    new THREE.BufferAttribute(sizes, 1));
+        geometry.setAttribute('aDepth',   new THREE.BufferAttribute(depths, 1));
 
         const material = new THREE.ShaderMaterial({
             uniforms: {
-                uColorA: { value: new THREE.Color(colorA) },
-                uColorB: { value: new THREE.Color(colorB) },
-                uColorMix: { value: 0 },
+                uColorA:    { value: new THREE.Color(colorA) },
+                uColorB:    { value: new THREE.Color(colorB) },
+                uColorMix:  { value: 0 },
                 uPixelRatio: { value: Math.min(window.devicePixelRatio || 1, 2) },
             },
             vertexShader: `
                 attribute float aSize;
                 attribute float aDepth;
-
                 varying float vDepth;
-
                 uniform float uPixelRatio;
-
                 void main() {
                     vDepth = aDepth;
-
                     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
                     gl_PointSize = aSize * uPixelRatio * mix(0.7, 1.3, aDepth);
                     gl_Position = projectionMatrix * mvPosition;
@@ -296,23 +213,19 @@ export default class StarfieldBackground {
                 uniform vec3 uColorA;
                 uniform vec3 uColorB;
                 uniform float uColorMix;
-
                 varying float vDepth;
-
                 void main() {
                     vec2 p = gl_PointCoord - 0.5;
                     float dist = length(p);
                     float alpha = smoothstep(0.52, 0.0, dist) * mix(0.3, 0.9, vDepth);
-
                     vec3 color = mix(uColorA, uColorB, uColorMix);
                     color = mix(color * 0.75, color, vDepth);
-
                     gl_FragColor = vec4(color, alpha);
                 }
             `,
             transparent: true,
             depthWrite: false,
-            depthTest: true,
+            depthTest: false,
             blending: THREE.AdditiveBlending,
         });
 
@@ -321,7 +234,6 @@ export default class StarfieldBackground {
         points.renderOrder = -990;
 
         this.target.add(points);
-
         this.points = points;
         this.pointsGeometry = geometry;
         this.pointsMaterial = material;
@@ -330,13 +242,10 @@ export default class StarfieldBackground {
     }
 
     private getCurrentStarTint(): THREE.Color {
-        if (!this.pointsMaterial) {
-            return new THREE.Color(0xd3e8ff);
-        }
-
+        if (!this.pointsMaterial) return new THREE.Color(0xd3e8ff);
         const colorMix = this.pointsMaterial.uniforms.uColorMix.value as number;
-        const colorA = this.pointsMaterial.uniforms.uColorA.value as THREE.Color;
-        const colorB = this.pointsMaterial.uniforms.uColorB.value as THREE.Color;
+        const colorA   = this.pointsMaterial.uniforms.uColorA.value as THREE.Color;
+        const colorB   = this.pointsMaterial.uniforms.uColorB.value as THREE.Color;
         return colorA.clone().lerp(colorB, colorMix);
     }
 
@@ -349,7 +258,6 @@ export default class StarfieldBackground {
             this.pointsGeometry = undefined;
             this.pointsMaterial = undefined;
         }
-
         this.shootingStarEffect.destroy();
     }
 }

@@ -16,12 +16,24 @@ export class CollectibleManager {
             this.cubes.push(cube);
         }
     }
-    spawnOne(scene: THREE.Scene, pos: THREE.Vector3, value = 2): void {
-        this.cubes.push(new TailCube(value, scene, pos));
+    spawnOne(scene: THREE.Scene, pos: THREE.Vector3, value = 2, withPop = true): void {
+        const cube = new TailCube(value, scene, pos);
+        if (withPop) cube.startSpawnPop();
+        this.cubes.push(cube);
     }
 
     get count(): number {
         return this.cubes.length;
+    }
+
+    /** Count only collectibles whose Z falls within [minZ, maxZ]. */
+    countInZRange(minZ: number, maxZ: number): number {
+        let n = 0;
+        for (const c of this.cubes) {
+            const z = c.position.z;
+            if (z >= minZ && z <= maxZ) n++;
+        }
+        return n;
     }
 
     /** Live position references — do NOT mutate. */
@@ -39,6 +51,22 @@ export class CollectibleManager {
             }
         }
         return null;
+    }
+
+    /** Remove only collectibles whose Z falls within [minZ, maxZ]. */
+    clearInZRange(minZ: number, maxZ: number): void {
+        for (let i = this.cubes.length - 1; i >= 0; i--) {
+            const z = this.cubes[i].position.z;
+            if (z >= minZ && z <= maxZ) {
+                this.cubes[i].destroy();
+                this.cubes.splice(i, 1);
+            }
+        }
+    }
+
+    /** Tick every cube's animations (pop, bounce, shadow). Must be called each frame. */
+    update(delta: number): void {
+        for (const cube of this.cubes) cube.update(delta);
     }
 
     destroy(): void {
