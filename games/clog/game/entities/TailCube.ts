@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { CubeBuilder } from "../builders/CubeBuilder";
 import { BOUNCE_AMPLITUDE, BOUNCE_DURATION, sizeForValue } from "../ClogConstants";
+import { BlobShadow } from "./BlobShadow";
 
 export class TailCube {
     public value: number;
@@ -15,6 +16,7 @@ export class TailCube {
     public isLocked = false;
 
     private bounceTimer = 0;
+    private shadow: BlobShadow;
 
     constructor(value: number, scene: THREE.Scene, position?: THREE.Vector3) {
         this.value = value;
@@ -24,6 +26,8 @@ export class TailCube {
         if (position) this.transform.position.copy(position);
         scene.add(this.transform);
         this.applyScale();
+        this.shadow = new BlobShadow(scene);
+        this.shadow.update(this.transform.position.x, this.transform.position.z, sizeForValue(value));
     }
 
     get position(): THREE.Vector3 {
@@ -47,6 +51,9 @@ export class TailCube {
     }
 
     update(delta: number): void {
+        // Shadow always tracks current position and size
+        this.shadow.update(this.position.x, this.position.z, sizeForValue(this.value));
+
         if (this.bounceTimer <= 0) return;
         this.bounceTimer = Math.max(0, this.bounceTimer - delta);
         const t = 1 - this.bounceTimer / BOUNCE_DURATION;
@@ -57,6 +64,7 @@ export class TailCube {
     }
 
     destroy(): void {
+        this.shadow.destroy();
         CubeBuilder.disposeMesh(this.mesh);
         this.transform.removeFromParent();
     }

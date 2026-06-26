@@ -3,12 +3,14 @@ import { CubeBuilder } from "../builders/CubeBuilder";
 import { BOUNCE_AMPLITUDE, BOUNCE_DURATION, followDist, sizeForValue } from "../ClogConstants";
 import { dbg, dbgTail } from "../debug/MergeDebugger";
 import { MergeQueue } from "../systems/MergeQueue";
+import { WalkBob } from "../components/WalkBob"; // [view:WalkBob]
+import { BlobShadow } from "./BlobShadow";
 import { TailCube } from "./TailCube";
 
 const MOVE_SPEED = 8;
 const ROTATION_SPEED = 12;
 const HISTORY_SAMPLE_DIST = 0.25; // world-units between sampled waypoints
-const FOLLOW_LERP = 0.18;
+const FOLLOW_STIFFNESS = 12; // damping coefficient; ~0.18/frame at 60fps, frame-rate independent
 const MERGE_SPEED = 14;      // world-units per second for merge slide
 const MIN_MERGE_TIME = 0.1;  // floor so very-close merges still have a visible pop
 const SETTLE_DELAY = 0.7;
@@ -33,6 +35,8 @@ export class PlayerEntity {
     private moveInputX = 0;
     private moveInputZ = 0;
     private bounceTimer = 0;
+    private shadow: BlobShadow;
+    private walkBob = new WalkBob(); // [view:WalkBob]
 
     constructor(value: number, scene: THREE.Scene) {
         this.value = value;
@@ -57,6 +61,7 @@ export class PlayerEntity {
 
         scene.add(this.transform);
         this.updateScale();
+        this.shadow = new BlobShadow(scene);
     }
 
     get position(): THREE.Vector3 {
@@ -110,11 +115,14 @@ export class PlayerEntity {
     /** Position on the history spline at arc-length `dist` from the player. */
     private historyPositionAt(dist: number): THREE.Vector3 | null {
         if (this.posHistory.length === 0) return null;
-        // Clamp to the oldest available waypoint rather than returning null.
-        // Without this, cubes freeze when their slot index grows beyond history
-        // length after a merge doubles their value (and their required spacing).
-        const idx = Math.min(Math.round(dist / HISTORY_SAMPLE_DIST), this.posHistory.length - 1);
-        return this.posHistory[idx];
+        // Linearly interpolate between adjacent waypoints so the target moves
+        // continuously instead of snapping every 0.25 units (Math.round caused
+        // ~30Hz micro-jitter visible as subtle tail shaking).
+        const rawIdx = dist / HISTORY_SAMPLE_DIST;
+        const lo = Math.min(Math.floor(rawIdx), this.posHistory.length - 1);
+        const hi = Math.min(lo + 1, this.posHistory.length - 1);
+        if (lo === hi) return this.posHistory[lo];
+        return this.posHistory[lo].clone().lerp(this.posHistory[hi], rawIdx - lo);
     }
 
     update(delta: number): void {
@@ -158,7 +166,12 @@ export class PlayerEntity {
             this.mesh.position.y = s * 0.5;
         }
 
-        // ── Drive tail cube bounce animations ────────────────────────────────
+        // ── [view:WalkBob] Hop animation while moving ────────────────────────
+        const bobY = this.walkBob.update(delta, mx !== 0 || mz !== 0);
+        this.mesh.position.y = this.mesh.scale.x * 0.5 + bobY;
+
+        // ── Shadows ───────────────────────────────────────────────────────────
+        this.shadow.update(this.transform.position.x, this.transform.position.z, sizeForValue(this.value));
         for (const cube of this.tail) {
             cube.update(delta);
         }
@@ -166,11 +179,12 @@ export class PlayerEntity {
         // ── Tail snake-follow: distance-based spline positioning ──────────────
         // Each cube's slot is determined by arc-length from the player so that
         // larger cubes automatically get more spacing. Only skip cubes that are
-        // actively sliding (isMerging); locked-but-stationary cubes keep following.
+        // actively sliding (isMerging); scheduled/locked cubes keep following.
+        const followFactor = 1 - Math.exp(-FOLLOW_STIFFNESS * delta);
         for (let i = 0; i < this.tail.length; i++) {
             if (this.tail[i].isMerging) continue;
             const target = this.historyPositionAt(this.tailSlotDist(i));
-            if (target) this.tail[i].position.lerp(target, FOLLOW_LERP);
+            if (target) this.tail[i].position.lerp(target, followFactor);
         }
 
         // ── Advance merge animations ──────────────────────────────────────────
@@ -327,6 +341,7 @@ export class PlayerEntity {
     }
 
     destroy(): void {
+        this.shadow.destroy();
         this.mergeQueue.destroy();
         for (const cube of this.tail) cube.destroy();
         this.tail = [];

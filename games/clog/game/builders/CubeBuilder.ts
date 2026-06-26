@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import { BendService } from "../services/BendService";
 
 const VALUE_COLORS: Record<number, string> = {
     2: "#4aba8a",
@@ -26,6 +27,8 @@ export class CubeBuilder {
         const color = colorForValue(value);
         const solid = new THREE.MeshStandardMaterial({ color });
         const top = new THREE.MeshStandardMaterial({ map: CubeBuilder.makeNumberTexture(value, color) });
+        BendService.applyBend(solid);
+        BendService.applyBend(top);
         // face order: +X, -X, +Y (top), -Y, +Z (front), -Z
         return new THREE.Mesh(geo, [solid, solid, top, solid, solid, solid]);
     }
@@ -37,6 +40,9 @@ export class CubeBuilder {
         const solid = new THREE.MeshStandardMaterial({ color });
         const top = new THREE.MeshStandardMaterial({ map: CubeBuilder.makeNumberTexture(value, color) });
         const front = new THREE.MeshStandardMaterial({ map: CubeBuilder.makeFaceTexture(color) });
+        BendService.applyBend(solid);
+        BendService.applyBend(top);
+        BendService.applyBend(front);
         // face order: +X, -X, +Y (top), -Y, +Z (front), -Z
         return new THREE.Mesh(geo, [solid, solid, top, solid, front, solid]);
     }

@@ -2,6 +2,7 @@ import { ThreeScene } from "@core/scene/ThreeScene";
 import * as THREE from "three";
 import { FloorBuilder } from "../builders/FloorBuilder";
 import { PlayerEntity } from "../entities/PlayerEntity";
+import { BendService } from "../services/BendService";
 import { CollectibleManager } from "../systems/CollectibleManager";
 import { LevelManager } from "../systems/LevelManager";
 
@@ -44,6 +45,7 @@ export default class ClogWorld3dScene extends ThreeScene {
     public update(delta: number): void {
         this.player.setMoveInput(this.moveInput.x, this.moveInput.z);
         this.player.update(delta);
+        BendService.updateOrigin(this.player.position);
 
         // Collect when a cube enters the eat circle in front of the player
         const hit = this.collectibles.checkCollision(this.player.eatPosition, this.player.eatRadius);
