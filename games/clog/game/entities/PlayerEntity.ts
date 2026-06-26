@@ -73,6 +73,11 @@ export class PlayerEntity {
         return sizeForValue(this.value) * 0.8;
     }
 
+    /** Physical collision radius used by AreaManager for gate/wall push-out. */
+    get collisionRadius(): number {
+        return sizeForValue(this.value) * 0.5;
+    }
+
     /** World-space center of the eat circle (in front of the cube face). */
     get eatPosition(): THREE.Vector3 {
         const s = sizeForValue(this.value);
@@ -196,8 +201,28 @@ export class PlayerEntity {
      * Appends the cube to the tail and schedules new merges without
      * interrupting any merge animations already in progress.
      */
+    /** Dev-only: instantly double the player's value. */
+    debugDoubleValue(): void {
+        this.value *= 2;
+        CubeBuilder.updateTextures(this.mesh, this.value);
+        this.updateScale();
+        this.startBounce();
+    }
+
     collect(cube: TailCube): void {
         dbg("collect", { value: cube.value, tailLen: this.tail.length });
+
+        // Trim trailing tail cubes that are lower-value than the new pickup.
+        // They can never merge upward past a higher-value cube — discard them
+        // before they permanently stall the merge chain.
+        for (let i = this.tail.length - 1; i >= 0; i--) {
+            const c = this.tail[i];
+            if (c.value >= cube.value) break;
+            if (c.isMerging || c.isScheduled) break; // don't interrupt live animations
+            c.destroy();
+            this.tail.splice(i, 1);
+        }
+
         // Place the new cube at its eventual spline position so it doesn't
         // teleport; if history is too short yet, fall back to the tail end.
         const newIdx = this.tail.length;

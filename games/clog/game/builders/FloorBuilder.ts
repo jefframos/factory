@@ -2,13 +2,14 @@ import * as THREE from "three";
 import { BendService } from "../services/BendService";
 
 export class FloorBuilder {
-    static build(scene: THREE.Scene, size = 30): void {
+    static build(scene: THREE.Scene, size = 30, cx = 0, cz = 0): void {
         // More segments so the radial bend looks smooth (1×1 only bends the 4 corners)
         const geo = new THREE.PlaneGeometry(size, size, 32, 32);
         const mat = new THREE.MeshBasicMaterial({ map: FloorBuilder.makeGridTexture(size) });
         BendService.applyBend(mat);
         const floor = new THREE.Mesh(geo, mat);
         floor.rotation.x = -Math.PI / 2;
+        floor.position.set(cx, 0, cz);
         scene.add(floor);
     }
 

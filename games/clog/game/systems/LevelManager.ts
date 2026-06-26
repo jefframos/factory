@@ -1,12 +1,11 @@
 import * as THREE from "three";
 import { CollectibleManager } from "./CollectibleManager";
 
-const MAX_FOOD = 20;
-const SPAWN_INTERVAL = 3.5;   // seconds between spawn attempts
-const MIN_DIST_FOOD = 2.5;   // min distance between food items
-const MIN_DIST_PLAYER = 7;     // don't spawn too close to the player
-const SPAWN_RANGE = 24;    // half-width of the spawn area
-const MAX_SPAWN_ATTEMPTS = 30;    // how many random tries before giving up
+const MAX_FOOD        = 20;
+const SPAWN_INTERVAL  = 3.5;
+const MIN_DIST_FOOD   = 2.5;
+const MIN_DIST_PLAYER = 7;
+const MAX_ATTEMPTS    = 30;
 
 export class LevelManager {
     private timer = 0;
@@ -16,37 +15,36 @@ export class LevelManager {
         collectibles: CollectibleManager,
         scene: THREE.Scene,
         playerPos: THREE.Vector3,
+        foodValues: number[],
+        spawnHalfSize: number,
+        spawnCenter: THREE.Vector2,
     ): void {
         this.timer += delta;
         if (this.timer < SPAWN_INTERVAL) return;
         this.timer = 0;
-
         if (collectibles.count >= MAX_FOOD) return;
-
-        this.trySpawn(collectibles, scene, playerPos);
+        this.trySpawn(collectibles, scene, playerPos, foodValues, spawnHalfSize, spawnCenter);
     }
 
     private trySpawn(
         collectibles: CollectibleManager,
         scene: THREE.Scene,
         playerPos: THREE.Vector3,
+        foodValues: number[],
+        halfSize: number,
+        center: THREE.Vector2,
     ): void {
         const occupied = collectibles.positions;
+        const value = foodValues[Math.floor(Math.random() * foodValues.length)];
 
-        for (let attempt = 0; attempt < MAX_SPAWN_ATTEMPTS; attempt++) {
-            const x = (Math.random() - 0.5) * SPAWN_RANGE;
-            const z = (Math.random() - 0.5) * SPAWN_RANGE;
+        for (let i = 0; i < MAX_ATTEMPTS; i++) {
+            const x = center.x + (Math.random() - 0.5) * 2 * halfSize;
+            const z = center.y + (Math.random() - 0.5) * 2 * halfSize;
             const pos = new THREE.Vector3(x, 0, z);
-
-            // Too close to player?
             if (pos.distanceTo(playerPos) < MIN_DIST_PLAYER) continue;
-
-            // Overlaps an existing collectible?
             if (occupied.some(p => p.distanceTo(pos) < MIN_DIST_FOOD)) continue;
-
-            collectibles.spawnOne(scene, pos);
+            collectibles.spawnOne(scene, pos, value);
             return;
         }
-        // All attempts failed — floor is too crowded, skip this tick
     }
 }

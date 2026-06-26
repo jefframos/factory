@@ -16,8 +16,8 @@ export class CollectibleManager {
             this.cubes.push(cube);
         }
     }
-    spawnOne(scene: THREE.Scene, pos: THREE.Vector3): void {
-        this.cubes.push(new TailCube(2, scene, pos));
+    spawnOne(scene: THREE.Scene, pos: THREE.Vector3, value = 2): void {
+        this.cubes.push(new TailCube(value, scene, pos));
     }
 
     get count(): number {

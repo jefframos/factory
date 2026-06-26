@@ -3,14 +3,15 @@ import AnalogInput from "@core/io/AnalogInput";
 import * as PIXI from "pixi.js";
 import ClogWorld3dScene from "./ClogWorld3dScene";
 import KeyboardInputMovement from "core/io/KeyboardInputMovement";
+import { DevGuiManager } from "@core/utils/DevGuiManager";
 
 
 export default class BaseDemoScene extends GameScene {
 
     private speedMultiplier = 1;
-    private world3d: ClogWorld3dScene;
-    private analogInput: AnalogInput;
-    private keyboardInput: KeyboardInputMovement;
+    private world3d!: ClogWorld3dScene;
+    private analogInput!: AnalogInput;
+    private keyboardInput!: KeyboardInputMovement;
 
     public async build(): Promise<void> {
         // Start up the 3D world scene (Three.js handles gameplay)
@@ -36,7 +37,9 @@ export default class BaseDemoScene extends GameScene {
             this.world3d.moveInput.z = direction.y * magnitude; // Pixi Y → Three.js Z
         });
 
-
+        DevGuiManager.instance.addButton('Double Value', () => {
+            this.world3d.debugDoublePlayerValue();
+        }, 'Player');
     }
 
     public update(delta: number): void {
