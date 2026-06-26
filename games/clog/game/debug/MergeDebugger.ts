@@ -9,11 +9,12 @@ export function dbg(event: string, data: Record<string, unknown>): void {
     console.log(`[CLOG] ${event} | ${vals}`);
 }
 
-export function dbgTail(label: string, playerValue: number, tail: { value: number; isMerging: boolean; isLocked: boolean }[]): void {
+export function dbgTail(label: string, playerValue: number, tail: { value: number; isMerging: boolean; isScheduled: boolean; isLocked: boolean }[]): void {
     if (!DEBUG) return;
     const chain = [playerValue, ...tail.map(c => {
         let s = String(c.value);
         if (c.isMerging) s += "(M)";
+        if (c.isScheduled) s += "(S)";
         if (c.isLocked) s += "(L)";
         return s;
     })].join(" → ");

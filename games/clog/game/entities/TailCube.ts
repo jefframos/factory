@@ -7,8 +7,10 @@ export class TailCube {
     public transform: THREE.Group;
     public mesh: THREE.Mesh;
 
-    /** True while this cube is sliding toward its merge target (skip snake-follow). */
+    /** True while this cube is actively sliding toward its merge target (skip snake-follow). */
     public isMerging = false;
+    /** True while this cube is queued as the source of a pending merge (allow snake-follow, block re-scheduling). */
+    public isScheduled = false;
     /** True while this cube is the destination of a queued merge (block re-scheduling). */
     public isLocked = false;
 

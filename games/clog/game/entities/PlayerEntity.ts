@@ -221,7 +221,7 @@ export class PlayerEntity {
         // past the player's value, permanently blocking the player from growing.
         if (this.tail.length > 0) {
             const front = this.tail[0];
-            if (front.value === this.value && !front.isMerging && !front.isLocked) {
+            if (front.value === this.value && !front.isMerging && !front.isScheduled && !front.isLocked) {
                 dbg("→ playerMerge", { playerVal: this.value, frontVal: this.tail[0].value });
                 this.enqueuePlayerMerge();
                 return;
@@ -234,7 +234,7 @@ export class PlayerEntity {
         for (let i = 0; i < this.tail.length - 1; i++) {
             const a = this.tail[i];     // closer to player
             const b = this.tail[i + 1]; // farther from player
-            if (a.value === b.value && !a.isMerging && !a.isLocked && !b.isMerging && !b.isLocked) {
+            if (a.value === b.value && !a.isMerging && !a.isScheduled && !a.isLocked && !b.isMerging && !b.isScheduled && !b.isLocked) {
                 // b slides into a (back cube slides toward player)
                 dbg("→ tailMerge", { from: i + 1, into: i, val: a.value });
                 this.enqueueTailMerge(i + 1, i);
@@ -247,19 +247,27 @@ export class PlayerEntity {
     private enqueueTailMerge(fromIdx: number, intoIdx: number): void {
         const from = this.tail[fromIdx];
         const into = this.tail[intoIdx];
-        const startPos = from.position.clone();
-        // Capture the target now so the slide goes to a fixed point at constant
-        // speed. Using into.position live chases a moving target and feels jittery.
-        const targetPos = into.position.clone();
-        const duration = Math.max(MIN_MERGE_TIME, startPos.distanceTo(targetPos) / MERGE_SPEED);
 
-        from.isMerging = true; // skip snake-follow, animate manually
-        into.isLocked = true;  // block re-scheduling while merge is pending
+        // Mark at enqueue time to block re-scheduling, but don't stop snake-follow yet.
+        // isMerging (which stops snake-follow) is set in onStart when animation actually begins.
+        from.isScheduled = true;
+        into.isLocked = true;
+
+        // Positions captured in onStart so the cube keeps following the spline
+        // until its animation turn arrives (no frozen-in-place waiting).
+        const anim = { startPos: new THREE.Vector3(), targetPos: new THREE.Vector3() };
 
         this.mergeQueue.enqueue({
-            duration,
+            duration: MIN_MERGE_TIME, // overwritten in onStart with real distance
+            onStart: (task) => {
+                anim.startPos.copy(from.position);
+                anim.targetPos.copy(into.position);
+                task.duration = Math.max(MIN_MERGE_TIME, anim.startPos.distanceTo(anim.targetPos) / MERGE_SPEED);
+                from.isMerging = true;
+                from.isScheduled = false;
+            },
             onProgress: (t) => {
-                from.position.lerpVectors(startPos, targetPos, t);
+                from.position.lerpVectors(anim.startPos, anim.targetPos, t);
             },
             onDone: () => {
                 // Re-derive the index at execution time: a player-merge that ran
@@ -287,12 +295,18 @@ export class PlayerEntity {
     /** Animate tail[0] sliding into the player, then double the player's value. */
     private enqueuePlayerMerge(): void {
         const from = this.tail[0];
-        const startPos = from.position.clone();
-        const duration = Math.max(MIN_MERGE_TIME, startPos.distanceTo(this.transform.position) / MERGE_SPEED);
-        from.isMerging = true;
+        from.isScheduled = true;
+
+        let startPos = new THREE.Vector3();
 
         this.mergeQueue.enqueue({
-            duration,
+            duration: MIN_MERGE_TIME, // overwritten in onStart
+            onStart: (task) => {
+                startPos = from.position.clone();
+                task.duration = Math.max(MIN_MERGE_TIME, startPos.distanceTo(this.transform.position) / MERGE_SPEED);
+                from.isMerging = true;
+                from.isScheduled = false;
+            },
             onProgress: (t) => {
                 // Player position is live intentionally: the cube should always
                 // arrive exactly at the player center even if they're moving.

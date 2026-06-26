@@ -36,8 +36,6 @@ export default class ClogWorld3dScene extends ThreeScene {
 
         this.levelManager = new LevelManager();
 
-        this.levelManager = new LevelManager();
-
         // Initial camera
         this.threeCamera.position.copy(this.player.position).add(CAM_OFFSET);
         this.threeCamera.lookAt(this.player.position);

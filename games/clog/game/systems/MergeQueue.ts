@@ -1,6 +1,8 @@
 interface MergeTask {
     duration: number;
     elapsed: number;
+    /** Called once when the task becomes active, before the first onProgress call. */
+    onStart?: (task: MergeTask) => void;
     onProgress: (t: number) => void;
     onDone: () => void;
 }
@@ -49,6 +51,7 @@ export class MergeQueue {
             // drain any non-active queue items
             while (this.queue.length > 0 && !this.active) {
                 const task = this.queue.shift()!;
+                task.onStart?.(task); // initialize before snapping
                 task.onProgress(1);
                 task.onDone();
             }
@@ -68,6 +71,7 @@ export class MergeQueue {
     private next(): void {
         if (this.queue.length > 0) {
             this.active = this.queue.shift()!;
+            this.active.onStart?.(this.active);
         }
     }
 }
