@@ -17,6 +17,7 @@ export default class ClogWorld3dScene extends ThreeScene {
     private levelManager!: LevelManager;
     private areaManager!: AreaManager;
     private sky!: SkyBackground;
+    private spawnCells: { x: number; z: number }[] = [];
 
     public moveInput: { x: number; z: number } = { x: 0, z: 0 };
 
@@ -54,6 +55,7 @@ export default class ClogWorld3dScene extends ThreeScene {
         this.collectibles = new CollectibleManager();
         const halfSize = this.areaManager.spawnHalfSize;
         this.collectibles.spawn(this.threeScene, 15, halfSize * 2);
+        this.rebuildSpawnCells();
 
         this.levelManager = new LevelManager();
 
@@ -73,14 +75,18 @@ export default class ClogWorld3dScene extends ThreeScene {
         const hit = this.collectibles.checkCollision(this.player.eatPosition, this.player.eatRadius);
         if (hit) this.player.collect(hit);
 
+        const hs     = this.areaManager.spawnHalfSize;
+        const center = this.areaManager.spawnCenter;
         this.levelManager.update(
             delta,
             this.collectibles,
             this.threeScene,
             this.player.position,
             this.areaManager.foodValues,
-            this.areaManager.spawnHalfSize,
-            this.areaManager.spawnCenter,
+            this.spawnCells,
+            center.y - hs,
+            center.y + hs,
+            15,
         );
 
         this.threeCamera.position.lerp(
@@ -90,6 +96,17 @@ export default class ClogWorld3dScene extends ThreeScene {
         this.threeCamera.lookAt(this.player.position);
 
         super.update(delta);
+    }
+
+    private rebuildSpawnCells(): void {
+        this.spawnCells = [];
+        const hs     = this.areaManager.spawnHalfSize;
+        const center = this.areaManager.spawnCenter;
+        for (let x = center.x - hs + 1; x < center.x + hs; x += 2) {
+            for (let z = center.y - hs + 1; z < center.y + hs; z += 2) {
+                this.spawnCells.push({ x, z });
+            }
+        }
     }
 
     /** Dev helper: instantly double the player's value. */

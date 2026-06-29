@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { LinearArea } from './LinearArea';
 import { getLinearRoomConfig, computeFoodCount, FOOD_CONFIG } from './LinearConfig';
 import type { LinearRoomConfig } from './LinearConfig';
+import { RoomGrid } from './RoomGrid';
 import { PlayerEntity } from '../entities/PlayerEntity';
 
 const TRANSITION_BUFFER = 2.5;
@@ -25,8 +26,9 @@ export class LinearAreaManager {
 
     constructor(scene: THREE.Scene) {
         this.scene       = scene;
-        this.currentArea = new LinearArea(getLinearRoomConfig(0), 0, 0, scene);
+        this.currentArea = new LinearArea(getLinearRoomConfig(0), 0, 0, scene, 0);
         this.nextArea    = this.buildArea(1);
+        this.logGrid(0, this.currentArea.grid.toLogString());
     }
 
     // ── Accessors ─────────────────────────────────────────────────────────────
@@ -52,6 +54,9 @@ export class LinearAreaManager {
     get spawnHalfSize(): number           { return this.currentConfig.size / 2 - FOOD_CONFIG.spawnPadding; }
     get spawnCenter(): THREE.Vector2      { return new THREE.Vector2(0, this.currentCenterZ); }
     get nextGateValue(): number           { return getLinearRoomConfig(this.currentRoomIdx + 1).gateValue; }
+
+    get currentGrid(): RoomGrid { return this.currentArea.grid; }
+    get nextGrid():    RoomGrid { return this.nextArea.grid; }
 
     // Next area — always pre-built and visible through the gate
     get nextConfig(): LinearRoomConfig         { return getLinearRoomConfig(this.currentRoomIdx + 1); }
@@ -90,8 +95,12 @@ export class LinearAreaManager {
         return z;
     }
 
+    private logGrid(roomIdx: number, grid: string): void {
+        console.log(`[Room ${roomIdx}] grid ${this.currentArea.grid.cols}×${this.currentArea.grid.rows}:\n${grid}`);
+    }
+
     private buildArea(roomIdx: number): LinearArea {
-        return new LinearArea(getLinearRoomConfig(roomIdx), 0, this.centerZFor(roomIdx), this.scene);
+        return new LinearArea(getLinearRoomConfig(roomIdx), 0, this.centerZFor(roomIdx), this.scene, roomIdx);
     }
 
     private transition(): void {
@@ -110,6 +119,10 @@ export class LinearAreaManager {
         this.currentCenterZ = this.centerZFor(this.currentRoomIdx);
         this.currentArea    = this.nextArea;
         this.nextArea       = this.buildArea(this.currentRoomIdx + 1);
+        this.logGrid(this.currentRoomIdx, this.currentArea.grid.toLogString());
+
+        // Seal the entrance of the room the player just entered so they can't go back.
+        this.currentArea.lockEntranceGate();
 
         this.onTransition?.({ prevMinZ, prevMaxZ });
     }

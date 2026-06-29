@@ -66,33 +66,13 @@ export default class LinearWorld3dScene extends ThreeScene {
         this.levelManager = new LevelManager();
 
         this.linearManager.onTransition = ({ prevMinZ, prevMaxZ }) => {
-            // Clear only the food that belonged to the room we just left.
-            // The next area's food was already placed when it was pre-built — keep it.
             this.collectibles.clearInZRange(prevMinZ, prevMaxZ);
-
-            // Seed the brand-new far area (room N+2) that was just built.
-            // Use initialCount so the new room starts sparse and tops up via LevelManager.
-            this.spawnFood(
-                this.linearManager.nextConfig.foodValues,
-                FOOD_CONFIG.initialCount,
-                this.linearManager.nextSpawnHalfSize,
-                this.linearManager.nextSpawnCenter,
-            );
+            this.spawnFood(this.linearManager.nextConfig.foodValues, FOOD_CONFIG.initialCount, this.linearManager.nextGrid);
         };
 
-        // Seed food in room 0 and the pre-built room 1 — small initial counts only.
-        this.spawnFood(
-            this.linearManager.currentConfig.foodValues,
-            FOOD_CONFIG.initialCount,
-            this.linearManager.spawnHalfSize,
-            this.linearManager.spawnCenter,
-        );
-        this.spawnFood(
-            this.linearManager.nextConfig.foodValues,
-            FOOD_CONFIG.initialCount,
-            this.linearManager.nextSpawnHalfSize,
-            this.linearManager.nextSpawnCenter,
-        );
+        // Seed food in rooms 0 and 1 at startup.
+        this.spawnFood(this.linearManager.currentConfig.foodValues, FOOD_CONFIG.initialCount, this.linearManager.currentGrid);
+        this.spawnFood(this.linearManager.nextConfig.foodValues,    FOOD_CONFIG.initialCount, this.linearManager.nextGrid);
 
         this.player = new PlayerEntity(2, this.threeScene);
         this.linearManager.registerPlayer(this.player);
@@ -130,14 +110,18 @@ export default class LinearWorld3dScene extends ThreeScene {
         const hit = this.collectibles.checkCollision(this.player.eatPosition, this.player.eatRadius);
         if (hit) this.player.collect(hit);
 
+        const grid = this.linearManager.currentGrid;
+        const cz   = this.linearManager.spawnCenter.y;
+        const hs   = this.linearManager.spawnHalfSize;
         this.levelManager.update(
             scaledDelta,
             this.collectibles,
             this.threeScene,
             this.player.position,
             this.linearManager.effectiveFoodValues,
-            this.linearManager.spawnHalfSize,
-            this.linearManager.spawnCenter,
+            grid.getFreeCells(),
+            cz - hs,
+            cz + hs,
             this.linearManager.computedFoodCount,
         );
 
@@ -167,15 +151,14 @@ export default class LinearWorld3dScene extends ThreeScene {
     private spawnFood(
         values: number[],
         count: number,
-        halfSize: number,
-        center: THREE.Vector2,
-        withPop = false,
+        grid: { getFreeCells(): { x: number; z: number }[] },
     ): void {
+        const cells = grid.getFreeCells();
+        if (cells.length === 0) return;
         for (let i = 0; i < count; i++) {
-            const x = center.x + (Math.random() - 0.5) * 2 * halfSize;
-            const z = center.y + (Math.random() - 0.5) * 2 * halfSize;
+            const cell  = cells[Math.floor(Math.random() * cells.length)];
             const value = values[Math.floor(Math.random() * values.length)];
-            this.collectibles.spawnOne(this.threeScene, new THREE.Vector3(x, 0, z), value, withPop);
+            this.collectibles.spawnOne(this.threeScene, new THREE.Vector3(cell.x, 0, cell.z), value);
         }
     }
 }

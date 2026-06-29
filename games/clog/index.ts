@@ -31,7 +31,7 @@ export default class MyGame extends Game {
         super({ resolution: Math.min(2, devicePixelRatio), backgroundAlpha: 0 }, false);
         PIXI.Ticker.shared.maxFPS = 60;
 
-        this.folderPath = 'farm';
+        this.folderPath = 'clog';
         this.initialize();
 
     }

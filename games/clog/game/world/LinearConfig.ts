@@ -1,16 +1,86 @@
-// ── Per-room config ───────────────────────────────────────────────────────────
-// Add a row to grow the map; tweak any value without touching game code.
-// foodCount is no longer per-row — it is computed from FOOD_CONFIG density below.
+// ── Tile definitions ──────────────────────────────────────────────────────────
+// Each non-zero grid cell value maps to a TileConfig that controls how it looks.
+// Add a new entry to TILE_DEFS to create a new tile type.
+//
+//   height     — how tall the tile is above the floor (world units)
+//   color      — hex colour (e.g. 0x1e2d3d)
+//   opacity    — 0 transparent → 1 solid  (default: 1)
+//   roughness  — 0 glossy → 1 matte       (default: 0.9)
+//   depthBelow — how far the mesh extends below y=0 (default: height >= 2 ? 30 : 0)
+//   texture    — texture path or null      (default: null, reserved for future use)
 
-export interface LinearRoomConfig {
-    size: number;          // platform side length (world units)
-    gateValue: number;     // player value required to open the gate (0 = always open)
-    foodValues: number[];  // pool drawn at random on each food spawn
+export interface TileConfig {
+    height: number;
+    color: number;
+    opacity?: number;
+    roughness?: number;
+    depthBelow?: number;
+    texture?: string | null;
 }
 
-//  Room  Size  Gate     Food          Speed
+export const TILE_DEFS: Record<number, TileConfig> = {
+    // 1 — full wall
+    1: { height: 1.5, color: 0x1e2d3d, depthBelow: 30 },
+    // 2 — short obstacle (1-unit tall, sits on floor)
+    2: { height: 1.0, color: 0x2a3a4a },
+};
+
+// ── Obstacle placement ────────────────────────────────────────────────────────
+// Stamp pre-defined shapes at positions chosen by seeded value noise.
+// Add a room's `obstacles` field to enable; omit it for a clean open room.
+//
+// pattern  — rows of characters; any digit > 0 is the tile id to stamp,
+//            '0' or '.' means "leave this cell alone".
+// scale    — noise frequency.  ~0.1 = large sparse blobs, ~0.3 = tight clusters.
+// threshold— noise value [0–1] above which a stamp fires.  0.6 = ~40% coverage.
+// seed     — integer; same seed always produces the same layout.
+
+export interface ObstacleConfig {
+    tileId: number;  // which tile type to fill (e.g. 2 for obstacle)
+    scale: number;  // noise frequency — smaller = larger blobs (try 0.04–0.10)
+    threshold: number;  // noise cutoff [0–1] — higher = sparser blobs (try 0.60–0.75)
+    seed: number;  // deterministic integer — same seed always produces the same layout
+}
+
+/** Ready-made patterns — use directly or as inspiration for inline ones. */
+export const OBSTACLE_SHAPES = {
+    dot: ['2'],
+    bar3: ['222'],
+    bar3V: ['2', '2', '2'],
+    block: ['22', '22'],
+    cross: ['020', '222', '020'],
+    lNW: ['22', '20'],
+    lNE: ['22', '02'],
+    lSW: ['20', '22'],
+    lSE: ['02', '22'],
+    tDown: ['222', '020'],
+    tUp: ['020', '222'],
+    tLeft: ['02', '22', '02'],
+    tRight: ['20', '22', '20'],
+};
+
+// ── Per-room config ───────────────────────────────────────────────────────────
+// Add a row to grow the map; tweak any value without touching game code.
+//
+// layout (optional): define the room as a string-grid.
+//   Each character is a tile id ('0' = free, '1' = wall, '2' = obstacle, etc.)
+//   matching entries in TILE_DEFS above.  Rows run south→north (row 0 = gate side).
+//   When omitted, the room is auto-generated: solid border + centred gate gap.
+
+export interface LinearRoomConfig {
+    size: number;         // platform side length in world units
+    gateValue: number;         // player value required to open the gate (0 = always open)
+    foodValues: number[];       // pool drawn at random on each food spawn
+    layout?: string[];       // optional hand-crafted grid (overrides auto-generation)
+    obstacles?: ObstacleConfig | null; // override default obstacles; null = no obstacles
+}
+
+//  Room  Size  Gate      Food
 export const ROOM_CONFIGS: LinearRoomConfig[] = [
-    { size: 60, gateValue: 0, foodValues: [2] },
+    {
+        size: 60, gateValue: 0, foodValues: [2],
+        obstacles: { tileId: 2, scale: 0.05, threshold: 0.88, seed: 1 }
+    },
     { size: 68, gateValue: 8, foodValues: [2] },
     { size: 76, gateValue: 16, foodValues: [2, 4] },
     { size: 86, gateValue: 32, foodValues: [2, 4] },
@@ -27,31 +97,18 @@ export const ROOM_CONFIGS: LinearRoomConfig[] = [
 export const KING_ROOM_INDEX = ROOM_CONFIGS.length - 1;
 
 // ── Food config ───────────────────────────────────────────────────────────────
-// One place for every food-related number. computeFoodCount() derives item
-// counts from density so large rooms automatically get more food.
 export const FOOD_CONFIG = {
-    // ── Initial spawn ─────────────────────────────────────────────────────
-    // Items placed when a room is first built. Kept intentionally small so
-    // the room feels sparse and the trickle spawn creates tension.
-    initialCount: 5,    // items placed on room creation (before any top-up)
-
-    // ── Density (LevelManager target) ─────────────────────────────────────
-    densityPer100: 1,    // items per 100 m²  (1 ≈ "1 per 10×10 area")
-    minAbsolute: 5,    // floor: LevelManager never lets a room drop below this
-    maxAbsolute: 80,    // ceiling: cap for very large rooms
-    spawnPadding: 5,    // units trimmed from each wall edge before spawning
-
-    // ── Top-up spawner (LevelManager) ─────────────────────────────────────
-    spawnInterval: 3.5,  // seconds between top-up ticks
-    minDistBetweenItems: 2.5,  // minimum separation between two food items
-    minDistFromPlayer: 7,    // new items spawn at least this far from the player
-    maxPlacementAttempts: 30,   // give up placement after this many tries
+    initialCount: 5,
+    densityPer100: 1,
+    minAbsolute: 5,
+    maxAbsolute: 80,
+    spawnPadding: 5,
+    spawnInterval: 3.5,
+    minDistBetweenItems: 2.5,
+    minDistFromPlayer: 7,
+    maxPlacementAttempts: 30,
 };
 
-/**
- * Returns how many food items should exist in a room of `roomSize`.
- * Formula: density * spawnArea, clamped to [minAbsolute, maxAbsolute].
- */
 export function computeFoodCount(roomSize: number): number {
     const side = Math.max(0, roomSize - FOOD_CONFIG.spawnPadding * 2);
     const count = Math.floor(FOOD_CONFIG.densityPer100 * side * side / 100);
@@ -59,58 +116,37 @@ export function computeFoodCount(roomSize: number): number {
 }
 
 // ── Camera config ─────────────────────────────────────────────────────────────
-// Camera orbits the player at a fixed pitch; distance scales with player value.
-//
-//   pitch        — tilt in degrees (0 = horizon, 90 = directly overhead)
-//   minDistance  — how far away the camera starts (player value = 2)
-//   maxDistance  — how far it pulls back at its limit
-//   maxAtValue   — the player value that reaches maxDistance
-//   lerp         — position-follow smoothing (lower = floatier, higher = snappier)
 export const CAMERA_CONFIG = {
-    pitch: 45,           // degrees above horizon
-    minDistance: 10,     // camera distance when value = 2
-    maxDistance: 15,     // camera distance when value = maxAtValue
-    maxAtValue: 8192,    // player value that maps to maxDistance
-    followSpeed: 5,      // position-follow speed — higher = snappier (5 ≈ lerp 0.08 at 60fps)
+    pitch: 45,
+    minDistance: 10,
+    maxDistance: 15,
+    maxAtValue: 8192,
+    followSpeed: 5,
 };
 
 // ── Room geometry config ──────────────────────────────────────────────────────
-// One place to tune every wall type and the floor slab independently.
-// All geometry in LinearArea.ts reads from this — no constants to chase.
+// Used only for the floor slab and the gate/entrance mesh height.
+// Wall/obstacle appearance is driven by TILE_DEFS above.
 export const ROOM_GEOMETRY = {
-    // E/W side walls — thick blocks that prevent seeing outside the room.
-    sideWalls: {
-        thickness: 40,   // depth extending outward from room edge
-        height: 3.5,     // above floor (top of visible wall)
-        depthBelow: 30,  // below floor (hides the void)
-        color: 0x1e2d3d,
-        roughness: 0.9,
-        opacity: 1.0,
-    },
-    // S-facing divider walls — flank the gate opening.
-    dividerWalls: {
-        thickness: 2,
-        height: 3.5,
-        depthBelow: 30,
-        color: 0x1e2d3d,
-        roughness: 0.9,
-        opacity: 1.0,
-    },
-    // Floor platform — the slab the player walks on and its downward pedestal.
     base: {
-        depth: 30,          // how far below y=0 the pedestal extends
+        depth: 30,
         sideColor: 0x0d1020,
         roughness: 0.95,
+    },
+    // Height used when sealing the entrance gap after transition.
+    // Matches tile 1 height by default.
+    walls: {
+        height: 3.5,
     },
 };
 
 // ── Gate material config ──────────────────────────────────────────────────────
 export const GATE_MATERIAL_CONFIG = {
-    opacity: 1,              // gate transparency (0 = invisible, 1 = solid)
+    opacity: 1,
     roughness: 0.5,
-    emissiveIntensity: 0.2,     // glow strength (locked uses red, open uses value color)
-    lockedColor: '#aa2222',     // background when locked
-    lockedBorder: '#ff5555',    // border/emissive when locked
+    emissiveIntensity: 0.2,
+    lockedColor: '#aa2222',
+    lockedBorder: '#ff5555',
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -122,7 +158,7 @@ export function getLinearRoomConfig(roomIndex: number): LinearRoomConfig {
     return {
         size: Math.min(last.size + extra * 10, 300),
         gateValue: last.gateValue * Math.pow(2, extra),
-        foodValues: last.foodValues
+        foodValues: last.foodValues,
     };
 }
 
