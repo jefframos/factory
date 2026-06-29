@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { LinearArea } from './LinearArea';
+
+const DEBUG_GRID = new URLSearchParams(window.location.search).has('debugGrid');
 import { getLinearRoomConfig, computeFoodCount, FOOD_CONFIG } from './LinearConfig';
 import type { LinearRoomConfig } from './LinearConfig';
 import { RoomGrid } from './RoomGrid';
@@ -96,6 +98,7 @@ export class LinearAreaManager {
     }
 
     private logGrid(roomIdx: number, grid: string): void {
+        if (!DEBUG_GRID) return;
         console.log(`[Room ${roomIdx}] grid ${this.currentArea.grid.cols}×${this.currentArea.grid.rows}:\n${grid}`);
     }
 

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ClusterMeshBuilder } from '../builders/ClusterMeshBuilder';
 import { BendService } from '../services/BendService';
 import { FloorBuilder } from '../builders/FloorBuilder';
 import { colorForValue } from '../builders/CubeBuilder';
@@ -6,20 +7,21 @@ import { ROOM_GEOMETRY, GATE_MATERIAL_CONFIG, TILE_DEFS, type TileConfig, type O
 import { RoomGrid, CELL_WALL } from './RoomGrid';
 import type { AreaConfig } from './AreaConfig';
 
-const GATE_W   = 6.0;
-const BORDER   = 2;    // auto-generated border thickness in grid cells
+const GATE_W = 6.0;
+const BORDER = 2;    // auto-generated border thickness in grid cells
+const DEBUG_MESH = new URLSearchParams(window.location.search).has('debugMesh');
 
 const LOCKED_BG = GATE_MATERIAL_CONFIG.lockedColor;
 const LOCKED_BD = GATE_MATERIAL_CONFIG.lockedBorder;
-const PERM_BG   = '#111111';
-const PERM_BD   = '#444444';
+const PERM_BG = '#111111';
+const PERM_BD = '#444444';
 
 // ── Seeded value noise ────────────────────────────────────────────────────────
 // Smooth, deterministic, output in [0, 1]. Used for obstacle placement.
 
 function valueNoise(x: number, y: number, seed: number): number {
     const ix = Math.floor(x), iy = Math.floor(y);
-    const fx = x - ix,        fy = y - iy;
+    const fx = x - ix, fy = y - iy;
     const ux = fx * fx * (3 - 2 * fx);
     const uy = fy * fy * (3 - 2 * fy);
     const h = (gx: number, gy: number): number => {
@@ -35,20 +37,22 @@ function valueNoise(x: number, y: number, seed: number): number {
 // Fills in optional TileConfig defaults so renderers always get concrete values.
 
 interface ResolvedTile {
-    height:     number;
+    height: number;
     depthBelow: number;
-    color:      number;
-    roughness:  number;
-    opacity:    number;
+    color: number;
+    roughness: number;
+    opacity: number;
+    radius: number;
 }
 
 function resolveTile(t: TileConfig): ResolvedTile {
     return {
-        height:     t.height,
-        color:      t.color,
-        opacity:    t.opacity    ?? 1.0,
-        roughness:  t.roughness  ?? 0.9,
+        height: t.height,
+        color: t.color,
+        opacity: t.opacity ?? 1.0,
+        roughness: t.roughness ?? 0.9,
         depthBelow: t.depthBelow ?? (t.height >= 2 ? 30 : 0),
+        radius: t.radius ?? 0,
     };
 }
 
@@ -72,15 +76,15 @@ function pushOut(
         pos.z += dz * (radius - d) / d;
         return;
     }
-    const toLeft  = pos.x - minX;
+    const toLeft = pos.x - minX;
     const toRight = maxX - pos.x;
-    const toBack  = pos.z - minZ;
+    const toBack = pos.z - minZ;
     const toFront = maxZ - pos.z;
     const min = Math.min(toLeft, toRight, toBack, toFront);
-    if      (min === toLeft)  pos.x = minX - radius;
+    if (min === toLeft) pos.x = minX - radius;
     else if (min === toRight) pos.x = maxX + radius;
-    else if (min === toBack)  pos.z = minZ - radius;
-    else                      pos.z = maxZ + radius;
+    else if (min === toBack) pos.z = minZ - radius;
+    else pos.z = maxZ + radius;
 }
 
 function makeGateTexture(
@@ -103,8 +107,8 @@ function makeGateTexture(
         ctx.strokeStyle = '#555555';
         ctx.lineWidth = 16;
         ctx.beginPath();
-        ctx.moveTo(60, 60);       ctx.lineTo(px - 60, px - 60);
-        ctx.moveTo(px - 60, 60);  ctx.lineTo(60, px - 60);
+        ctx.moveTo(60, 60); ctx.lineTo(px - 60, px - 60);
+        ctx.moveTo(px - 60, 60); ctx.lineTo(60, px - 60);
         ctx.stroke();
     } else {
         ctx.fillStyle = open ? openColor : LOCKED_BG;
@@ -112,16 +116,16 @@ function makeGateTexture(
         ctx.strokeStyle = open ? 'rgba(255,255,255,0.6)' : LOCKED_BD;
         ctx.lineWidth = 10;
         ctx.strokeRect(5, 5, px - 10, px - 10);
-        const text     = String(value);
+        const text = String(value);
         const fontSize = text.length <= 2 ? 110 : text.length <= 3 ? 88 : text.length <= 4 ? 68 : 52;
-        ctx.font          = `bold ${fontSize}px Arial`;
-        ctx.textAlign     = 'center';
-        ctx.textBaseline  = 'middle';
-        ctx.strokeStyle   = 'rgba(0,0,0,0.65)';
-        ctx.lineWidth     = 18;
-        ctx.lineJoin      = 'round';
+        ctx.font = `bold ${fontSize}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.strokeStyle = 'rgba(0,0,0,0.65)';
+        ctx.lineWidth = 18;
+        ctx.lineJoin = 'round';
         ctx.strokeText(text, px / 2, px / 2);
-        ctx.fillStyle     = '#ffffff';
+        ctx.fillStyle = '#ffffff';
         ctx.fillText(text, px / 2, px / 2);
     }
     return new THREE.CanvasTexture(canvas);
@@ -134,8 +138,8 @@ interface GateEntry {
     minZ: number; maxZ: number;
     mesh: THREE.Mesh;
     lockedTex: THREE.CanvasTexture;
-    openTex:   THREE.CanvasTexture;
-    permTex:   THREE.CanvasTexture;
+    openTex: THREE.CanvasTexture;
+    permTex: THREE.CanvasTexture;
     openColor: string;
     isOpen: boolean;
     permanentlyLocked: boolean;
@@ -172,12 +176,12 @@ export class LinearArea {
         scene: THREE.Scene,
         roomIndex = 0,
     ) {
-        this.config  = config;
+        this.config = config;
         this.centerX = centerX;
         this.centerZ = centerZ;
-        this.scene   = scene;
+        this.scene = scene;
 
-        const g  = GATE_W / 2;
+        const g = GATE_W / 2;
         const cx = centerX;
         const cz = centerZ;
 
@@ -188,7 +192,7 @@ export class LinearArea {
         } else {
             // Auto-generate: square grid with thick border and centred gate gap.
             const side = config.size;
-            this.grid  = new RoomGrid(side, side, cx, cz);
+            this.grid = new RoomGrid(side, side, cx, cz);
             this.grid.fillBorderThick(BORDER);
             for (let t = 0; t < BORDER; t++) this.grid.openRow(t, GATE_W);
             if (roomIndex > 0) {
@@ -198,7 +202,7 @@ export class LinearArea {
             if (obsCfg) this.placeObstacles(obsCfg);
         }
 
-        const cs   = this.grid.cellSize;
+        const cs = this.grid.cellSize;
         const minZ = this.grid.originZ;
         const maxZ = this.grid.originZ + this.grid.rows * cs;
 
@@ -296,13 +300,13 @@ export class LinearArea {
 
     private buildSlab(scene: THREE.Scene, size: number, cx: number, cz: number): void {
         const { depth, sideColor, roughness } = ROOM_GEOMETRY.base;
-        const topMat  = new THREE.MeshStandardMaterial({ map: FloorBuilder.makeGridTexture(size), roughness: 0.8 });
+        const topMat = new THREE.MeshStandardMaterial({ map: FloorBuilder.makeGridTexture(size), roughness: 0.8 });
         const sideMat = new THREE.MeshStandardMaterial({ color: sideColor, roughness });
         BendService.applyBend(topMat);
         BendService.applyBend(sideMat);
         this.extraMaterials.push(topMat, sideMat);
 
-        const geo  = new THREE.BoxGeometry(size, depth, size, 32, 2, 32);
+        const geo = new THREE.BoxGeometry(size, depth, size, 32, 2, 32);
         const mesh = new THREE.Mesh(geo, [sideMat, sideMat, topMat, sideMat, sideMat, sideMat]);
         mesh.position.set(cx, -depth / 2, cz);
         mesh.frustumCulled = false;
@@ -321,14 +325,14 @@ export class LinearArea {
         if (sizeX <= 0 || sizeZ <= 0) return;
 
         const totalH = cfg.height + cfg.depthBelow;
-        const segX   = Math.max(1, Math.round(sizeX / 2));
-        const segZ   = Math.max(1, Math.round(sizeZ / 2));
-        const geo    = new THREE.BoxGeometry(sizeX, totalH, sizeZ, segX, 2, segZ);
-        const mat    = new THREE.MeshStandardMaterial({
-            color:       cfg.color,
-            roughness:   cfg.roughness,
+        const segX = Math.max(1, Math.round(sizeX / 2));
+        const segZ = Math.max(1, Math.round(sizeZ / 2));
+        const geo = new THREE.BoxGeometry(sizeX, totalH, sizeZ, segX, 2, segZ);
+        const mat = new THREE.MeshStandardMaterial({
+            color: cfg.color,
+            roughness: cfg.roughness,
             transparent: cfg.opacity < 1,
-            opacity:     cfg.opacity,
+            opacity: cfg.opacity,
         });
         BendService.applyBend(mat);
         const mesh = new THREE.Mesh(geo, mat);
@@ -347,6 +351,78 @@ export class LinearArea {
         const { cols, rows } = this.grid;
         const visited = new Uint8Array(cols * rows);
 
+        if (cfg.radius > 0) {
+            // Flood-fill path: BFS to find each connected island, then build one
+            // voxel mesh per island via ClusterMeshBuilder (outer faces only,
+            // quarter-cylinder bevels at convex outer edges).
+            const cs = this.grid.cellSize;
+            const dirs: [number, number][] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+            let islandIdx = 0;
+
+            for (let startRow = 0; startRow < rows; startRow++) {
+                for (let startCol = 0; startCol < cols; startCol++) {
+                    const si = startRow * cols + startCol;
+                    if (visited[si] || this.grid.get(startCol, startRow) !== cellType) continue;
+
+                    // BFS to collect the connected island
+                    const queue: [number, number][] = [[startCol, startRow]];
+                    visited[si] = 1;
+                    const island: [number, number][] = [];
+
+                    while (queue.length > 0) {
+                        const [col, row] = queue.shift()!;
+                        island.push([col, row]);
+                        for (const [dc, dr] of dirs) {
+                            const nc = col + dc, nr = row + dr;
+                            if (!this.grid.inBounds(nc, nr)) continue;
+                            const ni = nr * cols + nc;
+                            if (visited[ni] || this.grid.get(nc, nr) !== cellType) continue;
+                            visited[ni] = 1;
+                            queue.push([nc, nr]);
+                        }
+                    }
+
+                    if (DEBUG_MESH) {
+                        const minC = Math.min(...island.map(([c]) => c));
+                        const maxC = Math.max(...island.map(([c]) => c));
+                        const minR = Math.min(...island.map(([, r]) => r));
+                        const maxR2 = Math.max(...island.map(([, r]) => r));
+                        const w = maxC - minC + 1, h = maxR2 - minR + 1;
+                        const cells = Array.from({ length: h }, () => Array<string>(w).fill('.'));
+                        for (const [c, r] of island) cells[r - minR][c - minC] = String(cellType);
+                        const ascii = cells.map(row => '  ' + row.join('')).join('\n');
+                        console.log(`[debugMesh tile=${cellType}] island #${islandIdx} — ${island.length} cells, cols ${minC}–${maxC}, rows ${minR}–${maxR2}\n${ascii}`);
+                        islandIdx++;
+                    }
+
+                    const geo = ClusterMeshBuilder.roundAllEdges(
+                        island,
+                        cs,
+                        cfg.height,
+                        cfg.depthBelow,
+                        this.grid.originX,
+                        this.grid.originZ,
+                        cfg.radius,
+                        3,
+                    );
+
+                    const mat = new THREE.MeshStandardMaterial({
+                        color: cfg.color,
+                        roughness: cfg.roughness,
+                        transparent: cfg.opacity < 1,
+                        opacity: cfg.opacity,
+                    });
+                    BendService.applyBend(mat);
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.frustumCulled = false;
+                    scene.add(mesh);
+                    this.sceneMeshes.push(mesh);
+                }
+            }
+            return;
+        }
+
+        // Greedy-merge path (radius === 0, used for walls with BendService tessellation)
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
                 const i = row * cols + col;
@@ -374,9 +450,9 @@ export class LinearArea {
                 const cs = this.grid.cellSize;
                 this.wallMesh(
                     scene,
-                    this.grid.originX + col    * cs,
+                    this.grid.originX + col * cs,
                     this.grid.originX + endCol * cs,
-                    this.grid.originZ + row    * cs,
+                    this.grid.originZ + row * cs,
                     this.grid.originZ + endRow * cs,
                     cfg,
                 );
@@ -417,25 +493,25 @@ export class LinearArea {
     ): void {
         const sizeX = maxX - minX;
         const sizeZ = maxZ - minZ;
-        const cx    = (minX + maxX) / 2;
-        const cz    = (minZ + maxZ) / 2;
+        const cx = (minX + maxX) / 2;
+        const cz = (minZ + maxZ) / 2;
 
         const openColor = colorForValue(value);
         const lockedTex = makeGateTexture(value, false);
-        const openTex   = makeGateTexture(value, true, false, openColor);
-        const permTex   = makeGateTexture(value, false, true);
+        const openTex = makeGateTexture(value, true, false, openColor);
+        const permTex = makeGateTexture(value, false, true);
 
         const wallH = ROOM_GEOMETRY.walls.height;
-        const segX  = Math.max(1, Math.round(sizeX / 2));
-        const segZ  = Math.max(1, Math.round(sizeZ / 2));
-        const geo   = new THREE.BoxGeometry(sizeX, wallH, sizeZ, segX, 2, segZ);
-        const mat   = new THREE.MeshStandardMaterial({
-            map:               lockedTex,
-            emissive:          new THREE.Color(LOCKED_BD),
+        const segX = Math.max(1, Math.round(sizeX / 2));
+        const segZ = Math.max(1, Math.round(sizeZ / 2));
+        const geo = new THREE.BoxGeometry(sizeX, wallH, sizeZ, segX, 2, segZ);
+        const mat = new THREE.MeshStandardMaterial({
+            map: lockedTex,
+            emissive: new THREE.Color(LOCKED_BD),
             emissiveIntensity: GATE_MATERIAL_CONFIG.emissiveIntensity,
-            transparent:       true,
-            opacity:           GATE_MATERIAL_CONFIG.opacity,
-            roughness:         GATE_MATERIAL_CONFIG.roughness,
+            transparent: true,
+            opacity: GATE_MATERIAL_CONFIG.opacity,
+            roughness: GATE_MATERIAL_CONFIG.roughness,
         });
         BendService.applyBend(mat);
         const mesh = new THREE.Mesh(geo, mat);

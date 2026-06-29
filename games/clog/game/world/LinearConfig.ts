@@ -16,13 +16,14 @@ export interface TileConfig {
     roughness?: number;
     depthBelow?: number;
     texture?: string | null;
+    radius?: number;  // corner bevel radius (world units); omit/0 = sharp BoxGeometry; >0 = RoundedBoxGeometry
 }
 
 export const TILE_DEFS: Record<number, TileConfig> = {
-    // 1 — full wall
+    // 1 — full wall (greedy-merged slab; BendService needs BoxGeometry segments)
     1: { height: 1.5, color: 0x1e2d3d, depthBelow: 30 },
-    // 2 — short obstacle (1-unit tall, sits on floor)
-    2: { height: 1.0, color: 0x2a3a4a },
+    // 2 — short obstacle (per-cell so each cube gets individually rounded corners)
+    2: { height: 1.0, color: 0x2a3a4a, radius: 0.2 },
 };
 
 // ── Obstacle placement ────────────────────────────────────────────────────────
