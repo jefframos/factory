@@ -25,14 +25,11 @@ export class FloorBuilder {
         canvas.width = canvas.height = px;
         const ctx = canvas.getContext("2d")!;
 
-        // Dark base
-        ctx.fillStyle = "#1a1a2e";
+        ctx.fillStyle = "#141830";
         ctx.fillRect(0, 0, px, px);
 
-        // Grid lines at tile boundaries — RepeatWrapping makes these seamless.
-        // A 2px line centered at x=0/y=0 splits evenly across the tile wrap point.
-        ctx.strokeStyle = "#3a3acc";
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#5566ff";
+        ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(0, 0); ctx.lineTo(0, px); // left/right boundary
         ctx.moveTo(0, 0); ctx.lineTo(px, 0); // top/bottom boundary

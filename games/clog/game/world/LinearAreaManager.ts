@@ -16,6 +16,7 @@ export class LinearAreaManager {
     private scene: THREE.Scene;
     private currentRoomIdx = 0;
     private currentCenterZ = 0;
+    private prevArea: LinearArea | null = null;   // locked, rendered, not updated
     private currentArea: LinearArea;
     private nextArea: LinearArea;
     private currentPlayers: PlayerEntity[] = [];
@@ -74,6 +75,7 @@ export class LinearAreaManager {
     }
 
     destroy(): void {
+        this.prevArea?.destroy(this.scene);
         this.currentArea.destroy(this.scene);
         this.nextArea.destroy(this.scene);
     }
@@ -93,14 +95,16 @@ export class LinearAreaManager {
     }
 
     private transition(): void {
-        // Capture old bounds before mutating state so the scene can clear
-        // only that room's food without touching the next area's pre-spawned items.
         const prevSize = getLinearRoomConfig(this.currentRoomIdx).size;
         const prevMinZ = this.currentCenterZ - prevSize / 2;
         const prevMaxZ = this.currentCenterZ + prevSize / 2;
 
+        // Destroy the room that is now two steps behind (player has fully left it)
+        this.prevArea?.destroy(this.scene);
+
+        // Lock the gate of the room being left, keep its geometry visible for one more room
         this.currentArea.lockForwardGate();
-        this.currentArea.destroy(this.scene);
+        this.prevArea = this.currentArea;   // still rendered, no longer updated
 
         this.currentRoomIdx++;
         this.currentCenterZ = this.centerZFor(this.currentRoomIdx);

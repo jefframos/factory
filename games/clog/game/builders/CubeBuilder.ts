@@ -2,21 +2,30 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { BendService } from "../services/BendService";
 
-const VALUE_COLORS: Record<number, string> = {
-    2: "#4aba8a",
-    4: "#4488cc",
-    8: "#e87850",
-    16: "#cc44aa",
-    32: "#88cc44",
-    64: "#cc8844",
-    128: "#4444cc",
-    256: "#aa44cc",
-    512: "#cc4444",
-    1024: "#44cccc",
-};
+// One color per doubling of value, in order starting at value=2.
+// Add entries freely — colorForValue() cycles through these instead of defaulting to grey.
+export const VALUE_PALETTE: string[] = [
+    '#4aba8a',  //  2  — mint green
+    '#4488cc',  //  4  — sky blue
+    '#e87850',  //  8  — tangerine
+    '#cc44aa',  // 16  — magenta
+    '#88cc44',  // 32  — lime
+    '#cc8844',  // 64  — amber
+    '#4444cc',  // 128  — cobalt
+    '#aa44cc',  // 256  — purple
+    '#cc4444',  // 512  — crimson
+    '#44cccc',  // 1024  — teal
+    '#ffd700',  // 2048  — gold
+    '#ff6b6b',  // 4096  — coral
+    '#69f0ae',  // 8192  — spring green
+    '#ba68c8',  // 16384  — lavender
+    '#ff7043',  // 32768  — deep orange
+    '#00acc1',  // 65536  — aqua blue
+];
 
 export function colorForValue(value: number): string {
-    return VALUE_COLORS[value] ?? "#888888";
+    const idx = Math.max(0, Math.round(Math.log2(Math.max(1, value))) - 1);
+    return VALUE_PALETTE[idx % VALUE_PALETTE.length];
 }
 
 export class CubeBuilder {
@@ -81,11 +90,17 @@ export class CubeBuilder {
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, size, size);
 
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 60px Arial";
+        const text = String(value);
+        const fontSize = text.length <= 2 ? 70 : text.length <= 3 ? 55 : text.length <= 4 ? 42 : 30;
+        ctx.font = `bold ${fontSize}px Arial`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(String(value), size / 2, size / 2);
+        ctx.strokeStyle = "rgba(0,0,0,0.65)";
+        ctx.lineWidth = 10;
+        ctx.lineJoin = "round";
+        ctx.strokeText(text, size / 2, size / 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(text, size / 2, size / 2);
 
         return new THREE.CanvasTexture(canvas);
     }

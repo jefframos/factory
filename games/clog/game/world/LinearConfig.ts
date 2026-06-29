@@ -6,23 +6,22 @@ export interface LinearRoomConfig {
     size: number;          // platform side length (world units)
     gateValue: number;     // player value required to open the gate (0 = always open)
     foodValues: number[];  // pool drawn at random on each food spawn
-    speedScale: number;    // multiplied into delta — makes bigger rooms feel slower
 }
 
 //  Room  Size  Gate     Food          Speed
 export const ROOM_CONFIGS: LinearRoomConfig[] = [
-    { size: 60, gateValue: 0, foodValues: [2], speedScale: 1.00 },
-    { size: 68, gateValue: 8, foodValues: [2], speedScale: 0.97 },
-    { size: 76, gateValue: 16, foodValues: [2, 4], speedScale: 0.95 },
-    { size: 86, gateValue: 32, foodValues: [2, 4], speedScale: 0.92 },
-    { size: 96, gateValue: 64, foodValues: [4], speedScale: 0.88 },
-    { size: 106, gateValue: 128, foodValues: [4], speedScale: 0.84 },
-    { size: 116, gateValue: 256, foodValues: [4, 8], speedScale: 0.80 },
-    { size: 126, gateValue: 512, foodValues: [8], speedScale: 0.75 },
-    { size: 136, gateValue: 1024, foodValues: [8, 16], speedScale: 0.70 },
-    { size: 148, gateValue: 2048, foodValues: [16], speedScale: 0.64 },
-    { size: 160, gateValue: 4096, foodValues: [16], speedScale: 0.58 },
-    { size: 172, gateValue: 8192, foodValues: [16, 32], speedScale: 0.52 },
+    { size: 60, gateValue: 0, foodValues: [2] },
+    { size: 68, gateValue: 8, foodValues: [2] },
+    { size: 76, gateValue: 16, foodValues: [2, 4] },
+    { size: 86, gateValue: 32, foodValues: [2, 4] },
+    { size: 96, gateValue: 64, foodValues: [4] },
+    { size: 106, gateValue: 128, foodValues: [4] },
+    { size: 116, gateValue: 256, foodValues: [4, 8] },
+    { size: 126, gateValue: 512, foodValues: [8] },
+    { size: 136, gateValue: 1024, foodValues: [8, 16] },
+    { size: 148, gateValue: 2048, foodValues: [16] },
+    { size: 160, gateValue: 4096, foodValues: [16] },
+    { size: 172, gateValue: 8192, foodValues: [16, 32] },
 ];
 
 export const KING_ROOM_INDEX = ROOM_CONFIGS.length - 1;
@@ -34,19 +33,19 @@ export const FOOD_CONFIG = {
     // ── Initial spawn ─────────────────────────────────────────────────────
     // Items placed when a room is first built. Kept intentionally small so
     // the room feels sparse and the trickle spawn creates tension.
-    initialCount:          5,    // items placed on room creation (before any top-up)
+    initialCount: 5,    // items placed on room creation (before any top-up)
 
     // ── Density (LevelManager target) ─────────────────────────────────────
-    densityPer100:         1,    // items per 100 m²  (1 ≈ "1 per 10×10 area")
-    minAbsolute:           5,    // floor: LevelManager never lets a room drop below this
-    maxAbsolute:          80,    // ceiling: cap for very large rooms
-    spawnPadding:          5,    // units trimmed from each wall edge before spawning
+    densityPer100: 1,    // items per 100 m²  (1 ≈ "1 per 10×10 area")
+    minAbsolute: 5,    // floor: LevelManager never lets a room drop below this
+    maxAbsolute: 80,    // ceiling: cap for very large rooms
+    spawnPadding: 5,    // units trimmed from each wall edge before spawning
 
     // ── Top-up spawner (LevelManager) ─────────────────────────────────────
-    spawnInterval:         3.5,  // seconds between top-up ticks
-    minDistBetweenItems:   2.5,  // minimum separation between two food items
-    minDistFromPlayer:     7,    // new items spawn at least this far from the player
-    maxPlacementAttempts:  30,   // give up placement after this many tries
+    spawnInterval: 3.5,  // seconds between top-up ticks
+    minDistBetweenItems: 2.5,  // minimum separation between two food items
+    minDistFromPlayer: 7,    // new items spawn at least this far from the player
+    maxPlacementAttempts: 30,   // give up placement after this many tries
 };
 
 /**
@@ -60,18 +59,58 @@ export function computeFoodCount(roomSize: number): number {
 }
 
 // ── Camera config ─────────────────────────────────────────────────────────────
-// Camera pulls back continuously based on the player's world-depth (|player.z|).
-// Formula:  targetY = baseY + depth * yPerDepth   (clamped to maxY)
-//           targetZ = baseZ + depth * zPerDepth   (clamped to maxZ)
-// Increase zPerDepth for more dramatic zoom-out; raise lerp for snappier follow.
+// Camera orbits the player at a fixed pitch; distance scales with player value.
+//
+//   pitch        — tilt in degrees (0 = horizon, 90 = directly overhead)
+//   minDistance  — how far away the camera starts (player value = 2)
+//   maxDistance  — how far it pulls back at its limit
+//   maxAtValue   — the player value that reaches maxDistance
+//   lerp         — position-follow smoothing (lower = floatier, higher = snappier)
 export const CAMERA_CONFIG = {
-    baseY: 5,      // height at depth 0
-    baseZ: 10,     // distance at depth 0
-    yPerDepth: 0.022,  // +Y per world unit of player depth
-    zPerDepth: 0.050,  // +Z per world unit of player depth
-    maxY: 40,     // maximum camera height
-    maxZ: 100,    // maximum camera distance
-    lerp: 0.08,   // position-follow smoothing (lower = floatier)
+    pitch: 45,           // degrees above horizon
+    minDistance: 10,     // camera distance when value = 2
+    maxDistance: 15,     // camera distance when value = maxAtValue
+    maxAtValue: 8192,    // player value that maps to maxDistance
+    followSpeed: 5,      // position-follow speed — higher = snappier (5 ≈ lerp 0.08 at 60fps)
+};
+
+// ── Room geometry config ──────────────────────────────────────────────────────
+// One place to tune every wall type and the floor slab independently.
+// All geometry in LinearArea.ts reads from this — no constants to chase.
+export const ROOM_GEOMETRY = {
+    // E/W side walls — thick blocks that prevent seeing outside the room.
+    sideWalls: {
+        thickness: 40,   // depth extending outward from room edge
+        height: 3.5,     // above floor (top of visible wall)
+        depthBelow: 30,  // below floor (hides the void)
+        color: 0x1e2d3d,
+        roughness: 0.9,
+        opacity: 1.0,
+    },
+    // S-facing divider walls — flank the gate opening.
+    dividerWalls: {
+        thickness: 2,
+        height: 3.5,
+        depthBelow: 30,
+        color: 0x1e2d3d,
+        roughness: 0.9,
+        opacity: 1.0,
+    },
+    // Floor platform — the slab the player walks on and its downward pedestal.
+    base: {
+        depth: 30,          // how far below y=0 the pedestal extends
+        sideColor: 0x0d1020,
+        roughness: 0.95,
+    },
+};
+
+// ── Gate material config ──────────────────────────────────────────────────────
+export const GATE_MATERIAL_CONFIG = {
+    opacity: 1,              // gate transparency (0 = invisible, 1 = solid)
+    roughness: 0.5,
+    emissiveIntensity: 0.2,     // glow strength (locked uses red, open uses value color)
+    lockedColor: '#aa2222',     // background when locked
+    lockedBorder: '#ff5555',    // border/emissive when locked
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -83,8 +122,7 @@ export function getLinearRoomConfig(roomIndex: number): LinearRoomConfig {
     return {
         size: Math.min(last.size + extra * 10, 300),
         gateValue: last.gateValue * Math.pow(2, extra),
-        foodValues: last.foodValues,
-        speedScale: Math.max(last.speedScale - extra * 0.03, 0.30),
+        foodValues: last.foodValues
     };
 }
 

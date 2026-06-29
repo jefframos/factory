@@ -18,9 +18,8 @@ export default class LinearWorld3dScene extends ThreeScene {
     private linearManager!: LinearAreaManager;
     private gradient = new FourCornersGradientBuilder();
 
-    // Smoothed camera offset — approaches target derived from player depth each frame
-    private camY = CAMERA_CONFIG.baseY;
-    private camZ = CAMERA_CONFIG.baseZ;
+    // Smoothed camera distance — approaches target derived from player value each frame
+    private camDist = CAMERA_CONFIG.minDistance;
 
     /** Zoom multiplier applied on top of the depth-driven target. 1 = default, >1 = further out. */
     public cameraZoom = 1.0;
@@ -29,10 +28,10 @@ export default class LinearWorld3dScene extends ThreeScene {
 
     // ── Exposed for Pixi HUD / minimap ────────────────────────────────────────
 
-    get playerValue(): number      { return this.player?.value ?? 0; }
-    get playerScore(): number      { return this.player?.score ?? 0; }
+    get playerValue(): number { return this.player?.value ?? 0; }
+    get playerScore(): number { return this.player?.score ?? 0; }
     get currentRoomIndex(): number { return this.linearManager?.currentRoomIndex ?? 0; }
-    get nextGateValue(): number    { return this.linearManager?.nextGateValue ?? 0; }
+    get nextGateValue(): number { return this.linearManager?.nextGateValue ?? 0; }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -45,23 +44,26 @@ export default class LinearWorld3dScene extends ThreeScene {
             mode: 'four-way',
             distance: 30,
             fourWay: {
-                topColor:    0x1a72d4,
-                leftColor:   0x42aaee,
+                topColor: 0x1a72d4,
+                leftColor: 0x42aaee,
                 bottomColor: 0x90d8f8,
-                rightColor:  0x42aaee,
+                rightColor: 0x42aaee,
                 radius: 1.5,
                 speed: 0.03,
             },
         });
 
-        this.threeScene.add(new THREE.AmbientLight(0xffffff, 0.5));
-        const dir = new THREE.DirectionalLight(0xaaccff, 0.9);
-        dir.position.set(5, 10, 7.5);
-        this.threeScene.add(dir);
+        this.threeScene.add(new THREE.AmbientLight(0xffffff, 0.9));
+        const key = new THREE.DirectionalLight(0xfff4dd, 1.6);  // warm key from above-right
+        key.position.set(5, 10, 7.5);
+        this.threeScene.add(key);
+        const fill = new THREE.DirectionalLight(0x99ccff, 0.5); // cool fill from left
+        fill.position.set(-8, 3, -5);
+        this.threeScene.add(fill);
 
-        this.linearManager  = new LinearAreaManager(this.threeScene);
-        this.collectibles   = new CollectibleManager();
-        this.levelManager   = new LevelManager();
+        this.linearManager = new LinearAreaManager(this.threeScene);
+        this.collectibles = new CollectibleManager();
+        this.levelManager = new LevelManager();
 
         this.linearManager.onTransition = ({ prevMinZ, prevMaxZ }) => {
             // Clear only the food that belonged to the room we just left.
@@ -94,25 +96,27 @@ export default class LinearWorld3dScene extends ThreeScene {
 
         this.player = new PlayerEntity(2, this.threeScene);
         this.linearManager.registerPlayer(this.player);
-        this.threeCamera.position.copy(this.player.position)
-            .add(new THREE.Vector3(0, this.camY, this.camZ));
+        const initPitch = CAMERA_CONFIG.pitch * Math.PI / 180;
+        this.threeCamera.position.copy(this.player.position).add(
+            new THREE.Vector3(0, Math.sin(initPitch) * this.camDist, Math.cos(initPitch) * this.camDist),
+        );
         this.threeCamera.lookAt(this.player.position);
     }
 
     public update(delta: number): void {
         const cfg = this.linearManager.currentConfig;
 
-        // ── Depth-driven camera ───────────────────────────────────────────────
-        // depth increases continuously as the player moves forward (deeper Z).
-        const depth     = Math.abs(this.player.position.z);
-        const targetY   = Math.min(CAMERA_CONFIG.baseY + depth * CAMERA_CONFIG.yPerDepth, CAMERA_CONFIG.maxY) * this.cameraZoom;
-        const targetZ   = Math.min(CAMERA_CONFIG.baseZ + depth * CAMERA_CONFIG.zPerDepth, CAMERA_CONFIG.maxZ) * this.cameraZoom;
-        const t         = 1 - Math.exp(-CAM_SMOOTH * delta);
-        this.camY      += (targetY - this.camY) * t;
-        this.camZ      += (targetZ - this.camZ) * t;
+        // ── Value-driven camera distance ──────────────────────────────────────
+        // Interpolates in log2 space so doubling value = equal steps in distance.
+        const log2Val = Math.log2(Math.max(2, this.player.value));
+        const log2Max = Math.log2(Math.max(2, CAMERA_CONFIG.maxAtValue));
+        const distT = Math.min(log2Val / log2Max, 1);
+        const targetDist = (CAMERA_CONFIG.minDistance + distT * (CAMERA_CONFIG.maxDistance - CAMERA_CONFIG.minDistance)) * this.cameraZoom;
+        const t = 1 - Math.exp(-CAM_SMOOTH * delta);
+        this.camDist += (targetDist - this.camDist) * t;
 
         // ── Speed scale — bigger rooms run slightly slower ─────────────────
-        const scaledDelta = delta * cfg.speedScale;
+        const scaledDelta = delta;
 
         this.gradient.update(scaledDelta);
 
@@ -137,10 +141,10 @@ export default class LinearWorld3dScene extends ThreeScene {
             this.linearManager.computedFoodCount,
         );
 
-        this.threeCamera.position.lerp(
-            this.player.position.clone().add(new THREE.Vector3(0, this.camY, this.camZ)),
-            CAMERA_CONFIG.lerp,
-        );
+        const pitch = CAMERA_CONFIG.pitch * Math.PI / 180;
+        const camOffset = new THREE.Vector3(0, Math.sin(pitch) * this.camDist, Math.cos(pitch) * this.camDist);
+        const posT = 1 - Math.exp(-CAMERA_CONFIG.followSpeed * delta);
+        this.threeCamera.position.lerp(this.player.position.clone().add(camOffset), posT);
         this.threeCamera.lookAt(this.player.position);
 
         super.update(delta);
@@ -168,8 +172,8 @@ export default class LinearWorld3dScene extends ThreeScene {
         withPop = false,
     ): void {
         for (let i = 0; i < count; i++) {
-            const x     = center.x + (Math.random() - 0.5) * 2 * halfSize;
-            const z     = center.y + (Math.random() - 0.5) * 2 * halfSize;
+            const x = center.x + (Math.random() - 0.5) * 2 * halfSize;
+            const z = center.y + (Math.random() - 0.5) * 2 * halfSize;
             const value = values[Math.floor(Math.random() * values.length)];
             this.collectibles.spawnOne(this.threeScene, new THREE.Vector3(x, 0, z), value, withPop);
         }
