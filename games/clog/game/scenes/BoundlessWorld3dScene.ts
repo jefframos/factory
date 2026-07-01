@@ -14,11 +14,13 @@ import { CloudSystem } from '../vfx/CloudSystem';
 import type { IWorld3dScene } from './IWorld3dScene';
 import { PerfOverlay } from '../utils/PerfOverlay';
 import SetupThree from '@core/scene/SetupThree';
+import { SimWorld } from '../sim/SimWorld';
 
 const PERF_MODE = new URLSearchParams(window.location.search).has('perf');
 
 const CAM_SMOOTH = 2.2;
-const SPAWN_RADIUS = 60;   // world-unit radius around player where food can spawn
+const SPAWN_RADIUS = 60;     // world-unit radius around player where food can spawn
+const BOT_MIN_DIST = 10;     // minimum world-unit distance from the player when spawning a bot
 
 // Derive food value pool from player value — mirrors room progression tiers.
 function foodValuesForValue(v: number): number[] {
@@ -38,11 +40,12 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     private levelManager!: LevelManager;
     private chunkManager!: BoundlessChunkManager;
     private gradient = new FourCornersGradientBuilder();
-    private cloudSystem = new CloudSystem();
+    private cloudSystem?: CloudSystem;
     private floorMesh!: THREE.Mesh;
     private floorMat!: THREE.Material;
     private camDist = CAMERA_CONFIG.minDistance;
     private perfOverlay: PerfOverlay | null = null;
+    private bots: PlayerEntity[] = [];
 
     public cameraZoom = 1.0;
     public moveInput: { x: number; z: number } = { x: 0, z: 0 };
@@ -90,11 +93,15 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
 
         this.player = new PlayerEntity(2, this.threeScene);
 
+        SimWorld.init(this.collectibles, this.chunkManager);
+        SimWorld.register(this.player);
+
         // Seed the starting chunks and initial food.
         this.chunkManager.update(this.player);
         this.seedInitialFood();
 
-        this.cloudSystem.build(this.threeScene);
+        //this.cloudSystem = new CloudSystem()
+        //this.cloudSystem.build(this.threeScene);
         if (PERF_MODE) this.perfOverlay = new PerfOverlay();
 
         const initPitch = CAMERA_CONFIG.pitch * Math.PI / 180;
@@ -113,10 +120,11 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.camDist += (target - this.camDist) * (1 - Math.exp(-CAM_SMOOTH * delta));
 
         this.gradient.update(delta);
-        this.cloudSystem.update(delta, this.player.position.x, this.player.position.z);
+        this.cloudSystem?.update(delta, this.player.position.x, this.player.position.z);
 
         this.player.setMoveInput(this.moveInput.x, this.moveInput.z);
         this.player.update(delta);
+        for (const bot of this.bots) bot.update(delta);
         BendService.updateOrigin(this.player.position);
 
         // Chunk streaming + collision
@@ -164,13 +172,48 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         }
     }
 
+    /**
+     * Spawns a stationary bot entity near the player.
+     * @param value The game value for the entity (must be a power of 2, e.g. 16 = 2×2×2×2).
+     */
+    public spawnBot(value: number): void {
+        const px = this.player.position.x;
+        const pz = this.player.position.z;
+
+        const cells = this.chunkManager.getFreeCellsNear(px, pz, SPAWN_RADIUS);
+        if (cells.length === 0) return;
+
+        const minDist2 = BOT_MIN_DIST * BOT_MIN_DIST;
+        const candidates = cells.filter(c => {
+            const dx = c.x - px;
+            const dz = c.z - pz;
+            return dx * dx + dz * dz >= minDist2;
+        });
+
+        const pool = candidates.length > 0 ? candidates : cells;
+        const cell  = pool[Math.floor(Math.random() * pool.length)];
+
+        const bot = new PlayerEntity(value, this.threeScene);
+        bot.position.set(cell.x, 0, cell.z);
+        bot.setMoveInput(0, 0);
+
+        SimWorld.register(bot);
+        this.bots.push(bot);
+    }
+
     public debugDoublePlayerValue(): void {
         this.player?.debugDoubleValue();
     }
 
     public destroy(): void {
+        for (const bot of this.bots) {
+            SimWorld.unregister(bot);
+            bot.destroy();
+        }
+        this.bots = [];
+        SimWorld.reset();
         this.perfOverlay?.destroy();
-        this.cloudSystem.destroy(this.threeScene);
+        this.cloudSystem?.destroy(this.threeScene);
         this.gradient.destroy();
         this.player?.destroy();
         this.collectibles?.destroy();

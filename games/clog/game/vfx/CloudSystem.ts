@@ -42,15 +42,12 @@ function valueNoise(x: number, y: number, seed: number): number {
 // Note: no instanceMatrix needed here — this is a single Mesh, not InstancedMesh.
 
 const vertexShader = /* glsl */`
-    varying vec3  vNormal;
     varying float vXZDist;
 
     uniform vec3  uBendOrigin;
     uniform float uBendStrength;
 
     void main() {
-        vNormal = normal;
-
         vec4 worldPos = modelMatrix * vec4(position, 1.0);
         float dx = worldPos.x - uBendOrigin.x;
         float dz = worldPos.z - uBendOrigin.z;
@@ -66,14 +63,11 @@ const fragmentShader = /* glsl */`
     uniform float uFadeNear;
     uniform float uFadeFar;
     uniform float uOpacity;
-    varying vec3  vNormal;
     varying float vXZDist;
 
     void main() {
-        float ny    = normalize(vNormal).y;
-        float shade = ny > 0.5 ? 1.00 : ny < -0.5 ? 0.72 : 0.88;
-        float fade  = smoothstep(uFadeNear, uFadeFar, vXZDist);
-        gl_FragColor = vec4(shade, shade, shade, uOpacity * fade);
+        float fade = smoothstep(uFadeNear, uFadeFar, vXZDist);
+        gl_FragColor = vec4(1.0, 1.0, 1.0, uOpacity * fade);
     }
 `;
 

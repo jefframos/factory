@@ -7,6 +7,7 @@ import { WalkBob } from "../components/WalkBob"; // [view:WalkBob]
 import { FloatBob } from "../components/FloatBob";
 import { BlobShadow } from "./BlobShadow";
 import { TailCube } from "./TailCube";
+import type { ISimEntity, TailEntry } from "../sim/SimWorld";
 
 const MOVE_SPEED = 8;
 const ROTATION_SPEED = 12;
@@ -16,7 +17,7 @@ const MERGE_SPEED = 14;      // world-units per second for merge slide
 const MIN_MERGE_TIME = 0.1;  // floor so very-close merges still have a visible pop
 const SETTLE_DELAY = 0.7;
 
-export class PlayerEntity {
+export class PlayerEntity implements ISimEntity {
     public value: number;
     public transform: THREE.Group;
     private mesh: THREE.Mesh;
@@ -225,6 +226,11 @@ export class PlayerEntity {
     /** Total value: head + every tail cube combined. Used as the .io score. */
     get score(): number {
         return this.tail.reduce((sum, c) => sum + c.value, this.value);
+    }
+
+    /** ISimEntity — flat snapshot of the tail for AI queries. Weakest cube is last. */
+    tailSnapshot(): TailEntry[] {
+        return this.tail.map(c => ({ position: c.position, value: c.value }));
     }
 
     /**

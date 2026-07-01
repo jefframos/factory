@@ -40,6 +40,18 @@ export class CollectibleManager {
     get positions(): THREE.Vector3[] {
         return this.cubes.map(c => c.position);
     }
+
+    /** Returns live position refs for all collectibles within `radius` of `origin`. */
+    getPositionsNear(origin: THREE.Vector3, radius: number): THREE.Vector3[] {
+        const r2 = radius * radius;
+        const out: THREE.Vector3[] = [];
+        for (const c of this.cubes) {
+            const dx = c.position.x - origin.x;
+            const dz = c.position.z - origin.z;
+            if (dx * dx + dz * dz <= r2) out.push(c.position);
+        }
+        return out;
+    }
     /**
      * Returns the first collectible within `radius` of `playerPos`,
      * removing it from the managed pool. Returns null if none found.

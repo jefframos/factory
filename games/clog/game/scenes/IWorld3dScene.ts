@@ -9,4 +9,5 @@ export interface IWorld3dScene {
     update(delta: number): void;
     destroy(): void;
     debugDoublePlayerValue(): void;
+    spawnBot(value: number): void;
 }

@@ -102,6 +102,20 @@ export class BoundlessChunkManager {
         return out;
     }
 
+    /**
+     * Returns true when (worldX, worldZ) is not occupied by a solid obstacle tile.
+     * Open water chunks (no island) and unloaded chunks are treated as walkable.
+     */
+    isWalkable(worldX: number, worldZ: number): boolean {
+        const cx = Math.round(worldX / CHUNK_SIZE);
+        const cz = Math.round(worldZ / CHUNK_SIZE);
+        const chunk = this.chunks.get(`${cx},${cz}`);
+        if (!chunk?.grid) return true;
+        const { col, row } = chunk.grid.worldToCell(worldX, worldZ);
+        if (!chunk.grid.inBounds(col, row)) return true;
+        return !chunk.grid.isBlocked(col, row);
+    }
+
     destroy(): void {
         for (const chunk of this.chunks.values()) chunk.destroy(this.scene);
         this.chunks.clear();

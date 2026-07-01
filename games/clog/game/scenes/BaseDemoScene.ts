@@ -34,7 +34,7 @@ export default class BaseDemoScene extends GameScene {
             : new BoundlessWorld3dScene(this.game);
         await this.world3d.build();
 
-        if (Game.debugParams.dev) {
+        if (Game.debugParams.stats) {
             const panels = [0, 2] as const; // 0 = FPS, 2 = MB
             panels.forEach((panel, i) => {
                 const s = new Stats();
@@ -46,7 +46,7 @@ export default class BaseDemoScene extends GameScene {
         }
 
         this.eventMode = 'static';
-        this.hitArea   = new PIXI.Rectangle(-2000, -2000, 6000, 6000);
+        this.hitArea = new PIXI.Rectangle(-2000, -2000, 6000, 6000);
 
         this.analogInput = new AnalogInput(this);
         this.analogInput.onMove.add(({ direction, magnitude }) => {
@@ -62,6 +62,10 @@ export default class BaseDemoScene extends GameScene {
 
         DevGuiManager.instance.addButton('Double Value', () => {
             this.world3d.debugDoublePlayerValue();
+        }, 'Player');
+
+        DevGuiManager.instance.addButton('Spawn Entity', () => {
+            this.world3d.spawnBot(16);
         }, 'Player');
 
         DevGuiManager.instance.addObjectTrigger(
