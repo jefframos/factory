@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 import { ClusterMeshBuilder } from '../builders/ClusterMeshBuilder';
 import { BendService } from '../services/BendService';
-import { FloorBuilder } from '../builders/FloorBuilder';
 import { colorForValue } from '../builders/CubeBuilder';
-import { ROOM_GEOMETRY, GATE_MATERIAL_CONFIG, TILE_DEFS, type TileConfig, type ObstacleConfig } from './LinearConfig';
+import { makeIslandTexture } from '../builders/IslandTexture';
+import { ROOM_GEOMETRY, GATE_MATERIAL_CONFIG, TILE_DEFS, type TileConfig } from './MeshConfig';
+import { type ObstacleConfig } from './LinearConfig';
+import { formatValue } from '../ClogConstants';
 import { RoomGrid, CELL_WALL } from './RoomGrid';
 import type { AreaConfig } from './AreaConfig';
 
@@ -43,6 +45,9 @@ interface ResolvedTile {
     roughness: number;
     opacity: number;
     radius: number;
+    texture: string | null;
+    fadeFrom: number | undefined;
+    fadeTo: number | undefined;
 }
 
 function resolveTile(t: TileConfig): ResolvedTile {
@@ -53,6 +58,9 @@ function resolveTile(t: TileConfig): ResolvedTile {
         roughness: t.roughness ?? 0.9,
         depthBelow: t.depthBelow ?? (t.height >= 2 ? 30 : 0),
         radius: t.radius ?? 0,
+        texture: t.texture ?? null,
+        fadeFrom: t.fadeFrom,
+        fadeTo: t.fadeTo,
     };
 }
 
@@ -116,7 +124,7 @@ function makeGateTexture(
         ctx.strokeStyle = open ? 'rgba(255,255,255,0.6)' : LOCKED_BD;
         ctx.lineWidth = 10;
         ctx.strokeRect(5, 5, px - 10, px - 10);
-        const text = String(value);
+        const text = formatValue(value);
         const fontSize = text.length <= 2 ? 110 : text.length <= 3 ? 88 : text.length <= 4 ? 68 : 52;
         ctx.font = `bold ${fontSize}px Arial`;
         ctx.textAlign = 'center';
@@ -163,6 +171,7 @@ export class LinearArea {
     private gate: GateEntry | null = null;
     private entranceGate: EntranceEntry | null = null;
     private extraMaterials: THREE.Material[] = [];
+    private extraTextures: THREE.Texture[] = [];
     private sceneMeshes: THREE.Mesh[] = [];
 
     /**
@@ -205,9 +214,6 @@ export class LinearArea {
         const cs = this.grid.cellSize;
         const minZ = this.grid.originZ;
         const maxZ = this.grid.originZ + this.grid.rows * cs;
-
-        // ── Slab ─────────────────────────────────────────────────────────────
-        this.buildSlab(scene, config.size, cx, cz);
 
         // ── Wall meshes — one greedy-merge pass per tile type in TILE_DEFS ───
         for (const [key, tileCfg] of Object.entries(TILE_DEFS)) {
@@ -288,6 +294,9 @@ export class LinearArea {
         for (const mat of this.extraMaterials) mat.dispose();
         this.extraMaterials = [];
 
+        for (const tex of this.extraTextures) tex.dispose();
+        this.extraTextures = [];
+
         if (this.gate) {
             this.gate.lockedTex.dispose();
             this.gate.openTex.dispose();
@@ -297,22 +306,6 @@ export class LinearArea {
     }
 
     // ── Builders ──────────────────────────────────────────────────────────────
-
-    private buildSlab(scene: THREE.Scene, size: number, cx: number, cz: number): void {
-        const { depth, sideColor, roughness } = ROOM_GEOMETRY.base;
-        const topMat = new THREE.MeshStandardMaterial({ map: FloorBuilder.makeGridTexture(size), roughness: 0.8 });
-        const sideMat = new THREE.MeshStandardMaterial({ color: sideColor, roughness });
-        BendService.applyBend(topMat);
-        BendService.applyBend(sideMat);
-        this.extraMaterials.push(topMat, sideMat);
-
-        const geo = new THREE.BoxGeometry(size, depth, size, 32, 2, 32);
-        const mesh = new THREE.Mesh(geo, [sideMat, sideMat, topMat, sideMat, sideMat, sideMat]);
-        mesh.position.set(cx, -depth / 2, cz);
-        mesh.frustumCulled = false;
-        scene.add(mesh);
-        this.sceneMeshes.push(mesh);
-    }
 
     private wallMesh(
         scene: THREE.Scene,
@@ -331,10 +324,11 @@ export class LinearArea {
         const mat = new THREE.MeshStandardMaterial({
             color: cfg.color,
             roughness: cfg.roughness,
-            transparent: cfg.opacity < 1,
+            transparent: cfg.opacity < 1 || cfg.fadeTo !== undefined,
             opacity: cfg.opacity,
         });
         BendService.applyBend(mat);
+        if (cfg.fadeTo !== undefined) BendService.applyBottomFade(mat, cfg.fadeFrom ?? 0, cfg.fadeTo);
         const mesh = new THREE.Mesh(geo, mat);
         mesh.position.set(
             (minX + maxX) / 2,
@@ -350,112 +344,69 @@ export class LinearArea {
     private buildGridWallMeshes(scene: THREE.Scene, cellType: number, cfg: ResolvedTile): void {
         const { cols, rows } = this.grid;
         const visited = new Uint8Array(cols * rows);
+        const cs = this.grid.cellSize;
+        const dirs: [number, number][] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+        let islandIdx = 0;
 
-        if (cfg.radius > 0) {
-            // Flood-fill path: BFS to find each connected island, then build one
-            // voxel mesh per island via ClusterMeshBuilder (outer faces only,
-            // quarter-cylinder bevels at convex outer edges).
-            const cs = this.grid.cellSize;
-            const dirs: [number, number][] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-            let islandIdx = 0;
+        // Create one shared texture per tile type so all island meshes of the same
+        // type share the same GPU texture rather than each allocating its own.
+        const islandTex = cfg.texture === 'island' ? makeIslandTexture() : null;
+        if (islandTex) this.extraTextures.push(islandTex);
 
-            for (let startRow = 0; startRow < rows; startRow++) {
-                for (let startCol = 0; startCol < cols; startCol++) {
-                    const si = startRow * cols + startCol;
-                    if (visited[si] || this.grid.get(startCol, startRow) !== cellType) continue;
+        for (let startRow = 0; startRow < rows; startRow++) {
+            for (let startCol = 0; startCol < cols; startCol++) {
+                const si = startRow * cols + startCol;
+                if (visited[si] || this.grid.get(startCol, startRow) !== cellType) continue;
 
-                    // BFS to collect the connected island
-                    const queue: [number, number][] = [[startCol, startRow]];
-                    visited[si] = 1;
-                    const island: [number, number][] = [];
+                const queue: [number, number][] = [[startCol, startRow]];
+                visited[si] = 1;
+                const island: [number, number][] = [];
 
-                    while (queue.length > 0) {
-                        const [col, row] = queue.shift()!;
-                        island.push([col, row]);
-                        for (const [dc, dr] of dirs) {
-                            const nc = col + dc, nr = row + dr;
-                            if (!this.grid.inBounds(nc, nr)) continue;
-                            const ni = nr * cols + nc;
-                            if (visited[ni] || this.grid.get(nc, nr) !== cellType) continue;
-                            visited[ni] = 1;
-                            queue.push([nc, nr]);
-                        }
+                while (queue.length > 0) {
+                    const [col, row] = queue.shift()!;
+                    island.push([col, row]);
+                    for (const [dc, dr] of dirs) {
+                        const nc = col + dc, nr = row + dr;
+                        if (!this.grid.inBounds(nc, nr)) continue;
+                        const ni = nr * cols + nc;
+                        if (visited[ni] || this.grid.get(nc, nr) !== cellType) continue;
+                        visited[ni] = 1;
+                        queue.push([nc, nr]);
                     }
-
-                    if (DEBUG_MESH) {
-                        const minC = Math.min(...island.map(([c]) => c));
-                        const maxC = Math.max(...island.map(([c]) => c));
-                        const minR = Math.min(...island.map(([, r]) => r));
-                        const maxR2 = Math.max(...island.map(([, r]) => r));
-                        const w = maxC - minC + 1, h = maxR2 - minR + 1;
-                        const cells = Array.from({ length: h }, () => Array<string>(w).fill('.'));
-                        for (const [c, r] of island) cells[r - minR][c - minC] = String(cellType);
-                        const ascii = cells.map(row => '  ' + row.join('')).join('\n');
-                        console.log(`[debugMesh tile=${cellType}] island #${islandIdx} — ${island.length} cells, cols ${minC}–${maxC}, rows ${minR}–${maxR2}\n${ascii}`);
-                        islandIdx++;
-                    }
-
-                    const geo = ClusterMeshBuilder.roundAllEdges(
-                        island,
-                        cs,
-                        cfg.height,
-                        cfg.depthBelow,
-                        this.grid.originX,
-                        this.grid.originZ,
-                        cfg.radius,
-                        3,
-                    );
-
-                    const mat = new THREE.MeshStandardMaterial({
-                        color: cfg.color,
-                        roughness: cfg.roughness,
-                        transparent: cfg.opacity < 1,
-                        opacity: cfg.opacity,
-                    });
-                    BendService.applyBend(mat);
-                    const mesh = new THREE.Mesh(geo, mat);
-                    mesh.frustumCulled = false;
-                    scene.add(mesh);
-                    this.sceneMeshes.push(mesh);
-                }
-            }
-            return;
-        }
-
-        // Greedy-merge path (radius === 0, used for walls with BendService tessellation)
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
-                const i = row * cols + col;
-                if (visited[i] || this.grid.get(col, row) !== cellType) continue;
-
-                let endCol = col + 1;
-                while (endCol < cols && this.grid.get(endCol, row) === cellType && !visited[row * cols + endCol]) {
-                    endCol++;
                 }
 
-                let endRow = row + 1;
-                while (endRow < rows) {
-                    let ok = true;
-                    for (let c = col; c < endCol; c++) {
-                        if (this.grid.get(c, endRow) !== cellType || visited[endRow * cols + c]) { ok = false; break; }
-                    }
-                    if (!ok) break;
-                    endRow++;
+                if (DEBUG_MESH) {
+                    const minC = Math.min(...island.map(([c]) => c));
+                    const maxC = Math.max(...island.map(([c]) => c));
+                    const minR = Math.min(...island.map(([, r]) => r));
+                    const maxR2 = Math.max(...island.map(([, r]) => r));
+                    const w = maxC - minC + 1, h = maxR2 - minR + 1;
+                    const cells = Array.from({ length: h }, () => Array<string>(w).fill('.'));
+                    for (const [c, r] of island) cells[r - minR][c - minC] = String(cellType);
+                    const ascii = cells.map(row => '  ' + row.join('')).join('\n');
+                    console.log(`[debugMesh tile=${cellType}] island #${islandIdx} — ${island.length} cells, cols ${minC}–${maxC}, rows ${minR}–${maxR2}\n${ascii}`);
+                    islandIdx++;
                 }
 
-                for (let r = row; r < endRow; r++) {
-                    for (let c = col; c < endCol; c++) visited[r * cols + c] = 1;
-                }
+                const geo = cfg.radius > 0
+                    ? ClusterMeshBuilder.roundAllEdges(island, cs, cfg.height, cfg.depthBelow, this.grid.originX, this.grid.originZ, cfg.radius, 3)
+                    : ClusterMeshBuilder.buildGeometry(island, cs, cfg.height, cfg.depthBelow, this.grid.originX, this.grid.originZ);
 
-                const cs = this.grid.cellSize;
-                this.wallMesh(
-                    scene,
-                    this.grid.originX + col * cs,
-                    this.grid.originX + endCol * cs,
-                    this.grid.originZ + row * cs,
-                    this.grid.originZ + endRow * cs,
-                    cfg,
-                );
+                const mat = new THREE.MeshStandardMaterial({
+                    // When an island texture is active, use white so canvas colours
+                    // show accurately (MeshStandardMaterial multiplies color × map).
+                    color: islandTex ? 0xffffff : cfg.color,
+                    map: islandTex ?? undefined,
+                    roughness: cfg.roughness,
+                    transparent: cfg.opacity < 1 || cfg.fadeTo !== undefined,
+                    opacity: cfg.opacity,
+                });
+                BendService.applyBend(mat);
+                if (cfg.fadeTo !== undefined) BendService.applyBottomFade(mat, cfg.fadeFrom ?? 0, cfg.fadeTo);
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.frustumCulled = false;
+                scene.add(mesh);
+                this.sceneMeshes.push(mesh);
             }
         }
     }

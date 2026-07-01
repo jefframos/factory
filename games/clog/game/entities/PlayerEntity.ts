@@ -4,6 +4,7 @@ import { BOUNCE_AMPLITUDE, BOUNCE_DURATION, followDist, sizeForValue } from "../
 import { dbg, dbgTail } from "../debug/MergeDebugger";
 import { MergeQueue } from "../systems/MergeQueue";
 import { WalkBob } from "../components/WalkBob"; // [view:WalkBob]
+import { FloatBob } from "../components/FloatBob";
 import { BlobShadow } from "./BlobShadow";
 import { TailCube } from "./TailCube";
 
@@ -36,7 +37,8 @@ export class PlayerEntity {
     private moveInputZ = 0;
     private bounceTimer = 0;
     private shadow: BlobShadow;
-    private walkBob = new WalkBob(); // [view:WalkBob]
+    private walkBob  = new WalkBob();   // [view:WalkBob]
+    private floatBob = new FloatBob();
 
     constructor(value: number, scene: THREE.Scene) {
         this.value = value;
@@ -49,14 +51,22 @@ export class PlayerEntity {
         this.transform = new THREE.Group();
         this.transform.add(this.mesh);
 
-        // Eat-area indicator ring (lies flat in front of the cube)
-        const ringGeo = new THREE.RingGeometry(0.8, 1.0, 40);
-        const ringMat = new THREE.MeshBasicMaterial({
-            color: 0xffffff, transparent: true, opacity: 0.35,
-            side: THREE.DoubleSide, depthWrite: false,
+        // Direction triangle — flat on the ground, apex points forward (+Z local).
+        // depthTest:false keeps it always visible regardless of floor/obstacle z-fights.
+        const triVerts = new Float32Array([
+             0,    0,  0.65,  // apex (forward)
+            -0.42, 0, -0.35,  // back-left
+             0.42, 0, -0.35,  // back-right
+        ]);
+        const triGeo = new THREE.BufferGeometry();
+        triGeo.setAttribute('position', new THREE.BufferAttribute(triVerts, 3));
+        triGeo.computeVertexNormals();
+        const triMat = new THREE.MeshBasicMaterial({
+            color: 0xffffff, transparent: true, opacity: 0.55,
+            side: THREE.DoubleSide, depthWrite: false, depthTest: true,
         });
-        this.eatIndicator = new THREE.Mesh(ringGeo, ringMat);
-        this.eatIndicator.rotation.x = -Math.PI / 2;
+        this.eatIndicator = new THREE.Mesh(triGeo, triMat);
+        this.eatIndicator.renderOrder = 1;
         this.transform.add(this.eatIndicator);
 
         scene.add(this.transform);
@@ -91,7 +101,8 @@ export class PlayerEntity {
         const eatR = this.eatRadius;
         this.mesh.scale.setScalar(s);
         this.mesh.position.y = s * 0.5;
-        this.eatIndicator.position.set(0, 0.05, s * 1.1);
+        // Keep indicator above the water surface (elevation 0.45 + max wave ~0.30).
+        this.eatIndicator.position.set(0, s * 0.5 + 0.4, s * 1.1);
         this.eatIndicator.scale.setScalar(eatR);
     }
 
@@ -171,9 +182,10 @@ export class PlayerEntity {
             this.mesh.position.y = s * 0.5;
         }
 
-        // ── [view:WalkBob] Hop animation while moving ────────────────────────
-        const bobY = this.walkBob.update(delta, mx !== 0 || mz !== 0);
-        this.mesh.position.y = this.mesh.scale.x * 0.5 + bobY;
+        // ── Float + walk bob ─────────────────────────────────────────────────
+        const bobY   = this.walkBob.update(delta, mx !== 0 || mz !== 0);
+        const floatY = this.floatBob.update(delta);
+        this.mesh.position.y = this.mesh.scale.x * 0.5 + bobY + floatY;
 
         // ── Shadows ───────────────────────────────────────────────────────────
         this.shadow.update(this.transform.position.x, this.transform.position.z, sizeForValue(this.value));

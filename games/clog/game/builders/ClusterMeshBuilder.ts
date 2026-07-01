@@ -171,6 +171,63 @@ export class ClusterMeshBuilder {
         return ClusterMeshBuilder._build(cells, cellSize, height, depthBelow, originX, originZ, r, segments);
     }
 
+    /**
+     * Remaps UV coordinates on geometry produced by roundAllEdges to match the island
+     * texture atlas: U∈[0.5,1] = grass (top faces), U∈[0,0.5] = sand (side/bottom).
+     * ExtrudeGeometry generates world-space UVs that don't respect the atlas split,
+     * so this must be called after roundAllEdges when texture:'island' is used.
+     */
+    static applyIslandAtlasUVs(
+        geo: THREE.BufferGeometry,
+        height: number,
+        depthBelow: number,
+    ): void {
+        geo.computeVertexNormals();
+        const pos    = geo.attributes.position.array as Float32Array;
+        const nor    = geo.attributes.normal.array as Float32Array;
+        const count  = pos.length / 3;
+        const totalH = height + depthBelow;
+
+        // Bounding box of top-face vertices — used to map the grass texture
+        // across the whole cluster without any tile-boundary seams.
+        let minX = Infinity, maxX = -Infinity;
+        let minZ = Infinity, maxZ = -Infinity;
+        for (let i = 0; i < count; i++) {
+            if (nor[i * 3 + 1] > 0.5) {
+                minX = Math.min(minX, pos[i * 3 + 0]);
+                maxX = Math.max(maxX, pos[i * 3 + 0]);
+                minZ = Math.min(minZ, pos[i * 3 + 2]);
+                maxZ = Math.max(maxZ, pos[i * 3 + 2]);
+            }
+        }
+        const spanX = maxX - minX || 1;
+        const spanZ = maxZ - minZ || 1;
+
+        const uvs  = new Float32Array(count * 2);
+        const TILE = 2; // world units per sand texture repeat on side faces
+
+        for (let i = 0; i < count; i++) {
+            const px = pos[i * 3 + 0];
+            const py = pos[i * 3 + 1];
+            const pz = pos[i * 3 + 2];
+            const nx = nor[i * 3 + 0];
+            const ny = nor[i * 3 + 1];
+            const nz = nor[i * 3 + 2];
+
+            if (ny > 0.5) {
+                // Top face → grass [U 0.5–1.0], one mapping across the whole cluster.
+                uvs[i * 2 + 0] = 0.5 + ((px - minX) / spanX) * 0.5;
+                uvs[i * 2 + 1] = (pz - minZ) / spanZ;
+            } else {
+                // Sides → sand [U 0.0–0.5], V from height, tiled along the face.
+                const along = Math.abs(nz) > Math.abs(nx) ? px : pz;
+                uvs[i * 2 + 0] = (((along / TILE) % 1) + 1) % 1 * 0.5;
+                uvs[i * 2 + 1] = totalH > 0 ? (py + depthBelow) / totalH : 0.5;
+            }
+        }
+        geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    }
+
     // ── Internal ──────────────────────────────────────────────────────────────
 
     private static _build(
@@ -188,6 +245,7 @@ export class ClusterMeshBuilder {
 
         const pos: number[] = [];
         const nor: number[] = [];
+        const uv: number[] = [];
         const idx: number[] = [];
 
         const yTop = height;
@@ -195,18 +253,24 @@ export class ClusterMeshBuilder {
         const r = radius;
 
         // ── Quad helper ───────────────────────────────────────────────────────
-        // Vertices must be ordered CCW when viewed from the normal direction.
-        // Winding verified per face below.
+        // Texture atlas: left half [U 0–0.5] = sand (sides), right half [U 0.5–1] = grass (top).
+        // UV params: (uA,vA), (uB,vB), (uC,vC), (uD,vD) — one per vertex in order A B C D.
+        // On side faces: v=1 → yTop (where grass cap starts), v=0 → yBot (deep side).
         const quad = (
             ax: number, ay: number, az: number,
             bx: number, by: number, bz: number,
             cx: number, cy: number, cz: number,
             dx: number, dy: number, dz: number,
             nx: number, ny: number, nz: number,
+            uA: number, vA: number,
+            uB: number, vB: number,
+            uC: number, vC: number,
+            uD: number, vD: number,
         ) => {
             const i = pos.length / 3;
             pos.push(ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz);
             nor.push(nx, ny, nz, nx, ny, nz, nx, ny, nz, nx, ny, nz);
+            uv.push(uA, vA, uB, vB, uC, vC, uD, vD);
             idx.push(i, i + 1, i + 2, i, i + 2, i + 3);
         };
 
@@ -222,12 +286,13 @@ export class ClusterMeshBuilder {
                 pts.push([cx + ca * r, cz + sa * r, ca, sa]);
             }
             for (let s = 0; s < segments; s++) {
-                const [x0, z0, nx0, nz0] = pts[s];
-                const [x1, z1, nx1, nz1] = pts[s + 1];
+                const [bx0, bz0, bnx0, bnz0] = pts[s];
+                const [bx1, bz1, bnx1, bnz1] = pts[s + 1];
                 const i = pos.length / 3;
                 // CCW winding verified for each quadrant in implementation notes
-                pos.push(x0, yTop, z0, x1, yTop, z1, x1, yBot, z1, x0, yBot, z0);
-                nor.push(nx0, 0, nz0, nx1, 0, nz1, nx1, 0, nz1, nx0, 0, nz0);
+                pos.push(bx0, yTop, bz0, bx1, yTop, bz1, bx1, yBot, bz1, bx0, yBot, bz0);
+                nor.push(bnx0, 0, bnz0, bnx1, 0, bnz1, bnx1, 0, bnz1, bnx0, 0, bnz0);
+                uv.push(0, 1, 0.25, 1, 0.25, 0, 0, 0); // bevel uses sand region
                 idx.push(i, i + 1, i + 2, i, i + 2, i + 3);
             }
         };
@@ -254,29 +319,40 @@ export class ClusterMeshBuilder {
             const rsw = cvxSW ? r : 0;
             const rse = cvxSE ? r : 0;
 
-            // Top face   (+Y) — always emitted
-            quad(x0, yTop, z0, x0, yTop, z1, x1, yTop, z1, x1, yTop, z0, 0, 1, 0);
-            // Bottom face (-Y) — always emitted
-            quad(x0, yBot, z0, x1, yBot, z0, x1, yBot, z1, x0, yBot, z1, 0, -1, 0);
+            // Top face (+Y) — grass atlas region [U 0.5–1.0]
+            quad(x0, yTop, z0, x0, yTop, z1, x1, yTop, z1, x1, yTop, z0, 0, 1, 0,
+                 0.5, 0,  0.5, 1,  1.0, 1,  1.0, 0);
+
+            // Bottom face (-Y) — sand region (not typically visible)
+            quad(x0, yBot, z0, x1, yBot, z0, x1, yBot, z1, x0, yBot, z1, 0, -1, 0,
+                 0, 0,  0.5, 0,  0.5, 1,  0, 1);
 
             // North side (-Z): skip if north neighbour is in the cluster
             if (!has(col, row - 1)) {
-                quad(x0 + rnw, yTop, z0, x1 - rne, yTop, z0, x1 - rne, yBot, z0, x0 + rnw, yBot, z0, 0, 0, -1);
+                const uR = ((cs - rnw - rne) / cs) * 0.5;
+                quad(x0 + rnw, yTop, z0, x1 - rne, yTop, z0, x1 - rne, yBot, z0, x0 + rnw, yBot, z0, 0, 0, -1,
+                     0, 1,  uR, 1,  uR, 0,  0, 0);
             }
 
             // South side (+Z): skip if south neighbour is in the cluster
             if (!has(col, row + 1)) {
-                quad(x1 - rse, yTop, z1, x0 + rsw, yTop, z1, x0 + rsw, yBot, z1, x1 - rse, yBot, z1, 0, 0, 1);
+                const uR = ((cs - rsw - rse) / cs) * 0.5;
+                quad(x1 - rse, yTop, z1, x0 + rsw, yTop, z1, x0 + rsw, yBot, z1, x1 - rse, yBot, z1, 0, 0, 1,
+                     uR, 1,  0, 1,  0, 0,  uR, 0);
             }
 
             // West side (-X): skip if west neighbour is in the cluster
             if (!has(col - 1, row)) {
-                quad(x0, yTop, z1 - rsw, x0, yTop, z0 + rnw, x0, yBot, z0 + rnw, x0, yBot, z1 - rsw, -1, 0, 0);
+                const uR = ((cs - rsw - rnw) / cs) * 0.5;
+                quad(x0, yTop, z1 - rsw, x0, yTop, z0 + rnw, x0, yBot, z0 + rnw, x0, yBot, z1 - rsw, -1, 0, 0,
+                     uR, 1,  0, 1,  0, 0,  uR, 0);
             }
 
             // East side (+X): skip if east neighbour is in the cluster
             if (!has(col + 1, row)) {
-                quad(x1, yTop, z0 + rne, x1, yTop, z1 - rse, x1, yBot, z1 - rse, x1, yBot, z0 + rne, 1, 0, 0);
+                const uR = ((cs - rne - rse) / cs) * 0.5;
+                quad(x1, yTop, z0 + rne, x1, yTop, z1 - rse, x1, yBot, z1 - rse, x1, yBot, z0 + rne, 1, 0, 0,
+                     0, 1,  uR, 1,  uR, 0,  0, 0);
             }
 
             // Bevel columns at convex outer vertical edges (no-op when r === 0)
@@ -290,6 +366,7 @@ export class ClusterMeshBuilder {
         const geo = new THREE.BufferGeometry();
         geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
         geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+        geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
         geo.setIndex(idx);
         return geo;
     }

@@ -32,9 +32,7 @@ export class WalkBob {
             this.phase += delta * WalkBob.FREQUENCY;
         }
 
-        // abs(sin) creates a bouncing-ball arc: spends time near 0 (ground contact)
-        // and rises quickly to the peak, giving a hop feel instead of a smooth wave.
-        return Math.abs(Math.sin(this.phase)) * WalkBob.AMPLITUDE * this.blend;
+        return Math.sin(this.phase) * WalkBob.AMPLITUDE * this.blend;
     }
 
     /** Reset to rest instantly (e.g. on spawn or teleport). */

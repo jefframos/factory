@@ -64,6 +64,17 @@ export class CollectibleManager {
         }
     }
 
+    /** Remove collectibles inside an axis-aligned rectangle. Used when a chunk unloads. */
+    clearInRect(minX: number, maxX: number, minZ: number, maxZ: number): void {
+        for (let i = this.cubes.length - 1; i >= 0; i--) {
+            const { x, z } = this.cubes[i].position;
+            if (x >= minX && x <= maxX && z >= minZ && z <= maxZ) {
+                this.cubes[i].destroy();
+                this.cubes.splice(i, 1);
+            }
+        }
+    }
+
     /** Tick every cube's animations (pop, bounce, shadow). Must be called each frame. */
     update(delta: number): void {
         for (const cube of this.cubes) cube.update(delta);

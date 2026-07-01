@@ -3,18 +3,22 @@ import AnalogInput from '@core/io/AnalogInput';
 import * as PIXI from 'pixi.js';
 import KeyboardInputMovement from 'core/io/KeyboardInputMovement';
 import { DevGuiManager } from '@core/utils/DevGuiManager';
+import { Game } from '@core/Game';
 import LinearWorld3dScene from './LinearWorld3dScene';
+import BoundlessWorld3dScene from './BoundlessWorld3dScene';
+import type { IWorld3dScene } from './IWorld3dScene';
 import { PlayerHud } from '../ui/PlayerHud';
 import { LinearMinimap } from '../ui/LinearMinimap';
 import { ScoreLeaderboard } from '../ui/ScoreLeaderboard';
+import Stats from 'stats.js';
 
-// To switch back to the dungeon layout import ClogWorld3dScene and replace
-// LinearWorld3dScene below. Both scenes co-exist; only one is active at a time.
+// ?gated re-enables the linear room / gate progression mode.
+const GATED_MODE = new URLSearchParams(window.location.search).has('gated');
 
 export default class BaseDemoScene extends GameScene {
 
     private speedMultiplier = 1;
-    private world3d!: LinearWorld3dScene;
+    private world3d!: IWorld3dScene;
     private analogInput!: AnalogInput;
     private keyboardInput!: KeyboardInputMovement;
     private hud!: PlayerHud;
@@ -22,10 +26,24 @@ export default class BaseDemoScene extends GameScene {
     private leaderboard!: ScoreLeaderboard;
     private lastW = 0;
     private lastH = 0;
+    private statsWidgets: Stats[] = [];
 
     public async build(): Promise<void> {
-        this.world3d = new LinearWorld3dScene(this.game);
+        this.world3d = GATED_MODE
+            ? new LinearWorld3dScene(this.game)
+            : new BoundlessWorld3dScene(this.game);
         await this.world3d.build();
+
+        if (Game.debugParams.dev) {
+            const panels = [0, 2] as const; // 0 = FPS, 2 = MB
+            panels.forEach((panel, i) => {
+                const s = new Stats();
+                s.showPanel(panel);
+                s.dom.style.cssText = `position:fixed;top:0;left:${i * 80}px;z-index:10002;`;
+                document.body.appendChild(s.dom);
+                this.statsWidgets.push(s);
+            });
+        }
 
         this.eventMode = 'static';
         this.hitArea   = new PIXI.Rectangle(-2000, -2000, 6000, 6000);
@@ -73,6 +91,7 @@ export default class BaseDemoScene extends GameScene {
     }
 
     public update(delta: number): void {
+        for (const s of this.statsWidgets) s.update();
         const scaledDelta = delta * this.speedMultiplier;
         this.world3d?.update(scaledDelta);
 
@@ -100,6 +119,8 @@ export default class BaseDemoScene extends GameScene {
     }
 
     public destroy(): void {
+        for (const s of this.statsWidgets) s.dom.parentElement?.removeChild(s.dom);
+        this.statsWidgets = [];
         this.world3d?.destroy();
         this.hud?.destroy();
         this.minimap?.destroy();

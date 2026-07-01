@@ -1,31 +1,3 @@
-// ── Tile definitions ──────────────────────────────────────────────────────────
-// Each non-zero grid cell value maps to a TileConfig that controls how it looks.
-// Add a new entry to TILE_DEFS to create a new tile type.
-//
-//   height     — how tall the tile is above the floor (world units)
-//   color      — hex colour (e.g. 0x1e2d3d)
-//   opacity    — 0 transparent → 1 solid  (default: 1)
-//   roughness  — 0 glossy → 1 matte       (default: 0.9)
-//   depthBelow — how far the mesh extends below y=0 (default: height >= 2 ? 30 : 0)
-//   texture    — texture path or null      (default: null, reserved for future use)
-
-export interface TileConfig {
-    height: number;
-    color: number;
-    opacity?: number;
-    roughness?: number;
-    depthBelow?: number;
-    texture?: string | null;
-    radius?: number;  // corner bevel radius (world units); omit/0 = sharp BoxGeometry; >0 = RoundedBoxGeometry
-}
-
-export const TILE_DEFS: Record<number, TileConfig> = {
-    // 1 — full wall (greedy-merged slab; BendService needs BoxGeometry segments)
-    1: { height: 1.5, color: 0x1e2d3d, depthBelow: 30 },
-    // 2 — short obstacle (per-cell so each cube gets individually rounded corners)
-    2: { height: 1.0, color: 0x2a3a4a, radius: 0.2 },
-};
-
 // ── Obstacle placement ────────────────────────────────────────────────────────
 // Stamp pre-defined shapes at positions chosen by seeded value noise.
 // Add a room's `obstacles` field to enable; omit it for a clean open room.
@@ -79,7 +51,7 @@ export interface LinearRoomConfig {
 //  Room  Size  Gate      Food
 export const ROOM_CONFIGS: LinearRoomConfig[] = [
     {
-        size: 60, gateValue: 0, foodValues: [2],
+        size: 60, gateValue: 8, foodValues: [2],
         obstacles: { tileId: 2, scale: 0.05, threshold: 0.88, seed: 1 }
     },
     { size: 68, gateValue: 8, foodValues: [2] },
@@ -123,31 +95,6 @@ export const CAMERA_CONFIG = {
     maxDistance: 15,
     maxAtValue: 8192,
     followSpeed: 5,
-};
-
-// ── Room geometry config ──────────────────────────────────────────────────────
-// Used only for the floor slab and the gate/entrance mesh height.
-// Wall/obstacle appearance is driven by TILE_DEFS above.
-export const ROOM_GEOMETRY = {
-    base: {
-        depth: 30,
-        sideColor: 0x0d1020,
-        roughness: 0.95,
-    },
-    // Height used when sealing the entrance gap after transition.
-    // Matches tile 1 height by default.
-    walls: {
-        height: 3.5,
-    },
-};
-
-// ── Gate material config ──────────────────────────────────────────────────────
-export const GATE_MATERIAL_CONFIG = {
-    opacity: 1,
-    roughness: 0.5,
-    emissiveIntensity: 0.2,
-    lockedColor: '#aa2222',
-    lockedBorder: '#ff5555',
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

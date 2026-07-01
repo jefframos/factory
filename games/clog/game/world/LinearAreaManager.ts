@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import { LinearArea } from './LinearArea';
+import { ROOM_GEOMETRY } from './MeshConfig';
+import { createWaterMaterial } from '../builders/WaterMaterial';
+import { BendService } from '../services/BendService';
+import { FloorBuilder } from '../builders/FloorBuilder';
 
 const DEBUG_GRID = new URLSearchParams(window.location.search).has('debugGrid');
 import { getLinearRoomConfig, computeFoodCount, FOOD_CONFIG } from './LinearConfig';
@@ -22,7 +26,10 @@ export class LinearAreaManager {
     private prevArea: LinearArea | null = null;   // locked, rendered, not updated
     private currentArea: LinearArea;
     private nextArea: LinearArea;
+    private pendingNextArea: LinearArea | null = null; // pre-built before transition to avoid frame spike
     private currentPlayers: PlayerEntity[] = [];
+    private floorMesh: THREE.Mesh;
+    private floorMat: THREE.Material;
 
     public onTransition?: (data: LinearTransitionData) => void;
 
@@ -31,6 +38,7 @@ export class LinearAreaManager {
         this.currentArea = new LinearArea(getLinearRoomConfig(0), 0, 0, scene, 0);
         this.nextArea    = this.buildArea(1);
         this.logGrid(0, this.currentArea.grid.toLogString());
+        this.floorMesh = this.buildFloor(scene);
     }
 
     // ── Accessors ─────────────────────────────────────────────────────────────
@@ -73,10 +81,16 @@ export class LinearAreaManager {
     // ── Update ────────────────────────────────────────────────────────────────
 
     update(player: PlayerEntity): void {
+        this.floorMesh.position.x = player.position.x;
+        this.floorMesh.position.z = player.position.z;
         this.currentArea.resolveCollisions(player.position, player.collisionRadius, player.value);
 
         const s = this.currentConfig.size / 2;
-        if (player.position.z < this.currentCenterZ - s - TRANSITION_BUFFER) {
+        const southEdge = this.currentCenterZ - s;
+        if (!this.pendingNextArea && player.position.z - southEdge < 20) {
+            this.pendingNextArea = this.buildArea(this.currentRoomIdx + 2);
+        }
+        if (player.position.z < southEdge - TRANSITION_BUFFER) {
             this.transition();
         }
     }
@@ -85,6 +99,10 @@ export class LinearAreaManager {
         this.prevArea?.destroy(this.scene);
         this.currentArea.destroy(this.scene);
         this.nextArea.destroy(this.scene);
+        this.pendingNextArea?.destroy(this.scene);
+        this.scene.remove(this.floorMesh);
+        this.floorMesh.geometry.dispose();
+        this.floorMat.dispose();
     }
 
     // ── Private ───────────────────────────────────────────────────────────────
@@ -100,6 +118,45 @@ export class LinearAreaManager {
     private logGrid(roomIdx: number, grid: string): void {
         if (!DEBUG_GRID) return;
         console.log(`[Room ${roomIdx}] grid ${this.currentArea.grid.cols}×${this.currentArea.grid.rows}:\n${grid}`);
+    }
+
+    private buildFloor(scene: THREE.Scene): THREE.Mesh {
+        // Single plane that follows the player each frame.
+        // 160 units covers the visible ground; the BendService world-curve
+        // drops the edges below the horizon before they reach the screen edge.
+        const SIZE = 160;
+        const SEGMENTS = 64;
+        const { shader: floorShader, opacity, elevation, waterColors, roughness } = ROOM_GEOMETRY.floor;
+
+        let mat: THREE.Material;
+        if (floorShader === 'water') {
+            mat = createWaterMaterial(opacity, elevation, waterColors);
+        } else {
+            const stdMat = new THREE.MeshStandardMaterial({
+                map: FloorBuilder.makeGridTexture(SIZE),
+                roughness,
+                transparent: opacity < 1,
+                opacity,
+            });
+            BendService.applyBend(stdMat);
+            mat = stdMat;
+        }
+        this.floorMat = mat;
+
+        const geo = new THREE.PlaneGeometry(SIZE, SIZE, SEGMENTS, SEGMENTS);
+        geo.rotateX(-Math.PI / 2);
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.frustumCulled = false;
+
+        if (floorShader === 'water') {
+            const t0 = performance.now();
+            mesh.onBeforeRender = () => {
+                (mat as THREE.ShaderMaterial).uniforms.time.value = (performance.now() - t0) / 1000;
+            };
+        }
+
+        scene.add(mesh);
+        return mesh;
     }
 
     private buildArea(roomIdx: number): LinearArea {
@@ -121,7 +178,8 @@ export class LinearAreaManager {
         this.currentRoomIdx++;
         this.currentCenterZ = this.centerZFor(this.currentRoomIdx);
         this.currentArea    = this.nextArea;
-        this.nextArea       = this.buildArea(this.currentRoomIdx + 1);
+        this.nextArea       = this.pendingNextArea ?? this.buildArea(this.currentRoomIdx + 1);
+        this.pendingNextArea = null;
         this.logGrid(this.currentRoomIdx, this.currentArea.grid.toLogString());
 
         // Seal the entrance of the room the player just entered so they can't go back.

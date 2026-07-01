@@ -44,7 +44,7 @@ export default class LinearWorld3dScene extends ThreeScene {
             mode: 'four-way',
             distance: 30,
             fourWay: {
-                topColor: 0x1a72d4,
+                topColor: 0x4AB8F0,
                 leftColor: 0x42aaee,
                 bottomColor: 0x90d8f8,
                 rightColor: 0x42aaee,
@@ -52,6 +52,8 @@ export default class LinearWorld3dScene extends ThreeScene {
                 speed: 0.03,
             },
         });
+
+
 
         this.threeScene.add(new THREE.AmbientLight(0xffffff, 0.9));
         const key = new THREE.DirectionalLight(0xfff4dd, 1.6);  // warm key from above-right
@@ -72,7 +74,7 @@ export default class LinearWorld3dScene extends ThreeScene {
 
         // Seed food in rooms 0 and 1 at startup.
         this.spawnFood(this.linearManager.currentConfig.foodValues, FOOD_CONFIG.initialCount, this.linearManager.currentGrid);
-        this.spawnFood(this.linearManager.nextConfig.foodValues,    FOOD_CONFIG.initialCount, this.linearManager.nextGrid);
+        this.spawnFood(this.linearManager.nextConfig.foodValues, FOOD_CONFIG.initialCount, this.linearManager.nextGrid);
 
         this.player = new PlayerEntity(2, this.threeScene);
         this.linearManager.registerPlayer(this.player);
@@ -111,8 +113,8 @@ export default class LinearWorld3dScene extends ThreeScene {
         if (hit) this.player.collect(hit);
 
         const grid = this.linearManager.currentGrid;
-        const cz   = this.linearManager.spawnCenter.y;
-        const hs   = this.linearManager.spawnHalfSize;
+        const cz = this.linearManager.spawnCenter.y;
+        const hs = this.linearManager.spawnHalfSize;
         this.levelManager.update(
             scaledDelta,
             this.collectibles,
@@ -156,7 +158,7 @@ export default class LinearWorld3dScene extends ThreeScene {
         const cells = grid.getFreeCells();
         if (cells.length === 0) return;
         for (let i = 0; i < count; i++) {
-            const cell  = cells[Math.floor(Math.random() * cells.length)];
+            const cell = cells[Math.floor(Math.random() * cells.length)];
             const value = values[Math.floor(Math.random() * values.length)];
             this.collectibles.spawnOne(this.threeScene, new THREE.Vector3(cell.x, 0, cell.z), value);
         }

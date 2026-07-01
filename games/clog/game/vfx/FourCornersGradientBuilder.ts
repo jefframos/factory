@@ -31,6 +31,7 @@ export default class FourCornersGradientBuilder {
     private currentMode: FourCornersGradientMode = 'simple';
     private animationSpeed = 0;
     private time = 0;
+    private readonly onResize = () => this.resize();
 
     public build(config: FourCornersGradientBuildConfig): void {
         this.camera = config.camera;
@@ -50,15 +51,13 @@ export default class FourCornersGradientBuilder {
 
         this.camera.add(this.gradientMesh);
         this.resize();
+        window.addEventListener('resize', this.onResize);
     }
 
     public resize(): void {
-        if (!this.gradientMesh || !this.camera) {
-            return;
-        }
+        if (!this.gradientMesh || !this.camera) return;
 
-        const effectiveFov = this.camera.getEffectiveFOV();
-        const fovRad = THREE.MathUtils.degToRad(effectiveFov);
+        const fovRad = THREE.MathUtils.degToRad(this.camera.getEffectiveFOV());
         const visibleHeight = 2 * Math.tan(fovRad / 2) * this.gradientDistance;
         const visibleWidth = visibleHeight * this.camera.aspect;
 
@@ -76,10 +75,23 @@ export default class FourCornersGradientBuilder {
     }
 
     public destroy(): void {
+        window.removeEventListener('resize', this.onResize);
         this.disposeMesh();
         this.camera = undefined;
         this.time = 0;
         this.animationSpeed = 0;
+    }
+
+    // Pass hex colors as raw sRGB Vector3 so THREE.js ColorManagement doesn't
+    // linearize them. ShaderMaterial outputs gl_FragColor directly without the
+    // automatic sRGB re-encoding that built-in materials get, so linear values
+    // passed through THREE.Color would appear darker on sRGB monitors.
+    private srgb(hex: number): THREE.Vector3 {
+        return new THREE.Vector3(
+            ((hex >> 16) & 0xff) / 255,
+            ((hex >> 8)  & 0xff) / 255,
+            ( hex        & 0xff) / 255,
+        );
     }
 
     private createSimpleMaterial(colors?: SimpleGradientColors): THREE.ShaderMaterial {
@@ -87,8 +99,8 @@ export default class FourCornersGradientBuilder {
 
         return new THREE.ShaderMaterial({
             uniforms: {
-                colorTop: { value: new THREE.Color(colors?.topColor ?? 0x2fe214) },
-                colorBottom: { value: new THREE.Color(colors?.bottomColor ?? 0x00e5ff) },
+                colorTop:    { value: this.srgb(colors?.topColor    ?? 0x2fe214) },
+                colorBottom: { value: this.srgb(colors?.bottomColor ?? 0x00e5ff) },
             },
             vertexShader: `
                 varying vec2 vUv;
@@ -119,10 +131,10 @@ export default class FourCornersGradientBuilder {
 
         return new THREE.ShaderMaterial({
             uniforms: {
-                colorTop: { value: new THREE.Color(colors?.topColor ?? 0x197bd4) },
-                colorLeft: { value: new THREE.Color(colors?.leftColor ?? 0x3054ea) },
-                colorBottom: { value: new THREE.Color(colors?.bottomColor ?? 0x181727) },
-                colorRight: { value: new THREE.Color(colors?.rightColor ?? 0x00b8ff) },
+                colorTop:    { value: this.srgb(colors?.topColor    ?? 0x197bd4) },
+                colorLeft:   { value: this.srgb(colors?.leftColor   ?? 0x3054ea) },
+                colorBottom: { value: this.srgb(colors?.bottomColor ?? 0x181727) },
+                colorRight:  { value: this.srgb(colors?.rightColor  ?? 0x00b8ff) },
                 uRadius: { value: radius },
                 uTime: { value: 0 },
             },

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { BendService } from "../services/BendService";
+import { formatValue } from "../ClogConstants";
 
 // One color per doubling of value, in order starting at value=2.
 // Add entries freely — colorForValue() cycles through these instead of defaulting to grey.
@@ -90,7 +91,7 @@ export class CubeBuilder {
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, size, size);
 
-        const text = String(value);
+        const text = formatValue(value);
         const fontSize = text.length <= 2 ? 70 : text.length <= 3 ? 55 : text.length <= 4 ? 42 : 30;
         ctx.font = `bold ${fontSize}px Arial`;
         ctx.textAlign = "center";
