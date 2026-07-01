@@ -10,6 +10,7 @@ import { ROOM_GEOMETRY } from '../world/MeshConfig';
 import { createWaterMaterial } from '../builders/WaterMaterial';
 import { FloorBuilder } from '../builders/FloorBuilder';
 import FourCornersGradientBuilder from '../vfx/FourCornersGradientBuilder';
+import { CloudSystem } from '../vfx/CloudSystem';
 import type { IWorld3dScene } from './IWorld3dScene';
 import { PerfOverlay } from '../utils/PerfOverlay';
 import SetupThree from '@core/scene/SetupThree';
@@ -37,6 +38,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     private levelManager!: LevelManager;
     private chunkManager!: BoundlessChunkManager;
     private gradient = new FourCornersGradientBuilder();
+    private cloudSystem = new CloudSystem();
     private floorMesh!: THREE.Mesh;
     private floorMat!: THREE.Material;
     private camDist = CAMERA_CONFIG.minDistance;
@@ -92,6 +94,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.chunkManager.update(this.player);
         this.seedInitialFood();
 
+        this.cloudSystem.build(this.threeScene);
         if (PERF_MODE) this.perfOverlay = new PerfOverlay();
 
         const initPitch = CAMERA_CONFIG.pitch * Math.PI / 180;
@@ -110,6 +113,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.camDist += (target - this.camDist) * (1 - Math.exp(-CAM_SMOOTH * delta));
 
         this.gradient.update(delta);
+        this.cloudSystem.update(delta, this.player.position.x, this.player.position.z);
 
         this.player.setMoveInput(this.moveInput.x, this.moveInput.z);
         this.player.update(delta);
@@ -166,6 +170,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
 
     public destroy(): void {
         this.perfOverlay?.destroy();
+        this.cloudSystem.destroy(this.threeScene);
         this.gradient.destroy();
         this.player?.destroy();
         this.collectibles?.destroy();
