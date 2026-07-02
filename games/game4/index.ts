@@ -1,5 +1,6 @@
 import SoundLoadManager from '@core/audio/SoundLoaderManager';
 import { Game } from '@core/Game';
+import HtmlLoader from '@core/loader/HtmlLoader';
 import { ManifestHelper } from '@core/loader/ManifestHelper';
 import GameDistributionPlatform from '@core/platforms/GameDistributionPlatform';
 import PlatformHandler from '@core/platforms/PlatformHandler';
@@ -9,10 +10,10 @@ import { ExtractTiledFile } from '@core/tiled/ExtractTiledFile';
 import * as PIXI from 'pixi.js';
 import { Fonts } from './game/character/Types';
 import GameplayJigsawScene from './game/jigsaw/GameplayJigsawScene';
-import JigsawLoader from './game/loader/JigsawLoader';
 import { ConfirmationPopup } from './game/popup/ConfirmationPopup';
 import { GameOverPopup } from './game/popup/GameOverPopup';
 import { DevGuiManager } from './game/utils/DevGuiManager';
+import loaderConfig from './loader.config';
 import audioManifest from './manifests/audio.json'; // adjust path
 import fontManifest from './manifests/fonts.json'; // adjust path
 import imageManifest from './manifests/images.json'; // adjust path
@@ -21,7 +22,7 @@ import jsonManifest from './manifests/json.json'; // adjust path
 export default class MyGame extends Game {
     private gameContainer = new PIXI.Container();
     private sceneManager!: SceneManager;
-    private loaderScene!: JigsawLoader;
+    private loaderScene: HtmlLoader;
 
 
     private popupManager: PopupManager = new PopupManager();
@@ -29,6 +30,7 @@ export default class MyGame extends Game {
 
     constructor() {
         super({ resolution: 1.5 }, false);
+        this.loaderScene = new HtmlLoader(loaderConfig);
 
         this.folderPath = 'game4';
 
@@ -38,8 +40,6 @@ export default class MyGame extends Game {
         PlatformHandler.instance.platform.startLoad();
         this.stageContainer.addChild(this.gameContainer);
         this.sceneManager = new SceneManager(this.gameContainer);
-        this.loaderScene = this.sceneManager.register('loader', JigsawLoader);
-        this.sceneManager.changeScene('loader');
         this.loadAssets();
     }
 
@@ -157,7 +157,7 @@ export default class MyGame extends Game {
         this.popupManager.registerPopup('gameOver', new GameOverPopup(), false);
 
 
-
+        this.loaderScene.hide();
         this.startGame();
 
     }

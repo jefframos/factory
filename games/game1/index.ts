@@ -1,5 +1,5 @@
 import { Game } from '@core/Game';
-import LoaderScene from '@core/loader/LoaderScene';
+import HtmlLoader from '@core/loader/HtmlLoader';
 import { ManifestHelper } from '@core/loader/ManifestHelper';
 import { SceneManager } from '@core/scene/SceneManager';
 import * as PIXI from 'pixi.js';
@@ -9,19 +9,19 @@ import CardScene from './game/scenes/card/CardScene';
 import MainMenuScene, { MenuButtonData } from './game/scenes/MainMenuScene';
 import ParticleScene from './game/scenes/particles/ParticleScene';
 import WordsScene from './game/scenes/words/WordsScene';
+import loaderConfig from './loader.config';
 
 
 export default class MyGame extends Game {
     private gameContainer = new PIXI.Container();
     private sceneManager!: SceneManager;
-    private loaderScene!: LoaderScene;
+    private loaderScene: HtmlLoader;
 
     constructor() {
         super(undefined, true);
+        this.loaderScene = new HtmlLoader(loaderConfig);
         this.stageContainer.addChild(this.gameContainer);
         this.sceneManager = new SceneManager(this.gameContainer);
-        this.loaderScene = this.sceneManager.register('loader', LoaderScene);
-        this.sceneManager.changeScene('loader');
         this.loadAssets();
     }
 
@@ -67,6 +67,7 @@ export default class MyGame extends Game {
         await PIXI.Assets.loadBundle('images', (p) => {
             this.loaderScene.updateLoader(p * 0.5 + 0.5);
         })
+        this.loaderScene.hide();
         this.startGame();
 
     }

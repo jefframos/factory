@@ -8,18 +8,19 @@ PlatformHandler.instance.initialize(new YouTubePlayablePlatform()).then(() => {
 
 import SoundLoadManager from 'core/audio/SoundLoaderManager';
 import { Game } from 'core/Game';
+import HtmlLoader from 'core/loader/HtmlLoader';
 import { ManifestHelper } from 'core/loader/ManifestHelper';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { PopupManager } from 'core/popup/PopupManager';
 import { SceneManager } from 'core/scene/SceneManager';
 import { ExtractTiledFile } from 'core/tiled/ExtractTiledFile';
 import * as PIXI from 'pixi.js';
-import MergeLoader from './game/loader/MergeLoader';
 import MergeAssets from './game/merge/MergeAssets';
 import MergeScene from './game/merge/MergeScene';
 import GameStorage from './game/merge/storage/GameStorage';
 import { PrizePopup } from './game/merge/ui/prize/PrizePopup';
 import { DevGuiManager } from './game/utils/DevGuiManager';
+import loaderConfig from './loader.config';
 import audioManifest from './manifests/audio.json'; // adjust path
 import fontManifest from './manifests/fonts.json'; // adjust path
 import imageManifest from './manifests/images.json'; // adjust path
@@ -30,7 +31,7 @@ import YouTubePlayablePlatform from 'core/platforms/YouTubePlayablePlatform';
 export default class MyGame extends Game {
     private gameContainer = new PIXI.Container();
     private sceneManager!: SceneManager;
-    private loaderScene!: MergeLoader;
+    private loaderScene: HtmlLoader;
 
 
     private popupManager: PopupManager = new PopupManager();
@@ -38,6 +39,7 @@ export default class MyGame extends Game {
 
     constructor() {
         super({ resolution: Math.max(2, (devicePixelRatio || 1)) }, false);
+        this.loaderScene = new HtmlLoader(loaderConfig);
 
         PIXI.Ticker.shared.maxFPS = 100;
 
@@ -46,8 +48,6 @@ export default class MyGame extends Game {
         PlatformHandler.instance.platform.startLoad();
         this.stageContainer.addChild(this.gameContainer);
         this.sceneManager = new SceneManager(this.gameContainer);
-        this.loaderScene = this.sceneManager.register('loader', MergeLoader);
-        this.sceneManager.changeScene('loader');
         this.loadAssets();
 
     }
@@ -145,7 +145,7 @@ export default class MyGame extends Game {
         this.popupManager.registerPopup('prize', new PrizePopup(), false);
 
 
-
+        this.loaderScene.hide();
         this.startGame();
 
     }

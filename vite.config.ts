@@ -6,6 +6,7 @@ import { defineConfig } from 'vite';
 dotenv.config();
 
 const GAME = process.env.GAME;
+const PLATFORM = process.env.VITE_PLATFORM || 'default';
 
 if (!GAME) {
     throw new Error('Please specify the GAME environment variable in your .env file (GAME=game1)');
@@ -22,7 +23,7 @@ export default defineConfig({
         },
     },
     build: {
-        outDir: `../../dist/`,
+        outDir: `../../dist/_builds_${GAME}/${PLATFORM}`,
         emptyOutDir: true,
         rollupOptions: {
             input: resolve(__dirname, `games/${GAME}/index.html`),

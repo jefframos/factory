@@ -1,5 +1,5 @@
 import { Game } from '@core/Game';
-import LoaderScene from '@core/loader/LoaderScene';
+import HtmlLoader from '@core/loader/HtmlLoader';
 import { ManifestHelper } from '@core/loader/ManifestHelper';
 import PlatformHandler from '@core/platforms/PlatformHandler';
 import PokiPlatform from '@core/platforms/PokiPlatform';
@@ -15,6 +15,7 @@ import { convertCharacterSetTable, Fonts } from './game/character/Types';
 import { ConfirmationPopup } from './game/popup/ConfirmationPopup';
 import { GameOverPopup } from './game/popup/GameOverPopup';
 import StartupScene from './game/scenes/StartupScene';
+import loaderConfig from './loader.config';
 import fontManifest from './manifests/fonts.json'; // adjust path
 import imageManifest from './manifests/images.json'; // adjust path
 import jsonManifest from './manifests/json.json'; // adjust path
@@ -23,7 +24,7 @@ import jsonManifest from './manifests/json.json'; // adjust path
 export default class MyGame extends Game {
     private gameContainer = new PIXI.Container();
     private sceneManager!: SceneManager;
-    private loaderScene!: LoaderScene;
+    private loaderScene: HtmlLoader;
 
     private folder: string = 'game3'
 
@@ -32,14 +33,13 @@ export default class MyGame extends Game {
 
     constructor() {
         super(undefined, true);
+        this.loaderScene = new HtmlLoader(loaderConfig);
 
         PlatformHandler.instance.initialize(new PokiPlatform())
 
         PlatformHandler.instance.platform.startLoad();
         this.stageContainer.addChild(this.gameContainer);
         this.sceneManager = new SceneManager(this.gameContainer);
-        this.loaderScene = this.sceneManager.register('loader', LoaderScene);
-        this.sceneManager.changeScene('loader');
         this.loadAssets();
     }
 
@@ -150,7 +150,7 @@ export default class MyGame extends Game {
         this.popupManager.registerPopup('gameOver', new GameOverPopup(), false);
 
 
-
+        this.loaderScene.hide();
         this.startGame();
 
     }

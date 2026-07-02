@@ -15,6 +15,7 @@ import type { IWorld3dScene } from './IWorld3dScene';
 import { PerfOverlay } from '../utils/PerfOverlay';
 import SetupThree from '@core/scene/SetupThree';
 import { SimWorld } from '../sim/SimWorld';
+import { resolveEntityEating } from '../sim/EntityEating';
 
 const PERF_MODE = new URLSearchParams(window.location.search).has('perf');
 
@@ -138,6 +139,8 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
 
         const hit = this.collectibles.checkCollision(this.player.eatPosition, this.player.eatRadius);
         if (hit) this.player.collect(hit);
+
+        resolveEntityEating(this.player, this.bots, this.collectibles);
 
         // Food top-up
         const pz = this.player.position.z;

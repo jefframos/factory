@@ -65,6 +65,11 @@ export class CollectibleManager {
         return null;
     }
 
+    /** Folds already-built cubes (e.g. dropped from a killed entity) into the loose-food pool. */
+    absorbDrop(cubes: TailCube[]): void {
+        for (const cube of cubes) this.cubes.push(cube);
+    }
+
     /** Remove only collectibles whose Z falls within [minZ, maxZ]. */
     clearInZRange(minZ: number, maxZ: number): void {
         for (let i = this.cubes.length - 1; i >= 0; i--) {

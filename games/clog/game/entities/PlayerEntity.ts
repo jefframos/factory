@@ -382,11 +382,48 @@ export class PlayerEntity implements ISimEntity {
         });
     }
 
+    /**
+     * Detaches and returns the first tail cube within `radius` of `pos` whose
+     * value is strictly less than `maxValue`. Cubes mid-merge are protected
+     * (skipped) so a steal can't corrupt an in-flight merge animation.
+     * Re-triggers merge scanning since removing a cube changes adjacency.
+     */
+    tryDetachTailCube(pos: THREE.Vector3, radius: number, maxValue: number): TailCube | null {
+        for (let i = 0; i < this.tail.length; i++) {
+            const cube = this.tail[i];
+            if (cube.isMerging || cube.isScheduled || cube.isLocked) continue;
+            if (cube.value >= maxValue) continue;
+            if (pos.distanceTo(cube.position) >= radius) continue;
+            this.tail.splice(i, 1);
+            this.scheduleMerges();
+            return cube;
+        }
+        return null;
+    }
+
+    /**
+     * Called when a bigger player eats this entity's head. Hands back every
+     * cube this entity owned — its existing tail plus a fresh one for the
+     * head's own value — for the eater to scatter as loose food, then tears
+     * down everything else (mesh, shadow, merge queue).
+     */
+    onEaten(): TailCube[] {
+        const dropped = this.tail;
+        dropped.push(new TailCube(this.value, this.scene, this.position.clone()));
+        this.tail = [];
+        this.teardownVisuals();
+        return dropped;
+    }
+
     destroy(): void {
-        this.shadow.destroy();
-        this.mergeQueue.destroy();
         for (const cube of this.tail) cube.destroy();
         this.tail = [];
+        this.teardownVisuals();
+    }
+
+    private teardownVisuals(): void {
+        this.shadow.destroy();
+        this.mergeQueue.destroy();
         CubeBuilder.disposeMesh(this.mesh);
         (this.eatIndicator.material as THREE.Material).dispose();
         this.eatIndicator.geometry.dispose();

@@ -1,13 +1,13 @@
 import SoundLoadManager from '@core/audio/SoundLoaderManager';
 import { Game } from '@core/Game';
-import LoaderScene from '@core/loader/LoaderScene';
+import HtmlLoader from '@core/loader/HtmlLoader';
 import { ManifestHelper } from '@core/loader/ManifestHelper';
 import PlatformHandler from '@core/platforms/PlatformHandler';
 import { PopupManager } from '@core/popup/PopupManager';
 import { SceneManager } from '@core/scene/SceneManager';
 import * as PIXI from 'pixi.js';
-import MergeLoader from './game/loader/MergeLoader';
 import { ConfirmationPopup } from './game/popup/ConfirmationPopup';
+import loaderConfig from './loader.config';
 import audioManifest from './manifests/audio.json'; // adjust path
 import fontManifest from './manifests/fonts.json'; // adjust path
 import imageManifest from './manifests/images.json'; // adjust path
@@ -23,7 +23,7 @@ import platformConfig from './platforms.config.json';
 export default class MyGame extends Game {
     private gameContainer = new PIXI.Container();
     private sceneManager!: SceneManager;
-    private loaderScene!: MergeLoader;
+    private loaderScene: HtmlLoader;
 
 
     private popupManager: PopupManager = new PopupManager();
@@ -31,6 +31,7 @@ export default class MyGame extends Game {
 
     constructor() {
         super({ resolution: Math.min(2, devicePixelRatio), backgroundAlpha: 0 }, false);
+        this.loaderScene = new HtmlLoader(loaderConfig);
         PIXI.Ticker.shared.maxFPS = 60;
 
         this.folderPath = 'net';
@@ -63,8 +64,6 @@ export default class MyGame extends Game {
             PlatformHandler.instance.platform.startLoad();
             this.stageContainer.addChild(this.gameContainer);
             this.sceneManager = new SceneManager(this.gameContainer);
-            this.loaderScene = this.sceneManager.register('loader', LoaderScene);
-            this.sceneManager.changeScene('loader');
 
             // 6. Proceed to assets
             this.loadAssets();
@@ -169,7 +168,7 @@ export default class MyGame extends Game {
         // this.popupManager.registerPopup('prize', new PrizePopup(), false);
 
 
-
+        this.loaderScene.hide();
         this.startGame();
 
     }
