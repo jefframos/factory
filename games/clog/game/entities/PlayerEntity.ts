@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { CubeBuilder } from "../builders/CubeBuilder";
+import { BendService } from "../services/BendService";
 import { BOUNCE_AMPLITUDE, BOUNCE_DURATION, followDist, sizeForValue } from "../ClogConstants";
 import { dbg, dbgTail } from "../debug/MergeDebugger";
 import { MergeQueue } from "../systems/MergeQueue";
@@ -10,6 +11,8 @@ import { TailCube } from "./TailCube";
 import type { ISimEntity, TailEntry } from "../sim/SimWorld";
 
 const MOVE_SPEED = 8;
+const SPEED_FALLOFF_PER_DOUBLING = 0.02; // ~2% slower each time value doubles — subtle, not a hard nerf
+const MIN_SPEED_SCALE = 0.7;             // floor so even huge values stay reasonably mobile
 const ROTATION_SPEED = 12;
 const HISTORY_SAMPLE_DIST = 0.25; // world-units between sampled waypoints
 const FOLLOW_STIFFNESS = 12; // damping coefficient; ~0.18/frame at 60fps, frame-rate independent
@@ -38,7 +41,7 @@ export class PlayerEntity implements ISimEntity {
     private moveInputZ = 0;
     private bounceTimer = 0;
     private shadow: BlobShadow;
-    private walkBob  = new WalkBob();   // [view:WalkBob]
+    private walkBob = new WalkBob();   // [view:WalkBob]
     private floatBob = new FloatBob();
 
     constructor(value: number, scene: THREE.Scene) {
@@ -53,21 +56,22 @@ export class PlayerEntity implements ISimEntity {
         this.transform.add(this.mesh);
 
         // Direction triangle — flat on the ground, apex points forward (+Z local).
-        // depthTest:false keeps it always visible regardless of floor/obstacle z-fights.
+        // Opaque (like the player cube) so it renders in the opaque pass and
+        // stays visible — just tinted by the water — instead of being culled
+        // by the water's depth write when submerged.
         const triVerts = new Float32Array([
-             0,    0,  0.65,  // apex (forward)
+            0, 0, 0.65,  // apex (forward)
             -0.42, 0, -0.35,  // back-left
-             0.42, 0, -0.35,  // back-right
+            0.42, 0, -0.35,  // back-right
         ]);
         const triGeo = new THREE.BufferGeometry();
         triGeo.setAttribute('position', new THREE.BufferAttribute(triVerts, 3));
         triGeo.computeVertexNormals();
-        const triMat = new THREE.MeshBasicMaterial({
-            color: 0xffffff, transparent: true, opacity: 0.55,
-            side: THREE.DoubleSide, depthWrite: false, depthTest: true,
+        const triMat = new THREE.MeshStandardMaterial({
+            color: 0xffffff, side: THREE.DoubleSide,
         });
+        BendService.applyBend(triMat);
         this.eatIndicator = new THREE.Mesh(triGeo, triMat);
-        this.eatIndicator.renderOrder = 1;
         this.transform.add(this.eatIndicator);
 
         scene.add(this.transform);
@@ -89,6 +93,13 @@ export class PlayerEntity implements ISimEntity {
         return sizeForValue(this.value) * 0.5;
     }
 
+    /** Movement speed — very slightly slower the bigger this entity gets. */
+    private get moveSpeed(): number {
+        const doublings = Math.log2(Math.max(2, this.value) / 2);
+        const scale = Math.max(MIN_SPEED_SCALE, 1 - SPEED_FALLOFF_PER_DOUBLING * doublings);
+        return MOVE_SPEED * scale;
+    }
+
     /** World-space center of the eat circle (in front of the cube face). */
     get eatPosition(): THREE.Vector3 {
         const s = sizeForValue(this.value);
@@ -103,7 +114,7 @@ export class PlayerEntity implements ISimEntity {
         this.mesh.scale.setScalar(s);
         this.mesh.position.y = s * 0.5;
         // Keep indicator above the water surface (elevation 0.45 + max wave ~0.30).
-        this.eatIndicator.position.set(0, s * 0.5 + 0.4, s * 1.1);
+        this.eatIndicator.position.set(0, s * 0.5, s * 1.1);
         this.eatIndicator.scale.setScalar(eatR);
     }
 
@@ -148,8 +159,9 @@ export class PlayerEntity implements ISimEntity {
 
         // ── Movement ──────────────────────────────────────────────────────────
         const prevPos = this.transform.position.clone();
-        this.transform.position.x += mx * MOVE_SPEED * delta;
-        this.transform.position.z += mz * MOVE_SPEED * delta;
+        const speed = this.moveSpeed;
+        this.transform.position.x += mx * speed * delta;
+        this.transform.position.z += mz * speed * delta;
 
         // ── Position history (waypoints for tail snake-following) ─────────────
         const moved = this.transform.position.distanceTo(prevPos);
@@ -184,7 +196,7 @@ export class PlayerEntity implements ISimEntity {
         }
 
         // ── Float + walk bob ─────────────────────────────────────────────────
-        const bobY   = this.walkBob.update(delta, mx !== 0 || mz !== 0);
+        const bobY = this.walkBob.update(delta, mx !== 0 || mz !== 0);
         const floatY = this.floatBob.update(delta);
         this.mesh.position.y = this.mesh.scale.x * 0.5 + bobY + floatY;
 
@@ -212,7 +224,7 @@ export class PlayerEntity implements ISimEntity {
     /** Dev-only: instantly double the player's value. */
     debugDoubleValue(): void {
         this.value *= 2;
-        CubeBuilder.updateTextures(this.mesh, this.value);
+        CubeBuilder.updateTextures(this.mesh, this.value, true);
         this.updateScale();
         this.startBounce();
     }
@@ -249,7 +261,7 @@ export class PlayerEntity implements ISimEntity {
 
         this.mergeQueue.enqueue({
             duration: SETTLE_DELAY,
-            onProgress: () => {},
+            onProgress: () => { },
             onDone: () => this.scheduleMerges(),
         });
     }
@@ -371,7 +383,7 @@ export class PlayerEntity implements ISimEntity {
             onDone: () => {
                 this.value *= 2;
                 dbg("playerMerge.onDone", { newPlayerVal: this.value });
-                CubeBuilder.updateTextures(this.mesh, this.value);
+                CubeBuilder.updateTextures(this.mesh, this.value, true);
                 this.updateScale();
                 this.startBounce();
                 from.destroy();

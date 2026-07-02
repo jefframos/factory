@@ -48,7 +48,7 @@ export class TailCube {
 
     setValue(newValue: number): void {
         this.value = newValue;
-        CubeBuilder.updateTextures(this.mesh, newValue);
+        CubeBuilder.updateTextures(this.mesh, newValue, false);
         this.applyScale();
     }
 

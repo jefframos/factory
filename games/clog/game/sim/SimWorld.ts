@@ -54,6 +54,8 @@ export class SimWorld {
     private static entities  = new Set<ISimEntity>();
     private static collectibles: CollectibleManager | null = null;
     private static chunks:       BoundlessChunkManager | null = null;
+    /** The human-controlled entity, if any — lets queries opt out of seeing it (debug/AI-testing). */
+    private static player: ISimEntity | null = null;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -61,24 +63,36 @@ export class SimWorld {
         this.entities.clear();
         this.collectibles = collectibles;
         this.chunks       = chunks;
+        this.player       = null;
     }
 
     static reset(): void {
         this.entities.clear();
         this.collectibles = null;
         this.chunks       = null;
+        this.player       = null;
     }
 
     static register(entity: ISimEntity): void   { this.entities.add(entity); }
     static unregister(entity: ISimEntity): void { this.entities.delete(entity); }
+
+    /** Tags which registered entity is the player, so queries can pass `excludePlayer` to ignore it. */
+    static setPlayer(entity: ISimEntity | null): void { this.player = entity; }
 
     // ── Queries ───────────────────────────────────────────────────────────────
 
     /**
      * Returns all food positions and entity snapshots within `radius` of `origin`.
      * Pass `self` so the querying entity is excluded from the entity list.
+     * Pass `opts.excludePlayer` to also hide the entity tagged via `setPlayer` —
+     * used by the AI debug harness to test bot-vs-bot behaviour in isolation.
      */
-    static query(origin: THREE.Vector3, radius: number, self?: ISimEntity): SimQueryResult {
+    static query(
+        origin: THREE.Vector3,
+        radius: number,
+        self?: ISimEntity,
+        opts?: { excludePlayer?: boolean },
+    ): SimQueryResult {
         const r2 = radius * radius;
 
         const food = this.collectibles?.getPositionsNear(origin, radius) ?? [];
@@ -86,6 +100,7 @@ export class SimWorld {
         const entities: EntitySnapshot[] = [];
         for (const e of this.entities) {
             if (e === self) continue;
+            if (opts?.excludePlayer && e === this.player) continue;
             const dx = e.position.x - origin.x;
             const dz = e.position.z - origin.z;
             if (dx * dx + dz * dz <= r2) {
@@ -108,32 +123,65 @@ export class SimWorld {
         return this.chunks?.isWalkable(x, z) ?? true;
     }
 
+    /** Deflection angles (degrees) tried around the desired heading, nearest first, alternating sides. */
+    private static readonly DEFLECT_ANGLES = [30, -30, 60, -60, 90, -90, 135, -135];
+    private static readonly UP = new THREE.Vector3(0, 1, 0);
+
     /**
-     * Given a desired move direction, returns either the original direction
-     * (path is clear) or a wall-slid fallback (one axis at a time).
+     * Given a desired move direction, returns the closest walkable heading to
+     * it: the original direction if the path ahead is clear, otherwise the
+     * nearest deflection (checked in increasing angle, alternating left/right)
+     * that is. This lets an entity curve around an obstacle's edge instead of
+     * being limited to the two cardinal slides (which fail whenever the
+     * desired direction is already axis-aligned) or stopping dead the moment
+     * every straight-line option is blocked.
      *
      * @param origin        Current world position of the entity.
      * @param dir           Desired direction, should be normalised.
      * @param probeDistance How far ahead to probe — use collisionRadius × 2.
+     * @param preferred     Last frame's resolved direction, if any (see below).
      */
     static resolveDirection(
         origin: THREE.Vector3,
         dir: THREE.Vector3,
         probeDistance: number,
+        preferred?: THREE.Vector3 | null,
     ): THREE.Vector3 {
-        const px = origin.x + dir.x * probeDistance;
-        const pz = origin.z + dir.z * probeDistance;
-        if (this.isWalkable(px, pz)) return dir;
+        if (this.isWalkableAlong(origin, dir, probeDistance)) return dir;
 
-        // Try sliding along X only
-        if (Math.abs(dir.x) > 0 && this.isWalkable(origin.x + dir.x * probeDistance, origin.z)) {
-            return new THREE.Vector3(dir.x, 0, 0).normalize();
+        // Prefer sticking with whatever deflection worked last frame, if it's
+        // still walkable, before re-deriving one from scratch. Without this,
+        // a *constant* desired heading (e.g. returnToLeash always aiming
+        // exactly at a fixed home point) can hunt forever between two
+        // equally-valid "first walkable" deflections: moving along deflection
+        // A shifts the entity a few centimetres, which — right at a grid-cell
+        // boundary — can flip the straight-ahead/deflection-A probe back to
+        // blocked while deflection B now clears; moving along B then flips it
+        // back the other way. Since nothing about the input ever changes,
+        // that 2-cycle repeats indefinitely: the entity vibrates in place and
+        // never makes net progress, looking permanently stuck. Committing to
+        // the previous choice breaks the cycle by not re-litigating it every
+        // single frame.
+        if (preferred && preferred.lengthSq() > 0 && this.isWalkableAlong(origin, preferred, probeDistance)) {
+            return preferred;
         }
-        // Try sliding along Z only
-        if (Math.abs(dir.z) > 0 && this.isWalkable(origin.x, origin.z + dir.z * probeDistance)) {
-            return new THREE.Vector3(0, 0, dir.z).normalize();
+
+        for (const deg of this.DEFLECT_ANGLES) {
+            const candidate = dir.clone().applyAxisAngle(this.UP, deg * Math.PI / 180);
+            if (this.isWalkableAlong(origin, candidate, probeDistance)) return candidate;
         }
-        // Fully cornered — back away
-        return dir.clone().negate();
+
+        // Enclosed on every side within probe range — stop rather than
+        // reverse. Reversing here used to cause an every-frame flip-flop:
+        // back away one tick, which un-blocks the original forward probe, so
+        // next tick it drives forward again into the same wall — repeat
+        // forever. Stopping breaks that loop; the caller's own target
+        // selection (wander re-heading, next nearest-food pick) naturally
+        // picks a new direction on a later tick.
+        return new THREE.Vector3(0, 0, 0);
+    }
+
+    private static isWalkableAlong(origin: THREE.Vector3, dir: THREE.Vector3, probeDistance: number): boolean {
+        return this.isWalkable(origin.x + dir.x * probeDistance, origin.z + dir.z * probeDistance);
     }
 }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { RoomGrid } from './RoomGrid';
 import { ClusterMeshBuilder } from '../builders/ClusterMeshBuilder';
 import { BendService } from '../services/BendService';
@@ -61,6 +62,33 @@ function resolveTile(t: TileConfig): ResolvedTile {
     };
 }
 
+// ── Shared tile materials ──────────────────────────────────────────────────────
+// TILE_DEFS only ever has a couple of configs — one material per cellType is built
+// once and reused by every chunk forever, instead of a fresh instance per chunk.
+// Reusing the exact same material object (not just an equivalent one) is what lets
+// the renderer skip re-doing per-material GPU setup on every new chunk.
+
+const tileMaterialCache = new Map<number, THREE.MeshStandardMaterial>();
+
+function getTileMaterial(cellType: number, cfg: ResolvedTile, islandTex: THREE.CanvasTexture | null): THREE.MeshStandardMaterial {
+    const cached = tileMaterialCache.get(cellType);
+    if (cached) return cached;
+
+    const mat = new THREE.MeshStandardMaterial({
+        color: islandTex ? 0xffffff : cfg.color,
+        map: islandTex ?? undefined,
+        roughness: cfg.roughness,
+        transparent: cfg.opacity < 1 || cfg.fadeTo !== undefined,
+        opacity: cfg.opacity,
+    });
+    BendService.applyBend(mat);
+    BendService.applyDistanceFade(mat, FADE_START, FADE_END);
+    if (cfg.fadeTo !== undefined) BendService.applyBottomFade(mat, cfg.fadeFrom ?? 0, cfg.fadeTo);
+
+    tileMaterialCache.set(cellType, mat);
+    return mat;
+}
+
 // ── BoundlessChunk ────────────────────────────────────────────────────────────
 
 export class BoundlessChunk {
@@ -75,7 +103,6 @@ export class BoundlessChunk {
     readonly grid: RoomGrid | null;
 
     private sceneMeshes: THREE.Mesh[] = [];
-    private extraTextures: THREE.Texture[] = [];
 
     constructor(chunkX: number, chunkZ: number, scene: THREE.Scene) {
         this.chunkX = chunkX;
@@ -122,15 +149,13 @@ export class BoundlessChunk {
     }
 
     destroy(scene: THREE.Scene): void {
+        // Materials are shared across every chunk (see tileMaterialCache) — only the
+        // per-chunk geometry is owned by this instance and safe to dispose here.
         for (const m of this.sceneMeshes) {
             scene.remove(m);
             m.geometry.dispose();
-            const mats = Array.isArray(m.material) ? m.material : [m.material];
-            for (const mat of mats) (mat as THREE.Material).dispose();
         }
         this.sceneMeshes = [];
-        for (const tex of this.extraTextures) tex.dispose();
-        this.extraTextures = [];
     }
 
     // ── Mesh building — mirrors LinearArea.buildGridWallMeshes ────────────────
@@ -149,7 +174,7 @@ export class BoundlessChunk {
         const dirs: [number, number][] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
         const islandTex = cfg.texture === 'island' ? makeIslandTexture() : null;
-        if (islandTex) this.extraTextures.push(islandTex);
+        const geometries: THREE.BufferGeometry[] = [];
 
         for (let startRow = 0; startRow < rows; startRow++) {
             for (let startCol = 0; startCol < cols; startCol++) {
@@ -180,23 +205,28 @@ export class BoundlessChunk {
                 } else {
                     geo = ClusterMeshBuilder.buildGeometry(island, cs, cfg.height, cfg.depthBelow, grid.originX, grid.originZ);
                 }
-
-                const mat = new THREE.MeshStandardMaterial({
-                    color: islandTex ? 0xffffff : cfg.color,
-                    map: islandTex ?? undefined,
-                    roughness: cfg.roughness,
-                    transparent: cfg.opacity < 1 || cfg.fadeTo !== undefined,
-                    opacity: cfg.opacity,
-                });
-                BendService.applyBend(mat);
-                BendService.applyDistanceFade(mat, FADE_START, FADE_END);
-                if (cfg.fadeTo !== undefined) BendService.applyBottomFade(mat, cfg.fadeFrom ?? 0, cfg.fadeTo);
-
-                const mesh = new THREE.Mesh(geo, mat);
-                mesh.frustumCulled = false;
-                scene.add(mesh);
-                this.sceneMeshes.push(mesh);
+                geometries.push(geo);
             }
         }
+
+        if (geometries.length === 0) return;
+
+        // Merge every connected blob of this tile type into one draw call — a chunk
+        // can have a dozen+ scattered obstacle clusters, and one mesh/material per
+        // cluster multiplies build cost and standing draw calls for no visual benefit.
+        let merged: THREE.BufferGeometry;
+        if (geometries.length > 1) {
+            merged = mergeGeometries(geometries, false);
+            for (const g of geometries) g.dispose();
+        } else {
+            merged = geometries[0];
+        }
+
+        const mat = getTileMaterial(cellType, cfg, islandTex);
+
+        const mesh = new THREE.Mesh(merged, mat);
+        mesh.frustumCulled = false;
+        scene.add(mesh);
+        this.sceneMeshes.push(mesh);
     }
 }

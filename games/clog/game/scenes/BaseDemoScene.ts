@@ -8,7 +8,6 @@ import LinearWorld3dScene from './LinearWorld3dScene';
 import BoundlessWorld3dScene from './BoundlessWorld3dScene';
 import type { IWorld3dScene } from './IWorld3dScene';
 import { PlayerHud } from '../ui/PlayerHud';
-import { LinearMinimap } from '../ui/LinearMinimap';
 import { ScoreLeaderboard } from '../ui/ScoreLeaderboard';
 import Stats from 'stats.js';
 
@@ -22,11 +21,11 @@ export default class BaseDemoScene extends GameScene {
     private analogInput!: AnalogInput;
     private keyboardInput!: KeyboardInputMovement;
     private hud!: PlayerHud;
-    private minimap!: LinearMinimap;
     private leaderboard!: ScoreLeaderboard;
     private lastW = 0;
     private lastH = 0;
     private statsWidgets: Stats[] = [];
+    private devPosLabel: PIXI.Text | null = null;
 
     public async build(): Promise<void> {
         this.world3d = GATED_MODE
@@ -77,21 +76,41 @@ export default class BaseDemoScene extends GameScene {
             'Camera',
         );
 
+        // AI debug view — snap the camera way out so entity behavior is visible
+        // at a glance instead of manually dragging the zoom slider each time.
+        DevGuiManager.instance.addToggle('Debug Zoom Out', false, (isZoomedOut) => {
+            this.world3d.cameraZoom = isZoomedOut ? 4.0 : 1.0;
+        }, 'Camera');
+
+        // Fast-forwards the whole sim (bots, food spawns, merges — everything
+        // downstream of the delta this scene hands to world3d.update()) so
+        // long-term AI behavior can be watched/logged without waiting for it
+        // in real time. 1 = normal speed, 0 = paused.
+        DevGuiManager.instance.addProperties(this, ['speedMultiplier'], [0, 10], 'Sim Speed', 'Simulation');
+
         // Pixi HUD — bottom-left player status
         this.hud = new PlayerHud();
         this.addChild(this.hud);
 
-        // Pixi minimap — top-right room ladder
-        this.minimap = new LinearMinimap();
-        this.addChild(this.minimap);
-
-        // Pixi leaderboard — top-left player scores
+        // Pixi leaderboard — bottom-right player scores
         this.leaderboard = new ScoreLeaderboard();
         this.addChild(this.leaderboard);
 
+        // Dev-only readout — top-right player world position.
+        // Parented to game.overlayContainer (not `this`) and positioned via
+        // Game.overlayScreenData so it stays pinned to the true screen edge
+        // instead of the letterboxed/scaled scene space.
+        if (Game.debugParams.dev) {
+            this.devPosLabel = new PIXI.Text('', {
+                fontFamily: 'monospace', fontSize: 14, fill: 0xffffff,
+                stroke: 0x000000, strokeThickness: 3,
+            });
+            this.devPosLabel.anchor.set(1, 0);
+            this.game.overlayContainer.addChild(this.devPosLabel);
+        }
+
         // Initial position
-        this.repositionUi(window.innerWidth, window.innerHeight);
-        this.minimap.update(0);
+        this.repositionUi();
     }
 
     public update(delta: number): void {
@@ -99,17 +118,17 @@ export default class BaseDemoScene extends GameScene {
         const scaledDelta = delta * this.speedMultiplier;
         this.world3d?.update(scaledDelta);
 
-        // Sync HUD, minimap, and leaderboard with current game state
+        // Sync HUD and leaderboard with current game state
         if (this.hud && this.world3d) {
-            this.hud.update(
-                this.world3d.playerValue,
-                this.world3d.nextGateValue,
-                this.world3d.currentRoomIndex,
-            );
-            this.minimap.update(this.world3d.currentRoomIndex);
+            this.hud.update(this.world3d.playerValue);
             this.leaderboard.update([
                 { name: 'You', score: this.world3d.playerScore, isYou: true },
             ]);
+            this.leaderboard.reposition();
+            if (this.devPosLabel) {
+                const pos = this.world3d.playerPosition;
+                this.devPosLabel.text = `x: ${pos.x.toFixed(1)}  z: ${pos.z.toFixed(1)}`;
+            }
         }
 
         // Reposition UI on screen resize (cheap check)
@@ -118,7 +137,7 @@ export default class BaseDemoScene extends GameScene {
         if (w !== this.lastW || h !== this.lastH) {
             this.lastW = w;
             this.lastH = h;
-            this.repositionUi(w, h);
+            this.repositionUi();
         }
     }
 
@@ -127,13 +146,19 @@ export default class BaseDemoScene extends GameScene {
         this.statsWidgets = [];
         this.world3d?.destroy();
         this.hud?.destroy();
-        this.minimap?.destroy();
         this.leaderboard?.destroy();
+        if (this.devPosLabel) {
+            this.game.overlayContainer.removeChild(this.devPosLabel);
+            this.devPosLabel.destroy();
+        }
     }
 
-    private repositionUi(w: number, h: number): void {
-        this.hud?.reposition(w, h);
-        this.minimap?.reposition(w);
-        this.leaderboard?.reposition(w, h);
+    private repositionUi(): void {
+        this.hud?.reposition();
+        this.leaderboard?.reposition();
+        if (this.devPosLabel) {
+            const { topRight } = Game.overlayScreenData;
+            this.devPosLabel.position.set(topRight.x - 8, topRight.y + 8);
+        }
     }
 }

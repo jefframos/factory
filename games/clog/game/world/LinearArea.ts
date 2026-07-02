@@ -171,7 +171,6 @@ export class LinearArea {
     private gate: GateEntry | null = null;
     private entranceGate: EntranceEntry | null = null;
     private extraMaterials: THREE.Material[] = [];
-    private extraTextures: THREE.Texture[] = [];
     private sceneMeshes: THREE.Mesh[] = [];
 
     /**
@@ -294,9 +293,6 @@ export class LinearArea {
         for (const mat of this.extraMaterials) mat.dispose();
         this.extraMaterials = [];
 
-        for (const tex of this.extraTextures) tex.dispose();
-        this.extraTextures = [];
-
         if (this.gate) {
             this.gate.lockedTex.dispose();
             this.gate.openTex.dispose();
@@ -348,10 +344,9 @@ export class LinearArea {
         const dirs: [number, number][] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
         let islandIdx = 0;
 
-        // Create one shared texture per tile type so all island meshes of the same
-        // type share the same GPU texture rather than each allocating its own.
+        // makeIslandTexture() returns a process-wide cached texture (deterministic,
+        // built once) — do not dispose it here, other areas still reference it.
         const islandTex = cfg.texture === 'island' ? makeIslandTexture() : null;
-        if (islandTex) this.extraTextures.push(islandTex);
 
         for (let startRow = 0; startRow < rows; startRow++) {
             for (let startCol = 0; startCol < cols; startCol++) {

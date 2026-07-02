@@ -12,8 +12,16 @@ import { ISLAND_TEXTURE_CONFIG } from '../world/MeshConfig';
  * Because THREE.CanvasTexture has flipY=true by default, canvas y=0 (top of image)
  * maps to UV v=1 — so the soil-transition strip drawn at canvas y=0 appears at
  * the top edge of side faces, right where they meet the grass cap.
+ *
+ * The atlas is fully deterministic (fixed PRNG seed), so it's built once and
+ * cached — callers must NOT dispose the returned texture, it's shared across
+ * every mesh that uses it for the lifetime of the app.
  */
+let cachedIslandTexture: THREE.CanvasTexture | null = null;
+
 export function makeIslandTexture(): THREE.CanvasTexture {
+    if (cachedIslandTexture) return cachedIslandTexture;
+
     const cfg = ISLAND_TEXTURE_CONFIG;
     const half = cfg.resolution;
     const canvas = document.createElement('canvas');
@@ -95,5 +103,6 @@ export function makeIslandTexture(): THREE.CanvasTexture {
     const tex = new THREE.CanvasTexture(canvas);
     tex.minFilter = THREE.LinearMipmapLinearFilter;
     tex.generateMipmaps = true;
+    cachedIslandTexture = tex;
     return tex;
 }

@@ -30,15 +30,72 @@ export function colorForValue(value: number): string {
 }
 
 export class CubeBuilder {
+    // ── Shared per-value materials/textures ─────────────────────────────────
+    // Every cube's appearance is fully determined by its value (color + number
+    // glyph are both derived from it), so — same as BoundlessChunk's tile
+    // materials — build each value's material/texture once and reuse the exact
+    // same object forever instead of creating "new" ones per cube instance.
+    // That's what lets the renderer skip re-doing GPU pipeline setup every time
+    // a food cube spawns or a merge doubles a value.
+    private static solidMatCache = new Map<number, THREE.MeshStandardMaterial>();
+    private static topMatCache = new Map<number, THREE.MeshStandardMaterial>();
+    private static frontMatCache = new Map<number, THREE.MeshStandardMaterial>();
+    private static numberTexCache = new Map<number, THREE.CanvasTexture>();
+    private static faceTexCache = new Map<number, THREE.CanvasTexture>();
+
+    private static getSolidMaterial(value: number): THREE.MeshStandardMaterial {
+        let mat = CubeBuilder.solidMatCache.get(value);
+        if (!mat) {
+            mat = new THREE.MeshStandardMaterial({ color: colorForValue(value) });
+            BendService.applyBend(mat);
+            CubeBuilder.solidMatCache.set(value, mat);
+        }
+        return mat;
+    }
+
+    private static getTopMaterial(value: number): THREE.MeshStandardMaterial {
+        let mat = CubeBuilder.topMatCache.get(value);
+        if (!mat) {
+            mat = new THREE.MeshStandardMaterial({ map: CubeBuilder.getNumberTexture(value) });
+            BendService.applyBend(mat);
+            CubeBuilder.topMatCache.set(value, mat);
+        }
+        return mat;
+    }
+
+    private static getFrontMaterial(value: number): THREE.MeshStandardMaterial {
+        let mat = CubeBuilder.frontMatCache.get(value);
+        if (!mat) {
+            mat = new THREE.MeshStandardMaterial({ map: CubeBuilder.getFaceTexture(value) });
+            BendService.applyBend(mat);
+            CubeBuilder.frontMatCache.set(value, mat);
+        }
+        return mat;
+    }
+
+    private static getNumberTexture(value: number): THREE.CanvasTexture {
+        let tex = CubeBuilder.numberTexCache.get(value);
+        if (!tex) {
+            tex = CubeBuilder.makeNumberTexture(value, colorForValue(value));
+            CubeBuilder.numberTexCache.set(value, tex);
+        }
+        return tex;
+    }
+
+    private static getFaceTexture(value: number): THREE.CanvasTexture {
+        let tex = CubeBuilder.faceTexCache.get(value);
+        if (!tex) {
+            tex = CubeBuilder.makeFaceTexture(colorForValue(value));
+            CubeBuilder.faceTexCache.set(value, tex);
+        }
+        return tex;
+    }
 
     /** Rounded cube with number on top face (+Y = index 2). */
     static buildNumbered(value: number, size = 1): THREE.Mesh {
         const geo = new RoundedBoxGeometry(size, size, size, 4, size * 0.15);
-        const color = colorForValue(value);
-        const solid = new THREE.MeshStandardMaterial({ color });
-        const top = new THREE.MeshStandardMaterial({ map: CubeBuilder.makeNumberTexture(value, color) });
-        BendService.applyBend(solid);
-        BendService.applyBend(top);
+        const solid = CubeBuilder.getSolidMaterial(value);
+        const top = CubeBuilder.getTopMaterial(value);
         // face order: +X, -X, +Y (top), -Y, +Z (front), -Z
         return new THREE.Mesh(geo, [solid, solid, top, solid, solid, solid]);
     }
@@ -46,40 +103,24 @@ export class CubeBuilder {
     /** Rounded cube with face-texture on front (+Z = index 4) and number on top (+Y = index 2). */
     static buildPlayer(value: number, size = 1): THREE.Mesh {
         const geo = new RoundedBoxGeometry(size, size, size, 4, size * 0.15);
-        const color = colorForValue(value);
-        const solid = new THREE.MeshStandardMaterial({ color });
-        const top = new THREE.MeshStandardMaterial({ map: CubeBuilder.makeNumberTexture(value, color) });
-        const front = new THREE.MeshStandardMaterial({ map: CubeBuilder.makeFaceTexture(color) });
-        BendService.applyBend(solid);
-        BendService.applyBend(top);
-        BendService.applyBend(front);
+        const solid = CubeBuilder.getSolidMaterial(value);
+        const top = CubeBuilder.getTopMaterial(value);
+        const front = CubeBuilder.getFrontMaterial(value);
         // face order: +X, -X, +Y (top), -Y, +Z (front), -Z
         return new THREE.Mesh(geo, [solid, solid, top, solid, front, solid]);
     }
 
-    /** Update number texture (top) and solid color on an existing cube mesh. */
-    static updateTextures(mesh: THREE.Mesh, value: number): void {
-        const mats = Array.isArray(mesh.material)
-            ? (mesh.material as THREE.MeshStandardMaterial[])
-            : [mesh.material as THREE.MeshStandardMaterial];
-        const color = colorForValue(value);
-
-        mats.forEach((mat, i) => {
-            if (i === 2) {
-                // Top — swap number texture
-                if (mat.map) mat.map.dispose();
-                mat.map = CubeBuilder.makeNumberTexture(value, color);
-                mat.needsUpdate = true;
-            } else if (i === 4 && mat.map) {
-                // Front face texture — regenerate with new color
-                mat.map.dispose();
-                mat.map = CubeBuilder.makeFaceTexture(color);
-                mat.needsUpdate = true;
-            } else {
-                // Solid face — update color only
-                mat.color.set(color);
-            }
-        });
+    /**
+     * Swap an existing cube mesh onto the (cached, shared) materials for its new
+     * value. Never mutates a material in place — these are shared across every
+     * cube at that value, so mutating one would repaint every other cube too.
+     */
+    static updateTextures(mesh: THREE.Mesh, value: number, hasFace: boolean): void {
+        const solid = CubeBuilder.getSolidMaterial(value);
+        const top = CubeBuilder.getTopMaterial(value);
+        mesh.material = hasFace
+            ? [solid, solid, top, solid, CubeBuilder.getFrontMaterial(value), solid]
+            : [solid, solid, top, solid, solid, solid];
     }
 
     static makeNumberTexture(value: number, bgColor: string): THREE.CanvasTexture {
@@ -134,14 +175,9 @@ export class CubeBuilder {
         return new THREE.CanvasTexture(canvas);
     }
 
+    /** Materials/textures are value-keyed and shared across every cube for the
+     *  app's lifetime — only the per-mesh geometry is owned by this instance. */
     static disposeMesh(mesh: THREE.Mesh): void {
         mesh.geometry.dispose();
-        const mats = Array.isArray(mesh.material)
-            ? (mesh.material as THREE.MeshStandardMaterial[])
-            : [mesh.material as THREE.MeshStandardMaterial];
-        for (const m of mats) {
-            if (m.map) m.map.dispose();
-            m.dispose();
-        }
     }
 }

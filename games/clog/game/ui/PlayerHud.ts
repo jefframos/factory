@@ -1,20 +1,16 @@
 import * as PIXI from 'pixi.js';
-import { getLinearConfig, KING_ROOM_INDEX, linearRoomLabel } from '../world/LinearMap';
+import { Game } from '@core/Game';
 
 const W  = 200;
-const H  = 88;
+const H  = 56;
 const PAD = 12;
 const ICON_R = 22;
 
-/** Bottom-left HUD: player icon, current value, progress toward next gate. */
+/** Bottom-left HUD: player icon and current value. */
 export class PlayerHud extends PIXI.Container {
     private bg        = new PIXI.Graphics();
     private icon      = new PIXI.Graphics();
-    private valueText = new PIXI.Text('0',     { fontFamily: 'Arial', fontSize: 26, fontWeight: 'bold', fill: 0xffffff });
-    private gateText  = new PIXI.Text('',      { fontFamily: 'Arial', fontSize: 11, fill: 0xaaaacc });
-    private roomText  = new PIXI.Text('Room 1',{ fontFamily: 'Arial', fontSize: 11, fill: 0x88aacc });
-    private barBg     = new PIXI.Graphics();
-    private barFill   = new PIXI.Graphics();
+    private valueText = new PIXI.Text('0', { fontFamily: 'Arial', fontSize: 26, fontWeight: 'bold', fill: 0xffffff });
 
     constructor() {
         super();
@@ -37,31 +33,8 @@ export class PlayerHud extends PIXI.Container {
 
         // Value text (right of icon)
         this.valueText.x = PAD + ICON_R * 2 + 8;
-        this.valueText.y = PAD - 2;
+        this.valueText.y = H / 2 - this.valueText.height / 2;
         this.addChild(this.valueText);
-
-        // Gate text
-        this.gateText.x = this.valueText.x;
-        this.gateText.y = PAD + 28;
-        this.addChild(this.gateText);
-
-        // Room label
-        this.roomText.x = PAD + ICON_R * 2 + 8;
-        this.roomText.y = H - PAD - 16;
-        this.addChild(this.roomText);
-
-        // Progress bar
-        const barX = PAD + ICON_R * 2 + 8;
-        const barY = H - PAD - 6;
-        const barW = W - barX - PAD;
-
-        this.barBg.beginFill(0x222240, 1);
-        this.barBg.drawRoundedRect(barX, barY, barW, 5, 3);
-        this.barBg.endFill();
-        this.addChild(this.barBg);
-        this.barFill.x = barX;
-        this.barFill.y = barY;
-        this.addChild(this.barFill);
     }
 
     private redrawIcon(value: number): void {
@@ -79,39 +52,21 @@ export class PlayerHud extends PIXI.Container {
         this.icon.endFill();
     }
 
-    update(value: number, nextGate: number, roomIndex: number): void {
+    update(value: number): void {
         this.valueText.text = formatValue(value);
-        this.roomText.text  = linearRoomLabel(roomIndex);
         this.redrawIcon(value);
-
-        if (roomIndex >= KING_ROOM_INDEX) {
-            this.gateText.text = '♚ King!';
-            this.gateText.style.fill = 0xffd700;
-            this.drawBar(1);
-        } else {
-            // gateValue is what you need to LEAVE this room (the gate on the next one)
-            this.gateText.text = `→ gate: ${formatValue(nextGate)}`;
-            this.gateText.style.fill = 0xaaaacc;
-            this.drawBar(nextGate > 0 ? Math.min(value / nextGate, 1) : 1);
-        }
     }
 
-    private drawBar(progress: number): void {
-        const barX = PAD + ICON_R * 2 + 8;
-        const barW = W - barX - PAD;
-        this.barFill.clear();
-        if (progress <= 0) return;
-        const fillW = Math.max(6, Math.round(barW * progress));
-        const col   = progress >= 1 ? 0x44ff88 : 0x3366ff;
-        this.barFill.beginFill(col, 0.95);
-        this.barFill.drawRoundedRect(0, 0, fillW, 5, 3);
-        this.barFill.endFill();
-    }
-
-    /** Call on screen resize — positions HUD in bottom-left. */
-    reposition(screenW: number, screenH: number): void {
-        this.x = 16;
-        this.y = screenH - H - 16;
+    /**
+     * Positions the HUD in the bottom-left, pinned to the real screen edge
+     * (via Game.overlayScreenData, which is already scale/letterbox-corrected —
+     * NOT window.innerWidth/innerHeight, which are raw screen pixels and don't
+     * account for the game's design-resolution scaling).
+     */
+    reposition(): void {
+        const { bottomLeft } = Game.overlayScreenData;
+        this.x = bottomLeft.x + 16;
+        this.y = bottomLeft.y - H - 16;
     }
 }
 

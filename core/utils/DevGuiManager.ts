@@ -58,6 +58,20 @@ export class DevGuiManager {
         target.add(obj, name);
     }
 
+    /** Adds a checkbox toggle, optionally inside a folder. */
+    public addToggle(
+        name: string,
+        defaultValue: boolean,
+        onChange: (value: boolean) => void,
+        folderName?: string,
+    ): void {
+        if (!this.isDev || !this.gui) return;
+
+        const obj = { [name]: defaultValue };
+        const target = folderName ? this.getOrCreateFolder(folderName) : this.gui;
+        target.add(obj, name).onChange(onChange);
+    }
+
 
 
     /**
@@ -135,6 +149,26 @@ export class DevGuiManager {
                     .onChange(() => callback({ ...defaultValue }));
             } else {
                 console.warn(`GuiHelper: Key "${key}" not found in defaultValue`, defaultValue);
+            }
+        });
+    }
+
+    /**
+     * Adds read-only, live-updating readouts for properties on `owner` — uses
+     * dat.GUI's `.listen()` so the displayed value keeps refreshing every
+     * frame instead of only reflecting its value at the moment it was added.
+     * Meant for inspecting fast-changing runtime state (AI position, current
+     * behaviour, etc), not for editing.
+     */
+    public addReadout(owner: any, keys: string[], name?: string, folderName?: string): void {
+        if (!this.isDev || !this.gui) return;
+        const folder = folderName ? this.getOrCreateFolder(folderName) : this.gui;
+
+        keys.forEach((key) => {
+            if (key in owner) {
+                folder.add(owner, key).name(`${name ? name : owner.constructor.name}.${key}`).listen();
+            } else {
+                console.warn(`GuiHelper: Key "${key}" not found in owner`, owner);
             }
         });
     }

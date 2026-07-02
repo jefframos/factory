@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import { Game } from '@core/Game';
 
 const W       = 172;
 const PAD     = 10;
@@ -15,13 +16,14 @@ export interface LeaderboardEntry {
 }
 
 /**
- * Top-left panel — shows top-3 players by score and "your" rank when outside the top 3.
+ * Bottom-right panel — shows top-3 players by score and "your" rank when outside the top 3.
  * Score = player head value + sum of all tail cube values.
  */
 export class ScoreLeaderboard extends PIXI.Container {
     private bg    = new PIXI.Graphics();
     private rows  = new PIXI.Graphics();
     private texts: PIXI.Text[] = [];
+    private panelH = 0;
     private title = new PIXI.Text('SCORES', {
         fontFamily: 'Arial', fontSize: 9, fontWeight: 'bold',
         fill: 0x6688bb, letterSpacing: 2,
@@ -42,7 +44,10 @@ export class ScoreLeaderboard extends PIXI.Container {
         this.bg.clear();
         this.rows.clear();
 
-        if (entries.length === 0) return;
+        if (entries.length === 0) {
+            this.panelH = 0;
+            return;
+        }
 
         const sorted     = [...entries].sort((a, b) => b.score - a.score);
         const yourRank   = sorted.findIndex(e => e.isYou);
@@ -53,6 +58,7 @@ export class ScoreLeaderboard extends PIXI.Container {
             + topSlice.length * ROW_H
             + (showYouRow ? 8 + ROW_H : 0)
             + PAD;
+        this.panelH = panelH;
 
         this.bg.beginFill(0x080c1a, 0.82);
         this.bg.lineStyle(1, 0x2244aa, 0.8);
@@ -130,9 +136,16 @@ export class ScoreLeaderboard extends PIXI.Container {
         this.texts.push(scoreTxt);
     }
 
-    reposition(_screenW: number, _screenH: number): void {
-        this.x = 16;
-        this.y = 16;
+    /**
+     * Positions the panel in the bottom-right, pinned to the real screen edge
+     * (via Game.overlayScreenData, which is already scale/letterbox-corrected —
+     * NOT window.innerWidth/innerHeight, which are raw screen pixels and don't
+     * account for the game's design-resolution scaling).
+     */
+    reposition(): void {
+        const { bottomRight } = Game.overlayScreenData;
+        this.x = bottomRight.x - W - 16;
+        this.y = bottomRight.y - this.panelH - 16;
     }
 }
 

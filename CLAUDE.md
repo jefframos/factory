@@ -33,9 +33,9 @@ Each game's `index.ts` creates a class extending `core/Game.ts`, loads its asset
 3D world and 2D UI are **separate renderers stacked in the DOM**. The THREE.js canvas sits behind a PIXI overlay:
 
 - `LinearWorld3dScene` (extends `ThreeScene`) — all 3D geometry, player, collectibles, camera
-- `BaseDemoScene` (extends `GameScene`, owns the above) — owns the PIXI UI (`PlayerHud`, `LinearMinimap`, `ScoreLeaderboard`) and syncs them each frame from the 3D scene's accessors
+- `BaseDemoScene` (extends `GameScene`, owns the above) — owns the PIXI UI (`PlayerHud`, `ScoreLeaderboard`) and syncs them each frame from the 3D scene's accessors
 
-`BaseDemoScene` never touches THREE directly — it reads `world3d.playerValue`, `world3d.nextGateValue`, `world3d.currentRoomIndex` and passes them to Pixi components.
+`BaseDemoScene` never touches THREE directly — it reads `world3d.playerValue` and `world3d.playerScore` and passes them to Pixi components.
 
 ### Scene lifecycle
 

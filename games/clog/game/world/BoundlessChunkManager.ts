@@ -71,9 +71,17 @@ export class BoundlessChunkManager {
             }
         }
 
-        // Collision resolution with all loaded islands.
+        this.resolveEntityCollisions(player.position, player.collisionRadius);
+    }
+
+    /**
+     * Pushes `pos` out of any blocked cell in every loaded island — the same
+     * physical safety net the player gets, generalized so bots don't rely
+     * solely on their steering heuristic to avoid clipping into walls.
+     */
+    resolveEntityCollisions(pos: THREE.Vector3, radius: number): void {
         for (const chunk of this.chunks.values()) {
-            chunk.resolveCollisions(player.position, player.collisionRadius);
+            chunk.resolveCollisions(pos, radius);
         }
     }
 

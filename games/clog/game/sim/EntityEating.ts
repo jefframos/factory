@@ -5,39 +5,65 @@ import { SimWorld } from "./SimWorld";
 const KILL_SCATTER = 0.6; // world-units of random offset applied to dropped cubes
 
 /**
- * Resolves eating between `eater` and a list of other live players each frame:
- *  - touching an opponent's head kills them if `eater` is bigger, scattering
- *    their whole body (tail + head) as loose food anyone can grab
- *  - touching an opponent's tail cube nibbles it off if it's smaller than `eater`
- * `others` is mutated in place: killed entities are removed and unregistered.
+ * Resolves eating between every pair of `entities` each frame — head-eats-head
+ * kills and tail-snipe nibbles are both checked in both directions, so bots
+ * and the player are symmetric threats to each other (not just player-as-eater).
+ *
+ * `entities` itself is not mutated. Killed entities are unregistered from
+ * SimWorld and returned so the caller can react by identity — e.g. destroy a
+ * bot outright but respawn the player, since PlayerEntity.onEaten() tears
+ * down its visuals unconditionally.
  */
 export function resolveEntityEating(
-    eater: PlayerEntity,
-    others: PlayerEntity[],
+    entities: PlayerEntity[],
     collectibles: CollectibleManager,
-): void {
-    const eatPos = eater.eatPosition;
-    const eatRadius = eater.eatRadius;
+): PlayerEntity[] {
+    const eaten = new Set<PlayerEntity>();
 
-    for (let i = others.length - 1; i >= 0; i--) {
-        const victim = others[i];
-        if (victim === eater) continue;
-
-        const headDist = eatPos.distanceTo(victim.position);
-        if (eater.value > victim.value && headDist < eatRadius + victim.collisionRadius) {
-            const dropped = victim.onEaten();
-            for (const cube of dropped) {
-                cube.position.x += (Math.random() - 0.5) * KILL_SCATTER;
-                cube.position.z += (Math.random() - 0.5) * KILL_SCATTER;
-                cube.startSpawnPop();
-            }
-            collectibles.absorbDrop(dropped);
-            SimWorld.unregister(victim);
-            others.splice(i, 1);
-            continue;
+    const kill = (victim: PlayerEntity): void => {
+        const dropped = victim.onEaten();
+        for (const cube of dropped) {
+            cube.position.x += (Math.random() - 0.5) * KILL_SCATTER;
+            cube.position.z += (Math.random() - 0.5) * KILL_SCATTER;
+            cube.startSpawnPop();
         }
+        collectibles.absorbDrop(dropped);
+        SimWorld.unregister(victim);
+        eaten.add(victim);
+    };
 
-        const cube = victim.tryDetachTailCube(eatPos, eatRadius, eater.value);
-        if (cube) eater.collect(cube);
+    for (let i = 0; i < entities.length; i++) {
+        const a = entities[i];
+        if (eaten.has(a)) continue;
+
+        for (let j = i + 1; j < entities.length; j++) {
+            const b = entities[j];
+            if (eaten.has(b)) continue;
+
+            // Head-eats-head, checked in both directions: either side eats the
+            // other once its value is at least the other's AND its own
+            // eat-circle (the point just in front of its face) reaches the
+            // other's body. Equal values are eatable too — `>=`, not `>` — so
+            // a same-value head-on meeting is resolved by who's actually
+            // biting whom (mouth-to-body contact) rather than being blocked
+            // outright.
+            if (a.value >= b.value && a.eatPosition.distanceTo(b.position) < a.eatRadius + b.collisionRadius) {
+                kill(b);
+                continue; // b is gone — no tail-snipe left to resolve for this pair
+            }
+            if (b.value >= a.value && b.eatPosition.distanceTo(a.position) < b.eatRadius + a.collisionRadius) {
+                kill(a);
+                break; // a is gone — stop checking the rest of the row against it
+            }
+
+            // Tail-snipe, both directions: either side can nibble the other's
+            // weaker tail cubes even without a head kill this frame.
+            const cubeFromB = b.tryDetachTailCube(a.eatPosition, a.eatRadius, a.value);
+            if (cubeFromB) a.collect(cubeFromB);
+            const cubeFromA = a.tryDetachTailCube(b.eatPosition, b.eatRadius, b.value);
+            if (cubeFromA) b.collect(cubeFromA);
+        }
     }
+
+    return [...eaten];
 }
