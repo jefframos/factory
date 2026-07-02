@@ -40,6 +40,15 @@ export class Blackboard {
     /** Mirrors the live entity's value when one exists. */
     value = 2;
 
+    /**
+     * 0-1, drifts up/down on its own each tick (see BotController's
+     * updateBraveness) instead of being a fixed personality knob like
+     * `params.aggressiveness` — models a bot's nerve coming and going moment
+     * to moment. Above BRAVE_THRESHOLD it'll risk sneaking up on a vulnerable
+     * tail cube even on a bigger entity; below it, it won't try.
+     */
+    braveness = 0.5;
+
     /** Debug-only: when true, flee/chase queries pretend the registered player doesn't exist. */
     ignorePlayer = false;
 

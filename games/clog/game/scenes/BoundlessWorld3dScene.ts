@@ -328,6 +328,10 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
             // of drowning it in every other bot's lines too.
             DevGuiManager.instance.addToggle('Log AI (console)', false, (v) => { controller.logging = v; }, folder);
             DevGuiManager.instance.addReadout(controller.debug, ['x', 'z', 'value', 'state'], label, folder);
+            // Live bar — drifts on its own (see BotController.updateBraveness),
+            // not something you set; watch it to see when a bot is about to
+            // risk sneaking up on a tail cube (BRAVE_THRESHOLD).
+            DevGuiManager.instance.addReadout(controller.blackboard, ['braveness'], label, folder, [0, 1]);
         }
     }
 

@@ -219,6 +219,12 @@ export class PlayerEntity implements ISimEntity {
 
         // ── Advance merge animations ──────────────────────────────────────────
         this.mergeQueue.update(delta);
+
+        // Catches any pair that just became eligible (a settle timer expiring
+        // above, most commonly) instead of relying solely on the event-driven
+        // calls elsewhere — cheap since scheduleMerges immediately bails once
+        // nothing qualifies.
+        this.scheduleMerges();
     }
 
     /** Dev-only: instantly double the player's value. */
@@ -258,12 +264,11 @@ export class PlayerEntity implements ISimEntity {
         const insertIdx = this.findInsertIdx(cube.value);
         this.tail.splice(insertIdx, 0, cube);
         cube.startBounce();
-
-        this.mergeQueue.enqueue({
-            duration: SETTLE_DELAY,
-            onProgress: () => { },
-            onDone: () => this.scheduleMerges(),
-        });
+        // Cosmetic-only grace period before this cube is eligible to merge —
+        // see TailCube.settleRemaining for why this is a per-cube timer and
+        // not a mergeQueue task (that queue is one-at-a-time; collecting
+        // several cubes fast used to queue that many sequential blocks).
+        cube.settleRemaining = SETTLE_DELAY;
     }
 
     /** Returns the first tail index where tail[i].value < value (descending order). */
@@ -289,7 +294,7 @@ export class PlayerEntity implements ISimEntity {
         // past the player's value, permanently blocking the player from growing.
         if (this.tail.length > 0) {
             const front = this.tail[0];
-            if (front.value === this.value && !front.isMerging && !front.isScheduled && !front.isLocked) {
+            if (front.value === this.value && front.settleRemaining <= 0 && !front.isMerging && !front.isScheduled && !front.isLocked) {
                 dbg("→ playerMerge", { playerVal: this.value, frontVal: this.tail[0].value });
                 this.enqueuePlayerMerge();
                 return;
@@ -302,7 +307,8 @@ export class PlayerEntity implements ISimEntity {
         for (let i = 0; i < this.tail.length - 1; i++) {
             const a = this.tail[i];     // closer to player
             const b = this.tail[i + 1]; // farther from player
-            if (a.value === b.value && !a.isMerging && !a.isScheduled && !a.isLocked && !b.isMerging && !b.isScheduled && !b.isLocked) {
+            if (a.value === b.value && a.settleRemaining <= 0 && b.settleRemaining <= 0
+                && !a.isMerging && !a.isScheduled && !a.isLocked && !b.isMerging && !b.isScheduled && !b.isLocked) {
                 // b slides into a (back cube slides toward player)
                 dbg("→ tailMerge", { from: i + 1, into: i, val: a.value });
                 this.enqueueTailMerge(i + 1, i);
@@ -354,6 +360,15 @@ export class PlayerEntity implements ISimEntity {
                 into.startBounce();
                 from.destroy();
                 this.tail.splice(currentIdx, 1);
+                // collect() sorts new cubes in by comparing against other
+                // cubes' *current* values — but `into` just doubled, so any
+                // cube collected while this merge was still animating was
+                // positioned relative to into's old, smaller value. Re-sort
+                // to restore descending order now that it's settled; safe
+                // any time since merge tasks hold direct object references,
+                // not indices (bar the indexOf(from) above, already robust
+                // to reordering for the same reason).
+                this.tail.sort((a, b) => b.value - a.value);
                 dbgTail("after tailMerge", this.value, this.tail);
                 this.scheduleMerges();
             },

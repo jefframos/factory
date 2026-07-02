@@ -10,6 +10,8 @@ export type TailEntry = { position: THREE.Vector3; value: number };
 /** Read-only view of a nearby entity returned by SimWorld.query(). */
 export type EntitySnapshot = {
     position: THREE.Vector3;
+    /** World-space point just in front of this entity's face — lets callers work out which way it's facing (eatPosition - position) without needing its raw rotation. */
+    eatPosition: THREE.Vector3;
     value: number;
     /** Sorted descending by value. tail[last] is the weakest cube — the snipe target. */
     tail: TailEntry[];
@@ -30,6 +32,7 @@ export type SimQueryResult = {
  */
 export interface ISimEntity {
     readonly position: THREE.Vector3;
+    readonly eatPosition: THREE.Vector3;
     readonly value: number;
     tailSnapshot(): TailEntry[];
 }
@@ -105,9 +108,10 @@ export class SimWorld {
             const dz = e.position.z - origin.z;
             if (dx * dx + dz * dz <= r2) {
                 entities.push({
-                    position: e.position,
-                    value:    e.value,
-                    tail:     e.tailSnapshot(),
+                    position:    e.position,
+                    eatPosition: e.eatPosition,
+                    value:       e.value,
+                    tail:        e.tailSnapshot(),
                 });
             }
         }

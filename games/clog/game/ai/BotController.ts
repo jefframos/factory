@@ -44,6 +44,42 @@ const LOG_INTERVAL = 0.5; // seconds between console lines per bot while logging
 const STUCK_ESCAPE_DELAY = 1.0; // seconds of near-zero movement before we try a sidestep
 const STUCK_MOVE_EPS = 0.05;    // world-units — below this counts as "not moving" for the watchdog
 
+// Braveness drifts on its own each tick instead of being a fixed personality
+// knob — see Blackboard.braveness. It gravitates toward the bot's own
+// aggressiveness (braver personalities rest at a higher average nerve) with
+// a random wobble on top, so "how brave am I feeling right now" varies
+// moment to moment the way the user described, without needing any
+// event-driven bookkeeping (scares, close calls, etc).
+const BRAVENESS_DRIFT_RATE = 0.5;  // max random nudge per second
+const BRAVENESS_REVERT_RATE = 0.15; // how fast it's pulled back toward its aggressiveness baseline
+// Above this, a bot will risk sneaking up on a vulnerable tail cube even on
+// an entity it wouldn't dare fight head-on. See snipeVulnerableTail.
+const BRAVE_THRESHOLD = 0.65;
+
+// A threat can only actually reach you if you're roughly in front of it —
+// PlayerEntity.eatPosition is a point offset ahead of an entity along
+// whatever direction it's currently facing, so `eatPosition - position` is
+// its facing direction. Dotting that against the direction to a candidate
+// tells us whether the candidate sits inside its forward bite arc — i.e.
+// "would this entity actually notice/reach me." Used both to decide whether
+// a nearby threat can actually catch us (fleeFromThreat only reacts to
+// threats that are facing us — safe on their back, per the user's framing)
+// and whether a would-be snipe target is currently facing us back (too risky
+// to approach — see snipeVulnerableTail).
+const DANGER_CONE_HALF_ANGLE = Math.PI / 3; // 60° each side = 120° total forward arc
+
+function isFacingTarget(observerPos: THREE.Vector3, observerEatPos: THREE.Vector3, targetPos: THREE.Vector3): boolean {
+    const facing = observerEatPos.clone().sub(observerPos);
+    if (facing.lengthSq() < 1e-6) return true; // no discernible facing — assume worst case
+    facing.normalize();
+
+    const toTarget = targetPos.clone().sub(observerPos);
+    if (toTarget.lengthSq() < 1e-6) return true; // exactly overlapping
+
+    toTarget.normalize();
+    return facing.dot(toTarget) >= Math.cos(DANGER_CONE_HALF_ANGLE);
+}
+
 /** Flat, dat.GUI-friendly snapshot of one bot's live state — for the AI debug panel. */
 export type BotDebugInfo = {
     x: number;
@@ -100,6 +136,7 @@ export class BotController {
 
         this.blackboard.position.copy(this.entity.position);
         this.blackboard.value = this.entity.value;
+        this.updateBraveness(delta);
         this.blackboard.set("steerUrgency", 0); // seekNearestFood raises this on final approach
 
         const ctx: BotContext = {
@@ -144,6 +181,14 @@ export class BotController {
 
     destroy(): void {
         this.tree.reset?.();
+    }
+
+    /** See BRAVENESS_DRIFT_RATE/BRAVENESS_REVERT_RATE above. */
+    private updateBraveness(delta: number): void {
+        const baseline = this.blackboard.params.aggressiveness;
+        const drift = (Math.random() - 0.5) * BRAVENESS_DRIFT_RATE * delta;
+        const pull = (baseline - this.blackboard.braveness) * BRAVENESS_REVERT_RATE * delta;
+        this.blackboard.braveness = Math.max(0, Math.min(1, this.blackboard.braveness + drift + pull));
     }
 
     /**
@@ -207,6 +252,7 @@ export class BotController {
             + `rawDir=${fmt2(rawDir)} postSep=${fmt2(postSeparationDir)} `
             + `smoothed=${fmt2(this.currentDir)} resolved=${fmt2(resolved)} `
             + `leashing=${bb.get<boolean>("leashing") ?? false} panicking=${bb.get<boolean>("panicking") ?? false} `
+            + `braveness=${bb.braveness.toFixed(2)} `
             + `targetDist=${bb.get<number>("targetDist")?.toFixed(2) ?? "-"} `
             + `foodSeen=${bb.get<number>("foodSeen") ?? "-"} foodReachable=${bb.get<number>("foodReachable") ?? "-"}`,
         );
@@ -247,7 +293,8 @@ export class BotController {
 // Priority order: flee a lethal threat (survival beats everything, including
 // leash — see fleeFromThreat's comment), return home if too far out, chase
 // weaker prey (if aggressive enough and it's actually catchable within leash
-// range), seek the nearest food, otherwise wander. This is a placeholder tree
+// range), sneak up on a vulnerable tail cube if feeling brave enough right
+// now, seek the nearest food, otherwise wander. This is a placeholder tree
 // that proves the Blackboard/BehaviorTree/SimWorld plumbing end-to-end and
 // exercises every BotParams knob — swap in richer trees per entity later.
 
@@ -256,6 +303,7 @@ function buildDefaultTree(home: THREE.Vector3): BTNode<BotContext> {
         fleeFromThreat(),
         returnToLeash(home),
         chaseWeakerPrey(home),
+        snipeVulnerableTail(home),
         seekNearestFood(home),
         wander(),
     ]);
@@ -316,6 +364,12 @@ function returnToLeash(home: THREE.Vector3): BTNode<BotContext> {
 // of committing to either behaviour.
 const PANIC_RELEASE_MULT = 1.6;
 
+// While fleeing, still pull a bit toward nearby food instead of running
+// blindly — more human than pure panic, and it means a bot that dodges a
+// threat near a food cluster doesn't ignore an easy grab right on its escape
+// route. Kept secondary (safety direction dominates) via this weight.
+const FLEE_FOOD_BIAS = 0.4;
+
 function fleeFromThreat(): BTNode<BotContext> {
     return new Action((ctx) => {
         const { entity, blackboard } = ctx;
@@ -334,6 +388,12 @@ function fleeFromThreat(): BTNode<BotContext> {
         let bestDist2 = Infinity;
         for (const other of result.entities) {
             if (other.value < lethalValue) continue;
+            // Only a threat that's actually facing us can catch us — one
+            // sitting right behind is no danger at all (its own forward-offset
+            // "mouth" points the other way). Ignoring it here, not just at the
+            // eating-check level, is what makes "safe on their back" actually
+            // change behaviour instead of just changing whether a bite lands.
+            if (!isFacingTarget(other.position, other.eatPosition, entity.position)) continue;
             const d2 = entity.position.distanceToSquared(other.position);
             if (d2 < bestDist2) { bestDist2 = d2; threat = other.position; }
         }
@@ -357,9 +417,21 @@ function fleeFromThreat(): BTNode<BotContext> {
         // always pulling toward roughly the same spot. Leash still applies
         // once the threat is gone and it's safe to head home.
         blackboard.set("panicking", true);
-        const dx = entity.position.x - threat.x;
-        const dz = entity.position.z - threat.z;
-        ctx.moveDir.set(dx, dz).normalize();
+        const fleeDir = new THREE.Vector2(entity.position.x - threat.x, entity.position.z - threat.z).normalize();
+
+        const foodResult = SimWorld.query(entity.position, blackboard.params.awarenessRadius, entity);
+        if (foodResult.food.length > 0) {
+            let nearestFood = foodResult.food[0];
+            let bestFoodDist2 = entity.position.distanceToSquared(nearestFood);
+            for (let i = 1; i < foodResult.food.length; i++) {
+                const d2 = entity.position.distanceToSquared(foodResult.food[i]);
+                if (d2 < bestFoodDist2) { bestFoodDist2 = d2; nearestFood = foodResult.food[i]; }
+            }
+            const towardFood = new THREE.Vector2(nearestFood.x - entity.position.x, nearestFood.z - entity.position.z).normalize();
+            fleeDir.addScaledVector(towardFood, FLEE_FOOD_BIAS).normalize();
+        }
+
+        ctx.moveDir.copy(fleeDir);
         blackboard.set("state", "flee");
         return NodeStatus.Running;
     });
@@ -423,6 +495,48 @@ function chaseWeakerPrey(home: THREE.Vector3): BTNode<BotContext> {
         const dz = prey.z - entity.position.z;
         ctx.moveDir.set(dx, dz).normalize();
         blackboard.set("state", "chase");
+        return NodeStatus.Running;
+    });
+}
+
+/**
+ * Sneaks up on a vulnerable tail cube on ANY nearby entity — including ones
+ * far too big to chase head-on via chaseWeakerPrey — as long as: the entity
+ * is currently brave enough to risk it (see Blackboard.braveness), the
+ * target's weakest tail cube is actually small enough to eat, the approach
+ * is reachable within leash range, and the target isn't currently facing us
+ * (sneaking up on something that's already looking at you isn't sneaking).
+ * The bite itself still just happens passively via EntityEating's proximity
+ * check once close enough — this only supplies the "go there" decision that
+ * was previously entirely missing, which is why bots never bothered trying.
+ */
+function snipeVulnerableTail(home: THREE.Vector3): BTNode<BotContext> {
+    return new Action((ctx) => {
+        const { entity, blackboard } = ctx;
+        if (blackboard.braveness < BRAVE_THRESHOLD) return NodeStatus.Failure;
+
+        const result = SimWorld.query(
+            entity.position, blackboard.params.awarenessRadius, entity,
+            { excludePlayer: blackboard.ignorePlayer },
+        );
+        const leashR2 = blackboard.params.leashRadius * blackboard.params.leashRadius;
+
+        let targetPos: THREE.Vector3 | null = null;
+        let bestDist2 = Infinity;
+        for (const other of result.entities) {
+            const weakest = other.tail[other.tail.length - 1];
+            if (!weakest || weakest.value > entity.value) continue;
+            if (isFacingTarget(other.position, other.eatPosition, entity.position)) continue;
+            if (home.distanceToSquared(weakest.position) > leashR2) continue;
+            const d2 = entity.position.distanceToSquared(weakest.position);
+            if (d2 < bestDist2) { bestDist2 = d2; targetPos = weakest.position; }
+        }
+        if (!targetPos) return NodeStatus.Failure;
+
+        const dx = targetPos.x - entity.position.x;
+        const dz = targetPos.z - entity.position.z;
+        ctx.moveDir.set(dx, dz).normalize();
+        blackboard.set("state", "snipe");
         return NodeStatus.Running;
     });
 }

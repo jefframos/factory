@@ -17,6 +17,18 @@ export class TailCube {
     public isScheduled = false;
     /** True while this cube is the destination of a queued merge (block re-scheduling). */
     public isLocked = false;
+    /**
+     * Seconds left in the post-collection grace period (set by
+     * PlayerEntity.collect) before this cube is eligible to be scanned for a
+     * merge — purely cosmetic pacing (let it visibly land in its tail slot
+     * first), so it's a plain per-cube timer decremented in update(), NOT a
+     * task in PlayerEntity's mergeQueue. That queue runs one task at a time;
+     * treating "settling" as an entry in it meant collecting several cubes in
+     * quick succession queued that many sequential 0.7s blocks before any
+     * actual merge (or the next settle) could even start, so a busy pickup
+     * spree looked like merging had stopped entirely.
+     */
+    public settleRemaining = 0;
 
     private bounceTimer = 0;
     private popTimer    = 0;
@@ -64,6 +76,8 @@ export class TailCube {
     }
 
     update(delta: number): void {
+        if (this.settleRemaining > 0) this.settleRemaining = Math.max(0, this.settleRemaining - delta);
+
         this.shadow.update(this.position.x, this.position.z, sizeForValue(this.value));
 
         const floatY = this.floatBob.update(delta);

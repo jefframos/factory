@@ -158,15 +158,20 @@ export class DevGuiManager {
      * dat.GUI's `.listen()` so the displayed value keeps refreshing every
      * frame instead of only reflecting its value at the moment it was added.
      * Meant for inspecting fast-changing runtime state (AI position, current
-     * behaviour, etc), not for editing.
+     * behaviour, etc), not for editing. Pass `range` to render numeric values
+     * as a slider bar (e.g. [0, 1] for a live-updating "braveness" gauge)
+     * instead of a plain number box.
      */
-    public addReadout(owner: any, keys: string[], name?: string, folderName?: string): void {
+    public addReadout(owner: any, keys: string[], name?: string, folderName?: string, range?: [number, number]): void {
         if (!this.isDev || !this.gui) return;
         const folder = folderName ? this.getOrCreateFolder(folderName) : this.gui;
 
         keys.forEach((key) => {
             if (key in owner) {
-                folder.add(owner, key).name(`${name ? name : owner.constructor.name}.${key}`).listen();
+                const controller = range
+                    ? folder.add(owner, key, range[0], range[1])
+                    : folder.add(owner, key);
+                controller.name(`${name ? name : owner.constructor.name}.${key}`).listen();
             } else {
                 console.warn(`GuiHelper: Key "${key}" not found in owner`, owner);
             }
