@@ -396,15 +396,17 @@ export class PlayerEntity implements ISimEntity {
 
     /**
      * Detaches and returns the first tail cube within `radius` of `pos` whose
-     * value is strictly less than `maxValue`. Cubes mid-merge are protected
-     * (skipped) so a steal can't corrupt an in-flight merge animation.
-     * Re-triggers merge scanning since removing a cube changes adjacency.
+     * value is at most `maxValue` — matches the head-eats-head rule in
+     * EntityEating.ts, which also allows equal values (whoever actually
+     * connects wins). Cubes mid-merge are protected (skipped) so a steal
+     * can't corrupt an in-flight merge animation. Re-triggers merge scanning
+     * since removing a cube changes adjacency.
      */
     tryDetachTailCube(pos: THREE.Vector3, radius: number, maxValue: number): TailCube | null {
         for (let i = 0; i < this.tail.length; i++) {
             const cube = this.tail[i];
             if (cube.isMerging || cube.isScheduled || cube.isLocked) continue;
-            if (cube.value >= maxValue) continue;
+            if (cube.value > maxValue) continue;
             if (pos.distanceTo(cube.position) >= radius) continue;
             this.tail.splice(i, 1);
             this.scheduleMerges();

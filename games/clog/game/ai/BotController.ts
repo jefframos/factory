@@ -26,7 +26,23 @@ const CLOSE_STEER_LERP = 24;
 const SEPARATION_RADIUS_MULT = 3; // personal-space radius, in multiples of own collisionRadius
 const SEPARATION_WEIGHT = 1.5;    // how hard nearby entities push apart, relative to the BT's own steering
 const ORIGIN_2D = new THREE.Vector2(0, 0);
+const UP_3D = new THREE.Vector3(0, 1, 0);
 const LOG_INTERVAL = 0.5; // seconds between console lines per bot while logging is on — enough to catch a stuck bot without flooding the console
+
+// Stuck watchdog — lives here, not in any one BT node, because getting
+// physically wedged (an obstacle corner where SimWorld.resolveDirection's
+// single-point probe can flicker between "clear" and "blocked" every frame —
+// see its own docs on missing thin/angled geometry) can happen under *any*
+// behaviour: leash, flee, seekFood, chase all drive a nonzero moveDir that
+// can land the entity in the same kind of dead spot. wander/seekFood/flee
+// naturally drift onto a new heading over time and usually self-recover, but
+// not reliably — and leash's heading never varies at all — so this applies
+// uniformly after the BT has already picked a direction, tracking real
+// displacement (not any behaviour-specific "am I making progress" measure,
+// which can itself stall while wedged) and forcing a fixed sideways detour
+// once movement has stalled for too long.
+const STUCK_ESCAPE_DELAY = 1.0; // seconds of near-zero movement before we try a sidestep
+const STUCK_MOVE_EPS = 0.05;    // world-units — below this counts as "not moving" for the watchdog
 
 /** Flat, dat.GUI-friendly snapshot of one bot's live state — for the AI debug panel. */
 export type BotDebugInfo = {
@@ -62,6 +78,10 @@ export class BotController {
     private lastLoggedPos: THREE.Vector2 | null = null;
     /** Last frame's post-obstacle-avoidance direction — see resolveDirection's `preferred` param. */
     private lastResolvedDir: THREE.Vector3 | null = null;
+    // Stuck watchdog state — see STUCK_ESCAPE_DELAY above.
+    private stuckPos: THREE.Vector3 | null = null;
+    private stuckTimer = 0;
+    private escapeAngle: number | null = null;
 
     constructor(
         public readonly entity: PlayerEntity,
@@ -104,7 +124,8 @@ export class BotController {
 
         let resolved = new THREE.Vector3(0, 0, 0);
         if (this.currentDir.lengthSq() > 0.0001) {
-            const dir3 = new THREE.Vector3(this.currentDir.x, 0, this.currentDir.y).normalize();
+            let dir3 = new THREE.Vector3(this.currentDir.x, 0, this.currentDir.y).normalize();
+            dir3 = this.applyStuckEscape(dir3, delta);
             resolved = SimWorld.resolveDirection(this.entity.position, dir3, this.entity.collisionRadius * 2, this.lastResolvedDir);
             this.entity.setMoveInput(resolved.x, resolved.z);
             this.lastResolvedDir = resolved.lengthSq() > 0 ? resolved : null;
@@ -123,6 +144,34 @@ export class BotController {
 
     destroy(): void {
         this.tree.reset?.();
+    }
+
+    /**
+     * Tracks real displacement independent of whichever BT node is currently
+     * driving, and rotates the desired direction by a fixed sideways angle
+     * once movement has stalled for STUCK_ESCAPE_DELAY — see the constant's
+     * comment for why this lives here instead of in any one behaviour. The
+     * angle is rolled once per stuck episode and held (not re-rolled every
+     * frame) so the escape attempt is a straight line long enough to actually
+     * clear whatever it's wedged against, then cleared as soon as real
+     * progress resumes.
+     */
+    private applyStuckEscape(dir3: THREE.Vector3, delta: number): THREE.Vector3 {
+        const pos = this.entity.position;
+        if (this.stuckPos && pos.distanceTo(this.stuckPos) < STUCK_MOVE_EPS) {
+            this.stuckTimer += delta;
+        } else {
+            this.stuckTimer = 0;
+            this.stuckPos = pos.clone();
+            this.escapeAngle = null;
+        }
+
+        if (this.stuckTimer <= STUCK_ESCAPE_DELAY) return dir3;
+
+        if (this.escapeAngle === null) {
+            this.escapeAngle = (Math.random() < 0.5 ? 1 : -1) * (Math.PI / 2 + Math.random() * Math.PI / 4);
+        }
+        return dir3.clone().applyAxisAngle(UP_3D, this.escapeAngle);
     }
 
     /**
@@ -195,17 +244,18 @@ export class BotController {
 }
 
 // ── Default tree ──────────────────────────────────────────────────────────────
-// Priority order: return home if too far out (overrides everything else — see
-// leashRadius), flee a lethal threat, chase weaker prey (if aggressive
-// enough), seek the nearest food, otherwise wander. This is a placeholder
-// tree that proves the Blackboard/BehaviorTree/SimWorld plumbing end-to-end
-// and exercises every BotParams knob — swap in richer trees per entity later.
+// Priority order: flee a lethal threat (survival beats everything, including
+// leash — see fleeFromThreat's comment), return home if too far out, chase
+// weaker prey (if aggressive enough and it's actually catchable within leash
+// range), seek the nearest food, otherwise wander. This is a placeholder tree
+// that proves the Blackboard/BehaviorTree/SimWorld plumbing end-to-end and
+// exercises every BotParams knob — swap in richer trees per entity later.
 
 function buildDefaultTree(home: THREE.Vector3): BTNode<BotContext> {
     return new Selector([
-        returnToLeash(home),
         fleeFromThreat(),
-        chaseWeakerPrey(),
+        returnToLeash(home),
+        chaseWeakerPrey(home),
         seekNearestFood(home),
         wander(),
     ]);
@@ -221,20 +271,9 @@ function buildDefaultTree(home: THREE.Vector3): BTNode<BotContext> {
 // directions average out to ~zero net motion, so it also looks stuck in place.
 const LEASH_RELEASE_FACTOR = 0.7;
 
-// Watchdog for getting physically wedged while leashing (e.g. an L-shaped
-// obstacle corner where SimWorld.resolveDirection's single-point probe can
-// alternate between "straight ahead is clear" and "blocked, deflect" every
-// frame without the entity ever actually clearing the corner — see
-// resolveDirection's own docs on why it can miss thin/angled geometry).
-// wander and seekFood both drift onto a new heading naturally over time and
-// self-recover from this; a heading that points dead-straight at a fixed
-// home point never does, so it has to be given an explicit way out.
-const LEASH_STUCK_ESCAPE_DELAY = 1.0; // seconds of near-zero movement before we try a sidestep
-const LEASH_STUCK_MOVE_EPS = 0.05;    // world-units — below this counts as "not moving" for the watchdog
-
 function returnToLeash(home: THREE.Vector3): BTNode<BotContext> {
     return new Action((ctx) => {
-        const { entity, blackboard, delta } = ctx;
+        const { entity, blackboard } = ctx;
         const r = blackboard.params.leashRadius;
         const dist2 = entity.position.distanceToSquared(home);
         const leashing = blackboard.get<boolean>("leashing") ?? false;
@@ -248,9 +287,6 @@ function returnToLeash(home: THREE.Vector3): BTNode<BotContext> {
                 // the same line, gets leashed again, comes back, and repeats
                 // — the "no exploration, same path over and over" pattern.
                 blackboard.set("wanderHeading", Math.random() * Math.PI * 2);
-                blackboard.delete("leashStuckPos");
-                blackboard.delete("leashStuckTimer");
-                blackboard.delete("leashEscapeAngle");
                 return NodeStatus.Failure;
             }
         } else if (dist2 <= r * r) {
@@ -259,37 +295,12 @@ function returnToLeash(home: THREE.Vector3): BTNode<BotContext> {
             blackboard.set("leashing", true);
         }
 
-        // Stuck watchdog — track real displacement (not distance-to-home,
-        // which can also stall while wedged) and commit to one fixed
-        // sideways detour angle for as long as progress stays stalled,
-        // instead of re-rolling a new angle every frame (which would just
-        // trade one oscillation for another).
-        const stuckPos = blackboard.get<THREE.Vector3>("leashStuckPos");
-        let stuckTimer = blackboard.get<number>("leashStuckTimer") ?? 0;
-        if (stuckPos && entity.position.distanceTo(stuckPos) < LEASH_STUCK_MOVE_EPS) {
-            stuckTimer += delta;
-        } else {
-            stuckTimer = 0;
-            blackboard.set("leashStuckPos", entity.position.clone());
-        }
-        blackboard.set("leashStuckTimer", stuckTimer);
-
+        // Getting physically wedged en route (e.g. an obstacle corner) is
+        // handled by BotController's own stuck watchdog, applied uniformly
+        // after every behaviour picks a direction — see STUCK_ESCAPE_DELAY.
         const dx = home.x - entity.position.x;
         const dz = home.z - entity.position.z;
-        const dir = new THREE.Vector2(dx, dz).normalize();
-
-        if (stuckTimer > LEASH_STUCK_ESCAPE_DELAY) {
-            let escapeAngle = blackboard.get<number>("leashEscapeAngle");
-            if (escapeAngle === undefined) {
-                escapeAngle = (Math.random() < 0.5 ? 1 : -1) * (Math.PI / 2 + Math.random() * Math.PI / 4);
-                blackboard.set("leashEscapeAngle", escapeAngle);
-            }
-            dir.rotateAround(ORIGIN_2D, escapeAngle);
-        } else {
-            blackboard.delete("leashEscapeAngle");
-        }
-
-        ctx.moveDir.copy(dir);
+        ctx.moveDir.set(dx, dz).normalize();
         blackboard.set("state", "leash");
         return NodeStatus.Running;
     });
@@ -333,9 +344,18 @@ function fleeFromThreat(): BTNode<BotContext> {
         }
 
         // Panic ignores everything else lower in the Selector for as long as
-        // it's active — flee already runs before seekFood/wander in priority,
-        // this just keeps it Running (instead of flickering to Failure) while
-        // a threat is anywhere within the widened panic radius.
+        // it's active — flee runs first (above returnToLeash too — see
+        // buildDefaultTree), this just keeps it Running (instead of
+        // flickering to Failure) while a threat is anywhere within the
+        // widened panic radius. Flee outranking leash matters: with leash on
+        // top, an entity fleeing for its life that happens to cross its leash
+        // boundary got yanked home *mid-escape*, potentially walking straight
+        // back toward the threat — and once released, immediately resumed
+        // fleeing, crossed the boundary again, and repeated: a flee<->leash
+        // tug-of-war (same shape as the leash<->seekFood one, just for
+        // survival instead of food) that looked like aimless zig-zagging
+        // always pulling toward roughly the same spot. Leash still applies
+        // once the threat is gone and it's safe to head home.
         blackboard.set("panicking", true);
         const dx = entity.position.x - threat.x;
         const dz = entity.position.z - threat.z;
@@ -345,10 +365,26 @@ function fleeFromThreat(): BTNode<BotContext> {
     });
 }
 
-function chaseWeakerPrey(): BTNode<BotContext> {
+// A chase that drags on this long without a kill gives up — either the prey
+// keeps slipping away (its own flee/leash/separation steering fighting ours
+// to a standstill) or it's simply not worth the detour. Without a give-up,
+// two bots that are each individually "correct" (predator chasing, prey
+// fleeing) can lock into an endless standoff that looks like a scripted
+// zig-zag rather than either side actually winning or losing.
+const CHASE_GIVEUP_TIME = 4;  // seconds of continuous chasing before giving up
+const CHASE_COOLDOWN    = 3;  // seconds the predator won't re-engage chase after giving up — otherwise the very next tick just re-picks the same nearest prey and resumes the standoff
+
+function chaseWeakerPrey(home: THREE.Vector3): BTNode<BotContext> {
     return new Action((ctx) => {
-        const { entity, blackboard } = ctx;
+        const { entity, blackboard, delta } = ctx;
         if (blackboard.params.aggressiveness <= 0) return NodeStatus.Failure;
+
+        let cooldown = blackboard.get<number>("chaseCooldown") ?? 0;
+        if (cooldown > 0) {
+            blackboard.set("chaseCooldown", cooldown - delta);
+            blackboard.set("chaseTimer", 0);
+            return NodeStatus.Failure;
+        }
 
         const result = SimWorld.query(
             entity.position, blackboard.params.awarenessRadius, entity,
@@ -356,15 +392,32 @@ function chaseWeakerPrey(): BTNode<BotContext> {
         );
         // Higher aggressiveness accepts riskier (closer-to-even) matchups as worth chasing.
         const preyValueCeiling = entity.value * (0.3 + 0.7 * blackboard.params.aggressiveness);
+        // Same idea as seekNearestFood's leash guard: don't commit to prey
+        // we'd have to leave leash range to actually catch — otherwise
+        // returnToLeash fights this node exactly like it used to fight
+        // seekNearestFood over unreachable food.
+        const leashR2 = blackboard.params.leashRadius * blackboard.params.leashRadius;
 
         let prey: THREE.Vector3 | null = null;
         let bestDist2 = Infinity;
         for (const other of result.entities) {
             if (other.value >= entity.value || other.value > preyValueCeiling) continue;
+            if (home.distanceToSquared(other.position) > leashR2) continue;
             const d2 = entity.position.distanceToSquared(other.position);
             if (d2 < bestDist2) { bestDist2 = d2; prey = other.position; }
         }
-        if (!prey) return NodeStatus.Failure;
+        if (!prey) {
+            blackboard.set("chaseTimer", 0);
+            return NodeStatus.Failure;
+        }
+
+        const chaseTimer = (blackboard.get<number>("chaseTimer") ?? 0) + delta;
+        if (chaseTimer > CHASE_GIVEUP_TIME) {
+            blackboard.set("chaseCooldown", CHASE_COOLDOWN);
+            blackboard.set("chaseTimer", 0);
+            return NodeStatus.Failure;
+        }
+        blackboard.set("chaseTimer", chaseTimer);
 
         const dx = prey.x - entity.position.x;
         const dz = prey.z - entity.position.z;

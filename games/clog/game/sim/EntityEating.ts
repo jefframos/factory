@@ -23,8 +23,22 @@ export function resolveEntityEating(
     const kill = (victim: PlayerEntity): void => {
         const dropped = victim.onEaten();
         for (const cube of dropped) {
-            cube.position.x += (Math.random() - 0.5) * KILL_SCATTER;
-            cube.position.z += (Math.random() - 0.5) * KILL_SCATTER;
+            // Unlike normal food spawns (LevelManager only picks from
+            // grid-derived free cells), this scatter isn't checked against
+            // the walkable grid — so it can knock a cube onto/inside an
+            // obstacle tile, especially when the kill happens right next to
+            // one (common: entities often die while wedged near terrain).
+            // A cube embedded in an obstacle is permanently uncollectable —
+            // the eater's own collision keeps it from ever getting close
+            // enough to trigger pickup. Only apply the scatter if it lands
+            // somewhere walkable; otherwise keep the un-scattered position,
+            // which was walkable a moment ago since the victim stood there.
+            const scatterX = cube.position.x + (Math.random() - 0.5) * KILL_SCATTER;
+            const scatterZ = cube.position.z + (Math.random() - 0.5) * KILL_SCATTER;
+            if (SimWorld.isWalkable(scatterX, scatterZ)) {
+                cube.position.x = scatterX;
+                cube.position.z = scatterZ;
+            }
             cube.startSpawnPop();
         }
         collectibles.absorbDrop(dropped);
