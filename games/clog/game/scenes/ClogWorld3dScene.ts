@@ -72,7 +72,7 @@ export default class ClogWorld3dScene extends ThreeScene {
 
         this.areaManager.update(this.player);
 
-        const hit = this.collectibles.checkCollision(this.player.eatPosition, this.player.eatRadius);
+        const hit = this.collectibles.checkCollision(this.player.position, this.player.foodRadius);
         if (hit) this.player.collect(hit);
 
         const hs     = this.areaManager.spawnHalfSize;

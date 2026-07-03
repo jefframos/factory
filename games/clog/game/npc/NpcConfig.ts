@@ -1,0 +1,90 @@
+/**
+ * Single source of truth for the NPC roster/director system — same role
+ * LinearConfig.ts plays for room config. Tune values here; nothing else in
+ * npc/ should hardcode a number that belongs in one of these groups.
+ */
+
+export const NPC_POPULATION_CONFIG = {
+    /** Total persistent NPC records — constant; entries are recycled, never added/removed. */
+    rosterSize: 24,
+    /** How many roster entries are materialized as real, on-screen bots near the player at once. */
+    activeMin: 4,
+    activeMax: 6,
+    /** Head value a record resets to after being killed (by another idle NPC, or for real via EntityEating). */
+    respawnValue: 2,
+};
+
+export const NPC_PERSONALITY_CONFIG = {
+    /**
+     * Base BotParams every materialized NPC starts from (see
+     * DEFAULT_BOT_PARAMS in Blackboard.ts) — raise `aggressiveness` here to
+     * make the whole population bolder as a baseline, independent of the
+     * per-NPC random variance below.
+     */
+    aggressiveness: 0.5,
+    awarenessRadius: 32,
+    fleeThreshold: 0.6,
+    wanderSpeed: 0.6,
+    leashRadius: 55,
+    /**
+     * Per-materialized-NPC random variance applied on top of the base values
+     * above (± range, clamped to each param's valid range) so the population
+     * reads as individuals instead of identical clones. E.g.
+     * aggressivenessVariance: 0.2 means each NPC's actual aggressiveness
+     * lands somewhere in [aggressiveness - 0.2, aggressiveness + 0.2].
+     */
+    aggressivenessVariance: 0.2,
+    awarenessRadiusVariance: 8,
+};
+
+export const NPC_IDLE_SIM_CONFIG = {
+    /**
+     * Seconds between idle feed ticks. Deliberately its own knob, not a
+     * reuse of LinearConfig's FOOD_CONFIG.spawnInterval — that constant
+     * governs the real on-screen food spawner; tuning idle NPC growth
+     * shouldn't silently retune how fast food appears in the world, or vice versa.
+     *
+     * The VALUE distribution fed on each tick, unlike the interval, is NOT
+     * duplicated here — it reads LinearConfig.rollFoodValue() (see
+     * NpcRoster), the same shared config the real on-screen spawner uses, so
+     * "what values can food be, and how likely each is" is one game-wide
+     * knob instead of two that can silently drift apart.
+     */
+    feedInterval: 3.5,
+    /** Seconds between "one idle NPC swallows another" rolls. */
+    killEventInterval: 20,
+    /** Seconds between "one idle NPC nibbles another's weakest tail cube" rolls. */
+    stealEventInterval: 12,
+};
+
+export const NPC_SPAWN_CONFIG = {
+    /** How often (seconds) the director re-checks distances and tops up the active window. */
+    checkInterval: 0.5,
+    /** A materialized NPC beyond this world-units distance from the player is dematerialized back into the roster. */
+    despawnDistance: 90,
+    /** New materializations land in this ring around the player — far enough to usually be off-camera, close enough to reach quickly. */
+    spawnMinDistance: 40,
+    spawnMaxDistance: 70,
+};
+
+export const NPC_DIFFICULTY_CONFIG = {
+    /**
+     * Player value at/below which spawn selection favors weak, docile NPCs
+     * instead of a uniform random pick from the whole roster — without this,
+     * a fresh level-2 player can just as easily get a heavily-grown, fully
+     * aggressive NPC materialized right next to them as their very first
+     * encounter.
+     */
+    lowLevelPlayerThreshold: 8,
+    /**
+     * While the player is at/below the threshold, only materialize idle
+     * records whose score is at most this multiple of the player's value.
+     * Falls back to the full idle pool if none qualify (same fallback shape
+     * as spawnBotNear's own candidate filter in BoundlessWorld3dScene) —
+     * the roster can age past the low-value range entirely given enough
+     * playtime, and a strict-only filter would then spawn nothing at all.
+     */
+    lowLevelValueMultiplier: 2,
+    /** Aggressiveness ceiling applied to NPCs spawned while the player is at/below the threshold — overrides the normal jitter from NPC_PERSONALITY_CONFIG. */
+    lowLevelAggressivenessCap: 0.2,
+};

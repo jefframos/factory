@@ -8,11 +8,20 @@ import LinearWorld3dScene from './LinearWorld3dScene';
 import BoundlessWorld3dScene from './BoundlessWorld3dScene';
 import type { IWorld3dScene } from './IWorld3dScene';
 import { PlayerHud } from '../ui/PlayerHud';
-import { ScoreLeaderboard } from '../ui/ScoreLeaderboard';
+import { BoostIndicator } from '../ui/BoostIndicator';
+import { LeaderboardPanel } from '../ui-dom/LeaderboardPanel';
+import { PlayerFlowController, type DeathSnapshot } from '../ui-dom/PlayerFlowController';
+import PlatformHandler from '@core/platforms/PlatformHandler';
 import Stats from 'stats.js';
+
+const PLAYER_NAME_KEY = 'playerName';
 
 // ?gated re-enables the linear room / gate progression mode.
 const GATED_MODE = new URLSearchParams(window.location.search).has('gated');
+
+// How often the leaderboard rebuilds its rows — every frame would be wasted
+// DOM churn for something that only needs to look "live," not exact.
+const LEADERBOARD_UPDATE_INTERVAL = 0.5;
 
 export default class BaseDemoScene extends GameScene {
 
@@ -21,11 +30,18 @@ export default class BaseDemoScene extends GameScene {
     private analogInput!: AnalogInput;
     private keyboardInput!: KeyboardInputMovement;
     private hud!: PlayerHud;
-    private leaderboard!: ScoreLeaderboard;
+    private boostIndicator!: BoostIndicator;
     private lastW = 0;
     private lastH = 0;
     private statsWidgets: Stats[] = [];
     private devPosLabel: PIXI.Text | null = null;
+    private leaderboard!: LeaderboardPanel;
+    private leaderboardTimer = 0;
+    private flowController!: PlayerFlowController;
+    /** True once "Join Server" has been pressed — gates movement input so the world (bots/food/camera-follow) keeps running underneath the menu/death overlay while the player itself stays put. */
+    private gameJoined = false;
+    /** Guards against re-showing the death overlay every frame while world3d.deathInfo stays non-null. */
+    private deathOverlayOpen = false;
 
     public async build(): Promise<void> {
         this.world3d = GATED_MODE
@@ -49,12 +65,14 @@ export default class BaseDemoScene extends GameScene {
 
         this.analogInput = new AnalogInput(this);
         this.analogInput.onMove.add(({ direction, magnitude }) => {
+            if (!this.gameJoined) return;
             this.world3d.moveInput.x = direction.x * magnitude;
             this.world3d.moveInput.z = direction.y * magnitude;
         });
 
         this.keyboardInput = new KeyboardInputMovement();
         this.keyboardInput.onMove.add(({ direction, magnitude }) => {
+            if (!this.gameJoined) return;
             this.world3d.moveInput.x = direction.x * magnitude;
             this.world3d.moveInput.z = direction.y * magnitude;
         });
@@ -75,7 +93,7 @@ export default class BaseDemoScene extends GameScene {
             { zoom: 1.0 },
             (v) => { this.world3d.cameraZoom = v.zoom; },
             ['zoom'],
-            [0.2, 4.0],
+            [0.2, 6.0],
             'Camera Zoom',
             'Camera',
         );
@@ -83,7 +101,7 @@ export default class BaseDemoScene extends GameScene {
         // AI debug view — snap the camera way out so entity behavior is visible
         // at a glance instead of manually dragging the zoom slider each time.
         DevGuiManager.instance.addToggle('Debug Zoom Out', false, (isZoomedOut) => {
-            this.world3d.cameraZoom = isZoomedOut ? 4.0 : 1.0;
+            this.world3d.cameraZoom = isZoomedOut ? 6.0 : 1.0;
         }, 'Camera');
 
         // Fast-forwards the whole sim (bots, food spawns, merges — everything
@@ -96,9 +114,15 @@ export default class BaseDemoScene extends GameScene {
         this.hud = new PlayerHud();
         this.addChild(this.hud);
 
-        // Pixi leaderboard — bottom-right player scores
-        this.leaderboard = new ScoreLeaderboard();
-        this.addChild(this.leaderboard);
+        // Floating boost bar that tracks the player in screen space — parented
+        // to game.overlayContainer (top Pixi layer, same as devPosLabel) since
+        // it needs to be positioned via a raw screen-pixel -> container-local
+        // conversion each frame (see update()), not `this`'s own layout flow.
+        this.boostIndicator = new BoostIndicator();
+        this.game.overlayContainer.addChild(this.boostIndicator);
+
+        // Production DOM leaderboard — bottom-right, always on (not dev-gated).
+        this.leaderboard = new LeaderboardPanel();
 
         // Dev-only readout — top-right player world position.
         // Parented to game.overlayContainer (not `this`) and positioned via
@@ -113,8 +137,29 @@ export default class BaseDemoScene extends GameScene {
             this.game.overlayContainer.addChild(this.devPosLabel);
         }
 
+        // Menu/Shop/Rename/Death — one DOM overlay, no scene change (see
+        // PlayerFlowController). The 3D world above is already fully live at
+        // this point (player spawned, NPCs simulating); the menu just gates
+        // movement input until "Join Server" so the still-centered player
+        // reads as a preview instead of drifting off unattended.
+        this.flowController = new PlayerFlowController();
+        const savedName = await PlatformHandler.instance.platform.getItem(PLAYER_NAME_KEY);
+        if (savedName) this.flowController.setPlayerName(savedName);
+        this.flowController.showMenu(() => this.handleJoinServer());
+
         // Initial position
         this.repositionUi();
+    }
+
+    /** "Join Server" from the menu — either the very first one (player already exists from build(), just unblock input) or a re-join after death (via "Join Another Server"), which needs an actual fresh respawn first. */
+    private handleJoinServer(): void {
+        if (this.world3d.deathInfo) {
+            this.world3d.respawnPlayer(2, []);
+        }
+        this.world3d.startNpcPopulation();
+        this.world3d.moveInput.x = 0;
+        this.world3d.moveInput.z = 0;
+        this.gameJoined = true;
     }
 
     public update(delta: number): void {
@@ -122,16 +167,55 @@ export default class BaseDemoScene extends GameScene {
         const scaledDelta = delta * this.speedMultiplier;
         this.world3d?.update(scaledDelta);
 
-        // Sync HUD and leaderboard with current game state
+        // Sync HUD with current game state
         if (this.hud && this.world3d) {
             this.hud.update(this.world3d.playerValue);
-            this.leaderboard.update([
-                { name: 'You', score: this.world3d.playerScore, isYou: true },
-            ]);
-            this.leaderboard.reposition();
+
+            // Boost bar: project the player's 3D world position to a raw
+            // screen-pixel point (world -> NDC -> CSS pixels, see
+            // ThreeScene.worldToScreen), then convert that into
+            // overlayContainer's own local space the same way Game.onResize
+            // derives overlayScreenData — dividing by renderer.resolution
+            // before toLocal, since Pixi's internal stage space is scaled
+            // down from raw CSS pixels by that factor (see Game.onResize).
+            const boostT = this.world3d.playerBoostT;
+            let boostAnchor: { x: number; y: number } | null = null;
+            if (boostT > 0) {
+                const screen = this.world3d.getPlayerScreenAnchor();
+                if (screen) {
+                    const stagePoint = new PIXI.Point(screen.x / Game.renderer.resolution, screen.y / Game.renderer.resolution);
+                    boostAnchor = this.game.overlayContainer.toLocal(stagePoint, this.game.app.stage);
+                }
+            }
+            this.boostIndicator.update(boostT, boostAnchor);
+
             if (this.devPosLabel) {
                 const pos = this.world3d.playerPosition;
                 this.devPosLabel.text = `x: ${pos.x.toFixed(1)}  z: ${pos.z.toFixed(1)}`;
+            }
+
+            this.leaderboardTimer += delta;
+            if (this.leaderboardTimer >= LEADERBOARD_UPDATE_INTERVAL) {
+                this.leaderboardTimer = 0;
+                this.leaderboard.update(this.world3d.listEntities());
+            }
+
+            const deathInfo = this.world3d.deathInfo;
+            if (deathInfo && !this.deathOverlayOpen) {
+                this.deathOverlayOpen = true;
+                this.gameJoined = false; // stop forwarding input while there's no live player to receive it
+                this.flowController.showDeath(
+                    deathInfo,
+                    (keepSize: DeathSnapshot | null) => {
+                        this.deathOverlayOpen = false;
+                        this.world3d.respawnPlayer(keepSize?.value ?? 2, keepSize?.tailValues ?? []);
+                        this.gameJoined = true;
+                    },
+                    () => {
+                        this.deathOverlayOpen = false;
+                        this.flowController.showMenu(() => this.handleJoinServer());
+                    },
+                );
             }
         }
 
@@ -150,7 +234,12 @@ export default class BaseDemoScene extends GameScene {
         this.statsWidgets = [];
         this.world3d?.destroy();
         this.hud?.destroy();
+        if (this.boostIndicator) {
+            this.game.overlayContainer.removeChild(this.boostIndicator);
+            this.boostIndicator.destroy();
+        }
         this.leaderboard?.destroy();
+        this.flowController?.destroy();
         if (this.devPosLabel) {
             this.game.overlayContainer.removeChild(this.devPosLabel);
             this.devPosLabel.destroy();
@@ -159,7 +248,6 @@ export default class BaseDemoScene extends GameScene {
 
     private repositionUi(): void {
         this.hud?.reposition();
-        this.leaderboard?.reposition();
         if (this.devPosLabel) {
             const { topRight } = Game.overlayScreenData;
             this.devPosLabel.position.set(topRight.x - 8, topRight.y + 8);

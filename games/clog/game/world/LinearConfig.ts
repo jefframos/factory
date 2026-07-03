@@ -80,7 +80,42 @@ export const FOOD_CONFIG = {
     minDistBetweenItems: 2.5,
     minDistFromPlayer: 7,
     maxPlacementAttempts: 30,
+    /**
+     * Independent "the player specifically must be able to find food" floor,
+     * on top of the zone-wide density/spawnInterval above. That interval only
+     * replaces one eaten item at a time regardless of how many mouths are
+     * drawing the pool down (bots now compete for the same food), so a busy
+     * area can go empty around the player even while the wider zone is at
+     * capacity. Checked on its own cadence (guaranteedCheckInterval) so bot
+     * competition can't starve it out.
+     */
+    guaranteedRadius: 14,        // world-units — the player should essentially never find zero food this close
+    guaranteedMinCount: 2,       // minimum food items expected within guaranteedRadius of the player
+    guaranteedCheckInterval: 1.0,
 };
+
+/**
+ * Single source of truth for which values can ever appear as food, and how
+ * often — used by every real on-screen food spawn in the boundless world
+ * (LevelManager) AND by the idle NPC roster's background feeding simulation
+ * (NpcRoster), so a materialized/dematerialized NPC's growth always reflects
+ * the same economy the player experiences. Weights must sum to 1.
+ */
+export const FOOD_VALUE_WEIGHTS: { value: number; weight: number }[] = [
+    { value: 2, weight: 0.80 },
+    { value: 4, weight: 0.15 },
+    { value: 8, weight: 0.05 },
+];
+
+export function rollFoodValue(): number {
+    const roll = Math.random();
+    let cumulative = 0;
+    for (const bucket of FOOD_VALUE_WEIGHTS) {
+        cumulative += bucket.weight;
+        if (roll < cumulative) return bucket.value;
+    }
+    return FOOD_VALUE_WEIGHTS[FOOD_VALUE_WEIGHTS.length - 1].value;
+}
 
 export function computeFoodCount(roomSize: number): number {
     const side = Math.max(0, roomSize - FOOD_CONFIG.spawnPadding * 2);
@@ -92,7 +127,7 @@ export function computeFoodCount(roomSize: number): number {
 export const CAMERA_CONFIG = {
     pitch: 45,
     minDistance: 10,
-    maxDistance: 15,
+    maxDistance: 25,
     maxAtValue: 8192,
     followSpeed: 5,
 };

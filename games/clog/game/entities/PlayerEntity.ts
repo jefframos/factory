@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { CubeBuilder } from "../builders/CubeBuilder";
 import { BendService } from "../services/BendService";
-import { BOUNCE_AMPLITUDE, BOUNCE_DURATION, followDist, sizeForValue } from "../ClogConstants";
+import { BOUNCE_AMPLITUDE, BOUNCE_DURATION, MOVE_SPEED, SMALL_VALUE_SPEED_BOOST, SMALL_VALUE_SPEED_THRESHOLD, TAP_BOOST_DURATION, TAP_BOOST_MULTIPLIER, followDist, sizeForValue } from "../ClogConstants";
 import { dbg, dbgTail } from "../debug/MergeDebugger";
 import { MergeQueue } from "../systems/MergeQueue";
 import { WalkBob } from "../components/WalkBob"; // [view:WalkBob]
@@ -10,9 +10,6 @@ import { BlobShadow } from "./BlobShadow";
 import { TailCube } from "./TailCube";
 import type { ISimEntity, TailEntry } from "../sim/SimWorld";
 
-const MOVE_SPEED = 8;
-const SPEED_FALLOFF_PER_DOUBLING = 0.02; // ~2% slower each time value doubles — subtle, not a hard nerf
-const MIN_SPEED_SCALE = 0.7;             // floor so even huge values stay reasonably mobile
 const ROTATION_SPEED = 12;
 const HISTORY_SAMPLE_DIST = 0.25; // world-units between sampled waypoints
 const FOLLOW_STIFFNESS = 12; // damping coefficient; ~0.18/frame at 60fps, frame-rate independent
@@ -28,7 +25,7 @@ export class PlayerEntity implements ISimEntity {
     private tail: TailCube[] = [];
     private scene: THREE.Scene;
     private mergeQueue: MergeQueue;
-    private eatIndicator: THREE.Mesh;
+    private eatIndicator: THREE.Mesh | null;
 
     private targetRotation = new THREE.Quaternion();
     private readonly UP = new THREE.Vector3(0, 1, 0);
@@ -39,12 +36,16 @@ export class PlayerEntity implements ISimEntity {
 
     private moveInputX = 0;
     private moveInputZ = 0;
+    private wasMoving = false;
+    /** Counts down from TAP_BOOST_DURATION once movement starts from a standstill — see update(). */
+    private tapBoostTimer = 0;
     private bounceTimer = 0;
     private shadow: BlobShadow;
     private walkBob = new WalkBob();   // [view:WalkBob]
     private floatBob = new FloatBob();
 
-    constructor(value: number, scene: THREE.Scene) {
+    /** @param showEatIndicator Whether to build the forward-facing direction triangle — the player wants it visible, but NPCs render without it. */
+    constructor(value: number, scene: THREE.Scene, showEatIndicator = true) {
         this.value = value;
         this.scene = scene;
         this.mergeQueue = new MergeQueue();
@@ -55,24 +56,28 @@ export class PlayerEntity implements ISimEntity {
         this.transform = new THREE.Group();
         this.transform.add(this.mesh);
 
-        // Direction triangle — flat on the ground, apex points forward (+Z local).
-        // Opaque (like the player cube) so it renders in the opaque pass and
-        // stays visible — just tinted by the water — instead of being culled
-        // by the water's depth write when submerged.
-        const triVerts = new Float32Array([
-            0, 0, 0.65,  // apex (forward)
-            -0.42, 0, -0.35,  // back-left
-            0.42, 0, -0.35,  // back-right
-        ]);
-        const triGeo = new THREE.BufferGeometry();
-        triGeo.setAttribute('position', new THREE.BufferAttribute(triVerts, 3));
-        triGeo.computeVertexNormals();
-        const triMat = new THREE.MeshStandardMaterial({
-            color: 0xffffff, side: THREE.DoubleSide,
-        });
-        BendService.applyBend(triMat);
-        this.eatIndicator = new THREE.Mesh(triGeo, triMat);
-        this.transform.add(this.eatIndicator);
+        if (showEatIndicator) {
+            // Direction triangle — flat on the ground, apex points forward (+Z local).
+            // Opaque (like the player cube) so it renders in the opaque pass and
+            // stays visible — just tinted by the water — instead of being culled
+            // by the water's depth write when submerged.
+            const triVerts = new Float32Array([
+                0, 0, 0.65,  // apex (forward)
+                -0.42, 0, -0.35,  // back-left
+                0.42, 0, -0.35,  // back-right
+            ]);
+            const triGeo = new THREE.BufferGeometry();
+            triGeo.setAttribute('position', new THREE.BufferAttribute(triVerts, 3));
+            triGeo.computeVertexNormals();
+            const triMat = new THREE.MeshStandardMaterial({
+                color: 0xffffff, side: THREE.DoubleSide,
+            });
+            BendService.applyBend(triMat);
+            this.eatIndicator = new THREE.Mesh(triGeo, triMat);
+            this.transform.add(this.eatIndicator);
+        } else {
+            this.eatIndicator = null;
+        }
 
         scene.add(this.transform);
         this.updateScale();
@@ -83,9 +88,24 @@ export class PlayerEntity implements ISimEntity {
         return this.transform.position;
     }
 
-    /** Radius of the eat circle (scales with value). */
+    /** World-space point just above the entity's head — anchor for floating UI that needs to track it on screen (e.g. the boost indicator). */
+    get uiAnchor(): THREE.Vector3 {
+        return this.position.clone().add(new THREE.Vector3(0, sizeForValue(this.value) + 0.5, 0));
+    }
+
+    /** 0..1 — fraction of the tap-start speed boost still remaining; 0 when not boosting. Drives the boost indicator's fill. */
+    get boostT(): number {
+        return this.tapBoostTimer / TAP_BOOST_DURATION;
+    }
+
+    /** Radius of the eat circle (scales with value). Used for player/NPC kills and tail-snipes. */
     get eatRadius(): number {
         return sizeForValue(this.value) * 0.8;
+    }
+
+    /** Radius for picking up loose food — a bit more forgiving than eatRadius since food can be grabbed from any side (no facing check). */
+    get foodRadius(): number {
+        return this.eatRadius * 1.3;
     }
 
     /** Physical collision radius used by AreaManager for gate/wall push-out. */
@@ -93,11 +113,10 @@ export class PlayerEntity implements ISimEntity {
         return sizeForValue(this.value) * 0.5;
     }
 
-    /** Movement speed — very slightly slower the bigger this entity gets. */
+    /** Base movement speed, before the tap-start boost — flat across all values except a small edge for fresh spawns (see SMALL_VALUE_SPEED_THRESHOLD). */
     private get moveSpeed(): number {
-        const doublings = Math.log2(Math.max(2, this.value) / 2);
-        const scale = Math.max(MIN_SPEED_SCALE, 1 - SPEED_FALLOFF_PER_DOUBLING * doublings);
-        return MOVE_SPEED * scale;
+        const boost = this.value <= SMALL_VALUE_SPEED_THRESHOLD ? SMALL_VALUE_SPEED_BOOST : 1;
+        return MOVE_SPEED * boost;
     }
 
     /** World-space center of the eat circle (in front of the cube face). */
@@ -110,12 +129,14 @@ export class PlayerEntity implements ISimEntity {
     /** Rescales the player mesh and eat indicator to match the current value. */
     private updateScale(): void {
         const s = sizeForValue(this.value);
-        const eatR = this.eatRadius;
         this.mesh.scale.setScalar(s);
         this.mesh.position.y = s * 0.5;
-        // Keep indicator above the water surface (elevation 0.45 + max wave ~0.30).
-        this.eatIndicator.position.set(0, s * 0.5, s * 1.1);
-        this.eatIndicator.scale.setScalar(eatR);
+        if (this.eatIndicator) {
+            const eatR = this.eatRadius;
+            // Keep indicator above the water surface (elevation 0.45 + max wave ~0.30).
+            this.eatIndicator.position.set(0, s * 0.5, s * 1.1);
+            this.eatIndicator.scale.setScalar(eatR);
+        }
     }
 
     private startBounce(): void {
@@ -157,9 +178,17 @@ export class PlayerEntity implements ISimEntity {
         const mx = this.moveInputX;
         const mz = this.moveInputZ;
 
+        // ── Tap-start speed boost ────────────────────────────────────────────
+        // A brief burst right when input goes from stopped to moving — makes
+        // starting off feel snappier without inflating sustained cruise speed.
+        const isMoving = mx !== 0 || mz !== 0;
+        if (isMoving && !this.wasMoving) this.tapBoostTimer = TAP_BOOST_DURATION;
+        this.wasMoving = isMoving;
+        if (this.tapBoostTimer > 0) this.tapBoostTimer = Math.max(0, this.tapBoostTimer - delta);
+
         // ── Movement ──────────────────────────────────────────────────────────
         const prevPos = this.transform.position.clone();
-        const speed = this.moveSpeed;
+        const speed = this.moveSpeed * (this.tapBoostTimer > 0 ? TAP_BOOST_MULTIPLIER : 1);
         this.transform.position.x += mx * speed * delta;
         this.transform.position.z += mz * speed * delta;
 
@@ -288,13 +317,25 @@ export class PlayerEntity implements ISimEntity {
      */
     private scheduleMerges(): void {
         dbgTail("scheduleMerges", this.value, this.tail);
-        // Player merge takes priority: if the front tail cube matches the player
-        // value, absorb it first before processing back-of-tail pairs. Without
-        // this, a settle delay can schedule a tail merge that doubles tail[0]
-        // past the player's value, permanently blocking the player from growing.
+        // Player merge takes priority: if the front tail cube matches or
+        // exceeds the player value, absorb it first before processing
+        // back-of-tail pairs. Without this, a settle delay can schedule a
+        // tail merge that doubles tail[0] past the player's value,
+        // permanently blocking the player from growing.
+        //
+        // ">=" and not "===": food can be collected with a value bigger than
+        // the player's current one (e.g. a fresh level-2 player picking up
+        // an 8), and findInsertIdx() correctly slots that straight into
+        // tail[0] (biggest-first order) — but a strict equality check here
+        // would then NEVER fire for it, since front.value (8) never equals
+        // this.value (2) on its own. That cube would sit at the front of the
+        // tail forever, looking exactly like the "head=2 but a huge first
+        // tail piece" oddity — this is what enqueuePlayerMerge's
+        // Math.max(...) below resolves: growing straight to the food's
+        // value instead of only ever doubling.
         if (this.tail.length > 0) {
             const front = this.tail[0];
-            if (front.value === this.value && front.settleRemaining <= 0 && !front.isMerging && !front.isScheduled && !front.isLocked) {
+            if (front.value >= this.value && front.settleRemaining <= 0 && !front.isMerging && !front.isScheduled && !front.isLocked) {
                 dbg("→ playerMerge", { playerVal: this.value, frontVal: this.tail[0].value });
                 this.enqueuePlayerMerge();
                 return;
@@ -375,7 +416,7 @@ export class PlayerEntity implements ISimEntity {
         });
     }
 
-    /** Animate tail[0] sliding into the player, then double the player's value. */
+    /** Animate tail[0] sliding into the player, then grow the player's value — doubling for a same-value merge, or straight to the food's value if it was bigger than the player (see scheduleMerges' ">=" comment). */
     private enqueuePlayerMerge(): void {
         const from = this.tail[0];
         from.isScheduled = true;
@@ -396,7 +437,7 @@ export class PlayerEntity implements ISimEntity {
                 from.position.lerpVectors(startPos, this.transform.position, t);
             },
             onDone: () => {
-                this.value *= 2;
+                this.value = Math.max(this.value * 2, from.value);
                 dbg("playerMerge.onDone", { newPlayerVal: this.value });
                 CubeBuilder.updateTextures(this.mesh, this.value, true);
                 this.updateScale();
@@ -454,8 +495,10 @@ export class PlayerEntity implements ISimEntity {
         this.shadow.destroy();
         this.mergeQueue.destroy();
         CubeBuilder.disposeMesh(this.mesh);
-        (this.eatIndicator.material as THREE.Material).dispose();
-        this.eatIndicator.geometry.dispose();
+        if (this.eatIndicator) {
+            (this.eatIndicator.material as THREE.Material).dispose();
+            this.eatIndicator.geometry.dispose();
+        }
         this.transform.removeFromParent();
     }
 }

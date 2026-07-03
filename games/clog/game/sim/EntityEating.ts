@@ -1,6 +1,7 @@
 import { PlayerEntity } from "../entities/PlayerEntity";
 import { CollectibleManager } from "../systems/CollectibleManager";
 import { SimWorld } from "./SimWorld";
+import { isFacingTarget } from "./VisionCone";
 
 const KILL_SCATTER = 0.6; // world-units of random offset applied to dropped cubes
 
@@ -55,17 +56,26 @@ export function resolveEntityEating(
             if (eaten.has(b)) continue;
 
             // Head-eats-head, checked in both directions: either side eats the
-            // other once its value is at least the other's AND its own
-            // eat-circle (the point just in front of its face) reaches the
-            // other's body. Equal values are eatable too — `>=`, not `>` — so
-            // a same-value head-on meeting is resolved by who's actually
-            // biting whom (mouth-to-body contact) rather than being blocked
-            // outright.
-            if (a.value >= b.value && a.eatPosition.distanceTo(b.position) < a.eatRadius + b.collisionRadius) {
+            // other once its value is at least the other's, AND two
+            // conditions both hold — unlike food (grabbable from any side),
+            // a kill requires the eater to actually be facing its victim:
+            //   1. Range — a plain center-to-center radius check (no facing
+            //      involved), so this step alone can't cause the rotation-
+            //      dependent "stuck" behavior food pickup used to have.
+            //   2. Cone vision — the victim must sit inside the eater's
+            //      forward bite arc (see isFacingTarget), same as before.
+            // Equal values are eatable too — `>=`, not `>` — so a same-value
+            // head-on meeting is resolved by who's actually biting whom
+            // rather than being blocked outright.
+            if (a.value >= b.value
+                && a.position.distanceTo(b.position) < a.eatRadius + b.collisionRadius
+                && isFacingTarget(a.position, a.eatPosition, b.position)) {
                 kill(b);
                 continue; // b is gone — no tail-snipe left to resolve for this pair
             }
-            if (b.value >= a.value && b.eatPosition.distanceTo(a.position) < b.eatRadius + a.collisionRadius) {
+            if (b.value >= a.value
+                && b.position.distanceTo(a.position) < b.eatRadius + a.collisionRadius
+                && isFacingTarget(b.position, b.eatPosition, a.position)) {
                 kill(a);
                 break; // a is gone — stop checking the rest of the row against it
             }

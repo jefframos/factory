@@ -36,6 +36,37 @@ export abstract class ThreeScene extends GameScene {
         SetupThree.container.style.zIndex = onTop ? "10" : "1";
     }
 
+    /**
+     * Projects a 3D world point to raw CSS-pixel screen coordinates — the
+     * same pixel space both the THREE canvas and the Pixi canvas are sized
+     * to (window.innerWidth/innerHeight; see SetupThree.resize and
+     * Game.onResize, which both ultimately size their canvases to the full
+     * viewport). Lets a Pixi element track a 3D entity: project here, then
+     * convert the result into whatever Pixi container you want to parent it
+     * under (see BaseDemoScene's use for the boost indicator, which further
+     * divides by Game.renderer.resolution and runs it through
+     * `container.toLocal()` — that step is Pixi-specific and deliberately
+     * not baked in here).
+     *
+     * Returns null when the point is behind the camera, so callers can hide
+     * whatever UI would otherwise land at a bogus on-screen position.
+     */
+    public worldToScreen(worldPos: THREE.Vector3): { x: number; y: number } | null {
+        // Project() alone isn't enough to detect "behind the camera" — a
+        // point behind the near plane can still land inside the -1..1 NDC
+        // box with flipped sign, reading as a valid on-screen position.
+        // Camera-space Z is unambiguous: the camera looks down its own -Z,
+        // so anything in front has a negative view-space Z.
+        const viewSpace = worldPos.clone().applyMatrix4(this.threeCamera.matrixWorldInverse);
+        if (viewSpace.z > 0) return null;
+
+        const ndc = worldPos.clone().project(this.threeCamera);
+        return {
+            x: (ndc.x * 0.5 + 0.5) * window.innerWidth,
+            y: (1 - (ndc.y * 0.5 + 0.5)) * window.innerHeight,
+        };
+    }
+
     public update(delta: number): void {
         // Render the 3D Scene every frame
         SetupThree.renderer.render(this.threeScene, this.threeCamera);

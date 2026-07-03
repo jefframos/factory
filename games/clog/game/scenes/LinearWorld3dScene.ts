@@ -30,8 +30,13 @@ export default class LinearWorld3dScene extends ThreeScene {
 
     get playerValue(): number { return this.player?.value ?? 0; }
     get playerScore(): number { return this.player?.score ?? 0; }
+    get playerBoostT(): number { return this.player?.boostT ?? 0; }
     get currentRoomIndex(): number { return this.linearManager?.currentRoomIndex ?? 0; }
     get nextGateValue(): number { return this.linearManager?.nextGateValue ?? 0; }
+
+    getPlayerScreenAnchor(): { x: number; y: number } | null {
+        return this.player ? this.worldToScreen(this.player.uiAnchor) : null;
+    }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -109,7 +114,7 @@ export default class LinearWorld3dScene extends ThreeScene {
         this.linearManager.update(this.player);
         this.collectibles.update(scaledDelta);
 
-        const hit = this.collectibles.checkCollision(this.player.eatPosition, this.player.eatRadius);
+        const hit = this.collectibles.checkCollision(this.player.position, this.player.foodRadius);
         if (hit) this.player.collect(hit);
 
         const grid = this.linearManager.currentGrid;
@@ -120,7 +125,10 @@ export default class LinearWorld3dScene extends ThreeScene {
             this.collectibles,
             this.threeScene,
             this.player.position,
-            this.linearManager.effectiveFoodValues,
+            () => {
+                const values = this.linearManager.effectiveFoodValues;
+                return values[Math.floor(Math.random() * values.length)];
+            },
             grid.getFreeCells(),
             cz - hs,
             cz + hs,
@@ -144,6 +152,17 @@ export default class LinearWorld3dScene extends ThreeScene {
     public spawnFood(count: number): void {
         this.spawnFoodInGrid(this.linearManager.currentConfig.foodValues, count, this.linearManager.currentGrid);
     }
+
+    /** Debug-only: this mode has no bots, so just the player. */
+    public listEntities(): { name: string; value: number; score: number }[] {
+        return [{ name: 'You', value: this.player.value, score: this.player.score }];
+    }
+
+    /** This mode has no death/respawn flow — the gated linear-room progression is out of scope for it. */
+    get deathInfo(): { value: number; tailValues: number[] } | null { return null; }
+    public respawnPlayer(_value: number, _tailValues: number[]): void { /* no-op */ }
+    /** This mode has no NPC population. */
+    public startNpcPopulation(): void { /* no-op */ }
 
     public destroy(): void {
         this.gradient.destroy();

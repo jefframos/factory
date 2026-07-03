@@ -1,11 +1,12 @@
 import { ThreeScene } from '@core/scene/ThreeScene';
 import * as THREE from 'three';
 import { PlayerEntity } from '../entities/PlayerEntity';
+import { TailCube } from '../entities/TailCube';
 import { BendService } from '../services/BendService';
 import { CollectibleManager } from '../systems/CollectibleManager';
 import { LevelManager } from '../systems/LevelManager';
 import { BoundlessChunkManager } from '../world/BoundlessChunkManager';
-import { CAMERA_CONFIG, FOOD_CONFIG } from '../world/LinearConfig';
+import { CAMERA_CONFIG, FOOD_CONFIG, rollFoodValue } from '../world/LinearConfig';
 import { ROOM_GEOMETRY } from '../world/MeshConfig';
 import { createWaterMaterial } from '../builders/WaterMaterial';
 import { FloorBuilder } from '../builders/FloorBuilder';
@@ -19,26 +20,16 @@ import { resolveEntityEating } from '../sim/EntityEating';
 import { BotController } from '../ai/BotController';
 import type { BotParams } from '../ai/Blackboard';
 import { DevGuiManager } from '@core/utils/DevGuiManager';
+import type { NpcHostScene } from '../npc/NpcHostScene';
+import { NpcDirector } from '../npc/NpcDirector';
 
 const PERF_MODE = new URLSearchParams(window.location.search).has('perf');
 
 const CAM_SMOOTH = 2.2;
 const SPAWN_RADIUS = 60;     // world-unit radius around player where food can spawn
 const BOT_MIN_DIST = 10;     // minimum world-unit distance from the player when spawning a bot
-const RESPAWN_DELAY = 2.5;   // seconds the camera lingers on the death spot before the player respawns
 
-// Derive food value pool from player value — mirrors room progression tiers.
-function foodValuesForValue(v: number): number[] {
-    if (v < 8) return [2];
-    if (v < 32) return [2, 4];
-    if (v < 128) return [4];
-    if (v < 512) return [4, 8];
-    if (v < 2048) return [8];
-    if (v < 8192) return [8, 16];
-    return [16, 32];
-}
-
-export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3dScene {
+export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3dScene, NpcHostScene {
 
     private player!: PlayerEntity;
     private collectibles!: CollectibleManager;
@@ -51,10 +42,16 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     private camDist = CAMERA_CONFIG.minDistance;
     private perfOverlay: PerfOverlay | null = null;
     private botControllers: BotController[] = [];
-    /** Seconds left before the player respawns; null while alive. */
-    private respawnTimer: number | null = null;
+    /** Non-null exactly while the player is dead, awaiting a respawn choice from the UI (see IWorld3dScene.deathInfo) — holds the value/tail captured the instant before death so a "watch a video" respawn can restore it. */
+    private _deathInfo: { value: number; tailValues: number[] } | null = null;
     /** The 4 bots spawned by the "AI Debug" panel — tracked separately so the panel can target just them. */
     private debugBotControllers: BotController[] = [];
+    /** Owns the persistent 24-NPC population and keeps ~activeMin-activeMax of them materialized near the player — see NpcDirector.ts. Its materialized bots live in `botControllers` alongside anything spawned via the debug panel, so the rest of this scene's bot handling (updateBots, resolveEntityEating, listEntities) needs no changes to pick them up. */
+    private npcDirector = new NpcDirector();
+    /** Dormant until startNpcPopulation() — the menu screen shows just the player alone in the world; NPCs only start once they actually join. */
+    private npcPopulationActive = false;
+    /** Last frame's wall-deflected move direction — see BotController.lastResolvedDir for why sticking with it avoids hunting between two equally-valid deflections at a fixed heading. */
+    private lastPlayerResolvedDir: THREE.Vector3 | null = null;
 
     public cameraZoom = 1.0;
     public moveInput: { x: number; z: number } = { x: 0, z: 0 };
@@ -66,8 +63,14 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     get playerPosition(): { x: number; z: number } {
         return { x: this.player?.position.x ?? 0, z: this.player?.position.z ?? 0 };
     }
+    get playerBoostT(): number { return this.player?.boostT ?? 0; }
     get currentRoomIndex(): number { return 0; }
     get nextGateValue(): number { return 0; }
+
+    getPlayerScreenAnchor(): { x: number; y: number } | null {
+        return this.player ? this.worldToScreen(this.player.uiAnchor) : null;
+    }
+    get deathInfo(): { value: number; tailValues: number[] } | null { return this._deathInfo; }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -133,8 +136,12 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
 
     public update(delta: number): void {
         this.gradient.update(delta);
+        // Idle-population growth + active-window spawn/despawn — independent
+        // of alive/dead state below, same as bots/food per updateDead's own
+        // doc, but dormant until the player actually joins (see startNpcPopulation).
+        if (this.npcPopulationActive) this.npcDirector.update(delta, this);
 
-        if (this.respawnTimer !== null) {
+        if (this._deathInfo !== null) {
             this.updateDead(delta);
             return;
         }
@@ -148,7 +155,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
 
         this.cloudSystem?.update(delta, this.player.position.x, this.player.position.z);
 
-        this.player.setMoveInput(this.moveInput.x, this.moveInput.z);
+        this.applyPlayerMoveInput();
         this.player.update(delta);
         this.updateBots(delta);
         BendService.updateOrigin(this.player.position);
@@ -162,8 +169,15 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
 
         this.collectibles.update(delta);
 
-        const hit = this.collectibles.checkCollision(this.player.eatPosition, this.player.eatRadius);
+        const hit = this.collectibles.checkCollision(this.player.position, this.player.foodRadius);
         if (hit) this.player.collect(hit);
+
+        // Captured before resolveEntityEating can run — a kill calls
+        // PlayerEntity.onEaten() synchronously inside it, which empties the
+        // tail immediately, so this is the only point where "the size the
+        // player had right before dying" is still readable.
+        const preDeathValue = this.player.value;
+        const preDeathTail = this.player.tailSnapshot().map(t => t.value);
 
         const eaten = resolveEntityEating(
             [this.player, ...this.botControllers.map(c => c.entity)],
@@ -171,10 +185,11 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         );
         if (eaten.length > 0) {
             this.botControllers = this.botControllers.filter(c => !eaten.includes(c.entity));
+            this.npcDirector.onEntitiesRemoved(eaten);
             if (eaten.includes(this.player)) {
                 // Don't respawn immediately — let the camera linger on the death
-                // spot so the player can see the killer absorb the scattered drop.
-                this.respawnTimer = RESPAWN_DELAY;
+                // spot (see updateDead) while the UI shows a respawn choice.
+                this._deathInfo = { value: preDeathValue, tailValues: preDeathTail };
             }
         }
 
@@ -187,7 +202,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
             this.collectibles,
             this.threeScene,
             this.player.position,
-            foodValuesForValue(this.player.value),
+            rollFoodValue,
             freeCells,
             pz - SPAWN_RADIUS,
             pz + SPAWN_RADIUS,
@@ -211,17 +226,58 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         }
     }
 
+    /**
+     * Feeds raw joystick/keyboard input through the same wall-deflection probe
+     * bots use (SimWorld.resolveDirection) before handing it to the player
+     * entity, instead of applying it as-is. Without this, a raw diagonal
+     * input straight into a wall corner — or a gap between two obstacles
+     * narrower than the player's body — only gets corrected reactively by
+     * chunkManager.resolveEntityCollisions' physical push-out below, which
+     * shoves the player back out along the wall normal every frame; against
+     * a gap that alternates which side is hit, that push-out alternates too,
+     * so the player visibly zigzags between the two walls instead of sliding
+     * past. Deflecting the desired direction sideways and probing ahead —
+     * same as isFacingTarget's cone is to raw distance checks — finds a clear
+     * heading before the walk ever drives into the corner. The physical
+     * push-out stays in place as a safety net for whatever the probe misses
+     * (thin/angled geometry — see updateBots' own note on this).
+     */
+    private applyPlayerMoveInput(): void {
+        const rawX = this.moveInput.x;
+        const rawZ = this.moveInput.z;
+        const magnitude = Math.hypot(rawX, rawZ);
+        if (magnitude < 0.0001) {
+            this.player.setMoveInput(0, 0);
+            this.lastPlayerResolvedDir = null;
+            return;
+        }
+
+        const dir = new THREE.Vector3(rawX, 0, rawZ).divideScalar(magnitude);
+        const resolved = SimWorld.resolveDirection(
+            this.player.position,
+            dir,
+            this.player.collisionRadius * 2,
+            this.lastPlayerResolvedDir,
+            this.player.collisionRadius,
+        );
+        this.lastPlayerResolvedDir = resolved.lengthSq() > 0 ? resolved : null;
+        // Re-apply the original input magnitude so a partial joystick push still
+        // moves at partial speed — resolveDirection only ever returns unit vectors.
+        this.player.setMoveInput(resolved.x * magnitude, resolved.z * magnitude);
+    }
+
     /** Ticks every bot's AI + movement + wall collision + its own food pickup. Shared by the alive and dead update paths. */
     private updateBots(delta: number): void {
         for (const controller of this.botControllers) {
             controller.update(delta);
             controller.entity.update(delta);
-            // Bots only avoid walls via a heuristic steering probe (SimWorld.resolveDirection),
-            // which can miss thin/angled obstacles — this physical push-out (same as the
-            // player) is the safety net that stops a bad probe from clipping into a wall
+            // Bots (and now the player — see applyPlayerMoveInput) only avoid
+            // walls via a heuristic steering probe (SimWorld.resolveDirection),
+            // which can miss thin/angled obstacles — this physical push-out is
+            // the safety net that stops a bad probe from clipping into a wall
             // and getting stuck there permanently.
             this.chunkManager.resolveEntityCollisions(controller.entity.position, controller.entity.collisionRadius);
-            const hit = this.collectibles.checkCollision(controller.entity.eatPosition, controller.entity.eatRadius);
+            const hit = this.collectibles.checkCollision(controller.entity.position, controller.entity.foodRadius);
             if (hit) controller.entity.collect(hit);
         }
     }
@@ -229,27 +285,22 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     /**
      * Runs while the player is dead: bots and food keep simulating (so the
      * killer can be seen absorbing the scattered drop) but the camera stays
-     * frozen on the death spot and no player logic runs. Respawns once
-     * `respawnTimer` elapses.
+     * frozen on the death spot and no player logic runs. Waits indefinitely
+     * for the UI to call respawnPlayer() with the player's choice (watch a
+     * video and keep their size, or respawn fresh) — see BaseDemoScene,
+     * which shows that choice as soon as deathInfo goes non-null.
      */
     private updateDead(delta: number): void {
-        const timer = (this.respawnTimer ?? 0) - delta;
-        this.respawnTimer = timer;
-
         this.updateBots(delta);
         this.collectibles.update(delta);
 
         const eaten = resolveEntityEating(this.botControllers.map(c => c.entity), this.collectibles);
         if (eaten.length > 0) {
             this.botControllers = this.botControllers.filter(c => !eaten.includes(c.entity));
+            this.npcDirector.onEntitiesRemoved(eaten);
         }
 
         super.update(delta);
-
-        if (timer <= 0) {
-            this.respawnTimer = null;
-            this.respawnPlayer();
-        }
     }
 
     /**
@@ -275,7 +326,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         const pool = candidates.length > 0 ? candidates : cells;
         const cell  = pool[Math.floor(Math.random() * pool.length)];
 
-        const bot = new PlayerEntity(value, this.threeScene);
+        const bot = new PlayerEntity(value, this.threeScene, false);
         bot.position.set(cell.x, 0, cell.z);
 
         SimWorld.register(bot);
@@ -288,27 +339,105 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.player?.debugDoubleValue();
     }
 
+    public startNpcPopulation(): void {
+        this.npcPopulationActive = true;
+    }
+
+    // ── NpcHostScene — see NpcHostScene.ts for why this isn't on IWorld3dScene ──
+
+    /** Finds a walkable point in the ring [minDist, maxDist] around (cx, cz). Falls back to the closest cell available if none clear minDist yet (e.g. chunks not streamed that far out), same fallback shape as spawnBotNear's own candidate filter. */
+    public findSpawnRing(cx: number, cz: number, minDist: number, maxDist: number): { x: number; z: number } | null {
+        const cells = this.chunkManager.getFreeCellsNear(cx, cz, maxDist);
+        if (cells.length === 0) return null;
+
+        const minDist2 = minDist * minDist;
+        const candidates = cells.filter(c => {
+            const dx = c.x - cx, dz = c.z - cz;
+            return dx * dx + dz * dz >= minDist2;
+        });
+
+        const pool = candidates.length > 0 ? candidates : cells;
+        return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    /** Spawns a real bot at `pos` with a preset tail — each cube fed through PlayerEntity.collect() in descending order so it slots straight into place instead of triggering out-of-order merge churn. */
+    public materializeNpc(pos: { x: number; z: number }, value: number, tailValues: number[], params?: Partial<BotParams>): BotController {
+        const bot = new PlayerEntity(value, this.threeScene, false);
+        bot.position.set(pos.x, 0, pos.z);
+
+        SimWorld.register(bot);
+        const controller = new BotController(bot, params);
+        this.botControllers.push(controller);
+
+        for (const v of tailValues) {
+            bot.collect(new TailCube(v, this.threeScene, bot.position.clone()));
+        }
+
+        return controller;
+    }
+
+    /** Tears down a materialized bot and hands back its final value/tail so the caller can save it into persistent NPC data before the entity is gone. */
+    public dematerializeNpc(controller: BotController): { value: number; tailValues: number[] } {
+        const snapshot = {
+            value: controller.entity.value,
+            tailValues: controller.entity.tailSnapshot().map(t => t.value),
+        };
+        this.botControllers = this.botControllers.filter(c => c !== controller);
+        SimWorld.unregister(controller.entity);
+        controller.entity.destroy();
+        return snapshot;
+    }
+
+    /**
+     * Flat dump of the player + the whole 24-NPC population, for the
+     * in-game LeaderboardPanel (and the dev debug panel). Deliberately
+     * excludes ad-hoc debug-spawned bots (Spawn Entity / Spawn 4 Debug Bots)
+     * — those aren't part of the real population and shouldn't show up in
+     * player-facing UI. See NpcDirector.listAll() for why this reads through
+     * the roster's stable ids instead of the botControllers list directly.
+     */
+    public listEntities(): { name: string; value: number; score: number }[] {
+        const list = [{ name: 'You', value: this.player.value, score: this.player.score }];
+        for (const npc of this.npcDirector.listAll()) {
+            list.push({ name: `NPC ${npc.id}`, value: npc.value, score: npc.score });
+        }
+        return list;
+    }
+
     /** Debug-only: drops `count` food items near the player using the same spawn logic as seedInitialFood/LevelManager. */
     public spawnFood(count: number): void {
         const cells = this.chunkManager.getFreeCellsNear(this.player.position.x, this.player.position.z, SPAWN_RADIUS);
         if (cells.length === 0) return;
-        const values = foodValuesForValue(this.player.value);
         for (let i = 0; i < count; i++) {
             const cell = cells[Math.floor(Math.random() * cells.length)];
-            const value = values[Math.floor(Math.random() * values.length)];
-            this.collectibles.spawnOne(this.threeScene, new THREE.Vector3(cell.x, 0, cell.z), value);
+            this.collectibles.spawnOne(this.threeScene, new THREE.Vector3(cell.x, 0, cell.z), rollFoodValue());
         }
     }
 
-    /** Tears down and re-creates the player entity after being eaten — mirrors the initial spawn in build(). */
-    private respawnPlayer(): void {
+    /**
+     * Re-creates the player entity after being eaten (or on the very first
+     * "Join Server" after a death) — mirrors the initial spawn in build(),
+     * plus seeds a tail (same `collect()`-per-cube trick as materializeNpc)
+     * so a "watch a video, keep your size" respawn can hand back the
+     * pre-death value/tail instead of always resetting to a bare level 2.
+     * Called externally by BaseDemoScene once the player picks a respawn
+     * option from the death UI — see IWorld3dScene.deathInfo.
+     */
+    public respawnPlayer(value: number, tailValues: number[]): void {
         const cells = this.chunkManager.getFreeCellsNear(0, 0, SPAWN_RADIUS);
         const cell = cells.length > 0 ? cells[Math.floor(Math.random() * cells.length)] : { x: 0, z: 0 };
 
-        this.player = new PlayerEntity(2, this.threeScene);
+        this.player = new PlayerEntity(value, this.threeScene);
         this.player.position.set(cell.x, 0, cell.z);
         SimWorld.register(this.player);
         SimWorld.setPlayer(this.player);
+        this.lastPlayerResolvedDir = null;
+
+        for (const v of tailValues) {
+            this.player.collect(new TailCube(v, this.threeScene, this.player.position.clone()));
+        }
+
+        this._deathInfo = null;
     }
 
     // ── AI debug panel (dat.GUI, only rendered when DevGuiManager is dev-initialized, i.e. ?dev=1) ──

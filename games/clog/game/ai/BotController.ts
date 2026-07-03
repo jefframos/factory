@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { PlayerEntity } from "../entities/PlayerEntity";
 import { SimWorld } from "../sim/SimWorld";
+import { isFacingTarget } from "../sim/VisionCone";
 import { Blackboard, BotParams } from "./Blackboard";
 import { Action, BTNode, NodeStatus, Selector } from "./BehaviorTree";
 
@@ -73,29 +74,12 @@ const BRAVENESS_REVERT_RATE = 0.15; // how fast it's pulled back toward its aggr
 // an entity it wouldn't dare fight head-on. See snipeVulnerableTail.
 const BRAVE_THRESHOLD = 0.65;
 
-// A threat can only actually reach you if you're roughly in front of it —
-// PlayerEntity.eatPosition is a point offset ahead of an entity along
-// whatever direction it's currently facing, so `eatPosition - position` is
-// its facing direction. Dotting that against the direction to a candidate
-// tells us whether the candidate sits inside its forward bite arc — i.e.
-// "would this entity actually notice/reach me." Used both to decide whether
-// a nearby threat can actually catch us (fleeFromThreat only reacts to
-// threats that are facing us — safe on their back, per the user's framing)
-// and whether a would-be snipe target is currently facing us back (too risky
-// to approach — see snipeVulnerableTail).
-const DANGER_CONE_HALF_ANGLE = Math.PI / 3; // 60° each side = 120° total forward arc
-
-function isFacingTarget(observerPos: THREE.Vector3, observerEatPos: THREE.Vector3, targetPos: THREE.Vector3): boolean {
-    const facing = observerEatPos.clone().sub(observerPos);
-    if (facing.lengthSq() < 1e-6) return true; // no discernible facing — assume worst case
-    facing.normalize();
-
-    const toTarget = targetPos.clone().sub(observerPos);
-    if (toTarget.lengthSq() < 1e-6) return true; // exactly overlapping
-
-    toTarget.normalize();
-    return facing.dot(toTarget) >= Math.cos(DANGER_CONE_HALF_ANGLE);
-}
+// A threat can only actually reach you if you're roughly in front of it — see
+// isFacingTarget in sim/VisionCone.ts. Used both to decide whether a nearby
+// threat can actually catch us (fleeFromThreat only reacts to threats that
+// are facing us — safe on their back, per the user's framing) and whether a
+// would-be snipe target is currently facing us back (too risky to approach —
+// see snipeVulnerableTail).
 
 /** Flat, dat.GUI-friendly snapshot of one bot's live state — for the AI debug panel. */
 export type BotDebugInfo = {
@@ -627,6 +611,14 @@ const FOOD_WIGGLE_MAX  = 0.6; // radians (~34°) clamp on either side of the dir
 // makes it circle without ever eating. Wiggle is for the open-field search,
 // not the final approach.
 const ARRIVAL_RADIUS_MULT = 3;
+// Multiple of eatRadius within which food overrides the leash-from-home
+// filter below. Without this, a bot sitting right at its leash edge ignores
+// food that's genuinely right next to it just because that spot happens to
+// be a hair past leashRadius from home — looks like the bot "ignores food
+// even when it's close." Grabbing something this close barely extends the
+// bot's excursion past wherever it already is, so it doesn't reintroduce the
+// walk-out/walk-back loop the filter exists to prevent.
+const LEASH_OVERRIDE_RADIUS_MULT = 4;
 
 function seekNearestFood(home: THREE.Vector3): BTNode<BotContext> {
     return new Action((ctx) => {
@@ -645,13 +637,14 @@ function seekNearestFood(home: THREE.Vector3): BTNode<BotContext> {
         // an endless walk-out/walk-back loop that looks like a scripted path
         // rather than exploration.
         const leashR2 = blackboard.params.leashRadius * blackboard.params.leashRadius;
+        const leashOverrideDist2 = (entity.eatRadius * LEASH_OVERRIDE_RADIUS_MULT) ** 2;
         let nearest: THREE.Vector3 | null = null;
         let bestDist2 = Infinity;
         let reachable = 0;
         for (const f of result.food) {
-            if (home.distanceToSquared(f) > leashR2) continue;
-            reachable++;
             const d2 = entity.position.distanceToSquared(f);
+            if (d2 > leashOverrideDist2 && home.distanceToSquared(f) > leashR2) continue;
+            reachable++;
             if (d2 < bestDist2) { bestDist2 = d2; nearest = f; }
         }
         blackboard.set("foodReachable", reachable);
