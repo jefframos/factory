@@ -69,12 +69,12 @@ export default class LinearWorld3dScene extends ThreeScene {
 
         this.linearManager.onTransition = ({ prevMinZ, prevMaxZ }) => {
             this.collectibles.clearInZRange(prevMinZ, prevMaxZ);
-            this.spawnFood(this.linearManager.nextConfig.foodValues, FOOD_CONFIG.initialCount, this.linearManager.nextGrid);
+            this.spawnFoodInGrid(this.linearManager.nextConfig.foodValues, FOOD_CONFIG.initialCount, this.linearManager.nextGrid);
         };
 
         // Seed food in rooms 0 and 1 at startup.
-        this.spawnFood(this.linearManager.currentConfig.foodValues, FOOD_CONFIG.initialCount, this.linearManager.currentGrid);
-        this.spawnFood(this.linearManager.nextConfig.foodValues, FOOD_CONFIG.initialCount, this.linearManager.nextGrid);
+        this.spawnFoodInGrid(this.linearManager.currentConfig.foodValues, FOOD_CONFIG.initialCount, this.linearManager.currentGrid);
+        this.spawnFoodInGrid(this.linearManager.nextConfig.foodValues, FOOD_CONFIG.initialCount, this.linearManager.nextGrid);
 
         this.player = new PlayerEntity(2, this.threeScene);
         this.linearManager.registerPlayer(this.player);
@@ -140,6 +140,11 @@ export default class LinearWorld3dScene extends ThreeScene {
         this.player.debugDoubleValue();
     }
 
+    /** Debug-only: drops `count` food items into the current room using the same spawn logic as the initial room seeding. */
+    public spawnFood(count: number): void {
+        this.spawnFoodInGrid(this.linearManager.currentConfig.foodValues, count, this.linearManager.currentGrid);
+    }
+
     public destroy(): void {
         this.gradient.destroy();
         this.player?.destroy();
@@ -150,7 +155,7 @@ export default class LinearWorld3dScene extends ThreeScene {
 
     // ── Private ───────────────────────────────────────────────────────────────
 
-    private spawnFood(
+    private spawnFoodInGrid(
         values: number[],
         count: number,
         grid: { getFreeCells(): { x: number; z: number }[] },

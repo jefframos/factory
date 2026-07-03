@@ -127,8 +127,12 @@ export class SimWorld {
         return this.chunks?.isWalkable(x, z) ?? true;
     }
 
-    /** Deflection angles (degrees) tried around the desired heading, nearest first, alternating sides. */
-    private static readonly DEFLECT_ANGLES = [30, -30, 60, -60, 90, -90, 135, -135];
+    /**
+     * Deflection angles (degrees) tried around the desired heading, nearest
+     * first, alternating sides. 180 (full reverse) is last-resort only — it's
+     * a real U-turn, not a slide, for when every forward-ish option is boxed in.
+     */
+    private static readonly DEFLECT_ANGLES = [30, -30, 60, -60, 90, -90, 135, -135, 180];
     private static readonly UP = new THREE.Vector3(0, 1, 0);
 
     /**
@@ -144,14 +148,19 @@ export class SimWorld {
      * @param dir           Desired direction, should be normalised.
      * @param probeDistance How far ahead to probe — use collisionRadius × 2.
      * @param preferred     Last frame's resolved direction, if any (see below).
+     * @param radius        Entity's own collision radius — widens each probe
+     *                      to check the entity's shoulders, not just its
+     *                      center ray (see isWalkableAlong). Defaults to a
+     *                      quarter of probeDistance if not given.
      */
     static resolveDirection(
         origin: THREE.Vector3,
         dir: THREE.Vector3,
         probeDistance: number,
         preferred?: THREE.Vector3 | null,
+        radius: number = probeDistance / 4,
     ): THREE.Vector3 {
-        if (this.isWalkableAlong(origin, dir, probeDistance)) return dir;
+        if (this.isWalkableAlong(origin, dir, probeDistance, radius)) return dir;
 
         // Prefer sticking with whatever deflection worked last frame, if it's
         // still walkable, before re-deriving one from scratch. Without this,
@@ -166,26 +175,78 @@ export class SimWorld {
         // never makes net progress, looking permanently stuck. Committing to
         // the previous choice breaks the cycle by not re-litigating it every
         // single frame.
-        if (preferred && preferred.lengthSq() > 0 && this.isWalkableAlong(origin, preferred, probeDistance)) {
+        if (preferred && preferred.lengthSq() > 0 && this.isWalkableAlong(origin, preferred, probeDistance, radius)) {
             return preferred;
         }
 
         for (const deg of this.DEFLECT_ANGLES) {
             const candidate = dir.clone().applyAxisAngle(this.UP, deg * Math.PI / 180);
-            if (this.isWalkableAlong(origin, candidate, probeDistance)) return candidate;
+            if (this.isWalkableAlong(origin, candidate, probeDistance, radius)) return candidate;
         }
 
-        // Enclosed on every side within probe range — stop rather than
-        // reverse. Reversing here used to cause an every-frame flip-flop:
-        // back away one tick, which un-blocks the original forward probe, so
-        // next tick it drives forward again into the same wall — repeat
-        // forever. Stopping breaks that loop; the caller's own target
-        // selection (wander re-heading, next nearest-food pick) naturally
-        // picks a new direction on a later tick.
+        // Enclosed on every side within probe range (even the 180 U-turn) —
+        // truly nowhere to go right now. The caller's own target selection
+        // (wander re-heading, next nearest-food pick) naturally picks a new
+        // direction on a later tick.
         return new THREE.Vector3(0, 0, 0);
     }
 
-    private static isWalkableAlong(origin: THREE.Vector3, dir: THREE.Vector3, probeDistance: number): boolean {
-        return this.isWalkable(origin.x + dir.x * probeDistance, origin.z + dir.z * probeDistance);
+    /**
+     * Checks not just the center point at the end of the ray but also the two
+     * points offset ±radius perpendicular to it — i.e. the entity's left/right
+     * "shoulders" at that distance, not just a single infinitely-thin ray.
+     * A bare center-point probe reports "clear" for a heading that grazes past
+     * a corner with room for a point but not the entity's actual body, and
+     * right at a grid-cell boundary that single point flickers between
+     * walkable/blocked as the entity shifts by fractions of a unit — this is
+     * what caused the "resolved direction jumps between unrelated headings
+     * every frame while the desired heading stays fixed" flicker at corners.
+     */
+    private static isWalkableAlong(origin: THREE.Vector3, dir: THREE.Vector3, probeDistance: number, radius: number): boolean {
+        const cx = origin.x + dir.x * probeDistance;
+        const cz = origin.z + dir.z * probeDistance;
+        if (!this.isWalkable(cx, cz)) return false;
+
+        const perpX = -dir.z, perpZ = dir.x; // dir is normalised & flat (y=0), so this is its 2D perpendicular
+        if (!this.isWalkable(cx + perpX * radius, cz + perpZ * radius)) return false;
+        if (!this.isWalkable(cx - perpX * radius, cz - perpZ * radius)) return false;
+        return true;
+    }
+
+    private static readonly RECOVERY_SAMPLE_COUNT = 16; // directions scanned around the full circle
+    private static readonly RECOVERY_STEP = 1;           // world-units per march step while scanning
+
+    /**
+     * Wide-arc recovery scan for a stuck watchdog (see BotController's
+     * applyStuckEscape tier 2): samples RECOVERY_SAMPLE_COUNT directions
+     * around a full circle — starting from a random offset each call so a
+     * repeat failure doesn't keep re-probing the exact same angles — and
+     * marches each one outward in RECOVERY_STEP increments (using the same
+     * width-aware check as resolveDirection) until it hits something or
+     * reaches maxProbe. Returns the direction that got furthest before being
+     * blocked, or null if every sampled direction is blocked immediately
+     * (fully enclosed within probe range).
+     *
+     * This is a one-shot "where's the open space" scan for escalated stuck
+     * recovery, not per-frame steering — resolveDirection's short-range,
+     * incremental deflection is what normally handles obstacle avoidance.
+     */
+    static findClearDirection(origin: THREE.Vector3, radius: number, maxProbe: number): THREE.Vector3 | null {
+        const startAngle = Math.random() * Math.PI * 2;
+        let bestDir: THREE.Vector3 | null = null;
+        let bestDist = 0;
+
+        for (let i = 0; i < this.RECOVERY_SAMPLE_COUNT; i++) {
+            const angle = startAngle + (i / this.RECOVERY_SAMPLE_COUNT) * Math.PI * 2;
+            const dir = new THREE.Vector3(Math.sin(angle), 0, Math.cos(angle));
+
+            let dist = 0;
+            while (dist + this.RECOVERY_STEP <= maxProbe && this.isWalkableAlong(origin, dir, dist + this.RECOVERY_STEP, radius)) {
+                dist += this.RECOVERY_STEP;
+            }
+            if (dist > bestDist) { bestDist = dist; bestDir = dir; }
+        }
+
+        return bestDist > 0 ? bestDir : null;
     }
 }

@@ -288,6 +288,18 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.player?.debugDoubleValue();
     }
 
+    /** Debug-only: drops `count` food items near the player using the same spawn logic as seedInitialFood/LevelManager. */
+    public spawnFood(count: number): void {
+        const cells = this.chunkManager.getFreeCellsNear(this.player.position.x, this.player.position.z, SPAWN_RADIUS);
+        if (cells.length === 0) return;
+        const values = foodValuesForValue(this.player.value);
+        for (let i = 0; i < count; i++) {
+            const cell = cells[Math.floor(Math.random() * cells.length)];
+            const value = values[Math.floor(Math.random() * values.length)];
+            this.collectibles.spawnOne(this.threeScene, new THREE.Vector3(cell.x, 0, cell.z), value);
+        }
+    }
+
     /** Tears down and re-creates the player entity after being eaten — mirrors the initial spawn in build(). */
     private respawnPlayer(): void {
         const cells = this.chunkManager.getFreeCellsNear(0, 0, SPAWN_RADIUS);
@@ -358,14 +370,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     // ── Private ───────────────────────────────────────────────────────────────
 
     private seedInitialFood(): void {
-        const cells = this.chunkManager.getFreeCellsNear(0, 0, SPAWN_RADIUS);
-        if (cells.length === 0) return;
-        const values = foodValuesForValue(this.player.value);
-        for (let i = 0; i < FOOD_CONFIG.initialCount; i++) {
-            const cell = cells[Math.floor(Math.random() * cells.length)];
-            const value = values[Math.floor(Math.random() * values.length)];
-            this.collectibles.spawnOne(this.threeScene, new THREE.Vector3(cell.x, 0, cell.z), value);
-        }
+        this.spawnFood(FOOD_CONFIG.initialCount);
     }
 
     private buildFloor(): THREE.Mesh {

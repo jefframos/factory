@@ -13,4 +13,5 @@ export interface IWorld3dScene {
     destroy(): void;
     debugDoublePlayerValue(): void;
     spawnBot(value: number, params?: Partial<BotParams>): void;
+    spawnFood(count: number): void;
 }

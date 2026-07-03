@@ -12,16 +12,16 @@ export const CHUNK_SIZE = 40;
 // Island dimensions — fits comfortably inside a chunk with ~7-unit water margin on each side.
 const ISLAND_SIZE = 26;
 // Organic tile-1 terrain blobs — gives islands their grass/sand look without enclosing walls.
-const TERRAIN_SCALE = 0.12;
-const TERRAIN_THRESHOLD = 0.65; // ~35% of cells become raised terrain
+// const TERRAIN_SCALE = 0.12;
+// const TERRAIN_THRESHOLD = 0.65; // ~35% of cells become raised terrain
 // Short tile-2 obstacles scattered in remaining free space.
-const OBS_SCALE = 0.09;
+const OBS_SCALE = 0.05;
 const OBS_THRESHOLD = 0.52;
 // Radius (in cells) kept free at the centre of chunk (0,0) for the player spawn.
 const SPAWN_CLEAR_RADIUS = 3;
 // Distance fade — meshes start fading at FADE_START and are invisible at FADE_END.
 const FADE_START = 60;
-const FADE_END   = 100;
+const FADE_END = 100;
 
 // Seed used for the global island-presence noise field (spatial coherence).
 const WORLD_SEED = 42;

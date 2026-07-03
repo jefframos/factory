@@ -67,6 +67,10 @@ export default class BaseDemoScene extends GameScene {
             this.world3d.spawnBot(16);
         }, 'Player');
 
+        DevGuiManager.instance.addButton('Spawn 10 Food', () => {
+            this.world3d.spawnFood(10);
+        }, 'Player');
+
         DevGuiManager.instance.addObjectTrigger(
             { zoom: 1.0 },
             (v) => { this.world3d.cameraZoom = v.zoom; },

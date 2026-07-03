@@ -193,6 +193,7 @@ export class LinearArea {
         const cx = centerX;
         const cz = centerZ;
 
+        console.log(config)
         // ── Grid ─────────────────────────────────────────────────────────────
         if (config.layout) {
             // Layout fully defines the grid — parse tile ids from the string array.
@@ -208,6 +209,7 @@ export class LinearArea {
             }
             const obsCfg: ObstacleConfig = config.obstacles ?? { tileId: 2, scale: 0.05, threshold: 0.9, seed: roomIndex };
             if (obsCfg) this.placeObstacles(obsCfg);
+
         }
 
         const cs = this.grid.cellSize;

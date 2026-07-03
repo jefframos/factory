@@ -44,6 +44,23 @@ const LOG_INTERVAL = 0.5; // seconds between console lines per bot while logging
 const STUCK_ESCAPE_DELAY = 1.0; // seconds of near-zero movement before we try a sidestep
 const STUCK_MOVE_EPS = 0.05;    // world-units — below this counts as "not moving" for the watchdog
 
+// Tier 2 — the fixed-angle sidestep above is a cheap guess, not a verified
+// fix: it can just rotate the bot into a *different* dead end (e.g. a
+// concave corner) and the watchdog would then sit there doing nothing since
+// stuckTimer never resets while movement stays near zero. If real movement
+// still hasn't resumed after this much longer delay, escalate to actually
+// scanning the surroundings for open space (SimWorld.findClearDirection) and
+// committing to that verified direction for a while, instead of continuing
+// to guess. Must be well above STUCK_ESCAPE_DELAY so tier 1 gets a fair shot
+// first — most stuck cases are corner-flicker and resolve with just that.
+const STUCK_RECOVERY_DELAY = 3.0;
+const RECOVERY_MOVE_DURATION = 1.5;  // seconds to commit to the scanned direction before re-evaluating
+const RECOVERY_MAX_PROBE = 24;       // world-units — how far out to scan for open space (below awarenessRadius; this is "get unstuck," not long-range pathing)
+// Keys cleared once recovery ends so the BT doesn't immediately re-adopt the
+// exact stale heading/timer that walked it into the jam in the first place
+// (e.g. wander's heading still pointing straight at the wall it just escaped).
+const RECOVERY_RESET_KEYS = ["wanderHeading", "wanderTimer", "wanderDrift", "foodWiggle", "chaseTimer", "chaseCooldown"];
+
 // Braveness drifts on its own each tick instead of being a fixed personality
 // knob — see Blackboard.braveness. It gravitates toward the bot's own
 // aggressiveness (braver personalities rest at a higher average nerve) with
@@ -118,6 +135,9 @@ export class BotController {
     private stuckPos: THREE.Vector3 | null = null;
     private stuckTimer = 0;
     private escapeAngle: number | null = null;
+    // Tier 2 recovery state — see STUCK_RECOVERY_DELAY above.
+    private recoveryDir: THREE.Vector3 | null = null;
+    private recoveryTimer: number | null = null;
 
     constructor(
         public readonly entity: PlayerEntity,
@@ -163,7 +183,7 @@ export class BotController {
         if (this.currentDir.lengthSq() > 0.0001) {
             let dir3 = new THREE.Vector3(this.currentDir.x, 0, this.currentDir.y).normalize();
             dir3 = this.applyStuckEscape(dir3, delta);
-            resolved = SimWorld.resolveDirection(this.entity.position, dir3, this.entity.collisionRadius * 2, this.lastResolvedDir);
+            resolved = SimWorld.resolveDirection(this.entity.position, dir3, this.entity.collisionRadius * 2, this.lastResolvedDir, this.entity.collisionRadius);
             this.entity.setMoveInput(resolved.x, resolved.z);
             this.lastResolvedDir = resolved.lengthSq() > 0 ? resolved : null;
         } else {
@@ -174,7 +194,10 @@ export class BotController {
         this.debug.x = this.entity.position.x;
         this.debug.z = this.entity.position.z;
         this.debug.value = this.entity.value;
-        this.debug.state = this.blackboard.get<string>("state") ?? "wander";
+        // Overrides whatever the BT reported — tier-2 recovery is steering
+        // directly (see applyStuckEscape) regardless of what the BT thinks
+        // it's doing, so the debug panel should say so.
+        this.debug.state = this.recoveryDir !== null ? "recover" : (this.blackboard.get<string>("state") ?? "wander");
 
         if (this.logging) this.logDebug(delta, rawDir, postSeparationDir, resolved);
     }
@@ -200,9 +223,30 @@ export class BotController {
      * frame) so the escape attempt is a straight line long enough to actually
      * clear whatever it's wedged against, then cleared as soon as real
      * progress resumes.
+     *
+     * That sidestep is a guess, not a verified fix — if it's still not
+     * producing real movement after STUCK_RECOVERY_DELAY, this escalates to
+     * an actual scan for open space (SimWorld.findClearDirection) and commits
+     * to the verified result for RECOVERY_MOVE_DURATION before releasing
+     * control back to the BT (clearing its stale target state so it doesn't
+     * just walk straight back into the same jam — see RECOVERY_RESET_KEYS).
      */
     private applyStuckEscape(dir3: THREE.Vector3, delta: number): THREE.Vector3 {
         const pos = this.entity.position;
+
+        if (this.recoveryTimer !== null) {
+            this.recoveryTimer -= delta;
+            const madeProgress = this.stuckPos ? pos.distanceTo(this.stuckPos) >= STUCK_MOVE_EPS * 4 : false;
+            if (this.recoveryTimer <= 0 || madeProgress) {
+                this.endRecovery();
+                // Fall through — re-evaluate stuck state fresh below instead
+                // of returning early, so a recovery that ended via timeout
+                // (not real progress) doesn't get a free pass this frame.
+            } else {
+                return this.recoveryDir!;
+            }
+        }
+
         if (this.stuckPos && pos.distanceTo(this.stuckPos) < STUCK_MOVE_EPS) {
             this.stuckTimer += delta;
         } else {
@@ -213,10 +257,40 @@ export class BotController {
 
         if (this.stuckTimer <= STUCK_ESCAPE_DELAY) return dir3;
 
+        if (this.stuckTimer > STUCK_RECOVERY_DELAY) {
+            const found = SimWorld.findClearDirection(pos, this.entity.collisionRadius, RECOVERY_MAX_PROBE);
+            if (found) {
+                this.startRecovery(found);
+                return found;
+            }
+            // No open direction found within probe range (fully enclosed) —
+            // fall back to the tier-1 sidestep below rather than doing nothing.
+        }
+
         if (this.escapeAngle === null) {
             this.escapeAngle = (Math.random() < 0.5 ? 1 : -1) * (Math.PI / 2 + Math.random() * Math.PI / 4);
         }
         return dir3.clone().applyAxisAngle(UP_3D, this.escapeAngle);
+    }
+
+    private startRecovery(dir: THREE.Vector3): void {
+        this.recoveryDir = dir;
+        this.recoveryTimer = RECOVERY_MOVE_DURATION;
+        // Re-baseline against the current position so "did recovery make
+        // progress" measures movement during recovery, not the stall that
+        // triggered it.
+        this.stuckPos = this.entity.position.clone();
+        this.stuckTimer = 0;
+        this.escapeAngle = null;
+    }
+
+    private endRecovery(): void {
+        this.recoveryDir = null;
+        this.recoveryTimer = null;
+        this.stuckPos = this.entity.position.clone();
+        this.stuckTimer = 0;
+        this.escapeAngle = null;
+        for (const key of RECOVERY_RESET_KEYS) this.blackboard.delete(key);
     }
 
     /**
@@ -252,6 +326,7 @@ export class BotController {
             + `rawDir=${fmt2(rawDir)} postSep=${fmt2(postSeparationDir)} `
             + `smoothed=${fmt2(this.currentDir)} resolved=${fmt2(resolved)} `
             + `leashing=${bb.get<boolean>("leashing") ?? false} panicking=${bb.get<boolean>("panicking") ?? false} `
+            + `recovering=${this.recoveryDir !== null} stuckTimer=${this.stuckTimer.toFixed(2)} `
             + `braveness=${bb.braveness.toFixed(2)} `
             + `targetDist=${bb.get<number>("targetDist")?.toFixed(2) ?? "-"} `
             + `foodSeen=${bb.get<number>("foodSeen") ?? "-"} foodReachable=${bb.get<number>("foodReachable") ?? "-"}`,
@@ -603,23 +678,36 @@ function seekNearestFood(home: THREE.Vector3): BTNode<BotContext> {
     });
 }
 
-const WANDER_RETARGET_INTERVAL = 2.5; // seconds between new wander headings
+const WANDER_RETARGET_INTERVAL = 2.5; // seconds between new long-term wander headings
+// Continuous heading wobble layered on top of the long-term heading — same
+// idea as seekNearestFood's foodWiggle. Without this, wander was a dead-
+// straight line for the full 2.5s then a hard snap to a new line, which reads
+// as robotic; a human on a joystick never holds a perfectly straight bearing.
+// Drifting the heading a little every frame instead produces a lazy curve.
+const WANDER_DRIFT_RATE = 1.0; // radians/sec of max drift speed
+const WANDER_DRIFT_MAX = 0.5;  // radians (~29°) clamp so drift curves the path without undoing the long-term heading
 
 function wander(): BTNode<BotContext> {
     return new Action((ctx) => {
         const { blackboard, delta } = ctx;
         let timer = blackboard.get<number>("wanderTimer") ?? 0;
         let heading = blackboard.get<number>("wanderHeading") ?? Math.random() * Math.PI * 2;
+        let drift = blackboard.get<number>("wanderDrift") ?? 0;
 
         timer -= delta;
         if (timer <= 0) {
             heading += (Math.random() - 0.5) * Math.PI; // turn up to +-90 degrees
             timer = WANDER_RETARGET_INTERVAL;
         }
+        drift += (Math.random() - 0.5) * WANDER_DRIFT_RATE * delta;
+        drift = Math.max(-WANDER_DRIFT_MAX, Math.min(WANDER_DRIFT_MAX, drift));
+
         blackboard.set("wanderTimer", timer);
         blackboard.set("wanderHeading", heading);
+        blackboard.set("wanderDrift", drift);
 
-        ctx.moveDir.set(Math.sin(heading), Math.cos(heading)).multiplyScalar(blackboard.params.wanderSpeed);
+        const effectiveHeading = heading + drift;
+        ctx.moveDir.set(Math.sin(effectiveHeading), Math.cos(effectiveHeading)).multiplyScalar(blackboard.params.wanderSpeed);
         blackboard.set("state", "wander");
         return NodeStatus.Running;
     });
