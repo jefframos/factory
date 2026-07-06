@@ -1,6 +1,22 @@
 import type { BotParams } from '../ai/Blackboard';
 import type { DeathSnapshot } from '../ui-dom/PlayerFlowController';
 
+/**
+ * One live floating-HUD target — the player or a materialized NPC, treated
+ * identically here regardless of which. `id` is stable for as long as the
+ * entity is alive, so EntityIndicatorManager can key a Map to it and recycle
+ * its floating UI container (name tag + boost bar) the moment the id stops
+ * appearing — entity eaten/despawned, or the player mid-death awaiting a
+ * respawn choice — instead of leaking one per entity that ever existed.
+ */
+export interface EntityUiTarget {
+    id: string;
+    /** Shown above the entity's head and set as the recycled container's PIXI `.name` — 'YOU' for the player, an NPC label otherwise. */
+    name: string;
+    boostT: number;
+    screenAnchor: { x: number; y: number } | null;
+}
+
 export interface IWorld3dScene {
     moveInput: { x: number; z: number };
     cameraZoom: number;
@@ -27,6 +43,8 @@ export interface IWorld3dScene {
     listEntities(): { name: string; value: number; score: number }[];
     /** Raw CSS-pixel screen position of a point just above the player's head — see ThreeScene.worldToScreen. Null when the player doesn't exist yet or is behind the camera. Used to position screen-space UI that tracks the 3D player (e.g. the boost indicator). */
     getPlayerScreenAnchor(): { x: number; y: number } | null;
+    /** Player + every live, materialized NPC's name/boost state, for the floating per-entity HUD — see EntityUiTarget and EntityIndicatorManager. */
+    listEntityUiTargets(): EntityUiTarget[];
     /** Re-creates the player entity after death — pass the captured deathInfo to keep their size, or {value: 2, tailValues: []} for a fresh respawn. */
     respawnPlayer(value: number, tailValues: number[]): void;
     /** Starts the NPC population (idle growth + active-window spawning) — dormant until the player actually joins, so the menu screen shows just the player alone in the world. Safe to call more than once. */

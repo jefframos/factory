@@ -12,7 +12,7 @@ import { createWaterMaterial } from '../builders/WaterMaterial';
 import { FloorBuilder } from '../builders/FloorBuilder';
 import FourCornersGradientBuilder from '../vfx/FourCornersGradientBuilder';
 import { CloudSystem } from '../vfx/CloudSystem';
-import type { IWorld3dScene } from './IWorld3dScene';
+import type { EntityUiTarget, IWorld3dScene } from './IWorld3dScene';
 import type { DeathSnapshot } from '../ui-dom/PlayerFlowController';
 import { PerfOverlay } from '../utils/PerfOverlay';
 import SetupThree from '@core/scene/SetupThree';
@@ -72,6 +72,37 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         return this.player ? this.worldToScreen(this.player.uiAnchor) : null;
     }
     get deathInfo(): DeathSnapshot | null { return this._deathInfo; }
+
+    /**
+     * Player + every live bot's name/boost state, for EntityIndicatorManager
+     * (see IWorld3dScene.listEntityUiTargets). The player is deliberately
+     * folded into the same `id`/`name`/`entity` list as every bot instead of
+     * being special-cased inline — it's just another entity here, so its HUD
+     * is produced by the exact same mapping step below.
+     *
+     * Excluded entirely while `_deathInfo` is set: onEaten() has already torn
+     * down the player's visuals at that point (see resolveEntityEating), so
+     * leaving it in would keep showing a name/boost HUD floating over an
+     * entity that no longer visually exists until respawnPlayer() runs. Since
+     * `id` stays 'player' across that gap, EntityIndicatorManager just
+     * recycles its container on the way out and reuses it the instant the
+     * target reappears — the HUD disappears on death and comes back on
+     * respawn with no extra bookkeeping here.
+     */
+    public listEntityUiTargets(): EntityUiTarget[] {
+        const live: { id: string; name: string; entity: PlayerEntity }[] = [];
+        if (this.player && this._deathInfo === null) live.push({ id: 'player', name: 'YOU', entity: this.player });
+        for (const controller of this.botControllers) {
+            live.push({ id: `bot-${controller.id}`, name: `NPC ${controller.id}`, entity: controller.entity });
+        }
+
+        return live.map(({ id, name, entity }) => ({
+            id,
+            name,
+            boostT: entity.boostT,
+            screenAnchor: this.worldToScreen(entity.uiAnchor),
+        }));
+    }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 

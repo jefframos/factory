@@ -8,7 +8,7 @@ import { Game } from '@core/Game';
 import LinearWorld3dScene from './LinearWorld3dScene';
 import BoundlessWorld3dScene from './BoundlessWorld3dScene';
 import type { IWorld3dScene } from './IWorld3dScene';
-import { BoostIndicator } from '../ui/BoostIndicator';
+import { EntityIndicatorManager } from '../ui/EntityIndicatorManager';
 import { LeaderboardPanel } from '../ui-dom/LeaderboardPanel';
 import { PlayerFlowController, type DeathSnapshot } from '../ui-dom/PlayerFlowController';
 import { MovementHint } from '../ui-dom/MovementHint';
@@ -50,7 +50,7 @@ export default class BaseDemoScene extends GameScene {
     private analogInput: AnalogInput | null = null;
     private pointerFollowInput: PointerFollowInput | null = null;
     private keyboardInput!: KeyboardInputMovement;
-    private boostIndicator!: BoostIndicator;
+    private entityIndicators!: EntityIndicatorManager;
     private lastW = 0;
     private lastH = 0;
     private statsWidgets: Stats[] = [];
@@ -154,12 +154,13 @@ export default class BaseDemoScene extends GameScene {
             TextureBuilder.export(TextureBuilder.island(), 'island.png');
         }, 'Textures');
 
-        // Floating boost bar that tracks the player in screen space — parented
-        // to game.overlayContainer (top Pixi layer, same as devPosLabel) since
-        // it needs to be positioned via a raw screen-pixel -> container-local
-        // conversion each frame (see update()), not `this`'s own layout flow.
-        this.boostIndicator = new BoostIndicator();
-        this.game.overlayContainer.addChild(this.boostIndicator);
+        // Floating per-entity HUD (name tag + boost bar) that tracks the
+        // player + every live NPC in screen space — parented to
+        // game.overlayContainer (top Pixi layer, same as devPosLabel) since
+        // each needs to be positioned via a raw screen-pixel ->
+        // container-local conversion every frame (see update()), not
+        // `this`'s own layout flow. See EntityIndicatorManager.
+        this.entityIndicators = new EntityIndicatorManager(this.game);
 
         // Production DOM leaderboard — bottom-right, always on (not dev-gated).
         this.leaderboard = new LeaderboardPanel();
@@ -264,23 +265,9 @@ export default class BaseDemoScene extends GameScene {
         this.world3d?.update(scaledDelta);
 
         if (this.world3d) {
-            // Boost bar: project the player's 3D world position to a raw
-            // screen-pixel point (world -> NDC -> CSS pixels, see
-            // ThreeScene.worldToScreen), then convert that into
-            // overlayContainer's own local space the same way Game.onResize
-            // derives overlayScreenData — dividing by renderer.resolution
-            // before toLocal, since Pixi's internal stage space is scaled
-            // down from raw CSS pixels by that factor (see Game.onResize).
-            const boostT = this.world3d.playerBoostT;
-            let boostAnchor: { x: number; y: number } | null = null;
-            if (boostT > 0) {
-                const screen = this.world3d.getPlayerScreenAnchor();
-                if (screen) {
-                    const stagePoint = new PIXI.Point(screen.x / Game.renderer.resolution, screen.y / Game.renderer.resolution);
-                    boostAnchor = this.game.overlayContainer.toLocal(stagePoint, this.game.app.stage);
-                }
-            }
-            this.boostIndicator.update(boostT, boostAnchor);
+            // Per-entity HUD: one per live target (player + every NPC) — see
+            // IWorld3dScene.listEntityUiTargets / EntityIndicatorManager.
+            this.entityIndicators.update(this.world3d.listEntityUiTargets());
 
             if (this.devPosLabel) {
                 const pos = this.world3d.playerPosition;
@@ -347,10 +334,7 @@ export default class BaseDemoScene extends GameScene {
         for (const s of this.statsWidgets) s.dom.parentElement?.removeChild(s.dom);
         this.statsWidgets = [];
         this.world3d?.destroy();
-        if (this.boostIndicator) {
-            this.game.overlayContainer.removeChild(this.boostIndicator);
-            this.boostIndicator.destroy();
-        }
+        this.entityIndicators?.destroy();
         this.leaderboard?.destroy();
         this.flowController?.destroy();
         this.soundToggle?.destroy();

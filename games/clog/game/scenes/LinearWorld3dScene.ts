@@ -7,6 +7,7 @@ import { LevelManager } from '../systems/LevelManager';
 import { LinearAreaManager } from '../world/LinearAreaManager';
 import { CAMERA_CONFIG, FOOD_CONFIG } from '../world/LinearConfig';
 import FourCornersGradientBuilder from '../vfx/FourCornersGradientBuilder';
+import type { EntityUiTarget } from './IWorld3dScene';
 
 const CAM_SMOOTH = 2.2; // exponential approach speed toward depth-driven target
 
@@ -39,6 +40,17 @@ export default class LinearWorld3dScene extends ThreeScene {
 
     getPlayerScreenAnchor(): { x: number; y: number } | null {
         return this.player ? this.worldToScreen(this.player.uiAnchor) : null;
+    }
+
+    /** This mode has no bots — just the player (see IWorld3dScene.listEntityUiTargets). */
+    public listEntityUiTargets(): EntityUiTarget[] {
+        if (!this.player) return [];
+        return [{
+            id: 'player',
+            name: 'YOU',
+            boostT: this.player.boostT,
+            screenAnchor: this.worldToScreen(this.player.uiAnchor),
+        }];
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
