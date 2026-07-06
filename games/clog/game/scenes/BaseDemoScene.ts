@@ -25,6 +25,13 @@ const GATED_MODE = new URLSearchParams(window.location.search).has('gated');
 // DOM churn for something that only needs to look "live," not exact.
 const LEADERBOARD_UPDATE_INTERVAL = 0.5;
 
+/**
+ * 'menu': boot/death/end-game screens — world3d is a fresh, dormant preview,
+ * input disabled. 'playing': joined, world active, input forwarded.
+ * 'dead': death/end-game countdown running, awaiting Revive/Continue.
+ */
+type FlowState = 'menu' | 'playing' | 'dead';
+
 export default class BaseDemoScene extends GameScene {
 
     private speedMultiplier = 1;
@@ -41,16 +48,12 @@ export default class BaseDemoScene extends GameScene {
     private flowController!: PlayerFlowController;
     private soundToggle!: SoundToggleButton;
     private movementHint!: MovementHint;
-    /** True once "Join Server" has been pressed — gates movement input so the world (bots/food/camera-follow) keeps running underneath the menu/death overlay while the player itself stays put. */
-    private gameJoined = false;
-    /** Guards against re-showing the death overlay every frame while world3d.deathInfo stays non-null. */
-    private deathOverlayOpen = false;
+    private flowState: FlowState = 'menu';
+    /** True while spawnFreshWorld() is rebuilding world3d — update() bails out for that tick so it never touches a not-yet-built instance. */
+    private worldRebuilding = false;
 
     public async build(): Promise<void> {
-        this.world3d = GATED_MODE
-            ? new LinearWorld3dScene(this.game)
-            : new BoundlessWorld3dScene(this.game);
-        await this.world3d.build();
+        await this.spawnFreshWorld();
 
         if (Game.debugParams.stats) {
             const panels = [0, 2] as const; // 0 = FPS, 2 = MB
@@ -70,7 +73,7 @@ export default class BaseDemoScene extends GameScene {
 
         this.analogInput = new AnalogInput(this);
         this.analogInput.onMove.add(({ direction, magnitude }) => {
-            if (!this.gameJoined) return;
+            if (this.flowState !== 'playing') return;
             if (magnitude > 0) this.movementHint.registerMove();
             this.world3d.moveInput.x = direction.x * magnitude;
             this.world3d.moveInput.z = direction.y * magnitude;
@@ -78,7 +81,7 @@ export default class BaseDemoScene extends GameScene {
 
         this.keyboardInput = new KeyboardInputMovement();
         this.keyboardInput.onMove.add(({ direction, magnitude }) => {
-            if (!this.gameJoined) return;
+            if (this.flowState !== 'playing') return;
             if (magnitude > 0) this.movementHint.registerMove();
             this.world3d.moveInput.x = direction.x * magnitude;
             this.world3d.moveInput.z = direction.y * magnitude;
@@ -156,8 +159,7 @@ export default class BaseDemoScene extends GameScene {
 
         // Not controllable yet — hide the touch joystick and the player's
         // direction triangle until "Tap to Start" (see handleJoinServer).
-        this.analogInput.setEnabled(false);
-        this.world3d.setPlayerIndicatorVisible(false);
+        this.setFlowState('menu');
 
         // Menu/Shop/Rename/Death — one DOM overlay, no scene change (see
         // PlayerFlowController). The 3D world above is already fully live at
@@ -183,14 +185,33 @@ export default class BaseDemoScene extends GameScene {
         this.world3d.cameraZoom = 1.0;
         this.world3d.moveInput.x = 0;
         this.world3d.moveInput.z = 0;
-        this.gameJoined = true;
-        this.analogInput.setEnabled(true);
-        this.world3d.setPlayerIndicatorVisible(true);
+        this.setFlowState('playing');
         this.leaderboard.show(); // only on an actual server join, not on every keep-size respawn — see onRespawnChoice
         this.movementHint.show();
     }
 
+    /** Owns every side effect tied to "not playing" vs "playing" — analog input and the player's direction triangle both follow the same on/off switch, so a transition can't forget one of them (see the death → Continue bug this fixed). */
+    private setFlowState(state: FlowState): void {
+        this.flowState = state;
+        const playing = state === 'playing';
+        this.analogInput.setEnabled(playing);
+        this.world3d.setPlayerIndicatorVisible(playing);
+    }
+
+    /** Tears down and rebuilds world3d from scratch — used for the initial boot and for "Continue" after death, since a freshly-built world always starts NPCs-dormant and zoomed in on its own (see BoundlessWorld3dScene/LinearWorld3dScene.build()), which is exactly the state a menu preview needs and a respawn-in-place can't guarantee. */
+    private async spawnFreshWorld(): Promise<void> {
+        this.worldRebuilding = true;
+        this.world3d?.destroy();
+        this.world3d = GATED_MODE
+            ? new LinearWorld3dScene(this.game)
+            : new BoundlessWorld3dScene(this.game);
+        await this.world3d.build();
+        this.worldRebuilding = false;
+    }
+
     public update(delta: number): void {
+        if (this.worldRebuilding) return; // world3d mid-rebuild (see spawnFreshWorld) — nothing below is safe to touch yet
+
         for (const s of this.statsWidgets) s.update();
         const scaledDelta = delta * this.speedMultiplier;
         this.world3d?.update(scaledDelta);
@@ -226,16 +247,12 @@ export default class BaseDemoScene extends GameScene {
             }
 
             const deathInfo = this.world3d.deathInfo;
-            if (deathInfo && !this.deathOverlayOpen) {
-                this.deathOverlayOpen = true;
-                this.gameJoined = false; // stop forwarding input while there's no live player to receive it
-                this.analogInput.setEnabled(false);
-                this.world3d.setPlayerIndicatorVisible(false);
+            if (deathInfo && this.flowState !== 'dead') {
+                this.setFlowState('dead');
                 this.flowController.showDeath(
                     deathInfo,
                     (keepSize: DeathSnapshot) => {
                         // Revive (watched an ad) — resume the same run at the same size.
-                        this.deathOverlayOpen = false;
                         this.world3d.respawnPlayer(keepSize.value, keepSize.tailValues);
                         // moveInput lives on the scene, not the player, so it survives
                         // respawnPlayer() — without this reset, whatever direction was
@@ -244,22 +261,25 @@ export default class BaseDemoScene extends GameScene {
                         // very next frame, reading as an unwanted instant lurch.
                         this.world3d.moveInput.x = 0;
                         this.world3d.moveInput.z = 0;
-                        this.gameJoined = true;
-                        this.analogInput.setEnabled(true);
-                        this.world3d.setPlayerIndicatorVisible(true);
+                        this.setFlowState('playing');
                     },
-                    () => {
+                    async () => {
                         // "Continue" from the End Game screen (via Next or the countdown
-                        // running out) — back to the boot menu for a fresh join. Respawns
-                        // right away (rather than waiting for "Tap to Start") for two
-                        // reasons: it clears world3d.deathInfo, so this file's own
-                        // deathInfo-triggers-showDeath check above doesn't immediately
-                        // re-fire and hijack the menu we're about to show; and it gives
-                        // the boot menu a live player to preview behind it again, same
-                        // as the very first boot (see build()'s comment on this scene).
-                        this.deathOverlayOpen = false;
-                        this.world3d.respawnPlayer(2, []);
-                        this.world3d.setPlayerIndicatorVisible(false); // still not joined — stays hidden until handleJoinServer
+                        // running out) — back to the boot menu for a fresh join. Rebuilds
+                        // world3d from scratch rather than respawning into the current
+                        // (still fully active) world: NPCs never go dormant again once
+                        // startNpcPopulation() has run once, so a fresh size-2 player
+                        // dropped into that live, hostile world would just get eaten
+                        // again before "Tap to Start" is even pressed. A rebuilt world
+                        // starts NPCs-dormant and zoomed-in on its own — see
+                        // spawnFreshWorld / BoundlessWorld3dScene.build().
+                        await this.spawnFreshWorld();
+                        this.setFlowState('menu');
+                        // Back to a "haven't joined yet" state (fresh world, just like
+                        // the very first boot) — hide the leaderboard again rather than
+                        // showing a reset one with just "You" in it; handleJoinServer()
+                        // re-shows it on the next real join.
+                        this.leaderboard.hide();
                         this.flowController.showMenu(() => this.handleJoinServer());
                     },
                 );
