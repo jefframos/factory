@@ -99,9 +99,10 @@ export class PlayerEntity implements ISimEntity {
         return this.transform.position;
     }
 
-    /** World-space point just above the entity's head — anchor for floating UI that needs to track it on screen (e.g. the boost indicator). */
+    /** World-space point just above the entity's head — anchor for floating UI that needs to track it on screen (e.g. the boost indicator). Run through BendService so the anchor lines up with where the bent mesh actually renders, not its raw (un-bent) transform position — matters most near screen corners, farthest from the bend origin. */
     get uiAnchor(): THREE.Vector3 {
-        return this.position.clone().add(new THREE.Vector3(0, sizeForValue(this.value) + 0.5, 0));
+        const raw = this.position.clone().add(new THREE.Vector3(0, sizeForValue(this.value) + 0.5, 0));
+        return BendService.applyToPosition(raw);
     }
 
     /** 0..1 — fraction of the tap-start speed boost still remaining, or the manual boost meter's current level whenever it isn't sitting full (draining, locked-out, or recharging); 0 when neither is active. Drives the boost indicator's fill. */

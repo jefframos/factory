@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import Assets from '../../Assets';
 
 const BAR_WIDTH = 46;
 const BAR_HEIGHT = 7;
@@ -9,9 +10,16 @@ const NAME_Y_OFFSET = -22; // stacked above the boost bar, whether or not the ba
 export class EntityIndicator extends PIXI.Container {
     private bg = new PIXI.Graphics();
     private fill = new PIXI.Graphics();
-    private label = new PIXI.Text('', {
-        fontFamily: 'sans-serif', fontSize: 12, fontWeight: 'bold', fill: 0xffffff,
-        stroke: 0x000000, strokeThickness: 3,
+    // Bitmap font (registered once in index.ts via PIXI.BitmapFont.from)
+    // instead of PIXI.Text — glyphs come from a pre-baked texture atlas, so
+    // there's no per-instance canvas rasterization that can go blurry when
+    // the app's renderer resolution is capped below the device's actual
+    // pixel ratio (see games/clog/index.ts).
+    private label = new PIXI.BitmapText('', {
+        fontName: Assets.MainFont.fontFamily as string,
+        fontSize: 24,
+        align: 'center',
+        letterSpacing: 2,
     });
 
     constructor() {

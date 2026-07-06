@@ -21,6 +21,22 @@ export class BendService {
     }
 
     /**
+     * JS-side mirror of the vertex-shader math in applyBend — for positioning
+     * screen-space UI (name tags, boost bars) that tracks a bent mesh, since
+     * worldToScreen() projects raw world positions and has no idea the GPU
+     * dropped the actual vertex's Y. Safe to call unconditionally: with
+     * uBendStrength at 0 the subtracted term is 0, so this is a no-op and the
+     * position passes through unchanged.
+     */
+    public static applyToPosition(pos: THREE.Vector3): THREE.Vector3 {
+        const origin = this.uniforms.uBendOrigin.value;
+        const strength = this.uniforms.uBendStrength.value;
+        const dx = pos.x - origin.x;
+        const dz = pos.z - origin.z;
+        return new THREE.Vector3(pos.x, pos.y - (dx * dx + dz * dz) * strength, pos.z);
+    }
+
+    /**
      * Fades diffuseColor.a between two world-Y heights.
      * Fully opaque at/above fadeFrom, fully transparent at/below fadeTo.
      */
