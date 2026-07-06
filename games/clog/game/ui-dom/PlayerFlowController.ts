@@ -101,18 +101,15 @@ export class PlayerFlowController {
         return section;
     }
 
+    /** Same full-viewport, dimmed-fade layout as the End Game screen (see renderEndGame) — countdown pinned top-center, Revive/Next pinned bottom-center, world still visible (dimmed, not boxed) behind it. */
     private renderDeath(): void {
         this.clearDeathCountdown();
         let remainingMs = DEATH_COUNTDOWN_SECONDS * 1000;
 
-        this.overlay.setContent(box => {
-            box.appendChild(heading('You died!'));
-
-            const { ring, setRemaining } = countdownRing(DEATH_COUNTDOWN_SECONDS);
-            box.appendChild(ring);
-
-            box.appendChild(goldButton('REVIVE?', () => this.handleWatchAd(), { icon: videoIcon }));
-            box.appendChild(goldButton('NEXT', () => this.goToEndGame()));
+        this.overlay.setFullContent(root => {
+            const { group, setRemaining } = deathCountdownGroup(DEATH_COUNTDOWN_SECONDS);
+            root.appendChild(group);
+            root.appendChild(deathBottomButtons(() => this.handleWatchAd(), () => this.goToEndGame()));
 
             this.deathCountdownHandle = window.setInterval(() => {
                 remainingMs -= DEATH_TICK_MS;
@@ -123,6 +120,7 @@ export class PlayerFlowController {
                 setRemaining(remainingMs, DEATH_COUNTDOWN_SECONDS * 1000);
             }, DEATH_TICK_MS);
         });
+        this.overlay.setDimmed(true);
     }
 
     /** "Next," or the countdown running out — same destination either way (see showDeath). */
@@ -140,7 +138,6 @@ export class PlayerFlowController {
 
         this.overlay.setFullContent(root => {
             root.appendChild(endGameTitle());
-            root.appendChild(tailChain(snapshot));
 
             const col = document.createElement('div');
             Object.assign(col.style, {
@@ -479,6 +476,58 @@ function countdownRing(seconds: number): { ring: HTMLElement; setRemaining: (rem
     return { ring: wrap, setRemaining };
 }
 
+/** "You died!" heading + countdown ring, pinned fixed top-center (see renderDeath). */
+function deathCountdownGroup(seconds: number): { group: HTMLElement; setRemaining: (remainingMs: number, totalMs: number) => void } {
+    const group = document.createElement('div');
+    Object.assign(group.style, {
+        position: 'fixed',
+        top: '48px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        pointerEvents: 'none',
+    });
+
+    const title = document.createElement('div');
+    title.textContent = 'You died!';
+    Object.assign(title.style, {
+        fontSize: '32px',
+        fontWeight: 'bold',
+        color: '#fff',
+        textShadow: '0 2px 6px rgba(0,0,0,0.6)',
+        marginBottom: '8px',
+    });
+    group.appendChild(title);
+
+    const { ring, setRemaining } = countdownRing(seconds);
+    group.appendChild(ring);
+
+    return { group, setRemaining };
+}
+
+/** Revive/Next, stacked in a fixed-width column pinned bottom-center (see renderDeath) — same "give it a width so it doesn't stretch edge-to-edge" treatment as the boot menu's bottom section. */
+function deathBottomButtons(onRevive: () => void, onNext: () => void): HTMLElement {
+    const col = document.createElement('div');
+    Object.assign(col.style, {
+        position: 'fixed',
+        left: '50%',
+        bottom: '48px',
+        transform: 'translateX(-50%)',
+        width: '320px',
+        maxWidth: '90vw',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        pointerEvents: 'auto',
+    });
+    col.appendChild(goldButton('REVIVE?', onRevive, { icon: videoIcon }));
+    col.appendChild(goldButton('NEXT', onNext));
+    return col;
+}
+
 /** Big green-gradient "END GAME" title, fixed top-center. */
 function endGameTitle(): HTMLElement {
     const h = document.createElement('div');
@@ -499,52 +548,6 @@ function endGameTitle(): HTMLElement {
         pointerEvents: 'none',
     });
     return h;
-}
-
-/** Vertical stack of the player's final tail (smallest to largest, head value included), pinned to the left edge — a simplified stand-in for the reference's diagonal cube-chain trophy shot. */
-function tailChain(snapshot: DeathSnapshot): HTMLElement {
-    const values = [snapshot.value, ...snapshot.tailValues].sort((a, b) => a - b);
-
-    const wrap = document.createElement('div');
-    Object.assign(wrap.style, {
-        position: 'fixed',
-        left: 'max(16px, calc(50% - 480px))',
-        top: '50%',
-        transform: 'translateY(-50%)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        pointerEvents: 'none',
-    });
-
-    values.forEach((v, i) => {
-        const badge = document.createElement('div');
-        badge.textContent = String(v);
-        Object.assign(badge.style, {
-            width: '70px',
-            height: '70px',
-            marginTop: i === 0 ? '0' : '-14px', // slight overlap, chain-like
-            borderRadius: '14px',
-            background: cubeColor(v),
-            border: '2px solid rgba(255,255,255,0.35)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            color: '#fff',
-            textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
-        });
-        wrap.appendChild(badge);
-    });
-
-    return wrap;
-}
-
-function cubeColor(value: number): string {
-    const hue = (Math.log2(Math.max(2, value)) * 47) % 360;
-    return `hsl(${hue}, 55%, 55%)`;
 }
 
 /** Amber/gold gradient pill for the death screen's Revive/Next actions. */

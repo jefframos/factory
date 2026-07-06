@@ -1,5 +1,6 @@
 import { GameScene } from '@core/scene/GameScene';
 import AnalogInput from '@core/io/AnalogInput';
+import PointerFollowInput from '@core/io/PointerFollowInput';
 import * as PIXI from 'pixi.js';
 import KeyboardInputMovement from 'core/io/KeyboardInputMovement';
 import { DevGuiManager } from '@core/utils/DevGuiManager';
@@ -21,6 +22,16 @@ const PLAYER_NAME_KEY = 'playerName';
 // ?gated re-enables the linear room / gate progression mode.
 const GATED_MODE = new URLSearchParams(window.location.search).has('gated');
 
+// Movement control scheme: true = virtual joystick (AnalogInput), false =
+// pointer-follow (chase the live mouse/finger position, click/tap to boost —
+// see PointerFollowInput).
+const USE_ANALOG_INPUT = false;
+
+// Below this distance (raw CSS pixels) from the pointer, the pointer-follow
+// scheme treats the player as "arrived" and stops moving, instead of jittering
+// in place trying to close the last sub-pixel gap.
+const POINTER_FOLLOW_DEADZONE = 4;
+
 // How often the leaderboard rebuilds its rows — every frame would be wasted
 // DOM churn for something that only needs to look "live," not exact.
 const LEADERBOARD_UPDATE_INTERVAL = 0.5;
@@ -36,7 +47,8 @@ export default class BaseDemoScene extends GameScene {
 
     private speedMultiplier = 1;
     private world3d!: IWorld3dScene;
-    private analogInput!: AnalogInput;
+    private analogInput: AnalogInput | null = null;
+    private pointerFollowInput: PointerFollowInput | null = null;
     private keyboardInput!: KeyboardInputMovement;
     private boostIndicator!: BoostIndicator;
     private lastW = 0;
@@ -71,13 +83,21 @@ export default class BaseDemoScene extends GameScene {
 
         this.movementHint = new MovementHint();
 
-        this.analogInput = new AnalogInput(this);
-        this.analogInput.onMove.add(({ direction, magnitude }) => {
-            if (this.flowState !== 'playing') return;
-            if (magnitude > 0) this.movementHint.registerMove();
-            this.world3d.moveInput.x = direction.x * magnitude;
-            this.world3d.moveInput.z = direction.y * magnitude;
-        });
+        if (USE_ANALOG_INPUT) {
+            this.analogInput = new AnalogInput(this);
+            this.analogInput.onMove.add(({ direction, magnitude }) => {
+                if (this.flowState !== 'playing') return;
+                if (magnitude > 0) this.movementHint.registerMove();
+                this.world3d.moveInput.x = direction.x * magnitude;
+                this.world3d.moveInput.z = direction.y * magnitude;
+            });
+        } else {
+            this.pointerFollowInput = new PointerFollowInput(this);
+            this.pointerFollowInput.onBoostChange.add(({ active }) => {
+                if (this.flowState !== 'playing') return;
+                this.world3d.setPlayerBoosting(active);
+            });
+        }
 
         this.keyboardInput = new KeyboardInputMovement();
         this.keyboardInput.onMove.add(({ direction, magnitude }) => {
@@ -190,11 +210,12 @@ export default class BaseDemoScene extends GameScene {
         this.movementHint.show();
     }
 
-    /** Owns every side effect tied to "not playing" vs "playing" — analog input and the player's direction triangle both follow the same on/off switch, so a transition can't forget one of them (see the death → Continue bug this fixed). */
+    /** Owns every side effect tied to "not playing" vs "playing" — movement input and the player's direction triangle both follow the same on/off switch, so a transition can't forget one of them (see the death → Continue bug this fixed). */
     private setFlowState(state: FlowState): void {
         this.flowState = state;
         const playing = state === 'playing';
-        this.analogInput.setEnabled(playing);
+        this.analogInput?.setEnabled(playing);
+        this.pointerFollowInput?.setEnabled(playing);
         this.world3d.setPlayerIndicatorVisible(playing);
     }
 
@@ -213,6 +234,32 @@ export default class BaseDemoScene extends GameScene {
         if (this.worldRebuilding) return; // world3d mid-rebuild (see spawnFreshWorld) — nothing below is safe to touch yet
 
         for (const s of this.statsWidgets) s.update();
+
+        // Pointer-follow control scheme: recomputed every frame (rather than
+        // event-driven like AnalogInput/KeyboardInputMovement) since the
+        // player's on-screen anchor drifts under camera follow independent of
+        // any pointer event — see PointerFollowInput.
+        if (this.pointerFollowInput && this.world3d && this.flowState === 'playing') {
+            const pointer = this.pointerFollowInput.getPointerPosition();
+            const anchor = pointer && this.world3d.getPlayerScreenAnchor();
+            if (pointer && anchor) {
+                const dx = pointer.x - anchor.x;
+                const dy = pointer.y - anchor.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > POINTER_FOLLOW_DEADZONE) {
+                    this.movementHint.registerMove();
+                    this.world3d.moveInput.x = dx / dist;
+                    this.world3d.moveInput.z = dy / dist;
+                } else {
+                    this.world3d.moveInput.x = 0;
+                    this.world3d.moveInput.z = 0;
+                }
+            } else {
+                this.world3d.moveInput.x = 0;
+                this.world3d.moveInput.z = 0;
+            }
+        }
+
         const scaledDelta = delta * this.speedMultiplier;
         this.world3d?.update(scaledDelta);
 

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { CubeBuilder } from "../builders/CubeBuilder";
 import { BendService } from "../services/BendService";
-import { BOUNCE_AMPLITUDE, BOUNCE_DURATION, MOVE_SPEED, SMALL_VALUE_SPEED_BOOST, SMALL_VALUE_SPEED_THRESHOLD, TAP_BOOST_DURATION, TAP_BOOST_MULTIPLIER, followDist, sizeForValue } from "../ClogConstants";
+import { BOUNCE_AMPLITUDE, BOUNCE_DURATION, MANUAL_BOOST_DRAIN_DURATION, MANUAL_BOOST_REENGAGE_THRESHOLD, MANUAL_BOOST_RECHARGE_DURATION, MOVE_SPEED, SMALL_VALUE_SPEED_BOOST, SMALL_VALUE_SPEED_THRESHOLD, TAP_BOOST_DURATION, TAP_BOOST_MULTIPLIER, followDist, sizeForValue } from "../ClogConstants";
 import { dbg, dbgTail } from "../debug/MergeDebugger";
 import { MergeQueue } from "../systems/MergeQueue";
 import { WalkBob } from "../components/WalkBob"; // [view:WalkBob]
@@ -39,6 +39,12 @@ export class PlayerEntity implements ISimEntity {
     private wasMoving = false;
     /** Counts down from TAP_BOOST_DURATION once movement starts from a standstill — see update(). */
     private tapBoostTimer = 0;
+    /** Held-boost switch — see setBoosting(). */
+    private manualBoostHeld = false;
+    /** 0..1 — manual boost stamina. Drains while held+active, refills while not — see update(). */
+    private manualBoostMeter = 1;
+    /** True once the meter has fully drained while held — blocks re-engaging the boost until it refills past MANUAL_BOOST_REENGAGE_THRESHOLD, even if still held. */
+    private manualBoostLocked = false;
     private bounceTimer = 0;
     private shadow: BlobShadow;
     private walkBob = new WalkBob();   // [view:WalkBob]
@@ -98,8 +104,9 @@ export class PlayerEntity implements ISimEntity {
         return this.position.clone().add(new THREE.Vector3(0, sizeForValue(this.value) + 0.5, 0));
     }
 
-    /** 0..1 — fraction of the tap-start speed boost still remaining; 0 when not boosting. Drives the boost indicator's fill. */
+    /** 0..1 — fraction of the tap-start speed boost still remaining, or the manual boost meter's current level whenever it isn't sitting full (draining, locked-out, or recharging); 0 when neither is active. Drives the boost indicator's fill. */
     get boostT(): number {
+        if (this.manualBoostMeter < 1) return this.manualBoostMeter;
         return this.tapBoostTimer / TAP_BOOST_DURATION;
     }
 
@@ -113,6 +120,11 @@ export class PlayerEntity implements ISimEntity {
      */
     triggerTapBoost(): void {
         if (this.tapBoostTimer <= 0) this.tapBoostTimer = TAP_BOOST_DURATION;
+    }
+
+    /** Held-boost switch for the pointer-follow control scheme (see PointerFollowInput) — boosted for exactly as long as the pointer/finger stays down, unlike the timed tap-start burst above. */
+    setBoosting(held: boolean): void {
+        this.manualBoostHeld = held;
     }
 
     /** Radius of the eat circle (scales with value). Used for player/NPC kills and tail-snipes. */
@@ -198,14 +210,33 @@ export class PlayerEntity implements ISimEntity {
         // ── Tap-start speed boost ────────────────────────────────────────────
         // A brief burst right when input goes from stopped to moving — makes
         // starting off feel snappier without inflating sustained cruise speed.
+        // Suppressed when the movement-start coincides with an explicit manual
+        // boost hold (the pointer-follow scheme's first tap does double duty as
+        // both "start moving" and "start boosting" — see PointerFollowInput) so
+        // the two boost systems don't run in parallel and fight over what
+        // boostT should report.
         const isMoving = mx !== 0 || mz !== 0;
-        if (isMoving && !this.wasMoving) this.tapBoostTimer = TAP_BOOST_DURATION;
+        if (isMoving && !this.wasMoving && !this.manualBoostHeld) this.tapBoostTimer = TAP_BOOST_DURATION;
         this.wasMoving = isMoving;
         if (this.tapBoostTimer > 0) this.tapBoostTimer = Math.max(0, this.tapBoostTimer - delta);
 
+        // ── Manual (held) boost meter ────────────────────────────────────────
+        // Stamina-style: draining while actively boosted, refilling otherwise.
+        // Hitting empty locks the boost off — even if still held — until the
+        // meter refills past MANUAL_BOOST_REENGAGE_THRESHOLD, so an empty
+        // meter can't instantly re-trigger the next frame.
+        const manualBoostActive = this.manualBoostHeld && !this.manualBoostLocked && this.manualBoostMeter > 0;
+        if (manualBoostActive) {
+            this.manualBoostMeter = Math.max(0, this.manualBoostMeter - delta / MANUAL_BOOST_DRAIN_DURATION);
+            if (this.manualBoostMeter <= 0) this.manualBoostLocked = true;
+        } else {
+            this.manualBoostMeter = Math.min(1, this.manualBoostMeter + delta / MANUAL_BOOST_RECHARGE_DURATION);
+            if (this.manualBoostLocked && this.manualBoostMeter >= MANUAL_BOOST_REENGAGE_THRESHOLD) this.manualBoostLocked = false;
+        }
+
         // ── Movement ──────────────────────────────────────────────────────────
         const prevPos = this.transform.position.clone();
-        const speed = this.moveSpeed * (this.tapBoostTimer > 0 ? TAP_BOOST_MULTIPLIER : 1);
+        const speed = this.moveSpeed * (this.tapBoostTimer > 0 || manualBoostActive ? TAP_BOOST_MULTIPLIER : 1);
         this.transform.position.x += mx * speed * delta;
         this.transform.position.z += mz * speed * delta;
 

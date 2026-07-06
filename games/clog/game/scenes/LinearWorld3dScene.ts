@@ -162,6 +162,10 @@ export default class LinearWorld3dScene extends ThreeScene {
         this.player.debugDoubleValue();
     }
 
+    public setPlayerBoosting(active: boolean): void {
+        this.player?.setBoosting(active);
+    }
+
     /** This mode has no death/respawn flow — see the deathInfo/respawnPlayer no-ops below. */
     public debugKillPlayer(): void { /* no-op */ }
 

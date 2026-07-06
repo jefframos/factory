@@ -17,6 +17,8 @@ export interface IWorld3dScene {
     update(delta: number): void;
     destroy(): void;
     debugDoublePlayerValue(): void;
+    /** Held-boost switch for the pointer-follow control scheme (see PointerFollowInput) — boosted for exactly as long as the pointer/finger stays down. See PlayerEntity.setBoosting. */
+    setPlayerBoosting(active: boolean): void;
     /** Debug-only: kills the player exactly as if eaten (drops their tail, triggers the normal death/respawn UI flow). No-op in modes without a death flow (see LinearWorld3dScene). */
     debugKillPlayer(): void;
     spawnBot(value: number, params?: Partial<BotParams>): void;

@@ -15,6 +15,13 @@ export const TAP_BOOST_MULTIPLIER = 1.5;
 /** Seconds the tap-start speed boost lasts. */
 export const TAP_BOOST_DURATION = 3;
 
+/** Seconds to fully drain the manual (held) boost meter from full — see PlayerEntity.setBoosting. */
+export const MANUAL_BOOST_DRAIN_DURATION = 3;
+/** Seconds to fully refill the manual boost meter from empty. */
+export const MANUAL_BOOST_RECHARGE_DURATION = 4;
+/** Fraction of the meter that must refill after a full drain before holding can re-engage the boost — prevents an empty meter from instantly re-triggering on the next frame. */
+export const MANUAL_BOOST_REENGAGE_THRESHOLD = 0.15;
+
 export function sizeForValue(value: number): number {
     return 1 + (Math.log2(value) - 1) * SCALE_STEP;
 }

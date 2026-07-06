@@ -349,6 +349,10 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.player?.debugDoubleValue();
     }
 
+    public setPlayerBoosting(active: boolean): void {
+        this.player?.setBoosting(active);
+    }
+
     /** Mirrors EntityEating.ts's kill() for the player specifically — drops their tail as scattered food and hands off to the same deathInfo/respawn flow a real kill would. */
     public debugKillPlayer(): void {
         if (this._deathInfo !== null || !this.player) return;
