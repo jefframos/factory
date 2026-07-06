@@ -105,6 +105,16 @@ export default class AnalogInput {
         this.onMove.dispatch({ direction: new PIXI.Point(0, 0), magnitude: 0 });
     };
 
+    /** Disables/re-enables the touch drag area — e.g. while the boot menu is up and there's no live player to move yet. Force-hides and resets an in-progress drag so disabling mid-touch can't leave the graphic stuck visible. */
+    public setEnabled(enabled: boolean): void {
+        this.container.eventMode = enabled ? 'static' : 'none';
+        if (!enabled) {
+            this.active = false;
+            this.bg.visible = false;
+            this.knob.visible = false;
+        }
+    }
+
     public destroy() {
         this.container.off('pointerdown', this.onPointerDown);
         this.container.off('pointerup', this.onPointerUp);

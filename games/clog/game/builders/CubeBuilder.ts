@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { BendService } from "../services/BendService";
 import { formatValue } from "../ClogConstants";
+import { TextureBuilder } from "./TextureBuilder";
 
 // One color per doubling of value, in order starting at value=2.
 // Add entries freely — colorForValue() cycles through these instead of defaulting to grey.
@@ -39,9 +40,12 @@ export class CubeBuilder {
     // a food cube spawns or a merge doubles a value.
     private static solidMatCache = new Map<number, THREE.MeshStandardMaterial>();
     private static topMatCache = new Map<number, THREE.MeshStandardMaterial>();
-    private static frontMatCache = new Map<number, THREE.MeshStandardMaterial>();
     private static numberTexCache = new Map<number, THREE.CanvasTexture>();
-    private static faceTexCache = new Map<number, THREE.CanvasTexture>();
+    // Single shared material for the face decal plane — value-independent
+    // (transparent overlay, not baked per colour), so unlike the caches above
+    // this isn't keyed by value.
+    private static faceDecalMat: THREE.MeshStandardMaterial | null = null;
+    private static readonly FACE_DECAL_NAME = 'faceDecal';
 
     private static getSolidMaterial(value: number): THREE.MeshStandardMaterial {
         let mat = CubeBuilder.solidMatCache.get(value);
@@ -63,14 +67,29 @@ export class CubeBuilder {
         return mat;
     }
 
-    private static getFrontMaterial(value: number): THREE.MeshStandardMaterial {
-        let mat = CubeBuilder.frontMatCache.get(value);
-        if (!mat) {
-            mat = new THREE.MeshStandardMaterial({ map: CubeBuilder.getFaceTexture(value) });
+    private static getFaceDecalMaterial(): THREE.MeshStandardMaterial {
+        if (!CubeBuilder.faceDecalMat) {
+            const mat = new THREE.MeshStandardMaterial({
+                map: TextureBuilder.face(),
+                transparent: false,
+                alphaTest: 0.5,
+            });
             BendService.applyBend(mat);
-            CubeBuilder.frontMatCache.set(value, mat);
+            CubeBuilder.faceDecalMat = mat;
         }
-        return mat;
+        return CubeBuilder.faceDecalMat;
+    }
+
+    /** Thin quad sitting just in front of the cube's +Z face — kept as a
+     *  separate child mesh (not baked into the cube's material) so the face
+     *  art can be swapped independently of the cube's colour. */
+    private static buildFaceDecal(size: number): THREE.Mesh {
+        const decalSize = size * 0.85;
+        const geo = new THREE.PlaneGeometry(decalSize, decalSize);
+        const mesh = new THREE.Mesh(geo, CubeBuilder.getFaceDecalMaterial());
+        mesh.name = CubeBuilder.FACE_DECAL_NAME;
+        mesh.position.z = size / 2 + size * 0.01;
+        return mesh;
     }
 
     private static getNumberTexture(value: number): THREE.CanvasTexture {
@@ -78,15 +97,6 @@ export class CubeBuilder {
         if (!tex) {
             tex = CubeBuilder.makeNumberTexture(value, colorForValue(value));
             CubeBuilder.numberTexCache.set(value, tex);
-        }
-        return tex;
-    }
-
-    private static getFaceTexture(value: number): THREE.CanvasTexture {
-        let tex = CubeBuilder.faceTexCache.get(value);
-        if (!tex) {
-            tex = CubeBuilder.makeFaceTexture(colorForValue(value));
-            CubeBuilder.faceTexCache.set(value, tex);
         }
         return tex;
     }
@@ -100,27 +110,38 @@ export class CubeBuilder {
         return new THREE.Mesh(geo, [solid, solid, top, solid, solid, solid]);
     }
 
-    /** Rounded cube with face-texture on front (+Z = index 4) and number on top (+Y = index 2). */
+    /** Rounded cube with a face-decal plane in front of +Z and number on top (+Y = index 2). */
     static buildPlayer(value: number, size = 1): THREE.Mesh {
         const geo = new RoundedBoxGeometry(size, size, size, 4, size * 0.15);
         const solid = CubeBuilder.getSolidMaterial(value);
         const top = CubeBuilder.getTopMaterial(value);
-        const front = CubeBuilder.getFrontMaterial(value);
         // face order: +X, -X, +Y (top), -Y, +Z (front), -Z
-        return new THREE.Mesh(geo, [solid, solid, top, solid, front, solid]);
+        const mesh = new THREE.Mesh(geo, [solid, solid, top, solid, solid, solid]);
+        mesh.add(CubeBuilder.buildFaceDecal(size));
+        return mesh;
     }
 
     /**
      * Swap an existing cube mesh onto the (cached, shared) materials for its new
      * value. Never mutates a material in place — these are shared across every
      * cube at that value, so mutating one would repaint every other cube too.
+     * The face decal (if any) is value-independent, so it's left untouched —
+     * only added/removed to match `hasFace`.
      */
     static updateTextures(mesh: THREE.Mesh, value: number, hasFace: boolean): void {
         const solid = CubeBuilder.getSolidMaterial(value);
         const top = CubeBuilder.getTopMaterial(value);
-        mesh.material = hasFace
-            ? [solid, solid, top, solid, CubeBuilder.getFrontMaterial(value), solid]
-            : [solid, solid, top, solid, solid, solid];
+        mesh.material = [solid, solid, top, solid, solid, solid];
+
+        // Geometry is always built at size=1 and scaled via mesh.scale afterwards
+        // (see buildPlayer/buildNumbered callers), so the decal can assume size=1 too.
+        const existingDecal = mesh.getObjectByName(CubeBuilder.FACE_DECAL_NAME);
+        if (hasFace && !existingDecal) {
+            mesh.add(CubeBuilder.buildFaceDecal(1));
+        } else if (!hasFace && existingDecal) {
+            mesh.remove(existingDecal);
+            (existingDecal as THREE.Mesh).geometry.dispose();
+        }
     }
 
     static makeNumberTexture(value: number, bgColor: string): THREE.CanvasTexture {
@@ -147,37 +168,12 @@ export class CubeBuilder {
         return new THREE.CanvasTexture(canvas);
     }
 
-    static makeFaceTexture(bgColor: string): THREE.CanvasTexture {
-        const size = 128;
-        const canvas = document.createElement("canvas");
-        canvas.width = canvas.height = size;
-        const ctx = canvas.getContext("2d")!;
-
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(0, 0, size, size);
-
-        // Eyes — white
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath(); ctx.arc(40, 45, 14, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(88, 45, 14, 0, Math.PI * 2); ctx.fill();
-        // Pupils
-        ctx.fillStyle = "#222222";
-        ctx.beginPath(); ctx.arc(44, 48, 7, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(92, 48, 7, 0, Math.PI * 2); ctx.fill();
-        // Smile
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 5;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.arc(64, 60, 28, 0.2 * Math.PI, 0.8 * Math.PI);
-        ctx.stroke();
-
-        return new THREE.CanvasTexture(canvas);
-    }
-
     /** Materials/textures are value-keyed and shared across every cube for the
-     *  app's lifetime — only the per-mesh geometry is owned by this instance. */
+     *  app's lifetime — only the per-mesh geometry (and the face decal's own
+     *  geometry, if present) is owned by this instance. */
     static disposeMesh(mesh: THREE.Mesh): void {
+        const decal = mesh.getObjectByName(CubeBuilder.FACE_DECAL_NAME) as THREE.Mesh | undefined;
+        decal?.geometry.dispose();
         mesh.geometry.dispose();
     }
 }

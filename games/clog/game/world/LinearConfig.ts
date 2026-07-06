@@ -130,6 +130,8 @@ export const CAMERA_CONFIG = {
     maxDistance: 25,
     maxAtValue: 8192,
     followSpeed: 5,
+    /** cameraZoom multiplier while the boot menu is up — starts close on the player, then eases out to 1.0 (via the existing camDist smoothing) once they hit "Tap to Start." */
+    menuZoom: 0.45,
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

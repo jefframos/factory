@@ -36,3 +36,36 @@ export function createFreshRecord(id: number, startValue: number): NpcRecord {
 export function scoreOf(record: NpcRecord): number {
     return record.tailValues.reduce((sum, v) => sum + v, record.value);
 }
+
+/**
+ * Plain-data equivalent of PlayerEntity.scheduleMerges, shared by NpcRoster
+ * and GrowthSimulator: absorbs a head-matching front tail cube into the head
+ * first (same priority reason as the real one — otherwise a tail merge can
+ * double past the head and permanently orphan it), then collapses adjacent
+ * equal pairs closest to the head first, re-checking head-absorb after each
+ * collapse since a tail merge can produce a new head match. Takes a bare
+ * {value, tailValues} shape (not the full NpcRecord) so GrowthSimulator's
+ * throwaway simulation entities can reuse it without depending on the rest
+ * of NpcRecord's fields.
+ */
+export function collapseMerges(entity: { value: number; tailValues: number[] }): void {
+    let changed = true;
+    while (changed) {
+        changed = false;
+
+        while (entity.tailValues.length > 0 && entity.tailValues[0] === entity.value) {
+            entity.value *= 2;
+            entity.tailValues.shift();
+            changed = true;
+        }
+
+        for (let i = 0; i < entity.tailValues.length - 1; i++) {
+            if (entity.tailValues[i] === entity.tailValues[i + 1]) {
+                entity.tailValues[i] *= 2;
+                entity.tailValues.splice(i + 1, 1);
+                changed = true;
+                break;
+            }
+        }
+    }
+}

@@ -7,12 +7,14 @@ import { Game } from '@core/Game';
 import LinearWorld3dScene from './LinearWorld3dScene';
 import BoundlessWorld3dScene from './BoundlessWorld3dScene';
 import type { IWorld3dScene } from './IWorld3dScene';
-import { PlayerHud } from '../ui/PlayerHud';
 import { BoostIndicator } from '../ui/BoostIndicator';
 import { LeaderboardPanel } from '../ui-dom/LeaderboardPanel';
 import { PlayerFlowController, type DeathSnapshot } from '../ui-dom/PlayerFlowController';
+import { MovementHint } from '../ui-dom/MovementHint';
+import { SoundToggleButton } from '@core/dom-ui/SoundToggleButton';
 import PlatformHandler from '@core/platforms/PlatformHandler';
 import Stats from 'stats.js';
+import { TextureBuilder } from '../builders/TextureBuilder';
 
 const PLAYER_NAME_KEY = 'playerName';
 
@@ -29,7 +31,6 @@ export default class BaseDemoScene extends GameScene {
     private world3d!: IWorld3dScene;
     private analogInput!: AnalogInput;
     private keyboardInput!: KeyboardInputMovement;
-    private hud!: PlayerHud;
     private boostIndicator!: BoostIndicator;
     private lastW = 0;
     private lastH = 0;
@@ -38,6 +39,8 @@ export default class BaseDemoScene extends GameScene {
     private leaderboard!: LeaderboardPanel;
     private leaderboardTimer = 0;
     private flowController!: PlayerFlowController;
+    private soundToggle!: SoundToggleButton;
+    private movementHint!: MovementHint;
     /** True once "Join Server" has been pressed — gates movement input so the world (bots/food/camera-follow) keeps running underneath the menu/death overlay while the player itself stays put. */
     private gameJoined = false;
     /** Guards against re-showing the death overlay every frame while world3d.deathInfo stays non-null. */
@@ -63,9 +66,12 @@ export default class BaseDemoScene extends GameScene {
         this.eventMode = 'static';
         this.hitArea = new PIXI.Rectangle(-2000, -2000, 6000, 6000);
 
+        this.movementHint = new MovementHint();
+
         this.analogInput = new AnalogInput(this);
         this.analogInput.onMove.add(({ direction, magnitude }) => {
             if (!this.gameJoined) return;
+            if (magnitude > 0) this.movementHint.registerMove();
             this.world3d.moveInput.x = direction.x * magnitude;
             this.world3d.moveInput.z = direction.y * magnitude;
         });
@@ -73,12 +79,17 @@ export default class BaseDemoScene extends GameScene {
         this.keyboardInput = new KeyboardInputMovement();
         this.keyboardInput.onMove.add(({ direction, magnitude }) => {
             if (!this.gameJoined) return;
+            if (magnitude > 0) this.movementHint.registerMove();
             this.world3d.moveInput.x = direction.x * magnitude;
             this.world3d.moveInput.z = direction.y * magnitude;
         });
 
         DevGuiManager.instance.addButton('Double Value', () => {
             this.world3d.debugDoublePlayerValue();
+        }, 'Player');
+
+        DevGuiManager.instance.addButton('Kill Player', () => {
+            this.world3d.debugKillPlayer();
         }, 'Player');
 
         DevGuiManager.instance.addButton('Spawn Entity', () => {
@@ -110,9 +121,15 @@ export default class BaseDemoScene extends GameScene {
         // in real time. 1 = normal speed, 0 = paused.
         DevGuiManager.instance.addProperties(this, ['speedMultiplier'], [0, 10], 'Sim Speed', 'Simulation');
 
-        // Pixi HUD — bottom-left player status
-        this.hud = new PlayerHud();
-        this.addChild(this.hud);
+        // Pulls the current procedurally-generated placeholder textures out as
+        // PNGs so they can be hand-edited and swapped in later via TextureBuilder.load().
+        DevGuiManager.instance.addButton('Download Face Texture', () => {
+            TextureBuilder.export(TextureBuilder.face(), 'face.png');
+        }, 'Textures');
+
+        DevGuiManager.instance.addButton('Download Island Texture', () => {
+            TextureBuilder.export(TextureBuilder.island(), 'island.png');
+        }, 'Textures');
 
         // Floating boost bar that tracks the player in screen space — parented
         // to game.overlayContainer (top Pixi layer, same as devPosLabel) since
@@ -137,6 +154,11 @@ export default class BaseDemoScene extends GameScene {
             this.game.overlayContainer.addChild(this.devPosLabel);
         }
 
+        // Not controllable yet — hide the touch joystick and the player's
+        // direction triangle until "Tap to Start" (see handleJoinServer).
+        this.analogInput.setEnabled(false);
+        this.world3d.setPlayerIndicatorVisible(false);
+
         // Menu/Shop/Rename/Death — one DOM overlay, no scene change (see
         // PlayerFlowController). The 3D world above is already fully live at
         // this point (player spawned, NPCs simulating); the menu just gates
@@ -147,19 +169,25 @@ export default class BaseDemoScene extends GameScene {
         if (savedName) this.flowController.setPlayerName(savedName);
         this.flowController.showMenu(() => this.handleJoinServer());
 
+        this.soundToggle = new SoundToggleButton();
+
         // Initial position
         this.repositionUi();
     }
 
-    /** "Join Server" from the menu — either the very first one (player already exists from build(), just unblock input) or a re-join after death (via "Join Another Server"), which needs an actual fresh respawn first. */
+    /** "Tap to Start" from the boot menu — the player entity already exists (either from build(), or re-spawned by the death flow's Revive/Continue before showing this menu again), so this just unblocks input/joins the live population. */
     private handleJoinServer(): void {
-        if (this.world3d.deathInfo) {
-            this.world3d.respawnPlayer(2, []);
-        }
         this.world3d.startNpcPopulation();
+        // Eases camDist back out from the close-in menu zoom to the standard
+        // value-driven distance (see BoundlessWorld3dScene/LinearWorld3dScene.build()).
+        this.world3d.cameraZoom = 1.0;
         this.world3d.moveInput.x = 0;
         this.world3d.moveInput.z = 0;
         this.gameJoined = true;
+        this.analogInput.setEnabled(true);
+        this.world3d.setPlayerIndicatorVisible(true);
+        this.leaderboard.show(); // only on an actual server join, not on every keep-size respawn — see onRespawnChoice
+        this.movementHint.show();
     }
 
     public update(delta: number): void {
@@ -167,10 +195,7 @@ export default class BaseDemoScene extends GameScene {
         const scaledDelta = delta * this.speedMultiplier;
         this.world3d?.update(scaledDelta);
 
-        // Sync HUD with current game state
-        if (this.hud && this.world3d) {
-            this.hud.update(this.world3d.playerValue);
-
+        if (this.world3d) {
             // Boost bar: project the player's 3D world position to a raw
             // screen-pixel point (world -> NDC -> CSS pixels, see
             // ThreeScene.worldToScreen), then convert that into
@@ -204,15 +229,37 @@ export default class BaseDemoScene extends GameScene {
             if (deathInfo && !this.deathOverlayOpen) {
                 this.deathOverlayOpen = true;
                 this.gameJoined = false; // stop forwarding input while there's no live player to receive it
+                this.analogInput.setEnabled(false);
+                this.world3d.setPlayerIndicatorVisible(false);
                 this.flowController.showDeath(
                     deathInfo,
-                    (keepSize: DeathSnapshot | null) => {
+                    (keepSize: DeathSnapshot) => {
+                        // Revive (watched an ad) — resume the same run at the same size.
                         this.deathOverlayOpen = false;
-                        this.world3d.respawnPlayer(keepSize?.value ?? 2, keepSize?.tailValues ?? []);
+                        this.world3d.respawnPlayer(keepSize.value, keepSize.tailValues);
+                        // moveInput lives on the scene, not the player, so it survives
+                        // respawnPlayer() — without this reset, whatever direction was
+                        // still held down the instant the player died (or the "Revive"
+                        // button's own click/tap) gets applied to the fresh player the
+                        // very next frame, reading as an unwanted instant lurch.
+                        this.world3d.moveInput.x = 0;
+                        this.world3d.moveInput.z = 0;
                         this.gameJoined = true;
+                        this.analogInput.setEnabled(true);
+                        this.world3d.setPlayerIndicatorVisible(true);
                     },
                     () => {
+                        // "Continue" from the End Game screen (via Next or the countdown
+                        // running out) — back to the boot menu for a fresh join. Respawns
+                        // right away (rather than waiting for "Tap to Start") for two
+                        // reasons: it clears world3d.deathInfo, so this file's own
+                        // deathInfo-triggers-showDeath check above doesn't immediately
+                        // re-fire and hijack the menu we're about to show; and it gives
+                        // the boot menu a live player to preview behind it again, same
+                        // as the very first boot (see build()'s comment on this scene).
                         this.deathOverlayOpen = false;
+                        this.world3d.respawnPlayer(2, []);
+                        this.world3d.setPlayerIndicatorVisible(false); // still not joined — stays hidden until handleJoinServer
                         this.flowController.showMenu(() => this.handleJoinServer());
                     },
                 );
@@ -233,13 +280,14 @@ export default class BaseDemoScene extends GameScene {
         for (const s of this.statsWidgets) s.dom.parentElement?.removeChild(s.dom);
         this.statsWidgets = [];
         this.world3d?.destroy();
-        this.hud?.destroy();
         if (this.boostIndicator) {
             this.game.overlayContainer.removeChild(this.boostIndicator);
             this.boostIndicator.destroy();
         }
         this.leaderboard?.destroy();
         this.flowController?.destroy();
+        this.soundToggle?.destroy();
+        this.movementHint?.destroy();
         if (this.devPosLabel) {
             this.game.overlayContainer.removeChild(this.devPosLabel);
             this.devPosLabel.destroy();
@@ -247,7 +295,6 @@ export default class BaseDemoScene extends GameScene {
     }
 
     private repositionUi(): void {
-        this.hud?.reposition();
         if (this.devPosLabel) {
             const { topRight } = Game.overlayScreenData;
             this.devPosLabel.position.set(topRight.x - 8, topRight.y + 8);

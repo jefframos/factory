@@ -1,7 +1,7 @@
 import type { PlayerEntity } from '../entities/PlayerEntity';
 import type { BotController } from '../ai/BotController';
 import type { BotParams } from '../ai/Blackboard';
-import { NPC_DIFFICULTY_CONFIG, NPC_PERSONALITY_CONFIG, NPC_POPULATION_CONFIG, NPC_SPAWN_CONFIG } from './NpcConfig';
+import { NPC_DIFFICULTY_CONFIG, NPC_PERSONALITY_CONFIG, NPC_POPULATION_CONFIG, NPC_SAFE_START_CONFIG, NPC_SPAWN_CONFIG } from './NpcConfig';
 import { NpcRoster } from './NpcRoster';
 import { scoreOf, type NpcRecord } from './NpcRecord';
 import type { NpcHostScene } from './NpcHostScene';
@@ -20,9 +20,12 @@ export class NpcDirector {
 
     private readonly active = new Map<NpcRecord, BotController>();
     private checkTimer = 0;
+    /** Wall-clock seconds since this director started — drives NPC_SAFE_START_CONFIG's grace window, independent of how fast the player's own value climbs. */
+    private sessionTime = 0;
 
     update(delta: number, host: NpcHostScene): void {
         this.roster.update(delta);
+        this.sessionTime += delta;
 
         this.checkTimer += delta;
         if (this.checkTimer < NPC_SPAWN_CONFIG.checkInterval) return;
@@ -116,20 +119,24 @@ export class NpcDirector {
         if (idle.length === 0) return; // roster fully materialized already — shouldn't happen while rosterSize > activeMax
 
         const playerValue = host.playerValue;
-        const record = this.pickRecordFor(idle, playerValue);
+        // Wall-clock backstop on top of the value-based check below — guarantees
+        // a minimum grace window even for a player who grows past
+        // lowLevelPlayerThreshold in the first few seconds via a lucky food run.
+        const inGrace = this.sessionTime < NPC_SAFE_START_CONFIG.graceSeconds;
+        const record = this.pickRecordFor(idle, playerValue, inGrace);
 
         const { x: px, z: pz } = host.playerPosition;
         const spot = host.findSpawnRing(px, pz, NPC_SPAWN_CONFIG.spawnMinDistance, NPC_SPAWN_CONFIG.spawnMaxDistance);
         if (!spot) return; // no walkable cell out there yet (chunks not streamed that far) — retried next check tick
 
-        const controller = host.materializeNpc(spot, record.value, record.tailValues, this.rollParams(playerValue));
+        const controller = host.materializeNpc(spot, record.value, record.tailValues, this.rollParams(playerValue, inGrace));
         record.state = 'active';
         this.active.set(record, controller);
     }
 
-    /** See NPC_DIFFICULTY_CONFIG — while the player is low-level, prefer weak idle records over a uniform random pick so their first encounters aren't a coin flip against something huge. */
-    private pickRecordFor(idle: NpcRecord[], playerValue: number): NpcRecord {
-        if (playerValue > NPC_DIFFICULTY_CONFIG.lowLevelPlayerThreshold) {
+    /** See NPC_DIFFICULTY_CONFIG — while the player is low-level (or still inside the wall-clock grace window — see NPC_SAFE_START_CONFIG), prefer weak idle records over a uniform random pick so their first encounters aren't a coin flip against something huge. */
+    private pickRecordFor(idle: NpcRecord[], playerValue: number, inGrace: boolean): NpcRecord {
+        if (!inGrace && playerValue > NPC_DIFFICULTY_CONFIG.lowLevelPlayerThreshold) {
             return idle[Math.floor(Math.random() * idle.length)];
         }
 
@@ -139,14 +146,14 @@ export class NpcDirector {
         return pool[Math.floor(Math.random() * pool.length)];
     }
 
-    /** Base BotParams from config, jittered per-NPC so the population isn't identical clones — see NPC_PERSONALITY_CONFIG. Aggressiveness is additionally capped while the player is low-level (NPC_DIFFICULTY_CONFIG). */
-    private rollParams(playerValue: number): Partial<BotParams> {
+    /** Base BotParams from config, jittered per-NPC so the population isn't identical clones — see NPC_PERSONALITY_CONFIG. Aggressiveness is additionally capped while the player is low-level or still inside the grace window (NPC_DIFFICULTY_CONFIG / NPC_SAFE_START_CONFIG). */
+    private rollParams(playerValue: number, inGrace: boolean): Partial<BotParams> {
         const cfg = NPC_PERSONALITY_CONFIG;
         const jitter = (base: number, variance: number, min: number, max: number) =>
             Math.max(min, Math.min(max, base + (Math.random() * 2 - 1) * variance));
 
         let aggressiveness = jitter(cfg.aggressiveness, cfg.aggressivenessVariance, 0, 1);
-        if (playerValue <= NPC_DIFFICULTY_CONFIG.lowLevelPlayerThreshold) {
+        if (inGrace || playerValue <= NPC_DIFFICULTY_CONFIG.lowLevelPlayerThreshold) {
             aggressiveness = Math.min(aggressiveness, NPC_DIFFICULTY_CONFIG.lowLevelAggressivenessCap);
         }
 

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { ClusterMeshBuilder } from '../builders/ClusterMeshBuilder';
 import { BendService } from '../services/BendService';
 import { colorForValue } from '../builders/CubeBuilder';
-import { makeIslandTexture } from '../builders/IslandTexture';
+import { TextureBuilder } from '../builders/TextureBuilder';
 import { ROOM_GEOMETRY, GATE_MATERIAL_CONFIG, TILE_DEFS, type TileConfig } from './MeshConfig';
 import { type ObstacleConfig } from './LinearConfig';
 import { formatValue } from '../ClogConstants';
@@ -193,7 +193,6 @@ export class LinearArea {
         const cx = centerX;
         const cz = centerZ;
 
-        console.log(config)
         // ── Grid ─────────────────────────────────────────────────────────────
         if (config.layout) {
             // Layout fully defines the grid — parse tile ids from the string array.
@@ -346,9 +345,9 @@ export class LinearArea {
         const dirs: [number, number][] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
         let islandIdx = 0;
 
-        // makeIslandTexture() returns a process-wide cached texture (deterministic,
+        // TextureBuilder.island() returns a process-wide cached texture (deterministic,
         // built once) — do not dispose it here, other areas still reference it.
-        const islandTex = cfg.texture === 'island' ? makeIslandTexture() : null;
+        const islandTex = cfg.texture === 'island' ? TextureBuilder.island() : null;
 
         for (let startRow = 0; startRow < rows; startRow++) {
             for (let startCol = 0; startCol < cols; startCol++) {

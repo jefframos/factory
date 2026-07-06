@@ -12,6 +12,37 @@ export const NPC_POPULATION_CONFIG = {
     activeMax: 6,
     /** Head value a record resets to after being killed (by another idle NPC, or for real via EntityEating). */
     respawnValue: 2,
+    /**
+     * Seconds of world time the roster is seeded to look like it's already
+     * been running — makes a freshly booted server read as an ongoing one
+     * instead of every NPC starting at respawnValue simultaneously. This is
+     * the only input the seeding simulation takes, so a different value per
+     * game session/lobby is how two "rooms" end up with different-looking
+     * populations — an older room just simulates more seconds. See
+     * NpcRoster.seedPopulation / GrowthSimulator.
+     */
+    seedElapsedSeconds: 600,
+    /**
+     * Exponent shaping each record's simulated feeding-time budget out of
+     * seedElapsedSeconds (rank^skew, rank 0 = weakest .. 1 = the leader) —
+     * see NpcRoster.seedPopulation. Higher = most records get a much shorter
+     * effective feeding window (staying close to respawnValue) while only
+     * the very top ranks approach the full seedElapsedSeconds.
+     */
+    seedSkew: 4,
+};
+
+export const NPC_SAFE_START_CONFIG = {
+    /**
+     * Seconds after a player joins where NPC materialization near them
+     * always favors weak, docile records — same treatment as
+     * lowLevelPlayerThreshold below, but gated on wall-clock time instead of
+     * player value. Guarantees a minimum grace window even for a player who
+     * gets lucky and grows past the value threshold in the first few
+     * seconds; a quick early win shouldn't cut the "figure out the controls
+     * without dying" period short.
+     */
+    graceSeconds: 30,
 };
 
 export const NPC_PERSONALITY_CONFIG = {
@@ -87,4 +118,20 @@ export const NPC_DIFFICULTY_CONFIG = {
     lowLevelValueMultiplier: 2,
     /** Aggressiveness ceiling applied to NPCs spawned while the player is at/below the threshold — overrides the normal jitter from NPC_PERSONALITY_CONFIG. */
     lowLevelAggressivenessCap: 0.2,
+};
+
+export const NPC_HUNT_CONFIG = {
+    /**
+     * Current value (not spawn-time — this is checked live, so a bot can
+     * grow into hunter status mid-game) at/above which chaseWeakerPrey stops
+     * requiring prey to be strictly weaker and instead treats anything up to
+     * preyCeilingMult as fair game — a real "hunt" state for the biggest
+     * bots, instead of every NPC only ever going after things smaller than
+     * itself. Kept comfortably below fleeThreshold's ~1.67x cutoff so a
+     * hunter's own flee reflex still fires against something genuinely
+     * bigger.
+     */
+    valueThreshold: 32,
+    /** Multiple of a hunter's own value it's willing to chase — see valueThreshold. */
+    preyCeilingMult: 1.3,
 };

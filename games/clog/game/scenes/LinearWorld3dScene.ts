@@ -26,6 +26,9 @@ export default class LinearWorld3dScene extends ThreeScene {
 
     public moveInput: { x: number; z: number } = { x: 0, z: 0 };
 
+    /** Dormant until startNpcPopulation() — gates the food spawn timer/top-up so it doesn't keep accumulating behind the menu screen. This mode has no NPCs, but still uses startNpcPopulation() as its "player has joined" signal (see IWorld3dScene). */
+    private worldActive = false;
+
     // ── Exposed for Pixi HUD / minimap ────────────────────────────────────────
 
     get playerValue(): number { return this.player?.value ?? 0; }
@@ -83,6 +86,13 @@ export default class LinearWorld3dScene extends ThreeScene {
 
         this.player = new PlayerEntity(2, this.threeScene);
         this.linearManager.registerPlayer(this.player);
+
+        // Start zoomed in close on the menu screen — camDist eases out to the
+        // standard distance once startNpcPopulation() flips cameraZoom back
+        // to 1.0 (see BaseDemoScene.handleJoinServer).
+        this.cameraZoom = CAMERA_CONFIG.menuZoom;
+        this.camDist = CAMERA_CONFIG.minDistance * this.cameraZoom;
+
         const initPitch = CAMERA_CONFIG.pitch * Math.PI / 180;
         this.threeCamera.position.copy(this.player.position).add(
             new THREE.Vector3(0, Math.sin(initPitch) * this.camDist, Math.cos(initPitch) * this.camDist),
@@ -117,23 +127,27 @@ export default class LinearWorld3dScene extends ThreeScene {
         const hit = this.collectibles.checkCollision(this.player.position, this.player.foodRadius);
         if (hit) this.player.collect(hit);
 
-        const grid = this.linearManager.currentGrid;
-        const cz = this.linearManager.spawnCenter.y;
-        const hs = this.linearManager.spawnHalfSize;
-        this.levelManager.update(
-            scaledDelta,
-            this.collectibles,
-            this.threeScene,
-            this.player.position,
-            () => {
-                const values = this.linearManager.effectiveFoodValues;
-                return values[Math.floor(Math.random() * values.length)];
-            },
-            grid.getFreeCells(),
-            cz - hs,
-            cz + hs,
-            this.linearManager.computedFoodCount,
-        );
+        // Food top-up — dormant until the player joins (see worldActive), so
+        // food doesn't keep accumulating behind the menu screen.
+        if (this.worldActive) {
+            const grid = this.linearManager.currentGrid;
+            const cz = this.linearManager.spawnCenter.y;
+            const hs = this.linearManager.spawnHalfSize;
+            this.levelManager.update(
+                scaledDelta,
+                this.collectibles,
+                this.threeScene,
+                this.player.position,
+                () => {
+                    const values = this.linearManager.effectiveFoodValues;
+                    return values[Math.floor(Math.random() * values.length)];
+                },
+                grid.getFreeCells(),
+                cz - hs,
+                cz + hs,
+                this.linearManager.computedFoodCount,
+            );
+        }
 
         const pitch = CAMERA_CONFIG.pitch * Math.PI / 180;
         const camOffset = new THREE.Vector3(0, Math.sin(pitch) * this.camDist, Math.cos(pitch) * this.camDist);
@@ -148,6 +162,9 @@ export default class LinearWorld3dScene extends ThreeScene {
         this.player.debugDoubleValue();
     }
 
+    /** This mode has no death/respawn flow — see the deathInfo/respawnPlayer no-ops below. */
+    public debugKillPlayer(): void { /* no-op */ }
+
     /** Debug-only: drops `count` food items into the current room using the same spawn logic as the initial room seeding. */
     public spawnFood(count: number): void {
         this.spawnFoodInGrid(this.linearManager.currentConfig.foodValues, count, this.linearManager.currentGrid);
@@ -159,10 +176,14 @@ export default class LinearWorld3dScene extends ThreeScene {
     }
 
     /** This mode has no death/respawn flow — the gated linear-room progression is out of scope for it. */
-    get deathInfo(): { value: number; tailValues: number[] } | null { return null; }
+    get deathInfo(): null { return null; }
     public respawnPlayer(_value: number, _tailValues: number[]): void { /* no-op */ }
-    /** This mode has no NPC population. */
-    public startNpcPopulation(): void { /* no-op */ }
+    /** This mode has no NPC population, but still uses this as the "player has joined" signal to start the food spawn timer/top-up (see worldActive). */
+    public startNpcPopulation(): void { this.worldActive = true; }
+
+    public setPlayerIndicatorVisible(visible: boolean): void {
+        this.player?.setEatIndicatorVisible(visible);
+    }
 
     public destroy(): void {
         this.gradient.destroy();

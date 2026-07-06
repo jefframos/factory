@@ -1,6 +1,7 @@
 import { NPC_IDLE_SIM_CONFIG, NPC_POPULATION_CONFIG } from './NpcConfig';
-import { createFreshRecord, type NpcRecord } from './NpcRecord';
+import { collapseMerges, createFreshRecord, type NpcRecord } from './NpcRecord';
 import { rollFoodValue } from '../world/LinearConfig';
+import { GrowthSimulator } from './GrowthSimulator';
 
 /**
  * Owns the persistent 24-NPC world population as plain data. Records in
@@ -19,11 +20,39 @@ export class NpcRoster {
     private stealTimer = 0;
     private nextId = 1;
 
-    constructor(size: number = NPC_POPULATION_CONFIG.rosterSize) {
+    /** @param seed Whether to run seedPopulation() on construction — defaults on; pass false for a truly fresh, everyone-at-respawnValue roster (e.g. in tests). */
+    constructor(size: number = NPC_POPULATION_CONFIG.rosterSize, seed: boolean = true) {
         this.records = Array.from(
             { length: size },
             () => createFreshRecord(this.nextId++, NPC_POPULATION_CONFIG.respawnValue),
         );
+        if (seed) this.seedPopulation();
+    }
+
+    /**
+     * Gives each record its own simulated feeding-time budget out of
+     * NPC_POPULATION_CONFIG.seedElapsedSeconds — most get a short one (stay
+     * close to respawnValue, as if freshly killed/respawned), only the top
+     * few ranks get close to the full duration (as if they'd been surviving
+     * and feeding the whole time) — then runs GrowthSimulator for that
+     * budget to get each record's actual value. This is what produces the
+     * "few big, many small" spread: every record racing the same clock
+     * (i.e. calling GrowthSimulator.run(seedElapsedSeconds) for all of them)
+     * would make the whole roster grow at nearly the same organic rate,
+     * since the underlying feed mechanic is time-driven, not luck-driven.
+     * Shuffled so the "leader" isn't always the same record id run to run.
+     */
+    private seedPopulation(): void {
+        const cfg = NPC_POPULATION_CONFIG;
+        const shuffled = [...this.records].sort(() => Math.random() - 0.5);
+        const n = shuffled.length;
+        for (let i = 0; i < n; i++) {
+            const t = n === 1 ? 1 : i / (n - 1); // 0 = weakest rank .. 1 = leader
+            const simSeconds = cfg.seedElapsedSeconds * Math.pow(t, cfg.seedSkew);
+            const outcome = GrowthSimulator.run(simSeconds);
+            shuffled[i].value = outcome.value;
+            shuffled[i].tailValues = outcome.tailValues;
+        }
     }
 
     update(delta: number): void {
@@ -53,37 +82,7 @@ export class NpcRoster {
     private feed(record: NpcRecord, value: number): void {
         record.tailValues.push(value);
         record.tailValues.sort((a, b) => b - a);
-        this.collapseMerges(record);
-    }
-
-    /**
-     * Plain-data equivalent of PlayerEntity.scheduleMerges: absorb a
-     * head-matching front cube into the head first (same priority reason as
-     * the real one — otherwise a tail merge can double past the head and
-     * permanently orphan it), then collapse adjacent equal pairs closest to
-     * the head first, re-checking head-absorb after each collapse since a
-     * tail merge can produce a new head match.
-     */
-    private collapseMerges(record: NpcRecord): void {
-        let changed = true;
-        while (changed) {
-            changed = false;
-
-            while (record.tailValues.length > 0 && record.tailValues[0] === record.value) {
-                record.value *= 2;
-                record.tailValues.shift();
-                changed = true;
-            }
-
-            for (let i = 0; i < record.tailValues.length - 1; i++) {
-                if (record.tailValues[i] === record.tailValues[i + 1]) {
-                    record.tailValues[i] *= 2;
-                    record.tailValues.splice(i + 1, 1);
-                    changed = true;
-                    break;
-                }
-            }
-        }
+        collapseMerges(record);
     }
 
     /**
@@ -122,7 +121,7 @@ export class NpcRoster {
 
         winner.tailValues.push(loser.value, ...loser.tailValues);
         winner.tailValues.sort((a, b) => b - a);
-        this.collapseMerges(winner);
+        collapseMerges(winner);
 
         loser.value = NPC_POPULATION_CONFIG.respawnValue;
         loser.tailValues = [];
@@ -144,6 +143,6 @@ export class NpcRoster {
 
         receiver.tailValues.push(stolen);
         receiver.tailValues.sort((a, b) => b - a);
-        this.collapseMerges(receiver);
+        collapseMerges(receiver);
     }
 }

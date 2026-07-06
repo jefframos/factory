@@ -4,6 +4,7 @@ import { SimWorld } from "../sim/SimWorld";
 import { isFacingTarget } from "../sim/VisionCone";
 import { Blackboard, BotParams } from "./Blackboard";
 import { Action, BTNode, NodeStatus, Selector } from "./BehaviorTree";
+import { NPC_HUNT_CONFIG } from "../npc/NpcConfig";
 
 /** Per-tick context handed to every BT node — everything a node needs to sense the world and act. */
 export type BotContext = {
@@ -150,6 +151,17 @@ export class BotController {
             moveDir: new THREE.Vector2(0, 0),
         };
         this.tree.tick(ctx);
+
+        // Hunting or fleeing is exactly when a human player would be tapping
+        // to burst — give bots the same edge instead of only ever getting it
+        // once, incidentally, on their very first tick of movement (chase/flee
+        // keep moveDir nonzero continuously, so PlayerEntity's own
+        // stopped->moving edge never fires again after that). Re-triggers
+        // itself every ~TAP_BOOST_DURATION seconds for as long as the state
+        // holds, since triggerTapBoost no-ops while already boosting.
+        const state = this.blackboard.get<string>("state");
+        if (state === "chase" || state === "hunt" || state === "flee") this.entity.triggerTapBoost();
+
         const rawDir = ctx.moveDir.clone(); // BT output before separation — kept only for logDebug
         this.applySeparation(ctx);
         const postSeparationDir = ctx.moveDir.clone();
@@ -521,8 +533,15 @@ function chaseWeakerPrey(home: THREE.Vector3): BTNode<BotContext> {
             entity.position, blackboard.params.awarenessRadius, entity,
             { excludePlayer: blackboard.ignorePlayer },
         );
+        // Big enough bots become hunters: instead of only ever going after
+        // strictly weaker prey, they'll chase anything up to preyCeilingMult
+        // of their own value — see NPC_HUNT_CONFIG. Checked against current
+        // value, not a spawn-time trait, so a bot can grow into this mid-game.
+        const isHunter = entity.value >= NPC_HUNT_CONFIG.valueThreshold;
         // Higher aggressiveness accepts riskier (closer-to-even) matchups as worth chasing.
-        const preyValueCeiling = entity.value * (0.3 + 0.7 * blackboard.params.aggressiveness);
+        const preyValueCeiling = isHunter
+            ? entity.value * NPC_HUNT_CONFIG.preyCeilingMult
+            : entity.value * (0.3 + 0.7 * blackboard.params.aggressiveness);
         // Same idea as seekNearestFood's leash guard: don't commit to prey
         // we'd have to leave leash range to actually catch — otherwise
         // returnToLeash fights this node exactly like it used to fight
@@ -532,7 +551,8 @@ function chaseWeakerPrey(home: THREE.Vector3): BTNode<BotContext> {
         let prey: THREE.Vector3 | null = null;
         let bestDist2 = Infinity;
         for (const other of result.entities) {
-            if (other.value >= entity.value || other.value > preyValueCeiling) continue;
+            if (!isHunter && other.value >= entity.value) continue;
+            if (other.value > preyValueCeiling) continue;
             if (home.distanceToSquared(other.position) > leashR2) continue;
             const d2 = entity.position.distanceToSquared(other.position);
             if (d2 < bestDist2) { bestDist2 = d2; prey = other.position; }
@@ -553,7 +573,7 @@ function chaseWeakerPrey(home: THREE.Vector3): BTNode<BotContext> {
         const dx = prey.x - entity.position.x;
         const dz = prey.z - entity.position.z;
         ctx.moveDir.set(dx, dz).normalize();
-        blackboard.set("state", "chase");
+        blackboard.set("state", isHunter ? "hunt" : "chase");
         return NodeStatus.Running;
     });
 }

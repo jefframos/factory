@@ -84,6 +84,11 @@ export class PlayerEntity implements ISimEntity {
         this.shadow = new BlobShadow(scene);
     }
 
+    /** Hides the forward-facing direction triangle — e.g. while the player is parked on the boot menu, not yet controllable. No-op for NPCs (built without one). */
+    public setEatIndicatorVisible(visible: boolean): void {
+        if (this.eatIndicator) this.eatIndicator.visible = visible;
+    }
+
     get position(): THREE.Vector3 {
         return this.transform.position;
     }
@@ -96,6 +101,18 @@ export class PlayerEntity implements ISimEntity {
     /** 0..1 — fraction of the tap-start speed boost still remaining; 0 when not boosting. Drives the boost indicator's fill. */
     get boostT(): number {
         return this.tapBoostTimer / TAP_BOOST_DURATION;
+    }
+
+    /**
+     * Manually starts the tap-start speed boost — lets AI-controlled entities
+     * use the same burst a human player gets by releasing and re-tapping
+     * movement, without actually having to stop moving to trigger the
+     * wasMoving edge in update(). No-ops while already boosting so a caller
+     * can invoke this every tick during a chase/flee without extending the
+     * burst past its normal duration.
+     */
+    triggerTapBoost(): void {
+        if (this.tapBoostTimer <= 0) this.tapBoostTimer = TAP_BOOST_DURATION;
     }
 
     /** Radius of the eat circle (scales with value). Used for player/NPC kills and tail-snipes. */

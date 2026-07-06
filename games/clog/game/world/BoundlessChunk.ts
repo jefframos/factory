@@ -3,7 +3,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { RoomGrid } from './RoomGrid';
 import { ClusterMeshBuilder } from '../builders/ClusterMeshBuilder';
 import { BendService } from '../services/BendService';
-import { makeIslandTexture } from '../builders/IslandTexture';
+import { TextureBuilder } from '../builders/TextureBuilder';
 import { TILE_DEFS, type TileConfig } from './MeshConfig';
 
 // World units per chunk. Each chunk may contain one island.
@@ -173,7 +173,7 @@ export class BoundlessChunk {
         const cs = grid.cellSize;
         const dirs: [number, number][] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
-        const islandTex = cfg.texture === 'island' ? makeIslandTexture() : null;
+        const islandTex = cfg.texture === 'island' ? TextureBuilder.island() : null;
         const geometries: THREE.BufferGeometry[] = [];
 
         for (let startRow = 0; startRow < rows; startRow++) {

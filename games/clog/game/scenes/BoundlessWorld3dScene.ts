@@ -13,6 +13,7 @@ import { FloorBuilder } from '../builders/FloorBuilder';
 import FourCornersGradientBuilder from '../vfx/FourCornersGradientBuilder';
 import { CloudSystem } from '../vfx/CloudSystem';
 import type { IWorld3dScene } from './IWorld3dScene';
+import type { DeathSnapshot } from '../ui-dom/PlayerFlowController';
 import { PerfOverlay } from '../utils/PerfOverlay';
 import SetupThree from '@core/scene/SetupThree';
 import { SimWorld } from '../sim/SimWorld';
@@ -42,13 +43,13 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     private camDist = CAMERA_CONFIG.minDistance;
     private perfOverlay: PerfOverlay | null = null;
     private botControllers: BotController[] = [];
-    /** Non-null exactly while the player is dead, awaiting a respawn choice from the UI (see IWorld3dScene.deathInfo) — holds the value/tail captured the instant before death so a "watch a video" respawn can restore it. */
-    private _deathInfo: { value: number; tailValues: number[] } | null = null;
+    /** Non-null exactly while the player is dead, awaiting a respawn choice from the UI (see IWorld3dScene.deathInfo) — holds the value/tail captured the instant before death so a "watch a video" respawn can restore it, plus a leaderboard snapshot for the End Game screen. */
+    private _deathInfo: DeathSnapshot | null = null;
     /** The 4 bots spawned by the "AI Debug" panel — tracked separately so the panel can target just them. */
     private debugBotControllers: BotController[] = [];
     /** Owns the persistent 24-NPC population and keeps ~activeMin-activeMax of them materialized near the player — see NpcDirector.ts. Its materialized bots live in `botControllers` alongside anything spawned via the debug panel, so the rest of this scene's bot handling (updateBots, resolveEntityEating, listEntities) needs no changes to pick them up. */
     private npcDirector = new NpcDirector();
-    /** Dormant until startNpcPopulation() — the menu screen shows just the player alone in the world; NPCs only start once they actually join. */
+    /** Dormant until startNpcPopulation() — the menu screen shows just the player alone in the world; NPCs and the food spawn timer/top-up only start once they actually join. */
     private npcPopulationActive = false;
     /** Last frame's wall-deflected move direction — see BotController.lastResolvedDir for why sticking with it avoids hunting between two equally-valid deflections at a fixed heading. */
     private lastPlayerResolvedDir: THREE.Vector3 | null = null;
@@ -70,7 +71,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     getPlayerScreenAnchor(): { x: number; y: number } | null {
         return this.player ? this.worldToScreen(this.player.uiAnchor) : null;
     }
-    get deathInfo(): { value: number; tailValues: number[] } | null { return this._deathInfo; }
+    get deathInfo(): DeathSnapshot | null { return this._deathInfo; }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -126,6 +127,12 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         if (PERF_MODE) this.perfOverlay = new PerfOverlay();
 
         this.buildAiDebugPanel();
+
+        // Start zoomed in close on the menu screen — camDist eases out to the
+        // standard distance once startNpcPopulation() flips cameraZoom back
+        // to 1.0 (see BaseDemoScene.handleJoinServer).
+        this.cameraZoom = CAMERA_CONFIG.menuZoom;
+        this.camDist = CAMERA_CONFIG.minDistance * this.cameraZoom;
 
         const initPitch = CAMERA_CONFIG.pitch * Math.PI / 180;
         this.threeCamera.position.copy(this.player.position).add(
@@ -189,25 +196,28 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
             if (eaten.includes(this.player)) {
                 // Don't respawn immediately — let the camera linger on the death
                 // spot (see updateDead) while the UI shows a respawn choice.
-                this._deathInfo = { value: preDeathValue, tailValues: preDeathTail };
+                this._deathInfo = this.buildDeathSnapshot(preDeathValue, preDeathTail);
             }
         }
 
-        // Food top-up
-        const pz = this.player.position.z;
-        const freeCells = this.chunkManager.getFreeCellsNear(this.player.position.x, pz, SPAWN_RADIUS);
-        const maxFood = Math.min(FOOD_CONFIG.maxAbsolute, Math.max(FOOD_CONFIG.minAbsolute, Math.floor(freeCells.length / 8)));
-        this.levelManager.update(
-            delta,
-            this.collectibles,
-            this.threeScene,
-            this.player.position,
-            rollFoodValue,
-            freeCells,
-            pz - SPAWN_RADIUS,
-            pz + SPAWN_RADIUS,
-            maxFood,
-        );
+        // Food top-up — dormant until the player joins (see npcPopulationActive),
+        // so food doesn't keep accumulating behind the menu screen.
+        if (this.npcPopulationActive) {
+            const pz = this.player.position.z;
+            const freeCells = this.chunkManager.getFreeCellsNear(this.player.position.x, pz, SPAWN_RADIUS);
+            const maxFood = Math.min(FOOD_CONFIG.maxAbsolute, Math.max(FOOD_CONFIG.minAbsolute, Math.floor(freeCells.length / 8)));
+            this.levelManager.update(
+                delta,
+                this.collectibles,
+                this.threeScene,
+                this.player.position,
+                rollFoodValue,
+                freeCells,
+                pz - SPAWN_RADIUS,
+                pz + SPAWN_RADIUS,
+                maxFood,
+            );
+        }
 
         // Camera follow
         const pitch = CAMERA_CONFIG.pitch * Math.PI / 180;
@@ -339,8 +349,40 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.player?.debugDoubleValue();
     }
 
+    /** Mirrors EntityEating.ts's kill() for the player specifically — drops their tail as scattered food and hands off to the same deathInfo/respawn flow a real kill would. */
+    public debugKillPlayer(): void {
+        if (this._deathInfo !== null || !this.player) return;
+
+        const preDeathValue = this.player.value;
+        const preDeathTail = this.player.tailSnapshot().map(t => t.value);
+
+        const dropped = this.player.onEaten();
+        for (const cube of dropped) cube.startSpawnPop();
+        this.collectibles.absorbDrop(dropped);
+        SimWorld.unregister(this.player);
+
+        this._deathInfo = this.buildDeathSnapshot(preDeathValue, preDeathTail);
+    }
+
     public startNpcPopulation(): void {
         this.npcPopulationActive = true;
+    }
+
+    public setPlayerIndicatorVisible(visible: boolean): void {
+        this.player?.setEatIndicatorVisible(visible);
+    }
+
+    /**
+     * Snapshots the leaderboard at the moment of death for the End Game
+     * screen's rank/rows. listEntities() alone isn't enough here — by this
+     * point onEaten() has already cleared the player's tail, so their live
+     * `score` getter (value + tail sum) has collapsed to just their head
+     * value; this overrides "You"'s score back to the pre-death total.
+     */
+    private buildDeathSnapshot(value: number, tailValues: number[]): DeathSnapshot {
+        const score = value + tailValues.reduce((sum, v) => sum + v, 0);
+        const entries = this.listEntities().map(e => e.name === 'You' ? { ...e, value, score } : e);
+        return { value, tailValues, entries };
     }
 
     // ── NpcHostScene — see NpcHostScene.ts for why this isn't on IWorld3dScene ──
