@@ -74,6 +74,12 @@ export class Game {
         this.app = new PIXI.Application({
             backgroundColor: 0x1099bb,
             resizeTo: window,
+            // Keeps the canvas's CSS box pinned to the viewport size while its
+            // backing buffer scales with `resolution` — without this, the
+            // buffer would render at `resolution`x the viewport but display at
+            // 1x CSS pixels (a giant, cropped canvas) instead of the intended
+            // "same on-screen size, sharper on high-DPI" result.
+            autoDensity: true,
             ...options,
         });
         Game.renderer = this.app.renderer;
@@ -170,8 +176,13 @@ export class Game {
     }
 
     protected onResize() {
-        const screenWidth = window.innerWidth / Game.renderer.resolution;
-        const screenHeight = window.innerHeight / Game.renderer.resolution;
+        // CSS pixels already, NOT physical device pixels — renderer.resize()
+        // multiplies by resolution internally to size the backing buffer, so
+        // dividing by resolution here would cancel that scaling straight back
+        // out (see autoDensity below for why the canvas doesn't then balloon
+        // to resolution× the viewport).
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
 
         const scaleX = screenWidth / Game.DESIGN_WIDTH;
         const scaleY = screenHeight / Game.DESIGN_HEIGHT;

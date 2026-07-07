@@ -4,7 +4,7 @@ import Assets from '../../Assets';
 const BAR_WIDTH = 46;
 const BAR_HEIGHT = 7;
 const BAR_Y_OFFSET = -14; // lift above the anchor point (already just above the entity's head) so it clears the direction triangle
-const NAME_Y_OFFSET = -22; // stacked above the boost bar, whether or not the bar itself is currently shown
+const NAME_Y_OFFSET = -32; // stacked above the boost bar, whether or not the bar itself is currently shown
 
 /** Small floating HUD that tracks one entity (player or NPC) in screen space: its name always shown above the head, plus a bar that fills while its tap-start speed boost is active. */
 export class EntityIndicator extends PIXI.Container {
@@ -17,9 +17,9 @@ export class EntityIndicator extends PIXI.Container {
     // pixel ratio (see games/clog/index.ts).
     private label = new PIXI.BitmapText('', {
         fontName: Assets.MainFont.fontFamily as string,
-        fontSize: 24,
+        fontSize: 18,
         align: 'center',
-        letterSpacing: 2,
+        letterSpacing: 2
     });
 
     constructor() {
@@ -33,6 +33,8 @@ export class EntityIndicator extends PIXI.Container {
 
         this.label.anchor.set(0.5, 1);
         this.label.position.set(0, NAME_Y_OFFSET);
+
+        this.label.resolution = 2
 
         this.addChild(this.bg, this.fill, this.label);
         this.visible = false;

@@ -1,4 +1,5 @@
 import { ThreeScene } from '@core/scene/ThreeScene';
+import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import { PlayerEntity } from '../entities/PlayerEntity';
 import { BendService } from '../services/BendService';
@@ -21,6 +22,11 @@ export default class LinearWorld3dScene extends ThreeScene {
 
     // Smoothed camera distance — approaches target derived from player value each frame
     private camDist = CAMERA_CONFIG.minDistance;
+
+    /** True while actually playing — see setGameplayCameraActive. */
+    private gameplayCameraActive = false;
+    /** Smoothed world-unit lift applied to the camera's look target — eases toward CAMERA_CONFIG.mobileFocusOffset while gameplayCameraActive on mobile, back to 0 otherwise (menu/death, or desktop). */
+    private cameraFocusOffset = 0;
 
     /** Zoom multiplier applied on top of the depth-driven target. 1 = default, >1 = further out. */
     public cameraZoom = 1.0;
@@ -165,7 +171,10 @@ export default class LinearWorld3dScene extends ThreeScene {
         const camOffset = new THREE.Vector3(0, Math.sin(pitch) * this.camDist, Math.cos(pitch) * this.camDist);
         const posT = 1 - Math.exp(-CAMERA_CONFIG.followSpeed * delta);
         this.threeCamera.position.lerp(this.player.position.clone().add(camOffset), posT);
-        this.threeCamera.lookAt(this.player.position);
+
+        const targetFocusOffset = (this.gameplayCameraActive && PIXI.isMobile.any) ? CAMERA_CONFIG.mobileFocusOffset : 0;
+        this.cameraFocusOffset += (targetFocusOffset - this.cameraFocusOffset) * posT;
+        this.threeCamera.lookAt(this.player.position.x, this.player.position.y + this.cameraFocusOffset, this.player.position.z);
 
         super.update(delta);
     }
@@ -199,6 +208,10 @@ export default class LinearWorld3dScene extends ThreeScene {
 
     public setPlayerIndicatorVisible(visible: boolean): void {
         this.player?.setEatIndicatorVisible(visible);
+    }
+
+    public setGameplayCameraActive(active: boolean): void {
+        this.gameplayCameraActive = active;
     }
 
     public destroy(): void {

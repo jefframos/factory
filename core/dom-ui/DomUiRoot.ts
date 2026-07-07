@@ -1,3 +1,5 @@
+import './buttons.css';
+
 /**
  * Root mount point for production, player-facing DOM/CSS UI — the
  * always-on sibling of DevGuiManager/DebugHtmlManager (both dev-only). A
@@ -27,7 +29,7 @@ export class DomUiRoot {
             inset: '0',
             pointerEvents: 'none', // mounted panels opt back in individually (see CollapsiblePanel)
             zIndex: '9000',        // above the game canvas (Pixi sits at 8 — see DevGuiManager), below dev tools (DebugHtmlManager 9999 / DevGuiManager 10000+)
-            fontFamily: 'sans-serif',
+            fontFamily: 'LEMONMILK-Regular, sans-serif',
         });
         document.body.appendChild(this.root);
         return this.root;

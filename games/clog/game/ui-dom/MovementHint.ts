@@ -1,36 +1,57 @@
 import { DomUiRoot } from '@core/dom-ui/DomUiRoot';
+import * as PIXI from 'pixi.js';
 
 const HIDE_DELAY = 600; // ms after the first move before the hint fades out — lets the player see it actually worked
 const FADE_DURATION = 400; // ms, must match the opacity transition below
+
+const START_TEXT = PIXI.isMobile.any ? 'Tap to start' : 'Click to start';
+const MOVE_TEXT = PIXI.isMobile.any ? 'Use your finger to move' : 'Use your mouse to move';
 
 /**
  * One-time onboarding hint shown the moment the player joins — fades out
  * shortly after they first move (see registerMove), same "shown once on
  * initial join, not on every death/respawn" convention as LeaderboardPanel.
+ * Two states: START_TEXT until the player's first move, then MOVE_TEXT
+ * (swapped in registerMove) confirms the control scheme for a moment
+ * before the hint fades.
+ *
+ * Structure is a plain fixed+centered wrapper (`element`) holding the actual
+ * label (`label`) — kept separate because the label's pulse animation drives
+ * its own `transform: scale(...)`, which would otherwise clobber the
+ * wrapper's `translateX(-50%)` centering (both can't animate the same
+ * `transform` property independently).
  */
 export class MovementHint {
     readonly element: HTMLDivElement;
+    private readonly label: HTMLDivElement;
     private hideTimer: number | null = null;
 
     constructor() {
         this.element = document.createElement('div');
         Object.assign(this.element.style, {
             position: 'fixed',
-            right: '24px',
-            bottom: '24px',
-            padding: '10px 18px',
-            borderRadius: '999px',
-            background: '#5ecf5e',
-            color: '#fff',
-            fontWeight: 'bold',
-            fontSize: '15px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            left: '50%',
+            bottom: '140px',
+            transform: 'translateX(-50%)',
             display: 'none',
             opacity: '0',
             transition: `opacity ${FADE_DURATION}ms ease`,
             pointerEvents: 'none',
         });
-        this.element.textContent = 'Use mouse to move';
+
+        this.label = document.createElement('div');
+        this.label.className = 'pulse-scale';
+        Object.assign(this.label.style, {
+            background: 'rgba(10, 14, 22, 0.65)',
+            borderRadius: '999px',
+            padding: '10px 24px',
+            fontSize: '15px',
+            fontWeight: 'bold',
+            color: '#fff',
+            textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+        });
+        this.label.textContent = START_TEXT;
+        this.element.appendChild(this.label);
 
         DomUiRoot.instance.mount(this.element);
     }
@@ -40,16 +61,27 @@ export class MovementHint {
             window.clearTimeout(this.hideTimer);
             this.hideTimer = null;
         }
-        this.element.style.display = 'block';
+        this.label.textContent = START_TEXT;
+        this.element.style.display = 'inline-flex';
         // Force a paint with opacity still 0 before animating it to 1, so the
         // transition actually plays instead of jumping straight to visible.
         requestAnimationFrame(() => { this.element.style.opacity = '1'; });
     }
 
-    /** Call on every move-input event; only the first call after a show() starts the fade-out countdown. */
+    /** Call on every move-input event; only the first call after a show() swaps in MOVE_TEXT and starts the fade-out countdown. */
     registerMove(): void {
         if (this.hideTimer !== null || this.element.style.display === 'none') return;
+        this.label.textContent = MOVE_TEXT;
         this.hideTimer = window.setTimeout(() => this.hide(), HIDE_DELAY);
+    }
+
+    /** Dismisses right away instead of waiting out HIDE_DELAY — for cases where the hint shouldn't linger regardless of whether the player ever moved: dying, or landing back on the boot menu. */
+    forceHide(): void {
+        if (this.hideTimer !== null) {
+            window.clearTimeout(this.hideTimer);
+            this.hideTimer = null;
+        }
+        this.hide();
     }
 
     private hide(): void {

@@ -1,4 +1,5 @@
 import { ThreeScene } from '@core/scene/ThreeScene';
+import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import { PlayerEntity } from '../entities/PlayerEntity';
 import { TailCube } from '../entities/TailCube';
@@ -41,6 +42,10 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     private floorMesh!: THREE.Mesh;
     private floorMat!: THREE.Material;
     private camDist = CAMERA_CONFIG.minDistance;
+    /** True while actually playing — see setGameplayCameraActive. */
+    private gameplayCameraActive = false;
+    /** Smoothed world-unit lift applied to the camera's look target — eases toward CAMERA_CONFIG.mobileFocusOffset while gameplayCameraActive on mobile, back to 0 otherwise (menu/death, or desktop). */
+    private cameraFocusOffset = 0;
     private perfOverlay: PerfOverlay | null = null;
     private botControllers: BotController[] = [];
     /** Non-null exactly while the player is dead, awaiting a respawn choice from the UI (see IWorld3dScene.deathInfo) — holds the value/tail captured the instant before death so a "watch a video" respawn can restore it, plus a leaderboard snapshot for the End Game screen. */
@@ -255,7 +260,10 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         const camOffset = new THREE.Vector3(0, Math.sin(pitch) * this.camDist, Math.cos(pitch) * this.camDist);
         const posT = 1 - Math.exp(-CAMERA_CONFIG.followSpeed * delta);
         this.threeCamera.position.lerp(this.player.position.clone().add(camOffset), posT);
-        this.threeCamera.lookAt(this.player.position);
+
+        const targetFocusOffset = (this.gameplayCameraActive && PIXI.isMobile.any) ? CAMERA_CONFIG.mobileFocusOffset : 0;
+        this.cameraFocusOffset += (targetFocusOffset - this.cameraFocusOffset) * posT;
+        this.threeCamera.lookAt(this.player.position.x, this.player.position.y + this.cameraFocusOffset, this.player.position.z);
 
         super.update(delta);
 
@@ -405,6 +413,10 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
 
     public setPlayerIndicatorVisible(visible: boolean): void {
         this.player?.setEatIndicatorVisible(visible);
+    }
+
+    public setGameplayCameraActive(active: boolean): void {
+        this.gameplayCameraActive = active;
     }
 
     /**

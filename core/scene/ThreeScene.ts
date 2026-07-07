@@ -43,10 +43,10 @@ export abstract class ThreeScene extends GameScene {
      * Game.onResize, which both ultimately size their canvases to the full
      * viewport). Lets a Pixi element track a 3D entity: project here, then
      * convert the result into whatever Pixi container you want to parent it
-     * under (see BaseDemoScene's use for the boost indicator, which further
-     * divides by Game.renderer.resolution and runs it through
-     * `container.toLocal()` — that step is Pixi-specific and deliberately
-     * not baked in here).
+     * under via plain `container.toLocal()` — no resolution division needed,
+     * since Pixi's stage space is itself sized in raw CSS pixels (see
+     * EntityIndicatorManager.toOverlayLocal for the boost indicator's use of
+     * this) — that step is Pixi-specific and deliberately not baked in here.
      *
      * Returns null when the point is behind the camera, so callers can hide
      * whatever UI would otherwise land at a bogus on-screen position.

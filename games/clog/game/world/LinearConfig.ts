@@ -132,6 +132,8 @@ export const CAMERA_CONFIG = {
     followSpeed: 5,
     /** cameraZoom multiplier while the boot menu is up — starts close on the player, then eases out to 1.0 (via the existing camDist smoothing) once they hit "Tap to Start." */
     menuZoom: 0.45,
+    /** World-unit vertical lift applied to the camera's look target on mobile while actually playing (see PIXI.isMobile.any) — tilts the view up slightly so the player renders lower on screen instead of dead-center, leaving room below for a thumb/joystick. Eased in/out via followSpeed; stays 0 (centered) on desktop and on the menu/death screens. */
+    mobileFocusOffset: 3,
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

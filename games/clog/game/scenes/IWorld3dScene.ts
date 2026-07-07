@@ -51,4 +51,6 @@ export interface IWorld3dScene {
     startNpcPopulation(): void;
     /** Shows/hides the player's forward-facing direction triangle — hidden while parked on the boot/death menu, since there's no live control to indicate a direction for yet. */
     setPlayerIndicatorVisible(visible: boolean): void;
+    /** True while actually playing (vs. parked on the boot/death menu) — eases the camera's look target up on mobile so the player reads lower on screen instead of dead-center (see CAMERA_CONFIG.mobileFocusOffset). No-op on desktop. */
+    setGameplayCameraActive(active: boolean): void;
 }

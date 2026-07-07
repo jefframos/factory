@@ -7,6 +7,8 @@ import soundOffIcon from './images/sound-off.png';
  * Persistent top-left mute/unmute toggle — the DOM-UI equivalent of
  * core/ui/SoundToggleButton.ts (which is Pixi-only and expects atlas
  * texture names). Always mounted, independent of any menu/modal state.
+ * Sits to the right of SettingsButton, which takes the actual top-left
+ * corner spot (12px) this used to sit in.
  */
 export class SoundToggleButton {
     readonly element: HTMLButtonElement;
@@ -17,7 +19,7 @@ export class SoundToggleButton {
         Object.assign(this.element.style, {
             position: 'fixed',
             top: '12px',
-            left: '12px',
+            left: '64px', // 12px margin + 40px SettingsButton + 12px gap
             width: '40px',
             height: '40px',
             borderRadius: '50%',

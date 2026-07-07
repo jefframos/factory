@@ -1,11 +1,19 @@
+import * as PIXI from 'pixi.js';
 import { DomUiRoot } from '@core/dom-ui/DomUiRoot';
 import { ModalOverlay } from '@core/dom-ui/ModalOverlay';
 import PlatformHandler from '@core/platforms/PlatformHandler';
 import { leaderboardRow, windowAround, type LeaderboardEntry } from './LeaderboardPanel';
+import { renderShopScreen } from './ShopScreen';
+import { HighScoreStorage } from '../data/HighScoreStorage';
 import shopIcon from '@core/dom-ui/images/shop.png';
 import videoIcon from '@core/dom-ui/images/video-icon.png';
+import whaleLogo from '@core/dom-ui/images/whaleLogo.png';
+import trophyIcon from '@core/dom-ui/images/ItemIcon_Trophy_Gold-2.png';
 
 export type DeathSnapshot = { value: number; tailValues: number[]; entries: LeaderboardEntry[] };
+
+/** Mirrors the .btn-* role classes in core/dom-ui/buttons.css. */
+type BtnRole = 'primary' | 'secondary' | 'accent' | 'shop' | 'danger';
 
 const DEATH_COUNTDOWN_SECONDS = 5;
 const DEATH_TICK_MS = 100;
@@ -24,10 +32,12 @@ export class PlayerFlowController {
 
     private playerName = randomPlayerName();
     private pendingDeath: DeathSnapshot | null = null;
+    private pendingIsNewHighScore = false;
     private deathCountdownHandle: number | null = null;
 
     private onJoin: (() => void) | null = null;
     private onRevive: ((keepSize: DeathSnapshot) => void) | null = null;
+    private onEndGame: (() => void) | null = null;
     private onContinue: (() => void) | null = null;
 
     constructor() {
@@ -49,12 +59,17 @@ export class PlayerFlowController {
      * Shown the instant the player dies, with a countdown ring. `onRevive`
      * is called (with the pre-death snapshot, to keep their size) only if
      * they watch a video — clicking "Next" or letting the countdown run out
-     * instead moves to the End Game rank screen, whose "Continue" then calls
-     * `onContinue` to return to the boot menu for a fresh join.
+     * instead moves to the End Game rank screen (`onEndGame` fires right as
+     * that screen appears — e.g. to hide the live in-game leaderboard, which
+     * would otherwise sit redundantly next to the End Game screen's own rank
+     * list), whose "Continue" then calls `onContinue` to return to the boot
+     * menu for a fresh join.
      */
-    showDeath(snapshot: DeathSnapshot, onRevive: (keepSize: DeathSnapshot) => void, onContinue: () => void): void {
+    showDeath(snapshot: DeathSnapshot, isNewHighScore: boolean, onRevive: (keepSize: DeathSnapshot) => void, onEndGame: () => void, onContinue: () => void): void {
         this.pendingDeath = snapshot;
+        this.pendingIsNewHighScore = isNewHighScore;
         this.onRevive = onRevive;
+        this.onEndGame = onEndGame;
         this.onContinue = onContinue;
         this.renderDeath();
         this.overlay.show();
@@ -70,8 +85,8 @@ export class PlayerFlowController {
 
     private renderMenu(): void {
         this.overlay.setFullContent(root => {
-            root.appendChild(menuHeading('Clog'));
-            root.appendChild(cornerButton('left', pillButton('Shop', () => this.renderShop(), { icon: shopIcon })));
+            root.appendChild(gameLogo());
+            root.appendChild(cornerButton('left', pillButton('Shop', () => this.renderShop(), { icon: shopIcon, role: 'shop' })));
             root.appendChild(cornerButton('right', boostBadge(() => this.renderBoost())));
             root.appendChild(this.menuBottomSection());
         });
@@ -97,7 +112,7 @@ export class PlayerFlowController {
         section.appendChild(pillButton('Tap to Start', () => {
             this.overlay.hide();
             this.onJoin?.();
-        }, { primary: true, big: true }));
+        }, { role: 'primary', big: true }));
         return section;
     }
 
@@ -126,6 +141,7 @@ export class PlayerFlowController {
     /** "Next," or the countdown running out — same destination either way (see showDeath). */
     private goToEndGame(): void {
         this.clearDeathCountdown();
+        this.onEndGame?.();
         if (this.pendingDeath) this.renderEndGame(this.pendingDeath);
     }
 
@@ -166,7 +182,9 @@ export class PlayerFlowController {
                 this.overlay.hide();
                 this.overlay.setDimmed(false);
                 this.onContinue?.();
-            }));
+            }, { role: 'primary' }));
+
+            if (this.pendingIsNewHighScore) col.appendChild(newHighScoreCallout(sorted[youIndex].score));
 
             root.appendChild(col);
         });
@@ -174,14 +192,8 @@ export class PlayerFlowController {
     }
 
     private renderShop(): void {
-        this.overlay.setContent(box => {
-            box.appendChild(heading('Shop'));
-            const note = document.createElement('div');
-            note.textContent = 'Coming soon.';
-            Object.assign(note.style, { opacity: '0.7', textAlign: 'center', marginBottom: '14px' });
-            box.appendChild(note);
-            box.appendChild(button('Back', () => this.back()));
-        });
+        this.overlay.setFullContent(root => renderShopScreen(root, () => this.back()));
+        this.overlay.setDimmed(true); // reads as a true blocking screen, like End Game
     }
 
     private renderBoost(): void {
@@ -214,7 +226,7 @@ export class PlayerFlowController {
             });
             box.appendChild(input);
 
-            box.appendChild(button('Save', () => this.saveName(input.value), { primary: true }));
+            box.appendChild(button('Save', () => this.saveName(input.value), { role: 'primary' }));
             box.appendChild(button('Back', () => this.back()));
         });
     }
@@ -263,8 +275,9 @@ export class PlayerFlowController {
             gap: '10px',
             padding: '10px 16px',
             borderRadius: '999px',
-            background: 'rgba(255,255,255,0.1)',
-            border: '1px solid rgba(255,255,255,0.25)',
+            background: 'linear-gradient(rgba(34,38,48,0.92), rgba(14,16,22,0.92))',
+            border: '1px solid rgba(255,255,255,0.18)',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.35)',
             boxSizing: 'border-box',
         });
 
@@ -313,22 +326,124 @@ function heading(text: string): HTMLElement {
     return h;
 }
 
-/** Fixed, top-center title for the edge-anchored boot menu (as opposed to `heading`'s in-flow boxed-screen style). */
-function menuHeading(text: string): HTMLElement {
-    const h = document.createElement('div');
-    h.textContent = text;
-    Object.assign(h.style, {
+/** Fixed, top-center game logo for the edge-anchored boot menu — the WHALE.IO wordmark image stacked over a bigger gold "2048" line, rather than a plain text heading. */
+function gameLogo(): HTMLElement {
+    const wrap = document.createElement('div');
+    Object.assign(wrap.style, {
         position: 'fixed',
-        top: '24px',
+        top: '48px',
         left: '50%',
         transform: 'translateX(-50%)',
-        fontSize: '28px',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        textShadow: '0 2px 6px rgba(0,0,0,0.6)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '0px',
         pointerEvents: 'none',
     });
-    return h;
+
+    const word = document.createElement('img');
+    word.src = whaleLogo;
+    Object.assign(word.style, {
+        width: '230px',
+        height: 'auto',
+        filter: 'drop-shadow(0 3px 3px rgba(0,0,0,0.45))',
+    });
+    wrap.appendChild(word);
+
+    const badge = document.createElement('div');
+    badge.textContent = '2048';
+    Object.assign(badge.style, {
+        fontSize: '30px',
+        fontWeight: '900',
+        letterSpacing: '1px',
+        color: '#3a2a00',
+        background: 'linear-gradient(#ffd873, #e8a93a)',
+        padding: '4px 18px',
+        borderRadius: '10px',
+        transform: 'rotate(-6deg)',
+        boxShadow: '0 4px 10px rgba(0,0,0,0.4)',
+        marginTop: '4px',
+    });
+    wrap.appendChild(badge);
+    wrap.appendChild(highScoreBadge());
+
+    return wrap;
+}
+
+/** Small trophy pill under the logo — gives the high score its own identity instead of reading as plain body text. */
+function highScoreBadge(): HTMLElement {
+    const pill = document.createElement('div');
+    Object.assign(pill.style, {
+        marginTop: '28px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '6px 18px',
+        borderRadius: '999px',
+        background: 'linear-gradient(rgba(34,38,48,0.92), rgba(14,16,22,0.92))',
+        border: '1px solid rgba(255,215,115,0.4)',
+        boxShadow: '0 3px 12px rgba(0,0,0,0.4)',
+    });
+
+    const trophy = document.createElement('img');
+    trophy.src = trophyIcon;
+    Object.assign(trophy.style, { width: '22px', height: '22px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' });
+    pill.appendChild(trophy);
+
+    const label = document.createElement('span');
+    label.textContent = 'HIGH SCORE';
+    Object.assign(label.style, {
+        fontSize: '11px',
+        fontWeight: 'bold',
+        letterSpacing: '0.8px',
+        color: 'rgba(255,255,255,0.75)',
+    });
+    pill.appendChild(label);
+
+    const value = document.createElement('span');
+    value.textContent = String(HighScoreStorage.get());
+    Object.assign(value.style, {
+        fontSize: '16px',
+        fontWeight: '900',
+        color: '#ffd873',
+        textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+    });
+    pill.appendChild(value);
+
+    return pill;
+}
+
+/** Shown under the End Game screen's CONTINUE button, only when this run's final score beat the pre-run best (see PlayerFlowController.pendingIsNewHighScore) — same trophy-pill skin as the boot menu's highScoreBadge, so it reads as the same "record" concept. */
+function newHighScoreCallout(score: number): HTMLElement {
+    const pill = document.createElement('div');
+    Object.assign(pill.style, {
+        marginTop: '4px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '6px 18px',
+        borderRadius: '999px',
+        background: 'linear-gradient(rgba(34,38,48,0.92), rgba(14,16,22,0.92))',
+        border: '1px solid rgba(255,215,115,0.4)',
+        boxShadow: '0 3px 12px rgba(0,0,0,0.4)',
+    });
+
+    const trophy = document.createElement('img');
+    trophy.src = trophyIcon;
+    Object.assign(trophy.style, { width: '20px', height: '20px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' });
+    pill.appendChild(trophy);
+
+    const label = document.createElement('span');
+    label.textContent = `NEW HIGH SCORE! ${score}`;
+    Object.assign(label.style, {
+        fontSize: '13px',
+        fontWeight: '900',
+        color: '#ffd873',
+        textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+    });
+    pill.appendChild(label);
+
+    return pill;
 }
 
 // Distance from screen-center each side button sits, fixed regardless of
@@ -337,44 +452,49 @@ function menuHeading(text: string): HTMLElement {
 // max(16px, ...) keeps them from overlapping/off-screen on narrow mobile widths.
 const MENU_SIDE_OFFSET = 'max(16px, calc(50% - 220px))';
 
-/** Pins a fixed-size element near the left or right of screen-center (not a flex participant), so it stays a corner-anchored HUD element on wide desktop windows instead of stretching with the page. */
+// Anchored from the viewport BOTTOM (not center+translateY) so the button's
+// own bottom edge is exactly this far above the true bottom, with no
+// half-height math to get wrong. menuBottomSection (nameRow + the big
+// Tap-to-Start pill, pinned bottom:32px) is ~190px tall on short mobile
+// viewports — the 190px floor keeps this clear of it there; on tall
+// desktop windows, "50% - 130px" wins instead, reading as "pushed down
+// from center" without needing the floor.
+const MENU_SIDE_BOTTOM_OFFSET = 'max(190px, calc(50% - 130px))';
+
+/**
+ * Pins a fixed-size element near the left or right of the viewport bottom
+ * (not a flex participant), so it stays a corner-anchored HUD element on
+ * wide desktop windows instead of stretching with the page, and never
+ * overlaps menuBottomSection regardless of viewport height (see
+ * MENU_SIDE_BOTTOM_OFFSET). Wraps `el` in its own positioning div rather
+ * than styling `el` directly — `el` (e.g. the boostBadge button) may want
+ * its own independent `transform` (see .btn-float) without this function
+ * fighting it on the same property.
+ */
 function cornerButton(side: 'left' | 'right', el: HTMLElement): HTMLElement {
-    Object.assign(el.style, {
+    const wrap = document.createElement('div');
+    Object.assign(wrap.style, {
         position: 'fixed',
-        top: '50%',
-        transform: 'translateY(-50%)',
+        bottom: MENU_SIDE_BOTTOM_OFFSET,
         [side]: MENU_SIDE_OFFSET,
         pointerEvents: 'auto',
     });
-    return el;
+    wrap.appendChild(el);
+    return wrap;
 }
 
 /** Rounded, auto-width button for the edge-anchored boot menu (as opposed to `button`'s full-width boxed-screen style). */
-function pillButton(label: string, onClick: () => void, opts: { primary?: boolean; big?: boolean; icon?: string } = {}): HTMLButtonElement {
+function pillButton(label: string, onClick: () => void, opts: { role?: BtnRole; big?: boolean; icon?: string } = {}): HTMLButtonElement {
     const btn = document.createElement('button');
-    Object.assign(btn.style, {
-        display: opts.big ? 'block' : 'inline-flex',
-        width: opts.big ? '100%' : 'auto',
-        boxSizing: 'border-box',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '8px',
-        padding: opts.big ? '16px 24px' : '8px 18px 8px 8px',
-        borderRadius: '999px',
-        border: 'none',
-        cursor: 'pointer',
-        font: 'inherit',
-        fontSize: opts.big ? '20px' : '15px',
-        fontWeight: 'bold',
-        color: '#fff',
-        background: opts.primary ? '#5ecf5e' : 'rgba(255,255,255,0.14)',
-        boxShadow: opts.primary ? '0 6px 14px rgba(0,0,0,0.35)' : 'none',
-    });
+    const classes = ['btn', `btn-${opts.role ?? 'secondary'}`, opts.big ? 'btn-lg btn-block' : 'btn-md'];
+    if (opts.icon) classes.push('btn-hug-start');
+    btn.className = classes.join(' ');
 
     if (opts.icon) {
         const img = document.createElement('img');
         img.src = opts.icon;
-        Object.assign(img.style, { width: '24px', height: '24px', borderRadius: '50%' });
+        img.className = `btn-icon ${opts.big ? 'btn-icon-lg' : 'btn-icon-md'}`;
+        img.style.borderRadius = '50%';
         btn.appendChild(img);
     }
 
@@ -386,25 +506,15 @@ function pillButton(label: string, onClick: () => void, opts: { primary?: boolea
     return btn;
 }
 
-/** Speech-bubble style callout for the boost feature, mirroring the reference io-game's "X16 START BIGGER" badge. */
+/** Two-line callout for the boost feature (icon + title + subtitle), on the same accent skin as the ad-rewarded Revive button since it's the same "special edge" promo flavor. Floats continuously (see .btn-float) to stand out as a bonus, not a core action. */
 function boostBadge(onClick: () => void): HTMLButtonElement {
     const btn = document.createElement('button');
-    Object.assign(btn.style, {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '8px 16px',
-        borderRadius: '14px',
-        border: '2px solid #6fdc6f',
-        background: 'rgba(20,24,32,0.9)',
-        color: '#6fdc6f',
-        cursor: 'pointer',
-        font: 'inherit',
-    });
+    btn.className = 'btn btn-accent btn-md btn-hug-start btn-float';
 
     const img = document.createElement('img');
     img.src = videoIcon;
-    Object.assign(img.style, { width: '22px', height: '22px' });
+    img.className = 'btn-icon btn-icon-md';
+    btn.appendChild(img);
 
     const labels = document.createElement('div');
     Object.assign(labels.style, { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' });
@@ -415,11 +525,10 @@ function boostBadge(onClick: () => void): HTMLButtonElement {
 
     const sub = document.createElement('div');
     sub.textContent = 'Start Bigger!';
-    Object.assign(sub.style, { fontSize: '10px', color: '#fff', opacity: '0.8' });
+    Object.assign(sub.style, { fontSize: '10px', opacity: '0.85' });
 
     labels.appendChild(title);
     labels.appendChild(sub);
-    btn.appendChild(img);
     btn.appendChild(labels);
     btn.addEventListener('click', onClick);
     return btn;
@@ -467,8 +576,13 @@ function countdownRing(seconds: number): { ring: HTMLElement; setRemaining: (rem
     wrap.appendChild(label);
 
     const setRemaining = (remainingMs: number, totalMs: number) => {
-        const deg = Math.max(0, Math.min(1, remainingMs / totalMs)) * 360;
-        ringEl.style.background = `conic-gradient(from -90deg, #e8f26e 0deg, #ffb648 ${deg / 2}deg, #5ecf5e ${deg}deg, transparent ${deg}deg 360deg)`;
+        const remainingDeg = Math.max(0, Math.min(1, remainingMs / totalMs)) * 360;
+        const elapsedDeg = 360 - remainingDeg;
+        // "from 0deg" — conic-gradient's own 0deg points to 12 o'clock — and
+        // the transparent (elapsed) wedge starts there and grows clockwise,
+        // like an analog clock eating away the pie, instead of shrinking the
+        // colored arc from the wrong (counter-clockwise) side.
+        ringEl.style.background = `conic-gradient(from 0deg, transparent ${elapsedDeg}deg, #5ecf5e ${elapsedDeg}deg, #ffb648 ${elapsedDeg + remainingDeg / 2}deg, #e8f26e 360deg)`;
         label.textContent = String(Math.ceil(remainingMs / 1000));
     };
     setRemaining(seconds * 1000, seconds * 1000);
@@ -481,7 +595,7 @@ function deathCountdownGroup(seconds: number): { group: HTMLElement; setRemainin
     const group = document.createElement('div');
     Object.assign(group.style, {
         position: 'fixed',
-        top: '48px',
+        top: '84px',
         left: '50%',
         transform: 'translateX(-50%)',
         display: 'flex',
@@ -523,12 +637,12 @@ function deathBottomButtons(onRevive: () => void, onNext: () => void): HTMLEleme
         gap: '12px',
         pointerEvents: 'auto',
     });
-    col.appendChild(goldButton('REVIVE?', onRevive, { icon: videoIcon }));
-    col.appendChild(goldButton('NEXT', onNext));
+    col.appendChild(goldButton('REVIVE?', onRevive, { icon: videoIcon, role: 'accent' }));
+    col.appendChild(goldButton('NEXT', onNext, { role: 'secondary' }));
     return col;
 }
 
-/** Big green-gradient "END GAME" title, fixed top-center. */
+/** Big green-gradient "END GAME" title, fixed top-center. Smaller/bolder on mobile (see PIXI.isMobile.any) — at the desktop size, narrow viewports force this shrink-to-fit fixed-position div to wrap onto two lines, which then overlaps the rank/list column below it. */
 function endGameTitle(): HTMLElement {
     const h = document.createElement('div');
     h.textContent = 'END GAME';
@@ -537,9 +651,10 @@ function endGameTitle(): HTMLElement {
         top: '48px',
         left: '50%',
         transform: 'translateX(-50%)',
-        fontSize: '56px',
-        fontWeight: 'bold',
+        fontSize: PIXI.isMobile.any ? '34px' : '56px',
+        fontWeight: '900',
         letterSpacing: '2px',
+        whiteSpace: 'nowrap',
         background: 'linear-gradient(#eafc9c, #4fae6a)',
         WebkitBackgroundClip: 'text',
         backgroundClip: 'text',
@@ -550,33 +665,16 @@ function endGameTitle(): HTMLElement {
     return h;
 }
 
-/** Amber/gold gradient pill for the death screen's Revive/Next actions. */
-function goldButton(label: string, onClick: () => void, opts: { icon?: string } = {}): HTMLButtonElement {
+/** Full-width pill for the death screen's Revive/Next and the end-game Continue — role picks the skin (accent = ad-reward, secondary = skip, primary = main forward action). */
+function goldButton(label: string, onClick: () => void, opts: { icon?: string; role?: BtnRole } = {}): HTMLButtonElement {
     const btn = document.createElement('button');
-    Object.assign(btn.style, {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '8px',
-        width: '100%',
-        boxSizing: 'border-box',
-        padding: '14px 20px',
-        marginTop: '10px',
-        borderRadius: '10px',
-        border: 'none',
-        cursor: 'pointer',
-        font: 'inherit',
-        fontSize: '17px',
-        fontWeight: 'bold',
-        color: '#3a2a00',
-        background: 'linear-gradient(#ffd873, #e8a93a)',
-        boxShadow: '0 4px 10px rgba(0,0,0,0.35)',
-    });
+    btn.className = `btn btn-${opts.role ?? 'accent'} btn-lg btn-block`;
+    btn.style.marginTop = '10px';
 
     if (opts.icon) {
         const img = document.createElement('img');
         img.src = opts.icon;
-        Object.assign(img.style, { width: '20px', height: '20px' });
+        img.className = 'btn-icon btn-icon-lg';
         btn.appendChild(img);
     }
 
@@ -588,27 +686,11 @@ function goldButton(label: string, onClick: () => void, opts: { icon?: string } 
     return btn;
 }
 
-function button(label: string, onClick: () => void, opts: { primary?: boolean } = {}): HTMLButtonElement {
+function button(label: string, onClick: () => void, opts: { role?: BtnRole } = {}): HTMLButtonElement {
     const btn = document.createElement('button');
     btn.textContent = label;
-    styleButton(btn, opts);
+    btn.className = `btn btn-${opts.role ?? 'secondary'} btn-md btn-block`;
+    btn.style.marginTop = '8px';
     btn.addEventListener('click', onClick);
     return btn;
-}
-
-function styleButton(btn: HTMLButtonElement, opts: { primary?: boolean }): void {
-    Object.assign(btn.style, {
-        display: 'block',
-        width: '100%',
-        boxSizing: 'border-box',
-        padding: '10px 14px',
-        marginTop: '8px',
-        borderRadius: '6px',
-        border: 'none',
-        cursor: 'pointer',
-        font: 'inherit',
-        fontWeight: opts.primary ? 'bold' : 'normal',
-        background: opts.primary ? '#4ab8f0' : 'rgba(255,255,255,0.12)',
-        color: '#fff',
-    });
 }

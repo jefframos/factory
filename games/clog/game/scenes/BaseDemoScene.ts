@@ -13,11 +13,15 @@ import { LeaderboardPanel } from '../ui-dom/LeaderboardPanel';
 import { PlayerFlowController, type DeathSnapshot } from '../ui-dom/PlayerFlowController';
 import { MovementHint } from '../ui-dom/MovementHint';
 import { SoundToggleButton } from '@core/dom-ui/SoundToggleButton';
+import { SettingsButton } from '@core/dom-ui/SettingsButton';
+import { renderSettingsMenu } from '../ui-dom/SettingsMenu';
 import PlatformHandler from '@core/platforms/PlatformHandler';
 import Stats from 'stats.js';
 import { TextureBuilder } from '../builders/TextureBuilder';
+import { ShopStorage } from '../data/ShopStorage';
+import { HighScoreStorage } from '../data/HighScoreStorage';
 
-const PLAYER_NAME_KEY = 'playerName';
+export const PLAYER_NAME_KEY = 'playerName';
 
 // ?gated re-enables the linear room / gate progression mode.
 const GATED_MODE = new URLSearchParams(window.location.search).has('gated');
@@ -59,6 +63,7 @@ export default class BaseDemoScene extends GameScene {
     private leaderboardTimer = 0;
     private flowController!: PlayerFlowController;
     private soundToggle!: SoundToggleButton;
+    private settingsButton!: SettingsButton;
     private movementHint!: MovementHint;
     private flowState: FlowState = 'menu';
     /** True while spawnFreshWorld() is rebuilding world3d — update() bails out for that tick so it never touches a not-yet-built instance. */
@@ -193,6 +198,7 @@ export default class BaseDemoScene extends GameScene {
         this.flowController.showMenu(() => this.handleJoinServer());
 
         this.soundToggle = new SoundToggleButton();
+        this.settingsButton = new SettingsButton(renderSettingsMenu);
 
         // Initial position
         this.repositionUi();
@@ -200,6 +206,7 @@ export default class BaseDemoScene extends GameScene {
 
     /** "Tap to Start" from the boot menu — the player entity already exists (either from build(), or re-spawned by the death flow's Revive/Continue before showing this menu again), so this just unblocks input/joins the live population. */
     private handleJoinServer(): void {
+        HighScoreStorage.markRunStart();
         this.world3d.startNpcPopulation();
         // Eases camDist back out from the close-in menu zoom to the standard
         // value-driven distance (see BoundlessWorld3dScene/LinearWorld3dScene.build()).
@@ -218,6 +225,7 @@ export default class BaseDemoScene extends GameScene {
         this.analogInput?.setEnabled(playing);
         this.pointerFollowInput?.setEnabled(playing);
         this.world3d.setPlayerIndicatorVisible(playing);
+        this.world3d.setGameplayCameraActive(playing);
     }
 
     /** Tears down and rebuilds world3d from scratch — used for the initial boot and for "Continue" after death, since a freshly-built world always starts NPCs-dormant and zoomed in on its own (see BoundlessWorld3dScene/LinearWorld3dScene.build()), which is exactly the state a menu preview needs and a respawn-in-place can't guarantee. */
@@ -235,6 +243,11 @@ export default class BaseDemoScene extends GameScene {
         if (this.worldRebuilding) return; // world3d mid-rebuild (see spawnFreshWorld) — nothing below is safe to touch yet
 
         for (const s of this.statsWidgets) s.update();
+
+        if (this.world3d) {
+            ShopStorage.recordValueReached(this.world3d.playerValue);
+            HighScoreStorage.recordScore(this.world3d.playerScore);
+        }
 
         // Pointer-follow control scheme: recomputed every frame (rather than
         // event-driven like AnalogInput/KeyboardInputMovement) since the
@@ -267,7 +280,9 @@ export default class BaseDemoScene extends GameScene {
         if (this.world3d) {
             // Per-entity HUD: one per live target (player + every NPC) — see
             // IWorld3dScene.listEntityUiTargets / EntityIndicatorManager.
-            this.entityIndicators.update(this.world3d.listEntityUiTargets());
+            // Hidden on the boot/death menu — only meaningful once the player
+            // has actually joined (see FlowState).
+            this.entityIndicators.update(this.flowState === 'playing' ? this.world3d.listEntityUiTargets() : []);
 
             if (this.devPosLabel) {
                 const pos = this.world3d.playerPosition;
@@ -283,8 +298,12 @@ export default class BaseDemoScene extends GameScene {
             const deathInfo = this.world3d.deathInfo;
             if (deathInfo && this.flowState !== 'dead') {
                 this.setFlowState('dead');
+                this.movementHint.forceHide();
+                const finalScore = deathInfo.entries.find(e => e.name === 'You')?.score ?? 0;
+                const isNewHighScore = HighScoreStorage.isNewHighScore(finalScore);
                 this.flowController.showDeath(
                     deathInfo,
+                    isNewHighScore,
                     (keepSize: DeathSnapshot) => {
                         // Revive (watched an ad) — resume the same run at the same size.
                         this.world3d.respawnPlayer(keepSize.value, keepSize.tailValues);
@@ -296,6 +315,12 @@ export default class BaseDemoScene extends GameScene {
                         this.world3d.moveInput.x = 0;
                         this.world3d.moveInput.z = 0;
                         this.setFlowState('playing');
+                    },
+                    () => {
+                        // End Game rank screen shows its own centered list —
+                        // the live in-game leaderboard pinned top-right would
+                        // otherwise just sit there redundantly behind it.
+                        this.leaderboard.hide();
                     },
                     async () => {
                         // "Continue" from the End Game screen (via Next or the countdown
@@ -314,6 +339,7 @@ export default class BaseDemoScene extends GameScene {
                         // showing a reset one with just "You" in it; handleJoinServer()
                         // re-shows it on the next real join.
                         this.leaderboard.hide();
+                        this.movementHint.forceHide();
                         this.flowController.showMenu(() => this.handleJoinServer());
                     },
                 );
@@ -338,6 +364,7 @@ export default class BaseDemoScene extends GameScene {
         this.leaderboard?.destroy();
         this.flowController?.destroy();
         this.soundToggle?.destroy();
+        this.settingsButton?.destroy();
         this.movementHint?.destroy();
         if (this.devPosLabel) {
             this.game.overlayContainer.removeChild(this.devPosLabel);

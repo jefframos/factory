@@ -1,3 +1,4 @@
+import * as PIXI from 'pixi.js';
 import { DomUiRoot } from '@core/dom-ui/DomUiRoot';
 
 export type LeaderboardEntry = { name: string; value: number; score: number };
@@ -19,17 +20,19 @@ export class LeaderboardPanel {
     private lastEntries: LeaderboardEntry[] = [];
 
     constructor() {
+        const isMobile = PIXI.isMobile.any;
+
         this.element = document.createElement('div');
         Object.assign(this.element.style, {
             position: 'fixed',
-            top: '12px',
-            right: '12px',
-            width: '220px',
+            top: isMobile ? '8px' : '12px',
+            right: isMobile ? '8px' : '12px',
+            width: isMobile ? '150px' : '220px',
             background: 'rgba(16, 20, 30, 0.55)',
             borderRadius: '10px',
-            padding: '4px 0',
+            padding: isMobile ? '2px 0' : '4px 0',
             fontFamily: 'inherit',
-            fontSize: '13px',
+            fontSize: isMobile ? '10px' : '13px',
             color: '#fff',
             boxShadow: '0 2px 10px rgba(0,0,0,0.25)',
         });

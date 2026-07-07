@@ -59,15 +59,15 @@ export class EntityIndicatorManager {
 
     /**
      * Raw CSS-pixel point (see ThreeScene.worldToScreen) -> overlayContainer's
-     * own local space — the same conversion Game.onResize uses to derive
-     * overlayScreenData, dividing by renderer.resolution before toLocal since
-     * Pixi's internal stage space is scaled down from raw CSS pixels by that
-     * factor.
+     * own local space. No resolution division needed — Pixi's internal stage
+     * space is sized in raw CSS pixels (see Game.onResize: renderer.resize()
+     * is handed window.innerWidth/innerHeight directly, with `resolution`
+     * only scaling the backing buffer for sharpness, not the stage's own
+     * coordinate space).
      */
     private toOverlayLocal(screen: { x: number; y: number } | null): { x: number; y: number } | null {
         if (!screen) return null;
-        const stagePoint = new PIXI.Point(screen.x / Game.renderer.resolution, screen.y / Game.renderer.resolution);
-        return this.game.overlayContainer.toLocal(stagePoint, this.game.app.stage);
+        return this.game.overlayContainer.toLocal(new PIXI.Point(screen.x, screen.y), this.game.app.stage);
     }
 
     destroy(): void {

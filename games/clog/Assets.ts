@@ -448,7 +448,7 @@ export default class Assets {
     // };
 
     static readonly MainFont: Partial<PIXI.TextStyle> = {
-        fontFamily: "Sniglet-Regular",
+        fontFamily: "LEMONMILK-Regular",
         fontSize: 28,
         fontWeight: 'bold',
         fill: 0xffffff,
@@ -463,7 +463,7 @@ export default class Assets {
     };
 
     static readonly MainFontTitle: Partial<PIXI.TextStyle> = {
-        fontFamily: "Ourland",
+        fontFamily: "LEMONMILK-Bold",
         fontSize: 42,
         fill: 0xffffff,
         stroke: "#1d1b1a",

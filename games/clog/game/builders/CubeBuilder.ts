@@ -103,7 +103,7 @@ export class CubeBuilder {
 
     /** Rounded cube with number on top face (+Y = index 2). */
     static buildNumbered(value: number, size = 1): THREE.Mesh {
-        const geo = new RoundedBoxGeometry(size, size, size, 4, size * 0.15);
+        const geo = new RoundedBoxGeometry(size, size, size, 4, size * 0.25);
         const solid = CubeBuilder.getSolidMaterial(value);
         const top = CubeBuilder.getTopMaterial(value);
         // face order: +X, -X, +Y (top), -Y, +Z (front), -Z
@@ -112,7 +112,7 @@ export class CubeBuilder {
 
     /** Rounded cube with a face-decal plane in front of +Z and number on top (+Y = index 2). */
     static buildPlayer(value: number, size = 1): THREE.Mesh {
-        const geo = new RoundedBoxGeometry(size, size, size, 4, size * 0.15);
+        const geo = new RoundedBoxGeometry(size, size, size, 4, size * 0.25);
         const solid = CubeBuilder.getSolidMaterial(value);
         const top = CubeBuilder.getTopMaterial(value);
         // face order: +X, -X, +Y (top), -Y, +Z (front), -Z
