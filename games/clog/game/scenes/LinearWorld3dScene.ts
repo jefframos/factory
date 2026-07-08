@@ -8,6 +8,7 @@ import { LevelManager } from '../systems/LevelManager';
 import { LinearAreaManager } from '../world/LinearAreaManager';
 import { CAMERA_CONFIG, FOOD_CONFIG } from '../world/LinearConfig';
 import FourCornersGradientBuilder from '../vfx/FourCornersGradientBuilder';
+import { WaterSplashSystem } from '../vfx/WaterSplashSystem';
 import type { EntityUiTarget } from './IWorld3dScene';
 import type { LeaderboardEntry } from '../ui-dom/LeaderboardPanel';
 import { Localization } from '../i18n/Localization';
@@ -106,6 +107,7 @@ export default class LinearWorld3dScene extends ThreeScene {
 
         this.player = new PlayerEntity(2, this.threeScene);
         this.linearManager.registerPlayer(this.player);
+        WaterSplashSystem.build(this.threeScene);
 
         // Start zoomed in close on the menu screen — camDist eases out to the
         // standard distance once startNpcPopulation() flips cameraZoom back
@@ -140,6 +142,7 @@ export default class LinearWorld3dScene extends ThreeScene {
         this.player.setMoveInput(this.moveInput.x, this.moveInput.z);
         this.player.update(scaledDelta);
         BendService.updateOrigin(this.player.position);
+        WaterSplashSystem.update(scaledDelta);
 
         this.linearManager.update(this.player);
         this.collectibles.update(scaledDelta);
@@ -218,6 +221,7 @@ export default class LinearWorld3dScene extends ThreeScene {
 
     public destroy(): void {
         this.gradient.destroy();
+        WaterSplashSystem.destroy();
         this.player?.destroy();
         this.collectibles?.destroy();
         this.linearManager?.destroy();

@@ -6,6 +6,7 @@ import { dbg, dbgTail } from "../debug/MergeDebugger";
 import { MergeQueue } from "../systems/MergeQueue";
 import { WalkBob } from "../components/WalkBob"; // [view:WalkBob]
 import { FloatBob } from "../components/FloatBob";
+import { WaterSplashEmitter } from "../components/WaterSplashEmitter";
 import { BlobShadow } from "./BlobShadow";
 import { TailCube } from "./TailCube";
 import type { ISimEntity, TailEntry } from "../sim/SimWorld";
@@ -49,6 +50,8 @@ export class PlayerEntity implements ISimEntity {
     private shadow: BlobShadow;
     private walkBob = new WalkBob();   // [view:WalkBob]
     private floatBob = new FloatBob();
+    /** Every head — player or NPC — kicks up a wake; see WaterSplashEmitter. */
+    private splash = new WaterSplashEmitter();
 
     /** @param showEatIndicator Whether to build the forward-facing direction triangle — the player wants it visible, but NPCs render without it. */
     constructor(value: number, scene: THREE.Scene, showEatIndicator = true) {
@@ -228,6 +231,7 @@ export class PlayerEntity implements ISimEntity {
         const speed = this.moveSpeed * (this.tapBoostTimer > 0 || manualBoostActive ? TAP_BOOST_MULTIPLIER : 1);
         this.transform.position.x += mx * speed * delta;
         this.transform.position.z += mz * speed * delta;
+        this.splash.update(this.transform.position.x, this.transform.position.z);
 
         // ── Position history (waypoints for tail snake-following) ─────────────
         const moved = this.transform.position.distanceTo(prevPos);

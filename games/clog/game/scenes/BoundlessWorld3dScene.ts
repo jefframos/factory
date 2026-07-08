@@ -13,6 +13,7 @@ import { createWaterMaterial } from '../builders/WaterMaterial';
 import { FloorBuilder } from '../builders/FloorBuilder';
 import FourCornersGradientBuilder from '../vfx/FourCornersGradientBuilder';
 import { CloudSystem } from '../vfx/CloudSystem';
+import { WaterSplashSystem } from '../vfx/WaterSplashSystem';
 import type { EntityUiTarget, IWorld3dScene } from './IWorld3dScene';
 import type { DeathSnapshot } from '../ui-dom/PlayerFlowController';
 import type { LeaderboardEntry } from '../ui-dom/LeaderboardPanel';
@@ -146,6 +147,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.chunkManager = new BoundlessChunkManager(this.threeScene, this.collectibles);
 
         this.player = new PlayerEntity(2, this.threeScene);
+        WaterSplashSystem.build(this.threeScene);
 
         SimWorld.init(this.collectibles, this.chunkManager);
         SimWorld.register(this.player);
@@ -181,6 +183,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
 
     public update(delta: number): void {
         this.gradient.update(delta);
+        WaterSplashSystem.update(delta);
         // Idle-population growth + active-window spawn/despawn — independent
         // of alive/dead state below, same as bots/food per updateDead's own
         // doc, but dormant until the player actually joins (see startNpcPopulation).
@@ -577,6 +580,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         SimWorld.reset();
         this.perfOverlay?.destroy();
         this.cloudSystem?.destroy(this.threeScene);
+        WaterSplashSystem.destroy();
         this.gradient.destroy();
         this.player?.destroy();
         this.collectibles?.destroy();
