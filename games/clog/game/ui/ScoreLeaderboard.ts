@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { Game } from '@core/Game';
+import { Game } from 'core/Game';
 
 const W       = 172;
 const PAD     = 10;

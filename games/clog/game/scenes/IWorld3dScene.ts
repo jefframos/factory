@@ -1,5 +1,6 @@
 import type { BotParams } from '../ai/Blackboard';
 import type { DeathSnapshot } from '../ui-dom/PlayerFlowController';
+import type { LeaderboardEntry } from '../ui-dom/LeaderboardPanel';
 
 /**
  * One live floating-HUD target — the player or a materialized NPC, treated
@@ -40,7 +41,7 @@ export interface IWorld3dScene {
     spawnBot(value: number, params?: Partial<BotParams>): void;
     spawnFood(count: number): void;
     /** Flat dump of the player + every live bot's value/score, for the in-game leaderboard (and the dev debug panel). */
-    listEntities(): { name: string; value: number; score: number }[];
+    listEntities(): LeaderboardEntry[];
     /** Raw CSS-pixel screen position of a point just above the player's head — see ThreeScene.worldToScreen. Null when the player doesn't exist yet or is behind the camera. Used to position screen-space UI that tracks the 3D player (e.g. the boost indicator). */
     getPlayerScreenAnchor(): { x: number; y: number } | null;
     /** Player + every live, materialized NPC's name/boost state, for the floating per-entity HUD — see EntityUiTarget and EntityIndicatorManager. */

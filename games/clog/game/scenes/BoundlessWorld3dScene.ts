@@ -1,4 +1,4 @@
-import { ThreeScene } from '@core/scene/ThreeScene';
+import { ThreeScene } from 'core/scene/ThreeScene';
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import { PlayerEntity } from '../entities/PlayerEntity';
@@ -15,15 +15,17 @@ import FourCornersGradientBuilder from '../vfx/FourCornersGradientBuilder';
 import { CloudSystem } from '../vfx/CloudSystem';
 import type { EntityUiTarget, IWorld3dScene } from './IWorld3dScene';
 import type { DeathSnapshot } from '../ui-dom/PlayerFlowController';
+import type { LeaderboardEntry } from '../ui-dom/LeaderboardPanel';
 import { PerfOverlay } from '../utils/PerfOverlay';
-import SetupThree from '@core/scene/SetupThree';
+import SetupThree from 'core/scene/SetupThree';
 import { SimWorld } from '../sim/SimWorld';
 import { resolveEntityEating } from '../sim/EntityEating';
 import { BotController } from '../ai/BotController';
 import type { BotParams } from '../ai/Blackboard';
-import { DevGuiManager } from '@core/utils/DevGuiManager';
+import { DevGuiManager } from 'core/utils/DevGuiManager';
 import type { NpcHostScene } from '../npc/NpcHostScene';
 import { NpcDirector } from '../npc/NpcDirector';
+import { Localization } from '../i18n/Localization';
 
 const PERF_MODE = new URLSearchParams(window.location.search).has('perf');
 
@@ -96,9 +98,9 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
      */
     public listEntityUiTargets(): EntityUiTarget[] {
         const live: { id: string; name: string; entity: PlayerEntity }[] = [];
-        if (this.player && this._deathInfo === null) live.push({ id: 'player', name: 'YOU', entity: this.player });
+        if (this.player && this._deathInfo === null) live.push({ id: 'player', name: Localization.getString('youTag'), entity: this.player });
         for (const controller of this.botControllers) {
-            live.push({ id: `bot-${controller.id}`, name: `NPC ${controller.id}`, entity: controller.entity });
+            live.push({ id: `bot-${controller.id}`, name: Localization.getString('npcName', { id: controller.id }), entity: controller.entity });
         }
 
         return live.map(({ id, name, entity }) => ({
@@ -428,7 +430,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
      */
     private buildDeathSnapshot(value: number, tailValues: number[]): DeathSnapshot {
         const score = value + tailValues.reduce((sum, v) => sum + v, 0);
-        const entries = this.listEntities().map(e => e.name === 'You' ? { ...e, value, score } : e);
+        const entries = this.listEntities().map(e => e.isYou ? { ...e, value, score } : e);
         return { value, tailValues, entries };
     }
 
@@ -485,10 +487,10 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
      * player-facing UI. See NpcDirector.listAll() for why this reads through
      * the roster's stable ids instead of the botControllers list directly.
      */
-    public listEntities(): { name: string; value: number; score: number }[] {
-        const list = [{ name: 'You', value: this.player.value, score: this.player.score }];
+    public listEntities(): LeaderboardEntry[] {
+        const list: LeaderboardEntry[] = [{ name: Localization.getString('you'), value: this.player.value, score: this.player.score, isYou: true }];
         for (const npc of this.npcDirector.listAll()) {
-            list.push({ name: `NPC ${npc.id}`, value: npc.value, score: npc.score });
+            list.push({ name: Localization.getString('npcName', { id: npc.id }), value: npc.value, score: npc.score });
         }
         return list;
     }

@@ -1,5 +1,6 @@
 import SoundManager from 'core/audio/SoundManager';
 import { DomUiRoot } from './DomUiRoot';
+import { Localization } from '../i18n/Localization';
 import soundOnIcon from './images/sound-on.png';
 import soundOffIcon from './images/sound-off.png';
 
@@ -39,6 +40,7 @@ export class SoundToggleButton {
 
         this.element.addEventListener('click', () => SoundManager.instance.toggleMute());
         SoundManager.instance.onMuteChange.add(this.updateIcon, this);
+        Localization.onLocaleChange.add(this.refreshIcon, this);
         this.updateIcon(SoundManager.instance.isMuted);
 
         DomUiRoot.instance.mount(this.element);
@@ -46,11 +48,16 @@ export class SoundToggleButton {
 
     private updateIcon(isMuted: boolean): void {
         this.icon.src = isMuted ? soundOffIcon : soundOnIcon;
-        this.element.title = isMuted ? 'Unmute' : 'Mute';
+        this.element.title = Localization.getString(isMuted ? 'unmute' : 'mute');
+    }
+
+    private refreshIcon(): void {
+        this.updateIcon(SoundManager.instance.isMuted);
     }
 
     destroy(): void {
         SoundManager.instance.onMuteChange.remove(this.updateIcon, this);
+        Localization.onLocaleChange.remove(this.refreshIcon, this);
         DomUiRoot.instance.unmount(this.element);
     }
 }

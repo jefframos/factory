@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { Game } from '@core/Game';
+import { Game } from 'core/Game';
 import { EntityIndicator } from './EntityIndicator';
 import type { EntityUiTarget } from '../scenes/IWorld3dScene';
 

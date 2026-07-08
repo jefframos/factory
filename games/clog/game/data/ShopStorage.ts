@@ -1,4 +1,4 @@
-import PlatformHandler from '@core/platforms/PlatformHandler';
+import PlatformHandler from 'core/platforms/PlatformHandler';
 import shopItemsJson from './shopItems.json';
 
 export type ShopItemKind = 'cosmetic' | 'achievement' | 'free';

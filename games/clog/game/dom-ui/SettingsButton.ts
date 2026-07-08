@@ -1,5 +1,6 @@
 import { DomUiRoot } from './DomUiRoot';
 import { ModalOverlay } from './ModalOverlay';
+import { Localization } from '../i18n/Localization';
 import settingsIcon from './images/settings.png';
 import closeIcon from './images/Icon_Close02.png';
 
@@ -38,7 +39,7 @@ export class SettingsButton {
             padding: '0',
             pointerEvents: 'auto',
         });
-        this.element.title = 'Settings';
+        Localization.bindLabel(this.element, 'settings', { attr: 'title' });
 
         const icon = document.createElement('img');
         icon.src = settingsIcon;
@@ -58,6 +59,13 @@ export class SettingsButton {
 
         DomUiRoot.instance.mount(this.element);
         DomUiRoot.instance.mount(this.overlay.element);
+
+        Localization.onLocaleChange.add(this.refreshIfOpen, this);
+    }
+
+    /** Re-draws the open menu in place on a locale change — a no-op while closed, since open() is called fresh next time anyway. */
+    private refreshIfOpen(): void {
+        if (this.overlay.isVisible) this.open();
     }
 
     private open(): void {
@@ -126,6 +134,8 @@ export class SettingsButton {
     }
 
     destroy(): void {
+        Localization.onLocaleChange.remove(this.refreshIfOpen, this);
+        Localization.unbindLabel(this.element);
         DomUiRoot.instance.unmount(this.element);
         DomUiRoot.instance.unmount(this.overlay.element);
         this.overlay.destroy();

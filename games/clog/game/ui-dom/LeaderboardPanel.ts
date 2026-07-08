@@ -1,7 +1,9 @@
 import * as PIXI from 'pixi.js';
-import { DomUiRoot } from '@core/dom-ui/DomUiRoot';
+import { DomUiRoot } from '../dom-ui/DomUiRoot';
+import { Localization } from '../i18n/Localization';
 
-export type LeaderboardEntry = { name: string; value: number; score: number };
+/** `isYou` — not `name` — is the identity flag: `name` is locale-translated display text, so it can't double as an equality key once more than one locale exists. */
+export type LeaderboardEntry = { name: string; value: number; score: number; isYou?: boolean };
 
 const WINDOW_SIZE = 5;
 const AHEAD = 3;   // preferred count of better-ranked rows shown above you
@@ -42,6 +44,8 @@ export class LeaderboardPanel {
 
         DomUiRoot.instance.mount(this.element);
         this.hide(); // shown once via show() on the initial server join — see BaseDemoScene.handleJoinServer
+
+        Localization.onLocaleChange.add(this.render, this);
     }
 
     /** Shown once on the initial server join, not on every death/respawn — see BaseDemoScene. */
@@ -60,7 +64,7 @@ export class LeaderboardPanel {
 
     private render(): void {
         const sorted = [...this.lastEntries].sort((a, b) => b.score - a.score);
-        const youIndex = sorted.findIndex(e => e.name === 'You');
+        const youIndex = sorted.findIndex(e => e.isYou);
         const { start, end } = windowAround(sorted.length, youIndex, WINDOW_SIZE, AHEAD, BEHIND);
 
         this.bodyEl.innerHTML = '';
@@ -70,13 +74,14 @@ export class LeaderboardPanel {
     }
 
     destroy(): void {
+        Localization.onLocaleChange.remove(this.render, this);
         DomUiRoot.instance.unmount(this.element);
     }
 }
 
 /** Shared row renderer — used by both the live in-game panel and the static End Game rank list (see PlayerFlowController.renderEndGame). */
 export function leaderboardRow(index: number, entry: LeaderboardEntry): HTMLDivElement {
-    const isYou = entry.name === 'You';
+    const isYou = entry.isYou === true;
     const row = document.createElement('div');
     Object.assign(row.style, {
         display: 'flex',
@@ -95,7 +100,7 @@ export function leaderboardRow(index: number, entry: LeaderboardEntry): HTMLDivE
     Object.assign(marker.style, { color: '#ff6b5e', fontSize: '11px', width: '8px', flexShrink: '0' });
 
     const label = document.createElement('span');
-    label.textContent = `${index + 1}. ${entry.name}`;
+    label.textContent = Localization.getString('leaderboardRow', { rank: index + 1, name: entry.name });
     Object.assign(label.style, {
         color: isYou ? '#4ecdc4' : '#fff',
         fontWeight: isYou ? 'bold' : 'normal',

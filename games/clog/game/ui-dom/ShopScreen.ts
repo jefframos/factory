@@ -1,23 +1,24 @@
-import PlatformHandler from '@core/platforms/PlatformHandler';
-import '@core/dom-ui/shop.css';
-import lockIcon from '@core/dom-ui/images/lock.png';
-import videoIcon from '@core/dom-ui/images/video-icon.png';
-import closeIcon from '@core/dom-ui/images/Icon_Close02.png';
-import checkIcon from '@core/dom-ui/images/Icon_Check03_s.png';
+import PlatformHandler from 'core/platforms/PlatformHandler';
+import '../dom-ui/shop.css';
+import lockIcon from '../dom-ui/images/lock.png';
+import videoIcon from '../dom-ui/images/video-icon.png';
+import closeIcon from '../dom-ui/images/Icon_Close02.png';
+import checkIcon from '../dom-ui/images/Icon_Check03_s.png';
 
-import iconSunglassesBlue from '@core/dom-ui/images/skins/sunglasses_blue.png';
-import iconSunglassesPink from '@core/dom-ui/images/skins/sunglasses_pink.png';
-import iconMustacheBrown from '@core/dom-ui/images/skins/mustache_brown.png';
-import iconMustacheBlack from '@core/dom-ui/images/skins/mustache_black.png';
-import iconUnicornHorn from '@core/dom-ui/images/skins/unicorn_horn.png';
-import iconBadge2048 from '@core/dom-ui/images/skins/badge_2048.png';
-import iconBadge8192 from '@core/dom-ui/images/skins/badge_8192.png';
-import iconBadge16384 from '@core/dom-ui/images/skins/badge_16384.png';
-import iconBadge1m from '@core/dom-ui/images/skins/badge_1m.png';
-import iconBadge1b from '@core/dom-ui/images/skins/badge_1b.png';
-import iconDefaultCube from '@core/dom-ui/images/skins/default_cube.png';
+import iconSunglassesBlue from '../dom-ui/images/skins/sunglasses_blue.png';
+import iconSunglassesPink from '../dom-ui/images/skins/sunglasses_pink.png';
+import iconMustacheBrown from '../dom-ui/images/skins/mustache_brown.png';
+import iconMustacheBlack from '../dom-ui/images/skins/mustache_black.png';
+import iconUnicornHorn from '../dom-ui/images/skins/unicorn_horn.png';
+import iconBadge2048 from '../dom-ui/images/skins/badge_2048.png';
+import iconBadge8192 from '../dom-ui/images/skins/badge_8192.png';
+import iconBadge16384 from '../dom-ui/images/skins/badge_16384.png';
+import iconBadge1m from '../dom-ui/images/skins/badge_1m.png';
+import iconBadge1b from '../dom-ui/images/skins/badge_1b.png';
+import iconDefaultCube from '../dom-ui/images/skins/default_cube.png';
 
 import { ShopStorage, SHOP_ITEMS, type ShopItem } from '../data/ShopStorage';
+import { Localization } from '../i18n/Localization';
 
 /** Static import map — Vite needs literal import statements to bundle these, so shopItems.json only carries the icon *key*, resolved here. */
 const ICONS: Record<string, string> = {
@@ -66,7 +67,7 @@ export function renderShopScreen(root: HTMLElement, onClose: () => void): void {
     });
     root.appendChild(wrap);
 
-    wrap.appendChild(heading('Shop'));
+    wrap.appendChild(heading(Localization.getString('shop')));
     wrap.appendChild(centerPreview());
 
     const grid = document.createElement('div');
@@ -189,7 +190,7 @@ function actionLabel(item: ShopItem, unlocked: boolean, equipped: boolean, needs
         row.appendChild(img);
 
         const text = document.createElement('span');
-        text.textContent = `Reach ${item.shortLabel ?? item.valueThreshold}`;
+        text.textContent = Localization.getString('reach', { value: item.shortLabel ?? item.valueThreshold ?? '' });
         row.appendChild(text);
         return row;
     }
@@ -201,14 +202,14 @@ function actionLabel(item: ShopItem, unlocked: boolean, equipped: boolean, needs
         row.appendChild(img);
 
         const text = document.createElement('span');
-        text.textContent = 'EQUIPPED';
+        text.textContent = Localization.getString('equipped');
         row.appendChild(text);
         return row;
     }
 
     if (!needsAd) {
         const text = document.createElement('span');
-        text.textContent = 'EQUIP';
+        text.textContent = Localization.getString('equip');
         row.appendChild(text);
         return row;
     }
@@ -219,7 +220,7 @@ function actionLabel(item: ShopItem, unlocked: boolean, equipped: boolean, needs
     row.appendChild(img);
 
     const text = document.createElement('span');
-    text.textContent = 'EQUIP';
+    text.textContent = Localization.getString('equip');
     row.appendChild(text);
     return row;
 }

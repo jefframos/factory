@@ -1,10 +1,10 @@
-import { GameScene } from '@core/scene/GameScene';
-import AnalogInput from '@core/io/AnalogInput';
-import PointerFollowInput from '@core/io/PointerFollowInput';
+import { GameScene } from 'core/scene/GameScene';
+import AnalogInput from 'core/io/AnalogInput';
+import PointerFollowInput from 'core/io/PointerFollowInput';
 import * as PIXI from 'pixi.js';
 import KeyboardInputMovement from 'core/io/KeyboardInputMovement';
-import { DevGuiManager } from '@core/utils/DevGuiManager';
-import { Game } from '@core/Game';
+import { DevGuiManager } from 'core/utils/DevGuiManager';
+import { Game } from 'core/Game';
 import LinearWorld3dScene from './LinearWorld3dScene';
 import BoundlessWorld3dScene from './BoundlessWorld3dScene';
 import type { IWorld3dScene } from './IWorld3dScene';
@@ -12,10 +12,10 @@ import { EntityIndicatorManager } from '../ui/EntityIndicatorManager';
 import { LeaderboardPanel } from '../ui-dom/LeaderboardPanel';
 import { PlayerFlowController, type DeathSnapshot } from '../ui-dom/PlayerFlowController';
 import { MovementHint } from '../ui-dom/MovementHint';
-import { SoundToggleButton } from '@core/dom-ui/SoundToggleButton';
-import { SettingsButton } from '@core/dom-ui/SettingsButton';
+import { SoundToggleButton } from '../dom-ui/SoundToggleButton';
+import { SettingsButton } from '../dom-ui/SettingsButton';
 import { renderSettingsMenu } from '../ui-dom/SettingsMenu';
-import PlatformHandler from '@core/platforms/PlatformHandler';
+import PlatformHandler from 'core/platforms/PlatformHandler';
 import Stats from 'stats.js';
 import { TextureBuilder } from '../builders/TextureBuilder';
 import { ShopStorage } from '../data/ShopStorage';
@@ -299,7 +299,7 @@ export default class BaseDemoScene extends GameScene {
             if (deathInfo && this.flowState !== 'dead') {
                 this.setFlowState('dead');
                 this.movementHint.forceHide();
-                const finalScore = deathInfo.entries.find(e => e.name === 'You')?.score ?? 0;
+                const finalScore = deathInfo.entries.find(e => e.isYou)?.score ?? 0;
                 const isNewHighScore = HighScoreStorage.isNewHighScore(finalScore);
                 this.flowController.showDeath(
                     deathInfo,

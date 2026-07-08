@@ -1,11 +1,17 @@
-import { DomUiRoot } from '@core/dom-ui/DomUiRoot';
+import { DomUiRoot } from '../dom-ui/DomUiRoot';
+import { Localization } from '../i18n/Localization';
 import * as PIXI from 'pixi.js';
 
 const HIDE_DELAY = 600; // ms after the first move before the hint fades out — lets the player see it actually worked
 const FADE_DURATION = 400; // ms, must match the opacity transition below
 
-const START_TEXT = PIXI.isMobile.any ? 'Tap to start' : 'Click to start';
-const MOVE_TEXT = PIXI.isMobile.any ? 'Use your finger to move' : 'Use your mouse to move';
+function startText(): string {
+    return Localization.getString(PIXI.isMobile.any ? 'tapToStartHint' : 'clickToStartHint');
+}
+
+function moveText(): string {
+    return Localization.getString(PIXI.isMobile.any ? 'moveHintTouch' : 'moveHintMouse');
+}
 
 /**
  * One-time onboarding hint shown the moment the player joins — fades out
@@ -25,6 +31,8 @@ export class MovementHint {
     readonly element: HTMLDivElement;
     private readonly label: HTMLDivElement;
     private hideTimer: number | null = null;
+    /** Which text the label should show right now — flipped by registerMove(), re-applied on a locale change (see refreshText). */
+    private moved = false;
 
     constructor() {
         this.element = document.createElement('div');
@@ -50,10 +58,15 @@ export class MovementHint {
             color: '#fff',
             textShadow: '0 1px 3px rgba(0,0,0,0.5)',
         });
-        this.label.textContent = START_TEXT;
+        this.label.textContent = startText();
         this.element.appendChild(this.label);
 
         DomUiRoot.instance.mount(this.element);
+        Localization.onLocaleChange.add(this.refreshText, this);
+    }
+
+    private refreshText(): void {
+        this.label.textContent = this.moved ? moveText() : startText();
     }
 
     show(): void {
@@ -61,17 +74,19 @@ export class MovementHint {
             window.clearTimeout(this.hideTimer);
             this.hideTimer = null;
         }
-        this.label.textContent = START_TEXT;
+        this.moved = false;
+        this.label.textContent = startText();
         this.element.style.display = 'inline-flex';
         // Force a paint with opacity still 0 before animating it to 1, so the
         // transition actually plays instead of jumping straight to visible.
         requestAnimationFrame(() => { this.element.style.opacity = '1'; });
     }
 
-    /** Call on every move-input event; only the first call after a show() swaps in MOVE_TEXT and starts the fade-out countdown. */
+    /** Call on every move-input event; only the first call after a show() swaps in the "how to move" text and starts the fade-out countdown. */
     registerMove(): void {
         if (this.hideTimer !== null || this.element.style.display === 'none') return;
-        this.label.textContent = MOVE_TEXT;
+        this.moved = true;
+        this.label.textContent = moveText();
         this.hideTimer = window.setTimeout(() => this.hide(), HIDE_DELAY);
     }
 
@@ -91,6 +106,7 @@ export class MovementHint {
 
     destroy(): void {
         if (this.hideTimer !== null) window.clearTimeout(this.hideTimer);
+        Localization.onLocaleChange.remove(this.refreshText, this);
         DomUiRoot.instance.unmount(this.element);
     }
 }

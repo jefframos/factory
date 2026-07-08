@@ -111,19 +111,7 @@ export class PlayerEntity implements ISimEntity {
         return this.tapBoostTimer / TAP_BOOST_DURATION;
     }
 
-    /**
-     * Manually starts the tap-start speed boost — lets AI-controlled entities
-     * use the same burst a human player gets by releasing and re-tapping
-     * movement, without actually having to stop moving to trigger the
-     * wasMoving edge in update(). No-ops while already boosting so a caller
-     * can invoke this every tick during a chase/flee without extending the
-     * burst past its normal duration.
-     */
-    triggerTapBoost(): void {
-        if (this.tapBoostTimer <= 0) this.tapBoostTimer = TAP_BOOST_DURATION;
-    }
-
-    /** Held-boost switch for the pointer-follow control scheme (see PointerFollowInput) — boosted for exactly as long as the pointer/finger stays down, unlike the timed tap-start burst above. */
+    /** Held-boost switch for the pointer-follow control scheme (see PointerFollowInput) and AI-controlled entities (see BotController) — boosted for exactly as long as it's held, with real drain/recharge via manualBoostMeter below, unlike the timed tap-start burst above. */
     setBoosting(held: boolean): void {
         this.manualBoostHeld = held;
     }

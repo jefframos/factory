@@ -1,14 +1,17 @@
-import PlatformHandler from '@core/platforms/PlatformHandler';
+import PlatformHandler from 'core/platforms/PlatformHandler';
 import { ShopStorage } from '../data/ShopStorage';
 import { HighScoreStorage } from '../data/HighScoreStorage';
 import { PLAYER_NAME_KEY } from '../scenes/BaseDemoScene';
+import { Localization } from '../i18n/Localization';
+import { renderLanguageRow } from './LanguagePicker';
+import { ConfirmationPopup } from '../dom-ui/ConfirmationPopup';
 
-/** Mirrors the .btn-* role classes in core/dom-ui/buttons.css. */
+/** Mirrors the .btn-* role classes in ../dom-ui/buttons.css. */
 type BtnRole = 'primary' | 'secondary' | 'accent' | 'shop' | 'danger';
 
 /**
- * Settings menu content for SettingsButton (see core/dom-ui/SettingsButton)
- * — currently just Clear Data. SettingsButton itself provides the close X
+ * Settings menu content for SettingsButton (see ../dom-ui/SettingsButton)
+ * — language picker + Clear Data. SettingsButton itself provides the close X
  * and click-outside-to-close, so there's no separate Close button here.
  * Reloads the page after wiping every persisted key rather than trying to
  * reset every in-memory cache (ShopStorage, HighScoreStorage, etc.) by hand,
@@ -16,12 +19,18 @@ type BtnRole = 'primary' | 'secondary' | 'accent' | 'shop' | 'danger';
  * would.
  */
 export function renderSettingsMenu(box: HTMLElement, _close: () => void): void {
-    box.appendChild(heading('Settings'));
-    box.appendChild(button('Clear Data', () => void handleClearData(), { role: 'danger' }));
+    box.appendChild(heading(Localization.getString('settings')));
+    renderLanguageRow(box);
+    box.appendChild(button(Localization.getString('clearData'), () => void handleClearData(), { role: 'danger' }));
 }
 
 async function handleClearData(): Promise<void> {
-    if (!window.confirm('Clear all saved data? This resets your high score, shop unlocks, and name. This cannot be undone.')) return;
+    const confirmed = await ConfirmationPopup.confirm({
+        message: Localization.getString('clearDataConfirm'),
+        confirmLabel: Localization.getString('clearData'),
+        confirmRole: 'danger',
+    });
+    if (!confirmed) return;
     await Promise.all([
         ShopStorage.clearAll(),
         HighScoreStorage.clearAll(),

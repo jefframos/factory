@@ -1,4 +1,4 @@
-import { ThreeScene } from "@core/scene/ThreeScene";
+import { ThreeScene } from "core/scene/ThreeScene";
 import * as THREE from "three";
 import { PlayerEntity } from "../entities/PlayerEntity";
 import { BendService } from "../services/BendService";

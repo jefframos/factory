@@ -152,15 +152,16 @@ export class BotController {
         };
         this.tree.tick(ctx);
 
-        // Hunting or fleeing is exactly when a human player would be tapping
-        // to burst — give bots the same edge instead of only ever getting it
-        // once, incidentally, on their very first tick of movement (chase/flee
-        // keep moveDir nonzero continuously, so PlayerEntity's own
-        // stopped->moving edge never fires again after that). Re-triggers
-        // itself every ~TAP_BOOST_DURATION seconds for as long as the state
-        // holds, since triggerTapBoost no-ops while already boosting.
+        // Hunting or fleeing is exactly when a human player would be holding
+        // the boost — give bots the same edge via the real stamina-based
+        // held-boost meter (setBoosting), which drains and locks out on
+        // recharge just like a player's. Using triggerTapBoost() here instead
+        // was a bug: that timer has no real cooldown, and re-calling it every
+        // tick re-armed it back to full the instant it hit 0 (same frame,
+        // since the state was still chase/hunt/flee), so bots never actually
+        // lost the boost for as long as they kept chasing/fleeing.
         const state = this.blackboard.get<string>("state");
-        if (state === "chase" || state === "hunt" || state === "flee") this.entity.triggerTapBoost();
+        this.entity.setBoosting(state === "chase" || state === "hunt" || state === "flee");
 
         const rawDir = ctx.moveDir.clone(); // BT output before separation — kept only for logDebug
         this.applySeparation(ctx);

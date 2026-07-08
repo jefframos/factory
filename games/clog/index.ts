@@ -1,18 +1,18 @@
-import SoundLoadManager from '@core/audio/SoundLoaderManager';
-import { Game } from '@core/Game';
-import HtmlLoader from '@core/loader/HtmlLoader';
-import { ManifestHelper } from '@core/loader/ManifestHelper';
-import PlatformHandler from '@core/platforms/PlatformHandler';
-import { PopupManager } from '@core/popup/PopupManager';
-import { SceneManager } from '@core/scene/SceneManager';
+import SoundLoadManager from 'core/audio/SoundLoaderManager';
+import { Game } from 'core/Game';
+import HtmlLoader from 'core/loader/HtmlLoader';
+import { ManifestHelper } from 'core/loader/ManifestHelper';
+import PlatformHandler from 'core/platforms/PlatformHandler';
+import { PopupManager } from 'core/popup/PopupManager';
+import { SceneManager } from 'core/scene/SceneManager';
 import * as PIXI from 'pixi.js';
 import audioManifest from './manifests/audio.json'; // adjust path
 import fontManifest from './manifests/fonts.json'; // adjust path
 import imageManifest from './manifests/images.json'; // adjust path
 import jsonManifest from './manifests/json.json'; // adjust path
 
-import { getPlatformInstance } from '@core/platforms/PlatformFactory';
-import { DevGuiManager } from '@core/utils/DevGuiManager';
+import { getPlatformInstance } from 'core/platforms/PlatformFactory';
+import { DevGuiManager } from 'core/utils/DevGuiManager';
 import Assets from './Assets';
 import BaseDemoScene from './game/scenes/BaseDemoScene';
 import { ShopStorage } from './game/data/ShopStorage';

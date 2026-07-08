@@ -1,4 +1,4 @@
-import { LoaderConfig } from '@core/loader/LoaderConfig';
+import { LoaderConfig } from 'core/loader/LoaderConfig';
 
 const loaderConfig: LoaderConfig = {
     backgroundColor: '#0b2853',

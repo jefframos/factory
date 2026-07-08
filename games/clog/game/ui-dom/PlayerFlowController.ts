@@ -1,18 +1,19 @@
 import * as PIXI from 'pixi.js';
-import { DomUiRoot } from '@core/dom-ui/DomUiRoot';
-import { ModalOverlay } from '@core/dom-ui/ModalOverlay';
-import PlatformHandler from '@core/platforms/PlatformHandler';
+import { DomUiRoot } from '../dom-ui/DomUiRoot';
+import { ModalOverlay } from '../dom-ui/ModalOverlay';
+import PlatformHandler from 'core/platforms/PlatformHandler';
 import { leaderboardRow, windowAround, type LeaderboardEntry } from './LeaderboardPanel';
 import { renderShopScreen } from './ShopScreen';
 import { HighScoreStorage } from '../data/HighScoreStorage';
-import shopIcon from '@core/dom-ui/images/shop.png';
-import videoIcon from '@core/dom-ui/images/video-icon.png';
-import whaleLogo from '@core/dom-ui/images/whaleLogo.png';
-import trophyIcon from '@core/dom-ui/images/ItemIcon_Trophy_Gold-2.png';
+import { Localization } from '../i18n/Localization';
+import shopIcon from '../dom-ui/images/shop.png';
+import videoIcon from '../dom-ui/images/video-icon.png';
+import whaleLogo from '../dom-ui/images/whaleLogo.png';
+import trophyIcon from '../dom-ui/images/ItemIcon_Trophy_Gold-2.png';
 
 export type DeathSnapshot = { value: number; tailValues: number[]; entries: LeaderboardEntry[] };
 
-/** Mirrors the .btn-* role classes in core/dom-ui/buttons.css. */
+/** Mirrors the .btn-* role classes in ../dom-ui/buttons.css. */
 type BtnRole = 'primary' | 'secondary' | 'accent' | 'shop' | 'danger';
 
 const DEATH_COUNTDOWN_SECONDS = 5;
@@ -40,8 +41,16 @@ export class PlayerFlowController {
     private onEndGame: (() => void) | null = null;
     private onContinue: (() => void) | null = null;
 
+    /** Whichever render*() call last drew the visible screen — re-invoked on a locale change so the screen currently on-screen picks up the new language (see refreshScreen). */
+    private currentScreen: () => void = () => {};
+
     constructor() {
         DomUiRoot.instance.mount(this.overlay.element);
+        Localization.onLocaleChange.add(this.refreshScreen, this);
+    }
+
+    private refreshScreen(): void {
+        if (this.overlay.isVisible) this.currentScreen();
     }
 
     setPlayerName(name: string): void {
@@ -76,6 +85,7 @@ export class PlayerFlowController {
     }
 
     destroy(): void {
+        Localization.onLocaleChange.remove(this.refreshScreen, this);
         this.clearDeathCountdown();
         DomUiRoot.instance.unmount(this.overlay.element);
         this.overlay.destroy();
@@ -84,9 +94,10 @@ export class PlayerFlowController {
     // ── Screens ──────────────────────────────────────────────────────────────
 
     private renderMenu(): void {
+        this.currentScreen = () => this.renderMenu();
         this.overlay.setFullContent(root => {
             root.appendChild(gameLogo());
-            root.appendChild(cornerButton('left', pillButton('Shop', () => this.renderShop(), { icon: shopIcon, role: 'shop' })));
+            root.appendChild(cornerButton('left', pillButton(Localization.getString('shop'), () => this.renderShop(), { icon: shopIcon, role: 'shop' })));
             root.appendChild(cornerButton('right', boostBadge(() => this.renderBoost())));
             root.appendChild(this.menuBottomSection());
         });
@@ -109,7 +120,7 @@ export class PlayerFlowController {
             pointerEvents: 'auto',
         });
         section.appendChild(this.nameRow());
-        section.appendChild(pillButton('Tap to Start', () => {
+        section.appendChild(pillButton(Localization.getString('tapToStart'), () => {
             this.overlay.hide();
             this.onJoin?.();
         }, { role: 'primary', big: true }));
@@ -118,6 +129,7 @@ export class PlayerFlowController {
 
     /** Same full-viewport, dimmed-fade layout as the End Game screen (see renderEndGame) — countdown pinned top-center, Revive/Next pinned bottom-center, world still visible (dimmed, not boxed) behind it. */
     private renderDeath(): void {
+        this.currentScreen = () => this.renderDeath();
         this.clearDeathCountdown();
         let remainingMs = DEATH_COUNTDOWN_SECONDS * 1000;
 
@@ -147,8 +159,9 @@ export class PlayerFlowController {
 
     /** Full-viewport, dimmed rank screen — no boxed container, since it's meant to read as a true blocking screen rather than the light "world stays visible" overlays the rest of the flow uses. */
     private renderEndGame(snapshot: DeathSnapshot): void {
+        this.currentScreen = () => this.renderEndGame(snapshot);
         const sorted = [...snapshot.entries].sort((a, b) => b.score - a.score);
-        const youIndex = sorted.findIndex(e => e.name === 'You');
+        const youIndex = sorted.findIndex(e => e.isYou);
         const rank = youIndex + 1;
         const { start, end } = windowAround(sorted.length, youIndex, END_GAME_WINDOW.size, END_GAME_WINDOW.ahead, END_GAME_WINDOW.behind);
 
@@ -169,7 +182,7 @@ export class PlayerFlowController {
             });
 
             const rankEl = document.createElement('div');
-            rankEl.textContent = `#${rank}`;
+            rankEl.textContent = Localization.getString('rank', { rank });
             Object.assign(rankEl.style, { fontSize: '52px', fontWeight: 'bold', color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,0.7)' });
             col.appendChild(rankEl);
 
@@ -178,7 +191,7 @@ export class PlayerFlowController {
             for (let i = start; i <= end; i++) list.appendChild(leaderboardRow(i, sorted[i]));
             col.appendChild(list);
 
-            col.appendChild(goldButton('CONTINUE', () => {
+            col.appendChild(goldButton(Localization.getString('continue'), () => {
                 this.overlay.hide();
                 this.overlay.setDimmed(false);
                 this.onContinue?.();
@@ -192,24 +205,27 @@ export class PlayerFlowController {
     }
 
     private renderShop(): void {
+        this.currentScreen = () => this.renderShop();
         this.overlay.setFullContent(root => renderShopScreen(root, () => this.back()));
         this.overlay.setDimmed(true); // reads as a true blocking screen, like End Game
     }
 
     private renderBoost(): void {
+        this.currentScreen = () => this.renderBoost();
         this.overlay.setContent(box => {
-            box.appendChild(heading('Boost'));
+            box.appendChild(heading(Localization.getString('boostTitle')));
             const note = document.createElement('div');
-            note.textContent = 'Coming soon.';
+            note.textContent = Localization.getString('comingSoon');
             Object.assign(note.style, { opacity: '0.7', textAlign: 'center', marginBottom: '14px' });
             box.appendChild(note);
-            box.appendChild(button('Back', () => this.back()));
+            box.appendChild(button(Localization.getString('back'), () => this.back()));
         });
     }
 
     private renderRename(): void {
+        this.currentScreen = () => this.renderRename();
         this.overlay.setContent(box => {
-            box.appendChild(heading('Rename'));
+            box.appendChild(heading(Localization.getString('rename')));
 
             const input = document.createElement('input');
             input.type = 'text';
@@ -226,8 +242,8 @@ export class PlayerFlowController {
             });
             box.appendChild(input);
 
-            box.appendChild(button('Save', () => this.saveName(input.value), { role: 'primary' }));
-            box.appendChild(button('Back', () => this.back()));
+            box.appendChild(button(Localization.getString('save'), () => this.saveName(input.value), { role: 'primary' }));
+            box.appendChild(button(Localization.getString('back'), () => this.back()));
         });
     }
 
@@ -287,7 +303,7 @@ export class PlayerFlowController {
 
         const renameIcon = document.createElement('button');
         renameIcon.textContent = '✏️';
-        renameIcon.title = 'Rename';
+        renameIcon.title = Localization.getString('rename');
         Object.assign(renameIcon.style, {
             background: 'none',
             border: 'none',
@@ -391,7 +407,7 @@ function highScoreBadge(): HTMLElement {
     pill.appendChild(trophy);
 
     const label = document.createElement('span');
-    label.textContent = 'HIGH SCORE';
+    label.textContent = Localization.getString('highScoreLabel');
     Object.assign(label.style, {
         fontSize: '11px',
         fontWeight: 'bold',
@@ -434,7 +450,7 @@ function newHighScoreCallout(score: number): HTMLElement {
     pill.appendChild(trophy);
 
     const label = document.createElement('span');
-    label.textContent = `NEW HIGH SCORE! ${score}`;
+    label.textContent = Localization.getString('newHighScore', { score });
     Object.assign(label.style, {
         fontSize: '13px',
         fontWeight: '900',
@@ -520,11 +536,11 @@ function boostBadge(onClick: () => void): HTMLButtonElement {
     Object.assign(labels.style, { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' });
 
     const title = document.createElement('div');
-    title.textContent = 'BOOST';
+    title.textContent = Localization.getString('boostBadgeTitle');
     Object.assign(title.style, { fontSize: '16px', fontWeight: 'bold' });
 
     const sub = document.createElement('div');
-    sub.textContent = 'Start Bigger!';
+    sub.textContent = Localization.getString('boostBadgeSubtitle');
     Object.assign(sub.style, { fontSize: '10px', opacity: '0.85' });
 
     labels.appendChild(title);
@@ -605,7 +621,7 @@ function deathCountdownGroup(seconds: number): { group: HTMLElement; setRemainin
     });
 
     const title = document.createElement('div');
-    title.textContent = 'You died!';
+    title.textContent = Localization.getString('youDied');
     Object.assign(title.style, {
         fontSize: '32px',
         fontWeight: 'bold',
@@ -637,15 +653,15 @@ function deathBottomButtons(onRevive: () => void, onNext: () => void): HTMLEleme
         gap: '12px',
         pointerEvents: 'auto',
     });
-    col.appendChild(goldButton('REVIVE?', onRevive, { icon: videoIcon, role: 'accent' }));
-    col.appendChild(goldButton('NEXT', onNext, { role: 'secondary' }));
+    col.appendChild(goldButton(Localization.getString('revive'), onRevive, { icon: videoIcon, role: 'accent' }));
+    col.appendChild(goldButton(Localization.getString('next'), onNext, { role: 'secondary' }));
     return col;
 }
 
 /** Big green-gradient "END GAME" title, fixed top-center. Smaller/bolder on mobile (see PIXI.isMobile.any) — at the desktop size, narrow viewports force this shrink-to-fit fixed-position div to wrap onto two lines, which then overlaps the rank/list column below it. */
 function endGameTitle(): HTMLElement {
     const h = document.createElement('div');
-    h.textContent = 'END GAME';
+    h.textContent = Localization.getString('endGame');
     Object.assign(h.style, {
         position: 'fixed',
         top: '48px',

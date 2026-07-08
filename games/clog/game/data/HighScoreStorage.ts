@@ -1,4 +1,4 @@
-import PlatformHandler from '@core/platforms/PlatformHandler';
+import PlatformHandler from 'core/platforms/PlatformHandler';
 
 const KEY = 'CLOG_HIGH_SCORE';
 

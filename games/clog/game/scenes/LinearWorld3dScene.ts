@@ -1,4 +1,4 @@
-import { ThreeScene } from '@core/scene/ThreeScene';
+import { ThreeScene } from 'core/scene/ThreeScene';
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import { PlayerEntity } from '../entities/PlayerEntity';
@@ -9,6 +9,8 @@ import { LinearAreaManager } from '../world/LinearAreaManager';
 import { CAMERA_CONFIG, FOOD_CONFIG } from '../world/LinearConfig';
 import FourCornersGradientBuilder from '../vfx/FourCornersGradientBuilder';
 import type { EntityUiTarget } from './IWorld3dScene';
+import type { LeaderboardEntry } from '../ui-dom/LeaderboardPanel';
+import { Localization } from '../i18n/Localization';
 
 const CAM_SMOOTH = 2.2; // exponential approach speed toward depth-driven target
 
@@ -53,7 +55,7 @@ export default class LinearWorld3dScene extends ThreeScene {
         if (!this.player) return [];
         return [{
             id: 'player',
-            name: 'YOU',
+            name: Localization.getString('youTag'),
             boostT: this.player.boostT,
             screenAnchor: this.worldToScreen(this.player.uiAnchor),
         }];
@@ -196,8 +198,8 @@ export default class LinearWorld3dScene extends ThreeScene {
     }
 
     /** Debug-only: this mode has no bots, so just the player. */
-    public listEntities(): { name: string; value: number; score: number }[] {
-        return [{ name: 'You', value: this.player.value, score: this.player.score }];
+    public listEntities(): LeaderboardEntry[] {
+        return [{ name: Localization.getString('you'), value: this.player.value, score: this.player.score, isYou: true }];
     }
 
     /** This mode has no death/respawn flow — the gated linear-room progression is out of scope for it. */
