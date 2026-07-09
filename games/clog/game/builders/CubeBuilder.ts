@@ -132,6 +132,21 @@ export class CubeBuilder {
     }
 
     /**
+     * One-off cube for the dev face-snapshot tool (see FaceSnapshotTool) — an
+     * explicit colour instead of the value palette, and no number glyph on
+     * top, since these renders only exist to preview/export face art.
+     * Never cached: call disposeMesh() *and* dispose the returned mesh's
+     * (single, non-array) body material yourself once you're done with it.
+     */
+    static buildDebugCube(color: THREE.ColorRepresentation, size = 1, faceTexture?: THREE.Texture): THREE.Mesh {
+        const geo = new RoundedBoxGeometry(size, size, size, 4, size * 0.25);
+        const mat = new THREE.MeshStandardMaterial({ color });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.add(CubeBuilder.buildFaceDecal(size, faceTexture));
+        return mesh;
+    }
+
+    /**
      * Swaps the face decal's texture on an already-built player mesh — used
      * once the equipped skin's texture finishes loading (async, so the mesh
      * is already on-screen with the default face by the time this lands).

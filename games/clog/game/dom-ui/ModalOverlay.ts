@@ -8,6 +8,10 @@
  */
 export class ModalOverlay {
     private static readonly DEFAULT_BOX_BACKGROUND = 'rgba(24, 24, 32, 0.96)';
+    // Sits a little below dead-center by default so the box doesn't cover
+    // the player — see setContent's marginTop override for screens (e.g.
+    // Shop) that want to sit lower still to show more of the game behind them.
+    private static readonly DEFAULT_BOX_MARGIN_TOP = '12vh';
 
     readonly element: HTMLDivElement;
     private readonly boxEl: HTMLDivElement;
@@ -39,7 +43,7 @@ export class ModalOverlay {
             maxWidth: '90vw',
             boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5)',
             fontFamily: 'inherit',
-            marginTop: '12vh', // sits a little below dead-center so it doesn't cover the player
+            marginTop: ModalOverlay.DEFAULT_BOX_MARGIN_TOP,
             pointerEvents: 'auto', // opts back in over both the backdrop and DomUiRoot's pointer-events:none
         });
 
@@ -58,14 +62,24 @@ export class ModalOverlay {
         this.element.appendChild(this.fullEl);
     }
 
-    /** Replaces the centered box's content right now. `background` overrides the default near-opaque box background (e.g. the Shop's semi-transparent panel, which lets the 3D world — and the player's live skin preview — show through behind it) — always passed explicitly (falling back to the default) so a previous screen's override can't leak into the next one. */
-    setContent(build: (container: HTMLElement) => void, opts?: { background?: string }): void {
+    /**
+     * Replaces the centered box's content right now. `background` overrides
+     * the default near-opaque box background (e.g. the Shop's semi-
+     * transparent panel, which lets the 3D world — and the player's live
+     * skin preview — show through behind it). `marginTop` overrides the
+     * default vertical offset (e.g. the Shop sitting lower to show more of
+     * the game behind it) without affecting any other screen sharing this
+     * overlay. Both always passed explicitly (falling back to the default)
+     * so a previous screen's override can't leak into the next one.
+     */
+    setContent(build: (container: HTMLElement) => void, opts?: { background?: string; marginTop?: string }): void {
         this.setDimmed(false);
         this.fullEl.style.display = 'none';
         this.fullEl.innerHTML = '';
         this.boxEl.innerHTML = '';
         this.boxEl.style.display = 'block';
         this.boxEl.style.background = opts?.background ?? ModalOverlay.DEFAULT_BOX_BACKGROUND;
+        this.boxEl.style.marginTop = opts?.marginTop ?? ModalOverlay.DEFAULT_BOX_MARGIN_TOP;
         build(this.boxEl);
     }
 

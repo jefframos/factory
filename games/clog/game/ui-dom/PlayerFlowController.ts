@@ -226,7 +226,9 @@ export class PlayerFlowController {
         this.currentScreen = () => this.renderShop();
         this.overlay.setContent(
             box => renderShopScreen(box, () => this.back()),
-            { background: PANEL_TRANSLUCENT_BACKGROUND },
+            // Sits lower than the shared default so more of the game (and
+            // the player's live skin preview) shows above the panel.
+            { background: PANEL_TRANSLUCENT_BACKGROUND, marginTop: '30vh' },
         );
     }
 

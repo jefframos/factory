@@ -19,7 +19,8 @@ import { renderSettingsMenu } from '../ui-dom/SettingsMenu';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import Stats from 'stats.js';
 import { TextureBuilder } from '../builders/TextureBuilder';
-import { ShopStorage } from '../data/ShopStorage';
+import { ShopStorage, SHOP_ITEMS } from '../data/ShopStorage';
+import { FaceSnapshotTool } from '../debug/FaceSnapshotTool';
 import { HighScoreStorage } from '../data/HighScoreStorage';
 import { DEFAULT_START_VALUE } from '../ClogConstants';
 
@@ -203,6 +204,33 @@ export default class BaseDemoScene extends GameScene {
             TextureBuilder.export(TextureBuilder.island(), 'island.png');
         }, 'Textures');
 
+        // Renders an isolated player cube (fixed colour, transparent bg) with
+        // each shop face texture applied and downloads it as a PNG — for
+        // lining up camera framing against hand-authored face art. See
+        // FaceSnapshotTool.
+        if (SHOP_ITEMS.length > 0) FaceSnapshotTool.settings.selectedFaceId = SHOP_ITEMS[0].id;
+
+        DevGuiManager.instance.addProperties(FaceSnapshotTool.settings, ['size'], [16, 512], 'Size', 'Face Snapshots');
+        DevGuiManager.instance.addProperties(FaceSnapshotTool.settings, ['yaw', 'pitch'], [-180, 180], 'Camera', 'Face Snapshots');
+        DevGuiManager.instance.addProperties(FaceSnapshotTool.settings, ['distance'], [0.5, 10], 'Camera', 'Face Snapshots');
+
+        DevGuiManager.instance.addDropdown(
+            FaceSnapshotTool.settings,
+            'selectedFaceId',
+            SHOP_ITEMS.map((item) => item.id),
+            () => { /* value already written straight into settings.selectedFaceId */ },
+            'Face to Test',
+            'Face Snapshots',
+        );
+
+        DevGuiManager.instance.addButton('Snapshot Selected Face', () => {
+            void FaceSnapshotTool.snapshotOne(FaceSnapshotTool.settings.selectedFaceId);
+        }, 'Face Snapshots');
+
+        DevGuiManager.instance.addButton('Snapshot All Faces', () => {
+            void FaceSnapshotTool.snapshotAll();
+        }, 'Face Snapshots');
+
         // Floating per-entity HUD (name tag + boost bar) that tracks the
         // player + every live NPC in screen space — parented to
         // game.overlayContainer (top Pixi layer, same as devPosLabel) since
@@ -266,17 +294,22 @@ export default class BaseDemoScene extends GameScene {
     }
 
     /**
-     * "Tap to Start" from the boot menu — the player entity already exists
-     * (either from build(), or re-spawned by the death flow's Revive/Continue
-     * before showing this menu again), so this just unblocks input/joins the
-     * live population. `startValue` is DEFAULT_START_VALUE unless the Boost
-     * screen's ad offer was claimed (see PlayerFlowController.pendingStartValue)
-     * — only respawn for the boosted case, since re-creating the player at
-     * its already-current default size would just be a wasted rebuild (and a
-     * flicker while PlayerEntity re-loads the equipped skin texture).
+     * "Tap to Start" from the boot menu, or the BOOST badge's watch-ad-and-
+     * join flow — the player entity already exists (either from build(), or
+     * re-spawned by the death flow's Revive/Continue before showing this menu
+     * again), so this just unblocks input/joins the live population.
+     * `startValue` is DEFAULT_START_VALUE unless the Boost badge's ad offer
+     * was claimed (see PlayerFlowController.handleClaimBoost) — only respawn
+     * for the boosted case, since re-creating the player at its already-
+     * current default size would just be a wasted rebuild (and a flicker
+     * while PlayerEntity re-loads the equipped skin texture). Either way,
+     * this is the actual "player is now vulnerable" moment — not build()'s
+     * parked preview spawn — so the spawn-invincibility grant always runs
+     * here, even on the (already-invincible-from-respawnPlayer) boosted path.
      */
     private handleJoinServer(startValue: number): void {
         if (startValue !== DEFAULT_START_VALUE) this.world3d.respawnPlayer(startValue, []);
+        this.world3d.grantPlayerSpawnInvincibility();
         HighScoreStorage.markRunStart();
         this.world3d.startNpcPopulation();
         // Eases camDist back out from the close-in menu zoom to the standard

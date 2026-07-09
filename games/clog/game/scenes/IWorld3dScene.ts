@@ -50,6 +50,8 @@ export interface IWorld3dScene {
     respawnPlayer(value: number, tailValues: number[]): void;
     /** Starts the NPC population (idle growth + active-window spawning) — dormant until the player actually joins, so the menu screen shows just the player alone in the world. Safe to call more than once. */
     startNpcPopulation(): void;
+    /** Starts the player's spawn-invincibility window (see PlayerEntity.grantSpawnInvincibility) — call exactly when they actually become vulnerable to gameplay (joining or respawning), not while merely parked as the boot-menu preview. */
+    grantPlayerSpawnInvincibility(): void;
     /** Shows/hides the player's forward-facing direction triangle — hidden while parked on the boot/death menu, since there's no live control to indicate a direction for yet. */
     setPlayerIndicatorVisible(visible: boolean): void;
     /** True while actually playing (vs. parked on the boot/death menu) — eases the camera's look target up on mobile so the player reads lower on screen instead of dead-center (see CAMERA_CONFIG.mobileFocusOffset). No-op on desktop. */

@@ -159,7 +159,10 @@ export default class LinearWorld3dScene extends ThreeScene {
         this.collectibles.update(scaledDelta);
 
         const hit = this.collectibles.checkCollision(this.player.position, this.player.foodRadius);
-        if (hit) this.player.collect(hit);
+        if (hit) {
+            this.player.collect(hit);
+            this.player.pulseEatBoost();
+        }
 
         // Food top-up — dormant until the player joins (see worldActive), so
         // food doesn't keep accumulating behind the menu screen.
@@ -226,6 +229,10 @@ export default class LinearWorld3dScene extends ThreeScene {
     public respawnPlayer(_value: number, _tailValues: number[]): void { /* no-op */ }
     /** This mode has no NPC population, but still uses this as the "player has joined" signal to start the food spawn timer/top-up (see worldActive). */
     public startNpcPopulation(): void { this.worldActive = true; }
+
+    public grantPlayerSpawnInvincibility(): void {
+        this.player.grantSpawnInvincibility();
+    }
 
     public setPlayerIndicatorVisible(visible: boolean): void {
         this.player?.setEatIndicatorVisible(visible);

@@ -49,6 +49,27 @@ export function loadShopItems(): void {
     SHOP_ITEMS.splice(0, SHOP_ITEMS.length, ...items);
 }
 
+/** Chance an eligible NPC wears a prestige/achievement skin instead of a common one — see pickBotFaceItemId. */
+const BOT_RARE_SKIN_CHANCE = 0.25;
+
+/**
+ * Random cosmetic flavor for an NPC's face (see PlayerEntity's non-real-player
+ * constructor branch) — bots don't equip anything via ShopStorage, this is
+ * just spawn-time visual variety. Mostly picks from the common (free/cosmetic)
+ * pool; if the NPC's own spawn value clears an achievement's valueThreshold
+ * (i.e. it's "big enough" to plausibly have earned that badge), there's a
+ * BOT_RARE_SKIN_CHANCE chance it wears that skin instead — never guaranteed,
+ * so even a very big NPC usually still just wears a common skin.
+ */
+export function pickBotFaceItemId(value: number): string {
+    const eligibleRare = SHOP_ITEMS.filter(i => i.kind === 'achievement' && i.valueThreshold !== undefined && value >= i.valueThreshold);
+    if (eligibleRare.length > 0 && Math.random() < BOT_RARE_SKIN_CHANCE) {
+        return eligibleRare[Math.floor(Math.random() * eligibleRare.length)].id;
+    }
+    const common = SHOP_ITEMS.filter(i => i.kind !== 'achievement');
+    return common[Math.floor(Math.random() * common.length)].id;
+}
+
 interface ShopSaveData {
     version: number;
     unlockedAchievementIds: string[];

@@ -74,13 +74,32 @@ export class DevGuiManager {
 
 
 
+    /** Adds a dropdown (select) bound to `owner[key]`, optionally inside a folder. */
+    public addDropdown<T extends string | number>(
+        owner: Record<string, T>,
+        key: string,
+        options: T[],
+        onChange: (value: T) => void,
+        name?: string,
+        folderName?: string,
+    ): void {
+        if (!this.isDev || !this.gui) return;
+        if (!(key in owner)) {
+            console.warn(`GuiHelper: Key "${key}" not found in owner`, owner);
+            return;
+        }
+
+        const target = folderName ? this.getOrCreateFolder(folderName) : this.gui;
+        target.add(owner, key, options).name(name ?? key).onChange(onChange);
+    }
+
     /**
      * Retrieves an existing folder or creates one if it doesn't exist.
      * param name - Folder name
      * returns dat.GUI instance for the folder
      */
     private getOrCreateFolder(name: string): dat.GUI {
-        if (!this.isDev || !this.gui) return;
+        if (!this.gui) throw new Error('DevGuiManager: getOrCreateFolder called before initialize()');
         if (!this.folders.has(name)) {
             const folder = this.gui.addFolder(name);
             folder.open(); // Optional: open folder by default

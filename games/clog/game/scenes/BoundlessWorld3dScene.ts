@@ -231,7 +231,10 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.collectibles.update(delta);
 
         const hit = this.collectibles.checkCollision(this.player.position, this.player.foodRadius);
-        if (hit) this.player.collect(hit);
+        if (hit) {
+            this.player.collect(hit);
+            this.player.pulseEatBoost();
+        }
 
         // Captured before resolveEntityEating can run — a kill calls
         // PlayerEntity.onEaten() synchronously inside it, which empties the
@@ -551,7 +554,16 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
             this.player.collect(new TailCube(v, this.threeScene, this.player.position.clone()));
         }
 
+        // A respawn always drops the player straight back into a live,
+        // NPC-populated world — unlike the initial build() spawn, which sits
+        // parked/unvulnerable on the boot-menu preview until Join.
+        this.player.grantSpawnInvincibility();
+
         this._deathInfo = null;
+    }
+
+    public grantPlayerSpawnInvincibility(): void {
+        this.player.grantSpawnInvincibility();
     }
 
     // ── AI debug panel (dat.GUI, only rendered when DevGuiManager is dev-initialized, i.e. ?dev=1) ──

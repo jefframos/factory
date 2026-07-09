@@ -3,7 +3,7 @@
         "id": "reach_2048",
         "name": "2048 Badge",
         "description": "Reach a cube value of 2048.",
-        "icon": "skins/face-star-1.webp",
+        "icon": "skins/clog-face-snapshots_reach_2048_128x128.webp",
         "texture": "skins/face-star-1.webp",
         "kind": "achievement",
         "valueThreshold": 2048,
@@ -13,7 +13,7 @@
         "id": "reach_8192",
         "name": "8K Badge",
         "description": "Reach a cube value of 8192.",
-        "icon": "skins/face-money-1.webp",
+        "icon": "skins/clog-face-snapshots_reach_8192_128x128.webp",
         "texture": "skins/face-money-1.webp",
         "kind": "achievement",
         "valueThreshold": 8192,
@@ -23,7 +23,7 @@
         "id": "reach_16384",
         "name": "16K Badge",
         "description": "Reach a cube value of 16384.",
-        "icon": "skins/face-hearts-1.webp",
+        "icon": "skins/clog-face-snapshots_reach_16384_128x128.webp",
         "texture": "skins/face-hearts-1.webp",
         "kind": "achievement",
         "valueThreshold": 16384,
@@ -33,7 +33,7 @@
         "id": "reach_1m",
         "name": "1M Badge",
         "description": "Reach a cube value of 1,048,576.",
-        "icon": "skins/face-fire-1.webp",
+        "icon": "skins/clog-face-snapshots_reach_1m_128x128.webp",
         "texture": "skins/face-fire-1.webp",
         "kind": "achievement",
         "valueThreshold": 1048576,
@@ -43,7 +43,7 @@
         "id": "reach_1b",
         "name": "1B Badge",
         "description": "Reach a cube value of 1,073,741,824.",
-        "icon": "skins/face-glasses-1.webp",
+        "icon": "skins/clog-face-snapshots_reach_1b_128x128.webp",
         "texture": "skins/face-glasses-1.webp",
         "kind": "achievement",
         "valueThreshold": 1073741824,
@@ -53,7 +53,7 @@
         "id": "default",
         "name": "Default",
         "description": "The plain cube — always available, no ad needed.",
-        "icon": "skins/face-1.webp",
+        "icon": "skins/clog-face-snapshots_default_128x128.webp",
         "texture": "skins/face-1.webp",
         "kind": "free"
     },
@@ -61,7 +61,7 @@
         "id": "face-smiling-2",
         "name": "Blue Shades",
         "description": "Cool blue sunglasses for your cube.",
-        "icon": "skins/face-smiling-2.webp",
+        "icon": "skins/clog-face-snapshots_face-smiling-2_128x128.webp",
         "texture": "skins/face-smiling-2.webp",
         "kind": "cosmetic"
     },
@@ -69,7 +69,7 @@
         "id": "face-crying-2",
         "name": "Heart Glasses",
         "description": "Heart-shaped pink glasses.",
-        "icon": "skins/face-crying-2.webp",
+        "icon": "skins/clog-face-snapshots_face-crying-2_128x128.webp",
         "texture": "skins/face-crying-2.webp",
         "kind": "cosmetic"
     },
@@ -77,7 +77,7 @@
         "id": "face-smile-1",
         "name": "Classic Mustache",
         "description": "A distinguished brown mustache.",
-        "icon": "skins/face-smile-1.webp",
+        "icon": "skins/clog-face-snapshots_face-smile-1_128x128.webp",
         "texture": "skins/face-smile-1.webp",
         "kind": "cosmetic"
     },
@@ -85,16 +85,88 @@
         "id": "face-laughing-1",
         "name": "Handlebar Mustache",
         "description": "A bold black handlebar mustache.",
-        "icon": "skins/face-laughing-1.webp",
+        "icon": "skins/clog-face-snapshots_face-laughing-1_128x128.webp",
         "texture": "skins/face-laughing-1.webp",
         "kind": "cosmetic"
     },
     {
-        "id": "face-dizzy-",
+        "id": "face-dizzy-1",
         "name": "Unicorn Horn",
         "description": "Majestic and sparkly.",
-        "icon": "skins/face-dizzy-1.webp",
+        "icon": "skins/clog-face-snapshots_face-dizzy-1_128x128.webp",
         "texture": "skins/face-dizzy-1.webp",
+        "kind": "cosmetic"
+    },
+    {
+        "id": "face-dizzy-2",
+        "name": "Unicorn Horn",
+        "description": "Majestic and sparkly.",
+        "icon": "skins/clog-face-snapshots_face-dizzy-2_128x128.webp",
+        "texture": "skins/face-dizzy-2.webp",
+        "kind": "cosmetic"
+    },
+    {
+        "id": "face-mustache-1",
+        "name": "Unicorn Horn",
+        "description": "Majestic and sparkly.",
+        "icon": "skins/clog-face-snapshots_face-mustache-1_128x128.webp",
+        "texture": "skins/face-mustache-1.webp",
+        "kind": "cosmetic"
+    },
+    {
+        "id": "face-sunglasses-2",
+        "name": "Unicorn Horn",
+        "description": "Majestic and sparkly.",
+        "icon": "skins/clog-face-snapshots_face-sunglasses-2_128x128.webp",
+        "texture": "skins/face-sunglasses-2.webp",
+        "kind": "cosmetic"
+    },
+    {
+        "id": "face-smile-3",
+        "name": "Unicorn Horn",
+        "description": "Majestic and sparkly.",
+        "icon": "skins/clog-face-snapshots_face-smile-3_128x128.webp",
+        "texture": "skins/face-smile-3.webp",
+        "kind": "cosmetic"
+    },
+    {
+        "id": "face-scary-1",
+        "name": "Unicorn Horn",
+        "description": "Majestic and sparkly.",
+        "icon": "skins/clog-face-snapshots_face-scary-1_128x128.webp",
+        "texture": "skins/face-scary-1.webp",
+        "kind": "cosmetic"
+    },
+    {
+        "id": "face-scary-2",
+        "name": "Unicorn Horn",
+        "description": "Majestic and sparkly.",
+        "icon": "skins/clog-face-snapshots_face-scary-2_128x128.webp",
+        "texture": "skins/face-scary-2.webp",
+        "kind": "cosmetic"
+    },
+    {
+        "id": "face-brave-1",
+        "name": "Unicorn Horn",
+        "description": "Majestic and sparkly.",
+        "icon": "skins/clog-face-snapshots_face-brave-1_128x128.webp",
+        "texture": "skins/face-brave-1.webp",
+        "kind": "cosmetic"
+    },
+    {
+        "id": "face-smirk-1",
+        "name": "Unicorn Horn",
+        "description": "Majestic and sparkly.",
+        "icon": "skins/clog-face-snapshots_face-smirk-1_128x128.webp",
+        "texture": "skins/face-smirk-1.webp",
+        "kind": "cosmetic"
+    },
+    {
+        "id": "face-glasses-1",
+        "name": "Unicorn Horn",
+        "description": "Majestic and sparkly.",
+        "icon": "skins/clog-face-snapshots_face-glasses-1_128x128.webp",
+        "texture": "skins/face-glasses-1.webp",
         "kind": "cosmetic"
     }
 ]
