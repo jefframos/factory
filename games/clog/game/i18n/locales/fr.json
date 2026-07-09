@@ -9,8 +9,8 @@
     "save": "Sauvegarder",
     "highScoreLabel": "MEILLEUR RESULTAT",
     "newHighScore": "NOUVEAU SCORE ÉLEVÉ ! {score}",
-    "boostBadgeTitle": "BOOST",
-    "boostBadgeSubtitle": "Commencez plus grand !",
+    "boostBadgeTitle": "Soutenir",
+    "boostBadgeSubtitle": "Commence {value} plus grand !",
     "youDied": "Vous êtes mort.",
     "revive": "REVIVE",
     "next": "SUIVANT",
@@ -22,6 +22,7 @@
     "settings": "Réglages",
     "clearData": "Effacer Data",
     "clearDataConfirm": "Effacer toutes les données enregistrées ? Cela réinitialise votre score élevé, les déverrouillages de la boutique et le nom. Cela ne peut pas être annulé.",
+    "cancel": "Annuler",
     "tapToStartHint": "Appuyez pour commencer",
     "clickToStartHint": "Cliquez sur Démarrer",
     "moveHintTouch": "Utilisez votre doigt pour bouger",
@@ -30,6 +31,5 @@
     "mute": "Muet",
     "unmute": "Désactiver le mode silencieux",
     "you": "pour vous",
-    "youTag": "VOUS",
-    "npcName": "PNJ {id}"
+    "boostButtonLabel": "BOOST"
 }

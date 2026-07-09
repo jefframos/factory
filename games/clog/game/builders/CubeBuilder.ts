@@ -80,13 +80,23 @@ export class CubeBuilder {
         return CubeBuilder.faceDecalMat;
     }
 
+    /** One-off (not cached) face material for a specific equipped-skin texture — only ever needed by the single local player, so unlike the value-keyed caches above there's no perf motive to share/reuse this across cubes. */
+    private static makeFaceDecalMaterial(texture: THREE.Texture): THREE.MeshStandardMaterial {
+        const mat = new THREE.MeshStandardMaterial({ map: texture, transparent: false, alphaTest: 0.5 });
+        BendService.applyBend(mat);
+        return mat;
+    }
+
     /** Thin quad sitting just in front of the cube's +Z face — kept as a
      *  separate child mesh (not baked into the cube's material) so the face
-     *  art can be swapped independently of the cube's colour. */
-    private static buildFaceDecal(size: number): THREE.Mesh {
+     *  art can be swapped independently of the cube's colour. `faceTexture`
+     *  overrides the shared default decal (e.g. the local player's equipped
+     *  shop skin) — omit it for bots, which all share the one default face. */
+    private static buildFaceDecal(size: number, faceTexture?: THREE.Texture): THREE.Mesh {
         const decalSize = size * 0.85;
         const geo = new THREE.PlaneGeometry(decalSize, decalSize);
-        const mesh = new THREE.Mesh(geo, CubeBuilder.getFaceDecalMaterial());
+        const mat = faceTexture ? CubeBuilder.makeFaceDecalMaterial(faceTexture) : CubeBuilder.getFaceDecalMaterial();
+        const mesh = new THREE.Mesh(geo, mat);
         mesh.name = CubeBuilder.FACE_DECAL_NAME;
         mesh.position.z = size / 2 + size * 0.01;
         return mesh;
@@ -110,15 +120,29 @@ export class CubeBuilder {
         return new THREE.Mesh(geo, [solid, solid, top, solid, solid, solid]);
     }
 
-    /** Rounded cube with a face-decal plane in front of +Z and number on top (+Y = index 2). */
-    static buildPlayer(value: number, size = 1): THREE.Mesh {
+    /** Rounded cube with a face-decal plane in front of +Z and number on top (+Y = index 2). `faceTexture` is the local player's equipped shop skin — see PlayerEntity.applyEquippedSkin(); omit for bots. */
+    static buildPlayer(value: number, size = 1, faceTexture?: THREE.Texture): THREE.Mesh {
         const geo = new RoundedBoxGeometry(size, size, size, 4, size * 0.25);
         const solid = CubeBuilder.getSolidMaterial(value);
         const top = CubeBuilder.getTopMaterial(value);
         // face order: +X, -X, +Y (top), -Y, +Z (front), -Z
         const mesh = new THREE.Mesh(geo, [solid, solid, top, solid, solid, solid]);
-        mesh.add(CubeBuilder.buildFaceDecal(size));
+        mesh.add(CubeBuilder.buildFaceDecal(size, faceTexture));
         return mesh;
+    }
+
+    /**
+     * Swaps the face decal's texture on an already-built player mesh — used
+     * once the equipped skin's texture finishes loading (async, so the mesh
+     * is already on-screen with the default face by the time this lands).
+     * Disposes the previous material first unless it's the shared bot default.
+     */
+    static setFaceTexture(mesh: THREE.Mesh, texture: THREE.Texture): void {
+        const decal = mesh.getObjectByName(CubeBuilder.FACE_DECAL_NAME) as THREE.Mesh | undefined;
+        if (!decal) return;
+        const prevMat = decal.material as THREE.MeshStandardMaterial;
+        decal.material = CubeBuilder.makeFaceDecalMaterial(texture);
+        if (prevMat !== CubeBuilder.faceDecalMat) prevMat.dispose();
     }
 
     /**
@@ -170,10 +194,16 @@ export class CubeBuilder {
 
     /** Materials/textures are value-keyed and shared across every cube for the
      *  app's lifetime — only the per-mesh geometry (and the face decal's own
-     *  geometry, if present) is owned by this instance. */
+     *  geometry, if present) is owned by this instance. The one exception is a
+     *  player's equipped-skin decal material (see setFaceTexture/buildFaceDecal
+     *  with faceTexture) — that's a one-off, not shared, so it's disposed here too. */
     static disposeMesh(mesh: THREE.Mesh): void {
         const decal = mesh.getObjectByName(CubeBuilder.FACE_DECAL_NAME) as THREE.Mesh | undefined;
-        decal?.geometry.dispose();
+        if (decal) {
+            decal.geometry.dispose();
+            const decalMat = decal.material as THREE.MeshStandardMaterial;
+            if (decalMat !== CubeBuilder.faceDecalMat) decalMat.dispose();
+        }
         mesh.geometry.dispose();
     }
 }

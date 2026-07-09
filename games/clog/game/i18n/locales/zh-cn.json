@@ -9,8 +9,8 @@
     "save": "保存",
     "highScoreLabel": "最高分",
     "newHighScore": "新高分！ {score}",
-    "boostBadgeTitle": "BOOST",
-    "boostBadgeSubtitle": "从大处着手！",
+    "boostBadgeTitle": "助推",
+    "boostBadgeSubtitle": "启动{value}更大！",
     "youDied": "你死了",
     "revive": "复活",
     "next": "下一个",
@@ -22,6 +22,7 @@
     "settings": "设置",
     "clearData": "清除数据",
     "clearDataConfirm": "清除所有已保存的数据？这将重置您的高分、商店解锁和姓名。此操作无法撤消。",
+    "cancel": "取消推荐",
     "tapToStartHint": "点按来开始",
     "clickToStartHint": "点击开始",
     "moveHintTouch": "用手指移动",
@@ -30,6 +31,5 @@
     "mute": "静音",
     "unmute": "取消静音",
     "you": "你",
-    "youTag": "你",
-    "npcName": "NPC {id}"
+    "boostButtonLabel": "BOOST"
 }

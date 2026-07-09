@@ -5,6 +5,7 @@ import { isFacingTarget } from "../sim/VisionCone";
 import { Blackboard, BotParams } from "./Blackboard";
 import { Action, BTNode, NodeStatus, Selector } from "./BehaviorTree";
 import { NPC_HUNT_CONFIG } from "../npc/NpcConfig";
+import { generateNpcName } from "../npc/NpcNames";
 
 /** Per-tick context handed to every BT node — everything a node needs to sense the world and act. */
 export type BotContext = {
@@ -127,6 +128,8 @@ export class BotController {
     constructor(
         public readonly entity: PlayerEntity,
         params: Partial<BotParams> = {},
+        /** Display name — passed in for roster-backed NPCs (see NpcDirector), or auto-rolled for one-off debug bots. */
+        public readonly name: string = generateNpcName(),
         tree: BTNode<BotContext> = buildDefaultTree(entity.position.clone()),
     ) {
         this.blackboard = new Blackboard(params);

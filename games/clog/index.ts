@@ -15,8 +15,9 @@ import { getPlatformInstance } from 'core/platforms/PlatformFactory';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
 import Assets from './Assets';
 import BaseDemoScene from './game/scenes/BaseDemoScene';
-import { ShopStorage } from './game/data/ShopStorage';
+import { ShopStorage, loadShopItems } from './game/data/ShopStorage';
 import { HighScoreStorage } from './game/data/HighScoreStorage';
+import { Localization } from './game/i18n/Localization';
 import loaderConfig from './loader.config';
 
 import platformConfig from './platforms.config.json';
@@ -62,6 +63,7 @@ export default class MyGame extends Game {
             await PlatformHandler.instance.initialize(plat);
             await ShopStorage.load();
             await HighScoreStorage.load();
+            await Localization.load();
 
             // 5. Setup Game Flow
             PlatformHandler.instance.platform.startLoad();
@@ -101,6 +103,7 @@ export default class MyGame extends Game {
         await PIXI.Assets.loadBundle('json', (p) => {
             this.loaderScene.updateLoader(p * 1 / bundles.length);
         })
+        loadShopItems();
 
         await PIXI.Assets.loadBundle('fonts', (p) => {
             this.loaderScene.updateLoader(p * 1 / bundles.length);

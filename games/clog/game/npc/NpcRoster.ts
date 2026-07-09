@@ -2,6 +2,7 @@ import { NPC_IDLE_SIM_CONFIG, NPC_POPULATION_CONFIG } from './NpcConfig';
 import { collapseMerges, createFreshRecord, type NpcRecord } from './NpcRecord';
 import { rollFoodValue } from '../world/LinearConfig';
 import { GrowthSimulator } from './GrowthSimulator';
+import { generateNpcName } from './NpcNames';
 
 /**
  * Owns the persistent 24-NPC world population as plain data. Records in
@@ -22,10 +23,12 @@ export class NpcRoster {
 
     /** @param seed Whether to run seedPopulation() on construction — defaults on; pass false for a truly fresh, everyone-at-respawnValue roster (e.g. in tests). */
     constructor(size: number = NPC_POPULATION_CONFIG.rosterSize, seed: boolean = true) {
-        this.records = Array.from(
-            { length: size },
-            () => createFreshRecord(this.nextId++, NPC_POPULATION_CONFIG.respawnValue),
-        );
+        const takenNames = new Set<string>();
+        this.records = Array.from({ length: size }, () => {
+            const name = generateNpcName(takenNames);
+            takenNames.add(name);
+            return createFreshRecord(this.nextId++, NPC_POPULATION_CONFIG.respawnValue, name);
+        });
         if (seed) this.seedPopulation();
     }
 

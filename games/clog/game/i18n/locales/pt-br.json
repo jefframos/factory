@@ -9,8 +9,8 @@
     "save": "Salvar",
     "highScoreLabel": "PONTUAÇÃO MÁXIMA",
     "newHighScore": "NOVO RECORDE! {score}",
-    "boostBadgeTitle": "Impulso",
-    "boostBadgeSubtitle": "Comece maior! ",
+    "boostBadgeTitle": "Impulsionar",
+    "boostBadgeSubtitle": "Inicia {value} Maior!",
     "youDied": "Você morreu! ",
     "revive": "REVIVER?",
     "next": "PRÓXIMO",
@@ -22,6 +22,7 @@
     "settings": "Configurações",
     "clearData": "Limpar Dados",
     "clearDataConfirm": "Limpar todos os dados salvos? Isso redefine sua pontuação máxima, desbloqueios de loja e nome. Isso não pode ser desfeito.",
+    "cancel": "Cancelar",
     "tapToStartHint": "CLIQUE PARA INICIAR",
     "clickToStartHint": "Clique para começar",
     "moveHintTouch": "Use o dedo para se mover",
@@ -30,6 +31,5 @@
     "mute": "Mudo",
     "unmute": "Ativar o áudio",
     "you": "Você",
-    "youTag": "VOCÊ",
-    "npcName": "NPC {id}"
+    "boostButtonLabel": "Impulso"
 }

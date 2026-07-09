@@ -9,8 +9,8 @@
     "save": "Сохранить",
     "highScoreLabel": "Лучший Результат",
     "newHighScore": "НОВЫЙ РЕКОРД! {score}",
-    "boostBadgeTitle": "увеличение",
-    "boostBadgeSubtitle": "Начните с большего!",
+    "boostBadgeTitle": "Сенсорная кнопка ускоренного нагревания",
+    "boostBadgeSubtitle": "Начинает {value} больше!",
     "youDied": "Вы погибли.",
     "revive": "ВОССТАНОВИТЬ",
     "next": "ДАЛЕЕ",
@@ -22,6 +22,7 @@
     "settings": "Настройки",
     "clearData": "Сбросить",
     "clearDataConfirm": "Очистить все сохраненные данные? Это сбрасывает ваш рекорд, разблокирует магазин и имя. Это действие нельзя отменить.",
+    "cancel": "Отмена",
     "tapToStartHint": "Нажмите, чтобы начать",
     "clickToStartHint": "Click to start",
     "moveHintTouch": "Используйте палец для перемещения",
@@ -30,6 +31,5 @@
     "mute": "Отключить звук",
     "unmute": "Без звука",
     "you": "Вы",
-    "youTag": "ВАМ",
-    "npcName": "NPC {id}"
+    "boostButtonLabel": "увеличение"
 }

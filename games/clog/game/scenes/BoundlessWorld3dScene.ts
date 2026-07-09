@@ -8,12 +8,14 @@ import { CollectibleManager } from '../systems/CollectibleManager';
 import { LevelManager } from '../systems/LevelManager';
 import { BoundlessChunkManager } from '../world/BoundlessChunkManager';
 import { CAMERA_CONFIG, FOOD_CONFIG, rollFoodValue } from '../world/LinearConfig';
+import { DEFAULT_START_VALUE } from '../ClogConstants';
 import { ROOM_GEOMETRY } from '../world/MeshConfig';
 import { createWaterMaterial } from '../builders/WaterMaterial';
 import { FloorBuilder } from '../builders/FloorBuilder';
 import FourCornersGradientBuilder from '../vfx/FourCornersGradientBuilder';
 import { CloudSystem } from '../vfx/CloudSystem';
 import { WaterSplashSystem } from '../vfx/WaterSplashSystem';
+import { BoostSpeedLineSystem } from '../vfx/BoostSpeedLineSystem';
 import type { EntityUiTarget, IWorld3dScene } from './IWorld3dScene';
 import type { DeathSnapshot } from '../ui-dom/PlayerFlowController';
 import type { LeaderboardEntry } from '../ui-dom/LeaderboardPanel';
@@ -47,7 +49,9 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     private camDist = CAMERA_CONFIG.minDistance;
     /** True while actually playing — see setGameplayCameraActive. */
     private gameplayCameraActive = false;
-    /** Smoothed world-unit lift applied to the camera's look target — eases toward CAMERA_CONFIG.mobileFocusOffset while gameplayCameraActive on mobile, back to 0 otherwise (menu/death, or desktop). */
+    /** True while the shop screen is open — see setShopCameraActive. */
+    private shopCameraActive = false;
+    /** Smoothed world-unit lift applied to the camera's look target — eases toward CAMERA_CONFIG.mobileFocusOffset while gameplayCameraActive on mobile, CAMERA_CONFIG.shopFocusOffset while shopCameraActive, back to 0 otherwise (menu/death, or desktop). */
     private cameraFocusOffset = 0;
     private perfOverlay: PerfOverlay | null = null;
     private botControllers: BotController[] = [];
@@ -96,12 +100,19 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
      * recycles its container on the way out and reuses it the instant the
      * target reappears — the HUD disappears on death and comes back on
      * respawn with no extra bookkeeping here.
+     *
+     * The player's own name is deliberately blank — it used to be a
+     * localized "YOU" tag, but that text has no fixed length across locales
+     * and could overflow/clip in the tight floating HUD for some languages.
+     * No tag at all sidesteps that without needing per-locale sizing. NPC
+     * names, by contrast, are plain (non-localized) generated strings — see
+     * NpcNames.generateNpcName — so they don't have this problem.
      */
     public listEntityUiTargets(): EntityUiTarget[] {
         const live: { id: string; name: string; entity: PlayerEntity }[] = [];
-        if (this.player && this._deathInfo === null) live.push({ id: 'player', name: Localization.getString('youTag'), entity: this.player });
+        if (this.player && this._deathInfo === null) live.push({ id: 'player', name: '', entity: this.player });
         for (const controller of this.botControllers) {
-            live.push({ id: `bot-${controller.id}`, name: Localization.getString('npcName', { id: controller.id }), entity: controller.entity });
+            live.push({ id: `bot-${controller.id}`, name: controller.name, entity: controller.entity });
         }
 
         return live.map(({ id, name, entity }) => ({
@@ -146,8 +157,9 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.levelManager = new LevelManager();
         this.chunkManager = new BoundlessChunkManager(this.threeScene, this.collectibles);
 
-        this.player = new PlayerEntity(2, this.threeScene);
+        this.player = new PlayerEntity(DEFAULT_START_VALUE, this.threeScene);
         WaterSplashSystem.build(this.threeScene);
+        BoostSpeedLineSystem.build(this.threeScene);
 
         SimWorld.init(this.collectibles, this.chunkManager);
         SimWorld.register(this.player);
@@ -184,6 +196,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     public update(delta: number): void {
         this.gradient.update(delta);
         WaterSplashSystem.update(delta);
+        BoostSpeedLineSystem.update(delta);
         // Idle-population growth + active-window spawn/despawn — independent
         // of alive/dead state below, same as bots/food per updateDead's own
         // doc, but dormant until the player actually joins (see startNpcPopulation).
@@ -257,6 +270,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
                 pz - SPAWN_RADIUS,
                 pz + SPAWN_RADIUS,
                 maxFood,
+                this.lastPlayerResolvedDir,
             );
         }
 
@@ -266,7 +280,9 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         const posT = 1 - Math.exp(-CAMERA_CONFIG.followSpeed * delta);
         this.threeCamera.position.lerp(this.player.position.clone().add(camOffset), posT);
 
-        const targetFocusOffset = (this.gameplayCameraActive && PIXI.isMobile.any) ? CAMERA_CONFIG.mobileFocusOffset : 0;
+        const targetFocusOffset = this.shopCameraActive
+            ? CAMERA_CONFIG.shopFocusOffset
+            : (this.gameplayCameraActive && PIXI.isMobile.any) ? CAMERA_CONFIG.mobileFocusOffset : 0;
         this.cameraFocusOffset += (targetFocusOffset - this.cameraFocusOffset) * posT;
         this.threeCamera.lookAt(this.player.position.x, this.player.position.y + this.cameraFocusOffset, this.player.position.z);
 
@@ -424,6 +440,10 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.gameplayCameraActive = active;
     }
 
+    public setShopCameraActive(active: boolean): void {
+        this.shopCameraActive = active;
+    }
+
     /**
      * Snapshots the leaderboard at the moment of death for the End Game
      * screen's rank/rows. listEntities() alone isn't enough here — by this
@@ -455,12 +475,12 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     }
 
     /** Spawns a real bot at `pos` with a preset tail — each cube fed through PlayerEntity.collect() in descending order so it slots straight into place instead of triggering out-of-order merge churn. */
-    public materializeNpc(pos: { x: number; z: number }, value: number, tailValues: number[], params?: Partial<BotParams>): BotController {
+    public materializeNpc(pos: { x: number; z: number }, value: number, tailValues: number[], name: string, params?: Partial<BotParams>): BotController {
         const bot = new PlayerEntity(value, this.threeScene, false);
         bot.position.set(pos.x, 0, pos.z);
 
         SimWorld.register(bot);
-        const controller = new BotController(bot, params);
+        const controller = new BotController(bot, params, name);
         this.botControllers.push(controller);
 
         for (const v of tailValues) {
@@ -493,7 +513,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     public listEntities(): LeaderboardEntry[] {
         const list: LeaderboardEntry[] = [{ name: Localization.getString('you'), value: this.player.value, score: this.player.score, isYou: true }];
         for (const npc of this.npcDirector.listAll()) {
-            list.push({ name: Localization.getString('npcName', { id: npc.id }), value: npc.value, score: npc.score });
+            list.push({ name: npc.name, value: npc.value, score: npc.score });
         }
         return list;
     }
@@ -581,6 +601,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.perfOverlay?.destroy();
         this.cloudSystem?.destroy(this.threeScene);
         WaterSplashSystem.destroy();
+        BoostSpeedLineSystem.destroy();
         this.gradient.destroy();
         this.player?.destroy();
         this.collectibles?.destroy();

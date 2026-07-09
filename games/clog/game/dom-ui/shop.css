@@ -12,9 +12,10 @@
 
 .shop-box {
     width: 700px;
-    /* Fixed-positioned directly in the viewport (see ShopScreen.renderShopScreen)
-       — % here resolves against the viewport itself, so this alone keeps it
-       from ever overflowing on narrow screens without needing a breakpoint. */
+    /* Rendered into PlayerFlowController's ModalOverlay box (see
+       ShopScreen.renderShopScreen) — % here resolves against the viewport
+       itself, so this alone keeps it from ever overflowing on narrow screens
+       without needing a breakpoint. */
     max-width: 92vw;
     box-sizing: border-box;
 }
@@ -60,6 +61,11 @@
     border-image-source: var(--btn-secondary-image);
 }
 
+/* Currently-equipped item — reuses the Shop role's purple skin (ResourceBar_Single_Btn_Purple1) instead of the grey used for locked items, so "equipped" reads distinctly from "locked" (see ShopScreen.shopItemCard). */
+.shop-card-equipped {
+    border-image-source: var(--btn-shop-image);
+}
+
 /* Whole-card click target (see ShopScreen.shopItemCard) — the card itself is
    a <button> now when actionable, so it needs its own pointer/hover/disabled
    treatment instead of relying on a nested .btn. */
@@ -85,12 +91,6 @@
     width: 52px;
     height: 52px;
     object-fit: contain;
-}
-
-.shop-preview-img {
-    width: 96px;
-    height: 96px;
-    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
 }
 
 /* Plain icon+text row — no chrome of its own now that the whole card carries
@@ -136,11 +136,6 @@
         height: 42px;
     }
 
-    .shop-preview-img {
-        width: 74px;
-        height: 74px;
-    }
-
     .shop-label {
         font-size: 9px;
         gap: 3px;
@@ -165,11 +160,6 @@
     .shop-card-icon {
         width: 30px;
         height: 30px;
-    }
-
-    .shop-preview-img {
-        width: 58px;
-        height: 58px;
     }
 
     .shop-label {

@@ -7,6 +7,8 @@
  * between sub-screens (see PlayerFlowController).
  */
 export class ModalOverlay {
+    private static readonly DEFAULT_BOX_BACKGROUND = 'rgba(24, 24, 32, 0.96)';
+
     readonly element: HTMLDivElement;
     private readonly boxEl: HTMLDivElement;
     private readonly fullEl: HTMLDivElement;
@@ -28,7 +30,8 @@ export class ModalOverlay {
         this.boxEl = document.createElement('div');
         Object.assign(this.boxEl.style, {
             display: 'none',
-            background: 'rgba(24, 24, 32, 0.96)',
+            position: 'relative', // lets a screen (e.g. Shop) anchor a corner close button via position:absolute
+            background: ModalOverlay.DEFAULT_BOX_BACKGROUND,
             color: '#fff',
             borderRadius: '12px',
             padding: '24px 28px',
@@ -55,13 +58,14 @@ export class ModalOverlay {
         this.element.appendChild(this.fullEl);
     }
 
-    /** Replaces the centered box's content right now. */
-    setContent(build: (container: HTMLElement) => void): void {
+    /** Replaces the centered box's content right now. `background` overrides the default near-opaque box background (e.g. the Shop's semi-transparent panel, which lets the 3D world — and the player's live skin preview — show through behind it) — always passed explicitly (falling back to the default) so a previous screen's override can't leak into the next one. */
+    setContent(build: (container: HTMLElement) => void, opts?: { background?: string }): void {
         this.setDimmed(false);
         this.fullEl.style.display = 'none';
         this.fullEl.innerHTML = '';
         this.boxEl.innerHTML = '';
         this.boxEl.style.display = 'block';
+        this.boxEl.style.background = opts?.background ?? ModalOverlay.DEFAULT_BOX_BACKGROUND;
         build(this.boxEl);
     }
 

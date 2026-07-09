@@ -54,12 +54,12 @@ export class NpcDirector {
      * materializes or dematerializes, and would leak debug bots into a
      * player-facing list.
      */
-    listAll(): { id: number; value: number; score: number }[] {
+    listAll(): { id: number; name: string; value: number; score: number }[] {
         return this.roster.records.map(record => {
             const controller = this.active.get(record);
             return controller
-                ? { id: record.id, value: controller.entity.value, score: controller.entity.score }
-                : { id: record.id, value: record.value, score: scoreOf(record) };
+                ? { id: record.id, name: record.name, value: controller.entity.value, score: controller.entity.score }
+                : { id: record.id, name: record.name, value: record.value, score: scoreOf(record) };
         });
     }
 
@@ -129,7 +129,7 @@ export class NpcDirector {
         const spot = host.findSpawnRing(px, pz, NPC_SPAWN_CONFIG.spawnMinDistance, NPC_SPAWN_CONFIG.spawnMaxDistance);
         if (!spot) return; // no walkable cell out there yet (chunks not streamed that far) — retried next check tick
 
-        const controller = host.materializeNpc(spot, record.value, record.tailValues, this.rollParams(playerValue, inGrace));
+        const controller = host.materializeNpc(spot, record.value, record.tailValues, record.name, this.rollParams(playerValue, inGrace));
         record.state = 'active';
         this.active.set(record, controller);
     }

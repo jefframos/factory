@@ -3,6 +3,14 @@ export const BOUNCE_DURATION = 0.4;
 export const BOUNCE_AMPLITUDE = 0.3;
 export const CUBE_GAP = 0.2; // extra breathing room between adjacent cubes
 
+/** Starting value a fresh join gets — the boot menu's parked player preview, and handleJoinServer's default (unboosted) spawn size. */
+export const DEFAULT_START_VALUE = 2;
+/** Multiplier applied to DEFAULT_START_VALUE once the boot menu's "Start bigger" ad offer is claimed — see PlayerFlowController.renderBoost/handleClaimBoost. */
+export const START_BOOST_MULTIPLIER = 16;
+
+/** Seconds the real player is unkillable (no head-eats-head, no tail-snipe) right after spawning or reviving — see PlayerEntity.isInvincible / EntityEating.ts. */
+export const SPAWN_INVINCIBILITY_DURATION = 5;
+
 /** Base speed shared by every value — the player and every bot (PlayerEntity.moveSpeed is shared) move at the same speed regardless of size. */
 export const MOVE_SPEED = 5;
 /** Values at/below this get SMALL_VALUE_SPEED_BOOST — a small early-game edge so a fresh spawn (2/4/8/16) can outrun bigger threats instead of just being an easy first kill. */

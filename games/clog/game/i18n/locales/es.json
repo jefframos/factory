@@ -9,8 +9,8 @@
     "save": "Guardar",
     "highScoreLabel": "PUNTUACIÓN MÁS ALTA",
     "newHighScore": "¡NUEVA PUNTUACIÓN ALTA! {score}",
-    "boostBadgeTitle": "BOOST",
-    "boostBadgeSubtitle": "¡Empieza más grande!",
+    "boostBadgeTitle": "Aumentar",
+    "boostBadgeSubtitle": "¡Comienza {value} más grande!",
     "youDied": "moriste, ",
     "revive": "¿REVIVIR?",
     "next": "SIGUIENTE",
@@ -22,6 +22,7 @@
     "settings": "Ajustes",
     "clearData": "Borrar datos",
     "clearDataConfirm": "¿Borrar todos los datos guardados? Esto restablece tu puntuación más alta, el desbloqueo de la tienda y el nombre. Esto no se puede deshacer.",
+    "cancel": "Cancelar",
     "tapToStartHint": "Toque para comenzar.",
     "clickToStartHint": "Haga clic para comenzar",
     "moveHintTouch": "Usa tu dedo para moverte",
@@ -30,6 +31,5 @@
     "mute": "Silenciar",
     "unmute": "Anular silenciar",
     "you": "Tú",
-    "youTag": "U.",
-    "npcName": "NPC {id}"
+    "boostButtonLabel": "BOOST"
 }

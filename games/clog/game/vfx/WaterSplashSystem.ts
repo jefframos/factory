@@ -14,7 +14,7 @@ const UP_SPEED_MAX = 4.6;
 const GRAVITY = 15.0;
 const SPAWN_AREA_RADIUS = 0.35; // world units — random XZ jitter per droplet so a burst doesn't spawn as one stacked point
 const WATER_Y = 0.5;    // roughly the average water surface height — see WaterMaterial's elevation (0.45) + wave amplitude
-const POINT_SIZE = 0.6;     // base point size in px at closest camera distance
+const POINT_SIZE = 0.2;     // base point size in px at closest camera distance
 const SIZE_ATTEN = 220;    // tuned against CAMERA_CONFIG's 10-25 unit follow distance
 
 // ── Shader ────────────────────────────────────────────────────────────────────

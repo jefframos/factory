@@ -17,7 +17,7 @@ export class EntityIndicator extends PIXI.Container {
     // pixel ratio (see games/clog/index.ts).
     private label = new PIXI.BitmapText('', {
         fontName: Assets.MainFont.fontFamily as string,
-        fontSize: 18,
+        fontSize: 12,
         align: 'center',
         letterSpacing: 2
     });
@@ -34,7 +34,7 @@ export class EntityIndicator extends PIXI.Container {
         this.label.anchor.set(0.5, 1);
         this.label.position.set(0, NAME_Y_OFFSET);
 
-        this.label.resolution = 2
+        //this.label.resolution = 2
 
         this.addChild(this.bg, this.fill, this.label);
         this.visible = false;

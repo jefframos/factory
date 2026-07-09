@@ -15,9 +15,9 @@ import type { EntityUiTarget } from '../scenes/IWorld3dScene';
  * the scene stops including a 'player' target while a death is awaiting a
  * respawn choice, exactly like it stops including a bot's id once it's eaten.
  *
- * Each container's PIXI `.name` is set to the target's name ('YOU' for the
- * player, an NPC label otherwise) so it's identifiable while recycled or in
- * a display-list dump.
+ * Each container's PIXI `.name` is set to the target's name (empty for the
+ * player, a generated NPC name otherwise — see NpcNames.generateNpcName) so
+ * it's identifiable while recycled or in a display-list dump.
  *
  * Indicators are recycled, not destroyed, when their target disappears —
  * pulled back out of the pool the next time a new target shows up, so heavy

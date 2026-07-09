@@ -9,8 +9,8 @@
     "save": "Save",
     "highScoreLabel": "HIGH SCORE",
     "newHighScore": "NEW HIGH SCORE! {score}",
-    "boostBadgeTitle": "BOOST",
-    "boostBadgeSubtitle": "Start Bigger!",
+    "boostBadgeTitle": "Boost",
+    "boostBadgeSubtitle": "Starts {value} Bigger!",
     "youDied": "You died!",
     "revive": "REVIVE?",
     "next": "NEXT",
@@ -31,6 +31,5 @@
     "mute": "Mute",
     "unmute": "Unmute",
     "you": "You",
-    "youTag": "YOU",
-    "npcName": "NPC {id}"
+    "boostButtonLabel": "BOOST"
 }

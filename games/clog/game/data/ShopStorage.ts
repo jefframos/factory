@@ -1,5 +1,6 @@
 import PlatformHandler from 'core/platforms/PlatformHandler';
-import shopItemsJson from './shopItems.json';
+import * as PIXI from 'pixi.js';
+import { Signal } from 'signals';
 
 export type ShopItemKind = 'cosmetic' | 'achievement' | 'free';
 
@@ -10,7 +11,10 @@ export interface ShopItem {
     id: string;
     name: string;
     description: string;
+    /** Relative path under images/non-preload — e.g. "skins/sunglasses_blue.webp". Resolve with resolveShopImagePath(). */
     icon: string;
+    /** Same convention as icon — for now artists point both at the same file until dedicated card icons exist. Applied to the live player cube's face decal — see PlayerEntity.applyEquippedSkin(). */
+    texture: string;
     kind: ShopItemKind;
     /** Only present on kind: 'achievement' items. */
     valueThreshold?: number;
@@ -18,7 +22,32 @@ export interface ShopItem {
     shortLabel?: string;
 }
 
-export const SHOP_ITEMS: ShopItem[] = shopItemsJson as ShopItem[];
+/**
+ * Shop item art is served straight from the asset pipeline's non-preload
+ * output (raw-assets/non-preload/skins/*.webp), not bundled by Vite — an
+ * artist edits shopItems.json's icon/texture fields and drops a matching
+ * file there, runs `npm run image`, and it shows up with no code change.
+ * Shared between ShopScreen (DOM <img>) and PlayerEntity (THREE texture).
+ */
+const NON_PRELOAD_IMAGE_BASE = 'clog/images/non-preload/';
+
+export function resolveShopImagePath(relativePath: string): string {
+    return `${NON_PRELOAD_IMAGE_BASE}${relativePath}`;
+}
+
+/**
+ * Populated in place from the 'json' PIXI bundle (raw-assets/json/shopItems.json)
+ * once it finishes loading — see MyGame.loadAssets() in index.ts. Kept as a
+ * mutated const array (rather than reassigned) so existing imports of
+ * SHOP_ITEMS stay valid references.
+ */
+export const SHOP_ITEMS: ShopItem[] = [];
+
+/** Call once the 'json' PIXI.Assets bundle has loaded — see index.ts loadAssets(). */
+export function loadShopItems(): void {
+    const items = PIXI.Assets.get('shopItems.json') as ShopItem[];
+    SHOP_ITEMS.splice(0, SHOP_ITEMS.length, ...items);
+}
 
 interface ShopSaveData {
     version: number;
@@ -48,6 +77,9 @@ export class ShopStorage {
 
     private static _cachedData: ShopSaveData | null = null;
     private static readonly sessionUnlockedCosmeticIds = new Set<string>();
+
+    /** Fires with the newly-equipped item id whenever equip() runs — lets the live player cube (see PlayerEntity.applyEquippedSkin) update its face texture immediately instead of only picking up the change on the next spawn. */
+    static readonly onEquipChanged: Signal = new Signal();
 
     private static createDefaultData(): ShopSaveData {
         return {
@@ -92,6 +124,7 @@ export class ShopStorage {
     static equip(itemId: string): void {
         const data = this.data();
         data.equippedSkinId = itemId;
+        this.onEquipChanged.dispatch(itemId);
         void this.persist(data);
     }
 

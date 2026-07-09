@@ -1,11 +1,14 @@
 import * as PIXI from 'pixi.js';
 import { DomUiRoot } from '../dom-ui/DomUiRoot';
 import { ModalOverlay } from '../dom-ui/ModalOverlay';
+import { PANEL_TRANSLUCENT_BACKGROUND, panelCloseButton, panelHeading } from '../dom-ui/PanelChrome';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { leaderboardRow, windowAround, type LeaderboardEntry } from './LeaderboardPanel';
 import { renderShopScreen } from './ShopScreen';
 import { HighScoreStorage } from '../data/HighScoreStorage';
 import { Localization } from '../i18n/Localization';
+import { generateNickname } from '../utils/NameGenerator';
+import { DEFAULT_START_VALUE, START_BOOST_MULTIPLIER } from '../ClogConstants';
 import shopIcon from '../dom-ui/images/shop.png';
 import videoIcon from '../dom-ui/images/video-icon.png';
 import whaleLogo from '../dom-ui/images/whaleLogo.png';
@@ -31,18 +34,21 @@ const END_GAME_WINDOW = { size: 5, ahead: 3, behind: 1 };
 export class PlayerFlowController {
     private readonly overlay = new ModalOverlay();
 
-    private playerName = randomPlayerName();
+    private playerName = generateNickname();
     private pendingDeath: DeathSnapshot | null = null;
     private pendingIsNewHighScore = false;
     private deathCountdownHandle: number | null = null;
 
-    private onJoin: (() => void) | null = null;
+    private onJoin: ((startValue: number) => void) | null = null;
     private onRevive: ((keepSize: DeathSnapshot) => void) | null = null;
     private onEndGame: (() => void) | null = null;
     private onContinue: (() => void) | null = null;
+    /** Set via setShopCameraHooks — lets BaseDemoScene shift the 3D camera while a boot-menu sub-panel (Shop, Rename) is up, so the player (behind it) reads above center instead of being covered. Named for Shop, its first user, but shared by Rename too — see renderMenu(), which always closes it regardless of which sub-panel is being left. Boost has no panel of its own (see handleClaimBoost), so it never opens this. */
+    private onShopOpen: (() => void) | null = null;
+    private onShopClose: (() => void) | null = null;
 
     /** Whichever render*() call last drew the visible screen — re-invoked on a locale change so the screen currently on-screen picks up the new language (see refreshScreen). */
-    private currentScreen: () => void = () => {};
+    private currentScreen: () => void = () => { };
 
     constructor() {
         DomUiRoot.instance.mount(this.overlay.element);
@@ -57,8 +63,14 @@ export class PlayerFlowController {
         this.playerName = name;
     }
 
+    /** Called once by BaseDemoScene right after construction — indirects through the live world3d rather than capturing it directly, since spawnFreshWorld() can swap that instance out from under this controller (see BaseDemoScene.spawnFreshWorld). */
+    setShopCameraHooks(onOpen: () => void, onClose: () => void): void {
+        this.onShopOpen = onOpen;
+        this.onShopClose = onClose;
+    }
+
     /** Boot menu — also where Shop/Rename return to (see back()). */
-    showMenu(onJoin: () => void): void {
+    showMenu(onJoin: (startValue: number) => void): void {
         this.onJoin = onJoin;
         this.renderMenu();
         this.overlay.show();
@@ -94,11 +106,15 @@ export class PlayerFlowController {
     // ── Screens ──────────────────────────────────────────────────────────────
 
     private renderMenu(): void {
+        // Always ensure the shop's camera framing is off once we're back at
+        // the menu, regardless of which screen we're returning from (see
+        // back() — Shop/Rename both route here).
+        this.onShopClose?.();
         this.currentScreen = () => this.renderMenu();
         this.overlay.setFullContent(root => {
             root.appendChild(gameLogo());
             root.appendChild(cornerButton('left', pillButton(Localization.getString('shop'), () => this.renderShop(), { icon: shopIcon, role: 'shop' })));
-            root.appendChild(cornerButton('right', boostBadge(() => this.renderBoost())));
+            root.appendChild(cornerButton('right', boostBadge(() => void this.handleClaimBoost())));
             root.appendChild(this.menuBottomSection());
         });
     }
@@ -122,7 +138,7 @@ export class PlayerFlowController {
         section.appendChild(this.nameRow());
         section.appendChild(pillButton(Localization.getString('tapToStart'), () => {
             this.overlay.hide();
-            this.onJoin?.();
+            this.onJoin?.(DEFAULT_START_VALUE);
         }, { role: 'primary', big: true }));
         return section;
     }
@@ -204,28 +220,23 @@ export class PlayerFlowController {
         this.overlay.setDimmed(true);
     }
 
+    /** Boxed, semi-transparent panel (not a full dimmed blocker) — the 3D world, and the live player cube wearing whatever skin is equipped, stays clearly visible behind it. See setShopCameraHooks: the camera also eases up while this is open so the player reads above the panel instead of behind it. */
     private renderShop(): void {
+        this.onShopOpen?.();
         this.currentScreen = () => this.renderShop();
-        this.overlay.setFullContent(root => renderShopScreen(root, () => this.back()));
-        this.overlay.setDimmed(true); // reads as a true blocking screen, like End Game
+        this.overlay.setContent(
+            box => renderShopScreen(box, () => this.back()),
+            { background: PANEL_TRANSLUCENT_BACKGROUND },
+        );
     }
 
-    private renderBoost(): void {
-        this.currentScreen = () => this.renderBoost();
-        this.overlay.setContent(box => {
-            box.appendChild(heading(Localization.getString('boostTitle')));
-            const note = document.createElement('div');
-            note.textContent = Localization.getString('comingSoon');
-            Object.assign(note.style, { opacity: '0.7', textAlign: 'center', marginBottom: '14px' });
-            box.appendChild(note);
-            box.appendChild(button(Localization.getString('back'), () => this.back()));
-        });
-    }
-
+    /** Same translucent panel + corner close-X + camera offset as Shop (see PanelChrome, setShopCameraHooks) rather than a boxed Back button. */
     private renderRename(): void {
+        this.onShopOpen?.();
         this.currentScreen = () => this.renderRename();
         this.overlay.setContent(box => {
-            box.appendChild(heading(Localization.getString('rename')));
+            box.appendChild(panelCloseButton(() => this.back()));
+            box.appendChild(panelHeading(Localization.getString('rename')));
 
             const input = document.createElement('input');
             input.type = 'text';
@@ -243,8 +254,7 @@ export class PlayerFlowController {
             box.appendChild(input);
 
             box.appendChild(button(Localization.getString('save'), () => this.saveName(input.value), { role: 'primary' }));
-            box.appendChild(button(Localization.getString('back'), () => this.back()));
-        });
+        }, { background: PANEL_TRANSLUCENT_BACKGROUND });
     }
 
     // ── Actions ──────────────────────────────────────────────────────────────
@@ -261,6 +271,20 @@ export class PlayerFlowController {
         this.clearDeathCountdown();
         this.overlay.hide();
         if (this.pendingDeath) this.onRevive?.(this.pendingDeath);
+    }
+
+    /**
+     * Boot menu's "BOOST" badge — one tap watches an ad, then joins
+     * immediately at START_BOOST_MULTIPLIER× the normal start size, skipping
+     * the usual "Tap to Start" step entirely (no intermediate panel). Same
+     * fire-and-resolve call shape as handleWatchAd (see its comment re:
+     * showRewardedVideo's Promise<void> vs Promise<boolean> mismatch).
+     */
+    private async handleClaimBoost(): Promise<void> {
+        await PlatformHandler.instance.platform.showRewardedVideo();
+        this.overlay.hide();
+        this.onJoin?.(START_BOOST_MULTIPLIER);
+        //this.onJoin?.(DEFAULT_START_VALUE * START_BOOST_MULTIPLIER);
     }
 
     private clearDeathCountdown(): void {
@@ -321,26 +345,7 @@ export class PlayerFlowController {
     }
 }
 
-// ── Name generation ──────────────────────────────────────────────────────────
-
-const NAME_ADJECTIVES = ['Swift', 'Brave', 'Lucky', 'Shiny', 'Quick', 'Bold', 'Sneaky', 'Mighty', 'Chubby', 'Rusty'];
-const NAME_ANIMALS = ['Fox', 'Wolf', 'Otter', 'Hawk', 'Panda', 'Tiger', 'Shark', 'Eagle', 'Slug', 'Newt'];
-
-function randomPlayerName(): string {
-    const adjective = NAME_ADJECTIVES[Math.floor(Math.random() * NAME_ADJECTIVES.length)];
-    const animal = NAME_ANIMALS[Math.floor(Math.random() * NAME_ANIMALS.length)];
-    const suffix = Math.floor(Math.random() * 100);
-    return `${adjective}${animal}${suffix}`;
-}
-
 // ── DOM helpers ──────────────────────────────────────────────────────────────
-
-function heading(text: string): HTMLElement {
-    const h = document.createElement('div');
-    h.textContent = text;
-    Object.assign(h.style, { fontSize: '20px', fontWeight: 'bold', textAlign: 'center', marginBottom: '14px' });
-    return h;
-}
 
 /** Fixed, top-center game logo for the edge-anchored boot menu — the WHALE.IO wordmark image stacked over a bigger gold "2048" line, rather than a plain text heading. */
 function gameLogo(): HTMLElement {
@@ -522,30 +527,69 @@ function pillButton(label: string, onClick: () => void, opts: { role?: BtnRole; 
     return btn;
 }
 
-/** Two-line callout for the boost feature (icon + title + subtitle), on the same accent skin as the ad-rewarded Revive button since it's the same "special edge" promo flavor. Floats continuously (see .btn-float) to stand out as a bonus, not a core action. */
+/**
+ * Callout for the boost feature, on the same accent skin as the ad-rewarded
+ * Revive button since it's the same "special edge" promo flavor. Floats
+ * continuously (see .btn-float) to stand out as a bonus, not a core action.
+ * No "Boost" title — the video icon (~20% of the button's width) and the
+ * two-line "Starts / 16x Bigger!" text carry the whole message. The
+ * multiplier gets its own bigger, green-highlighted span so it pops out of
+ * the sentence — boostBadgeSubtitle's raw {value} template is split around
+ * that span (rather than calling getString with vars) specifically so the
+ * highlight survives however a translation reorders the surrounding words.
+ */
 function boostBadge(onClick: () => void): HTMLButtonElement {
     const btn = document.createElement('button');
-    btn.className = 'btn btn-accent btn-md btn-hug-start btn-float';
+    btn.className = 'btn btn-accent btn-md btn-float';
+    Object.assign(btn.style, { display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '180px' });
 
+    const iconWrap = document.createElement('div');
+    Object.assign(iconWrap.style, { flex: '0 0 20%', display: 'flex', justifyContent: 'center' });
     const img = document.createElement('img');
     img.src = videoIcon;
-    img.className = 'btn-icon btn-icon-md';
-    btn.appendChild(img);
+    Object.assign(img.style, { width: '48px', height: '48px', objectFit: 'contain' });
+    iconWrap.appendChild(img);
+    btn.appendChild(iconWrap);
 
-    const labels = document.createElement('div');
-    Object.assign(labels.style, { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' });
+    const textCol = document.createElement('div');
+    // Object.assign(textCol.style, { display: 'flex', flexDirection: 'column', alignItems: 'flex-start' });
+    Object.assign(textCol.style, {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        flex: '1',
+    });
 
-    const title = document.createElement('div');
-    title.textContent = Localization.getString('boostBadgeTitle');
-    Object.assign(title.style, { fontSize: '16px', fontWeight: 'bold' });
+    const [subPrefix, subSuffix] = Localization.getString('boostBadgeSubtitle').split('{value}');
 
-    const sub = document.createElement('div');
-    sub.textContent = Localization.getString('boostBadgeSubtitle');
-    Object.assign(sub.style, { fontSize: '10px', opacity: '0.85' });
+    const line1 = document.createElement('div');
+    line1.textContent = subPrefix.trim();
+    Object.assign(line1.style, { fontSize: '15px', fontWeight: 'bold' });
+    textCol.appendChild(line1);
 
-    labels.appendChild(title);
-    labels.appendChild(sub);
-    btn.appendChild(labels);
+    const line2 = document.createElement('div');
+    line2.style.textAlign = 'center';
+
+    const value = document.createElement('span');
+    value.textContent = `${START_BOOST_MULTIPLIER}x `;
+    Object.assign(value.style, {
+        fontSize: '20px',
+        fontWeight: 'bold',
+        color: '#5CFF6B',
+    });
+
+    const suffix = document.createElement('span');
+    suffix.textContent = subSuffix.trim();
+    Object.assign(suffix.style, {
+        fontSize: '18px',
+        fontWeight: 'bold',
+    });
+
+    line2.append(value, suffix);
+    textCol.appendChild(line2);
+
+    btn.appendChild(textCol);
     btn.addEventListener('click', onClick);
     return btn;
 }

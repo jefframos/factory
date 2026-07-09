@@ -2,134 +2,45 @@ import PlatformHandler from 'core/platforms/PlatformHandler';
 import '../dom-ui/shop.css';
 import lockIcon from '../dom-ui/images/lock.png';
 import videoIcon from '../dom-ui/images/video-icon.png';
-import closeIcon from '../dom-ui/images/Icon_Close02.png';
 import checkIcon from '../dom-ui/images/Icon_Check03_s.png';
+import { panelCloseButton, panelHeading } from '../dom-ui/PanelChrome';
 
-import iconSunglassesBlue from '../dom-ui/images/skins/sunglasses_blue.png';
-import iconSunglassesPink from '../dom-ui/images/skins/sunglasses_pink.png';
-import iconMustacheBrown from '../dom-ui/images/skins/mustache_brown.png';
-import iconMustacheBlack from '../dom-ui/images/skins/mustache_black.png';
-import iconUnicornHorn from '../dom-ui/images/skins/unicorn_horn.png';
-import iconBadge2048 from '../dom-ui/images/skins/badge_2048.png';
-import iconBadge8192 from '../dom-ui/images/skins/badge_8192.png';
-import iconBadge16384 from '../dom-ui/images/skins/badge_16384.png';
-import iconBadge1m from '../dom-ui/images/skins/badge_1m.png';
-import iconBadge1b from '../dom-ui/images/skins/badge_1b.png';
-import iconDefaultCube from '../dom-ui/images/skins/default_cube.png';
-
-import { ShopStorage, SHOP_ITEMS, type ShopItem } from '../data/ShopStorage';
+import { ShopStorage, SHOP_ITEMS, resolveShopImagePath, type ShopItem } from '../data/ShopStorage';
 import { Localization } from '../i18n/Localization';
 
-/** Static import map — Vite needs literal import statements to bundle these, so shopItems.json only carries the icon *key*, resolved here. */
-const ICONS: Record<string, string> = {
-    sunglasses_blue: iconSunglassesBlue,
-    sunglasses_pink: iconSunglassesPink,
-    mustache_brown: iconMustacheBrown,
-    mustache_black: iconMustacheBlack,
-    unicorn_horn: iconUnicornHorn,
-    badge_2048: iconBadge2048,
-    badge_8192: iconBadge8192,
-    badge_16384: iconBadge16384,
-    badge_1m: iconBadge1m,
-    badge_1b: iconBadge1b,
-    default_cube: iconDefaultCube,
-};
+const FALLBACK_IMAGE = resolveShopImagePath('skins/default_cube.webp');
 
-function iconFor(item: ShopItem): string {
-    return ICONS[item.icon] ?? iconDefaultCube;
+function skinImageUrl(relativePath: string | undefined): string {
+    return relativePath ? resolveShopImagePath(relativePath) : FALLBACK_IMAGE;
 }
 
 /**
- * The Shop sub-screen, rendered into PlayerFlowController's dimmed, panel-
- * free ModalOverlay full-viewport layer (see renderShop() — setFullContent +
- * setDimmed(true), same "world hidden behind a dark backdrop" treatment as
- * End Game). No boxed card — just the dimmed backdrop, the close button, and
- * fixed-position content. Self-contained: re-invoking this function redraws
- * the whole screen, which is how card/preview state refreshes after an equip.
+ * The Shop sub-screen, rendered into PlayerFlowController's boxed,
+ * semi-transparent ModalOverlay panel (see renderShop() — setContent with a
+ * translucent background override) rather than a full dimmed blocker — the
+ * live 3D player, wearing whatever skin is equipped, stays visible behind
+ * the panel instead of a flat DOM preview image standing in for it (see
+ * PlayerEntity.applyEquippedSkin). Self-contained: re-invoking this function
+ * redraws the whole screen, which is how card state refreshes after an equip.
  */
 export function renderShopScreen(root: HTMLElement, onClose: () => void): void {
     root.innerHTML = '';
+    root.className = 'shop-box';
+    // Flex column with a height cap — the grid (flex-shrinks to fit, then
+    // scrolls via .shop-grid's own overflow-y) is what used to be capped by
+    // the old fixed-position wrapper's maxHeight; the close button stays
+    // pinned to the panel's corner (position:absolute) rather than scrolling
+    // away with it.
+    Object.assign(root.style, { display: 'flex', flexDirection: 'column', maxHeight: '66vh' });
     const rerender = () => renderShopScreen(root, onClose);
 
-    root.appendChild(closeButton(onClose));
-
-    const wrap = document.createElement('div');
-    wrap.className = 'shop-box';
-    Object.assign(wrap.style, {
-        position: 'fixed',
-        left: '50%',
-        top: '50%',
-        transform: 'translate(-50%, -50%)',
-        maxHeight: '82vh',
-        display: 'flex',
-        flexDirection: 'column',
-        pointerEvents: 'auto',
-    });
-    root.appendChild(wrap);
-
-    wrap.appendChild(heading(Localization.getString('shop')));
-    wrap.appendChild(centerPreview());
+    root.appendChild(panelCloseButton(onClose));
+    root.appendChild(panelHeading(Localization.getString('shop')));
 
     const grid = document.createElement('div');
     grid.className = 'shop-grid';
     for (const item of SHOP_ITEMS) grid.appendChild(shopItemCard(item, rerender));
-    wrap.appendChild(grid);
-}
-
-/** Fixed top-right circular close button — replaces the boxed screen's Back button, freeing up the vertical space a full-width bottom button would have used. */
-function closeButton(onClick: () => void): HTMLElement {
-    const wrap = document.createElement('div');
-    Object.assign(wrap.style, { position: 'fixed', top: '14px', right: '14px', pointerEvents: 'auto' });
-
-    const btn = document.createElement('button');
-    Object.assign(btn.style, {
-        width: '38px',
-        height: '38px',
-        borderRadius: '50%',
-        border: 'none',
-        background: 'rgba(20, 20, 28, 0.75)',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '0',
-    });
-
-    const img = document.createElement('img');
-    img.src = closeIcon;
-    Object.assign(img.style, { width: '20px', height: '20px' });
-    btn.appendChild(img);
-
-    btn.addEventListener('click', onClick);
-    wrap.appendChild(btn);
-    return wrap;
-}
-
-function heading(text: string): HTMLElement {
-    const h = document.createElement('div');
-    h.textContent = text;
-    Object.assign(h.style, {
-        fontSize: '20px',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        textShadow: '0 2px 6px rgba(0,0,0,0.6)',
-    });
-    return h;
-}
-
-/** Big preview of whatever's currently equipped (or the default cube, if nothing is). */
-function centerPreview(): HTMLElement {
-    const wrap = document.createElement('div');
-    Object.assign(wrap.style, { display: 'flex', justifyContent: 'center', margin: '10px 0 4px' });
-
-    const equippedId = ShopStorage.getEquippedSkinId();
-    const equippedItem = SHOP_ITEMS.find(i => i.id === equippedId);
-
-    const img = document.createElement('img');
-    img.className = 'shop-preview-img';
-    img.src = equippedItem ? iconFor(equippedItem) : iconDefaultCube;
-    wrap.appendChild(img);
-    return wrap;
+    root.appendChild(grid);
 }
 
 /**
@@ -145,12 +56,14 @@ function shopItemCard(item: ShopItem, rerender: () => void): HTMLElement {
     const needsAd = item.kind === 'cosmetic' && !ShopStorage.isCosmeticSessionUnlocked(item.id);
     const clickable = unlocked && !equipped;
 
-    // secondary (grey) = locked or already-equipped; accent (yellow) = needs an ad; primary (green) = free equip.
-    const roleClass = !unlocked || equipped
+    // secondary (grey) = locked; equipped (purple) = currently worn; accent (yellow) = needs an ad; primary (green) = free equip.
+    const roleClass = !unlocked
         ? 'shop-card-secondary'
-        : needsAd
-            ? 'shop-card-accent'
-            : 'shop-card-primary';
+        : equipped
+            ? 'shop-card-equipped'
+            : needsAd
+                ? 'shop-card-accent'
+                : 'shop-card-primary';
 
     const card = document.createElement(clickable ? 'button' : 'div');
     card.className = `shop-card ${roleClass}` + (clickable ? ' shop-card-clickable' : '');
@@ -159,7 +72,7 @@ function shopItemCard(item: ShopItem, rerender: () => void): HTMLElement {
     const icon = document.createElement('img');
     icon.className = 'shop-card-icon';
     icon.title = item.name;
-    icon.src = iconFor(item);
+    icon.src = skinImageUrl(item.icon);
     icon.style.filter = unlocked ? 'none' : 'grayscale(1) brightness(0.55)';
     card.appendChild(icon);
 

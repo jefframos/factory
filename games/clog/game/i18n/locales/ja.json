@@ -9,8 +9,8 @@
     "save": "保存",
     "highScoreLabel": "ハイスコア：",
     "newHighScore": "新しいハイスコア！ {score}",
-    "boostBadgeTitle": "BOOST",
-    "boostBadgeSubtitle": "よりビッグなスタートを切ろう！",
+    "boostBadgeTitle": "ブースト",
+    "boostBadgeSubtitle": "{value}を大きく開始！",
     "youDied": "死亡",
     "revive": "リヴァイヴ",
     "next": "次へ",
@@ -22,6 +22,7 @@
     "settings": "設定",
     "clearData": "データを消去",
     "clearDataConfirm": "保存したすべてのデータを消去しますか？これにより、ハイスコア、ショップアンロック、名前がリセットされます。これは元に戻せません。",
+    "cancel": "取り消す",
     "tapToStartHint": "タップして開始",
     "clickToStartHint": "クリックして開始",
     "moveHintTouch": "指で動かす",
@@ -30,6 +31,5 @@
     "mute": "ミュート",
     "unmute": "ミュート解除",
     "you": "あなたは",
-    "youTag": "あなた",
-    "npcName": "NPC {id}"
+    "boostButtonLabel": "BOOST"
 }

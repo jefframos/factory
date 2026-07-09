@@ -12,7 +12,7 @@ import type { LeaderboardEntry } from '../ui-dom/LeaderboardPanel';
  */
 export interface EntityUiTarget {
     id: string;
-    /** Shown above the entity's head and set as the recycled container's PIXI `.name` — 'YOU' for the player, an NPC label otherwise. */
+    /** Shown above the entity's head and set as the recycled container's PIXI `.name` — empty for the player (see BoundlessWorld3dScene.listEntityUiTargets), a generated name otherwise (see NpcNames.generateNpcName). */
     name: string;
     boostT: number;
     screenAnchor: { x: number; y: number } | null;
@@ -54,4 +54,6 @@ export interface IWorld3dScene {
     setPlayerIndicatorVisible(visible: boolean): void;
     /** True while actually playing (vs. parked on the boot/death menu) — eases the camera's look target up on mobile so the player reads lower on screen instead of dead-center (see CAMERA_CONFIG.mobileFocusOffset). No-op on desktop. */
     setGameplayCameraActive(active: boolean): void;
+    /** True while the shop screen is open — eases the camera's look target down so the player reads above center instead of dead-center, leaving room below for the shop panel (see CAMERA_CONFIG.shopFocusOffset). Takes priority over setGameplayCameraActive's mobile offset. */
+    setShopCameraActive(active: boolean): void;
 }

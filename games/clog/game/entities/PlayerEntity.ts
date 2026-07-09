@@ -1,15 +1,18 @@
 import * as THREE from "three";
 import { CubeBuilder } from "../builders/CubeBuilder";
 import { BendService } from "../services/BendService";
-import { BOUNCE_AMPLITUDE, BOUNCE_DURATION, MANUAL_BOOST_DRAIN_DURATION, MANUAL_BOOST_REENGAGE_THRESHOLD, MANUAL_BOOST_RECHARGE_DURATION, MOVE_SPEED, SMALL_VALUE_SPEED_BOOST, SMALL_VALUE_SPEED_THRESHOLD, TAP_BOOST_DURATION, TAP_BOOST_MULTIPLIER, followDist, sizeForValue } from "../ClogConstants";
+import { BOUNCE_AMPLITUDE, BOUNCE_DURATION, MANUAL_BOOST_DRAIN_DURATION, MANUAL_BOOST_REENGAGE_THRESHOLD, MANUAL_BOOST_RECHARGE_DURATION, MOVE_SPEED, SMALL_VALUE_SPEED_BOOST, SMALL_VALUE_SPEED_THRESHOLD, SPAWN_INVINCIBILITY_DURATION, TAP_BOOST_DURATION, TAP_BOOST_MULTIPLIER, followDist, sizeForValue } from "../ClogConstants";
 import { dbg, dbgTail } from "../debug/MergeDebugger";
 import { MergeQueue } from "../systems/MergeQueue";
 import { WalkBob } from "../components/WalkBob"; // [view:WalkBob]
 import { FloatBob } from "../components/FloatBob";
 import { WaterSplashEmitter } from "../components/WaterSplashEmitter";
+import { BoostSpeedLineEmitter } from "../components/BoostSpeedLineEmitter";
 import { BlobShadow } from "./BlobShadow";
 import { TailCube } from "./TailCube";
 import type { ISimEntity, TailEntry } from "../sim/SimWorld";
+import { TextureBuilder } from "../builders/TextureBuilder";
+import { ShopStorage, SHOP_ITEMS, resolveShopImagePath } from "../data/ShopStorage";
 
 const ROTATION_SPEED = 12;
 const HISTORY_SAMPLE_DIST = 0.25; // world-units between sampled waypoints
@@ -27,6 +30,8 @@ export class PlayerEntity implements ISimEntity {
     private scene: THREE.Scene;
     private mergeQueue: MergeQueue;
     private eatIndicator: THREE.Mesh | null;
+    /** True for the real, controllable player (showEatIndicator); false for bots — gates the shop-skin subscription in the constructor/teardownVisuals. */
+    private isRealPlayer: boolean;
 
     private targetRotation = new THREE.Quaternion();
     private readonly UP = new THREE.Vector3(0, 1, 0);
@@ -47,11 +52,15 @@ export class PlayerEntity implements ISimEntity {
     /** True once the meter has fully drained while held — blocks re-engaging the boost until it refills past MANUAL_BOOST_REENGAGE_THRESHOLD, even if still held. */
     private manualBoostLocked = false;
     private bounceTimer = 0;
+    /** Counts down from SPAWN_INVINCIBILITY_DURATION on spawn/revive — see isInvincible and the constructor. Every respawn (including a Revive) constructs a brand-new PlayerEntity (see BoundlessWorld3dScene.respawnPlayer), so setting this here covers both cases with no extra wiring. */
+    private invincibleRemaining = 0;
     private shadow: BlobShadow;
     private walkBob = new WalkBob();   // [view:WalkBob]
     private floatBob = new FloatBob();
     /** Every head — player or NPC — kicks up a wake; see WaterSplashEmitter. */
     private splash = new WaterSplashEmitter();
+    /** Fires while boosting; see BoostSpeedLineEmitter. */
+    private speedLines = new BoostSpeedLineEmitter();
 
     /** @param showEatIndicator Whether to build the forward-facing direction triangle — the player wants it visible, but NPCs render without it. */
     constructor(value: number, scene: THREE.Scene, showEatIndicator = true) {
@@ -91,6 +100,35 @@ export class PlayerEntity implements ISimEntity {
         scene.add(this.transform);
         this.updateScale();
         this.shadow = new BlobShadow(scene);
+
+        // Only the real, controllable player wears the shop-equipped skin —
+        // bots (showEatIndicator: false) keep CubeBuilder's shared default face.
+        // Subscribed live (not just applied once here) so switching skins in the
+        // shop mid-session updates this cube immediately instead of only taking
+        // effect on the next spawn/respawn.
+        this.isRealPlayer = showEatIndicator;
+        if (this.isRealPlayer) {
+            void this.applyEquippedSkin(ShopStorage.getEquippedSkinId());
+            ShopStorage.onEquipChanged.add(this.applyEquippedSkin, this);
+            this.invincibleRemaining = SPAWN_INVINCIBILITY_DURATION;
+        }
+    }
+
+    /** True right after spawning or reviving — see invincibleRemaining. Checked by EntityEating.ts to block both head-eats-head kills and tail-snipes against this entity for the duration; doesn't affect this entity's own ability to eat others. */
+    get isInvincible(): boolean {
+        return this.invincibleRemaining > 0;
+    }
+
+    /** Loads the given skin's texture and swaps it onto this cube's face decal — async since the texture has to load, so the mesh may already be on-screen with the previous face for a frame or two first. Bound to ShopStorage.onEquipChanged for live updates — see constructor. */
+    private async applyEquippedSkin(itemId: string): Promise<void> {
+        const item = SHOP_ITEMS.find(i => i.id === itemId);
+        if (!item) return;
+        try {
+            const texture = await TextureBuilder.load(resolveShopImagePath(item.texture));
+            CubeBuilder.setFaceTexture(this.mesh, texture);
+        } catch (e) {
+            console.error('PlayerEntity: failed to load equipped skin texture', e);
+        }
     }
 
     /** Hides the forward-facing direction triangle — e.g. while the player is parked on the boot menu, not yet controllable. No-op for NPCs (built without one). */
@@ -199,6 +237,8 @@ export class PlayerEntity implements ISimEntity {
         const mx = this.moveInputX;
         const mz = this.moveInputZ;
 
+        if (this.invincibleRemaining > 0) this.invincibleRemaining = Math.max(0, this.invincibleRemaining - delta);
+
         // ── Tap-start speed boost ────────────────────────────────────────────
         // A brief burst right when input goes from stopped to moving — makes
         // starting off feel snappier without inflating sustained cruise speed.
@@ -228,10 +268,12 @@ export class PlayerEntity implements ISimEntity {
 
         // ── Movement ──────────────────────────────────────────────────────────
         const prevPos = this.transform.position.clone();
-        const speed = this.moveSpeed * (this.tapBoostTimer > 0 || manualBoostActive ? TAP_BOOST_MULTIPLIER : 1);
+        const boostActive = this.tapBoostTimer > 0 || manualBoostActive;
+        const speed = this.moveSpeed * (boostActive ? TAP_BOOST_MULTIPLIER : 1);
         this.transform.position.x += mx * speed * delta;
         this.transform.position.z += mz * speed * delta;
         this.splash.update(this.transform.position.x, this.transform.position.z);
+        this.speedLines.update(this.transform.position.x, this.transform.position.z, boostActive, sizeForValue(this.value));
 
         // ── Position history (waypoints for tail snake-following) ─────────────
         const moved = this.transform.position.distanceTo(prevPos);
@@ -533,6 +575,7 @@ export class PlayerEntity implements ISimEntity {
     }
 
     private teardownVisuals(): void {
+        if (this.isRealPlayer) ShopStorage.onEquipChanged.remove(this.applyEquippedSkin, this);
         this.shadow.destroy();
         this.mergeQueue.destroy();
         CubeBuilder.disposeMesh(this.mesh);

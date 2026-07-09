@@ -126,7 +126,10 @@
 
 .btn-lg {
     --btn-border-width: 20px;
-    padding: 15px 28px;
+    /* Side padding kept tight (vs. e.g. 28px) so longer translated labels
+       (see Localization) have room to stay on one line instead of wrapping
+       and breaking the pill's fixed height — vertical padding is untouched. */
+    padding: 15px 14px;
     font-size: 20px;
 }
 

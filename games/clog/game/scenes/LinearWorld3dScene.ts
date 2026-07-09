@@ -7,8 +7,10 @@ import { CollectibleManager } from '../systems/CollectibleManager';
 import { LevelManager } from '../systems/LevelManager';
 import { LinearAreaManager } from '../world/LinearAreaManager';
 import { CAMERA_CONFIG, FOOD_CONFIG } from '../world/LinearConfig';
+import { DEFAULT_START_VALUE } from '../ClogConstants';
 import FourCornersGradientBuilder from '../vfx/FourCornersGradientBuilder';
 import { WaterSplashSystem } from '../vfx/WaterSplashSystem';
+import { BoostSpeedLineSystem } from '../vfx/BoostSpeedLineSystem';
 import type { EntityUiTarget } from './IWorld3dScene';
 import type { LeaderboardEntry } from '../ui-dom/LeaderboardPanel';
 import { Localization } from '../i18n/Localization';
@@ -28,7 +30,9 @@ export default class LinearWorld3dScene extends ThreeScene {
 
     /** True while actually playing — see setGameplayCameraActive. */
     private gameplayCameraActive = false;
-    /** Smoothed world-unit lift applied to the camera's look target — eases toward CAMERA_CONFIG.mobileFocusOffset while gameplayCameraActive on mobile, back to 0 otherwise (menu/death, or desktop). */
+    /** True while the shop screen is open — see setShopCameraActive. */
+    private shopCameraActive = false;
+    /** Smoothed world-unit lift applied to the camera's look target — eases toward CAMERA_CONFIG.mobileFocusOffset while gameplayCameraActive on mobile, CAMERA_CONFIG.shopFocusOffset while shopCameraActive, back to 0 otherwise (menu/death, or desktop). */
     private cameraFocusOffset = 0;
 
     /** Zoom multiplier applied on top of the depth-driven target. 1 = default, >1 = further out. */
@@ -51,12 +55,17 @@ export default class LinearWorld3dScene extends ThreeScene {
         return this.player ? this.worldToScreen(this.player.uiAnchor) : null;
     }
 
-    /** This mode has no bots — just the player (see IWorld3dScene.listEntityUiTargets). */
+    /**
+     * This mode has no bots — just the player (see
+     * IWorld3dScene.listEntityUiTargets). Name is left blank rather than a
+     * localized "YOU" tag — see BoundlessWorld3dScene.listEntityUiTargets
+     * for why.
+     */
     public listEntityUiTargets(): EntityUiTarget[] {
         if (!this.player) return [];
         return [{
             id: 'player',
-            name: Localization.getString('youTag'),
+            name: '',
             boostT: this.player.boostT,
             screenAnchor: this.worldToScreen(this.player.uiAnchor),
         }];
@@ -105,9 +114,10 @@ export default class LinearWorld3dScene extends ThreeScene {
         this.spawnFoodInGrid(this.linearManager.currentConfig.foodValues, FOOD_CONFIG.initialCount, this.linearManager.currentGrid);
         this.spawnFoodInGrid(this.linearManager.nextConfig.foodValues, FOOD_CONFIG.initialCount, this.linearManager.nextGrid);
 
-        this.player = new PlayerEntity(2, this.threeScene);
+        this.player = new PlayerEntity(DEFAULT_START_VALUE, this.threeScene);
         this.linearManager.registerPlayer(this.player);
         WaterSplashSystem.build(this.threeScene);
+        BoostSpeedLineSystem.build(this.threeScene);
 
         // Start zoomed in close on the menu screen — camDist eases out to the
         // standard distance once startNpcPopulation() flips cameraZoom back
@@ -143,6 +153,7 @@ export default class LinearWorld3dScene extends ThreeScene {
         this.player.update(scaledDelta);
         BendService.updateOrigin(this.player.position);
         WaterSplashSystem.update(scaledDelta);
+        BoostSpeedLineSystem.update(scaledDelta);
 
         this.linearManager.update(this.player);
         this.collectibles.update(scaledDelta);
@@ -169,6 +180,9 @@ export default class LinearWorld3dScene extends ThreeScene {
                 cz - hs,
                 cz + hs,
                 this.linearManager.computedFoodCount,
+                this.moveInput.x !== 0 || this.moveInput.z !== 0
+                    ? new THREE.Vector3(this.moveInput.x, 0, this.moveInput.z).normalize()
+                    : null,
             );
         }
 
@@ -177,7 +191,9 @@ export default class LinearWorld3dScene extends ThreeScene {
         const posT = 1 - Math.exp(-CAMERA_CONFIG.followSpeed * delta);
         this.threeCamera.position.lerp(this.player.position.clone().add(camOffset), posT);
 
-        const targetFocusOffset = (this.gameplayCameraActive && PIXI.isMobile.any) ? CAMERA_CONFIG.mobileFocusOffset : 0;
+        const targetFocusOffset = this.shopCameraActive
+            ? CAMERA_CONFIG.shopFocusOffset
+            : (this.gameplayCameraActive && PIXI.isMobile.any) ? CAMERA_CONFIG.mobileFocusOffset : 0;
         this.cameraFocusOffset += (targetFocusOffset - this.cameraFocusOffset) * posT;
         this.threeCamera.lookAt(this.player.position.x, this.player.position.y + this.cameraFocusOffset, this.player.position.z);
 
@@ -219,9 +235,14 @@ export default class LinearWorld3dScene extends ThreeScene {
         this.gameplayCameraActive = active;
     }
 
+    public setShopCameraActive(active: boolean): void {
+        this.shopCameraActive = active;
+    }
+
     public destroy(): void {
         this.gradient.destroy();
         WaterSplashSystem.destroy();
+        BoostSpeedLineSystem.destroy();
         this.player?.destroy();
         this.collectibles?.destroy();
         this.linearManager?.destroy();

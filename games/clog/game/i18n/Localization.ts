@@ -1,5 +1,6 @@
 import { Signal } from 'signals';
-import { SUPPORTED_LOCALES, DEFAULT_LOCALE, type Locale } from './config';
+import PlatformHandler from 'core/platforms/PlatformHandler';
+import { SUPPORTED_LOCALES, DEFAULT_LOCALE, isSupportedLocale, type Locale } from './config';
 import en from './locales/en.json';
 import es from './locales/es.json';
 import it from './locales/it.json';
@@ -42,6 +43,8 @@ function interpolate(template: string, vars: StringVars): string {
  *   the element is discarded, or the registry keeps it alive.
  */
 class LocalizationService {
+    private static readonly STORAGE_KEY = 'CLOG_LOCALE';
+
     static readonly instance = new LocalizationService();
 
     readonly onLocaleChange: Signal = new Signal();
@@ -53,11 +56,42 @@ class LocalizationService {
         return this.locale;
     }
 
-    setLocale(locale: Locale): void {
+    /**
+     * Call once at boot, before any locale-dependent UI renders (see
+     * index.ts's initialize(), alongside ShopStorage.load()/HighScoreStorage.load())
+     * — restores whatever locale setLocale() last persisted via the current
+     * platform's storage backend (see IPlatformConnection.getItem), falling
+     * back to DEFAULT_LOCALE if nothing was saved yet or the saved value is
+     * no longer a supported locale.
+     */
+    async load(): Promise<void> {
+        try {
+            const saved = await PlatformHandler.instance.platform.getItem(LocalizationService.STORAGE_KEY);
+            if (saved && isSupportedLocale(saved)) this.locale = saved;
+        } catch (e) {
+            console.error('Localization: failed to load saved locale', e);
+        }
+    }
+
+    /**
+     * Updates the active locale and rebinds every live label immediately
+     * (synchronous, so the UI never waits on storage to react), then
+     * persists the choice via the current platform's storage backend —
+     * awaited here so a caller that needs to know the save actually
+     * completed (e.g. before navigating away) can await this call; fire-
+     * and-forget callers (see LanguagePicker) are free to ignore the
+     * returned promise.
+     */
+    async setLocale(locale: Locale): Promise<void> {
         if (!SUPPORTED_LOCALES.includes(locale) || locale === this.locale) return;
         this.locale = locale;
         for (const [el, { id, vars, attr }] of this.labels) el[attr] = this.getString(id, vars);
         this.onLocaleChange.dispatch(locale);
+        try {
+            await PlatformHandler.instance.platform.setItem(LocalizationService.STORAGE_KEY, locale);
+        } catch (e) {
+            console.error('Localization: failed to save locale', e);
+        }
     }
 
     getString(id: StringId, vars?: StringVars): string {

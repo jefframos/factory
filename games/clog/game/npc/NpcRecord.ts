@@ -7,6 +7,8 @@
  */
 export type NpcRecord = {
     readonly id: number;
+    /** Display name, assigned once at creation and fixed for the record's whole lifetime (including across respawns) — see NpcNames.generateNpcName. Plain text, not a Localization key: a name is a proper noun and shouldn't change when the player switches language. */
+    readonly name: string;
     /** Head value — mirrors PlayerEntity.value. */
     value: number;
     /** Tail cube values, sorted descending — mirrors PlayerEntity.tailSnapshot() ordering. */
@@ -19,10 +21,11 @@ export type NpcRecord = {
     approxZ: number;
 };
 
-/** No config dependency here on purpose — callers (NpcRoster) pass the respawn value from NpcConfig so this file stays pure data. */
-export function createFreshRecord(id: number, startValue: number): NpcRecord {
+/** No config dependency here on purpose — callers (NpcRoster) pass the respawn value from NpcConfig, and the generated name, so this file stays pure data. */
+export function createFreshRecord(id: number, startValue: number, name: string): NpcRecord {
     return {
         id,
+        name,
         value: startValue,
         tailValues: [],
         state: 'idle',

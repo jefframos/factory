@@ -21,8 +21,8 @@ export interface NpcHostScene {
      */
     findSpawnRing(cx: number, cz: number, minDist: number, maxDist: number): { x: number; z: number } | null;
 
-    /** Spawns a real bot at `pos` with a preset tail composition (mirrors PlayerEntity.collect() per cube) instead of the single-cube default spawnBot() gives you. */
-    materializeNpc(pos: { x: number; z: number }, value: number, tailValues: number[], params?: Partial<BotParams>): BotController;
+    /** Spawns a real bot at `pos` with a preset tail composition (mirrors PlayerEntity.collect() per cube) instead of the single-cube default spawnBot() gives you. `name` carries the record's stable, non-translated display name through to the live BotController — see NpcNames.generateNpcName. */
+    materializeNpc(pos: { x: number; z: number }, value: number, tailValues: number[], name: string, params?: Partial<BotParams>): BotController;
 
     /** Tears down a materialized bot and hands back its final value/tail so the caller can save it into persistent NPC data before the entity is gone. */
     dematerializeNpc(controller: BotController): { value: number; tailValues: number[] };

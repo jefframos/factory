@@ -66,14 +66,17 @@ export function resolveEntityEating(
             //      forward bite arc (see isFacingTarget), same as before.
             // Equal values are eatable too — `>=`, not `>` — so a same-value
             // head-on meeting is resolved by who's actually biting whom
-            // rather than being blocked outright.
-            if (a.value >= b.value
+            // rather than being blocked outright. A victim mid-spawn-
+            // invincibility (see PlayerEntity.isInvincible) can't be killed
+            // — checked on the victim only; an invincible entity can still
+            // eat others normally.
+            if (a.value >= b.value && !b.isInvincible
                 && a.position.distanceTo(b.position) < a.eatRadius + b.collisionRadius
                 && isFacingTarget(a.position, a.eatPosition, b.position)) {
                 kill(b);
                 continue; // b is gone — no tail-snipe left to resolve for this pair
             }
-            if (b.value >= a.value
+            if (b.value >= a.value && !a.isInvincible
                 && b.position.distanceTo(a.position) < b.eatRadius + a.collisionRadius
                 && isFacingTarget(b.position, b.eatPosition, a.position)) {
                 kill(a);
@@ -81,10 +84,12 @@ export function resolveEntityEating(
             }
 
             // Tail-snipe, both directions: either side can nibble the other's
-            // weaker tail cubes even without a head kill this frame.
-            const cubeFromB = b.tryDetachTailCube(a.eatPosition, a.eatRadius, a.value);
+            // weaker tail cubes even without a head kill this frame. Same
+            // invincibility guard as above — an invincible entity's tail
+            // can't be sniped either.
+            const cubeFromB = !b.isInvincible ? b.tryDetachTailCube(a.eatPosition, a.eatRadius, a.value) : null;
             if (cubeFromB) a.collect(cubeFromB);
-            const cubeFromA = a.tryDetachTailCube(b.eatPosition, b.eatRadius, b.value);
+            const cubeFromA = !a.isInvincible ? a.tryDetachTailCube(b.eatPosition, b.eatRadius, b.value) : null;
             if (cubeFromA) b.collect(cubeFromA);
         }
     }

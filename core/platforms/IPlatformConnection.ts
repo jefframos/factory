@@ -49,6 +49,9 @@ export interface IPlatformConnection {
 
     getLanguage?(): Promise<string>;
 
+    /** Real account display name from the platform's own SDK, when it exposes one (e.g. a logged-in CrazyGames user) — null/undefined if unavailable or the user isn't logged in. Not every platform can supply this (Poki and GameDistribution don't expose player identity), so this stays optional; callers should fall back to a locally saved or randomly generated name. */
+    getPlayerName?(): Promise<string | null>;
+
     onPause?(callback: () => void): void;
     onResume?(callback: () => void): void;
     onAudioChanged?(callback: (enabled: boolean) => void): void;

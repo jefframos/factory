@@ -90,8 +90,18 @@ export const FOOD_CONFIG = {
      * competition can't starve it out.
      */
     guaranteedRadius: 14,        // world-units — the player should essentially never find zero food this close
-    guaranteedMinCount: 2,       // minimum food items expected within guaranteedRadius of the player
+    guaranteedMinCount: 3,       // minimum food items expected within guaranteedRadius of the player
     guaranteedCheckInterval: 1.0,
+    /**
+     * Dot-product threshold (against the player's current movement direction)
+     * a candidate guarantee-spawn cell must clear to count as "ahead" — see
+     * LevelManager.ensureNearbyFood. ~0.3 is a wide ~140° forward cone: tight
+     * enough that a straight sprint keeps finding food actually in front of
+     * it instead of a coin-flip on food spawning behind where it's already
+     * passed, loose enough that a normal-ish heading still has cells to pick
+     * from without constantly falling back to the full ring.
+     */
+    guaranteedAheadDot: 0.3,
 };
 
 /**
@@ -134,6 +144,8 @@ export const CAMERA_CONFIG = {
     menuZoom: 0.45,
     /** World-unit vertical lift applied to the camera's look target on mobile while actually playing (see PIXI.isMobile.any) — tilts the view up slightly so the player renders lower on screen instead of dead-center, leaving room below for a thumb/joystick. Eased in/out via followSpeed; stays 0 (centered) on desktop and on the menu/death screens. */
     mobileFocusOffset: 3,
+    /** World-unit downward shift applied to the camera's look target while the shop screen is open (see IWorld3dScene.setShopCameraActive) — tilts the view down so the player renders above center, leaving room below for the shop panel. Negative — opposite direction from mobileFocusOffset. Eased in/out via followSpeed. */
+    shopFocusOffset: -4,
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

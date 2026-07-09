@@ -14,12 +14,14 @@ import { PlayerFlowController, type DeathSnapshot } from '../ui-dom/PlayerFlowCo
 import { MovementHint } from '../ui-dom/MovementHint';
 import { SoundToggleButton } from '../dom-ui/SoundToggleButton';
 import { SettingsButton } from '../dom-ui/SettingsButton';
+import { BoostButton } from '../dom-ui/BoostButton';
 import { renderSettingsMenu } from '../ui-dom/SettingsMenu';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import Stats from 'stats.js';
 import { TextureBuilder } from '../builders/TextureBuilder';
 import { ShopStorage } from '../data/ShopStorage';
 import { HighScoreStorage } from '../data/HighScoreStorage';
+import { DEFAULT_START_VALUE } from '../ClogConstants';
 
 export const PLAYER_NAME_KEY = 'playerName';
 
@@ -30,6 +32,14 @@ const GATED_MODE = new URLSearchParams(window.location.search).has('gated');
 // pointer-follow (chase the live mouse/finger position, click/tap to boost —
 // see PointerFollowInput).
 const USE_ANALOG_INPUT = false;
+
+// Joystick scheme only (see AnalogInput): whether letting go of the stick
+// stops the player outright (false — magnitude 0 means moveInput 0) or lets
+// them keep coasting in whatever direction they last steered (true) so the
+// stick only ever has to steer, not also be held down just to stay in
+// motion. Doesn't apply before the player has steered at least once — there
+// is no "last direction" yet, so they stay put until the first touch either way.
+const AUTO_MOVE_WHEN_IDLE = true;
 
 // Below this distance (raw CSS pixels) from the pointer, the pointer-follow
 // scheme treats the player as "arrived" and stops moving, instead of jittering
@@ -53,6 +63,9 @@ export default class BaseDemoScene extends GameScene {
     private world3d!: IWorld3dScene;
     private analogInput: AnalogInput | null = null;
     private pointerFollowInput: PointerFollowInput | null = null;
+    private boostButton: BoostButton | null = null;
+    /** Last non-zero joystick direction — see AUTO_MOVE_WHEN_IDLE. Defaults to "not steered yet," which the onMove handler below treats as staying put on release rather than picking an arbitrary starting direction. */
+    private lastAnalogDir: { x: number; z: number } | null = null;
     private keyboardInput!: KeyboardInputMovement;
     private entityIndicators!: EntityIndicatorManager;
     private lastW = 0;
@@ -88,14 +101,45 @@ export default class BaseDemoScene extends GameScene {
 
         this.movementHint = new MovementHint();
 
-        if (USE_ANALOG_INPUT) {
+        if (USE_ANALOG_INPUT || PIXI.isMobile.any) {
             this.analogInput = new AnalogInput(this);
             this.analogInput.onMove.add(({ direction, magnitude }) => {
                 if (this.flowState !== 'playing') return;
-                if (magnitude > 0) this.movementHint.registerMove();
-                this.world3d.moveInput.x = direction.x * magnitude;
-                this.world3d.moveInput.z = direction.y * magnitude;
+                if (magnitude > 0) {
+                    this.movementHint.registerMove();
+                    this.lastAnalogDir = { x: direction.x, z: direction.y };
+                    this.world3d.moveInput.x = direction.x * magnitude;
+                    this.world3d.moveInput.z = direction.y * magnitude;
+                } else if (AUTO_MOVE_WHEN_IDLE && this.lastAnalogDir) {
+                    // Stick released — keep coasting in the last direction
+                    // steered instead of stopping dead (see AUTO_MOVE_WHEN_IDLE).
+                    this.world3d.moveInput.x = this.lastAnalogDir.x;
+                    this.world3d.moveInput.z = this.lastAnalogDir.z;
+                } else {
+                    this.world3d.moveInput.x = 0;
+                    this.world3d.moveInput.z = 0;
+                }
             });
+
+            // The joystick scheme has no gesture equivalent to
+            // PointerFollowInput's own click-and-hold-to-boost (see below) —
+            // mobile only, since desktop always uses PointerFollowInput.
+            if (PIXI.isMobile.any) {
+                this.boostButton = new BoostButton();
+                this.boostButton.onBoostChange.add(({ active }) => {
+                    if (this.flowState !== 'playing') return;
+                    this.world3d.setPlayerBoosting(active);
+                });
+
+                // The button is a DOM element stacked visually above the
+                // Pixi canvas, but the joystick's hitArea covers the whole
+                // screen (it's a floating stick that centers on wherever the
+                // player first touches) — a second finger tapping the button
+                // mid-drag would otherwise still reach AnalogInput and
+                // re-center/hijack it. Carve the button's own screen rect out.
+                const boostButton = this.boostButton;
+                this.analogInput.setExclusionZone((x, y) => boostButton.containsPoint(x, y));
+            }
         } else {
             this.pointerFollowInput = new PointerFollowInput(this);
             this.pointerFollowInput.onBoostChange.add(({ active }) => {
@@ -193,9 +237,26 @@ export default class BaseDemoScene extends GameScene {
         // movement input until "Join Server" so the still-centered player
         // reads as a preview instead of drifting off unattended.
         this.flowController = new PlayerFlowController();
+        // Indirect through `this.world3d` (not a captured reference) since
+        // spawnFreshWorld() swaps that instance out across the controller's
+        // own lifetime (e.g. the End Game screen's "Continue").
+        this.flowController.setShopCameraHooks(
+            () => this.world3d.setShopCameraActive(true),
+            () => this.world3d.setShopCameraActive(false),
+        );
+        // A saved rename is the player's own explicit choice — that always
+        // wins. Only when there isn't one yet do we prefer a real platform
+        // account name (when the SDK can supply one — see
+        // IPlatformConnection.getPlayerName) over the random default that
+        // PlayerFlowController otherwise starts with.
         const savedName = await PlatformHandler.instance.platform.getItem(PLAYER_NAME_KEY);
-        if (savedName) this.flowController.setPlayerName(savedName);
-        this.flowController.showMenu(() => this.handleJoinServer());
+        if (savedName) {
+            this.flowController.setPlayerName(savedName);
+        } else {
+            const platformName = await PlatformHandler.instance.platform.getPlayerName?.();
+            if (platformName) this.flowController.setPlayerName(platformName);
+        }
+        this.flowController.showMenu((startValue) => this.handleJoinServer(startValue));
 
         this.soundToggle = new SoundToggleButton();
         this.settingsButton = new SettingsButton(renderSettingsMenu);
@@ -204,8 +265,18 @@ export default class BaseDemoScene extends GameScene {
         this.repositionUi();
     }
 
-    /** "Tap to Start" from the boot menu — the player entity already exists (either from build(), or re-spawned by the death flow's Revive/Continue before showing this menu again), so this just unblocks input/joins the live population. */
-    private handleJoinServer(): void {
+    /**
+     * "Tap to Start" from the boot menu — the player entity already exists
+     * (either from build(), or re-spawned by the death flow's Revive/Continue
+     * before showing this menu again), so this just unblocks input/joins the
+     * live population. `startValue` is DEFAULT_START_VALUE unless the Boost
+     * screen's ad offer was claimed (see PlayerFlowController.pendingStartValue)
+     * — only respawn for the boosted case, since re-creating the player at
+     * its already-current default size would just be a wasted rebuild (and a
+     * flicker while PlayerEntity re-loads the equipped skin texture).
+     */
+    private handleJoinServer(startValue: number): void {
+        if (startValue !== DEFAULT_START_VALUE) this.world3d.respawnPlayer(startValue, []);
         HighScoreStorage.markRunStart();
         this.world3d.startNpcPopulation();
         // Eases camDist back out from the close-in menu zoom to the standard
@@ -224,6 +295,7 @@ export default class BaseDemoScene extends GameScene {
         const playing = state === 'playing';
         this.analogInput?.setEnabled(playing);
         this.pointerFollowInput?.setEnabled(playing);
+        this.boostButton?.setEnabled(playing);
         this.world3d.setPlayerIndicatorVisible(playing);
         this.world3d.setGameplayCameraActive(playing);
     }
@@ -340,7 +412,7 @@ export default class BaseDemoScene extends GameScene {
                         // re-shows it on the next real join.
                         this.leaderboard.hide();
                         this.movementHint.forceHide();
-                        this.flowController.showMenu(() => this.handleJoinServer());
+                        this.flowController.showMenu((startValue) => this.handleJoinServer(startValue));
                     },
                 );
             }
@@ -365,6 +437,7 @@ export default class BaseDemoScene extends GameScene {
         this.flowController?.destroy();
         this.soundToggle?.destroy();
         this.settingsButton?.destroy();
+        this.boostButton?.destroy();
         this.movementHint?.destroy();
         if (this.devPosLabel) {
             this.game.overlayContainer.removeChild(this.devPosLabel);

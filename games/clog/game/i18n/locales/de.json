@@ -9,8 +9,8 @@
     "save": "Speichern",
     "highScoreLabel": "HÖCHSTPUNKTZAHL",
     "newHighScore": "NEUER HIGHSCORE! {score}",
-    "boostBadgeTitle": "BELEBEND",
-    "boostBadgeSubtitle": "Beginnen Sie größer!",
+    "boostBadgeTitle": "Boosten",
+    "boostBadgeSubtitle": "Startet {value} größer!",
     "youDied": "Du bist gestorben",
     "revive": "BELEBEN",
     "next": "WEITER",
@@ -22,6 +22,7 @@
     "settings": "Einstellungen",
     "clearData": "Daten löschen",
     "clearDataConfirm": "Alle gespeicherten Daten löschen? Dadurch werden dein Highscore, deine Shop-Freischaltungen und dein Name zurückgesetzt. Dies kann nicht rückgängig gemacht werden.",
+    "cancel": "Abbrechen",
     "tapToStartHint": "Tippe zum Starten",
     "clickToStartHint": "Bitte klicken Sie auf das Bild um den Film zu starten.",
     "moveHintTouch": "Benutze deinen Finger, um dich zu bewegen",
@@ -30,6 +31,5 @@
     "mute": "Mute",
     "unmute": "Stummschaltung aufheben",
     "you": "You",
-    "youTag": "SIE",
-    "npcName": "NPC {id}"
+    "boostButtonLabel": "BELEBEND"
 }

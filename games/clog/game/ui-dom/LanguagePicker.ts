@@ -115,7 +115,7 @@ export function renderLanguageRow(container: HTMLElement): void {
         flag.src = flagIcon(locale);
         tile.appendChild(flag);
 
-        if (!isCurrent) tile.addEventListener('click', () => Localization.setLocale(locale));
+        if (!isCurrent) tile.addEventListener('click', () => void Localization.setLocale(locale));
         grid.appendChild(tile);
     }
 

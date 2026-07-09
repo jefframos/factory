@@ -9,8 +9,8 @@
     "save": "Salva",
     "highScoreLabel": "PUNTEGGIO RECORD",
     "newHighScore": "NUOVO PUNTEGGIO MIGLIORE! {score}",
-    "boostBadgeTitle": "POTENZIAMENTO",
-    "boostBadgeSubtitle": "Inizia più in grande!",
+    "boostBadgeTitle": "Potenziamento",
+    "boostBadgeSubtitle": "Avvia {value} più grande!",
     "youDied": "Sei morta!",
     "revive": "RIANIMA",
     "next": "AVANTI",
@@ -22,6 +22,7 @@
     "settings": "Impostazioni",
     "clearData": "Elimina dati",
     "clearDataConfirm": "Cancellare tutti i dati salvati? Questo ripristina il tuo punteggio più alto, gli sblocchi del negozio e il nome. Questa operazione non può essere annullata.",
+    "cancel": "Annulla",
     "tapToStartHint": "Tocca per iniziare",
     "clickToStartHint": "Clicca per iniziare",
     "moveHintTouch": "Usa il dito per muoverti",
@@ -30,6 +31,5 @@
     "mute": "Muto",
     "unmute": "Riattiva audio",
     "you": "Tu",
-    "youTag": "TU",
-    "npcName": "PNG {id}"
+    "boostButtonLabel": "POTENZIAMENTO"
 }

@@ -22,6 +22,18 @@ export default class CrazyGamesPlatform implements IPlatformConnection {
         return Promise.resolve();
     }
 
+    /** Only returns a name when the player is actually logged into a CrazyGames account (isUserAccountAvailable) — most players aren't, so null here is the common case, not a failure. */
+    public async getPlayerName(): Promise<string | null> {
+        if (!this.crazygamesSDK?.user?.isUserAccountAvailable) return null;
+        try {
+            const user = await this.crazygamesSDK.user.getUser();
+            return user?.username ?? null;
+        } catch (error) {
+            console.error("CrazyGames Platform: Error fetching player name:", error);
+            return null;
+        }
+    }
+
     public happyTime(): Promise<void> {
         if (this.crazygamesSDK) {
             this.crazygamesSDK.game.happytime();
