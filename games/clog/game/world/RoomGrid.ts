@@ -4,6 +4,8 @@ import * as THREE from 'three';
 export const CELL_FREE     = 0;
 export const CELL_WALL     = 1;
 export const CELL_OBSTACLE = 2;
+/** Boundless-mode island base terrain — distinct from CELL_WALL, which is the linear/gated mode's dungeon wall tile. */
+export const CELL_TERRAIN  = 3;
 /** Any non-negative integer — 0 is free, anything else is blocked. */
 export type CellType = number;
 

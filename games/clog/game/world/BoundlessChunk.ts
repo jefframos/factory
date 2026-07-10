@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { RoomGrid } from './RoomGrid';
+import { RoomGrid, CELL_FREE, CELL_OBSTACLE } from './RoomGrid';
 import { ClusterMeshBuilder } from '../builders/ClusterMeshBuilder';
 import { BendService } from '../services/BendService';
 import { TextureBuilder } from '../builders/TextureBuilder';
@@ -13,20 +13,24 @@ export const CHUNK_SIZE = 40;
 
 // Island dimensions — fits comfortably inside a chunk with ~7-unit water margin on each side.
 const ISLAND_SIZE = 26;
-// Organic tile-1 terrain blobs — gives islands their grass/sand look without enclosing walls.
-// const TERRAIN_SCALE = 0.12;
-// const TERRAIN_THRESHOLD = 0.65; // ~35% of cells become raised terrain
-// Short tile-2 obstacles scattered in remaining free space.
-const OBS_SCALE = 0.05;
-const OBS_THRESHOLD = 0.52;
+// Organic CELL_TERRAIN blobs — gives islands their grass/sand look without enclosing walls.
+const TERRAIN_SCALE = 0.12;
+const TERRAIN_THRESHOLD = 0.55; // ~35% of cells become raised terrain
+// Short CELL_OBSTACLE bumps scattered in remaining free space (i.e. only on top of terrain).
+const OBS_SCALE = 0.04;
+const OBS_THRESHOLD = 0.62;
 // Radius (in cells) kept free at the centre of chunk (0,0) for the player spawn.
-const SPAWN_CLEAR_RADIUS = 3;
+const SPAWN_CLEAR_RADIUS = 2;
+// Chunks within this many chunk-widths of the origin never get an island (except
+// chunk (0,0) itself, which always does) — keeps the starting island alone in open
+// water instead of noise potentially placing land right up against it.
+const SPAWN_ISLAND_CLEAR_RADIUS = 1;
 // Distance fade — meshes start fading at FADE_START and are invisible at FADE_END.
 const FADE_START = 60;
 const FADE_END = 100;
 
 // Seed used for the global island-presence noise field (spatial coherence).
-const WORLD_SEED = 42;
+const WORLD_SEED = 42 + Math.random() * 500000;
 
 // ── Deterministic noise ───────────────────────────────────────────────────────
 // Identical to the function in LinearArea — value noise in [0, 1].
@@ -124,9 +128,13 @@ export class BoundlessChunk {
         this.worldX = chunkX * CHUNK_SIZE;
         this.worldZ = chunkZ * CHUNK_SIZE;
 
-        // Chunk (0,0) always has an island so the player never starts on open water.
+        // Chunk (0,0) always has an island so the player never starts on open water;
+        // chunks within SPAWN_ISLAND_CLEAR_RADIUS of it never do, so that island
+        // starts out alone in open water instead of butting up against another one.
+        const isOrigin = chunkX === 0 && chunkZ === 0;
+        const nearOrigin = Math.hypot(chunkX, chunkZ) <= SPAWN_ISLAND_CLEAR_RADIUS;
         const islandPresence = valueNoise(chunkX * 0.65, chunkZ * 0.65, WORLD_SEED);
-        this.hasIsland = (chunkX === 0 && chunkZ === 0) || islandPresence > 0.35;
+        this.hasIsland = isOrigin || (!nearOrigin && islandPresence > 0.35);
 
         if (this.hasIsland) {
             // Per-chunk seed for each noise layer — each island looks different.
@@ -136,9 +144,12 @@ export class BoundlessChunk {
 
             for (let row = 0; row < ISLAND_SIZE; row++) {
                 for (let col = 0; col < ISLAND_SIZE; col++) {
-                    if (valueNoise(col * OBS_SCALE, row * OBS_SCALE, chunkSeed) >= OBS_THRESHOLD) {
-                        this.grid.set(col, row, 2);
-                    }
+                    // Terrain noise carves the island's silhouette; obstacles only ever
+                    // scatter on top of terrain, never floating alone over open water.
+                    if (valueNoise(col * TERRAIN_SCALE, row * TERRAIN_SCALE, chunkSeed) < TERRAIN_THRESHOLD) continue;
+                    const isObstacle = valueNoise(col * OBS_SCALE, row * OBS_SCALE, chunkSeed) >= OBS_THRESHOLD;
+                    this.grid.set(col, row, isObstacle ? CELL_OBSTACLE : CELL_OBSTACLE);
+                    //this.grid.set(col, row, isObstacle ? CELL_OBSTACLE : CELL_TERRAIN);
                 }
             }
 
@@ -147,7 +158,7 @@ export class BoundlessChunk {
                 const mid = Math.floor(ISLAND_SIZE / 2);
                 for (let dr = -SPAWN_CLEAR_RADIUS; dr <= SPAWN_CLEAR_RADIUS; dr++) {
                     for (let dc = -SPAWN_CLEAR_RADIUS; dc <= SPAWN_CLEAR_RADIUS; dc++) {
-                        this.grid.set(mid + dc, mid + dr, 0);
+                        this.grid.set(mid + dc, mid + dr, CELL_FREE);
                     }
                 }
             }

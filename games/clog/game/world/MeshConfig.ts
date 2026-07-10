@@ -55,9 +55,12 @@ export interface TileConfig {
 }
 
 export const TILE_DEFS: Record<number, TileConfig> = {
+    // 1 — CELL_WALL: linear/gated mode's dungeon wall (RoomGrid.ts). Not used by Boundless.
     1: { height: 5.5, color: 0x1e2d3d, depthBelow: 30, fadeFrom: 0, fadeTo: -10, texture: 'island' },
-    // 2 — short obstacle (rounded corners via ClusterMeshBuilder.roundEdges)
+    // 2 — CELL_OBSTACLE: short obstacle scattered on top of terrain (rounded corners via ClusterMeshBuilder.roundEdges)
     2: { height: 1.0, color: 0x2a3a4a, depthBelow: 10, radius: 0.5, fadeFrom: 0, fadeTo: -5, texture: 'island' },
+    // 3 — CELL_TERRAIN: Boundless-mode island base ground — short, unlike the CELL_WALL tile above.
+    3: { height: 1.0, color: 0x2a3a4a, depthBelow: 30, radius: 0.5, fadeFrom: 0, fadeTo: -10, texture: 'island' },
 };
 
 // ── Room geometry & material config ──────────────────────────────────────────
