@@ -3,7 +3,7 @@ import '../dom-ui/shop.css';
 import lockIcon from '../dom-ui/images/lock.png';
 import videoIcon from '../dom-ui/images/video-icon.png';
 import checkIcon from '../dom-ui/images/Icon_Check03_s.png';
-import { panelCloseButton, panelHeading } from '../dom-ui/PanelChrome';
+import { panelCloseButton, panelHeading, withTap } from '../dom-ui/PanelChrome';
 
 import { ShopStorage, SHOP_ITEMS, resolveShopImagePath, type ShopItem } from '../data/ShopStorage';
 import { Localization } from '../i18n/Localization';
@@ -79,14 +79,14 @@ function shopItemCard(item: ShopItem, rerender: () => void): HTMLElement {
     card.appendChild(actionLabel(item, unlocked, equipped, needsAd));
 
     if (clickable) {
-        card.addEventListener('click', () => {
+        card.addEventListener('click', withTap(() => {
             if (needsAd) {
                 void handleAdEquip(item, card as HTMLButtonElement, rerender);
             } else {
                 ShopStorage.equip(item.id);
                 rerender();
             }
-        });
+        }));
     }
     return card;
 }

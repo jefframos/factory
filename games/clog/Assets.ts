@@ -1,10 +1,6 @@
-import SoundManager from "core/audio/SoundManager";
+import type { SoundAsset } from "core/audio/SoundManager";
 import * as PIXI from "pixi.js";
-export interface SoundAsset {
-    soundId: string | string[];
-    volumeMinMax?: [number, number] | number,
-    pitchMinMax?: [number, number] | number
-}
+export type { SoundAsset };
 
 // export const SHOP_STYLE_CONFIG = {
 //     Window: {
@@ -63,200 +59,115 @@ export default class Assets {
     //         FadeShape: "fade-shape",
     //     }
     // } as const;
-    public static getRange(value?: number | [number, number]): number | undefined {
-        if (value === undefined) return 1;
-        if (typeof value === "number") return value;
-
-        const [min, max] = value;
-        return Math.random() * (max - min) + min;
-    }
-
-    private static getRandom(value?: string | string[]): string | undefined {
-        if (value === undefined) return undefined;
-        if (typeof value === "string") return value;
-
-        return value[Math.floor(Math.random() * value.length)]
-    }
-
-    static tryToPlaySound(soundAsset: SoundAsset) {
-        const id = this.getRandom(soundAsset.soundId)
-        if (!id) {
-            return
-        }
-        SoundManager.instance.playSoundById(id, {
-            volume: this.getRange(soundAsset.volumeMinMax),
-            pitch: this.getRange(soundAsset.pitchMinMax)
-        });
-    }
+    /**
+     * Background loops — played via SoundManager.instance.playBackgroundSound
+     * on their own named layer (see BaseDemoScene.setFlowState), not as a
+     * one-shot via Sounds/tryToPlaySound below. Music starts once at boot and
+     * keeps looping for the whole session; Gameplay is a second, independent
+     * layer that fades in on top once the player joins — Music ducks to
+     * duckedVolume rather than stopping, so the two blend instead of
+     * hard-swapping.
+     */
     static readonly AmbientSound = {
-
-        AmbientSoundId: 'soundtrack/longnight',
-        AmbientMasterVolume: 0.02,
-
-
+        Music: {
+            soundId: 'whale-st',
+            layer: 'music',
+            masterVolume: 0.05,
+            duckedVolume: 0.015,
+        },
+        Gameplay: {
+            soundId: 'ocean-ambient',
+            layer: 'ambient',
+            masterVolume: 0.05,
+        },
     }
+
+    /**
+     * Boost isn't a one-shot — it's a hum that should loop for as long as the
+     * boost is actually held, then stop (see PlayerEntity.setBoosting()).
+     * Played through the same named-layer loop mechanism as AmbientSound
+     * above (SoundManager.instance.playBackgroundSound(..., 0, layer) /
+     * .stopLayer(layer, fadeMs)) rather than Sounds/tryToPlaySound, which is
+     * fire-and-forget and can't be stopped mid-play.
+     */
+    static readonly BoostLoop = {
+        soundId: 'ocean-ambient',
+        layer: 'boost',
+        volume: 0.08,
+    }
+
+    /**
+     * One-shot SFX, played via SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.X).
+     * Each entry is a SoundAsset: soundId can be a single clip or a pool of
+     * variants (a random one is picked per play — use this for frequent
+     * actions like Merge/Grab so repeats don't sound identical), plus
+     * optional volume/pitch jitter ranges.
+     *
+     * lowDown / pepSound3-5 / phaserUp2 are the only SFX clips currently in
+     * games/clog/raw-assets/audio — several entries below intentionally
+     * reuse the same clip at a different volume/pitch (e.g. Grab reuses
+     * Merge's pool, Kill reuses it again lower/heavier, GameOver reuses
+     * Killed's clip slower/lower) as placeholders. Swap in dedicated clips
+     * per action as real audio comes in; the manifest
+     * (games/clog/manifests/audio.json) just needs the new alias added.
+     */
     static readonly Sounds = {
         Game: {
-            NewDiscovery: {
-                // soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
-                soundId: ['diamond-sparkle'],
-                volumeMinMax: 0.15,
-                pitchMinMax: 1
-            },
-            Notification: {
-                // soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
-                soundId: ['Bonus Highlights'],
-                volumeMinMax: 0.2,
-                pitchMinMax: [0.9, 1]
-            },
-            Yay: {
-                soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
-                volumeMinMax: 0.1,
-                pitchMinMax: [0.8, 1.2]
-            },
-
-            Egg: {
-                soundId: ['hpp-increase20'],
-                volumeMinMax: 0.07,
-                pitchMinMax: [0.8, 1]
-            },
-            Grab: {
-                soundId: ['grab (1)', 'grab (2)', 'grab (3)', 'grab (4)'],
-                volumeMinMax: 0.1,
-                pitchMinMax: [0.8, 1]
-            },
-            Drop: {
-                soundId: ['drop'],
-                volumeMinMax: 0.1,
-                pitchMinMax: [0.7, 1]
-            },
+            /** A tail cube (or the player) doubles in value — see PlayerEntity's merge onDone callbacks. */
             Merge: {
                 soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
-                volumeMinMax: 0.3,
-                pitchMinMax: [0.9, 1]
+                volumeMinMax: [0.10, 0.07],
+                pitchMinMax: [0.9, 1.1],
             },
-            Coin: {
-                soundId: 'Coin2',
-                volumeMinMax: [0.1, 0.15],
-                pitchMinMax: [0.8, 1.2],
+            /** Picking up loose food, or nibbling a cube off another entity's tail — see PlayerEntity.collect(). */
+            Grab: {
+                soundId: ['pepSound3', 'pepSound5'],
+                volumeMinMax: [0.08, 0.12],
+                pitchMinMax: [1.05, 1.25],
             },
-            OpenChest: {
-                soundId: 'Chest Open',
-                volumeMinMax: [0.1, 0.15],
-                pitchMinMax: [0.8, 1.2],
+            /** The real player's head eats another entity's head — see PlayerEntity.notifyKill() / EntityEating.ts. */
+            Kill: {
+                soundId: ['pepSound3', 'pepSound4', 'pepSound5'],
+                volumeMinMax: [0.2, 0.28],
+                pitchMinMax: [0.7, 0.85],
             },
-            DropChest: {
-                soundId: 'Chest Appear',
-                volumeMinMax: [0.1, 0.15],
-                pitchMinMax: [0.8, 1.2],
+            /** Entering the next room through its gate — linear/gated mode only, see LinearWorld3dScene.onTransition. */
+            GateOpen: {
+                soundId: 'phaserUp2',
+                volumeMinMax: 0.25,
+                pitchMinMax: [0.95, 1.05],
             },
-            StarAppear: {
-                soundId: 'hpp-increase20',
-                volumeMinMax: [0.1, 0.15],
-                pitchMinMax: [0.8, 1.2],
+            /** Spawn/revive invincibility grant — see PlayerEntity.grantSpawnInvincibility(). */
+            Invincible: {
+                soundId: 'pepSound3',
+                volumeMinMax: 0.08,
+                pitchMinMax: [1.3, 1.5],
+            },
+            /** The real player just got eaten (death, not the later End Game screen — see Sounds.Game.GameOver) — see BaseDemoScene's death detection. */
+            Killed: {
+                soundId: 'lowDown',
+                volumeMinMax: 0.2,
+            },
+            /** The End Game / final-rank screen actually appears (after the death countdown lapses or "Next" is tapped) — see BaseDemoScene's showDeath onEndGame callback. */
+            GameOver: {
+                soundId: 'lowDown',
+                volumeMinMax: 0.28,
+                pitchMinMax: [0.75, 0.85],
+            },
+            EndGame: {
+                soundId: 'Applause-Cheering',
+                volumeMinMax: 0.18,
+                pitchMinMax: [0.95, 1],
             },
         },
         UI: {
-            TransitionOpen: {
-                soundId: 'Doppler Whoosh 13',
-                volumeMinMax: 0.1,
-                pitchMinMax: [0.9, 1]
-            },
-            TransitionClose: {
-                soundId: 'Doppler Whoosh 13',
-                volumeMinMax: 0.1,
-                pitchMinMax: [0.75, 0.85]
-            },
+            /** Generic button-press feedback — see the various dom-ui/*.ts and ui-dom/*.ts button factories. */
             Tap: {
                 soundId: 'Tap',
-                volumeMinMax: 0.3,
-                pitchMinMax: [0.9, 1]
+                volumeMinMax: 0.08,
+                pitchMinMax: [1.3, 1.4],
             },
-            Hover: {
-                soundId: 'Hover',
-                volumeMinMax: 0.1,
-                pitchMinMax: [0.7, 1]
-            },
-            Hold: {
-                soundId: 'Hover',
-                volumeMinMax: 0.1,
-                pitchMinMax: [0.7, 1]
-            },
-            Drop: {
-                soundId: 'Bubbles',
-                volumeMinMax: 0.1,
-                pitchMinMax: [0.7, 1]
-            },
-            Purchase: {
-                soundId: 'ScoreUpdate',
-                volumeMinMax: 0.1,
-            },
-            Claim: {
-                soundId: 'Claim',
-                volumeMinMax: 0.1,
-            },
-            StartLevel: {
-                soundId: 'ScoreUpdate',
-                volumeMinMax: 0.15,
-            },
-            Coin1: {
-                soundId: 'Coin2',
-                volumeMinMax: [0.1, 0.15],
-                pitchMinMax: [0.8, 1.2],
-            },
-            PieceConnected: {
-                soundId: 'Bubbles',
-                volumeMinMax: [0.15, 0.2],
-                pitchMinMax: [0.8, 1],
-            },
-            PuzzleCompleted: {
-                soundId: 'Positive Open',
-                volumeMinMax: 0.1,
-            },
-            GameOverAppear: {
-                soundId: 'Applause Cheering',
-                volumeMinMax: 0.05,
-            },
-            PreviewOverAppear: {
-                soundId: 'Synth-Appear-01',
-                volumeMinMax: 0.1,
-            },
-            PieceRotate: {
-                soundId: 'Hover',
-                volumeMinMax: [0.15, 0.2],
-                pitchMinMax: [0.8, 1],
-            },
-            RenderSection: {
-                soundId: 'Hover',
-                volumeMinMax: [0.15, 0.2],
-                pitchMinMax: [0.8, 1],
-            },
-            RenderSectionDetail: {
-                soundId: 'Hover',
-                volumeMinMax: [0.15, 0.2],
-                pitchMinMax: [0.8, 1],
-            },
-            OpenPopup: {
-                soundId: 'PopupOpen',
-                volumeMinMax: [0.15, 0.2],
-                pitchMinMax: [0.8, 1],
-            },
-            ClosePopup: {
-                soundId: 'PopupOpen',
-                volumeMinMax: [0.15, 0.2],
-                pitchMinMax: [0.6, 0.7],
-            },
-            OpenPopupPrize: {
-                soundId: 'Bonus Screen Popup',
-                volumeMinMax: [0.15, 0.2],
-                pitchMinMax: [0.8, 1],
-            },
-            FlyAnim: {
-                soundId: 'Bonus Fly Anim',
-                volumeMinMax: [0.05, 0.1],
-                pitchMinMax: [0.8, 1],
-            }
-        }
+        },
     } satisfies Record<string, Record<string, SoundAsset>>;
 
     static readonly Offsets = {

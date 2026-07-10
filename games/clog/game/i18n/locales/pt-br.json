@@ -31,5 +31,7 @@
     "mute": "Mudo",
     "unmute": "Ativar o áudio",
     "you": "Você",
-    "boostButtonLabel": "Impulso"
+    "boostButtonLabel": "Impulso",
+    "quitRun": "End Run",
+    "quitRunConfirm": "Terminar sua corrida agora e ir direto para a tela de pontuação final?"
 }

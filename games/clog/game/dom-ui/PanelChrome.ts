@@ -1,4 +1,20 @@
+import SoundManager from 'core/audio/SoundManager';
+import Assets from '../../Assets';
 import closeIcon from './images/Icon_Close02.png';
+
+/**
+ * Wraps a click handler with the shared UI tap sound — every custom button
+ * across dom-ui/ui-dom (PlayerFlowController's pillButton/goldButton/button,
+ * ShopScreen's cards, SettingsMenu, CollapsiblePanel's toggle, etc.) runs its
+ * onClick through this once instead of each file wiring up SoundManager/Assets
+ * on its own.
+ */
+export function withTap(onClick: () => void): () => void {
+    return () => {
+        SoundManager.instance.tryToPlaySound(Assets.Sounds.UI.Tap);
+        onClick();
+    };
+}
 
 /**
  * Shared look for every "semi-transparent panel over the still-visible 3D
@@ -37,7 +53,7 @@ export function panelCloseButton(onClick: () => void): HTMLElement {
     Object.assign(img.style, { width: '20px', height: '20px' });
     btn.appendChild(img);
 
-    btn.addEventListener('click', onClick);
+    btn.addEventListener('click', withTap(onClick));
     wrap.appendChild(btn);
     return wrap;
 }

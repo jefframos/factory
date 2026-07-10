@@ -31,5 +31,7 @@
     "mute": "ミュート",
     "unmute": "ミュート解除",
     "you": "あなたは",
-    "boostButtonLabel": "BOOST"
+    "boostButtonLabel": "BOOST",
+    "quitRun": "実行を終了",
+    "quitRunConfirm": "今すぐ実行を終了し、最終スコア画面に直接移動しますか？"
 }

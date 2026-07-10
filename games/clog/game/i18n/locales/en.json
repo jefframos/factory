@@ -31,5 +31,7 @@
     "mute": "Mute",
     "unmute": "Unmute",
     "you": "You",
-    "boostButtonLabel": "BOOST"
+    "boostButtonLabel": "BOOST",
+    "quitRun": "End Run",
+    "quitRunConfirm": "End your run now and go straight to the final score screen?"
 }

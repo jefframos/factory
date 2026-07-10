@@ -172,6 +172,7 @@ export class LinearArea {
     private entranceGate: EntranceEntry | null = null;
     private extraMaterials: THREE.Material[] = [];
     private sceneMeshes: THREE.Mesh[] = [];
+    private debugMeshes: THREE.Object3D[] = [];
 
     /**
      * @param roomIndex  0 = first room (solid back wall, no entrance).
@@ -291,6 +292,15 @@ export class LinearArea {
         }
         this.sceneMeshes = [];
 
+        for (const m of this.debugMeshes) {
+            scene.remove(m);
+            if (m instanceof THREE.LineSegments) {
+                m.geometry.dispose();
+                (m.material as THREE.Material).dispose();
+            }
+        }
+        this.debugMeshes = [];
+
         for (const mat of this.extraMaterials) mat.dispose();
         this.extraMaterials = [];
 
@@ -385,7 +395,7 @@ export class LinearArea {
                 }
 
                 const geo = cfg.radius > 0
-                    ? ClusterMeshBuilder.roundAllEdges(island, cs, cfg.height, cfg.depthBelow, this.grid.originX, this.grid.originZ, cfg.radius, 3)
+                    ? ClusterMeshBuilder.roundEdges(island, cs, cfg.height, cfg.depthBelow, this.grid.originX, this.grid.originZ, cfg.radius, 3)
                     : ClusterMeshBuilder.buildGeometry(island, cs, cfg.height, cfg.depthBelow, this.grid.originX, this.grid.originZ);
 
                 const mat = new THREE.MeshStandardMaterial({
@@ -403,6 +413,18 @@ export class LinearArea {
                 mesh.frustumCulled = false;
                 scene.add(mesh);
                 this.sceneMeshes.push(mesh);
+
+                // ?debugMesh — overlay the real triangle edges so sparse/uneven
+                // vertex density (the usual cause of UV tiling looking "wrong")
+                // is visible directly on the mesh instead of guessed at.
+                if (DEBUG_MESH && islandTex) {
+                    const wire = new THREE.LineSegments(
+                        new THREE.WireframeGeometry(geo),
+                        new THREE.LineBasicMaterial({ color: 0x00ff00 }),
+                    );
+                    scene.add(wire);
+                    this.debugMeshes.push(wire);
+                }
             }
         }
     }

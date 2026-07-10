@@ -1,5 +1,6 @@
 import SoundManager from 'core/audio/SoundManager';
 import { DomUiRoot } from './DomUiRoot';
+import { withTap } from './PanelChrome';
 import { Localization } from '../i18n/Localization';
 import soundOnIcon from './images/sound-on.png';
 import soundOffIcon from './images/sound-off.png';
@@ -38,7 +39,7 @@ export class SoundToggleButton {
         Object.assign(this.icon.style, { width: '20px', height: '20px' });
         this.element.appendChild(this.icon);
 
-        this.element.addEventListener('click', () => SoundManager.instance.toggleMute());
+        this.element.addEventListener('click', withTap(() => SoundManager.instance.toggleMute()));
         SoundManager.instance.onMuteChange.add(this.updateIcon, this);
         Localization.onLocaleChange.add(this.refreshIcon, this);
         this.updateIcon(SoundManager.instance.isMuted);

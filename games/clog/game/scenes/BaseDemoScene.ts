@@ -5,6 +5,8 @@ import * as PIXI from 'pixi.js';
 import KeyboardInputMovement from 'core/io/KeyboardInputMovement';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
 import { Game } from 'core/Game';
+import SoundManager from 'core/audio/SoundManager';
+import Assets from '../../Assets';
 import LinearWorld3dScene from './LinearWorld3dScene';
 import BoundlessWorld3dScene from './BoundlessWorld3dScene';
 import type { IWorld3dScene } from './IWorld3dScene';
@@ -15,6 +17,7 @@ import { MovementHint } from '../ui-dom/MovementHint';
 import { SoundToggleButton } from '../dom-ui/SoundToggleButton';
 import { SettingsButton } from '../dom-ui/SettingsButton';
 import { BoostButton } from '../dom-ui/BoostButton';
+import { QuitButton } from '../dom-ui/QuitButton';
 import { renderSettingsMenu } from '../ui-dom/SettingsMenu';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import Stats from 'stats.js';
@@ -23,6 +26,8 @@ import { ShopStorage, SHOP_ITEMS } from '../data/ShopStorage';
 import { FaceSnapshotTool } from '../debug/FaceSnapshotTool';
 import { HighScoreStorage } from '../data/HighScoreStorage';
 import { DEFAULT_START_VALUE } from '../ClogConstants';
+import { ISLANDS, getDefaultIsland, setSelectedIslandId } from '../world/IslandStorage';
+import { clearTileMaterialCache } from '../world/BoundlessChunk';
 
 export const PLAYER_NAME_KEY = 'playerName';
 
@@ -78,12 +83,20 @@ export default class BaseDemoScene extends GameScene {
     private flowController!: PlayerFlowController;
     private soundToggle!: SoundToggleButton;
     private settingsButton!: SettingsButton;
+    private quitButton!: QuitButton;
     private movementHint!: MovementHint;
     private flowState: FlowState = 'menu';
     /** True while spawnFreshWorld() is rebuilding world3d — update() bails out for that tick so it never touches a not-yet-built instance. */
     private worldRebuilding = false;
+    /** Set right before debugKillPlayer() by the QuitButton's confirmed click — tells the next death-detection tick to skip the usual countdown/revive screen and jump straight to End Game. Consumed (reset to false) the instant it's read. */
+    private quitToEndGame = false;
 
     public async build(): Promise<void> {
+        // Started once, for the whole session — never stopped, only ducked
+        // while gameplay ambient plays alongside it (see setFlowState).
+        SoundManager.instance.setLayerVolume(Assets.AmbientSound.Music.layer, Assets.AmbientSound.Music.masterVolume);
+        void SoundManager.instance.playBackgroundSound(Assets.AmbientSound.Music.soundId, 0, Assets.AmbientSound.Music.layer);
+
         await this.spawnFreshWorld();
 
         if (Game.debugParams.stats) {
@@ -201,8 +214,26 @@ export default class BaseDemoScene extends GameScene {
         }, 'Textures');
 
         DevGuiManager.instance.addButton('Download Island Texture', () => {
-            TextureBuilder.export(TextureBuilder.island(), 'island.png');
+            TextureBuilder.export(TextureBuilder.islandPlaceholder(), 'island.png');
         }, 'Textures');
+
+        // Lets a dev preview any islands.json entry without editing the file —
+        // picks it as the active level and rebuilds world3d from scratch so the
+        // texture/sky/ambient/water all pick up the new island (see IslandStorage.ts).
+        if (ISLANDS.length > 0) {
+            const levelSettings = { islandId: getDefaultIsland().id };
+            DevGuiManager.instance.addDropdown(
+                levelSettings,
+                'islandId',
+                ISLANDS.map((island) => island.id),
+                (id) => {
+                    setSelectedIslandId(id);
+                    void this.spawnFreshWorld();
+                },
+                'Level',
+                'Levels',
+            );
+        }
 
         // Renders an isolated player cube (fixed colour, transparent bg) with
         // each shop face texture applied and downloads it as a PNG — for
@@ -288,6 +319,7 @@ export default class BaseDemoScene extends GameScene {
 
         this.soundToggle = new SoundToggleButton();
         this.settingsButton = new SettingsButton(renderSettingsMenu);
+        this.quitButton = new QuitButton(() => this.handleQuitRun());
 
         // Initial position
         this.repositionUi();
@@ -324,19 +356,42 @@ export default class BaseDemoScene extends GameScene {
 
     /** Owns every side effect tied to "not playing" vs "playing" — movement input and the player's direction triangle both follow the same on/off switch, so a transition can't forget one of them (see the death → Continue bug this fixed). */
     private setFlowState(state: FlowState): void {
+        const previous = this.flowState;
         this.flowState = state;
         const playing = state === 'playing';
         this.analogInput?.setEnabled(playing);
         this.pointerFollowInput?.setEnabled(playing);
         this.boostButton?.setEnabled(playing);
+        this.quitButton?.setEnabled(playing);
         this.world3d.setPlayerIndicatorVisible(playing);
         this.world3d.setGameplayCameraActive(playing);
+
+        // Gameplay ambient fades in alongside the music (never stopped —
+        // see build()), ducking it rather than replacing it. Skipped on the
+        // dead <-> playing edges (death/Revive) so the ocean loop already
+        // playing through the death screen doesn't restart from a Revive.
+        if (state === 'menu' && previous !== 'menu') {
+            SoundManager.instance.stopLayer(Assets.AmbientSound.Gameplay.layer, 1000);
+            SoundManager.instance.setLayerVolume(Assets.AmbientSound.Music.layer, Assets.AmbientSound.Music.masterVolume, 1000);
+        } else if (state === 'playing' && previous === 'menu') {
+            SoundManager.instance.setLayerVolume(Assets.AmbientSound.Gameplay.layer, Assets.AmbientSound.Gameplay.masterVolume);
+            void SoundManager.instance.playBackgroundSound(Assets.AmbientSound.Gameplay.soundId, 1000, Assets.AmbientSound.Gameplay.layer);
+            SoundManager.instance.setLayerVolume(Assets.AmbientSound.Music.layer, Assets.AmbientSound.Music.duckedVolume, 1000);
+        }
+    }
+
+    /** QuitButton, after the player confirms — kills the player exactly like the debug "Kill Player" panel button, but flags the resulting death (see quitToEndGame) to skip straight to the End Game screen instead of the usual countdown/revive choice, since ending the run was a deliberate choice, not an accident. */
+    private handleQuitRun(): void {
+        if (this.flowState !== 'playing') return;
+        this.quitToEndGame = true;
+        this.world3d.debugKillPlayer();
     }
 
     /** Tears down and rebuilds world3d from scratch — used for the initial boot and for "Continue" after death, since a freshly-built world always starts NPCs-dormant and zoomed in on its own (see BoundlessWorld3dScene/LinearWorld3dScene.build()), which is exactly the state a menu preview needs and a respawn-in-place can't guarantee. */
     private async spawnFreshWorld(): Promise<void> {
         this.worldRebuilding = true;
         this.world3d?.destroy();
+        clearTileMaterialCache();
         this.world3d = GATED_MODE
             ? new LinearWorld3dScene(this.game)
             : new BoundlessWorld3dScene(this.game);
@@ -403,9 +458,12 @@ export default class BaseDemoScene extends GameScene {
             const deathInfo = this.world3d.deathInfo;
             if (deathInfo && this.flowState !== 'dead') {
                 this.setFlowState('dead');
+                SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Killed);
                 this.movementHint.forceHide();
                 const finalScore = deathInfo.entries.find(e => e.isYou)?.score ?? 0;
                 const isNewHighScore = HighScoreStorage.isNewHighScore(finalScore);
+                const skipToEndGame = this.quitToEndGame;
+                this.quitToEndGame = false;
                 this.flowController.showDeath(
                     deathInfo,
                     isNewHighScore,
@@ -426,6 +484,7 @@ export default class BaseDemoScene extends GameScene {
                         // the live in-game leaderboard pinned top-right would
                         // otherwise just sit there redundantly behind it.
                         this.leaderboard.hide();
+                        SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.EndGame);
                     },
                     async () => {
                         // "Continue" from the End Game screen (via Next or the countdown
@@ -447,6 +506,7 @@ export default class BaseDemoScene extends GameScene {
                         this.movementHint.forceHide();
                         this.flowController.showMenu((startValue) => this.handleJoinServer(startValue));
                     },
+                    skipToEndGame,
                 );
             }
         }
@@ -470,6 +530,7 @@ export default class BaseDemoScene extends GameScene {
         this.flowController?.destroy();
         this.soundToggle?.destroy();
         this.settingsButton?.destroy();
+        this.quitButton?.destroy();
         this.boostButton?.destroy();
         this.movementHint?.destroy();
         if (this.devPosLabel) {

@@ -3,11 +3,18 @@
 // The generator reads these values; edit here to change the look without touching
 // the generator code in builders/IslandTexture.ts.
 //
-// Atlas layout:  left half  [U 0–0.5] = sand (vertical side faces)
-//                right half [U 0.5–1] = grass (top faces)
+// Atlas layout (square, 2×2 quadrants):
+//   top-left    [U 0–0.5,   V 0.5–1] = side "collar" — unique art bordering the top
+//   top-right   [U 0.5–1,   V 0.5–1] = grass (top faces), tiled every `tileSize` units
+//   bottom-left [U 0–0.5,   V 0–0.5] = side "tile" — repeats below the collar
+//   bottom-right[U 0.5–1,   V 0–0.5] = unused
+//
+// Real island art (see IslandStorage.ts / islands.json) must follow the same
+// quadrant layout for loadRealIsland() to look right.
 
 export const ISLAND_TEXTURE_CONFIG = {
-    resolution: 128,         // px per atlas half — increase for sharper texture
+    resolution: 128,         // px per atlas quadrant — increase for sharper texture
+    tileSize: 2,             // world units per texture repeat (top tiling + side collar/tile)
     grass: {
         base: '#4a7c32',   // dominant green
         dark: '#3a6028',   // shadow patches / blade tips
@@ -49,8 +56,8 @@ export interface TileConfig {
 
 export const TILE_DEFS: Record<number, TileConfig> = {
     1: { height: 5.5, color: 0x1e2d3d, depthBelow: 30, fadeFrom: 0, fadeTo: -10, texture: 'island' },
-    // 2 — short obstacle (rounded corners via ClusterMeshBuilder.roundAllEdges)
-    2: { height: 1.0, color: 0x2a3a4a, depthBelow: 10, radius: 0.2, fadeFrom: 0, fadeTo: -5, texture: 'island' },
+    // 2 — short obstacle (rounded corners via ClusterMeshBuilder.roundEdges)
+    2: { height: 1.0, color: 0x2a3a4a, depthBelow: 10, radius: 0.5, fadeFrom: 0, fadeTo: -5, texture: 'island' },
 };
 
 // ── Room geometry & material config ──────────────────────────────────────────
@@ -68,12 +75,6 @@ export const ROOM_GEOMETRY = {
         opacity: 0.8,
         shader: 'water' as FloorShader,
         elevation: 0.45,
-        waterColors: {
-            deep: 0x30c2f2,
-            mid: 0x3cc8f9,
-            bright: 0x43ccfc,
-            foam: 0xf2fafa,
-        },
     },
     // Height used when sealing the entrance gap after transition.
     walls: {

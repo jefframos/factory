@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { DomUiRoot } from '../dom-ui/DomUiRoot';
 import { ModalOverlay } from '../dom-ui/ModalOverlay';
-import { PANEL_TRANSLUCENT_BACKGROUND, panelCloseButton, panelHeading } from '../dom-ui/PanelChrome';
+import { PANEL_TRANSLUCENT_BACKGROUND, panelCloseButton, panelHeading, withTap } from '../dom-ui/PanelChrome';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { leaderboardRow, windowAround, type LeaderboardEntry } from './LeaderboardPanel';
 import { renderShopScreen } from './ShopScreen';
@@ -20,7 +20,6 @@ export type DeathSnapshot = { value: number; tailValues: number[]; entries: Lead
 type BtnRole = 'primary' | 'secondary' | 'accent' | 'shop' | 'danger';
 
 const DEATH_COUNTDOWN_SECONDS = 5;
-const DEATH_TICK_MS = 100;
 const END_GAME_WINDOW = { size: 5, ahead: 3, behind: 1 };
 
 /**
@@ -85,14 +84,24 @@ export class PlayerFlowController {
      * would otherwise sit redundantly next to the End Game screen's own rank
      * list), whose "Continue" then calls `onContinue` to return to the boot
      * menu for a fresh join.
+     *
+     * `skipToEndGame` (default false) bypasses the countdown/revive screen
+     * entirely and jumps straight to the End Game rank screen — used by
+     * QuitButton's "End Run" flow (see BaseDemoScene.quitToEndGame), since
+     * that death was a deliberate choice to stop, not an accident worth
+     * offering a Revive for.
      */
-    showDeath(snapshot: DeathSnapshot, isNewHighScore: boolean, onRevive: (keepSize: DeathSnapshot) => void, onEndGame: () => void, onContinue: () => void): void {
+    showDeath(snapshot: DeathSnapshot, isNewHighScore: boolean, onRevive: (keepSize: DeathSnapshot) => void, onEndGame: () => void, onContinue: () => void, skipToEndGame: boolean = false): void {
         this.pendingDeath = snapshot;
         this.pendingIsNewHighScore = isNewHighScore;
         this.onRevive = onRevive;
         this.onEndGame = onEndGame;
         this.onContinue = onContinue;
-        this.renderDeath();
+        if (skipToEndGame) {
+            this.goToEndGame();
+        } else {
+            this.renderDeath();
+        }
         this.overlay.show();
     }
 
@@ -147,21 +156,27 @@ export class PlayerFlowController {
     private renderDeath(): void {
         this.currentScreen = () => this.renderDeath();
         this.clearDeathCountdown();
-        let remainingMs = DEATH_COUNTDOWN_SECONDS * 1000;
+        const totalMs = DEATH_COUNTDOWN_SECONDS * 1000;
 
         this.overlay.setFullContent(root => {
             const { group, setRemaining } = deathCountdownGroup(DEATH_COUNTDOWN_SECONDS);
             root.appendChild(group);
             root.appendChild(deathBottomButtons(() => this.handleWatchAd(), () => this.goToEndGame()));
 
-            this.deathCountdownHandle = window.setInterval(() => {
-                remainingMs -= DEATH_TICK_MS;
+            // Driven by rAF off elapsed wall-clock time (not a fixed-step
+            // setInterval) so the ring sweep is smooth at display refresh
+            // rate instead of jumping in DEATH_TICK_MS-sized steps.
+            const startTime = performance.now();
+            const tick = () => {
+                const remainingMs = totalMs - (performance.now() - startTime);
                 if (remainingMs <= 0) {
                     this.goToEndGame();
                     return;
                 }
-                setRemaining(remainingMs, DEATH_COUNTDOWN_SECONDS * 1000);
-            }, DEATH_TICK_MS);
+                setRemaining(remainingMs, totalMs);
+                this.deathCountdownHandle = window.requestAnimationFrame(tick);
+            };
+            this.deathCountdownHandle = window.requestAnimationFrame(tick);
         });
         this.overlay.setDimmed(true);
     }
@@ -291,7 +306,7 @@ export class PlayerFlowController {
 
     private clearDeathCountdown(): void {
         if (this.deathCountdownHandle !== null) {
-            window.clearInterval(this.deathCountdownHandle);
+            window.cancelAnimationFrame(this.deathCountdownHandle);
             this.deathCountdownHandle = null;
         }
     }
@@ -339,7 +354,7 @@ export class PlayerFlowController {
             lineHeight: '1',
             flexShrink: '0',
         });
-        renameIcon.addEventListener('click', () => this.renderRename());
+        renameIcon.addEventListener('click', withTap(() => this.renderRename()));
 
         row.appendChild(label);
         row.appendChild(renameIcon);
@@ -436,9 +451,10 @@ function highScoreBadge(): HTMLElement {
     return pill;
 }
 
-/** Shown under the End Game screen's CONTINUE button, only when this run's final score beat the pre-run best (see PlayerFlowController.pendingIsNewHighScore) — same trophy-pill skin as the boot menu's highScoreBadge, so it reads as the same "record" concept. */
+/** Shown under the End Game screen's CONTINUE button, only when this run's final score beat the pre-run best (see PlayerFlowController.pendingIsNewHighScore) — same trophy-pill skin as the boot menu's highScoreBadge, so it reads as the same "record" concept. Pulses continuously (see .high-score-pulse in buttons.css) so a genuinely new record doesn't just blend into the rest of the static end-game rank list. */
 function newHighScoreCallout(score: number): HTMLElement {
     const pill = document.createElement('div');
+    pill.className = 'high-score-pulse';
     Object.assign(pill.style, {
         marginTop: '4px',
         display: 'flex',
@@ -525,7 +541,7 @@ function pillButton(label: string, onClick: () => void, opts: { role?: BtnRole; 
     text.textContent = label;
     btn.appendChild(text);
 
-    btn.addEventListener('click', onClick);
+    btn.addEventListener('click', withTap(onClick));
     return btn;
 }
 
@@ -592,7 +608,7 @@ function boostBadge(onClick: () => void): HTMLButtonElement {
     textCol.appendChild(line2);
 
     btn.appendChild(textCol);
-    btn.addEventListener('click', onClick);
+    btn.addEventListener('click', withTap(onClick));
     return btn;
 }
 
@@ -744,7 +760,7 @@ function goldButton(label: string, onClick: () => void, opts: { icon?: string; r
     text.textContent = label;
     btn.appendChild(text);
 
-    btn.addEventListener('click', onClick);
+    btn.addEventListener('click', withTap(onClick));
     return btn;
 }
 
@@ -753,6 +769,6 @@ function button(label: string, onClick: () => void, opts: { role?: BtnRole } = {
     btn.textContent = label;
     btn.className = `btn btn-${opts.role ?? 'secondary'} btn-md btn-block`;
     btn.style.marginTop = '8px';
-    btn.addEventListener('click', onClick);
+    btn.addEventListener('click', withTap(onClick));
     return btn;
 }

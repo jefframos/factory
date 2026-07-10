@@ -21,7 +21,8 @@ export function resolveEntityEating(
 ): PlayerEntity[] {
     const eaten = new Set<PlayerEntity>();
 
-    const kill = (victim: PlayerEntity): void => {
+    const kill = (victim: PlayerEntity, eater: PlayerEntity): void => {
+        eater.notifyKill();
         const dropped = victim.onEaten();
         for (const cube of dropped) {
             // Unlike normal food spawns (LevelManager only picks from
@@ -73,13 +74,13 @@ export function resolveEntityEating(
             if (a.value >= b.value && !b.isInvincible
                 && a.position.distanceTo(b.position) < a.eatRadius + b.collisionRadius
                 && isFacingTarget(a.position, a.eatPosition, b.position)) {
-                kill(b);
+                kill(b, a);
                 continue; // b is gone — no tail-snipe left to resolve for this pair
             }
             if (b.value >= a.value && !a.isInvincible
                 && b.position.distanceTo(a.position) < b.eatRadius + a.collisionRadius
                 && isFacingTarget(b.position, b.eatPosition, a.position)) {
-                kill(a);
+                kill(a, b);
                 break; // a is gone — stop checking the rest of the row against it
             }
 

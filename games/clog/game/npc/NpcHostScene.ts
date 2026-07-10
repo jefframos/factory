@@ -12,6 +12,8 @@ import type { BotParams } from '../ai/Blackboard';
 export interface NpcHostScene {
     readonly playerPosition: { x: number; z: number };
     readonly playerValue: number;
+    /** Head + tail sum — same definition as PlayerEntity.score. Used to detect a dominant lead for NpcDirector's rubber-banding (see NPC_RUBBERBAND_CONFIG). */
+    readonly playerScore: number;
 
     /**
      * Finds a walkable point in the ring [minDist, maxDist] around (cx, cz).

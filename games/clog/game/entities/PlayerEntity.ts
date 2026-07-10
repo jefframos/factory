@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import SoundManager from "core/audio/SoundManager";
+import Assets from "../../Assets";
 import { CubeBuilder } from "../builders/CubeBuilder";
 import { BendService } from "../services/BendService";
 import { BOUNCE_AMPLITUDE, BOUNCE_DURATION, EAT_BOOST_DURATION, EAT_BOOST_MULTIPLIER, MANUAL_BOOST_DRAIN_DURATION, MANUAL_BOOST_REENGAGE_THRESHOLD, MANUAL_BOOST_RECHARGE_DURATION, MOVE_SPEED, SHOW_INVINCIBILITY_SHIELD, SMALL_VALUE_SPEED_BOOST, SMALL_VALUE_SPEED_THRESHOLD, SPAWN_INVINCIBILITY_DURATION, TAP_BOOST_DURATION, TAP_BOOST_MULTIPLIER, followDist, sizeForValue } from "../ClogConstants";
@@ -146,6 +148,7 @@ export class PlayerEntity implements ISimEntity {
     grantSpawnInvincibility(): void {
         if (!this.isRealPlayer) return;
         this.invincibleRemaining = SPAWN_INVINCIBILITY_DURATION;
+        SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Invincible);
     }
 
     /** Loads the given skin's texture and swaps it onto this cube's face decal — async since the texture has to load, so the mesh may already be on-screen with the previous face for a frame or two first. Bound to ShopStorage.onEquipChanged for live updates — see constructor. */
@@ -188,7 +191,20 @@ export class PlayerEntity implements ISimEntity {
 
     /** Held-boost switch for the pointer-follow control scheme (see PointerFollowInput) and AI-controlled entities (see BotController) — boosted for exactly as long as it's held, with real drain/recharge via manualBoostMeter below, unlike the timed tap-start burst above. */
     setBoosting(held: boolean): void {
+        if (this.isRealPlayer && held !== this.manualBoostHeld) {
+            if (held) {
+                SoundManager.instance.setLayerVolume(Assets.BoostLoop.layer, Assets.BoostLoop.volume);
+                void SoundManager.instance.playBackgroundSound(Assets.BoostLoop.soundId, 0, Assets.BoostLoop.layer);
+            } else {
+                SoundManager.instance.stopLayer(Assets.BoostLoop.layer, 150);
+            }
+        }
         this.manualBoostHeld = held;
+    }
+
+    /** Called on the eater when it just killed another entity's head — see EntityEating.kill(). Bots call this too (they eat each other constantly); only the real player triggers audio feedback. */
+    notifyKill(): void {
+        if (this.isRealPlayer) SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Kill);
     }
 
     /** Radius of the eat circle (scales with value). Used for player/NPC kills and tail-snipes. */
@@ -413,6 +429,7 @@ export class PlayerEntity implements ISimEntity {
      */
     collect(cube: TailCube): void {
         dbg("collect", { value: cube.value, tailLen: this.tail.length });
+        if (this.isRealPlayer) SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Grab);
 
         const insertIdx = this.findInsertIdx(cube.value);
         this.tail.splice(insertIdx, 0, cube);
@@ -520,6 +537,7 @@ export class PlayerEntity implements ISimEntity {
                 }
                 const newVal = into.value * 2;
                 dbg("tailMerge.onDone", { intoIdx: currentIdx - 1, fromIdx: currentIdx, newVal });
+                if (this.isRealPlayer) SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Merge);
                 into.isLocked = false;
                 into.setValue(newVal);
                 into.startBounce();
@@ -563,6 +581,7 @@ export class PlayerEntity implements ISimEntity {
             onDone: () => {
                 this.value = Math.max(this.value * 2, from.value);
                 dbg("playerMerge.onDone", { newPlayerVal: this.value });
+                if (this.isRealPlayer) SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Merge);
                 CubeBuilder.updateTextures(this.mesh, this.value, true);
                 this.updateScale();
                 this.startBounce();
@@ -617,6 +636,8 @@ export class PlayerEntity implements ISimEntity {
 
     private teardownVisuals(): void {
         if (this.isRealPlayer) ShopStorage.onEquipChanged.remove(this.applyEquippedSkin, this);
+        // Guards against a stuck boost hum if this entity is torn down (death) mid-boost — setBoosting(false) is never coming.
+        if (this.isRealPlayer && this.manualBoostHeld) SoundManager.instance.stopLayer(Assets.BoostLoop.layer);
         this.invincibilityShield?.dispose();
         this.shadow.destroy();
         this.mergeQueue.destroy();

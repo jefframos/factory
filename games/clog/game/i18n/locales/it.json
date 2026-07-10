@@ -31,5 +31,7 @@
     "mute": "Muto",
     "unmute": "Riattiva audio",
     "you": "Tu",
-    "boostButtonLabel": "POTENZIAMENTO"
+    "boostButtonLabel": "POTENZIAMENTO",
+    "quitRun": "Termina esecuzione",
+    "quitRunConfirm": "Termina subito la corsa e vai direttamente alla schermata del punteggio finale?"
 }

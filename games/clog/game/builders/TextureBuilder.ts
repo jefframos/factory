@@ -4,30 +4,54 @@ import { ISLAND_TEXTURE_CONFIG } from '../world/MeshConfig';
 /**
  * Central place to obtain any texture the game uses, whichever of three
  * sources it comes from:
- *   - island() / face()  — procedurally generated on a canvas (placeholders,
- *     see export() below for pulling them out to hand-edit into real art)
+ *   - island() / face()  — real art once loaded (island() via loadRealIsland(),
+ *     face() always procedural for now), else a procedural placeholder on a
+ *     canvas (see export() below for pulling one out to hand-edit into real art)
  *   - load(path)          — a real image file, loaded once and cached by path
  */
 export class TextureBuilder {
     private static islandTex: THREE.CanvasTexture | null = null;
+    private static realIslandTex: THREE.Texture | null = null;
     private static faceTex: THREE.CanvasTexture | null = null;
     private static pathCache = new Map<string, THREE.Texture | Promise<THREE.Texture>>();
     private static loader = new THREE.TextureLoader();
 
     /**
-     * Deterministic 2:1 sand/grass atlas (see ISLAND_TEXTURE_CONFIG in
-     * MeshConfig.ts to tweak colours/detail). Built once and cached — callers
-     * must NOT dispose the returned texture, it's shared across every mesh
-     * that uses it for the lifetime of the app.
+     * Loads the real island art (see IslandStorage.ts) and makes island()
+     * return it from then on instead of the procedural placeholder. Call
+     * once, before any LinearArea is built, so mesh construction can stay
+     * synchronous — see LinearWorld3dScene.build().
      */
-    static island(): THREE.CanvasTexture {
+    static async loadRealIsland(path: string): Promise<THREE.Texture> {
+        const tex = await TextureBuilder.load(path);
+        TextureBuilder.realIslandTex = tex;
+        return tex;
+    }
+
+    /**
+     * Real island art once loadRealIsland() has resolved; otherwise falls
+     * back to the procedural placeholder — see islandPlaceholder().
+     */
+    static island(): THREE.Texture {
+        if (TextureBuilder.realIslandTex) return TextureBuilder.realIslandTex;
+        return TextureBuilder.islandPlaceholder();
+    }
+
+    /**
+     * Deterministic 2×2 quadrant atlas (see ISLAND_TEXTURE_CONFIG in
+     * MeshConfig.ts to tweak colours/detail, and its atlas-layout comment for
+     * the quadrant convention). Built once and cached — callers must NOT
+     * dispose the returned texture, it's shared across every mesh that uses it
+     * for the lifetime of the app.
+     */
+    static islandPlaceholder(): THREE.CanvasTexture {
         if (TextureBuilder.islandTex) return TextureBuilder.islandTex;
 
         const cfg = ISLAND_TEXTURE_CONFIG;
-        const half = cfg.resolution;
+        const q = cfg.resolution; // one quadrant's edge length, in px
         const canvas = document.createElement('canvas');
-        canvas.width = half * 2;
-        canvas.height = half;
+        canvas.width = q * 2;
+        canvas.height = q * 2;
         const ctx = canvas.getContext('2d')!;
 
         // Deterministic PRNG — same texture every load, no Date.now() / Math.random()
@@ -39,43 +63,54 @@ export class TextureBuilder {
             return (seed >>> 0) / 0xffffffff;
         };
 
-        // ── Sand region (left half) ─────────────────────────────────────────
-        ctx.fillStyle = cfg.sand.base;
-        ctx.fillRect(0, 0, half, half);
+        // ── Sand quadrant painter — used for both the collar (top-left) and the
+        // tiled side quadrant (bottom-left). `soilStrip` only makes sense on the
+        // collar, where it sits right at the grass/sand seam.
+        const paintSand = (offX: number, offY: number, soilStrip: boolean) => {
+            ctx.fillStyle = cfg.sand.base;
+            ctx.fillRect(offX, offY, q, q);
 
-        ctx.fillStyle = cfg.sand.soilStrip;
-        ctx.globalAlpha = 0.55;
-        ctx.fillRect(0, 0, half, Math.round(half * 0.1));
-        ctx.globalAlpha = 1;
+            if (soilStrip) {
+                ctx.fillStyle = cfg.sand.soilStrip;
+                ctx.globalAlpha = 0.55;
+                ctx.fillRect(offX, offY, q, Math.round(q * 0.1));
+                ctx.globalAlpha = 1;
+            }
 
-        for (let i = 0; i < cfg.sand.patchCount; i++) {
-            const px = rand() * half;
-            const py = rand() * half;
-            const pw = 5 + rand() * 22;
-            const ph = 4 + rand() * 14;
-            ctx.fillStyle = rand() > 0.5 ? cfg.sand.light : cfg.sand.dark;
-            ctx.globalAlpha = 0.18 + rand() * 0.28;
-            ctx.fillRect(px, py, pw, ph);
-        }
+            for (let i = 0; i < cfg.sand.patchCount; i++) {
+                const px = offX + rand() * q;
+                const py = offY + rand() * q;
+                const pw = 5 + rand() * 22;
+                const ph = 4 + rand() * 14;
+                ctx.fillStyle = rand() > 0.5 ? cfg.sand.light : cfg.sand.dark;
+                ctx.globalAlpha = 0.18 + rand() * 0.28;
+                ctx.fillRect(px, py, pw, ph);
+            }
 
-        ctx.strokeStyle = cfg.sand.dark;
-        ctx.lineWidth = 1;
-        for (let y = 8; y < half; y += 9 + Math.floor(rand() * 7)) {
-            ctx.globalAlpha = 0.05 + rand() * 0.05;
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(half, y);
-            ctx.stroke();
-        }
-        ctx.globalAlpha = 1;
+            ctx.strokeStyle = cfg.sand.dark;
+            ctx.lineWidth = 1;
+            for (let y = offY + 8; y < offY + q; y += 9 + Math.floor(rand() * 7)) {
+                ctx.globalAlpha = 0.05 + rand() * 0.05;
+                ctx.beginPath();
+                ctx.moveTo(offX, y);
+                ctx.lineTo(offX + q, y);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        };
 
-        // ── Grass region (right half) ───────────────────────────────────────
+        // Top-left — collar (canvas y 0..q → V 1..0.5, right at the grass seam)
+        paintSand(0, 0, true);
+        // Bottom-left — repeating side tile (canvas y q..2q → V 0.5..0)
+        paintSand(0, q, false);
+
+        // ── Grass quadrant (top-right) ──────────────────────────────────────
         ctx.fillStyle = cfg.grass.base;
-        ctx.fillRect(half, 0, half, half);
+        ctx.fillRect(q, 0, q, q);
 
         for (let i = 0; i < cfg.grass.patchCount; i++) {
-            const px = half + rand() * half;
-            const py = rand() * half;
+            const px = q + rand() * q;
+            const py = rand() * q;
             const pr = 4 + rand() * 16;
             ctx.fillStyle = rand() > 0.5 ? cfg.grass.light : cfg.grass.dark;
             ctx.globalAlpha = 0.28 + rand() * 0.32;
@@ -86,13 +121,15 @@ export class TextureBuilder {
 
         ctx.globalAlpha = 0.42;
         for (let i = 0; i < 55; i++) {
-            const px = half + rand() * half;
-            const py = rand() * half;
+            const px = q + rand() * q;
+            const py = rand() * q;
             const bh = 3 + rand() * 6;
             ctx.fillStyle = rand() > 0.5 ? cfg.grass.light : cfg.grass.dark;
             ctx.fillRect(px, py, 1 + Math.round(rand()), bh);
         }
         ctx.globalAlpha = 1;
+
+        // Bottom-right — unused, left blank.
 
         const tex = new THREE.CanvasTexture(canvas);
         tex.minFilter = THREE.LinearMipmapLinearFilter;

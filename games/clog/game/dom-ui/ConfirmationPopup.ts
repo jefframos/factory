@@ -1,5 +1,6 @@
 import { DomUiRoot } from './DomUiRoot';
 import { ModalOverlay } from './ModalOverlay';
+import { withTap } from './PanelChrome';
 import { Localization } from '../i18n/Localization';
 
 export interface ConfirmOptions {
@@ -55,13 +56,13 @@ class ConfirmationPopupService {
                 cancelBtn.textContent = opts.cancelLabel ?? Localization.getString('cancel');
                 cancelBtn.className = 'btn btn-secondary btn-md';
                 cancelBtn.style.flex = '1';
-                cancelBtn.addEventListener('click', () => this.resolve(false));
+                cancelBtn.addEventListener('click', withTap(() => this.resolve(false)));
 
                 const confirmBtn = document.createElement('button');
                 confirmBtn.textContent = opts.confirmLabel;
                 confirmBtn.className = `btn btn-${opts.confirmRole ?? 'primary'} btn-md`;
                 confirmBtn.style.flex = '1';
-                confirmBtn.addEventListener('click', () => this.resolve(true));
+                confirmBtn.addEventListener('click', withTap(() => this.resolve(true)));
 
                 row.appendChild(cancelBtn);
                 row.appendChild(confirmBtn);

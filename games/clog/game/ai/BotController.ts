@@ -4,7 +4,7 @@ import { SimWorld } from "../sim/SimWorld";
 import { isFacingTarget } from "../sim/VisionCone";
 import { Blackboard, BotParams } from "./Blackboard";
 import { Action, BTNode, NodeStatus, Selector } from "./BehaviorTree";
-import { NPC_HUNT_CONFIG } from "../npc/NpcConfig";
+import { NPC_HUNT_CONFIG, NPC_RUBBERBAND_CONFIG } from "../npc/NpcConfig";
 import { generateNpcName } from "../npc/NpcNames";
 
 /** Per-tick context handed to every BT node — everything a node needs to sense the world and act. */
@@ -543,9 +543,17 @@ function chaseWeakerPrey(home: THREE.Vector3): BTNode<BotContext> {
         // value, not a spawn-time trait, so a bot can grow into this mid-game.
         const isHunter = entity.value >= NPC_HUNT_CONFIG.valueThreshold;
         // Higher aggressiveness accepts riskier (closer-to-even) matchups as worth chasing.
-        const preyValueCeiling = isHunter
+        let preyValueCeiling = isHunter
             ? entity.value * NPC_HUNT_CONFIG.preyCeilingMult
             : entity.value * (0.3 + 0.7 * blackboard.params.aggressiveness);
+        // Rubber-band hunters (see NPC_RUBBERBAND_CONFIG) are willing to chase
+        // the real player well past the normal ceiling — checked per-prey via
+        // other.isPlayer below, not folded into isHunter, since this should
+        // never make a bot braver against other NPCs, only against whoever's
+        // actually leading.
+        if (blackboard.params.huntsBiggerPrey) {
+            preyValueCeiling = Math.max(preyValueCeiling, entity.value / NPC_RUBBERBAND_CONFIG.hunterMinValueRatio);
+        }
         // Same idea as seekNearestFood's leash guard: don't commit to prey
         // we'd have to leave leash range to actually catch — otherwise
         // returnToLeash fights this node exactly like it used to fight
@@ -555,7 +563,8 @@ function chaseWeakerPrey(home: THREE.Vector3): BTNode<BotContext> {
         let prey: THREE.Vector3 | null = null;
         let bestDist2 = Infinity;
         for (const other of result.entities) {
-            if (!isHunter && other.value >= entity.value) continue;
+            const allowsBiggerPrey = isHunter || (blackboard.params.huntsBiggerPrey && other.isPlayer);
+            if (!allowsBiggerPrey && other.value >= entity.value) continue;
             if (other.value > preyValueCeiling) continue;
             if (home.distanceToSquared(other.position) > leashR2) continue;
             const d2 = entity.position.distanceToSquared(other.position);

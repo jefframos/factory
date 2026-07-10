@@ -1,3 +1,5 @@
+import { withTap } from './PanelChrome';
+
 export type UiCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 const CORNER_STYLE: Record<UiCorner, Partial<CSSStyleDeclaration>> = {
@@ -77,7 +79,7 @@ export class CollapsiblePanel {
 
         header.appendChild(titleEl);
         header.appendChild(this.toggleBtn);
-        header.addEventListener('click', () => this.setExpanded(!this.expanded));
+        header.addEventListener('click', withTap(() => this.setExpanded(!this.expanded)));
 
         this.bodyEl = document.createElement('div');
         Object.assign(this.bodyEl.style, {

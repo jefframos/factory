@@ -16,6 +16,7 @@ import { DevGuiManager } from 'core/utils/DevGuiManager';
 import Assets from './Assets';
 import BaseDemoScene from './game/scenes/BaseDemoScene';
 import { ShopStorage, loadShopItems } from './game/data/ShopStorage';
+import { loadIslands } from './game/world/IslandStorage';
 import { HighScoreStorage } from './game/data/HighScoreStorage';
 import { Localization } from './game/i18n/Localization';
 import loaderConfig from './loader.config';
@@ -104,6 +105,7 @@ export default class MyGame extends Game {
             this.loaderScene.updateLoader(p * 1 / bundles.length);
         })
         loadShopItems();
+        loadIslands();
 
         await PIXI.Assets.loadBundle('fonts', (p) => {
             this.loaderScene.updateLoader(p * 1 / bundles.length);

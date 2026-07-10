@@ -31,5 +31,7 @@
     "mute": "Silenciar",
     "unmute": "Anular silenciar",
     "you": "Tú",
-    "boostButtonLabel": "BOOST"
+    "boostButtonLabel": "BOOST",
+    "quitRun": "Terminar la partida ",
+    "quitRunConfirm": "¿Quieres terminar tu carrera ahora y pasar directamente a la pantalla de puntuación final?"
 }

@@ -4,6 +4,7 @@ import { ROOM_GEOMETRY } from './MeshConfig';
 import { createWaterMaterial } from '../builders/WaterMaterial';
 import { BendService } from '../services/BendService';
 import { FloorBuilder } from '../builders/FloorBuilder';
+import { deriveWaterTones, getDefaultIsland, parseHexColor } from './IslandStorage';
 
 const DEBUG_GRID = new URLSearchParams(window.location.search).has('debugGrid');
 import { getLinearRoomConfig, computeFoodCount, FOOD_CONFIG } from './LinearConfig';
@@ -126,10 +127,11 @@ export class LinearAreaManager {
         // drops the edges below the horizon before they reach the screen edge.
         const SIZE = 160;
         const SEGMENTS = 64;
-        const { shader: floorShader, opacity, elevation, waterColors, roughness } = ROOM_GEOMETRY.floor;
+        const { shader: floorShader, opacity, elevation, roughness } = ROOM_GEOMETRY.floor;
 
         let mat: THREE.Material;
         if (floorShader === 'water') {
+            const waterColors = deriveWaterTones(parseHexColor(getDefaultIsland().waterColor));
             mat = createWaterMaterial(opacity, elevation, waterColors);
         } else {
             const stdMat = new THREE.MeshStandardMaterial({

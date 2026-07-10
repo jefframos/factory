@@ -31,5 +31,7 @@
     "mute": "Muet",
     "unmute": "Désactiver le mode silencieux",
     "you": "pour vous",
-    "boostButtonLabel": "BOOST"
+    "boostButtonLabel": "BOOST",
+    "quitRun": "-",
+    "quitRunConfirm": "Terminer votre course maintenant et aller directement à l'écran de score final ?"
 }

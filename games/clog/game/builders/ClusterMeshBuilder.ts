@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ISLAND_TEXTURE_CONFIG } from '../world/MeshConfig';
 
 /**
  * Builds a voxel-style BufferGeometry for a connected cluster of grid cells.
@@ -41,112 +42,6 @@ export class ClusterMeshBuilder {
     }
 
 
-    static roundAllEdges(
-        cells: [number, number][],
-        cellSize: number,
-        height: number,
-        depthBelow: number,
-        originX: number,
-        originZ: number,
-        radius: number,
-        segments = 4,
-    ): THREE.BufferGeometry {
-        const totalH = height + depthBelow;
-        const r = Math.min(radius, cellSize * 0.45, totalH * 0.45);
-
-        const cellSet = new Set(cells.map(([c, r]) => `${c},${r}`));
-        const edges: Array<[[number, number], [number, number]]> = [];
-
-        const has = (c: number, r: number) => cellSet.has(`${c},${r}`);
-
-        for (const [col, row] of cells) {
-            const x0 = originX + col * cellSize;
-            const x1 = originX + (col + 1) * cellSize;
-            const z0 = originZ + row * cellSize;
-            const z1 = originZ + (row + 1) * cellSize;
-
-            if (!has(col, row - 1)) edges.push([[x0, z0], [x1, z0]]);
-            if (!has(col + 1, row)) edges.push([[x1, z0], [x1, z1]]);
-            if (!has(col, row + 1)) edges.push([[x1, z1], [x0, z1]]);
-            if (!has(col - 1, row)) edges.push([[x0, z1], [x0, z0]]);
-        }
-
-        const key = (p: [number, number]) => `${p[0]},${p[1]}`;
-        const edgeMap = new Map<string, [number, number]>();
-
-        for (const [a, b] of edges) {
-            edgeMap.set(key(a), b);
-        }
-
-        const start = edges[0][0];
-        const points: [number, number][] = [start];
-
-        let current = start;
-
-        while (true) {
-            const next = edgeMap.get(key(current));
-            if (!next) break;
-
-            if (key(next) === key(start)) break;
-
-            points.push(next);
-            current = next;
-        }
-
-        const shape = new THREE.Shape();
-
-        for (let i = 0; i < points.length; i++) {
-            const prev = points[(i - 1 + points.length) % points.length];
-            const curr = points[i];
-            const next = points[(i + 1) % points.length];
-
-            const v1x = curr[0] - prev[0];
-            const v1z = curr[1] - prev[1];
-            const v2x = next[0] - curr[0];
-            const v2z = next[1] - curr[1];
-
-            const len1 = Math.hypot(v1x, v1z);
-            const len2 = Math.hypot(v2x, v2z);
-
-            const p1: [number, number] = [
-                curr[0] - (v1x / len1) * r,
-                curr[1] - (v1z / len1) * r,
-            ];
-
-            const p2: [number, number] = [
-                curr[0] + (v2x / len2) * r,
-                curr[1] + (v2z / len2) * r,
-            ];
-
-            if (i === 0) {
-                shape.moveTo(p1[0], p1[1]);
-            } else {
-                shape.lineTo(p1[0], p1[1]);
-            }
-
-            shape.quadraticCurveTo(curr[0], curr[1], p2[0], p2[1]);
-        }
-
-        shape.closePath();
-
-        const geo = new THREE.ExtrudeGeometry(shape, {
-            depth: totalH,
-            bevelEnabled: true,
-            bevelSize: r,
-            bevelThickness: r,
-            bevelSegments: segments,
-            curveSegments: segments,
-            steps: 1,
-        });
-
-        geo.rotateX(Math.PI / 2);
-        geo.translate(0, height, 0);
-
-        geo.computeVertexNormals();
-
-        return geo;
-    }
-
     /**
      * Voxel face mesh with quarter-cylinder bevels at all convex outer vertical edges.
      * Adjacent cells share a flat face (no rounding on the interior).
@@ -169,63 +64,6 @@ export class ClusterMeshBuilder {
         const maxR = Math.min(cellSize / 2, totalH / 2) - 0.01;
         const r = Math.min(radius, Math.max(0, maxR));
         return ClusterMeshBuilder._build(cells, cellSize, height, depthBelow, originX, originZ, r, segments);
-    }
-
-    /**
-     * Remaps UV coordinates on geometry produced by roundAllEdges to match the island
-     * texture atlas: U∈[0.5,1] = grass (top faces), U∈[0,0.5] = sand (side/bottom).
-     * ExtrudeGeometry generates world-space UVs that don't respect the atlas split,
-     * so this must be called after roundAllEdges when texture:'island' is used.
-     */
-    static applyIslandAtlasUVs(
-        geo: THREE.BufferGeometry,
-        height: number,
-        depthBelow: number,
-    ): void {
-        geo.computeVertexNormals();
-        const pos    = geo.attributes.position.array as Float32Array;
-        const nor    = geo.attributes.normal.array as Float32Array;
-        const count  = pos.length / 3;
-        const totalH = height + depthBelow;
-
-        // Bounding box of top-face vertices — used to map the grass texture
-        // across the whole cluster without any tile-boundary seams.
-        let minX = Infinity, maxX = -Infinity;
-        let minZ = Infinity, maxZ = -Infinity;
-        for (let i = 0; i < count; i++) {
-            if (nor[i * 3 + 1] > 0.5) {
-                minX = Math.min(minX, pos[i * 3 + 0]);
-                maxX = Math.max(maxX, pos[i * 3 + 0]);
-                minZ = Math.min(minZ, pos[i * 3 + 2]);
-                maxZ = Math.max(maxZ, pos[i * 3 + 2]);
-            }
-        }
-        const spanX = maxX - minX || 1;
-        const spanZ = maxZ - minZ || 1;
-
-        const uvs  = new Float32Array(count * 2);
-        const TILE = 2; // world units per sand texture repeat on side faces
-
-        for (let i = 0; i < count; i++) {
-            const px = pos[i * 3 + 0];
-            const py = pos[i * 3 + 1];
-            const pz = pos[i * 3 + 2];
-            const nx = nor[i * 3 + 0];
-            const ny = nor[i * 3 + 1];
-            const nz = nor[i * 3 + 2];
-
-            if (ny > 0.5) {
-                // Top face → grass [U 0.5–1.0], one mapping across the whole cluster.
-                uvs[i * 2 + 0] = 0.5 + ((px - minX) / spanX) * 0.5;
-                uvs[i * 2 + 1] = (pz - minZ) / spanZ;
-            } else {
-                // Sides → sand [U 0.0–0.5], V from height, tiled along the face.
-                const along = Math.abs(nz) > Math.abs(nx) ? px : pz;
-                uvs[i * 2 + 0] = (((along / TILE) % 1) + 1) % 1 * 0.5;
-                uvs[i * 2 + 1] = totalH > 0 ? (py + depthBelow) / totalH : 0.5;
-            }
-        }
-        geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     }
 
     // ── Internal ──────────────────────────────────────────────────────────────
@@ -252,10 +90,11 @@ export class ClusterMeshBuilder {
         const yBot = -depthBelow;
         const r = radius;
 
-        // ── Quad helper ───────────────────────────────────────────────────────
-        // Texture atlas: left half [U 0–0.5] = sand (sides), right half [U 0.5–1] = grass (top).
-        // UV params: (uA,vA), (uB,vB), (uC,vC), (uD,vD) — one per vertex in order A B C D.
-        // On side faces: v=1 → yTop (where grass cap starts), v=0 → yBot (deep side).
+        // World units the sand texture covers before it just stretches to fill
+        // whatever's left — see sideFace()/bevel() below.
+        const TILE = ISLAND_TEXTURE_CONFIG.tileSize;
+
+        // ── Quad / triangle helpers ────────────────────────────────────────────
         const quad = (
             ax: number, ay: number, az: number,
             bx: number, by: number, bz: number,
@@ -274,8 +113,53 @@ export class ClusterMeshBuilder {
             idx.push(i, i + 1, i + 2, i, i + 2, i + 3);
         };
 
+        const tri = (
+            ax: number, ay: number, az: number,
+            bx: number, by: number, bz: number,
+            cx: number, cy: number, cz: number,
+            nx: number, ny: number, nz: number,
+            uA: number, vA: number,
+            uB: number, vB: number,
+            uC: number, vC: number,
+        ) => {
+            const i = pos.length / 3;
+            pos.push(ax, ay, az, bx, by, bz, cx, cy, cz);
+            nor.push(nx, ny, nz, nx, ny, nz, nx, ny, nz);
+            uv.push(uA, vA, uB, vB, uC, vC);
+            idx.push(i, i + 1, i + 2);
+        };
+
+        // ── Side face helper ───────────────────────────────────────────────────
+        // Texture atlas (see ISLAND_TEXTURE_CONFIG in MeshConfig.ts): left column
+        // [U 0–0.5] = sand — collar (V 0.5–1) over tile (V 0–0.5). The top TILE
+        // world units render the collar at 1:1 scale (it borders the visible grass
+        // edge); everything below — usually underground — squashes/stretches the
+        // tile art to fill whatever height remains, since it's rarely seen.
+        // (ax,az)/(bx,bz) = the face's two vertical edges; u0/u1 = their U coord.
+        const sideFace = (
+            ax: number, az: number,
+            bx: number, bz: number,
+            nx: number, ny: number, nz: number,
+            u0: number, u1: number,
+        ) => {
+            const totalH = yTop - yBot;
+            const collarH = Math.min(TILE, totalH);
+            const yMid = yTop - collarH;
+            const vMid = 1 - (collarH / TILE) * 0.5;
+
+            quad(ax, yTop, az, bx, yTop, bz, bx, yMid, bz, ax, yMid, az, nx, ny, nz,
+                 u0, 1, u1, 1, u1, vMid, u0, vMid);
+
+            if (yMid > yBot) {
+                quad(ax, yMid, az, bx, yMid, bz, bx, yBot, bz, ax, yBot, az, nx, ny, nz,
+                     u0, 0.5, u1, 0.5, u1, 0, u0, 0);
+            }
+        };
+
         // ── Bevel column helper ───────────────────────────────────────────────
-        // Emits a quarter-cylinder strip from yBot to yTop.
+        // Emits a quarter-cylinder strip from yBot to yTop, split into the same
+        // collar/tile bands as sideFace() so a rounded corner matches the flat
+        // faces it joins instead of showing one unified stretch.
         // (cx, cz) = arc centre; a0→a1 = angle range in radians.
         // Per-vertex normals give smooth shading across the curve.
         const bevel = (cx: number, cz: number, a0: number, a1: number) => {
@@ -285,16 +169,43 @@ export class ClusterMeshBuilder {
                 const ca = Math.cos(a), sa = Math.sin(a);
                 pts.push([cx + ca * r, cz + sa * r, ca, sa]);
             }
+
+            const totalH = yTop - yBot;
+            const collarH = Math.min(TILE, totalH);
+            const yMid = yTop - collarH;
+            const vMid = 1 - (collarH / TILE) * 0.5;
+
             for (let s = 0; s < segments; s++) {
                 const [bx0, bz0, bnx0, bnz0] = pts[s];
                 const [bx1, bz1, bnx1, bnz1] = pts[s + 1];
                 const i = pos.length / 3;
                 // CCW winding verified for each quadrant in implementation notes
-                pos.push(bx0, yTop, bz0, bx1, yTop, bz1, bx1, yBot, bz1, bx0, yBot, bz0);
+                pos.push(bx0, yTop, bz0, bx1, yTop, bz1, bx1, yMid, bz1, bx0, yMid, bz0);
                 nor.push(bnx0, 0, bnz0, bnx1, 0, bnz1, bnx1, 0, bnz1, bnx0, 0, bnz0);
-                uv.push(0, 1, 0.25, 1, 0.25, 0, 0, 0); // bevel uses sand region
+                uv.push(0, 1, 0.25, 1, 0.25, vMid, 0, vMid); // bevel uses sand region
                 idx.push(i, i + 1, i + 2, i, i + 2, i + 3);
+
+                if (yMid > yBot) {
+                    const j = pos.length / 3;
+                    pos.push(bx0, yMid, bz0, bx1, yMid, bz1, bx1, yBot, bz1, bx0, yBot, bz0);
+                    nor.push(bnx0, 0, bnz0, bnx1, 0, bnz1, bnx1, 0, bnz1, bnx0, 0, bnz0);
+                    uv.push(0, 0.5, 0.25, 0.5, 0.25, 0, 0, 0);
+                    idx.push(j, j + 1, j + 2, j, j + 2, j + 3);
+                }
             }
+        };
+
+        // Arc points for chamfering a convex corner of the TOP face — the same
+        // quarter-circle as the bevel column below it, so the top face's outline
+        // never overhangs past the rounded corner. Returned in a0→a1 angle order;
+        // callers reverse this to match the top-face perimeter's winding direction.
+        const arcPts = (cx: number, cz: number, a0: number, a1: number): [number, number][] => {
+            const out: [number, number][] = [];
+            for (let s = 0; s <= segments; s++) {
+                const a = a0 + (a1 - a0) * (s / segments);
+                out.push([cx + Math.cos(a) * r, cz + Math.sin(a) * r]);
+            }
+            return out;
         };
 
         // ── Per-cell face emission ────────────────────────────────────────────
@@ -319,40 +230,60 @@ export class ClusterMeshBuilder {
             const rsw = cvxSW ? r : 0;
             const rse = cvxSE ? r : 0;
 
-            // Top face (+Y) — grass atlas region [U 0.5–1.0]
-            quad(x0, yTop, z0, x0, yTop, z1, x1, yTop, z1, x1, yTop, z0, 0, 1, 0,
-                 0.5, 0,  0.5, 1,  1.0, 1,  1.0, 0);
+            // Top face (+Y) — grass quadrant [U 0.5–1, V 0.5–1]. Convex corners are
+            // chamfered with the same arc as the bevel column beneath them (instead
+            // of the plain NW/SW/SE/NW square), then fan-triangulated; with no
+            // rounding this reduces to the exact same two triangles as a flat quad.
+            // Bottom faces are never visible (mesh sits on/above the floor) so
+            // they're not emitted.
+            const perim: [number, number][] = [];
+            if (cvxNW) perim.push(...arcPts(x0 + r, z0 + r, Math.PI, Math.PI * 1.5).reverse());
+            else perim.push([x0, z0]);
+            if (cvxSW) perim.push(...arcPts(x0 + r, z1 - r, Math.PI * 0.5, Math.PI).reverse());
+            else perim.push([x0, z1]);
+            if (cvxSE) perim.push(...arcPts(x1 - r, z1 - r, 0, Math.PI * 0.5).reverse());
+            else perim.push([x1, z1]);
+            if (cvxNE) perim.push(...arcPts(x1 - r, z0 + r, Math.PI * 1.5, Math.PI * 2).reverse());
+            else perim.push([x1, z0]);
 
-            // Bottom face (-Y) — sand region (not typically visible)
-            quad(x0, yBot, z0, x1, yBot, z0, x1, yBot, z1, x0, yBot, z1, 0, -1, 0,
-                 0, 0,  0.5, 0,  0.5, 1,  0, 1);
+            const topUv = (px: number, pz: number): [number, number] => [
+                0.5 + ((px - x0) / cs) * 0.5,
+                0.5 + ((pz - z0) / cs) * 0.5,
+            ];
+
+            for (let i = 1; i < perim.length - 1; i++) {
+                const [p0x, p0z] = perim[0];
+                const [pix, piz] = perim[i];
+                const [pjx, pjz] = perim[i + 1];
+                const [u0v, v0v] = topUv(p0x, p0z);
+                const [uiv, viv] = topUv(pix, piz);
+                const [ujv, vjv] = topUv(pjx, pjz);
+                tri(p0x, yTop, p0z, pix, yTop, piz, pjx, yTop, pjz, 0, 1, 0,
+                    u0v, v0v, uiv, viv, ujv, vjv);
+            }
 
             // North side (-Z): skip if north neighbour is in the cluster
             if (!has(col, row - 1)) {
                 const uR = ((cs - rnw - rne) / cs) * 0.5;
-                quad(x0 + rnw, yTop, z0, x1 - rne, yTop, z0, x1 - rne, yBot, z0, x0 + rnw, yBot, z0, 0, 0, -1,
-                     0, 1,  uR, 1,  uR, 0,  0, 0);
+                sideFace(x0 + rnw, z0, x1 - rne, z0, 0, 0, -1, 0, uR);
             }
 
             // South side (+Z): skip if south neighbour is in the cluster
             if (!has(col, row + 1)) {
                 const uR = ((cs - rsw - rse) / cs) * 0.5;
-                quad(x1 - rse, yTop, z1, x0 + rsw, yTop, z1, x0 + rsw, yBot, z1, x1 - rse, yBot, z1, 0, 0, 1,
-                     uR, 1,  0, 1,  0, 0,  uR, 0);
+                sideFace(x1 - rse, z1, x0 + rsw, z1, 0, 0, 1, uR, 0);
             }
 
             // West side (-X): skip if west neighbour is in the cluster
             if (!has(col - 1, row)) {
                 const uR = ((cs - rsw - rnw) / cs) * 0.5;
-                quad(x0, yTop, z1 - rsw, x0, yTop, z0 + rnw, x0, yBot, z0 + rnw, x0, yBot, z1 - rsw, -1, 0, 0,
-                     uR, 1,  0, 1,  0, 0,  uR, 0);
+                sideFace(x0, z1 - rsw, x0, z0 + rnw, -1, 0, 0, uR, 0);
             }
 
             // East side (+X): skip if east neighbour is in the cluster
             if (!has(col + 1, row)) {
                 const uR = ((cs - rne - rse) / cs) * 0.5;
-                quad(x1, yTop, z0 + rne, x1, yTop, z1 - rse, x1, yBot, z1 - rse, x1, yBot, z0 + rne, 1, 0, 0,
-                     0, 1,  uR, 1,  uR, 0,  0, 0);
+                sideFace(x1, z0 + rne, x1, z1 - rse, 1, 0, 0, 0, uR);
             }
 
             // Bevel columns at convex outer vertical edges (no-op when r === 0)

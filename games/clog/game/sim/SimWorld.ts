@@ -15,6 +15,8 @@ export type EntitySnapshot = {
     value: number;
     /** Sorted descending by value. tail[last] is the weakest cube — the snipe target. */
     tail: TailEntry[];
+    /** True for the one entity tagged via SimWorld.setPlayer — lets a query tell the real player apart from every bot without an identity check of its own. */
+    isPlayer: boolean;
 };
 
 export type SimQueryResult = {
@@ -112,6 +114,7 @@ export class SimWorld {
                     eatPosition: e.eatPosition,
                     value:       e.value,
                     tail:        e.tailSnapshot(),
+                    isPlayer:    e === this.player,
                 });
             }
         }

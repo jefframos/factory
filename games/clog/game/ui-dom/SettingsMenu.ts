@@ -5,7 +5,7 @@ import { PLAYER_NAME_KEY } from '../scenes/BaseDemoScene';
 import { Localization } from '../i18n/Localization';
 import { renderLanguageRow } from './LanguagePicker';
 import { ConfirmationPopup } from '../dom-ui/ConfirmationPopup';
-import { panelHeading } from '../dom-ui/PanelChrome';
+import { panelHeading, withTap } from '../dom-ui/PanelChrome';
 
 /** Mirrors the .btn-* role classes in ../dom-ui/buttons.css. */
 type BtnRole = 'primary' | 'secondary' | 'accent' | 'shop' | 'danger';
@@ -45,6 +45,6 @@ function button(label: string, onClick: () => void, opts: { role?: BtnRole } = {
     btn.textContent = label;
     btn.className = `btn btn-${opts.role ?? 'secondary'} btn-md btn-block`;
     btn.style.marginTop = '8px';
-    btn.addEventListener('click', onClick);
+    btn.addEventListener('click', withTap(onClick));
     return btn;
 }

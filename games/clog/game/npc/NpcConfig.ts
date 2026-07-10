@@ -6,10 +6,10 @@
 
 export const NPC_POPULATION_CONFIG = {
     /** Total persistent NPC records — constant; entries are recycled, never added/removed. */
-    rosterSize: 24,
+    rosterSize: 35,
     /** How many roster entries are materialized as real, on-screen bots near the player at once. */
     activeMin: 4,
-    activeMax: 6,
+    activeMax: 8,
     /** Head value a record resets to after being killed (by another idle NPC, or for real via EntityEating). */
     respawnValue: 2,
     /**
@@ -21,15 +21,19 @@ export const NPC_POPULATION_CONFIG = {
      * populations — an older room just simulates more seconds. See
      * NpcRoster.seedPopulation / GrowthSimulator.
      */
-    seedElapsedSeconds: 600,
+    seedElapsedSeconds: 900,
     /**
      * Exponent shaping each record's simulated feeding-time budget out of
      * seedElapsedSeconds (rank^skew, rank 0 = weakest .. 1 = the leader) —
      * see NpcRoster.seedPopulation. Higher = most records get a much shorter
      * effective feeding window (staying close to respawnValue) while only
-     * the very top ranks approach the full seedElapsedSeconds.
+     * the very top ranks approach the full seedElapsedSeconds. Lowered from
+     * 4 alongside the seedElapsedSeconds bump above so the top of the
+     * leaderboard reads meaningfully higher, not just the same curve
+     * stretched — rank is normalized (rank/(n-1)) so a bigger roster alone
+     * doesn't raise the leader's budget on its own.
      */
-    seedSkew: 4,
+    seedSkew: 3,
 };
 
 export const NPC_SAFE_START_CONFIG = {
@@ -134,4 +138,32 @@ export const NPC_HUNT_CONFIG = {
     valueThreshold: 32,
     /** Multiple of a hunter's own value it's willing to chase — see valueThreshold. */
     preyCeilingMult: 1.3,
+};
+
+export const NPC_RUBBERBAND_CONFIG = {
+    /**
+     * The real player's score must beat the best score anywhere in the NPC
+     * roster (active or idle) by at least this multiple to count as
+     * "leading" — see NpcDirector.isPlayerLeading. Below this margin, a
+     * player who's merely tied for the top spot doesn't trigger anything.
+     */
+    leadMarginMult: 1.15,
+    /**
+     * While leading, this fraction of new NPC materializations near the
+     * player deliberately pick the single biggest available idle record
+     * (instead of NpcDirector's normal weak-bias/uniform-random pick) and
+     * roll it as a hunter — see NpcDirector.materializeOne.
+     */
+    hunterSpawnChance: 0.5,
+    /** Aggressiveness forced onto a rubber-band hunter spawn, overriding the normal jitter/low-level cap. */
+    hunterAggressiveness: 1,
+    /**
+     * A rubber-band hunter is willing to chase the real player specifically
+     * even while the player is bigger than it, as long as its own value is
+     * at least this fraction of the player's — see BotParams.huntsBiggerPrey
+     * and chaseWeakerPrey. Deliberately player-only (checked via
+     * EntitySnapshot.isPlayer): this doesn't make hunters generally braver
+     * against other big NPCs, just against whoever's actually winning.
+     */
+    hunterMinValueRatio: 0.55,
 };

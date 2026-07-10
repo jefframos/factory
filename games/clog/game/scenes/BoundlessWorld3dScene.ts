@@ -29,6 +29,8 @@ import { DevGuiManager } from 'core/utils/DevGuiManager';
 import type { NpcHostScene } from '../npc/NpcHostScene';
 import { NpcDirector } from '../npc/NpcDirector';
 import { Localization } from '../i18n/Localization';
+import { TextureBuilder } from '../builders/TextureBuilder';
+import { deriveWaterTones, getDefaultIsland, parseHexColor, resolveIslandImagePath, shadeColor } from '../world/IslandStorage';
 
 const PERF_MODE = new URLSearchParams(window.location.search).has('perf');
 
@@ -126,7 +128,11 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     public async build(): Promise<void> {
-        this.threeScene.background = new THREE.Color(0x4ab8f0);
+        const island = getDefaultIsland();
+        await TextureBuilder.loadRealIsland(resolveIslandImagePath(island.texture));
+
+        const skyColor = parseHexColor(island.skyColor);
+        this.threeScene.background = new THREE.Color(skyColor);
         this.threeScene.add(this.threeCamera);
 
         this.gradient.build({
@@ -134,16 +140,16 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
             mode: 'four-way',
             distance: 30,
             fourWay: {
-                topColor: 0x4AB8F0,
-                leftColor: 0x42aaee,
-                bottomColor: 0x90d8f8,
-                rightColor: 0x42aaee,
+                topColor: skyColor,
+                leftColor: shadeColor(skyColor, -0.03),
+                bottomColor: shadeColor(skyColor, 0.35),
+                rightColor: shadeColor(skyColor, -0.03),
                 radius: 1.5,
                 speed: 0.03,
             },
         });
 
-        this.threeScene.add(new THREE.AmbientLight(0xffffff, 0.9));
+        this.threeScene.add(new THREE.AmbientLight(parseHexColor(island.ambientColor), 0.9));
         const key = new THREE.DirectionalLight(0xfff4dd, 1.6);
         key.position.set(5, 10, 7.5);
         this.threeScene.add(key);
@@ -633,10 +639,11 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     private buildFloor(): THREE.Mesh {
         const SIZE = 160;
         const SEGMENTS = 64;
-        const { shader: floorShader, opacity, elevation, waterColors, roughness } = ROOM_GEOMETRY.floor;
+        const { shader: floorShader, opacity, elevation, roughness } = ROOM_GEOMETRY.floor;
 
         let mat: THREE.Material;
         if (floorShader === 'water') {
+            const waterColors = deriveWaterTones(parseHexColor(getDefaultIsland().waterColor));
             mat = createWaterMaterial(opacity, elevation, waterColors);
         } else {
             const stdMat = new THREE.MeshStandardMaterial({

@@ -31,5 +31,7 @@
     "mute": "Mute",
     "unmute": "Stummschaltung aufheben",
     "you": "You",
-    "boostButtonLabel": "BELEBEND"
+    "boostButtonLabel": "BELEBEND",
+    "quitRun": "Endlauf",
+    "quitRunConfirm": "Beenden Sie jetzt Ihren Lauf und gehen Sie direkt zum Endergebnisbildschirm?"
 }

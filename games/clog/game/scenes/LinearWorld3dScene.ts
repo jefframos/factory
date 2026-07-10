@@ -1,12 +1,16 @@
 import { ThreeScene } from 'core/scene/ThreeScene';
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
+import SoundManager from 'core/audio/SoundManager';
+import Assets from '../../Assets';
 import { PlayerEntity } from '../entities/PlayerEntity';
 import { BendService } from '../services/BendService';
 import { CollectibleManager } from '../systems/CollectibleManager';
 import { LevelManager } from '../systems/LevelManager';
 import { LinearAreaManager } from '../world/LinearAreaManager';
 import { CAMERA_CONFIG, FOOD_CONFIG } from '../world/LinearConfig';
+import { TextureBuilder } from '../builders/TextureBuilder';
+import { getDefaultIsland, parseHexColor, resolveIslandImagePath, shadeColor } from '../world/IslandStorage';
 import { DEFAULT_START_VALUE } from '../ClogConstants';
 import FourCornersGradientBuilder from '../vfx/FourCornersGradientBuilder';
 import { WaterSplashSystem } from '../vfx/WaterSplashSystem';
@@ -74,7 +78,11 @@ export default class LinearWorld3dScene extends ThreeScene {
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     public async build(): Promise<void> {
-        this.threeScene.background = new THREE.Color(0x4ab8f0);
+        const island = getDefaultIsland();
+        await TextureBuilder.loadRealIsland(resolveIslandImagePath(island.texture));
+
+        const skyColor = parseHexColor(island.skyColor);
+        this.threeScene.background = new THREE.Color(skyColor);
         this.threeScene.add(this.threeCamera);
 
         this.gradient.build({
@@ -82,10 +90,10 @@ export default class LinearWorld3dScene extends ThreeScene {
             mode: 'four-way',
             distance: 30,
             fourWay: {
-                topColor: 0x4AB8F0,
-                leftColor: 0x42aaee,
-                bottomColor: 0x90d8f8,
-                rightColor: 0x42aaee,
+                topColor: skyColor,
+                leftColor: shadeColor(skyColor, -0.03),
+                bottomColor: shadeColor(skyColor, 0.35),
+                rightColor: shadeColor(skyColor, -0.03),
                 radius: 1.5,
                 speed: 0.03,
             },
@@ -93,7 +101,7 @@ export default class LinearWorld3dScene extends ThreeScene {
 
 
 
-        this.threeScene.add(new THREE.AmbientLight(0xffffff, 0.9));
+        this.threeScene.add(new THREE.AmbientLight(parseHexColor(island.ambientColor), 0.9));
         const key = new THREE.DirectionalLight(0xfff4dd, 1.6);  // warm key from above-right
         key.position.set(5, 10, 7.5);
         this.threeScene.add(key);
@@ -108,6 +116,7 @@ export default class LinearWorld3dScene extends ThreeScene {
         this.linearManager.onTransition = ({ prevMinZ, prevMaxZ }) => {
             this.collectibles.clearInZRange(prevMinZ, prevMaxZ);
             this.spawnFoodInGrid(this.linearManager.nextConfig.foodValues, FOOD_CONFIG.initialCount, this.linearManager.nextGrid);
+            SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.GateOpen);
         };
 
         // Seed food in rooms 0 and 1 at startup.

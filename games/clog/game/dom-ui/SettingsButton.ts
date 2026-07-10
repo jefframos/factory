@@ -1,6 +1,6 @@
 import { DomUiRoot } from './DomUiRoot';
 import { ModalOverlay } from './ModalOverlay';
-import { PANEL_TRANSLUCENT_BACKGROUND, panelCloseButton } from './PanelChrome';
+import { PANEL_TRANSLUCENT_BACKGROUND, panelCloseButton, withTap } from './PanelChrome';
 import { Localization } from '../i18n/Localization';
 import settingsIcon from './images/settings.png';
 
@@ -44,7 +44,7 @@ export class SettingsButton {
         Object.assign(icon.style, { width: '20px', height: '20px' });
         this.element.appendChild(icon);
 
-        this.element.addEventListener('click', () => this.open());
+        this.element.addEventListener('click', withTap(() => this.open()));
 
         DomUiRoot.instance.mount(this.element);
         DomUiRoot.instance.mount(this.overlay.element);

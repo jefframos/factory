@@ -1,8 +1,9 @@
 import { DomUiRoot } from '../dom-ui/DomUiRoot';
+import { DragPathHint } from '../dom-ui/DragPathHint';
 import { Localization } from '../i18n/Localization';
 import * as PIXI from 'pixi.js';
 
-const HIDE_DELAY = 600; // ms after the first move before the hint fades out — lets the player see it actually worked
+const HIDE_DELAY = 2500; // ms after the first move before the hint fades out — long enough to actually read the "how to move" text, not just flash past it
 const FADE_DURATION = 400; // ms, must match the opacity transition below
 
 function startText(): string {
@@ -26,10 +27,15 @@ function moveText(): string {
  * its own `transform: scale(...)`, which would otherwise clobber the
  * wrapper's `translateX(-50%)` centering (both can't animate the same
  * `transform` property independently).
+ *
+ * Also drives DragPathHint (the animated infinity-path/hand-icon visual) —
+ * shown/hidden in lockstep with this hint's own label, for exactly as long
+ * as the tutorial is up.
  */
 export class MovementHint {
     readonly element: HTMLDivElement;
     private readonly label: HTMLDivElement;
+    private readonly dragHint = new DragPathHint();
     private hideTimer: number | null = null;
     /** Which text the label should show right now — flipped by registerMove(), re-applied on a locale change (see refreshText). */
     private moved = false;
@@ -42,6 +48,9 @@ export class MovementHint {
             bottom: '140px',
             transform: 'translateX(-50%)',
             display: 'none',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '10px',
             opacity: '0',
             transition: `opacity ${FADE_DURATION}ms ease`,
             pointerEvents: 'none',
@@ -60,6 +69,8 @@ export class MovementHint {
         });
         this.label.textContent = startText();
         this.element.appendChild(this.label);
+        // Below the label (see the class doc comment) — column flex above handles the stacking.
+        this.element.appendChild(this.dragHint.element);
 
         DomUiRoot.instance.mount(this.element);
         Localization.onLocaleChange.add(this.refreshText, this);
@@ -76,10 +87,11 @@ export class MovementHint {
         }
         this.moved = false;
         this.label.textContent = startText();
-        this.element.style.display = 'inline-flex';
+        this.element.style.display = 'flex';
         // Force a paint with opacity still 0 before animating it to 1, so the
         // transition actually plays instead of jumping straight to visible.
         requestAnimationFrame(() => { this.element.style.opacity = '1'; });
+        this.dragHint.show();
     }
 
     /** Call on every move-input event; only the first call after a show() swaps in the "how to move" text and starts the fade-out countdown. */
@@ -102,11 +114,13 @@ export class MovementHint {
     private hide(): void {
         this.element.style.opacity = '0';
         window.setTimeout(() => { this.element.style.display = 'none'; }, FADE_DURATION);
+        this.dragHint.hide();
     }
 
     destroy(): void {
         if (this.hideTimer !== null) window.clearTimeout(this.hideTimer);
         Localization.onLocaleChange.remove(this.refreshText, this);
         DomUiRoot.instance.unmount(this.element);
+        this.dragHint.destroy();
     }
 }

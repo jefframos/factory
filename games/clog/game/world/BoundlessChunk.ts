@@ -6,6 +6,8 @@ import { BendService } from '../services/BendService';
 import { TextureBuilder } from '../builders/TextureBuilder';
 import { TILE_DEFS, type TileConfig } from './MeshConfig';
 
+const DEBUG_MESH = new URLSearchParams(window.location.search).has('debugMesh');
+
 // World units per chunk. Each chunk may contain one island.
 export const CHUNK_SIZE = 40;
 
@@ -70,7 +72,7 @@ function resolveTile(t: TileConfig): ResolvedTile {
 
 const tileMaterialCache = new Map<number, THREE.MeshStandardMaterial>();
 
-function getTileMaterial(cellType: number, cfg: ResolvedTile, islandTex: THREE.CanvasTexture | null): THREE.MeshStandardMaterial {
+function getTileMaterial(cellType: number, cfg: ResolvedTile, islandTex: THREE.Texture | null): THREE.MeshStandardMaterial {
     const cached = tileMaterialCache.get(cellType);
     if (cached) return cached;
 
@@ -89,6 +91,17 @@ function getTileMaterial(cellType: number, cfg: ResolvedTile, islandTex: THREE.C
     return mat;
 }
 
+/**
+ * Disposes and clears every cached tile material — call whenever the active
+ * island's texture changes (see BaseDemoScene.spawnFreshWorld), otherwise
+ * getTileMaterial() keeps handing out the material built against whichever
+ * island was active the first time each cellType was ever built.
+ */
+export function clearTileMaterialCache(): void {
+    for (const mat of tileMaterialCache.values()) mat.dispose();
+    tileMaterialCache.clear();
+}
+
 // ── BoundlessChunk ────────────────────────────────────────────────────────────
 
 export class BoundlessChunk {
@@ -103,6 +116,7 @@ export class BoundlessChunk {
     readonly grid: RoomGrid | null;
 
     private sceneMeshes: THREE.Mesh[] = [];
+    private debugMeshes: THREE.Object3D[] = [];
 
     constructor(chunkX: number, chunkZ: number, scene: THREE.Scene) {
         this.chunkX = chunkX;
@@ -156,6 +170,15 @@ export class BoundlessChunk {
             m.geometry.dispose();
         }
         this.sceneMeshes = [];
+
+        for (const m of this.debugMeshes) {
+            scene.remove(m);
+            if (m instanceof THREE.LineSegments) {
+                m.geometry.dispose();
+                (m.material as THREE.Material).dispose();
+            }
+        }
+        this.debugMeshes = [];
     }
 
     // ── Mesh building — mirrors LinearArea.buildGridWallMeshes ────────────────
@@ -198,13 +221,9 @@ export class BoundlessChunk {
                     }
                 }
 
-                let geo: THREE.BufferGeometry;
-                if (cfg.radius > 0) {
-                    geo = ClusterMeshBuilder.roundAllEdges(island, cs, cfg.height, cfg.depthBelow, grid.originX, grid.originZ, cfg.radius, 3);
-                    if (islandTex) ClusterMeshBuilder.applyIslandAtlasUVs(geo, cfg.height, cfg.depthBelow);
-                } else {
-                    geo = ClusterMeshBuilder.buildGeometry(island, cs, cfg.height, cfg.depthBelow, grid.originX, grid.originZ);
-                }
+                const geo = cfg.radius > 0
+                    ? ClusterMeshBuilder.roundEdges(island, cs, cfg.height, cfg.depthBelow, grid.originX, grid.originZ, cfg.radius, 3)
+                    : ClusterMeshBuilder.buildGeometry(island, cs, cfg.height, cfg.depthBelow, grid.originX, grid.originZ);
                 geometries.push(geo);
             }
         }
@@ -228,5 +247,17 @@ export class BoundlessChunk {
         mesh.frustumCulled = false;
         scene.add(mesh);
         this.sceneMeshes.push(mesh);
+
+        // ?debugMesh — overlay the real triangle edges so sparse/uneven vertex
+        // density (the usual cause of UV tiling looking "wrong") is visible
+        // directly on the mesh instead of guessed at.
+        if (DEBUG_MESH && islandTex) {
+            const wire = new THREE.LineSegments(
+                new THREE.WireframeGeometry(merged),
+                new THREE.LineBasicMaterial({ color: 0x00ff00 }),
+            );
+            scene.add(wire);
+            this.debugMeshes.push(wire);
+        }
     }
 }

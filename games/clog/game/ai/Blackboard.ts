@@ -15,6 +15,15 @@ export type BotParams = {
     wanderSpeed: number;
     /** World-units from spawn a bot is allowed to wander before being steered back — keeps it inside the terrain that's always streamed in around the player, so it can't drift into an unloaded chunk and get trapped when that chunk's obstacles are later generated on top of it. */
     leashRadius: number;
+    /**
+     * Rubber-band flag — when true, chaseWeakerPrey is willing to go after
+     * the real player specifically even while the player is bigger than this
+     * bot (down to NPC_RUBBERBAND_CONFIG.hunterMinValueRatio of the player's
+     * value). Never set for ordinary spawns — only NpcDirector's hunter-
+     * biased materializations while the player is leading by a margin. See
+     * NPC_RUBBERBAND_CONFIG.
+     */
+    huntsBiggerPrey?: boolean;
 };
 
 export const DEFAULT_BOT_PARAMS: BotParams = {
@@ -23,6 +32,7 @@ export const DEFAULT_BOT_PARAMS: BotParams = {
     fleeThreshold: 0.6,
     wanderSpeed: 0.6,
     leashRadius: 55,
+    huntsBiggerPrey: false,
 };
 
 /**

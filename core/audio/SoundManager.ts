@@ -8,12 +8,29 @@ export interface SoundProperties {
 	loop?: boolean;
 }
 
+/** One-shot SFX definition: a sound (or pool of variants to pick from at random) plus optional volume/pitch jitter ranges. Used with SoundManager.tryToPlaySound — see e.g. games/clog/Assets.ts for how a game's static sound registry is typed against this. */
+export interface SoundAsset {
+	soundId: string | string[];
+	volumeMinMax?: [number, number] | number;
+	pitchMinMax?: [number, number] | number;
+}
+
 export default class SoundManager {
 	static STORAGE_ID = "gameName";
 	private static _instance: SoundManager | null = null;
 	private masterSfxVolume: number = 1;
+	/** Backward-compat mirror of layerVolumes.get("default") — see setMasterAmbientVolume. */
 	private masterAmbientVolume: number = 1;
-	private currentBackgroundSound?: Howl;
+	/**
+	 * Looping background sounds, keyed by an arbitrary layer name so more than
+	 * one can play at once — e.g. a persistent music bed on a "music" layer
+	 * ducked (not stopped) under a gameplay "ambient" layer, rather than one
+	 * hard-swapping the other. Games that only ever call playBackgroundSound
+	 * with the default layer keep the old single-track behavior for free.
+	 */
+	private backgroundLayers: Map<string, Howl> = new Map();
+	/** Target volume per layer — reapplied by setLayerVolume/restoreSound even while nothing is currently loaded into that layer. */
+	private layerVolumes: Map<string, number> = new Map();
 	private activeSounds: Set<string> = new Set();
 	private soundEndListeners: Map<string, boolean> = new Map();
 
@@ -23,7 +40,7 @@ export default class SoundManager {
 	private _isMuted: boolean = false;
 
 	private previousMasterSfxVolume: number | null = null;
-	private previousMasterAmbientVolume: number | null = null;
+	private previousLayerVolumes: Map<string, number> | null = null;
 
 	private constructor() {
 		// Load saved state (defaults to false if not found)
@@ -115,6 +132,36 @@ export default class SoundManager {
 	}
 	// --- Existing Methods Updated/Maintained ---
 
+	/**
+	 * Resolves a SoundAsset (picking a random variant and rolling volume/pitch
+	 * within their ranges) and plays it as a one-shot SFX. No-op if soundId is
+	 * undefined/empty. This is the shared implementation every game's static
+	 * Assets registry used to duplicate as `tryToPlaySound`/`getRange`/`getRandom`.
+	 */
+	public tryToPlaySound(soundAsset: SoundAsset): void {
+		const id = this.pickVariant(soundAsset.soundId);
+		if (!id) return;
+
+		void this.playSoundById(id, {
+			volume: SoundManager.resolveRange(soundAsset.volumeMinMax),
+			pitch: SoundManager.resolveRange(soundAsset.pitchMinMax),
+		});
+	}
+
+	private pickVariant(value?: string | string[]): string | undefined {
+		if (value === undefined) return undefined;
+		if (typeof value === "string") return value;
+		return value[Math.floor(Math.random() * value.length)];
+	}
+
+	private static resolveRange(value?: number | [number, number]): number {
+		if (value === undefined) return 1;
+		if (typeof value === "number") return value;
+
+		const [min, max] = value;
+		return Math.random() * (max - min) + min;
+	}
+
 	public async playSoundById(name: string, properties: SoundProperties = {}): Promise<void> {
 		const soundLoadManager = SoundLoadManager.instance;
 		let audioAsset = soundLoadManager.getSound(name);
@@ -148,9 +195,17 @@ export default class SoundManager {
 		}
 	}
 
-	public async playBackgroundSound(name: string, transitionDuration: number = 0): Promise<void> {
+	/**
+	 * Starts a looping background sound on `layer` (default: "default"),
+	 * fading out/stopping whatever was already playing on that same layer.
+	 * Other layers are untouched — e.g. a "music" layer can keep playing
+	 * straight through a "ambient" layer starting up alongside it. Starts at
+	 * that layer's last volume set via setLayerVolume/setMasterAmbientVolume
+	 * (1 if never set).
+	 */
+	public async playBackgroundSound(name: string, transitionDuration: number = 0, layer: string = "default"): Promise<void> {
 		const soundLoadManager = SoundLoadManager.instance;
-		const oldSound = this.currentBackgroundSound;
+		const oldSound = this.backgroundLayers.get(layer);
 
 		// 1. Handle Fading Out the old sound
 		if (oldSound) {
@@ -171,18 +226,53 @@ export default class SoundManager {
 
 		if (audioAsset?.howlInstance) {
 			const newSound = audioAsset.howlInstance;
-			this.currentBackgroundSound = newSound;
+			this.backgroundLayers.set(layer, newSound);
+			const targetVolume = this.layerVolumes.get(layer) ?? 1;
 
 			newSound.loop(true);
 
 			if (transitionDuration > 0) {
-				newSound.fade(0, this.masterAmbientVolume, transitionDuration);
+				newSound.fade(0, targetVolume, transitionDuration);
 			} else {
-				newSound.volume(this.masterAmbientVolume);
+				newSound.volume(targetVolume);
 			}
 
 			newSound.play();
 		}
+	}
+
+	/**
+	 * Sets (and optionally fades to) a background layer's volume — the way to
+	 * duck a persistent music layer under a gameplay ambient layer without
+	 * stopping either. Remembered even if nothing is currently loaded into
+	 * that layer yet, so it applies as soon as playBackgroundSound starts one.
+	 */
+	public setLayerVolume(layer: string, volume: number, fadeDuration: number = 0): void {
+		this.layerVolumes.set(layer, volume);
+		if (layer === "default") this.masterAmbientVolume = volume;
+
+		const sound = this.backgroundLayers.get(layer);
+		if (!sound) return;
+
+		if (fadeDuration > 0) {
+			sound.fade(sound.volume(), volume, fadeDuration);
+		} else {
+			sound.volume(volume);
+		}
+	}
+
+	/** Fades out (or stops outright) and clears whatever is playing on `layer`. */
+	public stopLayer(layer: string, fadeDuration: number = 0): void {
+		const sound = this.backgroundLayers.get(layer);
+		if (!sound) return;
+
+		if (fadeDuration > 0) {
+			sound.fade(sound.volume(), 0, fadeDuration);
+			sound.once('fade', () => sound.stop());
+		} else {
+			sound.stop();
+		}
+		this.backgroundLayers.delete(layer);
 	}
 
 	public setMasterSfxVolume(volume: number): void {
@@ -191,11 +281,9 @@ export default class SoundManager {
 		// We update the local variable used when playing new SFX.
 	}
 
+	/** Sugar for setLayerVolume("default", volume) — the single-track API every game used before background layers existed. */
 	public setMasterAmbientVolume(volume: number): void {
-		this.masterAmbientVolume = volume;
-		if (this.currentBackgroundSound) {
-			this.currentBackgroundSound.volume(this.masterAmbientVolume);
-		}
+		this.setLayerVolume("default", volume);
 	}
 
 	public stopAllSounds(): void {
@@ -210,10 +298,10 @@ export default class SoundManager {
 	 */
 	public muteAllSounds(): void {
 		if (this.previousMasterSfxVolume === null) this.previousMasterSfxVolume = this.masterSfxVolume;
-		if (this.previousMasterAmbientVolume === null) this.previousMasterAmbientVolume = this.masterAmbientVolume;
+		if (this.previousLayerVolumes === null) this.previousLayerVolumes = new Map(this.layerVolumes);
 
 		this.setMasterSfxVolume(0);
-		this.setMasterAmbientVolume(0);
+		for (const layer of this.layerVolumes.keys()) this.setLayerVolume(layer, 0);
 		// Optional: Howler.stop() if you want total silence during ads
 	}
 
@@ -222,9 +310,9 @@ export default class SoundManager {
 			this.setMasterSfxVolume(this.previousMasterSfxVolume);
 			this.previousMasterSfxVolume = null;
 		}
-		if (this.previousMasterAmbientVolume !== null) {
-			this.setMasterAmbientVolume(this.previousMasterAmbientVolume);
-			this.previousMasterAmbientVolume = null;
+		if (this.previousLayerVolumes !== null) {
+			for (const [layer, volume] of this.previousLayerVolumes) this.setLayerVolume(layer, volume);
+			this.previousLayerVolumes = null;
 		}
 	}
 }

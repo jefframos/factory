@@ -1,4 +1,5 @@
 import { Localization } from '../i18n/Localization';
+import { withTap } from '../dom-ui/PanelChrome';
 import { SUPPORTED_LOCALES, LOCALE_LABELS, LOCALE_FLAG_CODE, type Locale } from '../i18n/config';
 import flagEng from '../dom-ui/flags/Icon_Flag_eng.png';
 import flagEsp from '../dom-ui/flags/Icon_Flag_esp.png';
@@ -115,18 +116,18 @@ export function renderLanguageRow(container: HTMLElement): void {
         flag.src = flagIcon(locale);
         tile.appendChild(flag);
 
-        if (!isCurrent) tile.addEventListener('click', () => void Localization.setLocale(locale));
+        if (!isCurrent) tile.addEventListener('click', withTap(() => void Localization.setLocale(locale)));
         grid.appendChild(tile);
     }
 
     inner.appendChild(grid);
 
-    row.addEventListener('click', () => {
+    row.addEventListener('click', withTap(() => {
         panelExpanded = !panelExpanded;
         wrap.style.gridTemplateRows = panelExpanded ? '1fr' : '0fr';
         wrap.style.opacity = panelExpanded ? '1' : '0';
         chevron.textContent = panelExpanded ? '▾' : '▸';
-    });
+    }));
 
     container.appendChild(row);
     container.appendChild(wrap);

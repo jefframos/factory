@@ -1,7 +1,7 @@
 import type { PlayerEntity } from '../entities/PlayerEntity';
 import type { BotController } from '../ai/BotController';
 import type { BotParams } from '../ai/Blackboard';
-import { NPC_DIFFICULTY_CONFIG, NPC_PERSONALITY_CONFIG, NPC_POPULATION_CONFIG, NPC_SAFE_START_CONFIG, NPC_SPAWN_CONFIG } from './NpcConfig';
+import { NPC_DIFFICULTY_CONFIG, NPC_PERSONALITY_CONFIG, NPC_POPULATION_CONFIG, NPC_RUBBERBAND_CONFIG, NPC_SAFE_START_CONFIG, NPC_SPAWN_CONFIG } from './NpcConfig';
 import { NpcRoster } from './NpcRoster';
 import { scoreOf, type NpcRecord } from './NpcRecord';
 import type { NpcHostScene } from './NpcHostScene';
@@ -123,19 +123,54 @@ export class NpcDirector {
         // a minimum grace window even for a player who grows past
         // lowLevelPlayerThreshold in the first few seconds via a lucky food run.
         const inGrace = this.sessionTime < NPC_SAFE_START_CONFIG.graceSeconds;
-        const record = this.pickRecordFor(idle, playerValue, inGrace);
+        // Rubber-banding never applies during the new-player grace window —
+        // "leading" this early is just a lucky food run, not dominance worth
+        // punishing. See NPC_RUBBERBAND_CONFIG.
+        const leading = !inGrace && this.isPlayerLeading(host);
+        const forceHunter = leading && Math.random() < NPC_RUBBERBAND_CONFIG.hunterSpawnChance;
+        const record = this.pickRecordFor(idle, playerValue, inGrace, forceHunter);
 
         const { x: px, z: pz } = host.playerPosition;
         const spot = host.findSpawnRing(px, pz, NPC_SPAWN_CONFIG.spawnMinDistance, NPC_SPAWN_CONFIG.spawnMaxDistance);
         if (!spot) return; // no walkable cell out there yet (chunks not streamed that far) — retried next check tick
 
-        const controller = host.materializeNpc(spot, record.value, record.tailValues, record.name, this.rollParams(playerValue, inGrace));
+        const controller = host.materializeNpc(spot, record.value, record.tailValues, record.name, this.rollParams(playerValue, inGrace, forceHunter));
         record.state = 'active';
         this.active.set(record, controller);
     }
 
-    /** See NPC_DIFFICULTY_CONFIG — while the player is low-level (or still inside the wall-clock grace window — see NPC_SAFE_START_CONFIG), prefer weak idle records over a uniform random pick so their first encounters aren't a coin flip against something huge. */
-    private pickRecordFor(idle: NpcRecord[], playerValue: number, inGrace: boolean): NpcRecord {
+    /**
+     * True once the real player's score beats the best score anywhere in the
+     * roster (active bots included, via their live entity score) by
+     * NPC_RUBBERBAND_CONFIG.leadMarginMult — i.e. genuinely dominant, not
+     * just barely tied for 1st. Feeds materializeOne's hunter-spawn bias.
+     */
+    private isPlayerLeading(host: NpcHostScene): boolean {
+        if (this.roster.records.length === 0) return false;
+        let best = 0;
+        for (const record of this.roster.records) {
+            const controller = this.active.get(record);
+            const score = controller ? controller.entity.score : scoreOf(record);
+            if (score > best) best = score;
+        }
+        return host.playerScore >= best * NPC_RUBBERBAND_CONFIG.leadMarginMult;
+    }
+
+    /**
+     * See NPC_DIFFICULTY_CONFIG — while the player is low-level (or still
+     * inside the wall-clock grace window — see NPC_SAFE_START_CONFIG),
+     * prefer weak idle records over a uniform random pick so their first
+     * encounters aren't a coin flip against something huge. `forceHunter`
+     * (rubber-banding — see NPC_RUBBERBAND_CONFIG) overrides that entirely
+     * and instead deliberately picks the single biggest idle record
+     * available, since the point is putting a real threat near a dominant
+     * player, not a random one.
+     */
+    private pickRecordFor(idle: NpcRecord[], playerValue: number, inGrace: boolean, forceHunter: boolean): NpcRecord {
+        if (forceHunter) {
+            return idle.reduce((best, r) => scoreOf(r) > scoreOf(best) ? r : best);
+        }
+
         if (!inGrace && playerValue > NPC_DIFFICULTY_CONFIG.lowLevelPlayerThreshold) {
             return idle[Math.floor(Math.random() * idle.length)];
         }
@@ -146,8 +181,16 @@ export class NpcDirector {
         return pool[Math.floor(Math.random() * pool.length)];
     }
 
-    /** Base BotParams from config, jittered per-NPC so the population isn't identical clones — see NPC_PERSONALITY_CONFIG. Aggressiveness is additionally capped while the player is low-level or still inside the grace window (NPC_DIFFICULTY_CONFIG / NPC_SAFE_START_CONFIG). */
-    private rollParams(playerValue: number, inGrace: boolean): Partial<BotParams> {
+    /**
+     * Base BotParams from config, jittered per-NPC so the population isn't
+     * identical clones — see NPC_PERSONALITY_CONFIG. Aggressiveness is
+     * additionally capped while the player is low-level or still inside the
+     * grace window (NPC_DIFFICULTY_CONFIG / NPC_SAFE_START_CONFIG), or
+     * forced to max plus huntsBiggerPrey when `forceHunter` (rubber-banding
+     * — see NPC_RUBBERBAND_CONFIG) is set; the two overrides can't both
+     * apply since forceHunter is only ever true outside the grace window.
+     */
+    private rollParams(playerValue: number, inGrace: boolean, forceHunter: boolean): Partial<BotParams> {
         const cfg = NPC_PERSONALITY_CONFIG;
         const jitter = (base: number, variance: number, min: number, max: number) =>
             Math.max(min, Math.min(max, base + (Math.random() * 2 - 1) * variance));
@@ -156,6 +199,7 @@ export class NpcDirector {
         if (inGrace || playerValue <= NPC_DIFFICULTY_CONFIG.lowLevelPlayerThreshold) {
             aggressiveness = Math.min(aggressiveness, NPC_DIFFICULTY_CONFIG.lowLevelAggressivenessCap);
         }
+        if (forceHunter) aggressiveness = NPC_RUBBERBAND_CONFIG.hunterAggressiveness;
 
         return {
             aggressiveness,
@@ -163,6 +207,7 @@ export class NpcDirector {
             fleeThreshold: cfg.fleeThreshold,
             wanderSpeed: cfg.wanderSpeed,
             leashRadius: cfg.leashRadius,
+            huntsBiggerPrey: forceHunter,
         };
     }
 }
