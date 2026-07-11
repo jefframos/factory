@@ -579,6 +579,21 @@ export class PlayerEntity implements ISimEntity {
                 from.position.lerpVectors(startPos, this.transform.position, t);
             },
             onDone: () => {
+                // Re-derive the index at execution time, same as enqueueTailMerge's
+                // onDone: this task may have sat queued (not yet active) behind
+                // another merge whose own onDone re-sorted the tail (see
+                // enqueueTailMerge), which can shuffle a bigger cube to the front
+                // and push `from` down to a different index. Blindly splicing
+                // index 0 here used to remove whatever cube ended up there
+                // instead — silently dropping it from tail[] (and the merge
+                // bookkeeping) without destroying it, leaving a stray, permanently
+                // stuck/uncollectible cube in the world.
+                const currentIdx = this.tail.indexOf(from);
+                if (currentIdx === -1) {
+                    dbg("playerMerge.onDone.skip", { reason: "from not in tail (stolen?)" });
+                    this.scheduleMerges();
+                    return;
+                }
                 this.value = Math.max(this.value * 2, from.value);
                 dbg("playerMerge.onDone", { newPlayerVal: this.value });
                 if (this.isRealPlayer) SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Merge);
@@ -586,7 +601,7 @@ export class PlayerEntity implements ISimEntity {
                 this.updateScale();
                 this.startBounce();
                 from.destroy();
-                this.tail.splice(0, 1);
+                this.tail.splice(currentIdx, 1);
                 dbgTail("after playerMerge", this.value, this.tail);
                 this.scheduleMerges();
             },

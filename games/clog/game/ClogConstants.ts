@@ -9,7 +9,7 @@ export const DEFAULT_START_VALUE = 2;
 export const START_BOOST_MULTIPLIER = 16;
 
 /** Seconds the real player is unkillable (no head-eats-head, no tail-snipe) right after spawning or reviving — see PlayerEntity.isInvincible / EntityEating.ts. */
-export const SPAWN_INVINCIBILITY_DURATION = 5;
+export const SPAWN_INVINCIBILITY_DURATION = 6;
 /** Whether the pulsing translucent shield (see components/InvincibilityShield.ts) shows while SPAWN_INVINCIBILITY_DURATION is active — flip to false to disable the visual entirely without touching the underlying invincibility timer/mechanic. */
 export const SHOW_INVINCIBILITY_SHIELD = true;
 
@@ -21,21 +21,21 @@ export const SMALL_VALUE_SPEED_THRESHOLD = 16;
 export const SMALL_VALUE_SPEED_BOOST = 1.2;
 
 /** Multiplier applied to moveSpeed for a short burst right after movement input starts from a standstill — see PlayerEntity.TAP_BOOST_DURATION. Also the multiplier for the manual (held) boost, since both share this same boostActive speed bump in PlayerEntity.update(). */
-export const TAP_BOOST_MULTIPLIER = 1.7;
+export const TAP_BOOST_MULTIPLIER = 2;
 /** Seconds the tap-start speed boost lasts. */
-export const TAP_BOOST_DURATION = 3;
+export const TAP_BOOST_DURATION = 5;
 
 /** Small extra speed multiplier pulsed for EAT_BOOST_DURATION whenever the real player eats a food collectible (not a tail-snipe) — see PlayerEntity.pulseEatBoost. Stacks with the tap/manual boost above rather than replacing it. */
-export const EAT_BOOST_MULTIPLIER = 1.2;
+export const EAT_BOOST_MULTIPLIER = 1.4;
 /** Seconds the eat-food speed pulse lasts. */
-export const EAT_BOOST_DURATION = 0.25;
+export const EAT_BOOST_DURATION = 0.3;
 
 /** Seconds to fully drain the manual (held) boost meter from full — see PlayerEntity.setBoosting. */
-export const MANUAL_BOOST_DRAIN_DURATION = 3;
+export const MANUAL_BOOST_DRAIN_DURATION = 5;
 /** Seconds to fully refill the manual boost meter from empty. */
 export const MANUAL_BOOST_RECHARGE_DURATION = 4;
 /** Fraction of the meter that must refill after a full drain before holding can re-engage the boost — prevents an empty meter from instantly re-triggering on the next frame. */
-export const MANUAL_BOOST_REENGAGE_THRESHOLD = 0.15;
+export const MANUAL_BOOST_REENGAGE_THRESHOLD = 0.5;
 
 export function sizeForValue(value: number): number {
     return 1 + (Math.log2(value) - 1) * SCALE_STEP;

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { CollectibleManager } from '../systems/CollectibleManager';
 import type { BoundlessChunkManager } from '../world/BoundlessChunkManager';
+import { PlayerEntity } from '../entities/PlayerEntity';
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -56,9 +57,9 @@ export interface ISimEntity {
  *   SimWorld.resolveDirection(pos, dir, probe) → adjusted direction
  */
 export class SimWorld {
-    private static entities  = new Set<ISimEntity>();
+    private static entities = new Set<ISimEntity>();
     private static collectibles: CollectibleManager | null = null;
-    private static chunks:       BoundlessChunkManager | null = null;
+    private static chunks: BoundlessChunkManager | null = null;
     /** The human-controlled entity, if any — lets queries opt out of seeing it (debug/AI-testing). */
     private static player: ISimEntity | null = null;
 
@@ -67,18 +68,18 @@ export class SimWorld {
     static init(collectibles: CollectibleManager, chunks: BoundlessChunkManager): void {
         this.entities.clear();
         this.collectibles = collectibles;
-        this.chunks       = chunks;
-        this.player       = null;
+        this.chunks = chunks;
+        this.player = null;
     }
 
     static reset(): void {
         this.entities.clear();
         this.collectibles = null;
-        this.chunks       = null;
-        this.player       = null;
+        this.chunks = null;
+        this.player = null;
     }
 
-    static register(entity: ISimEntity): void   { this.entities.add(entity); }
+    static register(entity: ISimEntity): void { this.entities.add(entity); }
     static unregister(entity: ISimEntity): void { this.entities.delete(entity); }
 
     /** Tags which registered entity is the player, so queries can pass `excludePlayer` to ignore it. */
@@ -106,15 +107,16 @@ export class SimWorld {
         for (const e of this.entities) {
             if (e === self) continue;
             if (opts?.excludePlayer && e === this.player) continue;
+            if ((this.player as PlayerEntity).isInvincible) continue;
             const dx = e.position.x - origin.x;
             const dz = e.position.z - origin.z;
             if (dx * dx + dz * dz <= r2) {
                 entities.push({
-                    position:    e.position,
+                    position: e.position,
                     eatPosition: e.eatPosition,
-                    value:       e.value,
-                    tail:        e.tailSnapshot(),
-                    isPlayer:    e === this.player,
+                    value: e.value,
+                    tail: e.tailSnapshot(),
+                    isPlayer: e === this.player,
                 });
             }
         }

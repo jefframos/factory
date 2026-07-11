@@ -339,14 +339,16 @@ export default class BaseDemoScene extends GameScene {
      * parked preview spawn — so the spawn-invincibility grant always runs
      * here, even on the (already-invincible-from-respawnPlayer) boosted path.
      */
-    private handleJoinServer(startValue: number): void {
+    private async handleJoinServer(startValue: number) {
         if (startValue !== DEFAULT_START_VALUE) this.world3d.respawnPlayer(startValue, []);
         this.world3d.grantPlayerSpawnInvincibility();
+        PlatformHandler.instance.platform.gameplayStart()
+
         HighScoreStorage.markRunStart();
         this.world3d.startNpcPopulation();
         // Eases camDist back out from the close-in menu zoom to the standard
         // value-driven distance (see BoundlessWorld3dScene/LinearWorld3dScene.build()).
-        this.world3d.cameraZoom = 1.0;
+        this.world3d.cameraZoom = PIXI.isMobile.any ? 1.25 : 1.1;
         this.world3d.moveInput.x = 0;
         this.world3d.moveInput.z = 0;
         this.setFlowState('playing');
@@ -385,6 +387,7 @@ export default class BaseDemoScene extends GameScene {
         if (this.flowState !== 'playing') return;
         this.quitToEndGame = true;
         this.world3d.debugKillPlayer();
+        PlatformHandler.instance.platform.gameplayStop()
     }
 
     /** Tears down and rebuilds world3d from scratch — used for the initial boot and for "Continue" after death, since a freshly-built world always starts NPCs-dormant and zoomed in on its own (see BoundlessWorld3dScene/LinearWorld3dScene.build()), which is exactly the state a menu preview needs and a respawn-in-place can't guarantee. */
@@ -496,6 +499,7 @@ export default class BaseDemoScene extends GameScene {
                         // again before "Tap to Start" is even pressed. A rebuilt world
                         // starts NPCs-dormant and zoomed-in on its own — see
                         // spawnFreshWorld / BoundlessWorld3dScene.build().
+                        await PlatformHandler.instance.platform.showCommercialBreak()
                         await this.spawnFreshWorld();
                         this.setFlowState('menu');
                         // Back to a "haven't joined yet" state (fresh world, just like

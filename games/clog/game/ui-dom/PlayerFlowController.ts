@@ -92,6 +92,7 @@ export class PlayerFlowController {
      * offering a Revive for.
      */
     showDeath(snapshot: DeathSnapshot, isNewHighScore: boolean, onRevive: (keepSize: DeathSnapshot) => void, onEndGame: () => void, onContinue: () => void, skipToEndGame: boolean = false): void {
+        PlatformHandler.instance.platform.gameplayStop()
         this.pendingDeath = snapshot;
         this.pendingIsNewHighScore = isNewHighScore;
         this.onRevive = onRevive;
@@ -103,6 +104,8 @@ export class PlayerFlowController {
             this.renderDeath();
         }
         this.overlay.show();
+
+
     }
 
     destroy(): void {

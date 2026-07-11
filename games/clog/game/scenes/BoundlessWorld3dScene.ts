@@ -31,12 +31,27 @@ import { NpcDirector } from '../npc/NpcDirector';
 import { Localization } from '../i18n/Localization';
 import { TextureBuilder } from '../builders/TextureBuilder';
 import { deriveWaterTones, getDefaultIsland, parseHexColor, resolveIslandImagePath, shadeColor } from '../world/IslandStorage';
+import PlatformHandler from 'core/platforms/PlatformHandler';
 
 const PERF_MODE = new URLSearchParams(window.location.search).has('perf');
 
 const CAM_SMOOTH = 2.2;
 const SPAWN_RADIUS = 60;     // world-unit radius around player where food can spawn
 const BOT_MIN_DIST = 10;     // minimum world-unit distance from the player when spawning a bot
+
+// ── Auto Play (debug) ──────────────────────────────────────────────────────
+// Dev-only stress-test mode (AI Debug panel, ?dev=1): drives the player via
+// the same BotController wander/seek AI bots use, ramps the effective game
+// speed up over time, and force-feeds a tail cube directly through
+// PlayerEntity.collect() on a timer — bypassing CollectibleManager.checkCollision
+// entirely, so it keeps exercising the merge path (MergeQueue/scheduleMerges)
+// even if food spawning/collection itself is misbehaving. Auto-respawns on
+// death instead of waiting on the UI's respawn choice.
+const AUTO_PLAY_SPEED_RAMP_SECONDS = 45; // wall-clock seconds to reach max speed multiplier
+const AUTO_PLAY_MAX_SPEED_MULT = 3;      // effective-delta multiplier once fully ramped
+const AUTO_PLAY_FEED_INTERVAL = 4;       // real seconds between forced tail-cube feeds
+const AUTO_PLAY_FEED_VALUE = 2;
+const AUTO_PLAY_RESPAWN_DELAY = 1.5;     // real seconds after death before auto-respawning
 
 export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3dScene, NpcHostScene {
 
@@ -67,6 +82,15 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     private npcPopulationActive = false;
     /** Last frame's wall-deflected move direction — see BotController.lastResolvedDir for why sticking with it avoids hunting between two equally-valid deflections at a fixed heading. */
     private lastPlayerResolvedDir: THREE.Vector3 | null = null;
+    /** Debug-only Auto Play mode — see AUTO_PLAY_* constants above and buildAiDebugPanel. */
+    private autoPlayEnabled = false;
+    /** Drives the player entity via the same BotController AI bots use, while autoPlayEnabled. Rebuilt on every (auto-)respawn since respawnPlayer() replaces `this.player` with a brand new entity. */
+    private autoPlayController: BotController | null = null;
+    /** Wall-clock seconds since Auto Play was enabled — feeds autoPlaySpeedMult's ramp. Reset on toggle, not on respawn. */
+    private autoPlayElapsed = 0;
+    private autoPlayFeedTimer = 0;
+    /** Non-null while the player is dead and Auto Play is counting down to an automatic respawn. */
+    private autoPlayRespawnTimer: number | null = null;
 
     public cameraZoom = 1.0;
     public moveInput: { x: number; z: number } = { x: 0, z: 0 };
@@ -203,13 +227,20 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.gradient.update(delta);
         WaterSplashSystem.update(delta);
         BoostSpeedLineSystem.update(delta);
+        // Auto Play (debug) ramps the effective game speed up over time — see
+        // AUTO_PLAY_* constants. Applied to gameplay simulation (player/bots/
+        // food/NPC population) but not to camera easing or ambient VFX above,
+        // so speeding up doesn't make the camera/visuals feel jerky.
+        if (this.autoPlayEnabled) this.autoPlayElapsed += delta;
+        const simDelta = this.autoPlayEnabled ? delta * this.autoPlaySpeedMult() : delta;
+
         // Idle-population growth + active-window spawn/despawn — independent
         // of alive/dead state below, same as bots/food per updateDead's own
         // doc, but dormant until the player actually joins (see startNpcPopulation).
-        if (this.npcPopulationActive) this.npcDirector.update(delta, this);
+        if (this.npcPopulationActive) this.npcDirector.update(simDelta, this);
 
         if (this._deathInfo !== null) {
-            this.updateDead(delta);
+            this.updateDead(simDelta);
             return;
         }
 
@@ -222,9 +253,13 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
 
         this.cloudSystem?.update(delta, this.player.position.x, this.player.position.z);
 
-        this.applyPlayerMoveInput();
-        this.player.update(delta);
-        this.updateBots(delta);
+        if (this.autoPlayEnabled && this.autoPlayController) {
+            this.autoPlayController.update(simDelta);
+        } else {
+            this.applyPlayerMoveInput();
+        }
+        this.player.update(simDelta);
+        this.updateBots(simDelta);
         BendService.updateOrigin(this.player.position);
 
         // Chunk streaming + collision
@@ -234,7 +269,20 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.floorMesh.position.x = this.player.position.x;
         this.floorMesh.position.z = this.player.position.z;
 
-        this.collectibles.update(delta);
+        this.collectibles.update(simDelta);
+
+        // Force-feeds a "2" tail cube straight through PlayerEntity.collect(),
+        // bypassing CollectibleManager.checkCollision entirely — keeps
+        // exercising the merge path even if food spawn/collection has issues.
+        // Timed off real `delta`, not simDelta, so the feed cadence stays
+        // predictable in wall-clock seconds regardless of the speed ramp.
+        if (this.autoPlayEnabled) {
+            this.autoPlayFeedTimer += delta;
+            if (this.autoPlayFeedTimer >= AUTO_PLAY_FEED_INTERVAL) {
+                this.autoPlayFeedTimer = 0;
+                this.player.collect(new TailCube(AUTO_PLAY_FEED_VALUE, this.threeScene, this.player.position.clone()));
+            }
+        }
 
         const hit = this.collectibles.checkCollision(this.player.position, this.player.foodRadius);
         if (hit) {
@@ -270,7 +318,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
             const freeCells = this.chunkManager.getFreeCellsNear(this.player.position.x, pz, SPAWN_RADIUS);
             const maxFood = Math.min(FOOD_CONFIG.maxAbsolute, Math.max(FOOD_CONFIG.minAbsolute, Math.floor(freeCells.length / 8)));
             this.levelManager.update(
-                delta,
+                simDelta,
                 this.collectibles,
                 this.threeScene,
                 this.player.position,
@@ -379,7 +427,50 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
             this.npcDirector.onEntitiesRemoved(eaten);
         }
 
+        // Auto Play never waits on the UI's respawn choice — counts down a
+        // short beat (so the death is still readable) then respawns fresh
+        // and rebuilds the AI controller against the new player entity,
+        // since respawnPlayer() replaces `this.player` outright.
+        if (this.autoPlayEnabled) {
+            this.autoPlayRespawnTimer = (this.autoPlayRespawnTimer ?? 0) + delta;
+            if (this.autoPlayRespawnTimer >= AUTO_PLAY_RESPAWN_DELAY) {
+                this.autoPlayRespawnTimer = null;
+                this.respawnPlayer(DEFAULT_START_VALUE, []);
+                this.startAutoPlayController();
+            }
+        }
+
         super.update(delta);
+    }
+
+    /** Enables/disables the debug Auto Play mode — see AUTO_PLAY_* constants. */
+    private setAutoPlay(enabled: boolean): void {
+        this.autoPlayEnabled = enabled;
+        this.autoPlayElapsed = 0;
+        this.autoPlayFeedTimer = 0;
+        this.autoPlayRespawnTimer = null;
+
+        if (enabled) {
+            this.startAutoPlayController();
+        } else {
+            this.autoPlayController?.destroy();
+            this.autoPlayController = null;
+            this.player?.setMoveInput(0, 0);
+        }
+    }
+
+    /** (Re)builds the BotController driving `this.player` — called on enable and after every auto-respawn, since respawnPlayer() swaps in a brand new player entity. */
+    private startAutoPlayController(): void {
+        if (!this.player) return;
+        this.autoPlayController?.destroy();
+        this.autoPlayController = new BotController(this.player, {}, 'AutoPlay');
+        this.autoPlayController.blackboard.ignorePlayer = true;
+    }
+
+    /** 1x at t=0, ramping to AUTO_PLAY_MAX_SPEED_MULT over AUTO_PLAY_SPEED_RAMP_SECONDS. */
+    private autoPlaySpeedMult(): number {
+        const t = Math.min(this.autoPlayElapsed / AUTO_PLAY_SPEED_RAMP_SECONDS, 1);
+        return 1 + t * (AUTO_PLAY_MAX_SPEED_MULT - 1);
     }
 
     /**
@@ -403,7 +494,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         });
 
         const pool = candidates.length > 0 ? candidates : cells;
-        const cell  = pool[Math.floor(Math.random() * pool.length)];
+        const cell = pool[Math.floor(Math.random() * pool.length)];
 
         const bot = new PlayerEntity(value, this.threeScene, false);
         bot.position.set(cell.x, 0, cell.z);
@@ -550,6 +641,8 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         const cells = this.chunkManager.getFreeCellsNear(0, 0, SPAWN_RADIUS);
         const cell = cells.length > 0 ? cells[Math.floor(Math.random() * cells.length)] : { x: 0, z: 0 };
 
+        PlatformHandler.instance.platform.gameplayStart();
+        this.npcDirector.respawnPlayer(this);
         this.player = new PlayerEntity(value, this.threeScene);
         this.player.position.set(cell.x, 0, cell.z);
         SimWorld.register(this.player);
@@ -579,6 +672,10 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         DevGuiManager.instance.addToggle('Pause All', false, (paused) => {
             for (const c of this.debugBotControllers) c.paused = paused;
         }, 'AI Debug');
+        // Stress-test mode: AI-drives the player, ramps game speed up over
+        // time, force-feeds tail cubes, and auto-respawns on death — see
+        // AUTO_PLAY_* constants and setAutoPlay.
+        DevGuiManager.instance.addToggle('Auto Play', false, (enabled) => this.setAutoPlay(enabled), 'AI Debug');
     }
 
     /** Spawns 4 bots that ignore the player (so they only react to each other/food) and exposes each one's tunables + live state. No-ops if already spawned — re-running would bind new controllers under folders dat.GUI can't clean up. */
@@ -615,6 +712,8 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         }
         this.botControllers = [];
         this.debugBotControllers = [];
+        this.autoPlayController?.destroy();
+        this.autoPlayController = null;
         SimWorld.reset();
         this.perfOverlay?.destroy();
         this.cloudSystem?.destroy(this.threeScene);

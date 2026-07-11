@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js';
 import Assets from '../../Assets';
+import { MANUAL_BOOST_REENGAGE_THRESHOLD } from '../ClogConstants';
 
 const BAR_WIDTH = 46;
 const BAR_HEIGHT = 7;
@@ -60,7 +61,14 @@ export class EntityIndicator extends PIXI.Container {
         this.fill.visible = showBar;
         if (showBar) {
             this.fill.clear();
-            this.fill.beginFill(0xffdd44, 0.95);
+            //const color = 0xffdd44
+            if (MANUAL_BOOST_REENGAGE_THRESHOLD < boostT) {
+
+                this.fill.beginFill(0xffdd44, 0.95);
+            } else {
+
+                this.fill.beginFill(0xaaaaaa, 0.95);
+            }
             this.fill.drawRoundedRect(-BAR_WIDTH / 2, -BAR_HEIGHT / 2, BAR_WIDTH * boostT, BAR_HEIGHT, 3);
             this.fill.endFill();
         }

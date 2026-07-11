@@ -110,7 +110,7 @@ export const NPC_DIFFICULTY_CONFIG = {
      * aggressive NPC materialized right next to them as their very first
      * encounter.
      */
-    lowLevelPlayerThreshold: 8,
+    lowLevelPlayerThreshold: 32,
     /**
      * While the player is at/below the threshold, only materialize idle
      * records whose score is at most this multiple of the player's value.

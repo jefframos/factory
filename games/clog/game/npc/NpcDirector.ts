@@ -20,12 +20,12 @@ export class NpcDirector {
 
     private readonly active = new Map<NpcRecord, BotController>();
     private checkTimer = 0;
-    /** Wall-clock seconds since this director started — drives NPC_SAFE_START_CONFIG's grace window, independent of how fast the player's own value climbs. */
-    private sessionTime = 0;
+    /** Wall-clock seconds since the player last (re)spawned — drives NPC_SAFE_START_CONFIG's grace window, independent of how fast the player's own value climbs. Reset by respawnPlayer() so every respawn gets a fresh grace window, not just the very first join. */
+    private currentSessionTime = 0;
 
     update(delta: number, host: NpcHostScene): void {
         this.roster.update(delta);
-        this.sessionTime += delta;
+        this.currentSessionTime += delta;
 
         this.checkTimer += delta;
         if (this.checkTimer < NPC_SPAWN_CONFIG.checkInterval) return;
@@ -63,6 +63,29 @@ export class NpcDirector {
         });
     }
 
+    /**
+     * Call right after the player respawns — restarts the grace window (see
+     * currentSessionTime) AND clears out every currently-active NPC back to
+     * idle, same as pruneFarNpcs. Without the prune, whatever was already
+     * materialized near the old death spot (which could be anything, grace
+     * window or not) stays active and can be standing right next to the new
+     * spawn point, so a fresh grace window alone doesn't stop the player from
+     * getting instantly attacked — topUp() then repopulates from scratch
+     * under the just-restarted grace window, so the replacements are all
+     * weak/docile per materializeOne's inGrace bias.
+     */
+    respawnPlayer(host: NpcHostScene): void {
+        this.currentSessionTime = 0;
+
+        for (const [record, controller] of this.active) {
+            const snapshot = host.dematerializeNpc(controller);
+            record.value = snapshot.value;
+            record.tailValues = snapshot.tailValues;
+            record.state = 'idle';
+            record.idleSince = 0;
+        }
+        this.active.clear();
+    }
     onEntitiesRemoved(removed: PlayerEntity[]): void {
         if (removed.length === 0) return;
 
@@ -122,7 +145,7 @@ export class NpcDirector {
         // Wall-clock backstop on top of the value-based check below — guarantees
         // a minimum grace window even for a player who grows past
         // lowLevelPlayerThreshold in the first few seconds via a lucky food run.
-        const inGrace = this.sessionTime < NPC_SAFE_START_CONFIG.graceSeconds;
+        const inGrace = this.currentSessionTime < NPC_SAFE_START_CONFIG.graceSeconds;
         // Rubber-banding never applies during the new-player grace window —
         // "leading" this early is just a lucky food run, not dominance worth
         // punishing. See NPC_RUBBERBAND_CONFIG.

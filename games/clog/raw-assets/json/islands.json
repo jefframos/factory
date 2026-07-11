@@ -10,9 +10,9 @@
   {
     "id": "snowLand",
     "texture": "islands/snowland.webp",
-    "skyColor": "#ffb8f0",
+    "skyColor": "#0294DE",
     "ambientColor": "#ffffff",
-    "waterColor": "#ffc2f2",
+    "waterColor": "#F894B7",
     "isDefault": false
   }
 ]

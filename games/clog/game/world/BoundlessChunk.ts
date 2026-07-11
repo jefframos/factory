@@ -12,10 +12,10 @@ const DEBUG_MESH = new URLSearchParams(window.location.search).has('debugMesh');
 export const CHUNK_SIZE = 40;
 
 // Island dimensions — fits comfortably inside a chunk with ~7-unit water margin on each side.
-const ISLAND_SIZE = 26;
+const ISLAND_SIZE = 28;
 // Organic CELL_TERRAIN blobs — gives islands their grass/sand look without enclosing walls.
 const TERRAIN_SCALE = 0.12;
-const TERRAIN_THRESHOLD = 0.55; // ~35% of cells become raised terrain
+const TERRAIN_THRESHOLD = 0.65; // ~35% of cells become raised terrain
 // Short CELL_OBSTACLE bumps scattered in remaining free space (i.e. only on top of terrain).
 const OBS_SCALE = 0.04;
 const OBS_THRESHOLD = 0.62;
