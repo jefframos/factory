@@ -136,7 +136,7 @@ export function computeFoodCount(roomSize: number): number {
 // ── Camera config ─────────────────────────────────────────────────────────────
 export const CAMERA_CONFIG = {
     pitch: 45,
-    minDistance: 13,
+    minDistance: 11,
     maxDistance: 26,
     maxAtValue: 8192,
     followSpeed: 5,

@@ -15,7 +15,7 @@ import { SHOP_ITEMS, resolveShopImagePath, type ShopItem } from '../data/ShopSto
  * on screen.
  */
 export class FaceSnapshotTool {
-    private static readonly CUBE_COLOR = 0xFFC335;
+    private static readonly CUBE_COLOR = 0xd71993;
     // Chrome (and most Chromium browsers) will create a real subfolder under
     // Downloads if the `download` attribute contains a "/" — no File System
     // Access API needed.
@@ -26,7 +26,7 @@ export class FaceSnapshotTool {
 
     /** Bound live by DevGuiManager controls in BaseDemoScene — tune size/camera here, use "Snapshot Selected Face" to preview, then "Snapshot All Faces" once it looks right. */
     public static readonly settings = {
-        size: 128,
+        size: 160,
         yaw: 15,
         pitch: 25,
         distance: 2.8,
@@ -46,13 +46,13 @@ export class FaceSnapshotTool {
             this.scene = new THREE.Scene();
             // Same three-light rig as LinearWorld3dScene.build(), so the cube
             // reads the same here as it does in-game.
-            this.scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-            const key = new THREE.DirectionalLight(0xfff4dd, 1.6);
+            this.scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+            const key = new THREE.DirectionalLight(0xffffff, 1.6);
             key.position.set(5, 10, 7.5);
             this.scene.add(key);
             const fill = new THREE.DirectionalLight(0x99ccff, 0.5);
             fill.position.set(-8, 3, -5);
-            this.scene.add(fill);
+            // this.scene.add(fill);
 
             this.camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
         }
