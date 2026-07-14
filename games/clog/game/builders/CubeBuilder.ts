@@ -25,6 +25,14 @@ export const VALUE_PALETTE: string[] = [
     '#00acc1',  // 65536  — aqua blue
 ];
 
+
+export interface CubeStyle {
+    text: string;
+    bodyColor: string;
+    topColor?: string;      // defaults to bodyColor
+    textColor?: string;     // defaults to white
+    strokeColor?: string;   // defaults to rgba(0,0,0,.65)
+}
 export function colorForValue(value: number): string {
     const idx = Math.max(0, Math.round(Math.log2(Math.max(1, value))) - 1);
     return VALUE_PALETTE[idx % VALUE_PALETTE.length];
@@ -46,6 +54,125 @@ export class CubeBuilder {
     // this isn't keyed by value.
     private static faceDecalMat: THREE.MeshStandardMaterial | null = null;
     private static readonly FACE_DECAL_NAME = 'faceDecal';
+
+    private static styledTopMatCache = new Map<string, THREE.MeshStandardMaterial>();
+    private static styledTexCache = new Map<string, THREE.CanvasTexture>();
+
+
+    private static getStyledTexture(style: CubeStyle): THREE.CanvasTexture {
+        const key = CubeBuilder.styleKey(style);
+
+        let tex = CubeBuilder.styledTexCache.get(key);
+        if (!tex) {
+            tex = CubeBuilder.makeTextTexture(style);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            CubeBuilder.styledTexCache.set(key, tex);
+        }
+
+        return tex;
+    }
+
+    static makeTextTexture(style: CubeStyle): THREE.CanvasTexture {
+        const size = 128;
+
+
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = size;
+
+        const ctx = canvas.getContext("2d")!;
+
+        ctx.fillStyle = style.topColor ?? style.bodyColor;
+        ctx.fillRect(0, 0, size, size);
+
+        const text = style.text;
+
+        const fontSize =
+            text.length <= 2 ? 70 :
+                text.length <= 3 ? 60 :
+                    text.length <= 4 ? 50 :
+                        text.length <= 5 ? 42 :
+                            34;
+
+        ctx.font = `bold ${fontSize}px Arial`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        ctx.strokeStyle = style.strokeColor ?? "rgba(0,0,0,.65)";
+        ctx.lineWidth = 10;
+        ctx.lineJoin = "round";
+        ctx.strokeText(text, size / 2, size / 2);
+
+        ctx.fillStyle = style.textColor ?? "#fff";
+        ctx.fillText(text, size / 2, size / 2);
+
+        const tex = new THREE.CanvasTexture(canvas);
+        //tex.colorSpace = THREE.NoColorSpace;
+        return tex;
+    }
+
+
+    static buildStyled(style: CubeStyle, size = 1): THREE.Mesh {
+        const geo = new RoundedBoxGeometry(size, size, size, 4, size * 0.25);
+
+        const solid = new THREE.MeshStandardMaterial({
+            color: style.bodyColor
+        });
+
+        BendService.applyBend(solid);
+
+        const top = CubeBuilder.getStyledTopMaterial(style);
+
+        return new THREE.Mesh(geo, [
+            solid,
+            solid,
+            top,
+            solid,
+            solid,
+            solid
+        ]);
+    }
+
+
+    static buildMultiplier(
+        multiplier: number,
+        size = 1,
+        options?: {
+            bodyColor?: string;
+            topColor?: string;
+            textColor?: string;
+        }
+    ): THREE.Mesh {
+
+        return CubeBuilder.buildStyled({
+            text: `${multiplier}x`,
+            bodyColor: options?.bodyColor ?? "#ffcc00",
+            topColor: options?.topColor,
+            textColor: options?.textColor ?? "#000"
+        }, size);
+    }
+
+    private static getStyledTopMaterial(style: CubeStyle): THREE.MeshStandardMaterial {
+        const key = CubeBuilder.styleKey(style);
+
+        let mat = CubeBuilder.styledTopMatCache.get(key);
+        if (!mat) {
+            mat = new THREE.MeshStandardMaterial({
+                map: CubeBuilder.getStyledTexture(style)
+            });
+
+            BendService.applyBend(mat);
+
+            CubeBuilder.styledTopMatCache.set(key, mat);
+        }
+
+        return mat;
+    }
+
+
+    private static styleKey(style: CubeStyle): string {
+        return JSON.stringify(style);
+    }
+
 
     private static getSolidMaterial(value: number): THREE.MeshStandardMaterial {
         let mat = CubeBuilder.solidMatCache.get(value);
@@ -204,7 +331,9 @@ export class CubeBuilder {
         ctx.fillStyle = "#ffffff";
         ctx.fillText(text, size / 2, size / 2);
 
-        return new THREE.CanvasTexture(canvas);
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
     }
 
     /** Materials/textures are value-keyed and shared across every cube for the

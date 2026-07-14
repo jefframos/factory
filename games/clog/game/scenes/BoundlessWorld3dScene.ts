@@ -30,8 +30,9 @@ import type { NpcHostScene } from '../npc/NpcHostScene';
 import { NpcDirector } from '../npc/NpcDirector';
 import { Localization } from '../i18n/Localization';
 import { TextureBuilder } from '../builders/TextureBuilder';
-import { deriveWaterTones, getDefaultIsland, parseHexColor, resolveIslandImagePath, shadeColor } from '../world/IslandStorage';
+import { deriveWaterTones, getDefaultIsland, parseHexColor, resolveIslandImagePath } from '../world/IslandStorage';
 import PlatformHandler from 'core/platforms/PlatformHandler';
+import { CartoonSky } from '../vfx/CartoonSky';
 
 const PERF_MODE = new URLSearchParams(window.location.search).has('perf');
 
@@ -94,6 +95,8 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
 
     public cameraZoom = 1.0;
     public moveInput: { x: number; z: number } = { x: 0, z: 0 };
+
+    private cartoonSky: CartoonSky = new CartoonSky(this.threeScene);
 
     // ── Accessors for HUD / minimap ───────────────────────────────────────────
 
@@ -159,19 +162,19 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.threeScene.background = new THREE.Color(skyColor);
         this.threeScene.add(this.threeCamera);
 
-        this.gradient.build({
-            camera: this.threeCamera,
-            mode: 'four-way',
-            distance: 30,
-            fourWay: {
-                topColor: skyColor,
-                leftColor: shadeColor(skyColor, -0.03),
-                bottomColor: shadeColor(skyColor, 0.35),
-                rightColor: shadeColor(skyColor, -0.03),
-                radius: 1.5,
-                speed: 0.03,
-            },
-        });
+        // this.gradient.build({
+        //     camera: this.threeCamera,
+        //     mode: 'four-way',
+        //     distance: 30,
+        //     fourWay: {
+        //         topColor: skyColor,
+        //         leftColor: shadeColor(skyColor, -0.03),
+        //         bottomColor: shadeColor(skyColor, 0.35),
+        //         rightColor: shadeColor(skyColor, -0.03),
+        //         radius: 1.5,
+        //         speed: 0.03,
+        //     },
+        // });
 
         this.threeScene.add(new THREE.AmbientLight(parseHexColor(island.ambientColor), 0.9));
         const key = new THREE.DirectionalLight(0xfff4dd, 1.6);
@@ -188,6 +191,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.chunkManager = new BoundlessChunkManager(this.threeScene, this.collectibles);
 
         this.player = new PlayerEntity(DEFAULT_START_VALUE, this.threeScene);
+        this.player.isMainPlayer = true;
         WaterSplashSystem.build(this.threeScene);
         BoostSpeedLineSystem.build(this.threeScene);
 
@@ -221,12 +225,21 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
             new THREE.Vector3(0, Math.sin(initPitch) * this.camDist, Math.cos(initPitch) * this.camDist),
         );
         this.threeCamera.lookAt(this.player.position);
+
+
+
+        // Directly around the horizon
+        this.cartoonSky.setCloudBaseline(-3);
+
+        // Clouds must be closer than camera.far
+        this.cartoonSky.setCloudDistance(150);
     }
 
     public update(delta: number): void {
-        this.gradient.update(delta);
+        //this.gradient.update(delta);
         WaterSplashSystem.update(delta);
         BoostSpeedLineSystem.update(delta);
+        this.cartoonSky?.update(delta, this.threeCamera);
         // Auto Play (debug) ramps the effective game speed up over time — see
         // AUTO_PLAY_* constants. Applied to gameplay simulation (player/bots/
         // food/NPC population) but not to camera easing or ambient VFX above,
@@ -307,6 +320,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
             if (eaten.includes(this.player)) {
                 // Don't respawn immediately — let the camera linger on the death
                 // spot (see updateDead) while the UI shows a respawn choice.
+                this.playerDeath()
                 this._deathInfo = this.buildDeathSnapshot(preDeathValue, preDeathTail);
             }
         }
@@ -498,6 +512,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
 
         const bot = new PlayerEntity(value, this.threeScene, false);
         bot.position.set(cell.x, 0, cell.z);
+        bot.isMainPlayer = false;
 
         SimWorld.register(bot);
         const controller = new BotController(bot, params);
@@ -525,9 +540,18 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.collectibles.absorbDrop(dropped);
         SimWorld.unregister(this.player);
 
+        this.playerDeath()
         this._deathInfo = this.buildDeathSnapshot(preDeathValue, preDeathTail);
     }
 
+    public playerDeath() {
+        console.log(
+            '[PLAYER DEAD]',
+            {
+                unpackCollected: this.player.unpackCollected(),
+            }
+        );
+    }
     public startNpcPopulation(): void {
         this.npcPopulationActive = true;
     }
@@ -578,6 +602,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     public materializeNpc(pos: { x: number; z: number }, value: number, tailValues: number[], name: string, params?: Partial<BotParams>): BotController {
         const bot = new PlayerEntity(value, this.threeScene, false);
         bot.position.set(pos.x, 0, pos.z);
+        bot.isMainPlayer = false;
 
         SimWorld.register(bot);
         const controller = new BotController(bot, params, name);
@@ -644,6 +669,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         PlatformHandler.instance.platform.gameplayStart();
         this.npcDirector.respawnPlayer(this);
         this.player = new PlayerEntity(value, this.threeScene);
+        this.player.isMainPlayer = true;
         this.player.position.set(cell.x, 0, cell.z);
         SimWorld.register(this.player);
         SimWorld.setPlayer(this.player);
@@ -719,7 +745,7 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.cloudSystem?.destroy(this.threeScene);
         WaterSplashSystem.destroy();
         BoostSpeedLineSystem.destroy();
-        this.gradient.destroy();
+        this.gradient?.destroy();
         this.player?.destroy();
         this.collectibles?.destroy();
         this.chunkManager?.destroy();

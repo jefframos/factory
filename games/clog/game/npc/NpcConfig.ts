@@ -5,35 +5,17 @@
  */
 
 export const NPC_POPULATION_CONFIG = {
-    /** Total persistent NPC records — constant; entries are recycled, never added/removed. */
     rosterSize: 35,
-    /** How many roster entries are materialized as real, on-screen bots near the player at once. */
     activeMin: 4,
     activeMax: 8,
-    /** Head value a record resets to after being killed (by another idle NPC, or for real via EntityEating). */
+
     respawnValue: 2,
-    /**
-     * Seconds of world time the roster is seeded to look like it's already
-     * been running — makes a freshly booted server read as an ongoing one
-     * instead of every NPC starting at respawnValue simultaneously. This is
-     * the only input the seeding simulation takes, so a different value per
-     * game session/lobby is how two "rooms" end up with different-looking
-     * populations — an older room just simulates more seconds. See
-     * NpcRoster.seedPopulation / GrowthSimulator.
-     */
+
+    /** Minimum number of NPCs that always start at the weakest value. */
+    guaranteedWeakCount: 10,
+
     seedElapsedSeconds: 900,
-    /**
-     * Exponent shaping each record's simulated feeding-time budget out of
-     * seedElapsedSeconds (rank^skew, rank 0 = weakest .. 1 = the leader) —
-     * see NpcRoster.seedPopulation. Higher = most records get a much shorter
-     * effective feeding window (staying close to respawnValue) while only
-     * the very top ranks approach the full seedElapsedSeconds. Lowered from
-     * 4 alongside the seedElapsedSeconds bump above so the top of the
-     * leaderboard reads meaningfully higher, not just the same curve
-     * stretched — rank is normalized (rank/(n-1)) so a bigger roster alone
-     * doesn't raise the leader's budget on its own.
-     */
-    seedSkew: 3,
+    seedSkew: 5,
 };
 
 export const NPC_SAFE_START_CONFIG = {
@@ -71,7 +53,13 @@ export const NPC_PERSONALITY_CONFIG = {
     aggressivenessVariance: 0.2,
     awarenessRadiusVariance: 8,
 };
+export const NPC_MULTIPLIER_CONFIG = {
+    /** Chance per feed event of finding a multiplier cube */
+    spawnChance: 0.005,
 
+    /** Multiplier strength */
+    valueMultiplier: 2,
+};
 export const NPC_IDLE_SIM_CONFIG = {
     /**
      * Seconds between idle feed ticks. Deliberately its own knob, not a
@@ -85,6 +73,8 @@ export const NPC_IDLE_SIM_CONFIG = {
      * "what values can food be, and how likely each is" is one game-wide
      * knob instead of two that can silently drift apart.
      */
+
+
     feedInterval: 3.5,
     /** Seconds between "one idle NPC swallows another" rolls. */
     killEventInterval: 20,
@@ -103,25 +93,14 @@ export const NPC_SPAWN_CONFIG = {
 };
 
 export const NPC_DIFFICULTY_CONFIG = {
-    /**
-     * Player value at/below which spawn selection favors weak, docile NPCs
-     * instead of a uniform random pick from the whole roster — without this,
-     * a fresh level-2 player can just as easily get a heavily-grown, fully
-     * aggressive NPC materialized right next to them as their very first
-     * encounter.
-     */
     lowLevelPlayerThreshold: 32,
-    /**
-     * While the player is at/below the threshold, only materialize idle
-     * records whose score is at most this multiple of the player's value.
-     * Falls back to the full idle pool if none qualify (same fallback shape
-     * as spawnBotNear's own candidate filter in BoundlessWorld3dScene) —
-     * the roster can age past the low-value range entirely given enough
-     * playtime, and a strict-only filter would then spawn nothing at all.
-     */
-    lowLevelValueMultiplier: 2,
-    /** Aggressiveness ceiling applied to NPCs spawned while the player is at/below the threshold — overrides the normal jitter from NPC_PERSONALITY_CONFIG. */
+    lowLevelValueMultiplier: 0.5,
     lowLevelAggressivenessCap: 0.2,
+
+    /**
+     * Above this player value, stronger NPCs are allowed to spawn.
+     */
+    allowStrongerBotsThreshold: 500,
 };
 
 export const NPC_HUNT_CONFIG = {

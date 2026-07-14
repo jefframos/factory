@@ -16,6 +16,7 @@ import { TailCube } from "./TailCube";
 import type { ISimEntity, TailEntry } from "../sim/SimWorld";
 import { TextureBuilder } from "../builders/TextureBuilder";
 import { ShopStorage, SHOP_ITEMS, resolveShopImagePath, pickBotFaceItemId } from "../data/ShopStorage";
+import { MultiplierCube } from "./MultiplierCube";
 
 const ROTATION_SPEED = 12;
 const HISTORY_SAMPLE_DIST = 0.25; // world-units between sampled waypoints
@@ -38,6 +39,8 @@ export class PlayerEntity implements ISimEntity {
 
     private targetRotation = new THREE.Quaternion();
     private readonly UP = new THREE.Vector3(0, 1, 0);
+
+    private collected: Record<number, number> = {};
 
     /** History of sampled world positions (newest first). */
     private posHistory: THREE.Vector3[] = [];
@@ -68,6 +71,8 @@ export class PlayerEntity implements ISimEntity {
     private splash = new WaterSplashEmitter();
     /** Fires while boosting; see BoostSpeedLineEmitter. */
     private speedLines = new BoostSpeedLineEmitter();
+
+    public isMainPlayer: boolean = false;
 
     /** @param showEatIndicator Whether to build the forward-facing direction triangle — the player wants it visible, but NPCs render without it. */
     constructor(value: number, scene: THREE.Scene, showEatIndicator = true) {
@@ -133,6 +138,29 @@ export class PlayerEntity implements ISimEntity {
         }
     }
 
+
+    addCollected(value: number, amount: number = 1): void {
+        this.collected[value] = (this.collected[value] ?? 0) + amount;
+    }
+    unpackCollected(): number[] {
+        const result: number[] = [];
+
+        const values = Object.keys(this.collected)
+            .map(Number)
+            .sort((a, b) => a - b);
+
+        for (const value of values) {
+            const amount = this.collected[value];
+
+            for (let i = 0; i < amount; i++) {
+                result.push(value);
+            }
+        }
+
+        this.collected = {};
+
+        return result;
+    }
     /** True right after spawning or reviving — see invincibleRemaining. Checked by EntityEating.ts to block both head-eats-head kills and tail-snipes against this entity for the duration; doesn't affect this entity's own ability to eat others. */
     get isInvincible(): boolean {
         return this.invincibleRemaining > 0;
@@ -204,7 +232,11 @@ export class PlayerEntity implements ISimEntity {
 
     /** Called on the eater when it just killed another entity's head — see EntityEating.kill(). Bots call this too (they eat each other constantly); only the real player triggers audio feedback. */
     notifyKill(): void {
-        if (this.isRealPlayer) SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Kill);
+
+        if (this.isRealPlayer) {
+            console.log(this.unpackCollected())
+            SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Kill);
+        }
     }
 
     /** Radius of the eat circle (scales with value). Used for player/NPC kills and tail-snipes. */
@@ -224,7 +256,11 @@ export class PlayerEntity implements ISimEntity {
 
     /** Base movement speed, before the tap-start boost — flat across all values except a small edge for fresh spawns (see SMALL_VALUE_SPEED_THRESHOLD). */
     private get moveSpeed(): number {
-        const boost = this.value <= SMALL_VALUE_SPEED_THRESHOLD ? SMALL_VALUE_SPEED_BOOST : 1;
+        let boost = this.value <= SMALL_VALUE_SPEED_THRESHOLD ? SMALL_VALUE_SPEED_BOOST : 1;
+
+        if (this.isMainPlayer) {
+            boost += 0.3;
+        }
         return MOVE_SPEED * boost;
     }
 
@@ -427,7 +463,19 @@ export class PlayerEntity implements ISimEntity {
      * The cube stays at its current world position — snake-follow pulls it
      * smoothly to its tail slot over the next few frames.
      */
-    collect(cube: TailCube): void {
+    collect(cube: TailCube | MultiplierCube): void {
+        if (cube.isMultiplier) {
+
+            this.value *= 2;
+            CubeBuilder.updateTextures(this.mesh, this.value, true);
+            this.updateScale();
+            this.startBounce();
+
+            cube.destroy();
+            return
+        }
+
+        this.addCollected(cube.value, 1);
         dbg("collect", { value: cube.value, tailLen: this.tail.length });
         if (this.isRealPlayer) SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Grab);
 
@@ -645,6 +693,7 @@ export class PlayerEntity implements ISimEntity {
 
     destroy(): void {
         for (const cube of this.tail) cube.destroy();
+
         this.tail = [];
         this.teardownVisuals();
     }

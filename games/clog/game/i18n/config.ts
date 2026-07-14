@@ -3,7 +3,32 @@
  * (games/clog/game/i18n/locales/en.json) — the rest are machine-translated
  * from it by tools/i18n/translate-i18n.mjs and checked in as plain JSON.
  */
-export const SUPPORTED_LOCALES = ['en', 'es', 'it', 'pt-br', 'fr', 'de', 'ja', 'ko', 'zh-cn', 'ru'] as const;
+export const SUPPORTED_LOCALES = [
+    'en',
+    'es',
+    'it',
+    'pt-br',
+    'fr',
+    'de',
+    'ja',
+    'ko',
+    'zh-cn',
+    'ru',
+    'hi',
+    'tr',
+    'pl',
+    'th',
+    'uk',
+    'id',
+    'vi',
+    'ar',
+    'nl',
+    'sv',
+    'da',
+    'no',
+    'ro',
+    'cs',
+] as const;
 
 export type Locale = typeof SUPPORTED_LOCALES[number];
 
@@ -25,6 +50,20 @@ export const LOCALE_LABELS: Record<Locale, string> = {
     ko: '한국어',
     'zh-cn': '中文',
     ru: 'Русский',
+    hi: 'हिन्दी',
+    tr: 'Türkçe',
+    pl: 'Polski',
+    th: 'ไทย',
+    uk: 'Українська',
+    id: 'Bahasa Indonesia',
+    vi: 'Tiếng Việt',
+    ar: 'العربية',
+    nl: 'Nederlands',
+    sv: 'Svenska',
+    da: 'Dansk',
+    no: 'Norsk',
+    ro: 'Română',
+    cs: 'Čeština',
 };
 
 /** games/clog/game/dom-ui/flags/Icon_Flag_<code>.png key for each locale — resolved to an actual import in LanguagePicker.ts (Vite needs literal import statements to bundle these, same pattern as ShopScreen's cosmetic icons). */
@@ -39,4 +78,18 @@ export const LOCALE_FLAG_CODE: Record<Locale, string> = {
     ko: 'kor',
     'zh-cn': 'chn',
     ru: 'rus',
+    hi: 'ind',
+    tr: 'tur',
+    pl: 'pol',
+    th: 'tha',
+    uk: 'ukr',
+    id: 'idn',
+    vi: 'vnm',
+    ar: 'ara',
+    nl: 'nld',
+    sv: 'swe',
+    da: 'dnk',
+    no: 'nor',
+    ro: 'rou',
+    cs: 'cze',
 };

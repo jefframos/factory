@@ -153,6 +153,17 @@ export class NpcDirector {
         const forceHunter = leading && Math.random() < NPC_RUBBERBAND_CONFIG.hunterSpawnChance;
         const record = this.pickRecordFor(idle, playerValue, inGrace, forceHunter);
 
+
+        // console.log('[NPC SPAWN CHECK]', {
+        //     botValue: record.value,
+        //     time: this.currentSessionTime.toFixed(1),
+        //     playerValue,
+        //     inGrace,
+        //     leading,
+        //     forceHunter,
+        //     idleCount: idle.length,
+        // });
+
         const { x: px, z: pz } = host.playerPosition;
         const spot = host.findSpawnRing(px, pz, NPC_SPAWN_CONFIG.spawnMinDistance, NPC_SPAWN_CONFIG.spawnMaxDistance);
         if (!spot) return; // no walkable cell out there yet (chunks not streamed that far) — retried next check tick
@@ -195,13 +206,38 @@ export class NpcDirector {
         }
 
         if (!inGrace && playerValue > NPC_DIFFICULTY_CONFIG.lowLevelPlayerThreshold) {
+            const min = playerValue * 0.5;
+            const max = playerValue * 2;
+
+            const suitable = idle.filter(r => {
+                const value = scoreOf(r);
+                return value >= min && value <= max;
+            });
+
+            if (suitable.length > 0) {
+                return suitable[Math.floor(Math.random() * suitable.length)];
+            }
+
             return idle[Math.floor(Math.random() * idle.length)];
         }
 
         const ceiling = playerValue * NPC_DIFFICULTY_CONFIG.lowLevelValueMultiplier;
-        const weak = idle.filter(r => scoreOf(r) <= ceiling);
-        const pool = weak.length > 0 ? weak : idle;
-        return pool[Math.floor(Math.random() * pool.length)];
+
+        const weak = idle.filter(
+            r => scoreOf(r) <= ceiling
+        );
+
+        if (weak.length > 0) {
+            return weak[Math.floor(Math.random() * weak.length)];
+        }
+
+        // No weak bots available.
+        // Always choose the weakest bot, never a random huge one.
+        return idle.reduce((weakest, current) =>
+            scoreOf(current) < scoreOf(weakest)
+                ? current
+                : weakest
+        );
     }
 
     /**

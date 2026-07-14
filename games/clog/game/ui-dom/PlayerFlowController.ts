@@ -367,12 +367,23 @@ export class PlayerFlowController {
 
 // ── DOM helpers ──────────────────────────────────────────────────────────────
 
-/** Fixed, top-center game logo for the edge-anchored boot menu — the WHALE.IO wordmark image stacked over a bigger gold "2048" line, rather than a plain text heading. */
+/**
+ * Top-center boot-menu header:
+ *
+ * 1. High-score pill
+ * 2. WHALE.IO logo
+ * 3. Gold 2048 badge
+ *
+ * The logo section is hidden through CSS on landscape screens below
+ * 560px high, while the high score remains visible.
+ */
 function gameLogo(): HTMLElement {
     const wrap = document.createElement('div');
+    wrap.className = 'menu-header';
+
     Object.assign(wrap.style, {
         position: 'fixed',
-        top: '48px',
+        top: '36px',
         left: '50%',
         transform: 'translateX(-50%)',
         display: 'flex',
@@ -380,19 +391,39 @@ function gameLogo(): HTMLElement {
         alignItems: 'center',
         gap: '0px',
         pointerEvents: 'none',
+        zIndex: '1',
+    });
+
+    // High score is outside menu-logo-content so it remains visible when
+    // the logo is hidden on short landscape screens.
+    wrap.appendChild(highScoreBadge());
+
+    const logoContent = document.createElement('div');
+    logoContent.className = 'menu-logo-content';
+
+    Object.assign(logoContent.style, {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        marginTop: '14px',
     });
 
     const word = document.createElement('img');
     word.src = whaleLogo;
+    word.className = 'menu-logo-image';
+
     Object.assign(word.style, {
         width: '230px',
         height: 'auto',
         filter: 'drop-shadow(0 3px 3px rgba(0,0,0,0.45))',
     });
-    wrap.appendChild(word);
+
+    logoContent.appendChild(word);
 
     const badge = document.createElement('div');
+    badge.className = 'menu-logo-number';
     badge.textContent = '2048';
+
     Object.assign(badge.style, {
         fontSize: '30px',
         fontWeight: '900',
@@ -405,26 +436,31 @@ function gameLogo(): HTMLElement {
         boxShadow: '0 4px 10px rgba(0,0,0,0.4)',
         marginTop: '4px',
     });
-    wrap.appendChild(badge);
-    wrap.appendChild(highScoreBadge());
+
+    logoContent.appendChild(badge);
+    wrap.appendChild(logoContent);
 
     return wrap;
 }
-
 /** Small trophy pill under the logo — gives the high score its own identity instead of reading as plain body text. */
 function highScoreBadge(): HTMLElement {
     const pill = document.createElement('div');
+    pill.className = 'menu-high-score';
+
     Object.assign(pill.style, {
-        marginTop: '28px',
+        marginTop: '0',
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
         padding: '6px 18px',
         borderRadius: '999px',
-        background: 'linear-gradient(rgba(34,38,48,0.92), rgba(14,16,22,0.92))',
+        background:
+            'linear-gradient(rgba(34,38,48,0.92), rgba(14,16,22,0.92))',
         border: '1px solid rgba(255,215,115,0.4)',
         boxShadow: '0 3px 12px rgba(0,0,0,0.4)',
     });
+
+    // Rest of the function remains unchanged.
 
     const trophy = document.createElement('img');
     trophy.src = trophyIcon;

@@ -7,9 +7,9 @@ import { FloatBob } from "../components/FloatBob";
 const POP_DURATION = 0.45; // seconds for the spawn-pop animation
 
 export class TailCube {
-    public value: number;
-    public transform: THREE.Group;
-    public mesh: THREE.Mesh;
+    public value!: number;
+    public transform!: THREE.Group;
+    public mesh!: THREE.Mesh;
 
     /** True while this cube is actively sliding toward its merge target (skip snake-follow). */
     public isMerging = false;
@@ -30,12 +30,17 @@ export class TailCube {
      */
     public settleRemaining = 0;
 
-    private bounceTimer = 0;
-    private popTimer    = 0;
-    private shadow: BlobShadow;
-    private floatBob: FloatBob;
+    public isMultiplier: boolean = false;
+    protected bounceTimer = 0;
+    protected popTimer = 0;
+    protected shadow!: BlobShadow;
+    protected floatBob!: FloatBob;
 
     constructor(value: number, scene: THREE.Scene, position?: THREE.Vector3) {
+        this.build(value, scene, position)
+    }
+    protected build(value: number, scene: THREE.Scene, position?: THREE.Vector3) {
+        this.isMultiplier = false;
         this.value = value;
         this.mesh = CubeBuilder.buildNumbered(value);
         this.transform = new THREE.Group();
@@ -52,7 +57,7 @@ export class TailCube {
         return this.transform.position;
     }
 
-    private applyScale(): void {
+    protected applyScale(): void {
         const s = sizeForValue(this.value);
         this.mesh.scale.setScalar(s);
         this.mesh.position.y = s * 0.5;

@@ -11,11 +11,47 @@ import flagJpn from '../dom-ui/flags/Icon_Flag_jpn.png';
 import flagKor from '../dom-ui/flags/Icon_Flag_kor.png';
 import flagChn from '../dom-ui/flags/Icon_Flag_chn.png';
 import flagRus from '../dom-ui/flags/Icon_Flag_rus.png';
+import flagInd from '../dom-ui/flags/Icon_Flag_ind.png';
+import flagTur from '../dom-ui/flags/Icon_Flag_tur.png';
+import flagPol from '../dom-ui/flags/Icon_Flag_pol.png';
+import flagTha from '../dom-ui/flags/Icon_Flag_tha.png';
+import flagUkr from '../dom-ui/flags/Icon_Flag_ukr.png';
+import flagIdn from '../dom-ui/flags/Icon_Flag_idn.png';
+import flagVnm from '../dom-ui/flags/Icon_Flag_vnm.png';
+import flagAra from '../dom-ui/flags/Icon_Flag_ara.png';
+import flagNld from '../dom-ui/flags/Icon_Flag_nld.png';
+import flagSwe from '../dom-ui/flags/Icon_Flag_swe.png';
+import flagDnk from '../dom-ui/flags/Icon_Flag_dnk.png';
+import flagNor from '../dom-ui/flags/Icon_Flag_nor.png';
+import flagRou from '../dom-ui/flags/Icon_Flag_rou.png';
+import flagCze from '../dom-ui/flags/Icon_Flag_cze.png';
 
 /** Static import map — Vite needs literal import statements to bundle these, so LOCALE_FLAG_CODE only carries the icon *key*, resolved here (same pattern as ShopScreen's ICONS). */
 const FLAG_ICON: Record<string, string> = {
-    eng: flagEng, esp: flagEsp, ita: flagIta, brz: flagBrz, fra: flagFra,
-    deu: flagDeu, jpn: flagJpn, kor: flagKor, chn: flagChn, rus: flagRus,
+    eng: flagEng,
+    esp: flagEsp,
+    ita: flagIta,
+    brz: flagBrz,
+    fra: flagFra,
+    deu: flagDeu,
+    jpn: flagJpn,
+    kor: flagKor,
+    chn: flagChn,
+    rus: flagRus,
+    ind: flagInd,
+    tur: flagTur,
+    pol: flagPol,
+    tha: flagTha,
+    ukr: flagUkr,
+    idn: flagIdn,
+    vnm: flagVnm,
+    ara: flagAra,
+    nld: flagNld,
+    swe: flagSwe,
+    dnk: flagDnk,
+    nor: flagNor,
+    rou: flagRou,
+    cze: flagCze,
 };
 
 function flagIcon(locale: Locale): string {

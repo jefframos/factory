@@ -1,23 +1,27 @@
 /**
- * Generates games/clog/game/i18n/locales/<code>.json for every locale listed
- * below (except 'en', the hand-authored source of truth) by machine-
- * translating en.json through the MyMemory API
- * (https://mymemory.translated.net/doc/spec.php).
+ * Generates games/clog/game/i18n/locales/<code>.json from en.json.
  *
- * Run: npm run translate:i18n            (all configured locales)
- *      npm run translate:i18n -- es fr   (only these locales)
+ * Modes:
  *
- * Needs MYMEMORY_EMAIL / MYMEMORY_KEY in .env — MyMemory ties the higher
- * daily quota to that account instead of the calling IP.
+ * Full translation (default):
+ *   npm run translate:i18n
  *
- * SUPPORTED_LOCALES here must stay in sync with
- * games/clog/game/i18n/config.ts — duplicated rather than imported since
- * this is a plain Node/ESM build tool (see tools/*.mjs) and that file is
- * TypeScript consumed by the Vite/game build instead.
+ * Only create missing locale files:
+ *   npm run translate:i18n -- --missing
+ *
+ * Only translate new/changed English strings:
+ *   npm run translate:i18n -- --update
+ *
+ * Cache:
+ *   tools/i18n/translation-cache.json
+ *
+ * The cache stores the last processed en.json snapshot.
+ * If the cache does not exist, it is created automatically from en.json.
  */
+
 import dotenv from 'dotenv';
-import { readFileSync, writeFileSync } from 'fs';
-import { dirname, resolve } from 'path';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 dotenv.config();
@@ -25,113 +29,173 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const SUPPORTED_LOCALES = ['en', 'es', 'it', 'pt-br', 'fr', 'de', 'ja', 'ko', 'zh-cn', 'ru'];
+const SUPPORTED_LOCALES = [
+    'en',
+    'es',
+    'it',
+    'pt-br',
+    'fr',
+    'de',
+    'ja',
+    'ko',
+    'zh-cn',
+    'ru',
+    'hi',
+    'tr',
+    'pl',
+    'th',
+    'uk',
+    'id',
+    'vi',
+    'ar',
+    'nl',
+    'sv',
+    'da',
+    'no',
+    'ro',
+    'cs',
+];
+
 const DEFAULT_LOCALE = 'en';
 
 const EMAIL = process.env.MYMEMORY_EMAIL;
 const KEY = process.env.MYMEMORY_KEY;
+
 if (!EMAIL || !KEY) {
     console.error('❌ Missing MYMEMORY_EMAIL / MYMEMORY_KEY in .env');
     process.exit(1);
 }
 
 const LOCALES_DIR = resolve(__dirname, '../../games/clog/game/i18n/locales');
-const REQUEST_DELAY_MS = 350; // MyMemory asks callers not to hammer the endpoint
+const CACHE_PATH = resolve(__dirname, 'translation-cache.json');
+
+const REQUEST_DELAY_MS = 350;
 const MAX_RETRIES = 2;
 
-/** MyMemory's own langpair codes, where they differ from our locale codes. */
 const MYMEMORY_CODE = {
     'pt-br': 'pt-BR',
     'zh-cn': 'zh-CN',
 };
 
-function sleep(ms) {
-    return new Promise(res => setTimeout(res, ms));
+/* ---------------- Cache ---------------- */
+
+function loadJson(path) {
+    return JSON.parse(readFileSync(path, 'utf8'));
 }
 
-// Open/close markers for a protected placeholder — deliberately non-repeating
-// letters (no run of the same character) so a translation engine that drops
-// or duplicates one character of a run (observed with a "zzz" token on CJK
-// output — see git history) can't silently leave a stray leftover character
-// behind that the placeholder-count check wouldn't catch.
+function saveJson(path, data) {
+    writeFileSync(path, JSON.stringify(data, null, 4) + '\n', 'utf8');
+}
+
+function loadCache(en) {
+    if (!existsSync(CACHE_PATH)) {
+        console.log('ℹ️ No translation cache found. Creating from en.json');
+        saveJson(CACHE_PATH, en);
+        return en;
+    }
+
+    return loadJson(CACHE_PATH);
+}
+
+/* ---------------- Helpers ---------------- */
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 const TOKEN_OPEN = 'qxk';
 const TOKEN_CLOSE = 'vqj';
 
-/**
- * Swaps every `{varName}` in `template` for an opaque `qxkNvqj` token before
- * translation (MT engines reliably leave alphanumeric "words" like that
- * alone, unlike `{curly braces}`, which some engines mangle or drop) and
- * hands back the list of names in order, so the caller can restore them
- * afterward and verify none went missing.
- */
 function protectPlaceholders(template) {
     const names = [];
+
     const protectedText = template.replace(/\{(\w+)\}/g, (_match, name) => {
         names.push(name);
         return `${TOKEN_OPEN}${names.length - 1}${TOKEN_CLOSE}`;
     });
+
     return { protectedText, names };
 }
 
-/** Restores `qxkNvqj` tokens back to `{varName}` — case-insensitive and whitespace-tolerant, since MT engines sometimes capitalize or re-space them. */
-function restorePlaceholders(translated, names) {
-    const pattern = new RegExp(`${TOKEN_OPEN}\\s*(\\d+)\\s*${TOKEN_CLOSE}`, 'gi');
-    return translated.replace(pattern, (match, indexStr) => {
-        const name = names[Number(indexStr)];
-        return name !== undefined ? `{${name}}` : match;
+function restorePlaceholders(text, names) {
+    const regex = new RegExp(`${TOKEN_OPEN}\\s*(\\d+)\\s*${TOKEN_CLOSE}`, 'gi');
+
+    return text.replace(regex, (_match, index) => {
+        const name = names[Number(index)];
+        return name !== undefined ? `{${name}}` : _match;
     });
 }
 
-/**
- * True only if `text` contains each of `names` exactly once as a clean
- * `{name}` placeholder AND no fragment of the raw token markers survived
- * restoration (the tell for a partial/overrun match — see restorePlaceholders
- * doc comment) — a translated string that passes this has zero leftover MT
- * artifacts, not just "the right variable names somewhere in it".
- */
 function hasAllPlaceholders(text, names) {
-    const noStrayMarkers = !new RegExp(TOKEN_OPEN, 'i').test(text) && !new RegExp(TOKEN_CLOSE, 'i').test(text);
-    return noStrayMarkers && names.every(name => text.split(`{${name}}`).length === 2);
+    const clean = !text.includes(TOKEN_OPEN) && !text.includes(TOKEN_CLOSE);
+
+    return clean && names.every(name => text.split(`{${name}}`).length === 2);
 }
 
-async function translateOne(text, targetCode) {
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${targetCode}&de=${encodeURIComponent(EMAIL)}&key=${encodeURIComponent(KEY)}`;
+/* ---------------- Translation ---------------- */
+
+async function translateOne(text, locale) {
+    const target = MYMEMORY_CODE[locale] ?? locale;
+
+    const url =
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}` +
+        `&langpair=en|${target}` +
+        `&de=${encodeURIComponent(EMAIL)}` +
+        `&key=${encodeURIComponent(KEY)}`;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
-            const res = await fetch(url);
-            const data = await res.json();
-            if (data.responseStatus === 200 && typeof data.responseData?.translatedText === 'string') {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (
+                data.responseStatus === 200 &&
+                typeof data.responseData?.translatedText === 'string'
+            ) {
                 return data.responseData.translatedText;
             }
-            console.warn(`  ! MyMemory returned status ${data.responseStatus} for "${text}" — ${data.responseDetails ?? 'no detail'}`);
+
+            console.warn(
+                `Translation failed (${data.responseStatus})`,
+                data.responseDetails
+            );
+
         } catch (err) {
-            console.warn(`  ! request failed (attempt ${attempt + 1}/${MAX_RETRIES + 1}) for "${text}":`, err);
+            console.warn(`Request failed attempt ${attempt + 1}`, err);
         }
-        if (attempt < MAX_RETRIES) await sleep(REQUEST_DELAY_MS * 2);
+
+        if (attempt < MAX_RETRIES) {
+            await sleep(REQUEST_DELAY_MS * 2);
+        }
     }
+
     return null;
 }
 
-async function translateTable(source, locale) {
-    const targetCode = MYMEMORY_CODE[locale] ?? locale;
+async function translateTable(source, locale, onlyKeys = null) {
     const result = {};
 
-    for (const [key, template] of Object.entries(source)) {
-        const { protectedText, names } = protectPlaceholders(template);
-        const translatedProtected = await translateOne(protectedText, targetCode);
+    const entries = Object.entries(source)
+        .filter(([key]) => !onlyKeys || onlyKeys.includes(key));
+
+    for (const [key, value] of entries) {
+        const { protectedText, names } = protectPlaceholders(value);
+
+        const translated = await translateOne(protectedText, locale);
+
         await sleep(REQUEST_DELAY_MS);
 
-        if (translatedProtected === null) {
-            console.warn(`  ! [${locale}] "${key}" — translation request failed, keeping English`);
-            result[key] = template;
+        if (!translated) {
+            console.warn(`[${locale}] ${key} failed, keeping English`);
+            result[key] = value;
             continue;
         }
 
-        const restored = restorePlaceholders(translatedProtected, names);
+        const restored = restorePlaceholders(translated, names);
+
         if (!hasAllPlaceholders(restored, names)) {
-            console.warn(`  ! [${locale}] "${key}" — lost a placeholder in translation ("${restored}"), keeping English`);
-            result[key] = template;
+            console.warn(`[${locale}] ${key} placeholder error`);
+            result[key] = value;
             continue;
         }
 
@@ -141,27 +205,173 @@ async function translateTable(source, locale) {
     return result;
 }
 
-async function main() {
-    const requested = process.argv.slice(2);
-    const targets = requested.length ? requested : SUPPORTED_LOCALES.filter(l => l !== DEFAULT_LOCALE);
+/* ---------------- Modes ---------------- */
 
-    for (const locale of targets) {
-        if (!SUPPORTED_LOCALES.includes(locale)) {
-            console.error(`❌ Unknown locale "${locale}" — must be one of ${SUPPORTED_LOCALES.join(', ')}`);
-            process.exit(1);
+function getChangedKeys(previous, current) {
+    const changed = [];
+
+    for (const [key, value] of Object.entries(current)) {
+        if (previous[key] !== value) {
+            changed.push(key);
         }
     }
 
-    const en = JSON.parse(readFileSync(resolve(LOCALES_DIR, 'en.json'), 'utf-8'));
-
-    for (const locale of targets) {
-        console.log(`Translating ${Object.keys(en).length} strings -> ${locale}...`);
-        const table = await translateTable(en, locale);
-        const outPath = resolve(LOCALES_DIR, `${locale}.json`);
-        writeFileSync(outPath, JSON.stringify(table, null, 4) + '\n', 'utf-8');
-        console.log(`  ✅ wrote ${outPath}`);
-    }
+    return changed;
 }
+
+function mergeTranslations(existing, incoming) {
+    return {
+        ...existing,
+        ...incoming,
+    };
+}
+
+/* ---------------- Main ---------------- */
+
+async function main() {
+    const args = process.argv.slice(2);
+
+    const mode =
+        args.includes('--missing') ? 'missing' :
+            args.includes('--update') ? 'update' :
+                'full';
+
+    const en = loadJson(resolve(LOCALES_DIR, 'en.json'));
+
+    const cachedEnglish = loadCache(en);
+
+    const targets = SUPPORTED_LOCALES.filter(
+        locale => locale !== DEFAULT_LOCALE
+    );
+
+    console.log(`Mode: ${mode}`);
+
+    if (mode === 'update') {
+        console.log('Checking English changes...');
+
+        const changedKeys = getChangedKeys(cachedEnglish, en);
+
+        if (changedKeys.length === 0) {
+            console.log('✅ No new or changed strings.');
+            return;
+        }
+
+        console.log(
+            `Found ${changedKeys.length} changed strings:`,
+            changedKeys.join(', ')
+        );
+
+        for (const locale of targets) {
+            const path = resolve(LOCALES_DIR, `${locale}.json`);
+
+            if (!existsSync(path)) {
+                console.log(
+                    `Creating missing locale ${locale}...`
+                );
+
+                const full = await translateTable(
+                    en,
+                    locale
+                );
+
+                saveJson(path, full);
+                continue;
+            }
+
+            const existing = loadJson(path);
+
+            console.log(
+                `Updating ${locale} (${changedKeys.length} strings)...`
+            );
+
+            const translated = await translateTable(
+                Object.fromEntries(
+                    changedKeys.map(key => [
+                        key,
+                        en[key],
+                    ])
+                ),
+                locale
+            );
+
+            saveJson(
+                path,
+                mergeTranslations(existing, translated)
+            );
+        }
+
+        saveJson(CACHE_PATH, en);
+
+        console.log('✅ Cache updated.');
+        return;
+    }
+
+
+    if (mode === 'missing') {
+        for (const locale of targets) {
+            const path = resolve(
+                LOCALES_DIR,
+                `${locale}.json`
+            );
+
+            if (existsSync(path)) {
+                console.log(
+                    `Skipping ${locale} (already exists)`
+                );
+                continue;
+            }
+
+            console.log(
+                `Creating ${locale}...`
+            );
+
+            const translated = await translateTable(
+                en,
+                locale
+            );
+
+            saveJson(path, translated);
+
+            console.log(
+                `✅ Created ${path}`
+            );
+        }
+
+        saveJson(CACHE_PATH, en);
+
+        console.log('✅ Cache updated.');
+        return;
+    }
+
+
+    // FULL MODE
+    for (const locale of targets) {
+        console.log(
+            `Translating ${Object.keys(en).length} strings -> ${locale}`
+        );
+
+        const translated = await translateTable(
+            en,
+            locale
+        );
+
+        const path = resolve(
+            LOCALES_DIR,
+            `${locale}.json`
+        );
+
+        saveJson(path, translated);
+
+        console.log(
+            `✅ Wrote ${path}`
+        );
+    }
+
+    saveJson(CACHE_PATH, en);
+
+    console.log('✅ Cache updated.');
+}
+
 
 main().catch(err => {
     console.error(err);

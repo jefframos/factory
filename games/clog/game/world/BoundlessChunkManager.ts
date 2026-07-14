@@ -16,8 +16,8 @@ export class BoundlessChunkManager {
     private chunks = new Map<string, BoundlessChunk>();
 
     private _buildsThisFrame = 0;
-    private _lastBuildMs     = 0;
-    private _peakBuildMs     = 0;
+    private _lastBuildMs = 0;
+    private _peakBuildMs = 0;
 
     constructor(scene: THREE.Scene, collectibles: CollectibleManager) {
         this.scene = scene;
@@ -26,10 +26,10 @@ export class BoundlessChunkManager {
 
     getStats(): Pick<PerfStats, 'chunksLoaded' | 'chunksBuiltThisFrame' | 'lastBuildMs' | 'peakBuildMs'> {
         return {
-            chunksLoaded:        this.chunks.size,
+            chunksLoaded: this.chunks.size,
             chunksBuiltThisFrame: this._buildsThisFrame,
-            lastBuildMs:         this._lastBuildMs,
-            peakBuildMs:         this._peakBuildMs,
+            lastBuildMs: this._lastBuildMs,
+            peakBuildMs: this._peakBuildMs,
         };
     }
 
@@ -48,7 +48,18 @@ export class BoundlessChunkManager {
                 if (!this.chunks.has(key)) {
                     if (this._buildsThisFrame >= MAX_BUILDS_PER_FRAME) continue;
                     const t0 = performance.now();
-                    this.chunks.set(key, new BoundlessChunk(cx + dx, cz + dz, this.scene));
+
+                    const chunk = new BoundlessChunk(cx + dx, cz + dz, this.scene);
+
+                    // console.log(
+                    //     "Chunk",
+                    //     cx + dx,
+                    //     cz + dz,
+                    //     "Island:",
+                    //     chunk.hasIsland
+                    // );
+
+                    this.chunks.set(key, chunk);
                     this._lastBuildMs = performance.now() - t0;
                     this._peakBuildMs = Math.max(this._peakBuildMs, this._lastBuildMs);
                     this._buildsThisFrame++;

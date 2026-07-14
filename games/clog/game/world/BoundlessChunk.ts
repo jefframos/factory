@@ -134,7 +134,7 @@ export class BoundlessChunk {
         const isOrigin = chunkX === 0 && chunkZ === 0;
         const nearOrigin = Math.hypot(chunkX, chunkZ) <= SPAWN_ISLAND_CLEAR_RADIUS;
         const islandPresence = valueNoise(chunkX * 0.65, chunkZ * 0.65, WORLD_SEED);
-        this.hasIsland = isOrigin || (!nearOrigin && islandPresence > 0.35);
+        this.hasIsland = isOrigin || (!nearOrigin && islandPresence > 0.15);
 
         if (this.hasIsland) {
             // Per-chunk seed for each noise layer — each island looks different.

@@ -11,13 +11,50 @@ import ja from './locales/ja.json';
 import ko from './locales/ko.json';
 import zhCn from './locales/zh-cn.json';
 import ru from './locales/ru.json';
+import hi from './locales/hi.json';
+import tr from './locales/tr.json';
+import pl from './locales/pl.json';
+import th from './locales/th.json';
+import uk from './locales/uk.json';
+import id from './locales/id.json';
+import vi from './locales/vi.json';
+import ar from './locales/ar.json';
+import nl from './locales/nl.json';
+import sv from './locales/sv.json';
+import da from './locales/da.json';
+import no from './locales/no.json';
+import ro from './locales/ro.json';
+import cs from './locales/cs.json';
 
 type StringTable = typeof en;
 export type StringId = keyof StringTable;
 type StringVars = Record<string, string | number>;
 
 const TABLES: Record<Locale, StringTable> = {
-    en, es, it, 'pt-br': ptBr, fr, de, ja, ko, 'zh-cn': zhCn, ru,
+    en,
+    es,
+    it,
+    'pt-br': ptBr,
+    fr,
+    de,
+    ja,
+    ko,
+    'zh-cn': zhCn,
+    ru,
+    hi,
+    tr,
+    pl,
+    th,
+    uk,
+    id,
+    vi,
+    ar,
+    nl,
+    sv,
+    da,
+    no,
+    ro,
+    cs,
 };
 
 /** DOM attribute a bound label writes its resolved string into — see bindLabel. */
@@ -67,9 +104,15 @@ class LocalizationService {
     async load(): Promise<void> {
         try {
             const saved = await PlatformHandler.instance.platform.getItem(LocalizationService.STORAGE_KEY);
-            if (saved && isSupportedLocale(saved)) this.locale = saved;
+
+            if (saved && isSupportedLocale(saved)) {
+                this.locale = saved;
+            } else {
+                this.locale = this.getBrowserLocale();
+            }
         } catch (e) {
             console.error('Localization: failed to load saved locale', e);
+            this.locale = this.getBrowserLocale();
         }
     }
 
@@ -93,7 +136,20 @@ class LocalizationService {
             console.error('Localization: failed to save locale', e);
         }
     }
+    private getBrowserLocale(): Locale {
+        const lang = navigator.language.toLowerCase();
 
+        if (lang.startsWith('pt')) return 'pt-br';
+        if (lang.startsWith('zh')) return 'zh-cn';
+
+        const base = lang.split('-')[0];
+
+        if (isSupportedLocale(base)) {
+            return base;
+        }
+
+        return DEFAULT_LOCALE;
+    }
     getString(id: StringId, vars?: StringVars): string {
         const template = TABLES[this.locale]?.[id] ?? TABLES[DEFAULT_LOCALE][id] ?? id;
         return vars ? interpolate(template, vars) : template;

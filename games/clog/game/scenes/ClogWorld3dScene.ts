@@ -8,7 +8,7 @@ import { SkyBackground } from "../vfx/SkyBackground";
 import { AreaManager } from "../world/AreaManager";
 
 const CAM_OFFSET = new THREE.Vector3(0, 6, 10);
-const CAM_LERP   = 0.1;
+const CAM_LERP = 0.1;
 
 export default class ClogWorld3dScene extends ThreeScene {
 
@@ -75,7 +75,7 @@ export default class ClogWorld3dScene extends ThreeScene {
         const hit = this.collectibles.checkCollision(this.player.position, this.player.foodRadius);
         if (hit) this.player.collect(hit);
 
-        const hs     = this.areaManager.spawnHalfSize;
+        const hs = this.areaManager.spawnHalfSize;
         const center = this.areaManager.spawnCenter;
         this.levelManager.update(
             delta,
@@ -100,7 +100,7 @@ export default class ClogWorld3dScene extends ThreeScene {
 
     private rebuildSpawnCells(): void {
         this.spawnCells = [];
-        const hs     = this.areaManager.spawnHalfSize;
+        const hs = this.areaManager.spawnHalfSize;
         const center = this.areaManager.spawnCenter;
         for (let x = center.x - hs + 1; x < center.x + hs; x += 2) {
             for (let z = center.y - hs + 1; z < center.y + hs; z += 2) {

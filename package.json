@@ -11,6 +11,8 @@
         "zip": "ts-node scripts/zip-game.ts",
         "generate:index": "ts-node scripts/generate-index.ts",
         "translate:i18n": "node tools/i18n/translate-i18n.mjs",
+        "translate:i18n:new": "node tools/i18n/translate-i18n.mjs --missing",
+        "translate:i18n:update": "node tools/i18n/translate-i18n.mjs --update",
         "image": "node tools/image/build-image.mjs",
         "image2": "npm run thumbs && npm run sizes && npm run image",
         "watch:image": "cross-env WATCH=true node tools/image/build-image.mjs",

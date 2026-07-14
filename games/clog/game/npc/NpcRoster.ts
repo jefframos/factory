@@ -48,11 +48,34 @@ export class NpcRoster {
     private seedPopulation(): void {
         const cfg = NPC_POPULATION_CONFIG;
         const shuffled = [...this.records].sort(() => Math.random() - 0.5);
-        const n = shuffled.length;
-        for (let i = 0; i < n; i++) {
-            const t = n === 1 ? 1 : i / (n - 1); // 0 = weakest rank .. 1 = leader
-            const simSeconds = cfg.seedElapsedSeconds * Math.pow(t, cfg.seedSkew);
-            const outcome = GrowthSimulator.run(simSeconds);
+
+        const weakCount = Math.min(
+            cfg.guaranteedWeakCount,
+            shuffled.length
+        );
+
+        // Force the first group to be newborn/weak
+        for (let i = 0; i < weakCount; i++) {
+            shuffled[i].value = cfg.respawnValue;
+            shuffled[i].tailValues = [];
+        }
+
+        // Seed the rest with world history
+        const remaining = shuffled.length - weakCount;
+
+        for (let i = weakCount; i < shuffled.length; i++) {
+            const rank = i - weakCount;
+
+            const t = remaining <= 1
+                ? 1
+                : rank / (remaining - 1);
+
+            const simSeconds =
+                cfg.seedElapsedSeconds *
+                Math.pow(t, cfg.seedSkew);
+
+            const outcome = GrowthSimulator.run(simSeconds * 2);
+
             shuffled[i].value = outcome.value;
             shuffled[i].tailValues = outcome.tailValues;
         }

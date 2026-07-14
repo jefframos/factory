@@ -1,5 +1,5 @@
 import { rollFoodValue } from '../world/LinearConfig';
-import { NPC_IDLE_SIM_CONFIG, NPC_POPULATION_CONFIG } from './NpcConfig';
+import { NPC_IDLE_SIM_CONFIG, NPC_MULTIPLIER_CONFIG, NPC_POPULATION_CONFIG } from './NpcConfig';
 import { collapseMerges } from './NpcRecord';
 
 /** Bare {value, tailValues} shape — same fields NpcRecord uses for growth, without the roster bookkeeping (id, state, position) that doesn't apply to a throwaway simulation entity. */
@@ -30,17 +30,39 @@ export type GrowthOutcome = {
  * long) instead of everyone racing the same clock — see that method's doc.
  */
 export class GrowthSimulator {
-    static run(seconds: number, step: number = NPC_IDLE_SIM_CONFIG.feedInterval): GrowthOutcome {
-        const entity: GrowthOutcome = { value: NPC_POPULATION_CONFIG.respawnValue, tailValues: [] };
+    static run(
+        seconds: number,
+        step: number = NPC_IDLE_SIM_CONFIG.feedInterval
+    ): GrowthOutcome {
+        const entity: GrowthOutcome = {
+            value: NPC_POPULATION_CONFIG.respawnValue,
+            tailValues: [],
+        };
 
         let feedClock = 0;
+
         for (let elapsed = 0; elapsed < seconds; elapsed += step) {
             feedClock += step;
+
             while (feedClock >= NPC_IDLE_SIM_CONFIG.feedInterval) {
                 feedClock -= NPC_IDLE_SIM_CONFIG.feedInterval;
+
+                // Normal food
                 entity.tailValues.push(rollFoodValue());
                 entity.tailValues.sort((a, b) => b - a);
                 collapseMerges(entity);
+
+                // Rare multiplier pickup
+                if (Math.random() < NPC_MULTIPLIER_CONFIG.spawnChance) {
+                    entity.value *= NPC_MULTIPLIER_CONFIG.valueMultiplier;
+
+                    entity.tailValues = entity.tailValues.map(
+                        v => v * NPC_MULTIPLIER_CONFIG.valueMultiplier
+                    );
+
+                    entity.tailValues.sort((a, b) => b - a);
+                    collapseMerges(entity);
+                }
             }
         }
 

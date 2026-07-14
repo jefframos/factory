@@ -51,11 +51,19 @@
     },
     {
         "id": "default",
+        "name": "Unicorn Horn",
+        "description": "Majestic and sparkly.",
+        "icon": "skins/clog-face-snapshots_face-brave-1_128x128.webp",
+        "texture": "skins/face-brave-1.webp",
+        "kind": "free"
+    },
+    {
+        "id": "smile-1",
         "name": "Default",
         "description": "The plain cube — always available, no ad needed.",
         "icon": "skins/clog-face-snapshots_default_128x128.webp",
         "texture": "skins/face-1.webp",
-        "kind": "free"
+        "kind": "cosmetic"
     },
     {
         "id": "face-smiling-2",
@@ -143,14 +151,6 @@
         "description": "Majestic and sparkly.",
         "icon": "skins/clog-face-snapshots_face-scary-2_128x128.webp",
         "texture": "skins/face-scary-2.webp",
-        "kind": "cosmetic"
-    },
-    {
-        "id": "face-brave-1",
-        "name": "Unicorn Horn",
-        "description": "Majestic and sparkly.",
-        "icon": "skins/clog-face-snapshots_face-brave-1_128x128.webp",
-        "texture": "skins/face-brave-1.webp",
         "kind": "cosmetic"
     },
     {

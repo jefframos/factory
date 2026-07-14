@@ -136,8 +136,8 @@ export function computeFoodCount(roomSize: number): number {
 // ── Camera config ─────────────────────────────────────────────────────────────
 export const CAMERA_CONFIG = {
     pitch: 45,
-    minDistance: 10,
-    maxDistance: 25,
+    minDistance: 13,
+    maxDistance: 26,
     maxAtValue: 8192,
     followSpeed: 5,
     /** cameraZoom multiplier while the boot menu is up — starts close on the player, then eases out to 1.0 (via the existing camDist smoothing) once they hit "Tap to Start." */
