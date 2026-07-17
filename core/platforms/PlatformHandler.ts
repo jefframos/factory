@@ -1,3 +1,4 @@
+import SoundManager from "core/audio/SoundManager";
 import { IPlatformConnection } from "./IPlatformConnection";
 
 export default class PlatformHandler {
@@ -24,10 +25,24 @@ export default class PlatformHandler {
         this._platform = value;
     }
 
-    public initialize(platform: IPlatformConnection): Promise<void> {
+    public async initialize(platform: IPlatformConnection): Promise<void> {
         this.platform = platform;
-        console.log(this.platform)
-        return this.platform.initialize()
+
+        await this.platform.initialize();
+
+        await this.platform?.onPause?.(() => {
+            console.log("GAME PAUSED");
+        });
+
+        await this.platform?.onResume?.(() => {
+            console.log("GAME RESUMED");
+        });
+
+        await this.platform?.onAudioChanged?.((enabled) => {
+            console.log("AUDIO ENABLED", enabled);
+
+            SoundManager.instance.setMuted(!enabled);
+        });
     }
 
 }

@@ -1,0 +1,25 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "islands.json"
+          ],
+          "src": [
+            "islands.json"
+          ]
+        },
+        {
+          "alias": [
+            "shopItems.json"
+          ],
+          "src": [
+            "shopItems.json"
+          ]
+        }
+      ]
+    }
+  ]
+}

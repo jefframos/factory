@@ -23,6 +23,21 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
         return Boolean(window.ytgame?.IN_PLAYABLES_ENV);
     }
 
+
+    private async waitForYTGame(): Promise<void> {
+        if (window.ytgame?.system) {
+            return;
+        }
+
+        await new Promise<void>((resolve) => {
+            const timer = setInterval(() => {
+                if (window.ytgame?.system) {
+                    clearInterval(timer);
+                    resolve();
+                }
+            }, 10);
+        });
+    }
     // -------------------------
     // SDK LOADING
     // -------------------------
@@ -64,7 +79,7 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
     // -------------------------
     public async initialize(): Promise<void> {
         log("initialize - start");
-
+        await this.waitForYTGame();
         // await this.startLoadSDK(); // intentionally disabled per your setup
 
         if (!this.isPlayablesEnv()) {
@@ -80,7 +95,15 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
                 const raw = await window.ytgame.game.loadData();
                 log("loadData result", raw);
 
-                this.saveData = raw ? JSON.parse(raw) : {};
+                if (!raw) {
+                    this.saveData = {};
+                }
+                else if (typeof raw === "string") {
+                    this.saveData = JSON.parse(raw);
+                }
+                else {
+                    this.saveData = raw;
+                }
 
                 log("saveData parsed", this.saveData);
             }
@@ -172,26 +195,21 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
             log("audio restored after rewarded");
         }
     }
-
+    private savePromise: Promise<void> = Promise.resolve();
     // -------------------------
     // STORAGE
     // -------------------------
     public async setItem(key: string, value: string): Promise<void> {
-        log("setItem", key, value);
-
-        if (!this.isPlayablesEnv()) {
-            localStorage.setItem(key, value);
-            this.saveData[key] = value;
-            return;
-        }
 
         this.saveData[key] = value;
 
-        await window.ytgame?.game?.saveData?.(
-            JSON.stringify(this.saveData)
-        );
+        this.savePromise = this.savePromise.then(async () => {
+            await window.ytgame?.game?.saveData?.(
+                JSON.stringify(this.saveData)
+            );
+        });
 
-        //log("saveData updated", this.saveData);
+        await this.savePromise;
     }
 
     public async getItem(key: string): Promise<string | null> {
@@ -211,21 +229,16 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
     }
 
     public async removeItem(key: string): Promise<void> {
-        log("removeItem", key);
-
-        if (!this.isPlayablesEnv()) {
-            localStorage.removeItem(key);
-            delete this.saveData[key];
-            return;
-        }
 
         delete this.saveData[key];
 
-        await window.ytgame?.game?.saveData?.(
-            JSON.stringify(this.saveData)
-        );
+        this.savePromise = this.savePromise.then(async () => {
+            await window.ytgame?.game?.saveData?.(
+                JSON.stringify(this.saveData)
+            );
+        });
 
-        //log("saveData updated after remove", this.saveData);
+        await this.savePromise;
     }
 
     // -------------------------
@@ -242,31 +255,40 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
         return lang;
     }
 
-    public onPause(callback: () => void): void {
-        log("onPause registered");
+    public async onPause(callback: () => void): Promise<void> {
+        await this.waitForYTGame();
 
-        window.ytgame?.system?.onPause?.(() => {
+        window.ytgame.system.onPause(() => {
             log("pause event triggered");
             callback();
         });
+
+        log("Pause handler registered");
+
     }
 
-    public onResume(callback: () => void): void {
-        log("onResume registered");
 
-        window.ytgame?.system?.onResume?.(() => {
+    public async onResume(callback: () => void): Promise<void> {
+        await this.waitForYTGame();
+
+        window.ytgame.system.onResume(() => {
             log("resume event triggered");
             callback();
         });
+
+        log("Resume handler registered");
     }
 
-    public onAudioChanged(callback: (enabled: boolean) => void): void {
-        log("onAudioChanged registered");
 
-        window.ytgame?.system?.onAudioEnabledChange?.((enabled: boolean) => {
+    public async onAudioChanged(callback: (enabled: boolean) => void): Promise<void> {
+        await this.waitForYTGame();
+
+        window.ytgame.system.onAudioEnabledChange((enabled: boolean) => {
             log("audio change event", enabled);
             callback(enabled);
         });
+
+        log("Audio handler registered");
     }
 
     // -------------------------

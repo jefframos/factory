@@ -1,4 +1,30 @@
 {
+    "mc": {
+        "portrait": {
+            "width": 540,
+            "height": 756,
+            "formats": [
+                "png"
+            ],
+            "description": "Text-free, full-bleed gameplay visual. Corners are rounded by the platform."
+        },
+        "square": {
+            "width": 512,
+            "height": 512,
+            "formats": [
+                "png"
+            ],
+            "description": "Text-free, full-bleed gameplay visual. Corners are rounded by the platform."
+        },
+        "video_trailer": {
+            "width": 1280,
+            "height": 720,
+            "formats": [
+                "mp4"
+            ],
+            "description": "High-quality 16:9 gameplay footage."
+        }
+    },
     "poki": {
         "main_icon": {
             "width": 628,
@@ -18,6 +44,30 @@
         }
     },
     "crazygames": {
+        "square": {
+            "width": 800,
+            "height": 800,
+            "formats": [
+                "png"
+            ],
+            "description": "Square game icon for the standacollterd grid."
+        },
+        "portrait": {
+            "width": 800,
+            "height": 1200,
+            "formats": [
+                "png"
+            ],
+            "description": "Square game icon for the standard grid."
+        },
+        "landscape": {
+            "width": 1920,
+            "height": 1080,
+            "formats": [
+                "png"
+            ],
+            "description": "Square game icon for the standard grid."
+        },
         "icon": {
             "width": 512,
             "height": 512,
