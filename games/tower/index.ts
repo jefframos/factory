@@ -14,13 +14,13 @@ import jsonManifest from './manifests/json.json'; // adjust path
 import { getPlatformInstance } from 'core/platforms/PlatformFactory';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
 import Assets from './Assets';
-import BaseDemoScene from './game/scenes/BaseDemoScene';
-import IslandViewScene from './game/scenes/IslandViewScene';
-import { ShopStorage, loadShopItems } from './game/data/ShopStorage';
-import { loadIslands } from './game/world/IslandStorage';
 import { HighScoreStorage } from './game/data/HighScoreStorage';
+import { ShopStorage, loadShopItems } from './game/data/ShopStorage';
 import { Localization } from './game/i18n/Localization';
+import BaseDemoScene from './game/scenes/BaseDemoScene';
+import { loadIslands } from './game/world/IslandStorage';
 import loaderConfig from './loader.config';
+import IslandViewScene from './tw/IslandViewScene';
 
 import platformConfig from './platforms.config.json';
 
