@@ -13,6 +13,14 @@
         },
         {
           "alias": [
+            "pieces-config.json"
+          ],
+          "src": [
+            "pieces-config.json"
+          ]
+        },
+        {
+          "alias": [
             "shopItems.json"
           ],
           "src": [

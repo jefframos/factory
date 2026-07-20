@@ -37,6 +37,10 @@ export class TowerDeadZoneController {
         this.onHit = callback;
     }
 
+    public getWalls(): readonly BoxEntity[] {
+        return this.walls;
+    }
+
     public rebuild(baseWorldY: number): void {
         this.clear();
 

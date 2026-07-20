@@ -21,6 +21,7 @@ import BaseDemoScene from './game/scenes/BaseDemoScene';
 import { loadIslands } from './game/world/IslandStorage';
 import loaderConfig from './loader.config';
 import IslandViewScene from './tw/IslandViewScene';
+import { loadPieces } from './tw/PieceStorage';
 
 import platformConfig from './platforms.config.json';
 
@@ -107,6 +108,7 @@ export default class MyGame extends Game {
         })
         loadShopItems();
         loadIslands();
+        loadPieces();
 
         await PIXI.Assets.loadBundle('fonts', (p) => {
             this.loaderScene.updateLoader(p * 1 / bundles.length);

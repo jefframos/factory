@@ -22,6 +22,11 @@ export class TowerZoneController {
         return this.targetLineWorldY;
     }
 
+    /** Zones completed so far — used as the piece-difficulty "level" (level = zoneIndex + 1). */
+    public getZoneIndex(): number {
+        return this.zoneIndex;
+    }
+
     public hasReachedLine(topWorldY: number): boolean {
         return topWorldY <= this.targetLineWorldY;
     }

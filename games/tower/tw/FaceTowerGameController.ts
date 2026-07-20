@@ -10,6 +10,7 @@ import {
     type FaceTowerBlock,
     type FaceTowerConfig,
 } from './FaceTowerTypes';
+import { PieceManager } from './PieceManager';
 import { TowerCameraController } from './TowerCameraController';
 import { TowerDeadZoneController } from './TowerDeadZoneController';
 import { TowerStabilityController } from './TowerStabilityController';
@@ -27,6 +28,7 @@ export class FaceTowerGameController {
     private readonly stability: TowerStabilityController;
     private readonly zones: TowerZoneController;
     private readonly deadZones: TowerDeadZoneController;
+    private readonly pieces: PieceManager;
     private readonly input: FaceTowerInputController;
     private readonly targetLine: PIXI.Graphics;
 
@@ -62,6 +64,9 @@ export class FaceTowerGameController {
             config.zoneHeight,
             config.floorY,
         );
+
+        this.pieces = new PieceManager();
+        this.pieces.build();
 
         this.deadZones = new TowerDeadZoneController(
             worldRoot,
@@ -173,8 +178,23 @@ export class FaceTowerGameController {
         return this.blocks.getBlocks();
     }
 
+    /** Every base placed so far (the original floor plus one per completed zone). */
+    public getBases() {
+        return this.blocks.getBases();
+    }
+
+    /** The side containment poles for the current zone — see TowerDeadZoneController. */
+    public getWalls() {
+        return this.deadZones.getWalls();
+    }
+
     public getScore(): number {
         return this.score;
+    }
+
+    /** Call after changing block size/bevel/stroke config at runtime — see FaceTowerBlockController.invalidateBodyTexture(). */
+    public invalidateBlockTexture(): void {
+        this.blocks.invalidateBodyTexture();
     }
 
     public destroy(): void {
@@ -269,7 +289,10 @@ export class FaceTowerGameController {
             return;
         }
 
-        this.blocks.spawnHeldBlock(this.targetX);
+        const level = this.zones.getZoneIndex() + 1;
+        const piece = this.pieces.getPieceForLevel(level);
+
+        this.blocks.spawnHeldBlock(this.targetX, piece);
         this.state = FaceTowerState.MovingBlock;
     }
 

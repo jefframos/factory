@@ -48,4 +48,12 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     wallWidth: 24,
     wallHeight: 80, // just tall enough to bumper the first block or two off the base
     deadZoneWidth: 1400,
+
+    // --- 2D block visuals ---
+    blockFillAlpha: 0.95,
+    blockStrokeColor: 0x000000,
+    blockStrokeWidth: 3,
+    blockBevelRadius: 12,
+    render2D: true,
+    render2DFaces: true,
 };

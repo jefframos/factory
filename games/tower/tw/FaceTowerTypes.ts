@@ -1,6 +1,7 @@
 // FaceTowerTypes.ts
 
 import type { BoxEntity } from 'core/phyisics/entities/BoxEntity';
+import type { PieceDefinition } from './PieceStorage';
 
 export enum FaceTowerState {
     Initialising = 'initialising',
@@ -15,6 +16,8 @@ export interface FaceTowerBlock {
     id: number;
     entity: BoxEntity;
     checkpointFrozen: boolean;
+    /** Which piece (shape/color/texture/scale) this block was spawned from — see PieceManager. */
+    piece: PieceDefinition;
 }
 
 export interface FaceTowerConfig {
@@ -64,6 +67,29 @@ export interface FaceTowerConfig {
     // Only reachable if something gets knocked past a wall, e.g. during a
     // collapse — touching one ends the run immediately.
     deadZoneWidth: number;
+
+    // --- 2D block visuals ---
+
+    // Global fill opacity (0-1) for every 2D block's body — the 3D world
+    // renders underneath the 2D overlay, so this is what lets it show
+    // through instead of being fully hidden.
+    blockFillAlpha: number;
+    blockStrokeColor: number;
+    blockStrokeWidth: number;
+
+    // Corner radius for the block-body texture — 0 draws a plain square,
+    // anything above draws a rounded rect. See BlockBodyTextureCache.
+    blockBevelRadius: number;
+
+    // Master toggle for the whole 2D visual layer (blocks/bases/target line)
+    // — physics, camera, and score keep running either way; this only hides
+    // the Pixi view so you can preview 3D-only. See IslandViewScene.
+    render2D: boolean;
+
+    // Whether newly-spawned blocks draw their piece's face texture on top
+    // of the colored/stroked body. Independent of render2D so you can have
+    // plain colored boxes without faces even with the 2D layer visible.
+    render2DFaces: boolean;
 }
 
 export type TowerSettleResult =

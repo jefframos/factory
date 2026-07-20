@@ -1,12 +1,24 @@
 // TowerBlockSync3D.ts
 
 import * as THREE from 'three';
+import { CubeBuilder } from '../game/builders/CubeBuilder';
+import { TextureBuilder } from '../game/builders/TextureBuilder';
 import type { FaceTowerBlock, FaceTowerConfig } from './FaceTowerTypes';
+import { resolvePieceImagePath } from './PieceStorage';
+
+function hexStringToNumber(hex: string): number {
+    return parseInt(hex.replace('#', ''), 16);
+}
 
 /**
- * Mirrors every live 2D physics block as a matching cube in the 3D scene.
+ * Mirrors every live 2D physics block as a matching cube in the 3D scene —
+ * built via CubeBuilder.buildDebugCube() (rounded box + face decal, the same
+ * look every other cube in the game uses) instead of a plain BoxGeometry,
+ * colored, textured, and SIZED from the block's own piece (see PieceManager)
+ * — piece.scale multiplies the cube size, so a bigger piece is just a bigger
+ * cube, matching the 2D side.
  * `pixelsPerUnit` design pixels become 1 THREE unit — at the default 80,
- * an 80x80 2D block becomes a 1x1x1 cube.
+ * an 80x80 2D block becomes a 1x1x1 cube (before scale is applied).
  *
  * Position mapping: 2D X and height-climbed-above-the-original-floor map
  * onto 3D X and Y (up) — the 2D game has no depth axis, so Z is fixed at 0.
@@ -14,19 +26,13 @@ import type { FaceTowerBlock, FaceTowerConfig } from './FaceTowerTypes';
  */
 export class TowerBlockSync3D {
     private readonly cubes = new Map<number, THREE.Mesh>();
-    private readonly material: THREE.MeshStandardMaterial;
 
     public constructor(
         private readonly scene: THREE.Scene,
         private readonly config: FaceTowerConfig,
         private readonly pixelsPerUnit: number,
         private readonly baseOffset: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 },
-    ) {
-        this.material = new THREE.MeshStandardMaterial({
-            color: 0xf2c14e,
-            roughness: 0.7,
-        });
-    }
+    ) { }
 
     public sync(blocks: readonly FaceTowerBlock[]): void {
         const seen = new Set<number>();
@@ -46,14 +52,20 @@ export class TowerBlockSync3D {
     }
 
     private createCube(block: FaceTowerBlock): THREE.Mesh {
-        const width = this.config.blockWidth / this.pixelsPerUnit;
-        const height = this.config.blockHeight / this.pixelsPerUnit;
-
-        const geometry = new THREE.BoxGeometry(width, height, width);
-        const cube = new THREE.Mesh(geometry, this.material);
+        const size = this.config.blockWidth * block.piece.scale / this.pixelsPerUnit;
+        const color = hexStringToNumber(block.piece.color);
+        const cube = CubeBuilder.buildDebugCube(color, size);
 
         this.scene.add(cube);
         this.cubes.set(block.id, cube);
+
+        if (block.piece.texture) {
+            // TextureBuilder.load caches by path, so repeated blocks of the
+            // same piece resolve this near-instantly after the first load.
+            TextureBuilder.load(resolvePieceImagePath(block.piece.texture))
+                .then(texture => CubeBuilder.setFaceTexture(cube, texture))
+                .catch(() => { /* keep the default shared face if art is missing */ });
+        }
 
         return cube;
     }
@@ -78,7 +90,13 @@ export class TowerBlockSync3D {
 
     private removeCube(id: number, cube: THREE.Mesh): void {
         this.scene.remove(cube);
-        cube.geometry.dispose();
+
+        // buildDebugCube() is never cached (see its docstring) — its body
+        // material is a one-off we own too, unlike CubeBuilder's normal
+        // value-keyed shared materials.
+        CubeBuilder.disposeMesh(cube);
+        (cube.material as THREE.Material).dispose();
+
         this.cubes.delete(id);
     }
 
@@ -90,6 +108,5 @@ export class TowerBlockSync3D {
 
     public destroy(): void {
         this.clear();
-        this.material.dispose();
     }
 }

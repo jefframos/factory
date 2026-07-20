@@ -8,13 +8,16 @@ export interface Tower3DConfig {
     cameraPitchDeg: number;
     cameraDistance: number;
 
-    // THREE units the camera (and its look-at target) rises per design-space
-    // pixel the 2D tower camera has scrolled. 0 disables the pairing.
-    towerFollowScale: number;
-
     // Constant baseline lift (THREE units) applied on top of the dynamic
-    // follow above — calibrates where the rig sits before the tower has
-    // climbed at all, independent of towerFollowScale.
+    // follow below — calibrates where the rig sits before the tower has
+    // climbed at all.
+    //
+    // The dynamic part itself is NOT a separate tunable: the camera's focus
+    // height is derived as `towerOffsetY / pixelsPerUnit`, the exact same
+    // conversion used to place the mirrored 3D cubes/base panels (see
+    // TowerBlockSync3D / TowerBaseSync3D). Using any other scale here would
+    // let the camera drift away from the base it's supposed to be centered
+    // on — see IslandViewScene.update().
     cameraMasterOffsetY: number;
 
     // --- Origin island cluster (a single connected blob, not the chunk streamer) ---
@@ -37,15 +40,29 @@ export interface Tower3DConfig {
     // — added to every cube's mapped position, so the tower can sit
     // somewhere other than dead-center on the island cluster.
     towerBaseOffset: { x: number; y: number; z: number };
+
+    // --- Base platform (see TowerBaseSync3D) ---
+    baseBevelRadius: number;
+    baseOpacity: number;
+    baseColor: number;
+
+    // Z-thickness (THREE units) shared by the base slab and the side poles
+    // (see TowerBaseSync3D/TowerWallSync3D) — both are flat blocks facing
+    // the camera, not full cubes, so this is the one place to tweak how
+    // deep they read.
+    platformDepth: number;
+
+    // --- Side poles (see TowerWallSync3D — mirrors TowerDeadZoneController's walls) ---
+    poleColor: number;
+    poleOpacity: number;
 }
 
 export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
     cameraYawDeg: 0,
     cameraPitchDeg: 5,
-    cameraDistance: 9,
+    cameraDistance: 10,
 
-    towerFollowScale: 0.025,
-    cameraMasterOffsetY: 5,
+    cameraMasterOffsetY: 5.5,
 
     clusterDiameter: 550, // 16 world units at pixelsPerUnit: 80 — matches the old fixed radius
     clusterCellSize: 1,
@@ -55,4 +72,12 @@ export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
 
     pixelsPerUnit: 80,
     towerBaseOffset: { x: 0, y: 1, z: 0 },
+
+    baseBevelRadius: 0.15,
+    baseOpacity: 0.7,
+    baseColor: 0x33cc66,
+    platformDepth: 2,
+
+    poleColor: 0x3388ff,
+    poleOpacity: 0.85,
 };

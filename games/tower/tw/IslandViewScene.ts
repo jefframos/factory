@@ -1,6 +1,7 @@
 import { Game } from 'core/Game';
 import Physics from 'core/phyisics/Physics';
 import { ThreeScene } from 'core/scene/ThreeScene';
+import { DevGuiManager } from 'core/utils/DevGuiManager';
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import { ClusterMeshBuilder } from '../game/builders/ClusterMeshBuilder';
@@ -18,8 +19,10 @@ import {
 import { ROOM_GEOMETRY } from '../game/world/MeshConfig';
 import { DEFAULT_FACE_TOWER_CONFIG } from './FaceTowerConfig';
 import { FaceTowerGameController } from './FaceTowerGameController';
+import { TowerBaseSync3D } from './TowerBaseSync3D';
 import { TowerBlockSync3D } from './TowerBlockSync3D';
 import { DEFAULT_TOWER_3D_CONFIG } from './Tower3DConfig';
+import { TowerWallSync3D } from './TowerWallSync3D';
 
 const VIEW_ORIGIN = {
     position: new THREE.Vector3(0, 0, 0),
@@ -75,6 +78,8 @@ export default class IslandViewScene extends ThreeScene {
 
     private faceTower!: FaceTowerGameController;
     private blockSync3D!: TowerBlockSync3D;
+    private baseSync3D!: TowerBaseSync3D;
+    private wallSync3D!: TowerWallSync3D;
 
     public async build(): Promise<void> {
         Physics.init({
@@ -144,6 +149,7 @@ export default class IslandViewScene extends ThreeScene {
 
     private buildFaceTowerLayer(): void {
         this.worldContainer = new PIXI.Container();
+        this.worldContainer.visible = DEFAULT_FACE_TOWER_CONFIG.render2D;
         this.addChild(this.worldContainer);
 
         this.scoreLabel = new PIXI.Text('0', {
@@ -231,8 +237,26 @@ export default class IslandViewScene extends ThreeScene {
             DEFAULT_TOWER_3D_CONFIG.towerBaseOffset,
         );
 
+        this.baseSync3D = new TowerBaseSync3D(
+            this.threeScene,
+            DEFAULT_FACE_TOWER_CONFIG,
+            DEFAULT_TOWER_3D_CONFIG.pixelsPerUnit,
+            DEFAULT_TOWER_3D_CONFIG,
+            DEFAULT_TOWER_3D_CONFIG.towerBaseOffset,
+        );
+
+        this.wallSync3D = new TowerWallSync3D(
+            this.threeScene,
+            DEFAULT_FACE_TOWER_CONFIG,
+            DEFAULT_TOWER_3D_CONFIG.pixelsPerUnit,
+            DEFAULT_TOWER_3D_CONFIG,
+            DEFAULT_TOWER_3D_CONFIG.towerBaseOffset,
+        );
+
         this.faceTower.start();
         this.resizeFaceTowerInput();
+        this.setupCameraDevGui();
+        this.setupVisualDevGui();
 
         /*
          * Added after (and thus on top of) the tower's full-screen input
@@ -281,6 +305,48 @@ export default class IslandViewScene extends ThreeScene {
         });
 
         return button;
+    }
+
+    private setupCameraDevGui(): void {
+        const gui = DevGuiManager.instance;
+        const cfg = DEFAULT_TOWER_3D_CONFIG;
+        const folder = 'Tower3D Camera';
+
+        gui.addProperties(cfg, ['cameraYawDeg', 'cameraPitchDeg'], [-90, 90], 'Camera', folder);
+        gui.addProperties(cfg, ['cameraDistance'], [1, 60], 'Camera', folder);
+        gui.addProperties(cfg, ['cameraMasterOffsetY'], [-30, 30], 'Camera', folder);
+    }
+
+    private setupVisualDevGui(): void {
+        const gui = DevGuiManager.instance;
+        const cfg = DEFAULT_FACE_TOWER_CONFIG;
+        const folder = 'Tower2D Visuals';
+
+        gui.addToggle('render2D', cfg.render2D, value => {
+            cfg.render2D = value;
+            this.worldContainer.visible = value;
+        }, folder);
+
+        // Only affects blocks spawned after the toggle flips — existing
+        // block/face sprites already on screen aren't retroactively touched.
+        gui.addToggle('render2DFaces', cfg.render2DFaces, value => {
+            cfg.render2DFaces = value;
+        }, folder);
+
+        gui.addProperties(cfg, ['blockFillAlpha'], [0, 1], 'Fill Alpha', folder);
+
+        // Bevel/stroke are baked into the shared body texture at draw time
+        // (see BlockBodyTextureCache), so changing them needs to invalidate
+        // the cache — addProperties has no change hook, so this uses
+        // addObjectTrigger instead. Only new blocks pick up the rebuilt texture.
+        gui.addObjectTrigger(
+            cfg as unknown as Record<string, number>,
+            () => this.faceTower.invalidateBlockTexture(),
+            ['blockBevelRadius', 'blockStrokeWidth'],
+            [0, 35],
+            'Bevel',
+            folder,
+        );
     }
 
     private flashMilestone(): void {
@@ -426,13 +492,21 @@ export default class IslandViewScene extends ThreeScene {
     public update(delta: number): void {
         const towerOffsetY = this.faceTower?.getCameraOffsetY() ?? 0;
 
+        /*
+         * Same conversion TowerBlockSync3D/TowerBaseSync3D use to place the
+         * mirrored cubes/panels — this is what keeps the camera's focus
+         * height exactly matching the current base's 3D position, instead
+         * of drifting away from it a little more every zone.
+         */
         this.positionCamera(
             DEFAULT_TOWER_3D_CONFIG.cameraMasterOffsetY +
-            towerOffsetY * DEFAULT_TOWER_3D_CONFIG.towerFollowScale,
+            towerOffsetY / DEFAULT_TOWER_3D_CONFIG.pixelsPerUnit,
         );
 
         if (this.faceTower) {
             this.blockSync3D.sync(this.faceTower.getBlocks());
+            this.baseSync3D.sync(this.faceTower.getBases());
+            this.wallSync3D.sync(this.faceTower.getWalls());
         }
 
         super.update(delta);
@@ -441,6 +515,8 @@ export default class IslandViewScene extends ThreeScene {
     public destroy(): void {
         this.faceTower?.destroy();
         this.blockSync3D?.destroy();
+        this.baseSync3D?.destroy();
+        this.wallSync3D?.destroy();
 
         this.replayButton?.removeFromParent();
         this.replayButton?.destroy({ children: true });
