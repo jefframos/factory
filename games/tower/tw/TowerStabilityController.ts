@@ -16,10 +16,11 @@ export class TowerStabilityController {
     public update(
         deltaSeconds: number,
         blocks: readonly FaceTowerBlock[],
+        deathWorldY: number,
     ): TowerSettleResult {
         this.totalWaitDuration += deltaSeconds;
 
-        if (this.hasBlockFallen(blocks)) {
+        if (this.hasBlockFallen(blocks, deathWorldY)) {
             return 'failed';
         }
 
@@ -80,6 +81,7 @@ export class TowerStabilityController {
 
     private hasBlockFallen(
         blocks: readonly FaceTowerBlock[],
+        deathWorldY: number,
     ): boolean {
         return blocks.some(block => {
             if (block.checkpointFrozen) {
@@ -88,7 +90,7 @@ export class TowerStabilityController {
 
             return (
                 block.entity.body.position.y >
-                this.config.deathY
+                deathWorldY
             );
         });
     }

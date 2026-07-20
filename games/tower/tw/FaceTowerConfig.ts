@@ -1,29 +1,51 @@
 // FaceTowerConfig.ts
+//
+// Single tweakable surface for the tower minigame. Tuned against
+// Game.DESIGN_WIDTH = 720 / Game.DESIGN_HEIGHT = 1080 — all X/Y values below
+// are design-space pixels, not raw screen pixels.
 
 import type { FaceTowerConfig } from './FaceTowerTypes';
 
 export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
-    spawnY: 110,
+    // --- Playfield anchors (screen-space, fixed regardless of camera scroll) ---
+    spawnScreenY: 150,   // where the held block hovers before it's dropped
+    floorScreenY: 940,   // where the "current" base always sits on screen
+    deathScreenY: 1030,  // cross this and it's game over
 
-    minBlockX: 80,
-    maxBlockX: 1120,
+    // --- Horizontal play area ---
+    minBlockX: 150,
+    maxBlockX: 570,
 
-    blockWidth: 90,
-    blockHeight: 90,
+    // --- Block / base sizes ---
+    blockWidth: 70,
+    blockHeight: 70,
 
-    floorWidth: 1200,
-    floorHeight: 60,
-    floorX: 600,
-    floorY: 700,
+    floorWidth: 460,
+    floorHeight: 40,
+    floorX: 360,
+    floorY: 940,
 
-    deathY: 900,
-
+    // --- Settle detection (when is a dropped block "done moving") ---
     settleLinearSpeed: 0.35,
     settleAngularSpeed: 0.05,
-
     settleDuration: 0.35,
     maximumSettleDuration: 2.5,
 
-    checkpointEvery: 10,
-    checkpointKeepBlocks: 6,
+    // --- Zones / milestones ---
+    zoneHeight: 480,     // world-space height to build before the base freezes
+    cameraPanSpeed: 1400, // px/sec the camera scrolls when a zone completes
+
+    // --- Physics feel ---
+    gravityX: 0,
+    gravityY: 1.8,       // Matter.js gravity scale; higher = faster fall
+
+    // Extra velocity (px/sec) applied the instant a block is released, on
+    // top of gravity. Leave both at 0 for a plain drop.
+    dropForceX: 0,
+    dropForceY: 8,
+
+    // --- Containment ---
+    wallWidth: 24,
+    wallHeight: 80, // just tall enough to bumper the first block or two off the base
+    deadZoneWidth: 1400,
 };

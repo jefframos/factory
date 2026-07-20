@@ -12,11 +12,12 @@ import type {
     FaceTowerBlock,
     FaceTowerConfig,
 } from './FaceTowerTypes';
+import type { TowerCameraController } from './TowerCameraController';
 
 export class FaceTowerBlockController {
     private readonly blocks: FaceTowerBlock[] = [];
+    private readonly bases: BoxEntity[] = [];
 
-    private floor?: BoxEntity;
     private heldBlock?: FaceTowerBlock;
 
     private nextBlockId = 1;
@@ -24,10 +25,11 @@ export class FaceTowerBlockController {
     public constructor(
         private readonly root: PIXI.Container,
         private readonly config: FaceTowerConfig,
+        private readonly camera: TowerCameraController,
     ) { }
 
     public initialise(): void {
-        this.createFloor();
+        this.addBase(this.config.floorY);
     }
 
     public spawnHeldBlock(x: number): FaceTowerBlock {
@@ -53,7 +55,7 @@ export class FaceTowerBlockController {
 
         Body.setPosition(entity.body, {
             x: this.clampBlockX(x),
-            y: this.config.spawnY,
+            y: this.camera.toWorldY(this.config.spawnScreenY),
         });
 
         Body.setAngle(entity.body, 0);
@@ -88,7 +90,7 @@ export class FaceTowerBlockController {
 
         Body.setPosition(body, {
             x: this.clampBlockX(x),
-            y: this.config.spawnY,
+            y: this.camera.toWorldY(this.config.spawnScreenY),
         });
 
         Body.setVelocity(body, {
@@ -114,8 +116,8 @@ export class FaceTowerBlockController {
         Body.setStatic(body, false);
 
         Body.setVelocity(body, {
-            x: 0,
-            y: 0,
+            x: this.config.dropForceX,
+            y: this.config.dropForceY,
         });
 
         Body.setAngularVelocity(body, 0);
@@ -150,7 +152,9 @@ export class FaceTowerBlockController {
             block.entity.update(delta);
         }
 
-        this.floor?.update(delta);
+        for (const base of this.bases) {
+            base.update(delta);
+        }
     }
 
     public getBlocks(): readonly FaceTowerBlock[] {
@@ -165,6 +169,52 @@ export class FaceTowerBlockController {
         return this.heldBlock;
     }
 
+    /** Highest point (smallest world Y) among the still-dynamic blocks. */
+    public getHighestTopWorldY(): number {
+        let top = Infinity;
+
+        for (const block of this.blocks) {
+            if (block.checkpointFrozen) {
+                continue;
+            }
+
+            top = Math.min(top, block.entity.body.bounds.min.y);
+        }
+
+        return top;
+    }
+
+    public freezeAll(): void {
+        for (const block of this.getDynamicBlocks()) {
+            this.freezeBlock(block);
+        }
+    }
+
+    /** Places a new static base — the "fresh start" floor for the next zone. */
+    public addBase(y: number): void {
+        const base = Pool.instance.getElement(BoxEntity) as BoxEntity;
+
+        base.build({
+            w: this.config.floorWidth,
+            h: this.config.floorHeight,
+            layer: CollisionLayer.DEFAULT,
+            debugColor: 0x00ff00,
+        });
+
+        base.isStatic = true;
+        Body.setStatic(base.body, true);
+
+        Body.setPosition(base.body, {
+            x: this.config.floorX,
+            y,
+        });
+
+        base.syncView();
+
+        this.root.addChild(base.view);
+        this.bases.push(base);
+    }
+
     public destroy(): void {
         this.heldBlock = undefined;
 
@@ -174,32 +224,11 @@ export class FaceTowerBlockController {
 
         this.blocks.length = 0;
 
-        this.floor?.destroy();
-        this.floor = undefined;
-    }
+        for (const base of this.bases) {
+            base.destroy();
+        }
 
-    private createFloor(): void {
-        const floor = Pool.instance.getElement(BoxEntity) as BoxEntity;
-
-        floor.build({
-            w: this.config.floorWidth,
-            h: this.config.floorHeight,
-            layer: CollisionLayer.DEFAULT,
-            debugColor: 0x00ff00,
-        });
-
-        floor.isStatic = true;
-        Body.setStatic(floor.body, true);
-
-        Body.setPosition(floor.body, {
-            x: this.config.floorX,
-            y: this.config.floorY,
-        });
-
-        floor.syncView();
-
-        this.root.addChild(floor.view);
-        this.floor = floor;
+        this.bases.length = 0;
     }
 
     private clampBlockX(x: number): number {

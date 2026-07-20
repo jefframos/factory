@@ -1,0 +1,4 @@
+GAME=tower
+
+MYMEMORY_EMAIL=jeff.ramos@cerebralfix.com
+MYMEMORY_KEY=60373de02c076e011686

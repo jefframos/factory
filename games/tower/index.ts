@@ -185,14 +185,14 @@ export default class MyGame extends Game {
     protected startGame(): void {
 
         DevGuiManager.instance.initialize(Game.debugParams.dev);
-        const gameplay = this.sceneManager.register<BaseDemoScene>('game', BaseDemoScene, this);
-        this.sceneManager.register<IslandViewScene>('island', IslandViewScene, this);
+        this.sceneManager.register<BaseDemoScene>('game', BaseDemoScene, this);
+        this.sceneManager.register<IslandViewScene>('tower', IslandViewScene, this);
         // if (Game.debugParams.scene === 'level') {
         //     const editor = this.sceneManager.register<LevelEditorScene>('level', LevelEditorScene, this);
         //     this.sceneManager.changeScene('level');
         // } else {
         // }
-        this.sceneManager.changeScene(Game.debugParams.scene || 'island');
+        this.sceneManager.changeScene(Game.debugParams.scene || 'tower');
         this.sceneManager.resize();
     }
 
