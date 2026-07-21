@@ -6,10 +6,18 @@ export interface PieceDefinition {
     id: string;
     /** Level a piece first becomes eligible to spawn at — see PieceManager. */
     level: number;
-    /** Not currently used for geometry (blocks render as a single cube) — kept for future multi-cell shapes. */
-    shape: number[][];
-    /** Multiplies blockWidth/blockHeight (2D) and cube size (3D) — 1 is the standard block, >1 is a bigger cube. */
-    scale: number;
+    /** Multiplies blockWidth/blockHeight (2D) and cube width/height (3D) independently — {x: 1, y: 1} is the standard block, >1 on either axis stretches that axis. */
+    scale: { x: number; y: number };
+    /**
+     * Optional outline override — points in unit-square space (0..0, 0..1;
+     * top-left origin, same convention as the block's own w/h) drawn instead
+     * of the default rect/rounded-rect when present, on both the 2D body
+     * texture (see BlockBodyTextureCache) and the 3D mesh (see
+     * PieceBoxBuilder). Collision stays the piece's rectangular bounding box
+     * either way (scale.x/y * blockWidth/blockHeight) — this only changes
+     * what's drawn, not what the block physically collides as.
+     */
+    polygon?: { x: number; y: number }[];
     /** Hex color applied to the block's body. */
     color: string;
     /** Relative path under images/non-preload/ — e.g. "skins/dog.webp". Resolve with resolvePieceImagePath(). */

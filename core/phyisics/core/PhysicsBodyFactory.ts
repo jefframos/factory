@@ -1,4 +1,4 @@
-import { Bodies, Body, IBodyDefinition, Vector, Vertices } from 'matter-js';
+import { Bodies, Body, IBodyDefinition, Vector } from 'matter-js';
 import * as PIXI from 'pixi.js';
 
 export interface BodyDescription {
@@ -75,44 +75,43 @@ export class PhysicsBodyFactory {
     // PhysicsBodyFactory.ts
 
     /**
- * Creates a Matter.js body from vertices (supporting concave shapes)
- * and generates a matching PIXI.Graphics object.
- */
-    /**
- * Creates a Matter.js body from vertices with automatic 
- * spawn-position compensation to keep the body at (x, y).
- */
-
+     * Creates a Matter.js body from vertices (supporting concave shapes,
+     * via poly-decomp) and a matching PIXI.Graphics debug outline.
+     *
+     * Bodies.fromVertices already does everything needed to land the body at
+     * (x, y): it recenters the vertices around their own centroid (see
+     * Matter's Body.setVertices) and then moves position + vertices + bounds
+     * together to (x, y) (see Body.setPosition, called internally). There is
+     * no separate "centre of mass" step to compensate for — a previous
+     * version of this method manually overwrote `body.position` afterwards
+     * using the ORIGINAL (non-recentered) vertices' centroid, which patched
+     * the reported position without moving the actual collision vertices,
+     * desyncing the rendered view (driven by body.position) from where the
+     * body actually collided. That only stayed invisible for shapes whose
+     * input vertices happened to already be centred on (0, 0) — anything
+     * else (e.g. an off-centre triangle) visibly mismatched.
+     */
     public static createPolygon(x: number, y: number, vertices: Vector[], options?: any, debugColor?: number): BodyDescription {
         if (PhysicsBodyFactory.FORCE_DEBUG_COLOR) {
             debugColor = PhysicsBodyFactory.DEFAULT_DEBUG_COLOR;
         }
-        // 1. Create the body at 0,0 first to find the Matter-calculated Center of Mass
-        const tempBody = Bodies.fromVertices(0, 0, [vertices], options);
-        const comOffset = { x: tempBody.position.x, y: tempBody.position.y };
 
-        const spawnX = x - comOffset.x
-        const spawnY = y - comOffset.y
-        // 2. Create the real body at the compensated position so it 'lands' at (x,y)
-        const body = Bodies.fromVertices(spawnX, spawnY, [vertices], options);
-        const centroid = Vertices.centre(vertices as any);
+        const body = Bodies.fromVertices(x, y, [vertices], options);
 
-        body.position.x = spawnX - centroid.x
-        body.position.y = spawnY - centroid.y
-        // 3. Extract the 'Source of Truth' vertices
-        // We map every part (convex sub-polygon) to be relative to the body's center
+        // Extract the 'source of truth' vertices — every part (convex
+        // sub-polygon after decomposition) mapped relative to the body's
+        // actual centre, which is now guaranteed to equal body.position.
         const decomposedParts = body.parts.length > 1
             ? body.parts.slice(1).map(part => part.vertices.map(v => ({ x: v.x - body.position.x, y: v.y - body.position.y })))
             : [body.vertices.map(v => ({ x: v.x - body.position.x, y: v.y - body.position.y }))];
 
-        // 4. Create PIXI Debug Graphic (Optional, uses the same truth)
         const gfx = new PIXI.Graphics();
         const color = debugColor ?? 0x00FF00;
         gfx.lineStyle(2, color).beginFill(color, 0.2);
         decomposedParts.forEach(path => gfx.drawPolygon(path));
         gfx.endFill();
 
-        return { body, debugGraphic: gfx, decomposedParts, centroidOffset: comOffset };
+        return { body, debugGraphic: gfx, decomposedParts };
     }
 
     /**

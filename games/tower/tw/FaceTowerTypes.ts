@@ -1,6 +1,6 @@
 // FaceTowerTypes.ts
 
-import type { BoxEntity } from 'core/phyisics/entities/BoxEntity';
+import type { BasePhysicsEntity } from 'core/phyisics/entities/BaseEntity';
 import type { PieceDefinition } from './PieceStorage';
 
 export enum FaceTowerState {
@@ -14,9 +14,10 @@ export enum FaceTowerState {
 
 export interface FaceTowerBlock {
     id: number;
-    entity: BoxEntity;
+    /** BoxEntity for a plain rect piece, PolygonEntity when the piece has a `polygon` override — see FaceTowerBlockController.spawnHeldBlock. */
+    entity: BasePhysicsEntity;
     checkpointFrozen: boolean;
-    /** Which piece (shape/color/texture/scale) this block was spawned from — see PieceManager. */
+    /** Which piece (color/texture/scale) this block was spawned from — see PieceManager. */
     piece: PieceDefinition;
 }
 
@@ -90,6 +91,22 @@ export interface FaceTowerConfig {
     // of the colored/stroked body. Independent of render2D so you can have
     // plain colored boxes without faces even with the 2D layer visible.
     render2DFaces: boolean;
+
+    // --- 3D piece visuals — see PieceBoxBuilder ---
+
+    // Z thickness of a piece's 3D mesh, as a fraction of its shorter
+    // width/height — 1 means "as thick as the piece is wide/tall (whichever
+    // is smaller)", so pieces read as flat plates rather than long boxes.
+    pieceDepthRatio: number;
+
+    // Corner-fillet radius, as a fraction of the piece's shorter
+    // width/height — 0 turns off rounding entirely (sharp corners).
+    pieceBevelRadiusRatio: number;
+
+    // How far the bevel extrudes outward, as a fraction of
+    // min(depth, bevel radius) — 0 turns off the bevel extrude (flat-edged
+    // fillet only).
+    pieceBevelThicknessRatio: number;
 }
 
 export type TowerSettleResult =

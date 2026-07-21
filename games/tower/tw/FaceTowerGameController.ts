@@ -11,6 +11,7 @@ import {
     type FaceTowerConfig,
 } from './FaceTowerTypes';
 import { PieceManager } from './PieceManager';
+import type { PieceDefinition } from './PieceStorage';
 import { TowerCameraController } from './TowerCameraController';
 import { TowerDeadZoneController } from './TowerDeadZoneController';
 import { TowerStabilityController } from './TowerStabilityController';
@@ -195,6 +196,21 @@ export class FaceTowerGameController {
     /** Call after changing block size/bevel/stroke config at runtime — see FaceTowerBlockController.invalidateBodyTexture(). */
     public invalidateBlockTexture(): void {
         this.blocks.invalidateBodyTexture();
+    }
+
+    /**
+     * Dev-only: swaps whatever's currently hovering over the drop area for
+     * `piece` — a no-op unless a block is actually being held (i.e. the
+     * player hasn't already dropped it), since there's nothing to replace
+     * otherwise. See IslandViewScene.setupPieceDevGui.
+     */
+    public replaceHeldBlockWithPiece(piece: PieceDefinition): void {
+        if (this.state !== FaceTowerState.MovingBlock) {
+            return;
+        }
+
+        this.blocks.discardHeldBlock();
+        this.blocks.spawnHeldBlock(this.targetX, piece);
     }
 
     public destroy(): void {

@@ -56,4 +56,9 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     blockBevelRadius: 12,
     render2D: true,
     render2DFaces: true,
+
+    // --- 3D piece visuals ---
+    pieceDepthRatio: 0.25,
+    pieceBevelRadiusRatio: 0.15,
+    pieceBevelThicknessRatio: 0.5,
 };

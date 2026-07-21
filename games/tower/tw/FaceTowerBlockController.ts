@@ -2,7 +2,9 @@
 
 import Pool from 'core/Pool';
 import { CollisionLayer } from 'core/phyisics/core/CollisionLayer';
+import type { BasePhysicsEntity } from 'core/phyisics/entities/BaseEntity';
 import { BoxEntity } from 'core/phyisics/entities/BoxEntity';
+import { PolygonEntity } from 'core/phyisics/entities/PolygonEntity';
 import {
     Body,
     Sleeping
@@ -46,16 +48,12 @@ export class FaceTowerBlockController {
             throw new Error('Cannot spawn another block while a block is held.');
         }
 
-        const w = this.config.blockWidth * piece.scale;
-        const h = this.config.blockHeight * piece.scale;
+        const w = this.config.blockWidth * piece.scale.x;
+        const h = this.config.blockHeight * piece.scale.y;
 
-        const entity = Pool.instance.getElement(BoxEntity) as BoxEntity;
-
-        entity.build({
-            w,
-            h,
-            layer: CollisionLayer.DEFAULT,
-        });
+        const entity = piece.polygon
+            ? this.buildPolygonEntity(piece.polygon, w, h)
+            : this.buildBoxEntity(w, h);
 
         /*
          * The block must not fall while the player is positioning it.
@@ -94,6 +92,45 @@ export class FaceTowerBlockController {
         return block;
     }
 
+    private buildBoxEntity(w: number, h: number): BoxEntity {
+        const entity = Pool.instance.getElement(BoxEntity) as BoxEntity;
+
+        entity.build({
+            w,
+            h,
+            layer: CollisionLayer.DEFAULT,
+        });
+
+        return entity;
+    }
+
+    /**
+     * Collision matches the piece's own outline instead of its rectangular
+     * bounding box — vertices are the same unit-square points as the piece's
+     * `polygon` (see PieceStorage), converted to pixel space and centered on
+     * the origin (top-left 0,0 → -w/2,-h/2 etc.) so they line up with
+     * PieceBoxBuilder's 3D mesh and BlockBodyTextureCache's 2D texture.
+     * Built at (0, 0) — spawnHeldBlock repositions it via Body.setPosition
+     * right after, same as the rect path.
+     */
+    private buildPolygonEntity(polygon: NonNullable<PieceDefinition['polygon']>, w: number, h: number): PolygonEntity {
+        const entity = Pool.instance.getElement(PolygonEntity) as PolygonEntity;
+
+        const vertices = polygon.map(p => ({
+            x: (p.x - 0.5) * w,
+            y: (p.y - 0.5) * h,
+        }));
+
+        entity.build({
+            x: 0,
+            y: 0,
+            vertices,
+            layer: CollisionLayer.DEFAULT,
+        });
+
+        return entity;
+    }
+
     /**
      * Replaces the box's default debug graphic with a Sprite of the shared,
      * pre-rasterized body texture (see BlockBodyTextureCache) — white fill
@@ -103,7 +140,7 @@ export class FaceTowerBlockController {
      * adds the piece's face texture on top.
      */
     private styleBlockView(
-        entity: BoxEntity,
+        entity: BasePhysicsEntity,
         piece: PieceDefinition,
         w: number,
         h: number,
@@ -136,7 +173,7 @@ export class FaceTowerBlockController {
             return;
         }
 
-        const w = this.config.blockWidth * this.heldBlock.piece.scale;
+        const w = this.config.blockWidth * this.heldBlock.piece.scale.x;
         const body = this.heldBlock.entity.body;
 
         Body.setPosition(body, {
@@ -180,6 +217,29 @@ export class FaceTowerBlockController {
         this.heldBlock = undefined;
 
         return block;
+    }
+
+    /**
+     * Removes the currently held block outright — no drop, no physics —
+     * instead of releasing it. Meant for the dev-only "swap piece" GUI (see
+     * IslandViewScene.setupPieceDevGui) where picking a piece from the list
+     * should replace whatever's hovering over the drop area, not drop it
+     * first.
+     */
+    public discardHeldBlock(): void {
+        const block = this.heldBlock;
+
+        if (!block) {
+            return;
+        }
+
+        const index = this.blocks.indexOf(block);
+        if (index >= 0) {
+            this.blocks.splice(index, 1);
+        }
+
+        block.entity.destroy();
+        this.heldBlock = undefined;
     }
 
     public freezeBlock(block: FaceTowerBlock): void {

@@ -19,6 +19,7 @@ import {
 import { ROOM_GEOMETRY } from '../game/world/MeshConfig';
 import { DEFAULT_FACE_TOWER_CONFIG } from './FaceTowerConfig';
 import { FaceTowerGameController } from './FaceTowerGameController';
+import { PIECES } from './PieceStorage';
 import { TowerBaseSync3D } from './TowerBaseSync3D';
 import { TowerBlockSync3D } from './TowerBlockSync3D';
 import { DEFAULT_TOWER_3D_CONFIG } from './Tower3DConfig';
@@ -257,6 +258,7 @@ export default class IslandViewScene extends ThreeScene {
         this.resizeFaceTowerInput();
         this.setupCameraDevGui();
         this.setupVisualDevGui();
+        this.setupPieceDevGui();
 
         /*
          * Added after (and thus on top of) the tower's full-screen input
@@ -345,6 +347,38 @@ export default class IslandViewScene extends ThreeScene {
             ['blockBevelRadius', 'blockStrokeWidth'],
             [0, 35],
             'Bevel',
+            folder,
+        );
+    }
+
+    /**
+     * Dev-only piece picker — a dropdown listing every piece in PIECES
+     * (see PieceStorage); selecting one replaces whatever's currently
+     * hovering over the drop area (see FaceTowerGameController.replaceHeldBlockWithPiece),
+     * so any piece can be tried out on demand instead of waiting for
+     * PieceManager's level-gated random pool to hand it out.
+     */
+    private setupPieceDevGui(): void {
+        const gui = DevGuiManager.instance;
+        const folder = 'Tower Pieces';
+
+        if (PIECES.length === 0) {
+            return;
+        }
+
+        const selection = { piece: PIECES[0].id };
+
+        gui.addDropdown(
+            selection,
+            'piece',
+            PIECES.map(piece => piece.id),
+            id => {
+                const piece = PIECES.find(p => p.id === id);
+                if (piece) {
+                    this.faceTower.replaceHeldBlockWithPiece(piece);
+                }
+            },
+            'Piece',
             folder,
         );
     }
