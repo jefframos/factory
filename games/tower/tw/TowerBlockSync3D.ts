@@ -54,9 +54,16 @@ export class TowerBlockSync3D {
         const width = this.config.blockWidth * block.piece.scale.x / this.pixelsPerUnit;
         const height = this.config.blockHeight * block.piece.scale.y / this.pixelsPerUnit;
         const color = hexStringToNumber(block.piece.color);
+
+        // Depth is a fixed absolute thickness shared by every piece — like a
+        // real block set, a bigger footprint doesn't mean a thicker piece —
+        // so it's derived from the UNSCALED base block size, not this
+        // piece's own (width, height), which already carry its scale.x/y.
+        const baseSize = Math.min(this.config.blockWidth, this.config.blockHeight) / this.pixelsPerUnit;
+
         const cube = PieceBoxBuilder.build(color, width, height, {
             polygon: block.piece.polygon,
-            depth: Math.min(width, height) * this.config.pieceDepthRatio,
+            depth: baseSize * this.config.pieceDepthRatio,
             bevelRadiusRatio: this.config.pieceBevelRadiusRatio,
             bevelThicknessRatio: this.config.pieceBevelThicknessRatio,
         });

@@ -110,54 +110,56 @@ export class PieceBoxBuilder {
      * midpoint instead would visibly drift the mesh away from where the
      * piece actually collides.
      *
-     * The extrude bevel is skipped entirely (bevel forced to 0, so
-     * frontZ = depth/2 exactly) for CONCAVE outlines — an arch's notch or a
-     * ramp's scooped curve (see PieceStorage) — because THREE's
-     * ExtrudeGeometry bevel offsets each vertex along its local outward
-     * normal, and at a concave/reflex corner that offset points INWARD,
-     * which can self-intersect or get silently clamped. The visible result
-     * was concave pieces reading as a different actual depth than convex
-     * ones (rect, triangle, dome, cylinder) even with identical
-     * depth/bevel inputs. Skipping the bevel for concave shapes keeps
-     * `frontZ` — and so the true rendered thickness — consistent across
-     * every piece; convex shapes keep the full beveled look unchanged.
+     * Two bevel-related corrections on top of a plain filleted extrude:
+     *
+     * 1. THREE's ExtrudeGeometry bevel pushes the front/back cap OUTWARD
+     *    past the shape's own outline by `bevelSize` (confirmed straight
+     *    from its source — the straight side walls sit exactly at the
+     *    outline, only the capped ends bulge past it). Left uncorrected,
+     *    a piece's rendered silhouette is wider/taller than its logical
+     *    (width, height) — the same size its 2D collision box and its
+     *    neighbors use — so adjacent pieces visibly clip into each other.
+     *    Fixed by insetting the shape by `bevel` before extruding, so the
+     *    bevel's outward push lands the outer edge back at the true
+     *    (width, height) instead of past it.
+     *
+     * 2. The bevel is clamped to the tightest per-corner fillet radius
+     *    found anywhere on the shape (`minCornerRadius`), instead of being
+     *    disabled outright for concave outlines (an arch's notch, a ramp's
+     *    scooped curve). ExtrudeGeometry's bevel offsets each vertex along
+     *    its local outward normal, which at a reflex/concave corner points
+     *    inward and can self-intersect if it's too large — capping it to
+     *    the smallest safe local clearance keeps every corner, convex or
+     *    concave, artifact-free instead of zeroing the whole piece's bevel.
      */
     private static buildOutlineGeometry(
         polygon: UnitPoint[], width: number, height: number, depth: number,
         bevelRadiusRatio: number, bevelThicknessRatio: number,
     ): { geometry: THREE.BufferGeometry; frontZ: number } {
         const centroid = getPolygonCentroid(polygon);
-        const vertices = polygon.map(p => ({
+        const radius = Math.min(width, height) * bevelRadiusRatio;
+
+        const rawVertices = polygon.map(p => ({
             x: (p.x - centroid.x) * width,
             y: (centroid.y - p.y) * height,
         }));
 
-        const len = vertices.length;
-        const radius = Math.min(width, height) * bevelRadiusRatio;
-        const shape = new THREE.Shape();
+        const { minCornerRadius } = PieceBoxBuilder.buildFilletedShape(rawVertices, radius);
+        const nominalBevel = Math.min(depth, radius) * bevelThicknessRatio;
+        const bevel = Math.min(nominalBevel, minCornerRadius);
 
-        for (let i = 0; i < len; i++) {
-            const p1 = vertices[i];
-            const p2 = vertices[(i + 1) % len];
-            const p3 = vertices[(i + 2) % len];
+        // Inset the shape by `bevel` on every side so the bevel's outward
+        // XY push (see method doc, point 1) lands back at the true
+        // (width, height) instead of exceeding it.
+        const insetWidth = Math.max(1e-4, width - bevel * 2);
+        const insetHeight = Math.max(1e-4, height - bevel * 2);
 
-            const v1x = p1.x - p2.x, v1y = p1.y - p2.y;
-            const v2x = p3.x - p2.x, v2y = p3.y - p2.y;
-            const d1 = Math.hypot(v1x, v1y), d2 = Math.hypot(v2x, v2y);
-            const r = Math.min(radius, d1 / 2, d2 / 2);
+        const insetVertices = polygon.map(p => ({
+            x: (p.x - centroid.x) * insetWidth,
+            y: (centroid.y - p.y) * insetHeight,
+        }));
 
-            const startX = p2.x + (v1x / d1) * r, startY = p2.y + (v1y / d1) * r;
-            const endX = p2.x + (v2x / d2) * r, endY = p2.y + (v2y / d2) * r;
-
-            if (i === 0) shape.moveTo(startX, startY);
-            else shape.lineTo(startX, startY);
-            shape.quadraticCurveTo(p2.x, p2.y, endX, endY);
-        }
-
-        shape.closePath();
-
-        const isConvex = PieceBoxBuilder.isConvexPolygon(vertices);
-        const bevel = isConvex ? Math.min(depth, radius) * bevelThicknessRatio : 0;
+        const { shape } = PieceBoxBuilder.buildFilletedShape(insetVertices, radius);
 
         const geo = new THREE.ExtrudeGeometry(shape, {
             depth,
@@ -175,30 +177,45 @@ export class PieceBoxBuilder {
         return { geometry: geo, frontZ: depth / 2 + bevel };
     }
 
-    /** True if every corner turns the same way (no reflex/concave vertex) — checked on the pre-fillet vertices, since the fillet only rounds corners without changing the overall turning direction. */
-    private static isConvexPolygon(vertices: { x: number; y: number }[]): boolean {
+    /**
+     * Builds a THREE.Shape from `vertices`, rounding each corner via
+     * quadraticCurveTo — same fillet math as GeometryFactory3D.createPolygon()
+     * — with `radius` clamped per-corner to half its adjacent edge lengths so
+     * it can never overshoot a short edge into self-intersection. Also
+     * returns `minCornerRadius`, the smallest of those per-corner clamped
+     * radii across the whole shape — used to cap how big an extrude bevel
+     * this shape can safely take (see buildOutlineGeometry).
+     */
+    private static buildFilletedShape(
+        vertices: { x: number; y: number }[], radius: number,
+    ): { shape: THREE.Shape; minCornerRadius: number } {
         const len = vertices.length;
-        let sign = 0;
+        const shape = new THREE.Shape();
+        let minCornerRadius = Infinity;
 
         for (let i = 0; i < len; i++) {
             const p1 = vertices[i];
             const p2 = vertices[(i + 1) % len];
             const p3 = vertices[(i + 2) % len];
 
-            const cross = (p2.x - p1.x) * (p3.y - p2.y) - (p2.y - p1.y) * (p3.x - p2.x);
-            if (Math.abs(cross) < 1e-9) {
-                continue;
-            }
+            const v1x = p1.x - p2.x, v1y = p1.y - p2.y;
+            const v2x = p3.x - p2.x, v2y = p3.y - p2.y;
+            const d1 = Math.hypot(v1x, v1y), d2 = Math.hypot(v2x, v2y);
+            const r = Math.min(radius, d1 / 2, d2 / 2);
 
-            const crossSign = Math.sign(cross);
-            if (sign === 0) {
-                sign = crossSign;
-            } else if (crossSign !== sign) {
-                return false;
-            }
+            minCornerRadius = Math.min(minCornerRadius, r);
+
+            const startX = p2.x + (v1x / d1) * r, startY = p2.y + (v1y / d1) * r;
+            const endX = p2.x + (v2x / d2) * r, endY = p2.y + (v2y / d2) * r;
+
+            if (i === 0) shape.moveTo(startX, startY);
+            else shape.lineTo(startX, startY);
+            shape.quadraticCurveTo(p2.x, p2.y, endX, endY);
         }
 
-        return true;
+        shape.closePath();
+
+        return { shape, minCornerRadius: Number.isFinite(minCornerRadius) ? minCornerRadius : 0 };
     }
 
     /** Shared default face material (bots) — swapped for a one-off via `faceTexture` (the local player's equipped skin). */
