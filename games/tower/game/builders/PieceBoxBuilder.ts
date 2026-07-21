@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { getPolygonCentroid } from '../../tw/PieceStorage';
 import { BendService } from '../services/BendService';
 import { TextureBuilder } from './TextureBuilder';
 
@@ -85,14 +86,25 @@ export class PieceBoxBuilder {
      * NOT simply depth/2, since a beveled extrude bulges outward past
      * `depth` by `bevelThickness` on each end. The face decal must sit at or
      * past `frontZ` or the bevel's bulge clips through it.
+     *
+     * Centered on the polygon's own area centroid (see
+     * PieceStorage.getPolygonCentroid), NOT the unit-square midpoint — this
+     * mesh's local origin (0,0,0) is what TowerBlockSync3D maps to the 2D
+     * physics body's position, and Matter.js always treats a polygon body's
+     * position as its vertex centroid (see FaceTowerBlockController's
+     * PolygonEntity path). For the default rect those are the same point,
+     * but for an asymmetric `polygon` they aren't — centering on the
+     * midpoint instead would visibly drift the mesh away from where the
+     * piece actually collides.
      */
     private static buildOutlineGeometry(
         polygon: UnitPoint[], width: number, height: number, depth: number,
         bevelRadiusRatio: number, bevelThicknessRatio: number,
     ): { geometry: THREE.BufferGeometry; frontZ: number } {
+        const centroid = getPolygonCentroid(polygon);
         const vertices = polygon.map(p => ({
-            x: (p.x - 0.5) * width,
-            y: (0.5 - p.y) * height,
+            x: (p.x - centroid.x) * width,
+            y: (centroid.y - p.y) * height,
         }));
 
         const len = vertices.length;

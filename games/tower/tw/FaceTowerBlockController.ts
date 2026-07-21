@@ -15,7 +15,7 @@ import type {
     FaceTowerBlock,
     FaceTowerConfig,
 } from './FaceTowerTypes';
-import { resolvePieceImagePath, type PieceDefinition } from './PieceStorage';
+import { getPolygonAnchorFraction, resolvePieceImagePath, type PieceDefinition } from './PieceStorage';
 import type { TowerCameraController } from './TowerCameraController';
 
 function hexStringToNumber(hex: string): number {
@@ -138,6 +138,15 @@ export class FaceTowerBlockController {
      * multiply tint), at the config's global alpha — instead of every block
      * drawing its own vector Graphics. Unless render2DFaces is off, also
      * adds the piece's face texture on top.
+     *
+     * The sprite's anchor is NOT a flat 0.5 — entity.view (and thus this
+     * sprite's parent) is positioned at the physics body's centroid every
+     * frame (see BasePhysicsEntity.syncView), and for a rect that centroid
+     * IS the visual center, but for a `polygon` piece it generally isn't
+     * (e.g. an off-center triangle). getPolygonAnchorFraction gives the
+     * fraction of the rasterized texture's own silhouette where that
+     * centroid actually falls, so the sprite stays aligned with collision
+     * instead of just centering on its own bounding box.
      */
     private styleBlockView(
         entity: BasePhysicsEntity,
@@ -149,8 +158,9 @@ export class FaceTowerBlockController {
         debugGraphic.visible = false;
 
         const body = new PIXI.Sprite(this.bodyTexture.getTexture(piece));
+        const anchor = getPolygonAnchorFraction(piece.polygon);
 
-        body.anchor.set(0.5);
+        body.anchor.set(anchor.x, anchor.y);
         body.tint = hexStringToNumber(piece.color);
         body.alpha = this.config.blockFillAlpha;
 
