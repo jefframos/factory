@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { ClusterMeshBuilder } from '../game/builders/ClusterMeshBuilder';
 import { TextureBuilder } from '../game/builders/TextureBuilder';
 import { createWaterMaterial } from '../game/builders/WaterMaterial';
+import { PieceDevGui } from '../game/debug/PieceDevGui';
 import type { PlayerEntity } from '../game/entities/PlayerEntity';
 import { CollectibleManager } from '../game/systems/CollectibleManager';
 import { BoundlessChunkManager } from '../game/world/BoundlessChunkManager';
@@ -81,6 +82,7 @@ export default class IslandViewScene extends ThreeScene {
     private blockSync3D!: TowerBlockSync3D;
     private baseSync3D!: TowerBaseSync3D;
     private wallSync3D!: TowerWallSync3D;
+    private pieceDevGui!: PieceDevGui;
 
     public async build(): Promise<void> {
         Physics.init({
@@ -258,7 +260,9 @@ export default class IslandViewScene extends ThreeScene {
         this.resizeFaceTowerInput();
         this.setupCameraDevGui();
         this.setupVisualDevGui();
-        this.setupPieceDevGui();
+
+        this.pieceDevGui = new PieceDevGui(PIECES, this.faceTower, this);
+        this.pieceDevGui.setup();
 
         /*
          * Added after (and thus on top of) the tower's full-screen input
@@ -347,38 +351,6 @@ export default class IslandViewScene extends ThreeScene {
             ['blockBevelRadius', 'blockStrokeWidth'],
             [0, 35],
             'Bevel',
-            folder,
-        );
-    }
-
-    /**
-     * Dev-only piece picker — a dropdown listing every piece in PIECES
-     * (see PieceStorage); selecting one replaces whatever's currently
-     * hovering over the drop area (see FaceTowerGameController.replaceHeldBlockWithPiece),
-     * so any piece can be tried out on demand instead of waiting for
-     * PieceManager's level-gated random pool to hand it out.
-     */
-    private setupPieceDevGui(): void {
-        const gui = DevGuiManager.instance;
-        const folder = 'Tower Pieces';
-
-        if (PIECES.length === 0) {
-            return;
-        }
-
-        const selection = { piece: PIECES[0].id };
-
-        gui.addDropdown(
-            selection,
-            'piece',
-            PIECES.map(piece => piece.id),
-            id => {
-                const piece = PIECES.find(p => p.id === id);
-                if (piece) {
-                    this.faceTower.replaceHeldBlockWithPiece(piece);
-                }
-            },
-            'Piece',
             folder,
         );
     }

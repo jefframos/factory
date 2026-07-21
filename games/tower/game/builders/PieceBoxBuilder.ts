@@ -46,6 +46,17 @@ export class PieceBoxBuilder {
     private static faceDecalMat?: THREE.MeshStandardMaterial;
 
     /**
+     * Incremented once per build() call and folded into that piece's face
+     * decal Z — two decal planes that would otherwise land at the EXACT same
+     * world Z (e.g. two pieces sharing the same depth/bevel, so their fronts
+     * compute to an identical frontZ) still get distinct, monotonically
+     * increasing Z values instead of truly coinciding, which is what causes
+     * z-fighting (flickering as the renderer can't consistently decide which
+     * coplanar triangle is "in front").
+     */
+    private static nextZOrder = 0;
+
+    /**
      * Never cached: call disposeMesh() yourself, and dispose the returned
      * mesh's (single, non-array) body material once you're done with it —
      * same contract as CubeBuilder.buildDebugCube.
@@ -68,7 +79,9 @@ export class PieceBoxBuilder {
         BendService.applyBend(mat);
 
         const mesh = new THREE.Mesh(geometry, mat);
-        mesh.add(PieceBoxBuilder.buildFaceDecal(frontZ, width, height, options.faceTexture));
+        const zOrderEpsilon = PieceBoxBuilder.nextZOrder++ * 0.00001;
+
+        mesh.add(PieceBoxBuilder.buildFaceDecal(frontZ, width, height, options.faceTexture, zOrderEpsilon));
 
         return mesh;
     }
@@ -96,6 +109,18 @@ export class PieceBoxBuilder {
      * but for an asymmetric `polygon` they aren't — centering on the
      * midpoint instead would visibly drift the mesh away from where the
      * piece actually collides.
+     *
+     * The extrude bevel is skipped entirely (bevel forced to 0, so
+     * frontZ = depth/2 exactly) for CONCAVE outlines — an arch's notch or a
+     * ramp's scooped curve (see PieceStorage) — because THREE's
+     * ExtrudeGeometry bevel offsets each vertex along its local outward
+     * normal, and at a concave/reflex corner that offset points INWARD,
+     * which can self-intersect or get silently clamped. The visible result
+     * was concave pieces reading as a different actual depth than convex
+     * ones (rect, triangle, dome, cylinder) even with identical
+     * depth/bevel inputs. Skipping the bevel for concave shapes keeps
+     * `frontZ` — and so the true rendered thickness — consistent across
+     * every piece; convex shapes keep the full beveled look unchanged.
      */
     private static buildOutlineGeometry(
         polygon: UnitPoint[], width: number, height: number, depth: number,
@@ -131,7 +156,8 @@ export class PieceBoxBuilder {
 
         shape.closePath();
 
-        const bevel = Math.min(depth, radius) * bevelThicknessRatio;
+        const isConvex = PieceBoxBuilder.isConvexPolygon(vertices);
+        const bevel = isConvex ? Math.min(depth, radius) * bevelThicknessRatio : 0;
 
         const geo = new THREE.ExtrudeGeometry(shape, {
             depth,
@@ -147,6 +173,32 @@ export class PieceBoxBuilder {
         geo.computeVertexNormals();
 
         return { geometry: geo, frontZ: depth / 2 + bevel };
+    }
+
+    /** True if every corner turns the same way (no reflex/concave vertex) — checked on the pre-fillet vertices, since the fillet only rounds corners without changing the overall turning direction. */
+    private static isConvexPolygon(vertices: { x: number; y: number }[]): boolean {
+        const len = vertices.length;
+        let sign = 0;
+
+        for (let i = 0; i < len; i++) {
+            const p1 = vertices[i];
+            const p2 = vertices[(i + 1) % len];
+            const p3 = vertices[(i + 2) % len];
+
+            const cross = (p2.x - p1.x) * (p3.y - p2.y) - (p2.y - p1.y) * (p3.x - p2.x);
+            if (Math.abs(cross) < 1e-9) {
+                continue;
+            }
+
+            const crossSign = Math.sign(cross);
+            if (sign === 0) {
+                sign = crossSign;
+            } else if (crossSign !== sign) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /** Shared default face material (bots) — swapped for a one-off via `faceTexture` (the local player's equipped skin). */
@@ -175,9 +227,11 @@ export class PieceBoxBuilder {
      * FaceTowerBlockController.styleBlockView's 2D face) so the art never
      * stretches on a non-square piece. `frontZ` must be the geometry's real
      * front (see buildOutlineGeometry) rather than depth/2, or the bevel's
-     * outward bulge clips through the decal.
+     * outward bulge clips through the decal. `zOrderEpsilon` (see
+     * PieceBoxBuilder.nextZOrder) nudges otherwise-identical Z values apart
+     * so two pieces with the same depth/bevel don't z-fight.
      */
-    private static buildFaceDecal(frontZ: number, width: number, height: number, faceTexture?: THREE.Texture): THREE.Mesh {
+    private static buildFaceDecal(frontZ: number, width: number, height: number, faceTexture: THREE.Texture | undefined, zOrderEpsilon: number): THREE.Mesh {
         const decalSize = Math.min(width, height) * 0.85;
         const geo = new THREE.PlaneGeometry(decalSize, decalSize);
         const mat = faceTexture
@@ -186,7 +240,7 @@ export class PieceBoxBuilder {
 
         const mesh = new THREE.Mesh(geo, mat);
         mesh.name = PieceBoxBuilder.FACE_DECAL_NAME;
-        mesh.position.z = frontZ + Math.min(width, height) * 0.01;
+        mesh.position.z = frontZ + Math.min(width, height) * 0.01 + zOrderEpsilon;
 
         return mesh;
     }
