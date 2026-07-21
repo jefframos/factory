@@ -21,7 +21,24 @@
             }
         ],
         "color": "#ff443b",
-        "texture": "skins/dog.webp"
+        "texture": "skins/dog.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 10
+        },
+        "faceScale": {
+            "x": 0.65,
+            "y": 0.65
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 15
+        },
+        "preview3DOffset": {
+            "x": 0,
+            "y": -0.1
+        },
+        "margin3D": 0.15
     },
     {
         "id": "square-1",
@@ -31,7 +48,19 @@
             "y": 1
         },
         "color": "#e8443b",
-        "texture": "skins/cool.webp"
+        "texture": "skins/cool.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 0
+        },
+        "faceScale": {
+            "x": 1,
+            "y": 1
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 0
+        }
     },
     {
         "id": "wide-2",
@@ -41,7 +70,19 @@
             "y": 1
         },
         "color": "#f2842e",
-        "texture": "skins/face-brave-1.webp"
+        "texture": "skins/face-brave-1.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 0
+        },
+        "faceScale": {
+            "x": 1,
+            "y": 1
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 0
+        }
     },
     {
         "id": "tall-3",
@@ -51,7 +92,19 @@
             "y": 1.6
         },
         "color": "#f4c93b",
-        "texture": "skins/face-crying-2.webp"
+        "texture": "skins/face-crying-2.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 0
+        },
+        "faceScale": {
+            "x": 1,
+            "y": 1
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 0
+        }
     },
     {
         "id": "square-4",
@@ -61,7 +114,19 @@
             "y": 1.6
         },
         "color": "#4aba6a",
-        "texture": "skins/face-dizzy-1.webp"
+        "texture": "skins/face-dizzy-1.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 0
+        },
+        "faceScale": {
+            "x": 1,
+            "y": 1
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 0
+        }
     },
     {
         "id": "wide-5",
@@ -71,7 +136,19 @@
             "y": 1.2
         },
         "color": "#3f8de0",
-        "texture": "skins/face-glasses-1.webp"
+        "texture": "skins/face-glasses-1.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 0
+        },
+        "faceScale": {
+            "x": 1,
+            "y": 1
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 0
+        }
     },
     {
         "id": "tall-6",
@@ -81,7 +158,19 @@
             "y": 2.2
         },
         "color": "#8a4fc2",
-        "texture": "skins/face-smirk-1.webp"
+        "texture": "skins/face-smirk-1.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 0
+        },
+        "faceScale": {
+            "x": 1,
+            "y": 1
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 0
+        }
     },
     {
         "id": "square-7",
@@ -91,7 +180,19 @@
             "y": 2
         },
         "color": "#f06fa8",
-        "texture": "skins/face-star-1.webp"
+        "texture": "skins/face-star-1.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 0
+        },
+        "faceScale": {
+            "x": 1,
+            "y": 1
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 0
+        }
     },
     {
         "id": "triangle-right-a",
@@ -115,7 +216,19 @@
             }
         ],
         "color": "#2ec4b6",
-        "texture": "skins/face-scary-2.webp"
+        "texture": "skins/face-scary-2.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 0
+        },
+        "faceScale": {
+            "x": 0.75,
+            "y": 0.75
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": -95
+        }
     },
     {
         "id": "triangle-right-b",
@@ -139,7 +252,19 @@
             }
         ],
         "color": "#ff9f1c",
-        "texture": "skins/face-mustache-1.webp"
+        "texture": "skins/face-mustache-1.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 0
+        },
+        "faceScale": {
+            "x": 0.75,
+            "y": 0.75
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 15
+        }
     },
     {
         "id": "dome-1",
@@ -187,7 +312,19 @@
             }
         ],
         "color": "#ef476f",
-        "texture": "skins/face-scary-1.webp"
+        "texture": "skins/face-scary-1.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": -8
+        },
+        "faceScale": {
+            "x": 0.65,
+            "y": 0.65
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 15
+        }
     },
     {
         "id": "ramp-1",
@@ -239,7 +376,19 @@
             }
         ],
         "color": "#118ab2",
-        "texture": "skins/face-fire-1.webp"
+        "texture": "skins/face-fire-1.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 0
+        },
+        "faceScale": {
+            "x": 1,
+            "y": 1
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 0
+        }
     },
     {
         "id": "ramp-b",
@@ -291,7 +440,19 @@
             }
         ],
         "color": "#073b4c",
-        "texture": "skins/face-smile-3.webp"
+        "texture": "skins/face-smile-3.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 0
+        },
+        "faceScale": {
+            "x": 1,
+            "y": 1
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 0
+        }
     },
     {
         "id": "cylinder-1",
@@ -367,7 +528,19 @@
             }
         ],
         "color": "#7209b7",
-        "texture": "skins/clown.webp"
+        "texture": "skins/clown.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 0
+        },
+        "faceScale": {
+            "x": 1,
+            "y": 1
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": -30
+        }
     },
     {
         "id": "arch-1",
@@ -439,7 +612,19 @@
             }
         ],
         "color": "#06d6a0",
-        "texture": "skins/devil.webp"
+        "texture": "skins/face-smiling-2.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": -12
+        },
+        "faceScale": {
+            "x": 1,
+            "y": 1
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": -50
+        }
     },
     {
         "id": "arch-wide",
@@ -511,7 +696,19 @@
             }
         ],
         "color": "#3a86ff",
-        "texture": "skins/dog.webp"
+        "texture": "skins/face-1.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": -20
+        },
+        "faceScale": {
+            "x": 0.65,
+            "y": 0.65
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": -50
+        }
     },
     {
         "id": "arch-ultra-wide",
@@ -583,7 +780,19 @@
             }
         ],
         "color": "#9d4edd",
-        "texture": "skins/face-smile-1.webp"
+        "texture": "skins/face-smile-1.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": -25
+        },
+        "faceScale": {
+            "x": 0.8,
+            "y": 0.8
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": -40
+        }
     },
     {
         "id": "wide-3",
@@ -593,6 +802,18 @@
             "y": 1
         },
         "color": "#ffd166",
-        "texture": "skins/face-hearts-1.webp"
+        "texture": "skins/face-hearts-1.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 0
+        },
+        "faceScale": {
+            "x": 1,
+            "y": 1
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 0
+        }
     }
 ]

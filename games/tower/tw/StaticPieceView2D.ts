@@ -59,16 +59,18 @@ export function buildStaticPieceView(
 
     view.addChild(body);
 
-    if (piece?.texture) {
+    const faceScale = piece?.faceScale ?? { x: 1, y: 1 };
+    const faceHidden = faceScale.x <= 0 || faceScale.y <= 0;
+
+    if (piece?.texture && !faceHidden) {
         const face = PIXI.Sprite.from(resolvePieceImagePath(piece.texture));
         const faceSize = Math.min(width, height) * 0.8;
-        const faceScale = piece.faceScale ?? { x: 1, y: 1 };
         const faceOffset = piece.faceOffset ?? { x: 0, y: 0 };
 
         face.anchor.set(0.5);
         face.width = faceSize * faceScale.x;
         face.height = faceSize * faceScale.y;
-        face.position.set(faceOffset.x * width, faceOffset.y * height);
+        face.position.set(faceOffset.x, faceOffset.y);
 
         view.addChild(face);
     }

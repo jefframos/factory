@@ -59,13 +59,18 @@ export class TowerBaseSync3D {
         const height = this.config.floorHeight / this.pixelsPerUnit;
         const depth = this.visualConfig.platformDepth;
 
+        // StaticPieceDefinition.faceOffset is authored in 2D design px —
+        // converted through pixelsPerUnit here, same as width/height above.
+        const faceOffsetPx = piece?.faceOffset ?? { x: 0, y: 0 };
+        const faceOffset = { x: faceOffsetPx.x / this.pixelsPerUnit, y: faceOffsetPx.y / this.pixelsPerUnit };
+
         const panel = PieceBoxBuilder.build(
             piece ? hexStringToNumber(piece.color) : this.visualConfig.baseColor,
             width, height,
             {
                 polygon: piece?.polygon,
                 depth,
-                faceOffset: piece?.faceOffset,
+                faceOffset,
                 faceScale: piece?.faceScale,
                 // The base's PHYSICS stays a plain symmetric BoxEntity no
                 // matter what polygon it's drawn with (see

@@ -19,7 +19,7 @@ export interface PieceBoxOptions {
     bevelRadiusRatio?: number;
     /** How far the bevel extrudes outward, as a fraction of min(depth, bevel radius) — see FaceTowerConfig.pieceBevelThicknessRatio. Defaults to 0.5. */
     bevelThicknessRatio?: number;
-    /** Shifts the face decal off-center — same unit-square-fraction convention as PieceDefinition.faceOffset. Defaults to {x: 0, y: 0}. */
+    /** Shifts the face decal off-center, in already-converted world units (see TowerBlockSync3D, which divides PieceDefinition's px-authored faceOffset by pixelsPerUnit before passing it here). Defaults to {x: 0, y: 0}. */
     faceOffset?: UnitPoint;
     /** Multiplies the face decal's default size independently per axis — same convention as PieceDefinition.faceScale. Defaults to {x: 1, y: 1}. */
     faceScale?: UnitPoint;
@@ -99,13 +99,21 @@ export class PieceBoxBuilder {
         BendService.applyBend(mat);
 
         const mesh = new THREE.Mesh(geometry, mat);
-        const zOrderEpsilon = PieceBoxBuilder.nextZOrder++ * 0.00001;
+        const faceScale = options.faceScale ?? { x: 1, y: 1 };
 
-        mesh.add(PieceBoxBuilder.buildFaceDecal(
-            frontZ, width, height, options.faceTexture, zOrderEpsilon,
-            options.faceOffset ?? { x: 0, y: 0 },
-            options.faceScale ?? { x: 1, y: 1 },
-        ));
+        // {x: 0} or {y: 0} means "no face" — skip the decal entirely rather
+        // than adding a degenerate zero-size plane. setFaceTexture() already
+        // no-ops safely if a later async texture load finds no decal to
+        // apply to (see its getObjectByName lookup).
+        if (faceScale.x > 0 && faceScale.y > 0) {
+            const zOrderEpsilon = PieceBoxBuilder.nextZOrder++ * 0.00001;
+
+            mesh.add(PieceBoxBuilder.buildFaceDecal(
+                frontZ, width, height, options.faceTexture, zOrderEpsilon,
+                options.faceOffset ?? { x: 0, y: 0 },
+                faceScale,
+            ));
+        }
 
         return mesh;
     }

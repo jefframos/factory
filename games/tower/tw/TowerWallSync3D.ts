@@ -64,6 +64,11 @@ export class TowerWallSync3D {
         const height = this.config.wallHeight / this.pixelsPerUnit;
         const depth = this.visualConfig.platformDepth;
 
+        // StaticPieceDefinition.faceOffset is authored in 2D design px —
+        // converted through pixelsPerUnit here, same as width/height above.
+        const faceOffsetPx = piece?.faceOffset ?? { x: 0, y: 0 };
+        const faceOffset = { x: faceOffsetPx.x / this.pixelsPerUnit, y: faceOffsetPx.y / this.pixelsPerUnit };
+
         for (let i = 0; i < walls.length; i++) {
             const pole = PieceBoxBuilder.build(
                 piece ? hexStringToNumber(piece.color) : this.visualConfig.poleColor,
@@ -71,7 +76,7 @@ export class TowerWallSync3D {
                 {
                     polygon: piece?.polygon,
                     depth,
-                    faceOffset: piece?.faceOffset,
+                    faceOffset,
                     faceScale: piece?.faceScale,
                     // Same reasoning as TowerBaseSync3D: the pole's physics
                     // stays a plain symmetric BoxEntity regardless of the

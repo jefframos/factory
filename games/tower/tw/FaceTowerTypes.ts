@@ -94,10 +94,40 @@ export interface FaceTowerConfig {
     // the Pixi view so you can preview 3D-only. See IslandViewScene.
     render2D: boolean;
 
+    // Master toggle for the whole 3D layer (island cluster, camera, mirrored
+    // pieces/bases/poles) — physics, camera tracking math, and score keep
+    // running either way; this just skips the THREE render call and hides
+    // its canvas, so you can preview 2D-only. See IslandViewScene.update().
+    render3D: boolean;
+
     // Whether newly-spawned blocks draw their piece's face texture on top
     // of the colored/stroked body. Independent of render2D so you can have
     // plain colored boxes without faces even with the 2D layer visible.
     render2DFaces: boolean;
+
+    // Height (world px in 2D, converted via pixelsPerUnit for 3D) of the
+    // "landing preview" strip shown at the held piece's own base — a
+    // vfx/grad.webp gradient (opaque at the piece, fading to transparent
+    // below it) tinted to the piece's color, hinting where it'll land. 0
+    // disables it entirely. Width always matches the piece's own visual
+    // span (see PieceDefinition.previewOffset for per-piece position
+    // tuning, and margin/margin3D below for per-piece width tuning).
+    previewStripHeight: number;
+
+    // Insets the strip's WIDTH symmetrically (world px in 2D, world units
+    // in 3D) — NOT a gap/offset — same as a CSS margin: a margin of 1
+    // removes half a px from the strip's left edge and half from the
+    // right, so it stays centered but reads narrower than the piece's own
+    // visual span. Stacks with PieceDefinition.margin/margin3D (per-piece).
+    previewMargin2D: number;
+    previewMargin3D: number;
+
+    // Flat (x, y) nudge (2D world px / 3D world units) applied to EVERY
+    // piece's preview strip on top of that piece's own
+    // PieceDefinition.previewOffset — for a constant adjustment that
+    // doesn't scale with piece dimensions.
+    previewGlobalOffset2D: { x: number; y: number };
+    previewGlobalOffset3D: { x: number; y: number };
 
     // --- 3D piece visuals — see PieceBoxBuilder ---
 

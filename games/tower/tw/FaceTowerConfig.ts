@@ -42,7 +42,7 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     // Extra velocity (px/sec) applied the instant a block is released, on
     // top of gravity. Leave both at 0 for a plain drop.
     dropForceX: 0,
-    dropForceY: 8,
+    dropForceY: 10,
 
     // --- Containment ---
     wallWidth: 24,
@@ -56,10 +56,16 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     blockStrokeWidth: 2,
     blockBevelRadius: 12,
     render2D: true,
+    render3D: true,
     render2DFaces: true,
+    previewStripHeight: 350,
+    previewMargin2D: 0,
+    previewMargin3D: 0,
+    previewGlobalOffset2D: { x: 0, y: -15 },
+    previewGlobalOffset3D: { x: 0, y: 0.1 },
 
     // --- 3D piece visuals ---
     pieceDepthRatio: 0.25,
     pieceBevelRadiusRatio: 0.15,
-    pieceBevelThicknessRatio: 0.5,
+    pieceBevelThicknessRatio: 0.25,
 };

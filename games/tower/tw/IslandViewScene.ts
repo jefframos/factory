@@ -1,6 +1,7 @@
 import { Game } from 'core/Game';
 import Physics from 'core/phyisics/Physics';
 import { ThreeScene } from 'core/scene/ThreeScene';
+import SetupThree from 'core/scene/SetupThree';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
@@ -333,6 +334,15 @@ export default class IslandViewScene extends ThreeScene {
             this.worldContainer.visible = value;
         }, folder);
 
+        // Also hides the THREE canvas outright — without this, turning
+        // render3D off just freezes the last rendered frame on screen
+        // instead of actually clearing it, since update() skips the render
+        // call but never touches what's already been drawn to the canvas.
+        gui.addToggle('render3D', cfg.render3D, value => {
+            cfg.render3D = value;
+            SetupThree.container.style.display = value ? '' : 'none';
+        }, folder);
+
         // Only affects blocks spawned after the toggle flips — existing
         // block/face sprites already on screen aren't retroactively touched.
         gui.addToggle('render2DFaces', cfg.render2DFaces, value => {
@@ -510,12 +520,18 @@ export default class IslandViewScene extends ThreeScene {
         );
 
         if (this.faceTower) {
-            this.blockSync3D.sync(this.faceTower.getBlocks());
+            this.blockSync3D.sync(this.faceTower.getBlocks(), this.faceTower.getHeldBlock());
             this.baseSync3D.sync(this.faceTower.getBases());
             this.wallSync3D.sync(this.faceTower.getWalls());
         }
 
-        super.update(delta);
+        // super.update() is what actually calls SetupThree.renderer.render()
+        // (see ThreeScene.update()) — skipped entirely when render3D is off,
+        // rather than just leaving 3D pieces/camera logic running but
+        // discarding the draw, so it also saves the GPU work.
+        if (DEFAULT_FACE_TOWER_CONFIG.render3D) {
+            super.update(delta);
+        }
     }
 
     public destroy(): void {

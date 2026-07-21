@@ -15,7 +15,7 @@ import type {
     FaceTowerBlock,
     FaceTowerConfig,
 } from './FaceTowerTypes';
-import { getPolygonAnchorFraction, resolvePieceImagePath, type PieceDefinition } from './PieceStorage';
+import { getPolygonAnchorFraction, getPolygonCentroid, getPolygonHorizontalBounds, resolvePieceImagePath, type PieceDefinition } from './PieceStorage';
 import { buildStaticPieceView } from './StaticPieceView2D';
 import { getStaticPiece } from './StaticPieceStorage';
 import type { TowerCameraController } from './TowerCameraController';
@@ -29,6 +29,16 @@ export class FaceTowerBlockController {
     private readonly bases: BoxEntity[] = [];
     private readonly bodyTexture: BlockBodyTextureCache;
 
+    /**
+     * The "landing preview" glow — ONE standalone sprite, not a child of any
+     * block's own view. Shown/repositioned for whichever piece is currently
+     * held (see spawnHeldBlock/moveHeldBlock) and hidden the instant it's
+     * dropped or discarded (see releaseHeldBlock/discardHeldBlock) — it
+     * previews where the CURRENT held piece will land, not a permanent
+     * decoration every piece carries around after it's already fallen.
+     */
+    private readonly previewStrip: PIXI.Sprite;
+
     private heldBlock?: FaceTowerBlock;
 
     private nextBlockId = 1;
@@ -39,6 +49,11 @@ export class FaceTowerBlockController {
         private readonly camera: TowerCameraController,
     ) {
         this.bodyTexture = new BlockBodyTextureCache(config);
+
+        this.previewStrip = PIXI.Sprite.from(resolvePieceImagePath('vfx/grad.webp'));
+        this.previewStrip.anchor.set(0.5, 0);
+        this.previewStrip.visible = false;
+        this.root.addChild(this.previewStrip);
     }
 
     public initialise(): void {
@@ -78,6 +93,7 @@ export class FaceTowerBlockController {
 
         entity.syncView();
         this.styleBlockView(entity, piece, w, h);
+        this.updatePreviewStrip(piece, entity.body.position.x, entity.body.position.y, w, h);
 
         this.root.addChild(entity.view);
 
@@ -168,19 +184,76 @@ export class FaceTowerBlockController {
 
         entity.view.addChildAt(body, 0);
 
-        if (this.config.render2DFaces && piece.texture) {
+        const faceScale = piece.faceScale ?? { x: 1, y: 1 };
+        const faceHidden = faceScale.x <= 0 || faceScale.y <= 0;
+
+        if (this.config.render2DFaces && piece.texture && !faceHidden) {
             const face = PIXI.Sprite.from(resolvePieceImagePath(piece.texture));
             const faceSize = Math.min(w, h) * 0.8;
-            const faceScale = piece.faceScale ?? { x: 1, y: 1 };
             const faceOffset = piece.faceOffset ?? { x: 0, y: 0 };
 
             face.anchor.set(0.5);
             face.width = faceSize * faceScale.x;
             face.height = faceSize * faceScale.y;
-            face.position.set(faceOffset.x * w, faceOffset.y * h);
+            face.position.set(faceOffset.x, faceOffset.y);
 
             entity.view.addChild(face);
         }
+    }
+
+    /**
+     * Repositions/restyles the single standalone preview strip (see the
+     * `previewStrip` field doc) for the held piece at world position
+     * (x, y) — a vfx/grad.webp gradient (opaque at the top, fading to
+     * transparent) tinted to the piece's color, anchored to the piece's own
+     * base plus previewMargin2D, and extending downward toward the floor.
+     *
+     * Sized/centered off the polygon's own LEFT/RIGHT extremes (see
+     * getPolygonHorizontalBounds), not the area centroid — entity.view (and
+     * so `x`) sits at the centroid every frame (see BasePhysicsEntity.syncView),
+     * which is correct for collision, but for an asymmetric outline (e.g. a
+     * triangle whose mass leans to one side) that point isn't the visual
+     * middle of the shape. Anchoring/sizing the strip off the centroid made
+     * it visibly off-center and the wrong width for anything that wasn't a
+     * plain rect; the bbox center and (right - left) span fix both.
+     *
+     * Independent nudges stack on top of that corrected anchor, all in
+     * plain 2D design px (not a fraction of the piece's size):
+     * PieceDefinition.previewOffset (per-piece, for shape-specific tuning —
+     * e.g. an arch's legs sit lower than its notch), previewGlobalOffset2D
+     * (applied to every piece alike). No-ops (and hides the strip) if
+     * previewStripHeight is 0.
+     *
+     * Margin (previewMargin2D + PieceDefinition.margin) is NOT a Y gap — it
+     * insets the strip's WIDTH symmetrically, same as a CSS margin: a
+     * margin of 1 removes half a px from the LEFT edge and half from the
+     * RIGHT, so the strip stays centered but reads narrower than the
+     * piece's own visual span.
+     */
+    private updatePreviewStrip(piece: PieceDefinition, x: number, y: number, w: number, h: number): void {
+        if (this.config.previewStripHeight <= 0) {
+            this.previewStrip.visible = false;
+            return;
+        }
+
+        const centroid = getPolygonCentroid(piece.polygon);
+        const bounds = getPolygonHorizontalBounds(piece.polygon);
+        const totalMargin = this.config.previewMargin2D + (piece.margin ?? 0);
+        const visualWidth = Math.max(0, (bounds.right - bounds.left) * w - totalMargin);
+        const centerShiftX = (bounds.center - centroid.x) * w;
+
+        const baseLocalY = (1 - centroid.y) * h;
+        const offset = piece.previewOffset ?? { x: 0, y: 0 };
+        const globalOffset = this.config.previewGlobalOffset2D;
+
+        this.previewStrip.width = visualWidth;
+        this.previewStrip.height = this.config.previewStripHeight;
+        this.previewStrip.tint = hexStringToNumber(piece.color);
+        this.previewStrip.position.set(
+            x + centerShiftX + offset.x + globalOffset.x,
+            y + baseLocalY + offset.y + globalOffset.y,
+        );
+        this.previewStrip.visible = true;
     }
 
     public moveHeldBlock(x: number): void {
@@ -188,7 +261,9 @@ export class FaceTowerBlockController {
             return;
         }
 
-        const w = this.config.blockWidth * this.heldBlock.piece.scale.x;
+        const piece = this.heldBlock.piece;
+        const w = this.config.blockWidth * piece.scale.x;
+        const h = this.config.blockHeight * piece.scale.y;
         const body = this.heldBlock.entity.body;
 
         Body.setPosition(body, {
@@ -205,6 +280,7 @@ export class FaceTowerBlockController {
         Body.setAngle(body, 0);
 
         this.heldBlock.entity.syncView();
+        this.updatePreviewStrip(piece, body.position.x, body.position.y, w, h);
     }
 
     public releaseHeldBlock(): FaceTowerBlock | undefined {
@@ -213,6 +289,8 @@ export class FaceTowerBlockController {
         if (!block) {
             return undefined;
         }
+
+        this.previewStrip.visible = false;
 
         const body = block.entity.body;
 
@@ -247,6 +325,8 @@ export class FaceTowerBlockController {
         if (!block) {
             return;
         }
+
+        this.previewStrip.visible = false;
 
         const index = this.blocks.indexOf(block);
         if (index >= 0) {

@@ -179,6 +179,11 @@ export class FaceTowerGameController {
         return this.blocks.getBlocks();
     }
 
+    /** The piece currently hovering over the drop area (undefined once dropped) — see TowerBlockSync3D's landing-preview strip. */
+    public getHeldBlock(): FaceTowerBlock | undefined {
+        return this.blocks.getHeldBlock();
+    }
+
     /** Every base placed so far (the original floor plus one per completed zone). */
     public getBases() {
         return this.blocks.getBases();
