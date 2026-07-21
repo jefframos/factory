@@ -16,6 +16,8 @@ import type {
     FaceTowerConfig,
 } from './FaceTowerTypes';
 import { getPolygonAnchorFraction, resolvePieceImagePath, type PieceDefinition } from './PieceStorage';
+import { buildStaticPieceView } from './StaticPieceView2D';
+import { getStaticPiece } from './StaticPieceStorage';
 import type { TowerCameraController } from './TowerCameraController';
 
 function hexStringToNumber(hex: string): number {
@@ -169,10 +171,13 @@ export class FaceTowerBlockController {
         if (this.config.render2DFaces && piece.texture) {
             const face = PIXI.Sprite.from(resolvePieceImagePath(piece.texture));
             const faceSize = Math.min(w, h) * 0.8;
+            const faceScale = piece.faceScale ?? { x: 1, y: 1 };
+            const faceOffset = piece.faceOffset ?? { x: 0, y: 0 };
 
             face.anchor.set(0.5);
-            face.width = faceSize;
-            face.height = faceSize;
+            face.width = faceSize * faceScale.x;
+            face.height = faceSize * faceScale.y;
+            face.position.set(faceOffset.x * w, faceOffset.y * h);
 
             entity.view.addChild(face);
         }
@@ -320,8 +325,18 @@ export class FaceTowerBlockController {
         }
     }
 
-    /** Places a new static base — the "fresh start" floor for the next zone. */
+    /**
+     * Places a new static base — the "fresh start" floor for the next zone.
+     * The very first call (see initialise()) is the tower's starting floor
+     * and uses the 'base' static piece (see StaticPieceStorage); every call
+     * after that (one per completed zone — see
+     * FaceTowerGameController.completeTurn) uses 'milestone' instead — same
+     * role split as TowerBaseSync3D's 3D panels.
+     */
     public addBase(y: number): void {
+        const isStartingFloor = this.bases.length === 0;
+        const piece = getStaticPiece(isStartingFloor ? 'base' : 'milestone');
+
         const base = Pool.instance.getElement(BoxEntity) as BoxEntity;
 
         base.build({
@@ -340,6 +355,20 @@ export class FaceTowerBlockController {
         });
 
         base.syncView();
+
+        (base.view.children[0] as PIXI.Graphics).visible = false;
+        base.view.addChildAt(
+            buildStaticPieceView(
+                piece,
+                this.config.floorWidth,
+                this.config.floorHeight,
+                0x33cc66,
+                this.config.blockStrokeColor,
+                this.config.blockStrokeWidth,
+                this.config.blockBevelRadius,
+            ),
+            0,
+        );
 
         this.root.addChild(base.view);
         this.bases.push(base);

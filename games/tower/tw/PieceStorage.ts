@@ -23,6 +23,20 @@ export interface PieceDefinition {
     color: string;
     /** Relative path under images/non-preload/ — e.g. "skins/dog.webp". Resolve with resolvePieceImagePath(). */
     texture: string;
+    /**
+     * Shifts the face texture off-center — a fraction of the piece's own
+     * width/height (same convention as `polygon`'s unit-square points: +x is
+     * right, +y is down). Applied on both the 2D face sprite (see
+     * FaceTowerBlockController.styleBlockView) and the 3D face decal (see
+     * PieceBoxBuilder.buildFaceDecal). Defaults to {x: 0, y: 0} — centered.
+     */
+    faceOffset?: { x: number; y: number };
+    /**
+     * Multiplies the face texture's default size independently per axis —
+     * {x: 1, y: 1} is the default (square, sized off the piece's shorter
+     * axis). Applied on both the 2D face sprite and the 3D face decal.
+     */
+    faceScale?: { x: number; y: number };
 }
 
 /**

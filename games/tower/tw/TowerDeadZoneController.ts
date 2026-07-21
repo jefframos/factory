@@ -8,6 +8,8 @@ import { TriggerEntity } from 'core/phyisics/entities/TriggerEntity';
 import { Body } from 'matter-js';
 import * as PIXI from 'pixi.js';
 import type { FaceTowerConfig } from './FaceTowerTypes';
+import { buildStaticPieceView } from './StaticPieceView2D';
+import { getStaticPiece } from './StaticPieceStorage';
 
 /**
  * Containment for the current build column, laid out like:
@@ -57,9 +59,12 @@ export class TowerDeadZoneController {
             this.config.deathScreenY - this.config.floorScreenY;
 
         // Flush with the base's top edge, extending upward — just enough
-        // to bumper the first block or two off the base, not the full column.
+        // to bumper the first block or two off the base, not the full
+        // column. wallOffsetY is a plain manual fudge on top of that, for
+        // when the flush math doesn't quite read right visually.
         const wallCenterY =
-            baseWorldY - this.config.floorHeight * 0.5 - wallHeight * 0.5;
+            baseWorldY - this.config.floorHeight * 0.5 - wallHeight * 0.5 +
+            this.config.wallOffsetY;
 
         const wallLeftX =
             this.config.floorX - halfFloor - wallWidth * 0.5;
@@ -120,6 +125,19 @@ export class TowerDeadZoneController {
         wall.body.restitution = 0.05;
 
         wall.syncView();
+
+        (wall.view.children[0] as PIXI.Graphics).visible = false;
+        wall.view.addChildAt(
+            buildStaticPieceView(
+                getStaticPiece('column'),
+                w, h,
+                0x3388ff,
+                this.config.blockStrokeColor,
+                this.config.blockStrokeWidth,
+                this.config.blockBevelRadius,
+            ),
+            0,
+        );
 
         this.root.addChild(wall.view);
         this.walls.push(wall);

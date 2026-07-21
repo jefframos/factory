@@ -19,6 +19,25 @@ export interface PieceBoxOptions {
     bevelRadiusRatio?: number;
     /** How far the bevel extrudes outward, as a fraction of min(depth, bevel radius) — see FaceTowerConfig.pieceBevelThicknessRatio. Defaults to 0.5. */
     bevelThicknessRatio?: number;
+    /** Shifts the face decal off-center — same unit-square-fraction convention as PieceDefinition.faceOffset. Defaults to {x: 0, y: 0}. */
+    faceOffset?: UnitPoint;
+    /** Multiplies the face decal's default size independently per axis — same convention as PieceDefinition.faceScale. Defaults to {x: 1, y: 1}. */
+    faceScale?: UnitPoint;
+    /**
+     * Overrides where the mesh's local origin (0,0,0) sits in unit-square
+     * space — defaults to the polygon's own area centroid (see
+     * PieceStorage.getPolygonCentroid). Gameplay blocks rely on that default
+     * because their PHYSICS body is ALSO a polygon centered on that same
+     * centroid (see FaceTowerBlockController's PolygonEntity path), so mesh
+     * and collision agree. Static pieces (base/column — see
+     * TowerBaseSync3D/TowerWallSync3D) are different: their physics stays a
+     * plain symmetric rect (BoxEntity) no matter what polygon they're drawn
+     * with, so centering the mesh on a concave polygon's (off-center)
+     * centroid would visibly drift it from that fixed rect — pass
+     * {x: 0.5, y: 0.5} there to keep the mesh centered on the plain
+     * geometric middle instead.
+     */
+    centerOverride?: UnitPoint;
 }
 
 /** Default outline for a plain rect piece — the box path is just this polygon run through the same extrude/fillet code as a custom `polygon`. */
@@ -73,6 +92,7 @@ export class PieceBoxBuilder {
             width, height, depth,
             options.bevelRadiusRatio ?? 0.15,
             options.bevelThicknessRatio ?? 0.5,
+            options.centerOverride,
         );
 
         const mat = new THREE.MeshStandardMaterial({ color });
@@ -81,7 +101,11 @@ export class PieceBoxBuilder {
         const mesh = new THREE.Mesh(geometry, mat);
         const zOrderEpsilon = PieceBoxBuilder.nextZOrder++ * 0.00001;
 
-        mesh.add(PieceBoxBuilder.buildFaceDecal(frontZ, width, height, options.faceTexture, zOrderEpsilon));
+        mesh.add(PieceBoxBuilder.buildFaceDecal(
+            frontZ, width, height, options.faceTexture, zOrderEpsilon,
+            options.faceOffset ?? { x: 0, y: 0 },
+            options.faceScale ?? { x: 1, y: 1 },
+        ));
 
         return mesh;
     }
@@ -135,8 +159,9 @@ export class PieceBoxBuilder {
     private static buildOutlineGeometry(
         polygon: UnitPoint[], width: number, height: number, depth: number,
         bevelRadiusRatio: number, bevelThicknessRatio: number,
+        centerOverride?: UnitPoint,
     ): { geometry: THREE.BufferGeometry; frontZ: number } {
-        const centroid = getPolygonCentroid(polygon);
+        const centroid = centerOverride ?? getPolygonCentroid(polygon);
         const radius = Math.min(width, height) * bevelRadiusRatio;
 
         const rawVertices = polygon.map(p => ({
@@ -240,24 +265,34 @@ export class PieceBoxBuilder {
 
     /**
      * Thin quad sitting just past the mesh's actual outermost +Z point —
-     * kept square (sized off the shorter axis, same as
-     * FaceTowerBlockController.styleBlockView's 2D face) so the art never
-     * stretches on a non-square piece. `frontZ` must be the geometry's real
-     * front (see buildOutlineGeometry) rather than depth/2, or the bevel's
-     * outward bulge clips through the decal. `zOrderEpsilon` (see
+     * square by default (sized off the shorter axis, same as
+     * FaceTowerBlockController.styleBlockView's 2D face) unless `faceScale`
+     * stretches it per axis. `frontZ` must be the geometry's real front (see
+     * buildOutlineGeometry) rather than depth/2, or the bevel's outward
+     * bulge clips through the decal. `zOrderEpsilon` (see
      * PieceBoxBuilder.nextZOrder) nudges otherwise-identical Z values apart
-     * so two pieces with the same depth/bevel don't z-fight.
+     * so two pieces with the same depth/bevel don't z-fight. `faceOffset` is
+     * a fraction of (width, height) — +x right, +y down, same convention as
+     * PieceDefinition.polygon's points — shifting the decal off-center.
      */
-    private static buildFaceDecal(frontZ: number, width: number, height: number, faceTexture: THREE.Texture | undefined, zOrderEpsilon: number): THREE.Mesh {
+    private static buildFaceDecal(
+        frontZ: number, width: number, height: number,
+        faceTexture: THREE.Texture | undefined, zOrderEpsilon: number,
+        faceOffset: UnitPoint, faceScale: UnitPoint,
+    ): THREE.Mesh {
         const decalSize = Math.min(width, height) * 0.85;
-        const geo = new THREE.PlaneGeometry(decalSize, decalSize);
+        const geo = new THREE.PlaneGeometry(decalSize * faceScale.x, decalSize * faceScale.y);
         const mat = faceTexture
             ? PieceBoxBuilder.makeFaceDecalMaterial(faceTexture)
             : PieceBoxBuilder.getFaceDecalMaterial();
 
         const mesh = new THREE.Mesh(geo, mat);
         mesh.name = PieceBoxBuilder.FACE_DECAL_NAME;
-        mesh.position.z = frontZ + Math.min(width, height) * 0.01 + zOrderEpsilon;
+        mesh.position.set(
+            faceOffset.x * width,
+            -faceOffset.y * height,
+            frontZ + Math.min(width, height) * 0.01 + zOrderEpsilon,
+        );
 
         return mesh;
     }

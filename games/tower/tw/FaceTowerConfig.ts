@@ -21,7 +21,7 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     blockHeight: 70,
 
     floorWidth: 460,
-    floorHeight: 40,
+    floorHeight: 100,
     floorX: 360,
     floorY: 940,
 
@@ -46,13 +46,14 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
 
     // --- Containment ---
     wallWidth: 24,
-    wallHeight: 80, // just tall enough to bumper the first block or two off the base
+    wallHeight: 180, // just tall enough to bumper the first block or two off the base
+    wallOffsetY: 100,
     deadZoneWidth: 1400,
 
     // --- 2D block visuals ---
-    blockFillAlpha: 0.95,
-    blockStrokeColor: 0x000000,
-    blockStrokeWidth: 3,
+    blockFillAlpha: 1,
+    blockStrokeColor: 0x555555,
+    blockStrokeWidth: 2,
     blockBevelRadius: 12,
     render2D: true,
     render2DFaces: true,

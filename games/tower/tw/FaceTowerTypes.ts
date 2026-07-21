@@ -64,6 +64,13 @@ export interface FaceTowerConfig {
     wallWidth: number;
     wallHeight: number;
 
+    // Manual vertical nudge (world px, +down) for the walls' position on
+    // top of the flush-with-base-top placement — see
+    // TowerDeadZoneController.rebuild(). Plain additive fudge factor for
+    // when the flush math doesn't quite read right visually, instead of
+    // re-deriving the "correct" offset from wall/base geometry.
+    wallOffsetY: number;
+
     // Invisible sensor strips beyond the walls (and one under the base).
     // Only reachable if something gets knocked past a wall, e.g. during a
     // collapse — touching one ends the run immediately.

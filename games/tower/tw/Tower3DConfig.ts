@@ -41,9 +41,9 @@ export interface Tower3DConfig {
     // somewhere other than dead-center on the island cluster.
     towerBaseOffset: { x: number; y: number; z: number };
 
-    // --- Base platform (see TowerBaseSync3D) ---
-    baseBevelRadius: number;
-    baseOpacity: number;
+    // --- Base platform (see TowerBaseSync3D) — color/shape/face come from
+    // the 'base'/'milestone' static pieces (see StaticPieceStorage) when
+    // configured; baseColor is only the fallback for an unconfigured role.
     baseColor: number;
 
     // Z-thickness (THREE units) shared by the base slab and the side poles
@@ -52,9 +52,10 @@ export interface Tower3DConfig {
     // deep they read.
     platformDepth: number;
 
-    // --- Side poles (see TowerWallSync3D — mirrors TowerDeadZoneController's walls) ---
+    // --- Side poles (see TowerWallSync3D — mirrors TowerDeadZoneController's
+    // walls) — color/shape/face come from the 'column' static piece when
+    // configured; poleColor is only the fallback for an unconfigured role.
     poleColor: number;
-    poleOpacity: number;
 }
 
 export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
@@ -64,8 +65,8 @@ export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
 
     cameraMasterOffsetY: 5.5,
 
-    clusterDiameter: 550, // 16 world units at pixelsPerUnit: 80 — matches the old fixed radius
-    clusterCellSize: 1,
+    clusterDiameter: 0, // 16 world units at pixelsPerUnit: 80 — matches the old fixed radius
+    clusterCellSize: 0,
     clusterHeight: 1,
     clusterDepthBelow: 20,
     clusterBevelRadius: 1.5,
@@ -73,11 +74,8 @@ export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
     pixelsPerUnit: 80,
     towerBaseOffset: { x: 0, y: 1, z: 0 },
 
-    baseBevelRadius: 0.15,
-    baseOpacity: 0.7,
     baseColor: 0x33cc66,
     platformDepth: 2,
 
     poleColor: 0x3388ff,
-    poleOpacity: 0.85,
 };

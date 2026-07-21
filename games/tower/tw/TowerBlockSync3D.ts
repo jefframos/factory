@@ -66,6 +66,8 @@ export class TowerBlockSync3D {
             depth: baseSize * this.config.pieceDepthRatio,
             bevelRadiusRatio: this.config.pieceBevelRadiusRatio,
             bevelThicknessRatio: this.config.pieceBevelThicknessRatio,
+            faceOffset: block.piece.faceOffset,
+            faceScale: block.piece.faceScale,
         });
 
         this.scene.add(cube);

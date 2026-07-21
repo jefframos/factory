@@ -26,6 +26,14 @@
           "src": [
             "shopItems.json"
           ]
+        },
+        {
+          "alias": [
+            "static-pieces-config.json"
+          ],
+          "src": [
+            "static-pieces-config.json"
+          ]
         }
       ]
     }
