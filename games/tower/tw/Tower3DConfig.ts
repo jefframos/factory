@@ -56,6 +56,42 @@ export interface Tower3DConfig {
     // walls) — color/shape/face come from the 'column' static piece when
     // configured; poleColor is only the fallback for an unconfigured role.
     poleColor: number;
+
+    // --- Height marker bars (see TowerHeightMarkers3D — the 3D counterpart
+    // of the 2D TowerHeightGauge) — the goal (target line) and progress
+    // (current top) bars are independently configurable, both in layout
+    // and visibility, since they read as two separate indicators rather
+    // than one combined gauge.
+
+    // 'centered' spans a bar the full play-column width, running through
+    // the tower (matches the 2D gauge's own "line through the stack" feel).
+    // 'side' instead docks a short bar just past the tower's own right
+    // edge, out of the way of the actual gameplay column — see
+    // heightMarkerSideMargin/heightMarkerSideWidth below for its exact
+    // offset/width in that mode. Read once at construction (see
+    // TowerHeightMarkers3D's constructor) — a bar's geometry is built for
+    // whichever mode is active at startup, not re-built if this value
+    // changes afterward.
+    goalMarkerLayout: 'centered' | 'side';
+    progressMarkerLayout: 'centered' | 'side';
+
+    // Independently hides a marker (bar + its meters label) entirely —
+    // checked every frame in TowerHeightMarkers3D.update(), so unlike
+    // layout this CAN be toggled live.
+    showGoalMarker: boolean;
+    showProgressMarker: boolean;
+
+    // How far past the play column's own right edge (world units) a bar
+    // sits when its own layout is 'side'. Shared by both markers; unused
+    // by one currently set to 'centered'.
+    heightMarkerSideMargin: number;
+
+    // A bar's own width (world units) when its layout is 'side' —
+    // deliberately much shorter than the full column span, since the point
+    // of 'side' mode is to read as a small marker beside the tower, not
+    // another bar spanning across it. Shared by both markers; unused by
+    // one currently set to 'centered'.
+    heightMarkerSideWidth: number;
 }
 
 export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
@@ -75,7 +111,14 @@ export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
     towerBaseOffset: { x: 0, y: 1, z: 0 },
 
     baseColor: 0x33cc66,
-    platformDepth: 2,
+    platformDepth: 0.6,
 
     poleColor: 0x3388ff,
+
+    goalMarkerLayout: 'centered',
+    progressMarkerLayout: 'side',
+    showGoalMarker: true,
+    showProgressMarker: false,
+    heightMarkerSideMargin: 1.2,
+    heightMarkerSideWidth: 1.6,
 };

@@ -9,7 +9,32 @@ export enum FaceTowerState {
     DroppingBlock = 'dropping-block',
     WaitingForTower = 'waiting-for-tower',
     PanningCamera = 'panning-camera',
+    /** A powerup's async freeze/grey queue is still draining — see PowerupSystem.isBusy(). Next block spawns once it empties. */
+    PowerupEffect = 'powerup-effect',
     GameOver = 'game-over',
+}
+
+/**
+ * What a powerup's dropped piece does to each block it touches, and how
+ * many it's allowed to affect before it also removes itself — see
+ * PowerupSystem. Normalized out of the raw PowerupStorage.PowerupDefinition
+ * JSON shape by FaceTowerGameController.spawnPowerup so PowerupSystem and
+ * FaceTowerBlockController only ever deal with one consistent shape
+ * regardless of which powerup type produced it.
+ */
+export interface PowerupEffectConfig {
+    /** 'freeze' greys+freezes a touched block in place (the lightning); 'destroy' removes it outright (bomb/super bomb); 'shrink' shrinks it in place, physics body included (the shrink ray). */
+    action: 'freeze' | 'destroy' | 'shrink';
+    /** Required when action === 'freeze' — see FaceTowerBlockController.freezeBlockForPowerup. */
+    greyColorHex?: number;
+    /** Required when action === 'shrink' — multiplies the touched block's CURRENT size (compounds on repeat hits, floored — see FaceTowerBlockController.shrinkBlockForPowerup). 0.6 means "60% of its current size", not 60% of its original size. */
+    shrinkFactor?: number;
+    /** Seconds between processing each additional queued block, so a run of simultaneous touches cascades one at a time instead of all snapping/vanishing/shrinking at once. */
+    stepDelay: number;
+    /** Max blocks this can affect before it also removes itself right away instead of continuing to fall — 1 for a single-target bomb, omit for unlimited (falls until it exits the bottom, like the lightning/super bomb/shrink ray). */
+    maxTargets?: number;
+    /** Overrides FaceTowerConfig.dropForceY for this piece's release — see PowerupDefinition.dropForceY. */
+    dropForceY?: number;
 }
 
 export interface FaceTowerBlock {
@@ -19,6 +44,23 @@ export interface FaceTowerBlock {
     checkpointFrozen: boolean;
     /** Which piece (color/texture/scale) this block was spawned from — see PieceManager. */
     piece: PieceDefinition;
+    /** Seconds left in the one-shot "shoot" bounce (see PieceAnimations.sampleShoot) — set on release. */
+    shootRemaining: number;
+    /** Seconds left in the one-shot "jiggle" wiggle (see PieceAnimations.sampleJiggle) — set on first physical contact, once ever. */
+    jiggleRemaining: number;
+    /** True once this block's first-hit jiggle has already fired — prevents every subsequent collision from re-triggering it. */
+    hasJiggled: boolean;
+    /** Cumulative multiplier from every shrink-ray hit this block has ever taken (1 = original size, shrinks compound, floored — see FaceTowerBlockController.shrinkBlockForPowerup). Applied every frame in updatePieceAnim so it survives past the shoot/jiggle animations finishing. */
+    shrinkScale: number;
+    /**
+     * Set only for a powerup's dropped piece (see PowerupSystem). Its body
+     * becomes a sensor the instant it's released (see
+     * FaceTowerBlockController.releaseHeldBlock) — falls under gravity but
+     * passes through everything instead of colliding — and it never settles
+     * into the tower: PowerupSystem destroys it once it falls past the
+     * bottom of the play column (or hits its maxTargets cap), ending the effect.
+     */
+    powerup?: PowerupEffectConfig;
 }
 
 export interface FaceTowerConfig {

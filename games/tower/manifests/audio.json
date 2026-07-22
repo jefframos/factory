@@ -13,6 +13,54 @@
         },
         {
           "alias": [
+            "Bubbles.wav"
+          ],
+          "src": [
+            "Bubbles.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "diamond-sparkle.mp3"
+          ],
+          "src": [
+            "diamond-sparkle.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "drop.wav"
+          ],
+          "src": [
+            "drop.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Explosion_01.mp3"
+          ],
+          "src": [
+            "Explosion_01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Explosion_02.mp3"
+          ],
+          "src": [
+            "Explosion_02.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Explosion_03.mp3"
+          ],
+          "src": [
+            "Explosion_03.mp3"
+          ]
+        },
+        {
+          "alias": [
             "footstep_wood_000.ogg"
           ],
           "src": [
@@ -85,10 +133,58 @@
         },
         {
           "alias": [
+            "impactSoft_medium_000.ogg"
+          ],
+          "src": [
+            "impactSoft_medium_000.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "impactSoft_medium_001.ogg"
+          ],
+          "src": [
+            "impactSoft_medium_001.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "impactSoft_medium_002.ogg"
+          ],
+          "src": [
+            "impactSoft_medium_002.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "impactSoft_medium_003.ogg"
+          ],
+          "src": [
+            "impactSoft_medium_003.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "impactSoft_medium_004.ogg"
+          ],
+          "src": [
+            "impactSoft_medium_004.mp3"
+          ]
+        },
+        {
+          "alias": [
             "lowDown.ogg"
           ],
           "src": [
             "lowDown.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "music.mp3"
+          ],
+          "src": [
+            "music.mp3"
           ]
         },
         {
@@ -125,6 +221,22 @@
         },
         {
           "alias": [
+            "phaserDown2.ogg"
+          ],
+          "src": [
+            "phaserDown2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "phaserDown3.ogg"
+          ],
+          "src": [
+            "phaserDown3.mp3"
+          ]
+        },
+        {
+          "alias": [
             "phaserUp2.ogg"
           ],
           "src": [
@@ -141,10 +253,18 @@
         },
         {
           "alias": [
-            "whale-st.mp3"
+            "tapped.wav"
           ],
           "src": [
-            "whale-st.mp3"
+            "tapped.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Whoosh.wav"
+          ],
+          "src": [
+            "Whoosh.mp3"
           ]
         }
       ]

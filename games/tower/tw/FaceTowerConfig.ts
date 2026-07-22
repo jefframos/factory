@@ -55,7 +55,7 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     blockStrokeColor: 0x555555,
     blockStrokeWidth: 2,
     blockBevelRadius: 12,
-    render2D: true,
+    render2D: false,
     render3D: true,
     render2DFaces: true,
     previewStripHeight: 350,

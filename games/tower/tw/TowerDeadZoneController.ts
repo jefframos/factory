@@ -170,9 +170,17 @@ export class TowerDeadZoneController {
         this.root.addChild(zone.view);
 
         Physics.events.onStart(zone.body, otherBody => {
-            // Ignore static bodies (bases, frozen blocks) — only a block
-            // still actively falling/tipping should end the run.
-            if (otherBody.isStatic) {
+            /*
+             * Ignore static bodies (bases, frozen blocks) — only a block
+             * still actively falling/tipping should end the run. Also
+             * ignore sensors: a powerup's dropped piece (see
+             * FaceTowerBlockController.releaseHeldBlock) is deliberately
+             * made a sensor the instant it's released — it's not a real
+             * piece, so touching a kill zone should just make it quietly
+             * despawn (see PowerupSystem.update), not end the run. Nothing
+             * else in this game is ever both non-static and a sensor.
+             */
+            if (otherBody.isStatic || otherBody.isSensor) {
                 return;
             }
 

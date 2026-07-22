@@ -5,6 +5,7 @@ import { CollisionLayer } from 'core/phyisics/core/CollisionLayer';
 import type { BasePhysicsEntity } from 'core/phyisics/entities/BaseEntity';
 import { BoxEntity } from 'core/phyisics/entities/BoxEntity';
 import { PolygonEntity } from 'core/phyisics/entities/PolygonEntity';
+import Physics from 'core/phyisics/Physics';
 import {
     Body,
     Sleeping
@@ -14,7 +15,9 @@ import { BlockBodyTextureCache } from './BlockBodyTextureCache';
 import type {
     FaceTowerBlock,
     FaceTowerConfig,
+    PowerupEffectConfig,
 } from './FaceTowerTypes';
+import { PieceAnimations } from './PieceAnimations';
 import { getPolygonAnchorFraction, getPolygonCentroid, getPolygonHorizontalBounds, resolvePieceImagePath, type PieceDefinition } from './PieceStorage';
 import { buildStaticPieceView } from './StaticPieceView2D';
 import { getStaticPiece } from './StaticPieceStorage';
@@ -47,6 +50,8 @@ export class FaceTowerBlockController {
         private readonly root: PIXI.Container,
         private readonly config: FaceTowerConfig,
         private readonly camera: TowerCameraController,
+        /** Notified the instant a block's jiggle actually fires (its first physical contact) — the 3D mirror layer has no physics of its own, so this is how it learns to play the matching cube jiggle. See FaceTowerGameEvents.onBlockFirstHit. */
+        private readonly onBlockFirstHit?: (block: FaceTowerBlock) => void,
     ) {
         this.bodyTexture = new BlockBodyTextureCache(config);
 
@@ -102,12 +107,32 @@ export class FaceTowerBlockController {
             entity,
             checkpointFrozen: false,
             piece,
+            shootRemaining: 0,
+            jiggleRemaining: 0,
+            hasJiggled: false,
+            shrinkScale: 1,
         };
 
         this.blocks.push(block);
         this.heldBlock = block;
 
         return block;
+    }
+
+    /**
+     * Tags the currently held block as a powerup's dropped piece — call
+     * right after spawnHeldBlock() (see FaceTowerGameController.spawnPowerup).
+     * releaseHeldBlock() reads this to make the body a sensor instead of a
+     * normal collider once dropped; PowerupSystem reads it for the effect
+     * (freeze/destroy), pacing, and cap once it starts acting on whatever
+     * this piece touches.
+     */
+    public markHeldBlockAsPowerup(effect: PowerupEffectConfig): void {
+        if (!this.heldBlock) {
+            return;
+        }
+
+        this.heldBlock.powerup = effect;
     }
 
     private buildBoxEntity(w: number, h: number): BoxEntity {
@@ -291,14 +316,30 @@ export class FaceTowerBlockController {
         }
 
         this.previewStrip.visible = false;
+        block.shootRemaining = PieceAnimations.SHOOT_DURATION;
 
         const body = block.entity.body;
 
         Body.setStatic(body, false);
 
+        if (block.powerup) {
+            // Passes through everything instead of colliding — falls under
+            // gravity same as any piece, but never bounces off or pushes
+            // anything it touches. PowerupSystem registers its own onStart
+            // listener on this same body (see FaceTowerGameController.dropBlock)
+            // to learn what it touched; the normal first-hit jiggle below is
+            // skipped entirely for a powerup piece, so there's no
+            // Physics.events.clear() call here to fight over that listener.
+            body.isSensor = true;
+        }
+
         Body.setVelocity(body, {
             x: this.config.dropForceX,
-            y: this.config.dropForceY,
+            // A powerup piece can override the drop's downward kick (see
+            // PowerupDefinition.dropForceY) — e.g. the lightning falling
+            // noticeably faster than a normal piece — falling back to the
+            // usual config value when it doesn't set one.
+            y: block.powerup?.dropForceY ?? this.config.dropForceY,
         });
 
         Body.setAngularVelocity(body, 0);
@@ -306,6 +347,26 @@ export class FaceTowerBlockController {
 
         // Ensure Matter wakes the body after changing it from static.
         Sleeping.set(body, false);
+
+        if (!block.powerup) {
+            /*
+             * First physical contact with anything (a base, another block, a
+             * wall) — not the release itself — is the jiggle's trigger. onStart
+             * fires again on every later collision too, so hasJiggled guards it
+             * to play exactly once per block; Physics.events.clear() then drops
+             * the listener outright since there's nothing left for it to do.
+             */
+            Physics.events.onStart(body, () => {
+                if (block.hasJiggled) {
+                    return;
+                }
+
+                block.hasJiggled = true;
+                block.jiggleRemaining = PieceAnimations.JIGGLE_DURATION;
+                this.onBlockFirstHit?.(block);
+                Physics.events.clear(body);
+            });
+        }
 
         this.heldBlock = undefined;
 
@@ -356,6 +417,7 @@ export class FaceTowerBlockController {
     public update(delta: number): void {
         for (const block of this.blocks) {
             block.entity.update(delta);
+            this.updatePieceAnim(block, delta);
         }
 
         for (const base of this.bases) {
@@ -363,12 +425,105 @@ export class FaceTowerBlockController {
         }
     }
 
+    /**
+     * Applied after entity.update()'s syncView() so all three layer on top
+     * of the physics-driven position/rotation instead of being overwritten
+     * by it. Shoot and jiggle can't actually overlap in practice (jiggle
+     * only starts once the piece has hit something, well after its own
+     * shoot bounce finishes) but combine cleanly regardless: scale
+     * multiplies, rotation adds. shrinkScale is folded into that same scale
+     * multiply every frame — unlike shoot/jiggle it isn't a timed animation
+     * (nothing decrements it), so it has to be applied unconditionally
+     * rather than only while shootRemaining/jiggleRemaining are still
+     * ticking, or a shrunk piece would snap back to full size the instant
+     * its last shoot/jiggle animation finished.
+     */
+    private updatePieceAnim(block: FaceTowerBlock, delta: number): void {
+        block.shootRemaining = Math.max(0, block.shootRemaining - delta);
+        block.jiggleRemaining = Math.max(0, block.jiggleRemaining - delta);
+
+        const shoot = PieceAnimations.sampleShoot(block.shootRemaining);
+        const jiggle = PieceAnimations.sampleJiggle(block.jiggleRemaining);
+
+        block.entity.view.scale.set(
+            shoot.scaleX * jiggle.scaleX * block.shrinkScale,
+            shoot.scaleY * jiggle.scaleY * block.shrinkScale,
+        );
+        block.entity.view.rotation += shoot.rotation + jiggle.rotation;
+    }
+
     public getBlocks(): readonly FaceTowerBlock[] {
         return this.blocks;
     }
 
+    /**
+     * Freezes `block` in place (static, zero velocity/angular velocity) and
+     * tints its body sprite grey — the 2D half of a powerup's freeze effect
+     * (see PowerupSystem.drainQueue). Deliberately doesn't touch
+     * `checkpointFrozen` — that flag excludes a block from
+     * getHighestTopWorldY()'s zone-completion height check, which a
+     * powerup-frozen block (still part of the live stack) should still
+     * count toward.
+     */
+    public freezeBlockForPowerup(block: FaceTowerBlock, greyColorHex: number): void {
+        const body = block.entity.body;
+
+        Body.setStatic(body, true);
+        Body.setVelocity(body, { x: 0, y: 0 });
+        Body.setAngularVelocity(body, 0);
+
+        const bodySprite = block.entity.view.children[0] as PIXI.Sprite;
+        bodySprite.tint = greyColorHex;
+    }
+
+    /**
+     * Shrinks `block` — physics body included, via Matter's Body.scale (which
+     * recomputes vertices/area/mass/bounds around the body's own centroid),
+     * not just its view — so a shrunk piece genuinely takes up less room in
+     * the stack instead of only looking smaller. `shrinkFactor` multiplies
+     * the block's CURRENT `shrinkScale` (compounding on repeat hits from
+     * later shrink rays), floored at MIN_SHRINK_SCALE so it can never shrink
+     * to a degenerate near-zero-area body. `block.shrinkScale` itself is
+     * applied to the view every frame in updatePieceAnim(), independent of
+     * the shoot/jiggle animations, so the visual shrink persists after they
+     * finish instead of being snapped back to full size.
+     */
+    private static readonly MIN_SHRINK_SCALE = 0.35;
+
+    public shrinkBlockForPowerup(block: FaceTowerBlock, shrinkFactor: number): void {
+        const nextScale = Math.max(
+            FaceTowerBlockController.MIN_SHRINK_SCALE,
+            block.shrinkScale * shrinkFactor,
+        );
+
+        const appliedFactor = nextScale / block.shrinkScale;
+
+        if (appliedFactor >= 1) {
+            return;
+        }
+
+        Body.scale(block.entity.body, appliedFactor, appliedFactor);
+        block.shrinkScale = nextScale;
+    }
+
+    /**
+     * Removes and destroys `block` outright — used when a powerup's dropped
+     * piece falls past the bottom of the play column (see PowerupSystem),
+     * "leaving the scene" instead of ever settling into the tower.
+     */
+    public removeBlock(block: FaceTowerBlock): void {
+        const index = this.blocks.indexOf(block);
+
+        if (index >= 0) {
+            this.blocks.splice(index, 1);
+        }
+
+        block.entity.destroy();
+    }
+
+    /** Excludes checkpoint-frozen blocks (already part of a settled base) AND powerup pieces (never part of the stack — see FaceTowerBlock.powerup). */
     public getDynamicBlocks(): FaceTowerBlock[] {
-        return this.blocks.filter(block => !block.checkpointFrozen);
+        return this.blocks.filter(block => !block.checkpointFrozen && !block.powerup);
     }
 
     public getHeldBlock(): FaceTowerBlock | undefined {
@@ -384,12 +539,27 @@ export class FaceTowerBlockController {
         this.bodyTexture.invalidate();
     }
 
-    /** Highest point (smallest world Y) among the still-dynamic blocks. */
+    /**
+     * Highest point (smallest world Y) among the blocks actually placed on
+     * the board — excludes checkpoint-frozen blocks, powerup pieces, the
+     * currently held block, and a just-dropped block that hasn't had its
+     * first hit yet (see `hasJiggled`, set once a block first physically
+     * touches something in releaseHeldBlock()'s onStart listener). Without
+     * that last exclusion, a piece still mid-air right after release —
+     * dropped from well above the stack — would spike the reported height
+     * to wherever it currently is falling through, instead of only
+     * counting once it's actually settled onto the board. The held block
+     * hovers at the spawn point, not wherever it'll actually land, so
+     * counting it would report the tower as however tall the spawn point
+     * happens to be instead of what's really stacked — it only starts
+     * counting once released (see releaseHeldBlock(), which clears
+     * heldBlock).
+     */
     public getHighestTopWorldY(): number {
         let top = Infinity;
 
         for (const block of this.blocks) {
-            if (block.checkpointFrozen) {
+            if (block.checkpointFrozen || block.powerup || block === this.heldBlock || !block.hasJiggled) {
                 continue;
             }
 

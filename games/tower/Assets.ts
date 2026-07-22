@@ -70,7 +70,7 @@ export default class Assets {
      */
     static readonly AmbientSound = {
         Music: {
-            soundId: 'whale-st',
+            soundId: 'music',
             layer: 'music',
             masterVolume: 0.05,
             duckedVolume: 0.015,
@@ -114,15 +114,30 @@ export default class Assets {
     static readonly Sounds = {
         Game: {
             /** A tail cube (or the player) doubles in value — see PlayerEntity's merge onDone callbacks. */
-            Merge: {
+            Wee: {
                 soundId: ['hpp-yay1', 'hpp-yay2', 'hpp-yay3', 'hpp-yay4'],
-                volumeMinMax: [0.10, 0.07],
-                pitchMinMax: [0.9, 1.1],
+                volumeMinMax: [0.05, 0.03],
+                pitchMinMax: [0.6, 0.85],
             },
             /** Picking up loose food, or nibbling a cube off another entity's tail — see PlayerEntity.collect(). */
             Grab: {
                 soundId: ['pepSound3', 'pepSound5'],
                 volumeMinMax: [0.08, 0.12],
+                pitchMinMax: [1.05, 1.25],
+            },
+            Drop: {
+                soundId: ['drop'],
+                volumeMinMax: [0.08, 0.12],
+                pitchMinMax: [0.8, 1.1],
+            },
+            Whoosh: {
+                soundId: ['Whoosh'],
+                volumeMinMax: [0.08, 0.12],
+                pitchMinMax: [0.8, 1.1],
+            },
+            Impact: {
+                soundId: ['impactSoft_medium_000', 'impactSoft_medium_001', 'impactSoft_medium_002', 'impactSoft_medium_003', 'impactSoft_medium_004'],
+                volumeMinMax: [0.15, 0.12],
                 pitchMinMax: [1.05, 1.25],
             },
             /** The real player's head eats another entity's head — see PlayerEntity.notifyKill() / EntityEating.ts. */
@@ -133,8 +148,8 @@ export default class Assets {
             },
             /** Entering the next room through its gate — linear/gated mode only, see LinearWorld3dScene.onTransition. */
             GateOpen: {
-                soundId: 'phaserUp2',
-                volumeMinMax: 0.25,
+                soundId: 'diamond-sparkle',
+                volumeMinMax: 0.15,
                 pitchMinMax: [0.95, 1.05],
             },
             /** Spawn/revive invincibility grant — see PlayerEntity.grantSpawnInvincibility(). */
@@ -155,7 +170,8 @@ export default class Assets {
                 pitchMinMax: [0.75, 0.85],
             },
             EndGame: {
-                soundId: 'Applause-Cheering',
+                //soundId: 'Applause-Cheering',
+                soundId: 'phaserUp2',
                 volumeMinMax: 0.18,
                 pitchMinMax: [0.95, 1],
             },

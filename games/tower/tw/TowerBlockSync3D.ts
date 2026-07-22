@@ -5,7 +5,13 @@ import { PieceBoxBuilder } from '../game/builders/PieceBoxBuilder';
 import { PreviewStripSprite } from '../game/builders/PreviewStripSprite';
 import { TextureBuilder } from '../game/builders/TextureBuilder';
 import type { FaceTowerBlock, FaceTowerConfig } from './FaceTowerTypes';
+import { PieceAnimations } from './PieceAnimations';
 import { getPolygonCentroid, getPolygonHorizontalBounds, resolvePieceImagePath } from './PieceStorage';
+
+interface CubeAnimState {
+    shootRemaining: number;
+    jiggleRemaining: number;
+}
 
 function hexStringToNumber(hex: string): number {
     return parseInt(hex.replace('#', ''), 16);
@@ -27,6 +33,9 @@ function hexStringToNumber(hex: string): number {
 export class TowerBlockSync3D {
     private readonly cubes = new Map<number, THREE.Mesh>();
 
+    /** One pair of animation timers per live cube, keyed by block id — see notifyDropped()/notifyFirstHit(). */
+    private readonly anims = new Map<number, CubeAnimState>();
+
     /**
      * The "landing preview" glow — ONE standalone sprite, not a child of
      * any block's own mesh. Shown/repositioned for whichever block is
@@ -44,7 +53,7 @@ export class TowerBlockSync3D {
         this.previewStrip = new PreviewStripSprite(scene);
     }
 
-    public sync(blocks: readonly FaceTowerBlock[], heldBlock?: FaceTowerBlock): void {
+    public sync(blocks: readonly FaceTowerBlock[], heldBlock: FaceTowerBlock | undefined, delta: number): void {
         const seen = new Set<number>();
 
         for (const block of blocks) {
@@ -52,6 +61,7 @@ export class TowerBlockSync3D {
 
             const cube = this.cubes.get(block.id) ?? this.createCube(block);
             this.updateCube(cube, block);
+            this.updatePieceAnim(block.id, cube, delta, block.shrinkScale);
         }
 
         for (const [id, cube] of this.cubes) {
@@ -61,6 +71,84 @@ export class TowerBlockSync3D {
         }
 
         this.updatePreviewStrip(heldBlock);
+    }
+
+    /**
+     * Notify this layer that `blockId` was just released/shot loose — the 3D
+     * counterpart to FaceTowerBlockController.releaseHeldBlock()'s own
+     * `block.shootRemaining` set. Wired from FaceTowerGameEvents.onBlockDropped
+     * (see IslandViewScene) since this class has no other way to learn about
+     * a drop happening in the 2D physics layer.
+     */
+    public notifyDropped(blockId: number): void {
+        this.getOrCreateAnim(blockId).shootRemaining = PieceAnimations.SHOOT_DURATION;
+    }
+
+    /**
+     * Notify this layer that `blockId` just had its (once-ever) first
+     * physical contact — the 3D counterpart of FaceTowerBlockController's
+     * `hasJiggled` guard. Wired from FaceTowerGameEvents.onBlockFirstHit
+     * (see IslandViewScene); this layer has no physics of its own, so it
+     * can't detect the hit itself.
+     */
+    public notifyFirstHit(blockId: number): void {
+        this.getOrCreateAnim(blockId).jiggleRemaining = PieceAnimations.JIGGLE_DURATION;
+    }
+
+    /**
+     * Notify this layer that `blockId` was just frozen-and-greyed by a
+     * powerup (see PowerupSystem.drainQueue / FaceTowerBlockController's 2D
+     * body-sprite tint) — recolors the mirrored cube's material to match. A
+     * permanent recolor, not a timed animation, so it's applied once here
+     * rather than through the per-frame updatePieceAnim() path. No-ops if
+     * the cube hasn't been created yet — shouldn't happen in practice since
+     * a block only reaches a powerup sensor after already falling/settling
+     * in the 2D world for at least one sync() pass.
+     */
+    public notifyFrozen(blockId: number, greyColorHex: number): void {
+        const cube = this.cubes.get(blockId);
+
+        if (!cube) {
+            return;
+        }
+
+        (cube.material as THREE.MeshStandardMaterial).color.setHex(greyColorHex);
+    }
+
+    private getOrCreateAnim(blockId: number): CubeAnimState {
+        let anim = this.anims.get(blockId);
+
+        if (!anim) {
+            anim = { shootRemaining: 0, jiggleRemaining: 0 };
+            this.anims.set(blockId, anim);
+        }
+
+        return anim;
+    }
+
+    /**
+     * Applied after updateCube()'s position/rotation.z assignment so all
+     * three layer on top instead of being overwritten by it. `shrinkScale`
+     * is folded into the same scale multiply every frame — unlike
+     * shoot/jiggle it isn't a timed animation (nothing decrements it), so
+     * unlike them it can't be skipped just because both anim timers happen
+     * to be at zero, or a shrunk cube would snap back to full size the
+     * instant its last shoot/jiggle animation finished.
+     */
+    private updatePieceAnim(blockId: number, cube: THREE.Mesh, delta: number, shrinkScale: number): void {
+        const anim = this.getOrCreateAnim(blockId);
+
+        anim.shootRemaining = Math.max(0, anim.shootRemaining - delta);
+        anim.jiggleRemaining = Math.max(0, anim.jiggleRemaining - delta);
+
+        const shoot = PieceAnimations.sampleShoot(anim.shootRemaining);
+        const jiggle = PieceAnimations.sampleJiggle(anim.jiggleRemaining);
+
+        const scaleX = shoot.scaleX * jiggle.scaleX * shrinkScale;
+        const scaleY = shoot.scaleY * jiggle.scaleY * shrinkScale;
+
+        cube.scale.set(scaleX, scaleY, scaleX);
+        cube.rotation.z += shoot.rotation + jiggle.rotation;
     }
 
     /**
@@ -204,12 +292,15 @@ export class TowerBlockSync3D {
         (cube.material as THREE.Material).dispose();
 
         this.cubes.delete(id);
+        this.anims.delete(id);
     }
 
     public clear(): void {
         for (const [id, cube] of this.cubes) {
             this.removeCube(id, cube);
         }
+
+        this.anims.clear();
     }
 
     public destroy(): void {

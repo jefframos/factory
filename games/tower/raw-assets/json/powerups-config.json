@@ -1,0 +1,259 @@
+[
+    {
+        "id": "lightning",
+        "type": "freeze-drop",
+        "piece": {
+            "scale": {
+                "x": 1,
+                "y": 1
+            },
+            "color": "#888888",
+            "texture": "skins/cool.webp",
+            "faceOffset": {
+                "x": 0,
+                "y": 0
+            },
+            "faceScale": {
+                "x": 1,
+                "y": 1
+            },
+            "previewOffset": {
+                "x": 0,
+                "y": 0
+            }
+        },
+        "greyColor": "#888888",
+        "greyStepDelay": 0.25,
+        "dropForceY": 20
+    },
+    {
+        "id": "bomb",
+        "type": "destroy-drop",
+        "piece": {
+            "scale": {
+                "x": 1,
+                "y": 1
+            },
+            "polygon": [
+                {
+                    "x": 1.0,
+                    "y": 0.5
+                },
+                {
+                    "x": 0.933,
+                    "y": 0.75
+                },
+                {
+                    "x": 0.75,
+                    "y": 0.933
+                },
+                {
+                    "x": 0.5,
+                    "y": 1.0
+                },
+                {
+                    "x": 0.25,
+                    "y": 0.933
+                },
+                {
+                    "x": 0.067,
+                    "y": 0.75
+                },
+                {
+                    "x": 0.0,
+                    "y": 0.5
+                },
+                {
+                    "x": 0.067,
+                    "y": 0.25
+                },
+                {
+                    "x": 0.25,
+                    "y": 0.067
+                },
+                {
+                    "x": 0.5,
+                    "y": 0.0
+                },
+                {
+                    "x": 0.75,
+                    "y": 0.067
+                },
+                {
+                    "x": 0.933,
+                    "y": 0.25
+                }
+            ],
+            "color": "#2b2b2b",
+            "texture": "skins/devil.webp",
+            "faceOffset": {
+                "x": 0,
+                "y": 0
+            },
+            "faceScale": {
+                "x": 0.8,
+                "y": 0.8
+            },
+            "previewOffset": {
+                "x": 0,
+                "y": -30
+            }
+        },
+        "destroyStepDelay": 0.1,
+        "maxTargets": 1,
+        "dropForceY": 20
+    },
+    {
+        "id": "super-bomb",
+        "type": "destroy-drop",
+        "piece": {
+            "scale": {
+                "x": 1,
+                "y": 1
+            },
+            "polygon": [
+                {
+                    "x": 1.0,
+                    "y": 0.5
+                },
+                {
+                    "x": 0.933,
+                    "y": 0.75
+                },
+                {
+                    "x": 0.75,
+                    "y": 0.933
+                },
+                {
+                    "x": 0.5,
+                    "y": 1.0
+                },
+                {
+                    "x": 0.25,
+                    "y": 0.933
+                },
+                {
+                    "x": 0.067,
+                    "y": 0.75
+                },
+                {
+                    "x": 0.0,
+                    "y": 0.5
+                },
+                {
+                    "x": 0.067,
+                    "y": 0.25
+                },
+                {
+                    "x": 0.25,
+                    "y": 0.067
+                },
+                {
+                    "x": 0.5,
+                    "y": 0.0
+                },
+                {
+                    "x": 0.75,
+                    "y": 0.067
+                },
+                {
+                    "x": 0.933,
+                    "y": 0.25
+                }
+            ],
+            "color": "#c0392b",
+            "texture": "skins/face-fire-1.webp",
+            "faceOffset": {
+                "x": 0,
+                "y": 0
+            },
+            "faceScale": {
+                "x": 0.8,
+                "y": 0.8
+            },
+            "previewOffset": {
+                "x": 0,
+                "y": -30
+            }
+        },
+        "destroyStepDelay": 0.15,
+        "dropForceY": 25
+    },
+    {
+        "id": "shrink-ray",
+        "type": "shrink-drop",
+        "piece": {
+            "scale": {
+                "x": 1,
+                "y": 1
+            },
+            "polygon": [
+                {
+                    "x": 1.0,
+                    "y": 0.5
+                },
+                {
+                    "x": 0.933,
+                    "y": 0.75
+                },
+                {
+                    "x": 0.75,
+                    "y": 0.933
+                },
+                {
+                    "x": 0.5,
+                    "y": 1.0
+                },
+                {
+                    "x": 0.25,
+                    "y": 0.933
+                },
+                {
+                    "x": 0.067,
+                    "y": 0.75
+                },
+                {
+                    "x": 0.0,
+                    "y": 0.5
+                },
+                {
+                    "x": 0.067,
+                    "y": 0.25
+                },
+                {
+                    "x": 0.25,
+                    "y": 0.067
+                },
+                {
+                    "x": 0.5,
+                    "y": 0.0
+                },
+                {
+                    "x": 0.75,
+                    "y": 0.067
+                },
+                {
+                    "x": 0.933,
+                    "y": 0.25
+                }
+            ],
+            "color": "#16a085",
+            "texture": "skins/panda.webp",
+            "faceOffset": {
+                "x": 0,
+                "y": 0
+            },
+            "faceScale": {
+                "x": 0.8,
+                "y": 0.8
+            },
+            "previewOffset": {
+                "x": 0,
+                "y": -30
+            }
+        },
+        "shrinkFactor": 0.6,
+        "shrinkStepDelay": 0.2,
+        "dropForceY": 20
+    }
+]
