@@ -45,8 +45,8 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     dropForceY: 10,
 
     // --- Containment ---
-    wallWidth: 24,
-    wallHeight: 180, // just tall enough to bumper the first block or two off the base
+    wallWidth: 32,
+    wallHeight: [500, 450, 300, 250], // just tall enough to bumper the first block or two off the base
     wallOffsetY: 100,
     deadZoneWidth: 1400,
 
@@ -65,7 +65,7 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     previewGlobalOffset3D: { x: 0, y: 0.1 },
 
     // --- 3D piece visuals ---
-    pieceDepthRatio: 0.25,
+    pieceDepthRatio: 0.5,
     pieceBevelRadiusRatio: 0.15,
     pieceBevelThicknessRatio: 0.25,
 };

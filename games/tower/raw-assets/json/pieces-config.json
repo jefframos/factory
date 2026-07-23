@@ -69,7 +69,7 @@
             "x": 2,
             "y": 1
         },
-        "color": "#FFB74D",
+        "color": "#FFaa4D",
         "texture": "skins/face-brave-1.webp",
         "faceOffset": {
             "x": 0,
@@ -93,6 +93,28 @@
         },
         "color": "#FFD54F",
         "texture": "skins/face-crying-2.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 0
+        },
+        "faceScale": {
+            "x": 1,
+            "y": 1
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 0
+        }
+    },
+    {
+        "id": "square-3",
+        "level": 1,
+        "scale": {
+            "x": 1.4,
+            "y": 1.4
+        },
+        "color": "#22D581",
+        "texture": "skins/face-sunglasses-2.webp",
         "faceOffset": {
             "x": 0,
             "y": 0
@@ -174,7 +196,7 @@
     },
     {
         "id": "square-7",
-        "level": 4,
+        "level": 3,
         "scale": {
             "x": 2,
             "y": 2
@@ -200,7 +222,7 @@
     },
     {
         "id": "triangle-right-a",
-        "level": 3,
+        "level": 5,
         "scale": {
             "x": 1.6,
             "y": 1.6
@@ -282,7 +304,7 @@
     },
     {
         "id": "dome-1",
-        "level": 2,
+        "level": 4,
         "scale": {
             "x": 1.6,
             "y": 1.6
@@ -347,7 +369,7 @@
     },
     {
         "id": "ramp-1",
-        "level": 2,
+        "level": 5,
         "scale": {
             "x": 1.6,
             "y": 1.6
@@ -411,7 +433,7 @@
     },
     {
         "id": "ramp-b",
-        "level": 2,
+        "level": 5,
         "scale": {
             "x": 1.6,
             "y": 1.6
@@ -475,7 +497,7 @@
     },
     {
         "id": "cylinder-1",
-        "level": 3,
+        "level": 6,
         "scale": {
             "x": 1.4,
             "y": 1.4
@@ -563,7 +585,8 @@
     },
     {
         "id": "arch-1",
-        "level": 4,
+        "level": 2,
+        "disabled": true,
         "scale": {
             "x": 2,
             "y": 1.4
@@ -733,7 +756,7 @@
         "id": "arch-ultra-wide",
         "level": 5,
         "scale": {
-            "x": 6.5,
+            "x": 5,
             "y": 1.4
         },
         "polygon": [
@@ -834,5 +857,294 @@
             "x": 0,
             "y": 0
         }
+    },
+    {
+        "id": "tetris-t-1",
+        "level": 1,
+        "scale": {
+            "x": 1.6,
+            "y": 1.6
+        },
+        "polygon": [
+            {
+                "x": 0.333,
+                "y": 0
+            },
+            {
+                "x": 0.667,
+                "y": 0
+            },
+            {
+                "x": 0.667,
+                "y": 0.5
+            },
+            {
+                "x": 1,
+                "y": 0.5
+            },
+            {
+                "x": 1,
+                "y": 1
+            },
+            {
+                "x": 0,
+                "y": 1
+            },
+            {
+                "x": 0,
+                "y": 0.5
+            },
+            {
+                "x": 0.333,
+                "y": 0.5
+            }
+        ],
+        "color": "#d460eb",
+        "texture": "skins/face-smile-3.webp",
+        "faceOffset": {
+            "x": 0,
+            "y": 10
+        },
+        "faceScale": {
+            "x": 0.65,
+            "y": 0.65
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 15
+        },
+        "preview3DOffset": {
+            "x": 0,
+            "y": -0.1
+        },
+        "margin3D": 0
+    },
+    {
+        "id": "tetris-s-1",
+        "level": 1,
+        "scale": {
+            "x": 1.6,
+            "y": 1.6
+        },
+        "polygon": [
+            {
+                "x": 0.333,
+                "y": 0
+            },
+            {
+                "x": 1,
+                "y": 0
+            },
+            {
+                "x": 1,
+                "y": 0.5
+            },
+            {
+                "x": 0.667,
+                "y": 0.5
+            },
+            {
+                "x": 0.667,
+                "y": 1
+            },
+            {
+                "x": 0,
+                "y": 1
+            },
+            {
+                "x": 0,
+                "y": 0.5
+            },
+            {
+                "x": 0.333,
+                "y": 0.5
+            }
+        ],
+        "color": "#4CAF50",
+        "texture": "skins/face-smile-1.webp",
+        "faceOffset": {
+            "x": -10,
+            "y": 20
+        },
+        "faceScale": {
+            "x": 0.55,
+            "y": 0.55
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 15
+        },
+        "preview3DOffset": {
+            "x": 0,
+            "y": -0.6
+        },
+        "margin3D": 0.1
+    },
+    {
+        "id": "tetris-z-1",
+        "level": 2,
+        "scale": {
+            "x": 1.6,
+            "y": 1.6
+        },
+        "polygon": [
+            {
+                "x": 0,
+                "y": 0
+            },
+            {
+                "x": 0.667,
+                "y": 0
+            },
+            {
+                "x": 0.667,
+                "y": 0.5
+            },
+            {
+                "x": 1,
+                "y": 0.5
+            },
+            {
+                "x": 1,
+                "y": 1
+            },
+            {
+                "x": 0.333,
+                "y": 1
+            },
+            {
+                "x": 0.333,
+                "y": 0.5
+            },
+            {
+                "x": 0,
+                "y": 0.5
+            }
+        ],
+        "color": "#F44336",
+        "texture": "skins/panda.webp",
+        "faceOffset": {
+            "x": 15,
+            "y": 20
+        },
+        "faceScale": {
+            "x": 0.55,
+            "y": 0.55
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 15
+        },
+        "preview3DOffset": {
+            "x": 0,
+            "y": -0.6
+        },
+        "margin3D": 0.1
+    },
+    {
+        "id": "tetris-j-1",
+        "level": 2,
+        "scale": {
+            "x": 1.6,
+            "y": 1.6
+        },
+        "polygon": [
+            {
+                "x": 0,
+                "y": 0
+            },
+            {
+                "x": 0.5,
+                "y": 0
+            },
+            {
+                "x": 0.5,
+                "y": 0.667
+            },
+            {
+                "x": 1,
+                "y": 0.667
+            },
+            {
+                "x": 1,
+                "y": 1
+            },
+            {
+                "x": 0,
+                "y": 1
+            }
+        ],
+        "color": "#2196F3",
+        "texture": "skins/face-scary-2.webp",
+        "faceOffset": {
+            "x": -10,
+            "y": -15
+        },
+        "faceScale": {
+            "x": 0.6,
+            "y": 0.6
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 15
+        },
+        "preview3DOffset": {
+            "x": 0,
+            "y": -0.1
+        },
+        "margin3D": 0
+    },
+    {
+        "id": "tetris-l-1",
+        "level": 2,
+        "scale": {
+            "x": 1.6,
+            "y": 1.6
+        },
+        "polygon": [
+            {
+                "x": 0.5,
+                "y": 0
+            },
+            {
+                "x": 1,
+                "y": 0
+            },
+            {
+                "x": 1,
+                "y": 1
+            },
+            {
+                "x": 0,
+                "y": 1
+            },
+            {
+                "x": 0,
+                "y": 0.667
+            },
+            {
+                "x": 0.5,
+                "y": 0.667
+            }
+        ],
+        "color": "#FF9800",
+        "texture": "skins/face-dizzy-2.webp",
+        "faceOffset": {
+            "x": 10,
+            "y": -15
+        },
+        "faceScale": {
+            "x": 0.6,
+            "y": 0.6
+        },
+        "previewOffset": {
+            "x": 0,
+            "y": 15
+        },
+        "preview3DOffset": {
+            "x": 0,
+            "y": -0.1
+        },
+        "margin3D": 0
     }
 ]

@@ -15,6 +15,8 @@ export class PieceManager {
     private readonly poolsByLevel = new Map<number, PieceDefinition[]>();
     private sortedLevels: number[] = [];
 
+    private lastId = '';
+
     public build(): void {
         this.poolsByLevel.clear();
 
@@ -29,7 +31,7 @@ export class PieceManager {
         for (const level of levels) {
             cumulative = [
                 ...cumulative,
-                ...PIECES.filter(piece => piece.level === level),
+                ...PIECES.filter(piece => piece.level === level && !piece.disabled),
             ];
 
             this.poolsByLevel.set(level, cumulative);
@@ -51,7 +53,11 @@ export class PieceManager {
         return pool;
     }
 
-    /** A random piece from the pool available at `level`. */
+    /**
+     * A random piece from the pool available at `level`. Avoids repeating
+     * the last piece when the pool has at least 2 options — if the pool
+     * only contains one piece, that piece is returned every time.
+     */
     public getPieceForLevel(level: number): PieceDefinition {
         const pool = this.getPoolForLevel(level);
 
@@ -61,6 +67,16 @@ export class PieceManager {
             );
         }
 
-        return pool[Math.floor(Math.random() * pool.length)];
+        if (pool.length === 1) {
+            const only = pool[0];
+            this.lastId = only.id;
+            return only;
+        }
+
+        const candidates = pool.filter(piece => piece.id !== this.lastId);
+        const pick = candidates[Math.floor(Math.random() * candidates.length)];
+
+        this.lastId = pick.id;
+        return pick;
     }
 }

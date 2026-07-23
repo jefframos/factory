@@ -40,15 +40,15 @@ type MarkerLayout = 'centered' | 'side';
  */
 export class TowerHeightMarkers3D {
     private static readonly BAR_HEIGHT = 0.22; // thin — "not much depth"
-    private static readonly BAR_DEPTH = 0.35;
+    private static readonly BAR_DEPTH = 0.05;
     // A fraction of the bar's own (short) height, so this rounds its ends
     // into a smooth pill shape rather than a sharp-edged plank.
     private static readonly BAR_BEVEL_RADIUS_RATIO = 0.5;
     private static readonly BAR_BEVEL_THICKNESS_RATIO = 0.6;
 
-    private static readonly CURRENT_COLOR = 0xffe066;
-    private static readonly CURRENT_OPACITY = 0.55;
-    private static readonly GOAL_COLOR = 0x2ecc71;
+    private static readonly CURRENT_COLOR = 0xff23ff;
+    private static readonly CURRENT_OPACITY = 1;
+    private static readonly GOAL_COLOR = 0xff2371;
     private static readonly GOAL_OPACITY = 1;
 
     private readonly currentBar: THREE.Mesh;
@@ -65,13 +65,13 @@ export class TowerHeightMarkers3D {
         private readonly visualConfig: Tower3DConfig,
         private readonly baseOffset: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 },
     ) {
-        this.currentBar = this.buildBar(
+        this.currentBar = this.buildDashedBar(
             TowerHeightMarkers3D.CURRENT_COLOR,
             TowerHeightMarkers3D.CURRENT_OPACITY,
             this.visualConfig.progressMarkerLayout,
         );
 
-        this.goalBar = this.buildBar(
+        this.goalBar = this.buildDashedBar(
             TowerHeightMarkers3D.GOAL_COLOR,
             TowerHeightMarkers3D.GOAL_OPACITY,
             this.visualConfig.goalMarkerLayout,
@@ -81,12 +81,61 @@ export class TowerHeightMarkers3D {
         this.threeSceneWrapper.threeScene.add(this.goalBar);
 
         this.currentLabel = new WorldSpaceLabel(threeSceneWrapper, game, pixiRoot, {
-            fill: TowerHeightMarkers3D.CURRENT_COLOR,
+            fill: 0xffffff//TowerHeightMarkers3D.CURRENT_COLOR,
         });
+
 
         this.goalLabel = new WorldSpaceLabel(threeSceneWrapper, game, pixiRoot, {
             fill: TowerHeightMarkers3D.GOAL_COLOR,
         });
+    }
+
+    private buildDashedBar(
+        color: number,
+        opacity: number,
+        layout: MarkerLayout
+    ): THREE.Group {
+
+        const group = new THREE.Group();
+
+        const totalWidth = layout === 'side'
+            ? this.visualConfig.heightMarkerSideWidth
+            : (this.config.maxBlockX - this.config.minBlockX) / this.pixelsPerUnit;
+
+        const dashLength = 0.35;
+        const gap = 0.18;
+
+        const dashWidth = dashLength + gap;
+
+        const dashCount = Math.floor((totalWidth + gap) / dashWidth);
+
+        const startX = -totalWidth * 0.5 + dashLength * 0.5;
+
+        for (let i = 0; i < dashCount; i++) {
+
+            const dash = PieceBoxBuilder.build(
+                color,
+                dashLength,
+                TowerHeightMarkers3D.BAR_HEIGHT,
+                {
+                    depth: TowerHeightMarkers3D.BAR_DEPTH,
+                    bevelRadiusRatio: TowerHeightMarkers3D.BAR_BEVEL_RADIUS_RATIO,
+                    bevelThicknessRatio: TowerHeightMarkers3D.BAR_BEVEL_THICKNESS_RATIO,
+                    faceScale: { x: 0, y: 0 },
+                }
+            );
+
+            const material = dash.material as THREE.MeshStandardMaterial;
+            material.transparent = opacity < 1;
+            material.opacity = opacity;
+            material.depthWrite = true//opacity >= 1;
+
+            dash.position.x = startX + i * dashWidth;
+
+            group.add(dash);
+        }
+
+        return group;
     }
 
     private buildBar(color: number, opacity: number, layout: MarkerLayout): THREE.Mesh {
@@ -116,7 +165,7 @@ export class TowerHeightMarkers3D {
     private xFor(layout: MarkerLayout): number {
         return layout === 'side'
             ? (this.config.maxBlockX - this.config.floorX) / this.pixelsPerUnit
-                + this.visualConfig.heightMarkerSideMargin + this.baseOffset.x
+            + this.visualConfig.heightMarkerSideMargin + this.baseOffset.x
             : this.baseOffset.x;
     }
 
@@ -134,8 +183,10 @@ export class TowerHeightMarkers3D {
             const x = this.xFor(this.visualConfig.progressMarkerLayout);
             const y = this.worldYTo3D(currentWorldY);
 
-            this.currentBar.position.set(x, y, this.baseOffset.z);
+            this.currentBar.position.set(x + 0.2, y, this.baseOffset.z);
             this.currentLabel.update(new THREE.Vector3(x, y, this.baseOffset.z), `${Math.max(0, currentMeters).toFixed(1)}m`);
+
+            this.currentBar.visible = false;
         } else {
             this.currentLabel.setVisible(false);
         }
@@ -149,8 +200,8 @@ export class TowerHeightMarkers3D {
             this.goalBar.position.set(x, y, this.baseOffset.z);
             this.goalLabel.update(new THREE.Vector3(x, y, this.baseOffset.z), `${targetMeters.toFixed(1)}m`);
         } else {
-            this.goalLabel.setVisible(false);
         }
+        this.goalLabel.setVisible(false);
     }
 
     private worldYTo3D(worldY: number): number {

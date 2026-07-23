@@ -104,7 +104,7 @@ export interface FaceTowerConfig {
     // Solid (non-sensor) bumper rails flush against the base's edges — keep
     // blocks contained in the build column under normal play.
     wallWidth: number;
-    wallHeight: number;
+    wallHeight: number[];
 
     // Manual vertical nudge (world px, +down) for the walls' position on
     // top of the flush-with-base-top placement — see

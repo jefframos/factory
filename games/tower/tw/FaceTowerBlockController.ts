@@ -7,8 +7,7 @@ import { BoxEntity } from 'core/phyisics/entities/BoxEntity';
 import { PolygonEntity } from 'core/phyisics/entities/PolygonEntity';
 import Physics from 'core/phyisics/Physics';
 import {
-    Body,
-    Sleeping
+    Body, Sleeping
 } from 'matter-js';
 import * as PIXI from 'pixi.js';
 import { BlockBodyTextureCache } from './BlockBodyTextureCache';
@@ -63,6 +62,9 @@ export class FaceTowerBlockController {
 
     public initialise(): void {
         this.addBase(this.config.floorY);
+
+
+
     }
 
     public spawnHeldBlock(x: number, piece: PieceDefinition): FaceTowerBlock {
@@ -356,6 +358,12 @@ export class FaceTowerBlockController {
              * to play exactly once per block; Physics.events.clear() then drops
              * the listener outright since there's nothing left for it to do.
              */
+            //console.log(body)
+            if (body.parts.length > 1) {
+                //   block.hasJiggled = true;
+            }
+
+
             Physics.events.onStart(body, () => {
                 if (block.hasJiggled) {
                     return;
@@ -557,8 +565,8 @@ export class FaceTowerBlockController {
      */
     public getHighestTopWorldY(): number {
         let top = Infinity;
-
         for (const block of this.blocks) {
+            //if (block.checkpointFrozen || block.powerup || block === this.heldBlock || !block.hasJiggled) {
             if (block.checkpointFrozen || block.powerup || block === this.heldBlock || !block.hasJiggled) {
                 continue;
             }

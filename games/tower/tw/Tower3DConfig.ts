@@ -7,6 +7,7 @@ export interface Tower3DConfig {
     cameraYawDeg: number;
     cameraPitchDeg: number;
     cameraDistance: number;
+    cameraDistanceMax: number;
 
     // Constant baseline lift (THREE units) applied on top of the dynamic
     // follow below — calibrates where the rig sits before the tower has
@@ -96,10 +97,11 @@ export interface Tower3DConfig {
 
 export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
     cameraYawDeg: 0,
-    cameraPitchDeg: 5,
-    cameraDistance: 10,
+    cameraPitchDeg: 3,
+    cameraDistance: 8,
+    cameraDistanceMax: 15,
 
-    cameraMasterOffsetY: 5.5,
+    cameraMasterOffsetY: 6.5,
 
     clusterDiameter: 0, // 16 world units at pixelsPerUnit: 80 — matches the old fixed radius
     clusterCellSize: 0,
@@ -111,14 +113,14 @@ export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
     towerBaseOffset: { x: 0, y: 1, z: 0 },
 
     baseColor: 0x33cc66,
-    platformDepth: 0.6,
+    platformDepth: 0.3,
 
     poleColor: 0x3388ff,
 
     goalMarkerLayout: 'centered',
     progressMarkerLayout: 'side',
     showGoalMarker: true,
-    showProgressMarker: false,
-    heightMarkerSideMargin: 1.2,
-    heightMarkerSideWidth: 1.6,
+    showProgressMarker: true,
+    heightMarkerSideMargin: 0,
+    heightMarkerSideWidth: 1,
 };

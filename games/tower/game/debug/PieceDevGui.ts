@@ -77,6 +77,7 @@ export class PieceDevGui {
 
         this.pieces.forEach((piece, index) => {
             const row = this.buildRow(piece);
+            console.log(piece)
             row.position.set(12, 12 + index * PieceDevGui.ROW_HEIGHT);
             container.addChild(row);
         });
@@ -97,7 +98,7 @@ export class PieceDevGui {
         preview.position.set(size * 0.5, size * 0.5);
         row.addChild(preview);
 
-        const label = new PIXI.Text(piece.id, {
+        const label = new PIXI.Text(piece.id + '-' + piece.level, {
             fill: 0xffffff,
             fontSize: 14,
         });

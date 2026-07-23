@@ -42,13 +42,13 @@ export class TowerWallSync3D {
         private readonly baseOffset: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 },
     ) { }
 
-    public sync(walls: readonly BoxEntity[]): void {
+    public sync(walls: readonly BoxEntity[], level: number = 0): void {
         const changed =
             walls.length !== this.trackedWalls.length ||
             walls.some((wall, i) => wall !== this.trackedWalls[i]);
 
         if (changed) {
-            this.rebuild(walls);
+            this.rebuild(walls, level);
         }
 
         for (let i = 0; i < walls.length; i++) {
@@ -56,12 +56,13 @@ export class TowerWallSync3D {
         }
     }
 
-    private rebuild(walls: readonly BoxEntity[]): void {
+    private rebuild(walls: readonly BoxEntity[], level: number): void {
         this.clearPoles();
 
         const piece = getStaticPiece('column');
         const width = this.config.wallWidth / this.pixelsPerUnit;
-        const height = this.config.wallHeight / this.pixelsPerUnit;
+        const height = this.config.wallHeight[Math.min(level, this.config.wallHeight.length - 1)] / this.pixelsPerUnit;
+        //console.log(height)
         const depth = this.visualConfig.platformDepth;
 
         // StaticPieceDefinition.faceOffset is authored in 2D design px —

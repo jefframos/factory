@@ -43,7 +43,7 @@ export class TowerDeadZoneController {
         return this.walls;
     }
 
-    public rebuild(baseWorldY: number): void {
+    public rebuild(baseWorldY: number, level: number): void {
         this.clear();
 
         // Gap between the wall and its dead zone so Matter.js never reports
@@ -52,7 +52,10 @@ export class TowerDeadZoneController {
 
         const halfFloor = this.config.floorWidth * 0.5;
         const wallWidth = this.config.wallWidth;
-        const wallHeight = this.config.wallHeight;
+        const wallHeight = this.config.wallHeight[Math.min(level, this.config.wallHeight.length - 1)];
+
+        //console.log(wallHeight)
+
         const zoneWidth = this.config.deadZoneWidth;
 
         const bottomOffset =
@@ -85,7 +88,7 @@ export class TowerDeadZoneController {
             wallLeftX - wallWidth * 0.5 - gap - zoneWidth * 0.5;
         const zoneRightX =
             wallRightX + wallWidth * 0.5 + gap + zoneWidth * 0.5;
-        const sideZoneHeight = this.config.floorHeight + 60;
+        const sideZoneHeight = this.config.floorHeight * 0.5;
 
         this.createZone(zoneLeftX, baseWorldY, zoneWidth, sideZoneHeight);
         this.createZone(zoneRightX, baseWorldY, zoneWidth, sideZoneHeight);

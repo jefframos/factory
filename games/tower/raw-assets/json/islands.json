@@ -5,14 +5,14 @@
     "skyColor": "#4ab8f0",
     "ambientColor": "#ffffff",
     "waterColor": "#30c2f2",
-    "isDefault": true
+    "isDefault": false
   },
   {
     "id": "snowLand",
     "texture": "islands/snowland.webp",
     "skyColor": "#0294DE",
     "ambientColor": "#ffffff",
-    "waterColor": "#F894B7",
-    "isDefault": false
+    "waterColor": "#30c2f2",
+    "isDefault": true
   }
 ]

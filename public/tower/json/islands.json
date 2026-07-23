@@ -1,1 +1,1 @@
-[{"id":"basicIsland","texture":"islands/grassland.webp","skyColor":"#4ab8f0","ambientColor":"#ffffff","waterColor":"#30c2f2","isDefault":true},{"id":"snowLand","texture":"islands/snowland.webp","skyColor":"#0294DE","ambientColor":"#ffffff","waterColor":"#F894B7","isDefault":false}]
+[{"id":"basicIsland","texture":"islands/grassland.webp","skyColor":"#4ab8f0","ambientColor":"#ffffff","waterColor":"#30c2f2","isDefault":false},{"id":"snowLand","texture":"islands/snowland.webp","skyColor":"#0294DE","ambientColor":"#ffffff","waterColor":"#30c2f2","isDefault":true}]

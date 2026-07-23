@@ -111,7 +111,7 @@ export class FaceTowerGameController {
 
     public start(): void {
         this.blocks.initialise();
-        this.deadZones.rebuild(this.config.floorY);
+        this.deadZones.rebuild(this.config.floorY, 0);
 
         this.score = 0;
         this.events.onScoreChanged?.(this.score);
@@ -488,7 +488,7 @@ export class FaceTowerGameController {
              */
             this.blocks.freezeAll();
             this.blocks.addBase(result.lineWorldY);
-            this.deadZones.rebuild(result.lineWorldY);
+            this.deadZones.rebuild(result.lineWorldY, this.getLevel());
 
             const newOffsetY =
                 this.config.floorScreenY - result.lineWorldY;
@@ -547,7 +547,9 @@ export class FaceTowerGameController {
         this.nextPiece = this.rollPiece();
         this.events.onNextPieceChanged?.(this.nextPiece);
     }
-
+    public getLevel(): number {
+        return this.zones.getZoneIndex() || 0;
+    }
     private rollPiece(): PieceDefinition {
         const level = this.zones.getZoneIndex() + 1;
         return this.pieces.getPieceForLevel(level);

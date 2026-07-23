@@ -21,6 +21,14 @@
         },
         {
           "alias": [
+            "powerups-config.json"
+          ],
+          "src": [
+            "powerups-config.json"
+          ]
+        },
+        {
+          "alias": [
             "shopItems.json"
           ],
           "src": [
@@ -33,14 +41,6 @@
           ],
           "src": [
             "static-pieces-config.json"
-          ]
-        },
-        {
-          "alias": [
-            "powerups-config.json"
-          ],
-          "src": [
-            "powerups-config.json"
           ]
         }
       ]
