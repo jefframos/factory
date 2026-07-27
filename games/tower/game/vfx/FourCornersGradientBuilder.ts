@@ -65,6 +65,22 @@ export default class FourCornersGradientBuilder {
         this.gradientMesh.scale.set(visibleWidth, visibleHeight, 1);
     }
 
+    /**
+     * Updates an already-built 'simple' gradient's colors in place — no
+     * mesh/material rebuild, just new uniform values — for a per-frame
+     * animated transition (see TowerSkyController). No-op if build() hasn't
+     * run yet or was built in 'four-way' mode instead.
+     */
+    public setSimpleColors(topColor: number, bottomColor: number): void {
+        if (!this.gradientMesh || this.currentMode !== 'simple') {
+            return;
+        }
+
+        const uniforms = this.gradientMesh.material.uniforms;
+        uniforms.colorTop.value.copy(this.srgb(topColor));
+        uniforms.colorBottom.value.copy(this.srgb(bottomColor));
+    }
+
     public update(delta: number): void {
         if (!this.gradientMesh || this.currentMode !== 'four-way' || this.animationSpeed <= 0) {
             return;

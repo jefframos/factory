@@ -32,7 +32,8 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     maximumSettleDuration: 2.5,
 
     // --- Zones / milestones ---
-    zoneHeight: 480,     // world-space height to build before the base freezes
+    // Zone height/pole-percentage per zone now come from levels-config.json
+    // (see LevelStorage/TowerLevelController) instead of a fixed value here.
     cameraPanSpeed: 1400, // px/sec the camera scrolls when a zone completes
 
     // --- Physics feel ---
@@ -46,7 +47,6 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
 
     // --- Containment ---
     wallWidth: 32,
-    wallHeight: [500, 450, 300, 250], // just tall enough to bumper the first block or two off the base
     wallOffsetY: 100,
     deadZoneWidth: 1400,
 

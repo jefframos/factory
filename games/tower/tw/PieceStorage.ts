@@ -76,6 +76,8 @@ export interface PieceDefinition {
      * `margin` regardless. Omit to just use `margin` for both renderers.
      */
     margin3D?: number;
+
+    disabled?: boolean,
 }
 
 /**

@@ -7,6 +7,8 @@ import { TextureBuilder } from '../game/builders/TextureBuilder';
 import type { FaceTowerBlock, FaceTowerConfig } from './FaceTowerTypes';
 import { PieceAnimations } from './PieceAnimations';
 import { getPolygonCentroid, getPolygonHorizontalBounds, resolvePieceImagePath } from './PieceStorage';
+import { MeshGlintService } from '../game/builders/MeshGlintService';
+import { getStaticPiece } from './StaticPieceStorage';
 
 interface CubeAnimState {
     shootRemaining: number;
@@ -72,7 +74,17 @@ export class TowerBlockSync3D {
 
         this.updatePreviewStrip(heldBlock);
     }
+    public freezeBlocks(blocks: readonly FaceTowerBlock[]) {
 
+        for (const block of blocks) {
+            // MeshGlintService.applyGlints(b)
+
+            const piece = getStaticPiece('column');
+            const color = piece?.color ? hexStringToNumber(piece?.color) : 0xff0000
+            this.notifyFrozen(block.id, color)
+        }
+
+    }
     /**
      * Notify this layer that `blockId` was just released/shot loose — the 3D
      * counterpart to FaceTowerBlockController.releaseHeldBlock()'s own
@@ -112,6 +124,18 @@ export class TowerBlockSync3D {
             return;
         }
 
+        MeshGlintService.applyGlints(cube.material, {
+            intensity: 0.05,
+            noiseStrength: 0.85,
+            noiseScale: 3,
+            speed: 2,
+            tintMix: 0.95,
+            materialColorMix: 0.85,
+            shimmerStrength: 0.65,
+            fresnelBias: 0.5,
+            fresnelPower: 0.1,
+            //tint: new THREE.Color(greyColorHex)
+        });
         (cube.material as THREE.MeshStandardMaterial).color.setHex(greyColorHex);
     }
 

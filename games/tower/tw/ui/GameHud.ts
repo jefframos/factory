@@ -18,6 +18,9 @@ export class GameHud extends PIXI.Container {
     private milestoneLabel!: PIXI.Text;
     private milestoneTimer: ReturnType<typeof setTimeout> | null = null;
 
+    /** Always-visible "Level N — next: Xm" hint — see updateLevelGoal(). */
+    private levelGoalLabel!: PIXI.Text;
+
     private heightGauge!: TowerHeightGauge;
     private progressBar2D!: TowerProgressBar2D;
 
@@ -77,6 +80,26 @@ export class GameHud extends PIXI.Container {
         }, 1200);
     }
 
+    /** Called once every zone of a level finishes — see FaceTowerGameEvents.onLevelProgressed. Reuses the same toast/timer as showMilestone() but with its own message. */
+    public showLevelProgressed(levelIndex: number): void {
+        this.milestoneLabel.text = `Level ${levelIndex + 1}!`;
+        this.milestoneLabel.alpha = 1;
+
+        if (this.milestoneTimer !== null) clearTimeout(this.milestoneTimer);
+
+        this.milestoneTimer = setTimeout(() => {
+            this.milestoneLabel.alpha = 0;
+            this.milestoneTimer = null;
+        }, 1200);
+    }
+
+    /** Always-visible hint of the level currently being built and how tall it still needs to get — see IslandViewScene.update(). */
+    public updateLevelGoal(levelIndex: number, nextLevelHeightMeters: number, isFinalLevel: boolean): void {
+        this.levelGoalLabel.text = isFinalLevel
+            ? `Level ${levelIndex + 1} — ${nextLevelHeightMeters.toFixed(1)}m`
+            : `Level ${levelIndex + 1} — next: ${nextLevelHeightMeters.toFixed(1)}m`;
+    }
+
     public showGameOver(score: number): void {
         this.gameOverPopup.showPopup(score);
     }
@@ -118,6 +141,7 @@ export class GameHud extends PIXI.Container {
 
         this.scoreLabel.position.set(Game.DESIGN_WIDTH * 0.5, 40);
         this.milestoneLabel.position.set(Game.DESIGN_WIDTH * 0.5, 100);
+        this.levelGoalLabel.position.set(Game.DESIGN_WIDTH * 0.5, topLeft.y + 20);
 
         // Popup handles its own internal layout
         this.gameOverPopup.layout();
@@ -172,5 +196,15 @@ export class GameHud extends PIXI.Container {
         this.milestoneLabel.anchor.set(0.5, 0);
         this.milestoneLabel.alpha = 0;
         this.gameplayLayer.addChild(this.milestoneLabel);
+
+        this.levelGoalLabel = new PIXI.Text('', {
+            fill: 0xffffff,
+            fontSize: 20,
+            fontWeight: 'bold',
+            stroke: 0x000000,
+            strokeThickness: 3,
+        });
+        this.levelGoalLabel.anchor.set(0.5, 0);
+        this.gameplayLayer.addChild(this.levelGoalLabel);
     }
 }

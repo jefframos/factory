@@ -12,10 +12,10 @@ export class TowerZoneController {
     private targetLineWorldY: number;
 
     public constructor(
-        private readonly zoneHeight: number,
+        initialZoneHeight: number,
         baseWorldY: number,
     ) {
-        this.targetLineWorldY = baseWorldY - zoneHeight;
+        this.targetLineWorldY = baseWorldY - initialZoneHeight;
     }
 
     public getTargetLineWorldY(): number {
@@ -31,16 +31,17 @@ export class TowerZoneController {
         return topWorldY <= this.targetLineWorldY;
     }
 
-    public reset(baseWorldY: number): void {
+    public reset(baseWorldY: number, initialZoneHeight: number): void {
         this.zoneIndex = 0;
-        this.targetLineWorldY = baseWorldY - this.zoneHeight;
+        this.targetLineWorldY = baseWorldY - initialZoneHeight;
     }
 
-    public completeZone(): TowerZoneResult {
+    /** `nextZoneHeight` is the world-space height (px) of the zone about to begin — see TowerLevelController, whose per-zone config drives this instead of a single fixed height. */
+    public completeZone(nextZoneHeight: number): TowerZoneResult {
         const lineWorldY = this.targetLineWorldY;
 
         this.zoneIndex++;
-        this.targetLineWorldY = lineWorldY - this.zoneHeight;
+        this.targetLineWorldY = lineWorldY - nextZoneHeight;
 
         return {
             zoneIndex: this.zoneIndex,

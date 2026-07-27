@@ -43,7 +43,8 @@ export class TowerDeadZoneController {
         return this.walls;
     }
 
-    public rebuild(baseWorldY: number, level: number): void {
+    /** `wallHeight` (world px) comes from the current zone's own height × its polePercent — see FaceTowerGameController/TowerLevelController. */
+    public rebuild(baseWorldY: number, wallHeight: number): void {
         this.clear();
 
         // Gap between the wall and its dead zone so Matter.js never reports
@@ -52,9 +53,6 @@ export class TowerDeadZoneController {
 
         const halfFloor = this.config.floorWidth * 0.5;
         const wallWidth = this.config.wallWidth;
-        const wallHeight = this.config.wallHeight[Math.min(level, this.config.wallHeight.length - 1)];
-
-        //console.log(wallHeight)
 
         const zoneWidth = this.config.deadZoneWidth;
 

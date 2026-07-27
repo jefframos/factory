@@ -105,14 +105,16 @@ export class PowerupSystem {
             // Skip the piece itself, other powerup pieces, anything already
             // queued, and anything already permanently static (a completed
             // zone's frozen blocks/bases) — nothing useful to act on there.
-            if (
-                block === this.activeBlock ||
-                block.powerup ||
-                block.checkpointFrozen ||
-                this.queuedIds.has(block.id)
-            ) {
-                continue;
-            }
+            // if (
+            //     block === this.activeBlock ||
+            //     block.powerup ||
+            //     block.checkpointFrozen ||
+            //     this.queuedIds.has(block.id)
+            // ) {
+            //     continue;
+            // }
+
+            if (block === this.activeBlock || block.powerup || (powerup.action !== 'destroy' && block.checkpointFrozen) || this.queuedIds.has(block.id)) { continue; }
 
             const bounds = block.entity.body.bounds;
             const overlapsX = bounds.max.x >= currentBounds.min.x && bounds.min.x <= currentBounds.max.x;
@@ -152,6 +154,41 @@ export class PowerupSystem {
      * still get processed in order without starting a second concurrent loop.
      */
     private async drainQueue(powerup: PowerupEffectConfig): Promise<void> {
+        if (this.busy) {
+            return;
+        }
+
+        this.busy = true;
+
+        while (this.queue.length > 0) {
+            const block = this.queue.shift()!;
+
+            if (powerup.action === 'freeze') {
+                this.blocks.freezeBlockForPowerup(block, powerup.greyColorHex!);
+                this.onBlockFrozen?.(block, powerup.greyColorHex!);
+            } else if (powerup.action === 'destroy') {
+                this.blocks.removeBlock(block);
+            } else {
+                this.blocks.shrinkBlockForPowerup(block, powerup.shrinkFactor!);
+            }
+
+            await PowerupSystem.wait(powerup.stepDelay);
+        }
+
+        this.busy = false;
+
+        // Clean up this effect's bookkeeping the instant it finishes —
+        // the touched-block id set is per-run state, not global, so that
+        // the next powerup dropped on the same live blocks can still
+        // affect them (a block frozen/shrunk here should still be
+        // destroyable by a later bomb, or freezable again by a later
+        // lightning, etc.). Without this, queuedIds would carry those
+        // ids forward and silently block the next run's touches.
+        this.queue.length = 0;
+        this.queuedIds.clear();
+    }
+
+    private async drainQueue2(powerup: PowerupEffectConfig): Promise<void> {
         if (this.busy) {
             return;
         }

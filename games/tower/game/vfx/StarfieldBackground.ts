@@ -10,6 +10,9 @@ type StarfieldMotionConfig = {
     speed: number;
 };
 
+/** Shooting stars only play once the field itself is mostly visible — one streaking across a barely-there daytime sky reads as a bug, not a flourish. See update(). */
+const SHOOTING_STAR_MIN_VISIBILITY = 0.65;
+
 export type StarfieldBackgroundBuildConfig = {
     target: THREE.Object3D;
     position?: Vector3Input;
@@ -45,6 +48,9 @@ export default class StarfieldBackground {
 
     private starPositions?: Float32Array;
     private starDepths?: Float32Array;
+
+    /** 0..1 global visibility multiplier on top of each star's own per-depth alpha — see setVisibility(). Applied via the uVisibility uniform so it's a single value update, not a per-star rebuild. Starts at 0 so there's no one-frame flash of full-brightness stars before the first real weight is set. */
+    private visibility = 0;
 
     public build(config: StarfieldBackgroundBuildConfig): void {
         this.target = config.target;
@@ -100,6 +106,15 @@ export default class StarfieldBackground {
         this.shootingStarEffect.setSettings(settings);
     }
 
+    /** 0 = stars barely visible, 1 = fully visible — see TowerStarfieldController, which drives this from each island's IslandConfig.starfieldWeightMin/Max as the player climbs. Safe to call before build() (applied once createStars() runs — see the uniform's initial value below). */
+    public setVisibility(value: number): void {
+        this.visibility = Math.max(0, Math.min(1, value));
+
+        if (this.pointsMaterial) {
+            this.pointsMaterial.uniforms.uVisibility.value = this.visibility;
+        }
+    }
+
     public setMotion(angleDeg: number, speed: number): void {
         this.motionAngleDeg = angleDeg;
         this.motionSpeed = Math.max(0, speed);
@@ -148,7 +163,7 @@ export default class StarfieldBackground {
         }
 
         this.pointsGeometry.attributes.position.needsUpdate = true;
-        this.shootingStarEffect.update(delta);
+        this.shootingStarEffect.update(delta, this.visibility >= SHOOTING_STAR_MIN_VISIBILITY);
     }
 
     public destroy(): void {
@@ -196,6 +211,7 @@ export default class StarfieldBackground {
                 uColorB:    { value: new THREE.Color(colorB) },
                 uColorMix:  { value: 0 },
                 uPixelRatio: { value: Math.min(window.devicePixelRatio || 1, 2) },
+                uVisibility: { value: this.visibility },
             },
             vertexShader: `
                 attribute float aSize;
@@ -213,11 +229,12 @@ export default class StarfieldBackground {
                 uniform vec3 uColorA;
                 uniform vec3 uColorB;
                 uniform float uColorMix;
+                uniform float uVisibility;
                 varying float vDepth;
                 void main() {
                     vec2 p = gl_PointCoord - 0.5;
                     float dist = length(p);
-                    float alpha = smoothstep(0.52, 0.0, dist) * mix(0.3, 0.9, vDepth);
+                    float alpha = smoothstep(0.52, 0.0, dist) * mix(0.3, 0.9, vDepth) * uVisibility;
                     vec3 color = mix(uColorA, uColorB, uColorMix);
                     color = mix(color * 0.75, color, vDepth);
                     gl_FragColor = vec4(color, alpha);

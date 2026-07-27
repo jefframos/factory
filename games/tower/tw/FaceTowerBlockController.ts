@@ -411,6 +411,8 @@ export class FaceTowerBlockController {
             return;
         }
 
+
+
         block.checkpointFrozen = true;
         block.entity.isStatic = true;
 

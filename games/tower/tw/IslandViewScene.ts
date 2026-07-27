@@ -16,6 +16,7 @@ import { BoundlessChunkManager } from '../game/world/BoundlessChunkManager';
 import {
     deriveWaterTones,
     getDefaultIsland,
+    type IslandConfig,
     ISLANDS,
     parseHexColor,
     resolveIslandImagePath,
@@ -31,6 +32,10 @@ import { TowerBlockSync3D } from './TowerBlockSync3D';
 import { DEFAULT_TOWER_3D_CONFIG } from './Tower3DConfig';
 import { loadTowerDevMeta, saveTowerDevMeta } from './TowerDevMeta';
 import { TowerHeightMarkers3D } from './TowerHeightMarkers3D';
+import { resolveIslandForZone } from './TowerIslandProgression';
+import { LEVELS } from './LevelStorage';
+import { TowerSkyController } from './TowerSkyController';
+import { TowerStarfieldController } from './TowerStarfieldController';
 import { TowerWallSync3D } from './TowerWallSync3D';
 import { GameHud } from './ui/GameHud';
 import SoundManager from 'core/audio/SoundManager';
@@ -80,6 +85,13 @@ export default class IslandViewScene extends ThreeScene {
     private waterMesh!: THREE.Mesh;
     private waterMat!: THREE.Material;
     private clusterMesh!: THREE.Mesh;
+
+    /** Degenerate four-corners gradient sky, built lazily the first time a zone's island defines skyGradient — see applyZoneIsland(). Until then the plain flat scene.background set in build() is what's showing. */
+    private readonly skyController = new TowerSkyController();
+    /** Camera-attached star layer, built lazily the first time a zone's island defines BOTH starfieldWeightMin/Max — see applyZoneIsland(). Its visibility is driven continuously every frame from climb progress — see update(). */
+    private readonly starfieldController = new TowerStarfieldController();
+    /** Which island's texture/water is currently applied — see applyZoneIsland(). */
+    private currentIslandId = '';
 
     // -------------------------------------------------------------------------
     // 2D / game layer
@@ -154,10 +166,36 @@ export default class IslandViewScene extends ThreeScene {
         });
 
         const island = getDefaultIsland();
+        this.currentIslandId = island.id;
 
         await TextureBuilder.loadRealIsland(resolveIslandImagePath(island.texture));
 
-        this.threeScene.background = new THREE.Color(parseHexColor(island.skyColor));
+        /*
+         * Resolved through the SAME per-zone lookup applyZoneIsland() uses
+         * later, rather than island.skyColor directly — so if level 0's
+         * island defines a skyGradient, the gradient sky is already what's
+         * showing from frame one. That matters for the FIRST zone
+         * transition specifically: transitionTo() eases from the sky's
+         * CURRENT top color, so if the initial sky were still the old flat
+         * THREE.Color background, that first transition would have nothing
+         * built yet to ease from and would have to hard-cut straight to the
+         * gradient (see the isBuilt() branch in applyZoneIsland()). An
+         * island with no skyGradient at all still falls back to the plain
+         * flat background exactly as before.
+         */
+        const initialZone = resolveIslandForZone(0, 0);
+
+        if (initialZone.island.skyGradient && initialZone.island.skyGradient.length > 0) {
+            this.skyController.build(this.threeCamera, initialZone.skyColorHex);
+        } else {
+            this.threeScene.background = new THREE.Color(parseHexColor(island.skyColor));
+        }
+
+        if (initialZone.island.starfieldWeightMin !== undefined && initialZone.island.starfieldWeightMax !== undefined) {
+            this.starfieldController.build(this.threeCamera);
+            this.starfieldController.setWeightBounds(initialZone.island.starfieldWeightMin, initialZone.island.starfieldWeightMax);
+        }
+
         this.threeScene.add(this.threeCamera);
         this.threeScene.add(new THREE.AmbientLight(parseHexColor(island.ambientColor), 1));
 
@@ -207,6 +245,8 @@ export default class IslandViewScene extends ThreeScene {
 
     public resize(): void {
         this.resizeFaceTowerInput();
+        this.skyController.resize();
+        this.starfieldController.resize(this.threeCamera);
     }
 
     public fixedUpdate(delta: number): void {
@@ -223,6 +263,27 @@ export default class IslandViewScene extends ThreeScene {
          * (shoot/jiggle/shrink) played at normal speed.
          */
         delta *= this.speedMultiplier;
+
+        this.skyController.update(delta);
+        this.starfieldController.update(delta);
+
+        if (this.faceTower && this.starfieldController.isBuilt()) {
+            /*
+             * Continuous, not stepped — driven straight from actual climb
+             * height (zoneIndexInLevel + fractional progress through the
+             * CURRENT zone) rather than snapping once per zone the way the
+             * sky color does, so the fade reads as smooth motion tied
+             * directly to the player's own climb instead of a series of
+             * little jumps.
+             */
+            const levelIndex = this.faceTower.getLevelIndex();
+            const zoneCount = LEVELS[Math.min(levelIndex, LEVELS.length - 1)]?.zoneCount ?? 1;
+            const levelProgress =
+                (this.faceTower.getZoneIndexInLevel() + this.faceTower.getZoneProgress()) /
+                Math.max(1, zoneCount);
+
+            this.starfieldController.updateProgress(levelProgress);
+        }
 
         const towerOffsetY = this.faceTower?.getCameraOffsetY() ?? 0;
 
@@ -241,7 +302,7 @@ export default class IslandViewScene extends ThreeScene {
         if (this.faceTower) {
             this.blockSync3D.sync(this.faceTower.getBlocks(), this.faceTower.getHeldBlock(), delta);
             this.baseSync3D.sync(this.faceTower.getBases());
-            this.wallSync3D.sync(this.faceTower.getWalls(), this.faceTower.getLevel());
+            this.wallSync3D.sync(this.faceTower.getWalls(), this.faceTower.getWallHeight());
 
             // toWorldY() is screenY − offsetY, so screenY is worldY + offsetY.
             const worldYToHeightMark = (worldY: number) => ({
@@ -264,6 +325,9 @@ export default class IslandViewScene extends ThreeScene {
                 .map((base) => worldYToHeightMark(base.body.position.y));
 
             this.gameHud?.updateHeightGauge(currentMark, targetMark, milestoneMarks, delta);
+
+            const nextLevelMark = worldYToHeightMark(this.faceTower.getNextLevelTargetWorldY());
+            this.gameHud?.updateLevelGoal(this.faceTower.getLevelIndex(), nextLevelMark.heightMeters, this.faceTower.isFinalLevel());
 
             // 3D markers take raw world-Y (not screen-space) since they
             // position actual meshes in the THREE scene.
@@ -288,6 +352,8 @@ export default class IslandViewScene extends ThreeScene {
     }
 
     public destroy(): void {
+        this.skyController.destroy();
+        this.starfieldController.destroy();
         this.faceTower?.destroy();
         this.blockSync3D?.destroy();
         this.baseSync3D?.destroy();
@@ -329,8 +395,17 @@ export default class IslandViewScene extends ThreeScene {
          */
         this.gameHud = new GameHud(
 
-            () => { this.gameHud.hideGameOver(); this.faceTower.continueRun(); },
-            () => { this.gameHud.hideGameOver(); this.baseSync3D.clear(); this.faceTower.reset(); },
+            () => {
+                this.gameHud.hideGameOver();
+                const blocks = this.faceTower.continueRun();
+                this.blockSync3D.freezeBlocks(blocks)
+
+            },
+            () => {
+                this.gameHud.hideGameOver();
+                this.baseSync3D.clear();
+                this.faceTower.reset();
+            },
 
 
         );
@@ -348,6 +423,22 @@ export default class IslandViewScene extends ThreeScene {
 
                 onMilestoneReached: (zoneIndex) => {
                     this.gameHud.showMilestone(zoneIndex);
+                    SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.GateOpen);
+
+                    /*
+                     * Fires on EVERY zone, not just full level-ups — the sky
+                     * needs to step forward one zone at a time (see
+                     * applyZoneIsland()), not sit static until a whole
+                     * level's worth of zones finishes. By this point
+                     * FaceTowerGameController has already advanced
+                     * levels/getZoneIndexInLevel() to whatever this zone
+                     * landed on, level-up included.
+                     */
+                    this.applyZoneIsland();
+                },
+
+                onLevelProgressed: (levelIndex) => {
+                    this.gameHud.showLevelProgressed(levelIndex);
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.GateOpen);
                 },
 
@@ -413,12 +504,98 @@ export default class IslandViewScene extends ThreeScene {
         this.resizeFaceTowerInput();
         this.setupCameraDevGui();
         this.setupVisualDevGui();
+        this.setupLevelDevGui();
 
         this.pieceDevGui = new PieceDevGui(PIECES, this.faceTower, this);
         this.pieceDevGui.setup();
 
         this.powerupDevGui = new PowerupDevGui(POWERUPS, this.faceTower);
         this.powerupDevGui.setup();
+    }
+
+    private setupLevelDevGui(): void {
+        const gui = DevGuiManager.instance;
+        const folder = 'Levels';
+
+        gui.addButton('Skip to next zone', () => this.faceTower.devSkipZone(), folder);
+        gui.addButton('Skip to next level', () => this.faceTower.devSkipLevel(), folder);
+    }
+
+    /**
+     * Called every time FaceTowerGameController fires onMilestoneReached —
+     * i.e. every zone, not just full level-ups — resolves which island/sky
+     * step the CURRENT (level, zone-within-level) pair now lands on (see
+     * TowerIslandProgression.resolveIslandForZone()) and:
+     *  - kicks off (or starts) the sky's smooth color transition, switching
+     *    from the original flat scene.background to the gradient sky the
+     *    very first time a skyGradient-enabled island is reached;
+     *  - swaps texture/water tones outright (no transition — only the sky
+     *    eases) whenever the island itself actually changes (i.e. only at
+     *    an actual level boundary — every zone within one level shares the
+     *    same island, so this is a no-op most of the time).
+     */
+    private applyZoneIsland(): void {
+        const { island, skyColorHex } = resolveIslandForZone(
+            this.faceTower.getLevelIndex(),
+            this.faceTower.getZoneIndexInLevel(),
+        );
+
+        if (island.skyGradient && island.skyGradient.length > 0) {
+            if (!this.skyController.isBuilt()) {
+                this.threeScene.background = null;
+                this.skyController.build(this.threeCamera, skyColorHex);
+            } else {
+                this.skyController.transitionTo(skyColorHex);
+            }
+        }
+
+        /*
+         * Bounds only — the actual visibility value is driven continuously
+         * every frame from climb progress (see update()), not stepped here
+         * per zone the way the sky color is. An island that doesn't define
+         * both bounds gets (0, 0), which reads as "no stars" without ever
+         * needing to build the starfield for it at all.
+         */
+        if (island.starfieldWeightMin !== undefined && island.starfieldWeightMax !== undefined) {
+            if (!this.starfieldController.isBuilt()) {
+                this.starfieldController.build(this.threeCamera);
+            }
+
+            this.starfieldController.setWeightBounds(island.starfieldWeightMin, island.starfieldWeightMax);
+        } else {
+            this.starfieldController.setWeightBounds(0, 0);
+        }
+
+        if (island.id !== this.currentIslandId) {
+            this.currentIslandId = island.id;
+            void this.swapIslandAssets(island);
+        }
+    }
+
+    /** Swaps the ground texture and water tint for `island` — instant, no transition (unlike the sky, see applyZoneIsland()). */
+    private async swapIslandAssets(island: IslandConfig): Promise<void> {
+        const texture = await TextureBuilder.loadRealIsland(resolveIslandImagePath(island.texture));
+        const clusterMaterial = this.clusterMesh.material as THREE.MeshStandardMaterial;
+
+        clusterMaterial.map = texture;
+        clusterMaterial.needsUpdate = true;
+
+        const waterColors = deriveWaterTones(parseHexColor(island.waterColor));
+        const waterUniforms = (this.waterMat as THREE.ShaderMaterial).uniforms;
+
+        waterUniforms.uColorDeep.value.copy(IslandViewScene.srgbVector(waterColors.deep));
+        waterUniforms.uColorMid.value.copy(IslandViewScene.srgbVector(waterColors.mid));
+        waterUniforms.uColorBright.value.copy(IslandViewScene.srgbVector(waterColors.bright));
+        waterUniforms.uColorFoam.value.copy(IslandViewScene.srgbVector(waterColors.foam));
+    }
+
+    /** Raw sRGB conversion (no ColorManagement linearization) — same convention as WaterMaterial.ts/FourCornersGradientBuilder's own srgb() helpers, so a hex value here matches exactly what those shaders were authored against. */
+    private static srgbVector(hex: number): THREE.Vector3 {
+        return new THREE.Vector3(
+            ((hex >> 16) & 0xff) / 255,
+            ((hex >> 8) & 0xff) / 255,
+            (hex & 0xff) / 255,
+        );
     }
 
     private setupCameraDevGui(): void {
@@ -483,22 +660,21 @@ export default class IslandViewScene extends ThreeScene {
      * 2D tower camera's scroll (see update()).
      */
     private positionCamera(liftY: number = 0): void {
-        const cfg = DEFAULT_TOWER_3D_CONFIG;
-        const yaw = (cfg.cameraYawDeg * Math.PI) / 180;
-        const pitch = (cfg.cameraPitchDeg * Math.PI) / 180;
 
-        const scl = Math.min(1, Game.scale)
+        // Half-extents of the play area the camera must show, in world units.
+        // X = how wide the tower/arena is, Y = how tall the visible portion is.
+        const PLAY_HALF_W = 3.2;   // e.g. tower is 8 units wide
+        const PLAY_HALF_H = 6.0;   // e.g. visible play height is 12 units
+        const FIT_PADDING = 1.05;  // 8% breathing room
 
-        const d = Math.min(cfg.cameraDistance + (cfg.cameraDistanceMax - cfg.cameraDistance) * (1 - scl), cfg.cameraDistanceMax)
-        const horizontal = d * Math.cos(pitch);
-        const focusY = FOCUS_POINT.y + liftY;
 
-        this.threeCamera.position.set(
-            FOCUS_POINT.x + horizontal * Math.sin(yaw),
-            focusY + d * Math.sin(pitch),
-            FOCUS_POINT.z + horizontal * Math.cos(yaw),
-        );
-
+        const cfg = DEFAULT_TOWER_3D_CONFIG; const yaw = (cfg.cameraYawDeg * Math.PI) / 180; const pitch = (cfg.cameraPitchDeg * Math.PI) / 180;
+        const fovV = (this.threeCamera.fov * Math.PI) / 180;   // vertical FOV in radians    
+        const aspect = this.threeCamera.aspect;                  // viewport W / H — keep this current in your resize handler!
+        const tan = Math.tan(fovV / 2); const playW = PLAY_HALF_W * 2; const playH = PLAY_HALF_H * 2;
+        const dFitH = (playH * Math.cos(pitch)) / (2 * tan); const dFitW = playW / (2 * tan * aspect);
+        const distance = Math.max(dFitH, dFitW) * FIT_PADDING; const horizontal = distance * Math.cos(pitch); const focusY = FOCUS_POINT.y + liftY;
+        this.threeCamera.position.set(FOCUS_POINT.x + horizontal * Math.sin(yaw), focusY + distance * Math.sin(pitch), FOCUS_POINT.z + horizontal * Math.cos(yaw),);
         this.threeCamera.lookAt(FOCUS_POINT.x, focusY, FOCUS_POINT.z);
     }
 

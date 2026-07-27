@@ -16,12 +16,15 @@ import { getPowerup, powerupGreyColorNumber } from './PowerupStorage';
 import { PowerupSystem } from './PowerupSystem';
 import { TowerCameraController } from './TowerCameraController';
 import { TowerDeadZoneController } from './TowerDeadZoneController';
+import { TowerLevelController } from './TowerLevelController';
 import { TowerStabilityController } from './TowerStabilityController';
 import { TowerZoneController } from './TowerZoneController';
 
 export interface FaceTowerGameEvents {
     onScoreChanged?(score: number): void;
     onMilestoneReached?(zoneIndex: number): void;
+    /** Fired once every zone of the current level is complete and play has rolled over into the next level — see TowerLevelController. Never fires again once the last authored level is reached; its zones just keep repeating. */
+    onLevelProgressed?(levelIndex: number): void;
     onGameOver?(score: number): void;
     /** Fired the instant a piece is released and physics takes over — the "shoot" moment. See dropBlock(). */
     onBlockDropped?(block: FaceTowerBlock): void;
@@ -38,6 +41,7 @@ export class FaceTowerGameController {
     private readonly blocks: FaceTowerBlockController;
     private readonly stability: TowerStabilityController;
     private readonly zones: TowerZoneController;
+    private readonly levels: TowerLevelController;
     private readonly deadZones: TowerDeadZoneController;
     private readonly pieces: PieceManager;
     private readonly powerups: PowerupSystem;
@@ -46,6 +50,11 @@ export class FaceTowerGameController {
 
     private state = FaceTowerState.Initialising;
     private score = 0;
+
+    /** World-space height (px) of the zone currently being built — drives both getZoneProgress() and the wall/pole height (zone height × its polePercent). Set from the level's own zone config — see LevelStorage/TowerLevelController. */
+    private currentZoneWorldHeight: number;
+    /** Wall/pole height (px) for the zone currently being built — currentZoneWorldHeight × its polePercent. */
+    private currentWallHeight: number;
 
     private targetX: number;
     /** Rolled one spawn ahead — see spawnNextBlock()/rollPiece(). Lets getNextPiece() answer "what's coming after this one" before it actually spawns. */
@@ -80,8 +89,14 @@ export class FaceTowerGameController {
 
         this.stability = new TowerStabilityController(config);
 
+        this.levels = new TowerLevelController();
+
+        const initialZoneConfig = this.levels.getCurrentZoneConfig();
+        this.currentZoneWorldHeight = initialZoneConfig.height * config.blockHeight;
+        this.currentWallHeight = this.currentZoneWorldHeight * initialZoneConfig.polePercent;
+
         this.zones = new TowerZoneController(
-            config.zoneHeight,
+            this.currentZoneWorldHeight,
             config.floorY,
         );
 
@@ -111,7 +126,7 @@ export class FaceTowerGameController {
 
     public start(): void {
         this.blocks.initialise();
-        this.deadZones.rebuild(this.config.floorY, 0);
+        this.deadZones.rebuild(this.config.floorY, this.currentWallHeight);
 
         this.score = 0;
         this.events.onScoreChanged?.(this.score);
@@ -125,7 +140,13 @@ export class FaceTowerGameController {
         this.deadZones.clear();
         this.powerups.clear();
         this.camera.reset();
-        this.zones.reset(this.config.floorY);
+
+        this.levels.reset();
+        const zoneConfig = this.levels.getCurrentZoneConfig();
+        this.currentZoneWorldHeight = zoneConfig.height * this.config.blockHeight;
+        this.currentWallHeight = this.currentZoneWorldHeight * zoneConfig.polePercent;
+
+        this.zones.reset(this.config.floorY, this.currentZoneWorldHeight);
         this.nextPiece = undefined;
 
         this.state = FaceTowerState.Initialising;
@@ -261,16 +282,51 @@ export class FaceTowerGameController {
      */
     public getZoneProgress(): number {
         const targetWorldY = this.zones.getTargetLineWorldY();
-        const zoneStartWorldY = targetWorldY + this.config.zoneHeight;
+        const zoneStartWorldY = targetWorldY + this.currentZoneWorldHeight;
         const currentTopWorldY = this.getCurrentTopWorldY();
 
         const climbed = zoneStartWorldY - currentTopWorldY;
-        return Math.max(0, Math.min(1, climbed / this.config.zoneHeight));
+        return Math.max(0, Math.min(1, climbed / this.currentZoneWorldHeight));
     }
 
     /** The side containment poles for the current zone — see TowerDeadZoneController. */
     public getWalls() {
         return this.deadZones.getWalls();
+    }
+
+    /** Current wall/pole height (px) — currentZoneWorldHeight × the current zone's polePercent. See TowerWallSync3D.sync(). */
+    public getWallHeight(): number {
+        return this.currentWallHeight;
+    }
+
+    /** 0-based progression tier (see TowerLevelController) — also what rollPiece() feeds PieceManager.getPieceForLevel() (as levelIndex + 1), so a piece's own `level` in pieces-config.json unlocks one full level's worth of zones at a time. */
+    public getLevelIndex(): number {
+        return this.levels.getLevelIndex();
+    }
+
+    /** 0-based zone index within the CURRENT level — resets to 0 every level-up. See TowerIslandProgression.resolveIslandForZone(). */
+    public getZoneIndexInLevel(): number {
+        return this.levels.getZoneIndexInLevel();
+    }
+
+    /** True once the last authored level (see levels-config.json) has been reached — its zones repeat forever from here on. */
+    public isFinalLevel(): boolean {
+        return this.levels.isFinalLevel();
+    }
+
+    /**
+     * World Y the player needs to reach the level AFTER the one currently
+     * being climbed — i.e. the target line as it will read once the current
+     * level's remaining zones are all finished. Always defined (even on the
+     * final level, where it just keeps climbing by the same repeating
+     * zone) — for a "next level: Xm" HUD hint shown alongside the current
+     * zone's own target line (getTargetLineWorldY()).
+     */
+    public getNextLevelTargetWorldY(): number {
+        const currentBaseWorldY = this.zones.getTargetLineWorldY() + this.currentZoneWorldHeight;
+        const remainingHeight = this.levels.getRemainingLevelHeight(this.config.blockHeight);
+
+        return currentBaseWorldY - remainingHeight;
     }
 
     public getScore(): number {
@@ -374,9 +430,9 @@ export class FaceTowerGameController {
      * "Continue" button currently calls this directly with no ad in front
      * of it yet.
      */
-    public continueRun(): void {
+    public continueRun(): FaceTowerBlock[] {
         if (this.state !== FaceTowerState.GameOver) {
-            return;
+            return [];
         }
 
         const deathWorldY = this.camera.toWorldY(this.config.deathScreenY);
@@ -414,6 +470,8 @@ export class FaceTowerGameController {
         // clear that first — it overwrites state again immediately anyway.
         this.state = FaceTowerState.MovingBlock;
         this.spawnNextBlock();
+
+        return this.blocks.getBlocks()
     }
 
     private moveBlock(x: number): void {
@@ -479,44 +537,126 @@ export class FaceTowerGameController {
         const topWorldY = this.blocks.getHighestTopWorldY();
 
         if (this.zones.hasReachedLine(topWorldY)) {
-            const result = this.zones.completeZone();
-
-            /*
-             * Everything built so far becomes the permanent base, and a
-             * fresh floor is placed exactly on the line it just reached —
-             * the tower effectively restarts on top of its own progress.
-             */
-            this.blocks.freezeAll();
-            this.blocks.addBase(result.lineWorldY);
-            this.deadZones.rebuild(result.lineWorldY, this.getLevel());
-
-            const newOffsetY =
-                this.config.floorScreenY - result.lineWorldY;
-
-            this.camera.panTo(newOffsetY);
-            this.drawTargetLine(this.zones.getTargetLineWorldY());
-
-            this.events.onMilestoneReached?.(result.zoneIndex);
-
-            /*
-             * The zone bump means rollPiece()'s level (and thus its pool)
-             * just changed — re-roll right away so the "next piece" preview
-             * reflects what will ACTUALLY spawn once panning finishes,
-             * instead of staying stale on whatever was rolled under the old
-             * zone's level.
-             */
-            this.nextPiece = this.rollPiece();
-            this.events.onNextPieceChanged?.(this.nextPiece);
-
-            /*
-             * Held block spawns only once the pan finishes, so it never
-             * appears mid-scroll. See PanningCamera handling in update().
-             */
-            this.state = FaceTowerState.PanningCamera;
+            this.advanceToNextZone();
             return;
         }
 
         this.spawnNextBlock();
+    }
+
+    /**
+     * Freezes everything built so far into a new base on the current
+     * target line and rolls play forward into the next zone (and, once
+     * the level's zoneCount is exhausted, the next level) — the shared
+     * path completeTurn() uses once the player actually reaches the
+     * target line, also reused as-is by the dev-only skip helpers below
+     * so "force it" behaves identically to "the player did it".
+     */
+    private advanceToNextZone(): void {
+        /*
+         * Normally there's nothing held here — the player already dropped
+         * their piece before the tower settles and completeTurn() runs.
+         * But the dev-only skip helpers (devSkipZone/devSkipLevel) can call
+         * this mid-hold, while a piece is still hovering over the drop
+         * area — spawnNextBlock() below would otherwise throw straight
+         * into spawnHeldBlock()'s "already holding one" guard. Discard it,
+         * but remember which piece it was so it reappears unchanged once
+         * panning finishes, instead of being swapped for a freshly rolled
+         * one — the player shouldn't lose the piece they were lining up
+         * just because a dev skipped the zone/level out from under them.
+         */
+        const heldPiece = this.blocks.getHeldBlock()?.piece;
+
+        if (heldPiece) {
+            this.blocks.discardHeldBlock();
+        }
+
+        const advance = this.levels.advanceZone();
+        const zoneConfig = this.levels.getCurrentZoneConfig();
+
+        this.currentZoneWorldHeight = zoneConfig.height * this.config.blockHeight;
+        this.currentWallHeight = this.currentZoneWorldHeight * zoneConfig.polePercent;
+
+        const result = this.zones.completeZone(this.currentZoneWorldHeight);
+
+        /*
+         * Everything built so far becomes the permanent base, and a
+         * fresh floor is placed exactly on the line it just reached —
+         * the tower effectively restarts on top of its own progress.
+         */
+        this.blocks.freezeAll();
+        this.blocks.addBase(result.lineWorldY);
+        this.deadZones.rebuild(result.lineWorldY, this.currentWallHeight);
+
+        const newOffsetY =
+            this.config.floorScreenY - result.lineWorldY;
+
+        this.camera.panTo(newOffsetY);
+        this.drawTargetLine(this.zones.getTargetLineWorldY());
+
+        this.events.onMilestoneReached?.(result.zoneIndex);
+
+        if (advance.leveledUp) {
+            this.events.onLevelProgressed?.(advance.levelIndex);
+        }
+
+        /*
+         * The zone bump means rollPiece()'s level (and thus its pool)
+         * just changed — re-roll right away so the "next piece" preview
+         * reflects what will ACTUALLY spawn once panning finishes,
+         * instead of staying stale on whatever was rolled under the old
+         * zone's level. Unless a piece was just discarded off the drop
+         * area above — that one takes priority over a fresh roll, for
+         * continuity.
+         */
+        this.nextPiece = heldPiece ?? this.rollPiece();
+        this.events.onNextPieceChanged?.(this.nextPiece);
+
+        /*
+         * Held block spawns only once the pan finishes, so it never
+         * appears mid-scroll. See PanningCamera handling in update().
+         */
+        this.state = FaceTowerState.PanningCamera;
+    }
+
+    /**
+     * Dev-only: force-completes the current zone right away, exactly as
+     * if the player had reached its target line — see
+     * IslandViewScene.setupLevelDevGui(). A no-op once the run has ended.
+     */
+    public devSkipZone(): void {
+        if (this.state === FaceTowerState.GameOver) {
+            return;
+        }
+
+        this.advanceToNextZone();
+    }
+
+    /**
+     * Dev-only: repeatedly force-completes zones until the level tier
+     * itself advances — i.e. as many devSkipZone() calls as the current
+     * level's remaining zoneCount needs. On the final level there's no
+     * next level to reach, so this just force-completes the one
+     * (repeating) zone instead. A no-op once the run has ended.
+     */
+    public devSkipLevel(): void {
+        if (this.state === FaceTowerState.GameOver) {
+            return;
+        }
+
+        if (this.levels.isFinalLevel()) {
+            this.advanceToNextZone();
+            return;
+        }
+
+        const startingLevel = this.levels.getLevelIndex();
+
+        // Guarded against a misconfigured levels-config.json (e.g.
+        // zoneCount <= 0) looping forever — no legitimate level needs
+        // anywhere near this many zones to roll over.
+        for (let i = 0; i < 1000 && this.levels.getLevelIndex() === startingLevel; i++) {
+            this.advanceToNextZone();
+        }
     }
 
     private spawnNextBlock(): void {
@@ -547,11 +687,9 @@ export class FaceTowerGameController {
         this.nextPiece = this.rollPiece();
         this.events.onNextPieceChanged?.(this.nextPiece);
     }
-    public getLevel(): number {
-        return this.zones.getZoneIndex() || 0;
-    }
+    /** Piece pool tier fed to PieceManager.getPieceForLevel() — the actual level tier (see TowerLevelController), NOT the ever-incrementing zone counter, so pieces-config.json's own small `level` values (1, 2, 3…) unlock one full level's worth of zones at a time instead of unlocking on every single zone. */
     private rollPiece(): PieceDefinition {
-        const level = this.zones.getZoneIndex() + 1;
+        const level = this.levels.getLevelIndex() + 1;
         return this.pieces.getPieceForLevel(level);
     }
 

@@ -147,8 +147,18 @@ export default class ShootingStarEffect {
         }
     }
 
-    public update(delta: number): void {
+    /** `enabled=false` freezes the spawn countdown and force-hides any shooting star already mid-flight — see StarfieldBackground's visibility-gated call. */
+    public update(delta: number, enabled: boolean = true): void {
         if (!this.mesh) return;
+
+        if (!enabled) {
+            if (this.state.active || this.mesh.visible) {
+                this.state.active = false;
+                this.mesh.visible = false;
+                this.mesh.material.uniforms.uOpacity.value = 0;
+            }
+            return;
+        }
 
         if (!this.state.active) {
             this.state.timer -= delta;

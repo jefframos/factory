@@ -42,6 +42,14 @@
           "src": [
             "static-pieces-config.json"
           ]
+        },
+        {
+          "alias": [
+            "levels-config.json"
+          ],
+          "src": [
+            "levels-config.json"
+          ]
         }
       ]
     }

@@ -15,7 +15,8 @@ export class PieceManager {
     private readonly poolsByLevel = new Map<number, PieceDefinition[]>();
     private sortedLevels: number[] = [];
 
-    private lastId = '';
+    /** Most recent picks, oldest first — see getPieceForLevel()'s HISTORY_DEPTH. */
+    private recentIds: string[] = [];
 
     public build(): void {
         this.poolsByLevel.clear();
@@ -55,8 +56,12 @@ export class PieceManager {
 
     /**
      * A random piece from the pool available at `level`. Avoids repeating
-     * the last piece when the pool has at least 2 options — if the pool
-     * only contains one piece, that piece is returned every time.
+     * any of the last HISTORY_DEPTH picks — falling back to a shorter
+     * history (down to just the immediately-previous pick, same as before)
+     * whenever the pool isn't big enough to honor the full depth, so a
+     * small early-game pool never throws or stalls waiting for variety it
+     * can't supply. A single-piece pool still just returns that piece every
+     * time.
      */
     public getPieceForLevel(level: number): PieceDefinition {
         const pool = this.getPoolForLevel(level);
@@ -69,14 +74,27 @@ export class PieceManager {
 
         if (pool.length === 1) {
             const only = pool[0];
-            this.lastId = only.id;
+            this.recentIds = [only.id];
             return only;
         }
 
-        const candidates = pool.filter(piece => piece.id !== this.lastId);
+        let candidates: readonly PieceDefinition[] = [];
+
+        for (let depth = Math.min(PieceManager.HISTORY_DEPTH, this.recentIds.length); depth >= 0; depth--) {
+            const excluded = new Set(this.recentIds.slice(this.recentIds.length - depth));
+            candidates = pool.filter(piece => !excluded.has(piece.id));
+
+            if (candidates.length > 0) {
+                break;
+            }
+        }
+
         const pick = candidates[Math.floor(Math.random() * candidates.length)];
 
-        this.lastId = pick.id;
+        this.recentIds = [...this.recentIds, pick.id].slice(-PieceManager.HISTORY_DEPTH);
         return pick;
     }
+
+    /** How many of the most recent picks getPieceForLevel() tries to avoid repeating — see its own doc for the pool-too-small fallback. */
+    private static readonly HISTORY_DEPTH = 2;
 }

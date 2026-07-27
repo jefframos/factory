@@ -23,7 +23,7 @@
             }
         },
         "greyColor": "#888888",
-        "greyStepDelay": 0.25,
+        "greyStepDelay": 0.1,
         "dropForceY": 20
     },
     {

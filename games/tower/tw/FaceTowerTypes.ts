@@ -86,9 +86,6 @@ export interface FaceTowerConfig {
     settleLinearSpeed: number;
     settleAngularSpeed: number;
 
-    // World-space height (px) the player must build above the current base
-    // before that base freezes and a new one is placed on the target line.
-    zoneHeight: number;
     cameraPanSpeed: number;
 
     // Matter.js world gravity (y is downward-positive, same as Matter's default).
@@ -102,9 +99,10 @@ export interface FaceTowerConfig {
     dropForceY: number;
 
     // Solid (non-sensor) bumper rails flush against the base's edges — keep
-    // blocks contained in the build column under normal play.
+    // blocks contained in the build column under normal play. Their height
+    // is no longer configured here — it's the current zone's own height ×
+    // its polePercent (see LevelStorage/TowerLevelController).
     wallWidth: number;
-    wallHeight: number[];
 
     // Manual vertical nudge (world px, +down) for the walls' position on
     // top of the flush-with-base-top placement — see

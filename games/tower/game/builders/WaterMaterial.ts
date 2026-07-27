@@ -16,6 +16,8 @@ uniform float time;
 
 varying vec2 vWorldXZ;
 
+#include <fog_pars_vertex>
+
 void main() {
     vec3 pos = position;
     pos.y += uElevation;
@@ -36,7 +38,11 @@ void main() {
     float dx = worldPos.x - uBendOrigin.x;
     float dz = worldPos.z - uBendOrigin.z;
     worldPos.y -= (dx * dx + dz * dz) * uBendStrength;
-    gl_Position = projectionMatrix * viewMatrix * worldPos;
+
+    vec4 mvPosition = viewMatrix * worldPos;
+    gl_Position = projectionMatrix * mvPosition;
+
+    #include <fog_vertex>
 }
 `;
 
@@ -50,6 +56,8 @@ uniform vec3  uColorBright;
 uniform vec3  uColorFoam;
 
 varying vec2 vWorldXZ;
+
+#include <fog_pars_fragment>
 
 void main() {
     // Blob noise — three overlapping sine waves in world space.
@@ -69,6 +77,8 @@ void main() {
     color = mix(color, uColorBright, step(2.0, tier));
 
     gl_FragColor = vec4(color, opacity);
+
+    #include <fog_fragment>
 }
 `;
 
@@ -87,20 +97,29 @@ export function createWaterMaterial(
     blobScale = 2.5,  // 1 = default  >1 = finer blobs  <1 = coarser blobs
 ): THREE.ShaderMaterial {
     return new THREE.ShaderMaterial({
-        uniforms: {
-            time: { value: 0 },
-            opacity: { value: opacity },
-            uElevation: { value: elevation },
-            uBlobScale: { value: blobScale },
-            uColorDeep: { value: srgb(colors.deep) },
-            uColorMid: { value: srgb(colors.mid) },
-            uColorBright: { value: srgb(colors.bright) },
-            uColorFoam: { value: srgb(colors.foam) },
-            uBendOrigin: BendService.uniforms.uBendOrigin,
-            uBendStrength: BendService.uniforms.uBendStrength,
-        },
+        uniforms: THREE.UniformsUtils.merge([
+            // fogColor/fogNear/fogFar (or fogDensity for FogExp2) — kept in
+            // sync automatically by WebGLRenderer every frame straight from
+            // scene.fog, same as any built-in material with `fog: true`. No
+            // manual wiring needed on our side beyond declaring `fog: true`
+            // below and including the matching GLSL chunks in the shaders.
+            THREE.UniformsLib.fog,
+            {
+                time: { value: 0 },
+                opacity: { value: opacity },
+                uElevation: { value: elevation },
+                uBlobScale: { value: blobScale },
+                uColorDeep: { value: srgb(colors.deep) },
+                uColorMid: { value: srgb(colors.mid) },
+                uColorBright: { value: srgb(colors.bright) },
+                uColorFoam: { value: srgb(colors.foam) },
+                uBendOrigin: BendService.uniforms.uBendOrigin,
+                uBendStrength: BendService.uniforms.uBendStrength,
+            },
+        ]),
         vertexShader,
         fragmentShader,
         transparent: opacity < 1,
+        fog: true,
     });
 }

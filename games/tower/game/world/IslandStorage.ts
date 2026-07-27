@@ -6,6 +6,26 @@ export interface IslandConfig {
     /** Relative path under images/non-preload/ — e.g. "islands/island.webp". Resolve with resolveIslandImagePath(). */
     texture: string;
     skyColor: string;
+    /**
+     * Optional sequence of hex colors this island's sky steps through, one
+     * per zone, as the player climbs the level(s) that reference it (see
+     * TowerIslandProgression.resolveIslandForZone()) — a zone past the end
+     * of this array repeats the last color, same convention as a level's own
+     * `zones`. Omit entirely for a plain flat sky (just `skyColor`, no
+     * FourCornersGradient) — see TowerSkyController.
+     */
+    skyGradient?: string[];
+    /**
+     * 0..1 starfield visibility bounds for this island — see
+     * TowerStarfieldController. Interpolated continuously (not per-zone
+     * steps, unlike skyGradient) across however far the player has climbed
+     * through the CURRENT level's zones, resetting to `starfieldWeightMin`
+     * every time the level changes — 0 at the level's first zone,
+     * `starfieldWeightMax` once its last zone is reached. Omit either (or
+     * both) to skip building a starfield for this island entirely.
+     */
+    starfieldWeightMin?: number;
+    starfieldWeightMax?: number;
     ambientColor: string;
     waterColor: string;
     /** Exactly one island in islands.json should set this — see getDefaultIsland(). */
@@ -99,6 +119,20 @@ export function saturateColor(color: number, t: number): number {
     return (Math.round(r * 255) << 16)
         | (Math.round(g * 255) << 8)
         | Math.round(b * 255);
+}
+
+/** Linear-interpolates two hex colors channel-by-channel — `t` 0 returns `a`, 1 returns `b`. See TowerSkyController's level-to-level sky transition. */
+export function lerpColorRgb(a: number, b: number, t: number): number {
+    const clampedT = Math.max(0, Math.min(1, t));
+
+    const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
+    const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
+
+    const r = Math.round(ar + (br - ar) * clampedT);
+    const g = Math.round(ag + (bg - ag) * clampedT);
+    const bl = Math.round(ab + (bb - ab) * clampedT);
+
+    return (r << 16) | (g << 8) | bl;
 }
 
 /** Lightens (t > 0) or darkens (t < 0) a hex color by mixing toward white/black. */

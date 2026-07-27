@@ -95,10 +95,38 @@ export class PieceBoxBuilder {
             options.centerOverride,
         );
 
-        const mat = new THREE.MeshStandardMaterial({ color });
+        const mat = new THREE.MeshPhysicalMaterial({
+            color, metalness: 0,
+            roughness: 0.3,
+
+            clearcoat: 1,
+            clearcoatRoughness: 0.12,
+
+            ior: 1.46,
+
+            envMapIntensity: 1.1,
+        });
         BendService.applyBend(mat);
 
+        const cloned = mat.clone();
+
+
         const mesh = new THREE.Mesh(geometry, mat);
+        mesh.material = cloned;
+        //
+        // MeshGlintService.applyGlints(cloned, {
+        //     intensity: 0.05,
+        //     noiseStrength: 0.85,
+        //     noiseScale: 5,
+        //     speed: 2,
+        //     tintMix: 0.15,
+        //     materialColorMix: 0.85,
+        //     shimmerStrength: 0.5,
+        //     fresnelBias: 0.5,
+        //     fresnelPower: 0.1
+        // });
+
+
         const faceScale = options.faceScale ?? { x: 1, y: 1 };
 
         // {x: 0} or {y: 0} means "no face" — skip the decal entirely rather

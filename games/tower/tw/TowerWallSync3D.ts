@@ -33,6 +33,15 @@ export class TowerWallSync3D {
     // re-push), so comparing against the live reference would never detect
     // a change; comparing element-by-element against a frozen copy does.
     private trackedWalls: BoxEntity[] = [];
+    // The walls themselves are Pool-recycled (see TowerDeadZoneController's
+    // createWall/Pool.getElement) — clear()+rebuild() reliably hands back
+    // the SAME BoxEntity instances every time (destroy() returns them to
+    // Pool, and the next rebuild's getElement() immediately shifts them back
+    // out), so trackedWalls never actually changes identity zone-to-zone and
+    // the array-comparison above alone would never detect a rebuild is
+    // needed. Tracking the height separately catches the case identity
+    // comparison can't: same wall objects, different size.
+    private trackedWallHeightPx = -1;
 
     public constructor(
         private readonly scene: THREE.Scene,
@@ -42,13 +51,16 @@ export class TowerWallSync3D {
         private readonly baseOffset: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 },
     ) { }
 
-    public sync(walls: readonly BoxEntity[], level: number = 0): void {
+    /** `wallHeightPx` is the 2D world-px wall height (see TowerDeadZoneController.rebuild) — converted to world units the same way width already is. */
+    public sync(walls: readonly BoxEntity[], wallHeightPx: number = 0): void {
         const changed =
             walls.length !== this.trackedWalls.length ||
-            walls.some((wall, i) => wall !== this.trackedWalls[i]);
+            walls.some((wall, i) => wall !== this.trackedWalls[i]) ||
+            wallHeightPx !== this.trackedWallHeightPx;
 
         if (changed) {
-            this.rebuild(walls, level);
+            this.rebuild(walls, wallHeightPx);
+            this.trackedWallHeightPx = wallHeightPx;
         }
 
         for (let i = 0; i < walls.length; i++) {
@@ -56,13 +68,12 @@ export class TowerWallSync3D {
         }
     }
 
-    private rebuild(walls: readonly BoxEntity[], level: number): void {
+    private rebuild(walls: readonly BoxEntity[], wallHeightPx: number): void {
         this.clearPoles();
 
         const piece = getStaticPiece('column');
         const width = this.config.wallWidth / this.pixelsPerUnit;
-        const height = this.config.wallHeight[Math.min(level, this.config.wallHeight.length - 1)] / this.pixelsPerUnit;
-        //console.log(height)
+        const height = wallHeightPx / this.pixelsPerUnit;
         const depth = this.visualConfig.platformDepth;
 
         // StaticPieceDefinition.faceOffset is authored in 2D design px —
@@ -131,6 +142,7 @@ export class TowerWallSync3D {
     public clear(): void {
         this.clearPoles();
         this.trackedWalls = [];
+        this.trackedWallHeightPx = -1;
     }
 
     public destroy(): void {
