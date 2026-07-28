@@ -16,10 +16,24 @@ export interface LevelZoneConfig {
  * TowerLevelController.getCurrentZoneConfig()).
  */
 export interface LevelConfig {
-    /** Which IslandStorage.IslandConfig this level's visuals (texture/water/sky) come from — see TowerIslandProgression.resolveIslandForLevel(). */
+    /** Which IslandStorage.IslandConfig this level's visuals (texture/water/sky) come from — see TowerIslandProgression.resolveIslandForZone(). */
     islandId: string;
+    /** Flavor-text destination name for this level's arrival — not read by any game logic, just along for the ride from levels-config.json. */
+    destination?: string;
+    /** Flavor-text distance for this level's leg of the trip — same as `destination`, display-only. */
+    distanceFromPreviousKm?: number;
     zoneCount: number;
     zones: LevelZoneConfig[];
+}
+
+/**
+ * Root shape of raw-assets/json/levels-config.json — `progression` is the
+ * actual level list (see LevelConfig); `poleSize` is a standalone top-level
+ * tuning value, not currently read by any game logic.
+ */
+interface LevelsConfigFile {
+    poleSize?: number;
+    progression: LevelConfig[];
 }
 
 /**
@@ -32,6 +46,6 @@ export const LEVELS: LevelConfig[] = [];
 
 /** Call once the 'json' PIXI.Assets bundle has loaded — see index.ts loadAssets(). */
 export function loadLevels(): void {
-    const levels = PIXI.Assets.get('levels-config.json') as LevelConfig[];
-    LEVELS.splice(0, LEVELS.length, ...levels);
+    const config = PIXI.Assets.get('levels-config.json') as LevelsConfigFile;
+    LEVELS.splice(0, LEVELS.length, ...config.progression);
 }

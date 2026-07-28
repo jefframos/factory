@@ -242,7 +242,14 @@ export default class StarfieldBackground {
             `,
             transparent: true,
             depthWrite: false,
-            depthTest: false,
+            // Stars sit a fixed distance behind the camera (see `position`,
+            // parented as a child of `target`) — depthTest MUST stay on so
+            // the already-written opaque depth buffer (gameplay pieces,
+            // base, poles — all much closer to the camera) correctly
+            // occludes them. Disabling it made stars ignore real 3D
+            // distance entirely and paint on top of everything regardless
+            // of what was actually in front.
+            depthTest: true,
             blending: THREE.AdditiveBlending,
         });
 

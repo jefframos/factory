@@ -1,6 +1,6 @@
 // TowerLevelController.ts
 
-import { LEVELS, type LevelZoneConfig } from './LevelStorage';
+import { LEVELS, type LevelConfig, type LevelZoneConfig } from './LevelStorage';
 
 const FALLBACK_ZONE: LevelZoneConfig = { height: 6, polePercent: 0.6 };
 
@@ -33,6 +33,16 @@ export class TowerLevelController {
 
     public isFinalLevel(): boolean {
         return this.levelIndex >= LEVELS.length - 1;
+    }
+
+    /** The full LevelConfig currently being played — for reading level-only metadata (destination, distanceFromPreviousKm, zoneCount) that isn't itself zone/level progression math. Undefined only if LEVELS hasn't loaded. */
+    public getCurrentLevelConfig(): LevelConfig | undefined {
+        return LEVELS[Math.min(this.levelIndex, LEVELS.length - 1)];
+    }
+
+    /** zoneCount of the level currently being played — 1 as a safe fallback so callers dividing by it never divide by zero. */
+    public getZoneCount(): number {
+        return this.getCurrentLevelConfig()?.zoneCount ?? 1;
     }
 
     public getCurrentZoneConfig(): LevelZoneConfig {

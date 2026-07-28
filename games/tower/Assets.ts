@@ -367,7 +367,7 @@ export default class Assets {
 
     // 3. Font Styles
     // static readonly MainFont: Partial<PIXI.TextStyle> = {
-    //     fontFamily: "LEMONMILK-Bold",
+    //     fontFamily: "Baloo2-ExtraBold",
     //     fontSize: 28,
     //     fill: 0xffffff,
     //     stroke: "#4b2a19",
@@ -390,7 +390,7 @@ export default class Assets {
     };
 
     static readonly MainFontTitle: Partial<PIXI.TextStyle> = {
-        fontFamily: "LEMONMILK-Bold",
+        fontFamily: "Baloo2-ExtraBold",
         fontSize: 42,
         fill: 0xffffff,
         stroke: "#1d1b1a",
@@ -402,5 +402,36 @@ export default class Assets {
         miterLimit: 1
     };
 
+    /**
+     * Shared PIXI.Text styles for in-game HUD labels (see
+     * TowerHeightGauge/GameHud) — each named variant spreads DefaultLabel
+     * and only overrides what differs, so a shared tweak (stroke color/
+     * thickness, font weight) only ever needs to change in one place.
+     */
+    static readonly TextStyles = (() => {
+        const DefaultLabel: Partial<PIXI.TextStyle> = {
+            fontFamily: "Baloo2-ExtraBold",
+            fontWeight: 'bold',
+            fill: 0xffffff,
+            stroke: 0x000000,
+            dropShadow: true,
+            dropShadowAlpha: 0.7,
+            dropShadowDistance: 2,
+            dropShadowAngle: 3.14 / 2,
+            strokeThickness: 2,
+        };
 
+        return {
+            /** Base every variant below builds on. */
+            PowerupCounter: { fontFamily: "Baloo2-ExtraBold", fill: 0x000000, fontSize: 18 } as Partial<PIXI.TextStyle>,
+
+            DefaultLabel,
+            /** TowerHeightGauge's current-height readout ("71m", "225M km") — warm yellow so it reads as the "live" number. */
+            MeterCounter: { ...DefaultLabel, fill: 0xffe066, fontSize: 20 } as Partial<PIXI.TextStyle>,
+            /** GameHud's "Level N — next: Xm" line. */
+            NextLabel: { ...DefaultLabel, fontSize: 20 } as Partial<PIXI.TextStyle>,
+            /** GameHud's "Zone X complete!"/"Level N!" toast. */
+            InfoLabel: { ...DefaultLabel, fill: 0xffe066, fontSize: 28, strokeThickness: 4 } as Partial<PIXI.TextStyle>,
+        };
+    })();
 }

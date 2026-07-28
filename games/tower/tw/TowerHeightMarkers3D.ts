@@ -7,7 +7,8 @@ import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import { PieceBoxBuilder } from '../game/builders/PieceBoxBuilder';
 import type { FaceTowerConfig } from './FaceTowerTypes';
-import type { Tower3DConfig } from './Tower3DConfig';
+import { formatHeight, formatSpaceDistanceValue, type Tower3DConfig } from './Tower3DConfig';
+import Assets from '../Assets';
 
 type MarkerLayout = 'centered' | 'side';
 
@@ -81,9 +82,10 @@ export class TowerHeightMarkers3D {
         this.threeSceneWrapper.threeScene.add(this.goalBar);
 
         this.currentLabel = new WorldSpaceLabel(threeSceneWrapper, game, pixiRoot, {
-            fill: 0xffffff//TowerHeightMarkers3D.CURRENT_COLOR,
+            ...Assets.TextStyles.MeterCounter, fill: 0xffffff//TowerHeightMarkers3D.CURRENT_COLOR,
         });
 
+        this.currentLabel.text.anchor.x = 1
 
         this.goalLabel = new WorldSpaceLabel(threeSceneWrapper, game, pixiRoot, {
             fill: TowerHeightMarkers3D.GOAL_COLOR,
@@ -173,18 +175,25 @@ export class TowerHeightMarkers3D {
      * `currentWorldY`/`targetWorldY` are 2D physics world Y values (same
      * source IslandViewScene.update() derives from
      * FaceTowerGameController.getCurrentTopWorldY()/getTargetLineWorldY()
-     * for the 2D gauge). `currentMeters`/`targetMeters` are their
-     * already-computed display values.
+     * for the 2D gauge). `currentValue`/`targetValue` are the SAME
+     * already-scaled numbers the 2D HUD shows — a level's own distance ×
+     * climb progress when `unit` is 'km' (rounded, no unit suffix — see
+     * formatSpaceDistanceValue(), a compact number already reads as a
+     * distance from context), or plain climbed meters when `unit` is 'm'
+     * (unrounded, one decimal, "m" suffix — see formatHeight()), matching
+     * Tower3DConfig.useRawHeightValues' effect on the 2D HUD.
      */
-    public update(currentWorldY: number, targetWorldY: number, currentMeters: number, targetMeters: number): void {
+    public update(currentWorldY: number, targetWorldY: number, currentValue: number, targetValue: number, unit: 'km' | 'm'): void {
+        const format = unit === 'km' ? formatSpaceDistanceValue : formatHeight;
+
         this.currentBar.visible = this.visualConfig.showProgressMarker;
 
         if (this.visualConfig.showProgressMarker) {
-            const x = this.xFor(this.visualConfig.progressMarkerLayout);
+            const x = this.xFor(this.visualConfig.progressMarkerLayout) + 0.7;
             const y = this.worldYTo3D(currentWorldY);
 
             this.currentBar.position.set(x + 0.2, y, this.baseOffset.z);
-            this.currentLabel.update(new THREE.Vector3(x, y, this.baseOffset.z), `${Math.max(0, currentMeters).toFixed(1)}m`);
+            this.currentLabel.update(new THREE.Vector3(x, y, this.baseOffset.z), format(currentValue));
 
             this.currentBar.visible = false;
         } else {
@@ -198,7 +207,7 @@ export class TowerHeightMarkers3D {
             const y = this.worldYTo3D(targetWorldY);
 
             this.goalBar.position.set(x, y, this.baseOffset.z);
-            this.goalLabel.update(new THREE.Vector3(x, y, this.baseOffset.z), `${targetMeters.toFixed(1)}m`);
+            this.goalLabel.update(new THREE.Vector3(x, y, this.baseOffset.z), format(targetValue));
         } else {
         }
         this.goalLabel.setVisible(false);

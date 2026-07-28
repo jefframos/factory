@@ -11,6 +11,8 @@ export enum FaceTowerState {
     PanningCamera = 'panning-camera',
     /** A powerup's async freeze/grey queue is still draining — see PowerupSystem.isBusy(). Next block spawns once it empties. */
     PowerupEffect = 'powerup-effect',
+    /** A level-up notification is up (see IslandViewScene's LevelUpNotification) — the camera pan already finished, but the next piece deliberately isn't spawned yet, so the board just sits frozen behind the popup. Exits back to MovingBlock only via FaceTowerGameController.resumeAfterLevelUpNotification(), called once the popup is actually dismissed. */
+    WaitingForNotification = 'waiting-for-notification',
     GameOver = 'game-over',
 }
 

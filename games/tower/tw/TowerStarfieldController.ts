@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import StarfieldBackground from '../game/vfx/StarfieldBackground';
 
 /** World-Z the star plane sits at, camera-relative — matches StarfieldBackground's own default position so its built-in sizing assumptions (star speed, shooting-star bounds) stay valid. */
-const DISTANCE = 29.8;
+const DISTANCE = 25;
 
 /**
  * Thin wrapper around StarfieldBackground driving its visibility from the

@@ -1,4 +1,5 @@
 import { Game } from 'core/Game';
+import PlatformHandler from 'core/platforms/PlatformHandler';
 import Physics from 'core/phyisics/Physics';
 import { ThreeScene } from 'core/scene/ThreeScene';
 import SetupThree from 'core/scene/SetupThree';
@@ -9,7 +10,9 @@ import { ClusterMeshBuilder } from '../game/builders/ClusterMeshBuilder';
 import { TextureBuilder } from '../game/builders/TextureBuilder';
 import { createWaterMaterial } from '../game/builders/WaterMaterial';
 import { PieceDevGui } from '../game/debug/PieceDevGui';
+import { PieceSnapshotTool } from '../game/debug/PieceSnapshotTool';
 import { PowerupDevGui } from '../game/debug/PowerupDevGui';
+import { PowerupInventoryStorage } from '../game/data/PowerupInventoryStorage';
 import type { PlayerEntity } from '../game/entities/PlayerEntity';
 import { CollectibleManager } from '../game/systems/CollectibleManager';
 import { BoundlessChunkManager } from '../game/world/BoundlessChunkManager';
@@ -25,8 +28,9 @@ import {
 import { ROOM_GEOMETRY } from '../game/world/MeshConfig';
 import { DEFAULT_FACE_TOWER_CONFIG } from './FaceTowerConfig';
 import { FaceTowerGameController } from './FaceTowerGameController';
-import { PIECES } from './PieceStorage';
-import { POWERUPS } from './PowerupStorage';
+import { PIECES, type PieceDefinition } from './PieceStorage';
+import { POWERUPS, SKIP_PIECE_POWERUP_ID } from './PowerupStorage';
+import { getEnabledPowerupIds } from './PowerupConfig';
 import { TowerBaseSync3D } from './TowerBaseSync3D';
 import { TowerBlockSync3D } from './TowerBlockSync3D';
 import { DEFAULT_TOWER_3D_CONFIG } from './Tower3DConfig';
@@ -103,6 +107,20 @@ export default class IslandViewScene extends ThreeScene {
     // Game logic
     // -------------------------------------------------------------------------
     private faceTower!: FaceTowerGameController;
+
+    /**
+     * Which real powerup (lightning/bomb/shrink-ray — never skip-piece,
+     * which is an instant one-shot with nothing to hold "active") is
+     * currently the held piece — see useHudPowerup(). Null once its piece
+     * actually gets dropped (see onBlockDropped below) or it's cancelled.
+     */
+    private activePowerupId: string | null = null;
+    /** Snapshot of whatever piece was held right before activePowerupId's piece swapped in — restored on cancel so cancelling reads as "never happened" rather than losing/re-rolling the piece that was actually there. */
+    private preActivationPiece: PieceDefinition | null = null;
+
+    /** Which powerup the currently-shown LevelUpNotification popup already granted — see handleLevelUpWatchVideo(), which grants a second one of THIS SAME id on a successful video. Null whenever no level-up popup is up. */
+    private pendingLevelUpPowerupId: string | null = null;
+
     private blockSync3D!: TowerBlockSync3D;
     private baseSync3D!: TowerBaseSync3D;
     private wallSync3D!: TowerWallSync3D;
@@ -270,19 +288,12 @@ export default class IslandViewScene extends ThreeScene {
         if (this.faceTower && this.starfieldController.isBuilt()) {
             /*
              * Continuous, not stepped — driven straight from actual climb
-             * height (zoneIndexInLevel + fractional progress through the
-             * CURRENT zone) rather than snapping once per zone the way the
-             * sky color does, so the fade reads as smooth motion tied
-             * directly to the player's own climb instead of a series of
-             * little jumps.
+             * progress through the current level rather than snapping once
+             * per zone the way the sky color does, so the fade reads as
+             * smooth motion tied directly to the player's own climb instead
+             * of a series of little jumps.
              */
-            const levelIndex = this.faceTower.getLevelIndex();
-            const zoneCount = LEVELS[Math.min(levelIndex, LEVELS.length - 1)]?.zoneCount ?? 1;
-            const levelProgress =
-                (this.faceTower.getZoneIndexInLevel() + this.faceTower.getZoneProgress()) /
-                Math.max(1, zoneCount);
-
-            this.starfieldController.updateProgress(levelProgress);
+            this.starfieldController.updateProgress(this.faceTower.getLevelProgressFraction());
         }
 
         const towerOffsetY = this.faceTower?.getCameraOffsetY() ?? 0;
@@ -305,41 +316,91 @@ export default class IslandViewScene extends ThreeScene {
             this.wallSync3D.sync(this.faceTower.getWalls(), this.faceTower.getWallHeight());
 
             // toWorldY() is screenY − offsetY, so screenY is worldY + offsetY.
-            const worldYToHeightMark = (worldY: number) => ({
-                screenY: worldY + towerOffsetY,
-                heightMeters:
-                    (DEFAULT_FACE_TOWER_CONFIG.floorY - worldY) /
-                    DEFAULT_TOWER_3D_CONFIG.pixelsPerUnit,
-            });
+            const screenYFor = (worldY: number) => worldY + towerOffsetY;
+
+            // Plain climbed height (meters) — still what the 3D height
+            // markers use (see below); unrelated to the km-scale figures
+            // the 2D HUD shows.
+            const plainMeters = (worldY: number) =>
+                (DEFAULT_FACE_TOWER_CONFIG.floorY - worldY) / DEFAULT_TOWER_3D_CONFIG.pixelsPerUnit;
 
             const currentTopWorldY = this.faceTower.getCurrentTopWorldY();
             const targetLineWorldY = this.faceTower.getTargetLineWorldY();
-            const currentMark = worldYToHeightMark(currentTopWorldY);
-            const targetMark = worldYToHeightMark(targetLineWorldY);
 
-            // getBases()[0] is the starting floor (height 0, not a milestone) —
-            // every base after that marks a completed zone.
+            /*
+             * "Current"/"goal" here are expressed in the SAME unit as the
+             * level's own destination distance (km), scaled by how far
+             * through the level's zones the player actually is — rather
+             * than an unrelated raw climbed-meters count shown next to an
+             * astronomical-scale destination distance (e.g. "225M km" next
+             * to "71.0m", two disconnected numbers). Falls back to plain
+             * meters only if this level doesn't define a distance at all.
+             */
+            const levelDistanceKm = this.faceTower.getLevelDistanceKm();
+            const hasLevelDistance = !DEFAULT_TOWER_3D_CONFIG.useRawHeightValues && levelDistanceKm > 0;
+
+            const currentMark = hasLevelDistance
+                ? {
+                    screenY: screenYFor(currentTopWorldY),
+                    value: levelDistanceKm * this.faceTower.getLevelProgressFraction(),
+                    unit: 'km' as const,
+                }
+                : { screenY: screenYFor(currentTopWorldY), value: plainMeters(currentTopWorldY), unit: 'm' as const };
+
+            const targetMark = hasLevelDistance
+                ? {
+                    screenY: screenYFor(targetLineWorldY),
+                    value: levelDistanceKm * this.faceTower.getZoneTargetProgressFraction(),
+                    unit: 'km' as const,
+                }
+                : { screenY: screenYFor(targetLineWorldY), value: plainMeters(targetLineWorldY), unit: 'm' as const };
+
+            // Milestones can belong to an EARLIER level with its own
+            // (different) destination distance, which isn't tracked once a
+            // base is placed — kept in plain meters rather than misreport
+            // them against the CURRENT level's distance.
             const milestoneMarks = this.faceTower
                 .getBases()
                 .slice(1)
-                .map((base) => worldYToHeightMark(base.body.position.y));
+                .map((base) => ({
+                    screenY: screenYFor(base.body.position.y),
+                    value: plainMeters(base.body.position.y),
+                    unit: 'm' as const,
+                }));
 
             this.gameHud?.updateHeightGauge(currentMark, targetMark, milestoneMarks, delta);
 
-            const nextLevelMark = worldYToHeightMark(this.faceTower.getNextLevelTargetWorldY());
-            this.gameHud?.updateLevelGoal(this.faceTower.getLevelIndex(), nextLevelMark.heightMeters, this.faceTower.isFinalLevel());
+            const currentLevelConfig = LEVELS[Math.min(this.faceTower.getLevelIndex(), LEVELS.length - 1)];
+
+            this.gameHud?.updateLevelGoal(
+                this.faceTower.getLevelIndex(),
+                this.faceTower.isFinalLevel(),
+                this.faceTower.getLevelProgressFraction(),
+                currentLevelConfig?.destination,
+                currentLevelConfig?.distanceFromPreviousKm,
+                DEFAULT_TOWER_3D_CONFIG.useRawHeightValues,
+                plainMeters(this.faceTower.getNextLevelTargetWorldY()),
+            );
 
             // 3D markers take raw world-Y (not screen-space) since they
-            // position actual meshes in the THREE scene.
+            // position actual meshes in the THREE scene — the VALUES,
+            // though, are the exact same currentMark/targetMark numbers the
+            // 2D HUD shows (km-scale progress toward the level's own
+            // destination when it has one, else plain meters), so the
+            // label following the tower's climb in 3D reads as the same
+            // unified measure instead of an unrelated raw meters count.
             this.heightMarkers3D?.update(
                 currentTopWorldY,
                 targetLineWorldY,
-                currentMark.heightMeters,
-                targetMark.heightMeters,
+                currentMark.value,
+                targetMark.value,
+                currentMark.unit,
             );
 
             this.gameHud?.updateProgressBar(this.faceTower.getZoneProgress());
         }
+
+        this.gameHud?.updatePowerupCounts(PowerupInventoryStorage.getAll());
 
         /*
          * super.update() calls SetupThree.renderer.render() — skip entirely
@@ -405,10 +466,28 @@ export default class IslandViewScene extends ThreeScene {
                 this.gameHud.hideGameOver();
                 this.baseSync3D.clear();
                 this.faceTower.reset();
+
+                /*
+                 * A fresh run wipes the board a pending active powerup's
+                 * piece was sitting on — refund it (it was already spent
+                 * from inventory in useHudPowerup()) rather than silently
+                 * losing it, since there's no piece left to cancel back to.
+                 */
+                if (this.activePowerupId !== null) {
+                    PowerupInventoryStorage.grant(this.activePowerupId);
+                    this.activePowerupId = null;
+                    this.preActivationPiece = null;
+                    this.gameHud.setActivePowerup(null);
+                }
             },
-
-
         );
+
+        this.gameHud.onUsePowerup.add((powerupId: string) => this.useHudPowerup(powerupId), this);
+        this.gameHud.onWatchVideoForLevelUp.add(() => void this.handleLevelUpWatchVideo(), this);
+        this.gameHud.onLevelUpCollected.add(() => {
+            this.pendingLevelUpPowerupId = null;
+            this.faceTower.resumeAfterLevelUpNotification();
+        }, this);
 
 
         this.faceTower = new FaceTowerGameController(
@@ -422,7 +501,7 @@ export default class IslandViewScene extends ThreeScene {
                 },
 
                 onMilestoneReached: (zoneIndex) => {
-                    this.gameHud.showMilestone(zoneIndex);
+                    this.gameHud.showZoneComplete(zoneIndex);
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.GateOpen);
 
                     /*
@@ -438,8 +517,35 @@ export default class IslandViewScene extends ThreeScene {
                 },
 
                 onLevelProgressed: (levelIndex) => {
-                    this.gameHud.showLevelProgressed(levelIndex);
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.GateOpen);
+
+                    /*
+                     * One random powerup (or the skip-piece pseudo-id) per
+                     * level reached — a simple, even reward rather than
+                     * granting all four at once, so the HUD counts climb
+                     * gradually across a run instead of all jumping
+                     * together every level. Granted BEFORE showing the
+                     * popup — the popup just displays what already
+                     * happened; watching the video (see
+                     * handleLevelUpWatchVideo()) grants a second one on
+                     * top rather than the popup itself deciding the base
+                     * amount.
+                     *
+                     * Only picks from PowerupConfig's currently-enabled
+                     * ids — a disabled powerup has no button to spend it
+                     * on, so granting one would just be dead inventory.
+                     */
+                    const enabledIds = getEnabledPowerupIds();
+
+                    if (enabledIds.length === 0) {
+                        return;
+                    }
+
+                    const grantedId = enabledIds[Math.floor(Math.random() * enabledIds.length)];
+                    PowerupInventoryStorage.grant(grantedId);
+
+                    this.pendingLevelUpPowerupId = grantedId;
+                    this.gameHud.showLevelUp(levelIndex, grantedId);
                 },
 
                 onGameOver: (score) => {
@@ -450,6 +556,18 @@ export default class IslandViewScene extends ThreeScene {
                 onBlockDropped: (block) => {
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Drop);
                     this.blockSync3D.notifyDropped(block.id);
+
+                    /*
+                     * The active powerup's piece just got dropped for
+                     * real — it's spent (already deducted from inventory
+                     * back in useHudPowerup()), so there's nothing left to
+                     * cancel back to. Clear the tracking WITHOUT refunding.
+                     */
+                    if (block.powerup && this.activePowerupId !== null) {
+                        this.activePowerupId = null;
+                        this.preActivationPiece = null;
+                        this.gameHud.setActivePowerup(null);
+                    }
                 },
 
                 onBlockFirstHit: (block) => {
@@ -505,6 +623,7 @@ export default class IslandViewScene extends ThreeScene {
         this.setupCameraDevGui();
         this.setupVisualDevGui();
         this.setupLevelDevGui();
+        this.setupPieceSnapshotDevGui();
 
         this.pieceDevGui = new PieceDevGui(PIECES, this.faceTower, this);
         this.pieceDevGui.setup();
@@ -519,6 +638,178 @@ export default class IslandViewScene extends ThreeScene {
 
         gui.addButton('Skip to next zone', () => this.faceTower.devSkipZone(), folder);
         gui.addButton('Skip to next level', () => this.faceTower.devSkipLevel(), folder);
+        gui.addButton('Game over', () => this.faceTower.devTriggerGameOver(), folder);
+
+        gui.addToggle('Use raw height values', DEFAULT_TOWER_3D_CONFIG.useRawHeightValues, (value) => {
+            DEFAULT_TOWER_3D_CONFIG.useRawHeightValues = value;
+        }, folder);
+    }
+
+    /**
+     * Renders each tower piece in isolation (its own real shape/scale/
+     * color/face texture, via the exact PieceBoxBuilder path gameplay
+     * uses) against a transparent background and downloads it as a PNG —
+     * for lining up camera framing against hand-authored face art before/
+     * after it lands in raw-assets/non-preload/skins. See PieceSnapshotTool.
+     */
+    private setupPieceSnapshotDevGui(): void {
+        const gui = DevGuiManager.instance;
+        const folder = 'Piece Snapshots';
+
+        if (PIECES.length === 0) {
+            return;
+        }
+
+        PieceSnapshotTool.settings.selectedPieceId = PIECES[0].id;
+
+        gui.addProperties(PieceSnapshotTool.settings, ['size'], [16, 512], 'Size', folder);
+        gui.addProperties(PieceSnapshotTool.settings, ['yaw', 'pitch'], [-180, 180], 'Camera', folder);
+        // A multiplier on top of the auto fit-to-frame distance now (see
+        // PieceSnapshotTool.frameMesh()), not a raw world-unit distance —
+        // 1 is a tight fit, so the slider only needs a modest zoom-out range.
+        gui.addProperties(PieceSnapshotTool.settings, ['distance'], [0.5, 3], 'Camera', folder);
+
+        gui.addDropdown(
+            PieceSnapshotTool.settings,
+            'selectedPieceId',
+            PIECES.map((piece) => piece.id),
+            () => { /* value already written straight into settings.selectedPieceId */ },
+            'Piece to Test',
+            folder,
+        );
+
+        gui.addButton('Snapshot Selected Piece', () => {
+            void PieceSnapshotTool.snapshotOne(PieceSnapshotTool.settings.selectedPieceId);
+        }, folder);
+
+        gui.addButton('Snapshot All Pieces', () => {
+            void PieceSnapshotTool.snapshotAll();
+        }, folder);
+
+        // Powerups are a SEPARATE set of buttons — their shape lives on
+        // PowerupDefinition.piece (powerups-config.json), not in PIECES, so
+        // they're not covered by "Snapshot All Pieces" above.
+        if (POWERUPS.length > 0) {
+            PieceSnapshotTool.settings.selectedPowerupId = POWERUPS[0].id;
+
+            gui.addDropdown(
+                PieceSnapshotTool.settings,
+                'selectedPowerupId',
+                POWERUPS.map((powerup) => powerup.id),
+                () => { /* value already written straight into settings.selectedPowerupId */ },
+                'Powerup to Test',
+                folder,
+            );
+
+            gui.addButton('Snapshot Selected Powerup', () => {
+                void PieceSnapshotTool.snapshotOnePowerup(PieceSnapshotTool.settings.selectedPowerupId);
+            }, folder);
+
+            gui.addButton('Snapshot All Powerups', () => {
+                void PieceSnapshotTool.snapshotAllPowerups();
+            }, folder);
+        }
+    }
+
+    /**
+     * GameHud's onUsePowerup callback.
+     *
+     * skip-piece is an instant one-shot (no "held" state to speak of — the
+     * swap is already done the moment it fires) so it just spends one and
+     * triggers it directly. The three REAL powerups instead track a single
+     * global "active" one:
+     *  - nothing active + tap → spend one, swap it in as the held piece,
+     *    remember what was held before (see preActivationPiece) so
+     *    cancelling can restore it exactly.
+     *  - tap the SAME active one again → cancel: refund it and restore the
+     *    pre-activation piece.
+     *  - tap a DIFFERENT one while one is active → also just cancels the
+     *    current one (never activates the tapped one in the same tap) — the
+     *    player has to tap the new one again afterward to actually activate
+     *    it. See cancelActivePowerup().
+     *
+     * Every path is also gated on FaceTowerGameController.canUsePowerup() (a
+     * piece must currently be hovering over the drop area) so a tap that
+     * can't take effect right now never spends the player's inventory for
+     * nothing.
+     */
+    private useHudPowerup(powerupId: string): void {
+        if (powerupId === SKIP_PIECE_POWERUP_ID) {
+            if (!this.faceTower.canUsePowerup() || !PowerupInventoryStorage.consume(powerupId)) {
+                return;
+            }
+
+            this.faceTower.skipHeldPiece();
+            return;
+        }
+
+        if (this.activePowerupId !== null) {
+            this.cancelActivePowerup();
+            return;
+        }
+
+        if (!this.faceTower.canUsePowerup() || !PowerupInventoryStorage.consume(powerupId)) {
+            return;
+        }
+
+        this.preActivationPiece = this.faceTower.getHeldBlock()?.piece ?? null;
+        this.activePowerupId = powerupId;
+        this.gameHud.setActivePowerup(powerupId);
+
+        this.faceTower.spawnPowerup(powerupId);
+    }
+
+    /** Refunds the active powerup and restores whatever piece was held right before it activated — see useHudPowerup(). No-op if nothing's active, or if the piece can no longer be swapped out from under the player (already dropped — canUsePowerup() false), which shouldn't normally happen since onBlockDropped clears activePowerupId the instant that piece is actually dropped. */
+    private cancelActivePowerup(): void {
+        if (this.activePowerupId === null || !this.faceTower.canUsePowerup()) {
+            return;
+        }
+
+        PowerupInventoryStorage.grant(this.activePowerupId);
+
+        if (this.preActivationPiece) {
+            this.faceTower.replaceHeldBlockWithPiece(this.preActivationPiece);
+        }
+
+        this.activePowerupId = null;
+        this.preActivationPiece = null;
+        this.gameHud.setActivePowerup(null);
+    }
+
+    /**
+     * GameHud's onWatchVideoForLevelUp callback — awaits the platform's
+     * rewarded-video call and grants a SECOND copy of whichever powerup the
+     * level-up already granted (see pendingLevelUpPowerupId) on success,
+     * telling the popup to reflect it; re-enables the button on
+     * failure/cancel so the player isn't stuck. No-op if there's no
+     * pending level-up (shouldn't happen — the button only exists while
+     * the popup is up).
+     */
+    private async handleLevelUpWatchVideo(): Promise<void> {
+        const powerupId = this.pendingLevelUpPowerupId;
+
+        if (!powerupId) {
+            return;
+        }
+
+        this.gameHud.setLevelUpWatchBusy(true);
+
+        let rewarded = false;
+
+        try {
+            rewarded = await PlatformHandler.instance.platform.showRewardedVideo('level-powerup-double');
+        } catch (e) {
+            console.error('IslandViewScene: rewarded video failed', e);
+        }
+
+        this.gameHud.setLevelUpWatchBusy(false);
+
+        if (rewarded) {
+            PowerupInventoryStorage.grant(powerupId);
+            this.gameHud.notifyLevelUpDoubled();
+        } else {
+            this.gameHud.notifyLevelUpVideoFailed();
+        }
     }
 
     /**

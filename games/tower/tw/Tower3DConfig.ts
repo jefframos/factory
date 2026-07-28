@@ -2,6 +2,104 @@
 //
 // Tweakable surface for the 3D backdrop — camera framing around the origin
 // island cluster, and how the 3D camera follows the 2D tower's climb.
+export type SurfaceType =
+    | 'water-islands'
+    | 'rocky-flat'
+    | 'desert-rock'
+    | 'gas-clouds'
+    | 'ringed-clouds'
+    | 'ice-ocean'
+    | 'storm-ocean'
+    | 'frozen-rock'
+    | 'asteroid-field'
+    | 'deep-ice'
+    | 'comet-cloud'
+    | 'stellar'
+    | 'galactic';
+
+
+
+const KM_PER_LIGHT_YEAR = 9_460_730_472_580.8;
+
+/** Largest-first — the first threshold `distanceKm` clears wins. */
+const DISTANCE_UNITS: { threshold: number; divisor: number; suffix: string }[] = [
+    { threshold: KM_PER_LIGHT_YEAR, divisor: KM_PER_LIGHT_YEAR, suffix: 'ly' },
+    { threshold: 1_000_000_000_000, divisor: 1_000_000_000_000, suffix: 'T' },
+    { threshold: 1_000_000_000, divisor: 1_000_000_000, suffix: 'B' },
+    { threshold: 1_000_000, divisor: 1_000_000, suffix: 'M' },
+    { threshold: 1_000, divisor: 1_000, suffix: 'K' },
+];
+
+/** Compact "1M km" / "225M km" / "1.5B km" / "4T km" / "1.2ly" style — short abbreviations rather than spelled-out magnitude words, since these numbers get big fast (levels-config.json's distanceFromPreviousKm runs well past quintillions by the last few levels). */
+export function formatSpaceDistance(distanceKm: number): string {
+
+    const safeDistance = Math.max(0, distanceKm);
+    const unit = DISTANCE_UNITS.find(candidate => safeDistance >= candidate.threshold);
+
+    if (!unit) {
+        return `${Math.round(safeDistance).toLocaleString('en-US')} km`;
+    }
+
+    const scaled = formatCompactNumber(safeDistance / unit.divisor);
+
+    // "1M km" / "225M km" (no space before the letter, one before "km") vs
+    // light-years, which has no "km" suffix at all — "1.2 ly".
+    return unit.suffix === 'ly' ? `${scaled} ly` : `${scaled}${unit.suffix} km`;
+}
+
+/**
+ * Compact "12.4m" below 1km, deferring to formatSpaceDistance's own K/M/B/T
+ * ladder above it (on the meters-as-km value) — see
+ * TowerHeightGauge/GameHud, whose current/goal/milestone height readouts
+ * would otherwise show a bare, unabbreviated meters count once a climb
+ * runs into the thousands.
+ */
+export function formatHeight(meters: number): string {
+    const safeMeters = Math.max(0, meters);
+
+    if (safeMeters < 1000) {
+        return `${safeMeters.toFixed(1)}m`;
+    }
+
+    return formatSpaceDistance(safeMeters / 1000);
+}
+
+/** Same as formatHeight() but rounded to a whole meter below 1km instead of one decimal place — see GameHud's "next level" line, which always wants a rounded figure regardless of the raw/converted toggle. */
+export function formatHeightRounded(meters: number): string {
+    const safeMeters = Math.max(0, meters);
+
+    if (safeMeters < 1000) {
+        return `${Math.round(safeMeters)}m`;
+    }
+
+    return formatSpaceDistance(safeMeters / 1000);
+}
+
+/**
+ * Same magnitude ladder as formatSpaceDistance() — just the rounded number
+ * plus its K/M/B/T/ly letter, no trailing " km"/" ly" text (e.g. "225M",
+ * "1.5B", "42" under 1000) — for a compact HUD readout that already reads
+ * as a distance from its own context (a label following the tower's climb),
+ * so repeating the unit next to it would be redundant. See
+ * TowerHeightMarkers3D.
+ */
+export function formatSpaceDistanceValue(distanceKm: number): string {
+    const safeDistance = Math.max(0, distanceKm);
+    const unit = DISTANCE_UNITS.find(candidate => safeDistance >= candidate.threshold);
+
+    if (!unit) {
+        return Math.round(safeDistance).toLocaleString('en-US');
+    }
+
+    return `${formatCompactNumber(safeDistance / unit.divisor)}${unit.suffix}`;
+}
+
+function formatCompactNumber(value: number): string {
+    return value.toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: value < 10 ? 2 : 1,
+    });
+}
 
 export interface Tower3DConfig {
     cameraYawDeg: number;
@@ -93,6 +191,19 @@ export interface Tower3DConfig {
     // another bar spanning across it. Shared by both markers; unused by
     // one currently set to 'centered'.
     heightMarkerSideWidth: number;
+
+    // --- HUD height/distance display (see IslandViewScene.update()) ---
+
+    // When true, every height readout (2D gauge's current/goal, GameHud's
+    // level line, the 3D height markers) shows the tower's own raw climbed
+    // data — plain meters via formatHeight(), GameHud's separate "next: Xm"
+    // — same as before distance-unification existed. When false, current/
+    // goal instead show progress toward the current level's own
+    // distanceFromPreviousKm (levels-config.json), in the SAME unit as that
+    // destination distance, so climbing the tower visibly approaches it
+    // instead of showing two unrelated-looking numbers. Checked live every
+    // frame, not just at startup.
+    useRawHeightValues: boolean;
 }
 
 export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
@@ -123,4 +234,7 @@ export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
     showProgressMarker: true,
     heightMarkerSideMargin: 0,
     heightMarkerSideWidth: 1,
+
+    // Defaults to the pre-conversion look — see the toggle's own doc.
+    useRawHeightValues: true,
 };

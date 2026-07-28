@@ -2,11 +2,26 @@
 
 import { Game } from 'core/Game';
 import * as PIXI from 'pixi.js';
+import { formatHeight, formatSpaceDistance } from './Tower3DConfig';
 
 export interface HeightMark {
     /** Where this mark falls in this container's local space (design px) — see TowerHeightGauge.update(). */
     screenY: number;
-    heightMeters: number;
+    /**
+     * The number to display — meaning depends on `unit`: a plain climbed
+     * height in meters, or a level's own distanceFromPreviousKm scaled by
+     * how far through it the player is (see
+     * FaceTowerGameController.getLevelProgressFraction()/getZoneTargetProgressFraction()).
+     * Kept as a raw number (not a pre-formatted string) so the "current"
+     * mark can still ease frame-to-frame — see smoothTowards().
+     */
+    value: number;
+    /** Which formatter `value` gets displayed with — 'km' via formatSpaceDistance (progress toward this level's own destination distance), 'm' via formatHeight (plain climbed height, e.g. for a milestone from an earlier level whose own destination distance no longer applies). See IslandViewScene.update(). */
+    unit: 'km' | 'm';
+}
+
+function formatHeightMark(mark: HeightMark): string {
+    return mark.unit === 'km' ? formatSpaceDistance(mark.value) : formatHeight(mark.value);
 }
 
 /**
@@ -57,7 +72,9 @@ export class TowerHeightGauge {
 
     /** Eased (not snapped) — see smoothTowards(). Undefined only before the first update() call, so that one snaps instead of easing in from nothing. */
     private displayedScreenY?: number;
-    private displayedMeters?: number;
+    private displayedValue?: number;
+    /** Which formatter displayedValue was last fed under — see update(). */
+    private displayedUnit: 'km' | 'm' = 'm';
 
     private readonly targetLine: PIXI.Graphics;
     private readonly targetLabel: PIXI.Text;
@@ -120,11 +137,12 @@ export class TowerHeightGauge {
         const labelRightEdge = topRight.x - TowerHeightGauge.RIGHT_MARGIN;
 
         this.displayedScreenY = TowerHeightGauge.smoothTowards(current.screenY, this.displayedScreenY, delta);
-        this.displayedMeters = TowerHeightGauge.smoothTowards(current.heightMeters, this.displayedMeters, delta);
+        this.displayedValue = TowerHeightGauge.smoothTowards(current.value, this.displayedValue, delta);
+        this.displayedUnit = current.unit;
 
         const clampedY = Math.max(topLeft.y + TowerHeightGauge.TOP_MARGIN, this.displayedScreenY);
 
-        this.label.text = `${Math.max(0, this.displayedMeters).toFixed(1)}m`;
+        this.label.text = formatHeightMark({ screenY: clampedY, value: Math.max(0, this.displayedValue), unit: this.displayedUnit });
         this.label.position.set(labelRightEdge, clampedY);
 
         // The line's own end budgets AROUND the label's actual (now
@@ -149,7 +167,7 @@ export class TowerHeightGauge {
         this.targetLine.visible = true;
         this.targetLabel.visible = true;
 
-        this.targetLabel.text = `Goal ${target.heightMeters.toFixed(1)}m`;
+        this.targetLabel.text = `Goal ${formatHeightMark(target)}`;
         this.targetLabel.position.set(labelRightEdge, target.screenY);
 
         const lineEndX = labelRightEdge - this.targetLabel.width - TowerHeightGauge.LABEL_GAP;
@@ -196,7 +214,7 @@ export class TowerHeightGauge {
             view.line.visible = true;
             view.label.visible = true;
 
-            view.label.text = `${mark.heightMeters.toFixed(1)}m`;
+            view.label.text = formatHeightMark(mark);
             view.label.position.set(labelRightEdge, mark.screenY);
 
             const lineEndX = labelRightEdge - view.label.width - TowerHeightGauge.LABEL_GAP;

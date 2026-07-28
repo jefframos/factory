@@ -15,6 +15,7 @@ import { getPlatformInstance } from 'core/platforms/PlatformFactory';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
 import Assets from './Assets';
 import { HighScoreStorage } from './game/data/HighScoreStorage';
+import { PowerupInventoryStorage } from './game/data/PowerupInventoryStorage';
 import { ShopStorage, loadShopItems } from './game/data/ShopStorage';
 import { Localization } from './game/i18n/Localization';
 import BaseDemoScene from './game/scenes/BaseDemoScene';
@@ -69,6 +70,7 @@ export default class MyGame extends Game {
             await PlatformHandler.instance.initialize(plat);
             await ShopStorage.load();
             await HighScoreStorage.load();
+            await PowerupInventoryStorage.load();
             await Localization.load();
 
             // 5. Setup Game Flow

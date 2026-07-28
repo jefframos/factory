@@ -18,7 +18,7 @@ import * as THREE from 'three';
  * shares that container's own coordinate space/z-order.
  */
 export class WorldSpaceLabel {
-    private readonly text: PIXI.Text;
+    public readonly text: PIXI.Text;
 
     public constructor(
         private readonly threeScene: ThreeScene,
@@ -27,11 +27,6 @@ export class WorldSpaceLabel {
         style: Partial<PIXI.ITextStyle> = {},
     ) {
         this.text = new PIXI.Text('', {
-            fill: 0xffffff,
-            fontSize: 18,
-            fontWeight: 'bold',
-            stroke: 0x000000,
-            strokeThickness: 3,
             ...style,
         });
 

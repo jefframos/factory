@@ -7,20 +7,20 @@ import { Signal } from 'signals';
 // ─────────────────────────────────────────────────────────────────────────────
 const ATLAS = {
     // Panel
-    PANEL: 'ItemFrame01_Single_Navy',
+    PANEL: 'ItemFrame03_Single_Navy',
 
     // Score shine (rotated sprite behind the score)
     SCORE_SHINE: 'Image_Effect_Rotate',
 
     // Replay button
-    REPLAY_STANDARD: 'Button01_s_Purple',
-    REPLAY_DOWN: 'Button01_s_Purple',
-    REPLAY_DISABLED: 'Button01_s_Gray',
+    REPLAY_STANDARD: 'Label_Parallelogram_Gray',
+    REPLAY_DOWN: 'Label_Parallelogram_Gray',
+    REPLAY_DISABLED: 'Label_Parallelogram_Gray',
 
     // Continue button
-    CONTINUE_STANDARD: 'Button01_s_Green',
-    CONTINUE_DOWN: 'Button01_s_Green',
-    CONTINUE_DISABLED: 'Button01_s_Green',
+    CONTINUE_STANDARD: 'Label_Parallelogram_Hologram',
+    CONTINUE_DOWN: 'Label_Parallelogram_Hologram',
+    CONTINUE_DISABLED: 'Label_Parallelogram_Hologram',
 
     // Continue video / watch-ad icon
     CONTINUE_VIDEO_ICON: 'ItemIcon_Video-2',
@@ -30,11 +30,11 @@ const ATLAS = {
 // Layout constants
 // ─────────────────────────────────────────────────────────────────────────────
 const PANEL_WIDTH = 520;
-const PANEL_HEIGHT = 640;
-const PANEL_NINE_SLICE_PADDING = 30;
+const PANEL_HEIGHT = 650;
+const PANEL_NINE_SLICE_PADDING = 60;
 
 const BUTTON_WIDTH = 420;
-const BUTTON_HEIGHT = 90;
+const BUTTON_HEIGHT = 66;
 const BUTTON_PADDING = 35;
 
 const SHINE_ROTATION_SPEED = 0.4; // radians per second
@@ -49,7 +49,7 @@ const FADE_DURATION_MS = 280; // milliseconds for fade in / out
 
 
 const REPLAY_FONT_STYLE: Partial<PIXI.ITextStyle> = {
-    fontFamily: 'LEMONMILK-Bold',
+    fontFamily: 'Baloo2-ExtraBold',
     fontSize: 32,
     fontWeight: 'bold',
     fill: 0xffffff,
@@ -128,7 +128,7 @@ export class GameOverPopup extends PIXI.Container {
 
         // ── Dimmer ───────────────────────────────────────────────────────────────
         this._dimmer = new PIXI.Graphics();
-        this._dimmer.beginFill(0x000000, 0.15);
+        this._dimmer.beginFill(0x000000, 0.65);
         this._dimmer.drawRect(-viewWidth * 2, -viewWidth * 2, viewWidth * 4, viewHeight * 4);
         this._dimmer.endFill();
         this.addChild(this._dimmer);

@@ -51,6 +51,9 @@ export class FaceTowerGameController {
     private state = FaceTowerState.Initialising;
     private score = 0;
 
+    /** Set true by advanceToNextZone() whenever that zone's completion also leveled up — read (and cleared) once the camera pan finishes, to detour into WaitingForNotification instead of spawning the next piece immediately. See resumeAfterLevelUpNotification(). */
+    private pendingLevelUpHold = false;
+
     /** World-space height (px) of the zone currently being built — drives both getZoneProgress() and the wall/pole height (zone height × its polePercent). Set from the level's own zone config — see LevelStorage/TowerLevelController. */
     private currentZoneWorldHeight: number;
     /** Wall/pole height (px) for the zone currently being built — currentZoneWorldHeight × its polePercent. */
@@ -148,6 +151,7 @@ export class FaceTowerGameController {
 
         this.zones.reset(this.config.floorY, this.currentZoneWorldHeight);
         this.nextPiece = undefined;
+        this.pendingLevelUpHold = false;
 
         this.state = FaceTowerState.Initialising;
 
@@ -186,12 +190,19 @@ export class FaceTowerGameController {
 
         if (this.state === FaceTowerState.PanningCamera) {
             if (!this.camera.isPanning()) {
-                this.spawnNextBlock();
+                if (this.pendingLevelUpHold) {
+                    this.pendingLevelUpHold = false;
+                    this.state = FaceTowerState.WaitingForNotification;
+                } else {
+                    this.spawnNextBlock();
+                }
             }
 
             return;
         }
 
+        // WaitingForNotification falls through here too — deliberately
+        // does nothing until resumeAfterLevelUpNotification() is called.
         if (this.state !== FaceTowerState.WaitingForTower) {
             return;
         }
@@ -314,6 +325,43 @@ export class FaceTowerGameController {
         return this.levels.isFinalLevel();
     }
 
+    /** How far (km) the CURRENT level's own destination is — levels-config.json's distanceFromPreviousKm, 0 if that level doesn't define one. See getLevelProgressFraction()/getZoneTargetProgressFraction() for scaling this into an in-progress "how far traveled" readout. */
+    public getLevelDistanceKm(): number {
+        return this.levels.getCurrentLevelConfig()?.distanceFromPreviousKm ?? 0;
+    }
+
+    /**
+     * 0..1 continuous progress through the CURRENT level's zones —
+     * (zoneIndexInLevel + fractional progress through the zone currently
+     * being built) / zoneCount. Multiply by getLevelDistanceKm() for a
+     * live "how far traveled toward this level's destination" value that
+     * shares the exact same unit/scale as that destination's own distance
+     * — see IslandViewScene, which uses this for both the HUD's level-goal
+     * line and the height gauge's "current" readout, instead of each
+     * showing an unrelated raw meters count.
+     */
+    public getLevelProgressFraction(): number {
+        const zoneCount = Math.max(1, this.levels.getZoneCount());
+        const fraction = (this.levels.getZoneIndexInLevel() + this.getZoneProgress()) / zoneCount;
+
+        return Math.max(0, Math.min(1, fraction));
+    }
+
+    /**
+     * 0..1 fraction of the level's distance the CURRENT ZONE's own target
+     * line sits at — one whole zone-step ahead of getLevelProgressFraction()'s
+     * continuous value, exactly 1 on the level's last zone (i.e. the target
+     * IS the level's own destination). Mirrors getZoneProgress()/getTargetLineWorldY()'s
+     * "current vs next zone" pairing, just expressed as a level-distance
+     * fraction instead of world-Y.
+     */
+    public getZoneTargetProgressFraction(): number {
+        const zoneCount = Math.max(1, this.levels.getZoneCount());
+        const fraction = (this.levels.getZoneIndexInLevel() + 1) / zoneCount;
+
+        return Math.max(0, Math.min(1, fraction));
+    }
+
     /**
      * World Y the player needs to reach the level AFTER the one currently
      * being climbed — i.e. the target line as it will read once the current
@@ -405,6 +453,45 @@ export class FaceTowerGameController {
                 dropForceY: powerup.dropForceY,
             });
         }
+    }
+
+    /** True only while a piece is actively hovering/falling toward the drop area — the same guard spawnPowerup()/skipHeldPiece()/replaceHeldBlockWithPiece() already enforce internally, exposed so a HUD button can grey itself out instead of silently no-opping on click. */
+    public canUsePowerup(): boolean {
+        return this.state === FaceTowerState.MovingBlock;
+    }
+
+    /**
+     * Swaps the currently-held piece for the one already queued as "next"
+     * (skipping straight to it instead of waiting to drop the current one),
+     * then rolls a fresh "next" — see the in-game skip-piece HUD button.
+     * Reuses replaceHeldBlockWithPiece()'s own MovingBlock guard, so this is
+     * a no-op at any other time.
+     */
+    public skipHeldPiece(): void {
+        if (this.state !== FaceTowerState.MovingBlock) {
+            return;
+        }
+
+        const piece = this.nextPiece ?? this.rollPiece();
+        this.replaceHeldBlockWithPiece(piece);
+
+        this.nextPiece = this.rollPiece();
+        this.events.onNextPieceChanged?.(this.nextPiece);
+    }
+
+    /**
+     * Call once the level-up popup has actually been dismissed (see
+     * IslandViewScene's LevelUpNotification.onCollect) — resumes play by
+     * spawning the next piece. No-op unless the game is genuinely sitting
+     * in WaitingForNotification (e.g. a stray second call), so this is safe
+     * to call defensively.
+     */
+    public resumeAfterLevelUpNotification(): void {
+        if (this.state !== FaceTowerState.WaitingForNotification) {
+            return;
+        }
+
+        this.spawnNextBlock();
     }
 
     public destroy(): void {
@@ -597,6 +684,7 @@ export class FaceTowerGameController {
         this.events.onMilestoneReached?.(result.zoneIndex);
 
         if (advance.leveledUp) {
+            this.pendingLevelUpHold = true;
             this.events.onLevelProgressed?.(advance.levelIndex);
         }
 
@@ -700,6 +788,11 @@ export class FaceTowerGameController {
 
         this.state = FaceTowerState.GameOver;
         this.events.onGameOver?.(this.score);
+    }
+
+    /** Dev-only: force-ends the run right away, exactly as if the tower had actually collapsed — see IslandViewScene.setupLevelDevGui(). A no-op once already GameOver. */
+    public devTriggerGameOver(): void {
+        this.gameOver();
     }
 
     private drawTargetLine(worldY: number): void {

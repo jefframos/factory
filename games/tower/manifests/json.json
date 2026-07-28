@@ -13,6 +13,14 @@
         },
         {
           "alias": [
+            "levels-config.json"
+          ],
+          "src": [
+            "levels-config.json"
+          ]
+        },
+        {
+          "alias": [
             "pieces-config.json"
           ],
           "src": [
@@ -45,10 +53,10 @@
         },
         {
           "alias": [
-            "levels-config.json"
+            "universe.json"
           ],
           "src": [
-            "levels-config.json"
+            "universe.json"
           ]
         }
       ]

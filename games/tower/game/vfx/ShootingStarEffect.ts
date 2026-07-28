@@ -109,7 +109,11 @@ export default class ShootingStarEffect {
             `,
             transparent: true,
             depthWrite: false,
-            depthTest: false,
+            // Same fixed camera-relative background distance as
+            // StarfieldBackground's own points — depthTest must stay on so
+            // closer gameplay pieces correctly occlude it instead of it
+            // painting on top regardless of real 3D distance.
+            depthTest: true,
             blending: THREE.AdditiveBlending,
         });
 

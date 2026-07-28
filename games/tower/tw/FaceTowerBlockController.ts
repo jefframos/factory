@@ -332,7 +332,21 @@ export class FaceTowerBlockController {
             // to learn what it touched; the normal first-hit jiggle below is
             // skipped entirely for a powerup piece, so there's no
             // Physics.events.clear() call here to fight over that listener.
-            body.isSensor = true;
+            //
+            // Set on every part, not just `body` itself: a CONCAVE polygon
+            // (the lightning bolt, the shrink ray's arrow) gets decomposed
+            // by poly-decomp into multiple convex sub-parts (see
+            // PhysicsBodyFactory.createPolygon — body.parts.length > 1 for
+            // those), and Matter's actual narrowphase collision check reads
+            // each PART's own isSensor flag, not the parent body's — so
+            // setting only `body.isSensor` left those parts still solid,
+            // and the piece landed/collided like a normal one instead of
+            // passing through. `body.parts` always includes `body` itself
+            // at index 0 for a single-part (convex) body, so this is safe
+            // either way.
+            for (const part of body.parts) {
+                part.isSensor = true;
+            }
         }
 
         Body.setVelocity(body, {

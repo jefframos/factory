@@ -3,9 +3,19 @@
 import { Game } from 'core/Game';
 import * as PIXI from 'pixi.js';
 import { resolvePieceImagePath, type PieceDefinition } from './PieceStorage';
+import { DEFAULT_FACE_TOWER_CONFIG } from './FaceTowerConfig';
+import Assets from '../Assets';
 
 function hexStringToNumber(hex: string): number {
     return parseInt(hex.replace('#', ''), 16);
+}
+
+/** Matches PieceSnapshotTool's default `size` setting at the time these pre-rendered images were generated — the swatch always requests this exact size, so regenerating at a different size means re-pointing this too. */
+const SNAPSHOT_SIZE = 256;
+
+/** e.g. "arch-1" → "tower/images/non-preload/pieces/tower-piece-snapshots_arch-1_256x256.webp" — see PieceSnapshotTool's DOWNLOAD_FOLDER/filenameFor(), just flattened into one filename (folder name + id + size) and converted to .webp once it lands in raw-assets. */
+function resolvePieceSnapshotPath(pieceId: string): string {
+    return resolvePieceImagePath(`pieces/tower-piece-snapshots_${pieceId}_${SNAPSHOT_SIZE}x${SNAPSHOT_SIZE}.webp`);
 }
 
 /**
@@ -38,21 +48,20 @@ export class NextPiecePreview extends PIXI.Container {
         this.container = new PIXI.Container();
 
         const label = new PIXI.Text('NEXT', {
-            fill: 0xffffff,
-            fontSize: 16,
-            fontWeight: 'bold',
-            stroke: 0x000000,
-            strokeThickness: 3,
+            ...Assets.TextStyles.NextLabel
         });
 
         label.anchor.set(0.5, 0);
         label.position.set(NextPiecePreview.BOX_SIZE * 0.5, 0);
         this.container.addChild(label);
 
-        const background = new PIXI.Graphics();
-        background.beginFill(0x000000, 0.35);
-        background.drawRoundedRect(0, label.height + 4, NextPiecePreview.BOX_SIZE, NextPiecePreview.BOX_SIZE, 8);
-        background.endFill();
+        const background = new PIXI.NineSlicePlane(PIXI.Texture.from('Button01_s_White_Light1'), 30, 30, 30, 30);
+        // background.beginFill(0x000000, 0.35);
+        // background.drawRoundedRect(0, label.height + 4, NextPiecePreview.BOX_SIZE, NextPiecePreview.BOX_SIZE, 8);
+        // background.endFill();
+        background.width = NextPiecePreview.BOX_SIZE
+        background.height = NextPiecePreview.BOX_SIZE
+        background.y = label.height + 4
         this.container.addChild(background);
 
         this.swatch = new PIXI.Container();
@@ -68,12 +77,54 @@ export class NextPiecePreview extends PIXI.Container {
         this.container.position.set(topLeft.x + NextPiecePreview.MARGIN, topLeft.y + NextPiecePreview.MARGIN);
     }
 
-    /** Redraws the swatch for `piece` — call on construction and every FaceTowerGameEvents.onNextPieceChanged. */
+    /**
+     * Redraws the swatch for `piece` — call on construction and every
+     * FaceTowerGameEvents.onNextPieceChanged. When the 3D layer is active
+     * (DEFAULT_FACE_TOWER_CONFIG.render3D), shows the piece's pre-rendered
+     * PieceSnapshotTool image instead of the flat 2D shape+face draw — a
+     * real 3D-lit render reads better alongside the 3D gameplay view than
+     * the flat swatch does. Falls back to the drawn 2D swatch if that
+     * image fails to load (e.g. a piece with no pre-rendered snapshot yet,
+     * like a powerup's synthesized id) so a missing file never shows a
+     * broken image.
+     */
     public show(piece: PieceDefinition): void {
         for (const child of this.swatch.removeChildren()) {
             child.destroy();
         }
 
+        if (DEFAULT_FACE_TOWER_CONFIG.render3D) {
+            this.showSnapshot(piece);
+        } else {
+            this.showDrawn(piece);
+        }
+    }
+
+    private showSnapshot(piece: PieceDefinition): void {
+        const size = NextPiecePreview.BOX_SIZE;
+        const texture = PIXI.Texture.from(resolvePieceSnapshotPath(piece.id));
+        const sprite = new PIXI.Sprite(texture);
+
+        sprite.anchor.set(0.5);
+        sprite.width = size * 0.9;
+        sprite.height = size * 0.9;
+        sprite.position.set(size * 0.5, size * 0.5);
+        this.swatch.addChild(sprite);
+
+        if (!texture.baseTexture.valid) {
+            texture.baseTexture.once('error', () => {
+                // Still showing (i.e. hasn't been swapped for a newer piece
+                // since) — this piece just has no pre-rendered snapshot,
+                // fall back to the drawn 2D swatch instead of a broken image.
+                if (this.swatch.children.includes(sprite)) {
+                    sprite.destroy();
+                    this.showDrawn(piece);
+                }
+            });
+        }
+    }
+
+    private showDrawn(piece: PieceDefinition): void {
         const size = NextPiecePreview.BOX_SIZE;
         const longestAxis = Math.max(piece.scale.x, piece.scale.y);
         const pixelsPerUnit = (size * 0.8) / longestAxis;

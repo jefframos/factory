@@ -26,8 +26,8 @@ const SPAWN_CLEAR_RADIUS = 2;
 // water instead of noise potentially placing land right up against it.
 const SPAWN_ISLAND_CLEAR_RADIUS = 1;
 // Distance fade — meshes start fading at FADE_START and are invisible at FADE_END.
-const FADE_START = 60;
-const FADE_END = 100;
+const FADE_START = 600;
+const FADE_END = 1000;
 
 // Seed used for the global island-presence noise field (spatial coherence).
 const WORLD_SEED = 42 + Math.random() * 500000;
