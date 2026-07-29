@@ -6,17 +6,17 @@
     "nextDestination": "Moon",
     "surfaceType": "water-islands",
     "texture": "islands/grassland.webp",
-    "skyColor": "#4AB8F0",
+    "skyColor": "#58BFF2",
     "skyGradient": [
-      "#62C8F5",
-      "#258DD1",
-      "#315C9D",
-      "#182342"
+      "#58BFF2",
+      "#369FE3",
+      "#286FC1",
+      "#182D63"
     ],
     "starfieldWeightMin": 0,
     "starfieldWeightMax": 0.08,
-    "ambientColor": "#FFF7E8",
-    "waterColor": "#30C2F2",
+    "ambientColor": "#FFF4DF",
+    "waterColor": "#0D79B8",
     "isDefault": true
   },
   {

@@ -4,9 +4,9 @@ import BaseButton from 'core/ui/BaseButton';
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
 import { formatPowerupName, getPowerup, SKIP_PIECE_POWERUP_ID } from '../../PowerupStorage';
-import { resolvePieceImagePath } from '../../PieceStorage';
 import { PowerupButton } from '../PowerupButton';
 import { ConfettiEffect } from './ConfettiEffect';
+import ViewUtils from 'core/utils/ViewUtils';
 
 const ATLAS = {
     PANEL: 'ItemFrame03_Single_Purple',
@@ -347,10 +347,9 @@ export class LevelUpNotification extends PIXI.Container {
         }
 
         if (powerup.icon) {
-            const sprite = PIXI.Sprite.from(resolvePieceImagePath(powerup.icon));
+            const sprite = PIXI.Sprite.from(powerup.icon);
             sprite.anchor.set(0.5);
-            sprite.width = size;
-            sprite.height = size;
+            sprite.scale.set(ViewUtils.elementScaler(sprite, size));
             return sprite;
         }
 

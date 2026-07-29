@@ -28,11 +28,13 @@ void main() {
     float wx = wbase.x;
     float wz = wbase.z;
     vWorldXZ = vec2(wx, wz);
+    
+    float time2 = time;
 
     // Geometry-only waves — purely for the surface ripple displacement.
-    pos.y += sin(wx * 0.35 + time * 1.40) * 0.14
-           + sin(wz * 0.28 + time * 1.00) * 0.10
-           + sin((wx - wz) * 0.22 + time * 1.80) * 0.06;
+    pos.y += sin(wx * 0.35 + time2 * 1.40) * 0.14
+           + sin(wz * 0.28 + time2 * 1.00) * 0.10
+           + sin((wx - wz) * 0.22 + time2 * 1.80) * 0.06;
 
     vec4 worldPos = modelMatrix * vec4(pos, 1.0);
     float dx = worldPos.x - uBendOrigin.x;
@@ -65,9 +67,14 @@ void main() {
     float bx = vWorldXZ.x * uBlobScale;
     float bz = vWorldXZ.y * uBlobScale;
 
-    float n1 = sin(bx * 0.35 + time * 1.40) * 0.14;
-    float n2 = sin(bz * 0.28 + time * 1.00) * 0.10;
-    float n3 = sin((bx - bz) * 0.22 + time * 1.80) * 0.06;
+
+
+    float time2 = time;
+
+
+    float n1 = sin(bx * 0.35 + time2 * 1.40) * 0.14;
+    float n2 = sin(bz * 0.28 + time2 * 1.00) * 0.10;
+    float n3 = sin((bx - bz) * 0.22 + time2 * 1.80) * 0.06;
     float blobH = clamp((n1 + n2 + n3 + 0.30) / 0.60, 0.0, 1.0);
 
     // Snap into 3 discrete tiers for a cartoony cel-shaded look.

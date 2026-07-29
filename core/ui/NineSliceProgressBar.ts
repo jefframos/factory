@@ -18,6 +18,14 @@ export interface NineSliceProgressBarOptions {
     barColor?: number;
     padding?: number;
     gradient?: ColorGradient;
+    /**
+     * When true, the fill never has its width/scale touched — it's drawn
+     * at full size and a rectangular mask is grown/shrunk over it instead.
+     * Avoids the 9-slice corner squish `minVisualWidth` otherwise works
+     * around at very low percentages, at the cost of one extra Graphics
+     * object. Off by default (existing width-driven behavior unchanged).
+     */
+    useMask?: boolean;
 }
 
 export class NineSliceProgressBar extends PIXI.Container {
@@ -27,6 +35,9 @@ export class NineSliceProgressBar extends PIXI.Container {
 
     // The minimum width to prevent 9-slice artifacts (left + right slices)
     private minVisualWidth: number;
+
+    /** Only built when opts.useMask is true — see update(). */
+    private fillMask?: PIXI.Graphics;
 
     constructor(opts: NineSliceProgressBarOptions) {
         super();
@@ -65,6 +76,21 @@ export class NineSliceProgressBar extends PIXI.Container {
 
         this.addChild(this.bg, this.bar);
 
+        if (this.opts.useMask) {
+            // Bar drawn at full, undistorted size — the mask (not the bar's
+            // own width/scale) is what actually reveals/hides it, so the
+            // 9-slice corners never squish at low percentages the way the
+            // width-driven path's minVisualWidth clamp otherwise works
+            // around.
+            this.bar.width = opts.width;
+            this.bar.scale.x = 1;
+
+            this.fillMask = new PIXI.Graphics();
+            this.fillMask.position.copyFrom(this.bar.position);
+            this.addChild(this.fillMask);
+            this.bar.mask = this.fillMask;
+        }
+
         // Center pivot like the original class
         this.pivot.set(opts.width / 2, opts.height / 2);
 
@@ -92,10 +118,19 @@ export class NineSliceProgressBar extends PIXI.Container {
             this.bar.tint = this.opts.barColor;
         }
 
-        // Logic: If the width is less than the corners, we hide it or 
+        if (this.fillMask) {
+            this.bar.visible = targetWidth > 0;
+            this.fillMask.clear();
+            this.fillMask.beginFill(0xffffff);
+            this.fillMask.drawRect(0, 0, targetWidth, this.bar.height);
+            this.fillMask.endFill();
+            return;
+        }
+
+        // Logic: If the width is less than the corners, we hide it or
         // cap it to the minVisualWidth to prevent texture folding.
         if (targetWidth < this.minVisualWidth) {
-            // If progress is very low, it's often better to scale the 
+            // If progress is very low, it's often better to scale the
             // whole slice down or just hide it to avoid visual glitches
             this.bar.visible = targetWidth > 0;
             this.bar.width = this.minVisualWidth;
@@ -111,6 +146,7 @@ export class NineSliceProgressBar extends PIXI.Container {
     public override destroy(options?: PIXI.IDestroyOptions | boolean): void {
         this.bg.destroy();
         this.bar.destroy();
+        this.fillMask?.destroy();
         super.destroy(options);
     }
 }

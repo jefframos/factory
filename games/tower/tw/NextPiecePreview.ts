@@ -11,7 +11,7 @@ function hexStringToNumber(hex: string): number {
 }
 
 /** Matches PieceSnapshotTool's default `size` setting at the time these pre-rendered images were generated — the swatch always requests this exact size, so regenerating at a different size means re-pointing this too. */
-const SNAPSHOT_SIZE = 256;
+const SNAPSHOT_SIZE = 128;
 
 /** e.g. "arch-1" → "tower/images/non-preload/pieces/tower-piece-snapshots_arch-1_256x256.webp" — see PieceSnapshotTool's DOWNLOAD_FOLDER/filenameFor(), just flattened into one filename (folder name + id + size) and converted to .webp once it lands in raw-assets. */
 function resolvePieceSnapshotPath(pieceId: string): string {

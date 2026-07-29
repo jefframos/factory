@@ -21,14 +21,6 @@
         },
         {
           "alias": [
-            "pieces-config.json"
-          ],
-          "src": [
-            "pieces-config.json"
-          ]
-        },
-        {
-          "alias": [
             "powerups-config.json"
           ],
           "src": [
@@ -57,6 +49,22 @@
           ],
           "src": [
             "universe.json"
+          ]
+        },
+        {
+          "alias": [
+            "pieces-config-old.json"
+          ],
+          "src": [
+            "pieces-config-old.json"
+          ]
+        },
+        {
+          "alias": [
+            "pieces-config.json"
+          ],
+          "src": [
+            "pieces-config.json"
           ]
         }
       ]

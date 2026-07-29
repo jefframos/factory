@@ -4,8 +4,8 @@ import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
 import { getPowerup, HUD_POWERUP_IDS, SKIP_PIECE_POWERUP_ID } from '../PowerupStorage';
 import { getEnabledPowerupIds } from '../PowerupConfig';
-import { resolvePieceImagePath } from '../PieceStorage';
 import { PowerupButton, type PowerupButtonColor } from './PowerupButton';
+import ViewUtils from 'core/utils/ViewUtils';
 
 /**
  * One color per HUD_POWERUP_IDS entry, same order (lightning/bomb/
@@ -36,15 +36,31 @@ export class PowerupBelt extends PIXI.Container {
      * how many buttons getEnabledPowerupIds() ends up building.
      */
     public static WIDTH = 420;
-    private static readonly ICON_SIZE = 75;
+    private static readonly ICON_SIZE = 55;
+    private static readonly BUTTON_SIZE = 70;
+
+    private static readonly BG_TEXTURE = 'Button01_s_White_Light1';
+    private static readonly BG_SLICE = 35;
+    private static readonly BG_PADDING_X = 20;
+    private static readonly BG_PADDING_Y = 20;
 
     /** Dispatches the tapped button's id (see PowerupStorage.HUD_POWERUP_IDS) — see IslandViewScene.useHudPowerup(), the sole listener. */
     public readonly onUsePowerup: Signal = new Signal();
 
     private readonly buttons = new Map<string, PowerupButton>();
+    private readonly bg: PIXI.NineSlicePlane;
 
     public constructor() {
         super();
+
+        this.bg = new PIXI.NineSlicePlane(
+            PIXI.Texture.from(PowerupBelt.BG_TEXTURE),
+            PowerupBelt.BG_SLICE, PowerupBelt.BG_SLICE, PowerupBelt.BG_SLICE, PowerupBelt.BG_SLICE,
+        );
+        this.bg.width = PowerupBelt.WIDTH + PowerupBelt.BG_PADDING_X * 2;
+        this.bg.height = PowerupBelt.BUTTON_SIZE + PowerupBelt.BG_PADDING_Y * 2 + 250;
+        this.bg.position.set(0, -PowerupBelt.BG_PADDING_Y);
+        this.addChild(this.bg);
 
         // Disabled ids (see PowerupConfig.POWERUP_ENABLED) are skipped
         // entirely — no button — rather than just hidden/greyed, so
@@ -92,7 +108,7 @@ export class PowerupBelt extends PIXI.Container {
         const step = usableWidth / (buttons.length - 1);
 
         buttons.forEach((button, index) => {
-            button.position.set(index * step, 0);
+            button.position.set(index * step + PowerupBelt.BG_PADDING_X, 0);
         });
     }
 
@@ -126,10 +142,10 @@ export class PowerupBelt extends PIXI.Container {
         }
 
         if (powerup.icon) {
-            const sprite = PIXI.Sprite.from(resolvePieceImagePath(powerup.icon));
+            const sprite = PIXI.Sprite.from(powerup.icon);
             sprite.anchor.set(0.5);
-            sprite.width = size;
-            sprite.height = size;
+            sprite.scale.set(ViewUtils.elementScaler(sprite, size, size));
+
             return sprite;
         }
 

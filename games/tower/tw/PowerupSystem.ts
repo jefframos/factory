@@ -8,6 +8,12 @@ interface Bounds {
     max: { x: number; y: number };
 }
 
+/** World-space (2D physics) point a powerup piece touched a block at — the touched block's own center, not the powerup piece's, since that's where the visual reaction (wiggle/burst) should anchor. */
+export interface PowerupContactPoint {
+    x: number;
+    y: number;
+}
+
 /**
  * Runs active powerup effects against the live 2D block set — the lightning
  * (freezes+greys everything it touches), the bomb (destroys the first piece
@@ -47,6 +53,17 @@ export class PowerupSystem {
         private readonly blocks: FaceTowerBlockController,
         /** Notified the instant a touched block's freeze+grey actually applies — the 3D mirror layer has no physics of its own, so this is how it learns to grey the matching cube. See FaceTowerGameEvents.onBlockFrozen. */
         private readonly onBlockFrozen?: (block: FaceTowerBlock, greyColorHex: number) => void,
+        /**
+         * Fired the INSTANT a block is queued in update()'s touch-detection
+         * loop below — i.e. on contact itself, not once drainQueue() gets
+         * around to actually applying the effect to it (which can lag
+         * behind by several stepDelay-spaced turns for a piece touching
+         * many things at once). Purely a hook for reactive VFX (wiggle the
+         * touched piece, burst+shake on a bomb, etc — see
+         * FaceTowerGameEvents.onPowerupTouch) — has no bearing on the
+         * actual effect logic, which drainQueue() still owns entirely.
+         */
+        private readonly onTouch?: (block: FaceTowerBlock, contactPoint: PowerupContactPoint, powerup: PowerupEffectConfig) => void,
     ) { }
 
     /** True while a powerup piece is still falling, or its freeze/grey queue still has pieces left to process — see FaceTowerGameController.spawnNextBlock/update. */
@@ -126,6 +143,7 @@ export class PowerupSystem {
 
             this.queuedIds.add(block.id);
             this.queue.push(block);
+            this.onTouch?.(block, { x: block.entity.body.position.x, y: block.entity.body.position.y }, powerup);
             this.drainQueue(powerup);
 
             if (powerup.maxTargets !== undefined && this.queuedIds.size >= powerup.maxTargets) {

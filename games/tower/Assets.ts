@@ -432,6 +432,11 @@ export default class Assets {
             NextLabel: { ...DefaultLabel, fontSize: 20 } as Partial<PIXI.TextStyle>,
             /** GameHud's "Zone X complete!"/"Level N!" toast. */
             InfoLabel: { ...DefaultLabel, fill: 0xffe066, fontSize: 28, strokeThickness: 4 } as Partial<PIXI.TextStyle>,
+            NotificationLabel: { ...DefaultLabel, fill: 0xffe066, fontSize: 42, strokeThickness: 4 } as Partial<PIXI.TextStyle>,
+            /** TowerHeader's centered "Level N" — the bigger, primary label of the two. */
+            HeaderCurrentLevel: { ...DefaultLabel, fontSize: 26 } as Partial<PIXI.TextStyle>,
+            /** TowerHeader's destination/next-height side label — smaller and warm yellow so it reads as secondary to the level number. */
+            HeaderNextLevel: { ...DefaultLabel, fill: 0xffe066, fontSize: 18 } as Partial<PIXI.TextStyle>,
         };
     })();
 }

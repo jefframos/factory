@@ -31,6 +31,8 @@ import { FaceTowerGameController } from './FaceTowerGameController';
 import { PIECES, type PieceDefinition } from './PieceStorage';
 import { POWERUPS, SKIP_PIECE_POWERUP_ID } from './PowerupStorage';
 import { getEnabledPowerupIds } from './PowerupConfig';
+import { PowerupBurstEffect } from './PowerupBurstEffect';
+import type { PowerupContactPoint } from './PowerupSystem';
 import { TowerBaseSync3D } from './TowerBaseSync3D';
 import { TowerBlockSync3D } from './TowerBlockSync3D';
 import { DEFAULT_TOWER_3D_CONFIG } from './Tower3DConfig';
@@ -134,6 +136,11 @@ export default class IslandViewScene extends ThreeScene {
      * this frame. Persisted via TowerDevMeta; see setupVisualDevGui().
      */
     private speedMultiplier = 1;
+
+    // Camera-shake state — see triggerCameraShake()/applyCameraShake().
+    private cameraShakeStrength = 0;
+    private cameraShakeDuration = 0;
+    private cameraShakeTimeRemaining = 0;
 
     // =========================================================================
     // Lifecycle
@@ -241,6 +248,7 @@ export default class IslandViewScene extends ThreeScene {
 
         this.positionCamera();
         this.buildFaceTowerLayer();
+        PowerupBurstEffect.build(this.threeScene);
 
         this.game.overlayContainer.addChild(this.hudContainer);
         this.hudContainer.addChild(this.gameHud);
@@ -309,6 +317,8 @@ export default class IslandViewScene extends ThreeScene {
             DEFAULT_TOWER_3D_CONFIG.cameraMasterOffsetY +
             towerOffsetY / DEFAULT_TOWER_3D_CONFIG.pixelsPerUnit,
         );
+        this.applyCameraShake(delta);
+        PowerupBurstEffect.update(delta);
 
         if (this.faceTower) {
             this.blockSync3D.sync(this.faceTower.getBlocks(), this.faceTower.getHeldBlock(), delta);
@@ -380,6 +390,7 @@ export default class IslandViewScene extends ThreeScene {
                 currentLevelConfig?.distanceFromPreviousKm,
                 DEFAULT_TOWER_3D_CONFIG.useRawHeightValues,
                 plainMeters(this.faceTower.getNextLevelTargetWorldY()),
+                plainMeters(currentTopWorldY),
             );
 
             // 3D markers take raw world-Y (not screen-space) since they
@@ -415,6 +426,7 @@ export default class IslandViewScene extends ThreeScene {
     public destroy(): void {
         this.skyController.destroy();
         this.starfieldController.destroy();
+        PowerupBurstEffect.destroy();
         this.faceTower?.destroy();
         this.blockSync3D?.destroy();
         this.baseSync3D?.destroy();
@@ -577,6 +589,22 @@ export default class IslandViewScene extends ThreeScene {
 
                 onBlockFrozen: (block, greyColorHex) => {
                     this.blockSync3D.notifyFrozen(block.id, greyColorHex);
+                },
+
+                onPowerupTouch: (block, contactPoint, powerup) => {
+                    if (powerup.action === 'destroy') {
+                        // Bomb/super-bomb: no wiggle (the block's about to be
+                        // removed anyway) — a burst + camera shake instead.
+                        const worldPos = this.contactPointToWorld(contactPoint);
+                        PowerupBurstEffect.spawn(worldPos.x, worldPos.y, worldPos.z);
+                        this.triggerCameraShake(0.12, 0.3);
+                    } else {
+                        // Freeze/shrink: replay the same jiggle wobble a
+                        // normal piece's first hit uses, so the touched
+                        // piece visibly reacts to the powerup passing
+                        // through it.
+                        this.blockSync3D.notifyPowerupTouch(block.id);
+                    }
                 },
 
                 onNextPieceChanged: (piece) => {
@@ -954,8 +982,8 @@ export default class IslandViewScene extends ThreeScene {
 
         // Half-extents of the play area the camera must show, in world units.
         // X = how wide the tower/arena is, Y = how tall the visible portion is.
-        const PLAY_HALF_W = 3.2;   // e.g. tower is 8 units wide
-        const PLAY_HALF_H = 6.0;   // e.g. visible play height is 12 units
+        const PLAY_HALF_W = 3;   // e.g. tower is 8 units wide
+        const PLAY_HALF_H = 5.8;   // e.g. visible play height is 12 units
         const FIT_PADDING = 1.05;  // 8% breathing room
 
 
@@ -965,8 +993,42 @@ export default class IslandViewScene extends ThreeScene {
         const tan = Math.tan(fovV / 2); const playW = PLAY_HALF_W * 2; const playH = PLAY_HALF_H * 2;
         const dFitH = (playH * Math.cos(pitch)) / (2 * tan); const dFitW = playW / (2 * tan * aspect);
         const distance = Math.max(dFitH, dFitW) * FIT_PADDING; const horizontal = distance * Math.cos(pitch); const focusY = FOCUS_POINT.y + liftY;
-        this.threeCamera.position.set(FOCUS_POINT.x + horizontal * Math.sin(yaw), focusY + distance * Math.sin(pitch), FOCUS_POINT.z + horizontal * Math.cos(yaw),);
+        this.threeCamera.position.set(FOCUS_POINT.x + horizontal * Math.sin(yaw), focusY + distance * Math.sin(pitch) + cfg.cameraExtraLiftY, FOCUS_POINT.z + horizontal * Math.cos(yaw),);
         this.threeCamera.lookAt(FOCUS_POINT.x, focusY, FOCUS_POINT.z);
+    }
+
+    /** Kicks off a decaying random jitter applied to the 3D camera each frame — see applyCameraShake(), called right after positionCamera() in update(). */
+    private triggerCameraShake(strength: number, duration: number): void {
+        this.cameraShakeStrength = strength;
+        this.cameraShakeDuration = duration;
+        this.cameraShakeTimeRemaining = duration;
+    }
+
+    /** Nudges the camera by a random offset that decays to zero over cameraShakeDuration — must run after positionCamera() sets the "clean" position each frame, since it adds on top of it rather than replacing it. */
+    private applyCameraShake(delta: number): void {
+        if (this.cameraShakeTimeRemaining <= 0) {
+            return;
+        }
+
+        this.cameraShakeTimeRemaining = Math.max(0, this.cameraShakeTimeRemaining - delta);
+        const t = this.cameraShakeTimeRemaining / this.cameraShakeDuration;
+        const amount = this.cameraShakeStrength * t;
+
+        this.threeCamera.position.x += (Math.random() * 2 - 1) * amount;
+        this.threeCamera.position.y += (Math.random() * 2 - 1) * amount;
+        this.threeCamera.position.z += (Math.random() * 2 - 1) * amount;
+    }
+
+    /** Same 2D-physics → 3D-world conversion TowerBlockSync3D.updateCube() uses — kept here since IslandViewScene already owns both config references it needs. */
+    private contactPointToWorld(contactPoint: PowerupContactPoint): THREE.Vector3 {
+        const cfg = DEFAULT_FACE_TOWER_CONFIG;
+        const cfg3d = DEFAULT_TOWER_3D_CONFIG;
+
+        return new THREE.Vector3(
+            (contactPoint.x - cfg.floorX) / cfg3d.pixelsPerUnit + cfg3d.towerBaseOffset.x,
+            (cfg.floorY - contactPoint.y) / cfg3d.pixelsPerUnit + cfg3d.towerBaseOffset.y,
+            cfg3d.towerBaseOffset.z,
+        );
     }
 
     private resizeFaceTowerInput(): void {

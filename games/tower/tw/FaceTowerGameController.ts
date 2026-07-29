@@ -9,11 +9,12 @@ import {
     FaceTowerState,
     type FaceTowerBlock,
     type FaceTowerConfig,
+    type PowerupEffectConfig,
 } from './FaceTowerTypes';
 import { PieceManager } from './PieceManager';
 import type { PieceDefinition } from './PieceStorage';
 import { getPowerup, powerupGreyColorNumber } from './PowerupStorage';
-import { PowerupSystem } from './PowerupSystem';
+import { PowerupSystem, type PowerupContactPoint } from './PowerupSystem';
 import { TowerCameraController } from './TowerCameraController';
 import { TowerDeadZoneController } from './TowerDeadZoneController';
 import { TowerLevelController } from './TowerLevelController';
@@ -32,6 +33,17 @@ export interface FaceTowerGameEvents {
     onBlockFirstHit?(block: FaceTowerBlock): void;
     /** Fired once per block, the instant a powerup freezes-and-greys it — see PowerupSystem.drainQueue. */
     onBlockFrozen?(block: FaceTowerBlock, greyColorHex: number): void;
+    /**
+     * Fired the instant a powerup piece touches ANY block (before
+     * drainQueue() gets around to actually applying the freeze/destroy/
+     * shrink effect, which can lag behind on a busy touch) — `contactPoint`
+     * is the touched block's own 2D physics position. Meant purely for
+     * reactive VFX: wiggle the touched piece for freeze/shrink, or a
+     * particle burst + camera shake for a destroy (bomb/super-bomb) — see
+     * PowerupSystem's own `onTouch` constructor param, which this just
+     * forwards.
+     */
+    onPowerupTouch?(block: FaceTowerBlock, contactPoint: PowerupContactPoint, powerup: PowerupEffectConfig): void;
     /** Fired whenever the upcoming piece changes — see spawnNextBlock()/getNextPiece(). Powerups swapped in via spawnPowerup() don't count as "next" and never fire this. */
     onNextPieceChanged?(piece: PieceDefinition): void;
 }
@@ -88,6 +100,7 @@ export class FaceTowerGameController {
         this.powerups = new PowerupSystem(
             this.blocks,
             (block, greyColorHex) => this.events.onBlockFrozen?.(block, greyColorHex),
+            (block, contactPoint, powerup) => this.events.onPowerupTouch?.(block, contactPoint, powerup),
         );
 
         this.stability = new TowerStabilityController(config);

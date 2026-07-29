@@ -2,14 +2,14 @@ import { Game } from 'core/Game';
 import SoundToggleButton from 'core/ui/SoundToggleButton';
 import * as PIXI from 'pixi.js';
 import type { Signal } from 'signals';
-import Assets from '../../Assets';
 import { NextPiecePreview } from '../NextPiecePreview';
 import { PieceDefinition } from '../PieceStorage';
 import { TowerHeightGauge, HeightMark } from '../TowerHeightGauge';
 import { TowerProgressBar2D } from '../TowerProgressBar2D';
 import { DEFAULT_FACE_TOWER_CONFIG } from '../FaceTowerConfig';
-import { formatHeightRounded, formatSpaceDistance } from '../Tower3DConfig';
 import { PowerupBelt } from './PowerupBelt';
+import { TowerHeader } from './TowerHeader';
+import { TowerNextLevelPanel } from './TowerNextLevelPanel';
 import { ZoneNotification } from './notifications/ZoneNotification';
 import { LevelUpNotification } from './notifications/LevelUpNotification';
 import {
@@ -22,8 +22,10 @@ export class GameHud extends PIXI.Container {
 
     private scoreLabel!: PIXI.Text;
 
-    /** Always-visible "Level N — next: Xm" hint — see updateLevelGoal(). */
-    private levelGoalLabel!: PIXI.Text;
+    /** Always-visible "Level N" bubble — see updateLevelGoal(). */
+    private readonly towerHeader = new TowerHeader();
+    /** Separate "current/target next-level height" progress bar — own container so it can be positioned independently of towerHeader. See updateLevelGoal(). */
+    private readonly nextLevelPanel = new TowerNextLevelPanel();
 
     private heightGauge!: TowerHeightGauge;
     private progressBar2D!: TowerProgressBar2D;
@@ -160,27 +162,10 @@ export class GameHud extends PIXI.Container {
         distanceKm: number | undefined,
         useRawHeightValues: boolean,
         nextLevelHeightMeters: number,
+        currentHeightMeters: number,
     ): void {
-        if (!useRawHeightValues && destination && distanceKm !== undefined) {
-            const currentKm = distanceKm * Math.max(0, Math.min(1, progressFraction));
-
-            const progressPart = isFinalLevel
-                ? formatSpaceDistance(currentKm)
-                : `${formatSpaceDistance(currentKm)} / ${formatSpaceDistance(distanceKm)}`;
-
-            this.levelGoalLabel.text = `Level ${levelIndex + 1} → ${destination}: ${progressPart}`;
-            return;
-        }
-
-        const heightPart = isFinalLevel
-            ? formatHeightRounded(nextLevelHeightMeters)
-            : `next: ${formatHeightRounded(nextLevelHeightMeters)}`;
-
-        const destinationPart = destination && distanceKm !== undefined
-            ? ` → ${destination} (${formatSpaceDistance(distanceKm)})`
-            : '';
-
-        this.levelGoalLabel.text = `Level ${levelIndex + 1}${destinationPart} — ${heightPart}`;
+        this.towerHeader.update(levelIndex);
+        this.nextLevelPanel.update(currentHeightMeters, nextLevelHeightMeters, progressFraction);
     }
 
     public showGameOver(score: number): void {
@@ -233,12 +218,13 @@ export class GameHud extends PIXI.Container {
         );
 
         this.scoreLabel.position.set(Game.DESIGN_WIDTH * 0.5, 40);
-        this.zoneNotification.position.set(Game.DESIGN_WIDTH * 0.5, 100);
-        this.levelGoalLabel.position.set(Game.DESIGN_WIDTH * 0.5, topLeft.y + 20);
+        this.zoneNotification.position.set(Game.DESIGN_WIDTH * 0.5, Game.DESIGN_HEIGHT / 2 - 50);
+        this.towerHeader.position.set(Game.DESIGN_WIDTH * 0.5, topLeft.y + 40);
+        this.nextLevelPanel.position.set(Game.DESIGN_WIDTH * 0.5 + this.towerHeader.width + 10, topLeft.y + 40);
 
         this.powerupBelt.position.set(
             (bottomLeft.x + bottomRight.x) * 0.5 - this.powerupBelt.width * 0.5,
-            bottomRight.y - this.powerupBelt.height - padding,
+            bottomRight.y - this.powerupBelt.height - padding + 290,
         );
 
         // Popups handle their own internal layout
@@ -254,6 +240,7 @@ export class GameHud extends PIXI.Container {
         this.zoneNotification.destroy();
         this.levelUpNotification.destroy();
         this.powerupBelt.destroy();
+        this.nextLevelPanel.destroy();
 
         super.destroy(options ?? { children: true });
     }
@@ -286,8 +273,7 @@ export class GameHud extends PIXI.Container {
         this.scoreLabel.anchor.set(0.5, 0);
         // this.gameplayLayer.addChild(this.scoreLabel);
 
-        this.levelGoalLabel = new PIXI.Text('', Assets.TextStyles.NextLabel);
-        this.levelGoalLabel.anchor.set(0.5, 0);
-        this.gameplayLayer.addChild(this.levelGoalLabel);
+        this.gameplayLayer.addChild(this.towerHeader);
+        this.gameplayLayer.addChild(this.nextLevelPanel);
     }
 }

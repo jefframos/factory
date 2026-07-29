@@ -12,8 +12,8 @@ import * as THREE from 'three';
  */
 export class BendService {
     public static uniforms = {
-        uBendOrigin:   { value: new THREE.Vector3() },
-        uBendStrength: { value: 0.002 },
+        uBendOrigin: { value: new THREE.Vector3() },
+        uBendStrength: { value: 0.001 },
     };
 
     public static updateOrigin(position: THREE.Vector3): void {
@@ -46,8 +46,8 @@ export class BendService {
         material.onBeforeCompile = (shader, renderer) => {
             prev(shader, renderer);
             shader.uniforms.uFadeFrom = { value: fadeFrom };
-            shader.uniforms.uFadeTo   = { value: fadeTo };
-            shader.vertexShader   = 'varying float vWorldY;\n' + shader.vertexShader;
+            shader.uniforms.uFadeTo = { value: fadeTo };
+            shader.vertexShader = 'varying float vWorldY;\n' + shader.vertexShader;
             shader.fragmentShader = 'uniform float uFadeFrom;\nuniform float uFadeTo;\nvarying float vWorldY;\n' + shader.fragmentShader;
             shader.vertexShader = shader.vertexShader.replace(
                 '#include <begin_vertex>',
@@ -74,7 +74,7 @@ export class BendService {
             prev(shader, renderer);
             shader.uniforms.uBendOrigin = BendService.uniforms.uBendOrigin;
             shader.uniforms.uDistFadeStart = { value: fadeStart };
-            shader.uniforms.uDistFadeEnd   = { value: fadeEnd };
+            shader.uniforms.uDistFadeEnd = { value: fadeEnd };
             shader.vertexShader = 'varying vec2 vWorldXZ;\n' + shader.vertexShader;
             shader.fragmentShader = [
                 'uniform vec3  uBendOrigin;',
@@ -98,7 +98,7 @@ export class BendService {
         const prev = material.onBeforeCompile;
         material.onBeforeCompile = (shader, renderer) => {
             prev(shader, renderer);
-            shader.uniforms.uBendOrigin   = BendService.uniforms.uBendOrigin;
+            shader.uniforms.uBendOrigin = BendService.uniforms.uBendOrigin;
             shader.uniforms.uBendStrength = BendService.uniforms.uBendStrength;
 
             shader.vertexShader = `

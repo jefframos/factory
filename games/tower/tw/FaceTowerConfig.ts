@@ -8,7 +8,7 @@ import type { FaceTowerConfig } from './FaceTowerTypes';
 
 export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     // --- Playfield anchors (screen-space, fixed regardless of camera scroll) ---
-    spawnScreenY: 150,   // where the held block hovers before it's dropped
+    spawnScreenY: 200,   // where the held block hovers before it's dropped
     floorScreenY: 940,   // where the "current" base always sits on screen
     deathScreenY: 1030,  // cross this and it's game over
 

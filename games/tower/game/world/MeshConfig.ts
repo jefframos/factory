@@ -75,7 +75,7 @@ export const ROOM_GEOMETRY = {
     },
     floor: {
         roughness: 0.8,
-        opacity: 0.8,
+        opacity: 1.0,
         shader: 'water' as FloorShader,
         elevation: 0.45,
     },

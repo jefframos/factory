@@ -30,7 +30,7 @@ export class ZoneNotification extends PIXI.Container {
 
             const letter = new PIXI.Text(
                 displayChar,
-                Assets.TextStyles.InfoLabel,
+                Assets.TextStyles.NotificationLabel,
             );
 
             letter.anchor.set(0.5);

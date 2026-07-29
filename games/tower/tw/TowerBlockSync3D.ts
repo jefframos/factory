@@ -108,6 +108,20 @@ export class TowerBlockSync3D {
     }
 
     /**
+     * Notify this layer that `blockId` was just touched by a falling
+     * powerup piece (freeze/shrink — see FaceTowerGameEvents.onPowerupTouch)
+     * — replays the same jiggle wobble notifyFirstHit() uses. A distinct
+     * method rather than reusing notifyFirstHit() directly since the two
+     * are semantically different events even though the animation itself
+     * (a timer reset — see PieceAnimations.sampleJiggle()) has no
+     * "already played" guard and is perfectly safe to retrigger from
+     * either call, even back-to-back.
+     */
+    public notifyPowerupTouch(blockId: number): void {
+        this.getOrCreateAnim(blockId).jiggleRemaining = PieceAnimations.JIGGLE_DURATION;
+    }
+
+    /**
      * Notify this layer that `blockId` was just frozen-and-greyed by a
      * powerup (see PowerupSystem.drainQueue / FaceTowerBlockController's 2D
      * body-sprite tint) — recolors the mirrored cube's material to match. A

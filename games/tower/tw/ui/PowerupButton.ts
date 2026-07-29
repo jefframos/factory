@@ -74,7 +74,8 @@ export class PowerupButton extends PIXI.Container {
         this.addChild(this.bgActive);
 
         this.icon = icon;
-        this.icon.position.set(size * 0.5, size * 0.42);
+
+
         this.addChild(this.icon);
 
         this.labelContainer = new PIXI.Container();
@@ -137,6 +138,10 @@ export class PowerupButton extends PIXI.Container {
 
         this.icon.alpha = hasAny ? 1 : 0.4;
         this.cursor = hasAny ? 'pointer' : 'default';
+
+        this.icon.x = PowerupButton.SIZE / 2
+        this.icon.y = PowerupButton.SIZE / 2
+
 
         this.labelContainer.visible = hasAny;
 

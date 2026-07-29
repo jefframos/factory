@@ -119,6 +119,11 @@ export interface Tower3DConfig {
     // on — see IslandViewScene.update().
     cameraMasterOffsetY: number;
 
+    // Extra height (THREE units) added ONLY to the camera's own position,
+    // not its look-at target — see DEFAULT_TOWER_3D_CONFIG's own comment
+    // on this field for why cameraMasterOffsetY alone can't do this.
+    cameraExtraLiftY: number;
+
     // --- Origin island cluster (a single connected blob, not the chunk streamer) ---
 
     // Diameter in design pixels — converted to world units via pixelsPerUnit
@@ -208,11 +213,19 @@ export interface Tower3DConfig {
 
 export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
     cameraYawDeg: 0,
-    cameraPitchDeg: 3,
+    cameraPitchDeg: -5,
     cameraDistance: 8,
     cameraDistanceMax: 15,
 
-    cameraMasterOffsetY: 6.5,
+    cameraMasterOffsetY: 4.9,
+
+    // Extra height (THREE units) added ONLY to the camera's own position,
+    // not its look-at target — unlike cameraMasterOffsetY (which shifts
+    // camera+target together and so has ~zero net effect on framing, it's
+    // just the follow-scroll tracking height), this actually tilts the view
+    // down a touch, pushing tower content higher in the frame so it clears
+    // bottom-of-screen UI. See positionCamera().
+    cameraExtraLiftY: 0.8,
 
     clusterDiameter: 0, // 16 world units at pixelsPerUnit: 80 — matches the old fixed radius
     clusterCellSize: 0,
@@ -220,8 +233,8 @@ export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
     clusterDepthBelow: 20,
     clusterBevelRadius: 1.5,
 
-    pixelsPerUnit: 80,
-    towerBaseOffset: { x: 0, y: 1, z: 0 },
+    pixelsPerUnit: 85,
+    towerBaseOffset: { x: 0, y: 0.3, z: 0 },
 
     baseColor: 0x33cc66,
     platformDepth: 0.3,
