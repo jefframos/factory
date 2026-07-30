@@ -8,6 +8,8 @@ export enum FaceTowerState {
     MovingBlock = 'moving-block',
     DroppingBlock = 'dropping-block',
     WaitingForTower = 'waiting-for-tower',
+    /** The just-completed zone's pieces are popping their points one by one (see TowerScorePopupUtils/FaceTowerGameEvents.onZoneScorePopup) — update() no-ops until the popup sequence resolves and FaceTowerGameController.finishZoneAdvance() runs. */
+    PoppingScore = 'popping-score',
     PanningCamera = 'panning-camera',
     /** A powerup's async freeze/grey queue is still draining — see PowerupSystem.isBusy(). Next block spawns once it empties. */
     PowerupEffect = 'powerup-effect',

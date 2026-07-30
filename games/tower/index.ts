@@ -23,6 +23,7 @@ import { loadIslands } from './game/world/IslandStorage';
 import loaderConfig from './loader.config';
 import IslandViewScene from './tw/IslandViewScene';
 import { loadLevels } from './tw/LevelStorage';
+import { TowerHighScoreStorage } from './tw/TowerHighScoreStorage';
 import { loadPieces } from './tw/PieceStorage';
 import { loadPowerups } from './tw/PowerupStorage';
 import { loadStaticPieces } from './tw/StaticPieceStorage';
@@ -70,6 +71,7 @@ export default class MyGame extends Game {
             await PlatformHandler.instance.initialize(plat);
             await ShopStorage.load();
             await HighScoreStorage.load();
+            await TowerHighScoreStorage.load();
             await PowerupInventoryStorage.load();
             await Localization.load();
 

@@ -78,6 +78,17 @@ export interface PieceDefinition {
     margin3D?: number;
 
     disabled?: boolean,
+
+    /** Score awarded when this piece pops during a zone-complete popup — see TowerScorePopupUtils/FaceTowerGameEvents.onZoneScorePopup. Omit to use DEFAULT_PIECE_POINTS. */
+    points?: number;
+}
+
+/** Fallback score for any piece that doesn't set its own `points` — "add 2 points for each for now". */
+export const DEFAULT_PIECE_POINTS = 2;
+
+/** `piece.points` if set, else DEFAULT_PIECE_POINTS. */
+export function getPiecePoints(piece: PieceDefinition): number {
+    return piece.points ?? DEFAULT_PIECE_POINTS;
 }
 
 /**

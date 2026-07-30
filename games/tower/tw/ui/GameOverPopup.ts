@@ -77,6 +77,28 @@ const SCORE_STYLE: Partial<PIXI.ITextStyle> = {
 
 };
 
+const HEIGHT_STYLE: Partial<PIXI.ITextStyle> = {
+    ...REPLAY_FONT_STYLE,
+    fontSize: 30,
+    fill: 0xffffff,
+};
+
+/** "Best: N" — shown under a stat when this run DIDN'T beat the existing record. */
+const BEST_STYLE: Partial<PIXI.ITextStyle> = {
+    ...REPLAY_FONT_STYLE,
+    fontSize: 22,
+    fill: 0xaaaaaa,
+    dropShadowDistance: 2,
+};
+
+/** "NEW HIGH SCORE!" — shown in BEST_STYLE's place when this run DID beat the record. */
+const NEW_HIGH_STYLE: Partial<PIXI.ITextStyle> = {
+    ...REPLAY_FONT_STYLE,
+    fontSize: 24,
+    fill: 0x66ff99,
+    dropShadowDistance: 2,
+};
+
 
 const TITLE_STYLE: Partial<PIXI.ITextStyle> = {
     ...REPLAY_FONT_STYLE,
@@ -84,6 +106,20 @@ const TITLE_STYLE: Partial<PIXI.ITextStyle> = {
     fontWeight: 'bold',
     fill: 0xffffff,
 };
+
+/**
+ * Points and height are two INDEPENDENT stats/high-scores — see
+ * HighScoreStorage — each gets its own "Best: X" (or "NEW HIGH SCORE!" when
+ * THIS run beat it) line under its own number.
+ */
+export interface GameOverData {
+    score: number;
+    heightText: string;
+    bestScoreText: string;
+    isNewScoreHigh: boolean;
+    bestHeightText: string;
+    isNewHeightHigh: boolean;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GameOverPopup
@@ -100,6 +136,9 @@ export class GameOverPopup extends PIXI.Container {
     private readonly _titleText: PIXI.Text;
     private readonly _scoreShine: PIXI.Sprite;
     private readonly _scoreText: PIXI.Text;
+    private readonly _heightText: PIXI.Text;
+    private readonly _scoreBestText: PIXI.Text;
+    private readonly _heightBestText: PIXI.Text;
     private readonly _replayBtn: BaseButton;
     private readonly _continueBtn: BaseButton;
 
@@ -163,6 +202,21 @@ export class GameOverPopup extends PIXI.Container {
         this._scoreText = new PIXI.Text('0', new PIXI.TextStyle(SCORE_STYLE));
         this._scoreText.anchor.set(0.5);
         this._card.addChild(this._scoreText);
+
+        // ── Score best/new-high ───────────────────────────────────────────────────
+        this._scoreBestText = new PIXI.Text('', new PIXI.TextStyle(BEST_STYLE));
+        this._scoreBestText.anchor.set(0.5, 0);
+        this._card.addChild(this._scoreBestText);
+
+        // ── Height reached ────────────────────────────────────────────────────────
+        this._heightText = new PIXI.Text('', new PIXI.TextStyle(HEIGHT_STYLE));
+        this._heightText.anchor.set(0.5, 0);
+        this._card.addChild(this._heightText);
+
+        // ── Height best/new-high ──────────────────────────────────────────────────
+        this._heightBestText = new PIXI.Text('', new PIXI.TextStyle(BEST_STYLE));
+        this._heightBestText.anchor.set(0.5, 0);
+        this._card.addChild(this._heightBestText);
 
 
         // ── Replay button ────────────────────────────────────────────────────────
@@ -241,9 +295,22 @@ export class GameOverPopup extends PIXI.Container {
     // Public API
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** Show the popup and display the supplied score. */
-    public showPopup(score: number): void {
-        this._scoreText.text = String(score);
+    /**
+     * Show the popup — `heightText`/`bestScoreText`/`bestHeightText` are
+     * already formatted strings (see IslandViewScene's onGameOver, which
+     * uses formatHeightRounded()/HighScoreStorage). `isNewScoreHigh`/
+     * `isNewHeightHigh` are checked independently — points and height are
+     * two separate records, so one can be a new high without the other.
+     */
+    public showPopup(data: GameOverData): void {
+        this._scoreText.text = String(data.score);
+        this._heightText.text = `Height: ${data.heightText}`;
+
+        this._scoreBestText.text = data.isNewScoreHigh ? 'NEW HIGH SCORE!' : `Best: ${data.bestScoreText}`;
+        this._scoreBestText.style = new PIXI.TextStyle(data.isNewScoreHigh ? NEW_HIGH_STYLE : BEST_STYLE);
+
+        this._heightBestText.text = data.isNewHeightHigh ? 'NEW HIGH SCORE!' : `Best: ${data.bestHeightText}`;
+        this._heightBestText.style = new PIXI.TextStyle(data.isNewHeightHigh ? NEW_HIGH_STYLE : BEST_STYLE);
 
         // Make visible before animation starts so updateTransform drives the fade
         this.visible = true;
@@ -281,11 +348,23 @@ export class GameOverPopup extends PIXI.Container {
         this._titleText.y = 48;
 
         // Shine & score: mid-upper area
-        const scoreCentreY = 220;
+        const scoreCentreY = 190;
         this._scoreShine.x = cx;
         this._scoreShine.y = scoreCentreY;
         this._scoreText.x = cx;
         this._scoreText.y = scoreCentreY;
+
+        // Score's best/new-high line, just below the score number
+        this._scoreBestText.x = cx;
+        this._scoreBestText.y = scoreCentreY + 45;
+
+        // Height reached: below that
+        this._heightText.x = cx;
+        this._heightText.y = scoreCentreY + 90;
+
+        // Height's own best/new-high line
+        this._heightBestText.x = cx;
+        this._heightBestText.y = scoreCentreY + 125;
 
         // Replay button (upper of the two buttons)
         const replayY = PANEL_HEIGHT - BUTTON_HEIGHT * 2 - 48 - 16;

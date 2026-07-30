@@ -10,17 +10,20 @@ import { DEFAULT_FACE_TOWER_CONFIG } from '../FaceTowerConfig';
 import { PowerupBelt } from './PowerupBelt';
 import { TowerHeader } from './TowerHeader';
 import { TowerNextLevelPanel } from './TowerNextLevelPanel';
+import { TowerScorePanel } from './TowerScorePanel';
 import { ZoneNotification } from './notifications/ZoneNotification';
 import { LevelUpNotification } from './notifications/LevelUpNotification';
 import {
     GameOverPopup,
+    type GameOverData,
 } from './GameOverPopup';
 
 export class GameHud extends PIXI.Container {
     private soundBtn!: SoundToggleButton;
     private nextPiecePreview!: NextPiecePreview;
 
-    private scoreLabel!: PIXI.Text;
+    /** Always-visible score bubble, left of towerHeader — see showScore()/getScoreLabelScreenPosition(). */
+    private readonly scorePanel = new TowerScorePanel();
 
     /** Always-visible "Level N" bubble — see updateLevelGoal(). */
     private readonly towerHeader = new TowerHeader();
@@ -103,7 +106,12 @@ export class GameHud extends PIXI.Container {
     // =========================================================================
 
     public showScore(score: number): void {
-        this.scoreLabel.text = String(score);
+        this.scorePanel.update(score);
+    }
+
+    /** This container's own local coordinates (same design-space frame the score-popup flying numbers already fly in — see TowerScorePopupUtils/IslandViewScene) — where the score panel currently sits, for the popup's numbers to fly toward. */
+    public getScoreLabelScreenPosition(): { x: number; y: number } {
+        return { x: this.scorePanel.x, y: this.scorePanel.y };
     }
 
     /** Every zone (not just full level-ups) — see FaceTowerGameEvents.onMilestoneReached. */
@@ -168,8 +176,8 @@ export class GameHud extends PIXI.Container {
         this.nextLevelPanel.update(currentHeightMeters, nextLevelHeightMeters, progressFraction);
     }
 
-    public showGameOver(score: number): void {
-        this.gameOverPopup.showPopup(score);
+    public showGameOver(data: GameOverData): void {
+        this.gameOverPopup.showPopup(data);
     }
 
     public hideGameOver(): void {
@@ -217,10 +225,10 @@ export class GameHud extends PIXI.Container {
             this.soundBtn.y + this.soundBtn.height / 2 + padding,
         );
 
-        this.scoreLabel.position.set(Game.DESIGN_WIDTH * 0.5, 40);
         this.zoneNotification.position.set(Game.DESIGN_WIDTH * 0.5, Game.DESIGN_HEIGHT / 2 - 50);
         this.towerHeader.position.set(Game.DESIGN_WIDTH * 0.5, topLeft.y + 40);
         this.nextLevelPanel.position.set(Game.DESIGN_WIDTH * 0.5 + this.towerHeader.width + 10, topLeft.y + 40);
+        this.scorePanel.position.set(Game.DESIGN_WIDTH * 0.5 - this.towerHeader.width - 10, topLeft.y + 40);
 
         this.powerupBelt.position.set(
             (bottomLeft.x + bottomRight.x) * 0.5 - this.powerupBelt.width * 0.5,
@@ -263,16 +271,7 @@ export class GameHud extends PIXI.Container {
     }
 
     private buildStaticLabels(): void {
-        this.scoreLabel = new PIXI.Text('0', {
-            fill: 0xffffff,
-            fontSize: 48,
-            fontWeight: 'bold',
-            stroke: 0x000000,
-            strokeThickness: 4,
-        });
-        this.scoreLabel.anchor.set(0.5, 0);
-        // this.gameplayLayer.addChild(this.scoreLabel);
-
+        this.gameplayLayer.addChild(this.scorePanel);
         this.gameplayLayer.addChild(this.towerHeader);
         this.gameplayLayer.addChild(this.nextLevelPanel);
     }

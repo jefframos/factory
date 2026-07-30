@@ -13,7 +13,7 @@ import {
     type PowerupEffectConfig,
 } from './FaceTowerTypes';
 import { PieceManager } from './PieceManager';
-import type { PieceDefinition } from './PieceStorage';
+import { getPiecePoints, type PieceDefinition } from './PieceStorage';
 import { getPowerup, powerupGreyColorNumber } from './PowerupStorage';
 import { PowerupSystem, type PowerupContactPoint } from './PowerupSystem';
 import { TowerCameraController } from './TowerCameraController';
@@ -28,7 +28,8 @@ export interface FaceTowerGameEvents {
     onMilestoneReached?(zoneIndex: number): void;
     /** Fired once every zone of the current level is complete and play has rolled over into the next level — see TowerLevelController. Never fires again once the last authored level is reached; its zones just keep repeating. */
     onLevelProgressed?(levelIndex: number): void;
-    onGameOver?(score: number): void;
+    /** `topWorldY` is the run's final climbed height (world Y, see getCurrentTopWorldY()) — same value TowerHeightGauge/TowerHeightMarkers3D convert to meters/km for their own display, for the game-over popup to show alongside the score. */
+    onGameOver?(score: number, topWorldY: number): void;
     /** Fired the instant a piece is released and physics takes over — the "shoot" moment. See dropBlock(). */
     onBlockDropped?(block: FaceTowerBlock): void;
     /**
@@ -55,6 +56,20 @@ export interface FaceTowerGameEvents {
     onPowerupTouch?(block: FaceTowerBlock, contactPoint: PowerupContactPoint, powerup: PowerupEffectConfig, actionBlock: FaceTowerBlock): void;
     /** Fired whenever the upcoming piece changes — see spawnNextBlock()/getNextPiece(). Powerups swapped in via spawnPowerup() don't count as "next" and never fire this. */
     onNextPieceChanged?(piece: PieceDefinition): void;
+    /**
+     * Fired once a zone completes, BEFORE its pieces are frozen into the
+     * new base — `blocks` is every piece that just built this zone (see
+     * FaceTowerBlockController.getDynamicBlocks()). The handler is expected
+     * to pop each block's score (see PieceStorage.getPiecePoints) one by
+     * one — see TowerScorePopupUtils, the intended consumer — calling
+     * `onPointsAwarded` for each as it pops so onScoreChanged fires
+     * incrementally rather than all at once. advanceToNextZone() awaits the
+     * returned promise before actually freezing the pieces/placing the next
+     * base/panning the camera — see finishZoneAdvance(). Omit entirely to
+     * skip the whole popup and award every block's points instantly (e.g.
+     * headless/test use, or TowerScorePopupUtils.enabled === false).
+     */
+    onZoneScorePopup?(blocks: readonly FaceTowerBlock[], onPointsAwarded: (points: number) => void): Promise<void>;
 }
 
 export class FaceTowerGameController {
@@ -666,7 +681,18 @@ export class FaceTowerGameController {
      * target line, also reused as-is by the dev-only skip helpers below
      * so "force it" behaves identically to "the player did it".
      */
-    private advanceToNextZone(): void {
+    /**
+     * `instant` (see devSkipZone/devSkipLevel below) skips the score-popup
+     * animation outright, awarding every piece's points immediately and
+     * running finishZoneAdvance() synchronously in the same call — required
+     * for devSkipLevel(), which loops calling this many times in a row: the
+     * normal async path (state = PoppingScore, finishZoneAdvance deferred
+     * until the popup's real-time animation resolves) would let those calls
+     * race each other and finish out of order, each stomping
+     * this.currentWallHeight/deadZones with whichever zone's popup happened
+     * to resolve last instead of the actual last zone.
+     */
+    private advanceToNextZone(instant: boolean = false): void {
         /*
          * Normally there's nothing held here — the player already dropped
          * their piece before the tower settles and completeTurn() runs.
@@ -685,6 +711,87 @@ export class FaceTowerGameController {
             this.blocks.discardHeldBlock();
         }
 
+        /*
+         * Score the pieces that just built this zone BEFORE anything about
+         * the zone/level itself advances — getDynamicBlocks() is exactly
+         * "every piece placed since the last base", excluding powerups.
+         * Deliberately NOT calling this.levels.advanceZone()/
+         * this.zones.completeZone() yet either: those are what move the
+         * dashed target line/goal marker (read live, every frame, by
+         * IslandViewScene regardless of FaceTowerGameController's own
+         * state) — advancing them before the popup finishes would jump the
+         * line to the NEXT zone's target while the just-completed zone's
+         * pieces are still popping their points, instead of only moving it
+         * once the popup (and thus finishZoneAdvance, which does the
+         * advancing) is done. update() no-ops the whole time in between
+         * (see its WaitingForTower-only fallthrough), so nothing else can
+         * happen mid-popup.
+         */
+        const dynamicBlocks = this.blocks.getDynamicBlocks();
+
+        /*
+         * Made static (physics-frozen) right away, BEFORE the popup even
+         * starts — not deferred to finishZoneAdvance() with the rest of the
+         * zone-advance bookkeeping. Otherwise these pieces are still live,
+         * settling physics bodies for the whole popup duration, and one can
+         * visibly topple/slide mid-animation.
+         */
+        this.blocks.freezeAll();
+
+        if (instant) {
+            for (const block of dynamicBlocks) {
+                this.score += getPiecePoints(block.piece);
+            }
+
+            this.events.onScoreChanged?.(this.score);
+            this.finishZoneAdvance(heldPiece);
+            return;
+        }
+
+        this.state = FaceTowerState.PoppingScore;
+
+        void this.runZoneScorePopup(dynamicBlocks).then(() => {
+            this.finishZoneAdvance(heldPiece);
+        });
+    }
+
+    /**
+     * Awaits FaceTowerGameEvents.onZoneScorePopup (see TowerScorePopupUtils,
+     * the intended handler) if one's wired up, calling `onPointsAwarded` for
+     * each block as its own popup lands so score updates incrementally
+     * rather than all at once. Falls back to awarding every block's points
+     * instantly when no handler is wired (headless/test use, or the popup
+     * feature disabled entirely) — see FaceTowerGameEvents.onZoneScorePopup.
+     */
+    private async runZoneScorePopup(blocks: readonly FaceTowerBlock[]): Promise<void> {
+        const onPointsAwarded = (points: number): void => {
+            this.score += points;
+            this.events.onScoreChanged?.(this.score);
+        };
+
+        if (this.events.onZoneScorePopup) {
+            await this.events.onZoneScorePopup(blocks, onPointsAwarded);
+        } else {
+            for (const block of blocks) {
+                onPointsAwarded(getPiecePoints(block.piece));
+            }
+        }
+    }
+
+    /**
+     * The rest of advanceToNextZone()'s original work — freezing the
+     * completed zone's pieces into a new base and panning the camera —
+     * deferred until runZoneScorePopup()'s promise resolves.
+     */
+    private finishZoneAdvance(heldPiece: PieceDefinition | undefined): void {
+        /*
+         * The actual zone/level bookkeeping — deliberately deferred until
+         * here (after the score popup, see advanceToNextZone()'s own doc)
+         * so the dashed target line/goal marker (driven live off
+         * this.zones.getTargetLineWorldY(), read every frame regardless of
+         * this class's own state) doesn't jump to the NEXT zone's line
+         * until the just-completed zone's pieces are actually done popping.
+         */
         const advance = this.levels.advanceZone();
         const zoneConfig = this.levels.getCurrentZoneConfig();
 
@@ -695,10 +802,12 @@ export class FaceTowerGameController {
 
         /*
          * Everything built so far becomes the permanent base, and a
-         * fresh floor is placed exactly on the line it just reached —
-         * the tower effectively restarts on top of its own progress.
+         * fresh floor is placed exactly on the line it just reached — the
+         * tower effectively restarts on top of its own progress. Already
+         * frozen static back in advanceToNextZone() (before the popup), so
+         * this is just placing the base/dead zones now that the zone/level
+         * bookkeeping above has caught up.
          */
-        this.blocks.freezeAll();
         const activeIsland = resolveIslandForZone(this.levels.getLevelIndex(), this.levels.getZoneIndexInLevel()).island;
         this.blocks.addBase(result.lineWorldY, activeIsland.basePieceId);
         this.deadZones.rebuild(result.lineWorldY, this.currentWallHeight);
@@ -761,7 +870,7 @@ export class FaceTowerGameController {
         }
 
         if (this.levels.isFinalLevel()) {
-            this.advanceToNextZone();
+            this.advanceToNextZone(true);
             return;
         }
 
@@ -769,9 +878,11 @@ export class FaceTowerGameController {
 
         // Guarded against a misconfigured levels-config.json (e.g.
         // zoneCount <= 0) looping forever — no legitimate level needs
-        // anywhere near this many zones to roll over.
+        // anywhere near this many zones to roll over. instant=true here —
+        // see advanceToNextZone()'s own doc for why this loop specifically
+        // can't use the normal async popup path.
         for (let i = 0; i < 1000 && this.levels.getLevelIndex() === startingLevel; i++) {
-            this.advanceToNextZone();
+            this.advanceToNextZone(true);
         }
     }
 
@@ -815,7 +926,7 @@ export class FaceTowerGameController {
         }
 
         this.state = FaceTowerState.GameOver;
-        this.events.onGameOver?.(this.score);
+        this.events.onGameOver?.(this.score, this.getCurrentTopWorldY());
     }
 
     /** Dev-only: force-ends the run right away, exactly as if the tower had actually collapsed — see IslandViewScene.setupLevelDevGui(). A no-op once already GameOver. */

@@ -12,6 +12,7 @@ import { createWaterMaterial } from '../game/builders/WaterMaterial';
 import { PieceDevGui } from '../game/debug/PieceDevGui';
 import { PieceSnapshotTool } from '../game/debug/PieceSnapshotTool';
 import { PowerupDevGui } from '../game/debug/PowerupDevGui';
+import { TowerHighScoreStorage } from './TowerHighScoreStorage';
 import { PowerupInventoryStorage } from '../game/data/PowerupInventoryStorage';
 import type { PlayerEntity } from '../game/entities/PlayerEntity';
 import { CollectibleManager } from '../game/systems/CollectibleManager';
@@ -35,7 +36,7 @@ import { TowerVfxUtils } from './TowerVfxUtils';
 import type { PowerupContactPoint } from './PowerupSystem';
 import { TowerBaseSync3D } from './TowerBaseSync3D';
 import { TowerBlockSync3D } from './TowerBlockSync3D';
-import { DEFAULT_TOWER_3D_CONFIG } from './Tower3DConfig';
+import { DEFAULT_TOWER_3D_CONFIG, formatHeightRounded } from './Tower3DConfig';
 import { loadTowerDevMeta, saveTowerDevMeta } from './TowerDevMeta';
 import { TowerHeightMarkers3D } from './TowerHeightMarkers3D';
 import { resolveIslandForZone } from './TowerIslandProgression';
@@ -44,6 +45,7 @@ import { TowerSkyController } from './TowerSkyController';
 import { TowerStarfieldController } from './TowerStarfieldController';
 import { TowerWallSync3D } from './TowerWallSync3D';
 import { GameHud } from './ui/GameHud';
+import { TowerScorePopupUtils } from './ui/TowerScorePopupUtils';
 import SoundManager from 'core/audio/SoundManager';
 import Assets from '../Assets';
 
@@ -427,6 +429,7 @@ export default class IslandViewScene extends ThreeScene {
         this.skyController.destroy();
         this.starfieldController.destroy();
         TowerVfxUtils.destroy();
+        TowerScorePopupUtils.destroy();
         this.faceTower?.destroy();
         this.blockSync3D?.destroy();
         this.baseSync3D?.destroy();
@@ -478,6 +481,7 @@ export default class IslandViewScene extends ThreeScene {
                 this.gameHud.hideGameOver();
                 this.baseSync3D.clear();
                 this.faceTower.reset();
+                TowerHighScoreStorage.markRunStart();
 
                 /*
                  * A fresh run wipes the board a pending active powerup's
@@ -493,6 +497,9 @@ export default class IslandViewScene extends ThreeScene {
                 }
             },
         );
+
+        TowerScorePopupUtils.build(this.hudContainer, () => this.gameHud.getScoreLabelScreenPosition());
+        TowerScorePopupUtils.onPop = () => SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Grab);
 
         this.gameHud.onUsePowerup.add((powerupId: string) => this.useHudPowerup(powerupId), this);
         this.gameHud.onWatchVideoForLevelUp.add(() => void this.handleLevelUpWatchVideo(), this);
@@ -560,8 +567,27 @@ export default class IslandViewScene extends ThreeScene {
                     this.gameHud.showLevelUp(levelIndex, grantedId);
                 },
 
-                onGameOver: (score) => {
-                    this.gameHud.showGameOver(score);
+                onGameOver: (score, topWorldY) => {
+                    const heightMeters = (DEFAULT_FACE_TOWER_CONFIG.floorY - topWorldY) / DEFAULT_TOWER_3D_CONFIG.pixelsPerUnit;
+
+                    // Checked BEFORE recording — recordX() below immediately
+                    // bumps the cache to match, so isNewXHigh() (which
+                    // compares against the run-START baseline) would always
+                    // read false afterward.
+                    const isNewScoreHigh = TowerHighScoreStorage.isNewPointsHigh(score);
+                    const isNewHeightHigh = TowerHighScoreStorage.isNewHeightHigh(heightMeters);
+
+                    TowerHighScoreStorage.recordPoints(score);
+                    TowerHighScoreStorage.recordHeight(heightMeters);
+
+                    this.gameHud.showGameOver({
+                        score,
+                        heightText: formatHeightRounded(heightMeters),
+                        bestScoreText: String(TowerHighScoreStorage.getPoints()),
+                        isNewScoreHigh,
+                        bestHeightText: formatHeightRounded(TowerHighScoreStorage.getHeight()),
+                        isNewHeightHigh,
+                    });
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.GameOver);
                 },
 
@@ -618,6 +644,16 @@ export default class IslandViewScene extends ThreeScene {
                 onNextPieceChanged: (piece) => {
                     this.gameHud.showNextPiece(piece);
                 },
+
+                onZoneScorePopup: (blocks, onPointsAwarded) =>
+                    TowerScorePopupUtils.playZoneComplete(
+                        blocks,
+                        (block) => ({
+                            x: block.entity.body.position.x,
+                            y: block.entity.body.position.y + (this.faceTower?.getCameraOffsetY() ?? 0),
+                        }),
+                        onPointsAwarded,
+                    ),
             },
         );
 
@@ -656,6 +692,7 @@ export default class IslandViewScene extends ThreeScene {
         );
 
         this.faceTower.start();
+        TowerHighScoreStorage.markRunStart();
         this.resizeFaceTowerInput();
         this.setupCameraDevGui();
         this.setupVisualDevGui();

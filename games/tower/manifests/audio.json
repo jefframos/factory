@@ -133,6 +133,30 @@
         },
         {
           "alias": [
+            "impactMetal_heavy_001.ogg"
+          ],
+          "src": [
+            "impactMetal_heavy_001.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "impactMetal_heavy_002.ogg"
+          ],
+          "src": [
+            "impactMetal_heavy_002.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "impactMetal_heavy_003.ogg"
+          ],
+          "src": [
+            "impactMetal_heavy_003.mp3"
+          ]
+        },
+        {
+          "alias": [
             "impactSoft_medium_000.ogg"
           ],
           "src": [
@@ -217,6 +241,14 @@
           ],
           "src": [
             "pepSound5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "phaseJump1.ogg"
+          ],
+          "src": [
+            "phaseJump1.mp3"
           ]
         },
         {

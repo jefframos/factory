@@ -101,7 +101,7 @@ export function createWaterMaterial(
     opacity: number,
     elevation: number,
     colors: WaterColors,
-    blobScale = 2.5,  // 1 = default  >1 = finer blobs  <1 = coarser blobs
+    blobScale = 5,  // 1 = default  >1 = finer blobs  <1 = coarser blobs
 ): THREE.ShaderMaterial {
     return new THREE.ShaderMaterial({
         uniforms: THREE.UniformsUtils.merge([

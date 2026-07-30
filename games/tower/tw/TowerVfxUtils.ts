@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import { DEFAULT_FACE_TOWER_CONFIG } from './FaceTowerConfig';
 import type { FaceTowerBlock } from './FaceTowerTypes';
 import { DEFAULT_TOWER_3D_CONFIG } from './Tower3DConfig';
+import SoundManager from 'core/audio/SoundManager';
+import Assets from '../Assets';
 
 interface BurstPreset {
     maxParticles: number;
@@ -222,7 +224,20 @@ const FIRST_TOUCH_POOL = new BurstPool({
     color: new THREE.Vector3(1.0, 1.0, 1.0), // plain white dust — every normal landing
 });
 
-const ALL_POOLS = [BOMB_POOL, FREEZE_POOL, SHRINK_POOL, FIRST_TOUCH_POOL];
+const SCORE_POOL = new BurstPool({
+    ignoreDepth: true,
+    maxParticles: 160,
+    particlesPerBurst: 14,
+    lifetime: 0.35,
+    speedMin: 1.0,
+    speedMax: 2.2,
+    gravity: 1.5,
+    pointSize: 1.2,
+    sizeAtten: 220,
+    color: new THREE.Vector3(1.0, 0.85, 0.2), // gold — matches a "points" pop
+});
+
+const ALL_POOLS = [BOMB_POOL, FREEZE_POOL, SHRINK_POOL, FIRST_TOUCH_POOL, SCORE_POOL];
 
 /**
  * Static VFX hook surface for the tower's gameplay "juice" — one radial
@@ -292,6 +307,8 @@ export class TowerVfxUtils {
         }
 
         FREEZE_POOL.spawn(contactPoint.x, contactPoint.y, contactPoint.z);
+        SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Freeze)
+
     }
 
     /** The shrink-ray powerup touching a block. */
@@ -305,6 +322,8 @@ export class TowerVfxUtils {
         }
 
         SHRINK_POOL.spawn(contactPoint.x, contactPoint.y, contactPoint.z);
+        SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Shrink)
+
     }
 
     /** The bomb/super-bomb powerup destroying a block. */
@@ -318,5 +337,12 @@ export class TowerVfxUtils {
         }
 
         BOMB_POOL.spawn(contactPoint.x, contactPoint.y, contactPoint.z);
+        SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Bomb)
+    }
+
+    /** A piece popping its score during a zone-complete popup — see TowerScorePopupUtils. */
+    public static onScorePopVfx(block: FaceTowerBlock): void {
+        const worldPos = TowerVfxUtils.blockToWorld(block);
+        SCORE_POOL.spawn(worldPos.x, worldPos.y, worldPos.z);
     }
 }

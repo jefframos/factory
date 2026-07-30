@@ -126,8 +126,8 @@ export default class Assets {
                 pitchMinMax: [1.05, 1.25],
             },
             Drop: {
-                soundId: ['drop'],
-                volumeMinMax: [0.08, 0.12],
+                soundId: ['Tap'],
+                volumeMinMax: [0.2, 0.25],
                 pitchMinMax: [0.8, 1.1],
             },
             Whoosh: {
@@ -150,6 +150,22 @@ export default class Assets {
             GateOpen: {
                 soundId: 'diamond-sparkle',
                 volumeMinMax: 0.15,
+                pitchMinMax: [0.95, 1.05],
+            },
+
+            Shrink: {
+                soundId: ['phaseJump1'],
+                volumeMinMax: 0.15,
+                pitchMinMax: [0.95, 1.05],
+            },
+            Bomb: {
+                soundId: ['Explosion_01', 'Explosion_02', 'Explosion_03'],
+                volumeMinMax: 0.2,
+                pitchMinMax: [0.95, 1.05],
+            },
+            Freeze: {
+                soundId: ['impactMetal_heavy_001', 'impactMetal_heavy_002', 'impactMetal_heavy_003'],
+                volumeMinMax: 0.2,
                 pitchMinMax: [0.95, 1.05],
             },
             /** Spawn/revive invincibility grant — see PlayerEntity.grantSpawnInvincibility(). */
