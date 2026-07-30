@@ -39,9 +39,9 @@ export default class MockPlatform implements IPlatformConnection {
         return Promise.resolve();
     }
 
-    public async showRewardedVideo(): Promise<void> {
+    public async showRewardedVideo(): Promise<boolean> {
         console.debug("Mock Platform: Showing rewarded video...");
-        return Promise.resolve();
+        return Promise.resolve(true);
     }
 
     public async setPlayerScore(score: number): Promise<void> {
@@ -64,6 +64,8 @@ export default class MockPlatform implements IPlatformConnection {
 
     public async gameplayStart(): Promise<void> {
         if (!this.isGameplayActive) {
+            console.debug("Mock Platform: Gameplay started.");
+            this.isGameplayActive = true;
             await Promise.resolve();
         } else {
             console.debug("Mock Platform: Gameplay already active.");
@@ -72,6 +74,8 @@ export default class MockPlatform implements IPlatformConnection {
 
     public async gameplayStop(): Promise<void> {
         if (this.isGameplayActive) {
+            console.debug("Mock Platform: Gameplay stopped.");
+            this.isGameplayActive = false;
             await Promise.resolve();
         } else {
             console.debug("Mock Platform: Gameplay already inactive.");

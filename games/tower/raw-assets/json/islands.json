@@ -33,8 +33,7 @@
     "starfieldWeightMax": 0.32,
     "ambientColor": "#DDE2EE",
     "waterColor": "#30C2F2",
-    "isDefault": false,
-    "basePieceId": "static-base-lunar"
+    "isDefault": false
   },
   {
     "id": "martianDunes",
@@ -72,7 +71,8 @@
     "starfieldWeightMax": 0.58,
     "ambientColor": "#FFE1B8",
     "waterColor": "#30C2F2",
-    "isDefault": false
+    "isDefault": false,
+    "basePieceId": "base-1"
   },
   {
     "id": "saturnRinglands",
@@ -92,7 +92,8 @@
     "starfieldWeightMax": 0.68,
     "ambientColor": "#FFF0C6",
     "waterColor": "#30C2F2",
-    "isDefault": false
+    "isDefault": false,
+    "basePieceId": "base-2"
   },
   {
     "id": "uranianIce",
@@ -132,7 +133,8 @@
     "starfieldWeightMax": 0.84,
     "ambientColor": "#B8D5FF",
     "waterColor": "#30C2F2",
-    "isDefault": false
+    "isDefault": false,
+    "basePieceId": "base-3"
   },
   {
     "id": "plutonianTwilight",

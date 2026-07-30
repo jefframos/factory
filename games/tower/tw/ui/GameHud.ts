@@ -119,14 +119,24 @@ export class GameHud extends PIXI.Container {
         this.zoneNotification.show(zoneIndex);
     }
 
+    /** Global (stage-space) position of the level-up popup's currently-shown powerup icon — see TowerRewardFlyUtils/IslandViewScene's onLevelUpCollected handler. */
+    public getLevelUpIconGlobalPosition(): { x: number; y: number } {
+        return this.levelUpNotification.getIconGlobalPosition();
+    }
+
+    /** Global (stage-space) position of `id`'s belt button — null if it's currently disabled/not built. See TowerRewardFlyUtils. */
+    public getPowerupBeltButtonPosition(id: string): { x: number; y: number } | null {
+        return this.powerupBelt.getButtonGlobalPosition(id);
+    }
+
     /**
      * Full level-up — shows the bigger popup with the powerup already
      * granted (see IslandViewScene's onLevelProgressed handler, which
      * grants BEFORE calling this) and offers doubling it via a rewarded
      * video. Confetti fires as part of LevelUpNotification.show().
      */
-    public showLevelUp(levelIndex: number, powerupId: string): void {
-        this.levelUpNotification.show(levelIndex, powerupId);
+    public showLevelUp(levelIndex: number, powerupId: string, videoBonusAmount: number): void {
+        this.levelUpNotification.show(levelIndex, powerupId, videoBonusAmount);
     }
 
     /** Call while awaiting the platform's rewarded-video promise — disables the watch button so a slow ad load can't be double-tapped. */
@@ -182,6 +192,11 @@ export class GameHud extends PIXI.Container {
 
     public hideGameOver(): void {
         this.gameOverPopup.hidePopup();
+    }
+
+    /** Call while awaiting the platform's rewarded-video promise for the game-over RESPAWN button. */
+    public setGameOverContinueBusy(busy: boolean): void {
+        this.gameOverPopup.setContinueBusy(busy);
     }
 
     public showNextPiece(piece: PieceDefinition): void {

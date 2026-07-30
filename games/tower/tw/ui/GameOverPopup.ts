@@ -257,7 +257,7 @@ export class GameOverPopup extends PIXI.Container {
                 height: BUTTON_HEIGHT,
                 allPadding: BUTTON_PADDING,
                 texture: PIXI.Texture.from(ATLAS.CONTINUE_STANDARD),
-                label: 'CONTINUE',
+                label: 'RESPAWN',
                 fontStyle: new PIXI.TextStyle(CONTINUE_FONT_STYLE),
                 // Video icon on the left side of the label
                 iconTexture: PIXI.Texture.from(ATLAS.CONTINUE_VIDEO_ICON),
@@ -286,7 +286,7 @@ export class GameOverPopup extends PIXI.Container {
             },
         });
         this._card.addChild(this._continueBtn);
-        this._continueBtn.setLabel('CONTINUE')
+        this._continueBtn.setLabel('RESPAWN')
         // Perform initial layout
         this.layout();
     }
@@ -322,6 +322,15 @@ export class GameOverPopup extends PIXI.Container {
 
         // Seed _prevTime so the first delta is 0 instead of huge
         this._prevTime = performance.now();
+    }
+
+    /** Call while awaiting the platform's rewarded-video promise — disables the RESPAWN button so a slow ad load can't be double-tapped. */
+    public setContinueBusy(busy: boolean): void {
+        if (busy) {
+            this._continueBtn.disable();
+        } else {
+            this._continueBtn.enable();
+        }
     }
 
     /** Hide the popup with a fade-out. */

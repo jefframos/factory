@@ -30,7 +30,7 @@ import { ROOM_GEOMETRY } from '../game/world/MeshConfig';
 import { DEFAULT_FACE_TOWER_CONFIG } from './FaceTowerConfig';
 import { FaceTowerGameController } from './FaceTowerGameController';
 import { PIECES, type PieceDefinition } from './PieceStorage';
-import { POWERUPS, SKIP_PIECE_POWERUP_ID } from './PowerupStorage';
+import { POWERUPS, SKIP_PIECE_POWERUP_ID, getPowerup } from './PowerupStorage';
 import { getEnabledPowerupIds } from './PowerupConfig';
 import { TowerVfxUtils } from './TowerVfxUtils';
 import type { PowerupContactPoint } from './PowerupSystem';
@@ -46,6 +46,9 @@ import { TowerStarfieldController } from './TowerStarfieldController';
 import { TowerWallSync3D } from './TowerWallSync3D';
 import { GameHud } from './ui/GameHud';
 import { TowerScorePopupUtils } from './ui/TowerScorePopupUtils';
+import { TowerRewardFlyUtils } from './ui/TowerRewardFlyUtils';
+import { PowerupButton } from './ui/PowerupButton';
+import ViewUtils from 'core/utils/ViewUtils';
 import SoundManager from 'core/audio/SoundManager';
 import Assets from '../Assets';
 
@@ -55,6 +58,9 @@ const VIEW_ORIGIN = {
 } as PlayerEntity;
 
 const FOCUS_POINT = new THREE.Vector3(0, 0, 0);
+
+/** How many copies of the level-up powerup a successful rewarded video grants — see handleLevelUpWatchVideo(). Change this one constant to retune the reward. */
+const REWARD_VIDEO_BONUS_AMOUNT = 3;
 
 /**
  * A single connected blob of cells (not the chunk streamer) centred on the
@@ -124,6 +130,12 @@ export default class IslandViewScene extends ThreeScene {
 
     /** Which powerup the currently-shown LevelUpNotification popup already granted — see handleLevelUpWatchVideo(), which grants a second one of THIS SAME id on a successful video. Null whenever no level-up popup is up. */
     private pendingLevelUpPowerupId: string | null = null;
+    /** How many copies to fly to the belt on collect — 1 normally, bumped by handleLevelUpWatchVideo() on a successful double. Purely a visual count for TowerRewardFlyUtils, not tied to the actual granted amount (which already happened silently at grant time). */
+    private pendingLevelUpFlyCount = 1;
+    /** True while the platform's own gameplayStart()/gameplayStop() thinks a run is "in play" — see onBlockDropped (starts it lazily on the next actual drop) and the onGameOver/onLevelProgressed handlers (stop it the instant either popup shows). Deliberately NOT restarted the instant a popup is dismissed — only the next real drop (i.e. the player actually touching the screen again) flips it back on. */
+    private isGameplayActive = false;
+    /** True once handleLevelUpWatchVideo() has already dispatched onLevelUpCollected for the CURRENT popup — the onLevelUpCollected listener uses this to skip the commercial break it otherwise shows for a plain (no-video) collect, since a rewarded video already played. Reset false every time a fresh level-up shows. */
+    private levelUpVideoWatched = false;
 
     private blockSync3D!: TowerBlockSync3D;
     private baseSync3D!: TowerBaseSync3D;
@@ -430,6 +442,7 @@ export default class IslandViewScene extends ThreeScene {
         this.starfieldController.destroy();
         TowerVfxUtils.destroy();
         TowerScorePopupUtils.destroy();
+        TowerRewardFlyUtils.destroy();
         this.faceTower?.destroy();
         this.blockSync3D?.destroy();
         this.baseSync3D?.destroy();
@@ -471,12 +484,7 @@ export default class IslandViewScene extends ThreeScene {
          */
         this.gameHud = new GameHud(
 
-            () => {
-                this.gameHud.hideGameOver();
-                const blocks = this.faceTower.continueRun();
-                this.blockSync3D.freezeBlocks(blocks)
-
-            },
+            () => void this.handleGameOverRespawnVideo(),
             () => {
                 this.gameHud.hideGameOver();
                 this.baseSync3D.clear();
@@ -495,16 +503,55 @@ export default class IslandViewScene extends ThreeScene {
                     this.preActivationPiece = null;
                     this.gameHud.setActivePowerup(null);
                 }
+
+                // Player restarted outright (as opposed to watching a video
+                // to respawn in place) — the natural "between sessions" spot
+                // for a commercial break.
+                void PlatformHandler.instance.platform.showCommercialBreak();
             },
         );
 
         TowerScorePopupUtils.build(this.hudContainer, () => this.gameHud.getScoreLabelScreenPosition());
         TowerScorePopupUtils.onPop = () => SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Grab);
+        TowerRewardFlyUtils.build(this.hudContainer);
+        TowerRewardFlyUtils.onArrive = () => SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Invincible);
 
         this.gameHud.onUsePowerup.add((powerupId: string) => this.useHudPowerup(powerupId), this);
         this.gameHud.onWatchVideoForLevelUp.add(() => void this.handleLevelUpWatchVideo(), this);
         this.gameHud.onLevelUpCollected.add(() => {
+            const powerupId = this.pendingLevelUpPowerupId;
+            const flyCount = this.pendingLevelUpFlyCount;
+
             this.pendingLevelUpPowerupId = null;
+            this.pendingLevelUpFlyCount = 1;
+
+            /*
+             * Fires after LevelUpNotification has already been told to hide
+             * (see GameHud's own onCollect listener, registered before this
+             * one during its own construction — same signal, so it runs
+             * first) — tracks the icon's on-screen position and the belt
+             * slot's position, THEN flies flyCount copies between them.
+             * Purely cosmetic: the actual grant already happened silently
+             * back when the level-up itself fired.
+             */
+            if (powerupId) {
+                const from = this.gameHud.getLevelUpIconGlobalPosition();
+                const to = this.gameHud.getPowerupBeltButtonPosition(powerupId);
+
+                if (to) {
+                    TowerRewardFlyUtils.fly(() => this.buildRewardFlyIcon(powerupId), from, to, flyCount);
+                }
+            }
+
+            // Only when THIS collect wasn't preceded by watching the bonus
+            // video — handleLevelUpWatchVideo() already showed a rewarded
+            // video before dispatching this same signal, so stacking a
+            // commercial break right after that would be a second ad in a
+            // row for the exact same moment.
+            if (!this.levelUpVideoWatched) {
+                void PlatformHandler.instance.platform.showCommercialBreak();
+            }
+
             this.faceTower.resumeAfterLevelUpNotification();
         }, this);
 
@@ -564,7 +611,15 @@ export default class IslandViewScene extends ThreeScene {
                     PowerupInventoryStorage.grant(grantedId);
 
                     this.pendingLevelUpPowerupId = grantedId;
-                    this.gameHud.showLevelUp(levelIndex, grantedId);
+                    this.pendingLevelUpFlyCount = 1;
+                    this.levelUpVideoWatched = false;
+                    this.gameHud.showLevelUp(levelIndex, grantedId, REWARD_VIDEO_BONUS_AMOUNT);
+
+                    // The popup is now up — gameplay is paused until the
+                    // player collects and drops the next piece (see
+                    // onBlockDropped, which flips this back on lazily).
+                    this.isGameplayActive = false;
+                    void PlatformHandler.instance.platform.gameplayStop();
                 },
 
                 onGameOver: (score, topWorldY) => {
@@ -589,11 +644,28 @@ export default class IslandViewScene extends ThreeScene {
                         isNewHeightHigh,
                     });
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.GameOver);
+
+                    // Run is over — gameplay stays "stopped" until the
+                    // player actually drops a piece again (see
+                    // onBlockDropped), whether that's a fresh run (REPLAY)
+                    // or respawning in place (RESPAWN video).
+                    this.isGameplayActive = false;
+                    void PlatformHandler.instance.platform.gameplayStop();
                 },
 
                 onBlockDropped: (block) => {
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Drop);
                     this.blockSync3D.notifyDropped(block.id);
+
+                    // Lazily (re)starts gameplay the instant the player
+                    // actually interacts — covers both the very first drop
+                    // of a session and every "touch the screen again" after
+                    // a game-over/level-up popup stopped it (see onGameOver/
+                    // onLevelProgressed).
+                    if (!this.isGameplayActive) {
+                        this.isGameplayActive = true;
+                        void PlatformHandler.instance.platform.gameplayStart();
+                    }
 
                     /*
                      * The active powerup's piece just got dropped for
@@ -851,13 +923,46 @@ export default class IslandViewScene extends ThreeScene {
     }
 
     /**
+     * GameHud's game-over "RESPAWN" callback — awaits the platform's
+     * rewarded-video call and only actually respawns (hide the popup,
+     * continue the run in place) if it was watched successfully; re-enables
+     * the button on failure/cancel so the player isn't stuck watching
+     * nothing happen.
+     */
+    private async handleGameOverRespawnVideo(): Promise<void> {
+        this.gameHud.setGameOverContinueBusy(true);
+
+        let rewarded = false;
+
+        try {
+            rewarded = await PlatformHandler.instance.platform.showRewardedVideo('game-over-respawn');
+        } catch (e) {
+            console.error('IslandViewScene: rewarded video failed', e);
+        }
+
+        this.gameHud.setGameOverContinueBusy(false);
+
+        // if (!rewarded) {
+        //     return;
+        // }
+
+        this.gameHud.hideGameOver();
+        const blocks = this.faceTower.continueRun();
+        this.blockSync3D.freezeBlocks(blocks);
+    }
+
+    /**
      * GameHud's onWatchVideoForLevelUp callback — awaits the platform's
-     * rewarded-video call and grants a SECOND copy of whichever powerup the
-     * level-up already granted (see pendingLevelUpPowerupId) on success,
-     * telling the popup to reflect it; re-enables the button on
-     * failure/cancel so the player isn't stuck. No-op if there's no
-     * pending level-up (shouldn't happen — the button only exists while
-     * the popup is up).
+     * rewarded-video call and, on success, grants REWARD_VIDEO_BONUS_AMOUNT
+     * copies of whichever powerup the level-up already granted (see
+     * pendingLevelUpPowerupId), then completes the popup exactly like
+     * tapping COLLECT would — hides it and flies that many icons to the
+     * belt — instead of leaving it up waiting for a separate collect tap
+     * (same "watch video → immediately continue" pattern the game-over
+     * popup's own continue button uses). Re-enables the watch button on
+     * failure/cancel so the player isn't stuck. No-op if there's no pending
+     * level-up (shouldn't happen — the button only exists while the popup
+     * is up).
      */
     private async handleLevelUpWatchVideo(): Promise<void> {
         const powerupId = this.pendingLevelUpPowerupId;
@@ -876,14 +981,51 @@ export default class IslandViewScene extends ThreeScene {
             console.error('IslandViewScene: rewarded video failed', e);
         }
 
+
         this.gameHud.setLevelUpWatchBusy(false);
 
         if (rewarded) {
-            PowerupInventoryStorage.grant(powerupId);
-            this.gameHud.notifyLevelUpDoubled();
+            PowerupInventoryStorage.grant(powerupId, REWARD_VIDEO_BONUS_AMOUNT);
+            this.pendingLevelUpFlyCount = REWARD_VIDEO_BONUS_AMOUNT;
+            this.levelUpVideoWatched = true;
+
+            // Same signal COLLECT dispatches — reuses its existing
+            // hide+fly+resume handling below verbatim rather than
+            // duplicating it here.
+            this.gameHud.onLevelUpCollected.dispatch();
         } else {
             this.gameHud.notifyLevelUpVideoFailed();
         }
+    }
+
+    /**
+     * Builds a single reward-fly icon for `powerupId` — same building
+     * blocks LevelUpNotification/PowerupBelt each already use for their own
+     * icons, deliberately duplicated rather than shared: TowerRewardFlyUtils
+     * is meant to stay a drop-in flourish, so each call site (there's only
+     * this one today) just hands over whatever icon it wants flown.
+     */
+    private buildRewardFlyIcon(powerupId: string): PIXI.Container {
+        const size = 70;
+
+        if (powerupId === SKIP_PIECE_POWERUP_ID) {
+            return PowerupButton.buildSkipIcon(size);
+        }
+
+        const powerup = getPowerup(powerupId);
+
+        if (!powerup) {
+            return PowerupButton.buildPieceIcon('#ffffff', undefined, size);
+        }
+
+        if (powerup.icon) {
+            const sprite = PIXI.Sprite.from(powerup.icon);
+            sprite.anchor.set(0.5);
+            sprite.scale.set(ViewUtils.elementScaler(sprite, size));
+            return sprite;
+        }
+
+        return PowerupButton.buildPieceIcon(powerup.piece.color, powerup.piece.polygon, size);
     }
 
     /**

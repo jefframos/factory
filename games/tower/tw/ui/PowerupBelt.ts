@@ -126,6 +126,18 @@ export class PowerupBelt extends PIXI.Container {
         }
     }
 
+    /** Global (stage-space) position of `id`'s button — null if it's disabled/not built (see PowerupConfig.getEnabledPowerupIds()). Purely for pointing a VFX flourish at it (see TowerRewardFlyUtils) — not read anywhere in normal gameplay flow. */
+    public getButtonGlobalPosition(id: string): { x: number; y: number } | null {
+        const button = this.buttons.get(id);
+
+        if (!button) {
+            return null;
+        }
+
+        const point = button.getGlobalPosition();
+        return { x: point.x, y: point.y };
+    }
+
     /**
      * `powerup.icon` (if set — see PowerupDefinition.icon) wins outright: a
      * plain PNG/webp sprite instead of a drawn piece-shape swatch. Falls

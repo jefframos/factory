@@ -29,15 +29,15 @@
             "zones": [
                 {
                     "height": 6,
+                    "polePercent": 0.9
+                },
+                {
+                    "height": 7,
+                    "polePercent": 0.8
+                },
+                {
+                    "height": 7,
                     "polePercent": 0.7
-                },
-                {
-                    "height": 7,
-                    "polePercent": 0.65
-                },
-                {
-                    "height": 7,
-                    "polePercent": 0.6
                 }
             ]
         },
@@ -49,15 +49,15 @@
             "zones": [
                 {
                     "height": 7,
-                    "polePercent": 0.6
+                    "polePercent": 0.9
                 },
                 {
                     "height": 8,
-                    "polePercent": 0.55
+                    "polePercent": 0.8
                 },
                 {
                     "height": 8,
-                    "polePercent": 0.5
+                    "polePercent": 0.7
                 }
             ]
         },
@@ -69,11 +69,11 @@
             "zones": [
                 {
                     "height": 8,
-                    "polePercent": 0.55
+                    "polePercent": 0.8
                 },
                 {
                     "height": 8,
-                    "polePercent": 0.5
+                    "polePercent": 0.6
                 },
                 {
                     "height": 9,

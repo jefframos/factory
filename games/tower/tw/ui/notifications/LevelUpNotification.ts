@@ -1,12 +1,22 @@
 // LevelUpNotification.ts
 
+import SoundManager from 'core/audio/SoundManager';
 import BaseButton from 'core/ui/BaseButton';
+import { gsap } from 'gsap';
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
+import Assets from '../../../Assets';
 import { formatPowerupName, getPowerup, SKIP_PIECE_POWERUP_ID } from '../../PowerupStorage';
 import { PowerupButton } from '../PowerupButton';
+import { RewardContainer } from '../RewardContainer';
 import { ConfettiEffect } from './ConfettiEffect';
 import ViewUtils from 'core/utils/ViewUtils';
+
+/** Seconds after the icon/name reveal before both buttons fade in — see revealReward(). */
+const BUTTON_REVEAL_DELAY = 0.35;
+
+/** Chest scale relative to its own native art size — see layout(). */
+const REWARD_CHEST_SCALE = 1.1;
 
 const ATLAS = {
     PANEL: 'ItemFrame03_Single_Purple',
@@ -95,6 +105,8 @@ export class LevelUpNotification extends PIXI.Container {
     private readonly subtitleText: PIXI.Text;
     private readonly rewardLabel: PIXI.Text;
     private iconContainer: PIXI.Container;
+    /** Chest prop — jiggles/bursts open, then reveals the icon/name (see show()/revealReward()) before the buttons appear. */
+    private readonly rewardContainer = new RewardContainer();
     private readonly collectBtn: BaseButton;
     private readonly watchBtn: BaseButton;
     private readonly confetti: ConfettiEffect;
@@ -160,6 +172,10 @@ export class LevelUpNotification extends PIXI.Container {
         this.subtitleText.anchor.set(0.5, 0);
         this.card.addChild(this.subtitleText);
 
+        // Chest added BEFORE the icon so the icon renders in front of it —
+        // the powerup should pop out on top of the chest, not behind it.
+        this.card.addChild(this.rewardContainer);
+
         this.iconContainer = new PIXI.Container();
         this.card.addChild(this.iconContainer);
 
@@ -186,7 +202,6 @@ export class LevelUpNotification extends PIXI.Container {
             click: { callback: () => this.onWatchVideo.dispatch() },
             disabled: { texture: PIXI.Texture.from(ATLAS.WATCH_DISABLED), tint: 0x888888 },
         } as any);
-        this.watchBtn.setLabel('x2');
         this.card.addChild(this.watchBtn);
 
         this.collectBtn = new BaseButton({
@@ -210,18 +225,29 @@ export class LevelUpNotification extends PIXI.Container {
         this.layout();
     }
 
-    /** Shows the popup for `levelIndex`/`powerupId`, resets to the single-reward state, and fires a fresh confetti burst. */
-    public show(levelIndex: number, powerupId: string): void {
+    /**
+     * Shows the popup for `levelIndex`/`powerupId` — the chest appears
+     * closed, jiggles, then bursts open (see RewardContainer.open()); only
+     * once the lid actually pops does the icon/name reveal (revealReward()),
+     * and only a beat after THAT do both buttons fade in. Resets to the
+     * single-reward (not-yet-doubled) state. `videoBonusAmount` is how many
+     * copies watching the video actually grants (see IslandViewScene's
+     * REWARD_VIDEO_BONUS_AMOUNT) — shown on the watch button itself
+     * ("x3") so it never drifts out of sync with the real reward.
+     */
+    public show(levelIndex: number, powerupId: string, videoBonusAmount: number): void {
         this.powerupId = powerupId;
-
         this.subtitleText.text = `Level ${levelIndex + 1}`;
-        this.rewardLabel.text = `+1 ${formatPowerupName(powerupId)}`;
-        this.rebuildIcon(powerupId);
+        this.watchBtn.setLabel(`x${videoBonusAmount}`);
 
-        this.watchBtn.visible = true;
-        this.watchBtn.enable();
+        this.iconContainer.visible = false;
+        this.rewardLabel.visible = false;
+        this.watchBtn.visible = false;
+        this.collectBtn.visible = false;
 
-        this.confetti.play();
+        this.rewardContainer.visible = true;
+        this.rewardContainer.initContainer();
+        this.rewardContainer.open(() => this.revealReward(powerupId));
 
         this.visible = true;
         this.interactiveChildren = false;
@@ -230,6 +256,30 @@ export class LevelUpNotification extends PIXI.Container {
         this.prevTime = performance.now();
 
         this.layout();
+    }
+
+    /** Fires the instant the chest's lid pops open (see RewardContainer.open()) — reveals the icon/name, fires the screen-wide confetti, and queues both buttons to fade in a beat later. */
+    private revealReward(powerupId: string): void {
+        this.rewardLabel.text = `+1 ${formatPowerupName(powerupId)}`;
+        this.rebuildIcon(powerupId);
+
+        this.iconContainer.visible = true;
+        this.iconContainer.scale.set(0.4);
+        this.rewardLabel.visible = true;
+        this.rewardLabel.alpha = 0;
+
+        gsap.to(this.iconContainer.scale, { x: 1, y: 1, duration: 0.35, ease: 'back.out(3)' });
+        gsap.to(this.rewardLabel, { alpha: 1, duration: 0.25 });
+
+        this.confetti.play();
+        SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Wee);
+
+        gsap.delayedCall(BUTTON_REVEAL_DELAY, () => {
+            this.watchBtn.visible = true;
+            this.watchBtn.enable();
+            this.collectBtn.visible = true;
+            this.layout();
+        });
     }
 
     /** Call once the rewarded video actually completes — bumps the shown reward to x2 and retires the watch button (only COLLECT remains). */
@@ -250,6 +300,12 @@ export class LevelUpNotification extends PIXI.Container {
         } else {
             this.watchBtn.enable();
         }
+    }
+
+    /** Global (stage-space) position of the granted-powerup icon — for TowerRewardFlyUtils to fly copies of it toward the powerup belt from the exact spot it's currently shown at. */
+    public getIconGlobalPosition(): { x: number; y: number } {
+        const point = this.iconContainer.getGlobalPosition();
+        return { x: point.x, y: point.y };
     }
 
     public hide(): void {
@@ -278,6 +334,8 @@ export class LevelUpNotification extends PIXI.Container {
         this.subtitleText.position.set(cx, RIBBON_HEIGHT + 4 + 20);
 
         this.iconContainer.position.set(cx, 320);
+        this.rewardContainer.position.set(cx, 320);
+        this.rewardContainer.scale.set(REWARD_CHEST_SCALE);
 
         this._scoreShine.x = this.iconContainer.x
         this._scoreShine.y = this.iconContainer.y
@@ -323,6 +381,10 @@ export class LevelUpNotification extends PIXI.Container {
                 this._shineAngle += SHINE_ROTATION_SPEED * elapsed;
                 this._scoreShine.rotation = this._shineAngle;
             }
+
+            if (this.rewardContainer.visible) {
+                this.rewardContainer.update(elapsed);
+            }
         }
 
 
@@ -361,6 +423,8 @@ export class LevelUpNotification extends PIXI.Container {
     }
 
     public override destroy(options?: boolean | PIXI.IDestroyOptions): void {
+        gsap.killTweensOf(this.iconContainer.scale);
+        gsap.killTweensOf(this.rewardLabel);
         super.destroy(options ?? { children: true });
     }
 }

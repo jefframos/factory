@@ -77,7 +77,7 @@ export class PieceDevGui {
 
         this.pieces.forEach((piece, index) => {
             const row = this.buildRow(piece);
-            console.log(piece)
+            // console.log(piece)
             row.position.set(12, 12 + index * PieceDevGui.ROW_HEIGHT);
             container.addChild(row);
         });
