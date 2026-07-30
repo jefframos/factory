@@ -19,7 +19,7 @@ import type {
 import { PieceAnimations } from './PieceAnimations';
 import { getPolygonAnchorFraction, getPolygonCentroid, getPolygonHorizontalBounds, resolvePieceImagePath, type PieceDefinition } from './PieceStorage';
 import { buildStaticPieceView } from './StaticPieceView2D';
-import { getStaticPiece } from './StaticPieceStorage';
+import { getStaticPiece, getStaticPieceById } from './StaticPieceStorage';
 import type { TowerCameraController } from './TowerCameraController';
 
 function hexStringToNumber(hex: string): number {
@@ -28,7 +28,10 @@ function hexStringToNumber(hex: string): number {
 
 export class FaceTowerBlockController {
     private readonly blocks: FaceTowerBlock[] = [];
-    private readonly bases: BoxEntity[] = [];
+    /** BoxEntity for a plain rect base, PolygonEntity when its resolved static piece has a custom `polygon` — see addBase(). */
+    private readonly bases: BasePhysicsEntity[] = [];
+    /** Which STATIC_PIECES id each base actually resolved to — see addBase()/getBasePieceId(). */
+    private readonly basePieceIds = new WeakMap<BasePhysicsEntity, string | undefined>();
     private readonly bodyTexture: BlockBodyTextureCache;
 
     /**
@@ -49,8 +52,22 @@ export class FaceTowerBlockController {
         private readonly root: PIXI.Container,
         private readonly config: FaceTowerConfig,
         private readonly camera: TowerCameraController,
-        /** Notified the instant a block's jiggle actually fires (its first physical contact) — the 3D mirror layer has no physics of its own, so this is how it learns to play the matching cube jiggle. See FaceTowerGameEvents.onBlockFirstHit. */
-        private readonly onBlockFirstHit?: (block: FaceTowerBlock) => void,
+        /**
+         * Notified the instant a block's jiggle actually fires (its first
+         * physical contact) — the 3D mirror layer has no physics of its own,
+         * so this is how it learns to play the matching cube jiggle. Also
+         * feeds TowerVfxUtils.onFirstTouchVfx (see IslandViewScene) for the
+         * juice pass — `contactPoint` is a best-effort 2D physics position
+         * (Matter's own contact point when available, else the midpoint
+         * between the two bodies), and `hitBlock` is whichever OTHER block
+         * was struck, undefined when it hit a base/wall/something that isn't
+         * a tracked block. See FaceTowerGameEvents.onBlockFirstHit.
+         */
+        private readonly onBlockFirstHit?: (
+            block: FaceTowerBlock,
+            contactPoint: { x: number; y: number },
+            hitBlock: FaceTowerBlock | undefined,
+        ) => void,
     ) {
         this.bodyTexture = new BlockBodyTextureCache(config);
 
@@ -60,11 +77,8 @@ export class FaceTowerBlockController {
         this.root.addChild(this.previewStrip);
     }
 
-    public initialise(): void {
-        this.addBase(this.config.floorY);
-
-
-
+    public initialise(basePieceId?: string): void {
+        this.addBase(this.config.floorY, basePieceId);
     }
 
     public spawnHeldBlock(x: number, piece: PieceDefinition): FaceTowerBlock {
@@ -378,14 +392,20 @@ export class FaceTowerBlockController {
             }
 
 
-            Physics.events.onStart(body, () => {
+            Physics.events.onStart(body, (otherBody, pair) => {
                 if (block.hasJiggled) {
                     return;
                 }
 
                 block.hasJiggled = true;
                 block.jiggleRemaining = PieceAnimations.JIGGLE_DURATION;
-                this.onBlockFirstHit?.(block);
+
+                const support = pair.collision?.supports?.[0];
+                const contactPoint = support
+                    ? { x: support.x, y: support.y }
+                    : { x: (body.position.x + otherBody.position.x) / 2, y: (body.position.y + otherBody.position.y) / 2 };
+
+                this.onBlockFirstHit?.(block, contactPoint, this.findBlockByBodyId(otherBody.id));
                 Physics.events.clear(body);
             });
         }
@@ -480,6 +500,11 @@ export class FaceTowerBlockController {
         return this.blocks;
     }
 
+    /** Best-effort lookup for onBlockFirstHit's `hitBlock` — undefined for anything not a tracked block (a base, a wall). */
+    private findBlockByBodyId(bodyId: number): FaceTowerBlock | undefined {
+        return this.blocks.find(block => block.entity.body.id === bodyId);
+    }
+
     /**
      * Freezes `block` in place (static, zero velocity/angular velocity) and
      * tints its body sprite grey — the 2D half of a powerup's freeze effect
@@ -554,7 +579,7 @@ export class FaceTowerBlockController {
         return this.heldBlock;
     }
 
-    public getBases(): readonly BoxEntity[] {
+    public getBases(): readonly BasePhysicsEntity[] {
         return this.bases;
     }
 
@@ -606,19 +631,32 @@ export class FaceTowerBlockController {
      * after that (one per completed zone — see
      * FaceTowerGameController.completeTurn) uses 'milestone' instead — same
      * role split as TowerBaseSync3D's 3D panels.
+     *
+     * `basePieceId` (see IslandConfig.basePieceId) overrides that role-based
+     * lookup outright when it resolves to a real STATIC_PIECES entry — lets
+     * the currently-active island swap in its own base shape/color instead
+     * of the single global default. Stashed in basePieceIds so
+     * TowerBaseSync3D.createPanel() (which only ever sees the base entity
+     * itself, not this call's params) can mirror the same choice in 3D — see
+     * getBasePieceId().
+     *
+     * When the resolved piece defines a `polygon`, collision matches it
+     * exactly (a PolygonEntity, same convention as
+     * buildPolygonEntity()/spawnHeldBlock for normal pieces) instead of the
+     * plain floorWidth x floorHeight rectangle every base used before —
+     * so a notched/non-rectangular base (e.g. an arch) can no longer be
+     * walked/landed on over its own cut-out corners. Requires a CONVEX
+     * polygon (or one poly-decomp can cleanly split) — see
+     * PhysicsBodyFactory.createPolygon, which already handles concave
+     * decomposition the same way pieces do.
      */
-    public addBase(y: number): void {
+    public addBase(y: number, basePieceId?: string): void {
         const isStartingFloor = this.bases.length === 0;
-        const piece = getStaticPiece(isStartingFloor ? 'base' : 'milestone');
+        const piece = (basePieceId ? getStaticPieceById(basePieceId) : undefined) ?? getStaticPiece(isStartingFloor ? 'base' : 'milestone');
 
-        const base = Pool.instance.getElement(BoxEntity) as BoxEntity;
-
-        base.build({
-            w: this.config.floorWidth,
-            h: this.config.floorHeight,
-            layer: CollisionLayer.DEFAULT,
-            debugColor: 0x00ff00,
-        });
+        const base: BasePhysicsEntity = piece?.polygon
+            ? this.buildPolygonEntity(piece.polygon, this.config.floorWidth, this.config.floorHeight)
+            : this.buildBoxEntity(this.config.floorWidth, this.config.floorHeight);
 
         base.isStatic = true;
         Body.setStatic(base.body, true);
@@ -646,6 +684,12 @@ export class FaceTowerBlockController {
 
         this.root.addChild(base.view);
         this.bases.push(base);
+        this.basePieceIds.set(base, piece?.id);
+    }
+
+    /** Whichever STATIC_PIECES id addBase() actually resolved for `base` (role-based default or an island's own basePieceId override) — see TowerBaseSync3D.createPanel(), the sole consumer. */
+    public getBasePieceId(base: BasePhysicsEntity): string | undefined {
+        return this.basePieceIds.get(base);
     }
 
     public destroy(): void {

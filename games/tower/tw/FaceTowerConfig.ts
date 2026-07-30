@@ -58,7 +58,7 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     render2D: false,
     render3D: true,
     render2DFaces: true,
-    previewStripHeight: 350,
+    previewStripHeight: 650,
     previewMargin2D: 0,
     previewMargin3D: 0,
     previewGlobalOffset2D: { x: 0, y: -15 },

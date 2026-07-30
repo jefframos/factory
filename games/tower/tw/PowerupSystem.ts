@@ -63,7 +63,7 @@ export class PowerupSystem {
          * FaceTowerGameEvents.onPowerupTouch) — has no bearing on the
          * actual effect logic, which drainQueue() still owns entirely.
          */
-        private readonly onTouch?: (block: FaceTowerBlock, contactPoint: PowerupContactPoint, powerup: PowerupEffectConfig) => void,
+        private readonly onTouch?: (block: FaceTowerBlock, contactPoint: PowerupContactPoint, powerup: PowerupEffectConfig, actionBlock: FaceTowerBlock) => void,
     ) { }
 
     /** True while a powerup piece is still falling, or its freeze/grey queue still has pieces left to process — see FaceTowerGameController.spawnNextBlock/update. */
@@ -143,7 +143,7 @@ export class PowerupSystem {
 
             this.queuedIds.add(block.id);
             this.queue.push(block);
-            this.onTouch?.(block, { x: block.entity.body.position.x, y: block.entity.body.position.y }, powerup);
+            this.onTouch?.(block, { x: block.entity.body.position.x, y: block.entity.body.position.y }, powerup, this.activeBlock);
             this.drainQueue(powerup);
 
             if (powerup.maxTargets !== undefined && this.queuedIds.size >= powerup.maxTargets) {

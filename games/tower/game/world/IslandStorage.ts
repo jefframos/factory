@@ -30,6 +30,17 @@ export interface IslandConfig {
     waterColor: string;
     /** Exactly one island in islands.json should set this — see getDefaultIsland(). */
     isDefault?: boolean;
+    /**
+     * Optional gameplay-shape override: id of a StaticPieceStorage entry
+     * (any role) to use for every base/milestone panel dropped while this
+     * island is active, instead of the single global 'base'/'milestone'
+     * static piece getStaticPiece() resolves to — see
+     * FaceTowerBlockController.addBase()/TowerBaseSync3D.createPanel(). Lets
+     * different islands/levels use a differently-shaped base polygon for
+     * gameplay variation. Falls back to the default role-based piece when
+     * omitted or when the id doesn't match any STATIC_PIECES entry.
+     */
+    basePieceId?: string;
 }
 
 /**

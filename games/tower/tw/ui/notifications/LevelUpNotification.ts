@@ -37,7 +37,7 @@ const BUTTON_HEIGHT = 66;
 const BUTTON_PADDING = 35;
 
 const FADE_DURATION_MS = 280;
-const ICON_SIZE = 200;
+const ICON_SIZE = 128;
 
 const TITLE_STYLE: Partial<PIXI.ITextStyle> = {
     fontFamily: 'Baloo2-ExtraBold',

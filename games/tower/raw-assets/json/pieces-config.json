@@ -210,12 +210,12 @@
     },
     {
         "id": "wide-3x1",
-        "level": 1,
+        "level": 2,
         "scale": {
             "x": 2.4,
             "y": 0.8
         },
-        "color": "#4F8DFF",
+        "color": "#FF8F6B",
         "texture": "skins/face-hearts-1.webp",
         "faceOffset": {
             "x": 0,
@@ -232,12 +232,12 @@
     },
     {
         "id": "square-2x2",
-        "level": 2,
+        "level": 1,
         "scale": {
             "x": 1.6,
             "y": 1.6
         },
-        "color": "#58C95B",
+        "color": "#4F8DFF",
         "texture": "skins/face-dizzy-1.webp",
         "faceOffset": {
             "x": 0,
@@ -301,7 +301,7 @@
                 "y": 0.35
             }
         ],
-        "color": "#FFA940",
+        "color": "#FFD54A",
         "texture": "skins/face-smile-1.webp",
         "faceOffset": {
             "x": 0,
@@ -350,7 +350,7 @@
                 "y": 1
             }
         ],
-        "color": "#FF6F61",
+        "color": "#33D1C6",
         "texture": "skins/face-scary-2.webp",
         "faceOffset": {
             "x": -10,
@@ -403,7 +403,7 @@
                 "y": 0.667
             }
         ],
-        "color": "#C96BFF",
+        "color": "#58C95B",
         "texture": "skins/face-dizzy-2.webp",
         "faceOffset": {
             "x": 10,
@@ -610,7 +610,7 @@
                 "y": 1
             }
         ],
-        "color": "#58C95B",
+        "color": "#FF8F6B",
         "texture": "skins/face-scary-1.webp",
         "faceOffset": {
             "x": 0,
@@ -659,7 +659,7 @@
                 "y": 1.0
             }
         ],
-        "color": "#FF8F6B",
+        "color": "#33D1C6",
         "texture": "skins/face-smile-3.webp",
         "faceOffset": {
             "x": 0,
@@ -682,7 +682,7 @@
             "x": 0.8,
             "y": 2.4
         },
-        "color": "#9C7CFF",
+        "color": "#58C95B",
         "texture": "skins/face-smirk-1.webp",
         "faceOffset": {
             "x": 0,
@@ -726,7 +726,7 @@
                 "y": 0.35
             }
         ],
-        "color": "#FFD54A",
+        "color": "#4F8DFF",
         "texture": "skins/face-smile-1.webp",
         "faceOffset": {
             "x": 0,
@@ -811,7 +811,7 @@
                 "y": 1
             }
         ],
-        "color": "#33D1C6",
+        "color": "#FF8F6B",
         "texture": "skins/face-1.webp",
         "faceOffset": {
             "x": 0,
@@ -863,7 +863,7 @@
                 "y": 0.58
             }
         ],
-        "color": "#5FB8FF",
+        "color": "#33D1C6",
         "texture": "skins/face-fire-1.webp",
         "faceOffset": {
             "x": 0,
@@ -908,7 +908,7 @@
                 "y": 0.3
             }
         ],
-        "color": "#33D1C6",
+        "color": "#58C95B",
         "texture": "skins/cool.webp",
         "faceOffset": {
             "x": 0,
@@ -993,7 +993,7 @@
                 "y": 0.14
             }
         ],
-        "color": "#FFD54A",
+        "color": "#4F8DFF",
         "texture": "skins/face-smirk-1.webp",
         "faceOffset": {
             "x": -12,
@@ -1070,7 +1070,7 @@
                 "y": 0.56
             }
         ],
-        "color": "#FF66B3",
+        "color": "#C96BFF",
         "texture": "skins/face-dizzy-1.webp",
         "faceOffset": {
             "x": 0,
@@ -1131,7 +1131,7 @@
                 "y": 1.0
             }
         ],
-        "color": "#FFD54A",
+        "color": "#FF8F6B",
         "texture": "skins/face-smile-1.webp",
         "faceOffset": {
             "x": 0,
@@ -1224,7 +1224,7 @@
                 "y": 0.76
             }
         ],
-        "color": "#FFA940",
+        "color": "#33D1C6",
         "texture": "skins/face-mustache-1.webp",
         "faceOffset": {
             "x": -10,
@@ -1261,7 +1261,7 @@
                 "y": 1
             }
         ],
-        "color": "#7CCB5E",
+        "color": "#58C95B",
         "texture": "skins/dog.webp",
         "faceOffset": {
             "x": 0,
@@ -1302,7 +1302,7 @@
                 "y": 1
             }
         ],
-        "color": "#FFA940",
+        "color": "#4F8DFF",
         "texture": "skins/face-scary-2.webp",
         "faceOffset": {
             "x": 0,
@@ -1343,7 +1343,7 @@
                 "y": 1
             }
         ],
-        "color": "#FF8F6B",
+        "color": "#C96BFF",
         "texture": "skins/face-mustache-1.webp",
         "faceOffset": {
             "x": 0,
@@ -1436,7 +1436,7 @@
                 "y": 0.038
             }
         ],
-        "color": "#FF66B3",
+        "color": "#FF8F6B",
         "texture": "skins/clown.webp",
         "faceOffset": {
             "x": 0,
@@ -1548,7 +1548,7 @@
                 "y": 0.38
             }
         ],
-        "color": "#9C7CFF",
+        "color": "#33D1C6",
         "texture": "skins/panda.webp",
         "faceOffset": {
             "x": 0,
@@ -1613,7 +1613,7 @@
                 "y": 1
             }
         ],
-        "color": "#5FB8FF",
+        "color": "#58C95B",
         "texture": "skins/face-fire-1.webp",
         "faceOffset": {
             "x": 0,
@@ -1677,7 +1677,7 @@
                 "y": 1
             }
         ],
-        "color": "#9C7CFF",
+        "color": "#4F8DFF",
         "texture": "skins/face-smile-3.webp",
         "faceOffset": {
             "x": 0,
@@ -1737,7 +1737,7 @@
                 "y": 0.24
             }
         ],
-        "color": "#4F8DFF",
+        "color": "#C96BFF",
         "texture": "skins/face-scary-1.webp",
         "faceOffset": {
             "x": 0,
@@ -1795,7 +1795,7 @@
                 "y": 1
             }
         ],
-        "color": "#FFD54A",
+        "color": "#C96BFF",
         "texture": "skins/face-smile-3.webp",
         "faceOffset": {
             "x": 0,
@@ -1885,7 +1885,7 @@
                 "y": 1
             }
         ],
-        "color": "#FFD54A",
+        "color": "#C96BFF",
         "texture": "skins/face-smiling-2.webp",
         "faceOffset": {
             "x": 0,
@@ -1969,7 +1969,7 @@
                 "y": 1
             }
         ],
-        "color": "#4F8DFF",
+        "color": "#FFA940",
         "texture": "skins/face-smile-1.webp",
         "faceOffset": {
             "x": 0,

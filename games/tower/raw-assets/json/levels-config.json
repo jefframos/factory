@@ -5,19 +5,19 @@
             "islandId": "earthMeadow",
             "destination": "Moon",
             "distanceFromPreviousKm": 384400,
-            "zoneCount": 5,
+            "zoneCount": 3,
             "zones": [
                 {
                     "height": 4,
-                    "polePercent": 0.9
+                    "polePercent": 1
                 },
                 {
                     "height": 5,
-                    "polePercent": 0.8
+                    "polePercent": 1
                 },
                 {
                     "height": 6,
-                    "polePercent": 0.7
+                    "polePercent": 1
                 }
             ]
         },
@@ -25,7 +25,7 @@
             "islandId": "lunarFrontier",
             "destination": "Mars",
             "distanceFromPreviousKm": 225000000,
-            "zoneCount": 8,
+            "zoneCount": 4,
             "zones": [
                 {
                     "height": 6,
@@ -45,7 +45,7 @@
             "islandId": "martianDunes",
             "destination": "Jupiter",
             "distanceFromPreviousKm": 550700000,
-            "zoneCount": 9,
+            "zoneCount": 5,
             "zones": [
                 {
                     "height": 7,
@@ -65,7 +65,7 @@
             "islandId": "jovianClouds",
             "destination": "Saturn",
             "distanceFromPreviousKm": 651400000,
-            "zoneCount": 10,
+            "zoneCount": 5,
             "zones": [
                 {
                     "height": 8,
@@ -85,7 +85,7 @@
             "islandId": "saturnRinglands",
             "destination": "Uranus",
             "distanceFromPreviousKm": 1446000000,
-            "zoneCount": 12,
+            "zoneCount": 6,
             "zones": [
                 {
                     "height": 8,
@@ -105,7 +105,7 @@
             "islandId": "uranianIce",
             "destination": "Neptune",
             "distanceFromPreviousKm": 1625000000,
-            "zoneCount": 13,
+            "zoneCount": 6,
             "zones": [
                 {
                     "height": 9,
@@ -125,7 +125,7 @@
             "islandId": "neptunianStorm",
             "destination": "Pluto",
             "distanceFromPreviousKm": 1405000000,
-            "zoneCount": 13,
+            "zoneCount": 7,
             "zones": [
                 {
                     "height": 9,
@@ -145,7 +145,7 @@
             "islandId": "plutonianTwilight",
             "destination": "Kuiper Belt",
             "distanceFromPreviousKm": 1500000000,
-            "zoneCount": 14,
+            "zoneCount": 7,
             "zones": [
                 {
                     "height": 9,
@@ -165,7 +165,7 @@
             "islandId": "kuiperDrift",
             "destination": "Eris",
             "distanceFromPreviousKm": 4000000000,
-            "zoneCount": 16,
+            "zoneCount": 8,
             "zones": [
                 {
                     "height": 9,
@@ -185,7 +185,7 @@
             "islandId": "erisFrost",
             "destination": "Sedna",
             "distanceFromPreviousKm": 11000000000,
-            "zoneCount": 18,
+            "zoneCount": 8,
             "zones": [
                 {
                     "height": 9,
@@ -205,7 +205,7 @@
             "islandId": "sednaEmber",
             "destination": "Oort Cloud",
             "distanceFromPreviousKm": 740000000000,
-            "zoneCount": 22,
+            "zoneCount": 10,
             "zones": [
                 {
                     "height": 10,
@@ -225,7 +225,7 @@
             "islandId": "oortVeil",
             "destination": "Proxima Centauri",
             "distanceFromPreviousKm": 40200000000000,
-            "zoneCount": 28,
+            "zoneCount": 10,
             "zones": [
                 {
                     "height": 10,
@@ -245,7 +245,7 @@
             "islandId": "proximaDawn",
             "destination": "Sirius",
             "distanceFromPreviousKm": 41000000000000,
-            "zoneCount": 30,
+            "zoneCount": 15,
             "zones": [
                 {
                     "height": 10,
@@ -265,7 +265,7 @@
             "islandId": "siriusRadiance",
             "destination": "Vega",
             "distanceFromPreviousKm": 175000000000000,
-            "zoneCount": 34,
+            "zoneCount": 15,
             "zones": [
                 {
                     "height": 10,
@@ -285,7 +285,7 @@
             "islandId": "vegaAurora",
             "destination": "Polaris",
             "distanceFromPreviousKm": 4160000000000000,
-            "zoneCount": 40,
+            "zoneCount": 20,
             "zones": [
                 {
                     "height": 10,
@@ -305,7 +305,7 @@
             "islandId": "polarisCrown",
             "destination": "Milky Way Center",
             "distanceFromPreviousKm": 239000000000000000,
-            "zoneCount": 48,
+            "zoneCount": 20,
             "zones": [
                 {
                     "height": 10,

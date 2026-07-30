@@ -9,9 +9,7 @@
     "skyColor": "#58BFF2",
     "skyGradient": [
       "#58BFF2",
-      "#369FE3",
-      "#286FC1",
-      "#182D63"
+      "#369FE3"
     ],
     "starfieldWeightMin": 0,
     "starfieldWeightMax": 0.08,
@@ -28,16 +26,15 @@
     "texture": "islands/grassland.webp",
     "skyColor": "#8B91A3",
     "skyGradient": [
-      "#B7B5AD",
-      "#77798A",
-      "#39394D",
-      "#11121C"
+      "#286FC1",
+      "#182D63"
     ],
     "starfieldWeightMin": 0.08,
     "starfieldWeightMax": 0.32,
     "ambientColor": "#DDE2EE",
     "waterColor": "#30C2F2",
-    "isDefault": false
+    "isDefault": false,
+    "basePieceId": "static-base-lunar"
   },
   {
     "id": "martianDunes",
@@ -48,10 +45,8 @@
     "texture": "islands/grassland.webp",
     "skyColor": "#C96845",
     "skyGradient": [
-      "#E3A06E",
-      "#B85E42",
-      "#713B43",
-      "#281D2C"
+      "#39394D",
+      "#11121C"
     ],
     "starfieldWeightMin": 0.2,
     "starfieldWeightMax": 0.48,

@@ -31,7 +31,7 @@ import { FaceTowerGameController } from './FaceTowerGameController';
 import { PIECES, type PieceDefinition } from './PieceStorage';
 import { POWERUPS, SKIP_PIECE_POWERUP_ID } from './PowerupStorage';
 import { getEnabledPowerupIds } from './PowerupConfig';
-import { PowerupBurstEffect } from './PowerupBurstEffect';
+import { TowerVfxUtils } from './TowerVfxUtils';
 import type { PowerupContactPoint } from './PowerupSystem';
 import { TowerBaseSync3D } from './TowerBaseSync3D';
 import { TowerBlockSync3D } from './TowerBlockSync3D';
@@ -248,7 +248,7 @@ export default class IslandViewScene extends ThreeScene {
 
         this.positionCamera();
         this.buildFaceTowerLayer();
-        PowerupBurstEffect.build(this.threeScene);
+        TowerVfxUtils.build(this.threeScene);
 
         this.game.overlayContainer.addChild(this.hudContainer);
         this.hudContainer.addChild(this.gameHud);
@@ -318,7 +318,7 @@ export default class IslandViewScene extends ThreeScene {
             towerOffsetY / DEFAULT_TOWER_3D_CONFIG.pixelsPerUnit,
         );
         this.applyCameraShake(delta);
-        PowerupBurstEffect.update(delta);
+        TowerVfxUtils.update(delta);
 
         if (this.faceTower) {
             this.blockSync3D.sync(this.faceTower.getBlocks(), this.faceTower.getHeldBlock(), delta);
@@ -426,7 +426,7 @@ export default class IslandViewScene extends ThreeScene {
     public destroy(): void {
         this.skyController.destroy();
         this.starfieldController.destroy();
-        PowerupBurstEffect.destroy();
+        TowerVfxUtils.destroy();
         this.faceTower?.destroy();
         this.blockSync3D?.destroy();
         this.baseSync3D?.destroy();
@@ -582,21 +582,23 @@ export default class IslandViewScene extends ThreeScene {
                     }
                 },
 
-                onBlockFirstHit: (block) => {
+                onBlockFirstHit: (block, contactPoint, hitBlock) => {
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Impact);
                     this.blockSync3D.notifyFirstHit(block.id);
+                    TowerVfxUtils.onFirstTouchVfx(this.contactPointToWorld(contactPoint), block, hitBlock);
                 },
 
                 onBlockFrozen: (block, greyColorHex) => {
                     this.blockSync3D.notifyFrozen(block.id, greyColorHex);
                 },
 
-                onPowerupTouch: (block, contactPoint, powerup) => {
+                onPowerupTouch: (block, contactPoint, powerup, actionBlock) => {
+                    const worldPos = this.contactPointToWorld(contactPoint);
+
                     if (powerup.action === 'destroy') {
                         // Bomb/super-bomb: no wiggle (the block's about to be
                         // removed anyway) — a burst + camera shake instead.
-                        const worldPos = this.contactPointToWorld(contactPoint);
-                        PowerupBurstEffect.spawn(worldPos.x, worldPos.y, worldPos.z);
+                        TowerVfxUtils.onBombVfx(worldPos, actionBlock, block);
                         this.triggerCameraShake(0.12, 0.3);
                     } else {
                         // Freeze/shrink: replay the same jiggle wobble a
@@ -604,6 +606,12 @@ export default class IslandViewScene extends ThreeScene {
                         // piece visibly reacts to the powerup passing
                         // through it.
                         this.blockSync3D.notifyPowerupTouch(block.id);
+
+                        if (powerup.action === 'freeze') {
+                            TowerVfxUtils.onFreezeVfx(worldPos, actionBlock, block);
+                        } else {
+                            TowerVfxUtils.onShrinkVfx(worldPos, actionBlock, block);
+                        }
                     }
                 },
 
@@ -626,6 +634,7 @@ export default class IslandViewScene extends ThreeScene {
             DEFAULT_TOWER_3D_CONFIG.pixelsPerUnit,
             DEFAULT_TOWER_3D_CONFIG,
             DEFAULT_TOWER_3D_CONFIG.towerBaseOffset,
+            base => this.faceTower.getBasePieceId(base),
         );
 
         this.wallSync3D = new TowerWallSync3D(

@@ -39,3 +39,13 @@ export function loadStaticPieces(): void {
 export function getStaticPiece(role: StaticPieceRole): StaticPieceDefinition | undefined {
     return STATIC_PIECES.find(piece => piece.role === role);
 }
+
+/**
+ * Direct id lookup, regardless of role — lets an island override the
+ * DEFAULT role-based base/milestone piece with a specific one of its own
+ * (see IslandConfig.basePieceId) instead of only ever getting the single
+ * global 'base'/'milestone' entry getStaticPiece() resolves to.
+ */
+export function getStaticPieceById(id: string): StaticPieceDefinition | undefined {
+    return STATIC_PIECES.find(piece => piece.id === id);
+}

@@ -14,6 +14,20 @@ function hexStringToNumber(hex: string): number {
 }
 
 /**
+ * Extra world units the pole mesh extends BELOW its actual wall entity —
+ * purely visual (the 2D wall's real collision height is untouched, see
+ * TowerDeadZoneController.rebuild). Each zone's walls are destroyed and
+ * rebuilt fresh (see TowerWallSync3D's own doc comment), so the previous
+ * zone's poles vanish entirely the instant a new one is placed — this
+ * stretches the new pole's bottom far enough down (well past the base,
+ * off the bottom of the visible camera frame) that it reads as continuing
+ * straight into whatever was below instead of visibly starting fresh at
+ * the current base line. The TOP of the pole is unaffected (see
+ * updatePole) — only the bottom drops further.
+ */
+const POLE_EXTRA_DROP = 40;
+
+/**
  * Mirrors the 2D side containment poles (see TowerDeadZoneController's
  * walls — the short bumper rails flush against the base's edges) as
  * matching blocks in the 3D scene — built via PieceBoxBuilder (same
@@ -73,7 +87,7 @@ export class TowerWallSync3D {
 
         const piece = getStaticPiece('column');
         const width = this.config.wallWidth / this.pixelsPerUnit;
-        const height = wallHeightPx / this.pixelsPerUnit;
+        const height = wallHeightPx / this.pixelsPerUnit + POLE_EXTRA_DROP;
         const depth = this.visualConfig.platformDepth;
 
         // StaticPieceDefinition.faceOffset is authored in 2D design px —
@@ -122,8 +136,13 @@ export class TowerWallSync3D {
             (body.position.x - this.config.floorX) / this.pixelsPerUnit +
             this.baseOffset.x,
 
+            // Shifted down by half the extra drop added to the mesh's own
+            // height in rebuild() — keeps the pole's TOP exactly where the
+            // real wall entity's top is, while the extra height (and thus
+            // the bottom edge) extends further down below it. See
+            // POLE_EXTRA_DROP.
             (this.config.floorY - body.position.y) / this.pixelsPerUnit +
-            this.baseOffset.y,
+            this.baseOffset.y - POLE_EXTRA_DROP / 2,
 
             this.baseOffset.z,
         );

@@ -1,5 +1,6 @@
 // FaceTowerGameController.ts
 
+import type { BasePhysicsEntity } from 'core/phyisics/entities/BaseEntity';
 import * as PIXI from 'pixi.js';
 import { FaceTowerBlockController } from './FaceTowerBlockController';
 import {
@@ -17,6 +18,7 @@ import { getPowerup, powerupGreyColorNumber } from './PowerupStorage';
 import { PowerupSystem, type PowerupContactPoint } from './PowerupSystem';
 import { TowerCameraController } from './TowerCameraController';
 import { TowerDeadZoneController } from './TowerDeadZoneController';
+import { resolveIslandForZone } from './TowerIslandProgression';
 import { TowerLevelController } from './TowerLevelController';
 import { TowerStabilityController } from './TowerStabilityController';
 import { TowerZoneController } from './TowerZoneController';
@@ -29,8 +31,14 @@ export interface FaceTowerGameEvents {
     onGameOver?(score: number): void;
     /** Fired the instant a piece is released and physics takes over — the "shoot" moment. See dropBlock(). */
     onBlockDropped?(block: FaceTowerBlock): void;
-    /** Fired once per block, on its first physical contact with anything — the "jiggle" moment. See FaceTowerBlockController.releaseHeldBlock. */
-    onBlockFirstHit?(block: FaceTowerBlock): void;
+    /**
+     * Fired once per block, on its first physical contact with anything —
+     * the "jiggle" moment. `contactPoint` is a best-effort 2D physics
+     * position; `hitBlock` is whichever other block was struck (undefined
+     * for a base/wall). See FaceTowerBlockController.releaseHeldBlock and
+     * TowerVfxUtils.onFirstTouchVfx, the intended consumer for VFX tuning.
+     */
+    onBlockFirstHit?(block: FaceTowerBlock, contactPoint: PowerupContactPoint, hitBlock: FaceTowerBlock | undefined): void;
     /** Fired once per block, the instant a powerup freezes-and-greys it — see PowerupSystem.drainQueue. */
     onBlockFrozen?(block: FaceTowerBlock, greyColorHex: number): void;
     /**
@@ -41,9 +49,10 @@ export interface FaceTowerGameEvents {
      * reactive VFX: wiggle the touched piece for freeze/shrink, or a
      * particle burst + camera shake for a destroy (bomb/super-bomb) — see
      * PowerupSystem's own `onTouch` constructor param, which this just
-     * forwards.
+     * forwards. `actionBlock` is the falling powerup piece itself (the
+     * "action piece" for TowerVfxUtils' hooks).
      */
-    onPowerupTouch?(block: FaceTowerBlock, contactPoint: PowerupContactPoint, powerup: PowerupEffectConfig): void;
+    onPowerupTouch?(block: FaceTowerBlock, contactPoint: PowerupContactPoint, powerup: PowerupEffectConfig, actionBlock: FaceTowerBlock): void;
     /** Fired whenever the upcoming piece changes — see spawnNextBlock()/getNextPiece(). Powerups swapped in via spawnPowerup() don't count as "next" and never fire this. */
     onNextPieceChanged?(piece: PieceDefinition): void;
 }
@@ -94,13 +103,13 @@ export class FaceTowerGameController {
             worldRoot,
             config,
             this.camera,
-            block => this.events.onBlockFirstHit?.(block),
+            (block, contactPoint, hitBlock) => this.events.onBlockFirstHit?.(block, contactPoint, hitBlock),
         );
 
         this.powerups = new PowerupSystem(
             this.blocks,
             (block, greyColorHex) => this.events.onBlockFrozen?.(block, greyColorHex),
-            (block, contactPoint, powerup) => this.events.onPowerupTouch?.(block, contactPoint, powerup),
+            (block, contactPoint, powerup, actionBlock) => this.events.onPowerupTouch?.(block, contactPoint, powerup, actionBlock),
         );
 
         this.stability = new TowerStabilityController(config);
@@ -141,7 +150,7 @@ export class FaceTowerGameController {
     }
 
     public start(): void {
-        this.blocks.initialise();
+        this.blocks.initialise(resolveIslandForZone(this.levels.getLevelIndex(), this.levels.getZoneIndexInLevel()).island.basePieceId);
         this.deadZones.rebuild(this.config.floorY, this.currentWallHeight);
 
         this.score = 0;
@@ -272,6 +281,11 @@ export class FaceTowerGameController {
     /** Every base placed so far (the original floor plus one per completed zone). */
     public getBases() {
         return this.blocks.getBases();
+    }
+
+    /** Whichever STATIC_PIECES id `base` actually resolved to — see FaceTowerBlockController.getBasePieceId(), TowerBaseSync3D's sole consumer. */
+    public getBasePieceId(base: BasePhysicsEntity): string | undefined {
+        return this.blocks.getBasePieceId(base);
     }
 
     /**
@@ -685,7 +699,8 @@ export class FaceTowerGameController {
          * the tower effectively restarts on top of its own progress.
          */
         this.blocks.freezeAll();
-        this.blocks.addBase(result.lineWorldY);
+        const activeIsland = resolveIslandForZone(this.levels.getLevelIndex(), this.levels.getZoneIndexInLevel()).island;
+        this.blocks.addBase(result.lineWorldY, activeIsland.basePieceId);
         this.deadZones.rebuild(result.lineWorldY, this.currentWallHeight);
 
         const newOffsetY =

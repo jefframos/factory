@@ -1,12 +1,12 @@
 // TowerBaseSync3D.ts
 
-import type { BoxEntity } from 'core/phyisics/entities/BoxEntity';
+import type { BasePhysicsEntity } from 'core/phyisics/entities/BaseEntity';
 import * as THREE from 'three';
 import { PieceBoxBuilder } from '../game/builders/PieceBoxBuilder';
 import { TextureBuilder } from '../game/builders/TextureBuilder';
 import type { FaceTowerConfig } from './FaceTowerTypes';
 import { resolvePieceImagePath } from './PieceStorage';
-import { getStaticPiece } from './StaticPieceStorage';
+import { getStaticPiece, getStaticPieceById } from './StaticPieceStorage';
 import type { Tower3DConfig } from './Tower3DConfig';
 
 function hexStringToNumber(hex: string): number {
@@ -31,7 +31,7 @@ function hexStringToNumber(hex: string): number {
  * one per base, keyed by the base entity itself since bases have no id.
  */
 export class TowerBaseSync3D {
-    private readonly panels = new Map<BoxEntity, THREE.Mesh>();
+    private readonly panels = new Map<BasePhysicsEntity, THREE.Mesh>();
 
     public constructor(
         private readonly scene: THREE.Scene,
@@ -39,21 +39,24 @@ export class TowerBaseSync3D {
         private readonly pixelsPerUnit: number,
         private readonly visualConfig: Tower3DConfig,
         private readonly baseOffset: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 },
+        /** Mirrors FaceTowerBlockController.getBasePieceId() — an island's basePieceId override, when it resolved to a real STATIC_PIECES entry for this specific base. See createPanel(). */
+        private readonly resolvePieceId?: (base: BasePhysicsEntity) => string | undefined,
     ) { }
 
-    public sync(bases: readonly BoxEntity[]): void {
+    public sync(bases: readonly BasePhysicsEntity[]): void {
         for (const base of bases) {
             const panel = this.panels.get(base) ?? this.createPanel(base);
             this.updatePanel(panel, base);
         }
     }
 
-    private createPanel(base: BoxEntity): THREE.Mesh {
+    private createPanel(base: BasePhysicsEntity): THREE.Mesh {
         // The very first panel placed (see FaceTowerBlockController.initialise)
         // is the tower's starting floor — everything after it is a fresh
         // floor dropped in on a completed zone (see FaceTowerGameController.completeTurn).
         const isStartingFloor = this.panels.size === 0;
-        const piece = getStaticPiece(isStartingFloor ? 'base' : 'milestone');
+        const overrideId = this.resolvePieceId?.(base);
+        const piece = (overrideId ? getStaticPieceById(overrideId) : undefined) ?? getStaticPiece(isStartingFloor ? 'base' : 'milestone');
 
         const width = this.config.floorWidth / this.pixelsPerUnit;
         const height = this.config.floorHeight / this.pixelsPerUnit;
@@ -72,13 +75,14 @@ export class TowerBaseSync3D {
                 depth,
                 faceOffset,
                 faceScale: piece?.faceScale,
-                // The base's PHYSICS stays a plain symmetric BoxEntity no
-                // matter what polygon it's drawn with (see
-                // FaceTowerBlockController.addBase), so the mesh must center
-                // on the plain geometric middle too — not the polygon's own
-                // (possibly off-center, e.g. an arch notch) area centroid —
-                // or it visibly drifts from where the wall/columns and the
-                // 2D collision box assume the floor actually sits.
+                // A polygon base's collision vertices are built the same way
+                // FaceTowerBlockController.buildPolygonEntity() builds a
+                // normal piece's — offset from the FIXED (0.5, 0.5) box
+                // center, not the polygon's own (possibly off-center, e.g.
+                // an arch notch) area centroid. The mesh must center on that
+                // same fixed point too, or it visibly drifts from where the
+                // wall/columns and the 2D collision shape assume the floor
+                // actually sits.
                 centerOverride: { x: 0.5, y: 0.5 },
             },
         );
@@ -102,7 +106,7 @@ export class TowerBaseSync3D {
         return panel;
     }
 
-    private updatePanel(panel: THREE.Mesh, base: BoxEntity): void {
+    private updatePanel(panel: THREE.Mesh, base: BasePhysicsEntity): void {
         const body = base.body;
 
         panel.position.set(
