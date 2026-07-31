@@ -67,6 +67,8 @@ export class PlayerEntity implements ISimEntity {
     private shadow: BlobShadow;
     private walkBob = new WalkBob();   // [view:WalkBob]
     private floatBob = new FloatBob();
+    /** Set false for a player standing on solid ground (e.g. PizzaScene's isolated flat-plane test) — the idle vertical bob only makes sense as a "bobbing on water" cue. On by default, matching every existing water-based scene. */
+    public floatBobEnabled = true;
     /** Every head — player or NPC — kicks up a wake; see WaterSplashEmitter. */
     private splash = new WaterSplashEmitter();
     /** Fires while boosting; see BoostSpeedLineEmitter. */
@@ -402,7 +404,7 @@ export class PlayerEntity implements ISimEntity {
 
         // ── Float + walk bob ─────────────────────────────────────────────────
         const bobY = this.walkBob.update(delta, mx !== 0 || mz !== 0);
-        const floatY = this.floatBob.update(delta);
+        const floatY = this.floatBobEnabled ? this.floatBob.update(delta) : 0;
         this.mesh.position.y = this.mesh.scale.x * 0.5 + bobY + floatY;
 
         // ── Shadows ───────────────────────────────────────────────────────────

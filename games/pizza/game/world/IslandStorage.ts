@@ -17,7 +17,7 @@ export interface IslandConfig {
  * (raw-assets/non-preload/islands/*.webp), not bundled by Vite — same
  * convention as ShopStorage.resolveShopImagePath.
  */
-const NON_PRELOAD_IMAGE_BASE = 'clog/images/non-preload/';
+const NON_PRELOAD_IMAGE_BASE = 'pizza/images/non-preload/';
 
 export function resolveIslandImagePath(relativePath: string): string {
     return `${NON_PRELOAD_IMAGE_BASE}${relativePath}`;

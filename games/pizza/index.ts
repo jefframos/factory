@@ -14,7 +14,7 @@ import jsonManifest from './manifests/json.json'; // adjust path
 import { getPlatformInstance } from 'core/platforms/PlatformFactory';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
 import Assets from './Assets';
-import BaseDemoScene from './game/scenes/BaseDemoScene';
+import PizzaScene from './game/scenes/PizzaScene';
 import { ShopStorage, loadShopItems } from './game/data/ShopStorage';
 import { loadIslands } from './game/world/IslandStorage';
 import { HighScoreStorage } from './game/data/HighScoreStorage';
@@ -37,7 +37,7 @@ export default class MyGame extends Game {
         this.loaderScene = new HtmlLoader(loaderConfig);
         PIXI.Ticker.shared.maxFPS = 60;
 
-        this.folderPath = 'clog';
+        this.folderPath = 'pizza';
         this.initialize();
 
     }
@@ -184,7 +184,7 @@ export default class MyGame extends Game {
     protected startGame(): void {
 
         DevGuiManager.instance.initialize(Game.debugParams.dev);
-        const gameplay = this.sceneManager.register<BaseDemoScene>('game', BaseDemoScene, this);
+        const gameplay = this.sceneManager.register<PizzaScene>('game', PizzaScene, this);
         // if (Game.debugParams.scene === 'level') {
         //     const editor = this.sceneManager.register<LevelEditorScene>('level', LevelEditorScene, this);
         //     this.sceneManager.changeScene('level');

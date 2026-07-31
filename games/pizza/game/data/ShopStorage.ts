@@ -29,7 +29,7 @@ export interface ShopItem {
  * file there, runs `npm run image`, and it shows up with no code change.
  * Shared between ShopScreen (DOM <img>) and PlayerEntity (THREE texture).
  */
-const NON_PRELOAD_IMAGE_BASE = 'clog/images/non-preload/';
+const NON_PRELOAD_IMAGE_BASE = 'pizza/images/non-preload/';
 
 export function resolveShopImagePath(relativePath: string): string {
     return `${NON_PRELOAD_IMAGE_BASE}${relativePath}`;
