@@ -934,10 +934,14 @@ export default class IslandViewScene extends ThreeScene {
 
         let rewarded = false;
 
-        try {
-            rewarded = await PlatformHandler.instance.platform.showRewardedVideo('game-over-respawn');
-        } catch (e) {
-            console.error('IslandViewScene: rewarded video failed', e);
+
+        if (PlatformHandler.ENABLE_VIDEO_ADS) {
+
+            try {
+                rewarded = await PlatformHandler.instance.platform.showRewardedVideo('game-over-respawn');
+            } catch (e) {
+                console.error('IslandViewScene: rewarded video failed', e);
+            }
         }
 
         this.gameHud.setGameOverContinueBusy(false);
@@ -975,27 +979,29 @@ export default class IslandViewScene extends ThreeScene {
 
         let rewarded = false;
 
-        try {
-            rewarded = await PlatformHandler.instance.platform.showRewardedVideo('level-powerup-double');
-        } catch (e) {
-            console.error('IslandViewScene: rewarded video failed', e);
+        if (PlatformHandler.ENABLE_VIDEO_ADS) {
+            try {
+                rewarded = await PlatformHandler.instance.platform.showRewardedVideo('level-powerup-double');
+            } catch (e) {
+                console.error('IslandViewScene: rewarded video failed', e);
+            }
         }
 
 
         this.gameHud.setLevelUpWatchBusy(false);
 
-        if (rewarded) {
-            PowerupInventoryStorage.grant(powerupId, REWARD_VIDEO_BONUS_AMOUNT);
-            this.pendingLevelUpFlyCount = REWARD_VIDEO_BONUS_AMOUNT;
-            this.levelUpVideoWatched = true;
+        //if (rewarded) {
+        PowerupInventoryStorage.grant(powerupId, REWARD_VIDEO_BONUS_AMOUNT);
+        this.pendingLevelUpFlyCount = REWARD_VIDEO_BONUS_AMOUNT;
+        this.levelUpVideoWatched = true;
 
-            // Same signal COLLECT dispatches — reuses its existing
-            // hide+fly+resume handling below verbatim rather than
-            // duplicating it here.
-            this.gameHud.onLevelUpCollected.dispatch();
-        } else {
-            this.gameHud.notifyLevelUpVideoFailed();
-        }
+        // Same signal COLLECT dispatches — reuses its existing
+        // hide+fly+resume handling below verbatim rather than
+        // duplicating it here.
+        this.gameHud.onLevelUpCollected.dispatch();
+        // } else {
+        //     this.gameHud.notifyLevelUpVideoFailed();
+        // }
     }
 
     /**

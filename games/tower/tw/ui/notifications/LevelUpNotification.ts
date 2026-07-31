@@ -21,8 +21,8 @@ const REWARD_CHEST_SCALE = 1.1;
 const ATLAS = {
     PANEL: 'ItemFrame03_Single_Purple',
     RIBBON: 'Title_Ribbon01_Sky',
-    COLLECT_STANDARD: 'Label_Parallelogram_Gray',
-    COLLECT_DOWN: 'Label_Parallelogram_Gray',
+    COLLECT_STANDARD: 'Label_Parallelogram_Yellow',
+    COLLECT_DOWN: 'Label_Parallelogram_Yellow',
     WATCH_STANDARD: 'Label_Parallelogram_Hologram',
     WATCH_DOWN: 'Label_Parallelogram_Hologram',
     WATCH_DISABLED: 'Button01_s_Gray',
@@ -189,13 +189,13 @@ export class LevelUpNotification extends PIXI.Container {
                 height: BUTTON_HEIGHT,
                 allPadding: BUTTON_PADDING,
                 texture: PIXI.Texture.from(ATLAS.WATCH_STANDARD),
-                fontStyle: new PIXI.TextStyle({ ...BUTTON_FONT_STYLE, fontSize: 42 }),
+                fontStyle: new PIXI.TextStyle({ ...BUTTON_FONT_STYLE, fontSize: 38 }),
                 iconTexture: PIXI.Texture.from(ATLAS.WATCH_VIDEO_ICON),
                 iconSize: { width: 60, height: 60 },
                 iconAnchor: new PIXI.Point(0, 0),
                 centerIconVertically: true,
+                textOffset: { x: 0, y: -3 },
                 iconOffset: new PIXI.Point(BUTTON_PADDING, -5),
-                labelOffset: { x: 28, y: 0 },
             },
             over: { tint: 0xddffd0 },
             down: { texture: PIXI.Texture.from(ATLAS.WATCH_DOWN), tint: 0xaaaaaa },
@@ -210,13 +210,14 @@ export class LevelUpNotification extends PIXI.Container {
                 height: BUTTON_HEIGHT,
                 allPadding: BUTTON_PADDING,
                 texture: PIXI.Texture.from(ATLAS.COLLECT_STANDARD),
-                fontStyle: new PIXI.TextStyle(BUTTON_FONT_STYLE),
+                textOffset: { x: 0, y: -3 },
+                fontStyle: new PIXI.TextStyle({ ...BUTTON_FONT_STYLE, fontSize: 32 }),
             },
             over: { tint: 0xddddff },
             down: { texture: PIXI.Texture.from(ATLAS.COLLECT_DOWN), tint: 0xcccccc },
             click: { callback: () => this.onCollect.dispatch() },
         } as any);
-        this.collectBtn.setLabel('COLLECT');
+        this.collectBtn.setLabel('CLAIM');
         this.card.addChild(this.collectBtn);
 
         this.confetti = new ConfettiEffect(viewWidth);
@@ -238,7 +239,7 @@ export class LevelUpNotification extends PIXI.Container {
     public show(levelIndex: number, powerupId: string, videoBonusAmount: number): void {
         this.powerupId = powerupId;
         this.subtitleText.text = `Level ${levelIndex + 1}`;
-        this.watchBtn.setLabel(`x${videoBonusAmount}`);
+        this.watchBtn.setLabel(`x${videoBonusAmount} CLAIM`);
 
         this.iconContainer.visible = false;
         this.rewardLabel.visible = false;

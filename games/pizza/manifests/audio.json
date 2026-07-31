@@ -1,0 +1,153 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "Applause-Cheering.mp3"
+          ],
+          "src": [
+            "Applause-Cheering.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "footstep_wood_000.ogg"
+          ],
+          "src": [
+            "footstep_wood_000.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "footstep_wood_001.ogg"
+          ],
+          "src": [
+            "footstep_wood_001.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "footstep_wood_002.ogg"
+          ],
+          "src": [
+            "footstep_wood_002.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "footstep_wood_003.ogg"
+          ],
+          "src": [
+            "footstep_wood_003.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "footstep_wood_004.ogg"
+          ],
+          "src": [
+            "footstep_wood_004.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay1.wav"
+          ],
+          "src": [
+            "hpp-yay1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay2.wav"
+          ],
+          "src": [
+            "hpp-yay2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay3.wav"
+          ],
+          "src": [
+            "hpp-yay3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay4.wav"
+          ],
+          "src": [
+            "hpp-yay4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "lowDown.ogg"
+          ],
+          "src": [
+            "lowDown.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ocean-ambient.mp3"
+          ],
+          "src": [
+            "ocean-ambient.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "pepSound3.ogg"
+          ],
+          "src": [
+            "pepSound3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "pepSound4.ogg"
+          ],
+          "src": [
+            "pepSound4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "pepSound5.ogg"
+          ],
+          "src": [
+            "pepSound5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "phaserUp2.ogg"
+          ],
+          "src": [
+            "phaserUp2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Tap.wav"
+          ],
+          "src": [
+            "Tap.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "whale-st.mp3"
+          ],
+          "src": [
+            "whale-st.mp3"
+          ]
+        }
+      ]
+    }
+  ]
+}
