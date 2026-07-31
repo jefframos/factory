@@ -16,8 +16,27 @@ export class BendService {
         uBendStrength: { value: 0.002 },
     };
 
+    /** Remembers the last non-zero strength so setEnabled(true) restores whatever it was tuned to, rather than a hardcoded default. */
+    private static lastStrength = this.uniforms.uBendStrength.value;
+
     public static updateOrigin(position: THREE.Vector3): void {
         this.uniforms.uBendOrigin.value.copy(position);
+    }
+
+    /**
+     * Global on/off switch for every material that's had applyBend() called
+     * on it — since they all read the SAME uBendStrength uniform, zeroing it
+     * here turns the bend off everywhere at once without touching any
+     * individual material or mesh. Everything stays hooked up; this is the
+     * one place to flip.
+     */
+    public static setEnabled(enabled: boolean): void {
+        if (enabled) {
+            this.uniforms.uBendStrength.value = this.lastStrength;
+        } else {
+            this.lastStrength = this.uniforms.uBendStrength.value || this.lastStrength;
+            this.uniforms.uBendStrength.value = 0;
+        }
     }
 
     /**
