@@ -1,74 +1,182 @@
-# Clog
+# Tower Builder Adventure (MVP)
 
-A 2048-style merge-snake game in a 3D linear corridor. The player collects numbered cubes, merges equal values to double them, and passes through value-gated doors to advance through increasingly large rooms.
+## Pitch
 
-## How to play
+A mobile-first hybrid casual game with **only one input: movement**.
 
-- Move with WASD / arrow keys or touch drag
-- Walk over food cubes to collect them — they attach to your tail
-- Equal adjacent values merge automatically, doubling the closer one
-- When your player value meets the gate requirement, the gate turns green and you can pass through
-- Reach Room 12 (gate: 8192) to become King
+The player never presses buttons to interact. Everything happens automatically:
 
-## Architecture
+- Walk near a tree → automatically chop it.
+- Walk near a rock → automatically mine it.
+- Walk over resources → automatically collect them.
+- Walk into the build zone → automatically deposit everything.
 
-Entry point: `BaseDemoScene` (Pixi `GameScene`) owns two layers:
+The gameplay is focused on relaxing resource gathering, satisfying progression, and watching your world grow.
 
-- **3D world** — `LinearWorld3dScene` (Three.js): player, rooms, food, camera
-- **2D HUD** — `PlayerHud`, `LinearMinimap`, `ScoreLeaderboard` (Pixi)
+---
 
-### Key systems
-
-| System | File | Responsibility |
-|---|---|---|
-| `LinearAreaManager` | `world/LinearAreaManager.ts` | Keeps 2 rooms live at all times; handles transitions |
-| `LinearArea` | `world/LinearArea.ts` | Single room geometry, gate mesh, collision |
-| `PlayerEntity` | `entities/PlayerEntity.ts` | Movement, tail snake-follow, merge pipeline |
-| `CollectibleManager` | `systems/CollectibleManager.ts` | Pool of food cubes in the scene |
-| `LevelManager` | `systems/LevelManager.ts` | Tops up food every 3.5 s |
-| `MergeQueue` | `systems/MergeQueue.ts` | Serializes merge animations |
-| `BendService` | `services/BendService.ts` | Vertex shader that curves the world around the player |
-
-### Room progression
-
-Rooms are defined in `world/LinearConfig.ts`. There are 12 named rooms (gates 8 → 8192), then procedurally generated rooms beyond that.
+# Core Gameplay Loop
 
 ```
-Room  Size  Gate    Food pool
-  1    60    —      [2]
-  2    68    8      [2]
-  3    76    16     [2, 4]
-  4    86    32     [2, 4]
-  5    96    64     [4]
-  6   106   128     [4]
-  7   116   256     [4, 8]
-  8   126   512     [8]
-  9   136   1024    [8, 16]
- 10   148   2048    [16]
- 11   160   4096    [16]
- 12♚  172   8192    [16, 32]  ← King Room
+Explore
+    ↓
+Find resources
+    ↓
+Auto gather
+    ↓
+Carry resources
+    ↓
+Return to tower
+    ↓
+Auto deposit
+    ↓
+Tower grows
+    ↓
+World expands
+    ↓
+Repeat
 ```
 
-### Merge flow
+---
 
-1. Player walks over a food cube → `collect()` inserts it into the tail in descending value order
-2. After a 0.7 s settle delay, `scheduleMerges()` finds the first adjacent equal pair
-3. The back cube slides into the front cube; their value doubles
-4. Repeat until no equal pairs remain
-5. If `tail[0].value === player.value`, the player absorbs it first (priority over tail merges)
+# Core Controls
 
-### Size formula
+Only one control:
 
-All spatial quantities scale with cube value:
+- Move
 
-```
-size = 1 + (log₂(value) − 1) × 0.15
-```
+Everything else is automatic.
 
-So value 2 → size 1.0, value 1024 → size 2.35.
+---
 
-## Dev tools
+# Resources
 
-- **Double Value** button in the dev GUI (Player section) — instantly doubles the player's value for testing gate progression
-- **Camera Zoom** slider in the dev GUI (Camera section)
-- `MergeDebugger` — enable `dbg` / `dbgTail` calls in `debug/MergeDebugger.ts` for verbose merge logging
+The player starts with:
+
+- 🌲 Wood
+
+After upgrading the tower, new resources unlock:
+
+- 🪨 Stone
+- ⛏ Iron
+- 💎 Crystal
+- (More later)
+
+Resources continuously respawn so the island always feels alive and players never run out of things to do.
+
+---
+
+# Tower Progression
+
+The tower is the center of progression.
+
+Example:
+
+## Tower Level 1
+
+- 20 Wood
+
+Unlocks:
+- Larger island
+- More trees
+
+---
+
+## Tower Level 2
+
+- 30 Wood
+- 15 Stone
+
+Unlocks:
+- Quarry
+- Stone nodes
+
+---
+
+## Tower Level 3
+
+- 40 Wood
+- 30 Stone
+- 10 Iron
+
+Unlocks:
+- Mine
+- Iron nodes
+
+Each tower upgrade visibly changes the tower with new floors, walls, windows, banners, and decorations.
+
+---
+
+# Expanding World
+
+Instead of zooming the camera out, the world expands around the player.
+
+Every tower upgrade reveals:
+
+- More land
+- More resource nodes
+- New biomes
+- New materials
+
+The player always has something new to explore while keeping the same comfortable camera distance.
+
+---
+
+# Resource Gathering
+
+Stand near a resource:
+
+- Progress circle fills.
+- Resource breaks.
+- Materials automatically fly into the player's backpack.
+
+No interaction required.
+
+---
+
+# Backpack
+
+Resources stack visibly on the player's back.
+
+Upgrades increase:
+
+- Carry capacity
+- Movement speed
+- Gathering speed
+- Pickup radius
+
+A larger backpack is an immediate visual indicator of progression.
+
+---
+
+# Building
+
+Entering the build zone automatically deposits carried resources.
+
+Resources fly into the tower one by one.
+
+Each deposit causes:
+
+- Small camera shake
+- Dust puff
+- Construction animation
+- Progress bar increase
+
+When requirements are met, the tower upgrades with a satisfying build animation.
+
+---
+
+# Why This Works
+
+The game is designed around constant progress.
+
+Every movement contributes to something:
+
+- Gathering resources
+- Unlocking new materials
+- Growing the tower
+- Expanding the world
+
+There is almost no downtime and no complex controls.
+
+The tower acts as both the player's home and the main visual representation of their progress.
