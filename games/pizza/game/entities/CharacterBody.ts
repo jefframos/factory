@@ -102,6 +102,21 @@ export default class CharacterBody {
         board.registerTransition('any', 'jumpUp', 0.1, undefined, 'jump');
         board.registerTransition('jumpUp', 'falling', 0.5, (vars) => (vars.verticalSpeed as number) > 0.01);
         board.registerTransition('falling', 'landing', 0.25, (vars) => vars.grounded === true);
+
+        /*
+         * PlayerActionController's timed actions (see ActionTypes.ts's animationTrigger
+         * field) — same trigger-in/trigger-out shape as jump above, except BOTH ends are
+         * triggers instead of a physics condition: PlayerActionController itself knows
+         * exactly when the action starts and ends (its own timer), so it fires 'chop'/
+         * 'mine' to enter and the shared 'actionDone' to leave, rather than the board
+         * inferring timing from clip length or game state. mix()'s default loop=true (see
+         * AnimatorController.mix()) means the clip repeats for however long the action's
+         * configured duration keeps it in that state, however short the source clip is.
+         */
+        board.registerTransition('any', 'chop', 0.1, undefined, 'chop');
+        board.registerTransition('chop', 'idle', 0.25, undefined, 'actionDone');
+        board.registerTransition('any', 'mine', 0.1, undefined, 'mine');
+        board.registerTransition('mine', 'idle', 0.25, undefined, 'actionDone');
     }
 
     /** Recolors every body mesh (excluding the head cube) to an explicit hex color — shared by both the value-palette player path and the flat-tint NPC path below. */
@@ -270,6 +285,24 @@ export default class CharacterBody {
         });
 
         return found;
+    }
+
+    /**
+     * Overrides targetRotation directly from a world-space direction (X/Z only), instead
+     * of deriving it from move input like update() normally does — see FacingComponent,
+     * which uses this to turn the character toward a resource it's gathering from while
+     * move input is zero (the player is frozen for the action's duration). The actual
+     * turn still happens gradually: update()'s own `container.quaternion.slerp(targetRotation,
+     * ROTATION_SLERP)` runs every frame regardless of how targetRotation got set, so this is
+     * "face this direction, smoothly, over the next several frames," not an instant snap.
+     * A near-zero direction (already facing it, or coincident position) is ignored rather
+     * than fed into atan2, which would return a meaningless angle for a zero vector.
+     */
+    public faceDirection(dirX: number, dirZ: number): void {
+        if (Math.hypot(dirX, dirZ) < 1e-4) {
+            return;
+        }
+        this.targetRotation.setFromAxisAngle(this.up, Math.atan2(dirX, dirZ));
     }
 
     /**

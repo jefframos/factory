@@ -1,0 +1,45 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "LEMONMILK-Bold.otf",
+            "LEMONMILK-Bold"
+          ],
+          "src": [
+            "LEMONMILK-Bold.woff2"
+          ]
+        },
+        {
+          "alias": [
+            "LEMONMILK-Regular.otf",
+            "LEMONMILK-Regular"
+          ],
+          "src": [
+            "LEMONMILK-Regular.woff2"
+          ]
+        },
+        {
+          "alias": [
+            "Poppins-Bold.ttf",
+            "Poppins-Bold"
+          ],
+          "src": [
+            "Poppins-Bold.woff2"
+          ]
+        },
+        {
+          "alias": [
+            "Poppins-Regular.ttf",
+            "Poppins-Regular"
+          ],
+          "src": [
+            "Poppins-Regular.woff2"
+          ]
+        }
+      ]
+    }
+  ]
+}

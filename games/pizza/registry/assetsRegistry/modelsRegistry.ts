@@ -16,6 +16,14 @@ const CharacterMedium = {
   nodes: {}
 } as const;
 
+const Digging = {
+  id: 'Digging',
+  path: 'characters/default/Digging',
+  fullPath: 'pizza/models/characters/default/Digging.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
 const FallingIdle = {
   id: 'FallingIdle',
   path: 'characters/default/FallingIdle',
@@ -64,6 +72,22 @@ const Landing = {
   nodes: {}
 } as const;
 
+const PickFruit = {
+  id: 'PickFruit',
+  path: 'characters/default/PickFruit',
+  fullPath: 'pizza/models/characters/default/PickFruit.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
+const PlantTree = {
+  id: 'PlantTree',
+  path: 'characters/default/PlantTree',
+  fullPath: 'pizza/models/characters/default/PlantTree.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
 const Roll = {
   id: 'Roll',
   path: 'characters/default/Roll',
@@ -92,6 +116,22 @@ const StandToRoll = {
   id: 'Stand To Roll',
   path: 'characters/default/Stand To Roll',
   fullPath: 'pizza/models/characters/default/Stand To Roll.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
+const StandingMeleeAttackDownwardCHOP = {
+  id: 'StandingMeleeAttack DownwardCHOP',
+  path: 'characters/default/StandingMeleeAttack DownwardCHOP',
+  fullPath: 'pizza/models/characters/default/StandingMeleeAttack DownwardCHOP.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
+const StandingPICKAXE = {
+  id: 'StandingPICKAXE',
+  path: 'characters/default/StandingPICKAXE',
+  fullPath: 'pizza/models/characters/default/StandingPICKAXE.fbx',
   format: 'fbx',
   nodes: {}
 } as const;
@@ -164,19 +204,33 @@ const TestIdle = {
 }
 } as const;
 
+const Watering = {
+  id: 'Watering',
+  path: 'characters/default/Watering',
+  fullPath: 'pizza/models/characters/default/Watering.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
 export const MODELS = {
   CharacterMedium,
+  Digging,
   FallingIdle,
   Idle,
   Idle2,
   Jump,
   JumpingUp,
   Landing,
+  PickFruit,
+  PlantTree,
   Roll,
   Run,
   Running,
   StandToRoll,
-  TestIdle
+  StandingMeleeAttackDownwardCHOP,
+  StandingPICKAXE,
+  TestIdle,
+  Watering
 } as const;
 
 export type ModelKey = keyof typeof MODELS;

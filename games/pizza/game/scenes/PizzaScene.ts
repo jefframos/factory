@@ -12,31 +12,37 @@
 // - No UI/HUD, no food/collectibles, no shop skins.
 // See BoundlessWorld3dScene.ts (the full game) for where all of that lives.
 //
-// The cube-based PlayerEntity is commented out for now (not deleted) — the
-// scene only actually "starts" (movement/camera/input take effect) once
-// ThirdPersonCharacter finishes its async load, so PlayerEntity's own cube
-// visual would otherwise show/move for a moment first with nothing to
-// replace it. Position is tracked directly here (playerPosition) instead,
-// using the same plain speed*delta math PlayerEntity itself uses.
+// The player itself is MainPlayer (see game/player/MainPlayer.ts) — a
+// dedicated Entity subclass that self-configures (RigidBody,
+// PlayerMovementController, collision events) in its own awake(). This
+// scene's job is just to build the World, add MainPlayer to it, add a
+// couple of test obstacles, and forward its own update()/fixedUpdate()
+// calls — see World.ts.
+//
+// Movement/physics/input never wait on the FBX character load: MainPlayer
+// is already fully functional (collides, falls under gravity, responds to
+// input) the instant it's added — loadPlayerCharacter() is a separate,
+// async, purely cosmetic step (see MainPlayer.loadCharacter()'s own doc).
 
-import AnalogInput from 'core/io/AnalogInput';
-import KeyboardInputMovement from 'core/io/KeyboardInputMovement';
-import PointerFollowInput from 'core/io/PointerFollowInput';
 import { ThreeScene } from 'core/scene/ThreeScene';
-import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 // import { DEFAULT_START_VALUE } from '../ClogConstants';
 // import { PlayerEntity } from '../entities/PlayerEntity';
 import { FloorBuilder } from '../builders/FloorBuilder';
 import { BendService } from '../services/BendService';
-import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
 import CharacterBody from '../entities/CharacterBody';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
 import { Game } from 'core/Game';
 import { LoadingSpinner } from '../dom-ui/LoadingSpinner';
-
-/** Cube color/value the head-cube test used — kept only as a comment reference now that PlayerEntity (and its DEFAULT_START_VALUE-driven color) is commented out. Pass whatever value you want ThirdPersonCharacter.applyColor() to use directly. */
-const HEAD_CUBE_VALUE = 2;
+import World from '../ecs/World';
+import RigidBody from '../physics/RigidBody';
+import { Layers } from '../physics/PhysicsConstants';
+import BoxVisualComponent from '../components/BoxVisualComponent';
+import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
+import MainPlayer from '../player/MainPlayer';
+import ResourceNode from '../player/ResourceNode';
+import DropZone from '../player/DropZone';
+import { ResourceType } from '../actions/ResourceTypes';
 
 /** Flat tone applied to the enemy test NPCs (see setupNpcs()) — a plain, saturated red to visually mark them as hostile, distinct from the player's value-palette color. */
 const ENEMY_COLOR = 0xaa1111;
@@ -72,7 +78,7 @@ const FLOOR_SEGMENTS = 100;
 const CAMERA_SETTINGS = {
     yawDeg: 0,
     pitchDeg: 35,
-    distance: 10,
+    distance: 20,
     followSpeed: 4,
 };
 
@@ -103,35 +109,46 @@ function cameraOffset(camera: THREE.PerspectiveCamera): THREE.Vector3 {
     );
 }
 
-/** Below this, an on-screen drag from the joystick's own center is ignored — same idea as BoundlessWorld3dScene's pointer-follow deadzone. */
-const POINTER_FOLLOW_DEADZONE = 8;
+/** Thin static slab just under the visible floor plane, top face resting at world Y=0 — gives the player something to land on instead of falling forever. */
+const GROUND_HALF_THICKNESS = 0.5;
+/** Test obstacle: a static box offset from spawn along Z only — see setupTestBox(). Walking into it should stop the player instead of passing through. */
+const TEST_BOX_HALF_EXTENTS = new THREE.Vector3(0.5, 0.5, 0.5);
+const TEST_BOX_OFFSET_Z = 4;
+
+/** World-space spawn spots for the gatherable resource nodes — see setupResourceNodes(). Kept clear of the solid TEST_BOX_* obstacle and the drop zone. */
+const RESOURCE_NODE_SPAWNS: Array<[ResourceType, number, number]> = [
+    [ResourceType.Tree, 3, 3],
+    [ResourceType.Tree, -3, 5],
+    [ResourceType.Stone, -3, 2],
+];
+
+/** Where the build/deposit zone sits — see setupDropZone(). Off to the side, clear of the resource nodes and the solid test box. */
+const DROP_ZONE_OFFSET = new THREE.Vector3(6, 0, -2);
 
 export default class PizzaScene extends ThreeScene {
-    /** Stands in for PlayerEntity.position while it's commented out — plain speed*delta integration, same math PlayerEntity itself does, driven every frame in update() once thirdPersonCharacter is ready. */
-    private readonly playerPosition = new THREE.Vector3(0, 0, 0);
+    /** Owns PhysicsWorld + every spawned Entity — the scene's job is just to spawn things into this and forward its own update()/fixedUpdate() calls here (see World.ts). */
+    private readonly world = new World();
 
-    /** Shown while the player character loads, destroyed the instant it resolves — see setupThirdPersonCharacter(). Tracked as a field too so destroy() can clean it up if the scene is torn down mid-load. */
+    /** The player — self-contained (RigidBody, PlayerMovementController, collision events all wired up in its own awake()). See MainPlayer.ts. */
+    private readonly mainPlayer: MainPlayer;
+
+    /** Shown while the player character loads, destroyed the instant it resolves — see loadPlayerCharacter(). Tracked as a field too so destroy() can clean it up if the scene is torn down mid-load. */
     private loadingSpinner?: LoadingSpinner;
-
-    /**
-     * The whole point of this scene right now — undefined (and therefore
-     * everything in update() skipped, see the early-return there) until its
-     * async load (FBX mesh + animation clips) finishes. See
-     * setupThirdPersonCharacter().
-     */
-    private thirdPersonCharacter?: ThirdPersonCharacter;
 
     /** Enemy test NPCs — same rig/animation as the player (see CharacterBody), driven directly with no move input each frame, so they just stand there idling in a red tone. Not wrapped in ThirdPersonCharacter since they have no move speed, no jump, no player input at all. */
     private readonly npcs: CharacterBody[] = [];
 
-    private keyboardInput!: KeyboardInputMovement;
-    private analogInput?: AnalogInput;
-    private pointerFollowInput?: PointerFollowInput;
-    /** True only while the pointer/finger is actually held down — PointerFollowInput.getPointerPosition() keeps returning the LAST known point even after release (nothing clears it on pointerup), so without this the player would keep chasing that stale point forever instead of stopping the instant it's released. */
-    private pointerHeld = false;
+    public constructor(game: Game) {
+        super(game);
 
-    /** Written by whichever input controller is active; read once per frame in update(). */
-    private readonly moveInput = { x: 0, z: 0 };
+        // World.add() adopts a purpose-built Entity subclass instance and calls its
+        // awake() immediately — by the time this returns, MainPlayer already has its
+        // RigidBody/PlayerMovementController and can move/collide, well before its FBX
+        // character has (or even starts to) load. `this` is passed as its movement
+        // input host (a Pixi container with worldToScreen()) and `this.threeScene` as
+        // where its eventual character mesh gets parented.
+        this.mainPlayer = this.world.add(new MainPlayer(this, this.threeScene));
+    }
 
     public build(): void {
         // Sky blue background + stronger ambient/directional intensities — brighter overall
@@ -144,42 +161,78 @@ export default class PizzaScene extends ThreeScene {
         this.threeScene.add(sun);
 
         this.buildFloor();
+        this.setupGround();
+        this.setupTestBox();
+        this.setupResourceNodes();
+        this.setupDropZone();
+        this.threeScene.add(this.mainPlayer.transform);
 
         this.positionCamera();
-        this.setupInput();
-        void this.setupThirdPersonCharacter();
+        void this.loadPlayerCharacter();
         void this.setupNpcs();
     }
 
+    /** Static RigidBody matching the visible floor plane — top face at world Y=0, so the player (gravity pulls it down from spawn) lands and rests on it instead of falling forever. Purely a collider; buildFloor() already draws the ground. */
+    private setupGround(): void {
+        const ground = this.world.spawn();
+        ground.addComponent(new RigidBody({
+            halfExtents: new THREE.Vector3(FLOOR_SIZE / 2, GROUND_HALF_THICKNESS, FLOOR_SIZE / 2),
+            isStatic: true,
+            layer: Layers.Environment,
+            centerOffset: new THREE.Vector3(0, -GROUND_HALF_THICKNESS, 0),
+        }));
+        this.threeScene.add(ground.transform);
+    }
+
+    /** The task's own collision test: a static box offset from spawn along Z only — walking the player into it should stop them instead of clipping through. */
+    private setupTestBox(): void {
+        const box = this.world.spawn();
+        box.transform.position.set(0, 0, TEST_BOX_OFFSET_Z);
+
+        box.addComponent(new RigidBody({
+            halfExtents: TEST_BOX_HALF_EXTENTS,
+            isStatic: true,
+            layer: Layers.Environment,
+            centerOffset: new THREE.Vector3(0, TEST_BOX_HALF_EXTENTS.y, 0),
+        }));
+        box.addComponent(new BoxVisualComponent(
+            TEST_BOX_HALF_EXTENTS.clone().multiplyScalar(2),
+            0xff8800,
+            new THREE.Vector3(0, TEST_BOX_HALF_EXTENTS.y, 0),
+        ));
+
+        this.threeScene.add(box.transform);
+    }
+
+    /** The "zone for getting the items" — one ResourceNode per RESOURCE_NODE_SPAWNS entry (see that constant), each a self-contained Entity subclass (trigger + placeholder visual — cylinder for a tree, cube for stone) that AutoGatherController (on MainPlayer) reacts to on its own. */
+    private setupResourceNodes(): void {
+        for (const [resourceType, x, z] of RESOURCE_NODE_SPAWNS) {
+            const node = this.world.add(new ResourceNode(resourceType, new THREE.Vector3(x, 0, z)));
+            this.threeScene.add(node.transform);
+        }
+    }
+
+    /** The "drop zone" — deposits whatever's in the player's backpack on entry (see DropZone.ts). Needs a ScreenAnchorHost (worldToScreen + the Pixi overlay) to float its "+N Wood"-style deposit popups — `this` covers worldToScreen (ThreeScene), `this.game.overlayContainer` is the same root EntityIndicatorManager-style overlays already use elsewhere in this repo. */
+    private setupDropZone(): void {
+        const screenHost: ScreenAnchorHost = {
+            worldToScreen: position => this.worldToScreen(position),
+            overlayContainer: this.game.overlayContainer,
+        };
+
+        const dropZone = this.world.add(new DropZone(DROP_ZONE_OFFSET, screenHost));
+        this.threeScene.add(dropZone.transform);
+    }
+
     /**
-     * Loads the FBX character + its animation clips and wires up the same
-     * idle/run/jump state graph the source project used (see
-     * ThirdPersonCharacter.setUp()). Hides the placeholder cube once ready
-     * so only one visible character shows at a time — PlayerEntity itself
-     * is untouched otherwise and keeps driving all real movement.
+     * Shows a spinner while MainPlayer.loadCharacter() does its thing (FBX mesh +
+     * animation clips) — purely cosmetic UI orchestration; the player itself never
+     * waits on this (see this file's own doc, and MainPlayer.loadCharacter()'s).
      */
-    private async setupThirdPersonCharacter(): Promise<void> {
+    private async loadPlayerCharacter(): Promise<void> {
         const spinner = this.loadingSpinner = new LoadingSpinner();
-        const character = new ThirdPersonCharacter();
-
-        await character.loadMesh(modelUrl(MODELS.CharacterMedium.fullPath));
-        await character.registerAnimation('idle', modelUrl(MODELS.Idle.fullPath));
-        await character.registerAnimation('run', modelUrl(MODELS.Running.fullPath));
-        await character.registerAnimation('jumpUp', modelUrl(MODELS.JumpingUp.fullPath));
-        await character.registerAnimation('falling', modelUrl(MODELS.FallingIdle.fullPath));
-        await character.registerAnimation('landing', modelUrl(MODELS.Landing.fullPath));
-        await character.registerAnimation('roll', modelUrl(MODELS.Roll.fullPath));
-        character.setUp();
-        // Test hook — colors the body + attaches a matching cube head, both
-        // using the same value-based palette the real cube player uses.
-        character.applyColor(HEAD_CUBE_VALUE);
-
-        character.container.scale.setScalar(CHARACTER_SCALE);
-        this.threeScene.add(character.container);
-
+        await this.mainPlayer.loadCharacter();
         spinner.destroy();
         this.loadingSpinner = undefined;
-        this.thirdPersonCharacter = character;
     }
 
     /**
@@ -225,50 +278,32 @@ export default class PizzaScene extends ThreeScene {
     }
 
     private positionCamera(): void {
-        this.threeCamera.position.copy(this.playerPosition).add(cameraOffset(this.threeCamera));
-        this.threeCamera.lookAt(this.playerPosition);
+        const playerPosition = this.mainPlayer.transform.position;
+        this.threeCamera.position.copy(playerPosition).add(cameraOffset(this.threeCamera));
+        this.threeCamera.lookAt(playerPosition);
     }
 
     /**
-     * Keyboard always on; mobile gets an on-screen joystick, desktop
-     * (non-mobile, no joystick) falls back to click-drag-to-chase-cursor —
-     * same split BaseDemoScene uses for the full game.
+     * Physics runs here, not in update(). Game.loop() (core/Game.ts) drives this at a
+     * fixed, constant step (Game._fixedDeltaTime/1000, ~1/60s) via an accumulator — if a
+     * frame stalls (e.g. the FBX character/animation loads in
+     * MainPlayer.loadCharacter() blocking the main thread for a moment), the accumulator
+     * just runs several small fixed steps back-to-back to catch up, instead of handing
+     * PhysicsWorld one enormous variable delta. That's what was launching the player
+     * across the map a few seconds in: update()'s delta comes straight from a raw
+     * performance.now() diff with no clamping, so the first frame after any real stall
+     * reported multiple real seconds of elapsed time, and gravity/position integration
+     * (delta multiplied twice) turned that into an instant multi-unit teleport — easily
+     * enough to tunnel clean through the thin ground slab and get flung out from a bad
+     * collision resolution on the way through. MAX_PHYSICS_DELTA (PhysicsConstants.ts)
+     * stays on as a second line of defense, but the fixed step is the real fix.
+     *
+     * Runs unconditionally from the very first frame — MainPlayer's RigidBody and
+     * PlayerMovementController exist from its own awake(), independent of whether its
+     * FBX character has loaded (see this file's own doc).
      */
-    private setupInput(): void {
-        /*
-         * Both AnalogInput and PointerFollowInput set eventMode = 'static'
-         * on the container they're given, but a plain PIXI.Container (this
-         * scene has no other PIXI children — it's THREE-rendered) has no
-         * hitArea of its own, so it never actually receives pointer events
-         * without one — same full-screen rectangle BaseDemoScene sets on
-         * itself before constructing either.
-         */
-        this.eventMode = 'static';
-        this.hitArea = new PIXI.Rectangle(-2000, -2000, 6000, 6000);
-
-        this.keyboardInput = new KeyboardInputMovement();
-        this.keyboardInput.onMove.add(({ direction, magnitude }: { direction: PIXI.Point; magnitude: number }) => {
-            this.moveInput.x = direction.x * magnitude;
-            this.moveInput.z = direction.y * magnitude;
-        });
-
-        if (PIXI.isMobile.any) {
-            this.analogInput = new AnalogInput(this);
-            this.analogInput.onMove.add(({ direction, magnitude }: { direction: PIXI.Point; magnitude: number }) => {
-                this.moveInput.x = magnitude > 0 ? direction.x * magnitude : 0;
-                this.moveInput.z = magnitude > 0 ? direction.y * magnitude : 0;
-            });
-        } else {
-            this.pointerFollowInput = new PointerFollowInput(this);
-            this.pointerFollowInput.onBoostChange.add(({ active }: { active: boolean }) => {
-                this.pointerHeld = active;
-
-                if (!active) {
-                    this.moveInput.x = 0;
-                    this.moveInput.z = 0;
-                }
-            });
-        }
+    public override fixedUpdate(delta: number): void {
+        this.world.fixedUpdate(delta);
     }
 
     public override update(delta: number): void {
@@ -277,35 +312,13 @@ export default class PizzaScene extends ThreeScene {
             npc.update(delta);
         }
 
-        // Game doesn't actually "start" until the character has finished loading.
-        if (!this.thirdPersonCharacter) {
-            super.update(delta);
-            return;
-        }
+        const playerPosition = this.mainPlayer.transform.position;
 
-        if (this.pointerFollowInput && this.pointerHeld) {
-            const pointer = this.pointerFollowInput.getPointerPosition();
-            const anchor = pointer && this.worldToScreen(this.playerPosition);
-
-            if (pointer && anchor) {
-                const dx = pointer.x - anchor.x;
-                const dy = pointer.y - anchor.y;
-                const dist = Math.hypot(dx, dy);
-
-                if (dist > POINTER_FOLLOW_DEADZONE) {
-                    this.moveInput.x = dx / dist;
-                    this.moveInput.z = dy / dist;
-                } else {
-                    this.moveInput.x = 0;
-                    this.moveInput.z = 0;
-                }
-            }
-        }
-
-        const moveSpeed = this.thirdPersonCharacter.getMoveSpeed();
-        this.playerPosition.x += this.moveInput.x * moveSpeed * delta;
-        this.playerPosition.z += this.moveInput.z * moveSpeed * delta;
-        this.thirdPersonCharacter.update(delta, this.playerPosition, this.moveInput.x, this.moveInput.z);
+        // Runs every entity's update() — for the player, that's PlayerMovementController's own
+        // pointer-follow tracking plus CharacterVisualComponent syncing position/animation from
+        // whatever fixedUpdate's physics step last resolved (once the FBX character has loaded
+        // and that component exists at all — harmless no-op until then).
+        this.world.update(delta);
 
         /*
          * CubeBuilder.buildPlayer() (used for the head cube) unconditionally
@@ -316,20 +329,19 @@ export default class PizzaScene extends ThreeScene {
          * from spawn. Re-centering the origin on the player every frame keeps
          * that distance at ~0, so it never sinks.
          */
-        BendService.updateOrigin(this.playerPosition);
+        BendService.updateOrigin(playerPosition);
 
-        const targetPosition = this.playerPosition.clone().add(cameraOffset(this.threeCamera));
+        const targetPosition = playerPosition.clone().add(cameraOffset(this.threeCamera));
         this.threeCamera.position.lerp(targetPosition, 1 - Math.exp(-CAMERA_SETTINGS.followSpeed * delta));
-        this.threeCamera.lookAt(this.playerPosition);
+        this.threeCamera.lookAt(playerPosition);
 
         super.update(delta);
     }
 
     public override destroy(): void {
-        this.keyboardInput?.destroy();
-        this.analogInput?.destroy();
-        this.pointerFollowInput?.destroy();
-        this.thirdPersonCharacter?.destroy();
+        // Tears down every component on mainPlayer, including PlayerMovementController's own
+        // input listeners and (if it ever loaded) the FBX character itself — see MainPlayer.destroy().
+        this.world.remove(this.mainPlayer);
         this.npcs.forEach(npc => npc.destroy());
         this.loadingSpinner?.destroy();
         super.destroy();

@@ -1,0 +1,33 @@
+M1 — Action system (core, build this first)
+
+ActionType enum (Chop, Mine, later Fish, etc.) plus a data table mapping resource → { action, tool, baseDurationSec } (e.g. Tree → Chop/Axe/5s).
+New PlayerActionController component on MainPlayer, exposing exactly the API you described: async playAction(action: ActionType, targetPosition: THREE.Vector3): Promise<void>. Internally, for now:
+console.log('[action]', action, targetPosition) — the stub you asked for.
+Freeze movement: reuse the machinery already built (movementController.enabled = false) — PlayerMovementController.onDisable() already zeroes velocity immediately, which is exactly "stop in place." No new freeze mechanism needed.
+Hand targetPosition to a FacingComponent (see below) so the player turns toward the resource.
+Wait out baseDurationSec (adjusted by the equipped tool's tier — see M4) via a small internal timer ticked in the component's own update(delta), not a raw setTimeout — the returned Promise resolves when that timer's done.
+Re-enable movement.
+FacingComponent (generic, reusable beyond actions): faceToward(target) sets a desired direction; its update(delta) slerps the character's facing toward it "overtime" rather than snapping. Needs a look at how CharacterBody's existing move-direction-driven rotation works so this doesn't fight it while an action is active — likely: FacingComponent owns rotation while an action is in progress, movement-direction rotation resumes once it ends.
+Actual per-resource animation clips (real idle/run/jumpUp-style registration on ThirdPersonCharacter, e.g. chop, mine) come once the animation assets exist — registerCollisionEvents-style stubbing first, wire in real triggers after.
+M2 — Resource nodes + auto-gather
+
+ResourceNode Entity (trigger RigidBody, Layers.Resource, holds { resourceType, amount, respawnTimer }).
+AutoGatherController on MainPlayer: on onTriggerEnter with a resource node, calls playAction(...) with the node's position; on completion, adds to the backpack and starts the node's respawn timer. This is the one thing that actually calls playAction — matches the README's "no interaction required."
+M3 — Backpack + collect-to-back visual
+
+BackpackComponent: capacity (starts at 5), per-resource counts, add()/isFull().
+On gather completion, a small fly-to-back tween (position lerp from the node to a backpack anchor point on the player) — a lightweight, reusable VFX helper, not tied to any one resource type.
+Visual stack on the player's back grows/shrinks as the backpack fills/empties.
+M4 — Tools + progression config
+
+Tool tiers (Axe/Pickaxe, etc.) — each tier multiplies action duration down and/or bumps yield; stored per-tool, independent of backpack capacity tiers.
+Backpack capacity tiers (5 → upgraded amounts).
+Single ProgressionConfig driving both, so "upgrade" is just bumping an index and re-reading the config — this is the piece that makes tuning ("5s per tree at the start, faster later") a data change, not a code change.
+M5 — Tower + build zone
+
+Same as before: Tower Entity with a build-zone trigger; deposit drains the backpack resource-by-resource, firing signals for VFX/audio/UI.
+M6 — Persistence — tower level, tool tiers, backpack tier survive reload (same storage pattern ShopStorage/HighScoreStorage already use).
+
+M7 — World expansion — grow the island + spawn new resource tiers per tower level; camera distance already level-independent.
+
+M8 — Polish — progress-circle over a node while gathering, camera shake/dust/construction beat on deposit, tower's visual changing per level.

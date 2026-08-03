@@ -81,6 +81,11 @@ export default class ThirdPersonCharacter {
         this.body.setHeadOffset(x, y, z);
     }
 
+    /** See CharacterBody.faceDirection()'s own doc — turns the character toward a world-space direction over the next several frames, independent of move input. */
+    public faceDirection(dirX: number, dirZ: number): void {
+        this.body.faceDirection(dirX, dirZ);
+    }
+
     /**
      * Call once per frame from the host scene. `moveInputX`/`moveInputZ` are
      * the SAME normalized (-1..1) input the host's own PlayerEntity already
@@ -114,6 +119,11 @@ export default class ThirdPersonCharacter {
 
         this.airborneRemaining = JUMP_AIRTIME;
         this.body.animator.animatorBoard?.setTrigger('jump');
+    }
+
+    /** Fires an animator-board trigger by name — see PlayerActionController, which uses this for the 'chop'/'mine'/'actionDone' triggers registered in CharacterBody.setUp(). Same underlying mechanism jump() uses, just generalized to any trigger name instead of one hardcoded to jump's own airtime bookkeeping. */
+    public playTrigger(trigger: string): void {
+        this.body.animator.animatorBoard?.setTrigger(trigger);
     }
 
     public destroy(): void {
