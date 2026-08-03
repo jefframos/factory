@@ -106,6 +106,7 @@ export default class MainPlayer extends Entity {
         this.addComponent(new AutoGatherController());
 
         this.registerCollisionEvents(rigidBody);
+
     }
 
     /**
