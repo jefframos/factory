@@ -19,6 +19,7 @@
 // Damage persists across cancelled actions — see the `life` field's doc.
 
 import * as THREE from 'three';
+import gsap from 'gsap';
 import Entity from '../ecs/Entity';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
@@ -119,6 +120,89 @@ export default class ResourceNode extends Entity implements ActionTarget {
 
         this.deplete(RESOURCE_CONFIG[this.resourceType].respawnSec);
         return true;
+    }
+
+    /** Called when a hit lands on this resource — shake the visual and show damage text. */
+    public onHit(hitData?: { damage: number }): void {
+        const mesh = this.visual.mesh;
+        const offsetPos = { x: 0, y: 0, z: 0 };
+
+        gsap.to(offsetPos, {
+            x: () => (Math.random() - 0.5) * 0.3,
+            y: () => (Math.random() - 0.5) * 0.2,
+            z: () => (Math.random() - 0.5) * 0.3,
+            duration: 0.1,
+            ease: 'power2.out',
+            onUpdate: () => {
+                mesh.position.x = offsetPos.x;
+                mesh.position.y = offsetPos.y;
+                mesh.position.z = offsetPos.z;
+            },
+            onComplete: () => {
+                gsap.to(mesh.position, {
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                    duration: 0.05,
+                    ease: 'power1.out',
+                });
+            },
+        });
+
+        // Show floating damage text
+        if (hitData?.damage && this.world) {
+            this.showDamagePopup(hitData.damage);
+        }
+    }
+
+    private showDamagePopup(damage: number): void {
+        const damageText = damage.toString();
+        const canvas = document.createElement('canvas');
+        const fontSize = 96;
+        const width = 256;
+        const height = 128;
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d')!;
+        ctx.font = `bold ${fontSize}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#FF4444';
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur = 12;
+        ctx.shadowOffsetX = 3;
+        ctx.shadowOffsetY = 3;
+        ctx.fillText(damageText, width / 2, height / 2);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+        const sprite = new THREE.Sprite(material);
+
+        const startPos = new THREE.Vector3(0, 2.5, 0);
+        sprite.position.copy(startPos);
+        sprite.scale.set(3, 1.5, 1);
+
+        this.transform.add(sprite);
+
+        const anim = { opacity: 1, y: 0, scale: 1 };
+        gsap.to(anim, {
+            opacity: 0,
+            y: 2,
+            scale: 0.8,
+            duration: 1.2,
+            ease: 'power2.out',
+            onUpdate: () => {
+                sprite.position.y = startPos.y + anim.y;
+                sprite.scale.set(3 * anim.scale, 1.5 * anim.scale, 1);
+                (sprite.material as THREE.SpriteMaterial).opacity = anim.opacity;
+            },
+            onComplete: () => {
+                texture.dispose();
+                material.dispose();
+                sprite.removeFromParent();
+            },
+        });
     }
 
     private deplete(respawnSec: number): void {

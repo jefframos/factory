@@ -36,8 +36,8 @@ const CHARACTER_SCALE = 0.0075;
 /** Cube color/value the head-cube test used — see ThirdPersonCharacter.applyColor(). */
 const HEAD_CUBE_VALUE = 2;
 
-/** Model-registry entries only carry a repo-relative fullPath (e.g. "pizza/models/..."); served at runtime from /pizza/... (see public/pizza/models). */
-const modelUrl = (fullPath: string): string => `/${fullPath}`;
+/** Model-registry entries only carry a repo-relative fullPath (e.g. "pizza/models/..."); served at runtime from ./pizza/... (see public/pizza/models). Works on localhost and GitHub Pages. */
+const modelUrl = (fullPath: string): string => `./${fullPath}`;
 
 export default class MainPlayer extends Entity {
     private readonly inputHost: MovementInputHost;

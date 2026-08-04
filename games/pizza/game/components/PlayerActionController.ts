@@ -1,20 +1,23 @@
 // PlayerActionController.ts
 //
 // Runs the player's automatic, repeated-hit actions (chopping, mining, ...)
-// — see ActionTypes.ts for the per-action timing/damage. An action is a loop,
-// not a single wait: `onPlayActionAnimation()` starts it, and from then on
-// this component
+// — see ActionTypes.ts for the per-action timing/damage. Each action loops
+// an animation and fires hits at a normalized point (hitTime) within that loop.
+// The animation playback speed is calculated dynamically so hits occur every
+// hitIntervalSec (which can be upgraded), regardless of animation duration or scale.
 //
 //   1. fires the per-action animator-board trigger once (ACTION_CONFIG's
 //      animationTrigger — 'chop'/'mine', see CharacterBody.setUp() for the
 //      matching transitions) so the swing clip loops for the whole action.
-//      A no-op if the FBX character hasn't loaded, since actions never wait
-//      on that load (see MainPlayer's own doc) — the hits below still land
-//      on schedule with no visible character yet.
+//      The playback speed is set to ensure hits land at hitTime and repeat
+//      every hitIntervalSec. A no-op if the FBX character hasn't loaded, since
+//      actions never wait on that load (see MainPlayer's own doc) — the hits
+//      below still land on schedule with no visible character yet.
 //   2. turns the player to face the target via FacingComponent.
-//   3. every hitIntervalSec, deals damagePerHit to the target
-//      (ActionTarget.applyHit) — and finishes as 'completed' the moment the
-//      target reports itself depleted.
+//   3. tracks normalized animation progress (0–1). When it reaches hitTime,
+//      deals damagePerHit to the target (ActionTarget.applyHit), then resets
+//      the progress counter. Finishes as 'completed' the moment the target
+//      reports itself depleted.
 //   4. on either ending, clears facing, fires ACTION_DONE_TRIGGER to drop
 //      back to idle, and resolves the returned Promise with which ending it
 //      was.
@@ -56,13 +59,15 @@ export interface ActionTarget {
     readonly position: THREE.Vector3;
     /** Absorb one hit. Returns true once this target is fully depleted, which ends the action as 'completed'. */
     applyHit(damage: number): boolean;
+    /** Called when a hit is about to land — target can play feedback (shake, impact, etc.) */
+    onHit?(hitData: { damage: number }): void;
 }
 
 export default class PlayerActionController extends Component {
     private currentAction?: ActionType;
     private currentTarget?: ActionTarget;
-    /** Counts down to the next hit; reset by adding hitIntervalSec back (not assigning it) so a long frame doesn't silently discard accumulated progress. */
-    private nextHitSec = 0;
+    /** Elapsed time in the current animation cycle (0 to animationDurationSec / playbackSpeed). Resets each time a hit fires. */
+    private timeSinceLastHitSec = 0;
     private resolveCurrent?: (result: ActionResult) => void;
 
     public get isBusy(): boolean {
@@ -91,14 +96,18 @@ export default class PlayerActionController extends Component {
         }
 
         const config = ACTION_CONFIG[action];
-        console.log(`[action] start ${action} (trigger: ${config.animationTrigger}, ${config.damagePerHit} dmg every ${config.hitIntervalSec}s)`);
+        const basePlaybackSpeed = (config.hitTime * config.animationDurationSec) / config.hitIntervalSec;
+        const finalPlaybackSpeed = basePlaybackSpeed * config.scale;
+        console.log(`[action] start ${action} (trigger: ${config.animationTrigger}, ${config.damagePerHit} dmg every ${(config.hitIntervalSec * config.scale).toFixed(2)}s, playback speed: ${finalPlaybackSpeed.toFixed(2)}x)`);
 
         this.currentAction = action;
         this.currentTarget = target;
-        this.nextHitSec = config.hitIntervalSec;
+        this.timeSinceLastHitSec = 0;
 
         this.entity.getComponent(FacingComponent)?.faceToward(target.position);
-        this.entity.getComponent(CharacterVisualComponent)?.character.playTrigger(config.animationTrigger);
+        const character = this.entity.getComponent(CharacterVisualComponent)?.character;
+        character?.getAnimation(config.animationTrigger).setSpeed(finalPlaybackSpeed);
+        character?.playTrigger(config.animationTrigger);
 
         return new Promise<ActionResult>(resolve => {
             this.resolveCurrent = resolve;
@@ -121,13 +130,15 @@ export default class PlayerActionController extends Component {
         }
 
         const config = ACTION_CONFIG[this.currentAction!];
-        this.nextHitSec -= delta;
+        const timeToHit = config.hitIntervalSec * config.scale;
 
-        if (this.nextHitSec > 0) {
+        this.timeSinceLastHitSec += delta;
+
+        if (this.timeSinceLastHitSec < timeToHit) {
             return;
         }
 
-        this.nextHitSec += config.hitIntervalSec;
+        this.timeSinceLastHitSec -= timeToHit;
 
         // Cache the target: applyHit() can synchronously deplete it, which (for a
         // ResourceNode) unregisters its RigidBody and fires onTriggerExit — and that
@@ -135,6 +146,7 @@ export default class PlayerActionController extends Component {
         // AutoGatherController's exit handler for the guard that keeps that from
         // turning this completion into a cancellation.
         const target = this.currentTarget!;
+        target.onHit?.({ damage: config.damagePerHit });
         const depleted = target.applyHit(config.damagePerHit);
 
         if (depleted && this.isBusy) {

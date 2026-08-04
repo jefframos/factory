@@ -126,6 +126,11 @@ export default class ThirdPersonCharacter {
         this.body.animator.animatorBoard?.setTrigger(trigger);
     }
 
+    /** Get animation settings to configure playback speed per animation. Example: character.getAnimation('chop').setSpeed(1.5) */
+    public getAnimation(id: string) {
+        return this.body.animator.getAnimation(id);
+    }
+
     public destroy(): void {
         this.body.destroy();
     }

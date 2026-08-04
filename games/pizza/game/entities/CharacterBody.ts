@@ -16,6 +16,7 @@ import { TextureBuilder } from '../builders/TextureBuilder';
 import { ShopStorage, SHOP_ITEMS, resolveShopImagePath } from '../data/ShopStorage';
 import { BendService } from '../services/BendService';
 import AnimatorController from './animation/AnimatorController';
+import { loadCompressedFile, releaseObjectURL } from '../utils/GzipLoader';
 
 const ROTATION_SLERP = 0.15;
 /**
@@ -55,13 +56,19 @@ export default class CharacterBody {
     private headBone?: THREE.Object3D;
 
     public async loadMesh(url: string): Promise<void> {
-        const loader = new FBXLoader();
-        const object = await loader.loadAsync(url);
-        this.applyFallbackMaterial(object);
-        this.container.add(object);
+        const resolvedUrl = await loadCompressedFile(url);
+        try {
+            const loader = new FBXLoader();
+            const object = await loader.loadAsync(resolvedUrl);
+            this.applyFallbackMaterial(object);
+            this.container.add(object);
 
-        this.mixer = new THREE.AnimationMixer(object);
-        this.animator.setMixer(this.mixer);
+            this.mixer = new THREE.AnimationMixer(object);
+            this.animator.setMixer(this.mixer);
+        } finally {
+            // Clean up the blob URL if it was created for a .gz file
+            releaseObjectURL(resolvedUrl);
+        }
     }
 
     /** See FALLBACK_COLOR's own doc — swaps every mesh straight onto a brand-new flat-color material, same recipe the cube player uses, instead of patching whatever the FBX itself shipped with. */

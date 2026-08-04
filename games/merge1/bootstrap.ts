@@ -1,33 +1,33 @@
-async function startLoadSDK(): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const script = document.createElement("script");
+// async function startLoadSDK(): Promise<void> {
+//     return new Promise((resolve, reject) => {
+//         const script = document.createElement("script");
 
-        script.src = "https://www.youtube.com/game_api/v1";
+//         script.src = "https://www.youtube.com/game_api/v1";
 
-        script.onload = () => {
-            const check = () => {
-                if (window.ytgame) {
-                    resolve();
-                } else {
-                    setTimeout(check, 10);
-                }
-            };
+//         script.onload = () => {
+//             const check = () => {
+//                 if (window.ytgame) {
+//                     resolve();
+//                 } else {
+//                     setTimeout(check, 10);
+//                 }
+//             };
 
-            check();
-        };
+//             check();
+//         };
 
-        script.onerror = reject;
+//         script.onerror = reject;
 
-        document.head.appendChild(script);
-    });
-}
+//         document.head.appendChild(script);
+//     });
+// }
 
-async function bootstrap() {
-    await startLoadSDK();
+// async function bootstrap() {
+//     await startLoadSDK();
 
-    // IMPORTANT: import your GAME file, not index.ts
-    await import('./index.ts');
+//     // IMPORTANT: import your GAME file, not index.ts
+//     await import('./index.ts');
 
-}
+// }
 
-bootstrap();
+// bootstrap();

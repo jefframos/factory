@@ -53,8 +53,8 @@ const NPC_SPAWN_POSITIONS: Array<[number, number, number]> = [
     [-6, 0, 7],
 ];
 
-/** Model-registry entries only carry a repo-relative fullPath (e.g. "pizza/models/..."); served at runtime from /pizza/... (see public/pizza/models). */
-const modelUrl = (fullPath: string): string => `/${fullPath}`;
+/** Model-registry entries only carry a repo-relative fullPath (e.g. "pizza/models/..."); served at runtime from ./pizza/... (see public/pizza/models). Works on localhost and GitHub Pages. */
+const modelUrl = (fullPath: string): string => `./${fullPath}`;
 
 /** FBX export scale for this character rig — same value the source project used. */
 const CHARACTER_SCALE = 0.0075;
