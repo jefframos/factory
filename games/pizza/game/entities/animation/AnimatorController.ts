@@ -91,6 +91,16 @@ export default class AnimatorController {
     }
 
     /**
+     * The registered clip's own native duration in seconds (at timeScale 1), straight from
+     * the loaded THREE.AnimationClip — the real source of truth for "how long is this
+     * animation," instead of a hand-maintained duplicate number in some other config.
+     * Returns undefined if `id` hasn't been registered (or failed to load) yet.
+     */
+    public getClipDuration(id: string): number | undefined {
+        return this.animations[id]?.duration;
+    }
+
+    /**
      * Get animation settings for a registered animation ID. Use this to configure
      * per-animation playback speeds that persist across play() calls.
      * Example: animator.getAnimation('chop').setSpeed(1.5);

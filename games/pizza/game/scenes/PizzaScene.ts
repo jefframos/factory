@@ -78,7 +78,7 @@ const FLOOR_SEGMENTS = 100;
 const CAMERA_SETTINGS = {
     yawDeg: 0,
     pitchDeg: 35,
-    distance: 20,
+    distance: 10,
     followSpeed: 4,
 };
 

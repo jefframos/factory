@@ -125,27 +125,22 @@ export default class ResourceNode extends Entity implements ActionTarget {
     /** Called when a hit lands on this resource — shake the visual and show damage text. */
     public onHit(hitData?: { damage: number }): void {
         const mesh = this.visual.mesh;
-        const offsetPos = { x: 0, y: 0, z: 0 };
 
-        gsap.to(offsetPos, {
-            x: () => (Math.random() - 0.5) * 0.3,
-            y: () => (Math.random() - 0.5) * 0.2,
-            z: () => (Math.random() - 0.5) * 0.3,
-            duration: 0.1,
-            ease: 'power2.out',
+        // Quick shake
+        const shake = { x: 0, y: 0, z: 0 };
+        gsap.to(shake, {
+            x: () => (Math.random() - 0.5) * 0.2,
+            y: () => (Math.random() - 0.5) * 0.15,
+            z: () => (Math.random() - 0.5) * 0.2,
+            duration: 0.08,
+            ease: 'power3.out',
             onUpdate: () => {
-                mesh.position.x = offsetPos.x;
-                mesh.position.y = offsetPos.y;
-                mesh.position.z = offsetPos.z;
+                mesh.position.x = shake.x;
+                mesh.position.y = shake.y;
+                mesh.position.z = shake.z;
             },
             onComplete: () => {
-                gsap.to(mesh.position, {
-                    x: 0,
-                    y: 0,
-                    z: 0,
-                    duration: 0.05,
-                    ease: 'power1.out',
-                });
+                mesh.position.set(0, 0, 0);
             },
         });
 
