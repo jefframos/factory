@@ -109,6 +109,8 @@ export default class PlayerActionController extends Component {
      */
     private cycleElapsedSec = 0;
     private resolveCurrent?: (result: ActionResult) => void;
+    /** Fired every time a hit actually lands (see update()) — see onPlayActionAnimation()'s `onHit` param. Deliberately separate from ActionTarget.onHit: that's the TARGET's own feedback (shake, damage popup); this is the CALLER's (e.g. AutoGatherController flying a resource chip toward the backpack), and the target itself has no reason to know about it. */
+    private onHitCallback?: () => void;
 
     public get isBusy(): boolean {
         return this.currentAction !== undefined;
@@ -130,7 +132,7 @@ export default class PlayerActionController extends Component {
      * (`await controller.onPlayActionAnimation(...)`); only the reentrancy failure mode
      * differs, on purpose.
      */
-    public onPlayActionAnimation(action: ActionType, target: ActionTarget): Promise<ActionResult> {
+    public onPlayActionAnimation(action: ActionType, target: ActionTarget, onHit?: () => void): Promise<ActionResult> {
         if (this.isBusy) {
             throw new Error(`PlayerActionController: already playing ${this.currentAction}, can't start ${action}`);
         }
@@ -144,6 +146,7 @@ export default class PlayerActionController extends Component {
         this.currentAction = action;
         this.currentTarget = target;
         this.cycleElapsedSec = 0;
+        this.onHitCallback = onHit;
 
         this.entity.getComponent(FacingComponent)?.faceToward(target.position);
         character?.getAnimation(config.animationTrigger).setSpeed(playbackSpeed);
@@ -188,6 +191,7 @@ export default class PlayerActionController extends Component {
         // turning this completion into a cancellation.
         const target = this.currentTarget!;
         target.onHit?.({ damage: config.damagePerHit });
+        this.onHitCallback?.();
         const depleted = target.applyHit(config.damagePerHit);
 
         if (depleted && this.isBusy) {
@@ -199,6 +203,7 @@ export default class PlayerActionController extends Component {
     private finish(result: ActionResult): void {
         this.currentAction = undefined;
         this.currentTarget = undefined;
+        this.onHitCallback = undefined;
 
         this.entity.getComponent(FacingComponent)?.clearTarget();
         this.entity.getComponent(CharacterVisualComponent)?.character.playTrigger(ACTION_DONE_TRIGGER);

@@ -29,6 +29,19 @@ const HEAD_CUBE_SIZE = 120;
 /** Head-cube pivot/offset, in the SAME real world units as HEAD_CUBE_SIZE — (0,0,0) sits exactly at the head bone's own origin. Tune here, or live via setHeadOffset(). */
 const HEAD_CUBE_OFFSET = new THREE.Vector3(0, 50, 0);
 
+/** Backpack cube size, same real-world-unit convention as HEAD_CUBE_SIZE (see mountBackpackCube()). Placeholder until real backpack art exists — see AssetLibraryRegistry.ts for where a glb would slot in for resource nodes; the backpack has no such registry entry yet. */
+const BACKPACK_CUBE_SIZE = 90;
+/**
+ * Backpack cube pivot/offset off the Chest bone's own origin, in the SAME real world units
+ * as BACKPACK_CUBE_SIZE — (0,0,0) sits exactly at the bone's origin. This is bone-LOCAL
+ * space, so it turns with the character automatically; the sign/axis that actually reads as
+ * "a bit toward the back" depends on this rig's own bind-pose orientation, which isn't
+ * obvious from code alone — tune this live via setBackpackOffset() while watching the
+ * character in-game, same as HEAD_CUBE_OFFSET above.
+ */
+const BACKPACK_CUBE_OFFSET = new THREE.Vector3(0, 0, -60);
+const BACKPACK_CUBE_COLOR = 0x8b5a2b;
+
 /**
  * This rig's FBX exports have no texture at all — no map, no embedded
  * media, nothing (confirmed: zero texture-filename strings anywhere in the
@@ -54,6 +67,10 @@ export default class CharacterBody {
     /** Wraps headCube — cancels the head bone's own inherited scale so HEAD_CUBE_SIZE/HEAD_CUBE_OFFSET are true world units, and gives setHeadOffset() something to reposition without touching the cube's own scale. */
     private headCubeHolder?: THREE.Group;
     private headBone?: THREE.Object3D;
+    private backpackCube?: THREE.Mesh;
+    /** Same role as headCubeHolder, for the backpack cube (see mountBackpackCube()). */
+    private backpackCubeHolder?: THREE.Group;
+    private backpackBone?: THREE.Object3D;
 
     public async loadMesh(url: string): Promise<void> {
         const resolvedUrl = await loadCompressedFile(url);
@@ -180,7 +197,7 @@ export default class CharacterBody {
     private mountHeadCube(cube: THREE.Mesh, syncEquippedFace: boolean): void {
         this.removeHeadCube();
 
-        const headBone = this.findHeadBone();
+        const headBone = this.findBoneByName('Head');
 
         if (!headBone) {
             console.warn('CharacterBody: no "Head" bone found — skipping cube head.');
@@ -278,20 +295,94 @@ export default class CharacterBody {
         this.headCube = undefined;
     }
 
-    private findHeadBone(): THREE.Object3D | undefined {
+    /** Case-insensitive bone lookup by name — shared by mountHeadCube() ("Head") and mountBackpackCube() ("Chest"). */
+    private findBoneByName(name: string): THREE.Object3D | undefined {
         let found: THREE.Object3D | undefined;
+        const lowerName = name.toLowerCase();
 
         this.container.traverse((child) => {
             if (found) {
                 return;
             }
 
-            if (child.name === 'Head' || child.name.toLowerCase() === 'head') {
+            if (child.name.toLowerCase() === lowerName) {
                 found = child;
             }
         });
 
         return found;
+    }
+
+    /**
+     * Parents a plain flat-color cube onto whichever bone is actually named "Chest" — same
+     * holder-cancels-inherited-scale pattern as mountHeadCube(). No-op (nothing attached) if
+     * no such bone is found. Placeholder for real backpack art — see BACKPACK_CUBE_* above.
+     */
+    public mountBackpackCube(): void {
+        this.removeBackpackCube();
+
+        const chestBone = this.findBoneByName('Chest');
+
+        if (!chestBone) {
+            console.warn('CharacterBody: no "Chest" bone found — skipping backpack cube.');
+            return;
+        }
+
+        this.backpackBone = chestBone;
+
+        const geometry = new THREE.BoxGeometry(BACKPACK_CUBE_SIZE, BACKPACK_CUBE_SIZE, BACKPACK_CUBE_SIZE);
+        const material = new THREE.MeshStandardMaterial({ color: BACKPACK_CUBE_COLOR });
+        BendService.applyBend(material);
+        const cube = new THREE.Mesh(geometry, material);
+
+        const holder = new THREE.Group();
+        chestBone.add(holder);
+        holder.add(cube);
+
+        this.backpackCubeHolder = holder;
+        this.backpackCube = cube;
+
+        this.applyBackpackTransform();
+    }
+
+    /** Repositions the backpack cube live — same real-world units as BACKPACK_CUBE_SIZE/BACKPACK_CUBE_OFFSET, (0,0,0) at the Chest bone's own origin. No-op if mountBackpackCube() hasn't run yet (or found no Chest bone). */
+    public setBackpackOffset(x: number, y: number, z: number): void {
+        BACKPACK_CUBE_OFFSET.set(x, y, z);
+        this.applyBackpackTransform();
+    }
+
+    /** Same reasoning as applyHeadTransform() — cancels the Chest bone's own inherited scale on the HOLDER so BACKPACK_CUBE_SIZE/OFFSET stay true world units. */
+    private applyBackpackTransform(): void {
+        if (!this.backpackCubeHolder || !this.backpackBone) {
+            return;
+        }
+
+        const boneWorldScale = new THREE.Vector3();
+        this.backpackBone.getWorldScale(boneWorldScale);
+
+        this.backpackCubeHolder.scale.set(1 / boneWorldScale.x, 1 / boneWorldScale.y, 1 / boneWorldScale.z);
+        this.backpackCubeHolder.position.set(
+            BACKPACK_CUBE_OFFSET.x / boneWorldScale.x,
+            BACKPACK_CUBE_OFFSET.y / boneWorldScale.y,
+            BACKPACK_CUBE_OFFSET.z / boneWorldScale.z,
+        );
+    }
+
+    private removeBackpackCube(): void {
+        if (!this.backpackCubeHolder) {
+            return;
+        }
+
+        this.backpackCubeHolder.parent?.remove(this.backpackCubeHolder);
+        this.backpackCube?.geometry.dispose();
+        this.backpackCubeHolder = undefined;
+        this.backpackCube = undefined;
+    }
+
+    /** World-space position of the backpack cube (or the bare Chest bone, if mountBackpackCube() hasn't run) — used by AutoGatherController to fly gathered resource chips toward it. undefined if neither exists (e.g. the rig has no Chest bone, or the FBX hasn't loaded yet). */
+    public getBackpackWorldPosition(target: THREE.Vector3 = new THREE.Vector3()): THREE.Vector3 | undefined {
+        const anchor = this.backpackCubeHolder ?? this.backpackBone;
+        return anchor?.getWorldPosition(target);
     }
 
     /**
@@ -338,6 +429,7 @@ export default class CharacterBody {
 
     public destroy(): void {
         this.removeHeadCube();
+        this.removeBackpackCube();
         this.container.parent?.remove(this.container);
         this.mixer?.stopAllAction();
     }

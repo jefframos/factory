@@ -212,6 +212,235 @@ const Watering = {
   nodes: {}
 } as const;
 
+const Bridge = {
+  id: 'bridge',
+  path: 'props/bridge',
+  fullPath: 'pizza/models/props/bridge.glb',
+  format: 'glb',
+  nodes: {
+  "Bridge": "bridge"
+}
+} as const;
+
+const BuildingPlatform = {
+  id: 'building-platform',
+  path: 'props/building-platform',
+  fullPath: 'pizza/models/props/building-platform.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingPlatform": "building-platform"
+}
+} as const;
+
+const BuildingRoof = {
+  id: 'building-roof',
+  path: 'props/building-roof',
+  fullPath: 'pizza/models/props/building-roof.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingRoof": "building-roof"
+}
+} as const;
+
+const BuildingStructure = {
+  id: 'building-structure',
+  path: 'props/building-structure',
+  fullPath: 'pizza/models/props/building-structure.glb',
+  format: 'glb',
+  nodes: {
+  "BuildingStructure": "building-structure"
+}
+} as const;
+
+const CharacterArcher = {
+  id: 'character-archer',
+  path: 'props/character-archer',
+  fullPath: 'pizza/models/props/character-archer.glb',
+  format: 'glb',
+  nodes: {
+  "CharacterArcher": "character-archer",
+  "Root": "root",
+  "LegLeft": "leg-left",
+  "LegRight": "leg-right",
+  "Torso": "torso",
+  "ArmLeft": "arm-left",
+  "ArmRight": "arm-right",
+  "Head": "head",
+  "BodyMesh": "body-mesh",
+  "HeadMesh": "head-mesh"
+}
+} as const;
+
+const Fence = {
+  id: 'fence',
+  path: 'props/fence',
+  fullPath: 'pizza/models/props/fence.glb',
+  format: 'glb',
+  nodes: {
+  "Fence": "fence"
+}
+} as const;
+
+const Flag = {
+  id: 'flag',
+  path: 'props/flag',
+  fullPath: 'pizza/models/props/flag.glb',
+  format: 'glb',
+  nodes: {
+  "Flag": "flag"
+}
+} as const;
+
+const Ladder = {
+  id: 'ladder',
+  path: 'props/ladder',
+  fullPath: 'pizza/models/props/ladder.glb',
+  format: 'glb',
+  nodes: {
+  "Ladder": "ladder"
+}
+} as const;
+
+const PatchDirt = {
+  id: 'patch-dirt',
+  path: 'props/patch-dirt',
+  fullPath: 'pizza/models/props/patch-dirt.glb',
+  format: 'glb',
+  nodes: {
+  "PatchDirt": "patch-dirt"
+}
+} as const;
+
+const PatchGrass = {
+  id: 'patch-grass',
+  path: 'props/patch-grass',
+  fullPath: 'pizza/models/props/patch-grass.glb',
+  format: 'glb',
+  nodes: {
+  "PatchGrass": "patch-grass"
+}
+} as const;
+
+const Plant = {
+  id: 'plant',
+  path: 'props/plant',
+  fullPath: 'pizza/models/props/plant.glb',
+  format: 'glb',
+  nodes: {
+  "Plant": "plant"
+}
+} as const;
+
+const Platform = {
+  id: 'platform',
+  path: 'props/platform',
+  fullPath: 'pizza/models/props/platform.glb',
+  format: 'glb',
+  nodes: {
+  "Platform": "platform"
+}
+} as const;
+
+const RocksHigh = {
+  id: 'rocks-high',
+  path: 'props/rocks-high',
+  fullPath: 'pizza/models/props/rocks-high.glb',
+  format: 'glb',
+  nodes: {
+  "RocksHigh": "rocks-high"
+}
+} as const;
+
+const RocksLow = {
+  id: 'rocks-low',
+  path: 'props/rocks-low',
+  fullPath: 'pizza/models/props/rocks-low.glb',
+  format: 'glb',
+  nodes: {
+  "RocksLow": "rocks-low"
+}
+} as const;
+
+const RocksRamp = {
+  id: 'rocks-ramp',
+  path: 'props/rocks-ramp',
+  fullPath: 'pizza/models/props/rocks-ramp.glb',
+  format: 'glb',
+  nodes: {
+  "RocksRamp": "rocks-ramp"
+}
+} as const;
+
+const Stones = {
+  id: 'stones',
+  path: 'props/stones',
+  fullPath: 'pizza/models/props/stones.glb',
+  format: 'glb',
+  nodes: {
+  "Stones": "stones"
+}
+} as const;
+
+const Target = {
+  id: 'target',
+  path: 'props/target',
+  fullPath: 'pizza/models/props/target.glb',
+  format: 'glb',
+  nodes: {
+  "Target": "target"
+}
+} as const;
+
+const Tent = {
+  id: 'tent',
+  path: 'props/tent',
+  fullPath: 'pizza/models/props/tent.glb',
+  format: 'glb',
+  nodes: {
+  "Tent": "tent"
+}
+} as const;
+
+const TreeHigh = {
+  id: 'tree-high',
+  path: 'props/tree-high',
+  fullPath: 'pizza/models/props/tree-high.glb',
+  format: 'glb',
+  nodes: {
+  "TreeHigh": "tree-high"
+}
+} as const;
+
+const Tree = {
+  id: 'tree',
+  path: 'props/tree',
+  fullPath: 'pizza/models/props/tree.glb',
+  format: 'glb',
+  nodes: {
+  "Tree": "tree"
+}
+} as const;
+
+const WeaponArrow = {
+  id: 'weapon-arrow',
+  path: 'props/weapon-arrow',
+  fullPath: 'pizza/models/props/weapon-arrow.glb',
+  format: 'glb',
+  nodes: {
+  "WeaponArrow": "weapon-arrow"
+}
+} as const;
+
+const WeaponBow = {
+  id: 'weapon-bow',
+  path: 'props/weapon-bow',
+  fullPath: 'pizza/models/props/weapon-bow.glb',
+  format: 'glb',
+  nodes: {
+  "WeaponBow": "weapon-bow"
+}
+} as const;
+
 export const MODELS = {
   CharacterMedium,
   Digging,
@@ -230,7 +459,29 @@ export const MODELS = {
   StandingMeleeAttackDownwardCHOP,
   StandingPICKAXE,
   TestIdle,
-  Watering
+  Watering,
+  Bridge,
+  BuildingPlatform,
+  BuildingRoof,
+  BuildingStructure,
+  CharacterArcher,
+  Fence,
+  Flag,
+  Ladder,
+  PatchDirt,
+  PatchGrass,
+  Plant,
+  Platform,
+  RocksHigh,
+  RocksLow,
+  RocksRamp,
+  Stones,
+  Target,
+  Tent,
+  TreeHigh,
+  Tree,
+  WeaponArrow,
+  WeaponBow
 } as const;
 
 export type ModelKey = keyof typeof MODELS;

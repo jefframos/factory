@@ -2,7 +2,16 @@
   "bundles": [
     {
       "name": "default",
-      "assets": []
+      "assets": [
+        {
+          "alias": [
+            "ui"
+          ],
+          "src": [
+            "ui.webp.json"
+          ]
+        }
+      ]
     }
   ]
 }

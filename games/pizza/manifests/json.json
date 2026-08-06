@@ -13,6 +13,22 @@
         },
         {
           "alias": [
+            "map/testMap1.json"
+          ],
+          "src": [
+            "map/testMap1.json"
+          ]
+        },
+        {
+          "alias": [
+            "map/tiles.json"
+          ],
+          "src": [
+            "map/tiles.json"
+          ]
+        },
+        {
+          "alias": [
             "shopItems.json"
           ],
           "src": [

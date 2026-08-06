@@ -113,7 +113,23 @@ export class BendService {
         material.needsUpdate = true;
     }
 
+    /**
+     * Materials bent more than once (e.g. GlbVisualComponent traversing every mesh in a
+     * loaded prop and calling applyBend() per mesh, when a glTF export commonly reuses ONE
+     * material across several mesh primitives) would otherwise chain onBeforeCompile twice —
+     * each call prepends `uniform vec3 uBendOrigin; uniform float uBendStrength;`
+     * unconditionally, so a second call on the same material duplicates that declaration and
+     * the vertex shader fails to compile. This guards applyBend() itself so any caller can
+     * call it as many times as convenient on the same material with no ill effect.
+     */
+    private static readonly bentMaterials = new WeakSet<THREE.Material>();
+
     public static applyBend(material: THREE.Material): void {
+        if (BendService.bentMaterials.has(material)) {
+            return;
+        }
+        BendService.bentMaterials.add(material);
+
         const prev = material.onBeforeCompile;
         material.onBeforeCompile = (shader, renderer) => {
             prev(shader, renderer);
@@ -129,10 +145,20 @@ export class BendService {
             // Working in world space (after modelMatrix) means the bend is always
             // in world-Y regardless of the object's local rotation or scale.
             // mvPosition is preserved so fog still works correctly.
+            //
+            // The stock project_vertex chunk multiplies by instanceMatrix (under
+            // USE_INSTANCING) BEFORE modelMatrix — skipping that here would collapse
+            // every instance of an InstancedMesh onto the object's own transform, since
+            // `transformed` alone carries no per-instance offset. Re-applying it keeps
+            // InstancedMesh (e.g. TileMap.ts) working under the bend.
             shader.vertexShader = shader.vertexShader.replace(
                 `#include <project_vertex>`,
                 `
-                vec4 _bendWorld = modelMatrix * vec4( transformed, 1.0 );
+                vec4 _bendLocal = vec4( transformed, 1.0 );
+                #ifdef USE_INSTANCING
+                    _bendLocal = instanceMatrix * _bendLocal;
+                #endif
+                vec4 _bendWorld = modelMatrix * _bendLocal;
                 float _dx = _bendWorld.x - uBendOrigin.x;
                 float _dz = _bendWorld.z - uBendOrigin.z;
                 _bendWorld.y -= ( _dx * _dx + _dz * _dz ) * uBendStrength;

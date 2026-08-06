@@ -1,67 +1,71 @@
 // AutoGatherController.ts
 //
-// The "no interaction required" half of the design doc: listens for the
-// player's own RigidBody overlapping a ResourceNode's gather-radius trigger
-// (Layers.Resource) and, if the player isn't already busy, starts the
-// matching action via PlayerActionController — the same
-// onPlayActionAnimation() entry point anything else would use. The action
-// then chips away at the node's life on its own schedule (see
-// PlayerActionController/ActionTypes.ts); this component only reacts to how
-// it ended, banking the yield on 'completed' and ignoring 'cancelled'.
+// The "no interaction required" half of the design doc: tracks every
+// ResourceNode whose gather-radius trigger (Layers.Resource) the player is
+// CURRENTLY overlapping (see `overlapping`, not just the one being acted
+// on), and — if the player isn't already busy — starts the matching action
+// via PlayerActionController against the first available one, the same
+// onPlayActionAnimation() entry point anything else would use.
 //
-// Leaving the node's trigger cancels the in-flight action (when the action's
-// cancelOnLeaveRange says so) — the node keeps its remaining life, so
-// wandering off and returning resumes the same tree.
+// Tracking every overlap (not just "the one that triggered this") matters
+// once the player stands where two resources' triggers overlap: only the
+// FIRST one's onTriggerEnter fires while walking in — the second one's
+// already-fired-and-forgotten. Finishing the first action needs to check
+// `overlapping` itself for "is there another one right here" rather than
+// waiting for a fresh onTriggerEnter that will never come — that's what
+// tryGatherNext() being called both from onTriggerEnter AND from every
+// action's completion/cancellation is for (see that method's own doc).
+//
+// This component banks amountPerGather on EVERY landed hit (see
+// onHitLanded()), not just once at the end — a tree with maxLife 5 and
+// amountPerGather 1 yields 5 Wood total for a full harvest, one per hit,
+// matching the visual (a chip flies per hit too). Cancelling mid-harvest
+// keeps whatever hits already landed; nothing is refunded, same as the
+// node's own damage persisting (see ResourceNode.life's doc).
+//
+// Leaving a node's trigger cancels the in-flight action against THAT node
+// (when the action's cancelOnLeaveRange says so) — the node keeps its
+// remaining life, so wandering off and returning resumes the same tree.
 //
 // Deliberately doesn't touch movement/facing/timing/damage itself — those
 // live in PlayerActionController/FacingComponent/the action config; this
-// component's only job is "notice a resource, kick off the right action,
-// bank the result, stop when out of range."
+// component's only job is "notice resources, kick off the right action,
+// bank the result, and always have somewhere to go next while still
+// standing in range of one."
 
 import Component from '../ecs/Component';
 import RigidBody from '../physics/RigidBody';
 import PlayerActionController from './PlayerActionController';
-import BackpackComponent from './BackpackComponent';
+import CharacterVisualComponent from './CharacterVisualComponent';
+import { spawnFlyingResourceChip } from './FlyingResourceEffect';
 import ResourceNode from '../player/ResourceNode';
+import { BackpackStorage } from '../data/BackpackStorage';
 import { RESOURCE_CONFIG } from '../actions/ResourceTypes';
 import { ACTION_CONFIG } from '../actions/ActionTypes';
 
 export default class AutoGatherController extends Component {
+    /** Every ResourceNode whose trigger the player is currently standing inside — see this file's own doc. */
+    private readonly overlapping = new Set<ResourceNode>();
+
     public awake(): void {
         const rigidBody = this.entity.getComponent(RigidBody)!;
-        rigidBody.onTriggerEnter.add(other => this.tryGather(other));
-        rigidBody.onTriggerExit.add(other => this.tryCancel(other));
+        rigidBody.onTriggerEnter.add(other => this.onTriggerEnter(other));
+        rigidBody.onTriggerExit.add(other => this.onTriggerExit(other));
     }
 
-    private tryGather(other: RigidBody): void {
+    private onTriggerEnter(other: RigidBody): void {
         const node = other.entity;
-        if (!(node instanceof ResourceNode) || !node.isAvailable) {
+        if (!(node instanceof ResourceNode)) {
             return;
         }
 
-        const actionController = this.entity.getComponent(PlayerActionController)!;
-        if (actionController.isBusy) {
-            // Already gathering (or otherwise acting) — this node just doesn't get a turn
-            // this time; walking into it again once free will retry via a fresh onTriggerEnter.
-            return;
-        }
-
-        const config = RESOURCE_CONFIG[node.resourceType];
-
-        void actionController.onPlayActionAnimation(config.action, node).then(result => {
-            if (result !== 'completed') {
-                // Cancelled — the node kept its damage (see ResourceNode.life), nothing to bank.
-                return;
-            }
-
-            const added = this.entity.getComponent(BackpackComponent)?.add(node.resourceType, config.amountPerGather) ?? 0;
-            console.log(`[gather] +${added} ${config.label}`);
-        });
+        this.overlapping.add(node);
+        this.tryGatherNext();
     }
 
     /**
-     * Player left something's trigger — cancel the action if that something is what we're
-     * currently acting on.
+     * Player left something's trigger — untrack it, and cancel the in-flight action if that
+     * something is what we're currently acting on.
      *
      * The `node.isAvailable` guard is what separates "walked away" from "just finished it":
      * a node depleting inside applyHit() unregisters its own RigidBody, and
@@ -70,9 +74,15 @@ export default class AutoGatherController extends Component {
      * with that very target. Without the guard, every successful harvest would cancel
      * itself a beat before it could report 'completed', and nothing would ever be banked.
      */
-    private tryCancel(other: RigidBody): void {
+    private onTriggerExit(other: RigidBody): void {
         const node = other.entity;
-        if (!(node instanceof ResourceNode) || !node.isAvailable) {
+        if (!(node instanceof ResourceNode)) {
+            return;
+        }
+
+        this.overlapping.delete(node);
+
+        if (!node.isAvailable) {
             return;
         }
 
@@ -86,5 +96,70 @@ export default class AutoGatherController extends Component {
         }
 
         actionController.cancel();
+        // cancel() resolves synchronously — the action's own .then() (see tryGather()) will
+        // also call tryGatherNext() on the next microtask, but doing it here too means the
+        // player doesn't wait even that long if another overlapping node is available right now.
+        this.tryGatherNext();
+    }
+
+    /**
+     * Starts gathering the first available node still in `overlapping` — called from
+     * onTriggerEnter (a genuinely new overlap) AND every time an action finishes, whether it
+     * completed or was cancelled (see tryGather()'s .then() and onTriggerExit()). That second
+     * call site is the actual point of this method: without it, finishing one resource while
+     * still standing inside another's trigger left the player idle until they physically left
+     * and re-entered a trigger to get a fresh onTriggerEnter.
+     */
+    private tryGatherNext(): void {
+        const actionController = this.entity.getComponent(PlayerActionController)!;
+        if (actionController.isBusy) {
+            return;
+        }
+
+        for (const node of this.overlapping) {
+            if (node.isAvailable) {
+                this.tryGather(node);
+                return;
+            }
+        }
+    }
+
+    private tryGather(node: ResourceNode): void {
+        const actionController = this.entity.getComponent(PlayerActionController)!;
+        const config = RESOURCE_CONFIG[node.resourceType];
+
+        void actionController.onPlayActionAnimation(config.action, node, () => this.onHitLanded(node)).then(result => {
+            if (result === 'completed') {
+                console.log(`[gather] fully harvested ${config.label}`);
+            }
+            // Either ending (completed or cancelled) may leave the player still standing in
+            // another resource's trigger — see this method's own doc / tryGatherNext()'s.
+            this.tryGatherNext();
+        });
+    }
+
+    /**
+     * Fired on every landed hit (see PlayerActionController's onHit param), not just once at
+     * the end — banks amountPerGather immediately and flies a small placeholder chip from the
+     * node to wherever the backpack cube currently sits, purely as visual feedback for the
+     * bank. The chip-flying half no-ops if the FBX character (and therefore the backpack
+     * cube) hasn't loaded yet, but the backpack still gets its resources either way.
+     */
+    private onHitLanded(node: ResourceNode): void {
+        const config = RESOURCE_CONFIG[node.resourceType];
+        const added = BackpackStorage.add(node.resourceType, config.amountPerGather);
+        console.log(`[gather] +${added} ${config.label}`);
+
+        const character = this.entity.getComponent(CharacterVisualComponent)?.character;
+        const backpackWorldPosition = character?.getBackpackWorldPosition();
+
+        // node.transform is added directly to the THREE.Scene by WorldManager (see
+        // spawnFlyingResourceChip's own doc) — its parent IS the scene.
+        const scene = node.transform.parent;
+        if (!backpackWorldPosition || !scene) {
+            return;
+        }
+
+        spawnFlyingResourceChip(scene, node.position, backpackWorldPosition, config.color);
     }
 }

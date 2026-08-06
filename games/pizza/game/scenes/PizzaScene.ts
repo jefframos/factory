@@ -3,8 +3,10 @@
 // Isolated player-movement test scene — just a player moving around on a
 // plain flat plane, driven by the SAME keyboard/mobile input systems
 // BoundlessWorld3dScene uses. Deliberately strips everything else out:
-// - No world streaming/chunking (BoundlessChunkManager) — one static plane.
-// - The floor, the character/NPC body materials, and all head cubes are all
+// - Ground is one static plane, no chunking (see WorldManager.buildGround()) —
+//   but resource nodes DO stream in/out by proximity to the player, and keep
+//   simulating (respawn timers) even while out of range. See ../world/WorldManager.ts.
+// - The floor, the character's body materials, and all head/backpack cubes are all
 //   hooked to BendService.applyBend() — same shared uBendOrigin/uBendStrength
 //   uniforms as the full game, kept centered on the player every frame via
 //   updateOrigin() below. Everything stays wired up; BendService.setEnabled()
@@ -28,10 +30,7 @@ import { ThreeScene } from 'core/scene/ThreeScene';
 import * as THREE from 'three';
 // import { DEFAULT_START_VALUE } from '../ClogConstants';
 // import { PlayerEntity } from '../entities/PlayerEntity';
-import { FloorBuilder } from '../builders/FloorBuilder';
 import { BendService } from '../services/BendService';
-import CharacterBody from '../entities/CharacterBody';
-import MODELS from '../../registry/assetsRegistry/modelsRegistry';
 import { Game } from 'core/Game';
 import { LoadingSpinner } from '../dom-ui/LoadingSpinner';
 import World from '../ecs/World';
@@ -40,29 +39,9 @@ import { Layers } from '../physics/PhysicsConstants';
 import BoxVisualComponent from '../components/BoxVisualComponent';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import MainPlayer from '../player/MainPlayer';
-import ResourceNode from '../player/ResourceNode';
 import DropZone from '../player/DropZone';
-import { ResourceType } from '../actions/ResourceTypes';
-
-/** Flat tone applied to the enemy test NPCs (see setupNpcs()) — a plain, saturated red to visually mark them as hostile, distinct from the player's value-palette color. */
-const ENEMY_COLOR = 0xaa1111;
-
-/** World-space spawn spots for the idle enemy test NPCs — just far enough from player spawn (0,0,0) to be visible without overlapping it. */
-const NPC_SPAWN_POSITIONS: Array<[number, number, number]> = [
-    [6, 0, 4],
-    [-6, 0, 7],
-];
-
-/** Model-registry entries only carry a repo-relative fullPath (e.g. "pizza/models/..."); served at runtime from ./pizza/... (see public/pizza/models). Works on localhost and GitHub Pages. */
-const modelUrl = (fullPath: string): string => `./${fullPath}`;
-
-/** FBX export scale for this character rig — same value the source project used. */
-const CHARACTER_SCALE = 0.0075;
-
-/** World-units square — plenty of room to walk around in, no streaming needed. */
-const FLOOR_SIZE = 200;
-/** BendService's shader only displaces vertices, not fragments — a default 1x1-segment PlaneGeometry has just 4 corner vertices, so bending it warps it into a twisted quad instead of curving smoothly. This gives it enough subdivision to actually curve. */
-const FLOOR_SEGMENTS = 100;
+import WorldManager from '../world/WorldManager';
+import BackpackUI from '../ui/BackpackUI';
 
 /**
  * Camera settings data — a spherical orbit around the player instead of a
@@ -109,25 +88,28 @@ function cameraOffset(camera: THREE.PerspectiveCamera): THREE.Vector3 {
     );
 }
 
-/** Thin static slab just under the visible floor plane, top face resting at world Y=0 — gives the player something to land on instead of falling forever. */
-const GROUND_HALF_THICKNESS = 0.5;
 /** Test obstacle: a static box offset from spawn along Z only — see setupTestBox(). Walking into it should stop the player instead of passing through. */
 const TEST_BOX_HALF_EXTENTS = new THREE.Vector3(0.5, 0.5, 0.5);
 const TEST_BOX_OFFSET_Z = 4;
 
-/** World-space spawn spots for the gatherable resource nodes — see setupResourceNodes(). Kept clear of the solid TEST_BOX_* obstacle and the drop zone. */
-const RESOURCE_NODE_SPAWNS: Array<[ResourceType, number, number]> = [
-    [ResourceType.Tree, 3, 3],
-    [ResourceType.Tree, -3, 5],
-    [ResourceType.Stone, -3, 2],
-];
-
 /** Where the build/deposit zone sits — see setupDropZone(). Off to the side, clear of the resource nodes and the solid test box. */
 const DROP_ZONE_OFFSET = new THREE.Vector3(6, 0, -2);
+
+/** Gap between the backpack HUD panel's bottom edge and the actual bottom of the screen — see positionBackpackUi(). */
+const BACKPACK_UI_BOTTOM_MARGIN = 16;
 
 export default class PizzaScene extends ThreeScene {
     /** Owns PhysicsWorld + every spawned Entity — the scene's job is just to spawn things into this and forward its own update()/fixedUpdate() calls here (see World.ts). */
     private readonly world = new World();
+
+    /** Shared by anything that pairs a Pixi overlay element to a 3D point (ScreenAnchorComponent) — DropZone's nameplate/deposit popups, ResourceNode's damage numbers. One instance so they all read the exact same worldToScreen/overlayContainer. */
+    private readonly screenHost: ScreenAnchorHost = {
+        worldToScreen: position => this.worldToScreen(position),
+        overlayContainer: this.game.overlayContainer,
+    };
+
+    /** Owns the ground + every resource node's position/gather/respawn state, streaming ResourceNode entities in/out by proximity to the player — see WorldManager.ts. */
+    private readonly worldManager = new WorldManager(this.world, this.threeScene, this.screenHost);
 
     /** The player — self-contained (RigidBody, PlayerMovementController, collision events all wired up in its own awake()). See MainPlayer.ts. */
     private readonly mainPlayer: MainPlayer;
@@ -135,8 +117,8 @@ export default class PizzaScene extends ThreeScene {
     /** Shown while the player character loads, destroyed the instant it resolves — see loadPlayerCharacter(). Tracked as a field too so destroy() can clean it up if the scene is torn down mid-load. */
     private loadingSpinner?: LoadingSpinner;
 
-    /** Enemy test NPCs — same rig/animation as the player (see CharacterBody), driven directly with no move input each frame, so they just stand there idling in a red tone. Not wrapped in ThirdPersonCharacter since they have no move speed, no jump, no player input at all. */
-    private readonly npcs: CharacterBody[] = [];
+    /** The backpack HUD panel — see setupBackpackUi(). Tracked so destroy() can unsubscribe it from BackpackStorage.onChange. */
+    private backpackUi?: BackpackUI;
 
     public constructor(game: Game) {
         super(game);
@@ -160,28 +142,14 @@ export default class PizzaScene extends ThreeScene {
         sun.position.set(5, 10, 5);
         this.threeScene.add(sun);
 
-        this.buildFloor();
-        this.setupGround();
+        this.worldManager.buildGround();
         this.setupTestBox();
-        this.setupResourceNodes();
         this.setupDropZone();
+        this.setupBackpackUi();
         this.threeScene.add(this.mainPlayer.transform);
 
         this.positionCamera();
         void this.loadPlayerCharacter();
-        void this.setupNpcs();
-    }
-
-    /** Static RigidBody matching the visible floor plane — top face at world Y=0, so the player (gravity pulls it down from spawn) lands and rests on it instead of falling forever. Purely a collider; buildFloor() already draws the ground. */
-    private setupGround(): void {
-        const ground = this.world.spawn();
-        ground.addComponent(new RigidBody({
-            halfExtents: new THREE.Vector3(FLOOR_SIZE / 2, GROUND_HALF_THICKNESS, FLOOR_SIZE / 2),
-            isStatic: true,
-            layer: Layers.Environment,
-            centerOffset: new THREE.Vector3(0, -GROUND_HALF_THICKNESS, 0),
-        }));
-        this.threeScene.add(ground.transform);
     }
 
     /** The task's own collision test: a static box offset from spawn along Z only — walking the player into it should stop them instead of clipping through. */
@@ -204,23 +172,41 @@ export default class PizzaScene extends ThreeScene {
         this.threeScene.add(box.transform);
     }
 
-    /** The "zone for getting the items" — one ResourceNode per RESOURCE_NODE_SPAWNS entry (see that constant), each a self-contained Entity subclass (trigger + placeholder visual — cylinder for a tree, cube for stone) that AutoGatherController (on MainPlayer) reacts to on its own. */
-    private setupResourceNodes(): void {
-        for (const [resourceType, x, z] of RESOURCE_NODE_SPAWNS) {
-            const node = this.world.add(new ResourceNode(resourceType, new THREE.Vector3(x, 0, z)));
-            this.threeScene.add(node.transform);
-        }
+    /** The "drop zone" — deposits whatever's in the player's backpack on entry, and carries a permanent "Drop Zone" nameplate (see DropZone.ts) — both via this.screenHost. */
+    private setupDropZone(): void {
+        const dropZone = this.world.add(new DropZone(DROP_ZONE_OFFSET, this.screenHost));
+        this.threeScene.add(dropZone.transform);
     }
 
-    /** The "drop zone" — deposits whatever's in the player's backpack on entry (see DropZone.ts). Needs a ScreenAnchorHost (worldToScreen + the Pixi overlay) to float its "+N Wood"-style deposit popups — `this` covers worldToScreen (ThreeScene), `this.game.overlayContainer` is the same root EntityIndicatorManager-style overlays already use elsewhere in this repo. */
-    private setupDropZone(): void {
-        const screenHost: ScreenAnchorHost = {
-            worldToScreen: position => this.worldToScreen(position),
-            overlayContainer: this.game.overlayContainer,
-        };
+    /** The backpack HUD panel — reads the same global BackpackStorage AutoGatherController/DropZone read/write, so it needs no wiring beyond existing and sitting in the overlay (see BackpackUI.ts's own doc). Positioned every frame — see positionBackpackUi(). */
+    private setupBackpackUi(): void {
+        this.backpackUi = new BackpackUI();
+        this.game.overlayContainer.addChild(this.backpackUi);
+        this.positionBackpackUi();
+    }
 
-        const dropZone = this.world.add(new DropZone(DROP_ZONE_OFFSET, screenHost));
-        this.threeScene.add(dropZone.transform);
+    /**
+     * Bottom-center, regardless of viewport size/aspect — Game.overlayScreenData is kept up
+     * to date by Game.onResize() and already expressed in overlayContainer's own LOCAL space
+     * (see that field's own doc in core/Game.ts), so this panel (a direct child of
+     * overlayContainer) can use those points directly with no extra conversion. Re-run every
+     * frame rather than once per resize event since it's cheap and this scene has no resize
+     * hook of its own to piggyback on.
+     */
+    private positionBackpackUi(): void {
+        if (!this.backpackUi) {
+            return;
+        }
+
+        const screen = Game.overlayScreenData;
+        if (!screen) {
+            return;
+        }
+
+        this.backpackUi.position.set(
+            screen.center.x - this.backpackUi.panelWidth / 2,
+            screen.bottomLeft.y - this.backpackUi.panelHeight - BACKPACK_UI_BOTTOM_MARGIN,
+        );
     }
 
     /**
@@ -233,48 +219,6 @@ export default class PizzaScene extends ThreeScene {
         await this.mainPlayer.loadCharacter();
         spinner.destroy();
         this.loadingSpinner = undefined;
-    }
-
-    /**
-     * Spawns the enemy test NPCs — same FBX rig/animations as the player,
-     * loaded independently (CharacterBody has no shared-instance state), but
-     * only 'idle' actually needs registering since they never move (see
-     * CharacterBody.update()'s doc — an idling body just stays in its
-     * initial state forever with no grounded/speed vars ever set to
-     * anything else). setUp() is still called so the state graph exists,
-     * kept consistent with the player's own setup.
-     */
-    private async setupNpcs(): Promise<void> {
-        for (const [x, y, z] of NPC_SPAWN_POSITIONS) {
-            const body = new CharacterBody();
-
-            await body.loadMesh(modelUrl(MODELS.CharacterMedium.fullPath));
-            await body.registerAnimation('idle', modelUrl(MODELS.Idle.fullPath));
-            body.setUp();
-            body.applyFlatColor(ENEMY_COLOR);
-
-            body.container.scale.setScalar(CHARACTER_SCALE);
-            body.container.position.set(x, y, z);
-            this.threeScene.add(body.container);
-
-            this.npcs.push(body);
-        }
-    }
-
-    /** Grid-textured plane (reusing FloorBuilder's own grid generator) so movement is actually visible against something, instead of a flat, featureless color. */
-    private buildFloor(): void {
-        const material = new THREE.MeshStandardMaterial({
-            map: FloorBuilder.makeGridTexture(FLOOR_SIZE),
-            roughness: 1,
-        });
-        // Hooked to the same shared BendService uniform as the character/head-cube
-        // materials — see BendService.setEnabled() to toggle the bend everywhere at once.
-        BendService.applyBend(material);
-        const geometry = new THREE.PlaneGeometry(FLOOR_SIZE, FLOOR_SIZE, FLOOR_SEGMENTS, FLOOR_SEGMENTS);
-        geometry.rotateX(-Math.PI / 2);
-
-        const floor = new THREE.Mesh(geometry, material);
-        this.threeScene.add(floor);
     }
 
     private positionCamera(): void {
@@ -301,24 +245,19 @@ export default class PizzaScene extends ThreeScene {
      * Runs unconditionally from the very first frame — MainPlayer's RigidBody and
      * PlayerMovementController exist from its own awake(), independent of whether its
      * FBX character has loaded (see this file's own doc).
+     *
+     * Camera follow, the bend origin, and WorldManager's proximity check all read
+     * mainPlayer.transform.position — which itself only changes here, in fixedUpdate().
+     * Doing all of that here too (rather than in update(), which runs at render rate) keeps
+     * everything that depends on the player's position moving on the SAME clock as the
+     * character mesh itself (see CharacterVisualComponent, which reads the RigidBody
+     * directly) — no relative jitter between camera and character from render/physics
+     * timing drift, since neither one moves except when this runs.
      */
     public override fixedUpdate(delta: number): void {
         this.world.fixedUpdate(delta);
-    }
-
-    public override update(delta: number): void {
-        // NPCs don't gate scene start — they idle independently of the player character's load.
-        for (const npc of this.npcs) {
-            npc.update(delta);
-        }
 
         const playerPosition = this.mainPlayer.transform.position;
-
-        // Runs every entity's update() — for the player, that's PlayerMovementController's own
-        // pointer-follow tracking plus CharacterVisualComponent syncing position/animation from
-        // whatever fixedUpdate's physics step last resolved (once the FBX character has loaded
-        // and that component exists at all — harmless no-op until then).
-        this.world.update(delta);
 
         /*
          * CubeBuilder.buildPlayer() (used for the head cube) unconditionally
@@ -326,14 +265,27 @@ export default class PizzaScene extends ThreeScene {
          * rendered Y by (dx²+dz²) * uBendStrength, where dx/dz are distance
          * from the shared uBendOrigin uniform. Left at its default (0,0,0),
          * the head cube sinks further "down" the farther the character walks
-         * from spawn. Re-centering the origin on the player every frame keeps
+         * from spawn. Re-centering the origin on the player every step keeps
          * that distance at ~0, so it never sinks.
          */
         BendService.updateOrigin(playerPosition);
 
+        // Streams resource nodes in/out around the player and keeps off-screen respawn
+        // timers ticking — see WorldManager.update()'s own doc.
+        this.worldManager.update(playerPosition, delta);
+
         const targetPosition = playerPosition.clone().add(cameraOffset(this.threeCamera));
         this.threeCamera.position.lerp(targetPosition, 1 - Math.exp(-CAMERA_SETTINGS.followSpeed * delta));
         this.threeCamera.lookAt(playerPosition);
+    }
+
+    public override update(delta: number): void {
+        // Runs every entity's update() — for the player, that's PlayerMovementController's own
+        // pointer-follow tracking plus CharacterVisualComponent syncing position/animation from
+        // whatever fixedUpdate's physics step last resolved (once the FBX character has loaded
+        // and that component exists at all — harmless no-op until then).
+        this.world.update(delta);
+        this.positionBackpackUi();
 
         super.update(delta);
     }
@@ -342,8 +294,9 @@ export default class PizzaScene extends ThreeScene {
         // Tears down every component on mainPlayer, including PlayerMovementController's own
         // input listeners and (if it ever loaded) the FBX character itself — see MainPlayer.destroy().
         this.world.remove(this.mainPlayer);
-        this.npcs.forEach(npc => npc.destroy());
+        this.worldManager.destroy();
         this.loadingSpinner?.destroy();
+        this.backpackUi?.destroy();
         super.destroy();
     }
 }

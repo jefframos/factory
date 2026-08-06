@@ -5,6 +5,24 @@
       "assets": [
         {
           "alias": [
+            "Baloo2-ExtraBold.ttf",
+            "Baloo2-ExtraBold"
+          ],
+          "src": [
+            "Baloo2-ExtraBold.woff2"
+          ]
+        },
+        {
+          "alias": [
+            "Baloo2-Regular.ttf",
+            "Baloo2-Regular"
+          ],
+          "src": [
+            "Baloo2-Regular.woff2"
+          ]
+        },
+        {
+          "alias": [
             "LEMONMILK-Bold.otf",
             "LEMONMILK-Bold"
           ],
@@ -19,6 +37,24 @@
           ],
           "src": [
             "LEMONMILK-Regular.woff2"
+          ]
+        },
+        {
+          "alias": [
+            "Nunito-Bold.ttf",
+            "Nunito-Bold"
+          ],
+          "src": [
+            "Nunito-Bold.woff2"
+          ]
+        },
+        {
+          "alias": [
+            "Nunito-Regular.ttf",
+            "Nunito-Regular"
+          ],
+          "src": [
+            "Nunito-Regular.woff2"
           ]
         },
         {

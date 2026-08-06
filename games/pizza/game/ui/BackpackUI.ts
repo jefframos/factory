@@ -1,0 +1,260 @@
+// BackpackUI.ts
+//
+// Renders the global BackpackStorage (see games/pizza/game/data/
+// BackpackStorage.ts) as a small framed panel with a fixed grid of item
+// slots. Subscribes to BackpackStorage.onChange ONCE and updates only the
+// slot whose resource actually changed — no per-frame polling. Tracks each
+// slot's own last-seen count (see `lastCounts`) purely to tell a gain from a
+// loss on every change, since onChange itself only reports WHICH resource
+// changed, not the delta — a gain plays a "+N" popup and jiggles the icon
+// (see playGainFeedback()); a loss (draining out to a drop zone) doesn't.
+//
+// Fully configurable (see BackpackUiConfig/DEFAULT_CONFIG below): slot
+// count/columns/size, which FrameRegistry entry frames the panel, the title
+// text. Change the look of the whole backpack HUD by editing one config
+// object or passing overrides into the constructor — no other code here
+// needs to change.
+//
+// Slot assignment is dynamic, not fixed per resource type: the first
+// resource type gathered claims the first free slot; once that type's count
+// drops back to 0 (fully deposited), its icon + count label are torn down
+// and the slot is free again for the next distinct type gathered. With more
+// distinct ResourceTypes than slots, a newly-gathered type with no free slot
+// just has nowhere to show (see AssetLibraryRegistry.ts's icon fallback for
+// the same "not wired up yet" shape) — pizza only has 2 ResourceTypes today,
+// matching DEFAULT_CONFIG.slotCount.
+
+import * as PIXI from 'pixi.js';
+import gsap from 'gsap';
+import FrameComponent from './FrameComponent';
+import { FrameName } from './FrameRegistry';
+import { TextStyleRegistry } from './TextStyleRegistry';
+import { BackpackStorage } from '../data/BackpackStorage';
+import { ResourceType } from '../actions/ResourceTypes';
+import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
+import { getAssetIcon } from '../world/AssetLibraryRegistry';
+
+export interface BackpackUiConfig {
+    slotCount: number;
+    columns: number;
+    slotSize: number;
+    slotGap: number;
+    /** Which FrameRegistry entry frames the whole panel — see FrameRegistry.ts. */
+    frame: FrameName;
+    title: string;
+    /** Space between the panel's frame border and its contents (slots grid + title). */
+    padding: number;
+}
+
+const DEFAULT_CONFIG: BackpackUiConfig = {
+    slotCount: 2,
+    columns: 2,
+    slotSize: 48,
+    slotGap: 8,
+    frame: 'Large',
+    title: 'Backpack',
+    padding: 14,
+};
+
+/** Plain flat square, tinted/alpha'd in code below rather than needing a pre-darkened asset variant — see buildSlot(). */
+const SLOT_BG_TEXTURE_KEY = 'BorderFrame_Squrare_Bg';
+const SLOT_BG_TINT = 0x000000;
+const SLOT_BG_ALPHA = 0.5;
+/** Vertical space reserved above the slot grid for the title text. */
+const TITLE_HEIGHT = 22;
+
+/** Icon jiggle on a gain — a quick punch-out-and-settle, not a full spin. */
+const JIGGLE_PUNCH_SCALE = 1.3;
+const JIGGLE_PUNCH_SEC = 0.12;
+const JIGGLE_SETTLE_SEC = 0.15;
+
+/** "+N" popup on a gain — rises and fades over this long, see playGainFeedback(). */
+const GAIN_POPUP_RISE_PX = 20;
+const GAIN_POPUP_DURATION_SEC = 0.6;
+
+interface Slot {
+    readonly container: PIXI.Container;
+    readonly background: PIXI.Sprite;
+    icon?: PIXI.Sprite;
+    label?: PIXI.Text;
+    resourceType?: ResourceType;
+}
+
+export default class BackpackUI extends PIXI.Container {
+    private readonly config: BackpackUiConfig;
+    private readonly slots: Slot[] = [];
+    /** Last count seen per resource type — the only way to tell a gain from a loss on onChange (see this file's own doc). */
+    private readonly lastCounts = new Map<ResourceType, number>();
+
+    /**
+     * The panel's own footprint, in its local space (top-left at (0,0)) — computed once from
+     * config, not read off PIXI.Container.getLocalBounds() (which would also have to walk
+     * every slot/icon/label child every time something asks). See PizzaScene's positioning
+     * code, which needs these to anchor this panel by a corner other than top-left (e.g.
+     * bottom-center) without it drifting as slots fill in.
+     */
+    public readonly panelWidth: number;
+    public readonly panelHeight: number;
+
+    public constructor(config: Partial<BackpackUiConfig> = {}) {
+        super();
+        this.config = { ...DEFAULT_CONFIG, ...config };
+
+        const { slotCount, columns, slotSize, slotGap, padding, frame, title } = this.config;
+        const rows = Math.ceil(slotCount / columns);
+        const gridWidth = columns * slotSize + (columns - 1) * slotGap;
+        const gridHeight = rows * slotSize + (rows - 1) * slotGap;
+        this.panelWidth = gridWidth + padding * 2;
+        this.panelHeight = gridHeight + padding * 2 + TITLE_HEIGHT;
+
+        this.addChild(new FrameComponent(frame, this.panelWidth, this.panelHeight));
+
+        const titleText = new PIXI.Text(title, TextStyleRegistry.Info);
+        titleText.anchor.set(0.5, 0);
+        titleText.position.set(this.panelWidth / 2, padding * 0.5);
+        this.addChild(titleText);
+
+        for (let i = 0; i < slotCount; i++) {
+            const col = i % columns;
+            const row = Math.floor(i / columns);
+            const x = padding + col * (slotSize + slotGap);
+            const y = padding + TITLE_HEIGHT + row * (slotSize + slotGap);
+            this.slots.push(this.buildSlot(x, y, slotSize));
+        }
+
+        BackpackStorage.onChange.add(this.onBackpackChanged, this);
+        // Pick up whatever's already in the backpack — e.g. this panel building after
+        // gathering already started (a scene rebuild, a HUD toggled back on, ...). Seeds
+        // lastCounts from 0 too, so this doesn't itself read as a "gain" worth popping.
+        for (const type of BackpackStorage.getAll().keys()) {
+            this.onBackpackChanged(type);
+        }
+    }
+
+    private buildSlot(x: number, y: number, size: number): Slot {
+        const container = new PIXI.Container();
+        container.position.set(x, y);
+        this.addChild(container);
+
+        const background = new PIXI.Sprite(PIXI.Texture.from(SLOT_BG_TEXTURE_KEY));
+        background.tint = SLOT_BG_TINT;
+        background.alpha = SLOT_BG_ALPHA;
+        background.width = size;
+        background.height = size;
+        container.addChild(background);
+
+        return { container, background };
+    }
+
+    private findSlot(type: ResourceType): Slot | undefined {
+        return this.slots.find(slot => slot.resourceType === type);
+    }
+
+    private findFreeSlot(): Slot | undefined {
+        return this.slots.find(slot => slot.resourceType === undefined);
+    }
+
+    private onBackpackChanged = (type: ResourceType): void => {
+        const previous = this.lastCounts.get(type) ?? 0;
+        const count = BackpackStorage.getCount(type);
+        this.lastCounts.set(type, count);
+
+        let slot = this.findSlot(type);
+
+        if (count <= 0) {
+            if (slot) {
+                this.clearSlot(slot);
+            }
+            return;
+        }
+
+        if (!slot) {
+            slot = this.findFreeSlot();
+            if (!slot) {
+                // No free slot for a newly-gathered type — see this file's own doc.
+                return;
+            }
+            this.occupySlot(slot, type);
+        }
+
+        this.updateSlotLabel(slot, count);
+
+        const gained = count - previous;
+        if (gained > 0) {
+            this.playGainFeedback(slot, gained);
+        }
+    };
+
+    /** First time `type` shows up in a slot — builds its icon (see AssetLibraryRegistry.getAssetIcon(), white-square fallback if no icon art is set) and count label. */
+    private occupySlot(slot: Slot, type: ResourceType): void {
+        slot.resourceType = type;
+        const size = slot.background.width;
+
+        const icon = new PIXI.Sprite(getAssetIcon(RESOURCE_ASSET_KEYS[type]));
+        icon.anchor.set(0.5);
+        icon.width = size * 0.7;
+        icon.height = size * 0.7;
+        icon.position.set(size / 2, size / 2);
+        slot.container.addChild(icon);
+        slot.icon = icon;
+
+        const label = new PIXI.Text('0', TextStyleRegistry.Body);
+        label.anchor.set(1, 1);
+        label.position.set(size - 4, size - 2);
+        slot.container.addChild(label);
+        slot.label = label;
+    }
+
+    private updateSlotLabel(slot: Slot, count: number): void {
+        if (slot.label) {
+            slot.label.text = count.toString();
+        }
+    }
+
+    /** A resource was just added — icon punches out and settles, and a "+N" rises and fades above it. Purely decorative; BackpackStorage's count (already applied by the time onChange fires) is the source of truth regardless. */
+    private playGainFeedback(slot: Slot, gained: number): void {
+        if (slot.icon) {
+            const icon = slot.icon;
+            gsap.killTweensOf(icon.scale);
+            icon.scale.set(1, 1);
+            gsap.timeline()
+                .to(icon.scale, { x: JIGGLE_PUNCH_SCALE, y: JIGGLE_PUNCH_SCALE, duration: JIGGLE_PUNCH_SEC, ease: 'back.out(2)' })
+                .to(icon.scale, { x: 1, y: 1, duration: JIGGLE_SETTLE_SEC, ease: 'power1.out' });
+        }
+
+        const popup = new PIXI.Text(`+${gained}`, TextStyleRegistry.ResourceDamage);
+        popup.style.fill = '#33cc66';
+        popup.anchor.set(0.5, 1);
+        popup.position.set(slot.background.width / 2, 0);
+        slot.container.addChild(popup);
+
+        const progress = { t: 0 };
+        gsap.to(progress, {
+            t: 1,
+            duration: GAIN_POPUP_DURATION_SEC,
+            ease: 'power2.out',
+            onUpdate: () => {
+                popup.position.y = -progress.t * GAIN_POPUP_RISE_PX;
+                popup.alpha = 1 - progress.t;
+            },
+            onComplete: () => popup.destroy(),
+        });
+    }
+
+    /** Resource type fully deposited — tear its icon/label down and free the slot for the next distinct type. */
+    private clearSlot(slot: Slot): void {
+        if (slot.icon) {
+            gsap.killTweensOf(slot.icon.scale);
+        }
+        slot.icon?.destroy();
+        slot.label?.destroy();
+        slot.icon = undefined;
+        slot.label = undefined;
+        slot.resourceType = undefined;
+    }
+
+    public override destroy(options?: Parameters<PIXI.Container['destroy']>[0]): void {
+        BackpackStorage.onChange.remove(this.onBackpackChanged, this);
+        super.destroy(options);
+    }
+}

@@ -23,7 +23,6 @@ import PlayerMovementController, { MovementInputHost } from '../components/Playe
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
 import FacingComponent from '../components/FacingComponent';
 import PlayerActionController, { ActionResult, ActionTarget } from '../components/PlayerActionController';
-import BackpackComponent from '../components/BackpackComponent';
 import AutoGatherController from '../components/AutoGatherController';
 import { ActionType } from '../actions/ActionTypes';
 import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
@@ -63,11 +62,6 @@ export default class MainPlayer extends Entity {
         return this.getComponent(PlayerMovementController)!;
     }
 
-    /** What the player is currently carrying — read/drained by DropZone, added to by AutoGatherController. */
-    public get backpack(): BackpackComponent {
-        return this.getComponent(BackpackComponent)!;
-    }
-
     /**
      * Starts a repeated-hit action (chop, mine, ...) against `target` — turns the player to
      * face it, hits it every hitIntervalSec, and resolves with 'completed' once the target
@@ -102,7 +96,6 @@ export default class MainPlayer extends Entity {
         ));
         this.addComponent(new FacingComponent());
         this.addComponent(new PlayerActionController());
-        this.addComponent(new BackpackComponent());
         this.addComponent(new AutoGatherController());
 
         this.registerCollisionEvents(rigidBody);
@@ -149,6 +142,9 @@ export default class MainPlayer extends Entity {
         // Test hook — colors the body + attaches a matching cube head, both using the
         // same value-based palette the real cube player uses.
         character.applyColor(HEAD_CUBE_VALUE);
+        // Placeholder backpack cube — see CharacterBody.mountBackpackCube()'s own doc for
+        // tuning its position live via character.setBackpackOffset(x, y, z).
+        character.mountBackpackCube();
         character.container.scale.setScalar(CHARACTER_SCALE);
 
         if (this.destroyed) {
