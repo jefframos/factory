@@ -2,10 +2,12 @@
 //
 // Data-driven definition of the auto-actions the player performs on
 // resources (chopping, mining, ...) — see PlayerActionController.ts, which
-// reads every field below and fires animationTrigger/ACTION_DONE_TRIGGER on
-// ThirdPersonCharacter's animator (see CharacterBody.setUp() for the
-// matching board transitions — 'any' -> animationTrigger -> back to 'idle'
-// on ACTION_DONE_TRIGGER, same shape jump() already used).
+// reads every field below and drives ThirdPersonCharacter's animator
+// ACTION LAYER (see AnimatorController's own doc): animationTrigger starts
+// that layer's upper-body-only clip (playAction()) and stopAction() fades
+// it back out, running concurrently with the base idle/run/jump layer
+// rather than replacing it — unlike jump(), which still goes through the
+// base layer's board directly.
 //
 // Actions are REPEATED HITS against a target's life, not one fixed-length
 // wait: every hitIntervalSec the action deals damagePerHit to whatever it's
@@ -18,10 +20,12 @@
 // is both the more natural knob for a better axe and the reason the
 // per-hit numbers are the source of truth here.
 
+import { ToolId } from './ToolRegistry';
+
 export enum ActionType {
     Chop = 'chop',
     Mine = 'mine',
-    /** Bare-handed gathering (berries, ...) — no tool involved, so it borrows Chop's animationTrigger below rather than needing its own clip. */
+    /** Bare-handed gathering (berries, ...) — no tool involved, plays its own 'pick' action-layer clip (see MainPlayer.ts's registerAnimation('pick', ...)). */
     Gather = 'gather',
 }
 
@@ -57,15 +61,14 @@ export interface ActionConfig {
      * rather than starting the tree over.
      */
     cancelOnLeaveRange: boolean;
-    /** Animator-board trigger name that enters this action's animation state — see CharacterBody.setUp(). */
+    /** Action-layer clip id this action plays — see AnimatorController.playActionLayer()/ThirdPersonCharacter.playAction(). Must match a registerAnimation() id (see MainPlayer.ts). */
     animationTrigger: string;
+    /** Which ToolRegistry entry (see ToolRegistry.ts) PlayerActionController shows in the right hand for the action's duration — see CharacterBody.showTool(). undefined means bare hands (Gather). */
+    tool?: ToolId;
 }
 
 export const ACTION_CONFIG: Record<ActionType, ActionConfig> = {
-    [ActionType.Chop]: { hitIntervalSec: 1, damagePerHit: 1, hitTime: 0.8, cancelOnLeaveRange: true, animationTrigger: 'chop' },
-    [ActionType.Mine]: { hitIntervalSec: 1.5, damagePerHit: 1, hitTime: 0.4, cancelOnLeaveRange: true, animationTrigger: 'mine' },
+    [ActionType.Chop]: { hitIntervalSec: 1, damagePerHit: 1, hitTime: 0.8, cancelOnLeaveRange: true, animationTrigger: 'chop', tool: 'axe' },
+    [ActionType.Mine]: { hitIntervalSec: 1.5, damagePerHit: 1, hitTime: 0.4, cancelOnLeaveRange: true, animationTrigger: 'mine', tool: 'pickaxe' },
     [ActionType.Gather]: { hitIntervalSec: 2, damagePerHit: 1, hitTime: 0.6, cancelOnLeaveRange: true, animationTrigger: 'pick' },
 };
-
-/** Shared trigger every action's animation state transitions back to 'idle' on — fired by PlayerActionController when an action ends, whether it completed or was cancelled (both stop the swing). Consumed by CharacterBody.setUp()'s per-action transitions. One shared name (not per-action) since "the action just ended" means the same thing regardless of which one it was. */
-export const ACTION_DONE_TRIGGER = 'actionDone';

@@ -17,6 +17,11 @@ import { ShopStorage, SHOP_ITEMS, resolveShopImagePath } from '../data/ShopStora
 import { BendService } from '../services/BendService';
 import AnimatorController from './animation/AnimatorController';
 import { loadCompressedFile, releaseObjectURL } from '../utils/GzipLoader';
+import { TOOL_LIBRARY, ToolId, ToolVisualEntry } from '../actions/ToolRegistry';
+import ModelLoaderManager from 'core/three/ModelLoaderManager';
+
+/** Same `./` + repo-relative convention every other model load in pizza uses (see GlbVisualComponent.ts/PizzaScene.ts/MainPlayer.ts's own modelUrl()) — resolves e.g. "pizza/models/tools/Axe.gltf" against public/pizza/models/. */
+const modelUrl = (fullPath: string): string => `./${fullPath}`;
 
 const ROTATION_SLERP = 0.15;
 /**
@@ -71,6 +76,22 @@ export default class CharacterBody {
     /** Same role as headCubeHolder, for the backpack cube (see mountBackpackCube()). */
     private backpackCubeHolder?: THREE.Group;
     private backpackBone?: THREE.Object3D;
+    /** RightHand bone the tool holder is parented to — see showTool(). */
+    private toolBone?: THREE.Object3D;
+    /** Cancels the RightHand bone's own inherited scale, same pattern as headCubeHolder/backpackCubeHolder. Every tool mesh lives under this one holder, built lazily the first time any tool is shown. */
+    private toolHolder?: THREE.Group;
+    /**
+     * Built lazily per tool id and kept around (just toggled invisible) rather than rebuilt
+     * on every swap — see showTool(). Each is a small wrapper Group carrying
+     * ToolVisualEntry.offset/rotationDeg/scale (see buildToolVisual()), so the same
+     * transform logic applies whether the tool ends up a placeholder cylinder (built
+     * synchronously) or a real model (attached once its async load resolves, possibly a
+     * frame or two later — the empty group is still positioned/visible right away).
+     */
+    private readonly toolVisuals = new Map<ToolId, THREE.Group>();
+    private currentToolId?: ToolId;
+    /** See debugShowHandMarker(). */
+    private handDebugMarker?: THREE.Mesh;
 
     public async loadMesh(url: string): Promise<void> {
         const resolvedUrl = await loadCompressedFile(url);
@@ -127,22 +148,21 @@ export default class CharacterBody {
         board.registerTransition('jumpUp', 'falling', 0.5, (vars) => (vars.verticalSpeed as number) > 0.01);
         board.registerTransition('falling', 'landing', 0.25, (vars) => vars.grounded === true);
 
-        /*
-         * PlayerActionController's timed actions (see ActionTypes.ts's animationTrigger
-         * field) — same trigger-in/trigger-out shape as jump above, except BOTH ends are
-         * triggers instead of a physics condition: PlayerActionController itself knows
-         * exactly when the action starts and ends (its own timer), so it fires 'chop'/
-         * 'mine' to enter and the shared 'actionDone' to leave, rather than the board
-         * inferring timing from clip length or game state. mix()'s default loop=true (see
-         * AnimatorController.mix()) means the clip repeats for however long the action's
-         * configured duration keeps it in that state, however short the source clip is.
-         */
-        board.registerTransition('any', 'chop', 0.1, undefined, 'chop');
-        board.registerTransition('chop', 'idle', 0.25, undefined, 'actionDone');
-        board.registerTransition('any', 'mine', 0.1, undefined, 'mine');
-        board.registerTransition('mine', 'idle', 0.25, undefined, 'actionDone');
-        board.registerTransition('any', 'pick', 0.1, undefined, 'pick');
-        board.registerTransition('pick', 'idle', 0.25, undefined, 'actionDone');
+        // PlayerActionController's timed actions (chop/mine/pick — see ActionTypes.ts's
+        // animationTrigger field) do NOT go through this board at all: they run on
+        // AnimatorController's separate, concurrent action layer (see playActionLayer()/
+        // stopActionLayer() below and that class's own doc) so the player keeps walking
+        // normally (this board stays on idle/run) while the upper body swings.
+    }
+
+    /** Starts the action layer's upper-body-only clip for `trigger` (chop/mine/pick — see AnimatorController's own doc) — runs on top of whatever this board is currently doing (idle/run/jump), not instead of it. */
+    public playActionLayer(trigger: string): void {
+        this.animator.playActionLayer(trigger);
+    }
+
+    /** Fades the action layer back out — the base board (idle/run/jump) is left as the sole driver of every bone again. */
+    public stopActionLayer(): void {
+        this.animator.stopActionLayer();
     }
 
     /** Recolors every body mesh (excluding the head cube) to an explicit hex color — shared by both the value-palette player path and the flat-tint NPC path below. */
@@ -388,6 +408,187 @@ export default class CharacterBody {
     }
 
     /**
+     * Shows `toolId` (axe/pickaxe — see ToolRegistry.ts) on the RightHand bone, hiding
+     * whatever tool was showing before — see PlayerActionController, which calls this
+     * alongside playAction()/stopAction() so the right tool appears for the action's
+     * duration and disappears once it ends. `undefined` hides every tool (bare hands,
+     * e.g. Gather). No-op (leaves whatever's already showing) if `toolId` matches the
+     * tool already showing. Each tool's visual is built once and reused — swapping just
+     * toggles visibility, same as MainPlayer's face-decal caching does for skins.
+     */
+    public showTool(toolId: ToolId | undefined): void {
+        if (this.currentToolId === toolId) {
+            return;
+        }
+
+        if (this.currentToolId) {
+            const previousVisual = this.toolVisuals.get(this.currentToolId);
+            if (previousVisual) {
+                previousVisual.visible = false;
+            }
+        }
+
+        this.currentToolId = toolId;
+
+        if (!toolId) {
+            return;
+        }
+
+        const holder = this.ensureToolHolder();
+        if (!holder) {
+            return;
+        }
+
+        let visual = this.toolVisuals.get(toolId);
+        if (!visual) {
+            visual = this.buildToolVisual(toolId);
+            holder.add(visual);
+            this.toolVisuals.set(toolId, visual);
+        }
+        visual.visible = true;
+    }
+
+    /**
+     * Repositions `toolId`'s wrapper group live, in the SAME bone-local units as
+     * ToolVisualEntry.offset — (0,0,0) sits exactly at the RightHand bone's own origin. Same
+     * "tune live in-game, the bind-pose axes aren't obvious from code alone" workflow as
+     * setHeadOffset()/setBackpackOffset(), and genuinely a SEPARATE tuning pass from either
+     * of those: every bone has its own local orientation/scale, so numbers that looked right
+     * on Head or Chest have no reason to also look right on RightHand. No-op if `toolId`'s
+     * visual hasn't been built yet (showTool() hasn't shown it at least once).
+     */
+    public setToolOffset(toolId: ToolId, x: number, y: number, z: number): void {
+        TOOL_LIBRARY[toolId].offset.set(x, y, z);
+        this.toolVisuals.get(toolId)?.position.set(x, y, z);
+    }
+
+    /** Same live-tuning workflow as setToolOffset(), for the wrapper group's own rotation (degrees, XYZ euler). */
+    public setToolRotation(toolId: ToolId, xDeg: number, yDeg: number, zDeg: number): void {
+        TOOL_LIBRARY[toolId].rotationDeg.set(xDeg, yDeg, zDeg);
+        this.toolVisuals.get(toolId)?.rotation.set(xDeg * (Math.PI / 180), yDeg * (Math.PI / 180), zDeg * (Math.PI / 180));
+    }
+
+    /** Same live-tuning workflow, for the wrapper group's uniform scale — see ToolVisualEntry.scale's own doc. */
+    public setToolScale(toolId: ToolId, scale: number): void {
+        TOOL_LIBRARY[toolId].scale = scale;
+        this.toolVisuals.get(toolId)?.scale.setScalar(scale);
+    }
+
+    /** Same live-tuning workflow, for the placeholder cylinder's own radius/length — only meaningful while ToolVisualEntry.models is empty; no-op (nothing to rebuild) once a real model is showing. */
+    public setToolSize(toolId: ToolId, radius: number, length: number): void {
+        const entry = TOOL_LIBRARY[toolId];
+        entry.radius = radius;
+        entry.length = length;
+
+        const placeholder = this.toolVisuals.get(toolId)?.children.find((child): child is THREE.Mesh => child instanceof THREE.Mesh);
+        if (placeholder) {
+            placeholder.geometry.dispose();
+            placeholder.geometry = new THREE.CylinderGeometry(radius, radius, length, 8);
+        }
+    }
+
+    /**
+     * DEBUG ONLY — drops a small bright sphere exactly at the RightHand bone's own origin
+     * (no offset, unlike the tool visuals) and leaves it there permanently, independent of
+     * showTool()/currentToolId. Answers "is the bone/holder tracking right at all" as a
+     * separate question from "are my offset numbers right" — if this sphere itself reads
+     * as being in the wrong place (or not moving with the hand), the bug is in the rig/bone
+     * lookup, not in ToolVisualEntry's offset/rotation/scale tuning. Safe to call multiple
+     * times (no-ops after the first — same marker instance, not one per call).
+     */
+    public debugShowHandMarker(): void {
+        if (this.handDebugMarker) {
+            return;
+        }
+
+        const holder = this.ensureToolHolder();
+        if (!holder) {
+            return;
+        }
+
+        const geometry = new THREE.SphereGeometry(15, 12, 12);
+        const material = new THREE.MeshBasicMaterial({ color: 0xff00ff });
+        this.handDebugMarker = new THREE.Mesh(geometry, material);
+        holder.add(this.handDebugMarker);
+    }
+
+    /**
+     * Builds `toolId`'s wrapper group, positioned/rotated/scaled from ToolVisualEntry right
+     * away (so it's correctly placed even before an async model load below resolves), then
+     * either:
+     *   - attaches the real model (ToolVisualEntry.models[0]) once ModelLoaderManager
+     *     resolves it — same BendService treatment every other prop/model gets; or
+     *   - if `models` is empty, builds the fallback placeholder cylinder synchronously.
+     *     Unlit (MeshBasicMaterial) — a lit MeshStandardMaterial can render almost black on
+     *     a thin cylinder caught edge-on to a light, which reads exactly like "not
+     *     spawning" even though it's there and correctly parented; unlit removes that
+     *     whole failure mode for what's only ever a temporary stand-in anyway.
+     */
+    private buildToolVisual(toolId: ToolId): THREE.Group {
+        const entry = TOOL_LIBRARY[toolId];
+
+        const group = new THREE.Group();
+        this.applyToolVisualTransform(group, entry);
+
+        if (entry.models.length > 0) {
+            const modelDef = entry.models[0];
+            ModelLoaderManager.instance.loadModel(modelUrl(modelDef.fullPath), modelDef.id)
+                .then(object => {
+                    object.traverse(child => {
+                        if (child instanceof THREE.Mesh) {
+                            const materials = Array.isArray(child.material) ? child.material : [child.material];
+                            materials.forEach(material => BendService.applyBend(material));
+                        }
+                    });
+                    group.add(object);
+                })
+                .catch(error => console.warn(`CharacterBody: failed to load tool model for "${toolId}"`, error));
+        } else {
+            const geometry = new THREE.CylinderGeometry(entry.radius, entry.radius, entry.length, 8);
+            const material = new THREE.MeshBasicMaterial({ color: entry.color });
+            BendService.applyBend(material);
+            group.add(new THREE.Mesh(geometry, material));
+        }
+
+        return group;
+    }
+
+    private applyToolVisualTransform(group: THREE.Group, entry: ToolVisualEntry): void {
+        group.position.copy(entry.offset);
+        group.rotation.set(
+            entry.rotationDeg.x * (Math.PI / 180),
+            entry.rotationDeg.y * (Math.PI / 180),
+            entry.rotationDeg.z * (Math.PI / 180),
+        );
+        group.scale.setScalar(entry.scale);
+    }
+
+    /** Lazily finds the RightHand bone and builds a holder on it (cancelling its own inherited scale, same pattern as mountHeadCube()/mountBackpackCube()) the first time any tool is shown. undefined (and a console warning) if the rig has no such bone. */
+    private ensureToolHolder(): THREE.Group | undefined {
+        if (this.toolHolder) {
+            return this.toolHolder;
+        }
+
+        const handBone = this.findBoneByName('RightHand');
+        if (!handBone) {
+            console.warn('CharacterBody: no "RightHand" bone found — skipping tool visual.');
+            return undefined;
+        }
+
+        this.toolBone = handBone;
+
+        const holder = new THREE.Group();
+        handBone.add(holder);
+        this.toolHolder = holder;
+
+        const boneWorldScale = new THREE.Vector3();
+        handBone.getWorldScale(boneWorldScale);
+        holder.scale.set(1 / boneWorldScale.x, 1 / boneWorldScale.y, 1 / boneWorldScale.z);
+
+        return holder;
+    }
+
+    /**
      * Overrides targetRotation directly from a world-space direction (X/Z only), instead
      * of deriving it from move input like update() normally does — see FacingComponent,
      * which uses this to turn the character toward a resource it's gathering from while
@@ -432,6 +633,15 @@ export default class CharacterBody {
     public destroy(): void {
         this.removeHeadCube();
         this.removeBackpackCube();
+        for (const visual of this.toolVisuals.values()) {
+            visual.traverse(child => {
+                if (child instanceof THREE.Mesh) {
+                    child.geometry.dispose();
+                }
+            });
+        }
+        this.toolVisuals.clear();
+        this.handDebugMarker?.geometry.dispose();
         this.container.parent?.remove(this.container);
         this.mixer?.stopAllAction();
     }

@@ -17,9 +17,11 @@ import {
     findLayer,
     getTilesetFirstGids,
     GROUND_LAYER_NAME,
+    iterateLayerCells,
     loadTileDefs,
     loadTiledMap,
     resolveGroundDef,
+    tileCellToWorldPosition,
     TILE_PAINT_Y_OFFSET,
     WORLD_UNITS_PER_TILE,
 } from './TileMapConfig';
@@ -44,13 +46,8 @@ export default class TileMap {
             return;
         }
 
-        const cellIndices: number[] = [];
-        for (let i = 0; i < layer.data.length; i++) {
-            if (layer.data[i] > 0) {
-                cellIndices.push(i);
-            }
-        }
-        if (cellIndices.length === 0) {
+        const cells = [...iterateLayerCells(layer)];
+        if (cells.length === 0) {
             return;
         }
 
@@ -64,7 +61,7 @@ export default class TileMap {
         // painted tile along with the rest of the world with no extra wiring needed here.
         BendService.applyBend(material);
 
-        const mesh = new THREE.InstancedMesh(geometry, material, cellIndices.length);
+        const mesh = new THREE.InstancedMesh(geometry, material, cells.length);
         mesh.position.y = TILE_PAINT_Y_OFFSET;
         // InstancedMesh's default bounding sphere comes from the geometry alone (one tile,
         // centered at the mesh's local origin) — Three culls the WHOLE mesh against that tiny
@@ -72,21 +69,15 @@ export default class TileMap {
         // One draw call regardless of tile count, so skipping culling entirely costs nothing here.
         mesh.frustumCulled = false;
 
-        const halfWidth = (map.width * this.worldUnitsPerTile) / 2;
-        const halfHeight = (map.height * this.worldUnitsPerTile) / 2;
         const matrix = new THREE.Matrix4();
         const color = new THREE.Color();
 
-        cellIndices.forEach((dataIndex, instanceIndex) => {
-            const col = dataIndex % layer.width;
-            const row = Math.floor(dataIndex / layer.width);
-            const worldX = (col + 0.5) * this.worldUnitsPerTile - halfWidth;
-            const worldZ = (row + 0.5) * this.worldUnitsPerTile - halfHeight;
+        cells.forEach(({ gid, col, row }, instanceIndex) => {
+            const { x: worldX, z: worldZ } = tileCellToWorldPosition(col, row, this.worldUnitsPerTile);
 
             matrix.makeTranslation(worldX, 0, worldZ);
             mesh.setMatrixAt(instanceIndex, matrix);
 
-            const gid = layer.data[dataIndex];
             const def = resolveGroundDef(gid, tileDefs, groundFirstGid);
             color.set(def?.color ?? FALLBACK_TILE_COLOR);
             mesh.setColorAt(instanceIndex, color);

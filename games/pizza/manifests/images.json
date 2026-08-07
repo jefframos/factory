@@ -5,6 +5,14 @@
       "assets": [
         {
           "alias": [
+            "survive"
+          ],
+          "src": [
+            "survive.webp.json"
+          ]
+        },
+        {
+          "alias": [
             "ui"
           ],
           "src": [

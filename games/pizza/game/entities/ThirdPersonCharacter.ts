@@ -18,6 +18,7 @@
 
 import * as THREE from 'three';
 import CharacterBody from './CharacterBody';
+import { ToolId } from '../actions/ToolRegistry';
 
 /** Purely cosmetic — fakes an airborne window so the jumpUp→falling→landing chain still plays without any real vertical physics. See jump(). */
 const JUMP_AIRTIME = 0.7;
@@ -135,9 +136,46 @@ export default class ThirdPersonCharacter {
         this.body.animator.animatorBoard?.setTrigger('jump');
     }
 
-    /** Fires an animator-board trigger by name — see PlayerActionController, which uses this for the 'chop'/'mine'/'actionDone' triggers registered in CharacterBody.setUp(). Same underlying mechanism jump() uses, just generalized to any trigger name instead of one hardcoded to jump's own airtime bookkeeping. */
+    /** Fires an animator-board trigger by name — jump() is the only remaining caller (see CharacterBody.setUp()'s jump transitions); PlayerActionController's chop/mine/pick no longer go through the board at all, see playAction()/stopAction() below. */
     public playTrigger(trigger: string): void {
         this.body.animator.animatorBoard?.setTrigger(trigger);
+    }
+
+    /** Starts an action-layer clip (chop/mine/pick — see AnimatorController's own doc) — used by PlayerActionController. Runs concurrently with idle/run/jump rather than replacing it. */
+    public playAction(trigger: string): void {
+        this.body.playActionLayer(trigger);
+    }
+
+    /** Fades the action layer back out — used by PlayerActionController once an action ends (completed or cancelled). */
+    public stopAction(): void {
+        this.body.stopActionLayer();
+    }
+
+    /** Shows/hides a tool (axe/pickaxe — see ToolRegistry.ts) in the right hand — used by PlayerActionController alongside playAction()/stopAction(). undefined hides every tool (bare hands). */
+    public showTool(toolId: ToolId | undefined): void {
+        this.body.showTool(toolId);
+    }
+
+    /** Live-tunes a tool's position/rotation/size — see CharacterBody's own doc on each; call from the console while showTool() has it visible, same workflow as setHeadOffset()/setBackpackOffset(). */
+    public setToolOffset(toolId: ToolId, x: number, y: number, z: number): void {
+        this.body.setToolOffset(toolId, x, y, z);
+    }
+
+    public setToolRotation(toolId: ToolId, xDeg: number, yDeg: number, zDeg: number): void {
+        this.body.setToolRotation(toolId, xDeg, yDeg, zDeg);
+    }
+
+    public setToolSize(toolId: ToolId, radius: number, length: number): void {
+        this.body.setToolSize(toolId, radius, length);
+    }
+
+    public setToolScale(toolId: ToolId, scale: number): void {
+        this.body.setToolScale(toolId, scale);
+    }
+
+    /** DEBUG ONLY — see CharacterBody.debugShowHandMarker(). */
+    public debugShowHandMarker(): void {
+        this.body.debugShowHandMarker();
     }
 
     /** Get animation settings to configure playback speed per animation. Example: character.getAnimation('chop').setSpeed(1.5) */

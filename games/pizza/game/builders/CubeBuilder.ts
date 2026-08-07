@@ -7,16 +7,16 @@ import { TextureBuilder } from "./TextureBuilder";
 // One color per doubling of value, in order starting at value=2.
 // Add entries freely — colorForValue() cycles through these instead of defaulting to grey.
 export const VALUE_PALETTE: string[] = [
+    '#44cccc',  // 1024  — teal
+    '#4444cc',  // 128  — cobalt
     '#4aba8a',  //  2  — mint green
     '#4488cc',  //  4  — sky blue
     '#e87850',  //  8  — tangerine
     '#cc44aa',  // 16  — magenta
     '#88cc44',  // 32  — lime
     '#cc8844',  // 64  — amber
-    '#4444cc',  // 128  — cobalt
     '#aa44cc',  // 256  — purple
     '#cc4444',  // 512  — crimson
-    '#44cccc',  // 1024  — teal
     '#ffd700',  // 2048  — gold
     '#ff6b6b',  // 4096  — coral
     '#69f0ae',  // 8192  — spring green

@@ -10,19 +10,47 @@
 // subscribes once and updates only the slot whose resource actually
 // changed, instead of polling every frame.
 //
+// Persisted via PlatformHandler (see ShopStorage.ts/GlobalResourceStorage.ts
+// for the same pattern) — load() must be awaited once at boot (see
+// index.ts), before anything reads getCount()/getAll(). Carrying resources
+// across a reload matters just as much as the base stockpile does: without
+// this, quitting mid-gather (backpack non-empty, not yet at the drop zone)
+// would silently erase whatever hadn't been deposited yet. Every mutation
+// fires off an async persist() (fire-and-forget from the caller's
+// perspective — AutoGatherController/DropZone don't need to await it) so
+// gathering/depositing never blocks on storage I/O.
+//
 // No per-type cap for now (removed — re-add one here first if a cap comes
 // back later; nothing else needs to change). removeOne() is what DropZone
 // calls per-unit as resources fly out to the drop zone over time (see
 // DropZone.ts) — depositing is gradual, not an instant drainAll().
 
 import { Signal } from 'signals';
+import PlatformHandler from 'core/platforms/PlatformHandler';
 import { ResourceType } from '../actions/ResourceTypes';
+
+const STORAGE_KEY = 'PIZZA_BACKPACK';
 
 export class BackpackStorage {
     private static readonly counts = new Map<ResourceType, number>();
 
     /** Fires with the resource type whose count just changed — see this file's own doc. */
     static readonly onChange: Signal = new Signal();
+
+    /** Call once at boot (see index.ts), before anything reads getCount()/getAll(). */
+    static async load(): Promise<void> {
+        try {
+            const raw = await PlatformHandler.instance.platform.getItem(STORAGE_KEY);
+            const parsed: Partial<Record<ResourceType, number>> = raw ? JSON.parse(raw) : {};
+            for (const [type, amount] of Object.entries(parsed)) {
+                if (typeof amount === 'number' && amount > 0) {
+                    this.counts.set(type as ResourceType, amount);
+                }
+            }
+        } catch (e) {
+            console.error('BackpackStorage: failed to load save data', e);
+        }
+    }
 
     static getCount(type: ResourceType): number {
         return this.counts.get(type) ?? 0;
@@ -41,6 +69,7 @@ export class BackpackStorage {
 
         this.counts.set(type, this.getCount(type) + amount);
         this.onChange.dispatch(type);
+        void this.persist();
         return amount;
     }
 
@@ -53,22 +82,29 @@ export class BackpackStorage {
 
         this.counts.set(type, current - 1);
         this.onChange.dispatch(type);
+        void this.persist();
         return true;
     }
 
     /** Empties everything at once and returns what it held — see DropZone.tryDeposit()'s fallback for when there's no loaded backpack cube to animate a gradual drain from (e.g. the FBX character hasn't finished loading yet). Prefer removeOne() for the normal animated path. */
     static drainAll(): Map<ResourceType, number> {
         const drained = this.getAll();
-        this.clearAll();
+        void this.clearAll();
         return drained;
     }
 
-    /** Test/dev hook — wipes every count back to empty and notifies subscribers. */
-    static clearAll(): void {
+    private static async persist(): Promise<void> {
+        const data: Partial<Record<ResourceType, number>> = Object.fromEntries(this.counts);
+        await PlatformHandler.instance.platform.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    /** Debug/dev reset (and drainAll()'s own instant-clear path) — wipes every count back to empty, notifies subscribers, and removes the persisted save entirely. See the "Clear Backpack" DevGuiManager button in PizzaScene.ts. */
+    static async clearAll(): Promise<void> {
         for (const type of this.counts.keys()) {
             this.counts.set(type, 0);
             this.onChange.dispatch(type);
         }
         this.counts.clear();
+        await PlatformHandler.instance.platform.removeItem(STORAGE_KEY);
     }
 }

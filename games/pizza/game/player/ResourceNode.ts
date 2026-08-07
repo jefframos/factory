@@ -1,6 +1,6 @@
 // ResourceNode.ts
 //
-// A gatherable resource — a tree (real glb prop, see MODELS.Tree) or a
+// A gatherable resource — a tree (real glb prop, see MODELS.Props.Tree) or a
 // stone (cube placeholder until real art exists), see ResourceTypes.ts for
 // the actual per-type numbers/color. Same "dedicated Entity subclass
 // self-configures in awake()" pattern as

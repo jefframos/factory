@@ -40,10 +40,23 @@ export interface TileDefsData {
     resources: TileDef[];
 }
 
-export interface TiledLayer {
+/** One chunk of an INFINITE map's layer — see TiledLayer's own doc. `data` is LOCAL to the chunk (index 0 is the chunk's own top-left cell), offset into the map's absolute tile grid by `x`/`y`, which are free to be negative (the map has grown up/left of where it started). */
+export interface TiledChunk {
     data: number[];
     width: number;
     height: number;
+    x: number;
+    y: number;
+}
+
+export interface TiledLayer {
+    /** Present on a BOUNDED (non-infinite) map's layer only — a flat, `width`-strided array. Infinite maps carry no such array at the layer level; see `chunks`. */
+    data?: number[];
+    /** Present on a bounded map's layer only, alongside `data`. Infinite maps carry no fixed layer width/height — the map can (and does, once exported "infinite" — see testMap1.json) grow in any direction, including negative. */
+    width?: number;
+    height?: number;
+    /** Present on an INFINITE map's layer only — see TiledChunk's own doc. Use iterateLayerCells() rather than reading `data`/`chunks` directly; it handles both shapes and always yields ABSOLUTE tile-grid coordinates. */
+    chunks?: TiledChunk[];
     type: string;
     visible: boolean;
     name: string;
@@ -54,10 +67,61 @@ export interface TiledTileset {
 }
 
 export interface TiledMapData {
+    /**
+     * Present regardless of `infinite`, but only meaningful when it's false — Tiled keeps
+     * writing SOME width/height on an infinite map's export (see testMap1.json), but it
+     * reflects the map's last-saved editor canvas size, not the actual extent of painted
+     * chunks (which can be, and is, bigger — and can extend negative). Never read these
+     * for an infinite map; use iterateLayerCells() + tileCellToWorldPosition() instead,
+     * both of which work in ABSOLUTE tile coordinates with no notion of a fixed size to
+     * center around.
+     */
     width: number;
     height: number;
+    infinite?: boolean;
     layers: TiledLayer[];
     tilesets: TiledTileset[];
+}
+
+/** One non-empty cell, in ABSOLUTE tile-grid coordinates — see iterateLayerCells(). */
+export interface TiledCell {
+    gid: number;
+    col: number;
+    row: number;
+}
+
+/**
+ * Iterates every nonzero cell in `layer`, whichever shape it's actually in — a bounded
+ * map's flat `data` array, or an infinite map's `chunks` (see TiledLayer's own doc) — always
+ * yielding ABSOLUTE tile-grid (col, row), never chunk-local or centered. This is the ONE
+ * place that needs to know both shapes exist; every caller (TileMap.ts's ground painter,
+ * buildResourceSpawnsFromTileMap() below) reads through this instead of touching
+ * `layer.data`/`layer.chunks` itself, so a map re-exported infinite-or-not never needs a
+ * second code path anywhere else.
+ */
+export function* iterateLayerCells(layer: TiledLayer): Iterable<TiledCell> {
+    if (layer.chunks) {
+        for (const chunk of layer.chunks) {
+            for (let i = 0; i < chunk.data.length; i++) {
+                const gid = chunk.data[i];
+                if (gid <= 0) {
+                    continue;
+                }
+                yield { gid, col: chunk.x + (i % chunk.width), row: chunk.y + Math.floor(i / chunk.width) };
+            }
+        }
+        return;
+    }
+
+    const data = layer.data ?? [];
+    const width = layer.width ?? 0;
+    for (let i = 0; i < data.length; i++) {
+        const gid = data[i];
+        if (gid <= 0) {
+            continue;
+        }
+        yield { gid, col: i % width, row: Math.floor(i / width) };
+    }
 }
 
 export const GROUND_LAYER_NAME = 'groundLayer';
@@ -118,19 +182,21 @@ export function resolveResourceDef(gid: number, tileDefs: TileDefsData, resource
     return tileDefs.resources[gid - resourceFirstGid];
 }
 
-/** Converts a layer's (col, row) grid cell to a world XZ position, centered on the map — same math TileMap.ts uses to paint the ground, so resource nodes built from the resource layer land exactly on the tile they're drawn on. */
-export function tileCellToWorldPosition(
-    col: number,
-    row: number,
-    mapWidth: number,
-    mapHeight: number,
-    worldUnitsPerTile: number,
-): { x: number; z: number } {
-    const halfWidth = (mapWidth * worldUnitsPerTile) / 2;
-    const halfHeight = (mapHeight * worldUnitsPerTile) / 2;
+/**
+ * Converts an ABSOLUTE tile-grid (col, row) — see iterateLayerCells() — to a world XZ
+ * position. Deliberately NOT centered on any map width/height: an infinite map has no
+ * fixed size to center on (see TiledMapData's own doc), and tile (0, 0) needs to land at
+ * the world origin regardless — that's what makes the player (which spawns at world
+ * (0,0,0), see MainPlayer.ts) stand somewhere sensible on the map, and it's also just the
+ * simpler mapping. A negative col/row (the map having grown up/left of where it started)
+ * falls out correctly with no special-casing, same as a positive one. Same math TileMap.ts
+ * uses to paint the ground, so resource nodes built from the resource layer land exactly
+ * on the tile they're drawn on.
+ */
+export function tileCellToWorldPosition(col: number, row: number, worldUnitsPerTile: number): { x: number; z: number } {
     return {
-        x: (col + 0.5) * worldUnitsPerTile - halfWidth,
-        z: (row + 0.5) * worldUnitsPerTile - halfHeight,
+        x: (col + 0.5) * worldUnitsPerTile,
+        z: (row + 0.5) * worldUnitsPerTile,
     };
 }
 
@@ -156,12 +222,7 @@ export function buildResourceSpawnsFromTileMap(
     const warnedNames = new Set<string>();
     const spawns: ResourceSpawnDef[] = [];
 
-    for (let i = 0; i < layer.data.length; i++) {
-        const gid = layer.data[i];
-        if (gid <= 0) {
-            continue;
-        }
-
+    for (const { gid, col, row } of iterateLayerCells(layer)) {
         const def = resolveResourceDef(gid, tileDefs, resourceFirstGid);
         const resourceType = def && RESOURCE_NAME_TO_TYPE[def.name];
         if (!resourceType) {
@@ -172,12 +233,10 @@ export function buildResourceSpawnsFromTileMap(
             continue;
         }
 
-        const col = i % layer.width;
-        const row = Math.floor(i / layer.width);
-        const { x, z } = tileCellToWorldPosition(col, row, map.width, map.height, worldUnitsPerTile);
+        const { x, z } = tileCellToWorldPosition(col, row, worldUnitsPerTile);
 
         spawns.push({
-            id: `${def!.name}-${i}`,
+            id: `${def!.name}-${col}-${row}`,
             resourceType,
             position: new THREE.Vector3(x, 0, z),
         });

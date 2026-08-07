@@ -67,8 +67,16 @@ function copyFolderSync(from, to) {
 
 /**
  * Scans models and ensures the entire containing folder is copied to public.
+ *
+ * `group` is fixed the FIRST time we descend into a subfolder of raw-assets/models (e.g.
+ * "characters{m}" -> "Characters") and passed unchanged through every deeper level of
+ * recursion — a model 3 folders deep still belongs to the same top-level group its
+ * grandparent folder named. Models sitting directly in raw-assets/models with no
+ * containing folder at all fall into the 'Root' group. This is what lets the registry
+ * nest models as MODELS.Characters.Running instead of one flat, ever-growing MODELS.Running
+ * namespace — see generateRegistryContent().
  */
-async function scanModels(dir, relativeDir = '') {
+async function scanModels(dir, relativeDir = '', group = null) {
     const extensions = ['.glb', '.gltf', '.fbx', '.obj'];
     let results = [];
     if (!fs.existsSync(dir)) return [];
@@ -84,7 +92,8 @@ async function scanModels(dir, relativeDir = '') {
         if (item.isDirectory()) {
             const subDirClean = cleanName(item.name);
             const nextRelativeDir = relativeDir ? `${relativeDir}/${subDirClean}` : subDirClean;
-            results = [...results, ...await scanModels(fullSourcePath, nextRelativeDir)];
+            const nextGroup = group ?? toValidIdentifier(subDirClean);
+            results = [...results, ...await scanModels(fullSourcePath, nextRelativeDir, nextGroup)];
         } else {
             const ext = path.extname(item.name).toLowerCase();
             if (extensions.includes(ext)) {
@@ -103,6 +112,7 @@ async function scanModels(dir, relativeDir = '') {
                 const relativeFilePath = relativeDir ? path.join(relativeDir, item.name) : item.name;
 
                 results.push({
+                    group: group ?? 'Root',
                     identifier: toValidIdentifier(nameOnly),
                     id: nameOnly,
                     path: relativeDir ? `${relativeDir}/${nameOnly}` : nameOnly,
@@ -117,8 +127,11 @@ async function scanModels(dir, relativeDir = '') {
 }
 
 function generateRegistryContent(models) {
+    // Every module-scope `const` needs a name unique across the WHOLE file (not just within
+    // its group), so it's qualified as e.g. CharactersRunning — but MODELS itself still
+    // nests it as MODELS.Characters.Running, which is the part callers actually type.
     const modelEntries = models.map(model => {
-        return `const ${model.identifier} = {
+        return `const ${model.group}${model.identifier} = {
   id: '${model.id}',
   path: '${model.path}',
   fullPath: '${model.fullPath}',
@@ -127,7 +140,16 @@ function generateRegistryContent(models) {
 } as const;`;
     }).join('\n\n');
 
-    const registryMapping = models.map(model => `  ${model.identifier}`).join(',\n');
+    const groups = new Map();
+    for (const model of models) {
+        if (!groups.has(model.group)) groups.set(model.group, []);
+        groups.get(model.group).push(model);
+    }
+
+    const registryMapping = [...groups.entries()].map(([group, groupModels]) => {
+        const entries = groupModels.map(model => `    ${model.identifier}: ${model.group}${model.identifier}`).join(',\n');
+        return `  ${group}: {\n${entries}\n  }`;
+    }).join(',\n');
 
     return `// Auto-generated file - DO NOT EDIT
 export type ModelFormat = 'glb' | 'gltf' | 'fbx' | 'obj';
@@ -141,11 +163,14 @@ export interface ModelDefinition {
 
 ${modelEntries}
 
+// Grouped by top-level raw-assets/models folder (the '{...}' tag stripped) — e.g.
+// raw-assets/models/characters{m}/... becomes MODELS.Characters.<name>. Files with no
+// containing folder land in MODELS.Root.
 export const MODELS = {
 ${registryMapping}
 } as const;
 
-export type ModelKey = keyof typeof MODELS;
+export type ModelGroup = keyof typeof MODELS;
 export default MODELS;`;
 }
 

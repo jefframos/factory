@@ -42,6 +42,10 @@ import MainPlayer from '../player/MainPlayer';
 import DropZone from '../player/DropZone';
 import WorldManager from '../world/WorldManager';
 import BackpackUI from '../ui/BackpackUI';
+import GlobalResourcesUI from '../ui/GlobalResourcesUI';
+import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
+import { BackpackStorage } from '../data/BackpackStorage';
+import { DevGuiManager } from 'core/utils/DevGuiManager';
 
 /**
  * Camera settings data — a spherical orbit around the player instead of a
@@ -98,6 +102,9 @@ const DROP_ZONE_OFFSET = new THREE.Vector3(6, 0, -2);
 /** Gap between the backpack HUD panel's bottom edge and the actual bottom of the screen — see positionBackpackUi(). */
 const BACKPACK_UI_BOTTOM_MARGIN = 16;
 
+/** Gap between the global-resources HUD panel's top/right edges and the actual top-right corner of the screen — see positionGlobalResourcesUi(). */
+const GLOBAL_RESOURCES_UI_MARGIN = 16;
+
 export default class PizzaScene extends ThreeScene {
     /** Owns PhysicsWorld + every spawned Entity — the scene's job is just to spawn things into this and forward its own update()/fixedUpdate() calls here (see World.ts). */
     private readonly world = new World();
@@ -119,6 +126,9 @@ export default class PizzaScene extends ThreeScene {
 
     /** The backpack HUD panel — see setupBackpackUi(). Tracked so destroy() can unsubscribe it from BackpackStorage.onChange. */
     private backpackUi?: BackpackUI;
+
+    /** The base-stockpile HUD panel, pinned top-right — see setupGlobalResourcesUi(). Tracked so destroy() can unsubscribe it from GlobalResourceStorage.onChange. */
+    private globalResourcesUi?: GlobalResourcesUI;
 
     public constructor(game: Game) {
         super(game);
@@ -146,10 +156,26 @@ export default class PizzaScene extends ThreeScene {
         this.setupTestBox();
         this.setupDropZone();
         this.setupBackpackUi();
+        this.setupGlobalResourcesUi();
+        this.setupDebugGui();
         this.threeScene.add(this.mainPlayer.transform);
 
         this.positionCamera();
         void this.loadPlayerCharacter();
+    }
+
+    /** Dev-only tools — no-ops entirely unless launched with ?dev (see Game.debugParams/DevGuiManager.initialize(), called once in index.ts's startGame()). */
+    private setupDebugGui(): void {
+        DevGuiManager.instance.addButton(
+            'Clear Global Resources',
+            () => void GlobalResourceStorage.clearAll(),
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
+            'Clear Backpack',
+            () => void BackpackStorage.clearAll(),
+            'Resources',
+        );
     }
 
     /** The task's own collision test: a static box offset from spawn along Z only — walking the player into it should stop them instead of clipping through. */
@@ -206,6 +232,30 @@ export default class PizzaScene extends ThreeScene {
         this.backpackUi.position.set(
             screen.center.x - this.backpackUi.panelWidth / 2,
             screen.bottomLeft.y - this.backpackUi.panelHeight - BACKPACK_UI_BOTTOM_MARGIN,
+        );
+    }
+
+    /** The base-stockpile HUD panel — reads the same global GlobalResourceStorage DropZone writes to, so it needs no wiring beyond existing and sitting in the overlay (see GlobalResourcesUI.ts's own doc). Positioned every frame — see positionGlobalResourcesUi(). */
+    private setupGlobalResourcesUi(): void {
+        this.globalResourcesUi = new GlobalResourcesUI();
+        this.game.overlayContainer.addChild(this.globalResourcesUi);
+        this.positionGlobalResourcesUi();
+    }
+
+    /** Top-right, regardless of viewport size/aspect — same screen.topRight-in-overlay-local-space reasoning as positionBackpackUi(). Re-run every frame since the panel's own size changes as rows are added. */
+    private positionGlobalResourcesUi(): void {
+        if (!this.globalResourcesUi) {
+            return;
+        }
+
+        const screen = Game.overlayScreenData;
+        if (!screen) {
+            return;
+        }
+
+        this.globalResourcesUi.position.set(
+            screen.topRight.x - this.globalResourcesUi.panelWidth - GLOBAL_RESOURCES_UI_MARGIN,
+            screen.topRight.y + GLOBAL_RESOURCES_UI_MARGIN,
         );
     }
 
@@ -286,6 +336,7 @@ export default class PizzaScene extends ThreeScene {
         // and that component exists at all — harmless no-op until then).
         this.world.update(delta);
         this.positionBackpackUi();
+        this.positionGlobalResourcesUi();
 
         super.update(delta);
     }
@@ -297,6 +348,7 @@ export default class PizzaScene extends ThreeScene {
         this.worldManager.destroy();
         this.loadingSpinner?.destroy();
         this.backpackUi?.destroy();
+        this.globalResourcesUi?.destroy();
         super.destroy();
     }
 }

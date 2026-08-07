@@ -18,6 +18,8 @@ import PizzaScene from './game/scenes/PizzaScene';
 import { ShopStorage, loadShopItems } from './game/data/ShopStorage';
 import { loadIslands } from './game/world/IslandStorage';
 import { HighScoreStorage } from './game/data/HighScoreStorage';
+import { GlobalResourceStorage } from './game/data/GlobalResourceStorage';
+import { BackpackStorage } from './game/data/BackpackStorage';
 import { Localization } from './game/i18n/Localization';
 import loaderConfig from './loader.config';
 
@@ -64,6 +66,8 @@ export default class MyGame extends Game {
             await PlatformHandler.instance.initialize(plat);
             await ShopStorage.load();
             await HighScoreStorage.load();
+            await GlobalResourceStorage.load();
+            await BackpackStorage.load();
             await Localization.load();
 
             // 5. Setup Game Flow

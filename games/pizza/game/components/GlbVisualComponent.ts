@@ -1,7 +1,7 @@
 // GlbVisualComponent.ts
 //
 // Real-art counterpart to BoxVisualComponent/CylinderVisualComponent — loads
-// a static prop (a model registry entry, e.g. MODELS.Tree) via
+// a static prop (a model registry entry, e.g. MODELS.Props.Tree) via
 // core/three/ModelLoaderManager instead of building a primitive. That
 // manager caches the parsed glb/gltf scene and hands back a clone per
 // instance, so spawning many of the same prop only pays the network/parse

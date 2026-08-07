@@ -9,7 +9,7 @@
 // ResourceType.
 //
 // Each entry is a `models` list (one is picked at random per spawn — lets a
-// single "tree" logical asset vary between e.g. MODELS.Tree/MODELS.TreeHigh)
+// single "tree" logical asset vary between e.g. MODELS.Props.Tree/MODELS.Props.TreeHigh)
 // plus scale/rotation ranges rolled once per spawn. An empty `models` list
 // means "no glb yet for this entry" — callers are expected to fall back to
 // a primitive placeholder (see ResourceNode.ts) rather than error.
@@ -54,21 +54,24 @@ export function pickRandom<T>(items: readonly T[]): T {
 
 export const ASSET_LIBRARY = {
     tree: {
-        models: [MODELS.Tree, MODELS.TreeHigh],
+        models: [MODELS.Props.Tree, MODELS.Props.TreeHigh],
         scale: [1.85, 2.15],
         rotationDeg: [0, 360],
+        icon: 'wood-log'
     },
     stone: {
         // No stone model yet — add one here whenever real art exists; nothing else needs to change.
         models: [],
         scale: 1,
         rotationDeg: [0, 360],
+        icon: 'stone-chunk'
     },
     berries: {
         // No berry-bush model yet — add one here whenever real art exists; nothing else needs to change.
         models: [],
         scale: 1,
         rotationDeg: [0, 360],
+        icon: 'wild-berries'
     },
 } satisfies Record<string, AssetLibraryEntry>;
 

@@ -127,19 +127,25 @@ export default class MainPlayer extends Entity {
     public async loadCharacter(): Promise<void> {
         const character = new ThirdPersonCharacter();
 
-        await character.loadMesh(modelUrl(MODELS.CharacterMedium.fullPath));
-        await character.registerAnimation('idle', modelUrl(MODELS.Idle.fullPath));
-        await character.registerAnimation('run', modelUrl(MODELS.Running.fullPath));
-        await character.registerAnimation('pick', modelUrl(MODELS.PickFruit.fullPath));
-        // await character.registerAnimation('jumpUp', modelUrl(MODELS.JumpingUp.fullPath));
-        // await character.registerAnimation('falling', modelUrl(MODELS.FallingIdle.fullPath));
-        // await character.registerAnimation('landing', modelUrl(MODELS.Landing.fullPath));
-        // await character.registerAnimation('roll', modelUrl(MODELS.Roll.fullPath));
-        // Ids here MUST match ACTION_CONFIG's animationTrigger values ('chop'/'mine') — that's
-        // also the animator-board STATE name (see CharacterBody.setUp()'s per-action transitions).
-        await character.registerAnimation('chop', modelUrl(MODELS.StandingMeleeAttackDownwardCHOP.fullPath));
-        await character.registerAnimation('mine', modelUrl(MODELS.StandingPICKAXE.fullPath));
+        await character.loadMesh(modelUrl(MODELS.Characters.CharacterMedium.fullPath));
+        await character.registerAnimation('idle', modelUrl(MODELS.Characters.Idle.fullPath));
+        await character.registerAnimation('run', modelUrl(MODELS.Characters.Running.fullPath));
+        await character.registerAnimation('pick', modelUrl(MODELS.Characters.PickFruit.fullPath));
+        // await character.registerAnimation('jumpUp', modelUrl(MODELS.Characters.JumpingUp.fullPath));
+        // await character.registerAnimation('falling', modelUrl(MODELS.Characters.FallingIdle.fullPath));
+        // await character.registerAnimation('landing', modelUrl(MODELS.Characters.Landing.fullPath));
+        // await character.registerAnimation('roll', modelUrl(MODELS.Characters.Roll.fullPath));
+        // Ids here MUST match ACTION_CONFIG's animationTrigger values ('chop'/'mine'/'pick') —
+        // that's what PlayerActionController plays on the animator's ACTION layer, not the
+        // idle/run/jump board (see AnimatorController's own doc).
+        await character.registerAnimation('chop', modelUrl(MODELS.Characters.StandingMeleeAttackDownwardCHOP.fullPath));
+        await character.registerAnimation('mine', modelUrl(MODELS.Characters.StandingPICKAXE.fullPath));
         character.setUp();
+        // DEBUG — permanent marker at the RightHand bone's own origin, so tool
+        // placement bugs can be narrowed to "the bone tracking is wrong" vs "the
+        // ToolVisualEntry offset/rotation numbers are wrong" — see CharacterBody's
+        // own doc. Remove once tool placement is confirmed working.
+        character.debugShowHandMarker();
         // Test hook — colors the body + attaches a matching cube head, both using the
         // same value-based palette the real cube player uses.
         character.applyColor(HEAD_CUBE_VALUE);

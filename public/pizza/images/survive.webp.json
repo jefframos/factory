@@ -1,0 +1,196 @@
+{
+  "frames": {
+    "woodcutters-axe": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 107,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 10,
+        "w": 107,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "wood-log": {
+      "frame": {
+        "x": 111,
+        "y": 2,
+        "w": 108,
+        "h": 103
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 12,
+        "w": 108,
+        "h": 103
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "wild-berries": {
+      "frame": {
+        "x": 2,
+        "y": 112,
+        "w": 108,
+        "h": 107
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 10,
+        "w": 108,
+        "h": 107
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "stone-chunk": {
+      "frame": {
+        "x": 112,
+        "y": 112,
+        "w": 107,
+        "h": 108
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 10,
+        "w": 107,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "mining-pickaxe": {
+      "frame": {
+        "x": 216,
+        "y": 2,
+        "w": 104,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 12,
+        "y": 10,
+        "w": 104,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "iron-ore": {
+      "frame": {
+        "x": 2,
+        "y": 221,
+        "w": 108,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 16,
+        "w": 108,
+        "h": 96
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "copper-ore": {
+      "frame": {
+        "x": 112,
+        "y": 221,
+        "w": 108,
+        "h": 94
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 17,
+        "w": 108,
+        "h": 94
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "coal-lump": {
+      "frame": {
+        "x": 222,
+        "y": 112,
+        "w": 108,
+        "h": 101
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 13,
+        "w": 108,
+        "h": 101
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "clay-lump": {
+      "frame": {
+        "x": 2,
+        "y": 319,
+        "w": 108,
+        "h": 91
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 18,
+        "w": 108,
+        "h": 91
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    }
+  },
+  "meta": {
+    "app": "http://github.com/pixijs/assetpack",
+    "version": "1.0",
+    "image": "survive.webp",
+    "format": "RGBA8888",
+    "size": {
+      "w": 325,
+      "h": 412
+    },
+    "scale": 1,
+    "related_multi_packs": []
+  }
+}

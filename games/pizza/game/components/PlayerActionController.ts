@@ -5,30 +5,36 @@
 // of fixed-length CYCLES, each hitIntervalSec long, one hit per cycle:
 // `onPlayActionAnimation()` starts it, and from then on this component
 //
-//   1. fires the per-action animator-board trigger once (ACTION_CONFIG's
-//      animationTrigger — 'chop'/'mine', see CharacterBody.setUp() for the
-//      matching transitions) so the swing clip loops for the whole action,
-//      and sets that clip's own playback speed (animationSpeedFor()) so one
-//      clip loop takes exactly hitIntervalSec — cosmetic only, see that
-//      function's own doc for why it never gates the hit itself. The clip's
-//      duration comes straight from AnimatorController.getClipDuration(),
-//      not a hand-maintained config number, so it's always accurate for
-//      whatever FBX is actually assigned. A no-op if the FBX character
-//      hasn't loaded, since actions never wait on that load (see MainPlayer's
-//      own doc) — the hits below still land on schedule with no visible
-//      character yet, just without the speed-matching (falls back to 1x,
-//      see animationSpeedFor()).
-//   2. turns the player to face the target via FacingComponent.
-//   3. tracks elapsed time within the current cycle (cycleElapsedSec) and
+//   1. starts the action layer's upper-body-only clip once (ACTION_CONFIG's
+//      animationTrigger — 'chop'/'mine'/'pick', see ThirdPersonCharacter.
+//      playAction()/AnimatorController's own doc) so the swing loops for the
+//      whole action ON TOP OF whatever the base layer (idle/run) is already
+//      doing — the player keeps walking normally while its upper body
+//      swings — and sets that clip's own playback speed (animationSpeedFor())
+//      so one clip loop takes exactly hitIntervalSec — cosmetic only, see
+//      that function's own doc for why it never gates the hit itself. The
+//      clip's duration comes straight from AnimatorController.
+//      getClipDuration(), not a hand-maintained config number, so it's
+//      always accurate for whatever FBX is actually assigned. A no-op if
+//      the FBX character hasn't loaded, since actions never wait on that
+//      load (see MainPlayer's own doc) — the hits below still land on
+//      schedule with no visible character yet, just without the
+//      speed-matching (falls back to 1x, see animationSpeedFor()).
+//   2. shows ACTION_CONFIG's tool (axe/pickaxe — see ToolRegistry.ts) in the
+//      right hand via CharacterBody.showTool(); undefined (Gather) leaves
+//      the hands bare.
+//   3. turns the player to face the target via FacingComponent.
+//   4. tracks elapsed time within the current cycle (cycleElapsedSec) and
 //      fires the hit once elapsed / hitIntervalSec (the NORMALIZED position
 //      within the cycle) reaches hitTime, then rolls the cycle over —
 //      subtracting hitIntervalSec rather than resetting to 0, so a long frame
 //      that overshoots by a bit doesn't lose that overshoot from the next
 //      cycle. Deals damagePerHit to the target (ActionTarget.applyHit) and
 //      finishes as 'completed' the moment the target reports itself depleted.
-//   4. on either ending, clears facing, fires ACTION_DONE_TRIGGER to drop
-//      back to idle, and resolves the returned Promise with which ending it
-//      was.
+//   5. on either ending, clears facing, fades the action layer back out and
+//      hides the tool again (stopAction()/showTool(undefined) — leaving
+//      idle/run as the sole driver of every bone again) and resolves the
+//      returned Promise with which ending it was.
 //
 // This guarantees exactly one hit per hitIntervalSec, forever, independent of
 // the animation's own playback state — the earlier design derived the hit
@@ -55,7 +61,7 @@
 
 import * as THREE from 'three';
 import Component from '../ecs/Component';
-import { ACTION_CONFIG, ACTION_DONE_TRIGGER, ActionConfig, ActionType } from '../actions/ActionTypes';
+import { ACTION_CONFIG, ActionConfig, ActionType } from '../actions/ActionTypes';
 import FacingComponent from './FacingComponent';
 import CharacterVisualComponent from './CharacterVisualComponent';
 
@@ -150,7 +156,8 @@ export default class PlayerActionController extends Component {
 
         this.entity.getComponent(FacingComponent)?.faceToward(target.position);
         character?.getAnimation(config.animationTrigger).setSpeed(playbackSpeed);
-        character?.playTrigger(config.animationTrigger);
+        character?.playAction(config.animationTrigger);
+        character?.showTool(config.tool);
 
         return new Promise<ActionResult>(resolve => {
             this.resolveCurrent = resolve;
@@ -206,7 +213,9 @@ export default class PlayerActionController extends Component {
         this.onHitCallback = undefined;
 
         this.entity.getComponent(FacingComponent)?.clearTarget();
-        this.entity.getComponent(CharacterVisualComponent)?.character.playTrigger(ACTION_DONE_TRIGGER);
+        const character = this.entity.getComponent(CharacterVisualComponent)?.character;
+        character?.stopAction();
+        character?.showTool(undefined);
 
         const resolve = this.resolveCurrent;
         this.resolveCurrent = undefined;

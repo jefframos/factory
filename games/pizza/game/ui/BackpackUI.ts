@@ -37,6 +37,7 @@ import { BackpackStorage } from '../data/BackpackStorage';
 import { ResourceType } from '../actions/ResourceTypes';
 import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
+import ViewUtils from 'core/utils/ViewUtils';
 
 export interface BackpackUiConfig {
     /** Container never shows narrower than this many slots, even with fewer (or zero) occupied — see reconcileSlotCount(). */
@@ -66,7 +67,10 @@ const SLOT_BG_ALPHA = 0.5;
 /** Vertical space reserved above the slot grid for the title text. */
 const TITLE_HEIGHT = 22;
 
-/** Icon jiggle on a gain — a quick punch-out-and-settle, not a full spin. */
+/** Gap left between the icon's edge and the slot background's edge — see occupySlot()'s ViewUtils.elementScaler() call. */
+const ICON_PADDING = 6;
+
+/** Icon jiggle on a gain — a quick punch-out-and-settle, not a full spin. Multiplies the icon's own fitted base scale (see occupySlot()), not an absolute scale — the punch settles back to that fitted size, not to 1. */
 const JIGGLE_PUNCH_SCALE = 1.3;
 const JIGGLE_PUNCH_SEC = 0.12;
 const JIGGLE_SETTLE_SEC = 0.15;
@@ -79,6 +83,8 @@ interface Slot {
     readonly container: PIXI.Container;
     readonly background: PIXI.Sprite;
     icon?: PIXI.Sprite;
+    /** The icon's fitted-to-slot scale (see occupySlot()'s ViewUtils.elementScaler() call) — playGainFeedback()'s jiggle punches out from and settles back to this, not to 1. */
+    iconBaseScale?: number;
     label?: PIXI.Text;
     resourceType?: ResourceType;
 }
@@ -249,11 +255,12 @@ export default class BackpackUI extends PIXI.Container {
 
         const icon = new PIXI.Sprite(getAssetIcon(RESOURCE_ASSET_KEYS[type]));
         icon.anchor.set(0.5);
-        icon.width = size * 0.7;
-        icon.height = size * 0.7;
         icon.position.set(size / 2, size / 2);
+        const baseScale = ViewUtils.elementScaler(icon, size - ICON_PADDING * 2);
+        icon.scale.set(baseScale);
         slot.container.addChild(icon);
         slot.icon = icon;
+        slot.iconBaseScale = baseScale;
 
         const label = new PIXI.Text('0', TextStyleRegistry.Body);
         label.anchor.set(1, 1);
@@ -270,13 +277,14 @@ export default class BackpackUI extends PIXI.Container {
 
     /** A resource was just added — icon punches out and settles, and a "+N" rises and fades above it. Purely decorative; BackpackStorage's count (already applied by the time onChange fires) is the source of truth regardless. */
     private playGainFeedback(slot: Slot, gained: number): void {
-        if (slot.icon) {
+        if (slot.icon && slot.iconBaseScale !== undefined) {
             const icon = slot.icon;
+            const baseScale = slot.iconBaseScale;
             gsap.killTweensOf(icon.scale);
-            icon.scale.set(1, 1);
+            icon.scale.set(baseScale);
             gsap.timeline()
-                .to(icon.scale, { x: JIGGLE_PUNCH_SCALE, y: JIGGLE_PUNCH_SCALE, duration: JIGGLE_PUNCH_SEC, ease: 'back.out(2)' })
-                .to(icon.scale, { x: 1, y: 1, duration: JIGGLE_SETTLE_SEC, ease: 'power1.out' });
+                .to(icon.scale, { x: baseScale * JIGGLE_PUNCH_SCALE, y: baseScale * JIGGLE_PUNCH_SCALE, duration: JIGGLE_PUNCH_SEC, ease: 'back.out(2)' })
+                .to(icon.scale, { x: baseScale, y: baseScale, duration: JIGGLE_SETTLE_SEC, ease: 'power1.out' });
         }
 
         const popup = new PIXI.Text(`+${gained}`, TextStyleRegistry.ResourceDamage);
@@ -306,6 +314,7 @@ export default class BackpackUI extends PIXI.Container {
         slot.icon?.destroy();
         slot.label?.destroy();
         slot.icon = undefined;
+        slot.iconBaseScale = undefined;
         slot.label = undefined;
         slot.resourceType = undefined;
     }

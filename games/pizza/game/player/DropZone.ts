@@ -6,10 +6,11 @@
 // reads the GLOBAL BackpackStorage (see that file's own doc — no longer a
 // per-entity component) and drains each resource type out ONE UNIT AT A
 // TIME: a flying chip per unit, staggered over time, each decrementing
-// BackpackStorage.removeOne() (and so the live BackpackUI) and popping its
-// own rising, fading "+1 Wood" — not one big "+13 Wood" up front — only
-// once it actually lands. Depositing reads as a satisfying little cascade,
-// not an instant zero-out.
+// BackpackStorage.removeOne() (and so the live BackpackUI) AND crediting
+// GlobalResourceStorage.add() (and so the live GlobalResourcesUI's base
+// stockpile) for that same unit, then popping its own rising, fading "+1
+// Wood" — not one big "+13 Wood" up front — only once it actually lands.
+// Depositing reads as a satisfying little cascade, not an instant zero-out.
 //
 // Also carries a PERMANENT "Drop Zone" nameplate via ScreenAnchorComponent
 // — the centralized 3D-point-tracking system, not anything drop-zone-
@@ -34,6 +35,7 @@ import { spawnFlyingResourceChip } from '../components/FlyingResourceEffect';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { BackpackStorage } from '../data/BackpackStorage';
+import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import MainPlayer from './MainPlayer';
 
@@ -165,6 +167,7 @@ export default class DropZone extends Entity {
             gsap.delayedCall(i * FLY_OUT_STAGGER_SEC, () => {
                 spawnFlyingResourceChip(scene, fromWorld, toWorld, color, () => {
                     BackpackStorage.removeOne(type);
+                    GlobalResourceStorage.add(type, 1);
                     this.spawnUnitPopup(label);
                     if (i === amount - 1) {
                         this.draining.delete(type);
@@ -182,6 +185,7 @@ export default class DropZone extends Entity {
         for (let i = 0; i < amount; i++) {
             gsap.delayedCall(i * FLY_OUT_STAGGER_SEC, () => {
                 BackpackStorage.removeOne(type);
+                GlobalResourceStorage.add(type, 1);
                 this.spawnUnitPopup(label);
                 if (i === amount - 1) {
                     this.draining.delete(type);
