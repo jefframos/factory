@@ -7,6 +7,9 @@
 // MainPlayer: `world.add(new ResourceNode(ResourceType.Tree, position))` is
 // the entire setup — trigger RigidBody (Layers.Resource — see
 // AutoGatherController, which listens for it) sized as the gather radius,
+// an optional SOLID RigidBody (Layers.Environment) sized by
+// ResourceConfig.solidRadius that actually blocks the player from walking
+// through (0 = none — Berries stay walk-over-able while Tree/Stone don't),
 // plus the placeholder visual.
 //
 // Implements ActionTarget (see PlayerActionController): the node holds
@@ -49,6 +52,8 @@ export default class ResourceNode extends Entity implements ActionTarget {
     public readonly resourceType: ResourceType;
 
     private rigidBody!: RigidBody;
+    /** Solid, non-trigger collider blocking the player from walking through — only created when ResourceConfig.solidRadius > 0 (see awake()). undefined for walk-over resources like Berries. */
+    private solidBody?: RigidBody;
     private visual!: BoxVisualComponent | GlbVisualComponent;
     /** Set while depleted; ticked in update() — see deplete()/respawn(). undefined means "available." */
     private respawnRemainingSec?: number;
@@ -99,6 +104,16 @@ export default class ResourceNode extends Entity implements ActionTarget {
 
         const config = RESOURCE_CONFIG[this.resourceType];
         const visualConfig = ASSET_LIBRARY[RESOURCE_ASSET_KEYS[this.resourceType]];
+
+        if (config.solidRadius > 0) {
+            const solidHalfExtents = new THREE.Vector3(config.solidRadius, config.solidRadius, config.solidRadius);
+            this.solidBody = this.addComponent(new RigidBody({
+                halfExtents: solidHalfExtents,
+                isStatic: true,
+                layer: Layers.Environment,
+                centerOffset: new THREE.Vector3(0, solidHalfExtents.y, 0),
+            }));
+        }
 
         // See AssetLibraryRegistry.ts — an empty models list (no glb yet for this asset)
         // falls back to the old flat-colored box placeholder instead.
@@ -237,14 +252,22 @@ export default class ResourceNode extends Entity implements ActionTarget {
         }
         this.visual.setVisible(false);
         this.world?.physics.unregister(this.rigidBody);
+        if (this.solidBody) {
+            this.world?.physics.unregister(this.solidBody);
+        }
     }
 
     private deplete(respawnSec: number): void {
         this.respawnRemainingSec = respawnSec;
         this.visual.setVisible(false);
         // See this file's own doc — PhysicsWorld doesn't consult RigidBody.enabled, so
-        // actually unregistering is what makes the node stop being triggerable.
+        // actually unregistering is what makes the node stop being triggerable. The solid
+        // collider (if any) comes out too — a depleted stump/rock shouldn't still block
+        // the player from walking through the now-empty spot.
         this.world?.physics.unregister(this.rigidBody);
+        if (this.solidBody) {
+            this.world?.physics.unregister(this.solidBody);
+        }
     }
 
     private respawn(): void {
@@ -254,5 +277,8 @@ export default class ResourceNode extends Entity implements ActionTarget {
         this.life = RESOURCE_CONFIG[this.resourceType].maxLife;
         this.visual.setVisible(true);
         this.world?.physics.register(this.rigidBody);
+        if (this.solidBody) {
+            this.world?.physics.register(this.solidBody);
+        }
     }
 }

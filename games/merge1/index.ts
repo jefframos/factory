@@ -1,15 +1,8 @@
-PlatformHandler.ENABLE_VIDEO_ADS = true;
-PlatformHandler.GAME_ID = 'f7cdc30e8fd14e50a3170c485f207936';
-PlatformHandler.instance.initialize(new YouTubePlayablePlatform()).then(() => {
-    new MyGame();
-
-})
-
-
 import SoundLoadManager from 'core/audio/SoundLoaderManager';
 import { Game } from 'core/Game';
 import HtmlLoader from 'core/loader/HtmlLoader';
 import { ManifestHelper } from 'core/loader/ManifestHelper';
+import { getPlatformInstance } from 'core/platforms/PlatformFactory';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { PopupManager } from 'core/popup/PopupManager';
 import { SceneManager } from 'core/scene/SceneManager';
@@ -25,7 +18,19 @@ import audioManifest from './manifests/audio.json'; // adjust path
 import fontManifest from './manifests/fonts.json'; // adjust path
 import imageManifest from './manifests/images.json'; // adjust path
 import jsonManifest from './manifests/json.json'; // adjust path
-import YouTubePlayablePlatform from 'core/platforms/YouTubePlayablePlatform';
+import platformConfig from './platforms.config.json';
+
+const platformName = import.meta.env.VITE_PLATFORM || 'youtube';
+const config = platformConfig[platformName];
+
+PlatformHandler.GAME_ID = config?.gameId || '';
+PlatformHandler.ENABLE_VIDEO_ADS = config?.enableAds ?? true;
+
+getPlatformInstance(platformName).then((plat) =>
+    PlatformHandler.instance.initialize(plat)
+).then(() => {
+    new MyGame();
+})
 
 
 export default class MyGame extends Game {
@@ -43,7 +48,7 @@ export default class MyGame extends Game {
 
         PIXI.Ticker.shared.maxFPS = 100;
 
-        this.folderPath = 'merge1';
+        this.folderPath = config?.folderPath || 'merge1';
 
         PlatformHandler.instance.platform.startLoad();
         this.stageContainer.addChild(this.gameContainer);

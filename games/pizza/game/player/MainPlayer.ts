@@ -130,10 +130,11 @@ export default class MainPlayer extends Entity {
         await character.loadMesh(modelUrl(MODELS.CharacterMedium.fullPath));
         await character.registerAnimation('idle', modelUrl(MODELS.Idle.fullPath));
         await character.registerAnimation('run', modelUrl(MODELS.Running.fullPath));
-        await character.registerAnimation('jumpUp', modelUrl(MODELS.JumpingUp.fullPath));
-        await character.registerAnimation('falling', modelUrl(MODELS.FallingIdle.fullPath));
-        await character.registerAnimation('landing', modelUrl(MODELS.Landing.fullPath));
-        await character.registerAnimation('roll', modelUrl(MODELS.Roll.fullPath));
+        await character.registerAnimation('pick', modelUrl(MODELS.PickFruit.fullPath));
+        // await character.registerAnimation('jumpUp', modelUrl(MODELS.JumpingUp.fullPath));
+        // await character.registerAnimation('falling', modelUrl(MODELS.FallingIdle.fullPath));
+        // await character.registerAnimation('landing', modelUrl(MODELS.Landing.fullPath));
+        // await character.registerAnimation('roll', modelUrl(MODELS.Roll.fullPath));
         // Ids here MUST match ACTION_CONFIG's animationTrigger values ('chop'/'mine') — that's
         // also the animator-board STATE name (see CharacterBody.setUp()'s per-action transitions).
         await character.registerAnimation('chop', modelUrl(MODELS.StandingMeleeAttackDownwardCHOP.fullPath));

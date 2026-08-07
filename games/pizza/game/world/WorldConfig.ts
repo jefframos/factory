@@ -54,13 +54,16 @@ function mulberry32(seed: number): () => number {
     };
 }
 
-/** Scatters `count` resource nodes uniformly across a [-halfExtent, halfExtent] square, picking Tree/Stone with even odds — same seed always yields the same layout. */
+/** Every ResourceType procedural spawning picks evenly between — see generateProceduralResourceSpawns(). */
+const PROCEDURAL_RESOURCE_TYPES = [ResourceType.Tree, ResourceType.Stone, ResourceType.Berries];
+
+/** Scatters `count` resource nodes uniformly across a [-halfExtent, halfExtent] square, picking evenly among PROCEDURAL_RESOURCE_TYPES — same seed always yields the same layout. */
 export function generateProceduralResourceSpawns(seed: number, count: number, halfExtent: number): ResourceSpawnDef[] {
     const random = mulberry32(seed);
     const spawns: ResourceSpawnDef[] = [];
 
     for (let i = 0; i < count; i++) {
-        const resourceType = random() < 0.5 ? ResourceType.Tree : ResourceType.Stone;
+        const resourceType = PROCEDURAL_RESOURCE_TYPES[Math.floor(random() * PROCEDURAL_RESOURCE_TYPES.length)];
         const x = (random() * 2 - 1) * halfExtent;
         const z = (random() * 2 - 1) * halfExtent;
         spawns.push({ id: `${resourceType}-${i}`, resourceType, position: new THREE.Vector3(x, 0, z) });

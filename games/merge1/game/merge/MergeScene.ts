@@ -253,7 +253,18 @@ export default class MergeScene extends GameScene {
     private setupPopups(): void {
         PopupManager.instance.onPopupEnd.add(this._onPopupEnd);
         PopupManager.instance.onPopupStart.add(this._onPopupStart);
+
+        PlatformHandler.instance.onPause.add(this._onPlatformPause);
+        PlatformHandler.instance.onResume.add(this._onPlatformResume);
     }
+
+    private readonly _onPlatformPause = () => {
+        this.paused = true;
+    };
+
+    private readonly _onPlatformResume = () => {
+        this.paused = false;
+    };
 
     private readonly _onPopupEnd = (popupId: string) => {
         if (popupId === "gameOver") {
@@ -276,5 +287,8 @@ export default class MergeScene extends GameScene {
     public destroy(): void {
         PopupManager.instance.onPopupEnd.remove(this._onPopupEnd);
         PopupManager.instance.onPopupStart.remove(this._onPopupStart);
+
+        PlatformHandler.instance.onPause.remove(this._onPlatformPause);
+        PlatformHandler.instance.onResume.remove(this._onPlatformResume);
     }
 }

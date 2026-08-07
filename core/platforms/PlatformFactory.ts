@@ -24,6 +24,10 @@ export async function getPlatformInstance(name: string): Promise<IPlatformConnec
             const module = await import('./GamePixPlatform');
             return new module.default();
         }
+        case 'youtube': {
+            const module = await import('./YouTubePlayablePlatform');
+            return new module.default();
+        }
         default: {
             const module = await import('./PokiPlatform');
             return new module.default();

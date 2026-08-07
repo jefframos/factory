@@ -21,6 +21,8 @@
 export enum ActionType {
     Chop = 'chop',
     Mine = 'mine',
+    /** Bare-handed gathering (berries, ...) — no tool involved, so it borrows Chop's animationTrigger below rather than needing its own clip. */
+    Gather = 'gather',
 }
 
 export interface ActionConfig {
@@ -62,6 +64,7 @@ export interface ActionConfig {
 export const ACTION_CONFIG: Record<ActionType, ActionConfig> = {
     [ActionType.Chop]: { hitIntervalSec: 1, damagePerHit: 1, hitTime: 0.8, cancelOnLeaveRange: true, animationTrigger: 'chop' },
     [ActionType.Mine]: { hitIntervalSec: 1.5, damagePerHit: 1, hitTime: 0.4, cancelOnLeaveRange: true, animationTrigger: 'mine' },
+    [ActionType.Gather]: { hitIntervalSec: 2, damagePerHit: 1, hitTime: 0.6, cancelOnLeaveRange: true, animationTrigger: 'pick' },
 };
 
 /** Shared trigger every action's animation state transitions back to 'idle' on — fired by PlayerActionController when an action ends, whether it completed or was cancelled (both stop the swing). Consumed by CharacterBody.setUp()'s per-action transitions. One shared name (not per-action) since "the action just ended" means the same thing regardless of which one it was. */

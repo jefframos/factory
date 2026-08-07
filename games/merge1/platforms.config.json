@@ -33,5 +33,13 @@
         "gameId": "cg-456",
         "enableAds": true,
         "folderPath": "game4-cg"
+    },
+    "youtube": {
+        "className": "YouTubePlayablePlatform",
+        "importPath": "core/platforms/YouTubePlayablePlatform",
+        "gameId": "f7cdc30e8fd14e50a3170c485f207936",
+        "enableAds": true,
+        "folderPath": "merge1",
+        "apiScript": "https://www.youtube.com/game_api/v1"
     }
 }

@@ -1,17 +1,37 @@
 {
-    "activeFile": "",
+    "activeFile": "testMap1.tmx",
     "expandedProjectPaths": [
+        "."
     ],
     "fileStates": {
+        "": {
+            "scaleInEditor": 1
+        },
+        "testMap1.tmx": {
+            "scale": 0.8223437499999999,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 957.0207106213186,
+                "y": 230.43891316739496
+            }
+        },
+        "testMap1.tmx#resources": {
+            "scaleInDock": 1
+        },
+        "testMap1.tmx#tileset": {
+            "scaleInDock": 1
+        }
     },
     "last.exportedFilePath": "C:/Users/jfbod/Documents/Projects/projects/hyper/factory/games/pizza/raw-assets/json/map",
     "last.imagePath": "C:/Users/jfbod/Documents/Projects/projects/hyper/factory/games/pizza/tiled",
     "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
     "map.lastUsedFormat": "tmx",
     "openFiles": [
+        "testMap1.tmx"
     ],
     "project": "world.tiled-project",
     "recentFiles": [
+        "testMap1.tmx"
     ],
     "tileset.embedInMap": true
 }

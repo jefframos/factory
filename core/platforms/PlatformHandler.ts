@@ -1,3 +1,4 @@
+import { Signal } from "signals";
 import SoundManager from "core/audio/SoundManager";
 import { IPlatformConnection } from "./IPlatformConnection";
 
@@ -5,6 +6,9 @@ export default class PlatformHandler {
     public static ENABLE_VIDEO_ADS = true;
     public static GAME_ID = "YOUR_GAME_ID_HERE";
     public isGameplayActive = false;
+
+    public readonly onPause: Signal = new Signal();
+    public readonly onResume: Signal = new Signal();
 
     private static _instance: PlatformHandler;
 
@@ -32,10 +36,12 @@ export default class PlatformHandler {
 
         await this.platform?.onPause?.(() => {
             console.log("GAME PAUSED");
+            this.onPause.dispatch();
         });
 
         await this.platform?.onResume?.(() => {
             console.log("GAME RESUMED");
+            this.onResume.dispatch();
         });
 
         await this.platform?.onAudioChanged?.((enabled) => {

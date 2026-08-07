@@ -141,6 +141,8 @@ export default class CharacterBody {
         board.registerTransition('chop', 'idle', 0.25, undefined, 'actionDone');
         board.registerTransition('any', 'mine', 0.1, undefined, 'mine');
         board.registerTransition('mine', 'idle', 0.25, undefined, 'actionDone');
+        board.registerTransition('any', 'pick', 0.1, undefined, 'pick');
+        board.registerTransition('pick', 'idle', 0.25, undefined, 'actionDone');
     }
 
     /** Recolors every body mesh (excluding the head cube) to an explicit hex color — shared by both the value-palette player path and the flat-tint NPC path below. */

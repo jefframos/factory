@@ -6,32 +6,12 @@
         "enableAds": true,
         "folderPath": "car"
     },
-    "crazygames": {
-        "className": "CrazyGamesPlatform",
-        "importPath": "core/platforms/CrazyGamesPlatform",
-        "gameId": "cg-456",
+    "youtube": {
+        "className": "YouTubePlayablePlatform",
+        "importPath": "core/platforms/YouTubePlayablePlatform",
+        "gameId": "f7cdc30e8fd14e50a3170c485f207936",
         "enableAds": true,
-        "folderPath": "car-cg"
-    },
-    "crazygames-no-ads": {
-        "className": "CrazyGamesPlatform",
-        "importPath": "core/platforms/CrazyGamesPlatform",
-        "gameId": "cg-456",
-        "enableAds": false,
-        "folderPath": "car-cg"
-    },
-    "gamepix": {
-        "className": "GamePixPlatform",
-        "importPath": "core/platforms/GamePixPlatform",
-        "gameId": "cg-456",
-        "enableAds": true,
-        "folderPath": "car-cg"
-    },
-    "gamedis": {
-        "className": "GameDistributionPlatform",
-        "importPath": "core/platforms/GameDistributionPlatform",
-        "gameId": "cg-456",
-        "enableAds": true,
-        "folderPath": "car-cg"
+        "folderPath": "merge1",
+        "apiScript": "https://www.youtube.com/game_api/v1"
     }
 }

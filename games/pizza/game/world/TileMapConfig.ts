@@ -80,13 +80,14 @@ export const DEFAULT_TILE_MAP_ALIASES = {
 /**
  * Tiled tile names (map/tiles.json's resources[].name) that have a matching gameplay
  * ResourceType — see ResourceTypes.ts. A resource tile whose name isn't listed here
- * (gold, iron, coal, copper, ice_crystal, berries, cactus, mushroom, ...) is skipped by
+ * (gold, iron, coal, copper, ice_crystal, cactus, mushroom, ...) is skipped by
  * buildResourceSpawnsFromTileMap() until that ResourceType exists; nothing else needs to
  * change here when it does.
  */
 export const RESOURCE_NAME_TO_TYPE: Partial<Record<string, ResourceType>> = {
     tree: ResourceType.Tree,
     stone: ResourceType.Stone,
+    berries: ResourceType.Berries,
 };
 
 export function loadTiledMap(alias: string): TiledMapData {

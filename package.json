@@ -25,7 +25,7 @@
         "watch:font": "cross-env WATCH=true node tools/font/build-font.mjs",
         "models": "node tools/models/build-models.mjs",
         "watch:models": "cross-env WATCH=true node tools/models/build-models.mjs",
-        "all": "npm run image && npm run font && npm run audio && npm run json",
+        "all": "node tools/build-all.mjs",
         "audio": "node tools/audio/build-audio.mjs",
         "watch:audio": "cross-env WATCH=true node tools/audio/build-audio.mjs",
         "thumbs": "node tools/image/thumbs.mjs ./games/game4/raw-assets/non-preload/puzzles{copy} ./games/game4/raw-assets/images/thumbs{tps} 200x200 1",

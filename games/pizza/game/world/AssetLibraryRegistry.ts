@@ -64,6 +64,12 @@ export const ASSET_LIBRARY = {
         scale: 1,
         rotationDeg: [0, 360],
     },
+    berries: {
+        // No berry-bush model yet — add one here whenever real art exists; nothing else needs to change.
+        models: [],
+        scale: 1,
+        rotationDeg: [0, 360],
+    },
 } satisfies Record<string, AssetLibraryEntry>;
 
 export type AssetLibraryKey = keyof typeof ASSET_LIBRARY;

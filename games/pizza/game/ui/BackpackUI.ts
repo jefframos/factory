@@ -1,28 +1,32 @@
 // BackpackUI.ts
 //
 // Renders the global BackpackStorage (see games/pizza/game/data/
-// BackpackStorage.ts) as a small framed panel with a fixed grid of item
-// slots. Subscribes to BackpackStorage.onChange ONCE and updates only the
-// slot whose resource actually changed — no per-frame polling. Tracks each
-// slot's own last-seen count (see `lastCounts`) purely to tell a gain from a
-// loss on every change, since onChange itself only reports WHICH resource
-// changed, not the delta — a gain plays a "+N" popup and jiggles the icon
-// (see playGainFeedback()); a loss (draining out to a drop zone) doesn't.
+// BackpackStorage.ts) as a small framed panel with a single centered row of
+// item slots. Subscribes to BackpackStorage.onChange ONCE and updates only
+// the slot whose resource actually changed — no per-frame polling. Tracks
+// each slot's own last-seen count (see `lastCounts`) purely to tell a gain
+// from a loss on every change, since onChange itself only reports WHICH
+// resource changed, not the delta — a gain plays a "+N" popup and jiggles
+// the icon (see playGainFeedback()); a loss (draining out to a drop zone)
+// doesn't.
 //
-// Fully configurable (see BackpackUiConfig/DEFAULT_CONFIG below): slot
-// count/columns/size, which FrameRegistry entry frames the panel, the title
-// text. Change the look of the whole backpack HUD by editing one config
-// object or passing overrides into the constructor — no other code here
-// needs to change.
+// Fully configurable (see BackpackUiConfig/DEFAULT_CONFIG below): the
+// minimum slot count, slot size/gap, which FrameRegistry entry frames the
+// panel, the title text. Change the look of the whole backpack HUD by
+// editing one config object or passing overrides into the constructor — no
+// other code here needs to change.
 //
-// Slot assignment is dynamic, not fixed per resource type: the first
-// resource type gathered claims the first free slot; once that type's count
-// drops back to 0 (fully deposited), its icon + count label are torn down
-// and the slot is free again for the next distinct type gathered. With more
-// distinct ResourceTypes than slots, a newly-gathered type with no free slot
-// just has nowhere to show (see AssetLibraryRegistry.ts's icon fallback for
-// the same "not wired up yet" shape) — pizza only has 2 ResourceTypes today,
-// matching DEFAULT_CONFIG.slotCount.
+// The slot row's length is never a hard cap — it's always
+// `max(distinct resource types currently held, minVisualSlots)` (see
+// reconcileSlotCount()). The first resource type gathered claims a free
+// slot; a brand new slot is grown when every slot is occupied and one more
+// distinct type shows up (so a player with the right tool can never get
+// stuck for lack of backpack space); once a type's count drops back to 0
+// (fully deposited), its slot is torn down entirely and the row shrinks
+// back — but never below `minVisualSlots`, so the row always fills the
+// panel's full width and reads as centered rather than a lone slot hugging
+// an edge. The panel (frame background, title, panelWidth/panelHeight) is
+// resized to match every time the row changes — see layoutSlots().
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
@@ -35,20 +39,19 @@ import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 
 export interface BackpackUiConfig {
-    slotCount: number;
-    columns: number;
+    /** Container never shows narrower than this many slots, even with fewer (or zero) occupied — see reconcileSlotCount(). */
+    minVisualSlots: number;
     slotSize: number;
     slotGap: number;
     /** Which FrameRegistry entry frames the whole panel — see FrameRegistry.ts. */
     frame: FrameName;
     title: string;
-    /** Space between the panel's frame border and its contents (slots grid + title). */
+    /** Space between the panel's frame border and its contents (slots row + title). */
     padding: number;
 }
 
 const DEFAULT_CONFIG: BackpackUiConfig = {
-    slotCount: 2,
-    columns: 2,
+    minVisualSlots: 2,
     slotSize: 48,
     slotGap: 8,
     frame: 'Large',
@@ -56,7 +59,7 @@ const DEFAULT_CONFIG: BackpackUiConfig = {
     padding: 14,
 };
 
-/** Plain flat square, tinted/alpha'd in code below rather than needing a pre-darkened asset variant — see buildSlot(). */
+/** Plain flat square, tinted/alpha'd in code below rather than needing a pre-darkened asset variant — see addSlot(). */
 const SLOT_BG_TEXTURE_KEY = 'BorderFrame_Squrare_Bg';
 const SLOT_BG_TINT = 0x000000;
 const SLOT_BG_ALPHA = 0.5;
@@ -86,41 +89,35 @@ export default class BackpackUI extends PIXI.Container {
     /** Last count seen per resource type — the only way to tell a gain from a loss on onChange (see this file's own doc). */
     private readonly lastCounts = new Map<ResourceType, number>();
 
+    private frameComponent!: FrameComponent;
+    private titleText!: PIXI.Text;
+
     /**
-     * The panel's own footprint, in its local space (top-left at (0,0)) — computed once from
-     * config, not read off PIXI.Container.getLocalBounds() (which would also have to walk
-     * every slot/icon/label child every time something asks). See PizzaScene's positioning
-     * code, which needs these to anchor this panel by a corner other than top-left (e.g.
-     * bottom-center) without it drifting as slots fill in.
+     * The panel's own footprint, in its local space (top-left at (0,0)) — recomputed by
+     * layoutSlots() every time the row's slot count changes, not read off
+     * PIXI.Container.getLocalBounds() (which would also have to walk every slot/icon/label
+     * child every time something asks). See PizzaScene's positioning code, which re-reads
+     * these every frame to anchor this panel by a corner other than top-left (e.g.
+     * bottom-center) without it drifting as the row grows or shrinks.
      */
-    public readonly panelWidth: number;
-    public readonly panelHeight: number;
+    public panelWidth = 0;
+    public panelHeight = 0;
 
     public constructor(config: Partial<BackpackUiConfig> = {}) {
         super();
         this.config = { ...DEFAULT_CONFIG, ...config };
 
-        const { slotCount, columns, slotSize, slotGap, padding, frame, title } = this.config;
-        const rows = Math.ceil(slotCount / columns);
-        const gridWidth = columns * slotSize + (columns - 1) * slotGap;
-        const gridHeight = rows * slotSize + (rows - 1) * slotGap;
-        this.panelWidth = gridWidth + padding * 2;
-        this.panelHeight = gridHeight + padding * 2 + TITLE_HEIGHT;
+        const { frame, title, padding } = this.config;
 
-        this.addChild(new FrameComponent(frame, this.panelWidth, this.panelHeight));
+        this.frameComponent = new FrameComponent(frame, 0, 0);
+        this.addChild(this.frameComponent);
 
-        const titleText = new PIXI.Text(title, TextStyleRegistry.Info);
-        titleText.anchor.set(0.5, 0);
-        titleText.position.set(this.panelWidth / 2, padding * 0.5);
-        this.addChild(titleText);
+        this.titleText = new PIXI.Text(title, TextStyleRegistry.Info);
+        this.titleText.anchor.set(0.5, 0);
+        this.titleText.position.set(0, padding * 0.5);
+        this.addChild(this.titleText);
 
-        for (let i = 0; i < slotCount; i++) {
-            const col = i % columns;
-            const row = Math.floor(i / columns);
-            const x = padding + col * (slotSize + slotGap);
-            const y = padding + TITLE_HEIGHT + row * (slotSize + slotGap);
-            this.slots.push(this.buildSlot(x, y, slotSize));
-        }
+        this.reconcileSlotCount();
 
         BackpackStorage.onChange.add(this.onBackpackChanged, this);
         // Pick up whatever's already in the backpack — e.g. this panel building after
@@ -131,19 +128,79 @@ export default class BackpackUI extends PIXI.Container {
         }
     }
 
-    private buildSlot(x: number, y: number, size: number): Slot {
+    /** Appends one more (empty) slot to the row. Doesn't reposition anything by itself — see layoutSlots(). */
+    private addSlot(): Slot {
+        const { slotSize } = this.config;
+
         const container = new PIXI.Container();
-        container.position.set(x, y);
         this.addChild(container);
 
         const background = new PIXI.Sprite(PIXI.Texture.from(SLOT_BG_TEXTURE_KEY));
         background.tint = SLOT_BG_TINT;
         background.alpha = SLOT_BG_ALPHA;
-        background.width = size;
-        background.height = size;
+        background.width = slotSize;
+        background.height = slotSize;
         container.addChild(background);
 
-        return { container, background };
+        const slot: Slot = { container, background };
+        this.slots.push(slot);
+        return slot;
+    }
+
+    /** Tears a slot down entirely and drops it from the row — used only on an empty slot once the row has more than `minVisualSlots` (see reconcileSlotCount()). */
+    private removeSlot(slot: Slot): void {
+        const index = this.slots.indexOf(slot);
+        if (index !== -1) {
+            this.slots.splice(index, 1);
+        }
+        if (slot.icon) {
+            gsap.killTweensOf(slot.icon.scale);
+        }
+        slot.container.destroy({ children: true });
+    }
+
+    /**
+     * Keeps the slot row at exactly `max(occupied slot count, minVisualSlots)` —
+     * grows by adding empty slots when every slot is occupied and one more distinct
+     * resource type shows up, and shrinks back down (destroying emptied slots) once a
+     * resource is fully deposited, but never below the configured minimum. Because
+     * empty slots always pad the row out to that minimum, the row fills the panel's
+     * full width exactly — which is what keeps it visually centered rather than a
+     * lone slot hugging one edge.
+     */
+    private reconcileSlotCount(): void {
+        const occupiedCount = this.slots.filter(slot => slot.resourceType !== undefined).length;
+        const desired = Math.max(occupiedCount, this.config.minVisualSlots);
+
+        while (this.slots.length < desired) {
+            this.addSlot();
+        }
+        while (this.slots.length > desired) {
+            const freeSlot = this.findFreeSlot();
+            if (!freeSlot) {
+                break;
+            }
+            this.removeSlot(freeSlot);
+        }
+
+        this.layoutSlots();
+    }
+
+    /** Single row filling the full panel width — resizes the frame + retitles to match the current slot count. */
+    private layoutSlots(): void {
+        const { slotSize, slotGap, padding } = this.config;
+
+        const gridWidth = this.slots.length * slotSize + Math.max(0, this.slots.length - 1) * slotGap;
+        this.panelWidth = gridWidth + padding * 2;
+        this.panelHeight = slotSize + padding * 2 + TITLE_HEIGHT;
+
+        const y = padding + TITLE_HEIGHT;
+        this.slots.forEach((slot, i) => {
+            slot.container.position.set(padding + i * (slotSize + slotGap), y);
+        });
+
+        this.frameComponent.setSize(this.panelWidth, this.panelHeight);
+        this.titleText.position.x = this.panelWidth / 2;
     }
 
     private findSlot(type: ResourceType): Slot | undefined {
@@ -164,17 +221,17 @@ export default class BackpackUI extends PIXI.Container {
         if (count <= 0) {
             if (slot) {
                 this.clearSlot(slot);
+                this.reconcileSlotCount();
             }
             return;
         }
 
         if (!slot) {
-            slot = this.findFreeSlot();
-            if (!slot) {
-                // No free slot for a newly-gathered type — see this file's own doc.
-                return;
-            }
+            // No free slot for a newly-gathered type — grow the row rather than
+            // leaving it with nowhere to go (see this file's own doc).
+            slot = this.findFreeSlot() ?? this.addSlot();
             this.occupySlot(slot, type);
+            this.reconcileSlotCount();
         }
 
         this.updateSlotLabel(slot, count);
@@ -241,7 +298,7 @@ export default class BackpackUI extends PIXI.Container {
         });
     }
 
-    /** Resource type fully deposited — tear its icon/label down and free the slot for the next distinct type. */
+    /** Resource type fully deposited — tear its icon/label down. Whether the now-empty slot itself gets removed is reconcileSlotCount()'s call, made right after this by the caller. */
     private clearSlot(slot: Slot): void {
         if (slot.icon) {
             gsap.killTweensOf(slot.icon.scale);
