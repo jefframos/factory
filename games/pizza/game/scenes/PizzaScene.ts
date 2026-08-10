@@ -40,12 +40,23 @@ import BoxVisualComponent from '../components/BoxVisualComponent';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import MainPlayer from '../player/MainPlayer';
 import DropZone from '../player/DropZone';
+import BuildingZone from '../player/BuildingZone';
 import WorldManager from '../world/WorldManager';
 import BackpackUI from '../ui/BackpackUI';
 import GlobalResourcesUI from '../ui/GlobalResourcesUI';
 import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { BackpackStorage } from '../data/BackpackStorage';
+import { BuildingStorage } from '../data/BuildingStorage';
+import { BuildingId } from '../data/BuildingTypes';
+import { ResourceType } from '../actions/ResourceTypes';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
+import { CameraFocusHost, CameraFocusOptions } from '../camera/CameraFocusHost';
+import { WorldProgressionHost } from '../camera/WorldProgressionHost';
+import { wait } from '../utils/GsapUtils';
+import Gate from '../world/Gate';
+import GateManager from '../world/GateManager';
+import { GATE_CONFIG, GateId } from '../data/GateTypes';
+import { GateStorage } from '../data/GateStorage';
 
 /**
  * Camera settings data — a spherical orbit around the player instead of a
@@ -59,9 +70,9 @@ import { DevGuiManager } from 'core/utils/DevGuiManager';
  * viewport aspect ratio (narrow phones vs. wide desktops).
  */
 const CAMERA_SETTINGS = {
-    yawDeg: 0,
+    yawDeg: 35,
     pitchDeg: 35,
-    distance: 10,
+    distance: 15,
     followSpeed: 4,
 };
 
@@ -99,13 +110,20 @@ const TEST_BOX_OFFSET_Z = 4;
 /** Where the build/deposit zone sits — see setupDropZone(). Off to the side, clear of the resource nodes and the solid test box. */
 const DROP_ZONE_OFFSET = new THREE.Vector3(6, 0, -2);
 
+/** Where the test Camp building zone sits — see setupBuildingZone(). Separate spot from the drop zone so the two nameplates never overlap. */
+const BUILDING_ZONE_OFFSET = new THREE.Vector3(-6, 0, -2);
+
 /** Gap between the backpack HUD panel's bottom edge and the actual bottom of the screen — see positionBackpackUi(). */
 const BACKPACK_UI_BOTTOM_MARGIN = 16;
 
 /** Gap between the global-resources HUD panel's top/right edges and the actual top-right corner of the screen — see positionGlobalResourcesUi(). */
 const GLOBAL_RESOURCES_UI_MARGIN = 16;
 
-export default class PizzaScene extends ThreeScene {
+/** Default timing for a camera-focus event (see PizzaScene.focusCameraOn()) when a caller doesn't override — a beat quick enough not to drag out an upgrade, slow enough to actually read as travel rather than a cut. */
+const DEFAULT_FOCUS_TRAVEL_SEC = 0.8;
+const DEFAULT_FOCUS_HOLD_SEC = 1.5;
+
+export default class PizzaScene extends ThreeScene implements CameraFocusHost, WorldProgressionHost {
     /** Owns PhysicsWorld + every spawned Entity — the scene's job is just to spawn things into this and forward its own update()/fixedUpdate() calls here (see World.ts). */
     private readonly world = new World();
 
@@ -113,10 +131,14 @@ export default class PizzaScene extends ThreeScene {
     private readonly screenHost: ScreenAnchorHost = {
         worldToScreen: position => this.worldToScreen(position),
         overlayContainer: this.game.overlayContainer,
+        getViewerPosition: () => this.mainPlayer.transform.position,
     };
 
     /** Owns the ground + every resource node's position/gather/respawn state, streaming ResourceNode entities in/out by proximity to the player — see WorldManager.ts. */
     private readonly worldManager = new WorldManager(this.world, this.threeScene, this.screenHost);
+
+    /** Owns every live Gate, sequences their unlock-camera-trips off notifyBuildingLevelUp() — see GateManager.ts's own doc. */
+    private readonly gateManager = new GateManager(this.world, this);
 
     /** The player — self-contained (RigidBody, PlayerMovementController, collision events all wired up in its own awake()). See MainPlayer.ts. */
     private readonly mainPlayer: MainPlayer;
@@ -129,6 +151,27 @@ export default class PizzaScene extends ThreeScene {
 
     /** The base-stockpile HUD panel, pinned top-right — see setupGlobalResourcesUi(). Tracked so destroy() can unsubscribe it from GlobalResourceStorage.onChange. */
     private globalResourcesUi?: GlobalResourcesUI;
+
+    /**
+     * When set, fixedUpdate()'s camera follow targets THIS instead of the player — see
+     * focusCameraOn(). `null` (the normal case) means "follow the player," which is why
+     * fixedUpdate() falls back to playerPosition whenever this is unset rather than needing a
+     * separate "focusing vs following" flag.
+     */
+    private cameraFocusPoint: THREE.Vector3 | null = null;
+
+    /**
+     * The point the camera is ACTUALLY aimed/positioned at — eased toward whichever point it
+     * should currently be following (player or cameraFocusPoint), rather than snapping to
+     * whichever one that is the instant it changes. Switching cameraFocusPoint's identity is
+     * an instruction ("start heading toward the building" / "head back to the player"), not a
+     * teleport: without this intermediate target, lookAt() would still reorient the camera
+     * INSTANTLY toward the new point every time cameraFocusPoint changes, even though position
+     * itself eases smoothly via the lerp below — that mismatch (position drifting smoothly,
+     * gaze snapping) is what reads as "jumps twice." Easing this instead means both position
+     * AND gaze move together, continuously, through the whole focus/return trip.
+     */
+    private readonly smoothedFollowTarget = new THREE.Vector3();
 
     public constructor(game: Game) {
         super(game);
@@ -155,6 +198,8 @@ export default class PizzaScene extends ThreeScene {
         this.worldManager.buildGround();
         this.setupTestBox();
         this.setupDropZone();
+        this.setupBuildingZone();
+        this.setupGates();
         this.setupBackpackUi();
         this.setupGlobalResourcesUi();
         this.setupDebugGui();
@@ -176,6 +221,32 @@ export default class PizzaScene extends ThreeScene {
             () => void BackpackStorage.clearAll(),
             'Resources',
         );
+        DevGuiManager.instance.addButton(
+            'Clear Buildings',
+            () => void BuildingStorage.clearAll(),
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
+            'Clear Gates',
+            () => void GateStorage.clearAll(),
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
+            'Add 10 Of Each Resource',
+            () => {
+                for (const type of Object.values(ResourceType)) {
+                    BackpackStorage.add(type, 10);
+                }
+            },
+            'Resources',
+        );
+
+        // Live sliders bound directly to CAMERA_SETTINGS — cameraOffset()/fixedUpdate() read
+        // it every frame, so dragging these updates the camera immediately, no extra wiring.
+        DevGuiManager.instance.addProperties(CAMERA_SETTINGS, ['yawDeg'], [-180, 180], 'Camera', 'Camera');
+        DevGuiManager.instance.addProperties(CAMERA_SETTINGS, ['pitchDeg'], [0, 89], 'Camera', 'Camera');
+        DevGuiManager.instance.addProperties(CAMERA_SETTINGS, ['distance'], [2, 30], 'Camera', 'Camera');
+        DevGuiManager.instance.addProperties(CAMERA_SETTINGS, ['followSpeed'], [0.5, 20], 'Camera', 'Camera');
     }
 
     /** The task's own collision test: a static box offset from spawn along Z only — walking the player into it should stop them instead of clipping through. */
@@ -202,6 +273,40 @@ export default class PizzaScene extends ThreeScene {
     private setupDropZone(): void {
         const dropZone = this.world.add(new DropZone(DROP_ZONE_OFFSET, this.screenHost));
         this.threeScene.add(dropZone.transform);
+    }
+
+    /** Test building zone — funds Camp's upgrade ladder (see BuildingZone.ts/BuildingTypes.ts) independently of the drop zone's base-stockpile deposits. `this` is passed as BOTH CameraFocusHost and WorldProgressionHost — see BuildingZone's own doc for why the level-up-then-gate-check chain has to go through the latter rather than a second independent signal listener. */
+    private setupBuildingZone(): void {
+        const buildingZone = this.world.add(new BuildingZone(BUILDING_ZONE_OFFSET, this.screenHost, BuildingId.Camp, this, this));
+        this.threeScene.add(buildingZone.transform);
+    }
+
+    /**
+     * Spawns every gate not already unlocked from a previous session (see GateStorage.ts) and
+     * registers it with gateManager. Also catches up any gate whose requirement is ALREADY met
+     * the moment it spawns (e.g. the building it depends on was leveled up in a session before
+     * this gate existed, or before the player ever walked near it) — that case unlocks
+     * silently, with no camera trip, since there's no live "event" to dramatize; it's just
+     * this session's world catching up to state that was already true.
+     */
+    private setupGates(): void {
+        for (const id of Object.values(GateId)) {
+            if (GateStorage.isUnlocked(id)) {
+                continue;
+            }
+
+            const config = GATE_CONFIG[id];
+            const gate = this.world.add(new Gate(this.screenHost, id, config));
+            this.threeScene.add(gate.transform);
+
+            if (gate.isRequirementMet()) {
+                GateStorage.unlock(id);
+                this.world.remove(gate);
+                continue;
+            }
+
+            this.gateManager.register(gate);
+        }
     }
 
     /** The backpack HUD panel — reads the same global BackpackStorage AutoGatherController/DropZone read/write, so it needs no wiring beyond existing and sitting in the overlay (see BackpackUI.ts's own doc). Positioned every frame — see positionBackpackUi(). */
@@ -273,6 +378,10 @@ export default class PizzaScene extends ThreeScene {
 
     private positionCamera(): void {
         const playerPosition = this.mainPlayer.transform.position;
+        // Snapped, not eased — this only runs once, before the first frame, so there's nothing
+        // to ease FROM yet. Every later change to what the camera's looking at goes through
+        // fixedUpdate()'s smoothedFollowTarget lerp instead.
+        this.smoothedFollowTarget.copy(playerPosition);
         this.threeCamera.position.copy(playerPosition).add(cameraOffset(this.threeCamera));
         this.threeCamera.lookAt(playerPosition);
     }
@@ -324,9 +433,61 @@ export default class PizzaScene extends ThreeScene {
         // timers ticking — see WorldManager.update()'s own doc.
         this.worldManager.update(playerPosition, delta);
 
-        const targetPosition = playerPosition.clone().add(cameraOffset(this.threeCamera));
-        this.threeCamera.position.lerp(targetPosition, 1 - Math.exp(-CAMERA_SETTINGS.followSpeed * delta));
-        this.threeCamera.lookAt(playerPosition);
+        // Whatever the camera SHOULD end up following — the player, normally, or a
+        // focusCameraOn() target while a camera event is in progress. This is an instruction,
+        // not where the camera looks THIS frame — see smoothedFollowTarget's own doc for why
+        // that distinction matters (jumping straight to this would snap the camera's gaze
+        // instantly even though position still eased smoothly).
+        const desiredTarget = this.cameraFocusPoint ?? playerPosition;
+        const followT = 1 - Math.exp(-CAMERA_SETTINGS.followSpeed * delta);
+        this.smoothedFollowTarget.lerp(desiredTarget, followT);
+
+        const targetPosition = this.smoothedFollowTarget.clone().add(cameraOffset(this.threeCamera));
+        this.threeCamera.position.lerp(targetPosition, followT);
+        this.threeCamera.lookAt(this.smoothedFollowTarget);
+    }
+
+    /**
+     * Redirects the camera's own follow-lerp (see fixedUpdate()) from the player onto `target`
+     * for a beat, then hands it back — the general "camera visits an event" mechanism
+     * BuildingZone's level-up sequence is the first caller of (see CameraFocusHost.ts's own
+     * doc). Implemented as three plain waits rather than driving anything itself: setting
+     * cameraFocusPoint is the entire "travel" instruction, since fixedUpdate()'s existing lerp
+     * eases toward whatever this points at every step; the waits just give that lerp time to
+     * actually get there (and back) before this resolves, using the same time-based-not-
+     * distance-based convention the rest of this game's UI timing already uses (e.g.
+     * BuildingZone's LEVEL_UP_REVEAL_DELAY_SEC) rather than polling for "close enough."
+     *
+     * Also disables mainPlayer.movementController for the whole trip: the player has no
+     * camera to steer by once it's looking at the event instead of them, so moving would be
+     * blind at best (and visually wrong — the character drifting off while the camera holds
+     * on the building). Re-enabled right before this resolves, once the camera has actually
+     * finished easing back — see MainPlayer.movementController's own doc for what disabling
+     * it does/doesn't do (input keeps recording in the background, only the resulting
+     * movement stops).
+     */
+    public async focusCameraOn(target: THREE.Vector3, options: CameraFocusOptions = {}): Promise<void> {
+        const travelSec = options.travelSec ?? DEFAULT_FOCUS_TRAVEL_SEC;
+        const holdSec = options.holdSec ?? DEFAULT_FOCUS_HOLD_SEC;
+        const returnSec = options.returnSec ?? travelSec;
+
+        this.mainPlayer.movementController.enabled = false;
+
+        this.cameraFocusPoint = target.clone();
+        await wait(travelSec);
+        await wait(holdSec);
+        // Clearing this is the ENTIRE "return" instruction — fixedUpdate() falls back to
+        // playerPosition next step and the same lerp eases back toward wherever the player
+        // actually is by then, not wherever they were when the event started.
+        this.cameraFocusPoint = null;
+        await wait(returnSec);
+
+        this.mainPlayer.movementController.enabled = true;
+    }
+
+    /** WorldProgressionHost implementation — see that file's own doc for why this is the one place that checks for gate unlocks, rather than GateManager listening to BuildingStorage.onLevelUp directly. */
+    public async notifyBuildingLevelUp(buildingId: BuildingId, level: number): Promise<void> {
+        await this.gateManager.processBuildingLevelUp(buildingId, level);
     }
 
     public override update(delta: number): void {

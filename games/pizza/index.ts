@@ -20,6 +20,8 @@ import { loadIslands } from './game/world/IslandStorage';
 import { HighScoreStorage } from './game/data/HighScoreStorage';
 import { GlobalResourceStorage } from './game/data/GlobalResourceStorage';
 import { BackpackStorage } from './game/data/BackpackStorage';
+import { BuildingStorage } from './game/data/BuildingStorage';
+import { GateStorage } from './game/data/GateStorage';
 import { Localization } from './game/i18n/Localization';
 import loaderConfig from './loader.config';
 
@@ -68,6 +70,8 @@ export default class MyGame extends Game {
             await HighScoreStorage.load();
             await GlobalResourceStorage.load();
             await BackpackStorage.load();
+            await BuildingStorage.load();
+            await GateStorage.load();
             await Localization.load();
 
             // 5. Setup Game Flow

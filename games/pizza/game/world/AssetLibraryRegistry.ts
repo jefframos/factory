@@ -61,7 +61,7 @@ export const ASSET_LIBRARY = {
     },
     stone: {
         // No stone model yet — add one here whenever real art exists; nothing else needs to change.
-        models: [],
+        models: [MODELS.Props.RocksHigh, MODELS.Props.RocksLow],
         scale: 1,
         rotationDeg: [0, 360],
         icon: 'stone-chunk'

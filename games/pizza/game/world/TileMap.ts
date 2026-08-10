@@ -5,9 +5,15 @@
 // flat colored quad positioned at its cell and tinted from map/tiles.json's
 // `grounds` lookup for that gid. Purely visual paint on top of
 // WorldManager's existing ground plane/physics slab — doesn't touch
-// collision. The map's OTHER tilelayer, resourcesLayer, marks where
-// gatherable resources spawn — see TileMapConfig.buildResourceSpawnsFromTileMap(),
-// consumed by WorldManager, not this class.
+// collision itself, but build() also keeps the col/row -> TileDef lookup
+// around (see `cellDefs`) so isWalkableAt() can answer "what ground tile is
+// at this world position, and is it walkable" — and publishes that as the
+// query TileWalkability.ts exposes, so PlayerMovementController can block
+// movement onto e.g. water without depending on TileMap at all (see that
+// file's own doc for why this is a one-way, optional publish). The map's
+// OTHER tilelayer, resourcesLayer, marks where gatherable resources spawn —
+// see TileMapConfig.buildResourceSpawnsFromTileMap(), consumed by
+// WorldManager, not this class.
 
 import * as THREE from 'three';
 import { BendService } from '../services/BendService';
@@ -17,17 +23,29 @@ import {
     findLayer,
     getTilesetFirstGids,
     GROUND_LAYER_NAME,
+    isGroundWalkable,
     iterateLayerCells,
     loadTileDefs,
     loadTiledMap,
     resolveGroundDef,
+    TileDef,
     tileCellToWorldPosition,
     TILE_PAINT_Y_OFFSET,
     WORLD_UNITS_PER_TILE,
 } from './TileMapConfig';
+import { clearWalkabilityQuery, setWalkabilityQuery } from './TileWalkability';
+
+/** Key `cellDefs` is stored under — same col/row pair iterateLayerCells() yields. */
+function cellKey(col: number, row: number): string {
+    return `${col},${row}`;
+}
 
 export default class TileMap {
     private mesh?: THREE.InstancedMesh;
+    /** col/row (see `cellKey`) -> resolved ground def, kept around after build() purely so isWalkableAt()/getGroundDefAt() can answer queries without re-reading the Tiled JSON each call. Empty (not built, or the map had no groundLayer) means every query fails open — see isWalkableAt(). */
+    private readonly cellDefs = new Map<string, TileDef>();
+    /** Bound once so destroy() can hand the SAME function reference back to clearWalkabilityQuery() for its identity check. */
+    private readonly walkabilityQuery = (worldX: number, worldZ: number): boolean => this.isWalkableAt(worldX, worldZ);
 
     public constructor(
         private readonly threeScene: THREE.Scene,
@@ -81,6 +99,10 @@ export default class TileMap {
             const def = resolveGroundDef(gid, tileDefs, groundFirstGid);
             color.set(def?.color ?? FALLBACK_TILE_COLOR);
             mesh.setColorAt(instanceIndex, color);
+
+            if (def) {
+                this.cellDefs.set(cellKey(col, row), def);
+            }
         });
 
         mesh.instanceMatrix.needsUpdate = true;
@@ -90,9 +112,40 @@ export default class TileMap {
 
         this.threeScene.add(mesh);
         this.mesh = mesh;
+
+        setWalkabilityQuery(this.walkabilityQuery);
+    }
+
+    /** Inverse of TileMapConfig.tileCellToWorldPosition() — floors the world position down to the ABSOLUTE tile-grid col/row it falls inside. */
+    private worldToTileCell(worldX: number, worldZ: number): { col: number; row: number } {
+        return {
+            col: Math.floor(worldX / this.worldUnitsPerTile),
+            row: Math.floor(worldZ / this.worldUnitsPerTile),
+        };
+    }
+
+    /** The resolved ground def painted at this world position, or undefined if it's outside every painted cell (e.g. off the edge of the map) — see cellDefs' own doc. */
+    public getGroundDefAt(worldX: number, worldZ: number): TileDef | undefined {
+        const { col, row } = this.worldToTileCell(worldX, worldZ);
+        return this.cellDefs.get(cellKey(col, row));
+    }
+
+    /**
+     * Fails OPEN, not closed: a position with no painted ground cell (map not built yet,
+     * outside the painted area, or this TileMap never had a groundLayer at all) is walkable
+     * — only a cell that's both painted AND listed in NON_WALKABLE_GROUND_TILES blocks
+     * movement. That's what keeps this purely additive (see this file's class doc and
+     * TileWalkability.ts) instead of accidentally trapping the player anywhere the map
+     * doesn't cover.
+     */
+    public isWalkableAt(worldX: number, worldZ: number): boolean {
+        return isGroundWalkable(this.getGroundDefAt(worldX, worldZ)?.name);
     }
 
     public destroy(): void {
+        clearWalkabilityQuery(this.walkabilityQuery);
+        this.cellDefs.clear();
+
         if (!this.mesh) {
             return;
         }

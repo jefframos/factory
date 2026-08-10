@@ -154,6 +154,19 @@ export const RESOURCE_NAME_TO_TYPE: Partial<Record<string, ResourceType>> = {
     berries: ResourceType.Berries,
 };
 
+/**
+ * Ground tile names (map/tiles.json's grounds[].name) the player cannot walk onto — see
+ * TileMap.isWalkableAt()/TileWalkability.ts, which is the only thing that reads this. A
+ * name not listed here (including any new ground added to tiles.json later) is walkable by
+ * default, so adding a new ground tile never requires touching this list unless it should
+ * block movement.
+ */
+export const NON_WALKABLE_GROUND_TILES: ReadonlySet<string> = new Set(['water', 'lava']);
+
+export function isGroundWalkable(name: string | undefined): boolean {
+    return name === undefined || !NON_WALKABLE_GROUND_TILES.has(name);
+}
+
 export function loadTiledMap(alias: string): TiledMapData {
     return PIXI.Assets.get(alias) as TiledMapData;
 }

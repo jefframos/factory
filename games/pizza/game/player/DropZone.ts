@@ -37,6 +37,7 @@ import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
+import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import MainPlayer from './MainPlayer';
 
 /** Breathing room between the nameplate's text and its AutoFitFrame border — separate from the frame asset's OWN 9-slice padding (see FrameRegistry.ts). */
@@ -109,9 +110,23 @@ export default class DropZone extends Entity {
             new THREE.Vector3(0, HALF_EXTENTS.y, 0),
         ));
 
+        // A dedicated empty node the nameplate tracks, rather than a raw captured position —
+        // parented under this.transform so it moves with the zone for free, and gives the
+        // label a stable, independently-positionable "where does the UI render from" point.
+        const labelAnchor = new THREE.Object3D();
+        labelAnchor.position.copy(LABEL_HEIGHT_OFFSET);
+        this.transform.add(labelAnchor);
+        const labelAnchorWorldPosition = new THREE.Vector3();
+
         // No ttlSec — persistent for as long as this entity is. See ScreenAnchorComponent.ts.
-        const labelPosition = this.transform.position.clone().add(LABEL_HEIGHT_OFFSET);
-        this.addComponent(new ScreenAnchorComponent(this.screenHost, this.createLabelContent(), () => labelPosition));
+        // ZONE_LABEL_ANCHOR_OPTIONS hides/shrinks the nameplate by distance from the player —
+        // see that file's own doc.
+        this.addComponent(new ScreenAnchorComponent(
+            this.screenHost,
+            this.createLabelContent(),
+            () => labelAnchor.getWorldPosition(labelAnchorWorldPosition),
+            ZONE_LABEL_ANCHOR_OPTIONS,
+        ));
 
         rigidBody.onTriggerEnter.add(other => this.tryDeposit(other));
     }

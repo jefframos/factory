@@ -32,6 +32,7 @@ import CharacterVisualComponent from './CharacterVisualComponent';
 import AnalogInput from 'core/io/AnalogInput';
 import KeyboardInputMovement from 'core/io/KeyboardInputMovement';
 import PointerFollowInput from 'core/io/PointerFollowInput';
+import { isWalkable } from '../world/TileWalkability';
 
 /** Below this, an on-screen drag from the joystick's own center — or the gap between the pointer and the player's on-screen anchor in desktop pointer-follow mode — is ignored. */
 const POINTER_FOLLOW_DEADZONE = 8;
@@ -135,14 +136,32 @@ export default class PlayerMovementController extends Component {
         }
     }
 
-    public fixedUpdate(): void {
+    public fixedUpdate(delta: number): void {
         const rigidBody = this.entity.getComponent(RigidBody);
         const visual = this.entity.getComponent(CharacterVisualComponent);
 
         if (rigidBody) {
             const speed = this.getMoveSpeed();
-            rigidBody.velocity.x = this.moveInput.x * speed;
-            rigidBody.velocity.z = this.moveInput.y * speed;
+            let velocityX = this.moveInput.x * speed;
+            let velocityZ = this.moveInput.y * speed;
+
+            // Tile-map walkability (e.g. water/lava) is entirely optional — see
+            // TileWalkability.ts's own doc — isWalkable() is a no-op (always true) unless
+            // some TileMap has published a query, so this never affects a game with no tile
+            // map. Checked per axis, each against the CURRENT position on the other axis,
+            // so walking diagonally into a wall of non-walkable tiles slides along it
+            // instead of stopping dead — same axis-independent resolution RigidBody's own
+            // push-out uses.
+            const position = this.entity.transform.position;
+            if (velocityX !== 0 && !isWalkable(position.x + velocityX * delta, position.z)) {
+                velocityX = 0;
+            }
+            if (velocityZ !== 0 && !isWalkable(position.x, position.z + velocityZ * delta)) {
+                velocityZ = 0;
+            }
+
+            rigidBody.velocity.x = velocityX;
+            rigidBody.velocity.z = velocityZ;
         }
 
         visual?.moveInput.copy(this.moveInput);
