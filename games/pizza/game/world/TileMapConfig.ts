@@ -57,9 +57,75 @@ export interface TiledLayer {
     height?: number;
     /** Present on an INFINITE map's layer only — see TiledChunk's own doc. Use iterateLayerCells() rather than reading `data`/`chunks` directly; it handles both shapes and always yields ABSOLUTE tile-grid coordinates. */
     chunks?: TiledChunk[];
+    /** Present on an `objectgroup` layer only (layer.type === 'objectgroup') — see TiledObject's own doc and WorldObjectRegistry.ts, the one reader. */
+    objects?: TiledObject[];
     type: string;
     visible: boolean;
     name: string;
+}
+
+/** One custom property on a TiledObject, as Tiled's "Custom Properties" panel exports it — see TiledObject's own doc for why this project reads THESE instead of the object's own name/type fields. */
+export interface TiledObjectProperty {
+    name: string;
+    type: string;
+    value: string;
+}
+
+/**
+ * One placed object from an `objectgroup` layer (e.g. "mapSettings") — a rectangle Tiled's
+ * map editor lets you draw anywhere, independent of the tile grid. This project doesn't use
+ * the object's own `name`/`type` fields (both left blank in Tiled — every object exported so
+ * far has `name: ""`, `type: ""`) — instead, a "type" and "id" custom property are set per
+ * object (see TiledObjectProperty), read via getObjectProperty() below. x/y/width/height are
+ * in PIXEL space (Tiled's native unit for objects, unlike tile layers' col/row) with x/y
+ * anchored at the rectangle's TOP-LEFT corner — see objectCenterToWorldPosition() for the
+ * conversion to world XZ.
+ */
+export interface TiledObject {
+    id: number;
+    name: string;
+    type: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+    visible: boolean;
+    properties?: TiledObjectProperty[];
+}
+
+/** Reads a named custom property off a TiledObject (see its own doc) — undefined if that object has no property by this name. */
+export function getObjectProperty(obj: TiledObject, propertyName: string): string | undefined {
+    return obj.properties?.find(p => p.name === propertyName)?.value;
+}
+
+/**
+ * Converts one TiledObject's pixel-space rectangle to world units — both its center position
+ * (centered on the rectangle rather than anchored at Tiled's top-left corner) AND its
+ * width/depth footprint, same "the tile/pixel grid and the 3D world are different unit
+ * systems" conversion tileCellToWorldPosition() does for ground cells, just from pixels
+ * instead of col/row. `tileSizePx` is the tileset's pixel tile size (map/tiles.json's
+ * `tileSize`, e.g. 32) — the ratio worldUnitsPerTile/tileSizePx is what actually converts
+ * pixels to world units, for position AND size alike.
+ *
+ * Tiled is a 2D top-down editor, so a rect's `width`/`height` are both HORIZONTAL — they map
+ * to world X and Z respectively (a footprint), never to the mesh's vertical Y height. There's
+ * no third dimension in a Tiled object to derive that from — a spawner combining this with a
+ * config-driven mesh should keep that config's own height (Y) and only override X/Z from
+ * `width`/`depth` here (see PizzaScene's setupBuildingZone()/setupGates()).
+ */
+export function objectToWorldRect(
+    obj: TiledObject,
+    tileSizePx: number,
+    worldUnitsPerTile: number,
+): { x: number; z: number; width: number; depth: number } {
+    const scale = worldUnitsPerTile / tileSizePx;
+    return {
+        x: (obj.x + obj.width / 2) * scale,
+        z: (obj.y + obj.height / 2) * scale,
+        width: obj.width * scale,
+        depth: obj.height * scale,
+    };
 }
 
 export interface TiledTileset {

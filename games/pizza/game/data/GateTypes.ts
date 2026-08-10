@@ -9,7 +9,8 @@
 import { BuildingId } from './BuildingTypes';
 
 export enum GateId {
-    North = 'north',
+    /** Matches the "id" custom property on the Tiled map's "mapSettings" objectgroup layer — see WorldObjectRegistry.ts. Not "North": gate ids are just whatever's authored in Tiled, with no assumed direction/position. */
+    Gate1 = 'gate1',
 }
 
 export interface GateRequirement {
@@ -34,7 +35,7 @@ export interface GateConfig {
 }
 
 export const GATE_CONFIG: Record<GateId, GateConfig> = {
-    [GateId.North]: {
+    [GateId.Gate1]: {
         name: 'North Gate',
         position: [0, 0, -16],
         requirement: { buildingId: BuildingId.Camp, level: 2 },

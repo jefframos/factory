@@ -28,6 +28,10 @@
 
 import { ThreeScene } from 'core/scene/ThreeScene';
 import * as THREE from 'three';
+import * as PIXI from 'pixi.js';
+import gsap from 'gsap';
+import BaseButton from 'core/ui/BaseButton';
+import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 // import { DEFAULT_START_VALUE } from '../ClogConstants';
 // import { PlayerEntity } from '../entities/PlayerEntity';
 import { BendService } from '../services/BendService';
@@ -42,6 +46,7 @@ import MainPlayer from '../player/MainPlayer';
 import DropZone from '../player/DropZone';
 import BuildingZone from '../player/BuildingZone';
 import WorldManager from '../world/WorldManager';
+import WorldObjectRegistry from '../world/WorldObjectRegistry';
 import BackpackUI from '../ui/BackpackUI';
 import GlobalResourcesUI from '../ui/GlobalResourcesUI';
 import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
@@ -78,6 +83,15 @@ const CAMERA_SETTINGS = {
     followSpeed: 4,
 };
 
+/** CAMERA_SETTINGS.pitchDeg/distance the camera eases BACK to when the top-down toggle (see setupCameraToggleButton()) is switched off — captured from CAMERA_SETTINGS' own initial values so a dev-GUI tweak to the normal follow angle before ever toggling still gets restored correctly. */
+const DEFAULT_CAMERA_PITCH_DEG = CAMERA_SETTINGS.pitchDeg;
+const DEFAULT_CAMERA_DISTANCE = CAMERA_SETTINGS.distance;
+/** Straight overhead — see cameraUpVector()'s own doc for why 90 specifically used to make the camera spin. */
+const TOP_DOWN_CAMERA_PITCH_DEG = 90;
+const TOP_DOWN_CAMERA_DISTANCE = 35;
+/** How long toggling the camera mode takes to ease pitch/distance to their new values — instant would read as a jump-cut; this is a smooth top-down/follow transition instead. */
+const CAMERA_MODE_TRANSITION_SEC = 0.8;
+
 /** The game's own design resolution (see Game.DESIGN_WIDTH/HEIGHT) is the aspect ratio CAMERA_SETTINGS.distance was tuned against. Anything taller/narrower than that zooms out to show more; landscape/wider viewports keep the original distance untouched. */
 const REFERENCE_ASPECT = Game.DESIGN_WIDTH / Game.DESIGN_HEIGHT;
 
@@ -105,6 +119,35 @@ function cameraOffset(camera: THREE.PerspectiveCamera): THREE.Vector3 {
     );
 }
 
+/**
+ * The up-vector camera.lookAt() needs to stay well-defined at every pitch, including
+ * pitchDeg=90 (straight down) — see this function's own doc for why that specific case
+ * broke before this existed.
+ *
+ * lookAt() derives the camera's rotation from the view direction (target - position) AND
+ * camera.up; the two must never be parallel, or the cross product that builds the camera's
+ * "right" axis degenerates to a near-zero vector, and which way it flips is then decided by
+ * floating-point noise — invisible most of the time, but AT pitchDeg=90 the view direction
+ * IS exactly parallel to THREE's default up (0,1,0) (looking straight down = looking along
+ * -Y), so every frame's tiny position/lerp differences could flip that cross product's sign,
+ * which is exactly what looked like the camera "rotating on its own" when pitch hit 90 —
+ * lookAt() was never actually stable there in the first place, it just happened not to
+ * matter visibly until the view direction became perfectly vertical.
+ *
+ * Fix: derive `up` the same way a spherical orbit camera should — `right` depends only on
+ * yaw (always horizontal, defined for every pitch), and `up = right × forward`. This reduces
+ * to the ordinary (0,1,0) at low pitch (verified: at pitch=0 the cross product below IS
+ * (0,1,0), so this changes nothing about the camera's current working behavior) and turns
+ * into a horizontal vector at pitch=90 that still varies continuously with yaw — never
+ * parallel to `forward`, so lookAt() has a stable, unique answer at every pitch in between.
+ */
+function cameraUpVector(yawDeg: number, offset: THREE.Vector3): THREE.Vector3 {
+    const yaw = yawDeg * (Math.PI / 180);
+    const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+    const forward = offset.clone().negate().normalize();
+    return right.cross(forward).normalize();
+}
+
 /** Test obstacle: a static box offset from spawn along Z only — see setupTestBox(). Walking into it should stop the player instead of passing through. */
 const TEST_BOX_HALF_EXTENTS = new THREE.Vector3(0.5, 0.5, 0.5);
 const TEST_BOX_OFFSET_Z = 4;
@@ -120,6 +163,12 @@ const BACKPACK_UI_BOTTOM_MARGIN = 16;
 
 /** Gap between the global-resources HUD panel's top/right edges and the actual top-right corner of the screen — see positionGlobalResourcesUi(). */
 const GLOBAL_RESOURCES_UI_MARGIN = 16;
+
+/** Gap between the camera-toggle button's bottom/left edges and the actual bottom-left corner of the screen — see positionCameraToggleButton(). */
+const CAMERA_TOGGLE_BUTTON_MARGIN = 16;
+
+/** The camera-toggle button's own fixed size — shared between setupCameraToggleButton() (construction) and positionCameraToggleButton() (which needs the height to land the button's bottom edge, not its top, at the screen's bottom edge). */
+const CAMERA_TOGGLE_BUTTON_SIZE = { width: 160, height: 48 };
 
 /** Default timing for a camera-focus event (see PizzaScene.focusCameraOn()) when a caller doesn't override — a beat quick enough not to drag out an upgrade, slow enough to actually read as travel rather than a cut. */
 const DEFAULT_FOCUS_TRAVEL_SEC = 0.8;
@@ -139,6 +188,9 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     /** Owns the ground + every resource node's position/gather/respawn state, streaming ResourceNode entities in/out by proximity to the player — see WorldManager.ts. */
     private readonly worldManager = new WorldManager(this.world, this.threeScene, this.screenHost);
 
+    /** Hand-placed building/gate/etc. spawn points read from the Tiled map's "mapSettings" objectgroup layer — see WorldObjectRegistry.ts. Built once here (same loadTiledMap()/loadTileDefs() reads WorldManager's TileMap already does — no extra cost) and read by setupBuildingZone()/setupGates() below. */
+    private readonly worldObjects = new WorldObjectRegistry();
+
     /** Owns every live Gate, sequences their unlock-camera-trips off notifyBuildingLevelUp() — see GateManager.ts's own doc. */
     private readonly gateManager = new GateManager(this.world, this);
 
@@ -153,6 +205,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
     /** The base-stockpile HUD panel, pinned top-right — see setupGlobalResourcesUi(). Tracked so destroy() can unsubscribe it from GlobalResourceStorage.onChange. */
     private globalResourcesUi?: GlobalResourcesUI;
+
+    /** Bottom-left toggle between the normal follow camera and a top-down view — see setupCameraToggleButton(). */
+    private cameraToggleButton?: BaseButton;
+    /** Which mode toggleCameraMode() last switched TO — CAMERA_SETTINGS.pitchDeg/distance are tweened, not snapped, so this (not CAMERA_SETTINGS' current mid-tween value) is the source of truth for what the button should say/do next. */
+    private isTopDownCamera = false;
 
     /**
      * When set, fixedUpdate()'s camera follow targets THIS instead of the player — see
@@ -211,6 +268,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupGates();
         this.setupBackpackUi();
         this.setupGlobalResourcesUi();
+        this.setupCameraToggleButton();
         this.setupDebugGui();
         this.threeScene.add(this.mainPlayer.transform);
 
@@ -346,7 +404,12 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
     /** Test building zone — funds Camp's upgrade ladder (see BuildingZone.ts/BuildingTypes.ts) independently of the drop zone's base-stockpile deposits. `this` is passed as BOTH CameraFocusHost and WorldProgressionHost — see BuildingZone's own doc for why the level-up-then-gate-check chain has to go through the latter rather than a second independent signal listener. */
     private setupBuildingZone(): void {
-        const buildingZone = this.world.add(new BuildingZone(BUILDING_ZONE_OFFSET, this.screenHost, BuildingId.Camp, this, this));
+        // Fallback width/depth match BuildingTypes.ts's own baseMesh footprint (1x1) — only
+        // used if "camp" isn't found on the Tiled map's "mapSettings" layer at all (see
+        // WorldObjectRegistry.require()'s warning).
+        const placement = this.worldObjects.require('building', BuildingId.Camp, { x: BUILDING_ZONE_OFFSET.x, z: BUILDING_ZONE_OFFSET.z, width: 1, depth: 1 });
+        const position = new THREE.Vector3(placement.x, BUILDING_ZONE_OFFSET.y, placement.z);
+        const buildingZone = this.world.add(new BuildingZone(position, this.screenHost, BuildingId.Camp, this, this, { width: placement.width, depth: placement.depth }));
         this.threeScene.add(buildingZone.transform);
     }
 
@@ -365,7 +428,18 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             }
 
             const config = GATE_CONFIG[id];
-            const gate = this.world.add(new Gate(this.screenHost, id, config));
+            // Fallback width/depth = this gate's own configured mesh size — only used if `id`
+            // isn't found on the Tiled map's "mapSettings" layer at all (see
+            // WorldObjectRegistry.require()'s warning).
+            const placement = this.worldObjects.require('gate', id, {
+                x: config.position[0], z: config.position[2],
+                width: config.mesh.size[0], depth: config.mesh.size[2],
+            });
+            const gate = this.world.add(new Gate(this.screenHost, id, {
+                ...config,
+                position: [placement.x, config.position[1], placement.z],
+                mesh: { ...config.mesh, size: [placement.width, config.mesh.size[1], placement.depth] },
+            }));
             this.threeScene.add(gate.transform);
 
             if (gate.isRequirementMet()) {
@@ -434,6 +508,82 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     }
 
     /**
+     * Bottom-left toggle between the normal follow camera and a straight-overhead top-down
+     * view. No button texture art exists yet for pizza (BaseButton isn't used anywhere else
+     * in this game) — PIXI.Texture.WHITE + tint is the same "flat colored placeholder until
+     * real art exists" convention BuildingMeshConfig/GateMeshConfig already use for meshes,
+     * just applied to a UI button instead.
+     */
+    private setupCameraToggleButton(): void {
+        this.cameraToggleButton = new BaseButton({
+            standard: {
+                width: CAMERA_TOGGLE_BUTTON_SIZE.width, height: CAMERA_TOGGLE_BUTTON_SIZE.height,
+                texture: PIXI.Texture.WHITE, tint: 0x2255aa,
+                fontStyle: new PIXI.TextStyle(TextStyleRegistry.Body),
+                fontColor: 0xffffff,
+            },
+            over: { tint: 0x336ecb },
+            down: { tint: 0x163d7a },
+            // The callback belongs on CLICK, not STANDARD — BaseButton.setState() fires
+            // attr.callback() unconditionally whenever it transitions INTO that state (see
+            // core/ui/BaseButton.ts's setState()), and setState(STANDARD) runs on
+            // construction AND every mouse-out, not just clicks. Putting the callback there
+            // fired it on load and on every hover-away, which is exactly the "toggles by
+            // itself / fires multiple times" behavior — CLICK only fires from onMouseUp, see
+            // ItemBeltButton.ts's identical convention.
+            click: { callback: () => this.toggleCameraMode() },
+        });
+        this.cameraToggleButton.setLabel('Top-Down View');
+        this.game.overlayContainer.addChild(this.cameraToggleButton);
+        this.positionCameraToggleButton();
+    }
+
+    /**
+     * Bottom-left, regardless of viewport size/aspect — same screen.bottomLeft-in-overlay-
+     * local-space reasoning as positionBackpackUi(). BaseButton's anchor param only affects
+     * its INTERNAL pivot (see updateTexturePosition() — it sets both `pivot` and `x`/`y` to
+     * the same offset, which cancel out to the same rendered rect regardless of anchor), so
+     * this container's origin is always the button's own TOP-LEFT corner — same as
+     * BackpackUI, which is why this subtracts the full height, not just a margin, to land
+     * the button's BOTTOM edge (not its top) at the screen's bottom edge.
+     */
+    private positionCameraToggleButton(): void {
+        if (!this.cameraToggleButton) {
+            return;
+        }
+
+        const screen = Game.overlayScreenData;
+        if (!screen) {
+            return;
+        }
+
+        this.cameraToggleButton.position.set(
+            screen.bottomLeft.x + CAMERA_TOGGLE_BUTTON_MARGIN,
+            screen.bottomLeft.y - CAMERA_TOGGLE_BUTTON_SIZE.height - CAMERA_TOGGLE_BUTTON_MARGIN,
+        );
+    }
+
+    /**
+     * Eases CAMERA_SETTINGS.pitchDeg/distance toward the top-down values (or back to
+     * DEFAULT_CAMERA_PITCH_DEG/DISTANCE) over CAMERA_MODE_TRANSITION_SEC — fixedUpdate()'s
+     * existing follow logic reads CAMERA_SETTINGS fresh every step, so tweening the settings
+     * object itself is all this needs to do; there's no separate "camera mode" state for the
+     * follow logic to branch on.
+     */
+    private toggleCameraMode(): void {
+        this.isTopDownCamera = !this.isTopDownCamera;
+        this.cameraToggleButton?.setLabel(this.isTopDownCamera ? 'Follow View' : 'Top-Down View');
+
+        gsap.killTweensOf(CAMERA_SETTINGS);
+        gsap.to(CAMERA_SETTINGS, {
+            pitchDeg: this.isTopDownCamera ? TOP_DOWN_CAMERA_PITCH_DEG : DEFAULT_CAMERA_PITCH_DEG,
+            distance: this.isTopDownCamera ? TOP_DOWN_CAMERA_DISTANCE : DEFAULT_CAMERA_DISTANCE,
+            duration: CAMERA_MODE_TRANSITION_SEC,
+            ease: 'power2.inOut',
+        });
+    }
+
+    /**
      * Shows a spinner while MainPlayer.loadCharacter() does its thing (FBX mesh +
      * animation clips) — purely cosmetic UI orchestration; the player itself never
      * waits on this (see this file's own doc, and MainPlayer.loadCharacter()'s).
@@ -451,7 +601,9 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // to ease FROM yet. Every later change to what the camera's looking at goes through
         // fixedUpdate()'s smoothedFollowTarget lerp instead.
         this.smoothedFollowTarget.copy(playerPosition);
-        this.threeCamera.position.copy(playerPosition).add(cameraOffset(this.threeCamera));
+        const offset = cameraOffset(this.threeCamera);
+        this.threeCamera.up.copy(cameraUpVector(CAMERA_SETTINGS.yawDeg, offset));
+        this.threeCamera.position.copy(playerPosition).add(offset);
         this.threeCamera.lookAt(playerPosition);
     }
 
@@ -511,7 +663,9 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         const followT = 1 - Math.exp(-CAMERA_SETTINGS.followSpeed * delta);
         this.smoothedFollowTarget.lerp(desiredTarget, followT);
 
-        const targetPosition = this.smoothedFollowTarget.clone().add(cameraOffset(this.threeCamera));
+        const offset = cameraOffset(this.threeCamera);
+        this.threeCamera.up.copy(cameraUpVector(CAMERA_SETTINGS.yawDeg, offset));
+        const targetPosition = this.smoothedFollowTarget.clone().add(offset);
         this.threeCamera.position.lerp(targetPosition, followT);
         this.threeCamera.lookAt(this.smoothedFollowTarget);
     }
@@ -567,6 +721,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.world.update(delta);
         this.positionBackpackUi();
         this.positionGlobalResourcesUi();
+        this.positionCameraToggleButton();
 
         super.update(delta);
     }

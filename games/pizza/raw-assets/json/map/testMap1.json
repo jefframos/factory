@@ -564,7 +564,7 @@
          "name":"mapSettings",
          "objects":[
                 {
-                 "height":152.666666666667,
+                 "height":160,
                  "id":1,
                  "name":"",
                  "opacity":1,
@@ -582,12 +582,12 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":232,
-                 "x":349.333333333333,
-                 "y":-273.333333333333
+                 "width":224,
+                 "x":352,
+                 "y":-288
                 }, 
                 {
-                 "height":41.3333333333334,
+                 "height":32,
                  "id":2,
                  "name":"",
                  "opacity":1,
@@ -605,9 +605,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":202.666666666667,
-                 "x":152.666666666667,
-                 "y":-486
+                 "width":192,
+                 "x":160,
+                 "y":-480
                 }],
          "opacity":1,
          "type":"objectgroup",

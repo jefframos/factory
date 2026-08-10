@@ -450,13 +450,13 @@
   </data>
  </layer>
  <objectgroup id="3" name="mapSettings">
-  <object id="1" x="349.333" y="-273.333" width="232" height="152.667">
+  <object id="1" x="352" y="-288" width="224" height="160">
    <properties>
     <property name="id" value="camp"/>
     <property name="type" value="building"/>
    </properties>
   </object>
-  <object id="2" x="152.667" y="-486" width="202.667" height="41.3333">
+  <object id="2" x="160" y="-480" width="192" height="32">
    <properties>
     <property name="id" value="gate1"/>
     <property name="type" value="gate"/>

@@ -105,28 +105,51 @@ export default class BuildingZone extends Entity {
         void this.playLevelUpSequence(level);
     };
 
+    /** Overrides BuildingMeshConfig's own width/depth (X/Z) at every level — see the constructor's `footprint` param doc. Undefined means "use whatever BuildingTypes.ts says," same as before this existed. */
+    private readonly footprint?: { width: number; depth: number };
+
     public constructor(
         position: THREE.Vector3,
         screenHost: ScreenAnchorHost,
         buildingId: BuildingId = BuildingId.Camp,
         cameraFocusHost?: CameraFocusHost,
         worldProgressionHost?: WorldProgressionHost,
+        /**
+         * Optional X/Z footprint override — from a Tiled object's rect (see
+         * WorldObjectRegistry.ts/PizzaScene.setupBuildingZone()), so the visible mesh
+         * actually matches whatever size the level designer drew in Tiled instead of always
+         * using BuildingTypes.ts's own hardcoded per-level size. Only overrides X/Z: a Tiled
+         * rect has no vertical dimension, so each level's own height (Y) still comes from
+         * BuildingMeshConfig — see createBuildingMesh().
+         */
+        footprint?: { width: number; depth: number },
     ) {
         super();
         this.screenHost = screenHost;
         this.buildingId = buildingId;
         this.cameraFocusHost = cameraFocusHost;
         this.worldProgressionHost = worldProgressionHost;
+        this.footprint = footprint;
         this.transform.position.copy(position);
     }
 
     public override awake(): void {
+        // Trigger footprint (X/Z) matches the visible mesh's own footprint when one was
+        // given (see the constructor's `footprint` param doc) — HALF_EXTENTS was a fixed
+        // "roughly building-sized" guess for every building regardless of its actual size;
+        // without this a Tiled-authored building much bigger than that guess (e.g. a 14x9
+        // footprint) would still only be enterable within the old tiny 2.5x2.5 trigger.
+        // Height (Y) is unaffected — a Tiled rect has no vertical dimension to derive it from.
+        const halfExtents = this.footprint
+            ? new THREE.Vector3(this.footprint.width / 2, HALF_EXTENTS.y, this.footprint.depth / 2)
+            : HALF_EXTENTS;
+
         const rigidBody = this.addComponent(new RigidBody({
-            halfExtents: HALF_EXTENTS,
+            halfExtents,
             isStatic: true,
             isTrigger: true,
             layer: Layers.Trigger,
-            centerOffset: new THREE.Vector3(0, HALF_EXTENTS.y, 0),
+            centerOffset: new THREE.Vector3(0, halfExtents.y, 0),
         }));
         // The zone's actual visible structure — starts at whatever level it's already at (e.g.
         // reloading a save mid-upgrade-ladder), no drop-in for this first placement (see
@@ -183,7 +206,9 @@ export default class BuildingZone extends Entity {
         const material = new THREE.MeshStandardMaterial({ color: config.color });
         BendService.applyBend(material);
 
-        const [width, height, depth] = config.size;
+        const [configWidth, height, configDepth] = config.size;
+        const width = this.footprint?.width ?? configWidth;
+        const depth = this.footprint?.depth ?? configDepth;
         const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
         const restY = height / 2;
         mesh.position.set(0, dropIn ? restY + MESH_DROP_START_HEIGHT : restY, 0);
