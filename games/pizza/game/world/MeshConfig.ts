@@ -30,12 +30,20 @@ export const ISLAND_TEXTURE_CONFIG = {
     },
 } as const;
 
-// ── Tile definitions ──────────────────────────────────────────────────────────
-// Each non-zero grid cell value maps to a TileConfig that controls how it looks.
-// Add a new entry to TILE_DEFS to create a new tile type.
+// ── Island tile definitions ────────────────────────────────────────────────────
+// Keyed by map/tiles.json's grounds[].name (see TileMapConfig.ts) — every ground
+// tile IslandMeshBuilder.ts paints as raised island geometry (i.e. every ground
+// name except 'water', which becomes the water plane instead — see
+// ISLAND_NON_LAND_TILES below) looks up its entry here. A name with no entry
+// falls back to ISLAND_DEFAULT_TILE, so a brand-new ground tile added to
+// tiles.json needs no MeshConfig change to render as flat island geometry —
+// only add an entry here to give it a distinct height/bevel.
 //
 //   height     — how tall the tile is above the floor (world units)
-//   color      — hex colour (e.g. 0x1e2d3d); ignored when texture is 'island'
+//   color      — ignored: IslandMeshBuilder colors each mesh from the tile's own
+//                map/tiles.json color instead, so there's one place tile color
+//                is registered, not two. Kept on the interface for parity with
+//                `texture: 'island'`, which paints over color entirely.
 //   opacity    — 0 transparent → 1 solid  (default: 1)
 //   roughness  — 0 glossy → 1 matte       (default: 0.9)
 //   depthBelow — how far the mesh extends below y=0 (default: height >= 2 ? 30 : 0)
@@ -54,13 +62,27 @@ export interface TileConfig {
     fadeTo?: number;    // world Y where fragment is fully transparent (at and below)
 }
 
-export const TILE_DEFS: Record<number, TileConfig> = {
-    // 1 — CELL_WALL: linear/gated mode's dungeon wall (RoomGrid.ts). Not used by Boundless.
-    1: { height: 5.5, color: 0x1e2d3d, depthBelow: 30, fadeFrom: 0, fadeTo: -10, texture: 'island' },
-    // 2 — CELL_OBSTACLE: short obstacle scattered on top of terrain (rounded corners via ClusterMeshBuilder.roundEdges)
-    2: { height: 1.0, color: 0x2a3a4a, depthBelow: 10, radius: 0.5, fadeFrom: 0, fadeTo: -5, texture: 'island' },
-    // 3 — CELL_TERRAIN: Boundless-mode island base ground — short, unlike the CELL_WALL tile above.
-    3: { height: 1.0, color: 0x2a3a4a, depthBelow: 30, radius: 0.5, fadeFrom: 0, fadeTo: -10, texture: 'island' },
+/** Ground tile names IslandMeshBuilder never meshes as land — they're left as gaps in the island geometry so the global water plane (ROOM_GEOMETRY.floor) shows through instead. */
+export const ISLAND_NON_LAND_TILES: ReadonlySet<string> = new Set(['water']);
+
+/**
+ * height: 0 — the island top sits exactly at y=0, level with the rest of pizza's world
+ * (player, buildings, drop/gate zones all assume ground level is y=0; clog's original
+ * CELL_TERRAIN height of 1.0 sat land a full unit above that and overlapped everything).
+ * ROOM_GEOMETRY.floor.elevation is set to -0.5 to match — water sits 0.5 below the island
+ * top. depthBelow/radius/fade are unchanged from clog's numbers — those only shape the
+ * (usually unseen) underside and outer bevel, not how high the top sits. Used for any
+ * ground tile name with no entry in ISLAND_TILE_DEFS below.
+ */
+export const ISLAND_DEFAULT_TILE: TileConfig = {
+    height: 0.001, color: 0x2a3a4a, depthBelow: 30, radius: 0.5, fadeFrom: 0, fadeTo: -10,
+};
+
+export const ISLAND_TILE_DEFS: Record<string, TileConfig> = {
+    // Beach — lower and rounder than the default land tile, echoing a gentle slope into the water.
+    sand: { height: 0.3, color: 0x2a3a4a, depthBelow: 30, radius: 0.6, fadeFrom: 0, fadeTo: -10 },
+    // Slightly built-up, sharper-edged than the surrounding land.
+    lava: { height: 0.45, color: 0x2a3a4a, depthBelow: 30, radius: 0.2, opacity: 0.95, fadeFrom: 0, fadeTo: -10 },
 };
 
 // ── Room geometry & material config ──────────────────────────────────────────
@@ -77,7 +99,9 @@ export const ROOM_GEOMETRY = {
         roughness: 0.8,
         opacity: 0.8,
         shader: 'water' as FloorShader,
-        elevation: 0.45,
+        // 0.5 below ISLAND_DEFAULT_TILE's height (0) — island tops sit at y=0, level with
+        // the rest of the world, and the water surface sits 0.5 below that.
+        elevation: -0.5,
     },
     // Height used when sealing the entrance gap after transition.
     walls: {

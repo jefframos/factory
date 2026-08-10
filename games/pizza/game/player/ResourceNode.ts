@@ -36,6 +36,7 @@ import { ActionTarget } from '../components/PlayerActionController';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
 import { ASSET_LIBRARY, pickRandom, resolveRange } from '../world/AssetLibraryRegistry';
+import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 
 /** Gather-radius trigger half-extents — bigger than the visual mesh itself, so the player doesn't have to walk INTO the trunk/rock to trigger gathering. */
 const TRIGGER_HALF_EXTENTS = new THREE.Vector3(1, 1, 1);
@@ -130,6 +131,53 @@ export default class ResourceNode extends Entity implements ActionTarget {
             ));
 
         this.applyInitialState();
+    }
+
+    /**
+     * Scales the visual up from nothing instead of snapping straight to full size — called
+     * by WorldManager.materialize() so a resource streaming into range doesn't visibly pop
+     * in. A GlbVisualComponent whose glb hasn't finished loading yet has no real mesh to
+     * read/animate yet (see GlbVisualComponent's own doc — its `mesh` getter throws until
+     * the load resolves, same guard onHit() uses), so this simply no-ops rather than
+     * animating a mesh that doesn't exist; the model will just snap in at full scale
+     * whenever its load happens to resolve, same as before this existed.
+     */
+    public playSpawnIn(durationSec: number = PERFORMANCE_CONFIG.resourcePopInSec): void {
+        if (this.visual instanceof GlbVisualComponent && !this.visual.isReady) {
+            return;
+        }
+        const mesh = this.visual.mesh;
+        if (durationSec <= 0) {
+            return;
+        }
+        // Capture the mesh's own already-set scale (GlbVisualComponent bakes a per-resource
+        // scale into it on load — see its awake()/load()) as the tween target BEFORE
+        // zeroing it out, rather than assuming (1,1,1).
+        const target = mesh.scale.clone();
+        mesh.scale.set(0, 0, 0);
+        gsap.to(mesh.scale, {
+            x: target.x, y: target.y, z: target.z,
+            duration: durationSec,
+            ease: 'back.out(1.7)',
+        });
+    }
+
+    /**
+     * Mirror of playSpawnIn() — scales the visual down to nothing, then calls `onComplete`
+     * (WorldManager.dematerialize() passes the actual world.remove(node) call) once the tween
+     * finishes, instead of removing the entity the instant it drifts out of UNLOAD_RADIUS.
+     */
+    public playDespawnOut(onComplete: () => void, durationSec: number = PERFORMANCE_CONFIG.resourcePopOutSec): void {
+        if (durationSec <= 0 || (this.visual instanceof GlbVisualComponent && !this.visual.isReady)) {
+            onComplete();
+            return;
+        }
+        gsap.to(this.visual.mesh.scale, {
+            x: 0, y: 0, z: 0,
+            duration: durationSec,
+            ease: 'power2.in',
+            onComplete,
+        });
     }
 
     public override update(delta: number): void {

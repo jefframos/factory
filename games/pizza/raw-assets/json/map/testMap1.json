@@ -557,9 +557,66 @@
          "width":64,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":3,
+         "name":"mapSettings",
+         "objects":[
+                {
+                 "height":152.666666666667,
+                 "id":1,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"camp"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"building"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":232,
+                 "x":349.333333333333,
+                 "y":-273.333333333333
+                }, 
+                {
+                 "height":41.3333333333334,
+                 "id":2,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"gate1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"gate"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":202.666666666667,
+                 "x":152.666666666667,
+                 "y":-486
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":3,
- "nextobjectid":1,
+ "nextlayerid":4,
+ "nextobjectid":3,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

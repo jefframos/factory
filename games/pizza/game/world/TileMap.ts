@@ -40,10 +40,19 @@ function cellKey(col: number, row: number): string {
     return `${col},${row}`;
 }
 
+/** One resolved ground cell, as handed out by TileMap.getGroundCells() — see IslandMeshBuilder.ts, the one consumer that needs to iterate every painted cell rather than query a single point. */
+export interface GroundCell {
+    col: number;
+    row: number;
+    def: TileDef;
+}
+
 export default class TileMap {
     private mesh?: THREE.InstancedMesh;
     /** col/row (see `cellKey`) -> resolved ground def, kept around after build() purely so isWalkableAt()/getGroundDefAt() can answer queries without re-reading the Tiled JSON each call. Empty (not built, or the map had no groundLayer) means every query fails open — see isWalkableAt(). */
     private readonly cellDefs = new Map<string, TileDef>();
+    /** Same cells as `cellDefs`, kept as a flat list too — getGroundCells() hands this out so IslandMeshBuilder can flood-fill without knowing cellKey's string format. */
+    private readonly cellList: GroundCell[] = [];
     /** Bound once so destroy() can hand the SAME function reference back to clearWalkabilityQuery() for its identity check. */
     private readonly walkabilityQuery = (worldX: number, worldZ: number): boolean => this.isWalkableAt(worldX, worldZ);
 
@@ -54,10 +63,22 @@ export default class TileMap {
         private readonly worldUnitsPerTile: number = WORLD_UNITS_PER_TILE,
     ) { }
 
-    /** Reads the map + tile defs (already-loaded PIXI assets, see TileMapConfig.ts) and builds the instanced mesh for groundLayer. Call once during scene build. */
-    public build(): void {
+    /**
+     * Reads the map + tile defs (already-loaded PIXI assets, see TileMapConfig.ts) and
+     * builds the instanced mesh for groundLayer. Call once during scene build.
+     *
+     * `paintVisible = false` still builds and publishes everything (cellDefs, cellList, the
+     * walkability query) — it only hides the flat-color quad mesh itself. That's what
+     * WorldManager uses when IslandMeshBuilder is building 3D island geometry from this same
+     * TileMap: the flat paint is still there and still walkable/queryable, just not drawn
+     * under the raised island mesh, so switching back to it later is a one-line change (see
+     * WorldManager.buildGround()) rather than losing the tile map's own data.
+     */
+    public build(paintVisible = true): void {
         const map = loadTiledMap(this.mapAlias);
         const tileDefs = loadTileDefs(this.tilesAlias);
+
+        console.log(map)
 
         const layer = findLayer(map, GROUND_LAYER_NAME);
         if (!layer) {
@@ -102,6 +123,7 @@ export default class TileMap {
 
             if (def) {
                 this.cellDefs.set(cellKey(col, row), def);
+                this.cellList.push({ col, row, def });
             }
         });
 
@@ -110,6 +132,7 @@ export default class TileMap {
             mesh.instanceColor.needsUpdate = true;
         }
 
+        mesh.visible = paintVisible;
         this.threeScene.add(mesh);
         this.mesh = mesh;
 
@@ -130,6 +153,16 @@ export default class TileMap {
         return this.cellDefs.get(cellKey(col, row));
     }
 
+    /** Every painted groundLayer cell, col/row + resolved def — see IslandMeshBuilder.ts, which flood-fills this list into per-tile-name blobs. Empty before build() (or if the map had no groundLayer). */
+    public getGroundCells(): readonly GroundCell[] {
+        return this.cellList;
+    }
+
+    /** World units per tile-grid cell — IslandMeshBuilder needs this to size ClusterMeshBuilder's cells the same as the painted mesh. */
+    public getWorldUnitsPerTile(): number {
+        return this.worldUnitsPerTile;
+    }
+
     /**
      * Fails OPEN, not closed: a position with no painted ground cell (map not built yet,
      * outside the painted area, or this TileMap never had a groundLayer at all) is walkable
@@ -145,6 +178,7 @@ export default class TileMap {
     public destroy(): void {
         clearWalkabilityQuery(this.walkabilityQuery);
         this.cellDefs.clear();
+        this.cellList.length = 0;
 
         if (!this.mesh) {
             return;

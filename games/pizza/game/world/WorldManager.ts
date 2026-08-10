@@ -27,21 +27,20 @@ import * as THREE from 'three';
 import World from '../ecs/World';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
-import { FloorBuilder } from '../builders/FloorBuilder';
-import { BendService } from '../services/BendService';
 import ResourceNode from '../player/ResourceNode';
 import { RESOURCE_CONFIG } from '../actions/ResourceTypes';
 import {
-    FLOOR_SIZE,
-    FLOOR_SEGMENTS,
-    GROUND_HALF_THICKNESS,
-    LOAD_RADIUS_SQ,
-    UNLOAD_RADIUS_SQ,
-    ResourceSpawnDef,
+    FLOOR_SIZE, GROUND_HALF_THICKNESS,
+    ResourceSpawnDef
 } from './WorldConfig';
 import TileMap from './TileMap';
+import IslandMeshBuilder from './IslandMeshBuilder';
 import { buildResourceSpawnsFromTileMap, DEFAULT_TILE_MAP_ALIASES } from './TileMapConfig';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
+import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
+
+/** Flip to false to fall back to TileMap's own flat-color quad paint instead of IslandMeshBuilder's raised, rounded-corner island + water — see buildGround(). */
+const USE_ISLAND_MESH = true;
 
 interface ResourceRecord {
     readonly def: ResourceSpawnDef;
@@ -55,6 +54,8 @@ interface ResourceRecord {
 export default class WorldManager {
     private readonly records = new Map<string, ResourceRecord>();
     private readonly tileMap: TileMap;
+    /** Builds 3D island geometry + water from tileMap's parsed ground cells — see its own doc. Reassign `USE_ISLAND_MESH` below to `false` to go back to TileMap's own flat-color paint instead. */
+    private readonly islandMeshBuilder: IslandMeshBuilder;
 
     /**
      * `spawns` defaults to reading the map's resourcesLayer (see
@@ -74,18 +75,27 @@ export default class WorldManager {
             this.records.set(def.id, { def, life: RESOURCE_CONFIG[def.resourceType].maxLife });
         }
         this.tileMap = new TileMap(threeScene, tileMapAliases.map, tileMapAliases.tiles);
+        this.islandMeshBuilder = new IslandMeshBuilder(threeScene);
     }
 
-    /** Grid-textured visual plane + a matching static physics slab, top face at world Y=0 — the "one large plane, that's ok for now" ground — plus the Tiled tile map painted just above it (see TileMap.ts). Call once from the scene's build(). */
+    /**
+     * Grid-textured visual plane + a matching static physics slab, top face at world Y=0 —
+     * the "one large plane, that's ok for now" ground/collision floor — plus the Tiled tile
+     * map's data built on top of it (see TileMap.ts) and, when USE_ISLAND_MESH is on (the
+     * default), IslandMeshBuilder's raised rounded-corner island geometry + moving water
+     * plane instead of TileMap's own flat-color paint (see build()'s own doc for exactly
+     * what stays running either way — walkability, resource spawns, etc. never depend on
+     * which one is actually drawn). Call once from the scene's build().
+     */
     public buildGround(): void {
-        const material = new THREE.MeshStandardMaterial({
-            map: FloorBuilder.makeGridTexture(FLOOR_SIZE),
-            roughness: 1,
-        });
-        BendService.applyBend(material);
-        const geometry = new THREE.PlaneGeometry(FLOOR_SIZE, FLOOR_SIZE, FLOOR_SEGMENTS, FLOOR_SEGMENTS);
-        geometry.rotateX(-Math.PI / 2);
-        this.threeScene.add(new THREE.Mesh(geometry, material));
+        // const material = new THREE.MeshStandardMaterial({
+        //     map: FloorBuilder.makeGridTexture(FLOOR_SIZE),
+        //     roughness: 1,
+        // });
+        // BendService.applyBend(material);
+        // const geometry = new THREE.PlaneGeometry(FLOOR_SIZE, FLOOR_SIZE, FLOOR_SEGMENTS, FLOOR_SEGMENTS);
+        // geometry.rotateX(-Math.PI / 2);
+        // this.threeScene.add(new THREE.Mesh(geometry, material));
 
         const ground = this.world.spawn();
         ground.addComponent(new RigidBody({
@@ -96,7 +106,14 @@ export default class WorldManager {
         }));
         this.threeScene.add(ground.transform);
 
-        this.tileMap.build();
+        // paintVisible=false when the island mesh is taking over the visuals: the flat quad
+        // paint still gets built (cellDefs/cellList/walkability all still populate normally,
+        // see TileMap.build()'s own doc) — it's just not drawn under the raised island.
+        this.tileMap.build(!USE_ISLAND_MESH);
+
+        if (USE_ISLAND_MESH) {
+            this.islandMeshBuilder.build(this.tileMap);
+        }
     }
 
     /**
@@ -105,6 +122,12 @@ export default class WorldManager {
      * own doc for why that second part matters.
      */
     public update(playerPosition: THREE.Vector3, delta: number): void {
+        // Read fresh each call, not cached — PERFORMANCE_CONFIG's radii are a live dat.GUI
+        // slider target (see PerformanceConfig.ts's own doc), so a cached squared value
+        // would freeze at whatever it was on the first frame.
+        const loadRadiusSq = PERFORMANCE_CONFIG.resourceLoadRadius * PERFORMANCE_CONFIG.resourceLoadRadius;
+        const unloadRadiusSq = PERFORMANCE_CONFIG.resourceUnloadRadius * PERFORMANCE_CONFIG.resourceUnloadRadius;
+
         for (const record of this.records.values()) {
             const distanceSq = record.def.position.distanceToSquared(playerPosition);
 
@@ -114,7 +137,7 @@ export default class WorldManager {
                 record.life = record.node.remainingLife;
                 record.respawnRemainingSec = record.node.respawnRemaining;
 
-                if (distanceSq > UNLOAD_RADIUS_SQ) {
+                if (distanceSq > unloadRadiusSq) {
                     this.dematerialize(record);
                 }
                 continue;
@@ -128,7 +151,7 @@ export default class WorldManager {
                 }
             }
 
-            if (distanceSq <= LOAD_RADIUS_SQ) {
+            if (distanceSq <= loadRadiusSq) {
                 this.materialize(record);
             }
         }
@@ -143,6 +166,7 @@ export default class WorldManager {
             }
         }
         this.tileMap.destroy();
+        this.islandMeshBuilder.destroy();
     }
 
     private materialize(record: ResourceRecord): void {
@@ -150,8 +174,18 @@ export default class WorldManager {
         this.world.add(node);
         this.threeScene.add(node.transform);
         record.node = node;
+        // See RESOURCE_POP_IN_SEC's own doc (WorldConfig.ts) — scales in instead of
+        // snapping straight to full size the instant this streams into LOAD_RADIUS.
+        node.playSpawnIn();
     }
 
+    /**
+     * Clears `record.node` immediately (so update()'s streaming loop won't touch this
+     * record again — see LOAD_RADIUS_SQ's own doc on the load/unload hysteresis gap) but
+     * defers the actual world.remove() until the node's playDespawnOut() tween finishes, so
+     * it visibly shrinks away instead of vanishing the instant the player drifts past
+     * UNLOAD_RADIUS.
+     */
     private dematerialize(record: ResourceRecord): void {
         const node = record.node;
         if (!node) {
@@ -159,7 +193,7 @@ export default class WorldManager {
         }
         record.life = node.remainingLife;
         record.respawnRemainingSec = node.respawnRemaining;
-        this.world.remove(node);
         record.node = undefined;
+        node.playDespawnOut(() => this.world.remove(node));
     }
 }

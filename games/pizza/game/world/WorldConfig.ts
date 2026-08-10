@@ -14,21 +14,9 @@ export const FLOOR_SEGMENTS = 100;
 /** Thin static slab just under the visible floor plane, top face resting at world Y=0 — gives the player something to land on instead of falling forever. */
 export const GROUND_HALF_THICKNESS = 0.5;
 
-/**
- * A resource only gets a live ResourceNode (mesh + physics) once the player is within
- * this radius — see WorldManager.update(). Squared once here so the per-resource check
- * every frame is a cheap distanceToSquared() compare, no sqrt.
- */
-export const LOAD_RADIUS = 20;
-/**
- * ...and stays materialized until the player drifts out past this LARGER radius —
- * deliberately wider than LOAD_RADIUS so a resource sitting right at the boundary
- * doesn't load/unload every frame as the player jitters back and forth across one line.
- */
-export const UNLOAD_RADIUS = 28;
-
-export const LOAD_RADIUS_SQ = LOAD_RADIUS * LOAD_RADIUS;
-export const UNLOAD_RADIUS_SQ = UNLOAD_RADIUS * UNLOAD_RADIUS;
+// Resource load/unload radii + pop-in/out timing moved to PerformanceConfig.ts (a mutable,
+// dat.GUI-tweakable object — see its own doc) since they're exactly the kind of "how far/
+// how much renders" knob that file exists to collect in one adjustable place.
 
 export interface ResourceSpawnDef {
     id: string;

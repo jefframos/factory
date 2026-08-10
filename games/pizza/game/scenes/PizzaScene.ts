@@ -50,6 +50,8 @@ import { BuildingStorage } from '../data/BuildingStorage';
 import { BuildingId } from '../data/BuildingTypes';
 import { ResourceType } from '../actions/ResourceTypes';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
+import SetupThree from 'core/scene/SetupThree';
+import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 import { CameraFocusHost, CameraFocusOptions } from '../camera/CameraFocusHost';
 import { WorldProgressionHost } from '../camera/WorldProgressionHost';
 import { wait } from '../utils/GsapUtils';
@@ -183,6 +185,13 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // input host (a Pixi container with worldToScreen()) and `this.threeScene` as
         // where its eventual character mesh gets parented.
         this.mainPlayer = this.world.add(new MainPlayer(this, this.threeScene));
+
+        // ThreeScene's constructor already set a far plane (1000, plenty of headroom by
+        // default) — applying PERFORMANCE_CONFIG.cameraFar here just makes it the one place
+        // that number lives, so the "Camera Far" dev slider (see setupDebugGui()) has
+        // something real to move instead of fighting a hardcoded value in core/.
+        this.threeCamera.far = PERFORMANCE_CONFIG.cameraFar;
+        this.threeCamera.updateProjectionMatrix();
     }
 
     public build(): void {
@@ -209,8 +218,68 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         void this.loadPlayerCharacter();
     }
 
+    /**
+     * Live dat.GUI readout for renderer stats — meshCount is EVERY THREE.Mesh currently in
+     * threeScene (frustum culling never removes/re-adds objects, just skips drawing them —
+     * see THREE's Frustum.intersectsObject, which tests the mesh's own boundingSphere BEFORE
+     * BendService's vertex-shader bend displaces anything, so a mesh sitting right at the
+     * cull boundary is being culled/kept based on its UN-bent position). triangles/drawCalls
+     * come straight from SetupThree.renderer.info.render, which DOES reflect the outcome of
+     * that (possibly wrong, pre-bend) culling decision — only what actually got drawn this
+     * frame counts toward them. Comparing meshCount against drawCalls is exactly how to spot
+     * "this is being culled when it shouldn't be" vs "this is being culled correctly."
+     * dat.GUI's `.listen()` (see DevGuiManager.addReadout()) re-reads these getters every
+     * frame on its own — nothing here needs to be updated manually per frame.
+     */
+    private readonly renderStats = {
+        threeScene: this.threeScene,
+        get triangles(): number {
+            return SetupThree.renderer.info.render.triangles;
+        },
+        get drawCalls(): number {
+            return SetupThree.renderer.info.render.calls;
+        },
+        get meshCount(): number {
+            let count = 0;
+            this.threeScene.traverse(obj => {
+                if ((obj as THREE.Mesh).isMesh) {
+                    count++;
+                }
+            });
+            return count;
+        },
+    };
+
     /** Dev-only tools — no-ops entirely unless launched with ?dev (see Game.debugParams/DevGuiManager.initialize(), called once in index.ts's startGame()). */
     private setupDebugGui(): void {
+        DevGuiManager.instance.addReadout(this.renderStats, ['triangles', 'drawCalls', 'meshCount'], 'Render', 'Render');
+
+        // Camera far needs updateProjectionMatrix() on every change to actually take
+        // effect — addObjectTrigger's callback (unlike addProperties' plain owner[key]=v)
+        // is exactly the hook for that side effect.
+        DevGuiManager.instance.addObjectTrigger(
+            PERFORMANCE_CONFIG,
+            () => {
+                this.threeCamera.far = PERFORMANCE_CONFIG.cameraFar;
+                this.threeCamera.updateProjectionMatrix();
+            },
+            ['cameraFar'],
+            [100, 3000],
+            'Camera',
+            'Performance',
+        );
+        // resourceLoadRadius/UnloadRadius are read fresh every WorldManager.update() call
+        // (see PerformanceConfig.ts's own doc) — no onChange side effect needed, dragging
+        // these takes effect on the very next frame.
+        // addProperties() always renders as "<name>.<propertyKey>" (see DevGuiManager.ts) —
+        // short, DISTINCT names here on purpose, since "Resource Load Radius" and "Resource
+        // Unload Radius" both start with the same word and read as identical at a glance in
+        // dat.GUI's 200px-wide panel.
+        DevGuiManager.instance.addProperties(PERFORMANCE_CONFIG, ['resourceLoadRadius'], [5, 150], 'Load', 'Performance');
+        DevGuiManager.instance.addProperties(PERFORMANCE_CONFIG, ['resourceUnloadRadius'], [5, 160], 'Unload', 'Performance');
+        DevGuiManager.instance.addProperties(PERFORMANCE_CONFIG, ['resourcePopInSec'], [0, 1.5], 'Pop In', 'Performance');
+        DevGuiManager.instance.addProperties(PERFORMANCE_CONFIG, ['resourcePopOutSec'], [0, 1.5], 'Pop Out', 'Performance');
+
         DevGuiManager.instance.addButton(
             'Clear Global Resources',
             () => void GlobalResourceStorage.clearAll(),
