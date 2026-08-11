@@ -32,13 +32,15 @@ import { Layers } from '../physics/PhysicsConstants';
 import { BendService } from '../services/BendService';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
-import { spawnFlyingResourceChip } from '../components/FlyingResourceEffect';
+import { spawnFlyingResourceIcon } from '../components/FlyingResourceIcon';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { BuildingStorage } from '../data/BuildingStorage';
 import { BUILDING_CONFIG, BuildingId, BuildingMeshConfig, getMeshConfigForLevel } from '../data/BuildingTypes';
-import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
+import { ResourceType } from '../actions/ResourceTypes';
+import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
+import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { createResourceSlot } from '../ui/ResourceSlotVisual';
 import { CameraFocusHost } from '../camera/CameraFocusHost';
@@ -54,9 +56,9 @@ const POPUP_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 2.2, 0);
 const POPUP_RISE = 0.8;
 const POPUP_LIFETIME_SEC = 1.6;
 /** How long the panel keeps showing the just-cleared level's numbers when there's no CameraFocusHost to time the reveal off of instead — see playLevelUpSequence(). */
-const LEVEL_UP_REVEAL_DELAY_SEC = 1.8;
+const LEVEL_UP_REVEAL_DELAY_SEC = 1;
 /** How long the camera holds on the building once it arrives — see playLevelUpSequence(). Roughly matches LEVEL_UP_REVEAL_DELAY_SEC so the popup has time to read either way. */
-const CAMERA_FOCUS_HOLD_SEC = 1.6;
+const CAMERA_FOCUS_HOLD_SEC = 1;
 /** Point the camera actually looks at during the focus — roughly head-height above the zone, same idea as POPUP_HEIGHT_OFFSET but a bit lower since this is a look-target, not a popup spawn point. */
 const CAMERA_FOCUS_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2, 0);
 /** Vertical gap between the requirement slots and the title sitting above them — see refreshLabel(). */
@@ -65,7 +67,6 @@ const TITLE_SLOTS_GAP = 4;
 const REQ_SLOT_SIZE = 56;
 const REQ_SLOT_GAP = 10;
 const FLY_IN_STAGGER_SEC = 0.12;
-const DEPOSIT_LANDING_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y, 0);
 /** How far above its resting height the upgraded mesh starts before dropping in — see replaceBuildingMesh(). */
 const MESH_DROP_START_HEIGHT = 3;
 const MESH_DROP_DURATION_SEC = 0.7;
@@ -77,8 +78,14 @@ export default class BuildingZone extends Entity {
     private readonly cameraFocusHost?: CameraFocusHost;
     /** Optional — when given, notified at the very end of playLevelUpSequence() so chained world-progression checks (e.g. a gate unlocking) run AFTER this building's own camera trip is fully done, never concurrently with it. See WorldProgressionHost.ts's own doc. */
     private readonly worldProgressionHost?: WorldProgressionHost;
-    /** Resource types currently mid-drain via flyInResource()/depositInstantly() — guards a fast re-entry from double-draining the same type. */
+    /** Resource types currently mid-drain via flyInResource() — guards a second overlapping drain loop starting for the same type. */
     private readonly draining = new Set<ResourceType>();
+    /** True for as long as the player's RigidBody is inside this zone's trigger — flyInResource()'s per-unit loop checks this before every unit and stops the instant it goes false, rather than a fixed onTriggerEnter burst draining everything regardless of whether the player stuck around. */
+    private isPlayerInside = false;
+    /** The player entity currently inside this zone — undefined whenever isPlayerInside is false. Kept so flyInResource() can read the player's CURRENT backpack world position on every unit, not a stale snapshot from whenever the trigger first fired. */
+    private player?: MainPlayer;
+    /** Where deposited icons fly TO — the same anchor this zone's own requirements panel tracks (see awake()), i.e. wherever this building's UI is actually rendered on screen, not a point on the building's 3D mesh. */
+    private labelAnchor!: THREE.Object3D;
 
     private titleText!: PIXI.Text;
     /** Holds either a single horizontal row of requirement slots (see ResourceSlotVisual.ts) or a lone "MAX LEVEL" text — rebuilt wholesale by refreshLabel() rather than diffed, since it only ever has a handful of children. */
@@ -173,10 +180,12 @@ export default class BuildingZone extends Entity {
         this.refreshLabel();
 
         // A dedicated empty node the panel tracks, rather than a raw captured position —
-        // parented under this.transform so it moves with the zone for free.
-        const labelAnchor = new THREE.Object3D();
-        labelAnchor.position.copy(LABEL_HEIGHT_OFFSET);
-        this.transform.add(labelAnchor);
+        // parented under this.transform so it moves with the zone for free. Stored as a field
+        // (not just a local) since flyInResource() targets the same spot — deposited icons fly
+        // to wherever this building's own UI actually renders, not a point on its 3D mesh.
+        this.labelAnchor = new THREE.Object3D();
+        this.labelAnchor.position.copy(LABEL_HEIGHT_OFFSET);
+        this.transform.add(this.labelAnchor);
         const labelAnchorWorldPosition = new THREE.Vector3();
 
         // ZONE_LABEL_ANCHOR_OPTIONS hides/shrinks the panel by distance from the player — see
@@ -184,14 +193,22 @@ export default class BuildingZone extends Entity {
         this.addComponent(new ScreenAnchorComponent(
             this.screenHost,
             this.labelFrame,
-            () => labelAnchor.getWorldPosition(labelAnchorWorldPosition),
+            () => this.labelAnchor.getWorldPosition(labelAnchorWorldPosition),
             ZONE_LABEL_ANCHOR_OPTIONS,
         ));
 
         BuildingStorage.onProgressChanged.add(this.handleProgressChanged);
         BuildingStorage.onLevelUp.add(this.handleLevelUp);
 
+        // onTriggerStay (not just onTriggerEnter) makes this a CONTINUOUS deposit — every
+        // physics step the player is still standing here, tryDeposit() gets another chance to
+        // start draining any type that isn't already mid-drain. onTriggerExit flips
+        // isPlayerInside off, which flyInResource()'s loop checks before every single unit —
+        // see this file's own doc for why the old "fire the whole burst on enter" behavior kept
+        // draining the backpack even after the player walked away.
         rigidBody.onTriggerEnter.add(other => this.tryDeposit(other));
+        rigidBody.onTriggerStay.add(other => this.tryDeposit(other));
+        rigidBody.onTriggerExit.add(other => this.handleTriggerExit(other));
     }
 
     public override destroy(): void {
@@ -290,66 +307,71 @@ export default class BuildingZone extends Entity {
             return;
         }
 
-        const backpackWorldPosition = player.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition();
+        this.isPlayerInside = true;
+        this.player = player;
 
         for (const type of Object.keys(next.requirements) as ResourceType[]) {
-            if (this.draining.has(type)) {
-                continue;
-            }
-
-            const need = next.requirements[type] ?? 0;
-            const remaining = need - BuildingStorage.getProgress(this.buildingId, type);
-            const amount = Math.min(remaining, BackpackStorage.getCount(type));
-            if (amount <= 0) {
-                continue;
-            }
-
-            if (backpackWorldPosition) {
-                this.flyInResource(type, amount, backpackWorldPosition.clone());
-            } else {
-                this.depositInstantly(type, amount);
-            }
+            this.flyInResource(type);
         }
     }
 
-    /** Same per-unit staggered drain as DropZone.flyOutResource() — see that file's own doc — but crediting BuildingStorage.addProgress() instead of GlobalResourceStorage, and checking for a level clear after every unit lands. */
-    private flyInResource(type: ResourceType, amount: number, fromWorld: THREE.Vector3): void {
-        const scene = this.transform.parent;
-        if (!scene) {
+    /** Player's RigidBody left this zone's trigger — flyInResource()'s loop reads isPlayerInside before every unit, so clearing it here is the ENTIRE "stop depositing" instruction; nothing further needs to be cancelled explicitly. */
+    private handleTriggerExit(other: RigidBody): void {
+        if (other.entity !== this.player) {
             return;
         }
 
-        const toWorld = this.transform.position.clone().add(DEPOSIT_LANDING_OFFSET);
-        const color = RESOURCE_CONFIG[type].color;
-
-        this.draining.add(type);
-        for (let i = 0; i < amount; i++) {
-            gsap.delayedCall(i * FLY_IN_STAGGER_SEC, () => {
-                spawnFlyingResourceChip(scene, fromWorld, toWorld, color, () => {
-                    BackpackStorage.removeOne(type);
-                    BuildingStorage.addProgress(this.buildingId, type, 1);
-                    BuildingStorage.tryCompleteLevel(this.buildingId);
-                    if (i === amount - 1) {
-                        this.draining.delete(type);
-                    }
-                });
-            });
-        }
+        this.isPlayerInside = false;
+        this.player = undefined;
     }
 
-    /** No loaded backpack cube to fly chips from — see DropZone.drainInstantly()'s own doc for why this fallback exists at all. */
-    private depositInstantly(type: ResourceType, amount: number): void {
+    /**
+     * Drains `type` out of BackpackStorage one unit at a time, re-checking isPlayerInside and
+     * this building's CURRENT next-level requirement/progress before every single unit — not a
+     * fixed burst computed once at trigger time. Each unit's icon departs from wherever the
+     * player's backpack cube currently sits (read fresh every unit, since a continuously-
+     * draining player is still walking around) and arrives at this building's own labelAnchor
+     * — see this file's own doc. No-ops (and clears `draining`) the instant the player leaves,
+     * the level clears/changes, the backpack runs out, or the FBX character (and so the
+     * backpack cube) hasn't loaded yet.
+     */
+    private flyInResource(type: ResourceType): void {
+        if (this.draining.has(type)) {
+            return;
+        }
         this.draining.add(type);
-        for (let i = 0; i < amount; i++) {
-            gsap.delayedCall(i * FLY_IN_STAGGER_SEC, () => {
+
+        const icon = getAssetIcon(RESOURCE_ASSET_KEYS[type]);
+        const toWorld = new THREE.Vector3();
+
+        const step = (): void => {
+            const next = this.isPlayerInside && !BuildingStorage.isMaxLevel(this.buildingId)
+                ? BuildingStorage.getNextLevelConfig(this.buildingId)
+                : undefined;
+            const need = next?.requirements[type] ?? 0;
+            const remaining = need - BuildingStorage.getProgress(this.buildingId, type);
+
+            const fromWorld = remaining > 0 && BackpackStorage.getCount(type) > 0
+                ? this.player?.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition()
+                : undefined;
+
+            if (!fromWorld) {
+                this.draining.delete(type);
+                return;
+            }
+
+            this.labelAnchor.getWorldPosition(toWorld);
+
+            spawnFlyingResourceIcon(this.screenHost, fromWorld.clone(), toWorld.clone(), icon, () => {
                 BackpackStorage.removeOne(type);
                 BuildingStorage.addProgress(this.buildingId, type, 1);
                 BuildingStorage.tryCompleteLevel(this.buildingId);
-                if (i === amount - 1) {
-                    this.draining.delete(type);
-                }
             });
-        }
+
+            gsap.delayedCall(FLY_IN_STAGGER_SEC, step);
+        };
+
+        step();
     }
 
     /**

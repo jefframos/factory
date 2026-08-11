@@ -31,12 +31,14 @@ import { Layers } from '../physics/PhysicsConstants';
 import BoxVisualComponent from '../components/BoxVisualComponent';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
-import { spawnFlyingResourceChip } from '../components/FlyingResourceEffect';
+import { spawnFlyingResourceIcon } from '../components/FlyingResourceIcon';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
+import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
+import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import MainPlayer from './MainPlayer';
 
@@ -52,10 +54,8 @@ const POPUP_RISE = 0.8;
 const POPUP_LIFETIME_SEC = 0.9;
 /** The nameplate sits a bit above the deposit popups' own spot, so the two never overlap. */
 const LABEL_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 1.2, 0);
-/** Seconds between each unit's flying chip departing the backpack (and, in the instant-drain fallback, each unit's popup) — see flyOutResource()/drainInstantly(). */
+/** Seconds between each unit's flying icon departing the backpack — see flyOutResource(). */
 const FLY_OUT_STAGGER_SEC = 0.12;
-/** Where a deposited chip actually lands, relative to this zone's own position. */
-const DEPOSIT_LANDING_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y, 0);
 
 /** Builds the actual Pixi content for a single unit's "+1 Wood" deposit popup — plain PIXI.Text by default. Injectable (see the constructor) so DropZone's trigger/backpack-draining logic stays testable headlessly, where PIXI.Text can't construct at all (needs a real canvas/`document` — see scripts/test-gather.ts). */
 function defaultCreatePopupContent(label: string): PIXI.Container {
@@ -80,8 +80,14 @@ export default class DropZone extends Entity {
     private readonly screenHost: ScreenAnchorHost;
     private readonly createPopupContent: (label: string) => PIXI.Container;
     private readonly createLabelContent: () => PIXI.Container;
-    /** Resource types currently draining out via flyOutResource()/drainInstantly() — guards a fast re-entry from starting a second overlapping drain for the same type (see tryDeposit()). */
+    /** Resource types currently draining out via flyOutResource() — guards a second overlapping drain loop starting for the same type (see tryDeposit()). */
     private readonly draining = new Set<ResourceType>();
+    /** True for as long as the player's RigidBody is inside this zone's trigger — flyOutResource()'s per-unit loop checks this before every unit and stops the instant it goes false, rather than a fixed onTriggerEnter burst draining everything regardless of whether the player stuck around. */
+    private isPlayerInside = false;
+    /** The player entity currently inside this zone — undefined whenever isPlayerInside is false. Kept so flyOutResource() can read the player's CURRENT backpack world position on every unit, not a stale snapshot from whenever the trigger first fired. */
+    private player?: MainPlayer;
+    /** Where deposited icons fly TO — the same anchor this zone's own nameplate tracks (see awake()), i.e. wherever this zone's UI is actually rendered on screen, not a point on the zone's 3D mesh. */
+    private labelAnchor!: THREE.Object3D;
 
     public constructor(
         position: THREE.Vector3,
@@ -113,9 +119,12 @@ export default class DropZone extends Entity {
         // A dedicated empty node the nameplate tracks, rather than a raw captured position —
         // parented under this.transform so it moves with the zone for free, and gives the
         // label a stable, independently-positionable "where does the UI render from" point.
-        const labelAnchor = new THREE.Object3D();
-        labelAnchor.position.copy(LABEL_HEIGHT_OFFSET);
-        this.transform.add(labelAnchor);
+        // Stored as a field (not just a local) since flyOutResource() targets the same spot —
+        // deposited icons fly to wherever this zone's own UI actually renders, not a point on
+        // its 3D mesh.
+        this.labelAnchor = new THREE.Object3D();
+        this.labelAnchor.position.copy(LABEL_HEIGHT_OFFSET);
+        this.transform.add(this.labelAnchor);
         const labelAnchorWorldPosition = new THREE.Vector3();
 
         // No ttlSec — persistent for as long as this entity is. See ScreenAnchorComponent.ts.
@@ -124,11 +133,20 @@ export default class DropZone extends Entity {
         this.addComponent(new ScreenAnchorComponent(
             this.screenHost,
             this.createLabelContent(),
-            () => labelAnchor.getWorldPosition(labelAnchorWorldPosition),
+            () => this.labelAnchor.getWorldPosition(labelAnchorWorldPosition),
             ZONE_LABEL_ANCHOR_OPTIONS,
         ));
 
+        // onTriggerStay (not just onTriggerEnter) is what makes this a CONTINUOUS deposit —
+        // every physics step the player is still standing here, tryDeposit() gets another
+        // chance to start draining any type that isn't already mid-drain (e.g. one gathered
+        // AFTER the player arrived). onTriggerExit is the other half: it flips isPlayerInside
+        // off, which flyOutResource()'s loop checks before every single unit — see this file's
+        // own doc for why the old "fire the whole burst on enter" behavior kept draining the
+        // backpack even after the player walked away.
         rigidBody.onTriggerEnter.add(other => this.tryDeposit(other));
+        rigidBody.onTriggerStay.add(other => this.tryDeposit(other));
+        rigidBody.onTriggerExit.add(other => this.handleTriggerExit(other));
     }
 
     private tryDeposit(other: RigidBody): void {
@@ -137,83 +155,76 @@ export default class DropZone extends Entity {
             return;
         }
 
-        // The backpack cube's current world position is where every flying chip departs
-        // from — undefined until the FBX character has loaded (see
-        // CharacterVisualComponent/MainPlayer.loadCharacter()). Falling all the way back to
-        // an instant per-unit drain rather than no-op'ing means a player who reaches the drop
-        // zone before their character finishes loading still actually deposits — just
-        // without the flying-chip animation preceding each popup for that one visit.
-        const backpackWorldPosition = player.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition();
+        this.isPlayerInside = true;
+        this.player = player;
 
         for (const [type, amount] of BackpackStorage.getAll()) {
-            if (amount <= 0 || this.draining.has(type)) {
+            if (amount <= 0) {
                 continue;
             }
 
-            console.log(`[deposit] +${amount} ${RESOURCE_CONFIG[type].label}`);
-
-            if (backpackWorldPosition) {
-                this.flyOutResource(type, amount, backpackWorldPosition.clone());
-            } else {
-                this.drainInstantly(type, amount);
-            }
+            this.flyOutResource(type);
         }
     }
 
-    /**
-     * Drains `amount` units of `type` out of BackpackStorage over time — one flying chip per
-     * unit, staggered by FLY_OUT_STAGGER_SEC, each decrementing BackpackStorage and popping its
-     * own "+1 {label}" only once it actually lands (see FlyingResourceEffect's onArrive).
-     * `fromWorld` is a snapshot taken at trigger time; the ~amount*stagger-second drain window
-     * is short enough that a moving player mid-drain isn't worth re-tracking live.
-     */
-    private flyOutResource(type: ResourceType, amount: number, fromWorld: THREE.Vector3): void {
-        const scene = this.transform.parent;
-        if (!scene) {
+    /** Player's RigidBody left this zone's trigger — flyOutResource()'s loop reads isPlayerInside before every unit, so clearing it here is the ENTIRE "stop depositing" instruction; nothing further needs to be cancelled explicitly. */
+    private handleTriggerExit(other: RigidBody): void {
+        if (other.entity !== this.player) {
             return;
         }
 
-        const toWorld = this.transform.position.clone().add(DEPOSIT_LANDING_OFFSET);
-        const color = RESOURCE_CONFIG[type].color;
-        const label = RESOURCE_CONFIG[type].label;
-
-        this.draining.add(type);
-        for (let i = 0; i < amount; i++) {
-            gsap.delayedCall(i * FLY_OUT_STAGGER_SEC, () => {
-                spawnFlyingResourceChip(scene, fromWorld, toWorld, color, () => {
-                    BackpackStorage.removeOne(type);
-                    GlobalResourceStorage.add(type, 1);
-                    this.spawnUnitPopup(label);
-                    if (i === amount - 1) {
-                        this.draining.delete(type);
-                    }
-                });
-            });
-        }
+        this.isPlayerInside = false;
+        this.player = undefined;
     }
 
-    /** No loaded backpack cube to fly chips from (see tryDeposit()) — still drains + pops one unit at a time, staggered the same way, just without a chip preceding each pop. */
-    private drainInstantly(type: ResourceType, amount: number): void {
-        const label = RESOURCE_CONFIG[type].label;
-
+    /**
+     * Drains `type` out of BackpackStorage one unit at a time, re-checking isPlayerInside and
+     * BackpackStorage's CURRENT count before every single unit — not a fixed burst computed
+     * once at trigger time. Each unit's icon departs from wherever the player's backpack cube
+     * currently sits (read fresh every unit, since a continuously-draining player is still
+     * walking around) and arrives at this zone's own labelAnchor — see this file's own doc.
+     * No-ops (and clears `draining`) the instant the player leaves, the backpack empties, or
+     * the FBX character (and so the backpack cube) hasn't loaded yet.
+     */
+    private flyOutResource(type: ResourceType): void {
+        if (this.draining.has(type)) {
+            return;
+        }
         this.draining.add(type);
-        for (let i = 0; i < amount; i++) {
-            gsap.delayedCall(i * FLY_OUT_STAGGER_SEC, () => {
+
+        const icon = getAssetIcon(RESOURCE_ASSET_KEYS[type]);
+        const label = RESOURCE_CONFIG[type].label;
+        const toWorld = new THREE.Vector3();
+
+        const step = (): void => {
+            const fromWorld = this.isPlayerInside
+                ? this.player?.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition()
+                : undefined;
+
+            if (!fromWorld || BackpackStorage.getCount(type) <= 0) {
+                this.draining.delete(type);
+                return;
+            }
+
+            this.labelAnchor.getWorldPosition(toWorld);
+
+            spawnFlyingResourceIcon(this.screenHost, fromWorld.clone(), toWorld.clone(), icon, () => {
                 BackpackStorage.removeOne(type);
                 GlobalResourceStorage.add(type, 1);
                 this.spawnUnitPopup(label);
-                if (i === amount - 1) {
-                    this.draining.delete(type);
-                }
             });
-        }
+
+            gsap.delayedCall(FLY_OUT_STAGGER_SEC, step);
+        };
+
+        step();
     }
 
     /**
      * One rising, fading "+1 {label}" popup for a single deposited unit — a throwaway
      * ScreenAnchorComponent-backed entity (see that file's own doc), same rise-via-world-
      * position + gsap-alpha-fade shape as ResourceNode.showDamagePopup(). Several of these
-     * spawned FLY_OUT_STAGGER_SEC apart (see flyOutResource()/drainInstantly()) overlap in
+     * spawned FLY_OUT_STAGGER_SEC apart (see flyOutResource()) overlap in
      * TIME but not in SPACE: each starts at the same ground position but rises by
      * (elapsed / POPUP_LIFETIME_SEC) * POPUP_RISE, so an older popup is always further up
      * than a newer one started at the same spot a beat later — a little cascade instead of a

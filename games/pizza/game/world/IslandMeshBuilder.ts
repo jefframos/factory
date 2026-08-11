@@ -1,22 +1,31 @@
 // IslandMeshBuilder.ts
 //
-// Builds 3D island geometry + a water plane FROM the Tiled ground layer TileMap
-// already parsed (see TileMap.getGroundCells()) — the games/clog equivalent
+// Builds 3D island geometry + a water plane FROM the Tiled ground layers TileMap
+// already parsed (see TileMap.getGroundCellLayers()) — the games/clog equivalent
 // (BoundlessChunk.buildIslandMeshes(), see its own doc) generates its grid
 // procedurally from value-noise; this does the same flood-fill-into-blobs ->
 // ClusterMeshBuilder -> mergeGeometries pipeline, but the grid comes from
 // whatever's hand-painted in Tiled instead.
 //
-// One mesh per ground tile NAME (not per connected blob — see buildTileGroup()):
-// every blob of e.g. "sand" across the whole map merges into a single draw call,
-// same reasoning as BoundlessChunk's per-cellType merge. "water" (see
-// ISLAND_NON_LAND_TILES in MeshConfig.ts) is never meshed as land at all — those
-// cells are simply gaps in the island geometry, and the single global water
-// plane built here shows through them, exactly like clog's static floor plane
-// sitting under/around every chunk's island.
+// Runs the SAME per-layer blob-building independently for every matched
+// groundLayer-named layer (see TileMapConfig.GROUND_LAYER_NAME/findLayers()) —
+// a decorative "groundLayer2" overlay gets the exact same rounded, per-tile-
+// height treatment (ISLAND_TILE_DEFS) the base layer does, just as its own
+// separate geometry lifted GROUND_LAYER_Y_STEP higher (see build()), rather
+// than being flattened into the base layer's own blobs (which would let an
+// overlay tile punch a hole in, or reshape the rounded edge of, the base).
+//
+// One mesh per ground tile NAME PER LAYER (not per connected blob — see
+// buildTileGroup()): every blob of e.g. "sand" within one layer merges into a
+// single draw call, same reasoning as BoundlessChunk's per-cellType merge.
+// "water" (see ISLAND_NON_LAND_TILES in MeshConfig.ts) is never meshed as land
+// at all — those cells are simply gaps in the island geometry, and the single
+// global water plane built here (sized off the BASE layer only) shows through
+// them, exactly like clog's static floor plane sitting under/around every
+// chunk's island.
 //
 // Entirely optional and additive: nothing else in pizza depends on this file.
-// TileMap's existing flat-quad ground paint (TileMap.ts's own mesh) keeps
+// TileMap's existing flat-quad ground paint (TileMap.ts's own meshes) keeps
 // working whether or not a caller also builds island geometry on top of it —
 // call build() from WorldManager.buildGround() (or wherever) when ready to turn
 // it on; until then this file just sits unused, same as MeshConfig.ts's
@@ -28,6 +37,7 @@ import { ClusterMeshBuilder } from '../builders/ClusterMeshBuilder';
 import { createWaterMaterial } from '../builders/WaterMaterial';
 import { BendService } from '../services/BendService';
 import TileMap, { GroundCell } from './TileMap';
+import { GROUND_LAYER_Y_STEP } from './TileMapConfig';
 import {
     ISLAND_DEFAULT_TILE,
     ISLAND_NON_LAND_TILES,
@@ -52,35 +62,49 @@ export default class IslandMeshBuilder {
 
     public constructor(private readonly threeScene: THREE.Scene) { }
 
-    /** Reads tileMap.getGroundCells() (call after tileMap.build()) and builds one merged mesh per land tile name, plus one water plane sized to the painted area. */
+    /**
+     * Reads tileMap.getGroundCellLayers() (call after tileMap.build()) and, for EACH matched
+     * layer independently, builds one merged mesh per land tile name — lifted
+     * `layerIndex * GROUND_LAYER_Y_STEP` above the base, same offset TileMap's own flat paint
+     * uses, so a decorative overlay layer's blobs sit visibly above the base layer's rather
+     * than z-fighting/merging with them. The water plane is only ever built once, sized and
+     * colored off the BASE layer (layerIndex 0) — water is a base-terrain feature, not
+     * something an overlay decoration layer should redefine.
+     */
     public build(tileMap: TileMap): void {
-        const cells = tileMap.getGroundCells();
-        if (cells.length === 0) {
-            return;
-        }
-
+        const layers = tileMap.getGroundCellLayers();
         const worldUnitsPerTile = tileMap.getWorldUnitsPerTile();
-        const byName = new Map<string, GroundCell[]>();
-        let waterColorHex: string | undefined;
 
-        for (const cell of cells) {
-            if (ISLAND_NON_LAND_TILES.has(cell.def.name)) {
-                waterColorHex ??= cell.def.color;
-                continue;
+        layers.forEach((cells, layerIndex) => {
+            if (cells.length === 0) {
+                return;
             }
-            let bucket = byName.get(cell.def.name);
-            if (!bucket) {
-                bucket = [];
-                byName.set(cell.def.name, bucket);
+
+            const byName = new Map<string, GroundCell[]>();
+            let waterColorHex: string | undefined;
+
+            for (const cell of cells) {
+                if (ISLAND_NON_LAND_TILES.has(cell.def.name)) {
+                    waterColorHex ??= cell.def.color;
+                    continue;
+                }
+                let bucket = byName.get(cell.def.name);
+                if (!bucket) {
+                    bucket = [];
+                    byName.set(cell.def.name, bucket);
+                }
+                bucket.push(cell);
             }
-            bucket.push(cell);
-        }
 
-        for (const [name, namedCells] of byName) {
-            this.buildTileGroup(name, namedCells, worldUnitsPerTile);
-        }
+            const layerYOffset = layerIndex * GROUND_LAYER_Y_STEP;
+            for (const [name, namedCells] of byName) {
+                this.buildTileGroup(name, namedCells, worldUnitsPerTile, layerYOffset);
+            }
 
-        this.buildWater(cells, worldUnitsPerTile, waterColorHex);
+            if (layerIndex === 0) {
+                this.buildWater(cells, worldUnitsPerTile, waterColorHex);
+            }
+        });
     }
 
     /** Tears down every mesh this instance built — call from whatever owns build() (e.g. WorldManager.destroy()). */
@@ -99,8 +123,8 @@ export default class IslandMeshBuilder {
         }
     }
 
-    /** Flood-fills every connected blob of `name`'s cells, builds each blob's geometry, and merges them all into one mesh — mirrors BoundlessChunk.buildTileGroup(), minus the RoomGrid dependency (a plain col/row Set stands in for it here). */
-    private buildTileGroup(name: string, namedCells: GroundCell[], worldUnitsPerTile: number): void {
+    /** Flood-fills every connected blob of `name`'s cells, builds each blob's geometry, and merges them all into one mesh — mirrors BoundlessChunk.buildTileGroup(), minus the RoomGrid dependency (a plain col/row Set stands in for it here). `yOffset` lifts the WHOLE merged mesh (on top of each tile's own cfg.height/depthBelow) — see build()'s own doc on why an overlay layer's blobs sit above the base layer's instead of merging into them. */
+    private buildTileGroup(name: string, namedCells: GroundCell[], worldUnitsPerTile: number, yOffset: number): void {
         const cfg = resolveTileConfig(name);
         const cellSet = new Set(namedCells.map(({ col, row }) => `${col},${row}`));
         const byKey = new Map(namedCells.map(c => [`${c.col},${c.row}`, c]));
@@ -166,6 +190,7 @@ export default class IslandMeshBuilder {
         }
 
         const mesh = new THREE.Mesh(merged, material);
+        mesh.position.y = yOffset;
         mesh.frustumCulled = false;
         this.threeScene.add(mesh);
         this.meshes.push(mesh);

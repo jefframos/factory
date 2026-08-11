@@ -35,19 +35,24 @@ import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import { ActionTarget } from '../components/PlayerActionController';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
-import { ASSET_LIBRARY, pickRandom, resolveRange } from '../world/AssetLibraryRegistry';
+import { ASSET_LIBRARY, getAssetIcon, pickRandom, resolveRange } from '../world/AssetLibraryRegistry';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
+import ViewUtils from 'core/utils/ViewUtils';
 
 /** Gather-radius trigger half-extents — bigger than the visual mesh itself, so the player doesn't have to walk INTO the trunk/rock to trigger gathering. */
 const TRIGGER_HALF_EXTENTS = new THREE.Vector3(1, 1, 1);
 
 const STONE_HALF_EXTENTS = new THREE.Vector3(0.6, 0.5, 0.6);
 
-/** Where the damage popup starts, relative to the node's own position — roughly trunk/rock height. */
-const DAMAGE_POPUP_BASE_OFFSET = new THREE.Vector3(0, 2, 0);
-/** World units the popup rises over its lifetime — see showDamagePopup(). */
-const DAMAGE_POPUP_RISE = 1.2;
-const DAMAGE_POPUP_TTL_SEC = 0.9;
+/** Where the gain popup starts, relative to the node's own position — roughly trunk/rock height. */
+const GAIN_POPUP_BASE_OFFSET = new THREE.Vector3(0, 2, 0);
+/** World units the popup rises over its lifetime — see showGainPopup(). */
+const GAIN_POPUP_RISE = 1.2;
+const GAIN_POPUP_TTL_SEC = 0.9;
+/** The gain popup's icon, sized the same as BackpackUI's own slot icons feel scaled down — see showGainPopup(). */
+const GAIN_POPUP_ICON_SIZE = 28;
+/** Gap between the gain popup's icon and its "+N" text. */
+const GAIN_POPUP_ICON_GAP = 4;
 
 export default class ResourceNode extends Entity implements ActionTarget {
     public readonly resourceType: ResourceType;
@@ -60,7 +65,7 @@ export default class ResourceNode extends Entity implements ActionTarget {
     private respawnRemainingSec?: number;
     /** Remaining hit-points (see ResourceConfig.maxLife). Deliberately NOT reset when an action is cancelled — walking away mid-chop leaves the tree exactly as damaged as it was, and coming back resumes from here. Only a full harvest + respawn restores it (see respawn()). */
     private life: number;
-    /** Undefined only in contexts that never call onHit() (e.g. headless tests) — see showDamagePopup(), which no-ops without it. */
+    /** Undefined only in contexts that never call onHit() (e.g. headless tests) — see showGainPopup(), which no-ops without it. */
     private readonly screenHost?: ScreenAnchorHost;
 
     /**
@@ -223,7 +228,7 @@ export default class ResourceNode extends Entity implements ActionTarget {
         return true;
     }
 
-    /** Called when a hit lands on this resource — shake the visual and show damage text. Skips the visual feedback (but the hit itself still counts, see applyHit()) if a Tree's glb model hasn't finished loading yet — see GlbVisualComponent's own doc. */
+    /** Called when a hit lands on this resource — shake the visual and show the gain popup. Skips the visual feedback (but the hit itself still counts, see applyHit()) if a Tree's glb model hasn't finished loading yet — see GlbVisualComponent's own doc. */
     public onHit(hitData?: { damage: number }): void {
         if (this.visual instanceof GlbVisualComponent && !this.visual.isReady) {
             return;
@@ -248,47 +253,65 @@ export default class ResourceNode extends Entity implements ActionTarget {
             },
         });
 
-        // Show floating damage text
+        // Show the floating gain popup — hitData.damage just gates "did a hit actually land,"
+        // the popup's own content (resource icon + amountPerGather) doesn't depend on its value.
         if (hitData?.damage && this.world) {
-            this.showDamagePopup(hitData.damage);
+            this.showGainPopup();
         }
     }
 
     /**
      * A ScreenAnchorComponent-backed popup (see that file's own doc for the "THROWAWAY"
      * shape) instead of a 3D CanvasTexture sprite — same "PIXI element paired to a 3D point"
-     * approach DropZone's deposit popups use, so damage numbers get bend compensation and
-     * crisp screen-space text for free instead of a billboarded 3D quad. The rise/fade is
-     * still done in world space (a rising getTargetPosition(), see `progress` below) rather
-     * than animating the PIXI content's own local position directly, since
-     * ScreenAnchorComponent overwrites that every frame from the projected screen point.
+     * approach DropZone's deposit popups use, so it gets bend compensation and crisp
+     * screen-space rendering for free instead of a billboarded 3D quad. Shows the resource's
+     * own icon + "+amountPerGather" (the same icon BackpackUI/GlobalResourcesUI use — see
+     * getAssetIcon()) rather than a bare damage number, so a landed hit reads as a reward, not
+     * combat. The rise/fade is still done in world space (a rising getTargetPosition(), see
+     * `progress` below) rather than animating the PIXI content's own local position directly,
+     * since ScreenAnchorComponent overwrites that every frame from the projected screen point.
      */
-    private showDamagePopup(damage: number): void {
+    private showGainPopup(): void {
         if (!this.world || !this.screenHost) {
             return;
         }
 
-        const text = new PIXI.Text(damage.toString(), TextStyleRegistry.ResourceDamage);
-        text.anchor.set(0.5, 1);
+        const config = RESOURCE_CONFIG[this.resourceType];
 
-        const basePosition = this.position.clone().add(DAMAGE_POPUP_BASE_OFFSET);
+        const icon = new PIXI.Sprite(getAssetIcon(RESOURCE_ASSET_KEYS[this.resourceType]));
+        icon.anchor.set(0, 0.5);
+        icon.scale.set(ViewUtils.elementScaler(icon, GAIN_POPUP_ICON_SIZE));
+
+        const text = new PIXI.Text(`+${config.amountPerGather}`, TextStyleRegistry.ResourceDamage);
+        text.style.fill = '#33cc66';
+        text.anchor.set(0, 0.5);
+        text.position.set(icon.width + GAIN_POPUP_ICON_GAP, 0);
+
+        const content = new PIXI.Container();
+        content.addChild(icon, text);
+        // icon/text both anchor at their own vertical center (y=0.5) — pivoting the
+        // container to its own combined center reproduces the same "rises from a
+        // bottom-center anchor" placement the old single Text(anchor 0.5, 1) had.
+        content.pivot.set(content.width / 2, content.height / 2);
+
+        const basePosition = this.position.clone().add(GAIN_POPUP_BASE_OFFSET);
         const progress = { t: 0 };
         const risenPosition = new THREE.Vector3();
 
         const popupEntity = this.world.spawn();
         popupEntity.addComponent(new ScreenAnchorComponent(
             this.screenHost,
-            text,
-            () => risenPosition.copy(basePosition).setY(basePosition.y + progress.t * DAMAGE_POPUP_RISE),
-            { ttlSec: DAMAGE_POPUP_TTL_SEC },
+            content,
+            () => risenPosition.copy(basePosition).setY(basePosition.y + progress.t * GAIN_POPUP_RISE),
+            { ttlSec: GAIN_POPUP_TTL_SEC },
         ));
 
         gsap.to(progress, {
             t: 1,
-            duration: DAMAGE_POPUP_TTL_SEC,
+            duration: GAIN_POPUP_TTL_SEC,
             ease: 'power2.out',
             onUpdate: () => {
-                text.alpha = 1 - progress.t;
+                content.alpha = 1 - progress.t;
             },
         });
     }

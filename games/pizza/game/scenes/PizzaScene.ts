@@ -28,10 +28,7 @@
 
 import { ThreeScene } from 'core/scene/ThreeScene';
 import * as THREE from 'three';
-import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
-import BaseButton from 'core/ui/BaseButton';
-import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 // import { DEFAULT_START_VALUE } from '../ClogConstants';
 // import { PlayerEntity } from '../entities/PlayerEntity';
 import { BendService } from '../services/BendService';
@@ -47,8 +44,7 @@ import DropZone from '../player/DropZone';
 import BuildingZone from '../player/BuildingZone';
 import WorldManager from '../world/WorldManager';
 import WorldObjectRegistry from '../world/WorldObjectRegistry';
-import BackpackUI from '../ui/BackpackUI';
-import GlobalResourcesUI from '../ui/GlobalResourcesUI';
+import UIService from '../ui/UIService';
 import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { BuildingStorage } from '../data/BuildingStorage';
@@ -83,7 +79,7 @@ const CAMERA_SETTINGS = {
     followSpeed: 4,
 };
 
-/** CAMERA_SETTINGS.pitchDeg/distance the camera eases BACK to when the top-down toggle (see setupCameraToggleButton()) is switched off — captured from CAMERA_SETTINGS' own initial values so a dev-GUI tweak to the normal follow angle before ever toggling still gets restored correctly. */
+/** CAMERA_SETTINGS.pitchDeg/distance the camera eases BACK to when the top-down toggle (see UIService's camera-toggle button) is switched off — captured from CAMERA_SETTINGS' own initial values so a dev-GUI tweak to the normal follow angle before ever toggling still gets restored correctly. */
 const DEFAULT_CAMERA_PITCH_DEG = CAMERA_SETTINGS.pitchDeg;
 const DEFAULT_CAMERA_DISTANCE = CAMERA_SETTINGS.distance;
 /** Straight overhead — see cameraUpVector()'s own doc for why 90 specifically used to make the camera spin. */
@@ -158,18 +154,6 @@ const DROP_ZONE_OFFSET = new THREE.Vector3(6, 0, -2);
 /** Where the test Camp building zone sits — see setupBuildingZone(). Separate spot from the drop zone so the two nameplates never overlap. */
 const BUILDING_ZONE_OFFSET = new THREE.Vector3(-6, 0, -2);
 
-/** Gap between the backpack HUD panel's bottom edge and the actual bottom of the screen — see positionBackpackUi(). */
-const BACKPACK_UI_BOTTOM_MARGIN = 16;
-
-/** Gap between the global-resources HUD panel's top/right edges and the actual top-right corner of the screen — see positionGlobalResourcesUi(). */
-const GLOBAL_RESOURCES_UI_MARGIN = 16;
-
-/** Gap between the camera-toggle button's bottom/left edges and the actual bottom-left corner of the screen — see positionCameraToggleButton(). */
-const CAMERA_TOGGLE_BUTTON_MARGIN = 16;
-
-/** The camera-toggle button's own fixed size — shared between setupCameraToggleButton() (construction) and positionCameraToggleButton() (which needs the height to land the button's bottom edge, not its top, at the screen's bottom edge). */
-const CAMERA_TOGGLE_BUTTON_SIZE = { width: 160, height: 48 };
-
 /** Default timing for a camera-focus event (see PizzaScene.focusCameraOn()) when a caller doesn't override — a beat quick enough not to drag out an upgrade, slow enough to actually read as travel rather than a cut. */
 const DEFAULT_FOCUS_TRAVEL_SEC = 0.8;
 const DEFAULT_FOCUS_HOLD_SEC = 1.5;
@@ -200,14 +184,9 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     /** Shown while the player character loads, destroyed the instant it resolves — see loadPlayerCharacter(). Tracked as a field too so destroy() can clean it up if the scene is torn down mid-load. */
     private loadingSpinner?: LoadingSpinner;
 
-    /** The backpack HUD panel — see setupBackpackUi(). Tracked so destroy() can unsubscribe it from BackpackStorage.onChange. */
-    private backpackUi?: BackpackUI;
+    /** Owns every screen-anchored HUD panel (backpack, global resources, camera toggle) — see UIService.ts's own doc. Built in build() since it needs game.overlayContainer to already exist. */
+    private uiService!: UIService;
 
-    /** The base-stockpile HUD panel, pinned top-right — see setupGlobalResourcesUi(). Tracked so destroy() can unsubscribe it from GlobalResourceStorage.onChange. */
-    private globalResourcesUi?: GlobalResourcesUI;
-
-    /** Bottom-left toggle between the normal follow camera and a top-down view — see setupCameraToggleButton(). */
-    private cameraToggleButton?: BaseButton;
     /** Which mode toggleCameraMode() last switched TO — CAMERA_SETTINGS.pitchDeg/distance are tweened, not snapped, so this (not CAMERA_SETTINGS' current mid-tween value) is the source of truth for what the button should say/do next. */
     private isTopDownCamera = false;
 
@@ -266,9 +245,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupDropZone();
         this.setupBuildingZone();
         this.setupGates();
-        this.setupBackpackUi();
-        this.setupGlobalResourcesUi();
-        this.setupCameraToggleButton();
+        this.uiService = new UIService(this.game, () => this.toggleCameraMode());
         this.setupDebugGui();
         this.threeScene.add(this.mainPlayer.transform);
 
@@ -452,117 +429,6 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         }
     }
 
-    /** The backpack HUD panel — reads the same global BackpackStorage AutoGatherController/DropZone read/write, so it needs no wiring beyond existing and sitting in the overlay (see BackpackUI.ts's own doc). Positioned every frame — see positionBackpackUi(). */
-    private setupBackpackUi(): void {
-        this.backpackUi = new BackpackUI();
-        this.game.overlayContainer.addChild(this.backpackUi);
-        this.positionBackpackUi();
-    }
-
-    /**
-     * Bottom-center, regardless of viewport size/aspect — Game.overlayScreenData is kept up
-     * to date by Game.onResize() and already expressed in overlayContainer's own LOCAL space
-     * (see that field's own doc in core/Game.ts), so this panel (a direct child of
-     * overlayContainer) can use those points directly with no extra conversion. Re-run every
-     * frame rather than once per resize event since it's cheap and this scene has no resize
-     * hook of its own to piggyback on.
-     */
-    private positionBackpackUi(): void {
-        if (!this.backpackUi) {
-            return;
-        }
-
-        const screen = Game.overlayScreenData;
-        if (!screen) {
-            return;
-        }
-
-        this.backpackUi.position.set(
-            screen.center.x - this.backpackUi.panelWidth / 2,
-            screen.bottomLeft.y - this.backpackUi.panelHeight - BACKPACK_UI_BOTTOM_MARGIN,
-        );
-    }
-
-    /** The base-stockpile HUD panel — reads the same global GlobalResourceStorage DropZone writes to, so it needs no wiring beyond existing and sitting in the overlay (see GlobalResourcesUI.ts's own doc). Positioned every frame — see positionGlobalResourcesUi(). */
-    private setupGlobalResourcesUi(): void {
-        this.globalResourcesUi = new GlobalResourcesUI();
-        this.game.overlayContainer.addChild(this.globalResourcesUi);
-        this.positionGlobalResourcesUi();
-    }
-
-    /** Top-right, regardless of viewport size/aspect — same screen.topRight-in-overlay-local-space reasoning as positionBackpackUi(). Re-run every frame since the panel's own size changes as rows are added. */
-    private positionGlobalResourcesUi(): void {
-        if (!this.globalResourcesUi) {
-            return;
-        }
-
-        const screen = Game.overlayScreenData;
-        if (!screen) {
-            return;
-        }
-
-        this.globalResourcesUi.position.set(
-            screen.topRight.x - this.globalResourcesUi.panelWidth - GLOBAL_RESOURCES_UI_MARGIN,
-            screen.topRight.y + GLOBAL_RESOURCES_UI_MARGIN,
-        );
-    }
-
-    /**
-     * Bottom-left toggle between the normal follow camera and a straight-overhead top-down
-     * view. No button texture art exists yet for pizza (BaseButton isn't used anywhere else
-     * in this game) — PIXI.Texture.WHITE + tint is the same "flat colored placeholder until
-     * real art exists" convention BuildingMeshConfig/GateMeshConfig already use for meshes,
-     * just applied to a UI button instead.
-     */
-    private setupCameraToggleButton(): void {
-        this.cameraToggleButton = new BaseButton({
-            standard: {
-                width: CAMERA_TOGGLE_BUTTON_SIZE.width, height: CAMERA_TOGGLE_BUTTON_SIZE.height,
-                texture: PIXI.Texture.WHITE, tint: 0x2255aa,
-                fontStyle: new PIXI.TextStyle(TextStyleRegistry.Body),
-                fontColor: 0xffffff,
-            },
-            over: { tint: 0x336ecb },
-            down: { tint: 0x163d7a },
-            // The callback belongs on CLICK, not STANDARD — BaseButton.setState() fires
-            // attr.callback() unconditionally whenever it transitions INTO that state (see
-            // core/ui/BaseButton.ts's setState()), and setState(STANDARD) runs on
-            // construction AND every mouse-out, not just clicks. Putting the callback there
-            // fired it on load and on every hover-away, which is exactly the "toggles by
-            // itself / fires multiple times" behavior — CLICK only fires from onMouseUp, see
-            // ItemBeltButton.ts's identical convention.
-            click: { callback: () => this.toggleCameraMode() },
-        });
-        this.cameraToggleButton.setLabel('Top-Down View');
-        this.game.overlayContainer.addChild(this.cameraToggleButton);
-        this.positionCameraToggleButton();
-    }
-
-    /**
-     * Bottom-left, regardless of viewport size/aspect — same screen.bottomLeft-in-overlay-
-     * local-space reasoning as positionBackpackUi(). BaseButton's anchor param only affects
-     * its INTERNAL pivot (see updateTexturePosition() — it sets both `pivot` and `x`/`y` to
-     * the same offset, which cancel out to the same rendered rect regardless of anchor), so
-     * this container's origin is always the button's own TOP-LEFT corner — same as
-     * BackpackUI, which is why this subtracts the full height, not just a margin, to land
-     * the button's BOTTOM edge (not its top) at the screen's bottom edge.
-     */
-    private positionCameraToggleButton(): void {
-        if (!this.cameraToggleButton) {
-            return;
-        }
-
-        const screen = Game.overlayScreenData;
-        if (!screen) {
-            return;
-        }
-
-        this.cameraToggleButton.position.set(
-            screen.bottomLeft.x + CAMERA_TOGGLE_BUTTON_MARGIN,
-            screen.bottomLeft.y - CAMERA_TOGGLE_BUTTON_SIZE.height - CAMERA_TOGGLE_BUTTON_MARGIN,
-        );
-    }
-
     /**
      * Eases CAMERA_SETTINGS.pitchDeg/distance toward the top-down values (or back to
      * DEFAULT_CAMERA_PITCH_DEG/DISTANCE) over CAMERA_MODE_TRANSITION_SEC — fixedUpdate()'s
@@ -572,7 +438,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      */
     private toggleCameraMode(): void {
         this.isTopDownCamera = !this.isTopDownCamera;
-        this.cameraToggleButton?.setLabel(this.isTopDownCamera ? 'Follow View' : 'Top-Down View');
+        this.uiService.setCameraToggleLabel(this.isTopDownCamera ? 'Follow View' : 'Top-Down View');
 
         gsap.killTweensOf(CAMERA_SETTINGS);
         gsap.to(CAMERA_SETTINGS, {
@@ -719,9 +585,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // whatever fixedUpdate's physics step last resolved (once the FBX character has loaded
         // and that component exists at all — harmless no-op until then).
         this.world.update(delta);
-        this.positionBackpackUi();
-        this.positionGlobalResourcesUi();
-        this.positionCameraToggleButton();
+        this.uiService.update();
 
         super.update(delta);
     }
@@ -732,8 +596,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.world.remove(this.mainPlayer);
         this.worldManager.destroy();
         this.loadingSpinner?.destroy();
-        this.backpackUi?.destroy();
-        this.globalResourcesUi?.destroy();
+        this.uiService.destroy();
         super.destroy();
     }
 }

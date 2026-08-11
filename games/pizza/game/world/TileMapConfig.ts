@@ -199,6 +199,9 @@ export const WORLD_UNITS_PER_TILE = 2;
 /** Small lift above WorldManager's ground plane so painted tiles don't z-fight with it. */
 export const TILE_PAINT_Y_OFFSET = 0.01;
 
+/** Extra Y lift applied per additional groundLayer-named layer (see findLayers()/TileMap.ts) — e.g. a decorative "groundLayer2" painted overlay sits GROUND_LAYER_Y_STEP above the base "groundLayer", "groundLayer3" another step above that, and so on, so each stacked layer visibly renders on top of the one below instead of z-fighting with it. */
+export const GROUND_LAYER_Y_STEP = 0.05;
+
 /** Used if a gid on the map has no matching entry in tiles.json — keeps a bad map data reference visible (bright, obviously wrong) instead of invisible. */
 export const FALLBACK_TILE_COLOR = '#ff00ff';
 
@@ -243,6 +246,18 @@ export function loadTileDefs(alias: string): TileDefsData {
 
 export function findLayer(map: TiledMapData, name: string): TiledLayer | undefined {
     return map.layers.find(layer => layer.type === 'tilelayer' && layer.visible && layer.name === name);
+}
+
+/**
+ * All tilelayers whose name CONTAINS `name` (not an exact match) — kept in the same order
+ * Tiled exported them (map.layers' own array order), which is what determines paint order:
+ * the Nth match gets lifted N steps higher (see GROUND_LAYER_Y_STEP). Lets a map author stack
+ * decorative ground variants (e.g. "groundLayer", "groundLayer2", "groundLayer_path") without
+ * this project needing to know how many there are or what they're called beyond sharing that
+ * substring — see TileMap.ts's build(), the one caller.
+ */
+export function findLayers(map: TiledMapData, name: string): TiledLayer[] {
+    return map.layers.filter(layer => layer.type === 'tilelayer' && layer.visible && layer.name.includes(name));
 }
 
 /** See this file's own doc — recovers the ground/resource tileset gid ranges by firstgid order rather than hardcoding either. */

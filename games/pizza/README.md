@@ -70,12 +70,19 @@ preloaded PIXI assets, read synchronously via `loadTiledMap()`/`loadTileDefs()`.
   deliberately uncentered — tile (0,0) is world origin), and the `objectgroup`-layer
   equivalents `TiledObject`/`getObjectProperty()`/`objectToWorldRect()` for the
   `"mapSettings"` layer (see World Objects below).
-- **`TileMap.ts`** — paints `groundLayer` as one `InstancedMesh` (one draw call
-  regardless of map size) tinted from `tiles.json`'s per-tile color. Also keeps a
-  `col/row → TileDef` lookup (`getGroundCells()`/`getGroundDefAt()`) that survives
-  even when the mesh itself is hidden (`build(paintVisible=false)`) — this is what
-  lets `IslandMeshBuilder` and `TileWalkability` both work off the same parsed data
-  without re-parsing Tiled.
+- **`TileMap.ts`** — paints every layer whose name CONTAINS `"groundLayer"` (see
+  `findLayers()`/`GROUND_LAYER_NAME`, not just an exact match — lets a map stack
+  decorative variants like `groundLayer2`) as its own `InstancedMesh` (one draw call per
+  matched layer regardless of map size), tinted from `tiles.json`'s per-tile color. A
+  layer beyond the first sits `GROUND_LAYER_Y_STEP` (0.05) higher than the one before it.
+  Keeps two separate lookups: `cellDefs` (`getGroundDefAt()`/`isWalkableAt()`) is ALWAYS
+  merged across every matched layer, topmost wins per cell, so an overlay tile's
+  walkability always takes priority; `layerCellLists` (`getGroundCellLayers()`) keeps
+  each layer's cells SEPARATE, feeding `IslandMeshBuilder` one layer at a time so an
+  overlay never reshapes the base layer's blob. Both survive even when the meshes
+  themselves are hidden (`build(paintVisible=false)`) — this is what lets
+  `IslandMeshBuilder` and `TileWalkability` both work off the same parsed data without
+  re-parsing Tiled.
 - **`TileWalkability.ts`** — a bare optional module-level slot (`setWalkabilityQuery`/
   `isWalkable`), fail-open (`true`) when nothing has published a query. `TileMap.build()`
   publishes; `PlayerMovementController.fixedUpdate()` checks it per-axis before applying
@@ -83,12 +90,14 @@ preloaded PIXI assets, read synchronously via `loadTiledMap()`/`loadTileDefs()`.
   game with no tile map at all still moves normally — nothing hard-depends on this.
   Non-walkable tile names live in `NON_WALKABLE_GROUND_TILES` (currently `water`, `lava`).
 - **`IslandMeshBuilder.ts`** — the current default visual (`WorldManager.buildGround()`'s
-  `USE_ISLAND_MESH` flag): flood-fills `TileMap.getGroundCells()` into per-tile-name
-  connected blobs, builds each via `ClusterMeshBuilder` (ported from `games/clog` —
-  voxel-blob geometry with optional rounded outer corners), merges same-name blobs into
-  one mesh, and builds a single animated water plane (`WaterMaterial.ts`, also ported
-  from clog) sized to the painted area, deriving its 4-tone palette from the map's own
-  `water` tile color (`IslandStorage.deriveWaterTones()`). Per-tile-name
+  `USE_ISLAND_MESH` flag): reads `TileMap.getGroundCellLayers()` and, for EACH matched
+  ground layer independently, flood-fills its cells into per-tile-name connected blobs,
+  builds each via `ClusterMeshBuilder` (ported from `games/clog` — voxel-blob geometry
+  with optional rounded outer corners), merges same-name blobs into one mesh per layer
+  (lifted `layerIndex * GROUND_LAYER_Y_STEP` above the base, same offset `TileMap`'s own
+  flat paint uses), and builds a single animated water plane (`WaterMaterial.ts`, also
+  ported from clog) sized off the BASE layer only, deriving its 4-tone palette from the
+  map's own `water` tile color (`IslandStorage.deriveWaterTones()`). Per-tile-name
   height/depth/radius/fade live in `MeshConfig.ts`'s `ISLAND_TILE_DEFS`/
   `ISLAND_DEFAULT_TILE` — island tops currently sit at `height: 0` (flush with the rest
   of the world), water surface at `elevation: -0.5`.
