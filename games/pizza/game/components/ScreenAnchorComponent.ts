@@ -30,8 +30,10 @@
 // `host.worldToScreen()`, hide `content` if that's null (behind the camera)
 // OR the projected point falls outside the actual viewport (worldToScreen
 // only checks "behind camera," not "within the visible screen rectangle" —
-// see its own doc), otherwise show it and reposition it into
-// `host.overlayContainer`'s local space. Ordinary Component lifecycle
+// see its own doc), otherwise show it (fading alpha in from 0 rather than
+// popping straight to full opacity — see ALPHA_FADE_IN_SPEED; disappearing
+// itself stays an instant snap, only the way back in eases) and reposition
+// it into `host.overlayContainer`'s local space. Ordinary Component lifecycle
 // otherwise: awake() parents `content` into the overlay once, destroy()
 // tears it down — the caller never has to remember to add/remove it from
 // the Pixi tree by hand.
@@ -71,6 +73,9 @@ const SCALE_SMOOTHING_SPEED = 10;
 /** Same easing as SCALE_SMOOTHING_SPEED, applied to the projected screen position — smooths out the same per-frame noise (camera/player position isn't perfectly stable, worldToScreen's projection amplifies tiny 3D jitter into visible 2D pixel movement) instead of snapping content.position straight to the raw projection every frame. */
 const POSITION_SMOOTHING_SPEED = 15;
 
+/** How fast `content` fades IN once it starts being shown again (see smoothedAlpha's own doc) — deliberately only eased on the way in; hideContent() still snaps `visible` straight to false, since a pop on the way OUT is far less noticeable (and far cheaper) than one on the way in. */
+const ALPHA_FADE_IN_SPEED = 10;
+
 export interface ScreenAnchorOptions {
     /** Auto-despawns the OWNING ENTITY this many seconds after awake() — see this file's own doc's "THROWAWAY" shape. Only pass this for an entity obtained via world.spawn() specifically for this popup; omit it entirely for a persistent label. */
     ttlSec?: number;
@@ -98,6 +103,8 @@ export default class ScreenAnchorComponent extends Component {
     /** Eased toward the projected target position each frame — see POSITION_SMOOTHING_SPEED's own doc. Same `undefined`-means-snap convention as smoothedScale. */
     private smoothedX?: number;
     private smoothedY?: number;
+    /** Eased toward 1 every frame content is shown — see ALPHA_FADE_IN_SPEED's own doc. `undefined` (reset by hideContent()) means "start the next appearance from 0," so re-appearing always fades in from invisible instead of popping straight to full opacity. */
+    private smoothedAlpha?: number;
 
     /**
      * `getTargetPosition` is a function, not a fixed Vector3, so the tracked point can
@@ -156,6 +163,14 @@ export default class ScreenAnchorComponent extends Component {
         }
 
         this.content.visible = true;
+
+        // Fades in from 0 rather than popping straight to full opacity — see
+        // ALPHA_FADE_IN_SPEED/smoothedAlpha's own docs. Undefined only right after
+        // hideContent(), so THIS frame (the first one visible again) starts the fade at 0.
+        const alphaT = 1 - Math.exp(-ALPHA_FADE_IN_SPEED * delta);
+        this.smoothedAlpha = this.smoothedAlpha === undefined ? 0 : this.smoothedAlpha + (1 - this.smoothedAlpha) * alphaT;
+        this.content.alpha = this.smoothedAlpha;
+
         this.scratchPoint.set(screen.x, screen.y);
         this.host.overlayContainer.toLocal(this.scratchPoint, this.host.overlayContainer.parent ?? undefined, this.scratchLocalPoint);
 
@@ -173,12 +188,13 @@ export default class ScreenAnchorComponent extends Component {
         }
     }
 
-    /** Hides content AND resets the smoothing state (see smoothedX/Y/Scale's own docs) — so the next time this becomes visible again, it snaps straight to its new spot instead of visibly easing in from wherever it was last shown (which could be anywhere on screen after e.g. crossing back under maxDistance from a completely different angle). */
+    /** Hides content AND resets the smoothing state (see smoothedX/Y/Scale/Alpha's own docs) — so the next time this becomes visible again, it snaps straight to its new spot (position/scale) instead of visibly easing in from wherever it was last shown (which could be anywhere on screen after e.g. crossing back under maxDistance from a completely different angle), while still FADING in alpha from 0 (see smoothedAlpha's own doc) rather than popping straight to full opacity. Disappearing itself stays an instant snap — only the way back in eases. */
     private hideContent(): void {
         this.content.visible = false;
         this.smoothedX = undefined;
         this.smoothedY = undefined;
         this.smoothedScale = undefined;
+        this.smoothedAlpha = undefined;
     }
 
     /** 1 at/below nearDistance, minScale at/beyond farDistance, linear (and clamped) in between. */

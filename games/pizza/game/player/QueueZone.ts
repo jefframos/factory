@@ -16,9 +16,10 @@
 //
 // Carries a PERSISTENT nameplate/task panel the same way BuildingZone's
 // requirements panel does (ScreenAnchorComponent, no ttlSec, mutated in
-// place rather than rebuilt-and-re-added) — showing either the active
-// task's requirement + reward, or a "next task in Ns" countdown while on
-// cooldown, so a player standing right there never sees a blank panel.
+// place rather than rebuilt-and-re-added) — showing the active task's
+// requirement + reward, and hidden entirely (not a bubble/placeholder)
+// whenever there's no active task at all (cooldown, or waiting for a
+// giver to walk one in).
 //
 // Queue ids come straight from whatever's drawn on the Tiled map (see
 // WorldObjectRegistry.getAllOfType()/PizzaScene.setupQueues()) rather than
@@ -64,6 +65,8 @@ const REQ_SLOT_SIZE = 56;
 const REQ_SLOT_GAP = 10;
 const REWARD_ICON_SIZE = 22;
 const FLY_IN_STAGGER_SEC = 0.12;
+/** How long the panel takes to fade in on becoming deliverable — see refreshLabel()'s own doc. Disappearing stays instant, same "pop out is fine, pop in isn't" convention ScreenAnchorComponent's own alpha fade uses. */
+const LABEL_FADE_IN_SEC = 0.25;
 
 export default class QueueZone extends Entity {
     private readonly screenHost: ScreenAnchorHost;
@@ -98,8 +101,18 @@ export default class QueueZone extends Entity {
     /** Holds either the active task's requirement row (see ResourceSlotVisual.ts), or a "next task in Ns" countdown — rebuilt wholesale by refreshLabel() on every actual state change (see handleTaskChanged()). No title anywhere — the reward line IS the header, see this file's own doc. */
     private bodyContainer!: PIXI.Container;
     private labelFrame!: AutoFitFrame;
-    /** Set by refreshLabel() only while on cooldown (no active task) — update() ticks its text every frame from QueueStorage's own timestamp, since time passing isn't itself a QueueStorage mutation/Signal. Undefined whenever a task is active. */
-    private cooldownText?: PIXI.Text;
+    /** Whether the panel was visible as of the LAST refreshLabel() call — see refreshLabel()'s own doc on why the fade-in only plays on the false->true edge, not on every rebuild while already shown (progress ticking rebuilds the panel constantly while a task is being delivered). */
+    private wasDeliverable = false;
+    /**
+     * False for a queue that has its own QuestGiverEntity walking a waypoint path in/out (see
+     * that file's own doc) — such a queue's pacing is driven entirely by the giver's own
+     * arrival (QueueStorage.startTaskNow()), not this zone's timer-based
+     * QueueStorage.tryRollNextTask(). Leaving BOTH enabled would let the timer's cooldown roll
+     * a task on its own schedule, completely out of sync with (and possibly well before) the
+     * giver physically walking in — see PizzaScene.setupQueues(), which passes false exactly
+     * when a giver+path exists for this queue's id.
+     */
+    private readonly autoRollTasks: boolean;
 
     private readonly handleTaskChanged = (id: string): void => {
         if (id === this.queueId) {
@@ -114,6 +127,8 @@ export default class QueueZone extends Entity {
         getWalletOverlayPosition: () => { x: number; y: number },
         footprint?: { width: number; depth: number },
         config: QueueConfig = getQueueConfig(queueId),
+        /** See `autoRollTasks`'s own doc. Defaults to true — unchanged behavior for a queue with no giver. */
+        autoRollTasks = true,
     ) {
         super();
         this.screenHost = screenHost;
@@ -121,6 +136,7 @@ export default class QueueZone extends Entity {
         this.getWalletOverlayPosition = getWalletOverlayPosition;
         this.footprint = footprint;
         this.config = config;
+        this.autoRollTasks = autoRollTasks;
         this.transform.position.copy(position);
     }
 
@@ -151,11 +167,27 @@ export default class QueueZone extends Entity {
         column.addChild(this.headerContainer, this.bodyContainer);
         this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, 'Popup', column);
 
+        // ScreenAnchorComponent.update() unconditionally sets ITS OWN content's `visible = true`
+        // every frame the anchor is on-screen (see that file's own doc — it only ever hides
+        // content for being off-screen/too far, it has no notion of "this queue has nothing to
+        // show right now"). Passing `this.labelFrame` there directly would fight refreshLabel()'s
+        // own `labelFrame.visible = false` every single frame, leaving an empty bubble on
+        // screen instead of nothing. Wrapping it in this outer container gives
+        // ScreenAnchorComponent something to toggle that ISN'T the same object refreshLabel()
+        // controls — a PIXI child stays hidden if EITHER it or any ancestor is invisible, so
+        // `labelFrame.visible = false` still wins regardless of what the wrapper's own
+        // visibility is doing.
+        const anchorContent = new PIXI.Container();
+        anchorContent.addChild(this.labelFrame);
+
         // Kicks off this queue's very first task immediately (a brand-new queue has no
         // nextTaskAtEpochMs yet — see QueueStorage.tryRollNextTask()'s own doc) rather than
         // waiting for the first update() tick, so the panel never shows stale/blank content
-        // on the very first frame it's built.
-        QueueStorage.tryRollNextTask(this.queueId, this.config);
+        // on the very first frame it's built. Skipped entirely for a giver-driven queue (see
+        // `autoRollTasks`'s own doc) — its first task starts once the giver actually arrives.
+        if (this.autoRollTasks) {
+            QueueStorage.tryRollNextTask(this.queueId, this.config);
+        }
         this.refreshLabel();
 
         // A dedicated empty node the panel tracks, rather than a raw captured position —
@@ -169,7 +201,7 @@ export default class QueueZone extends Entity {
 
         this.addComponent(new ScreenAnchorComponent(
             this.screenHost,
-            this.labelFrame,
+            anchorContent,
             () => this.labelAnchor.getWorldPosition(labelAnchorWorldPosition),
             ZONE_LABEL_ANCHOR_OPTIONS,
         ));
@@ -192,7 +224,9 @@ export default class QueueZone extends Entity {
      * Rolls a new task the instant this queue's cooldown elapses, with NO player proximity
      * required — a task should be waiting by the time a player wanders back, not only start
      * rolling once they arrive. Cheap: QueueStorage.tryRollNextTask() no-ops (returns false)
-     * on every call except the rare moment a cooldown actually just passed. Also ticks the
+     * on every call except the rare moment a cooldown actually just passed. Skipped entirely
+     * when `autoRollTasks` is false (see its own doc) — a giver-driven queue's
+     * QuestGiverEntity is the only thing allowed to start its next task. Also ticks the
      * cooldown countdown TEXT every frame while on cooldown — see `cooldownText`'s own doc for
      * why that can't just be event-driven like everything else here.
      *
@@ -210,83 +244,105 @@ export default class QueueZone extends Entity {
     public override update(delta: number): void {
         super.update(delta);
 
-        QueueStorage.tryRollNextTask(this.queueId, this.config);
+        if (this.autoRollTasks) {
+            QueueStorage.tryRollNextTask(this.queueId, this.config);
+        }
 
         const completedTask = QueueStorage.tryCompleteTask(this.queueId, this.config);
         if (completedTask) {
             this.flyRewardToWallet(completedTask.rewardAmount);
-        }
-
-        if (this.cooldownText) {
-            const nextAt = QueueStorage.getState(this.queueId).nextTaskAtEpochMs;
-            const remainingSec = nextAt !== undefined ? Math.max(0, Math.ceil((nextAt - Date.now()) / 1000)) : 0;
-            this.cooldownText.text = `Next task in ${remainingSec}s`;
         }
     }
 
     /**
      * Rewrites the panel from QueueStorage's current state for this queue and re-fits the
      * frame around the new bounds — called on every actual state change (task rolled/progress
-     * changed/task completed), not every frame (see update()'s own doc for the one thing that
-     * DOES need a per-frame tick). No title anywhere: while a task is active, the reward line
-     * sits where a title normally would (headerContainer, above the requirements row); while
-     * on cooldown there's nothing to reward yet, so just the countdown text shows.
+     * changed/task completed), not every frame. No title anywhere: the reward line sits where
+     * a title normally would (headerContainer, above the requirements row). While there's no
+     * active task (cooldown, or waiting for a giver to walk one in), the WHOLE panel just
+     * hides — no "next task in Ns" bubble sitting there with nothing to say.
+     *
+     * Becoming deliverable (false -> true) fades the panel's alpha in from 0 instead of
+     * popping straight to opaque — same "pop out is fine, pop in isn't" convention
+     * ScreenAnchorComponent's own distance-based fade uses, just independent of it (this
+     * panel can go from hidden to shown with the player standing right there the whole time,
+     * not because of distance). Only the RISING edge fades — this method reruns (and rebuilds
+     * header/body from scratch) on every progress tick while a task is already being
+     * delivered, so re-triggering the fade on every one of those calls would flicker the
+     * panel's opacity with every landed unit; `wasDeliverable` is what tells a genuine
+     * appearance apart from "still deliverable, just rebuilding content."
      */
     private refreshLabel(): void {
-        this.cooldownText = undefined;
-
         this.headerContainer.removeChildren().forEach(child => child.destroy({ children: true }));
         this.bodyContainer.removeChildren().forEach(child => child.destroy({ children: true }));
 
         const state = QueueStorage.getState(this.queueId);
-        let headerHeight = 0;
-        let bodyHeight: number;
+        const task = state.activeTask;
+        const deliverable = this.isTaskDeliverable();
 
-        if (!state.activeTask) {
-            const nextAt = state.nextTaskAtEpochMs;
-            const remainingSec = nextAt !== undefined ? Math.max(0, Math.ceil((nextAt - Date.now()) / 1000)) : 0;
-            const text = new PIXI.Text(`Next task in ${remainingSec}s`, TextStyleRegistry.Body);
-            text.anchor.set(0.5, 1);
-            this.bodyContainer.addChild(text);
-            this.cooldownText = text;
-            bodyHeight = text.height;
-        } else {
-            const task = state.activeTask;
+        if (deliverable && !this.wasDeliverable) {
+            gsap.killTweensOf(this.labelFrame);
+            this.labelFrame.alpha = 0;
+            this.labelFrame.visible = true;
+            gsap.to(this.labelFrame, { alpha: 1, duration: LABEL_FADE_IN_SEC });
+        } else if (!deliverable) {
+            gsap.killTweensOf(this.labelFrame);
+            this.labelFrame.visible = false;
+            this.labelFrame.alpha = 1;
+        }
+        this.wasDeliverable = deliverable;
 
-            // Reward line — icon + "+N", centered, sitting in the header area (see this
-            // method's own doc). PIXI.Container has no `anchor`, so a bottom-center pivot
-            // reproduces the same "bottom edge lands exactly at this container's local y=0"
-            // placement a PIXI.Text with anchor (0.5, 1) gets for free.
-            const rewardIcon = new PIXI.Sprite(getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey));
-            rewardIcon.anchor.set(0, 0.5);
-            rewardIcon.width = REWARD_ICON_SIZE;
-            rewardIcon.height = REWARD_ICON_SIZE;
-            this.headerContainer.addChild(rewardIcon);
-
-            const rewardText = new PIXI.Text(`+${task.rewardAmount}`, TextStyleRegistry.Body);
-            rewardText.anchor.set(0, 0.5);
-            rewardText.position.set(REWARD_ICON_SIZE + 4, 0);
-            this.headerContainer.addChild(rewardText);
-
-            this.headerContainer.pivot.set(this.headerContainer.width / 2, this.headerContainer.height);
-            headerHeight = this.headerContainer.height;
-
-            // Requirements row — currently always exactly one slot (see REQ_SLOT_SIZE's own
-            // doc), laid out the same "centered row, bottom edge at y=0" way
-            // BuildingZone.refreshLabel() lays out its own (possibly multi-slot) row.
-            const requirements = [{ resourceType: task.resourceType, amount: task.amount }];
-            const slots = requirements.map(req => createResourceSlot(req.resourceType, REQ_SLOT_SIZE, `${state.progress}/${req.amount}`));
-            bodyHeight = Math.max(REQ_SLOT_SIZE, ...slots.map(slot => slot.visualHeight));
-
-            const rowWidth = slots.length * REQ_SLOT_SIZE + Math.max(0, slots.length - 1) * REQ_SLOT_GAP;
-            slots.forEach((slot, index) => {
-                slot.container.position.set(-rowWidth / 2 + index * (REQ_SLOT_SIZE + REQ_SLOT_GAP), -bodyHeight);
-                this.bodyContainer.addChild(slot.container);
-            });
+        if (!task || !deliverable) {
+            return;
         }
 
-        this.headerContainer.position.set(0, -(bodyHeight + (headerHeight > 0 ? HEADER_BODY_GAP : 0)));
+        // Reward line — icon + "+N", centered, sitting in the header area (see this method's
+        // own doc). PIXI.Container has no `anchor`, so a bottom-center pivot reproduces the
+        // same "bottom edge lands exactly at this container's local y=0" placement a
+        // PIXI.Text with anchor (0.5, 1) gets for free.
+        const rewardIcon = new PIXI.Sprite(getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey));
+        rewardIcon.anchor.set(0, 0.5);
+        rewardIcon.width = REWARD_ICON_SIZE;
+        rewardIcon.height = REWARD_ICON_SIZE;
+        this.headerContainer.addChild(rewardIcon);
+
+        const rewardText = new PIXI.Text(`+${task.rewardAmount}`, TextStyleRegistry.Body);
+        rewardText.anchor.set(0, 0.5);
+        rewardText.position.set(REWARD_ICON_SIZE + 4, 0);
+        this.headerContainer.addChild(rewardText);
+
+        this.headerContainer.pivot.set(this.headerContainer.width / 2, this.headerContainer.height);
+        const headerHeight = this.headerContainer.height;
+
+        // Requirements row — currently always exactly one slot (see REQ_SLOT_SIZE's own doc),
+        // laid out the same "centered row, bottom edge at y=0" way
+        // BuildingZone.refreshLabel() lays out its own (possibly multi-slot) row.
+        const requirements = [{ resourceType: task.resourceType, amount: task.amount }];
+        const slots = requirements.map(req => createResourceSlot(req.resourceType, REQ_SLOT_SIZE, `${state.progress}/${req.amount}`));
+        const bodyHeight = Math.max(REQ_SLOT_SIZE, ...slots.map(slot => slot.visualHeight));
+
+        const rowWidth = slots.length * REQ_SLOT_SIZE + Math.max(0, slots.length - 1) * REQ_SLOT_GAP;
+        slots.forEach((slot, index) => {
+            slot.container.position.set(-rowWidth / 2 + index * (REQ_SLOT_SIZE + REQ_SLOT_GAP), -bodyHeight);
+            this.bodyContainer.addChild(slot.container);
+        });
+
+        this.headerContainer.position.set(0, -(bodyHeight + HEADER_BODY_GAP));
         this.labelFrame.fit();
+    }
+
+    /**
+     * True only when this queue actually has something the player can deliver into RIGHT NOW
+     * — an active task existing in QueueStorage is NOT enough on its own for a giver-driven
+     * queue (`autoRollTasks === false`): a task can be active/persisted (e.g. survived a page
+     * reload) well before its QuestGiverEntity has finished walking back in this session, and
+     * the player must not be able to deposit into (or even see the panel for) a task the giver
+     * hasn't actually brought yet — see QueueStorage.setGiverPresent()'s own doc. A queue with
+     * no giver at all (`autoRollTasks === true`) only ever needs the plain activeTask check.
+     */
+    private isTaskDeliverable(): boolean {
+        const hasTask = QueueStorage.getState(this.queueId).activeTask !== undefined;
+        return hasTask && (this.autoRollTasks || QueueStorage.isGiverPresent(this.queueId));
     }
 
     private tryDeposit(other: RigidBody): void {
@@ -296,7 +352,7 @@ export default class QueueZone extends Entity {
         }
 
         const activeTask = QueueStorage.getState(this.queueId).activeTask;
-        if (!activeTask) {
+        if (!activeTask || !this.isTaskDeliverable()) {
             return;
         }
 
@@ -340,7 +396,7 @@ export default class QueueZone extends Entity {
         const step = (): void => {
             const state = QueueStorage.getState(this.queueId);
             const task = state.activeTask;
-            const stillNeedsThisType = this.isPlayerInside && task?.resourceType === type
+            const stillNeedsThisType = this.isPlayerInside && this.isTaskDeliverable() && task?.resourceType === type
                 && state.progress + this.inFlightCount < task.amount;
 
             const fromWorld = stillNeedsThisType && BackpackStorage.getCount(type) > 0

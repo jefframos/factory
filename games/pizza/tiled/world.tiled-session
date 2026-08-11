@@ -30,6 +30,7 @@
         "testMap1.tmx"
     ],
     "project": "world.tiled-project",
+    "property.type": "string",
     "recentFiles": [
         "testMap1.tmx"
     ],

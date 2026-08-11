@@ -609,6 +609,768 @@ const PetsAnimalTiger = {
 }
 } as const;
 
+const PirateBarrel = {
+  id: 'barrel',
+  path: 'pirate/barrel',
+  fullPath: 'pizza/models/pirate/barrel.glb',
+  format: 'glb',
+  nodes: {
+  "Barrel": "barrel"
+}
+} as const;
+
+const PirateBoatRowLarge = {
+  id: 'boat-row-large',
+  path: 'pirate/boat-row-large',
+  fullPath: 'pizza/models/pirate/boat-row-large.glb',
+  format: 'glb',
+  nodes: {
+  "BoatRowLarge": "boat-row-large",
+  "Paddles": "paddles"
+}
+} as const;
+
+const PirateBoatRowSmall = {
+  id: 'boat-row-small',
+  path: 'pirate/boat-row-small',
+  fullPath: 'pizza/models/pirate/boat-row-small.glb',
+  format: 'glb',
+  nodes: {
+  "BoatRowSmall": "boat-row-small",
+  "Paddles": "paddles"
+}
+} as const;
+
+const PirateBottleLarge = {
+  id: 'bottle-large',
+  path: 'pirate/bottle-large',
+  fullPath: 'pizza/models/pirate/bottle-large.glb',
+  format: 'glb',
+  nodes: {
+  "BottleLarge": "bottle-large"
+}
+} as const;
+
+const PirateBottle = {
+  id: 'bottle',
+  path: 'pirate/bottle',
+  fullPath: 'pizza/models/pirate/bottle.glb',
+  format: 'glb',
+  nodes: {
+  "Bottle": "bottle"
+}
+} as const;
+
+const PirateCannonBall = {
+  id: 'cannon-ball',
+  path: 'pirate/cannon-ball',
+  fullPath: 'pizza/models/pirate/cannon-ball.glb',
+  format: 'glb',
+  nodes: {
+  "CannonBall": "cannon-ball"
+}
+} as const;
+
+const PirateCannonMobile = {
+  id: 'cannon-mobile',
+  path: 'pirate/cannon-mobile',
+  fullPath: 'pizza/models/pirate/cannon-mobile.glb',
+  format: 'glb',
+  nodes: {
+  "CannonMobile": "cannon-mobile",
+  "Group": "Group"
+}
+} as const;
+
+const PirateCannon = {
+  id: 'cannon',
+  path: 'pirate/cannon',
+  fullPath: 'pizza/models/pirate/cannon.glb',
+  format: 'glb',
+  nodes: {
+  "Cannon": "cannon",
+  "Group": "Group"
+}
+} as const;
+
+const PirateCastleDoor = {
+  id: 'castle-door',
+  path: 'pirate/castle-door',
+  fullPath: 'pizza/models/pirate/castle-door.glb',
+  format: 'glb',
+  nodes: {
+  "CastleDoor": "castle-door"
+}
+} as const;
+
+const PirateCastleGate = {
+  id: 'castle-gate',
+  path: 'pirate/castle-gate',
+  fullPath: 'pizza/models/pirate/castle-gate.glb',
+  format: 'glb',
+  nodes: {
+  "CastleGate": "castle-gate"
+}
+} as const;
+
+const PirateCastleWall = {
+  id: 'castle-wall',
+  path: 'pirate/castle-wall',
+  fullPath: 'pizza/models/pirate/castle-wall.glb',
+  format: 'glb',
+  nodes: {
+  "CastleWall": "castle-wall"
+}
+} as const;
+
+const PirateCastleWindow = {
+  id: 'castle-window',
+  path: 'pirate/castle-window',
+  fullPath: 'pizza/models/pirate/castle-window.glb',
+  format: 'glb',
+  nodes: {
+  "CastleWindow": "castle-window"
+}
+} as const;
+
+const PirateChest = {
+  id: 'chest',
+  path: 'pirate/chest',
+  fullPath: 'pizza/models/pirate/chest.glb',
+  format: 'glb',
+  nodes: {
+  "Chest": "chest",
+  "Lid": "lid"
+}
+} as const;
+
+const PirateCrateBottles = {
+  id: 'crate-bottles',
+  path: 'pirate/crate-bottles',
+  fullPath: 'pizza/models/pirate/crate-bottles.glb',
+  format: 'glb',
+  nodes: {
+  "CrateBottles": "crate-bottles"
+}
+} as const;
+
+const PirateCrate = {
+  id: 'crate',
+  path: 'pirate/crate',
+  fullPath: 'pizza/models/pirate/crate.glb',
+  format: 'glb',
+  nodes: {
+  "Crate": "crate"
+}
+} as const;
+
+const PirateFlagHighPennant = {
+  id: 'flag-high-pennant',
+  path: 'pirate/flag-high-pennant',
+  fullPath: 'pizza/models/pirate/flag-high-pennant.glb',
+  format: 'glb',
+  nodes: {
+  "FlagHighPennant": "flag-high-pennant"
+}
+} as const;
+
+const PirateFlagHigh = {
+  id: 'flag-high',
+  path: 'pirate/flag-high',
+  fullPath: 'pizza/models/pirate/flag-high.glb',
+  format: 'glb',
+  nodes: {
+  "FlagHigh": "flag-high"
+}
+} as const;
+
+const PirateFlagPennant = {
+  id: 'flag-pennant',
+  path: 'pirate/flag-pennant',
+  fullPath: 'pizza/models/pirate/flag-pennant.glb',
+  format: 'glb',
+  nodes: {
+  "FlagPennant": "flag-pennant"
+}
+} as const;
+
+const PirateFlagPirateHighPennant = {
+  id: 'flag-pirate-high-pennant',
+  path: 'pirate/flag-pirate-high-pennant',
+  fullPath: 'pizza/models/pirate/flag-pirate-high-pennant.glb',
+  format: 'glb',
+  nodes: {
+  "FlagPirateHighPennant": "flag-pirate-high-pennant"
+}
+} as const;
+
+const PirateFlagPirateHigh = {
+  id: 'flag-pirate-high',
+  path: 'pirate/flag-pirate-high',
+  fullPath: 'pizza/models/pirate/flag-pirate-high.glb',
+  format: 'glb',
+  nodes: {
+  "FlagPirateHigh": "flag-pirate-high"
+}
+} as const;
+
+const PirateFlagPiratePennant = {
+  id: 'flag-pirate-pennant',
+  path: 'pirate/flag-pirate-pennant',
+  fullPath: 'pizza/models/pirate/flag-pirate-pennant.glb',
+  format: 'glb',
+  nodes: {
+  "FlagPiratePennant": "flag-pirate-pennant"
+}
+} as const;
+
+const PirateFlagPirate = {
+  id: 'flag-pirate',
+  path: 'pirate/flag-pirate',
+  fullPath: 'pizza/models/pirate/flag-pirate.glb',
+  format: 'glb',
+  nodes: {
+  "FlagPirate": "flag-pirate"
+}
+} as const;
+
+const PirateFlag = {
+  id: 'flag',
+  path: 'pirate/flag',
+  fullPath: 'pizza/models/pirate/flag.glb',
+  format: 'glb',
+  nodes: {
+  "Flag": "flag"
+}
+} as const;
+
+const PirateGrassPatch = {
+  id: 'grass-patch',
+  path: 'pirate/grass-patch',
+  fullPath: 'pizza/models/pirate/grass-patch.glb',
+  format: 'glb',
+  nodes: {
+  "GrassPatch": "grass-patch"
+}
+} as const;
+
+const PirateGrassPlant = {
+  id: 'grass-plant',
+  path: 'pirate/grass-plant',
+  fullPath: 'pizza/models/pirate/grass-plant.glb',
+  format: 'glb',
+  nodes: {
+  "GrassPlant": "grass-plant"
+}
+} as const;
+
+const PirateGrass = {
+  id: 'grass',
+  path: 'pirate/grass',
+  fullPath: 'pizza/models/pirate/grass.glb',
+  format: 'glb',
+  nodes: {
+  "Grass": "grass"
+}
+} as const;
+
+const PirateHole = {
+  id: 'hole',
+  path: 'pirate/hole',
+  fullPath: 'pizza/models/pirate/hole.glb',
+  format: 'glb',
+  nodes: {
+  "Hole": "hole"
+}
+} as const;
+
+const PirateMastRopes = {
+  id: 'mast-ropes',
+  path: 'pirate/mast-ropes',
+  fullPath: 'pizza/models/pirate/mast-ropes.glb',
+  format: 'glb',
+  nodes: {
+  "MastRopes": "mast-ropes",
+  "SailA": "sail-a",
+  "FlagC": "flag-c"
+}
+} as const;
+
+const PirateMast = {
+  id: 'mast',
+  path: 'pirate/mast',
+  fullPath: 'pizza/models/pirate/mast.glb',
+  format: 'glb',
+  nodes: {
+  "Mast": "mast",
+  "SailA": "sail-a",
+  "FlagC": "flag-c"
+}
+} as const;
+
+const PiratePalmBend = {
+  id: 'palm-bend',
+  path: 'pirate/palm-bend',
+  fullPath: 'pizza/models/pirate/palm-bend.glb',
+  format: 'glb',
+  nodes: {
+  "PalmBend": "palm-bend"
+}
+} as const;
+
+const PiratePalmDetailedBend = {
+  id: 'palm-detailed-bend',
+  path: 'pirate/palm-detailed-bend',
+  fullPath: 'pizza/models/pirate/palm-detailed-bend.glb',
+  format: 'glb',
+  nodes: {
+  "PalmDetailedBend": "palm-detailed-bend"
+}
+} as const;
+
+const PiratePalmDetailedStraight = {
+  id: 'palm-detailed-straight',
+  path: 'pirate/palm-detailed-straight',
+  fullPath: 'pizza/models/pirate/palm-detailed-straight.glb',
+  format: 'glb',
+  nodes: {
+  "PalmDetailedStraight": "palm-detailed-straight"
+}
+} as const;
+
+const PiratePalmStraight = {
+  id: 'palm-straight',
+  path: 'pirate/palm-straight',
+  fullPath: 'pizza/models/pirate/palm-straight.glb',
+  format: 'glb',
+  nodes: {
+  "PalmStraight": "palm-straight"
+}
+} as const;
+
+const PiratePatchGrassFoliage = {
+  id: 'patch-grass-foliage',
+  path: 'pirate/patch-grass-foliage',
+  fullPath: 'pizza/models/pirate/patch-grass-foliage.glb',
+  format: 'glb',
+  nodes: {
+  "PatchGrassFoliage": "patch-grass-foliage"
+}
+} as const;
+
+const PiratePatchGrass = {
+  id: 'patch-grass',
+  path: 'pirate/patch-grass',
+  fullPath: 'pizza/models/pirate/patch-grass.glb',
+  format: 'glb',
+  nodes: {
+  "PatchGrass": "patch-grass"
+}
+} as const;
+
+const PiratePatchSandFoliage = {
+  id: 'patch-sand-foliage',
+  path: 'pirate/patch-sand-foliage',
+  fullPath: 'pizza/models/pirate/patch-sand-foliage.glb',
+  format: 'glb',
+  nodes: {
+  "PatchSandFoliage": "patch-sand-foliage"
+}
+} as const;
+
+const PiratePatchSand = {
+  id: 'patch-sand',
+  path: 'pirate/patch-sand',
+  fullPath: 'pizza/models/pirate/patch-sand.glb',
+  format: 'glb',
+  nodes: {
+  "PatchSand": "patch-sand"
+}
+} as const;
+
+const PiratePlatformPlanks = {
+  id: 'platform-planks',
+  path: 'pirate/platform-planks',
+  fullPath: 'pizza/models/pirate/platform-planks.glb',
+  format: 'glb',
+  nodes: {
+  "PlatformPlanks": "platform-planks"
+}
+} as const;
+
+const PiratePlatform = {
+  id: 'platform',
+  path: 'pirate/platform',
+  fullPath: 'pizza/models/pirate/platform.glb',
+  format: 'glb',
+  nodes: {
+  "Platform": "platform"
+}
+} as const;
+
+const PirateRocksA = {
+  id: 'rocks-a',
+  path: 'pirate/rocks-a',
+  fullPath: 'pizza/models/pirate/rocks-a.glb',
+  format: 'glb',
+  nodes: {
+  "RocksA": "rocks-a"
+}
+} as const;
+
+const PirateRocksB = {
+  id: 'rocks-b',
+  path: 'pirate/rocks-b',
+  fullPath: 'pizza/models/pirate/rocks-b.glb',
+  format: 'glb',
+  nodes: {
+  "RocksB": "rocks-b"
+}
+} as const;
+
+const PirateRocksC = {
+  id: 'rocks-c',
+  path: 'pirate/rocks-c',
+  fullPath: 'pizza/models/pirate/rocks-c.glb',
+  format: 'glb',
+  nodes: {
+  "RocksC": "rocks-c"
+}
+} as const;
+
+const PirateRocksSandA = {
+  id: 'rocks-sand-a',
+  path: 'pirate/rocks-sand-a',
+  fullPath: 'pizza/models/pirate/rocks-sand-a.glb',
+  format: 'glb',
+  nodes: {
+  "RocksSandA": "rocks-sand-a"
+}
+} as const;
+
+const PirateRocksSandB = {
+  id: 'rocks-sand-b',
+  path: 'pirate/rocks-sand-b',
+  fullPath: 'pizza/models/pirate/rocks-sand-b.glb',
+  format: 'glb',
+  nodes: {
+  "RocksSandB": "rocks-sand-b"
+}
+} as const;
+
+const PirateRocksSandC = {
+  id: 'rocks-sand-c',
+  path: 'pirate/rocks-sand-c',
+  fullPath: 'pizza/models/pirate/rocks-sand-c.glb',
+  format: 'glb',
+  nodes: {
+  "RocksSandC": "rocks-sand-c"
+}
+} as const;
+
+const PirateShipGhost = {
+  id: 'ship-ghost',
+  path: 'pirate/ship-ghost',
+  fullPath: 'pizza/models/pirate/ship-ghost.glb',
+  format: 'glb',
+  nodes: {
+  "ShipGhost": "ship-ghost",
+  "FlagB": "flag-b",
+  "FlagC": "flag-c",
+  "SailA": "sail-a",
+  "SailB": "sail-b",
+  "FlagA": "flag-a"
+}
+} as const;
+
+const PirateShipLarge = {
+  id: 'ship-large',
+  path: 'pirate/ship-large',
+  fullPath: 'pizza/models/pirate/ship-large.glb',
+  format: 'glb',
+  nodes: {
+  "ShipLarge": "ship-large",
+  "FlagA": "flag-a",
+  "SailB": "sail-b",
+  "SailA": "sail-a",
+  "FlagC": "flag-c",
+  "FlagB": "flag-b"
+}
+} as const;
+
+const PirateShipMedium = {
+  id: 'ship-medium',
+  path: 'pirate/ship-medium',
+  fullPath: 'pizza/models/pirate/ship-medium.glb',
+  format: 'glb',
+  nodes: {
+  "ShipMedium": "ship-medium",
+  "SailB": "sail-b",
+  "SailA": "sail-a",
+  "FlagC": "flag-c",
+  "FlagB": "flag-b",
+  "FlagA": "flag-a"
+}
+} as const;
+
+const PirateShipPirateLarge = {
+  id: 'ship-pirate-large',
+  path: 'pirate/ship-pirate-large',
+  fullPath: 'pizza/models/pirate/ship-pirate-large.glb',
+  format: 'glb',
+  nodes: {
+  "ShipPirateLarge": "ship-pirate-large",
+  "SailB": "sail-b",
+  "SailA": "sail-a",
+  "FlagC": "flag-c"
+}
+} as const;
+
+const PirateShipPirateMedium = {
+  id: 'ship-pirate-medium',
+  path: 'pirate/ship-pirate-medium',
+  fullPath: 'pizza/models/pirate/ship-pirate-medium.glb',
+  format: 'glb',
+  nodes: {
+  "ShipPirateMedium": "ship-pirate-medium",
+  "FlagB": "flag-b",
+  "SailB": "sail-b",
+  "SailA": "sail-a",
+  "FlagC": "flag-c",
+  "FlagA": "flag-a"
+}
+} as const;
+
+const PirateShipPirateSmall = {
+  id: 'ship-pirate-small',
+  path: 'pirate/ship-pirate-small',
+  fullPath: 'pizza/models/pirate/ship-pirate-small.glb',
+  format: 'glb',
+  nodes: {
+  "ShipPirateSmall": "ship-pirate-small",
+  "SailA": "sail-a",
+  "FlagB": "flag-b",
+  "FlagA": "flag-a"
+}
+} as const;
+
+const PirateShipSmall = {
+  id: 'ship-small',
+  path: 'pirate/ship-small',
+  fullPath: 'pizza/models/pirate/ship-small.glb',
+  format: 'glb',
+  nodes: {
+  "ShipSmall": "ship-small",
+  "FlagA": "flag-a",
+  "FlagB": "flag-b",
+  "SailA": "sail-a"
+}
+} as const;
+
+const PirateShipWreck = {
+  id: 'ship-wreck',
+  path: 'pirate/ship-wreck',
+  fullPath: 'pizza/models/pirate/ship-wreck.glb',
+  format: 'glb',
+  nodes: {
+  "ShipWreck": "ship-wreck",
+  "Grass": "grass",
+  "Group": "Group",
+  "SailA": "sail-a"
+}
+} as const;
+
+const PirateStructureFenceSides = {
+  id: 'structure-fence-sides',
+  path: 'pirate/structure-fence-sides',
+  fullPath: 'pizza/models/pirate/structure-fence-sides.glb',
+  format: 'glb',
+  nodes: {
+  "StructureFenceSides": "structure-fence-sides",
+  "Group": "Group"
+}
+} as const;
+
+const PirateStructureFence = {
+  id: 'structure-fence',
+  path: 'pirate/structure-fence',
+  fullPath: 'pizza/models/pirate/structure-fence.glb',
+  format: 'glb',
+  nodes: {
+  "StructureFence": "structure-fence"
+}
+} as const;
+
+const PirateStructurePlatformDockSmall = {
+  id: 'structure-platform-dock-small',
+  path: 'pirate/structure-platform-dock-small',
+  fullPath: 'pizza/models/pirate/structure-platform-dock-small.glb',
+  format: 'glb',
+  nodes: {
+  "StructurePlatformDockSmall": "structure-platform-dock-small"
+}
+} as const;
+
+const PirateStructurePlatformDock = {
+  id: 'structure-platform-dock',
+  path: 'pirate/structure-platform-dock',
+  fullPath: 'pizza/models/pirate/structure-platform-dock.glb',
+  format: 'glb',
+  nodes: {
+  "StructurePlatformDock": "structure-platform-dock"
+}
+} as const;
+
+const PirateStructurePlatformSmall = {
+  id: 'structure-platform-small',
+  path: 'pirate/structure-platform-small',
+  fullPath: 'pizza/models/pirate/structure-platform-small.glb',
+  format: 'glb',
+  nodes: {
+  "StructurePlatformSmall": "structure-platform-small"
+}
+} as const;
+
+const PirateStructurePlatform = {
+  id: 'structure-platform',
+  path: 'pirate/structure-platform',
+  fullPath: 'pizza/models/pirate/structure-platform.glb',
+  format: 'glb',
+  nodes: {
+  "StructurePlatform": "structure-platform"
+}
+} as const;
+
+const PirateStructureRoof = {
+  id: 'structure-roof',
+  path: 'pirate/structure-roof',
+  fullPath: 'pizza/models/pirate/structure-roof.glb',
+  format: 'glb',
+  nodes: {
+  "StructureRoof": "structure-roof"
+}
+} as const;
+
+const PirateStructure = {
+  id: 'structure',
+  path: 'pirate/structure',
+  fullPath: 'pizza/models/pirate/structure.glb',
+  format: 'glb',
+  nodes: {
+  "Structure": "structure"
+}
+} as const;
+
+const PirateToolPaddle = {
+  id: 'tool-paddle',
+  path: 'pirate/tool-paddle',
+  fullPath: 'pizza/models/pirate/tool-paddle.glb',
+  format: 'glb',
+  nodes: {
+  "ToolPaddle": "tool-paddle"
+}
+} as const;
+
+const PirateToolShovel = {
+  id: 'tool-shovel',
+  path: 'pirate/tool-shovel',
+  fullPath: 'pizza/models/pirate/tool-shovel.glb',
+  format: 'glb',
+  nodes: {
+  "ToolShovel": "tool-shovel"
+}
+} as const;
+
+const PirateTowerBaseDoor = {
+  id: 'tower-base-door',
+  path: 'pirate/tower-base-door',
+  fullPath: 'pizza/models/pirate/tower-base-door.glb',
+  format: 'glb',
+  nodes: {
+  "TowerBaseDoor": "tower-base-door"
+}
+} as const;
+
+const PirateTowerBase = {
+  id: 'tower-base',
+  path: 'pirate/tower-base',
+  fullPath: 'pizza/models/pirate/tower-base.glb',
+  format: 'glb',
+  nodes: {
+  "TowerBase": "tower-base"
+}
+} as const;
+
+const PirateTowerCompleteLarge = {
+  id: 'tower-complete-large',
+  path: 'pirate/tower-complete-large',
+  fullPath: 'pizza/models/pirate/tower-complete-large.glb',
+  format: 'glb',
+  nodes: {
+  "TowerCompleteLarge": "tower-complete-large"
+}
+} as const;
+
+const PirateTowerCompleteSmall = {
+  id: 'tower-complete-small',
+  path: 'pirate/tower-complete-small',
+  fullPath: 'pizza/models/pirate/tower-complete-small.glb',
+  format: 'glb',
+  nodes: {
+  "TowerCompleteSmall": "tower-complete-small"
+}
+} as const;
+
+const PirateTowerMiddleWindows = {
+  id: 'tower-middle-windows',
+  path: 'pirate/tower-middle-windows',
+  fullPath: 'pizza/models/pirate/tower-middle-windows.glb',
+  format: 'glb',
+  nodes: {
+  "TowerMiddleWindows": "tower-middle-windows"
+}
+} as const;
+
+const PirateTowerMiddle = {
+  id: 'tower-middle',
+  path: 'pirate/tower-middle',
+  fullPath: 'pizza/models/pirate/tower-middle.glb',
+  format: 'glb',
+  nodes: {
+  "TowerMiddle": "tower-middle"
+}
+} as const;
+
+const PirateTowerRoof = {
+  id: 'tower-roof',
+  path: 'pirate/tower-roof',
+  fullPath: 'pizza/models/pirate/tower-roof.glb',
+  format: 'glb',
+  nodes: {
+  "TowerRoof": "tower-roof"
+}
+} as const;
+
+const PirateTowerTop = {
+  id: 'tower-top',
+  path: 'pirate/tower-top',
+  fullPath: 'pizza/models/pirate/tower-top.glb',
+  format: 'glb',
+  nodes: {
+  "TowerTop": "tower-top"
+}
+} as const;
+
+const PirateTowerWatch = {
+  id: 'tower-watch',
+  path: 'pirate/tower-watch',
+  fullPath: 'pizza/models/pirate/tower-watch.glb',
+  format: 'glb',
+  nodes: {
+  "TowerWatch": "tower-watch"
+}
+} as const;
+
 const PropsBridge = {
   id: 'bridge',
   path: 'props/bridge',
@@ -1387,6 +2149,80 @@ export const MODELS = {
     AnimalPig: PetsAnimalPig,
     AnimalPolar: PetsAnimalPolar,
     AnimalTiger: PetsAnimalTiger
+  },
+  Pirate: {
+    Barrel: PirateBarrel,
+    BoatRowLarge: PirateBoatRowLarge,
+    BoatRowSmall: PirateBoatRowSmall,
+    BottleLarge: PirateBottleLarge,
+    Bottle: PirateBottle,
+    CannonBall: PirateCannonBall,
+    CannonMobile: PirateCannonMobile,
+    Cannon: PirateCannon,
+    CastleDoor: PirateCastleDoor,
+    CastleGate: PirateCastleGate,
+    CastleWall: PirateCastleWall,
+    CastleWindow: PirateCastleWindow,
+    Chest: PirateChest,
+    CrateBottles: PirateCrateBottles,
+    Crate: PirateCrate,
+    FlagHighPennant: PirateFlagHighPennant,
+    FlagHigh: PirateFlagHigh,
+    FlagPennant: PirateFlagPennant,
+    FlagPirateHighPennant: PirateFlagPirateHighPennant,
+    FlagPirateHigh: PirateFlagPirateHigh,
+    FlagPiratePennant: PirateFlagPiratePennant,
+    FlagPirate: PirateFlagPirate,
+    Flag: PirateFlag,
+    GrassPatch: PirateGrassPatch,
+    GrassPlant: PirateGrassPlant,
+    Grass: PirateGrass,
+    Hole: PirateHole,
+    MastRopes: PirateMastRopes,
+    Mast: PirateMast,
+    PalmBend: PiratePalmBend,
+    PalmDetailedBend: PiratePalmDetailedBend,
+    PalmDetailedStraight: PiratePalmDetailedStraight,
+    PalmStraight: PiratePalmStraight,
+    PatchGrassFoliage: PiratePatchGrassFoliage,
+    PatchGrass: PiratePatchGrass,
+    PatchSandFoliage: PiratePatchSandFoliage,
+    PatchSand: PiratePatchSand,
+    PlatformPlanks: PiratePlatformPlanks,
+    Platform: PiratePlatform,
+    RocksA: PirateRocksA,
+    RocksB: PirateRocksB,
+    RocksC: PirateRocksC,
+    RocksSandA: PirateRocksSandA,
+    RocksSandB: PirateRocksSandB,
+    RocksSandC: PirateRocksSandC,
+    ShipGhost: PirateShipGhost,
+    ShipLarge: PirateShipLarge,
+    ShipMedium: PirateShipMedium,
+    ShipPirateLarge: PirateShipPirateLarge,
+    ShipPirateMedium: PirateShipPirateMedium,
+    ShipPirateSmall: PirateShipPirateSmall,
+    ShipSmall: PirateShipSmall,
+    ShipWreck: PirateShipWreck,
+    StructureFenceSides: PirateStructureFenceSides,
+    StructureFence: PirateStructureFence,
+    StructurePlatformDockSmall: PirateStructurePlatformDockSmall,
+    StructurePlatformDock: PirateStructurePlatformDock,
+    StructurePlatformSmall: PirateStructurePlatformSmall,
+    StructurePlatform: PirateStructurePlatform,
+    StructureRoof: PirateStructureRoof,
+    Structure: PirateStructure,
+    ToolPaddle: PirateToolPaddle,
+    ToolShovel: PirateToolShovel,
+    TowerBaseDoor: PirateTowerBaseDoor,
+    TowerBase: PirateTowerBase,
+    TowerCompleteLarge: PirateTowerCompleteLarge,
+    TowerCompleteSmall: PirateTowerCompleteSmall,
+    TowerMiddleWindows: PirateTowerMiddleWindows,
+    TowerMiddle: PirateTowerMiddle,
+    TowerRoof: PirateTowerRoof,
+    TowerTop: PirateTowerTop,
+    TowerWatch: PirateTowerWatch
   },
   Props: {
     Bridge: PropsBridge,

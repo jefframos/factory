@@ -39,8 +39,18 @@ function createDefaultState(): QueueState {
 
 export class QueueStorage {
     private static readonly states = new Map<string, QueueState>();
+    /**
+     * Which giver-driven queues currently have their QuestGiverEntity PHYSICALLY AT the queue
+     * (see that file's own doc) — in-memory only, deliberately never persisted. Presence is a
+     * pure runtime fact the giver re-establishes itself every time the scene builds (it always
+     * starts its walk fresh from the far waypoint), not state that should survive a reload —
+     * unlike `activeTask`/`progress`, which SHOULD survive one. A queue with no giver at all
+     * never touches this Set; see QueueZone's own `autoRollTasks`-gated checks, which only
+     * consult isGiverPresent() when it actually has one.
+     */
+    private static readonly giverPresent = new Set<string>();
 
-    /** Fires with the queue id whenever ANYTHING about its state changes — a task rolling, progress ticking, or a task completing into cooldown. See this file's own doc for why one Signal covers all three. */
+    /** Fires with the queue id whenever ANYTHING about its state changes — a task rolling, progress ticking, a task completing into cooldown, or a giver arriving/leaving. See this file's own doc for why one Signal covers all of it. */
     static readonly onTaskChanged: Signal = new Signal();
 
     /** Call once at boot (see index.ts), before anything reads getState(). */
@@ -79,6 +89,11 @@ export class QueueStorage {
      * rolls a random task from `config.possibleTasks` and makes it active. Returns whether it
      * actually rolled one — cheap enough to call unconditionally every frame (see QueueZone.
      * update()); a no-op the overwhelming majority of those calls.
+     *
+     * This is the TIME-gated path — for a queue whose pacing is instead driven by a
+     * QuestGiverEntity walking a waypoint path in/out (see that file's own doc), use
+     * startTaskNow() instead, which ignores `nextTaskAtEpochMs` entirely; QueueZone only calls
+     * this one when it has no such giver (see its own `autoRollTasks` constructor param).
      */
     static tryRollNextTask(id: string, config: QueueConfig): boolean {
         const state = this.state(id);
@@ -88,10 +103,59 @@ export class QueueStorage {
         if (state.nextTaskAtEpochMs !== undefined && Date.now() < state.nextTaskAtEpochMs) {
             return false;
         }
+
+        return this.rollTask(id, config);
+    }
+
+    /**
+     * Rolls a new task immediately, ignoring `nextTaskAtEpochMs` entirely — the ONLY
+     * requirement is that `id` doesn't already have an active task. Used by QuestGiverEntity
+     * once it physically arrives at the queue (order-0 waypoint): for a giver-driven queue,
+     * ARRIVAL is what makes a task available, not a timer — see this file's own doc and
+     * tryRollNextTask()'s. Returns whether it actually rolled one, same convention as
+     * tryRollNextTask() (false if a task was already active, or `config.possibleTasks` is
+     * empty).
+     */
+    static startTaskNow(id: string, config: QueueConfig): boolean {
+        const state = this.state(id);
+        if (state.activeTask) {
+            return false;
+        }
+
+        return this.rollTask(id, config);
+    }
+
+    /**
+     * Marks whether `id`'s QuestGiverEntity is physically standing at the queue right now —
+     * called from that entity's own arrival/departure handlers, never from QueueZone directly.
+     * A queue's task can exist (activeTask set, progress persisted) WITHOUT its giver being
+     * present at all — e.g. right after a page reload, before the freshly-respawned giver has
+     * finished walking back in — and QueueZone must not let the player deliver into (or even
+     * see the panel for) a task the giver hasn't actually brought yet. Fires onTaskChanged so
+     * QueueZone's panel visibility updates the instant presence changes, same as every other
+     * state change here.
+     */
+    static setGiverPresent(id: string, present: boolean): void {
+        if (present) {
+            this.giverPresent.add(id);
+        } else {
+            this.giverPresent.delete(id);
+        }
+        this.onTaskChanged.dispatch(id);
+    }
+
+    /** See setGiverPresent()'s own doc. Always false for a queue that never calls setGiverPresent() at all (no giver) — QueueZone only consults this when it actually has one. */
+    static isGiverPresent(id: string): boolean {
+        return this.giverPresent.has(id);
+    }
+
+    /** Shared by tryRollNextTask()/startTaskNow() — both have already confirmed `id` has no active task; this just picks one and makes it active. */
+    private static rollTask(id: string, config: QueueConfig): boolean {
         if (config.possibleTasks.length === 0) {
             return false;
         }
 
+        const state = this.state(id);
         const task = config.possibleTasks[Math.floor(Math.random() * config.possibleTasks.length)];
         state.activeTask = task;
         state.progress = 0;

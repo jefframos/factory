@@ -43,6 +43,8 @@ import MainPlayer from '../player/MainPlayer';
 import DropZone from '../player/DropZone';
 import BuildingZone, { BuildingTriggerArea } from '../player/BuildingZone';
 import QueueZone from '../player/QueueZone';
+import QuestGiverEntity from '../player/QuestGiverEntity';
+import { getQuestGiverConfig } from '../data/QuestGiverTypes';
 import WorldManager from '../world/WorldManager';
 import WorldObjectRegistry from '../world/WorldObjectRegistry';
 import UIService from '../ui/UIService';
@@ -242,7 +244,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.threeScene.add(sun);
 
         this.worldManager.buildGround();
-        this.setupTestBox();
+        //this.setupTestBox();
         //this.setupDropZone();
         this.setupBuildingZone();
         this.setupGates();
@@ -481,12 +483,28 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private setupQueues(): void {
         for (const [id, placement] of this.worldObjects.getAllOfType('queue')) {
             const position = new THREE.Vector3(placement.x, 0, placement.z);
+
+            // A quest giver needs BOTH its own config AND at least two waypoints (a path needs
+            // a start and an end) — see QuestGiverEntity.ts's own doc. When both are present,
+            // this queue's pacing is handed over entirely to the giver's own walk cycle
+            // (QueueZone's `autoRollTasks = false` — see that field's own doc).
+            const questGiverConfig = getQuestGiverConfig(id);
+            const waypoints = this.worldObjects.getWaypoints(id);
+            const hasGiverPath = questGiverConfig !== undefined && waypoints.length >= 2;
+
             const queueZone = this.world.add(new QueueZone(
                 position, this.screenHost, id,
                 () => this.uiService.economyUi.getIconAnchorPosition(),
                 { width: placement.width, depth: placement.depth },
+                undefined,
+                !hasGiverPath,
             ));
             this.threeScene.add(queueZone.transform);
+
+            if (hasGiverPath) {
+                const questGiver = this.world.add(new QuestGiverEntity(id, waypoints, questGiverConfig!));
+                this.threeScene.add(questGiver.transform);
+            }
         }
     }
 

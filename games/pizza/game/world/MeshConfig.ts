@@ -80,7 +80,7 @@ export const ISLAND_DEFAULT_TILE: TileConfig = {
 
 export const ISLAND_TILE_DEFS: Record<string, TileConfig> = {
     // Beach — lower and rounder than the default land tile, echoing a gentle slope into the water.
-    sand: { height: 0.3, color: 0x2a3a4a, depthBelow: 30, radius: 0.6, fadeFrom: 0, fadeTo: -10 },
+    sand: { height: 0.03, color: 0x2a3a4a, depthBelow: 30, radius: 0.6, fadeFrom: 0, fadeTo: -10 },
     // Slightly built-up, sharper-edged than the surrounding land.
     lava: { height: 0.45, color: 0x2a3a4a, depthBelow: 30, radius: 0.2, opacity: 0.95, fadeFrom: 0, fadeTo: -10 },
     rock: { height: 10, color: 0x2a3a4a, depthBelow: 2, radius: 0.2, opacity: 1, fadeFrom: 0, fadeTo: -10 },

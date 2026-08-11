@@ -41,6 +41,8 @@ export default class MergeScene extends GameScene {
     private envManager!: EnvironmentManager;
     static MAP_ID = 'Garden'
 
+    private gameBlocker: PIXI.Sprite = PIXI.Sprite.from(PIXI.Texture.WHITE)
+
     constructor(game: Game) {
         super(game);
         SoundManager.STORAGE_ID = "Merge1_";
@@ -174,6 +176,14 @@ export default class MergeScene extends GameScene {
         //this.mediator.spawnAnimal(1, new PIXI.Point(Game.DESIGN_WIDTH / 2, Game.DESIGN_HEIGHT / 2));
 
 
+        setTimeout(() => {
+            this.game.overlayContainer.addChild(this.gameBlocker)
+            this.gameBlocker.scale.set(1000)
+            this.gameBlocker.anchor.set(0.5)
+            this.gameBlocker.interactive = true;
+            this.gameBlocker.alpha = 0.05
+            this.gameBlocker.tint = 0
+        }, 10);
     }
 
 
@@ -196,6 +206,11 @@ export default class MergeScene extends GameScene {
 
     public update(delta: number): void {
         this.patternBackground?.update(delta);
+
+
+        if (this.gameBlocker) {
+            this.gameBlocker.interactive = this.paused;
+        }
 
         // Calculate the inverse scale
         const containerScale = this.gameplayContainer.scale;
