@@ -23,6 +23,7 @@ import { TextStyleRegistry } from './TextStyleRegistry';
 import BackpackUI from './BackpackUI';
 import GlobalResourcesUI from './GlobalResourcesUI';
 import EconomyUI from './EconomyUI';
+import ToolLevelUI from './ToolLevelUI';
 
 /** Gap between the backpack HUD panel's bottom edge and the actual bottom of the screen — see positionBackpackUi(). */
 const BACKPACK_UI_BOTTOM_MARGIN = 16;
@@ -35,6 +36,9 @@ const ECONOMY_UI_MARGIN = 16;
 
 /** Gap between the camera-toggle button's bottom/left edges and the actual bottom-left corner of the screen — see positionCameraToggleButton(). */
 const CAMERA_TOGGLE_BUTTON_MARGIN = 16;
+
+/** Gap between the tool/level HUD panel's bottom/right edges and the actual bottom-right corner of the screen — see positionToolLevelUi(). */
+const TOOL_LEVEL_UI_MARGIN = 16;
 
 /** The camera-toggle button's own fixed size — shared between the constructor (building it) and positionCameraToggleButton() (which needs the height to land the button's bottom edge, not its top, at the screen's bottom edge). */
 const CAMERA_TOGGLE_BUTTON_SIZE = { width: 160, height: 48 };
@@ -50,6 +54,9 @@ export default class UIService {
 
     /** The money HUD panel, pinned top-right — see EconomyUI.ts's own doc. */
     public readonly economyUi: EconomyUI;
+
+    /** The tool/level HUD panel, pinned bottom-right — see ToolLevelUI.ts's own doc. */
+    public readonly toolLevelUi: ToolLevelUI;
 
     /** Bottom-left toggle between the normal follow camera and a top-down view. No button texture art exists yet for pizza — PIXI.Texture.WHITE + tint is the same "flat colored placeholder until real art exists" convention BuildingMeshConfig/GateMeshConfig already use for meshes, just applied to a UI button instead. */
     private readonly cameraToggleButton: BaseButton;
@@ -70,6 +77,9 @@ export default class UIService {
 
         this.economyUi = new EconomyUI();
         this.game.overlayContainer.addChild(this.economyUi);
+
+        this.toolLevelUi = new ToolLevelUI();
+        this.game.overlayContainer.addChild(this.toolLevelUi);
 
         this.cameraToggleButton = new BaseButton({
             standard: {
@@ -104,6 +114,7 @@ export default class UIService {
         this.positionGlobalResourcesUi();
         this.positionEconomyUi();
         this.positionCameraToggleButton();
+        this.positionToolLevelUi();
     }
 
     /** Bottom-center, regardless of viewport size/aspect. */
@@ -165,10 +176,34 @@ export default class UIService {
         );
     }
 
+    /**
+     * Bottom-right, regardless of viewport size/aspect. ToolLevelUI's own local (0,0) sits at
+     * the BOTTOM of its row list (see that file's own doc — rows stack UPWARD from y=0), not
+     * the panel's top-left corner like every other panel here — so unlike
+     * positionGlobalResourcesUi()/positionEconomyUi()'s `panelWidth`/`panelHeight` fields, this
+     * anchors off getLocalBounds() directly: `bounds.x`/`bounds.y` already account for
+     * wherever the frame actually extends relative to that origin (including AutoFitFrame's
+     * own padding), so subtracting them out is what correctly lands the frame's real
+     * bottom-right corner at the screen's, whichever direction the content happens to extend.
+     */
+    private positionToolLevelUi(): void {
+        const screen = Game.overlayScreenData;
+        if (!screen) {
+            return;
+        }
+
+        const bounds = this.toolLevelUi.getLocalBounds();
+        this.toolLevelUi.position.set(
+            screen.bottomRight.x - bounds.x - bounds.width - TOOL_LEVEL_UI_MARGIN,
+            screen.bottomRight.y - bounds.y - bounds.height - TOOL_LEVEL_UI_MARGIN,
+        );
+    }
+
     public destroy(): void {
         this.backpackUi.destroy();
         this.globalResourcesUi.destroy();
         this.economyUi.destroy();
         this.cameraToggleButton.destroy();
+        this.toolLevelUi.destroy();
     }
 }

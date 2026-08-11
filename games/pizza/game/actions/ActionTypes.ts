@@ -72,3 +72,13 @@ export const ACTION_CONFIG: Record<ActionType, ActionConfig> = {
     [ActionType.Mine]: { hitIntervalSec: 1.5, damagePerHit: 1, hitTime: 0.4, cancelOnLeaveRange: true, animationTrigger: 'mine', tool: 'pickaxe' },
     [ActionType.Gather]: { hitIntervalSec: 2, damagePerHit: 1, hitTime: 0.6, cancelOnLeaveRange: true, animationTrigger: 'pick' },
 };
+
+/**
+ * A frozen snapshot of ACTION_CONFIG's hand-authored defaults, taken before anything (a shop
+ * upgrade — see ShopTypes.applyShopLevel()) ever mutates it live. ACTION_CONFIG itself is NOT
+ * persisted between sessions (only ShopUpgradeStorage's `level` is); this is what lets a debug
+ * "reset upgrades" action put its hitIntervalSec/damagePerHit back to exactly where a fresh
+ * session would start, without hand-duplicating these numbers a second time elsewhere. See
+ * ShopTypes.resetAllActionConfigs(), the one reader.
+ */
+export const BASE_ACTION_CONFIG: Record<ActionType, ActionConfig> = JSON.parse(JSON.stringify(ACTION_CONFIG));

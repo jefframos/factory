@@ -10,12 +10,15 @@
 // real models (MODELS.Tools.Axe/Pickaxe, both .gltf — confirmed working via
 // ModelLoaderManager's GLTFLoader branch, same as every .glb prop).
 
+import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import MODELS, { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
 
 export interface ToolVisualEntry {
     /** Candidate models for this tool — empty until real art exists (see this file's own doc). */
     models: ModelDefinition[];
+    /** Texture alias (packed 'survive' image bundle) representing this tool in flat 2D UI — e.g. ToolLevelUI's bottom-right tool/level list, ShopZone's panel. See getToolIcon(), the one reader. */
+    icon: string;
     /** Placeholder cylinder color, used only while `models` is empty. */
     color: number;
     /** Placeholder cylinder radius/length, world units (same scale as HEAD_CUBE_SIZE/BACKPACK_CUBE_SIZE in CharacterBody.ts) — used only while `models` is empty. */
@@ -40,6 +43,7 @@ export interface ToolVisualEntry {
 export const TOOL_LIBRARY = {
     axe: {
         models: [MODELS.Tools.Axe],
+        icon: 'woodcutters-axe',
         color: 0x6b4423,
         radius: 8,
         length: 100,
@@ -49,6 +53,7 @@ export const TOOL_LIBRARY = {
     },
     pickaxe: {
         models: [MODELS.Tools.Pickaxe],
+        icon: 'mining-pickaxe',
         color: 0x71716f,
         radius: 8,
         length: 100,
@@ -59,3 +64,8 @@ export const TOOL_LIBRARY = {
 } satisfies Record<string, ToolVisualEntry>;
 
 export type ToolId = keyof typeof TOOL_LIBRARY;
+
+/** `TOOL_LIBRARY[id].icon`, as an actual texture — see ToolVisualEntry.icon's own doc. */
+export function getToolIcon(id: ToolId): PIXI.Texture {
+    return PIXI.Texture.from(TOOL_LIBRARY[id].icon);
+}

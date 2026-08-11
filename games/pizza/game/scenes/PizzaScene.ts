@@ -45,6 +45,12 @@ import BuildingZone, { BuildingTriggerArea } from '../player/BuildingZone';
 import QueueZone from '../player/QueueZone';
 import QuestGiverEntity from '../player/QuestGiverEntity';
 import { getQuestGiverConfig } from '../data/QuestGiverTypes';
+import ShopZone, { ShopTriggerArea } from '../shop/ShopZone';
+import { getShopConfig, SHOP_CONFIG_BY_ID } from '../shop/ShopTypes';
+import { ShopUpgradeStorage } from '../shop/ShopUpgradeStorage';
+import { QueueStorage } from '../data/QueueStorage';
+import { EconomyStorage } from '../data/EconomyStorage';
+import { CurrencyType } from '../data/EconomyTypes';
 import WorldManager from '../world/WorldManager';
 import WorldObjectRegistry from '../world/WorldObjectRegistry';
 import UIService from '../ui/UIService';
@@ -252,6 +258,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // setupQueues()), so the panel has to exist first.
         this.uiService = new UIService(this.game, () => this.toggleCameraMode());
         this.setupQueues();
+        this.setupShops();
         this.setupDebugGui();
         this.threeScene.add(this.mainPlayer.transform);
 
@@ -342,6 +349,21 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             'Resources',
         );
         DevGuiManager.instance.addButton(
+            'Clear Queues',
+            () => void QueueStorage.clearAll(),
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
+            'Clear Money',
+            () => void EconomyStorage.clearAll(),
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
+            'Clear Shop Upgrades',
+            () => void ShopUpgradeStorage.clearAll(),
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
             'Add 10 Of Each Resource',
             () => {
                 for (const type of Object.values(ResourceType)) {
@@ -349,6 +371,53 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 }
             },
             'Resources',
+        );
+        DevGuiManager.instance.addButton(
+            'Add 100 Money',
+            () => EconomyStorage.add(CurrencyType.Money, 100),
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
+            'Reset Everything',
+            () => {
+                void GlobalResourceStorage.clearAll();
+                void BackpackStorage.clearAll();
+                void BuildingStorage.clearAll();
+                void GateStorage.clearAll();
+                void QueueStorage.clearAll();
+                void EconomyStorage.clearAll();
+                void ShopUpgradeStorage.clearAll();
+            },
+            'Resources',
+        );
+
+        // One force-upgrade button per configured shop — fully funds AND completes its next
+        // level in one click (bypassing both the coin-deposit walk-up and its cooldown, unlike
+        // the normal ShopZone flow), so a designer can test every upgrade tier's ActionConfig
+        // change without grinding money/waiting out cooldowns. tryCompleteUpgrade() itself
+        // doesn't check cooldown — only addProgress()'s cap on `cost` and isMaxLevel() gate
+        // this at all.
+        for (const [id, config] of Object.entries(SHOP_CONFIG_BY_ID)) {
+            if (!config) {
+                continue;
+            }
+            DevGuiManager.instance.addButton(
+                `Upgrade ${config.name}`,
+                () => {
+                    const cost = config.levels[ShopUpgradeStorage.getLevel(id)]?.cost;
+                    if (cost === undefined) {
+                        return;
+                    }
+                    ShopUpgradeStorage.addProgress(id, config, cost);
+                    ShopUpgradeStorage.tryCompleteUpgrade(id, config);
+                },
+                'Upgrades',
+            );
+        }
+        DevGuiManager.instance.addButton(
+            'Reset Upgrades',
+            () => void ShopUpgradeStorage.clearAll(),
+            'Upgrades',
         );
 
         // Live sliders bound directly to CAMERA_SETTINGS — cameraOffset()/fixedUpdate() read
@@ -505,6 +574,46 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 const questGiver = this.world.add(new QuestGiverEntity(id, waypoints, questGiverConfig!));
                 this.threeScene.add(questGiver.transform);
             }
+        }
+    }
+
+    /**
+     * Spawns one ShopZone per "shop" object found on the Tiled map's "mapSettings" layer whose
+     * id has a matching ShopConfig (see ShopTypes.SHOP_CONFIG_BY_ID) — auto-discovery like
+     * setupQueues(), since a shop's id is likewise whatever's drawn on the map, EXCEPT a shop
+     * with no config entry is skipped (with a warning) rather than falling back to some default,
+     * since a shop has no sensible default (see ShopTypes.ts's own doc — it has to know which
+     * tool it upgrades).
+     *
+     * Same dropper-or-own-footprint trigger resolution as setupBuildingZone(): a Tiled
+     * "dropper" object targeting this shop's id (see WorldObjectRegistry.ts) stands in for the
+     * shop's own footprint as the deposit trigger when the level designer has placed one — e.g.
+     * a shop stall drawn against a wall the player can't walk into, with its real drop-off spot
+     * placed elsewhere. Falls back to the shop's own footprint when no dropper exists.
+     */
+    private setupShops(): void {
+        for (const [id, placement] of this.worldObjects.getAllOfType('shop')) {
+            if (!getShopConfig(id)) {
+                console.warn(`[PizzaScene] shop "${id}" found on the Tiled map but has no ShopConfig entry — skipping`);
+                continue;
+            }
+
+            const position = new THREE.Vector3(placement.x, 0, placement.z);
+            const dropperPlacement = this.worldObjects.getDropperFor(id);
+            const triggerArea: ShopTriggerArea | undefined = dropperPlacement
+                ? {
+                    position: new THREE.Vector3(dropperPlacement.x, 0, dropperPlacement.z),
+                    footprint: { width: dropperPlacement.width, depth: dropperPlacement.depth },
+                }
+                : undefined;
+
+            const shopZone = this.world.add(new ShopZone(
+                position, this.screenHost, id,
+                () => this.uiService.economyUi.getIconAnchorPosition(),
+                { width: placement.width, depth: placement.depth },
+                triggerArea,
+            ));
+            this.threeScene.add(shopZone.transform);
         }
     }
 

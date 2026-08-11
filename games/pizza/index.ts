@@ -24,6 +24,7 @@ import { BuildingStorage } from './game/data/BuildingStorage';
 import { GateStorage } from './game/data/GateStorage';
 import { EconomyStorage } from './game/data/EconomyStorage';
 import { QueueStorage } from './game/data/QueueStorage';
+import { ShopUpgradeStorage } from './game/shop/ShopUpgradeStorage';
 import { Localization } from './game/i18n/Localization';
 import loaderConfig from './loader.config';
 
@@ -76,6 +77,8 @@ export default class MyGame extends Game {
             await GateStorage.load();
             await EconomyStorage.load();
             await QueueStorage.load();
+            await ShopUpgradeStorage.load();
+            ShopUpgradeStorage.reapplyAllShopUpgrades();
             await Localization.load();
 
             // 5. Setup Game Flow

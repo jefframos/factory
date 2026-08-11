@@ -176,3 +176,25 @@ export function spawnFlyingIconToOverlayPoint(
         onArrive,
     );
 }
+
+/**
+ * The mirror image of spawnFlyingIconToOverlayPoint() — the DEPARTURE point is a live HUD
+ * element's own position (e.g. ShopZone spending money that flies FROM EconomyUI's wallet icon
+ * TO the shop itself) and the destination is a world point. Same "read the HUD point fresh
+ * every frame" reasoning as that function's own doc, just on the other end of the flight.
+ */
+export function spawnFlyingIconFromOverlayPoint(
+    host: ScreenAnchorHost,
+    getFromOverlayPoint: () => { x: number; y: number },
+    toWorld: THREE.Vector3,
+    texture: PIXI.Texture,
+    onArrive?: () => void,
+): void {
+    flyIcon(
+        host,
+        () => scratchFromLocalPoint.copyFrom(getFromOverlayPoint()),
+        () => projectWorldToOverlay(host, toWorld, scratchToWorld, scratchToScreenPoint, scratchToLocalPoint),
+        texture,
+        onArrive,
+    );
+}
