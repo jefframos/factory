@@ -74,10 +74,10 @@ import { GateStorage } from '../data/GateStorage';
  * viewport aspect ratio (narrow phones vs. wide desktops).
  */
 const CAMERA_SETTINGS = {
-    yawDeg: 35,
-    pitchDeg: 35,
+    yawDeg: 0,
+    pitchDeg: 38,
     distance: 15,
-    followSpeed: 4,
+    followSpeed: 10,
 };
 
 /** CAMERA_SETTINGS.pitchDeg/distance the camera eases BACK to when the top-down toggle (see UIService's camera-toggle button) is switched off — captured from CAMERA_SETTINGS' own initial values so a dev-GUI tweak to the normal follow angle before ever toggling still gets restored correctly. */
@@ -590,10 +590,20 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         const followT = 1 - Math.exp(-CAMERA_SETTINGS.followSpeed * delta);
         this.smoothedFollowTarget.lerp(desiredTarget, followT);
 
+        // Position is set DIRECTLY from smoothedFollowTarget (rigidly offset, not a second
+        // independent lerp toward it) — see smoothedFollowTarget's own doc for the ONE lag
+        // stage this is meant to be. A second lerp here used to make position chase an
+        // already-lagging target: two decoupled first-order lags never perfectly track each
+        // other frame-to-frame, so the vector from camera.position to the lookAt target
+        // (this.smoothedFollowTarget) drifted slightly off `offset` during any transient
+        // (walking, stopping, turning) — a constant tiny rotation of the view direction even
+        // though yawDeg/pitchDeg never changed, which reads as motion sickness. Deriving
+        // position straight from the same smoothed point keeps camera.position and the lookAt
+        // target ALWAYS exactly `offset` apart, so the rig translates with lag but never
+        // rotates relative to the player on its own.
         const offset = cameraOffset(this.threeCamera);
         this.threeCamera.up.copy(cameraUpVector(CAMERA_SETTINGS.yawDeg, offset));
-        const targetPosition = this.smoothedFollowTarget.clone().add(offset);
-        this.threeCamera.position.lerp(targetPosition, followT);
+        this.threeCamera.position.copy(this.smoothedFollowTarget).add(offset);
         this.threeCamera.lookAt(this.smoothedFollowTarget);
     }
 

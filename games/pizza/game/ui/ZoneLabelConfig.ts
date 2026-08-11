@@ -13,12 +13,12 @@ import { ScreenAnchorOptions } from '../components/ScreenAnchorComponent';
 
 export const ZONE_LABEL_ANCHOR_OPTIONS: ScreenAnchorOptions = {
     /** Beyond this, the nameplate hides entirely rather than clutter the screen from across the map. */
-    maxDistance: 14,
+    maxDistance: 16,
     distanceScale: {
         /** At/below this distance, the nameplate renders at full size. */
         nearDistance: 3,
         /** At/beyond this distance, the nameplate is at its smallest (minScale) — same value as maxDistance so it's already near-invisible by the time it'd stop shrinking. */
         farDistance: 14,
-        minScale: 0.5,
+        minScale: 0.85,
     },
 };

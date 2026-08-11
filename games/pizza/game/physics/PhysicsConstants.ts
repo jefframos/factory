@@ -6,7 +6,8 @@
 // rotation, just AABB overlap + push-out per axis.
 
 /** Flip to true to render a wireframe box over every RigidBody's collider (see RigidBody.onAdded()). */
-export const PHYSICS_DEBUG = true;
+export const PHYSICS_DEBUG = false;
+export const PHYSICS_TRIGGER_DEBUG = false;
 
 /** World-units/second^2 downward acceleration applied to every RigidBody with useGravity=true. */
 export const GRAVITY = -20;
@@ -23,7 +24,7 @@ export const GRAVITY = -20;
 export const MAX_PHYSICS_DELTA = 1 / 20;
 
 /** Color used for the debug wireframe boxes. */
-export const DEBUG_COLLIDER_COLOR = 0x00ff66;
+export const DEBUG_COLLIDER_COLOR = 0xff0066;
 /** Color used for the debug wireframe boxes of RigidBodies with isTrigger=true — kept visually distinct from solid colliders. */
 export const DEBUG_TRIGGER_COLOR = 0xffee00;
 

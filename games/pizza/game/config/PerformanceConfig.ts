@@ -28,7 +28,7 @@ export const PERFORMANCE_CONFIG = {
      * within this radius — see WorldManager.update(). This is the actual "mesh render
      * radius" knob for resources: raise it to have them appear/stay visible further out.
      */
-    resourceLoadRadius: 26,
+    resourceLoadRadius: 30,
     /**
      * ...and stays materialized until the player drifts out past this LARGER radius —
      * deliberately wider than resourceLoadRadius so a resource sitting right at the

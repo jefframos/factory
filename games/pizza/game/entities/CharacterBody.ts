@@ -506,7 +506,8 @@ export default class CharacterBody {
             return;
         }
 
-        const geometry = new THREE.SphereGeometry(15, 12, 12);
+        //const geometry = new THREE.SphereGeometry(15, 12, 12);
+        const geometry = new THREE.SphereGeometry(1, 1, 1);
         const material = new THREE.MeshBasicMaterial({ color: 0xff00ff });
         this.handDebugMarker = new THREE.Mesh(geometry, material);
         holder.add(this.handDebugMarker);

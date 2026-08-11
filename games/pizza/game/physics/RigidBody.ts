@@ -30,7 +30,7 @@
 import * as THREE from 'three';
 import { Signal } from 'signals';
 import Component from '../ecs/Component';
-import { ALL_LAYERS, DEBUG_COLLIDER_COLOR, DEBUG_TRIGGER_COLOR, Layers, PHYSICS_DEBUG } from './PhysicsConstants';
+import { ALL_LAYERS, DEBUG_COLLIDER_COLOR, DEBUG_TRIGGER_COLOR, Layers, PHYSICS_DEBUG, PHYSICS_TRIGGER_DEBUG } from './PhysicsConstants';
 
 export interface RigidBodyOptions {
     /** Half-width/height/depth of the box collider, world units. */
@@ -88,7 +88,11 @@ export default class RigidBody extends Component {
     public awake(): void {
         this.entity.world?.physics.register(this);
 
-        if (!PHYSICS_DEBUG) {
+        if (!this.isTrigger && !PHYSICS_DEBUG) {
+            return;
+        }
+
+        if (this.isTrigger && !PHYSICS_TRIGGER_DEBUG) {
             return;
         }
 

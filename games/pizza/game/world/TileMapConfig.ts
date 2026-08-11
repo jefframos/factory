@@ -230,7 +230,7 @@ export const RESOURCE_NAME_TO_TYPE: Partial<Record<string, ResourceType>> = {
  * default, so adding a new ground tile never requires touching this list unless it should
  * block movement.
  */
-export const NON_WALKABLE_GROUND_TILES: ReadonlySet<string> = new Set(['water', 'lava']);
+export const NON_WALKABLE_GROUND_TILES: ReadonlySet<string> = new Set(['water', 'lava', 'rock']);
 
 export function isGroundWalkable(name: string | undefined): boolean {
     return name === undefined || !NON_WALKABLE_GROUND_TILES.has(name);

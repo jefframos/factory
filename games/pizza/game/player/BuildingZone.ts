@@ -90,6 +90,16 @@ export default class BuildingZone extends Entity {
     private isPlayerInside = false;
     /** The player entity currently inside this zone — undefined whenever isPlayerInside is false. Kept so flyInResource() can read the player's CURRENT backpack world position on every unit, not a stale snapshot from whenever the trigger first fired. */
     private player?: MainPlayer;
+    /**
+     * Set the instant a level clears (see handleLevelUp()) — while true, tryDeposit() refuses
+     * to start any new drain and flyInResource()'s step() loop halts on its next tick, so
+     * depositing stops for the whole level-up transition instead of continuing to feed the
+     * NEXT level's requirements while the mesh-swap/camera sequence is still playing. Only
+     * clears once the player actually LEAVES this zone's trigger (see handleTriggerExit()) —
+     * even after the transition finishes, standing in place doesn't auto-resume; the building
+     * is "dirty" until they leave and walk back in, same as a fresh visit.
+     */
+    private awaitingReentry = false;
     /** Where deposited icons fly TO — the same anchor this zone's own requirements panel tracks (see awake()), i.e. wherever this building's UI is actually rendered on screen, not a point on the building's 3D mesh. */
     private labelAnchor!: THREE.Object3D;
 
@@ -111,6 +121,12 @@ export default class BuildingZone extends Entity {
         if (id !== this.buildingId) {
             return;
         }
+
+        // Set synchronously, in the SAME tick the level actually cleared (this handler runs
+        // straight off BuildingStorage.tryCompleteLevel()'s own dispatch, which itself runs
+        // straight off the landing icon that completed it) — see awaitingReentry's own doc.
+        // Anything already in flight still lands normally; this only stops NEW departures.
+        this.awaitingReentry = true;
 
         // Fire-and-forget from the Signal's perspective — BuildingStorage.onLevelUp is a
         // synchronous callback, but the sequence it kicks off (popup, camera travel/hold/
@@ -334,7 +350,7 @@ export default class BuildingZone extends Entity {
 
     private tryDeposit(other: RigidBody): void {
         const player = other.entity;
-        if (!(player instanceof MainPlayer) || BuildingStorage.isMaxLevel(this.buildingId)) {
+        if (!(player instanceof MainPlayer) || BuildingStorage.isMaxLevel(this.buildingId) || this.awaitingReentry) {
             return;
         }
 
@@ -351,7 +367,13 @@ export default class BuildingZone extends Entity {
         }
     }
 
-    /** Player's RigidBody left this zone's trigger — flyInResource()'s loop reads isPlayerInside before every unit, so clearing it here is the ENTIRE "stop depositing" instruction; nothing further needs to be cancelled explicitly. */
+    /**
+     * Player's RigidBody left this zone's trigger — flyInResource()'s loop reads isPlayerInside
+     * before every unit, so clearing it here is the ENTIRE "stop depositing" instruction;
+     * nothing further needs to be cancelled explicitly. Also clears awaitingReentry (see that
+     * field's own doc) — leaving is what makes the building "clean" again after a level-up,
+     * regardless of whether the transition itself has actually finished playing yet.
+     */
     private handleTriggerExit(other: RigidBody): void {
         if (other.entity !== this.player) {
             return;
@@ -359,6 +381,7 @@ export default class BuildingZone extends Entity {
 
         this.isPlayerInside = false;
         this.player = undefined;
+        this.awaitingReentry = false;
     }
 
     /**
@@ -368,8 +391,9 @@ export default class BuildingZone extends Entity {
      * player's backpack cube currently sits (read fresh every unit, since a continuously-
      * draining player is still walking around) and arrives at this building's own labelAnchor
      * — see this file's own doc. No-ops (and clears `draining`) the instant the player leaves,
-     * the level clears/changes, the backpack runs out, or the FBX character (and so the
-     * backpack cube) hasn't loaded yet.
+     * a level clear sets awaitingReentry (see that field's own doc — depositing stays paused
+     * for the rest of the transition even though the player never left), the backpack runs
+     * out, or the FBX character (and so the backpack cube) hasn't loaded yet.
      */
     private flyInResource(type: ResourceType): void {
         if (this.draining.has(type)) {
@@ -381,7 +405,7 @@ export default class BuildingZone extends Entity {
         const toWorld = new THREE.Vector3();
 
         const step = (): void => {
-            const next = this.isPlayerInside && !BuildingStorage.isMaxLevel(this.buildingId)
+            const next = this.isPlayerInside && !this.awaitingReentry && !BuildingStorage.isMaxLevel(this.buildingId)
                 ? BuildingStorage.getNextLevelConfig(this.buildingId)
                 : undefined;
             const need = next?.requirements[type] ?? 0;
