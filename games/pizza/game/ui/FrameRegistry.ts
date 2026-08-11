@@ -23,6 +23,9 @@ export interface FrameDef {
     textureKey: string;
     /** Border widths (source pixels) PIXI.NineSlicePlane keeps unstretched at each edge/corner — see FrameComponent.ts. */
     padding: FramePadding;
+
+    arrowTexture?: string
+    arrowPivot?: { x: number, y: number }
 }
 
 export function uniformPadding(px: number): FramePadding {
@@ -31,16 +34,27 @@ export function uniformPadding(px: number): FramePadding {
 
 /** Every BorderFrame_Round20_* asset was exported with the same 22px border on every side — see uniformPadding(). Override per-frame below if a different asset ever needs asymmetric padding. */
 const DEFAULT_PADDING = uniformPadding(22);
+const DEFAULT_PADDING_BUBBLE = uniformPadding(30);
 
-export const FrameRegistry = {
-    /** Primary HUD panel background — dark, reads as "the main container." */
-    Main: { textureKey: 'BorderFrame_Round20_Single_Dark', padding: DEFAULT_PADDING },
-    /** Emphasis frame for something bigger/celebratory (level-up, reward reveal) — warm yellow border. */
-    Large: { textureKey: 'BorderFrame_Round20_Single_Yellow', padding: DEFAULT_PADDING },
-    /** Light background for informational readouts — see TextStyleRegistry.Info's text counterpart. */
-    Info: { textureKey: 'BorderFrame_Round20_White_Bg', padding: DEFAULT_PADDING },
-    /** Light background for short-lived popups/toasts — see AutoFitFrame's use on DropZone's nameplate. */
-    Popup: { textureKey: 'BorderFrame_Round20_White_Bg', padding: DEFAULT_PADDING },
-} satisfies Record<string, FrameDef>;
+export const FrameRegistry: Record<string, FrameDef> = {
+    Main: {
+        textureKey: 'BorderFrame_Round20_Single_Dark',
+        padding: DEFAULT_PADDING,
+    },
+    Large: {
+        textureKey: 'BorderFrame_Round20_Single_Yellow',
+        padding: DEFAULT_PADDING,
+    },
+    Info: {
+        textureKey: 'BorderFrame_Round24',
+        padding: DEFAULT_PADDING_BUBBLE,
+    },
+    Popup: {
+        textureKey: 'BorderFrame_Round24',
+        padding: DEFAULT_PADDING_BUBBLE,
+        arrowTexture: 'BubbleFrame03_Arrow_Bottom',
+        arrowPivot: { x: 0.5, y: 1 },
+    },
+};
 
 export type FrameName = keyof typeof FrameRegistry;

@@ -48,7 +48,7 @@ import { WorldProgressionHost } from '../camera/WorldProgressionHost';
 import { wait } from '../utils/GsapUtils';
 import MainPlayer from './MainPlayer';
 
-const LABEL_FRAME_PADDING = uniformFitPadding(10);
+const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
 const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
 const LABEL_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 1.2, 0);
@@ -70,6 +70,12 @@ const FLY_IN_STAGGER_SEC = 0.12;
 /** How far above its resting height the upgraded mesh starts before dropping in — see replaceBuildingMesh(). */
 const MESH_DROP_START_HEIGHT = 3;
 const MESH_DROP_DURATION_SEC = 0.7;
+
+/** A separate deposit-trigger rect, in WORLD space — see the constructor's `triggerArea` param doc. */
+export interface BuildingTriggerArea {
+    position: THREE.Vector3;
+    footprint: { width: number; depth: number };
+}
 
 export default class BuildingZone extends Entity {
     private readonly screenHost: ScreenAnchorHost;
@@ -114,6 +120,8 @@ export default class BuildingZone extends Entity {
 
     /** Overrides BuildingMeshConfig's own width/depth (X/Z) at every level — see the constructor's `footprint` param doc. Undefined means "use whatever BuildingTypes.ts says," same as before this existed. */
     private readonly footprint?: { width: number; depth: number };
+    /** Optional separate deposit-trigger rect — see the constructor's `triggerArea` param doc. Undefined means "trigger the building's own footprint," same as before this existed. */
+    private readonly triggerArea?: BuildingTriggerArea;
 
     public constructor(
         position: THREE.Vector3,
@@ -130,6 +138,18 @@ export default class BuildingZone extends Entity {
          * BuildingMeshConfig — see createBuildingMesh().
          */
         footprint?: { width: number; depth: number },
+        /**
+         * Optional separate deposit-trigger area, in WORLD space — from a Tiled "dropper"
+         * object targeting this building (see WorldObjectRegistry.ts's own doc /
+         * PizzaScene.setupBuildingZone()). When given, the PLAYER-FACING trigger (what
+         * actually starts a deposit) sits here instead of on the building's own footprint —
+         * e.g. a building drawn somewhere the player can't walk up to, with its real
+         * drop-off spot placed elsewhere on the map. The building's own visual mesh,
+         * nameplate, and camera-focus point are all UNAFFECTED — they stay exactly where
+         * `position`/`footprint` say regardless. Undefined means "trigger the building's
+         * own footprint," same as before this param existed.
+         */
+        triggerArea?: BuildingTriggerArea,
     ) {
         super();
         this.screenHost = screenHost;
@@ -137,26 +157,42 @@ export default class BuildingZone extends Entity {
         this.cameraFocusHost = cameraFocusHost;
         this.worldProgressionHost = worldProgressionHost;
         this.footprint = footprint;
+        this.triggerArea = triggerArea;
         this.transform.position.copy(position);
     }
 
     public override awake(): void {
-        // Trigger footprint (X/Z) matches the visible mesh's own footprint when one was
-        // given (see the constructor's `footprint` param doc) — HALF_EXTENTS was a fixed
-        // "roughly building-sized" guess for every building regardless of its actual size;
-        // without this a Tiled-authored building much bigger than that guess (e.g. a 14x9
-        // footprint) would still only be enterable within the old tiny 2.5x2.5 trigger.
-        // Height (Y) is unaffected — a Tiled rect has no vertical dimension to derive it from.
-        const halfExtents = this.footprint
-            ? new THREE.Vector3(this.footprint.width / 2, HALF_EXTENTS.y, this.footprint.depth / 2)
+        // Trigger footprint (X/Z) matches this.triggerArea's footprint when a separate
+        // trigger area was given (see the constructor's `triggerArea` param doc), else the
+        // visible mesh's own footprint when one was given (see the `footprint` param doc) —
+        // HALF_EXTENTS was a fixed "roughly building-sized" guess for every building
+        // regardless of its actual size; without this a Tiled-authored building/dropper much
+        // bigger than that guess (e.g. a 14x9 footprint) would still only be enterable within
+        // the old tiny 2.5x2.5 trigger. Height (Y) is unaffected — a Tiled rect has no
+        // vertical dimension to derive it from.
+        const triggerFootprint = this.triggerArea?.footprint ?? this.footprint;
+        const halfExtents = triggerFootprint
+            ? new THREE.Vector3(triggerFootprint.width / 2, HALF_EXTENTS.y, triggerFootprint.depth / 2)
             : HALF_EXTENTS;
+
+        // RigidBody.centerOffset is relative to THIS entity's own transform.position (the
+        // building's visual position) — when triggerArea gives an ABSOLUTE world position
+        // instead, converting it to an X/Z offset from here is what lets the trigger sit
+        // somewhere else on the map entirely while the visual mesh/nameplate/camera-focus
+        // point all stay exactly where `position` says (see triggerArea's own doc: only the
+        // player-facing trigger moves, nothing else about this building does).
+        const centerOffset = new THREE.Vector3(0, halfExtents.y, 0);
+        if (this.triggerArea) {
+            centerOffset.x = this.triggerArea.position.x - this.transform.position.x;
+            centerOffset.z = this.triggerArea.position.z - this.transform.position.z;
+        }
 
         const rigidBody = this.addComponent(new RigidBody({
             halfExtents,
             isStatic: true,
             isTrigger: true,
             layer: Layers.Trigger,
-            centerOffset: new THREE.Vector3(0, halfExtents.y, 0),
+            centerOffset,
         }));
         // The zone's actual visible structure — starts at whatever level it's already at (e.g.
         // reloading a save mid-upgrade-ladder), no drop-in for this first placement (see

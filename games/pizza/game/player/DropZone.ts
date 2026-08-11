@@ -43,7 +43,7 @@ import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import MainPlayer from './MainPlayer';
 
 /** Breathing room between the nameplate's text and its AutoFitFrame border — separate from the frame asset's OWN 9-slice padding (see FrameRegistry.ts). */
-const LABEL_FRAME_PADDING = uniformFitPadding(10);
+const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
 const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
 /** How far above the zone each unit's "+1" popup starts. */

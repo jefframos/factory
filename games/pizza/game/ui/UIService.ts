@@ -22,12 +22,16 @@ import { Game } from 'core/Game';
 import { TextStyleRegistry } from './TextStyleRegistry';
 import BackpackUI from './BackpackUI';
 import GlobalResourcesUI from './GlobalResourcesUI';
+import EconomyUI from './EconomyUI';
 
 /** Gap between the backpack HUD panel's bottom edge and the actual bottom of the screen — see positionBackpackUi(). */
 const BACKPACK_UI_BOTTOM_MARGIN = 16;
 
 /** Gap between the global-resources HUD panel's top/right edges and the actual top-right corner of the screen — see positionGlobalResourcesUi(). */
 const GLOBAL_RESOURCES_UI_MARGIN = 16;
+
+/** Gap between the economy (money) HUD panel's top/right edges and the actual top-right corner of the screen — see positionEconomyUi(). Same spot globalResourcesUi would occupy (that panel is currently not added to the display tree), so no visual collision. */
+const ECONOMY_UI_MARGIN = 16;
 
 /** Gap between the camera-toggle button's bottom/left edges and the actual bottom-left corner of the screen — see positionCameraToggleButton(). */
 const CAMERA_TOGGLE_BUTTON_MARGIN = 16;
@@ -44,6 +48,9 @@ export default class UIService {
     /** The base-stockpile HUD panel, pinned top-right — see GlobalResourcesUI.ts's own doc. */
     public readonly globalResourcesUi: GlobalResourcesUI;
 
+    /** The money HUD panel, pinned top-right — see EconomyUI.ts's own doc. */
+    public readonly economyUi: EconomyUI;
+
     /** Bottom-left toggle between the normal follow camera and a top-down view. No button texture art exists yet for pizza — PIXI.Texture.WHITE + tint is the same "flat colored placeholder until real art exists" convention BuildingMeshConfig/GateMeshConfig already use for meshes, just applied to a UI button instead. */
     private readonly cameraToggleButton: BaseButton;
 
@@ -59,7 +66,10 @@ export default class UIService {
         this.game.overlayContainer.addChild(this.backpackUi);
 
         this.globalResourcesUi = new GlobalResourcesUI();
-        this.game.overlayContainer.addChild(this.globalResourcesUi);
+        //this.game.overlayContainer.addChild(this.globalResourcesUi);
+
+        this.economyUi = new EconomyUI();
+        this.game.overlayContainer.addChild(this.economyUi);
 
         this.cameraToggleButton = new BaseButton({
             standard: {
@@ -92,6 +102,7 @@ export default class UIService {
     public update(): void {
         this.positionBackpackUi();
         this.positionGlobalResourcesUi();
+        this.positionEconomyUi();
         this.positionCameraToggleButton();
     }
 
@@ -121,6 +132,19 @@ export default class UIService {
         );
     }
 
+    /** Top-right, regardless of viewport size/aspect — same spot globalResourcesUi would occupy (see ECONOMY_UI_MARGIN's own doc). */
+    private positionEconomyUi(): void {
+        const screen = Game.overlayScreenData;
+        if (!screen) {
+            return;
+        }
+
+        this.economyUi.position.set(
+            screen.topRight.x - this.economyUi.panelWidth - ECONOMY_UI_MARGIN,
+            screen.topRight.y + ECONOMY_UI_MARGIN,
+        );
+    }
+
     /**
      * Bottom-left, regardless of viewport size/aspect. BaseButton's anchor param only affects
      * its INTERNAL pivot (see updateTexturePosition() — it sets both `pivot` and `x`/`y` to
@@ -144,6 +168,7 @@ export default class UIService {
     public destroy(): void {
         this.backpackUi.destroy();
         this.globalResourcesUi.destroy();
+        this.economyUi.destroy();
         this.cameraToggleButton.destroy();
     }
 }

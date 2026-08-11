@@ -22,6 +22,8 @@ import { GlobalResourceStorage } from './game/data/GlobalResourceStorage';
 import { BackpackStorage } from './game/data/BackpackStorage';
 import { BuildingStorage } from './game/data/BuildingStorage';
 import { GateStorage } from './game/data/GateStorage';
+import { EconomyStorage } from './game/data/EconomyStorage';
+import { QueueStorage } from './game/data/QueueStorage';
 import { Localization } from './game/i18n/Localization';
 import loaderConfig from './loader.config';
 
@@ -72,6 +74,8 @@ export default class MyGame extends Game {
             await BackpackStorage.load();
             await BuildingStorage.load();
             await GateStorage.load();
+            await EconomyStorage.load();
+            await QueueStorage.load();
             await Localization.load();
 
             // 5. Setup Game Flow

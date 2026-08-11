@@ -73,6 +73,13 @@ export const ASSET_LIBRARY = {
         rotationDeg: [0, 360],
         icon: 'wild-berries'
     },
+    money: {
+        // No 3D presence at all — money is a currency, never a gatherable world prop.
+        models: [],
+        scale: 1,
+        rotationDeg: 0,
+        icon: 'ItemIcon_Money_Bill-2',
+    },
 } satisfies Record<string, AssetLibraryEntry>;
 
 export type AssetLibraryKey = keyof typeof ASSET_LIBRARY;

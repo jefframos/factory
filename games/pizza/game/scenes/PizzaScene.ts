@@ -41,7 +41,8 @@ import BoxVisualComponent from '../components/BoxVisualComponent';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import MainPlayer from '../player/MainPlayer';
 import DropZone from '../player/DropZone';
-import BuildingZone from '../player/BuildingZone';
+import BuildingZone, { BuildingTriggerArea } from '../player/BuildingZone';
+import QueueZone from '../player/QueueZone';
 import WorldManager from '../world/WorldManager';
 import WorldObjectRegistry from '../world/WorldObjectRegistry';
 import UIService from '../ui/UIService';
@@ -242,10 +243,13 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
         this.worldManager.buildGround();
         this.setupTestBox();
-        this.setupDropZone();
+        //this.setupDropZone();
         this.setupBuildingZone();
         this.setupGates();
+        // Built before setupQueues() — a queue's reward flies to this UI's wallet icon (see
+        // setupQueues()), so the panel has to exist first.
         this.uiService = new UIService(this.game, () => this.toggleCameraMode());
+        this.setupQueues();
         this.setupDebugGui();
         this.threeScene.add(this.mainPlayer.transform);
 
@@ -379,15 +383,53 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.threeScene.add(dropZone.transform);
     }
 
-    /** Test building zone — funds Camp's upgrade ladder (see BuildingZone.ts/BuildingTypes.ts) independently of the drop zone's base-stockpile deposits. `this` is passed as BOTH CameraFocusHost and WorldProgressionHost — see BuildingZone's own doc for why the level-up-then-gate-check chain has to go through the latter rather than a second independent signal listener. */
+    /**
+     * Every building's zone — funds its own upgrade ladder (see BuildingZone.ts/
+     * BuildingTypes.ts) independently of the drop zone's base-stockpile deposits. `this` is
+     * passed as BOTH CameraFocusHost and WorldProgressionHost — see BuildingZone's own doc
+     * for why the level-up-then-gate-check chain has to go through the latter rather than a
+     * second independent signal listener.
+     *
+     * Each building's deposit TRIGGER prefers a Tiled "dropper" object targeting it (see
+     * WorldObjectRegistry.ts's own doc) over the building's own footprint, when the level
+     * designer has placed one — e.g. a building drawn somewhere unreachable, with its real
+     * walk-up-to-deposit spot placed elsewhere on the map. After resolving every building,
+     * this warns ONCE with the full list of buildings that have no dropper at all (they still
+     * work — see BuildingZone's `triggerArea` param doc — this is purely a "did you forget
+     * one" nudge for whoever is placing them in Tiled).
+     */
     private setupBuildingZone(): void {
-        // Fallback width/depth match BuildingTypes.ts's own baseMesh footprint (1x1) — only
-        // used if "camp" isn't found on the Tiled map's "mapSettings" layer at all (see
-        // WorldObjectRegistry.require()'s warning).
-        const placement = this.worldObjects.require('building', BuildingId.Camp, { x: BUILDING_ZONE_OFFSET.x, z: BUILDING_ZONE_OFFSET.z, width: 1, depth: 1 });
-        const position = new THREE.Vector3(placement.x, BUILDING_ZONE_OFFSET.y, placement.z);
-        const buildingZone = this.world.add(new BuildingZone(position, this.screenHost, BuildingId.Camp, this, this, { width: placement.width, depth: placement.depth }));
-        this.threeScene.add(buildingZone.transform);
+        const buildingsWithoutDropper: BuildingId[] = [];
+
+        for (const buildingId of Object.values(BuildingId)) {
+            // Fallback width/depth match BuildingTypes.ts's own baseMesh footprint (1x1) —
+            // only used if this building isn't found on the Tiled map's "mapSettings" layer
+            // at all (see WorldObjectRegistry.require()'s warning).
+            const placement = this.worldObjects.require('building', buildingId, { x: BUILDING_ZONE_OFFSET.x, z: BUILDING_ZONE_OFFSET.z, width: 1, depth: 1 });
+            const position = new THREE.Vector3(placement.x, BUILDING_ZONE_OFFSET.y, placement.z);
+
+            const dropperPlacement = this.worldObjects.getDropperFor(buildingId);
+            const triggerArea: BuildingTriggerArea | undefined = dropperPlacement
+                ? {
+                    position: new THREE.Vector3(dropperPlacement.x, BUILDING_ZONE_OFFSET.y, dropperPlacement.z),
+                    footprint: { width: dropperPlacement.width, depth: dropperPlacement.depth },
+                }
+                : undefined;
+            if (!triggerArea) {
+                buildingsWithoutDropper.push(buildingId);
+            }
+
+            const buildingZone = this.world.add(new BuildingZone(
+                position, this.screenHost, buildingId, this, this,
+                { width: placement.width, depth: placement.depth },
+                triggerArea,
+            ));
+            this.threeScene.add(buildingZone.transform);
+        }
+
+        if (buildingsWithoutDropper.length > 0) {
+            console.warn(`[PizzaScene] no dropper found for building(s): ${buildingsWithoutDropper.join(', ')} — each is using its own footprint as its deposit trigger instead`);
+        }
     }
 
     /**
@@ -426,6 +468,25 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             }
 
             this.gateManager.register(gate);
+        }
+    }
+
+    /**
+     * Spawns one QueueZone per "queue" object found on the Tiled map's "mapSettings" layer —
+     * see WorldObjectRegistry.getAllOfType()'s own doc for why this is auto-discovery rather
+     * than a fixed id list like setupBuildingZone()/setupGates() use: a queue's id comes
+     * straight from whatever's drawn on the map, so a level designer can add "queue7" and have
+     * it fully work with zero code changes here.
+     */
+    private setupQueues(): void {
+        for (const [id, placement] of this.worldObjects.getAllOfType('queue')) {
+            const position = new THREE.Vector3(placement.x, 0, placement.z);
+            const queueZone = this.world.add(new QueueZone(
+                position, this.screenHost, id,
+                () => this.uiService.economyUi.getIconAnchorPosition(),
+                { width: placement.width, depth: placement.depth },
+            ));
+            this.threeScene.add(queueZone.transform);
         }
     }
 
