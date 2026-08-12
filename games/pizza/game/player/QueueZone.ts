@@ -32,7 +32,7 @@ import gsap from 'gsap';
 import Entity from '../ecs/Entity';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
-import BoxVisualComponent from '../components/BoxVisualComponent';
+import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
 import { spawnFlyingResourceIcon, spawnFlyingIconToOverlayPoint } from '../components/FlyingResourceIcon';
@@ -53,8 +53,10 @@ import MainPlayer from './MainPlayer';
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
 const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
-/** Placeholder box color — distinct from DropZone's green/BuildingZone's own mesh, so a queue reads as its own kind of zone on the map until real art exists. */
+/** Dotted-outline color — distinct from DropZone's green/BuildingZone's own mesh, so a queue reads as its own kind of zone on the map until real art exists. */
 const QUEUE_BOX_COLOR = 0xcc8800;
+/** Corner rounding for the floor outline — purely cosmetic, the collider itself stays a sharp-cornered box (see RigidBody above). */
+const QUEUE_ZONE_CORNER_RADIUS = 0.3;
 const LABEL_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 1.2, 0);
 /** Where the reward icon departs from — roughly head-height above the zone, same idea as BuildingZone's own popup spawn point. */
 const POPUP_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 2.2, 0);
@@ -154,10 +156,11 @@ export default class QueueZone extends Entity {
             layer: Layers.Trigger,
             centerOffset: new THREE.Vector3(0, halfExtents.y, 0),
         }));
-        this.addComponent(new BoxVisualComponent(
-            halfExtents.clone().multiplyScalar(2),
-            QUEUE_BOX_COLOR,
-            new THREE.Vector3(0, halfExtents.y, 0),
+        this.addComponent(new DottedZoneVisualComponent(
+            halfExtents.x * 2,
+            halfExtents.z * 2,
+            QUEUE_ZONE_CORNER_RADIUS,
+            { color: QUEUE_BOX_COLOR },
         ));
 
         this.headerContainer = new PIXI.Container();

@@ -1,0 +1,113 @@
+// Popup.ts
+//
+// Base class for anything shown through PopupManager — owns the shared
+// chrome (AutoFitFrame panel, centered title, corner close button) so a
+// concrete popup (SettingsPopup, future ones) only has to describe its OWN
+// content via buildContent(), not rebuild alignment/frame/close-button
+// plumbing every time.
+//
+// Content lays out inside a FIXED-WIDTH column (`contentWidth`) rather than
+// auto-sizing from whatever children happen to be added — anchoring the
+// title against AutoFitFrame's own auto-measured bounds (which include
+// wherever the close button happens to sit) drifts the title off-true
+// depending on what else is in the popup. Anchoring the title AND every
+// piece of `buildContent`'s own content to the same known `contentWidth`
+// instead keeps everything aligned to one authoritative column regardless
+// of what's added.
+
+import * as PIXI from 'pixi.js';
+import BaseButton from 'core/ui/BaseButton';
+import Assets from '../../../Assets';
+import { TextStyleRegistry } from '../TextStyleRegistry';
+import AutoFitFrame, { uniformFitPadding } from '../AutoFitFrame';
+import { FrameName } from '../FrameRegistry';
+
+const CLOSE_BUTTON_SIZE = 36;
+const CLOSE_BUTTON_ICON_SIZE = 18;
+/** How far the close button sits past contentWidth's right edge / above the title's top edge — a corner badge overlapping the panel's own border, same "pinned to the corner" idiom QueueZone's upgrade badge uses on its tool icon. */
+const CLOSE_BUTTON_INSET = 6;
+const TITLE_CONTENT_GAP = 20;
+const PANEL_PADDING = 28;
+
+export interface PopupOptions {
+    /** Column width every child (title, buildContent's own content) lays out against — see this file's own doc. */
+    contentWidth?: number;
+    /** Whether PopupManager should show a full-screen dark backdrop behind this popup. Defaults to true. */
+    darkenBackground?: boolean;
+    /** 9-slice panel chrome — defaults to the same 'Popup' bubble frame every other pizza panel uses (see FrameRegistry.ts). */
+    frame?: FrameName;
+}
+
+export default abstract class Popup {
+    public readonly root = new PIXI.Container();
+    public readonly darkenBackground: boolean;
+    protected readonly contentWidth: number;
+
+    private readonly frame: AutoFitFrame;
+    private onCloseRequested?: () => void;
+
+    protected constructor(title: string, options: PopupOptions = {}) {
+        this.contentWidth = options.contentWidth ?? 300;
+        this.darkenBackground = options.darkenBackground ?? true;
+
+        const column = new PIXI.Container();
+
+        const titleText = new PIXI.Text(title, TextStyleRegistry.Title);
+        titleText.anchor.set(0.5, 0);
+        titleText.position.set(this.contentWidth / 2, 0);
+        column.addChild(titleText);
+
+        const content = new PIXI.Container();
+        content.position.set(0, titleText.height + TITLE_CONTENT_GAP);
+        column.addChild(content);
+
+        // Populated AFTER content is already positioned/parented — buildContent() only ever
+        // needs to add children into it, never worry about its own placement within column.
+        this.buildContent(content, this.contentWidth);
+
+        const closeButton = new BaseButton({
+            standard: {
+                width: CLOSE_BUTTON_SIZE, height: CLOSE_BUTTON_SIZE,
+                texture: PIXI.Texture.WHITE, tint: 0x222233,
+                iconTexture: PIXI.Texture.from(Assets.Textures.Icons.Close),
+                iconSize: { width: CLOSE_BUTTON_ICON_SIZE, height: CLOSE_BUTTON_ICON_SIZE },
+                centerIconHorizontally: true,
+                centerIconVertically: true,
+            },
+            over: { tint: 0x333344 },
+            down: { tint: 0x11111a },
+            click: { callback: () => this.requestClose() },
+        });
+        closeButton.position.set(
+            this.contentWidth - CLOSE_BUTTON_SIZE / 2 + CLOSE_BUTTON_INSET,
+            -CLOSE_BUTTON_SIZE / 2 - CLOSE_BUTTON_INSET,
+        );
+        column.addChild(closeButton);
+
+        this.frame = new AutoFitFrame(uniformFitPadding(PANEL_PADDING), options.frame ?? 'Popup', column);
+        this.root.addChild(this.frame);
+
+        // root's own local (0,0) is wherever `column`'s (0,0) happens to land — that's the
+        // title's own anchor point, NOT the panel's visual center (the close button hangs past
+        // contentWidth on one side, the frame's own padding extends past content on every side,
+        // ...). Pivoting to the panel's ACTUAL rendered bounds is what makes `root.position`
+        // (set by PopupManager) land the panel's real visual center on screen, and makes
+        // rotation/scale (see PopupTransitions.ts) pivot around that same true center instead
+        // of some arbitrary corner.
+        const bounds = this.root.getLocalBounds();
+        this.root.pivot.set(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    }
+
+    /** Concrete popups implement this — add whatever this popup needs into `content`, laid out against `contentWidth` (e.g. `x: contentWidth / 2 - button.width / 2` to center a button). Called once, during construction, before the panel frame is fit around the final size. */
+    protected abstract buildContent(content: PIXI.Container, contentWidth: number): void;
+
+    /** PopupManager wires this via bindClose() right before showing the popup — lets content added in buildContent() (e.g. a "Done" button) close the popup without needing to know PopupManager exists. */
+    protected requestClose(): void {
+        this.onCloseRequested?.();
+    }
+
+    /** Called by PopupManager right before showing this popup — see requestClose()'s own doc. */
+    public bindClose(onCloseRequested: () => void): void {
+        this.onCloseRequested = onCloseRequested;
+    }
+}

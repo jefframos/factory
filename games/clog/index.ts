@@ -184,6 +184,7 @@ export default class MyGame extends Game {
     protected startGame(): void {
 
         DevGuiManager.instance.initialize(Game.debugParams.dev);
+        PlatformHandler.instance.setupDevPauseToggle();
         const gameplay = this.sceneManager.register<BaseDemoScene>('game', BaseDemoScene, this);
         // if (Game.debugParams.scene === 'level') {
         //     const editor = this.sceneManager.register<LevelEditorScene>('level', LevelEditorScene, this);

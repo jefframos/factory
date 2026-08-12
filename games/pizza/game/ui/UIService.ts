@@ -24,6 +24,8 @@ import BackpackUI from './BackpackUI';
 import GlobalResourcesUI from './GlobalResourcesUI';
 import EconomyUI from './EconomyUI';
 import ToolLevelUI from './ToolLevelUI';
+import SettingsUIService from './SettingsUIService';
+import { UpgradeNotificationManager } from './notifications/UpgradeNotificationManager';
 
 /** Gap between the backpack HUD panel's bottom edge and the actual bottom of the screen — see positionBackpackUi(). */
 const BACKPACK_UI_BOTTOM_MARGIN = 16;
@@ -60,6 +62,9 @@ export default class UIService {
 
     /** Bottom-left toggle between the normal follow camera and a top-down view. No button texture art exists yet for pizza — PIXI.Texture.WHITE + tint is the same "flat colored placeholder until real art exists" convention BuildingMeshConfig/GateMeshConfig already use for meshes, just applied to a UI button instead. */
     private readonly cameraToggleButton: BaseButton;
+
+    /** Top-left mute + settings buttons, and the settings panel the gear button opens — see SettingsUIService.ts's own doc. */
+    private readonly settingsUi: SettingsUIService;
 
     /**
      * `onCameraToggle` is a callback into the scene rather than this service importing
@@ -100,6 +105,9 @@ export default class UIService {
         this.cameraToggleButton.setLabel('Top-Down View');
         this.game.overlayContainer.addChild(this.cameraToggleButton);
 
+        this.settingsUi = new SettingsUIService(this.game);
+        UpgradeNotificationManager.instance.init(this.game);
+
         this.update();
     }
 
@@ -115,6 +123,7 @@ export default class UIService {
         this.positionEconomyUi();
         this.positionCameraToggleButton();
         this.positionToolLevelUi();
+        this.settingsUi.update();
     }
 
     /** Bottom-center, regardless of viewport size/aspect. */
@@ -205,5 +214,6 @@ export default class UIService {
         this.economyUi.destroy();
         this.cameraToggleButton.destroy();
         this.toolLevelUi.destroy();
+        this.settingsUi.destroy();
     }
 }

@@ -165,6 +165,7 @@ export default class MyGame extends Game {
     protected startGame(): void {
 
         DevGuiManager.instance.initialize(Game.debugParams.dev);
+        PlatformHandler.instance.setupDevPauseToggle();
         const gameplay = this.sceneManager.register<GameplayJigsawScene>('game', GameplayJigsawScene, this);
         this.sceneManager.changeScene(Game.debugParams.scene || 'game');
         this.sceneManager.resize();

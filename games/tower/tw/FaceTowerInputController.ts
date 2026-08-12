@@ -61,6 +61,26 @@ export class FaceTowerInputController {
         this.inputLayer.height = height;
     }
 
+    /**
+     * Toggles the input layer's OWN eventMode rather than relying solely on some other overlay
+     * sitting on top of it — PIXI's EventSystem listens on the canvas's native pointer events
+     * directly and keeps dispatching regardless of whether the render ticker is running, so a
+     * frozen screen alone does NOT stop this layer from still seeing pointerdown/move/up. See
+     * IslandViewScene's _onPlatformPause/_onPlatformResume, the intended caller.
+     */
+    public setEnabled(enabled: boolean): void {
+        this.inputLayer.eventMode = enabled ? 'static' : 'none';
+
+        if (!enabled && this.pointerActive) {
+            // Cancel a drag in progress instead of leaving pointerActive stuck true — else
+            // re-enabling later would silently ignore the next pointerdown, since
+            // onPointerMove's touch-input gate (see above) requires pointerActive to already
+            // be true from an EARLIER pointerdown that, with eventMode off, will never arrive.
+            this.pointerActive = false;
+            this.inputLayer.cursor = 'grab';
+        }
+    }
+
     public destroy(): void {
         this.inputLayer.off(
             'pointerdown',

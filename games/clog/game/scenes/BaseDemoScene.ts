@@ -28,6 +28,7 @@ import { HighScoreStorage } from '../data/HighScoreStorage';
 import { DEFAULT_START_VALUE } from '../ClogConstants';
 import { ISLANDS, getDefaultIsland, setSelectedIslandId } from '../world/IslandStorage';
 import { clearTileMaterialCache } from '../world/BoundlessChunk';
+import { DomUiRoot } from '../dom-ui/DomUiRoot';
 
 export const PLAYER_NAME_KEY = 'playerName';
 
@@ -90,6 +91,8 @@ export default class BaseDemoScene extends GameScene {
     private worldRebuilding = false;
     /** Set right before debugKillPlayer() by the QuitButton's confirmed click — tells the next death-detection tick to skip the usual countdown/revive screen and jump straight to End Game. Consumed (reset to false) the instant it's read. */
     private quitToEndGame = false;
+    /** True while PlatformHandler says the platform SDK (or the dev "Pause Game" toggle — see PlatformHandler.setupDevPauseToggle()) has paused the game — see setupPlatformPause()/isPlaying()'s own docs. Independent of `flowState`: pausing during 'menu'/'dead' must not make resume incorrectly re-enable input that flowState itself says should stay off. */
+    private paused = false;
 
     public async build(): Promise<void> {
         // Started once, for the whole session — never stopped, only ducked
@@ -118,7 +121,7 @@ export default class BaseDemoScene extends GameScene {
         if (USE_ANALOG_INPUT || PIXI.isMobile.any) {
             this.analogInput = new AnalogInput(this);
             this.analogInput.onMove.add(({ direction, magnitude }) => {
-                if (this.flowState !== 'playing') return;
+                if (!this.isPlaying()) return;
                 if (magnitude > 0) {
                     this.movementHint.registerMove();
                     this.lastAnalogDir = { x: direction.x, z: direction.y };
@@ -141,7 +144,7 @@ export default class BaseDemoScene extends GameScene {
             if (PIXI.isMobile.any) {
                 this.boostButton = new BoostButton();
                 this.boostButton.onBoostChange.add(({ active }) => {
-                    if (this.flowState !== 'playing') return;
+                    if (!this.isPlaying()) return;
                     this.world3d.setPlayerBoosting(active);
                 });
 
@@ -157,14 +160,14 @@ export default class BaseDemoScene extends GameScene {
         } else {
             this.pointerFollowInput = new PointerFollowInput(this);
             this.pointerFollowInput.onBoostChange.add(({ active }) => {
-                if (this.flowState !== 'playing') return;
+                if (!this.isPlaying()) return;
                 this.world3d.setPlayerBoosting(active);
             });
         }
 
         this.keyboardInput = new KeyboardInputMovement();
         this.keyboardInput.onMove.add(({ direction, magnitude }) => {
-            if (this.flowState !== 'playing') return;
+            if (!this.isPlaying()) return;
             if (magnitude > 0) this.movementHint.registerMove();
             this.world3d.moveInput.x = direction.x * magnitude;
             this.world3d.moveInput.z = direction.y * magnitude;
@@ -323,7 +326,42 @@ export default class BaseDemoScene extends GameScene {
 
         // Initial position
         this.repositionUi();
+
+        this.setupPlatformPause();
     }
+
+    /**
+     * Subscribes to the platform's own pause/resume signal — see `paused`'s own doc. Mirrors
+     * tower's IslandViewScene.setupPlatformPause()/MergeScene.setupPopups() identical
+     * PlatformHandler wiring, adapted to clog's existing flowState-driven input gating instead
+     * of a separate Pixi gameBlocker sprite: every input controller here already supports being
+     * disabled directly (setEnabled()) via setFlowState(), so re-running that with `paused` now
+     * true is enough to also disable them — no extra blocker mesh needed.
+     */
+    private setupPlatformPause(): void {
+        PlatformHandler.instance.onPause.add(this._onPlatformPause);
+        PlatformHandler.instance.onResume.add(this._onPlatformResume);
+    }
+
+    private readonly _onPlatformPause = (): void => {
+        this.paused = true;
+        this.setFlowState(this.flowState);
+        this.world3d?.setPaused(true);
+        // Mute/settings/quit are real DOM elements sitting above the Pixi canvas entirely —
+        // disabling this scene's own input controllers (above) can't reach them.
+        DomUiRoot.instance.setInputBlocked(true);
+    };
+
+    private readonly _onPlatformResume = (): void => {
+        this.paused = false;
+        // Re-running setFlowState with the SAME state it's already in is what restores each
+        // input controller's correct enabled-ness for whatever flowState actually is right now
+        // (e.g. staying disabled if paused happened during 'menu'/'dead') — see isPlaying()'s
+        // own doc for why `paused` can't just force everything back to enabled here.
+        this.setFlowState(this.flowState);
+        this.world3d?.setPaused(false);
+        DomUiRoot.instance.setInputBlocked(false);
+    };
 
     /**
      * "Tap to Start" from the boot menu, or the BOOST badge's watch-ad-and-
@@ -360,7 +398,7 @@ export default class BaseDemoScene extends GameScene {
     private setFlowState(state: FlowState): void {
         const previous = this.flowState;
         this.flowState = state;
-        const playing = state === 'playing';
+        const playing = state === 'playing' && !this.paused;
         this.analogInput?.setEnabled(playing);
         this.pointerFollowInput?.setEnabled(playing);
         this.boostButton?.setEnabled(playing);
@@ -382,9 +420,14 @@ export default class BaseDemoScene extends GameScene {
         }
     }
 
+    /** Same "actually able to move/act right now" check every input handler above gates on — flowState alone isn't enough once `paused` exists, since pausing must NOT change flowState itself (see `paused`'s own doc: resuming has to restore whatever flowState already said, not just always re-enable 'playing'). */
+    private isPlaying(): boolean {
+        return this.flowState === 'playing' && !this.paused;
+    }
+
     /** QuitButton, after the player confirms — kills the player exactly like the debug "Kill Player" panel button, but flags the resulting death (see quitToEndGame) to skip straight to the End Game screen instead of the usual countdown/revive choice, since ending the run was a deliberate choice, not an accident. */
     private handleQuitRun(): void {
-        if (this.flowState !== 'playing') return;
+        if (!this.isPlaying()) return;
         this.quitToEndGame = true;
         this.world3d.debugKillPlayer();
         PlatformHandler.instance.platform.gameplayStop()
@@ -399,6 +442,11 @@ export default class BaseDemoScene extends GameScene {
             ? new LinearWorld3dScene(this.game)
             : new BoundlessWorld3dScene(this.game);
         await this.world3d.build();
+        // A fresh world3d instance starts unpaused regardless of this scene's own `paused` —
+        // reapply it so rebuilding mid-pause (e.g. the Level dropdown, or "Continue" after
+        // death) can't hand back a live, ticking world while the platform still thinks the
+        // game is paused.
+        this.world3d.setPaused(this.paused);
         this.worldRebuilding = false;
     }
 
@@ -416,7 +464,7 @@ export default class BaseDemoScene extends GameScene {
         // event-driven like AnalogInput/KeyboardInputMovement) since the
         // player's on-screen anchor drifts under camera follow independent of
         // any pointer event — see PointerFollowInput.
-        if (this.pointerFollowInput && this.world3d && this.flowState === 'playing') {
+        if (this.pointerFollowInput && this.world3d && this.isPlaying()) {
             const pointer = this.pointerFollowInput.getPointerPosition();
             const anchor = pointer && this.world3d.getPlayerScreenAnchor();
             if (pointer && anchor) {
@@ -438,7 +486,14 @@ export default class BaseDemoScene extends GameScene {
         }
 
         const scaledDelta = delta * this.speedMultiplier;
-        this.world3d?.update(scaledDelta);
+        // Freezes NPCs/movement/physics/VFX all at once — every bit of clog's own simulation
+        // (NpcDirector, bots, chunk streaming, collectibles, eating resolution, camera follow)
+        // lives inside world3d.update() (see BoundlessWorld3dScene.update()'s own doc), so
+        // simply not calling it while paused is enough to stop "everything" — see `paused`'s
+        // own doc.
+        if (!this.paused) {
+            this.world3d?.update(scaledDelta);
+        }
 
         if (this.world3d) {
             // Per-entity HUD: one per live target (player + every NPC) — see
@@ -526,6 +581,13 @@ export default class BaseDemoScene extends GameScene {
     }
 
     public destroy(): void {
+        PlatformHandler.instance.onPause.remove(this._onPlatformPause);
+        PlatformHandler.instance.onResume.remove(this._onPlatformResume);
+        // DomUiRoot is an app-wide singleton, not scene-owned — don't leave its OWN input
+        // blocked past this scene's own lifetime just because it happened to be paused when
+        // torn down.
+        DomUiRoot.instance.setInputBlocked(false);
+
         for (const s of this.statsWidgets) s.dom.parentElement?.removeChild(s.dom);
         this.statsWidgets = [];
         this.world3d?.destroy();

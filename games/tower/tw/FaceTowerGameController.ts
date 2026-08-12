@@ -269,6 +269,11 @@ export class FaceTowerGameController {
         this.input.resize(x, y, width, height);
     }
 
+    /** See FaceTowerInputController.setEnabled's own doc — stops the drag/drop input layer from responding at all, independent of whether anything is currently rendering. */
+    public setInputEnabled(enabled: boolean): void {
+        this.input.setEnabled(enabled);
+    }
+
     public getState(): FaceTowerState {
         return this.state;
     }

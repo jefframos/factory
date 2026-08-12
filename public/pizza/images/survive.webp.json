@@ -1,8 +1,48 @@
 {
   "frames": {
-    "woodcutters-axe": {
+    "work-gloves": {
       "frame": {
         "x": 2,
+        "y": 2,
+        "w": 108,
+        "h": 107
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 10,
+        "w": 108,
+        "h": 107
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "wooden-spear": {
+      "frame": {
+        "x": 2,
+        "y": 111,
+        "w": 105,
+        "h": 108
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 11,
+        "y": 10,
+        "w": 105,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "woodcutters-axe": {
+      "frame": {
+        "x": 112,
         "y": 2,
         "w": 107,
         "h": 108
@@ -22,8 +62,128 @@
     },
     "wood-log": {
       "frame": {
-        "x": 111,
+        "x": 2,
+        "y": 218,
+        "w": 108,
+        "h": 103
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 12,
+        "w": 108,
+        "h": 103
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "wilderness-map": {
+      "frame": {
+        "x": 112,
+        "y": 112,
+        "w": 108,
+        "h": 91
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 18,
+        "w": 108,
+        "h": 91
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "wild-berries": {
+      "frame": {
+        "x": 221,
         "y": 2,
+        "w": 108,
+        "h": 107
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 10,
+        "w": 108,
+        "h": 107
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "water-canteen": {
+      "frame": {
+        "x": 205,
+        "y": 112,
+        "w": 105,
+        "h": 108
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 11,
+        "y": 10,
+        "w": 105,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "warm-blanket": {
+      "frame": {
+        "x": 112,
+        "y": 222,
+        "w": 108,
+        "h": 90
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 19,
+        "w": 108,
+        "h": 90
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "tree-resin": {
+      "frame": {
+        "x": 2,
+        "y": 323,
+        "w": 86,
+        "h": 108
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 21,
+        "y": 10,
+        "w": 86,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "tree-bark": {
+      "frame": {
+        "x": 222,
+        "y": 219,
         "w": 108,
         "h": 103
       },
@@ -40,20 +200,80 @@
         "h": 128
       }
     },
-    "wild-berries": {
+    "tanned-leather": {
       "frame": {
-        "x": 2,
-        "y": 112,
+        "x": 330,
+        "y": 2,
         "w": 108,
-        "h": 107
+        "h": 101
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 13,
+        "w": 108,
+        "h": 101
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "survival-torch": {
+      "frame": {
+        "x": 327,
+        "y": 112,
+        "w": 99,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 14,
+        "y": 10,
+        "w": 99,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "survival-tent": {
+      "frame": {
+        "x": 112,
+        "y": 314,
+        "w": 108,
+        "h": 86
       },
       "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 10,
-        "y": 10,
+        "y": 21,
         "w": 108,
-        "h": 107
+        "h": 86
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "survival-backpack": {
+      "frame": {
+        "x": 327,
+        "y": 222,
+        "w": 99,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 14,
+        "y": 10,
+        "w": 99,
+        "h": 108
       },
       "sourceSize": {
         "w": 128,
@@ -62,8 +282,8 @@
     },
     "stone-chunk": {
       "frame": {
-        "x": 112,
-        "y": 112,
+        "x": 2,
+        "y": 411,
         "w": 107,
         "h": 108
       },
@@ -80,19 +300,19 @@
         "h": 128
       }
     },
-    "mining-pickaxe": {
+    "snare-trap": {
       "frame": {
-        "x": 216,
-        "y": 2,
-        "w": 104,
+        "x": 112,
+        "y": 402,
+        "w": 107,
         "h": 108
       },
       "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
-        "x": 12,
+        "x": 10,
         "y": 10,
-        "w": 104,
+        "w": 107,
         "h": 108
       },
       "sourceSize": {
@@ -100,10 +320,90 @@
         "h": 128
       }
     },
-    "iron-ore": {
+    "slingshot": {
       "frame": {
-        "x": 2,
-        "y": 221,
+        "x": 221,
+        "y": 402,
+        "w": 90,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 19,
+        "y": 10,
+        "w": 90,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "signal-whistle": {
+      "frame": {
+        "x": 313,
+        "y": 332,
+        "w": 108,
+        "h": 88
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 20,
+        "w": 108,
+        "h": 88
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "signal-mirror": {
+      "frame": {
+        "x": 433,
+        "y": 2,
+        "w": 108,
+        "h": 102
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 13,
+        "w": 108,
+        "h": 102
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "signal-flare": {
+      "frame": {
+        "x": 313,
+        "y": 422,
+        "w": 93,
+        "h": 108
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 17,
+        "y": 10,
+        "w": 93,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "sharpening-stone": {
+      "frame": {
+        "x": 423,
+        "y": 332,
         "w": 108,
         "h": 96
       },
@@ -120,10 +420,670 @@
         "h": 128
       }
     },
-    "copper-ore": {
+    "sewing-kit": {
+      "frame": {
+        "x": 428,
+        "y": 112,
+        "w": 108,
+        "h": 104
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 12,
+        "w": 108,
+        "h": 104
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "scrap-metal": {
+      "frame": {
+        "x": 428,
+        "y": 222,
+        "w": 108,
+        "h": 93
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 17,
+        "w": 108,
+        "h": 93
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "sand-pile": {
+      "frame": {
+        "x": 423,
+        "y": 430,
+        "w": 108,
+        "h": 76
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 26,
+        "w": 108,
+        "h": 76
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "salt-pouch": {
+      "frame": {
+        "x": 2,
+        "y": 520,
+        "w": 107,
+        "h": 108
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 10,
+        "w": 107,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "safety-goggles": {
       "frame": {
         "x": 112,
-        "y": 221,
+        "y": 517,
+        "w": 108,
+        "h": 75
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 26,
+        "w": 108,
+        "h": 75
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "rope-coil": {
+      "frame": {
+        "x": 189,
+        "y": 517,
+        "w": 108,
+        "h": 103
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 12,
+        "w": 108,
+        "h": 103
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "repair-wrench": {
+      "frame": {
+        "x": 294,
+        "y": 517,
+        "w": 102,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 13,
+        "y": 10,
+        "w": 102,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "raw-meat": {
+      "frame": {
+        "x": 398,
+        "y": 517,
+        "w": 108,
+        "h": 89
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 19,
+        "w": 108,
+        "h": 89
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "rain-poncho": {
+      "frame": {
+        "x": 523,
+        "y": 222,
+        "w": 108,
+        "h": 89
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 19,
+        "w": 108,
+        "h": 89
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "plant-fiber": {
+      "frame": {
+        "x": 489,
+        "y": 508,
+        "w": 108,
+        "h": 107
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 10,
+        "w": 108,
+        "h": 107
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "oil-lantern": {
+      "frame": {
+        "x": 534,
+        "y": 112,
+        "w": 58,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 35,
+        "y": 10,
+        "w": 58,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "mortar-and-pestle": {
+      "frame": {
+        "x": 537,
+        "y": 2,
+        "w": 100,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 14,
+        "y": 10,
+        "w": 100,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "mining-pickaxe": {
+      "frame": {
+        "x": 594,
+        "y": 112,
+        "w": 104,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 12,
+        "y": 10,
+        "w": 104,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "medicinal-herbs": {
+      "frame": {
+        "x": 614,
+        "y": 222,
+        "w": 97,
+        "h": 108
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 15,
+        "y": 10,
+        "w": 97,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "leather-belt": {
+      "frame": {
+        "x": 639,
+        "y": 2,
+        "w": 108,
+        "h": 85
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 21,
+        "w": 108,
+        "h": 85
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "iron-ore": {
+      "frame": {
+        "x": 614,
+        "y": 321,
+        "w": 108,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 16,
+        "w": 108,
+        "h": 96
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "hunting-knife": {
+      "frame": {
+        "x": 598,
+        "y": 419,
+        "w": 95,
+        "h": 108
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 16,
+        "y": 10,
+        "w": 95,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "hiking-boots": {
+      "frame": {
+        "x": 598,
+        "y": 516,
+        "w": 108,
+        "h": 100
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 14,
+        "w": 108,
+        "h": 100
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "hardwood-planks": {
+      "frame": {
+        "x": 2,
+        "y": 629,
+        "w": 108,
+        "h": 98
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 15,
+        "w": 108,
+        "h": 98
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "hand-saw": {
+      "frame": {
+        "x": 2,
+        "y": 729,
+        "w": 108,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 10,
+        "w": 108,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "hand-drill": {
+      "frame": {
+        "x": 489,
+        "y": 618,
+        "w": 108,
+        "h": 104
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 12,
+        "w": 108,
+        "h": 104
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "fur-hood": {
+      "frame": {
+        "x": 112,
+        "y": 728,
+        "w": 89,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 19,
+        "y": 10,
+        "w": 89,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "frying-pan": {
+      "frame": {
+        "x": 203,
+        "y": 728,
+        "w": 108,
+        "h": 96
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 16,
+        "w": 108,
+        "h": 96
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "flint-and-steel": {
+      "frame": {
+        "x": 301,
+        "y": 728,
+        "w": 108,
+        "h": 94
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 17,
+        "w": 108,
+        "h": 94
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "fishing-rod": {
+      "frame": {
+        "x": 397,
+        "y": 728,
+        "w": 106,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 11,
+        "y": 10,
+        "w": 106,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "fishing-net": {
+      "frame": {
+        "x": 505,
+        "y": 728,
+        "w": 108,
+        "h": 105
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 11,
+        "w": 108,
+        "h": 105
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "first-aid-kit": {
+      "frame": {
+        "x": 112,
+        "y": 627,
+        "w": 108,
+        "h": 92
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 18,
+        "w": 108,
+        "h": 92
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "field-shovel": {
+      "frame": {
+        "x": 612,
+        "y": 626,
+        "w": 105,
+        "h": 108
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 11,
+        "y": 10,
+        "w": 105,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "field-bandage": {
+      "frame": {
+        "x": 222,
+        "y": 627,
+        "w": 108,
+        "h": 92
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 18,
+        "w": 108,
+        "h": 92
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "feather-bundle": {
+      "frame": {
+        "x": 612,
+        "y": 733,
+        "w": 101,
+        "h": 108
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 13,
+        "y": 10,
+        "w": 101,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "edible-mushroom": {
+      "frame": {
+        "x": 332,
+        "y": 627,
+        "w": 108,
+        "h": 81
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 23,
+        "w": 108,
+        "h": 81
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "dust-mask": {
+      "frame": {
+        "x": 700,
+        "y": 112,
+        "w": 108,
+        "h": 87
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 20,
+        "w": 108,
+        "h": 87
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "crafting-hammer": {
+      "frame": {
+        "x": 700,
+        "y": 516,
+        "w": 98,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 15,
+        "y": 10,
+        "w": 98,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "copper-ore": {
+      "frame": {
+        "x": 708,
+        "y": 419,
         "w": 108,
         "h": 94
       },
@@ -140,9 +1100,49 @@
         "h": 128
       }
     },
+    "cooking-pot": {
+      "frame": {
+        "x": 726,
+        "y": 2,
+        "w": 89,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 19,
+        "y": 10,
+        "w": 89,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "cooked-meat": {
+      "frame": {
+        "x": 724,
+        "y": 222,
+        "w": 108,
+        "h": 91
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 18,
+        "w": 108,
+        "h": 91
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
     "coal-lump": {
       "frame": {
-        "x": 222,
+        "x": 789,
         "y": 112,
         "w": 108,
         "h": 101
@@ -160,10 +1160,250 @@
         "h": 128
       }
     },
+    "cloth-roll": {
+      "frame": {
+        "x": 800,
+        "y": 515,
+        "w": 108,
+        "h": 105
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 11,
+        "w": 108,
+        "h": 105
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
     "clay-lump": {
       "frame": {
+        "x": 817,
+        "y": 2,
+        "w": 108,
+        "h": 91
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 18,
+        "w": 108,
+        "h": 91
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "canned-food": {
+      "frame": {
+        "x": 724,
+        "y": 332,
+        "w": 76,
+        "h": 108
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 26,
+        "y": 10,
+        "w": 76,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "campfire": {
+      "frame": {
+        "x": 817,
+        "y": 222,
+        "w": 88,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 20,
+        "y": 10,
+        "w": 88,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "camp-kettle": {
+      "frame": {
+        "x": 800,
+        "y": 622,
+        "w": 96,
+        "h": 108
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 16,
+        "y": 10,
+        "w": 96,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "camp-coffee": {
+      "frame": {
+        "x": 834,
+        "y": 332,
+        "w": 82,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 23,
+        "y": 10,
+        "w": 82,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "brass-spyglass": {
+      "frame": {
+        "x": 722,
+        "y": 720,
+        "w": 108,
+        "h": 97
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 15,
+        "w": 108,
+        "h": 97
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "brass-compass": {
+      "frame": {
+        "x": 821,
+        "y": 720,
+        "w": 98,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 15,
+        "y": 10,
+        "w": 98,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "binoculars": {
+      "frame": {
         "x": 2,
-        "y": 319,
+        "y": 839,
+        "w": 108,
+        "h": 97
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 15,
+        "w": 108,
+        "h": 97
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "bedroll": {
+      "frame": {
+        "x": 112,
+        "y": 838,
+        "w": 108,
+        "h": 85
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 21,
+        "w": 108,
+        "h": 85
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "bear-trap": {
+      "frame": {
+        "x": 722,
+        "y": 830,
+        "w": 108,
+        "h": 103
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 12,
+        "w": 108,
+        "h": 103
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "antidote-vial": {
+      "frame": {
+        "x": 612,
+        "y": 836,
+        "w": 79,
+        "h": 108
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 24,
+        "y": 10,
+        "w": 79,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "animal-hide": {
+      "frame": {
+        "x": 222,
+        "y": 838,
         "w": 108,
         "h": 91
       },
@@ -179,6 +1419,26 @@
         "w": 128,
         "h": 128
       }
+    },
+    "animal-bone": {
+      "frame": {
+        "x": 892,
+        "y": 112,
+        "w": 106,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 11,
+        "y": 10,
+        "w": 106,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
     }
   },
   "meta": {
@@ -187,8 +1447,8 @@
     "image": "survive.webp",
     "format": "RGBA8888",
     "size": {
-      "w": 325,
-      "h": 412
+      "w": 1000,
+      "h": 938
     },
     "scale": 1,
     "related_multi_packs": []

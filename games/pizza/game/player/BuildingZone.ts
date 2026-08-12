@@ -31,6 +31,7 @@ import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
 import { BendService } from '../services/BendService';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
+import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
 import { spawnFlyingResourceIcon } from '../components/FlyingResourceIcon';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
@@ -51,6 +52,10 @@ import MainPlayer from './MainPlayer';
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
 const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
+/** Dotted-outline color for this building's deposit trigger — same technique/consistency as QueueZone/DropZone's own outlines, distinct hue so a building's dropper reads as its own kind of zone. */
+const DROPPER_ZONE_COLOR = 0x3388ff;
+/** Corner rounding for the dropper's floor outline — purely cosmetic, the collider itself stays a sharp-cornered box (see RigidBody below). */
+const DROPPER_ZONE_CORNER_RADIUS = 0.3;
 const LABEL_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 1.2, 0);
 const POPUP_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 2.2, 0);
 const POPUP_RISE = 0.8;
@@ -210,6 +215,17 @@ export default class BuildingZone extends Entity {
             layer: Layers.Trigger,
             centerOffset,
         }));
+        // Traces the ACTUAL deposit trigger's own footprint/position on the floor — same
+        // dotted-outline technique as QueueZone/DropZone. Needed independently of the building's
+        // own visual mesh below since a triggerArea (a Tiled "dropper") can sit anywhere on the
+        // map, entirely apart from where the building itself is drawn — see triggerArea's own doc.
+        this.addComponent(new DottedZoneVisualComponent(
+            halfExtents.x * 2,
+            halfExtents.z * 2,
+            DROPPER_ZONE_CORNER_RADIUS,
+            { color: DROPPER_ZONE_COLOR },
+            centerOffset,
+        ));
         // The zone's actual visible structure — starts at whatever level it's already at (e.g.
         // reloading a save mid-upgrade-ladder), no drop-in for this first placement (see
         // createBuildingMesh()'s `dropIn` param) since there's no "before" state to animate

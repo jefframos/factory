@@ -75,8 +75,36 @@ export class DomUiRoot {
 
     private currentScale = 1;
 
+    /** Full-viewport blocker appended to viewportRoot (NOT scaledRoot — see setInputBlocked()) whenever some real-DOM UI (mute/settings/quit buttons — see SoundToggleButton.ts) needs to stop responding to clicks. These buttons live outside the Pixi canvas entirely, so a Pixi-side blocker sprite can never reach them — this is the DOM-side equivalent. Ported from tower's identical DomUiRoot.ts. */
+    private inputBlocker: HTMLDivElement | null = null;
+
     private constructor() {
         this.handleResize = this.handleResize.bind(this);
+    }
+
+    /**
+     * Blocks (or unblocks) every mounted DOM-UI button at once — e.g. while the game is
+     * platform-paused (see BaseDemoScene._onPlatformPause/_onPlatformResume). Sits ABOVE
+     * scaledRoot (appended after it as a later viewportRoot sibling — later siblings win ties
+     * with no z-index needed) but stays below anything outside DomUiRoot entirely, like dev-GUI
+     * panels (dat.gui's own DOM root uses zIndex 10000+ — see DevGuiManager.ts), so the SAME
+     * "Pause Game" dev toggle that caused the block stays clickable to undo it.
+     */
+    public setInputBlocked(blocked: boolean): void {
+        this.ensureRoot();
+        const viewportRoot = this.viewportRoot!;
+
+        if (!this.inputBlocker) {
+            this.inputBlocker = document.createElement('div');
+            Object.assign(this.inputBlocker.style, {
+                position: 'absolute',
+                inset: '0',
+                pointerEvents: 'auto',
+            });
+            viewportRoot.appendChild(this.inputBlocker);
+        }
+
+        this.inputBlocker.style.display = blocked ? 'block' : 'none';
     }
 
     /**
@@ -171,6 +199,7 @@ export class DomUiRoot {
 
         this.viewportRoot = null;
         this.scaledRoot = null;
+        this.inputBlocker = null;
         this.currentScale = 1;
 
         DomUiRoot._instance = null;

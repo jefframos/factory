@@ -1,6 +1,7 @@
 import 'core/style.css';
 import * as PIXI from 'pixi.js';
 import Stats from 'stats.js';
+import PlatformHandler from 'core/platforms/PlatformHandler';
 
 export class Game {
     static DESIGN_WIDTH = 720;
@@ -28,6 +29,11 @@ export class Game {
 
     private lastWindowWidth: number = 0;
     private lastWindowHeight: number = 0;
+
+    /** True while the browser tab itself is hidden (document.visibilitychange) — independent of platformPaused below, since a platform SDK's own pause (e.g. a rewarded-ad break) can happen with the tab still visible, and vice versa. The ticker only runs while BOTH are false — see updateTickerState(). */
+    private tabHidden: boolean = false;
+    /** True while the current platform SDK says the game is paused (PlatformHandler.instance.onPause/onResume — see IPlatformConnection's onPause?/onResume? hooks). Not every platform wrapper implements those hooks yet; this simply never flips for one that doesn't. */
+    private platformPaused: boolean = false;
 
     // Screen data
     static renderer: PIXI.Renderer;
@@ -118,6 +124,36 @@ export class Game {
         window.addEventListener('resize', this.onResize.bind(this));
         window.addEventListener('orientationchange', () => this.handleResizeDebounced());
         this.onResize();
+
+        document.addEventListener('visibilitychange', () => {
+            this.tabHidden = document.hidden;
+            this.updateTickerState();
+        });
+
+        // PlatformHandler is a global singleton set up once via PlatformHandler.instance.initialize()
+        // in each game's own index.ts — subscribing here rather than waiting for that call is safe:
+        // Signal.add() just registers the listener, it doesn't require onPause/onResume to have
+        // fired (or even exist) yet, so this works whether that initialize() call has already
+        // happened, hasn't happened yet, or never happens at all (a platform with no onPause/onResume
+        // hooks implemented just never dispatches these signals — see IPlatformConnection).
+        PlatformHandler.instance.onPause.add(() => {
+            this.platformPaused = true;
+            this.updateTickerState();
+        });
+        PlatformHandler.instance.onResume.add(() => {
+            this.platformPaused = false;
+            this.updateTickerState();
+        });
+    }
+
+    /** Ticker only runs while NEITHER pause reason is active — see tabHidden/platformPaused's own docs. Stopping the ticker (rather than just gating loop()'s own body) also stops PIXI's own internal rendering, not just this class's update/fixedUpdate calls. */
+    private updateTickerState(): void {
+        const shouldRun = !this.tabHidden && !this.platformPaused;
+        if (shouldRun && !this.app.ticker.started) {
+            this.app.ticker.start();
+        } else if (!shouldRun && this.app.ticker.started) {
+            this.app.ticker.stop();
+        }
     }
     public setCanvasZIndex(value: number) {
         this.view.style.zIndex = value.toString();

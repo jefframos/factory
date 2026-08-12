@@ -29,6 +29,7 @@ import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
 import { BendService } from '../services/BendService';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
+import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import { spawnFlyingIconFromOverlayPoint } from '../components/FlyingResourceIcon';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
@@ -36,14 +37,20 @@ import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { EconomyStorage } from '../data/EconomyStorage';
 import { CURRENCY_CONFIG, CurrencyType } from '../data/EconomyTypes';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
-import { ShopUpgradeStorage } from './ShopUpgradeStorage';
 import { getToolIcon } from '../actions/ToolRegistry';
+import { ShopUpgradeStorage } from './ShopUpgradeStorage';
+import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
+import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
 import { getShopConfig, ShopConfig, SHOP_UPGRADE_AVAILABLE_ICON } from './ShopTypes';
 import MainPlayer from '../player/MainPlayer';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
 const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
+/** Dotted-outline color for this shop's deposit trigger — same technique/consistency as QueueZone/DropZone/BuildingZone's own outlines. */
+const DROPPER_ZONE_COLOR = 0x3388ff;
+/** Corner rounding for the dropper's floor outline — purely cosmetic, the collider itself stays a sharp-cornered box (see RigidBody below). */
+const DROPPER_ZONE_CORNER_RADIUS = 0.3;
 const LABEL_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 1.2, 0);
 const COST_ICON_SIZE = 22;
 const FLY_IN_STAGGER_SEC = 0.12;
@@ -162,6 +169,17 @@ export default class ShopZone extends Entity {
             layer: Layers.Trigger,
             centerOffset,
         }));
+        // Traces the ACTUAL deposit trigger's own footprint/position on the floor — same
+        // dotted-outline technique as QueueZone/DropZone/BuildingZone. Needed independently of
+        // the shop's own visual mesh below since a triggerArea (a Tiled "dropper") can sit
+        // anywhere on the map, entirely apart from where the shop itself is drawn.
+        this.addComponent(new DottedZoneVisualComponent(
+            halfExtents.x * 2,
+            halfExtents.z * 2,
+            DROPPER_ZONE_CORNER_RADIUS,
+            { color: DROPPER_ZONE_COLOR },
+            centerOffset,
+        ));
 
         this.createShopMesh();
 
@@ -374,7 +392,18 @@ export default class ShopZone extends Entity {
             spawnFlyingIconFromOverlayPoint(this.screenHost, this.getWalletOverlayPosition, toWorld.clone(), icon, () => {
                 EconomyStorage.spend(CurrencyType.Money, 1);
                 ShopUpgradeStorage.addProgress(this.shopId, this.config, 1);
-                ShopUpgradeStorage.tryCompleteUpgrade(this.shopId, this.config);
+                if (ShopUpgradeStorage.tryCompleteUpgrade(this.shopId, this.config)) {
+                    // Rarity is hardcoded to Common for now — ShopUpgradeLevel has no rarity
+                    // field yet (see ShopTypes.ts). Wire it up to actually vary per level once
+                    // that's added.
+                    UpgradeNotificationManager.instance.show({
+                        type: NotificationType.Upgrade,
+                        rarity: NotificationRarity.Common,
+                        icon: getToolIcon(this.config.tool),
+                        title: 'UPGRADE!',
+                        subtitle: `${this.config.tool.toUpperCase()} LEVEL ${ShopUpgradeStorage.getLevel(this.shopId)}`,
+                    });
+                }
             });
 
             gsap.delayedCall(FLY_IN_STAGGER_SEC, step);

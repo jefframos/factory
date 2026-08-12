@@ -197,6 +197,7 @@ export default class MyGame extends Game {
     protected startGame(): void {
 
         DevGuiManager.instance.initialize(Game.debugParams.dev);
+        PlatformHandler.instance.setupDevPauseToggle();
         this.sceneManager.register<BaseDemoScene>('game', BaseDemoScene, this);
         this.sceneManager.register<IslandViewScene>('tower', IslandViewScene, this);
         // if (Game.debugParams.scene === 'level') {

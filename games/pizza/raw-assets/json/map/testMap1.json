@@ -692,7 +692,7 @@
                  "x":16,
                  "y":0
                 }],
-         "height":64,
+         "height":48,
          "id":2,
          "name":"resourcesLayer",
          "opacity":1,
@@ -832,8 +832,8 @@
                  "type":"",
                  "visible":true,
                  "width":0,
-                 "x":-175.333333333333,
-                 "y":-175.333333333333
+                 "x":-175.333,
+                 "y":-175.333
                 }, 
                 {
                  "ellipse":true,
@@ -861,7 +861,7 @@
                  "type":"",
                  "visible":true,
                  "width":0,
-                 "x":-174.666666666667,
+                 "x":-174.667,
                  "y":-431
                 }, 
                 {
@@ -891,7 +891,7 @@
                  "visible":true,
                  "width":0,
                  "x":-465,
-                 "y":-527.666666666667
+                 "y":-527.667
                 }, 
                 {
                  "height":65,
@@ -913,8 +913,36 @@
                  "type":"",
                  "visible":true,
                  "width":65,
-                 "x":-60,
-                 "y":-413
+                 "x":-64,
+                 "y":-416
+                }, 
+                {
+                 "height":64.5,
+                 "id":11,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"dropperShop1"
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"shop1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":64.5,
+                 "x":-64,
+                 "y":-384
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -923,7 +951,7 @@
          "y":0
         }],
  "nextlayerid":5,
- "nextobjectid":11,
+ "nextobjectid":12,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

@@ -10,15 +10,29 @@
 // base layer's board directly.
 //
 // Actions are REPEATED HITS against a target's life, not one fixed-length
-// wait: every hitIntervalSec the action deals damagePerHit to whatever it's
-// acting on (see ActionTarget in PlayerActionController.ts), and finishes
-// only once that target reports itself depleted. Total time to clear a
-// target therefore falls out of the data rather than being configured
-// directly — a tree with maxLife 5 (see ResourceTypes.ts) under Chop's
-// 1 damage every 1s is the design doc's "5 seconds per tree". Tool
-// upgrades (M4) raise damagePerHit rather than shrinking a duration, which
-// is both the more natural knob for a better axe and the reason the
-// per-hit numbers are the source of truth here.
+// wait: every hitIntervalSec the action removes hitScale life from whatever
+// it's acting on (see PlayerActionController.update(), which caps that at
+// whatever life the target has actually got left — no overkill), and
+// finishes only once that target reports itself depleted. Total time to
+// clear a target therefore falls out of the data rather than being
+// configured directly — a tree with maxLife 5 (see ResourceTypes.ts) under
+// Chop's default hitScale 1/1s hitIntervalSec is the design doc's "5 seconds
+// per tree".
+//
+// Tool upgrades (M4) are THREE independent knobs, not one:
+//   - hitIntervalSec: swings faster, no change to yield per swing.
+//   - hitScale: how many hits one swing counts as — shrinks the hit COUNT
+//     needed to clear a target (a level whose hitScale reaches 5 one-shots
+//     a 5-life tree), capped at the target's remaining life so overkill
+//     never counts for more hits than the target actually had left.
+//   - resourcePerHit: how much AutoGatherController.onHitLanded() banks
+//     PER HIT (amountPerGather * resourcePerHit * hits) — deliberately NEVER
+//     capped by remaining life, unlike hitScale. This is what lets a
+//     resourcePerHit upgrade pull a total yield well past a tree's own
+//     maxLife: hitScale 3 with resourcePerHit 3 on a 5-life tree banks 3
+//     hits' worth (capped) at 3 each = 9 in one swing, then the last 2
+//     life's worth (hitScale capped to 2) banks 2*3 = 6 more — 15 total,
+//     not the 5 a hitScale-only reading of "5 life = 5 wood" would suggest.
 
 import { ToolId } from './ToolRegistry';
 
@@ -44,8 +58,24 @@ export interface ActionConfig {
      * never out of sync with whatever FBX is actually assigned to animationTrigger.
      */
     hitIntervalSec: number;
-    /** Life removed from the target per hit — see ActionTarget.applyHit(). */
-    damagePerHit: number;
+    /**
+     * How many hits one swing counts as — life removed from the target per swing (see
+     * ActionTarget.applyHit()). Capped at the target's own remaining life for a killing blow
+     * (see PlayerActionController.update()), so this can go arbitrarily high (a 10-level axe
+     * ladder tops out well past most maxLife values) without ever removing more life than a
+     * target actually had. Purely about hit COUNT/kill speed — see resourcePerHit for the
+     * separate, uncapped knob that controls how much each of those hits is actually worth.
+     */
+    hitScale: number;
+    /**
+     * Yield banked per hit — see AutoGatherController.onHitLanded(), which multiplies this by
+     * amountPerGather and the (possibly hitScale-capped) hit count a swing actually removed.
+     * Deliberately NEVER capped by a target's remaining life the way hitScale is: this is
+     * "how much extra you extract per hit," not "how fast you kill," so a resourcePerHit
+     * upgrade is what lets a fully-upgraded tool pull a total yield well past a tree's own
+     * maxLife (see this file's own doc for the worked example).
+     */
+    resourcePerHit: number;
     /**
      * Normalized position (0–1) within one hit cycle where the hit lands — e.g. 0.8
      * means 80% of the way through each hitIntervalSec-long cycle, which (since the
@@ -68,16 +98,16 @@ export interface ActionConfig {
 }
 
 export const ACTION_CONFIG: Record<ActionType, ActionConfig> = {
-    [ActionType.Chop]: { hitIntervalSec: 1, damagePerHit: 1, hitTime: 0.8, cancelOnLeaveRange: true, animationTrigger: 'chop', tool: 'axe' },
-    [ActionType.Mine]: { hitIntervalSec: 1.5, damagePerHit: 1, hitTime: 0.4, cancelOnLeaveRange: true, animationTrigger: 'mine', tool: 'pickaxe' },
-    [ActionType.Gather]: { hitIntervalSec: 2, damagePerHit: 1, hitTime: 0.6, cancelOnLeaveRange: true, animationTrigger: 'pick' },
+    [ActionType.Chop]: { hitIntervalSec: 1, hitScale: 1, resourcePerHit: 1, hitTime: 0.8, cancelOnLeaveRange: true, animationTrigger: 'chop', tool: 'axe' },
+    [ActionType.Mine]: { hitIntervalSec: 1.5, hitScale: 1, resourcePerHit: 1, hitTime: 0.4, cancelOnLeaveRange: true, animationTrigger: 'mine', tool: 'pickaxe' },
+    [ActionType.Gather]: { hitIntervalSec: 2, hitScale: 1, resourcePerHit: 1, hitTime: 0.6, cancelOnLeaveRange: true, animationTrigger: 'pick' },
 };
 
 /**
  * A frozen snapshot of ACTION_CONFIG's hand-authored defaults, taken before anything (a shop
  * upgrade — see ShopTypes.applyShopLevel()) ever mutates it live. ACTION_CONFIG itself is NOT
  * persisted between sessions (only ShopUpgradeStorage's `level` is); this is what lets a debug
- * "reset upgrades" action put its hitIntervalSec/damagePerHit back to exactly where a fresh
+ * "reset upgrades" action put its hitIntervalSec/hitScale/resourcePerHit back to exactly where a fresh
  * session would start, without hand-duplicating these numbers a second time elsewhere. See
  * ShopTypes.resetAllActionConfigs(), the one reader.
  */

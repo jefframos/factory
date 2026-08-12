@@ -58,7 +58,11 @@ import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { BuildingStorage } from '../data/BuildingStorage';
 import { BuildingId } from '../data/BuildingTypes';
-import { ResourceType } from '../actions/ResourceTypes';
+import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
+import { ACTION_CONFIG } from '../actions/ActionTypes';
+import { getToolIcon } from '../actions/ToolRegistry';
+import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
+import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
 import SetupThree from 'core/scene/SetupThree';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
@@ -396,7 +400,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // the normal ShopZone flow), so a designer can test every upgrade tier's ActionConfig
         // change without grinding money/waiting out cooldowns. tryCompleteUpgrade() itself
         // doesn't check cooldown — only addProgress()'s cap on `cost` and isMaxLevel() gate
-        // this at all.
+        // this at all. Fires the same UpgradeNotificationManager callout ShopZone's own
+        // coin-drain completion does (see ShopZone.ts) — this button bypasses ShopZone
+        // entirely, so without this call here the notification would never have a way to
+        // be exercised outside actually standing in the shop and paying it off.
         for (const [id, config] of Object.entries(SHOP_CONFIG_BY_ID)) {
             if (!config) {
                 continue;
@@ -409,7 +416,15 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                         return;
                     }
                     ShopUpgradeStorage.addProgress(id, config, cost);
-                    ShopUpgradeStorage.tryCompleteUpgrade(id, config);
+                    if (ShopUpgradeStorage.tryCompleteUpgrade(id, config)) {
+                        UpgradeNotificationManager.instance.show({
+                            type: NotificationType.Upgrade,
+                            rarity: NotificationRarity.Common,
+                            icon: getToolIcon(config.tool),
+                            title: 'UPGRADE!',
+                            subtitle: `${config.tool.toUpperCase()} LEVEL ${ShopUpgradeStorage.getLevel(id)}`,
+                        });
+                    }
                 },
                 'Upgrades',
             );
@@ -419,6 +434,37 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             () => void ShopUpgradeStorage.clearAll(),
             'Upgrades',
         );
+
+        // One folder per tool (named after ShopConfig.tool, capitalized — 'Axe'/'Pickaxe')
+        // with live readouts of the three independent knobs a shop upgrade actually moves
+        // (see ActionTypes.ts's own doc): hitIntervalSec (seconds per swing), hitScale (hits
+        // one swing counts as — capped by a target's remaining life), and yieldPerHit
+        // (amountPerGather * resourcePerHit — the uncapped per-hit yield multiplier). .listen()
+        // (see DevGuiManager.addReadout()) keeps these live as ShopUpgradeStorage upgrades
+        // land, no manual refresh wiring needed. Matched to the same RESOURCE_CONFIG entry
+        // whose `action` equals this shop's action, since that's what amountPerGather lives on.
+        for (const config of Object.values(SHOP_CONFIG_BY_ID)) {
+            if (!config) {
+                continue;
+            }
+            const resourceConfig = Object.values(RESOURCE_CONFIG).find(r => r.action === config.action);
+            if (!resourceConfig) {
+                continue;
+            }
+            const toolStats = {
+                get hitIntervalSec(): number {
+                    return ACTION_CONFIG[config.action].hitIntervalSec;
+                },
+                get hitScale(): number {
+                    return ACTION_CONFIG[config.action].hitScale;
+                },
+                get yieldPerHit(): number {
+                    return resourceConfig.amountPerGather * ACTION_CONFIG[config.action].resourcePerHit;
+                },
+            };
+            const folderName = config.tool.charAt(0).toUpperCase() + config.tool.slice(1);
+            DevGuiManager.instance.addReadout(toolStats, ['hitIntervalSec', 'hitScale', 'yieldPerHit'], config.name, folderName);
+        }
 
         // Live sliders bound directly to CAMERA_SETTINGS — cameraOffset()/fixedUpdate() read
         // it every frame, so dragging these updates the camera immediately, no extra wiring.

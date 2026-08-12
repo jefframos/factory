@@ -12,11 +12,13 @@
 //
 // Each shop sells a straight-line upgrade LADDER for one ToolRegistry tool:
 // `levels[n]` is what buying the (n+1)th upgrade costs and what it changes
-// about that tool's ActionConfig (see ActionTypes.ts) — hitIntervalSec makes
-// it faster, damagePerHit makes it collect more per hit. A level only needs
-// to set whichever field it's upgrading; applyShopLevel() below only touches
-// the fields actually present, so e.g. a "faster" level doesn't reset
-// damagePerHit back to its base value.
+// about that tool's ActionConfig (see ActionTypes.ts's own doc for the full
+// three-knob breakdown) — hitIntervalSec swings faster, hitScale kills in
+// fewer swings, resourcePerHit extracts more per hit (uncapped by a target's
+// remaining life, unlike hitScale). A level only needs to set whichever
+// field it's upgrading; applyShopLevel() below only touches the fields
+// actually present, so e.g. a "faster" level doesn't reset hitScale/
+// resourcePerHit back to their base values.
 
 import { ACTION_CONFIG, ActionType, BASE_ACTION_CONFIG } from '../actions/ActionTypes';
 import { ToolId } from '../actions/ToolRegistry';
@@ -31,8 +33,10 @@ export interface ShopUpgradeLevel {
     cooldownSec: number;
     /** Absolute override (not a delta) for ACTION_CONFIG[config.action].hitIntervalSec — omit to leave whatever the previous level left it at. */
     hitIntervalSec?: number;
-    /** Absolute override (not a delta) for ACTION_CONFIG[config.action].damagePerHit — omit to leave whatever the previous level left it at. */
-    damagePerHit?: number;
+    /** Absolute override (not a delta) for ACTION_CONFIG[config.action].hitScale — omit to leave whatever the previous level left it at. */
+    hitScale?: number;
+    /** Absolute override (not a delta) for ACTION_CONFIG[config.action].resourcePerHit — omit to leave whatever the previous level left it at. */
+    resourcePerHit?: number;
 }
 
 /** The shop's own placeholder mesh — same shape as BuildingTypes.ts's BuildingMeshConfig, just one fixed mesh (no per-level growth) since a shop's ladder is about the TOOL, not the shop building itself. */
@@ -59,12 +63,23 @@ export const SHOP_CONFIG_BY_ID: Partial<Record<string, ShopConfig>> = {
         tool: 'axe',
         action: ActionType.Chop,
         mesh: DEFAULT_SHOP_MESH,
+        // 10 levels, rotating all three independent knobs (see ActionTypes.ts's own doc):
+        // speed (hitIntervalSec), hit count (hitScale), and yield per hit (resourcePerHit).
+        // By level 6 hitScale=3/resourcePerHit=3 — a tree (maxLife 5, amountPerGather 1, see
+        // ResourceTypes.ts) takes two swings (3, then the last 2 capped by remaining life) for
+        // 3*3 + 2*3 = 15 total wood, well past the 5 a hitScale-only reading would suggest,
+        // since resourcePerHit is never capped by remaining life the way hitScale is.
         levels: [
             { cost: 50, cooldownSec: 300, hitIntervalSec: 0.85 },
-            { cost: 120, cooldownSec: 300, damagePerHit: 2 },
-            { cost: 250, cooldownSec: 300, hitIntervalSec: 0.65 },
-            { cost: 450, cooldownSec: 300, damagePerHit: 3 },
-            { cost: 800, cooldownSec: 300, hitIntervalSec: 0.45 },
+            { cost: 120, cooldownSec: 300, hitScale: 2 },
+            { cost: 250, cooldownSec: 300, resourcePerHit: 2 },
+            { cost: 450, cooldownSec: 300, hitIntervalSec: 0.7 },
+            { cost: 800, cooldownSec: 300, hitScale: 3 },
+            { cost: 1300, cooldownSec: 300, resourcePerHit: 3 },
+            { cost: 2000, cooldownSec: 300, hitIntervalSec: 0.55 },
+            { cost: 3000, cooldownSec: 300, hitScale: 4 },
+            { cost: 4400, cooldownSec: 300, resourcePerHit: 4 },
+            { cost: 6400, cooldownSec: 300, hitIntervalSec: 0.4 },
         ],
     },
 };
@@ -79,8 +94,11 @@ export function applyShopLevel(config: ShopConfig, level: ShopUpgradeLevel): voi
     if (level.hitIntervalSec !== undefined) {
         actionConfig.hitIntervalSec = level.hitIntervalSec;
     }
-    if (level.damagePerHit !== undefined) {
-        actionConfig.damagePerHit = level.damagePerHit;
+    if (level.hitScale !== undefined) {
+        actionConfig.hitScale = level.hitScale;
+    }
+    if (level.resourcePerHit !== undefined) {
+        actionConfig.resourcePerHit = level.resourcePerHit;
     }
 }
 

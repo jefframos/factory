@@ -28,7 +28,7 @@ import gsap from 'gsap';
 import Entity from '../ecs/Entity';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
-import BoxVisualComponent from '../components/BoxVisualComponent';
+import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
 import { spawnFlyingResourceIcon } from '../components/FlyingResourceIcon';
@@ -46,6 +46,10 @@ import MainPlayer from './MainPlayer';
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
 const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
+/** Dotted-outline color — green reads as "deposit here," distinct from QueueZone/BuildingZone's own outlines. */
+const DROP_ZONE_COLOR = 0x33cc66;
+/** Corner rounding for the floor outline — purely cosmetic, the collider itself stays a sharp-cornered box (see RigidBody below). */
+const DROP_ZONE_CORNER_RADIUS = 0.3;
 /** How far above the zone each unit's "+1" popup starts. */
 const POPUP_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 0.5, 0);
 /** World units a popup rises over its own lifetime — see spawnUnitPopup(). */
@@ -110,10 +114,11 @@ export default class DropZone extends Entity {
             layer: Layers.Trigger,
             centerOffset: new THREE.Vector3(0, HALF_EXTENTS.y, 0),
         }));
-        this.addComponent(new BoxVisualComponent(
-            HALF_EXTENTS.clone().multiplyScalar(2),
-            0x33cc66,
-            new THREE.Vector3(0, HALF_EXTENTS.y, 0),
+        this.addComponent(new DottedZoneVisualComponent(
+            HALF_EXTENTS.x * 2,
+            HALF_EXTENTS.z * 2,
+            DROP_ZONE_CORNER_RADIUS,
+            { color: DROP_ZONE_COLOR },
         ));
 
         // A dedicated empty node the nameplate tracks, rather than a raw captured position —

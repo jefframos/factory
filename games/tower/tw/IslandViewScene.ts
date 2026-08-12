@@ -4,6 +4,7 @@ import Physics from 'core/phyisics/Physics';
 import { ThreeScene } from 'core/scene/ThreeScene';
 import SetupThree from 'core/scene/SetupThree';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
+import { DomUiRoot } from '../game/dom-ui/DomUiRoot';
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import { ClusterMeshBuilder } from '../game/builders/ClusterMeshBuilder';
@@ -145,6 +146,7 @@ export default class IslandViewScene extends ThreeScene {
     private powerupDevGui!: PowerupDevGui;
     private gameHud!: GameHud;
 
+
     /**
      * Dev-only — multiplies every delta passed to physics/game-logic/animation
      * this frame. Persisted via TowerDevMeta; see setupVisualDevGui().
@@ -155,6 +157,11 @@ export default class IslandViewScene extends ThreeScene {
     private cameraShakeStrength = 0;
     private cameraShakeDuration = 0;
     private cameraShakeTimeRemaining = 0;
+
+    /** True while PlatformHandler says the platform SDK has paused the game (e.g. tab-embedded pause on some platforms) — see setupPlatformPause()/MergeScene.ts's identical convention. Gates fixedUpdate()'s physics/game-logic stepping and drives gameBlocker's interactivity below; it deliberately does NOT stop update()'s cosmetic/camera/HUD work, same split MergeScene makes. */
+    private paused = false;
+    /** Full-screen invisible-ish blocker sitting in the overlay (above the HUD) that only becomes interactive while paused — same shape/purpose as MergeScene's own gameBlocker: swallow pointer input so a drop/tap that lands while the platform thinks the game is paused can't reach the tower gameplay underneath. */
+    private readonly gameBlocker: PIXI.Sprite = PIXI.Sprite.from(PIXI.Texture.WHITE);
 
     // =========================================================================
     // Lifecycle
@@ -267,6 +274,8 @@ export default class IslandViewScene extends ThreeScene {
         this.game.overlayContainer.addChild(this.hudContainer);
         this.hudContainer.addChild(this.gameHud);
 
+        this.setupPlatformPause();
+
         if (ISLANDS.length > 0) {
             const levelSettings = { islandId: getDefaultIsland().id };
             DevGuiManager.instance.addDropdown(
@@ -291,9 +300,17 @@ export default class IslandViewScene extends ThreeScene {
 
     public fixedUpdate(delta: number): void {
         delta *= this.speedMultiplier;
-        Physics.fixedUpdate(delta);
+
+        // Skips the actual simulation/game-logic step while paused — see `paused`'s own doc —
+        // but still calls super.fixedUpdate() unconditionally, same "cosmetic stuff keeps
+        // running, only the mediator/game-logic step freezes" split MergeScene.update() makes.
+        if (!this.paused) {
+            Physics.fixedUpdate(delta);
+        }
         super.fixedUpdate(delta);
-        this.faceTower?.update(delta);
+        if (!this.paused) {
+            this.faceTower?.update(delta);
+        }
     }
 
     public update(delta: number): void {
@@ -437,7 +454,54 @@ export default class IslandViewScene extends ThreeScene {
         }
     }
 
+    /** Adds gameBlocker to the overlay (above the HUD) and subscribes to the platform's own pause/resume signal — see `paused`/`gameBlocker`'s own docs. Mirrors MergeScene.setupPopups()'s identical PlatformHandler wiring. */
+    private setupPlatformPause(): void {
+        this.game.overlayContainer.addChild(this.gameBlocker);
+        this.gameBlocker.anchor.set(0.5);
+        this.gameBlocker.scale.set(1000);
+        this.gameBlocker.alpha = 0.1;
+        this.gameBlocker.tint = 0;
+        this.gameBlocker.interactive = false;
+        this.gameBlocker.visible = false;
+
+        PlatformHandler.instance.onPause.add(this._onPlatformPause);
+        PlatformHandler.instance.onResume.add(this._onPlatformResume);
+    }
+
+    private readonly _onPlatformPause = (): void => {
+        this.paused = true;
+
+        // Set synchronously here rather than lazily every frame in update() — core/Game.ts
+        // stops the WHOLE ticker on this same onPause signal (see its own doc), so update()
+        // stops running the instant this fires; anything gating input on `paused` has to be
+        // applied right here or it never actually takes effect.
+        this.gameBlocker.interactive = true;
+        this.gameBlocker.visible = true;
+        this.faceTower?.setInputEnabled(false);
+        // Mute/settings/quit (SoundToggleButton.ts etc.) are real DOM elements sitting ABOVE
+        // the Pixi canvas entirely — gameBlocker can't reach them no matter how it's layered
+        // inside the canvas, so they need this separate DOM-side block.
+        DomUiRoot.instance.setInputBlocked(true);
+    };
+
+    private readonly _onPlatformResume = (): void => {
+        this.paused = false;
+
+        this.gameBlocker.interactive = false;
+        this.gameBlocker.visible = false;
+        this.faceTower?.setInputEnabled(true);
+        DomUiRoot.instance.setInputBlocked(false);
+    };
+
     public destroy(): void {
+        PlatformHandler.instance.onPause.remove(this._onPlatformPause);
+        PlatformHandler.instance.onResume.remove(this._onPlatformResume);
+        this.gameBlocker.removeFromParent();
+        // DomUiRoot is an app-wide singleton, not scene-owned — don't leave its OWN input
+        // blocked past this scene's own lifetime just because this scene happened to be the
+        // one paused when it was torn down.
+        DomUiRoot.instance.setInputBlocked(false);
+
         this.skyController.destroy();
         this.starfieldController.destroy();
         TowerVfxUtils.destroy();

@@ -93,6 +93,9 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
     /** Non-null while the player is dead and Auto Play is counting down to an automatic respawn. */
     private autoPlayRespawnTimer: number | null = null;
 
+    /** True while platform-paused — see setPaused()'s own doc. Checked FIRST thing in update(), independent of and in addition to whatever gates the caller (BaseDemoScene) applies — belt-and-suspenders so NPCs/spawning/movement stop at the source regardless of anything happening one level up. */
+    private paused = false;
+
     public cameraZoom = 1.0;
     public moveInput: { x: number; z: number } = { x: 0, z: 0 };
 
@@ -235,7 +238,17 @@ export default class BoundlessWorld3dScene extends ThreeScene implements IWorld3
         this.cartoonSky.setCloudDistance(150);
     }
 
+    /** Freezes NPCs/spawning/movement/physics — everything below — while leaving rendering itself running (a no-op render of an unchanged scene, since nothing moved) rather than skipping super.update() outright, so a caller that's still ticking for some other reason (HUD, camera) doesn't end up with a stale/blank 3D canvas. See `paused`'s own doc. */
+    public setPaused(paused: boolean): void {
+        this.paused = paused;
+    }
+
     public update(delta: number): void {
+        if (this.paused) {
+            super.update(delta);
+            return;
+        }
+
         //this.gradient.update(delta);
         WaterSplashSystem.update(delta);
         BoostSpeedLineSystem.update(delta);

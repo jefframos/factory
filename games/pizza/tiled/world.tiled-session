@@ -5,14 +5,15 @@
     ],
     "fileStates": {
         "": {
+            "scaleInDock": 1,
             "scaleInEditor": 1
         },
         "testMap1.tmx": {
             "scale": 4,
-            "selectedLayer": 2,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 404.5,
-                "y": -189.875
+                "x": 20.25,
+                "y": -300.375
             }
         },
         "testMap1.tmx#resources": {

@@ -29,7 +29,7 @@
 //      within the cycle) reaches hitTime, then rolls the cycle over —
 //      subtracting hitIntervalSec rather than resetting to 0, so a long frame
 //      that overshoots by a bit doesn't lose that overshoot from the next
-//      cycle. Deals damagePerHit to the target (ActionTarget.applyHit) and
+//      cycle. Deals hitScale hits to the target (ActionTarget.applyHit) and
 //      finishes as 'completed' the moment the target reports itself depleted.
 //   5. on either ending, clears facing, fades the action layer back out and
 //      hides the tool again (stopAction()/showTool(undefined) — leaving
@@ -96,10 +96,17 @@ export type ActionResult = 'completed' | 'cancelled';
 export interface ActionTarget {
     /** World position the player turns to face while acting on this. */
     readonly position: THREE.Vector3;
-    /** Absorb one hit. Returns true once this target is fully depleted, which ends the action as 'completed'. */
-    applyHit(damage: number): boolean;
+    /** Absorb `hits` worth of life in one go. Returns true once this target is fully depleted, which ends the action as 'completed'. */
+    applyHit(hits: number): boolean;
+    /**
+     * Life left BEFORE the next hit lands, if this target tracks life at all — update() reads
+     * this to cap the HIT COUNT a killing blow actually removes (see its own doc), so a swing
+     * that would overkill only ever removes the life that was actually still there. Optional/
+     * undefined for a target with no notion of "remaining life" to cap against.
+     */
+    readonly remainingLife?: number;
     /** Called when a hit is about to land — target can play feedback (shake, impact, etc.) */
-    onHit?(hitData: { damage: number }): void;
+    onHit?(hitData: { hits: number }): void;
 }
 
 export default class PlayerActionController extends Component {
@@ -115,8 +122,16 @@ export default class PlayerActionController extends Component {
      */
     private cycleElapsedSec = 0;
     private resolveCurrent?: (result: ActionResult) => void;
-    /** Fired every time a hit actually lands (see update()) — see onPlayActionAnimation()'s `onHit` param. Deliberately separate from ActionTarget.onHit: that's the TARGET's own feedback (shake, damage popup); this is the CALLER's (e.g. AutoGatherController flying a resource chip toward the backpack), and the target itself has no reason to know about it. */
-    private onHitCallback?: () => void;
+    /**
+     * Fired every time a hit actually lands (see update()) — see onPlayActionAnimation()'s
+     * `onHit` param. Deliberately separate from ActionTarget.onHit: that's the TARGET's own
+     * feedback (shake, damage popup); this is the CALLER's (e.g. AutoGatherController flying a
+     * resource chip toward the backpack and banking its yield), and the target itself has no
+     * reason to know about it. Passed the ACTUAL (possibly capped, see update()'s own doc) hit
+     * count this swing removed, not just a "something landed" ping — the caller multiplies
+     * that by its own resourcePerHit to bank a yield (see AutoGatherController.onHitLanded()).
+     */
+    private onHitCallback?: (hits: number) => void;
 
     public get isBusy(): boolean {
         return this.currentAction !== undefined;
@@ -138,7 +153,7 @@ export default class PlayerActionController extends Component {
      * (`await controller.onPlayActionAnimation(...)`); only the reentrancy failure mode
      * differs, on purpose.
      */
-    public onPlayActionAnimation(action: ActionType, target: ActionTarget, onHit?: () => void): Promise<ActionResult> {
+    public onPlayActionAnimation(action: ActionType, target: ActionTarget, onHit?: (hits: number) => void): Promise<ActionResult> {
         if (this.isBusy) {
             throw new Error(`PlayerActionController: already playing ${this.currentAction}, can't start ${action}`);
         }
@@ -147,7 +162,7 @@ export default class PlayerActionController extends Component {
         const character = this.entity.getComponent(CharacterVisualComponent)?.character;
         const clipDurationSec = character?.animator.getClipDuration(config.animationTrigger);
         const playbackSpeed = animationSpeedFor(config, clipDurationSec);
-        console.log(`[action] start ${action} (trigger: ${config.animationTrigger}, ${config.damagePerHit} dmg every ${config.hitIntervalSec.toFixed(2)}s, playback: ${playbackSpeed.toFixed(2)}x)`);
+        console.log(`[action] start ${action} (trigger: ${config.animationTrigger}, ${config.hitScale}x hits worth ${config.resourcePerHit}/hit every ${config.hitIntervalSec.toFixed(2)}s, playback: ${playbackSpeed.toFixed(2)}x)`);
 
         this.currentAction = action;
         this.currentTarget = target;
@@ -197,9 +212,20 @@ export default class PlayerActionController extends Component {
         // AutoGatherController's exit handler for the guard that keeps that from
         // turning this completion into a cancellation.
         const target = this.currentTarget!;
-        target.onHit?.({ damage: config.damagePerHit });
-        this.onHitCallback?.();
-        const depleted = target.applyHit(config.damagePerHit);
+        // hitScale is "how many hits this one swing counts as" — capped at whatever life the
+        // target has LEFT, so a level-10 axe (hitScale well past most trees' maxLife) swinging
+        // into a tree with 2 life remaining only ever removes those last 2 hits' worth, not
+        // more. This caps the HIT COUNT only — resourcePerHit (the yield each of those hits is
+        // worth, see AutoGatherController.onHitLanded()) is a completely separate knob, never
+        // capped by remaining life: a resourcePerHit upgrade is "extract more per hit," not
+        // "kill faster," so it's what lets a fully-upgraded axe pull well past a tree's
+        // maxLife in total wood, unlike hitScale which can only ever shrink the hit COUNT.
+        const hits = target.remainingLife !== undefined
+            ? Math.min(config.hitScale, target.remainingLife)
+            : config.hitScale;
+        target.onHit?.({ hits });
+        this.onHitCallback?.(hits);
+        const depleted = target.applyHit(hits);
 
         if (depleted && this.isBusy) {
             console.log(`[action] complete ${this.currentAction}`);

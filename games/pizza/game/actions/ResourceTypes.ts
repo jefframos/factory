@@ -20,10 +20,10 @@ export interface ResourceConfig {
     action: ActionType;
     /**
      * How many hit-points this node absorbs before it yields — the player chips this down
-     * damagePerHit at a time (see ActionConfig), and partial progress SURVIVES walking
+     * hitScale at a time (see ActionConfig), and partial progress SURVIVES walking
      * away, so this is "how much total work a full harvest is," not a timer. Combined with
-     * the action's hitIntervalSec/damagePerHit, this is what actually sets time-to-harvest:
-     * 5 life at 1 damage per 1s = the design doc's 5 seconds per tree.
+     * the action's hitIntervalSec/hitScale, this is what actually sets time-to-harvest:
+     * 5 life at hitScale 1 per 1s = the design doc's 5 seconds per tree.
      */
     maxLife: number;
     /** How much of this resource one successful gather cycle grants. */

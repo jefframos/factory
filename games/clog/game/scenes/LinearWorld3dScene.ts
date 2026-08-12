@@ -47,6 +47,12 @@ export default class LinearWorld3dScene extends ThreeScene {
     /** Dormant until startNpcPopulation() — gates the food spawn timer/top-up so it doesn't keep accumulating behind the menu screen. This mode has no NPCs, but still uses startNpcPopulation() as its "player has joined" signal (see IWorld3dScene). */
     private worldActive = false;
 
+    /** See BoundlessWorld3dScene.setPaused()'s own doc — same belt-and-suspenders freeze-at-the-source, kept in parity even though this mode (?gated) has no NPCs of its own. */
+    private paused = false;
+    public setPaused(paused: boolean): void {
+        this.paused = paused;
+    }
+
     // ── Exposed for Pixi HUD / minimap ────────────────────────────────────────
 
     get playerValue(): number { return this.player?.value ?? 0; }
@@ -142,6 +148,11 @@ export default class LinearWorld3dScene extends ThreeScene {
     }
 
     public update(delta: number): void {
+        if (this.paused) {
+            super.update(delta);
+            return;
+        }
+
         const cfg = this.linearManager.currentConfig;
 
         // ── Value-driven camera distance ──────────────────────────────────────

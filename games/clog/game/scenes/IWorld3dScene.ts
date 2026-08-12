@@ -58,4 +58,6 @@ export interface IWorld3dScene {
     setGameplayCameraActive(active: boolean): void;
     /** True while the shop screen is open — eases the camera's look target down so the player reads above center instead of dead-center, leaving room below for the shop panel (see CAMERA_CONFIG.shopFocusOffset). Takes priority over setGameplayCameraActive's mobile offset. */
     setShopCameraActive(active: boolean): void;
+    /** Freezes ALL simulation (NPCs, spawning, movement, physics) at the source the instant it's set — see BoundlessWorld3dScene.setPaused()'s own doc. Independent of/in addition to any input- or caller-level gating (e.g. BaseDemoScene's own `paused`), so the sim can't keep advancing regardless of what's happening one level up. */
+    setPaused(paused: boolean): void;
 }

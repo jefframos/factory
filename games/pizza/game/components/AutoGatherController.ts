@@ -16,12 +16,15 @@
 // tryGatherNext() being called both from onTriggerEnter AND from every
 // action's completion/cancellation is for (see that method's own doc).
 //
-// This component banks amountPerGather on EVERY landed hit (see
-// onHitLanded()), not just once at the end — a tree with maxLife 5 and
-// amountPerGather 1 yields 5 Wood total for a full harvest, one per hit,
-// matching the visual (a chip flies per hit too). Cancelling mid-harvest
-// keeps whatever hits already landed; nothing is refunded, same as the
-// node's own damage persisting (see ResourceNode.life's doc).
+// This component banks amountPerGather * resourcePerHit * hits on EVERY
+// landed swing (see onHitLanded()), not just once at the end — matching the
+// visual (a chip flies per swing too). resourcePerHit (see ActionTypes.ts's
+// own doc) is a tool-upgrade knob, never capped by a target's remaining
+// life the way the hit COUNT is, so a fully-upgraded axe can pull a total
+// yield well past a tree's own maxLife — a resourcePerHit-3 axe still banks
+// 3x on the tree's very last hit, not just 1x. Cancelling mid-harvest keeps
+// whatever hits already landed; nothing is refunded, same as the node's own
+// damage persisting (see ResourceNode.life's doc).
 //
 // Leaving a node's trigger cancels the in-flight action against THAT node
 // (when the action's cancelOnLeaveRange says so) — the node keeps its
@@ -128,7 +131,7 @@ export default class AutoGatherController extends Component {
         const actionController = this.entity.getComponent(PlayerActionController)!;
         const config = RESOURCE_CONFIG[node.resourceType];
 
-        void actionController.onPlayActionAnimation(config.action, node, () => this.onHitLanded(node)).then(result => {
+        void actionController.onPlayActionAnimation(config.action, node, hits => this.onHitLanded(node, hits)).then(result => {
             if (result === 'completed') {
                 console.log(`[gather] fully harvested ${config.label}`);
             }
@@ -139,15 +142,22 @@ export default class AutoGatherController extends Component {
     }
 
     /**
-     * Fired on every landed hit (see PlayerActionController's onHit param), not just once at
-     * the end — banks amountPerGather immediately and flies a small placeholder chip from the
-     * node to wherever the backpack cube currently sits, purely as visual feedback for the
-     * bank. The chip-flying half no-ops if the FBX character (and therefore the backpack
-     * cube) hasn't loaded yet, but the backpack still gets its resources either way.
+     * Fired on every landed swing (see PlayerActionController's onHit param), not just once at
+     * the end — banks amountPerGather * resourcePerHit * hits immediately and flies a small
+     * placeholder chip from the node to wherever the backpack cube currently sits, purely as
+     * visual feedback for the bank. `hits` is whatever PlayerActionController.update() actually
+     * removed this swing — already capped at the node's remaining life for a killing blow (see
+     * that file's own doc) — but resourcePerHit (read fresh off ACTION_CONFIG, see
+     * ActionTypes.ts's own doc) is NOT capped the same way, so a resourcePerHit upgrade banks
+     * proportionally more per hit all the way through the tree's very last hit, not just on
+     * hits that don't finish it off. The chip-flying half no-ops if the FBX character (and
+     * therefore the backpack cube) hasn't loaded yet, but the backpack still gets its
+     * resources either way.
      */
-    private onHitLanded(node: ResourceNode): void {
+    private onHitLanded(node: ResourceNode, hits: number): void {
         const config = RESOURCE_CONFIG[node.resourceType];
-        const added = BackpackStorage.add(node.resourceType, config.amountPerGather);
+        const resourcePerHit = ACTION_CONFIG[config.action].resourcePerHit;
+        const added = BackpackStorage.add(node.resourceType, config.amountPerGather * resourcePerHit * hits);
         console.log(`[gather] +${added} ${config.label}`);
 
         const character = this.entity.getComponent(CharacterVisualComponent)?.character;

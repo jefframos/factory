@@ -55,8 +55,11 @@ space, no conversion needed).
 live camera sliders, a live render-stats readout (`triangles`/`drawCalls`/`meshCount`
 from `SetupThree.renderer.info` vs. a full scene traversal — useful for spotting
 frustum-culling mismatches caused by `BendService`'s vertex bend happening *after* THREE
-already decided visibility from the un-bent bounding sphere), and every
-`PerformanceConfig` knob (see below).
+already decided visibility from the un-bent bounding sphere), every `PerformanceConfig`
+knob (see below), and an `Upgrades` folder — one force-upgrade button per shop (fully
+funds + completes the next level in one click, firing the same notification the real
+coin-drain flow does — see Tools & shop upgrades / Notifications below) plus a live
+per-tool readout of `hitIntervalSec`/`hitScale`/`yieldPerHit`.
 
 ## World / terrain — `game/world/`
 
@@ -162,15 +165,76 @@ work from the first frame, independent of the FBX character load
   `RigidBody.velocity` in `fixedUpdate()`, checking `TileWalkability.isWalkable()` per
   axis first.
 - **`PlayerActionController`** — the repeated-hit action loop against an `ActionTarget`
-  (`ResourceNode` implements this: `position`, `applyHit(damage): boolean`,
-  `onHit?()`). `onPlayActionAnimation(action, target, onHit?)` is the entry point;
+  (`ResourceNode` implements this: `position`, `remainingLife?`, `applyHit(hits): boolean`,
+  `onHit?({ hits })`). `onPlayActionAnimation(action, target, onHit?)` is the entry point;
   throws synchronously if already busy. Does not freeze movement — walking away is the
-  cancel gesture.
+  cancel gesture. Every `hitIntervalSec` it removes `hitScale` hits' worth of life from the
+  target, CAPPED at `target.remainingLife` so a killing blow never removes more than the
+  target actually had left (no overkill) — see Tools & shop upgrades below for how that hit
+  count and the separate, uncapped yield-per-hit multiplier interact.
 - **`AutoGatherController`** — the actual "no interaction required" layer: tracks every
   `ResourceNode` currently overlapped (`Layers.Resource` trigger), auto-starts
-  `PlayerActionController` on the first one, credits `BackpackStorage` + spawns a flying
-  chip visual per landed hit, picks the next target on completion/cancellation/new
-  overlap.
+  `PlayerActionController` on the first one, credits `BackpackStorage` with
+  `amountPerGather * resourcePerHit * hits` (see below) + spawns a flying chip visual per
+  landed swing, picks the next target on completion/cancellation/new overlap.
+
+## Tools & shop upgrades — `game/actions/ActionTypes.ts`, `game/actions/ToolRegistry.ts`, `game/shop/`
+
+`ActionConfig` (`ACTION_CONFIG`, keyed by `ActionType` — `Chop`/`Mine`/`Gather`) is the
+live, mutable gameplay data every hit reads: **three independent upgrade knobs**, not one:
+
+| Field | Effect | Capped by remaining life? |
+|---|---|---|
+| `hitIntervalSec` | seconds per swing (speed) | n/a |
+| `hitScale` | how many hits one swing counts as — shrinks the hit COUNT needed to clear a target | **yes** — `PlayerActionController.update()` clamps it to `target.remainingLife` |
+| `resourcePerHit` | yield banked per hit (`amountPerGather * resourcePerHit * hits`, see `AutoGatherController.onHitLanded()`) | **no** — deliberately uncapped, so it's what lets total yield exceed a target's own `maxLife` |
+
+Example: a Tree (`maxLife` 5, `amountPerGather` 1) hit by a swing with `hitScale: 3,
+resourcePerHit: 3` removes 3 life and banks `1*3*3 = 9`; the next swing removes the
+remaining 2 (hit count capped, yield multiplier isn't) and banks `1*3*2 = 6` — 15 total,
+not the 5 a `hitScale`-only reading would suggest.
+
+`ToolRegistry.ts` (`TOOL_LIBRARY`) is purely cosmetic — which glb/placeholder a tool shows
+in the right hand, no gameplay numbers. `ShopTypes.ts` (`SHOP_CONFIG_BY_ID`) defines a
+per-tool upgrade LADDER: each `ShopUpgradeLevel` sets whichever of `hitIntervalSec`/
+`hitScale`/`resourcePerHit` it upgrades (omitted fields stay whatever the previous level
+left them at — see `applyShopLevel()`). The default axe ladder (`shop1`) is 10 levels,
+rotating all three knobs. `ShopZone.ts` is the in-world trigger that drains
+`EconomyStorage`'s money into `ShopUpgradeStorage.addProgress()`/`tryCompleteUpgrade()`;
+the dev GUI's `Upgrades` folder (`?dev`) has a force-upgrade button per shop (bypasses the
+coin-walk-up/cooldown) plus a live per-tool readout of all three knobs, for testing without
+grinding money.
+
+`ShopUpgradeStorage` persists only the purchased `level` per shop id — `ACTION_CONFIG`
+itself is a plain in-memory object, replayed back to the correct live values at boot via
+`reapplyAllShopUpgrades()`. `resetAllActionConfigs()` (called by the dev GUI's "Reset
+Upgrades"/"Reset Everything") restores `ACTION_CONFIG` to `BASE_ACTION_CONFIG`'s
+hand-authored defaults.
+
+## Notifications — `game/ui/notifications/`
+
+A large, non-blocking, center-upper callout for big events (tool upgrades today;
+building-upgrade/gate-unlock call sites aren't wired up yet) — deliberately NOT a `Popup`
+(no backdrop, doesn't steal input, self-timed).
+
+- **`UpgradeNotificationView.ts`** — the visual + animation: a ribbon (9-sliced,
+  `NotificationType`-colored via `UpgradeStyle.ribbonTextureFor()`) reading "UPGRADE!", a
+  badge hanging off its bottom edge (`NotificationRarity`-colored via
+  `UpgradeStyle.badgeTextureFor()`) holding the target's icon with a spinning shine effect
+  behind it, and a caption below naming what got upgraded (e.g. "AXE LEVEL 2"). Owns its
+  own show → hold → hide → self-destroy lifecycle (`play(restPosition): Promise<void>`).
+- **`UpgradeNotificationManager.ts`** — a singleton queue (multiple `show()` calls queue
+  rather than interrupt each other) that only knows WHERE a notification sits and THAT they
+  queue — never what one looks like. `init(game)` once (see `UIService`'s constructor,
+  same convention as `PopupManager`); `show(options)` to queue one.
+- **`NotificationTypes.ts`** / **`UpgradeStyle.ts`** — `NotificationType` (`Upgrade`/
+  `Unlockable`/`BuildingUpgrade`) picks the ribbon color, `NotificationRarity` (`Common`/
+  `Rare`/`Epic`/`Legendary`) picks the badge color (all four badge textures are real;
+  `Unlockable`/`BuildingUpgrade` ribbon textures are placeholders pending final ids).
+
+Call sites: `ShopZone.ts`'s coin-drain completion and the dev GUI's per-shop force-upgrade
+button both fire `UpgradeNotificationManager.instance.show({ type, rarity, icon, title,
+subtitle })` right after `ShopUpgradeStorage.tryCompleteUpgrade()` succeeds.
 
 ## Buildings & progression — `game/player/BuildingZone.ts`, `game/data/`
 
@@ -239,3 +303,10 @@ get both physical push-out AND `onCollisionEnter/Stay/Exit`.
   `PizzaScene.ts`. Remember `cameraUpVector()` exists specifically because `lookAt()`
   breaks down at `pitch=90` — don't reintroduce a raw `lookAt()` without it if pitch can
   reach vertical.
+- **New tool upgrade level/ladder** → `ShopTypes.ts`'s `SHOP_CONFIG_BY_ID[id].levels` —
+  set only the `hitIntervalSec`/`hitScale`/`resourcePerHit` field(s) that level changes.
+- **New notification call site** (building level-up, gate unlock) → call
+  `UpgradeNotificationManager.instance.show({ type, rarity, icon, title, subtitle })`
+  right after the event actually completes — see `ShopZone.ts` for the existing pattern.
+  `NotificationType.BuildingUpgrade`/`Unlockable` ribbon textures are still placeholders
+  (see `UpgradeStyle.ts`).

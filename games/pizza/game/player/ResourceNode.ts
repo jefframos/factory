@@ -34,6 +34,7 @@ import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnc
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import { ActionTarget } from '../components/PlayerActionController';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
+import { ACTION_CONFIG } from '../actions/ActionTypes';
 import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
 import { ASSET_LIBRARY, getAssetIcon, pickRandom, resolveRange } from '../world/AssetLibraryRegistry';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
@@ -208,17 +209,17 @@ export default class ResourceNode extends Entity implements ActionTarget {
     }
 
     /**
-     * ActionTarget — absorbs one hit from whatever action is being performed on this node
-     * (see PlayerActionController). Returns true once life runs out, which both depletes
-     * the node here and tells the action it's done; AutoGatherController then banks the
-     * yield. Partial damage just sits in `life` — see that field's own doc.
+     * ActionTarget — absorbs `hits` worth of life from whatever action is being performed on
+     * this node (see PlayerActionController). Returns true once life runs out, which both
+     * depletes the node here and tells the action it's done; AutoGatherController then banks
+     * the yield. Partial damage just sits in `life` — see that field's own doc.
      */
-    public applyHit(damage: number): boolean {
+    public applyHit(hits: number): boolean {
         if (!this.isAvailable) {
             return true;
         }
 
-        this.life -= damage;
+        this.life -= hits;
 
         if (this.life > 0) {
             return false;
@@ -229,7 +230,7 @@ export default class ResourceNode extends Entity implements ActionTarget {
     }
 
     /** Called when a hit lands on this resource — shake the visual and show the gain popup. Skips the visual feedback (but the hit itself still counts, see applyHit()) if a Tree's glb model hasn't finished loading yet — see GlbVisualComponent's own doc. */
-    public onHit(hitData?: { damage: number }): void {
+    public onHit(hitData?: { hits: number }): void {
         if (this.visual instanceof GlbVisualComponent && !this.visual.isReady) {
             return;
         }
@@ -253,10 +254,11 @@ export default class ResourceNode extends Entity implements ActionTarget {
             },
         });
 
-        // Show the floating gain popup — hitData.damage just gates "did a hit actually land,"
-        // the popup's own content (resource icon + amountPerGather) doesn't depend on its value.
-        if (hitData?.damage && this.world) {
-            this.showGainPopup();
+        // Show the floating gain popup — hitData.hits is the (possibly remaining-life-capped)
+        // hit count this swing removed (see PlayerActionController.update()'s own doc), so the
+        // popup's "+N" has to fold that in too, not just gate on truthiness.
+        if (hitData?.hits && this.world) {
+            this.showGainPopup(hitData.hits);
         }
     }
 
@@ -265,24 +267,27 @@ export default class ResourceNode extends Entity implements ActionTarget {
      * shape) instead of a 3D CanvasTexture sprite — same "PIXI element paired to a 3D point"
      * approach DropZone's deposit popups use, so it gets bend compensation and crisp
      * screen-space rendering for free instead of a billboarded 3D quad. Shows the resource's
-     * own icon + "+amountPerGather" (the same icon BackpackUI/GlobalResourcesUI use — see
-     * getAssetIcon()) rather than a bare damage number, so a landed hit reads as a reward, not
-     * combat. The rise/fade is still done in world space (a rising getTargetPosition(), see
-     * `progress` below) rather than animating the PIXI content's own local position directly,
-     * since ScreenAnchorComponent overwrites that every frame from the projected screen point.
+     * own icon + "+amountPerGather * resourcePerHit * hits" (the actual amount
+     * AutoGatherController.onHitLanded() just banked — see its own doc; the same icon
+     * BackpackUI/GlobalResourcesUI use, see getAssetIcon()) rather than a bare hit count, so a
+     * landed hit reads as a reward, not combat. The rise/fade is still done in world space (a
+     * rising getTargetPosition(), see `progress` below) rather than animating the PIXI
+     * content's own local position directly, since ScreenAnchorComponent overwrites that every
+     * frame from the projected screen point.
      */
-    private showGainPopup(): void {
+    private showGainPopup(hits: number): void {
         if (!this.world || !this.screenHost) {
             return;
         }
 
         const config = RESOURCE_CONFIG[this.resourceType];
+        const resourcePerHit = ACTION_CONFIG[config.action].resourcePerHit;
 
         const icon = new PIXI.Sprite(getAssetIcon(RESOURCE_ASSET_KEYS[this.resourceType]));
         icon.anchor.set(0, 0.5);
         icon.scale.set(ViewUtils.elementScaler(icon, GAIN_POPUP_ICON_SIZE));
 
-        const text = new PIXI.Text(`+${config.amountPerGather}`, TextStyleRegistry.ResourceDamage);
+        const text = new PIXI.Text(`+${config.amountPerGather * resourcePerHit * hits}`, TextStyleRegistry.ResourceDamage);
         text.style.fill = '#33cc66';
         text.anchor.set(0, 0.5);
         text.position.set(icon.width + GAIN_POPUP_ICON_GAP, 0);
