@@ -32,9 +32,21 @@ export interface AssetLibraryEntry {
     icon?: string;
 }
 
-/** Reads an entry's icon texture, falling back to a flat white square (tintable) if none is set yet — see AssetLibraryEntry.icon's own doc. */
+/**
+ * Reads an entry's icon texture, falling back to a flat white square (tintable) if none is set
+ * yet — see AssetLibraryEntry.icon's own doc. Also falls back (with a warning, not a throw) for
+ * a `key` that doesn't resolve to any entry at all — e.g. a stale ResourceType string surviving
+ * in an old save from before an AssetLibraryRegistry key got renamed. BackpackStorage.load()
+ * already filters these out at the source, but this is what keeps a caller reading a bad key
+ * from ANY other path (a future renamed AssetLibraryKey, a caller passing a raw string) from
+ * crashing the whole scene build over one missing icon.
+ */
 export function getAssetIcon(key: AssetLibraryKey): PIXI.Texture {
-    const entry: AssetLibraryEntry = ASSET_LIBRARY[key];
+    const entry: AssetLibraryEntry | undefined = ASSET_LIBRARY[key];
+    if (!entry) {
+        console.warn(`[AssetLibraryRegistry] no entry for key "${key}" — falling back to a blank icon`);
+        return PIXI.Texture.WHITE;
+    }
     return entry.icon ? PIXI.Texture.from(entry.icon) : PIXI.Texture.WHITE;
 }
 
@@ -72,6 +84,14 @@ export const ASSET_LIBRARY = {
         scale: 1,
         rotationDeg: [0, 360],
         icon: 'wild-berries'
+    },
+    bark: {
+        // Two variants — one is picked at random per spawn (see pickRandom()) so identical logs
+        // scattered near each other don't all look the same.
+        models: [MODELS.Resources.WoodLogA, MODELS.Resources.WoodLogB],
+        scale: [0.8, 1.1],
+        rotationDeg: [0, 360],
+        icon: 'tree-bark',
     },
     money: {
         // No 3D presence at all — money is a currency, never a gatherable world prop.

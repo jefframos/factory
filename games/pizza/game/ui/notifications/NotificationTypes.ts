@@ -14,6 +14,8 @@ export enum NotificationType {
     Unlockable = 'unlockable',
     /** A building leveling up — see BuildingZone.ts (call site not wired up yet). */
     BuildingUpgrade = 'buildingUpgrade',
+    /** A brand-new tool crafted for the first time (e.g. a pickaxe) — see CraftZone.ts. Distinct from Upgrade, which is an existing tool getting BETTER, not a new one being obtained. */
+    NewTool = 'newTool',
 }
 
 export enum NotificationRarity {

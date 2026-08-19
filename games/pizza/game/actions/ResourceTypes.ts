@@ -13,6 +13,8 @@ export enum ResourceType {
     Tree = 'tree',
     Stone = 'stone',
     Berries = 'berries',
+    /** Loose ground loot — a wood log's bark, picked up whole (see LooseResourceNode.ts/DynamicResourceSpawner.ts). A separate BackpackStorage bucket from Tree's own "wood," by design: this is dynamically-spawned test loot, not the same pool a chopped tree fills. */
+    Bark = 'bark',
 }
 
 export interface ResourceConfig {
@@ -71,6 +73,24 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         respawnSec: 50,
         label: 'Berries',
         color: 0xcc2244,
+        solidRadius: 0,
+    },
+    [ResourceType.Bark]: {
+        // Bare-handed, same as Berries — see this file's own doc/ResourceType.Bark's.
+        action: ActionType.Gather,
+        // One hit clears it — a loose log on the ground is a quick pick-up, not a multi-swing
+        // harvest.
+        maxLife: 1,
+        amountPerGather: 2,
+        // Never actually read — LooseResourceNode overrides deplete() to leave the world for
+        // good instead of respawning after a cooldown (see that file's own doc). Kept nonzero
+        // rather than 0 only so this doesn't read as "instant respawn" to anyone skimming the
+        // config.
+        respawnSec: 0,
+        label: 'Bark',
+        color: 0x6b4423,
+        // No solid collider — see this file's own doc ("no collider" was an explicit
+        // requirement), same walk-over-able convention Berries already uses.
         solidRadius: 0,
     },
 };

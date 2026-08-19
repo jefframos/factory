@@ -21,6 +21,13 @@
 // node genuinely stops being gatherable until respawn() puts it back.
 //
 // Damage persists across cancelled actions — see the `life` field's doc.
+//
+// A few members below are `protected` rather than `private` specifically so
+// LooseResourceNode.ts (dynamically-spawned, spawner-cluster-managed ground
+// loot — see DynamicResourceSpawner.ts) can subclass this and override just
+// deplete() to fully leave the world on a full harvest instead of respawning
+// in place — everything else (trigger, visual, gain popup, damage/hit
+// handling) is reused as-is.
 
 import * as THREE from 'three';
 import * as PIXI from 'pixi.js';
@@ -36,7 +43,7 @@ import { ActionTarget } from '../components/PlayerActionController';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { ACTION_CONFIG } from '../actions/ActionTypes';
 import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
-import { ASSET_LIBRARY, getAssetIcon, pickRandom, resolveRange } from '../world/AssetLibraryRegistry';
+import { ASSET_LIBRARY, AssetLibraryEntry, getAssetIcon, pickRandom, resolveRange } from '../world/AssetLibraryRegistry';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 import ViewUtils from 'core/utils/ViewUtils';
 
@@ -58,10 +65,10 @@ const GAIN_POPUP_ICON_GAP = 4;
 export default class ResourceNode extends Entity implements ActionTarget {
     public readonly resourceType: ResourceType;
 
-    private rigidBody!: RigidBody;
+    protected rigidBody!: RigidBody;
     /** Solid, non-trigger collider blocking the player from walking through — only created when ResourceConfig.solidRadius > 0 (see awake()). undefined for walk-over resources like Berries. */
     private solidBody?: RigidBody;
-    private visual!: BoxVisualComponent | GlbVisualComponent;
+    protected visual!: BoxVisualComponent | GlbVisualComponent;
     /** Set while depleted; ticked in update() — see deplete()/respawn(). undefined means "available." */
     private respawnRemainingSec?: number;
     /** Remaining hit-points (see ResourceConfig.maxLife). Deliberately NOT reset when an action is cancelled — walking away mid-chop leaves the tree exactly as damaged as it was, and coming back resumes from here. Only a full harvest + respawn restores it (see respawn()). */
@@ -110,7 +117,12 @@ export default class ResourceNode extends Entity implements ActionTarget {
         }));
 
         const config = RESOURCE_CONFIG[this.resourceType];
-        const visualConfig = ASSET_LIBRARY[RESOURCE_ASSET_KEYS[this.resourceType]];
+        // Explicitly widened to AssetLibraryEntry — indexing ASSET_LIBRARY with a plain
+        // AssetLibraryKey union otherwise infers the narrow PER-ENTRY literal union (each
+        // entry's own `models` tuple keeps its own literal element type, from `satisfies
+        // Record<...>` — see AssetLibraryRegistry.ts's own doc), which pickRandom() below
+        // can't take a `readonly T[]` of once more than one shape of models array exists.
+        const visualConfig: AssetLibraryEntry = ASSET_LIBRARY[RESOURCE_ASSET_KEYS[this.resourceType]];
 
         if (config.solidRadius > 0) {
             const solidHalfExtents = new THREE.Vector3(config.solidRadius, config.solidRadius, config.solidRadius);
@@ -333,7 +345,7 @@ export default class ResourceNode extends Entity implements ActionTarget {
         }
     }
 
-    private deplete(respawnSec: number): void {
+    protected deplete(respawnSec: number): void {
         this.respawnRemainingSec = respawnSec;
         this.visual.setVisible(false);
         // See this file's own doc — PhysicsWorld doesn't consult RigidBody.enabled, so

@@ -17,6 +17,9 @@ import { EconomyStorage } from '../../data/EconomyStorage';
 import { ShopUpgradeStorage } from '../../shop/ShopUpgradeStorage';
 import { ShopStorage } from '../../data/ShopStorage';
 import { HighScoreStorage } from '../../data/HighScoreStorage';
+import { CraftStorage } from '../../crafting/CraftStorage';
+import { ItemStorage } from '../../crafting/ItemStorage';
+import { DynamicResourceStorage } from '../../world/DynamicResourceStorage';
 
 export default class SettingsPopup extends Popup {
     public constructor() {
@@ -31,7 +34,19 @@ export default class SettingsPopup extends Popup {
         content.addChild(clearDataButton);
     }
 
-    /** Same storage list PizzaScene's own dev "Reset Everything" button clears, plus ShopStorage/HighScoreStorage (which that dev button doesn't touch but genuinely should for a PLAYER-facing clear). Reloads afterward so a fresh boot picks up the cleared state exactly like a first-ever visit would, rather than trying to reset every in-memory cache/UI by hand. */
+    /**
+     * Same storage list PizzaScene's own dev "Reset Everything" button clears, plus
+     * ShopStorage/HighScoreStorage (which that dev button doesn't touch but genuinely should
+     * for a PLAYER-facing clear). Reloads afterward so a fresh boot picks up the cleared state
+     * exactly like a first-ever visit would, rather than trying to reset every in-memory
+     * cache/UI by hand.
+     *
+     * CraftStorage/ItemStorage use ItemStorage.resetToDefaults() rather than
+     * ItemStorage.clearAll() — a plain wipe would leave the reload with NO tools at all
+     * (nothing left to re-seed the starting axe once index.ts's ItemStorage.load() sees an
+     * already-empty-but-still-written save), where the reload should land back at "one axe,
+     * craft1 available again," the same state a first-ever visit gets.
+     */
     private handleClearData(): void {
         void Promise.all([
             GlobalResourceStorage.clearAll(),
@@ -43,6 +58,9 @@ export default class SettingsPopup extends Popup {
             ShopUpgradeStorage.clearAll(),
             ShopStorage.clearAll(),
             HighScoreStorage.clearAll(),
+            CraftStorage.clearAll(),
+            ItemStorage.resetToDefaults(),
+            DynamicResourceStorage.clearAll(),
         ]).then(() => window.location.reload());
     }
 }

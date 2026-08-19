@@ -40,11 +40,12 @@ import Component from '../ecs/Component';
 import RigidBody from '../physics/RigidBody';
 import PlayerActionController from './PlayerActionController';
 import CharacterVisualComponent from './CharacterVisualComponent';
-import { spawnFlyingResourceChip } from './FlyingResourceEffect';
 import ResourceNode from '../player/ResourceNode';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { RESOURCE_CONFIG } from '../actions/ResourceTypes';
 import { ACTION_CONFIG } from '../actions/ActionTypes';
+import { ItemStorage } from '../crafting/ItemStorage';
+import { ItemType } from '../crafting/ItemTypes';
 
 export default class AutoGatherController extends Component {
     /** Every ResourceNode whose trigger the player is currently standing inside — see this file's own doc. */
@@ -120,11 +121,25 @@ export default class AutoGatherController extends Component {
         }
 
         for (const node of this.overlapping) {
-            if (node.isAvailable) {
+            if (node.isAvailable && this.hasRequiredTool(node)) {
                 this.tryGather(node);
                 return;
             }
         }
+    }
+
+    /**
+     * Whether the player actually owns whatever tool `node`'s action equips (see
+     * ActionConfig.tool's own doc — undefined means bare-handed, e.g. Gather/berries, always
+     * allowed). ToolId and ItemType share the exact same string values ('axe'/'pickaxe' —
+     * see ItemTypes.ts's own doc), so the cast below is safe: a tool the player hasn't
+     * crafted yet (see CraftZone.ts) just means this resource sits there un-harvestable
+     * until they craft it, same as standing next to a tree with no axe at all before this
+     * check existed would otherwise have silently let them chop it anyway.
+     */
+    private hasRequiredTool(node: ResourceNode): boolean {
+        const tool = ACTION_CONFIG[RESOURCE_CONFIG[node.resourceType].action].tool;
+        return tool === undefined || ItemStorage.hasCount(tool as ItemType, 1);
     }
 
     private tryGather(node: ResourceNode): void {
@@ -170,6 +185,6 @@ export default class AutoGatherController extends Component {
             return;
         }
 
-        spawnFlyingResourceChip(scene, node.position, backpackWorldPosition, config.color);
+        //spawnFlyingResourceChip(scene, node.position, backpackWorldPosition, config.color);
     }
 }

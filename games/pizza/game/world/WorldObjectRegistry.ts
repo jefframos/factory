@@ -16,6 +16,16 @@
 // entirely. It points at its target via a "target" custom property (e.g. a
 // BuildingId) rather than "id" — see getDropperFor(), the one reader.
 //
+// A "playerStart" object is a bare Tiled point carrying ONLY an "id"
+// custom property (value "playerStart") — no "type" at all, unlike every
+// other object here, since it isn't a typed/bucketed thing a spawner looks
+// up by (type, id); it's a single, singular marker. Handled as its own
+// special case, checked by id before the "type" requirement every other
+// object below goes through — see getPlayerStart(), the one reader
+// (PizzaScene, positioning MainPlayer at boot). Optional: a map with no such
+// object just means "whatever MainPlayer's own default position already
+// is" — see getPlayerStart()'s own doc.
+//
 // A "waypoint" object is a point (Tiled ellipse, zero width/height) marking
 // one stop on a walked PATH — it carries "order" (an int, where the path
 // runs LOWEST-to-highest, index 0 conventionally right next to whatever it
@@ -47,6 +57,9 @@ const DROPPER_TYPE = 'dropper';
 /** The custom property (NOT "id") a dropper uses to name what it's a trigger area FOR — e.g. a BuildingId. */
 const DROPPER_TARGET_PROPERTY = 'target';
 
+/** The "id" custom property value marking the player-start point — see this file's own doc. */
+const PLAYER_START_ID = 'playerStart';
+
 /** The "type" custom property value marking a waypoint point — see this file's own doc. */
 const WAYPOINT_TYPE = 'waypoint';
 /** The custom property (NOT "id") a waypoint uses to name which path it belongs to — e.g. a queue id. */
@@ -77,6 +90,8 @@ export default class WorldObjectRegistry {
     private readonly dropperPlacementsByTarget = new Map<string, WorldObjectPlacement>();
     /** target (a waypoint's "target" custom property, e.g. a queue id) -> every waypoint drawn for that path, sorted ascending by order once the constructor finishes — see getWaypoints(). */
     private readonly waypointsByTarget = new Map<string, WaypointPlacement[]>();
+    /** The map's single "playerStart" point, if drawn — see this file's own doc and getPlayerStart(). */
+    private playerStartPlacement?: WorldObjectPlacement;
 
     public constructor(
         mapAlias: string = DEFAULT_TILE_MAP_ALIASES.map,
@@ -99,6 +114,16 @@ export default class WorldObjectRegistry {
         for (const obj of layer.objects) {
             const type = getObjectProperty(obj, 'type');
 
+            // The player-start marker has no "type" at all (see this file's own doc) — checked
+            // by "id" before the type-based waypoint/bucket handling below, since it wouldn't
+            // survive either of those paths' own requirements.
+            const objId = getObjectProperty(obj, 'id');
+            if (objId === PLAYER_START_ID) {
+                this.playerStartPlacement = objectToWorldRect(obj, tileDefs.tileSize, worldUnitsPerTile);
+                console.log(`  - id="playerStart" -> world x=${this.playerStartPlacement.x.toFixed(2)} z=${this.playerStartPlacement.z.toFixed(2)}`);
+                continue;
+            }
+
             // Waypoints are keyed by "target"+"order", never "id" (see this file's own doc) —
             // handled entirely separately, before the id-requirement check every OTHER type
             // goes through below.
@@ -107,7 +132,7 @@ export default class WorldObjectRegistry {
                 continue;
             }
 
-            const id = getObjectProperty(obj, 'id');
+            const id = objId;
             if (!type || !id) {
                 console.warn(`[WorldObjectRegistry] object #${obj.id} on "${OBJECTS_LAYER_NAME}" is missing its "type" or "id" custom property — skipping`);
                 continue;
@@ -206,6 +231,11 @@ export default class WorldObjectRegistry {
     /** Every waypoint drawn for `target`'s path, sorted ascending by order (already sorted once at construction — see the constructor's own doc) — index 0 IS order 0. Empty array if `target` has no waypoints at all; callers (QuestGiverEntity.ts) treat fewer than 2 as "no usable path" themselves. */
     public getWaypoints(target: string): readonly WaypointPlacement[] {
         return this.waypointsByTarget.get(target) ?? [];
+    }
+
+    /** The map's "playerStart" point (see this file's own doc), or undefined if the level designer hasn't drawn one — the caller (PizzaScene) falls back to MainPlayer's own default position in that case. */
+    public getPlayerStart(): WorldObjectPlacement | undefined {
+        return this.playerStartPlacement;
     }
 
     /**

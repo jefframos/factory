@@ -45,7 +45,7 @@ export class MovementHint {
         Object.assign(this.element.style, {
             position: 'fixed',
             left: '50%',
-            bottom: '140px',
+            bottom: '0px',
             transform: 'translateX(-50%)',
             display: 'none',
             flexDirection: 'column',

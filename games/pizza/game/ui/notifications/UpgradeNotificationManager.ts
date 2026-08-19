@@ -59,6 +59,18 @@ export class UpgradeNotificationManager {
         if (this.playing || !this.layer) {
             return;
         }
+
+        // Re-adding an EXISTING child moves it to the end of its parent's own children list
+        // (PIXI's addChild() is also how you reorder) rather than adding a duplicate — this is
+        // what actually keeps this notification layer drawing on top of EVERYTHING else in
+        // game.overlayContainer, no matter what got added there since init() ran. Without this,
+        // any UI added to overlayContainer AFTER init() (a zone's own ScreenAnchorComponent
+        // nameplate — QueueZone/CraftZone/... — or PopupManager's root, itself added by
+        // SettingsUIService before this manager's own init() call in UIService's constructor)
+        // would draw OVER this layer simply for having been added later, since PIXI renders a
+        // container's children in list order. Bringing this to the front right before every
+        // notification plays means the actual add-order of everything else never matters.
+        this.layer.parent?.addChild(this.layer);
         const options = this.queue.shift();
         if (!options) {
             return;

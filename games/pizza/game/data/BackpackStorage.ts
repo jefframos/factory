@@ -37,12 +37,26 @@ export class BackpackStorage {
     /** Fires with the resource type whose count just changed — see this file's own doc. */
     static readonly onChange: Signal = new Signal();
 
-    /** Call once at boot (see index.ts), before anything reads getCount()/getAll(). */
+    /**
+     * Call once at boot (see index.ts), before anything reads getCount()/getAll().
+     *
+     * Drops any persisted key that isn't a CURRENT ResourceType — a save written before a
+     * ResourceType gets renamed/removed (e.g. WoodLog -> Bark) would otherwise load that old
+     * string in as if it were still valid, and every later reader (BackpackUI, RESOURCE_CONFIG
+     * lookups, RESOURCE_ASSET_KEYS/ASSET_LIBRARY) assumes every key here IS one of the current
+     * enum's values — one stale key was enough to crash BackpackUI's very first render (see
+     * getAssetIcon()'s own doc), taking the whole scene build down with it.
+     */
     static async load(): Promise<void> {
         try {
             const raw = await PlatformHandler.instance.platform.getItem(STORAGE_KEY);
             const parsed: Partial<Record<ResourceType, number>> = raw ? JSON.parse(raw) : {};
+            const validTypes: ReadonlySet<string> = new Set(Object.values(ResourceType));
             for (const [type, amount] of Object.entries(parsed)) {
+                if (!validTypes.has(type)) {
+                    console.warn(`BackpackStorage: dropping stale/unknown resource type "${type}" from save data`);
+                    continue;
+                }
                 if (typeof amount === 'number' && amount > 0) {
                     this.counts.set(type as ResourceType, amount);
                 }

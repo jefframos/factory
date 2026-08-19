@@ -25,6 +25,7 @@ export class UpgradeStyle {
         [NotificationType.Upgrade]: 'Title_Ribbon01_Blue',
         [NotificationType.Unlockable]: 'Title_Ribbon01_Green',
         [NotificationType.BuildingUpgrade]: 'Title_Ribbon01_Purple',
+        [NotificationType.NewTool]: 'Title_Ribbon01_Red',
     };
 
     private static readonly BADGE_TEXTURE: Record<NotificationRarity, string> = {

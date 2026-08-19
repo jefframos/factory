@@ -24,6 +24,9 @@ import { BuildingStorage } from './game/data/BuildingStorage';
 import { GateStorage } from './game/data/GateStorage';
 import { EconomyStorage } from './game/data/EconomyStorage';
 import { QueueStorage } from './game/data/QueueStorage';
+import { ItemStorage } from './game/crafting/ItemStorage';
+import { CraftStorage } from './game/crafting/CraftStorage';
+import { DynamicResourceStorage } from './game/world/DynamicResourceStorage';
 import { ShopUpgradeStorage } from './game/shop/ShopUpgradeStorage';
 import { Localization } from './game/i18n/Localization';
 import loaderConfig from './loader.config';
@@ -78,6 +81,9 @@ export default class MyGame extends Game {
             await EconomyStorage.load();
             await QueueStorage.load();
             await ShopUpgradeStorage.load();
+            await ItemStorage.load();
+            await CraftStorage.load();
+            await DynamicResourceStorage.load();
             ShopUpgradeStorage.reapplyAllShopUpgrades();
             await Localization.load();
 

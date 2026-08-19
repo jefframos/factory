@@ -3,13 +3,16 @@
 // Owns every live Gate in the scene and is the ONLY thing that decides when
 // to check a gate's requirement and play its unlock sequence — see
 // WorldProgressionHost.ts's own doc for why that has to be centralized
-// rather than each Gate reacting to BuildingStorage.onLevelUp on its own
-// (two gates unlocking off the same level-up would otherwise fight over the
-// camera). PizzaScene calls processBuildingLevelUp() from its
-// notifyBuildingLevelUp() (the WorldProgressionHost implementation), after
-// the triggering building's own level-up sequence has fully played out.
+// rather than each Gate reacting to BuildingStorage.onLevelUp/ItemStorage.
+// onChange on its own (two gates unlocking off the same milestone would
+// otherwise fight over the camera). PizzaScene calls
+// processBuildingLevelUp()/processItemCrafted() from its
+// notifyBuildingLevelUp()/notifyItemCrafted() (the WorldProgressionHost
+// implementation), after the triggering milestone's own event has fully
+// played out.
 
 import { BuildingId } from '../data/BuildingTypes';
+import { ItemType } from '../crafting/ItemTypes';
 import { CameraFocusHost } from '../camera/CameraFocusHost';
 import World from '../ecs/World';
 import Gate from './Gate';
@@ -37,9 +40,25 @@ export default class GateManager {
      * sequence finishes, before the next one (if any) starts.
      */
     public async processBuildingLevelUp(buildingId: BuildingId, _level: number): Promise<void> {
+        await this.unlockMatching(gate => gate.requiresBuilding(buildingId));
+    }
+
+    /** Same shape as processBuildingLevelUp(), just keyed by a crafted ItemType instead of a BuildingId — see PizzaScene.notifyItemCrafted(). */
+    public async processItemCrafted(item: ItemType): Promise<void> {
+        await this.unlockMatching(gate => gate.requiresItem(item));
+    }
+
+    /**
+     * Shared by processBuildingLevelUp()/processItemCrafted(): plays every matching, now-met
+     * gate's unlock sequence ONE AT A TIME, awaited in order, never concurrently, so two gates
+     * unlocking off the same milestone don't both grab the camera at once. Each unlocked gate
+     * is removed from `world` (and this manager's own list) once its sequence finishes, before
+     * the next one (if any) starts.
+     */
+    private async unlockMatching(matches: (gate: Gate) => boolean): Promise<void> {
         // Snapshotted up front, not re-read mid-loop — remove() mutates `this.gates` as each
         // gate finishes, and iterating a live array while splicing it would skip entries.
-        const candidates = this.gates.filter(gate => gate.requiresBuilding(buildingId));
+        const candidates = this.gates.filter(matches);
 
         for (const gate of candidates) {
             if (!gate.isRequirementMet()) {

@@ -55,7 +55,7 @@ if (fs.existsSync(cacheDir)) {
 }
 
 console.log(`📦 Building assets for GAME=${currentGame}`);
-execSync('npm run image && npm run font && npm run audio && npm run json', {
+execSync('npm run image && npm run font && npm run audio && npm run models && npm run json', {
     stdio: 'inherit',
     cwd: root,
     env: { ...process.env, GAME: currentGame },

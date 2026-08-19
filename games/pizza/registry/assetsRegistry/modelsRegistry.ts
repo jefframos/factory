@@ -1411,25 +1411,6 @@ const PropsBuildingStructure = {
 }
 } as const;
 
-const PropsCharacterArcher = {
-  id: 'character-archer',
-  path: 'props/character-archer',
-  fullPath: 'pizza/models/props/character-archer.glb',
-  format: 'glb',
-  nodes: {
-  "CharacterArcher": "character-archer",
-  "Root": "root",
-  "LegLeft": "leg-left",
-  "LegRight": "leg-right",
-  "Torso": "torso",
-  "ArmLeft": "arm-left",
-  "ArmRight": "arm-right",
-  "Head": "head",
-  "BodyMesh": "body-mesh",
-  "HeadMesh": "head-mesh"
-}
-} as const;
-
 const PropsFence = {
   id: 'fence',
   path: 'props/fence',
@@ -1597,6 +1578,96 @@ const PropsWeaponBow = {
   format: 'glb',
   nodes: {
   "WeaponBow": "weapon-bow"
+}
+} as const;
+
+const ResourcesSilverNuggets = {
+  id: 'Silver_Nuggets',
+  path: 'resources/Silver_Nuggets',
+  fullPath: 'pizza/models/resources/Silver_Nuggets.gltf',
+  format: 'gltf',
+  nodes: {
+  "SilverNuggets": "Silver_Nuggets"
+}
+} as const;
+
+const ResourcesSilverNuggetLarge = {
+  id: 'Silver_Nugget_Large',
+  path: 'resources/Silver_Nugget_Large',
+  fullPath: 'pizza/models/resources/Silver_Nugget_Large.gltf',
+  format: 'gltf',
+  nodes: {
+  "SilverNuggetLarge": "Silver_Nugget_Large"
+}
+} as const;
+
+const ResourcesSilverNuggetMedium = {
+  id: 'Silver_Nugget_Medium',
+  path: 'resources/Silver_Nugget_Medium',
+  fullPath: 'pizza/models/resources/Silver_Nugget_Medium.gltf',
+  format: 'gltf',
+  nodes: {
+  "SilverNuggetMedium": "Silver_Nugget_Medium"
+}
+} as const;
+
+const ResourcesSilverNuggetSmall = {
+  id: 'Silver_Nugget_Small',
+  path: 'resources/Silver_Nugget_Small',
+  fullPath: 'pizza/models/resources/Silver_Nugget_Small.gltf',
+  format: 'gltf',
+  nodes: {
+  "SilverNuggetSmall": "Silver_Nugget_Small"
+}
+} as const;
+
+const ResourcesStoneChunksLarge = {
+  id: 'Stone_Chunks_Large',
+  path: 'resources/Stone_Chunks_Large',
+  fullPath: 'pizza/models/resources/Stone_Chunks_Large.gltf',
+  format: 'gltf',
+  nodes: {
+  "StoneChunksLarge": "Stone_Chunks_Large"
+}
+} as const;
+
+const ResourcesStoneChunksSmall = {
+  id: 'Stone_Chunks_Small',
+  path: 'resources/Stone_Chunks_Small',
+  fullPath: 'pizza/models/resources/Stone_Chunks_Small.gltf',
+  format: 'gltf',
+  nodes: {
+  "StoneChunksSmall": "Stone_Chunks_Small"
+}
+} as const;
+
+const ResourcesWoodLogA = {
+  id: 'Wood_Log_A',
+  path: 'resources/Wood_Log_A',
+  fullPath: 'pizza/models/resources/Wood_Log_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "WoodLogA": "Wood_Log_A"
+}
+} as const;
+
+const ResourcesWoodLogB = {
+  id: 'Wood_Log_B',
+  path: 'resources/Wood_Log_B',
+  fullPath: 'pizza/models/resources/Wood_Log_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "WoodLogB": "Wood_Log_B"
+}
+} as const;
+
+const ResourcesWoodLogStack = {
+  id: 'Wood_Log_Stack',
+  path: 'resources/Wood_Log_Stack',
+  fullPath: 'pizza/models/resources/Wood_Log_Stack.gltf',
+  format: 'gltf',
+  nodes: {
+  "WoodLogStack": "Wood_Log_Stack"
 }
 } as const;
 
@@ -2229,7 +2300,6 @@ export const MODELS = {
     BuildingPlatform: PropsBuildingPlatform,
     BuildingRoof: PropsBuildingRoof,
     BuildingStructure: PropsBuildingStructure,
-    CharacterArcher: PropsCharacterArcher,
     Fence: PropsFence,
     Flag: PropsFlag,
     Ladder: PropsLadder,
@@ -2247,6 +2317,17 @@ export const MODELS = {
     Tree: PropsTree,
     WeaponArrow: PropsWeaponArrow,
     WeaponBow: PropsWeaponBow
+  },
+  Resources: {
+    SilverNuggets: ResourcesSilverNuggets,
+    SilverNuggetLarge: ResourcesSilverNuggetLarge,
+    SilverNuggetMedium: ResourcesSilverNuggetMedium,
+    SilverNuggetSmall: ResourcesSilverNuggetSmall,
+    StoneChunksLarge: ResourcesStoneChunksLarge,
+    StoneChunksSmall: ResourcesStoneChunksSmall,
+    WoodLogA: ResourcesWoodLogA,
+    WoodLogB: ResourcesWoodLogB,
+    WoodLogStack: ResourcesWoodLogStack
   },
   Tools: {
     Anvil: ToolsAnvil,

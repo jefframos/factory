@@ -48,11 +48,18 @@ import { getQuestGiverConfig } from '../data/QuestGiverTypes';
 import ShopZone, { ShopTriggerArea } from '../shop/ShopZone';
 import { getShopConfig, SHOP_CONFIG_BY_ID } from '../shop/ShopTypes';
 import { ShopUpgradeStorage } from '../shop/ShopUpgradeStorage';
+import CraftZone, { CraftTriggerArea } from '../crafting/CraftZone';
+import { getCraftConfig } from '../crafting/CraftTypes';
+import { CraftStorage } from '../crafting/CraftStorage';
+import { ItemStorage } from '../crafting/ItemStorage';
+import { ItemType } from '../crafting/ItemTypes';
 import { QueueStorage } from '../data/QueueStorage';
 import { EconomyStorage } from '../data/EconomyStorage';
 import { CurrencyType } from '../data/EconomyTypes';
 import WorldManager from '../world/WorldManager';
 import WorldObjectRegistry from '../world/WorldObjectRegistry';
+import WorldSpawner from '../world/WorldSpawner';
+import DynamicResourceSpawner from '../world/DynamicResourceSpawner';
 import UIService from '../ui/UIService';
 import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { BackpackStorage } from '../data/BackpackStorage';
@@ -188,6 +195,15 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     /** Hand-placed building/gate/etc. spawn points read from the Tiled map's "mapSettings" objectgroup layer — see WorldObjectRegistry.ts. Built once here (same loadTiledMap()/loadTileDefs() reads WorldManager's TileMap already does — no extra cost) and read by setupBuildingZone()/setupGates() below. */
     private readonly worldObjects = new WorldObjectRegistry();
 
+    /** Clusters every "spawnerLayer"-named tilelayer into connected, same-type groups — see WorldSpawner.ts's own doc. */
+    private readonly worldSpawner = new WorldSpawner();
+
+    /** Scatters loose, dynamically-spawned resources (currently just the test "bark") across worldSpawner's own clusters — see DynamicResourceSpawner.ts/DynamicResourceTypes.ts. */
+    private readonly dynamicResourceSpawner = new DynamicResourceSpawner(this.world, this.threeScene, this.screenHost, this.worldSpawner);
+
+    /** Every live CraftZone, keyed by craft id — see setupCraftTables()/resetCraftingProgress()'s own doc for why this has to be tracked rather than just re-derived from the map each time. */
+    private readonly craftZones = new Map<string, CraftZone>();
+
     /** Owns every live Gate, sequences their unlock-camera-trips off notifyBuildingLevelUp() — see GateManager.ts's own doc. */
     private readonly gateManager = new GateManager(this.world, this);
 
@@ -235,6 +251,15 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // where its eventual character mesh gets parented.
         this.mainPlayer = this.world.add(new MainPlayer(this, this.threeScene));
 
+        // Drops the player at the Tiled map's "playerStart" point (see
+        // WorldObjectRegistry.ts's own doc) when the level designer has drawn one, instead of
+        // wherever MainPlayer's own transform otherwise defaults to (world origin). No-op
+        // (keeps that default) if the map has no such marker.
+        const playerStart = this.worldObjects.getPlayerStart();
+        if (playerStart) {
+            this.mainPlayer.transform.position.set(playerStart.x, 0, playerStart.z);
+        }
+
         // ThreeScene's constructor already set a far plane (1000, plenty of headroom by
         // default) — applying PERFORMANCE_CONFIG.cameraFar here just makes it the one place
         // that number lives, so the "Camera Far" dev slider (see setupDebugGui()) has
@@ -263,6 +288,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.uiService = new UIService(this.game, () => this.toggleCameraMode());
         this.setupQueues();
         this.setupShops();
+        this.setupCraftTables();
         this.setupDebugGui();
         this.threeScene.add(this.mainPlayer.transform);
 
@@ -368,6 +394,16 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             'Resources',
         );
         DevGuiManager.instance.addButton(
+            'Clear Crafting',
+            () => void this.resetCraftingProgress(),
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
+            'Clear Dynamic Resources',
+            () => void this.dynamicResourceSpawner.resetAll(),
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
             'Add 10 Of Each Resource',
             () => {
                 for (const type of Object.values(ResourceType)) {
@@ -391,6 +427,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 void QueueStorage.clearAll();
                 void EconomyStorage.clearAll();
                 void ShopUpgradeStorage.clearAll();
+                void this.resetCraftingProgress();
+                void this.dynamicResourceSpawner.resetAll();
             },
             'Resources',
         );
@@ -664,6 +702,96 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     }
 
     /**
+     * Spawns one CraftZone per "craft" object found on the Tiled map's "mapSettings" layer
+     * whose id has a matching CraftTableConfig (see CraftTypes.CRAFT_CONFIG_BY_ID) —
+     * auto-discovery like setupShops(), since a craft table's id is likewise whatever's drawn
+     * on the map, EXCEPT a craft id with no config entry is skipped (with a warning) rather
+     * than falling back to some default — a craft table has no sensible default, same
+     * reasoning as ShopTypes.ts's own doc (it has to know what it can actually craft).
+     *
+     * Same dropper-or-own-footprint trigger resolution as setupShops()/setupBuildingZone(): a
+     * Tiled "dropper" object targeting this craft table's id (e.g. "dropperCraft" -> "craft1")
+     * stands in for the table's own footprint as the walk-up trigger when the level designer
+     * has placed one, falling back to the table's own footprint otherwise.
+     *
+     * Tracks every spawned zone in `this.craftZones` (keyed by craft id) — a `destroyOnComplete`
+     * table removes ITSELF from the world once fully crafted (see CraftZone.ts), so
+     * resetCraftingProgress() needs a way to find and re-spawn one that's no longer live after
+     * a "Clear Data"/"Reset Everything" wipes CraftStorage back to nothing crafted. Skips an id
+     * that's already tracked (see resetCraftingProgress()'s own doc) so calling this again
+     * after a reset never ends up with two CraftZones for the same table.
+     *
+     * Also skips a `destroyOnComplete` table whose CraftStorage state ALREADY says every
+     * recipe's crafted — e.g. a scene rebuilt (not just a page reload) after that table
+     * already spent itself this session. Without this, setupCraftTables() would build a brand
+     * new CraftZone for an id that's genuinely done — inert (tryDeposit() already refuses once
+     * CraftStorage.isFullyCrafted() is true, so this was never a way to re-farm a "spent"
+     * table's recipes), but still very much VISIBLE (mesh + trigger both built unconditionally
+     * in CraftZone.awake(), regardless of what refreshLabel() ends up showing) — a table that's
+     * supposed to have vanished for good re-appearing, doing nothing, is exactly the "must not
+     * even be built" bug this check exists to prevent.
+     */
+    private setupCraftTables(): void {
+        for (const [id, placement] of this.worldObjects.getAllOfType('craft')) {
+            if (this.craftZones.has(id)) {
+                continue;
+            }
+            const config = getCraftConfig(id);
+            if (!config) {
+                console.warn(`[PizzaScene] craft table "${id}" found on the Tiled map but has no CraftTableConfig entry — skipping`);
+                continue;
+            }
+            if (config.destroyOnComplete && CraftStorage.isFullyCrafted(id, config)) {
+                continue;
+            }
+
+            const position = new THREE.Vector3(placement.x, 0, placement.z);
+            const dropperPlacement = this.worldObjects.getDropperFor(id);
+            const triggerArea: CraftTriggerArea | undefined = dropperPlacement
+                ? {
+                    position: new THREE.Vector3(dropperPlacement.x, 0, dropperPlacement.z),
+                    footprint: { width: dropperPlacement.width, depth: dropperPlacement.depth },
+                }
+                : undefined;
+
+            const craftZone = this.world.add(new CraftZone(
+                position, this.screenHost, id,
+                { width: placement.width, depth: placement.depth },
+                triggerArea,
+                this,
+            ));
+            this.threeScene.add(craftZone.transform);
+            this.craftZones.set(id, craftZone);
+        }
+    }
+
+    /**
+     * "Clear Data"'s actual crafting reset — wired into the "Reset Everything"/"Clear Crafting"
+     * dev-GUI buttons (see setupDebugGui()). Plain CraftStorage.clearAll() alone (what those
+     * buttons used to call) left two things broken:
+     *   1. ItemStorage never got touched at all, so a previously-crafted pickaxe just stayed
+     *      in the player's inventory forever — "clear data" ought to put the player back at
+     *      "one axe, nothing else" (see ItemStorage.resetToDefaults()), not leave every tool
+     *      ever earned sitting there.
+     *   2. A `destroyOnComplete` table that had already been fully crafted had REMOVED ITSELF
+     *      from the world (see CraftZone.ts) — clearing CraftStorage's data alone doesn't bring
+     *      a deleted entity back, so the table would stay gone even though CraftStorage now
+     *      says nothing's been crafted. Removing every tracked CraftZone and re-running
+     *      setupCraftTables() re-spawns exactly the ones that are missing (see that method's
+     *      own `this.craftZones.has(id)` skip).
+     */
+    private async resetCraftingProgress(): Promise<void> {
+        await CraftStorage.clearAll();
+        await ItemStorage.resetToDefaults();
+
+        for (const zone of this.craftZones.values()) {
+            this.world.remove(zone);
+        }
+        this.craftZones.clear();
+        this.setupCraftTables();
+    }
+
+    /**
      * Eases CAMERA_SETTINGS.pitchDeg/distance toward the top-down values (or back to
      * DEFAULT_CAMERA_PITCH_DEG/DISTANCE) over CAMERA_MODE_TRANSITION_SEC — fixedUpdate()'s
      * existing follow logic reads CAMERA_SETTINGS fresh every step, so tweening the settings
@@ -753,6 +881,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // Streams resource nodes in/out around the player and keeps off-screen respawn
         // timers ticking — see WorldManager.update()'s own doc.
         this.worldManager.update(playerPosition, delta);
+        // Independent of the above — see DynamicResourceSpawner.ts's own doc.
+        this.dynamicResourceSpawner.update(playerPosition, delta);
 
         // Whatever the camera SHOULD end up following — the player, normally, or a
         // focusCameraOn() target while a camera event is in progress. This is an instruction,
@@ -823,6 +953,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         await this.gateManager.processBuildingLevelUp(buildingId, level);
     }
 
+    /** WorldProgressionHost implementation — see that file's own doc. Same reasoning as notifyBuildingLevelUp(), just for a crafted item (see CraftZone.ts) instead of a building level-up. */
+    public async notifyItemCrafted(item: ItemType): Promise<void> {
+        await this.gateManager.processItemCrafted(item);
+    }
+
     public override update(delta: number): void {
         // Runs every entity's update() — for the player, that's PlayerMovementController's own
         // pointer-follow tracking plus CharacterVisualComponent syncing position/animation from
@@ -839,6 +974,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // input listeners and (if it ever loaded) the FBX character itself — see MainPlayer.destroy().
         this.world.remove(this.mainPlayer);
         this.worldManager.destroy();
+        this.dynamicResourceSpawner.destroy();
         this.loadingSpinner?.destroy();
         this.uiService.destroy();
         super.destroy();
