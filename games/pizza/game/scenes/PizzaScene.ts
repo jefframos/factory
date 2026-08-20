@@ -43,6 +43,8 @@ import MainPlayer from '../player/MainPlayer';
 import DropZone from '../player/DropZone';
 import BuildingZone, { BuildingTriggerArea } from '../player/BuildingZone';
 import QueueZone from '../player/QueueZone';
+import { getQueueConfig } from '../data/QueueTypes';
+import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
 import QuestGiverEntity from '../player/QuestGiverEntity';
 import { getQuestGiverConfig } from '../data/QuestGiverTypes';
 import ShopZone, { ShopTriggerArea } from '../shop/ShopZone';
@@ -64,7 +66,7 @@ import UIService from '../ui/UIService';
 import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { BuildingStorage } from '../data/BuildingStorage';
-import { BuildingId } from '../data/BuildingTypes';
+import { BUILDING_CONFIG, BuildingId } from '../data/BuildingTypes';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { ACTION_CONFIG } from '../actions/ActionTypes';
 import { getToolIcon } from '../actions/ToolRegistry';
@@ -77,7 +79,7 @@ import { CameraFocusHost, CameraFocusOptions } from '../camera/CameraFocusHost';
 import { WorldProgressionHost } from '../camera/WorldProgressionHost';
 import { wait } from '../utils/GsapUtils';
 import Gate from '../world/Gate';
-import GateManager from '../world/GateManager';
+import RequirementRegistry from '../world/RequirementRegistry';
 import { GATE_CONFIG, GateId } from '../data/GateTypes';
 import { GateStorage } from '../data/GateStorage';
 
@@ -204,8 +206,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     /** Every live CraftZone, keyed by craft id — see setupCraftTables()/resetCraftingProgress()'s own doc for why this has to be tracked rather than just re-derived from the map each time. */
     private readonly craftZones = new Map<string, CraftZone>();
 
-    /** Owns every live Gate, sequences their unlock-camera-trips off notifyBuildingLevelUp() — see GateManager.ts's own doc. */
-    private readonly gateManager = new GateManager(this.world, this);
+    /** Every live QueueZone, keyed by queue id — populated as each one's RequirementRegistry spawn gate fires (see registerQueueSpawnGates()). Not read for gating (the registry owns that); kept for any future lookup that needs a live queue by id. */
+    private readonly queueZones = new Map<string, QueueZone>();
+
+    /** Central "spawn once a requirement is met" / "unlock once a requirement is met" system shared by queues, shops, buildings, and gates — see RequirementRegistry.ts's own doc. */
+    private readonly requirementRegistry = new RequirementRegistry();
 
     /** The player — self-contained (RigidBody, PlayerMovementController, collision events all wired up in its own awake()). See MainPlayer.ts. */
     private readonly mainPlayer: MainPlayer;
@@ -283,11 +288,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         //this.setupDropZone();
         this.setupBuildingZone();
         this.setupGates();
-        // Built before setupQueues() — a queue's reward flies to this UI's wallet icon (see
-        // setupQueues()), so the panel has to exist first.
+        // Built before registerQueueSpawnGates() — a queue's reward flies to this UI's wallet
+        // icon (see registerQueueSpawnGates()), so the panel has to exist first.
         this.uiService = new UIService(this.game, () => this.toggleCameraMode());
-        this.setupQueues();
-        this.setupShops();
+        this.registerQueueSpawnGates();
+        this.registerShopSpawnGates();
         this.setupCraftTables();
         this.setupDebugGui();
         this.threeScene.add(this.mainPlayer.transform);
@@ -552,6 +557,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * this warns ONCE with the full list of buildings that have no dropper at all (they still
      * work — see BuildingZone's `triggerArea` param doc — this is purely a "did you forget
      * one" nudge for whoever is placing them in Tiled).
+     *
+     * Each building is registered with requirementRegistry as a SPAWN gate (see that file's
+     * own doc) keyed off BuildingConfig.appearRequirement — undefined for every building today
+     * (Camp is the very first one, nothing gates it), which registerSpawnGate treats as
+     * "spawn immediately," so this reads identically to before that field existed.
      */
     private setupBuildingZone(): void {
         const buildingsWithoutDropper: BuildingId[] = [];
@@ -574,12 +584,14 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 buildingsWithoutDropper.push(buildingId);
             }
 
-            const buildingZone = this.world.add(new BuildingZone(
-                position, this.screenHost, buildingId, this, this,
-                { width: placement.width, depth: placement.depth },
-                triggerArea,
-            ));
-            this.threeScene.add(buildingZone.transform);
+            this.requirementRegistry.registerSpawnGate(buildingId, BUILDING_CONFIG[buildingId].appearRequirement, () => {
+                const buildingZone = this.world.add(new BuildingZone(
+                    position, this.screenHost, buildingId, this, this,
+                    { width: placement.width, depth: placement.depth },
+                    triggerArea,
+                ));
+                this.threeScene.add(buildingZone.transform);
+            });
         }
 
         if (buildingsWithoutDropper.length > 0) {
@@ -589,11 +601,13 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
     /**
      * Spawns every gate not already unlocked from a previous session (see GateStorage.ts) and
-     * registers it with gateManager. Also catches up any gate whose requirement is ALREADY met
-     * the moment it spawns (e.g. the building it depends on was leveled up in a session before
-     * this gate existed, or before the player ever walked near it) — that case unlocks
-     * silently, with no camera trip, since there's no live "event" to dramatize; it's just
-     * this session's world catching up to state that was already true.
+     * registers it with requirementRegistry as an UNLOCK gate (see that file's own doc). Also
+     * catches up any gate whose requirement is ALREADY met the moment it spawns (e.g. the
+     * building it depends on was leveled up in a session before this gate existed, or before
+     * the player ever walked near it) — that case unlocks silently, with no camera trip, since
+     * there's no live "event" to dramatize; it's just this session's world catching up to
+     * state that was already true. Only a gate that DIDN'T catch up gets registered — see
+     * RequirementRegistry.registerUnlockGate()'s own doc for why it relies on that.
      */
     private setupGates(): void {
         for (const id of Object.values(GateId)) {
@@ -622,52 +636,65 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 continue;
             }
 
-            this.gateManager.register(gate);
+            this.requirementRegistry.registerUnlockGate(id, config.requirement, async () => {
+                await gate.playUnlockSequence(this);
+                this.world.remove(gate);
+            });
         }
     }
 
     /**
-     * Spawns one QueueZone per "queue" object found on the Tiled map's "mapSettings" layer —
-     * see WorldObjectRegistry.getAllOfType()'s own doc for why this is auto-discovery rather
-     * than a fixed id list like setupBuildingZone()/setupGates() use: a queue's id comes
-     * straight from whatever's drawn on the map, so a level designer can add "queue7" and have
-     * it fully work with zero code changes here.
+     * Registers one SPAWN gate (see RequirementRegistry.ts's own doc) per "queue" object found
+     * on the Tiled map's "mapSettings" layer, keyed off QueueConfig.appearRequirement (see
+     * QueueTypes.ts's own doc) — see WorldObjectRegistry.getAllOfType()'s own doc for why this
+     * is auto-discovery rather than a fixed id list like setupBuildingZone()/setupGates() use:
+     * a queue's id comes straight from whatever's drawn on the map, so a level designer can add
+     * "queue7" and have it fully work with zero code changes here. Called once — a queue with
+     * no appearRequirement spawns immediately (registerSpawnGate's own behavior for an
+     * undefined requirement); one WITH a requirement spawns whenever requirementRegistry next
+     * rechecks it (see PizzaScene.notifyBuildingLevelUp()/notifyItemCrafted()).
      */
-    private setupQueues(): void {
+    private registerQueueSpawnGates(): void {
         for (const [id, placement] of this.worldObjects.getAllOfType('queue')) {
-            const position = new THREE.Vector3(placement.x, 0, placement.z);
+            const config = getQueueConfig(id);
 
-            // A quest giver needs BOTH its own config AND at least two waypoints (a path needs
-            // a start and an end) — see QuestGiverEntity.ts's own doc. When both are present,
-            // this queue's pacing is handed over entirely to the giver's own walk cycle
-            // (QueueZone's `autoRollTasks = false` — see that field's own doc).
-            const questGiverConfig = getQuestGiverConfig(id);
-            const waypoints = this.worldObjects.getWaypoints(id);
-            const hasGiverPath = questGiverConfig !== undefined && waypoints.length >= 2;
+            this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
+                const position = new THREE.Vector3(placement.x, 0, placement.z);
 
-            const queueZone = this.world.add(new QueueZone(
-                position, this.screenHost, id,
-                () => this.uiService.economyUi.getIconAnchorPosition(),
-                { width: placement.width, depth: placement.depth },
-                undefined,
-                !hasGiverPath,
-            ));
-            this.threeScene.add(queueZone.transform);
+                // A quest giver needs BOTH its own config AND at least two waypoints (a path
+                // needs a start and an end) — see QuestGiverEntity.ts's own doc. When both are
+                // present, this queue's pacing is handed over entirely to the giver's own walk
+                // cycle (QueueZone's `autoRollTasks = false` — see that field's own doc).
+                const questGiverConfig = getQuestGiverConfig(id);
+                const waypoints = this.worldObjects.getWaypoints(id);
+                const hasGiverPath = questGiverConfig !== undefined && waypoints.length >= 2;
 
-            if (hasGiverPath) {
-                const questGiver = this.world.add(new QuestGiverEntity(id, waypoints, questGiverConfig!));
-                this.threeScene.add(questGiver.transform);
-            }
+                const queueZone = this.world.add(new QueueZone(
+                    position, this.screenHost, id,
+                    () => this.uiService.economyUi.getIconAnchorPosition(),
+                    { width: placement.width, depth: placement.depth },
+                    config,
+                    !hasGiverPath,
+                ));
+                this.threeScene.add(queueZone.transform);
+                this.queueZones.set(id, queueZone);
+
+                if (hasGiverPath) {
+                    const questGiver = this.world.add(new QuestGiverEntity(id, waypoints, questGiverConfig!));
+                    this.threeScene.add(questGiver.transform);
+                }
+            });
         }
     }
 
     /**
-     * Spawns one ShopZone per "shop" object found on the Tiled map's "mapSettings" layer whose
-     * id has a matching ShopConfig (see ShopTypes.SHOP_CONFIG_BY_ID) — auto-discovery like
-     * setupQueues(), since a shop's id is likewise whatever's drawn on the map, EXCEPT a shop
-     * with no config entry is skipped (with a warning) rather than falling back to some default,
-     * since a shop has no sensible default (see ShopTypes.ts's own doc — it has to know which
-     * tool it upgrades).
+     * Registers one SPAWN gate per "shop" object found on the Tiled map's "mapSettings" layer
+     * whose id has a matching ShopConfig (see ShopTypes.SHOP_CONFIG_BY_ID) — auto-discovery
+     * like registerQueueSpawnGates(), since a shop's id is likewise whatever's drawn on the
+     * map, EXCEPT a shop with no config entry is skipped (with a warning) rather than falling
+     * back to some default, since a shop has no sensible default (see ShopTypes.ts's own doc —
+     * it has to know which tool it upgrades). Keyed off ShopConfig.appearRequirement, same
+     * "spawns immediately if unset" behavior as every other spawn gate.
      *
      * Same dropper-or-own-footprint trigger resolution as setupBuildingZone(): a Tiled
      * "dropper" object targeting this shop's id (see WorldObjectRegistry.ts) stands in for the
@@ -675,41 +702,44 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * a shop stall drawn against a wall the player can't walk into, with its real drop-off spot
      * placed elsewhere. Falls back to the shop's own footprint when no dropper exists.
      */
-    private setupShops(): void {
+    private registerShopSpawnGates(): void {
         for (const [id, placement] of this.worldObjects.getAllOfType('shop')) {
-            if (!getShopConfig(id)) {
+            const config = getShopConfig(id);
+            if (!config) {
                 console.warn(`[PizzaScene] shop "${id}" found on the Tiled map but has no ShopConfig entry — skipping`);
                 continue;
             }
 
-            const position = new THREE.Vector3(placement.x, 0, placement.z);
-            const dropperPlacement = this.worldObjects.getDropperFor(id);
-            const triggerArea: ShopTriggerArea | undefined = dropperPlacement
-                ? {
-                    position: new THREE.Vector3(dropperPlacement.x, 0, dropperPlacement.z),
-                    footprint: { width: dropperPlacement.width, depth: dropperPlacement.depth },
-                }
-                : undefined;
+            this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
+                const position = new THREE.Vector3(placement.x, 0, placement.z);
+                const dropperPlacement = this.worldObjects.getDropperFor(id);
+                const triggerArea: ShopTriggerArea | undefined = dropperPlacement
+                    ? {
+                        position: new THREE.Vector3(dropperPlacement.x, 0, dropperPlacement.z),
+                        footprint: { width: dropperPlacement.width, depth: dropperPlacement.depth },
+                    }
+                    : undefined;
 
-            const shopZone = this.world.add(new ShopZone(
-                position, this.screenHost, id,
-                () => this.uiService.economyUi.getIconAnchorPosition(),
-                { width: placement.width, depth: placement.depth },
-                triggerArea,
-            ));
-            this.threeScene.add(shopZone.transform);
+                const shopZone = this.world.add(new ShopZone(
+                    position, this.screenHost, id,
+                    () => this.uiService.economyUi.getIconAnchorPosition(),
+                    { width: placement.width, depth: placement.depth },
+                    triggerArea,
+                ));
+                this.threeScene.add(shopZone.transform);
+            });
         }
     }
 
     /**
      * Spawns one CraftZone per "craft" object found on the Tiled map's "mapSettings" layer
      * whose id has a matching CraftTableConfig (see CraftTypes.CRAFT_CONFIG_BY_ID) —
-     * auto-discovery like setupShops(), since a craft table's id is likewise whatever's drawn
+     * auto-discovery like registerShopSpawnGates(), since a craft table's id is likewise whatever's drawn
      * on the map, EXCEPT a craft id with no config entry is skipped (with a warning) rather
      * than falling back to some default — a craft table has no sensible default, same
      * reasoning as ShopTypes.ts's own doc (it has to know what it can actually craft).
      *
-     * Same dropper-or-own-footprint trigger resolution as setupShops()/setupBuildingZone(): a
+     * Same dropper-or-own-footprint trigger resolution as registerShopSpawnGates()/setupBuildingZone(): a
      * Tiled "dropper" object targeting this craft table's id (e.g. "dropperCraft" -> "craft1")
      * stands in for the table's own footprint as the walk-up trigger when the level designer
      * has placed one, falling back to the table's own footprint otherwise.
@@ -742,6 +772,12 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 continue;
             }
             if (config.destroyOnComplete && CraftStorage.isFullyCrafted(id, config)) {
+                continue;
+            }
+            // Checked inline, not via RequirementRegistry — see CraftTableConfig.
+            // appearRequirement's own doc for why a craft table's destroy-and-respawn
+            // lifecycle doesn't fit that registry's "fires once, forever" spawn-gate role.
+            if (config.appearRequirement && !isMilestoneRequirementMet(config.appearRequirement)) {
                 continue;
             }
 
@@ -948,14 +984,23 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.mainPlayer.movementController.enabled = true;
     }
 
-    /** WorldProgressionHost implementation — see that file's own doc for why this is the one place that checks for gate unlocks, rather than GateManager listening to BuildingStorage.onLevelUp directly. */
-    public async notifyBuildingLevelUp(buildingId: BuildingId, level: number): Promise<void> {
-        await this.gateManager.processBuildingLevelUp(buildingId, level);
+    /**
+     * WorldProgressionHost implementation — see that file's own doc for why this is the one
+     * place that rechecks every requirement-gated entity (queues, shops, buildings, gates —
+     * see RequirementRegistry.ts's own doc), rather than each one listening to
+     * BuildingStorage.onLevelUp directly. `buildingId`/`level` themselves aren't even read —
+     * recheckAll() doesn't filter by which milestone fired, it just re-tries everything still
+     * pending; cheap enough that not filtering is simpler than trying to.
+     */
+    public async notifyBuildingLevelUp(_buildingId: BuildingId, _level: number): Promise<void> {
+        await this.requirementRegistry.recheckAll();
+        this.setupCraftTables();
     }
 
-    /** WorldProgressionHost implementation — see that file's own doc. Same reasoning as notifyBuildingLevelUp(), just for a crafted item (see CraftZone.ts) instead of a building level-up. */
-    public async notifyItemCrafted(item: ItemType): Promise<void> {
-        await this.gateManager.processItemCrafted(item);
+    /** WorldProgressionHost implementation — see that file's own doc. Same reasoning as notifyBuildingLevelUp(), just triggered by a crafted item (see CraftZone.ts) instead of a building level-up. */
+    public async notifyItemCrafted(_item: ItemType): Promise<void> {
+        await this.requirementRegistry.recheckAll();
+        this.setupCraftTables();
     }
 
     public override update(delta: number): void {

@@ -6,22 +6,24 @@
 // that reads this). Same "just a config entry" philosophy as
 // ResourceTypes.ts/BuildingTypes.ts.
 //
-// A gate's requirement is a small discriminated union rather than a single
-// fixed shape — building level-ups (the original milestone) and crafting a
-// particular item (see ItemTypes.ts) are both "a game milestone just
-// happened," but need different data to describe (buildingId+level vs. just
-// an item) and different storage to check against (BuildingStorage vs.
-// ItemStorage — see Gate.isRequirementMet()). Adding a THIRD milestone kind
-// later (a queue delivered N times, a shop upgrade bought, ...) is another
-// arm of this union plus a matching case in Gate.ts/GateManager.ts/
-// WorldProgressionHost.ts — nothing about an EXISTING gate's config needs to
-// change.
+// A gate's requirement is MilestoneRequirement.ts's own shared union
+// (building level-ups, crafting a particular item — see that file's own
+// doc) rather than a type of its own; QueueTypes.ts's QueueConfig.
+// appearRequirement reads the exact same shape, for the exact same reason
+// (a queue that shouldn't even appear until some milestone happens). Adding
+// a new milestone KIND is a MilestoneRequirement.ts change, not a
+// GateTypes.ts one — nothing about an EXISTING gate's config needs to
+// change either way.
 
 import { BuildingId } from './BuildingTypes';
-// ItemGateRequirement below needs the actual runtime enum (GATE_CONFIG references
-// ItemType.Axe as a VALUE, not just a type) — same "data file importing a typed id from
-// elsewhere" precedent ShopTypes.ts already sets by importing ToolRegistry's ToolId.
+// GATE_CONFIG references ItemType.Axe as a VALUE, not just a type — same "data file
+// importing a typed id from elsewhere" precedent ShopTypes.ts already sets by importing
+// ToolRegistry's ToolId.
 import { ItemType } from '../crafting/ItemTypes';
+import { MilestoneRequirement } from './MilestoneRequirement';
+
+/** Alias kept for readability at GateConfig's own call sites — see this file's own doc for why the underlying type is shared with QueueTypes.ts rather than defined here. */
+export type GateRequirement = MilestoneRequirement;
 
 export enum GateId {
     /** Matches the "id" custom property on the Tiled map's "mapSettings" objectgroup layer — see WorldObjectRegistry.ts. Not "North": gate ids are just whatever's authored in Tiled, with no assumed direction/position. */
@@ -29,21 +31,6 @@ export enum GateId {
     /** Opens once the player crafts their first axe (see CraftTypes.ts's "craftAxe" table) — already drawn on the Tiled map. */
     GateAxe = 'gateAxe',
 }
-
-/** A building must be AT LEAST `level` — the original (and still default) milestone kind. */
-export interface BuildingGateRequirement {
-    type: 'building';
-    buildingId: BuildingId;
-    level: number;
-}
-
-/** The player must own at least one `item` — see ItemStorage.hasCount(). Met the instant ANY craft table (or future source) hands out that item, not tied to one specific table's id. */
-export interface ItemGateRequirement {
-    type: 'item';
-    item: ItemType;
-}
-
-export type GateRequirement = BuildingGateRequirement | ItemGateRequirement;
 
 /** Placeholder box art, same convention as BuildingTypes.ts's BuildingMeshConfig — plain numbers so this data file stays engine-import-free. */
 export interface GateMeshConfig {

@@ -28,6 +28,7 @@
 
 import { ResourceType } from '../actions/ResourceTypes';
 import { ItemType } from './ItemTypes';
+import { MilestoneRequirement } from '../data/MilestoneRequirement';
 
 export interface CraftRecipeDef {
     /** Unique within this table's own `recipes` list — CraftStorage tracks completion per (craftId, recipeId) pair. */
@@ -46,6 +47,17 @@ export interface CraftTableConfig {
     recipes: CraftRecipeDef[];
     /** Whether this table removes itself once every recipe above has been crafted — see this file's own doc. */
     destroyOnComplete: boolean;
+    /**
+     * Optional — when set, this table isn't spawned at all until MilestoneRequirement.ts's
+     * isMilestoneRequirementMet() says this is satisfied. Same shared requirement shape
+     * GateConfig.requirement/QueueConfig.appearRequirement use — BUT checked inline in
+     * PizzaScene.setupCraftTables() rather than through RequirementRegistry's spawn-gate role
+     * (see that registry's own doc): a craft table can be destroyed and later rebuilt (Clear
+     * Data resetting a `destroyOnComplete` table back to not-yet-crafted), which conflicts
+     * with a spawn gate's "fires once, forever" contract. undefined means "always appears,"
+     * unchanged from before this field existed.
+     */
+    appearRequirement?: MilestoneRequirement;
 }
 
 /** Per-craft-table-id config — see this file's own doc for why (unlike QueueTypes' DEFAULT_QUEUE_CONFIG) there's no fallback for an id not listed here. */

@@ -13,6 +13,7 @@
 // file changing again.
 
 import { ResourceType } from '../actions/ResourceTypes';
+import { MilestoneRequirement } from './MilestoneRequirement';
 
 export enum BuildingId {
     Camp = 'camp',
@@ -56,6 +57,8 @@ export interface BuildingConfig {
     baseMesh: BuildingMeshConfig;
     /** Ordered ascending by `level` — BuildingStorage/BuildingZone index into this by `currentLevel` to find the next rung. */
     levels: BuildingLevelConfig[];
+    /** Optional — when set, this building's BuildingZone isn't spawned at all (see PizzaScene.setupBuildingZone(), which registers it as a RequirementRegistry spawn gate) until MilestoneRequirement.ts's isMilestoneRequirementMet() says this is satisfied. Same shared requirement shape GateConfig.requirement/QueueConfig.appearRequirement use. undefined (the only case today — Camp is the very first building, nothing gates it) means "always appears." */
+    appearRequirement?: MilestoneRequirement;
 }
 
 export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {

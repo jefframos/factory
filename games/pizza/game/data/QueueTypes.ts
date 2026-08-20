@@ -13,6 +13,8 @@
 // changes — see getQueueConfig(), the one reader.
 
 import { ResourceType } from '../actions/ResourceTypes';
+import { ItemType } from '../crafting/ItemTypes';
+import { MilestoneRequirement } from './MilestoneRequirement';
 
 export interface QueueTaskDef {
     resourceType: ResourceType;
@@ -27,6 +29,20 @@ export interface QueueConfig {
     cooldownSec: number;
     /** One is picked at random whenever a new task starts — see QueueStorage.tryRollNextTask(). */
     possibleTasks: QueueTaskDef[];
+    /**
+     * Optional — when set, this queue's QueueZone isn't spawned at all (see PizzaScene.
+     * trySpawnQueues()) until MilestoneRequirement.ts's isMilestoneRequirementMet() says this
+     * is satisfied. Same shared requirement shape GateTypes.ts's GateConfig.requirement uses
+     * ("a building reaching a required level" or "owning a particular crafted item" — see
+     * that file's own doc), for the exact same reason: a queue appearing is just as much "some
+     * OTHER game milestone happened" as a gate unlocking is. Checked once at boot for every
+     * queue already drawn on the map, AND again every time notifyBuildingLevelUp()/
+     * notifyItemCrafted() fires — see PizzaScene.ts's own doc — so a queue whose requirement
+     * becomes true mid-session appears right then, not only after a reload. undefined (the
+     * default for every queue below except queue1) means "always appears," unchanged from
+     * before this field existed.
+     */
+    appearRequirement?: MilestoneRequirement;
 }
 
 /** Applied to every discovered queue unless QUEUE_CONFIG_BY_ID has an override for its id — see this file's own doc. */
@@ -39,8 +55,15 @@ export const DEFAULT_QUEUE_CONFIG: QueueConfig = {
     ],
 };
 
-/** Per-queue-id overrides — e.g. QUEUE_CONFIG_BY_ID['queue1'] = { cooldownSec: 10, possibleTasks: [...] } for a queue that should behave differently from every other one. Empty until a level actually needs one. */
-export const QUEUE_CONFIG_BY_ID: Partial<Record<string, QueueConfig>> = {};
+/** Per-queue-id overrides — e.g. QUEUE_CONFIG_BY_ID['queue1'] = { cooldownSec: 10, possibleTasks: [...] } for a queue that should behave differently from every other one. */
+export const QUEUE_CONFIG_BY_ID: Partial<Record<string, QueueConfig>> = {
+    // Doesn't appear at all until the player has crafted a pickaxe — see QueueConfig.
+    // appearRequirement's own doc. Everything else (cooldown, tasks) stays the default.
+    queue1: {
+        ...DEFAULT_QUEUE_CONFIG,
+        appearRequirement: { type: 'item', item: ItemType.Pickaxe },
+    },
+};
 
 /** The config a queue with this id should use — its own override if QUEUE_CONFIG_BY_ID has one, else DEFAULT_QUEUE_CONFIG. */
 export function getQueueConfig(id: string): QueueConfig {

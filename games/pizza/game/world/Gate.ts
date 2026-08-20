@@ -3,27 +3,31 @@
 // A solid, non-trigger box obstacle (see RigidBody's `isStatic`/no
 // `isTrigger`, same shape as PizzaScene's TEST_BOX) that physically blocks
 // the player from progressing further into the world until some game
-// milestone happens — a building reaching a required level, or the player
-// crafting a particular item (see GateTypes.ts's GateRequirement union).
-// Carries a PERSISTENT "Locked" nameplate — "{gate name}" / "Required:
-// {building} Lv.N" or "Required: Craft {item}" — the same
-// ScreenAnchorComponent + distance-cull/scale treatment BuildingZone's panel
+// milestone happens — a building reaching a required level, the player
+// owning a particular item, or holding enough of a resource (see
+// MilestoneRequirement.ts's own union, aliased as GateTypes.ts's
+// GateRequirement). Carries a PERSISTENT "Locked" nameplate — "{gate name}"
+// / "Required: {building} Lv.N", "Required: Craft {item}", or "Required:
+// {amount} {resource}" — the same ScreenAnchorComponent + distance-cull/
+// scale treatment BuildingZone's panel
 // uses, visible for as long as the gate itself stands.
 //
 // Deliberately does NOT listen to BuildingStorage.onLevelUp/ItemStorage.
-// onChange itself — GateManager is the one thing that decides WHEN to check
-// a gate's requirement (right after the triggering milestone's own
-// event/camera sequence has fully resolved — see WorldProgressionHost.ts's
-// own doc for why), so a gate unlocking and the milestone that triggered it
+// onChange itself — RequirementRegistry (registered as an unlock gate, see
+// PizzaScene.setupGates()) is the one thing that decides WHEN to check a
+// gate's requirement (right after the triggering milestone's own event/
+// camera sequence has fully resolved — see WorldProgressionHost.ts's own
+// doc for why), so a gate unlocking and the milestone that triggered it
 // never fight over the camera at the same time. isRequirementMet() is
-// exposed for GateManager (and PizzaScene's startup catch-up check) to call
-// explicitly instead.
+// exposed for RequirementRegistry (and PizzaScene's startup catch-up check)
+// to call explicitly instead.
 //
 // playUnlockSequence() is the entire "camera visits the gate, it collapses,
-// camera returns" beat. GateManager awaits it, then removes this entity
-// from the world entirely via World.remove() — which is what "remove the
-// collider" means in practice: RigidBody self-unregisters from physics in
-// its own destroy() (see that file's own doc), so the whole gate, collider
+// camera returns" beat. Whatever's awaiting it (PizzaScene.setupGates()'s
+// own unlock-gate callback) removes this entity from the world entirely
+// via World.remove() right after — which is what "remove the collider"
+// means in practice: RigidBody self-unregisters from physics in its own
+// destroy() (see that file's own doc), so the whole gate, collider
 // included, is simply gone.
 
 import * as THREE from 'three';
@@ -37,13 +41,13 @@ import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnc
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
-import { BuildingStorage } from '../data/BuildingStorage';
-import { BUILDING_CONFIG, BuildingId } from '../data/BuildingTypes';
+import { BUILDING_CONFIG } from '../data/BuildingTypes';
 import { GateConfig, GateId } from '../data/GateTypes';
 import { GateStorage } from '../data/GateStorage';
+import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
 import { CameraFocusHost } from '../camera/CameraFocusHost';
-import { ItemStorage } from '../crafting/ItemStorage';
-import { ItemType, ITEM_CONFIG } from '../crafting/ItemTypes';
+import { ITEM_CONFIG } from '../crafting/ItemTypes';
+import { RESOURCE_CONFIG } from '../actions/ResourceTypes';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(10);
 /** Gap between the requirement line and the title sitting above it — see buildLabel(). */
@@ -70,22 +74,9 @@ export default class Gate extends Entity {
         this.transform.position.set(...config.position);
     }
 
-    /** Whether this gate's requirement is tied to `buildingId` at all — GateManager uses this to skip gates unrelated to whichever building just leveled up, before bothering to call isRequirementMet(). False for an item-requirement gate. */
-    public requiresBuilding(buildingId: BuildingId): boolean {
-        return this.config.requirement.type === 'building' && this.config.requirement.buildingId === buildingId;
-    }
-
-    /** Whether this gate's requirement is tied to `item` at all — GateManager uses this to skip gates unrelated to whichever item just got crafted, before bothering to call isRequirementMet(). False for a building-requirement gate. */
-    public requiresItem(item: ItemType): boolean {
-        return this.config.requirement.type === 'item' && this.config.requirement.item === item;
-    }
-
-    /** True once whichever storage backs this gate's requirement kind (see GateTypes.ts's own doc) says it's already satisfied. */
+    /** True once whichever storage backs this gate's requirement kind (see MilestoneRequirement.ts's own doc) says it's already satisfied. */
     public isRequirementMet(): boolean {
-        const requirement = this.config.requirement;
-        return requirement.type === 'building'
-            ? BuildingStorage.getLevel(requirement.buildingId) >= requirement.level
-            : ItemStorage.hasCount(requirement.item, 1);
+        return isMilestoneRequirementMet(this.config.requirement);
     }
 
     public override awake(): void {
@@ -121,9 +112,18 @@ export default class Gate extends Entity {
     /** Static content — unlike BuildingZone's panel, a gate's requirement never changes while it's still standing, so this is built once in awake() and never refreshed. */
     private buildLabel(): PIXI.Container {
         const req = this.config.requirement;
-        const requirementText = req.type === 'building'
-            ? `Required: ${BUILDING_CONFIG[req.buildingId].name} Lv.${req.level}`
-            : `Required: Craft ${ITEM_CONFIG[req.item].label}`;
+        let requirementText: string;
+        switch (req.type) {
+            case 'building':
+                requirementText = `Required: ${BUILDING_CONFIG[req.buildingId].name} Lv.${req.level}`;
+                break;
+            case 'item':
+                requirementText = `Required: Craft ${ITEM_CONFIG[req.item].label}`;
+                break;
+            case 'resource':
+                requirementText = `Required: ${req.amount} ${RESOURCE_CONFIG[req.resourceType].label}`;
+                break;
+        }
 
         const requirement = new PIXI.Text(requirementText, TextStyleRegistry.Body);
         requirement.anchor.set(0.5, 1);

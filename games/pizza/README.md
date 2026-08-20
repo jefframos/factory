@@ -22,7 +22,8 @@ actually exists in code today so a new session can extend it without re-deriving
 the one seam between game code and any specific platform SDK's ads/save-storage calls),
 then sequentially loads every persisted-data store (`ShopStorage`, `HighScoreStorage`,
 `GlobalResourceStorage`, `BackpackStorage`, `BuildingStorage`, `GateStorage`,
-`Localization`) *before* any asset loads. `loadAssets()` then loads three PIXI bundles
+`EconomyStorage`, `QueueStorage`, `ShopUpgradeStorage`, `ItemStorage`, `CraftStorage`,
+`DynamicResourceStorage`, `Localization`) *before* any asset loads. `loadAssets()` then loads three PIXI bundles
 in order — `json` (also triggers `loadShopItems()`/`loadIslands()`), `fonts`, `images`
 — each patched to `pizza/<kind>/` via `ManifestHelper.patchPaths()`. `startGame()`
 initializes `DevGuiManager` (gated on `?dev` — see `Game.debugParams`), registers and
@@ -118,15 +119,44 @@ preloaded PIXI assets, read synchronously via `loadTiledMap()`/`loadTileDefs()`.
 - **`WorldManager.ts`** — owns the ground + every resource node's streaming
   materialize/dematerialize state (see Resources below). `buildGround()` builds the
   physics floor slab, `TileMap`, and (if `USE_ISLAND_MESH`) `IslandMeshBuilder`.
-- **`Gate.ts` / `GateManager.ts`** — a solid obstacle that physically blocks progress
-  until a building reaches a required level (`GateTypes.ts`'s `GateRequirement`).
-  `GateManager` is the sole authority on *when* to check/unlock a gate (serialized after
-  the triggering building's own camera sequence, never concurrently) — see
-  `WorldProgressionHost` below for why.
+- **`Gate.ts` / `RequirementRegistry.ts`** — a solid obstacle that physically blocks
+  progress until some milestone happens (a building level, an owned item, a held resource
+  amount — see `MilestoneRequirement.ts`). `RequirementRegistry` is the sole authority on
+  *when* to check/unlock a gate (serialized after the triggering milestone's own camera
+  sequence, never concurrently) — see `WorldProgressionHost` below for why. The same
+  registry also spawns queues/shops/buildings once their own `appearRequirement` is met.
 - **`AssetLibraryRegistry.ts`** — catalog of spawnable visual assets (models + scale/
   rotation ranges) keyed by a plain string id, separate from `ResourceType` (that
   mapping is `ResourceRegistry.ts`'s `RESOURCE_ASSET_KEYS`). An empty `models` list means
   "no glb yet" — callers fall back to a colored box primitive.
+- **`WorldSpawner.ts`** — finds every tilelayer whose name CONTAINS `"spawnerLayer"` (same
+  substring-match convention as `TileMap`'s `"groundLayer"`, so multiple spawner layers
+  can coexist and are never merged) and flood-fills each one's painted cells into
+  per-tile-name connected clusters (4-directional adjacency only — a diagonal touch
+  doesn't count as connected). A cluster's `type` is the resolved tile name (e.g.
+  `"grass"`, `"sand"`), not the raw gid — resolved via the same
+  `getTilesetFirstGids()`/`resolveGroundDef()`/`resolveResourceDef()` lookup
+  `buildResourceSpawnsFromTileMap()` uses. Log-only today (`getLayers()` exists for
+  consumers — see `DynamicResourceSpawner.ts` below, the one reader so far).
+- **`DynamicResourceSpawner.ts` / `DynamicResourceTypes.ts` / `DynamicResourceStorage.ts`
+  / `game/player/LooseResourceNode.ts`** — a SECOND resource system, independent of the
+  Tiled `resourcesLayer` one above: loose ground loot (bark, pebbles, grass fiber) that
+  comes and goes dynamically instead of sitting at fixed map-painted positions. A
+  `DynamicResourcePlacement` (`DynamicResourceTypes.ts`) is one `(resourceType,
+  spawnerTileType)` pair with its own `density` (target instances per eligible
+  `WorldSpawner` cell WITHIN `PERFORMANCE_CONFIG.resourceLoadRadius` of the player — a
+  rate, not a flat world count), `minDistance`, and `checkIntervalSec` — the same
+  resourceType can have a different density on different terrain via two separate
+  placements. `DynamicResourceSpawner.update(playerPosition, delta)` streams
+  materialize/dematerialize by the SAME load/unload radius `WorldManager` uses for
+  map-painted resources, and periodically tops up each placement's nearby instance count
+  toward its density target. Only `(col, row)` cells are persisted
+  (`DynamicResourceStorage`), keyed by `placementKey()` (`"resourceType:spawnerTileType"`)
+  — not live entities — so a walked-away area's loot survives a reload without ever
+  needing to precompute/store anything for the parts of the map nobody's near.
+  `LooseResourceNode` is a plain `Entity` (NOT a `ResourceNode` subclass, no
+  `PlayerActionController` channel at all) picked up instantly on player contact — no
+  gather animation, no tool requirement.
 
 ## Performance — `game/config/PerformanceConfig.ts`
 
@@ -154,6 +184,17 @@ from the Tiled map's `resourcesLayer` (`TileMapConfig.buildResourceSpawnsFromTil
 — procedural spawning (`WorldConfig.generateProceduralResourceSpawns()`) exists as an
 alternative but isn't the default path.
 
+`ResourceType` today: `Tree`/`Stone`/`Berries` (map-painted, harvested via
+`PlayerActionController`'s multi-swing action loop — see Player & actions below) and
+`Bark`/`Pebble`/`GrassFiber` (dynamically-spawned loose loot — see `DynamicResourceSpawner.ts`
+under World above — picked up INSTANTLY on contact via `LooseResourceNode`, no tool, no
+action/animation). Both kinds share the same `RESOURCE_CONFIG`/`RESOURCE_ASSET_KEYS`/
+`BackpackStorage` bucket shape; only `ResourceNode`'s multi-hit harvest is skipped for
+the loose ones — most of `ResourceConfig`'s fields (`action`/`maxLife`/`respawnSec`/
+`solidRadius`) are simply unused for a `LooseResourceNode`-backed type, kept only because
+`RESOURCE_CONFIG` is a `Record<ResourceType, ResourceConfig>` requiring a complete entry
+per type.
+
 ## Player & actions — `game/player/MainPlayer.ts`, `game/components/`
 
 `MainPlayer` self-configures in `awake()` (`RigidBody`, `PlayerMovementController`,
@@ -174,9 +215,14 @@ work from the first frame, independent of the FBX character load
   count and the separate, uncapped yield-per-hit multiplier interact.
 - **`AutoGatherController`** — the actual "no interaction required" layer: tracks every
   `ResourceNode` currently overlapped (`Layers.Resource` trigger), auto-starts
-  `PlayerActionController` on the first one, credits `BackpackStorage` with
+  `PlayerActionController` on the first AVAILABLE one the player also has the tool for
+  (`hasRequiredTool()` checks `ACTION_CONFIG[action].tool` against `ItemStorage` —
+  `undefined` tool, e.g. `Gather`, is always allowed bare-handed; a `Stone` node just
+  sits un-harvestable until the player owns a pickaxe), credits `BackpackStorage` with
   `amountPerGather * resourcePerHit * hits` (see below) + spawns a flying chip visual per
-  landed swing, picks the next target on completion/cancellation/new overlap.
+  landed swing, picks the next target on completion/cancellation/new overlap. Loose
+  resources (`LooseResourceNode`) never enter this controller at all — see Resources
+  above.
 
 ## Tools & shop upgrades — `game/actions/ActionTypes.ts`, `game/actions/ToolRegistry.ts`, `game/shop/`
 
@@ -228,13 +274,17 @@ building-upgrade/gate-unlock call sites aren't wired up yet) — deliberately NO
   queue — never what one looks like. `init(game)` once (see `UIService`'s constructor,
   same convention as `PopupManager`); `show(options)` to queue one.
 - **`NotificationTypes.ts`** / **`UpgradeStyle.ts`** — `NotificationType` (`Upgrade`/
-  `Unlockable`/`BuildingUpgrade`) picks the ribbon color, `NotificationRarity` (`Common`/
-  `Rare`/`Epic`/`Legendary`) picks the badge color (all four badge textures are real;
-  `Unlockable`/`BuildingUpgrade` ribbon textures are placeholders pending final ids).
+  `Unlockable`/`BuildingUpgrade`/`NewTool`) picks the ribbon color, `NotificationRarity`
+  (`Common`/`Rare`/`Epic`/`Legendary`) picks the badge color (all four badge textures are
+  real; `Unlockable`/`BuildingUpgrade` ribbon textures are placeholders pending final
+  ids; `NewTool` uses the real `Title_Ribbon01_Red`).
 
 Call sites: `ShopZone.ts`'s coin-drain completion and the dev GUI's per-shop force-upgrade
 button both fire `UpgradeNotificationManager.instance.show({ type, rarity, icon, title,
 subtitle })` right after `ShopUpgradeStorage.tryCompleteUpgrade()` succeeds.
+`CraftZone.ts` fires a `NotificationType.NewTool` (always `NotificationRarity.Common`,
+i.e. the green badge) callout the instant a recipe hands out its item — distinct from
+`Upgrade`, which is an EXISTING tool getting better, not a new one being obtained.
 
 ## Buildings & progression — `game/player/BuildingZone.ts`, `game/data/`
 
@@ -255,6 +305,114 @@ still comes from the level's own `BuildingMeshConfig`, since Tiled has no 3rd di
 `PlatformHandler`'s `getItem`/`setItem` (not raw `localStorage`), each firing an
 `onChange: Signal<ResourceType>` the matching HUD panel subscribes to.
 `BuildingStorage`/`GateStorage` persist upgrade/unlock state the same way.
+
+### Shared requirement system — `game/data/MilestoneRequirement.ts`, `game/world/RequirementRegistry.ts`
+
+Queue/Shop/Building "should this even appear yet" checks and Gate's "should this unlock
+and vanish yet" check are the SAME underlying question — some other game milestone
+happened — so they share one requirement vocabulary and one dispatcher instead of four
+bespoke implementations:
+
+- **`MilestoneRequirement.ts`** — the DATA half: a small discriminated union —
+  `{type:'building', buildingId, level}`, `{type:'item', item}` (owning a crafted
+  tool/good — `ItemStorage.hasCount()`), or `{type:'resource', resourceType, amount}`
+  (currently HELD in `BackpackStorage`, so — unlike the other two — it can become
+  un-met again if the player spends the resource). `isMilestoneRequirementMet()` is the
+  one function that actually reads any of those three storages.
+- **`RequirementRegistry.ts`** — the BEHAVIOR half, two roles over the same requirement
+  data: **spawn gate** (`registerSpawnGate(id, requirement, spawn)`— entity doesn't exist
+  yet; `spawn()` fires exactly once, immediately if `requirement` is undefined) and
+  **unlock gate** (`registerUnlockGate(id, requirement, unlock)` — entity already exists,
+  blocking; `unlock()` fires exactly once, and every pending unlock gate is processed ONE
+  AT A TIME in registration order so two unlocking off the same milestone never fight
+  over the camera). `recheckAll()` is the one entry point `PizzaScene`'s
+  `WorldProgressionHost` implementation (`notifyBuildingLevelUp()`/`notifyItemCrafted()`)
+  calls after a triggering zone's own camera sequence (if any) has fully resolved — same
+  ordering guarantee the old building-level-up → gate-unlock chain always relied on.
+  `QueueConfig`/`ShopConfig`/`BuildingConfig` all carry an optional
+  `appearRequirement?: MilestoneRequirement` field wired through `registerSpawnGate()` in
+  `PizzaScene.registerQueueSpawnGates()`/`registerShopSpawnGates()`/`setupBuildingZone()`.
+
+**One deliberate exception:** `CraftTableConfig.appearRequirement` is checked INLINE in
+`PizzaScene.setupCraftTables()` (calling `isMilestoneRequirementMet()` directly) rather
+than through a registered spawn gate — a craft table can be destroyed and later REBUILT
+(Clear Data resets a spent `destroyOnComplete` table back to not-yet-crafted, and
+`setupCraftTables()` is expected to respawn it), which conflicts with a spawn gate's
+"fires once, forever" contract. Same requirement data/check function either way, just a
+different lifecycle wrapper — see that method's own doc for the full reasoning.
+
+**Adding a brand new gated entity type**: give its config an optional
+`appearRequirement?: MilestoneRequirement`, and in its setup code call
+`requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => { /* build it */ })`
+— that's the entire integration, whatever the requirement kind. Something that needs
+Gate's "already exists, unlocks and vanishes" behavior instead uses
+`registerUnlockGate()`.
+
+## Queues — `game/player/QueueZone.ts`, `game/data/QueueTypes.ts`, `game/data/QueueStorage.ts`
+
+A queue is a repeating task-delivery trigger, id'd from whatever's drawn on the Tiled
+map's `"queue"` objects (open-ended, unlike `BuildingId`/`GateId`'s fixed enums — a level
+designer can add `"queue7"` with zero code changes). `QueueConfig` (`QUEUE_CONFIG_BY_ID`,
+falling back to `DEFAULT_QUEUE_CONFIG` for any id not listed) picks a random
+`QueueTaskDef` (`resourceType`, `amount`, `rewardAmount`) on a cooldown
+(`QueueStorage.tryRollNextTask()`); `QueueZone` drains `BackpackStorage` into it the same
+staggered-flying-icon way `BuildingZone` does, then flies a money icon to `EconomyUI`'s
+wallet on completion (`EconomyStorage` is only credited once that icon actually LANDS,
+not on departure — the same convention every deposit flow here follows). A queue can
+instead be paced by a `QuestGiverEntity` walking a Tiled waypoint path in/out
+(`QueueConfig`'s giver fields + `WorldObjectRegistry.getWaypoints()`) — when both a
+`QuestGiverConfig` AND ≥2 waypoints exist for an id, `QueueZone`'s own
+timer-based `autoRollTasks` is turned off, and the giver's arrival is what starts the
+next task instead.
+
+`QueueConfig.appearRequirement?: MilestoneRequirement` (see Buildings & progression's
+shared requirement system above) gates whether a queue exists at all —
+`PizzaScene.registerQueueSpawnGates()` registers one `RequirementRegistry` spawn gate per
+queue found on the map. `queue1` requires owning a pickaxe (`{type:'item',
+item:ItemType.Pickaxe}`) as a worked example — anything without an `appearRequirement`
+just spawns immediately, unchanged from before that field existed.
+
+## Crafting — `game/crafting/`
+
+A second progression track, independent of Queue/Shop/Building: crafting TABLES turn
+raw resources into ITEMS (tools/goods), which the rest of the game reads off
+`ItemStorage` — `AutoGatherController.hasRequiredTool()` (Player & actions above) and
+`GateTypes.ts`'s `{type:'item', ...}` requirement both key off it.
+
+- **`ItemTypes.ts`** — `ItemType` (`Axe`/`Pickaxe` today) + `ITEM_CONFIG` (display label,
+  and the `ToolRegistry` id it shares its hand-held/icon art with — a crafted item and an
+  equippable tool are the same concept from two different files' perspectives).
+- **`ItemStorage.ts`** — persisted item counts, same static-class-+-`Signal`-+-
+  `PlatformHandler` shape as `BackpackStorage`. `DEFAULT_STARTING_ITEMS` is EMPTY — a
+  brand new player starts with no tools at all; crafting the very first axe (see below)
+  is the actual first thing there is to do.
+- **`CraftTypes.ts`** — `CraftTableConfig` per craft id (`CRAFT_CONFIG_BY_ID`, no
+  fallback default — same "has to know what it can actually make" reasoning as
+  `ShopTypes.ts`): a list of INDEPENDENT `CraftRecipeDef`s (own resource `cost`, own
+  `result` item+amount — no forced build order), `destroyOnComplete` (a one-shot starter
+  table removes itself once every recipe's crafted; a permanent table — e.g. one meant to
+  keep producing rarer items — never does), and an optional `appearRequirement` (checked
+  inline, not via a spawn gate — see the shared-requirement-system section above for why).
+- **`CraftStorage.ts`** — which recipes are already crafted per table id
+  (`completedRecipeIds`) + progress toward the currently-active one; `tryCompleteRecipe()`
+  credits `ItemStorage` and fires the table's `NewTool` notification (see Notifications
+  above).
+- **`CraftZone.ts`** — the trigger, same staggered-flying-icon deposit shape as
+  `BuildingZone`/`QueueZone`. A `destroyOnComplete` table NEVER visibly renders a
+  "fully crafted" state, not even for one frame — `refreshLabel()` just hides everything
+  the instant `CraftStorage` reports it's done, and the entity leaves the world in that
+  same tick (see the flying-icon landing callback) — there's no fade-out/delay to watch.
+  `PizzaScene.setupCraftTables()` also refuses to even BUILD a `destroyOnComplete` table
+  whose `CraftStorage` state already says it's fully spent (e.g. after a scene rebuild,
+  not just a reload) — otherwise it'd reappear, inert, doing nothing. Notifies
+  `WorldProgressionHost.notifyItemCrafted(item)` (fire-and-forget — a gate's own unlock
+  sequence has nothing to do with whether the table's entity still exists) right after
+  crediting the item.
+
+Worked example already in `CRAFT_CONFIG_BY_ID`: `craftAxe` (5 `Bark` → 1 `Axe`,
+`destroyOnComplete: true`) is the very first thing a fresh player can do (`Bark` needs no
+tool to gather — see Resources above); crafting the axe satisfies `GateId.GateAxe`'s
+`{type:'item', item:ItemType.Axe}` requirement, unlocking that gate live, mid-session.
 
 ## ECS — `game/ecs/`
 
@@ -310,3 +468,24 @@ get both physical push-out AND `onCollisionEnter/Stay/Exit`.
   right after the event actually completes — see `ShopZone.ts` for the existing pattern.
   `NotificationType.BuildingUpgrade`/`Unlockable` ribbon textures are still placeholders
   (see `UpgradeStyle.ts`).
+- **New queue** → draw a `"queue"` object on Tiled's `"mapSettings"` layer with an `id`
+  (no fixed enum needed). Custom cooldown/tasks → add an entry to
+  `QueueTypes.ts`'s `QUEUE_CONFIG_BY_ID`; leave it out to just get the default ladder.
+- **New craft table / craftable item** → `ItemTypes.ts` (`ItemType` + `ITEM_CONFIG`,
+  reusing a `ToolRegistry` id for the hand-held/icon art if it's a tool) + an entry in
+  `CraftTypes.ts`'s `CRAFT_CONFIG_BY_ID` (recipes, `destroyOnComplete`), then draw a
+  `"craft"` object on Tiled matching that id.
+- **New dynamically-spawned (loose, instant-pickup) resource** → a `ResourceType` +
+  `RESOURCE_CONFIG`/`ResourceRegistry.ts`/`AssetLibraryRegistry.ts` entry (same as any
+  resource) + one entry in `DynamicResourceTypes.ts`'s `DYNAMIC_RESOURCE_PLACEMENTS`
+  naming which `WorldSpawner` tile type (e.g. `"grass"`) it scatters across and at what
+  density — no `PizzaScene.ts` changes needed. Give the SAME resource a second placement
+  entry (different `spawnerTileType`) for a different density on different terrain.
+- **New "appears once X happens" or "unlocks once X happens" entity** → add an optional
+  `appearRequirement?: MilestoneRequirement` to its config type, then register it via
+  `requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {...})` (or
+  `registerUnlockGate()` for Gate-style "already exists, vanishes once met") in its
+  `PizzaScene.ts` setup method — see the shared requirement system under Buildings &
+  progression above. `MilestoneRequirement` itself covers building level, owned item, and
+  held resource amount today; add a new arm there (+ a branch in
+  `isMilestoneRequirementMet()`) for a milestone kind that doesn't fit those three.
