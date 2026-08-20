@@ -22,12 +22,10 @@
 //
 // Damage persists across cancelled actions — see the `life` field's doc.
 //
-// A few members below are `protected` rather than `private` specifically so
-// LooseResourceNode.ts (dynamically-spawned, spawner-cluster-managed ground
-// loot — see DynamicResourceSpawner.ts) can subclass this and override just
-// deplete() to fully leave the world on a full harvest instead of respawning
-// in place — everything else (trigger, visual, gain popup, damage/hit
-// handling) is reused as-is.
+// NOT used for dynamically-spawned ground loot (see LooseResourceNode.ts's
+// own doc for why that's a deliberately separate, much simpler entity —
+// instant pickup on contact, no ActionTarget/PlayerActionController channel
+// at all — rather than a subclass of this).
 
 import * as THREE from 'three';
 import * as PIXI from 'pixi.js';
@@ -65,10 +63,10 @@ const GAIN_POPUP_ICON_GAP = 4;
 export default class ResourceNode extends Entity implements ActionTarget {
     public readonly resourceType: ResourceType;
 
-    protected rigidBody!: RigidBody;
+    private rigidBody!: RigidBody;
     /** Solid, non-trigger collider blocking the player from walking through — only created when ResourceConfig.solidRadius > 0 (see awake()). undefined for walk-over resources like Berries. */
     private solidBody?: RigidBody;
-    protected visual!: BoxVisualComponent | GlbVisualComponent;
+    private visual!: BoxVisualComponent | GlbVisualComponent;
     /** Set while depleted; ticked in update() — see deplete()/respawn(). undefined means "available." */
     private respawnRemainingSec?: number;
     /** Remaining hit-points (see ResourceConfig.maxLife). Deliberately NOT reset when an action is cancelled — walking away mid-chop leaves the tree exactly as damaged as it was, and coming back resumes from here. Only a full harvest + respawn restores it (see respawn()). */
@@ -345,7 +343,7 @@ export default class ResourceNode extends Entity implements ActionTarget {
         }
     }
 
-    protected deplete(respawnSec: number): void {
+    private deplete(respawnSec: number): void {
         this.respawnRemainingSec = respawnSec;
         this.visual.setVisible(false);
         // See this file's own doc — PhysicsWorld doesn't consult RigidBody.enabled, so

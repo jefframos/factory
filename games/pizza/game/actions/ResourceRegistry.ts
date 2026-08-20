@@ -14,4 +14,6 @@ export const RESOURCE_ASSET_KEYS: Record<ResourceType, AssetLibraryKey> = {
     [ResourceType.Stone]: 'stone',
     [ResourceType.Berries]: 'berries',
     [ResourceType.Bark]: 'bark',
+    [ResourceType.Pebble]: 'pebble',
+    [ResourceType.GrassFiber]: 'grassFiber',
 };

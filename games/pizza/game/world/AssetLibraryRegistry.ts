@@ -93,6 +93,23 @@ export const ASSET_LIBRARY = {
         rotationDeg: [0, 360],
         icon: 'tree-bark',
     },
+    pebble: {
+        // Reusing the small stone-chunks model as a stand-in until a dedicated pebble model
+        // exists — nothing else needs to change once one does, just swap this list.
+        models: [MODELS.Resources.StoneChunksSmall],
+        scale: [0.5, 0.8],
+        rotationDeg: [0, 360],
+        icon: 'sharpening-stone',
+    },
+    grassFiber: {
+        // Two variants — one is picked at random per spawn (see pickRandom()); both bank the
+        // same flat amountPerGather regardless of which got picked (see ResourceTypes.ts's own
+        // doc on ResourceType.GrassFiber).
+        models: [MODELS.Pirate.GrassPlant, MODELS.Pirate.Grass],
+        scale: [0.8, 1.2],
+        rotationDeg: [0, 360],
+        icon: 'plant-fiber',
+    },
     money: {
         // No 3D presence at all — money is a currency, never a gatherable world prop.
         models: [],

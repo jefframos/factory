@@ -2,8 +2,10 @@
 //
 // Persisted positions for DynamicResourceSpawner.ts's own scattered
 // instances — same "static class + PlatformHandler persistence" shape as
-// BackpackStorage/QueueStorage, keyed by DynamicResourceConfig.id (a plain
-// string, same open-ended convention QueueStorage uses for queue ids).
+// BackpackStorage/QueueStorage, keyed by DynamicResourceTypes.placementKey()
+// (a plain string derived from a placement's own resourceType +
+// spawnerTileType — see that function's own doc), same open-ended
+// convention QueueStorage uses for queue ids.
 //
 // Only the (col, row) tile cell is persisted, not a live entity — an
 // instance far from the player is tracked as pure data (this is exactly
@@ -16,7 +18,7 @@
 // — see that file's own doc.
 //
 // A record's (col, row) pair IS its own id — two different instances of the
-// same config can never legitimately share a cell (see
+// same placement can never legitimately share a cell (see
 // DynamicResourceSpawner.isFarEnough()), so there's no need for a separate
 // generated id.
 //
@@ -34,16 +36,16 @@ export interface DynamicResourceRecord {
 }
 
 export class DynamicResourceStorage {
-    private static readonly recordsByConfigId = new Map<string, DynamicResourceRecord[]>();
+    private static readonly recordsByPlacementKey = new Map<string, DynamicResourceRecord[]>();
 
     /** Call once at boot (see index.ts), before anything reads getRecords(). */
     static async load(): Promise<void> {
         try {
             const raw = await PlatformHandler.instance.platform.getItem(STORAGE_KEY);
             const parsed: Record<string, DynamicResourceRecord[]> = raw ? JSON.parse(raw) : {};
-            for (const [configId, records] of Object.entries(parsed)) {
+            for (const [placementKey, records] of Object.entries(parsed)) {
                 if (Array.isArray(records)) {
-                    this.recordsByConfigId.set(configId, records.filter(r => typeof r?.col === 'number' && typeof r?.row === 'number'));
+                    this.recordsByPlacementKey.set(placementKey, records.filter(r => typeof r?.col === 'number' && typeof r?.row === 'number'));
                 }
             }
         } catch (e) {
@@ -51,25 +53,25 @@ export class DynamicResourceStorage {
         }
     }
 
-    /** Every persisted record for `configId` — a fresh copy, so a caller can't mutate this storage's own state by holding onto the returned array. Empty array (not undefined) if nothing's been spawned for this config yet. */
-    static getRecords(configId: string): DynamicResourceRecord[] {
-        return [...(this.recordsByConfigId.get(configId) ?? [])];
+    /** Every persisted record for `placementKey` (see DynamicResourceTypes.placementKey()) — a fresh copy, so a caller can't mutate this storage's own state by holding onto the returned array. Empty array (not undefined) if nothing's been spawned for this placement yet. */
+    static getRecords(placementKey: string): DynamicResourceRecord[] {
+        return [...(this.recordsByPlacementKey.get(placementKey) ?? [])];
     }
 
-    /** Reserves (col, row) for `configId` — called the instant DynamicResourceSpawner spawns a new instance there, so the cell survives a reload even if the player leaves before it's ever picked up. */
-    static addRecord(configId: string, record: DynamicResourceRecord): void {
-        let records = this.recordsByConfigId.get(configId);
+    /** Reserves (col, row) for `placementKey` — called the instant DynamicResourceSpawner spawns a new instance there, so the cell survives a reload even if the player leaves before it's ever picked up. */
+    static addRecord(placementKey: string, record: DynamicResourceRecord): void {
+        let records = this.recordsByPlacementKey.get(placementKey);
         if (!records) {
             records = [];
-            this.recordsByConfigId.set(configId, records);
+            this.recordsByPlacementKey.set(placementKey, records);
         }
         records.push(record);
         void this.persist();
     }
 
-    /** Frees (col, row) for `configId` — called once that instance is fully harvested (see LooseResourceNode.ts's onConsumed), so a picked-up spot doesn't count against density forever. No-ops if that cell was never actually recorded (defensive; shouldn't happen). */
-    static removeRecord(configId: string, record: DynamicResourceRecord): void {
-        const records = this.recordsByConfigId.get(configId);
+    /** Frees (col, row) for `placementKey` — called once that instance is fully harvested (see LooseResourceNode.ts's onConsumed), so a picked-up spot doesn't count against density forever. No-ops if that cell was never actually recorded (defensive; shouldn't happen). */
+    static removeRecord(placementKey: string, record: DynamicResourceRecord): void {
+        const records = this.recordsByPlacementKey.get(placementKey);
         if (!records) {
             return;
         }
@@ -82,13 +84,13 @@ export class DynamicResourceStorage {
     }
 
     private static async persist(): Promise<void> {
-        const data: Record<string, DynamicResourceRecord[]> = Object.fromEntries(this.recordsByConfigId);
+        const data: Record<string, DynamicResourceRecord[]> = Object.fromEntries(this.recordsByPlacementKey);
         await PlatformHandler.instance.platform.setItem(STORAGE_KEY, JSON.stringify(data));
     }
 
     /** Debug/dev + "Clear Data" reset — wipes every persisted record and removes the save entirely. Live-rendered instances (if any) are NOT this class's job to tear down — see DynamicResourceSpawner.resetAll(), which clears both. */
     static async clearAll(): Promise<void> {
-        this.recordsByConfigId.clear();
+        this.recordsByPlacementKey.clear();
         await PlatformHandler.instance.platform.removeItem(STORAGE_KEY);
     }
 }

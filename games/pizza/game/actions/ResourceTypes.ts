@@ -13,8 +13,12 @@ export enum ResourceType {
     Tree = 'tree',
     Stone = 'stone',
     Berries = 'berries',
-    /** Loose ground loot — a wood log's bark, picked up whole (see LooseResourceNode.ts/DynamicResourceSpawner.ts). A separate BackpackStorage bucket from Tree's own "wood," by design: this is dynamically-spawned test loot, not the same pool a chopped tree fills. */
+    /** Loose ground loot — a wood log's bark, picked up whole (see LooseResourceNode.ts/DynamicResourceSpawner.ts). A separate BackpackStorage bucket from Tree's own "wood," by design: this is dynamically-spawned test loot, not the same pool a chopped tree fills. Scattered on "sand" spawner clusters — see DynamicResourceTypes.ts. */
     Bark = 'bark',
+    /** Loose ground loot, same instant-pickup shape as Bark (see LooseResourceNode.ts/DynamicResourceSpawner.ts) — scattered on "grass" spawner clusters instead of "sand." A separate BackpackStorage bucket from Stone's own pool, by design, same reasoning as Bark's. */
+    Pebble = 'pebble',
+    /** Loose ground loot, same instant-pickup shape as Bark/Pebble — also scattered on "grass" spawner clusters (see DynamicResourceTypes.ts). Visual varies per spawn between MODELS.Pirate.GrassPlant and MODELS.Pirate.Grass (see AssetLibraryRegistry.ts's own "grassFiber" entry), but every pickup banks the same flat amountPerGather regardless of which model got picked. */
+    GrassFiber = 'grassFiber',
 }
 
 export interface ResourceConfig {
@@ -76,21 +80,40 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         solidRadius: 0,
     },
     [ResourceType.Bark]: {
-        // Bare-handed, same as Berries — see this file's own doc/ResourceType.Bark's.
+        // action/maxLife/respawnSec/solidRadius below are all UNUSED for Bark — LooseResourceNode
+        // (see that file's own doc) is a deliberately separate, much simpler entity: picked up
+        // instantly on contact, no PlayerActionController channel, no depletion/respawn cycle,
+        // no solid collider at all. Only amountPerGather/label/color (the placeholder-visual
+        // fallback color) are actually read for it. Kept as harmless, honest-looking defaults
+        // rather than removed, since RESOURCE_CONFIG is a `Record<ResourceType, ResourceConfig>`
+        // — every ResourceType needs a complete entry here regardless of which fields its own
+        // pickup path actually reads.
         action: ActionType.Gather,
-        // One hit clears it — a loose log on the ground is a quick pick-up, not a multi-swing
-        // harvest.
         maxLife: 1,
-        amountPerGather: 2,
-        // Never actually read — LooseResourceNode overrides deplete() to leave the world for
-        // good instead of respawning after a cooldown (see that file's own doc). Kept nonzero
-        // rather than 0 only so this doesn't read as "instant respawn" to anyone skimming the
-        // config.
+        amountPerGather: 1,
         respawnSec: 0,
         label: 'Bark',
         color: 0x6b4423,
-        // No solid collider — see this file's own doc ("no collider" was an explicit
-        // requirement), same walk-over-able convention Berries already uses.
+        solidRadius: 0,
+    },
+    [ResourceType.Pebble]: {
+        // Same "most fields unused" shape as Bark — see that entry's own doc.
+        action: ActionType.Gather,
+        maxLife: 1,
+        amountPerGather: 1,
+        respawnSec: 0,
+        label: 'Pebble',
+        color: 0x9a9a9a,
+        solidRadius: 0,
+    },
+    [ResourceType.GrassFiber]: {
+        // Same "most fields unused" shape as Bark/Pebble — see Bark's own doc.
+        action: ActionType.Gather,
+        maxLife: 1,
+        amountPerGather: 2,
+        respawnSec: 0,
+        label: 'Grass Fiber',
+        color: 0x6ccb5f,
         solidRadius: 0,
     },
 };

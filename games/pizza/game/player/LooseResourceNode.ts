@@ -1,38 +1,64 @@
 // LooseResourceNode.ts
 //
-// A ResourceNode subclass for dynamically-spawned, spawner-cluster-managed
-// ground loot (e.g. a wood log lying on the grass — see
-// DynamicResourceSpawner.ts, the one thing that constructs these) rather
-// than a fixed map-painted resource (see ResourceNode.ts's own doc — trees/
-// stones/berries, positioned from the Tiled map's resourcesLayer and kept
-// alive forever by WorldManager). Reuses EVERYTHING about ResourceNode
-// (trigger, visual, gain popup, damage/hit handling, the whole
-// PlayerActionController/AutoGatherController pipeline) except one thing:
-// once fully harvested, a fixed ResourceNode respawns itself in the exact
-// same spot after a cooldown; this one instead leaves the world FOR GOOD
-// and tells DynamicResourceSpawner (via `onConsumed`) that its slot is free
-// — the spawner decides if/where a replacement shows up next, which may not
-// be the same spot at all.
+// Instant-pickup ground loot — dynamically-spawned resources (see
+// DynamicResourceSpawner.ts, the one thing that constructs these) collected
+// the instant the player's RigidBody touches this one's trigger. Deliberately
+// NOT a ResourceNode and does NOT go through PlayerActionController/
+// AutoGatherController at all: a tree or rock is a multi-swing HARVEST (see
+// ResourceNode.ts's own doc — an action plays out over hitIntervalSec before
+// anything's actually banked), which is the right model for something the
+// player has to work at. Loose loot lying in the open needs none of that —
+// touching it is the whole interaction, same as walking over a coin in
+// countless other games. Reusing ResourceNode's ActionTarget/hit-animation
+// plumbing here would mean making the player wait out a swing animation to
+// pick up something already just lying there; this class exists specifically
+// so that never happens.
 //
-// `isAvailable` is overridden (not just `deplete()`) so the very same
-// "walking away mid-harvest cancels the action; the harvest ITSELF must
-// not" guard AutoGatherController.onTriggerExit() already relies on for
-// ordinary ResourceNode depletion keeps working correctly here too — see
-// that method's own doc. `consumed` flips to true synchronously, before
-// this leaves the world (whose RigidBody teardown is what actually fires
-// the trigger-exit), so the guard sees "depleted", never "walked away",
-// exactly like a normal ResourceNode.
+// No solid collider at all (see DynamicResourceTypes.ts's own doc — every
+// dynamic resource so far is walk-over-able ground clutter); the trigger
+// IS the pickup detector, sized to roughly the player's own reach rather
+// than a tree's much larger "gather radius," since this is "bumped into,"
+// not "walked near."
 
 import * as THREE from 'three';
-import ResourceNode from './ResourceNode';
-import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
+import * as PIXI from 'pixi.js';
+import gsap from 'gsap';
+import Entity from '../ecs/Entity';
+import RigidBody from '../physics/RigidBody';
+import { Layers } from '../physics/PhysicsConstants';
+import BoxVisualComponent from '../components/BoxVisualComponent';
+import GlbVisualComponent from '../components/GlbVisualComponent';
+import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
+import { TextStyleRegistry } from '../ui/TextStyleRegistry';
+import { BackpackStorage } from '../data/BackpackStorage';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
+import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
+import { ASSET_LIBRARY, AssetLibraryEntry, getAssetIcon, pickRandom, resolveRange } from '../world/AssetLibraryRegistry';
+import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
+import ViewUtils from 'core/utils/ViewUtils';
+import MainPlayer from './MainPlayer';
 
-export default class LooseResourceNode extends ResourceNode {
-    /** Flips true the instant this is fully harvested — see this file's own doc for why isAvailable checks this instead of the (never-set, for this subclass) respawn timer ResourceNode's own getter reads. */
-    private consumed = false;
+/** Pickup-trigger half-extents — smaller than ResourceNode's own gather-radius trigger (1,1,1): this is "bumped into," not "stood near" — see this file's own doc. */
+const TRIGGER_HALF_EXTENTS = new THREE.Vector3(0.6, 0.6, 0.6);
+/** Placeholder box size, only used while this resource's AssetLibraryRegistry entry has no glb models yet. */
+const PLACEHOLDER_HALF_EXTENTS = new THREE.Vector3(0.3, 0.3, 0.3);
+
+/** Same rising "+N" popup ResourceNode.showGainPopup() uses, trimmed down (no hit-shake, no resourcePerHit multiplier — there's no action config here to read one from, just amountPerGather flat). */
+const GAIN_POPUP_BASE_OFFSET = new THREE.Vector3(0, 1, 0);
+const GAIN_POPUP_RISE = 1.2;
+const GAIN_POPUP_TTL_SEC = 0.9;
+const GAIN_POPUP_ICON_SIZE = 28;
+const GAIN_POPUP_ICON_GAP = 4;
+
+export default class LooseResourceNode extends Entity {
+    public readonly resourceType: ResourceType;
+    private readonly screenHost?: ScreenAnchorHost;
     /** Notifies DynamicResourceSpawner that this instance's slot just freed up — called once, right before this leaves the world. */
     private readonly onConsumed?: () => void;
+
+    private visual!: BoxVisualComponent | GlbVisualComponent;
+    /** True the instant tryPickup() fires — guards a second overlapping onTriggerEnter (or a stray one arriving after this already started leaving the world) from double-banking/double-notifying. */
+    private consumed = false;
 
     public constructor(
         resourceType: ResourceType,
@@ -40,18 +66,134 @@ export default class LooseResourceNode extends ResourceNode {
         screenHost?: ScreenAnchorHost,
         onConsumed?: () => void,
     ) {
-        super(resourceType, position, RESOURCE_CONFIG[resourceType].maxLife, undefined, screenHost);
+        super();
+        this.resourceType = resourceType;
+        this.screenHost = screenHost;
         this.onConsumed = onConsumed;
+        this.transform.position.copy(position);
     }
 
-    public override get isAvailable(): boolean {
-        return !this.consumed;
+    /** Where this loot sits — read by DynamicResourceSpawner for its own distance checks (minDistance, load/unload radius). */
+    public get position(): THREE.Vector3 {
+        return this.transform.position;
     }
 
-    /** Overrides ResourceNode's "hide + start a respawn timer, revive in place later" with "leave for good" — see this file's own doc. */
-    protected override deplete(): void {
+    public override awake(): void {
+        const rigidBody = this.addComponent(new RigidBody({
+            halfExtents: TRIGGER_HALF_EXTENTS,
+            isStatic: true,
+            isTrigger: true,
+            // Deliberately NOT Layers.Resource — that's the layer AutoGatherController's own
+            // player-side trigger listens on to find HARVESTABLE nodes (see that file's own
+            // doc); this resource is never meant to reach that pipeline at all, so it has no
+            // reason to share the layer that feeds it.
+            layer: Layers.Default,
+            centerOffset: new THREE.Vector3(0, TRIGGER_HALF_EXTENTS.y, 0),
+        }));
+
+        const visualConfig: AssetLibraryEntry = ASSET_LIBRARY[RESOURCE_ASSET_KEYS[this.resourceType]];
+        this.visual = visualConfig.models.length > 0
+            ? this.addComponent(new GlbVisualComponent(
+                pickRandom(visualConfig.models),
+                new THREE.Vector3(),
+                resolveRange(visualConfig.scale),
+                resolveRange(visualConfig.rotationDeg) * (Math.PI / 180),
+            ))
+            : this.addComponent(new BoxVisualComponent(
+                PLACEHOLDER_HALF_EXTENTS.clone().multiplyScalar(2), RESOURCE_CONFIG[this.resourceType].color,
+                new THREE.Vector3(0, PLACEHOLDER_HALF_EXTENTS.y, 0),
+            ));
+
+        rigidBody.onTriggerEnter.add(other => this.tryPickup(other));
+    }
+
+    /**
+     * Scales the visual up from nothing instead of snapping straight to full size — same
+     * "pop in softly" idiom ResourceNode.playSpawnIn() uses for map-painted resources
+     * streaming into range. No-ops if a GlbVisualComponent's model hasn't finished loading
+     * yet (nothing to animate) — it'll just snap in at full scale whenever the load resolves.
+     */
+    public playSpawnIn(durationSec: number = PERFORMANCE_CONFIG.resourcePopInSec): void {
+        if (this.visual instanceof GlbVisualComponent && !this.visual.isReady) {
+            return;
+        }
+        if (durationSec <= 0) {
+            return;
+        }
+        const mesh = this.visual.mesh;
+        const target = mesh.scale.clone();
+        mesh.scale.set(0, 0, 0);
+        gsap.to(mesh.scale, { x: target.x, y: target.y, z: target.z, duration: durationSec, ease: 'back.out(1.7)' });
+    }
+
+    /** Mirror of playSpawnIn() — for DynamicResourceSpawner dematerializing this out of range (NOT for a pickup — see tryPickup(), which leaves instantly, no animation). */
+    public playDespawnOut(onComplete: () => void, durationSec: number = PERFORMANCE_CONFIG.resourcePopOutSec): void {
+        if (durationSec <= 0 || (this.visual instanceof GlbVisualComponent && !this.visual.isReady)) {
+            onComplete();
+            return;
+        }
+        gsap.to(this.visual.mesh.scale, { x: 0, y: 0, z: 0, duration: durationSec, ease: 'power2.in', onComplete });
+    }
+
+    /**
+     * The entire interaction: the instant the player's RigidBody touches this one's trigger,
+     * bank the resource and leave — no animation, no channel, no PlayerActionController
+     * involvement at all (see this file's own doc). `consumed` guards against a second
+     * onTriggerEnter (or one arriving after world.remove() has already been called) trying to
+     * bank/notify twice.
+     */
+    private tryPickup(other: RigidBody): void {
+        if (this.consumed || !(other.entity instanceof MainPlayer)) {
+            return;
+        }
         this.consumed = true;
+
+        const config = RESOURCE_CONFIG[this.resourceType];
+        BackpackStorage.add(this.resourceType, config.amountPerGather);
+        this.showGainPopup(config.amountPerGather);
+
         this.onConsumed?.();
         this.world?.remove(this);
+    }
+
+    /** Trimmed-down version of ResourceNode.showGainPopup() — no hit-shake (there's no hit), no resourcePerHit multiplier (no action config to read one from here), just the flat amountPerGather this pickup actually banked. */
+    private showGainPopup(amount: number): void {
+        if (!this.world || !this.screenHost) {
+            return;
+        }
+
+        const icon = new PIXI.Sprite(getAssetIcon(RESOURCE_ASSET_KEYS[this.resourceType]));
+        icon.anchor.set(0, 0.5);
+        icon.scale.set(ViewUtils.elementScaler(icon, GAIN_POPUP_ICON_SIZE));
+
+        const text = new PIXI.Text(`+${amount}`, TextStyleRegistry.ResourceDamage);
+        text.style.fill = '#33cc66';
+        text.anchor.set(0, 0.5);
+        text.position.set(icon.width + GAIN_POPUP_ICON_GAP, 0);
+
+        const content = new PIXI.Container();
+        content.addChild(icon, text);
+        content.pivot.set(content.width / 2, content.height / 2);
+
+        const basePosition = this.position.clone().add(GAIN_POPUP_BASE_OFFSET);
+        const progress = { t: 0 };
+        const risenPosition = new THREE.Vector3();
+
+        const popupEntity = this.world.spawn();
+        popupEntity.addComponent(new ScreenAnchorComponent(
+            this.screenHost,
+            content,
+            () => risenPosition.copy(basePosition).setY(basePosition.y + progress.t * GAIN_POPUP_RISE),
+            { ttlSec: GAIN_POPUP_TTL_SEC },
+        ));
+
+        gsap.to(progress, {
+            t: 1,
+            duration: GAIN_POPUP_TTL_SEC,
+            ease: 'power2.out',
+            onUpdate: () => {
+                content.alpha = 1 - progress.t;
+            },
+        });
     }
 }
