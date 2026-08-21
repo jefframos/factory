@@ -82,6 +82,7 @@ import Gate from '../world/Gate';
 import RequirementRegistry from '../world/RequirementRegistry';
 import { GATE_CONFIG, GateId } from '../data/GateTypes';
 import { GateStorage } from '../data/GateStorage';
+import { downloadGameData } from '../debug/GameDataBaker';
 
 /**
  * Camera settings data — a spherical orbit around the player instead of a
@@ -336,6 +337,16 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     /** Dev-only tools — no-ops entirely unless launched with ?dev (see Game.debugParams/DevGuiManager.initialize(), called once in index.ts's startGame()). */
     private setupDebugGui(): void {
         DevGuiManager.instance.addReadout(this.renderStats, ['triangles', 'drawCalls', 'meshCount'], 'Render', 'Render');
+
+        // Dumps every hand-authored design config (resources, tools, actions, items,
+        // crafting, shops, queues, buildings, gates, dynamic resource placements, asset
+        // library) into one JSON file and downloads it — see GameDataBaker.ts's own doc.
+        // For design review, not player-facing.
+        DevGuiManager.instance.addButton(
+            'Bake Game Data',
+            () => downloadGameData(),
+            'Data',
+        );
 
         // Camera far needs updateProjectionMatrix() on every change to actually take
         // effect — addObjectTrigger's callback (unlike addProperties' plain owner[key]=v)

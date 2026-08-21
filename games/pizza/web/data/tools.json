@@ -1,0 +1,12 @@
+{
+    "axe": {
+        "label": "Axe",
+        "icon": "woodcutters-axe",
+        "models": ["Tools.Axe"]
+    },
+    "pickaxe": {
+        "label": "Pickaxe",
+        "icon": "mining-pickaxe",
+        "models": ["Tools.Pickaxe"]
+    }
+}

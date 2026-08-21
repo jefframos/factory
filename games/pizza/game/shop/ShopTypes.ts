@@ -62,8 +62,8 @@ const DEFAULT_SHOP_MESH: ShopMeshConfig = { size: [2, 2, 2], color: 0x8855cc };
 /** Per-shop-id config — see this file's own doc for why (unlike QueueTypes' DEFAULT_QUEUE_CONFIG) there's no fallback for an id not listed here. */
 export const SHOP_CONFIG_BY_ID: Partial<Record<string, ShopConfig>> = {
     shop1: {
-        name: 'Axe Shop',
-        tool: 'axe',
+        name: "Axe Shop",
+        tool: "axe",
         action: ActionType.Chop,
         mesh: DEFAULT_SHOP_MESH,
         // 10 levels, rotating all three independent knobs (see ActionTypes.ts's own doc):
@@ -73,16 +73,56 @@ export const SHOP_CONFIG_BY_ID: Partial<Record<string, ShopConfig>> = {
         // 3*3 + 2*3 = 15 total wood, well past the 5 a hitScale-only reading would suggest,
         // since resourcePerHit is never capped by remaining life the way hitScale is.
         levels: [
-            { cost: 50, cooldownSec: 300, hitIntervalSec: 0.85 },
-            { cost: 120, cooldownSec: 300, hitScale: 2 },
-            { cost: 250, cooldownSec: 300, resourcePerHit: 2 },
-            { cost: 450, cooldownSec: 300, hitIntervalSec: 0.7 },
-            { cost: 800, cooldownSec: 300, hitScale: 3 },
-            { cost: 1300, cooldownSec: 300, resourcePerHit: 3 },
-            { cost: 2000, cooldownSec: 300, hitIntervalSec: 0.55 },
-            { cost: 3000, cooldownSec: 300, hitScale: 4 },
-            { cost: 4400, cooldownSec: 300, resourcePerHit: 4 },
-            { cost: 6400, cooldownSec: 300, hitIntervalSec: 0.4 },
+            {
+                "cost": 10,
+                "cooldownSec": 300,
+                "hitIntervalSec": 0.85
+            },
+            {
+                "cost": 120,
+                "cooldownSec": 300,
+                "hitScale": 2
+            },
+            {
+                "cost": 250,
+                "cooldownSec": 300,
+                "resourcePerHit": 2
+            },
+            {
+                "cost": 450,
+                "cooldownSec": 300,
+                "hitIntervalSec": 0.7
+            },
+            {
+                "cost": 800,
+                "cooldownSec": 300,
+                "hitScale": 3
+            },
+            {
+                "cost": 1300,
+                "cooldownSec": 300,
+                "resourcePerHit": 3
+            },
+            {
+                "cost": 2000,
+                "cooldownSec": 300,
+                "hitIntervalSec": 0.55
+            },
+            {
+                "cost": 3000,
+                "cooldownSec": 300,
+                "hitScale": 4
+            },
+            {
+                "cost": 4400,
+                "cooldownSec": 300,
+                "resourcePerHit": 4
+            },
+            {
+                "cost": 6400,
+                "cooldownSec": 300,
+                "hitIntervalSec": 0.4
+            }
         ],
     },
 };

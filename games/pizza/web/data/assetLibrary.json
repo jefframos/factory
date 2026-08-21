@@ -1,0 +1,9 @@
+{
+    "tree": { "icon": "wood-log", "models": ["Props.Tree", "Props.TreeHigh"], "scale": [1.85, 2.15], "rotationDeg": [0, 360] },
+    "stone": { "icon": "stone-chunk", "models": ["Props.RocksHigh", "Props.RocksLow"], "scale": 1, "rotationDeg": [0, 360] },
+    "berries": { "icon": "wild-berries", "models": [], "scale": 1, "rotationDeg": [0, 360] },
+    "bark": { "icon": "tree-bark", "models": ["Resources.WoodLogA", "Resources.WoodLogB"], "scale": [0.8, 1.1], "rotationDeg": [0, 360] },
+    "pebble": { "icon": "sharpening-stone", "models": ["Resources.StoneChunksSmall"], "scale": [0.5, 0.8], "rotationDeg": [0, 360] },
+    "grassFiber": { "icon": "plant-fiber", "models": ["Pirate.GrassPlant", "Pirate.Grass"], "scale": [0.8, 1.2], "rotationDeg": [0, 360] },
+    "money": { "icon": "ItemIcon_Money_Bill-2", "models": [], "scale": 1, "rotationDeg": 0 }
+}

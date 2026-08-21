@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Pizza — Game Data Editor</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <header>
+        <div class="header-row">
+            <h1>Pizza — Game Data Editor</h1>
+            <div class="header-actions">
+                <button id="check-map-btn" title="Cross-check ids against the Tiled map">Check map</button>
+                <button id="restart-btn" title="Restart the editor server">Restart server</button>
+            </div>
+        </div>
+        <p class="hint" id="source-hint"></p>
+    </header>
+    <nav id="tabs"></nav>
+    <main id="content"></main>
+    <script src="schemas.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

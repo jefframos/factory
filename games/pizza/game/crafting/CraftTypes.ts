@@ -63,13 +63,18 @@ export interface CraftTableConfig {
 /** Per-craft-table-id config — see this file's own doc for why (unlike QueueTypes' DEFAULT_QUEUE_CONFIG) there's no fallback for an id not listed here. */
 export const CRAFT_CONFIG_BY_ID: Partial<Record<string, CraftTableConfig>> = {
     craft1: {
-        name: 'Crafting Table',
+        name: "Crafting Table",
         recipes: [
             {
-                id: 'pickaxe',
-                result: { item: ItemType.Pickaxe, amount: 1 },
-                cost: { [ResourceType.Tree]: 5 },
-            },
+                "id": "pickaxe",
+                "result": {
+                    "item": ItemType.Pickaxe,
+                    "amount": 1
+                },
+                "cost": {
+                    "tree": 5
+                }
+            }
         ],
         destroyOnComplete: true,
     },
@@ -79,13 +84,18 @@ export const CRAFT_CONFIG_BY_ID: Partial<Record<string, CraftTableConfig>> = {
     // started. Crafting the axe here is what GateTypes.ts's GateId.GateAxe (an item-requirement
     // gate) is waiting on — see CraftZone.ts's own notifyItemCrafted() call.
     craftAxe: {
-        name: 'Axe Crafting Table',
+        name: "Axe Crafting Table",
         recipes: [
             {
-                id: 'axe',
-                result: { item: ItemType.Axe, amount: 1 },
-                cost: { [ResourceType.Bark]: 5 },
-            },
+                "id": "axe",
+                "result": {
+                    "item": ItemType.Axe,
+                    "amount": 1
+                },
+                "cost": {
+                    "bark": 5
+                }
+            }
         ],
         destroyOnComplete: true,
     },

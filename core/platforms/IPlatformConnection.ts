@@ -55,4 +55,13 @@ export interface IPlatformConnection {
     onPause?(callback: () => void): void;
     onResume?(callback: () => void): void;
     onAudioChanged?(callback: (enabled: boolean) => void): void;
+
+    /**
+     * Whether Game.ts is allowed to use the web Page Visibility API
+     * (document.hidden/visibilitychange) to pause/resume the ticker.
+     * Defaults to true (undefined) for every existing platform — only
+     * YouTube sets this to false, since YouTube certification requires
+     * pause/resume to come exclusively from ytgame.system.onPause/onResume.
+     */
+    usesPageVisibilityApi?: boolean;
 }

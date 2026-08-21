@@ -1,0 +1,112 @@
+{
+    "tree": {
+        "action": "chop",
+        "maxLife": 5,
+        "amountPerGather": 1,
+        "respawnSec": 60,
+        "label": "Wood",
+        "icon": "wood-log",
+        "models": [
+            "Props.Tree",
+            "Props.TreeHigh"
+        ],
+        "scale": [
+            1.85,
+            2.15
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "stone": {
+        "action": "mine",
+        "maxLife": 5,
+        "amountPerGather": 1,
+        "respawnSec": 80,
+        "label": "Stone",
+        "icon": "stone-chunk",
+        "models": [
+            "Props.RocksHigh",
+            "Props.RocksLow"
+        ],
+        "scale": 1,
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "berries": {
+        "action": "gather",
+        "maxLife": 2,
+        "amountPerGather": 1,
+        "respawnSec": 50,
+        "label": "Berries",
+        "icon": "wild-berries",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "bark": {
+        "action": "gather",
+        "maxLife": 1,
+        "amountPerGather": 1,
+        "respawnSec": 0,
+        "label": "Bark",
+        "icon": "tree-bark",
+        "models": [
+            "Resources.WoodLogA",
+            "Resources.WoodLogB"
+        ],
+        "scale": [
+            0.8,
+            1.1
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "pebble": {
+        "action": "gather",
+        "maxLife": 1,
+        "amountPerGather": 1,
+        "respawnSec": 0,
+        "label": "Pebble",
+        "icon": "sharpening-stone",
+        "models": [
+            "Resources.StoneChunksSmall"
+        ],
+        "scale": [
+            0.5,
+            0.8
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "grassFiber": {
+        "action": "gather",
+        "maxLife": 1,
+        "amountPerGather": 2,
+        "respawnSec": 0,
+        "label": "Grass Fiber",
+        "icon": "plant-fiber",
+        "models": [
+            "Pirate.GrassPlant",
+            "Pirate.Grass"
+        ],
+        "scale": [
+            0.8,
+            1.2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    }
+}

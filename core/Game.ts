@@ -125,10 +125,15 @@ export class Game {
         window.addEventListener('orientationchange', () => this.handleResizeDebounced());
         this.onResize();
 
-        document.addEventListener('visibilitychange', () => {
-            this.tabHidden = document.hidden;
-            this.updateTickerState();
-        });
+        // Skipped when the active platform opts out (e.g. YouTube Playables,
+        // which requires pause/resume to come exclusively from
+        // ytgame.system.onPause/onResume — see IPlatformConnection.usesPageVisibilityApi).
+        if (PlatformHandler.instance.platform?.usesPageVisibilityApi !== false) {
+            document.addEventListener('visibilitychange', () => {
+                this.tabHidden = document.hidden;
+                this.updateTickerState();
+            });
+        }
 
         // PlatformHandler is a global singleton set up once via PlatformHandler.instance.initialize()
         // in each game's own index.ts — subscribing here rather than waiting for that call is safe:

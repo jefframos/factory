@@ -15,6 +15,8 @@ import * as THREE from 'three';
 import MODELS, { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
 
 export interface ToolVisualEntry {
+    /** Human-readable name — shown wherever a tool needs a display label (e.g. the web editor's Tools tab, ToolLevelUI). Not gameplay data; purely for anything that wants to show a name instead of the raw id. */
+    label: string;
     /** Candidate models for this tool — empty until real art exists (see this file's own doc). */
     models: ModelDefinition[];
     /** Texture alias (packed 'survive' image bundle) representing this tool in flat 2D UI — e.g. ToolLevelUI's bottom-right tool/level list, ShopZone's panel. See getToolIcon(), the one reader. */
@@ -42,6 +44,7 @@ export interface ToolVisualEntry {
 
 export const TOOL_LIBRARY = {
     axe: {
+        label: 'Axe',
         models: [MODELS.Tools.Axe],
         icon: 'woodcutters-axe',
         color: 0x6b4423,
@@ -52,6 +55,7 @@ export const TOOL_LIBRARY = {
         rotationDeg: new THREE.Vector3(180, 0, 90),
     },
     pickaxe: {
+        label: 'Pickaxe',
         models: [MODELS.Tools.Pickaxe],
         icon: 'mining-pickaxe',
         color: 0x71716f,

@@ -4,6 +4,7 @@
     "scripts": {
         "dev": "vite",
         "start": "vite",
+        "editor": "node tools/editor/run-editor.mjs",
         "build": "vite build",
         "build-all": "node tools/build/build-platforms.mjs",
         "assets": "cross-env node tools/build-assets.mjs && npm run build:json",
@@ -46,6 +47,7 @@
         "cross-env": "^7.0.3",
         "dotenv": "^16.5.0",
         "pixi.js": "7.4.2",
+        "ts-morph": "^28.0.0",
         "ts-node": "^10.9.2",
         "tsconfig-paths": "^4.2.0",
         "vite": "^4.5.0",

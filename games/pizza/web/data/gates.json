@@ -1,0 +1,17 @@
+{
+    "gateAxe": {
+        "name": "Axe Gate",
+        "requirement": {
+            "type": "item",
+            "item": "axe"
+        }
+    },
+    "gate1": {
+        "name": "North Gate",
+        "requirement": {
+            "type": "building",
+            "buildingId": "camp",
+            "level": 2
+        }
+    }
+}

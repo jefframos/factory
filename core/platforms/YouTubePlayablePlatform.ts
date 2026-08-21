@@ -1,9 +1,13 @@
 import SoundManager from "core/audio/SoundManager";
 import { IPlatformConnection } from "./IPlatformConnection";
 
+// Real ambient types for the global `ytgame` namespace — see ./ytgame.d.ts (copied from
+// Google's own SDK typings). `window.ytgame` itself is still optional: the SDK script
+// (see startLoadSDK()) may not have loaded yet, or this may be running outside the
+// YouTube Playables environment entirely (see isPlayablesEnv()).
 declare global {
     interface Window {
-        ytgame?: any;
+        ytgame?: typeof ytgame;
     }
 }
 
@@ -14,6 +18,11 @@ function log(event: string, ...args: any[]) {
 export default class YouTubePlayablePlatform implements IPlatformConnection {
 
     public isGameplayActive = false;
+
+    // YouTube certification requires pause/resume to come exclusively from
+    // ytgame.system.onPause/onResume — using the Page Visibility API instead
+    // (or in addition) causes incorrect pause/resume behavior during ad breaks.
+    public usesPageVisibilityApi = false;
 
     private saveData: Record<string, string> = {};
 
@@ -92,18 +101,12 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
             log("loadData available - requesting save state");
 
             try {
+                // loadData() is typed as Promise<string> (see ytgame.d.ts) — always a
+                // serialized string per the SDK's own contract, never a pre-parsed object.
                 const raw = await window.ytgame.game.loadData();
                 log("loadData result", raw);
 
-                if (!raw) {
-                    this.saveData = {};
-                }
-                else if (typeof raw === "string") {
-                    this.saveData = JSON.parse(raw);
-                }
-                else {
-                    this.saveData = raw;
-                }
+                this.saveData = raw ? JSON.parse(raw) : {};
 
                 log("saveData parsed", this.saveData);
             }
@@ -199,17 +202,29 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
     // -------------------------
     // STORAGE
     // -------------------------
+    private async flushSaveData(): Promise<void> {
+        await window.ytgame?.game?.saveData?.(
+            JSON.stringify(this.saveData)
+        );
+    }
+
     public async setItem(key: string, value: string): Promise<void> {
 
         this.saveData[key] = value;
 
-        this.savePromise = this.savePromise.then(async () => {
-            await window.ytgame?.game?.saveData?.(
-                JSON.stringify(this.saveData)
-            );
-        });
+        // Chain onto savePromise for ordering, but never let a rejection poison
+        // it — ytgame.game.saveData() can reject (e.g. API_UNAVAILABLE) per the
+        // SDK's own docs, and an uncaught rejection here would permanently break
+        // every future save for the rest of the session (.then() on an already-
+        // rejected promise never runs its callback again).
+        const next = this.savePromise.catch(() => {}).then(() => this.flushSaveData());
+        this.savePromise = next;
 
-        await this.savePromise;
+        try {
+            await next;
+        } catch (e) {
+            log("saveData failed", e);
+        }
     }
 
     public async getItem(key: string): Promise<string | null> {
@@ -232,13 +247,14 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
 
         delete this.saveData[key];
 
-        this.savePromise = this.savePromise.then(async () => {
-            await window.ytgame?.game?.saveData?.(
-                JSON.stringify(this.saveData)
-            );
-        });
+        const next = this.savePromise.catch(() => {}).then(() => this.flushSaveData());
+        this.savePromise = next;
 
-        await this.savePromise;
+        try {
+            await next;
+        } catch (e) {
+            log("saveData failed", e);
+        }
     }
 
     // -------------------------

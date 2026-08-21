@@ -1,0 +1,34 @@
+{
+    "craft1": {
+        "name": "Crafting Table",
+        "recipes": [
+            {
+                "id": "pickaxe",
+                "result": {
+                    "item": "pickaxe",
+                    "amount": 1
+                },
+                "cost": {
+                    "tree": 5
+                }
+            }
+        ],
+        "destroyOnComplete": true
+    },
+    "craftAxe": {
+        "name": "Axe Crafting Table",
+        "recipes": [
+            {
+                "id": "axe",
+                "result": {
+                    "item": "axe",
+                    "amount": 1
+                },
+                "cost": {
+                    "bark": 5
+                }
+            }
+        ],
+        "destroyOnComplete": true
+    }
+}

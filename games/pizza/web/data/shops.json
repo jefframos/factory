@@ -1,0 +1,59 @@
+{
+    "shop1": {
+        "name": "Axe Shop",
+        "tool": "axe",
+        "action": "chop",
+        "levels": [
+            {
+                "cost": 10,
+                "cooldownSec": 300,
+                "hitIntervalSec": 0.85
+            },
+            {
+                "cost": 120,
+                "cooldownSec": 300,
+                "hitScale": 2
+            },
+            {
+                "cost": 250,
+                "cooldownSec": 300,
+                "resourcePerHit": 2
+            },
+            {
+                "cost": 450,
+                "cooldownSec": 300,
+                "hitIntervalSec": 0.7
+            },
+            {
+                "cost": 800,
+                "cooldownSec": 300,
+                "hitScale": 3
+            },
+            {
+                "cost": 1300,
+                "cooldownSec": 300,
+                "resourcePerHit": 3
+            },
+            {
+                "cost": 2000,
+                "cooldownSec": 300,
+                "hitIntervalSec": 0.55
+            },
+            {
+                "cost": 3000,
+                "cooldownSec": 300,
+                "hitScale": 4
+            },
+            {
+                "cost": 4400,
+                "cooldownSec": 300,
+                "resourcePerHit": 4
+            },
+            {
+                "cost": 6400,
+                "cooldownSec": 300,
+                "hitIntervalSec": 0.4
+            }
+        ]
+    }
+}
