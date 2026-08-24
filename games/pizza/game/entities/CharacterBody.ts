@@ -44,7 +44,7 @@ const BACKPACK_CUBE_SIZE = 90;
  * obvious from code alone — tune this live via setBackpackOffset() while watching the
  * character in-game, same as HEAD_CUBE_OFFSET above.
  */
-const BACKPACK_CUBE_OFFSET = new THREE.Vector3(0, 0, -60);
+const BACKPACK_CUBE_OFFSET = new THREE.Vector3(0, 0, -30);
 const BACKPACK_CUBE_COLOR = 0x8b5a2b;
 
 /**
@@ -352,7 +352,7 @@ export default class CharacterBody {
 
         this.backpackBone = chestBone;
 
-        const geometry = new THREE.BoxGeometry(BACKPACK_CUBE_SIZE, BACKPACK_CUBE_SIZE, BACKPACK_CUBE_SIZE);
+        const geometry = new THREE.BoxGeometry(BACKPACK_CUBE_SIZE, BACKPACK_CUBE_SIZE, BACKPACK_CUBE_SIZE * 0.5);
         const material = new THREE.MeshStandardMaterial({ color: BACKPACK_CUBE_COLOR });
         BendService.applyBend(material);
         const cube = new THREE.Mesh(geometry, material);

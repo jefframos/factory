@@ -42,6 +42,7 @@ import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import Component from '../ecs/Component';
 import { BendService } from '../services/BendService';
+import ViewUtils from 'core/utils/ViewUtils';
 
 /** Whatever a ScreenAnchorComponent needs from its host scene — the same structural-interface pattern PlayerMovementController's MovementInputHost already uses, so this doesn't have to import a concrete scene class. Whichever container the host hands in here is treated as the "base in-game UI" tier — PizzaScene wires this to `game.uiLayer` (see core/Game.ts's own doc on its three z-ordered overlay tiers), so every zone nameplate/requirement panel/flying resource icon always draws under a toast notification and under a popup, regardless of add-order. */
 export interface ScreenAnchorHost {
@@ -67,7 +68,7 @@ export interface ScreenAnchorDistanceScale {
  * scale write, and the target itself is never perfectly stable frame-to-frame (physics resting
  * contacts leave the player's position with sub-unit noise even "standing still"), so an
  * unsmoothed scale chases that noise every frame and reads as jitter. Smoothing low-pass-filters
- * it out while still tracking real distance changes (the player actually walking closer/farther)
+ * it out while still tracking real distance changes (the plapbackpoayer actually walking closer/farther)
  * within a few frames.
  */
 const SCALE_SMOOTHING_SPEED = 10;
@@ -80,9 +81,12 @@ const ALPHA_FADE_IN_SPEED = 10;
 
 /** Same exponential-decay easing as POSITION_SMOOTHING_SPEED, applied to how much `avoidViewer` currently pushes content aside — without its own easing this would snap sideways the instant the viewer crosses into `radius` (and snap back the instant they leave), which reads as a jump-cut; smoothing it makes the dodge itself feel like a deliberate little slide. */
 const AVOID_SMOOTHING_SPEED = 8;
-/** Length/thickness (px, in overlay-local space) of the placeholder pointer sprite avoidViewer shows while displaced — see PIXI.Texture.WHITE's own doc in awake() for why this is a plain tinted rectangle rather than a real arrow asset. */
-const POINTER_LENGTH = 16;
-const POINTER_THICKNESS = 3;
+/** Content-local units the pointer's root is nudged away from content's own center, along the same direction as its clamped boundary point — 0 sits it exactly ON the boundary (the previous behavior), positive pushes it OUTSIDE the popup (floating just past the edge), negative pulls it INSIDE (overlapping the frame's own border). Tune this to taste once real pointer art exists — a triangle/arrow asset will usually want a small negative value so its tip visually meets the frame instead of hovering just past it. */
+const POINTER_EDGE_PADDING = -20;
+/** How far (content-local units) the TRUE target must sit outside content's own rect before the pointer is considered "meaningfully displaced" and fades toward visible — below this it fades toward invisible instead. Deliberately measured from the target-vs-rect geometry itself (see distOutside in update()), not avoidViewer's own push magnitude — those two ease on different schedules and drifting out of sync was exactly what caused the pointer to visibly slide toward content's center right before vanishing (see smoothedPointerAlpha's own doc). */
+const POINTER_SHOW_THRESHOLD = 0;
+/** How fast the pointer's own alpha eases toward its 0/1 target — same exponential-decay shape as ALPHA_FADE_IN_SPEED, just applied both ways (fading OUT included, unlike content's own alpha) since a pointer popping suddenly invisible reads worse than content doing the same (it's a small, already-attention-grabbing accent, not the main panel). */
+const POINTER_ALPHA_SMOOTHING_SPEED = 10;
 
 export interface ScreenAnchorOptions {
     /** Auto-despawns the OWNING ENTITY this many seconds after awake() — see this file's own doc's "THROWAWAY" shape. Only pass this for an entity obtained via world.spawn() specifically for this popup; omit it entirely for a persistent label. */
@@ -106,6 +110,30 @@ export interface ScreenAnchorOptions {
      * avoidance component at all).
      */
     avoidViewer?: boolean;
+    /**
+     * Which point within `content`'s own bounds represents "the popup," in normalized
+     * PIXI-anchor units (0,0 = top-left, 0.5,1 = bottom-center, ...) — this is the point that
+     * ends up placed exactly at the target position (and, with avoidViewer on, the point every
+     * distance/direction calculation above measures FROM). Omitted (the default) means content's
+     * own local origin (0,0) already IS that point — true for every existing caller, whose
+     * content builds its own text/icons anchored such that local (0,0) sits where they want it
+     * (typically bottom-center, e.g. `text.anchor.set(0.5, 1)`) — so this only needs setting when
+     * a caller wants a DIFFERENT point of content's rendered bounds to be "the popup," without
+     * having to rebuild content's own internal anchoring to match (see PopupConfig.ts's 'simple'
+     * style, which sets this to {x: 0.5, y: 0} — top-center — instead of restructuring every
+     * zone's own icon/text layout).
+     */
+    anchor?: { x: number; y: number };
+    /**
+     * Shows the avoidViewer pointer as soon as content is displaced at ALL, instead of waiting
+     * for the displacement to clear POINTER_SHOW_THRESHOLD first — the only thing that still
+     * fades it out is the target genuinely sitting inside/on content's own rect (distOutside ~
+     * 0, the same degenerate case that already has to fade it — see the pointer block in
+     * update()'s own doc), not an extra "is this worth mentioning yet" margin on top of that.
+     * Omitted (the default, false) keeps the small buffer so a barely-there dodge doesn't flash
+     * the pointer for a couple frames on its way to settling back to nothing.
+     */
+    pointerAlwaysVisible?: boolean;
 }
 
 export default class ScreenAnchorComponent extends Component {
@@ -118,7 +146,10 @@ export default class ScreenAnchorComponent extends Component {
 
     /** Scratch — avoids allocating a new PIXI.Point/Vector3 every frame. */
     private readonly scratchPoint = new PIXI.Point();
+    /** The TRUE projected target position — see getTargetPosition() — in overlay-local space. Never shifted by ScreenAnchorOptions.anchor (unlike scratchAnchoredPoint below); this is what the avoidViewer pointer points AT, since it needs the real target, not wherever content's own local origin happens to be placed to make that anchor point line up with it. */
     private readonly scratchLocalPoint = new PIXI.Point();
+    /** Where content's own LOCAL ORIGIN needs to sit so ScreenAnchorOptions.anchor's chosen point lands on scratchLocalPoint instead — see the anchor block in update(). Identical to scratchLocalPoint whenever no anchor is set. This (not scratchLocalPoint) is what avoidance/positioning below actually place content at. */
+    private readonly scratchAnchoredPoint = new PIXI.Point();
     private readonly scratchPosition = new THREE.Vector3();
     /** Scratch for avoidViewer's own player-head-region projection — see the avoidViewer block in update(). */
     private readonly scratchViewerPoint = new PIXI.Point();
@@ -130,6 +161,8 @@ export default class ScreenAnchorComponent extends Component {
     /** Eased toward however far avoidViewer currently needs to push content aside (0 when not overlapping) — see AVOID_SMOOTHING_SPEED's own doc. Reset to 0 whenever content is hidden, same "don't carry stale state into the next appearance" reasoning as smoothedX/Y. */
     private smoothedAvoidPushX = 0;
     private smoothedAvoidPushY = 0;
+    /** Eased toward 1 while the target sits far enough outside content's own rect to bother showing the pointer, toward 0 once it doesn't (see POINTER_SHOW_THRESHOLD) — a plain lerp toward a binary target, same shape as smoothedAlpha's own fade-in, so the pointer fades smoothly in/out instead of popping visible/invisible right at the threshold. Reset to 0 whenever content is hidden. */
+    private smoothedPointerAlpha = 0;
 
     /** Eased toward the distance-derived target scale each frame — see SCALE_SMOOTHING_SPEED's own doc. `undefined` whenever the next frame should SNAP instead of ease (the first distance-scaled frame, or right after content was hidden — see the two `hideContent()` call sites). */
     private smoothedScale?: number;
@@ -169,12 +202,22 @@ export default class ScreenAnchorComponent extends Component {
             // anchor (0, 0.5) pivots at the LEFT-middle edge, so this.pointer.rotation alone
             // (set every frame in update()) is enough to make the rectangle's far end point
             // wherever it needs to — no separate direction vector -> sprite-orientation math.
-            this.pointer = new PIXI.Sprite(PIXI.Texture.WHITE);
+            //
+            // A CHILD of `content` (not a sibling in host.overlayContainer) — positioned every
+            // frame in CONTENT-LOCAL coordinates (see update()), it then inherits content's own
+            // position/scale automatically through the normal Pixi transform hierarchy, with no
+            // separate tracking to keep in sync. An earlier version computed the pointer's
+            // position independently in overlay-space, which could visibly detach from the
+            // popup whenever the two were computed from even slightly different snapshots of
+            // content's own position (e.g. before vs. after that frame's own smoothing pass) —
+            // parenting it here makes that entire class of bug structurally impossible.
+            this.pointer = PIXI.Sprite.from('pointer');
             this.pointer.anchor.set(0, 0.5);
-            this.pointer.width = POINTER_LENGTH;
-            this.pointer.height = POINTER_THICKNESS;
+            this.pointer.scale.set(ViewUtils.elementScaler(this.pointer, 10));
+            //this.pointer.width = POINTER_LENGTH;
+            //this.pointer.height = POINTER_THICKNESS;
             this.pointer.visible = false;
-            this.host.overlayContainer.addChild(this.pointer);
+            this.content.addChild(this.pointer);
         }
     }
 
@@ -229,7 +272,25 @@ export default class ScreenAnchorComponent extends Component {
         // parent was app.stage (identity transform, so it was a no-op either way).
         this.host.overlayContainer.toLocal(this.scratchPoint, undefined, this.scratchLocalPoint);
 
-        // avoidViewer: push the TRUE anchor point (scratchLocalPoint) sideways, away from the
+        // ScreenAnchorOptions.anchor — re-express the target as "where content's own LOCAL
+        // ORIGIN needs to sit" (scratchAnchoredPoint) so the caller's chosen anchor point, not
+        // necessarily local origin itself, ends up placed at the TRUE target (scratchLocalPoint,
+        // left untouched here on purpose — the avoidViewer pointer below points AT that real
+        // target, not at this shifted placement value; conflating the two used to make the
+        // pointer aim at the wrong spot whenever an anchor was set). Avoidance/position-smoothing
+        // below read scratchAnchoredPoint instead of scratchLocalPoint for exactly this reason.
+        // Uses last frame's scale/bounds (both already one-frame-stale elsewhere in this file,
+        // e.g. the pointer block) — content resizing/rescaling mid-frame is rare enough that the
+        // lag is never visible.
+        this.scratchAnchoredPoint.copyFrom(this.scratchLocalPoint);
+        if (this.options.anchor) {
+            const anchorBounds = this.content.getLocalBounds();
+            const anchorScale = this.content.scale.x || 1;
+            this.scratchAnchoredPoint.x -= (anchorBounds.x + this.options.anchor.x * anchorBounds.width) * anchorScale;
+            this.scratchAnchoredPoint.y -= (anchorBounds.y + this.options.anchor.y * anchorBounds.height) * anchorScale;
+        }
+
+        // avoidViewer: push the placement point (scratchAnchoredPoint) sideways, away from the
         // LIVE player-head region (see ScreenAnchorHost.getUIAvoidancePoint()/
         // PlayerUIAvoidanceComponent.ts), whenever they'd otherwise overlap — see
         // ScreenAnchorOptions.avoidViewer's own doc. Computed BEFORE the position-smoothing
@@ -246,17 +307,79 @@ export default class ScreenAnchorComponent extends Component {
                 this.scratchViewerPoint.set(viewerScreen.x, viewerScreen.y);
                 this.host.overlayContainer.toLocal(this.scratchViewerPoint, undefined, this.scratchViewerLocalPoint);
 
-                const dx = this.scratchLocalPoint.x - this.scratchViewerLocalPoint.x;
-                const dy = this.scratchLocalPoint.y - this.scratchViewerLocalPoint.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
+                // dx/dy is content's LOCAL ORIGIN placement (scratchAnchoredPoint — already
+                // accounts for ScreenAnchorOptions.anchor, see above) relative to the viewer —
+                // corners/center below are all expressed relative to THIS same reference (their
+                // own local bounds offset, scaled), never against the viewer directly, so this
+                // one projection is all update() needs regardless of how many points get tested
+                // against it.
+                const dx = this.scratchAnchoredPoint.x - this.scratchViewerLocalPoint.x;
+                const dy = this.scratchAnchoredPoint.y - this.scratchViewerLocalPoint.y;
                 const { radius } = avoidRegion;
-                if (dist < radius) {
-                    // Directly on top of the viewer (dist ~ 0) has no real direction to push
-                    // along — default to straight up, which reads naturally for a popup that's
-                    // meant to sit near the viewer's feet anyway.
-                    const nx = dist > 0.001 ? dx / dist : 0;
-                    const ny = dist > 0.001 ? dy / dist : -1;
-                    const push = radius - dist;
+                const bounds = this.content.getLocalBounds();
+                const scale = this.content.scale.x || 1;
+                const corners: Array<[number, number]> = [
+                    [bounds.x, bounds.y],
+                    [bounds.x + bounds.width, bounds.y],
+                    [bounds.x, bounds.y + bounds.height],
+                    [bounds.x + bounds.width, bounds.y + bounds.height],
+                ];
+
+                // GATING must be rect-based, not anchor-based — the anchor point alone can sit
+                // well outside `radius` (e.g. approaching a bottom-anchored panel from directly
+                // above, near its far TOP edge) while the rectangle itself already overlaps the
+                // viewer, which used to mean avoidance never even triggered. Clamping the
+                // viewer's own position into the rect's bounds finds the true nearest point on
+                // the rectangle to the viewer — 0 distance once the viewer is inside it.
+                const nearestOffsetX = Math.min(Math.max(-dx / scale, bounds.x), bounds.x + bounds.width);
+                const nearestOffsetY = Math.min(Math.max(-dy / scale, bounds.y), bounds.y + bounds.height);
+                const nearestQx = dx + nearestOffsetX * scale;
+                const nearestQy = dy + nearestOffsetY * scale;
+                const nearestDist = Math.hypot(nearestQx, nearestQy);
+
+                if (nearestDist < radius) {
+                    // DIRECTION is based on the rectangle's own CENTER relative to the viewer,
+                    // not the anchor point — pushing "away from the viewer" only makes sense
+                    // measured from somewhere inside the shape actually being moved. Using the
+                    // anchor for direction too meant a tall/offset panel could get pushed along a
+                    // direction that barely relates to where its own bulk actually sits (e.g.
+                    // sliding sideways when it really needed to clear vertically), leaving part
+                    // of it still overlapping even though the loop below would faithfully solve
+                    // for SOME corner's clearance along that (poorly chosen) direction.
+                    const centerOffsetX = bounds.x + bounds.width / 2;
+                    const centerOffsetY = bounds.y + bounds.height / 2;
+                    const centerQx = dx + centerOffsetX * scale;
+                    const centerQy = dy + centerOffsetY * scale;
+                    const centerDist = Math.hypot(centerQx, centerQy);
+                    // Viewer sitting exactly on the rect's own center (centerDist ~ 0) has no
+                    // real direction to push along — default to straight up.
+                    const nx = centerDist > 0.001 ? centerQx / centerDist : 0;
+                    const ny = centerDist > 0.001 ? centerQy / centerDist : -1;
+
+                    // Pushing just far enough for the CENTER to clear the circle isn't enough —
+                    // content is a RECTANGLE. Solve per-corner instead: for each corner of
+                    // content's own bounds, find the push distance (along nx/ny) at which THAT
+                    // corner sits exactly on the circle (the larger root of
+                    // |corner + t*n| = radius, quadratic in t — the smaller root is where the
+                    // corner would cross back INTO the circle further out, not the one we
+                    // want), then push by the largest of those so every corner clears
+                    // simultaneously and the nearest one ends up exactly tangent to the circle
+                    // (touching it) rather than stopping some arbitrary margin short.
+                    let push = radius - nearestDist;
+                    for (const [cornerX, cornerY] of corners) {
+                        const qx = dx + cornerX * scale;
+                        const qy = dy + cornerY * scale;
+                        const nDotQ = qx * nx + qy * ny;
+                        const discriminant = nDotQ * nDotQ - (qx * qx + qy * qy - radius * radius);
+                        if (discriminant < 0) {
+                            // This corner's path along the push direction never comes within
+                            // `radius` of the viewer at all — already safe no matter how far we
+                            // push, so it imposes no constraint here.
+                            continue;
+                        }
+                        push = Math.max(push, -nDotQ + Math.sqrt(discriminant));
+                    }
+
                     avoidPushX = nx * push;
                     avoidPushY = ny * push;
                 }
@@ -266,26 +389,103 @@ export default class ScreenAnchorComponent extends Component {
         const avoidT = 1 - Math.exp(-AVOID_SMOOTHING_SPEED * delta);
         this.smoothedAvoidPushX += (avoidPushX - this.smoothedAvoidPushX) * avoidT;
         this.smoothedAvoidPushY += (avoidPushY - this.smoothedAvoidPushY) * avoidT;
-        const avoidedX = this.scratchLocalPoint.x + this.smoothedAvoidPushX;
-        const avoidedY = this.scratchLocalPoint.y + this.smoothedAvoidPushY;
-
-        if (this.pointer) {
-            // Only worth pointing back at the true anchor once the dodge is actually visible —
-            // a fraction-of-a-pixel push (easing settling back to 0 after the viewer moves away
-            // again) shouldn't leave a barely-visible sliver of a pointer hanging around.
-            const showPointer = Math.hypot(this.smoothedAvoidPushX, this.smoothedAvoidPushY) > 1;
-            this.pointer.visible = showPointer;
-            if (showPointer) {
-                this.pointer.position.set(avoidedX, avoidedY);
-                this.pointer.rotation = Math.atan2(this.scratchLocalPoint.y - avoidedY, this.scratchLocalPoint.x - avoidedX);
-                this.pointer.alpha = this.content.alpha;
-            }
-        }
+        const avoidedX = this.scratchAnchoredPoint.x + this.smoothedAvoidPushX;
+        const avoidedY = this.scratchAnchoredPoint.y + this.smoothedAvoidPushY;
 
         const positionT = 1 - Math.exp(-POSITION_SMOOTHING_SPEED * delta);
         this.smoothedX = this.smoothedX === undefined ? avoidedX : this.smoothedX + (avoidedX - this.smoothedX) * positionT;
         this.smoothedY = this.smoothedY === undefined ? avoidedY : this.smoothedY + (avoidedY - this.smoothedY) * positionT;
         this.content.position.set(this.smoothedX, this.smoothedY);
+
+        if (this.pointer) {
+            // Only worth pointing back at the true target once the dodge is actually visible —
+            // a fraction-of-a-pixel push (easing settling back to 0 after the viewer moves away
+            // again) shouldn't leave a barely-visible sliver of a pointer hanging around.
+            //
+            // Hidden BEFORE measuring content's own bounds below — the pointer is now a CHILD
+            // of content (see awake()'s own doc), so leaving it visible here would fold its own
+            // (last frame's) position/size into content.getLocalBounds(), corrupting the very
+            // rectangle it's about to be positioned against — a feedback loop where the pointer
+            // could creep away from the popup a little further every frame instead of settling.
+            this.pointer.visible = false;
+
+            // Nearest point on content's OWN boundary to the TRUE (un-avoided) target —
+            // clamping the target's coordinates into content's local bounds on each axis
+            // independently always lands exactly ON that boundary, whichever edge or corner
+            // that actually turns out to be for the current push direction, rather than
+            // guessing a point via the avoidance CIRCLE's geometry (which doesn't necessarily
+            // touch the rectangle at all — see this file's own history for that earlier,
+            // detaching attempt). Everything here is in CONTENT-LOCAL space (the coordinate
+            // system this.pointer, as a child of content, actually renders in) — the target is
+            // converted into it by undoing content's own current position and scale, so the
+            // pointer inherits content's real on-screen transform for free through the ordinary
+            // Pixi parent/child hierarchy instead of needing to track it separately (see
+            // awake()'s own doc for why that used to visibly detach).
+            const bounds = this.content.getLocalBounds();
+            const scale = this.content.scale.x || 1;
+            const targetLocalX = (this.scratchLocalPoint.x - this.content.position.x) / scale;
+            const targetLocalY = (this.scratchLocalPoint.y - this.content.position.y) / scale;
+            const boundaryX = Math.min(Math.max(targetLocalX, bounds.x), bounds.x + bounds.width);
+            const boundaryY = Math.min(Math.max(targetLocalY, bounds.y), bounds.y + bounds.height);
+
+            // How far the TRUE target actually sits OUTSIDE content's own rect right now — 0
+            // once it's inside/on it. This is the one quantity the fade must key off, not
+            // avoidPush's own (separately-smoothed) magnitude: as a dodge eases back down,
+            // content slides back toward the target on its own schedule (POSITION_SMOOTHING_
+            // SPEED), which is NOT the same schedule avoidPush itself eases on (AVOID_
+            // SMOOTHING_SPEED) — so keying the fade off avoidPush let the two drift out of
+            // sync, and for a beat near the end of a dodge the target would already have
+            // crept back INSIDE the rect (making the clamp above a no-op — boundaryX/Y just
+            // reprint targetLocalX/Y, dragging the "edge" point in toward content's own
+            // center) while the pointer was still fading out on its own separate timer,
+            // reading as a visible bug (the pointer sliding to the center right before
+            // vanishing) rather than a clean fade. Driving the fade off THIS distance instead
+            // means it can only ever be fully visible while the position math is actually
+            // meaningful (target genuinely outside the rect), and is already most of the way
+            // to invisible by the time the target gets close enough to start dragging the
+            // point inward.
+            const distOutside = Math.hypot(targetLocalX - boundaryX, targetLocalY - boundaryY);
+
+            // Eased toward that 0/1 target rather than snapped — see smoothedPointerAlpha's own
+            // doc — so the pointer fades in as it clears the threshold and fades back out as it
+            // approaches, instead of popping visible/invisible right at the threshold.
+            // pointerAlwaysVisible drops that threshold to effectively 0 — the only thing left
+            // that can still fade it out is the target genuinely sitting inside/on content's own
+            // rect (distOutside itself hitting 0), not an extra "worth mentioning yet" margin —
+            // see that option's own doc.
+            const showThreshold = this.options.pointerAlwaysVisible ? 0 : POINTER_SHOW_THRESHOLD;
+            const pointerTargetAlpha = distOutside > showThreshold ? 1 : 0;
+            const pointerAlphaT = 1 - Math.exp(-POINTER_ALPHA_SMOOTHING_SPEED * delta);
+            this.smoothedPointerAlpha += (pointerTargetAlpha - this.smoothedPointerAlpha) * pointerAlphaT;
+            this.pointer.alpha = this.smoothedPointerAlpha = 1;
+
+            // Fully faded out (settled at 0, not just momentarily dipped below 1) is the only
+            // case worth skipping the position/rotation update for below — anywhere above that,
+            // even mid-fade, it should keep tracking the target so the fade-out doesn't freeze
+            // it at a stale angle right as it disappears.
+            if (this.smoothedPointerAlpha > 0.01) {
+                // Clamped point sits EXACTLY on the boundary — POINTER_EDGE_PADDING then nudges
+                // it along the same direction from content's own center (0 = stay right on the
+                // boundary, positive = outside the popup, negative = inside/overlapping the
+                // frame's own border — see that constant's own doc). anchor(0, 0.5) plus a
+                // rotation pointing AT the target (on the opposite side of the popup from this
+                // edge, since the popup was just pushed away from it) means the sprite's own
+                // body extends outward from here regardless of the padding's sign, never back
+                // over the popup's own content.
+                const centerX = bounds.x + bounds.width / 2;
+                const centerY = bounds.y + bounds.height / 2;
+                const outLen = Math.hypot(boundaryX - centerX, boundaryY - centerY) || 1;
+                const pointerX = boundaryX + ((boundaryX - centerX) / outLen) * POINTER_EDGE_PADDING;
+                const pointerY = boundaryY + ((boundaryY - centerY) / outLen) * POINTER_EDGE_PADDING;
+
+                this.pointer.position.set(pointerX, pointerY);
+                // Points AT the true target (in the same content-local space) — the entity this
+                // popup is actually about, not the viewer being avoided — like a speech bubble's
+                // tail pointing at its speaker.
+                this.pointer.rotation = Math.atan2(targetLocalY - pointerY, targetLocalX - pointerX);
+                this.pointer.visible = true;
+            }
+        }
 
         if (this.options.distanceScale && distance !== undefined) {
             const targetScale = this.computeDistanceScale(distance, this.options.distanceScale);
@@ -305,8 +505,10 @@ export default class ScreenAnchorComponent extends Component {
         this.smoothedAlpha = undefined;
         this.smoothedAvoidPushX = 0;
         this.smoothedAvoidPushY = 0;
+        this.smoothedPointerAlpha = 0;
         if (this.pointer) {
             this.pointer.visible = false;
+            this.pointer.alpha = 0;
         }
     }
 
@@ -326,7 +528,9 @@ export default class ScreenAnchorComponent extends Component {
     }
 
     public destroy(): void {
+        // this.pointer (if any) is a CHILD of content (see awake()'s own doc) — destroying
+        // content with `children: true` already tears it down too, a separate destroy() call
+        // here would double-destroy it.
         this.content.destroy({ children: true });
-        this.pointer?.destroy();
     }
 }

@@ -22,7 +22,7 @@
         "float": true,
         "heightOffset": 1,
         "popupMode": "simple",
-        "popupBobOffset": -2
+        "popupBobOffset": 1
     },
     "craftPickaxe": {
         "name": "Crafting Table",
@@ -48,6 +48,9 @@
         "appearRequirement": {
             "type": "item",
             "item": "axe"
-        }
+        },
+        "heightOffset": 0,
+        "popupMode": "simple",
+        "popupBobOffset": 0
     }
 }

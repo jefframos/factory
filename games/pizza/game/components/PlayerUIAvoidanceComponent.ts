@@ -47,7 +47,7 @@ export default class PlayerUIAvoidanceComponent extends Component {
     /** Overlay-space (px) radius other UI keeps clear of the head point — read live every frame by every popup using avoidViewer, so changing this takes effect immediately. */
     public radius: number;
     /** Toggle a live debug circle showing exactly what `radius` currently protects — see this file's own doc. */
-    public showDebugPreview = true;
+    public showDebugPreview = false;
 
     private debugCircle?: PIXI.Graphics;
     private readonly scratchPosition = new THREE.Vector3();

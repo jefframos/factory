@@ -117,7 +117,7 @@ export const CRAFT_CONFIG_BY_ID: Partial<Record<string, CraftTableConfig>> = {
         "float": true,
         "heightOffset": 1,
         "popupMode": "simple",
-        "popupBobOffset": -2
+        "popupBobOffset": 1
     },
     "craftPickaxe": {
         "name": "Crafting Table",
@@ -143,7 +143,10 @@ export const CRAFT_CONFIG_BY_ID: Partial<Record<string, CraftTableConfig>> = {
         "appearRequirement": {
             "type": "item",
             "item": ItemType.Axe
-        }
+        },
+        "heightOffset": 0,
+        "popupMode": "simple",
+        "popupBobOffset": 0
     }
 };
 

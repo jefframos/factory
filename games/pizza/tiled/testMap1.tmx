@@ -797,13 +797,13 @@
     <property name="type" value="gate"/>
    </properties>
   </object>
-  <object id="16" x="-207.5" y="400" width="32" height="32">
+  <object id="16" x="-80.25" y="464.25" width="32" height="32">
    <properties>
     <property name="id" value="craftAxe"/>
     <property name="type" value="craft"/>
    </properties>
   </object>
-  <object id="17" x="-223.25" y="383.75" width="64.5" height="64.5">
+  <object id="17" x="-96" y="448" width="64.5" height="64.5">
    <properties>
     <property name="id" value="craftAxeDropper"/>
     <property name="target" value="craftAxe"/>
