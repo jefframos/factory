@@ -12,7 +12,10 @@ export default class FrameComponent extends PIXI.Container {
 
         const def = FrameRegistry[frame];
 
-        const texture = PIXI.Texture.from(def.textureKey);
+        // Undefined textureKey (see FrameDef's own doc) means this frame draws no visible
+        // panel at all — PIXI.Texture.EMPTY is a valid 0x0 texture NineSlicePlane accepts
+        // fine, it just renders nothing, while still sizing/positioning like any other frame.
+        const texture = def.textureKey ? PIXI.Texture.from(def.textureKey) : PIXI.Texture.EMPTY;
         this.plane = new PIXI.NineSlicePlane(
             texture,
             def.padding.left,

@@ -29,6 +29,10 @@
 import { ResourceType } from '../actions/ResourceTypes';
 import { ItemType } from './ItemTypes';
 import { MilestoneRequirement } from '../data/MilestoneRequirement';
+import MODELS, { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
+import { NumberRange } from '../world/AssetLibraryRegistry';
+import { ToolId } from '../actions/ToolRegistry';
+import { PopupMode } from '../ui/PopupConfig';
 
 export interface CraftRecipeDef {
     /** Unique within this table's own `recipes` list — CraftStorage tracks completion per (craftId, recipeId) pair. */
@@ -58,26 +62,33 @@ export interface CraftTableConfig {
      * unchanged from before this field existed.
      */
     appearRequirement?: MilestoneRequirement;
+    /**
+     * Show a real 3D model on this table instead of the plain placeholder box (see
+     * CraftZone.createTableMesh()) — false/undefined keeps the old box, same as before this
+     * field existed. `toolId` (reusing an existing Tool's own model) takes priority over
+     * `models` when both are set — the two are alternatives, not stacked.
+     */
+    showModel?: boolean;
+    /** Reuses TOOL_LIBRARY[toolId]'s own `models` list instead of picking one directly below — e.g. showcase the axe this table crafts, using the exact same model the player wields once they have one. */
+    toolId?: ToolId;
+    /** Directly-picked candidate models (one chosen at random per spawn, same as AssetLibraryEntry) — ignored when `toolId` is set. */
+    models?: ModelDefinition[];
+    /** Uniform scale applied to the picked model — same shape/semantics as AssetLibraryEntry.scale. */
+    scale?: NumberRange;
+    /** Yaw rotation in degrees applied to the picked model — same shape/semantics as AssetLibraryEntry.rotationDeg. */
+    rotationDeg?: NumberRange;
+    /** Idle up/down bob loop on whichever visual ends up showing (see FloatAnimation.ts) — ignored while `showModel` is false (the placeholder box never floats). */
+    float?: boolean;
+    /** Extra world-units added to the model's resting Y position — a model authored with its origin at its base (rather than centered) otherwise sits half-buried in/floating above the table's own surface; nudge this up or down to correct that per model. 0/undefined leaves the default resting height (the table's own half-height) unchanged. This is the bob's resting center when `float` is also on, not a one-time offset it ignores. */
+    heightOffset?: number;
+    /** Requirements-panel style — see PopupConfig.ts's own doc. undefined behaves as 'complete' (this table's existing result-icon + cost-row panel), unchanged from before this field existed. */
+    popupMode?: PopupMode;
+    /** How high above this table's own base the requirements panel floats — see PopupConfig.ts's own doc. undefined/0 sits it right at the table's base instead of floating. */
+    popupBobOffset?: number;
 }
 
 /** Per-craft-table-id config — see this file's own doc for why (unlike QueueTypes' DEFAULT_QUEUE_CONFIG) there's no fallback for an id not listed here. */
 export const CRAFT_CONFIG_BY_ID: Partial<Record<string, CraftTableConfig>> = {
-    craft1: {
-        name: "Crafting Table",
-        recipes: [
-            {
-                "id": "pickaxe",
-                "result": {
-                    "item": ItemType.Pickaxe,
-                    "amount": 1
-                },
-                "cost": {
-                    "wood": 5
-                }
-            }
-        ],
-        destroyOnComplete: true,
-    },
     // The player's very first tool — costs Bark (bare-handed, no tool needed to gather it —
     // see ResourceTypes.ts's ResourceType.Bark), specifically so a brand new player with zero
     // tools (see ItemStorage's DEFAULT_STARTING_ITEMS) has SOMETHING they can gather to get
@@ -98,7 +109,42 @@ export const CRAFT_CONFIG_BY_ID: Partial<Record<string, CraftTableConfig>> = {
             }
         ],
         destroyOnComplete: true,
+        "showModel": true,
+        "toolId": "axe",
+        "models": [],
+        "scale": 2,
+        "rotationDeg": 0,
+        "float": true,
+        "heightOffset": 1,
+        "popupMode": "simple",
+        "popupBobOffset": -2
     },
+    "craftPickaxe": {
+        "name": "Crafting Table",
+        "recipes": [
+            {
+                "id": "pickaxe",
+                "result": {
+                    "item": ItemType.Pickaxe,
+                    "amount": 1
+                },
+                "cost": {
+                    "wood": 5
+                }
+            }
+        ],
+        "destroyOnComplete": true,
+        "showModel": true,
+        "toolId": "pickaxe",
+        "models": [],
+        "scale": 2,
+        "rotationDeg": 0,
+        "float": true,
+        "appearRequirement": {
+            "type": "item",
+            "item": ItemType.Axe
+        }
+    }
 };
 
 export function getCraftConfig(id: string): CraftTableConfig | undefined {

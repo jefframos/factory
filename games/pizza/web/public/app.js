@@ -741,7 +741,10 @@ function makeLeafInput(obj, field, onDirty) {
             blank.textContent = '(none)';
             select.appendChild(blank);
         }
-        const options = getOptions(field.source);
+        // `field.options` is a fixed inline list (e.g. popupMode's None/Complete/Simple) —
+        // not sourced from another tab's live data at all, unlike `field.source`. Checked
+        // first since a field never has both.
+        const options = field.options ?? getOptions(field.source);
         for (const opt of options) {
             const el = document.createElement('option');
             el.value = opt.value;

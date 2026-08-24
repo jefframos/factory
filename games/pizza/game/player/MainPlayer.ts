@@ -24,6 +24,8 @@ import CharacterVisualComponent from '../components/CharacterVisualComponent';
 import FacingComponent from '../components/FacingComponent';
 import PlayerActionController, { ActionResult, ActionTarget } from '../components/PlayerActionController';
 import AutoGatherController from '../components/AutoGatherController';
+import PlayerUIAvoidanceComponent from '../components/PlayerUIAvoidanceComponent';
+import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { ActionType } from '../actions/ActionTypes';
 import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
@@ -46,10 +48,19 @@ export default class MainPlayer extends Entity {
     /** Guards loadCharacter()'s continuation against attaching a component to an entity that got destroyed (or pooled/reused as something else) while the FBX load was still in flight. */
     private destroyed = false;
 
-    public constructor(inputHost: MovementInputHost, threeScene: THREE.Scene) {
+    /** Optional — powers PlayerUIAvoidanceComponent (see awake()), which needs a way to project the player's head into screen space. Omitted by the headless test harness (scripts/test-gather.ts), which has no PIXI/overlay at all — the player just doesn't get a UI-avoidance region there, since there's no UI to avoid. */
+    private readonly screenHost?: ScreenAnchorHost;
+
+    public constructor(inputHost: MovementInputHost, threeScene: THREE.Scene, screenHost?: ScreenAnchorHost) {
         super();
         this.inputHost = inputHost;
         this.threeScene = threeScene;
+        this.screenHost = screenHost;
+    }
+
+    /** The live "keep UI off the player" region, or undefined if this player has no PlayerUIAvoidanceComponent (e.g. the headless test harness) — see PizzaScene's screenHost.getUIAvoidancePoint() wiring, the one caller. */
+    public getUIAvoidancePoint(): { position: THREE.Vector3; radius: number } | undefined {
+        return this.getComponent(PlayerUIAvoidanceComponent)?.getRegion();
     }
 
     /** Once loadCharacter() resolves, this is the loaded rig — undefined until then. Nothing in this class or PizzaScene gates on it; it's exposed purely for callers that want to react to the character specifically becoming available (e.g. triggering a "ready" animation or UI beat). */
@@ -97,6 +108,9 @@ export default class MainPlayer extends Entity {
         this.addComponent(new FacingComponent());
         this.addComponent(new PlayerActionController());
         this.addComponent(new AutoGatherController());
+        if (this.screenHost) {
+            this.addComponent(new PlayerUIAvoidanceComponent(this.screenHost));
+        }
 
         this.registerCollisionEvents(rigidBody);
 

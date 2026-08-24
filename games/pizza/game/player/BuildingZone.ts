@@ -43,6 +43,7 @@ import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
+import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer } from '../ui/PopupConfig';
 import { createResourceSlot } from '../ui/ResourceSlotVisual';
 import { CameraFocusHost } from '../camera/CameraFocusHost';
 import { WorldProgressionHost } from '../camera/WorldProgressionHost';
@@ -56,7 +57,6 @@ const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
 const DROPPER_ZONE_COLOR = 0x3388ff;
 /** Corner rounding for the dropper's floor outline — purely cosmetic, the collider itself stays a sharp-cornered box (see RigidBody below). */
 const DROPPER_ZONE_CORNER_RADIUS = 0.3;
-const LABEL_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 1.2, 0);
 const POPUP_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 2.2, 0);
 const POPUP_RISE = 0.8;
 const POPUP_LIFETIME_SEC = 1.6;
@@ -91,6 +91,16 @@ export default class BuildingZone extends Entity {
     private readonly worldProgressionHost?: WorldProgressionHost;
     /** Resource types currently mid-drain via flyInResource() — guards a second overlapping drain loop starting for the same type. */
     private readonly draining = new Set<ResourceType>();
+    /**
+     * How many units of each type have DEPARTED but not yet LANDED — see flyInResource()'s own
+     * doc for why this exists: BackpackStorage/BuildingStorage's progress only advance on
+     * LANDING (a ~0.45s flight), but a new unit departs every FLY_IN_STAGGER_SEC (0.12s) —
+     * reading the live backpack count/remaining-requirement alone at departure time would keep
+     * seeing room for more and send out units the backpack doesn't actually have (or the
+     * requirement doesn't actually still need), over-crediting on landing. Incremented right
+     * before a departure, decremented the instant that same unit lands.
+     */
+    private readonly inFlightByType = new Map<ResourceType, number>();
     /** True for as long as the player's RigidBody is inside this zone's trigger — flyInResource()'s per-unit loop checks this before every unit and stops the instant it goes false, rather than a fixed onTriggerEnter burst draining everything regardless of whether the player stuck around. */
     private isPlayerInside = false;
     /** The player entity currently inside this zone — undefined whenever isPlayerInside is false. Kept so flyInResource() can read the player's CURRENT backpack world position on every unit, not a stale snapshot from whenever the trigger first fired. */
@@ -244,7 +254,7 @@ export default class BuildingZone extends Entity {
 
         const column = new PIXI.Container();
         column.addChild(this.titleText, this.requirementsContainer);
-        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, 'Popup', column);
+        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(BUILDING_CONFIG[this.buildingId].popupMode), column);
         this.refreshLabel();
 
         // A dedicated empty node the panel tracks, rather than a raw captured position —
@@ -252,17 +262,19 @@ export default class BuildingZone extends Entity {
         // (not just a local) since flyInResource() targets the same spot — deposited icons fly
         // to wherever this building's own UI actually renders, not a point on its 3D mesh.
         this.labelAnchor = new THREE.Object3D();
-        this.labelAnchor.position.copy(LABEL_HEIGHT_OFFSET);
+        this.labelAnchor.position.copy(resolvePopupAnchorOffset(BUILDING_CONFIG[this.buildingId].popupBobOffset));
         this.transform.add(this.labelAnchor);
         const labelAnchorWorldPosition = new THREE.Vector3();
 
         // ZONE_LABEL_ANCHOR_OPTIONS hides/shrinks the panel by distance from the player — see
-        // that file's own doc.
+        // that file's own doc. avoidViewer (only for 'simple' — see PopupConfig.ts's own doc)
+        // slides the panel aside instead of letting it land on the player, who's typically
+        // standing right on this zone's own base once they're close enough to interact.
         this.addComponent(new ScreenAnchorComponent(
             this.screenHost,
             this.labelFrame,
             () => this.labelAnchor.getWorldPosition(labelAnchorWorldPosition),
-            ZONE_LABEL_ANCHOR_OPTIONS,
+            { ...ZONE_LABEL_ANCHOR_OPTIONS, ...resolvePopupAvoidViewer(BUILDING_CONFIG[this.buildingId].popupMode) },
         ));
 
         BuildingStorage.onProgressChanged.add(this.handleProgressChanged);
@@ -323,11 +335,21 @@ export default class BuildingZone extends Entity {
         this.createBuildingMesh(getMeshConfigForLevel(this.buildingId, level), true);
     }
 
-    /** Rewrites the panel's title/requirement slots from BuildingStorage's current state and re-fits the frame around the new bounds. */
+    /** Rewrites the panel's title/requirement slots from BuildingStorage's current state and re-fits the frame around the new bounds. `popupMode: 'none'` (see PopupConfig.ts's own doc) skips all of this and keeps the panel permanently hidden; `'simple'` keeps the requirement slots but drops the title line. */
     private refreshLabel(): void {
         const config = BUILDING_CONFIG[this.buildingId];
+
+        if (config.popupMode === 'none') {
+            this.titleText.visible = false;
+            this.labelFrame.visible = false;
+            this.labelFrame.fit();
+            return;
+        }
+
         const level = BuildingStorage.getLevel(this.buildingId);
-        this.titleText.text = `${config.name} Lv.${level}`;
+        const showTitle = config.popupMode !== 'simple';
+        this.titleText.visible = showTitle;
+        this.titleText.text = showTitle ? `${config.name} Lv.${level}` : '';
 
         this.requirementsContainer.removeChildren().forEach(child => child.destroy({ children: true }));
 
@@ -421,13 +443,14 @@ export default class BuildingZone extends Entity {
         const toWorld = new THREE.Vector3();
 
         const step = (): void => {
+            const inFlight = this.inFlightByType.get(type) ?? 0;
             const next = this.isPlayerInside && !this.awaitingReentry && !BuildingStorage.isMaxLevel(this.buildingId)
                 ? BuildingStorage.getNextLevelConfig(this.buildingId)
                 : undefined;
             const need = next?.requirements[type] ?? 0;
-            const remaining = need - BuildingStorage.getProgress(this.buildingId, type);
+            const remaining = need - BuildingStorage.getProgress(this.buildingId, type) - inFlight;
 
-            const fromWorld = remaining > 0 && BackpackStorage.getCount(type) > 0
+            const fromWorld = remaining > 0 && BackpackStorage.getCount(type) - inFlight > 0
                 ? this.player?.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition()
                 : undefined;
 
@@ -437,11 +460,14 @@ export default class BuildingZone extends Entity {
             }
 
             this.labelAnchor.getWorldPosition(toWorld);
+            this.inFlightByType.set(type, inFlight + 1);
 
             spawnFlyingResourceIcon(this.screenHost, fromWorld.clone(), toWorld.clone(), icon, () => {
-                BackpackStorage.removeOne(type);
-                BuildingStorage.addProgress(this.buildingId, type, 1);
-                BuildingStorage.tryCompleteLevel(this.buildingId);
+                this.inFlightByType.set(type, (this.inFlightByType.get(type) ?? 1) - 1);
+                if (BackpackStorage.removeOne(type)) {
+                    BuildingStorage.addProgress(this.buildingId, type, 1);
+                    BuildingStorage.tryCompleteLevel(this.buildingId);
+                }
             });
 
             gsap.delayedCall(FLY_IN_STAGGER_SEC, step);

@@ -55,7 +55,7 @@ export default class SettingsUIService {
         // roughly match BUTTON_SIZE's icon-only footprint, same 0.7 scale tower's GameHud uses
         // on the identical class.
         this.soundToggle.scale.set(0.7);
-        this.game.overlayContainer.addChild(this.soundToggle);
+        this.game.uiLayer.addChild(this.soundToggle);
 
         this.settingsButton = new BaseButton({
             standard: {
@@ -73,7 +73,7 @@ export default class SettingsUIService {
             click: { callback: () => PopupManager.instance.show(new SettingsPopup()) },
         });
         this.settingsButton.addAlertIcon(PIXI.Texture.from(Assets.Textures.UI.Exclamation), ALERT_ICON_SIZE);
-        this.game.overlayContainer.addChild(this.settingsButton);
+        this.game.uiLayer.addChild(this.settingsButton);
 
         this.update();
     }

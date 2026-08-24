@@ -1,20 +1,4 @@
 {
-    "craft1": {
-        "name": "Crafting Table",
-        "recipes": [
-            {
-                "id": "pickaxe",
-                "result": {
-                    "item": "pickaxe",
-                    "amount": 1
-                },
-                "cost": {
-                    "wood": 5
-                }
-            }
-        ],
-        "destroyOnComplete": true
-    },
     "craftAxe": {
         "name": "Axe Crafting Table",
         "recipes": [
@@ -29,6 +13,41 @@
                 }
             }
         ],
-        "destroyOnComplete": true
+        "destroyOnComplete": true,
+        "models": [],
+        "showModel": true,
+        "toolId": "axe",
+        "scale": 2,
+        "rotationDeg": 0,
+        "float": true,
+        "heightOffset": 1,
+        "popupMode": "simple",
+        "popupBobOffset": -2
+    },
+    "craftPickaxe": {
+        "name": "Crafting Table",
+        "recipes": [
+            {
+                "id": "pickaxe",
+                "result": {
+                    "item": "pickaxe",
+                    "amount": 1
+                },
+                "cost": {
+                    "wood": 5
+                }
+            }
+        ],
+        "destroyOnComplete": true,
+        "models": [],
+        "toolId": "pickaxe",
+        "scale": 2,
+        "rotationDeg": 0,
+        "float": true,
+        "showModel": true,
+        "appearRequirement": {
+            "type": "item",
+            "item": "axe"
+        }
     }
 }

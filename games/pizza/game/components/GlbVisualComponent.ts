@@ -28,15 +28,18 @@ export default class GlbVisualComponent extends Component {
     private readonly scale: number;
     /** Yaw, in radians — see ResourceRegistry.ts's rotationDeg for where a caller typically rolls this from. */
     private readonly rotationY: number;
+    /** Fired once, right after the model finishes loading and `this.mesh` becomes safe to read — for a caller that needs to do something to the mesh itself (e.g. CraftZone's float animation) but can't just do it inline after `new GlbVisualComponent(...)` returns, since the load is always asynchronous. */
+    private readonly onReady?: () => void;
     private _mesh?: THREE.Object3D;
     private destroyed = false;
 
-    public constructor(modelDef: ModelDefinition, centerOffset: THREE.Vector3 = new THREE.Vector3(), scale = 1, rotationY = 0) {
+    public constructor(modelDef: ModelDefinition, centerOffset: THREE.Vector3 = new THREE.Vector3(), scale = 1, rotationY = 0, onReady?: () => void) {
         super();
         this.modelDef = modelDef;
         this.centerOffset = centerOffset;
         this.scale = scale;
         this.rotationY = rotationY;
+        this.onReady = onReady;
     }
 
     public get mesh(): THREE.Object3D {
@@ -80,6 +83,7 @@ export default class GlbVisualComponent extends Component {
 
         this._mesh = object;
         this.entity.transform.add(object);
+        this.onReady?.();
     }
 
     /** Hide/show the mesh without tearing it down — see ResourceNode.deplete()/respawn(). No-op until the model has actually loaded. */

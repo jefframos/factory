@@ -74,6 +74,7 @@ import { getToolIcon } from '../actions/ToolRegistry';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
+import PlayerUIAvoidanceComponent from '../components/PlayerUIAvoidanceComponent';
 import SetupThree from 'core/scene/SetupThree';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 import { CameraFocusHost, CameraFocusOptions } from '../camera/CameraFocusHost';
@@ -186,11 +187,25 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     /** Owns PhysicsWorld + every spawned Entity — the scene's job is just to spawn things into this and forward its own update()/fixedUpdate() calls here (see World.ts). */
     private readonly world = new World();
 
-    /** Shared by anything that pairs a Pixi overlay element to a 3D point (ScreenAnchorComponent) — DropZone's nameplate/deposit popups, ResourceNode's damage numbers. One instance so they all read the exact same worldToScreen/overlayContainer. */
+    /**
+     * Shared by anything that pairs a Pixi overlay element to a 3D point (ScreenAnchorComponent)
+     * — DropZone's nameplate/deposit popups, ResourceNode's damage numbers. One instance so they
+     * all read the exact same worldToScreen/overlayContainer. Points at `game.uiLayer` (the
+     * bottom of the three z-ordered overlay tiers — see core/Game.ts's own doc), NOT the raw
+     * `game.overlayContainer` umbrella, which now exists purely to hold uiLayer/
+     * notificationLayer/popupLayer in the right order — anything added directly to it instead
+     * of one of those three would draw on top of even popupLayer, for having been added last.
+     */
     private readonly screenHost: ScreenAnchorHost = {
         worldToScreen: position => this.worldToScreen(position),
-        overlayContainer: this.game.overlayContainer,
+        overlayContainer: this.game.uiLayer,
         getViewerPosition: () => this.mainPlayer.transform.position,
+        // Delegates to MainPlayer's own PlayerUIAvoidanceComponent (head position + live,
+        // designer-tunable radius) — see that component's own doc. Referenced lazily (this
+        // function only runs once mainPlayer actually exists) same as getViewerPosition above,
+        // even though `this.mainPlayer` isn't assigned yet at the point this object literal
+        // itself is constructed.
+        getUIAvoidancePoint: () => this.mainPlayer.getUIAvoidancePoint(),
     };
 
     /** Owns the ground + every resource node's position/gather/respawn state, streaming ResourceNode entities in/out by proximity to the player — see WorldManager.ts. */
@@ -220,7 +235,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     /** Shown while the player character loads, destroyed the instant it resolves — see loadPlayerCharacter(). Tracked as a field too so destroy() can clean it up if the scene is torn down mid-load. */
     private loadingSpinner?: LoadingSpinner;
 
-    /** Owns every screen-anchored HUD panel (backpack, global resources, camera toggle) — see UIService.ts's own doc. Built in build() since it needs game.overlayContainer to already exist. */
+    /** Owns every screen-anchored HUD panel (backpack, global resources, camera toggle) — see UIService.ts's own doc. Built in build() since it needs game.uiLayer to already exist. */
     private uiService!: UIService;
 
     /** Which mode toggleCameraMode() last switched TO — CAMERA_SETTINGS.pitchDeg/distance are tweened, not snapped, so this (not CAMERA_SETTINGS' current mid-tween value) is the source of truth for what the button should say/do next. */
@@ -256,7 +271,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // character has (or even starts to) load. `this` is passed as its movement
         // input host (a Pixi container with worldToScreen()) and `this.threeScene` as
         // where its eventual character mesh gets parented.
-        this.mainPlayer = this.world.add(new MainPlayer(this, this.threeScene));
+        this.mainPlayer = this.world.add(new MainPlayer(this, this.threeScene, this.screenHost));
 
         // Drops the player at the Tiled map's "playerStart" point (see
         // WorldObjectRegistry.ts's own doc) when the level designer has drawn one, instead of
@@ -338,6 +353,22 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     /** Dev-only tools — no-ops entirely unless launched with ?dev (see Game.debugParams/DevGuiManager.initialize(), called once in index.ts's startGame()). */
     private setupDebugGui(): void {
         DevGuiManager.instance.addReadout(this.renderStats, ['triangles', 'drawCalls', 'meshCount'], 'Render', 'Render');
+
+        // Live-tune the "keep UI off the player" region every 'simple' zone popup dodges (see
+        // PlayerUIAvoidanceComponent.ts) and preview exactly what it protects with a translucent
+        // circle at the player's own head — turn the toggle on, drag the radius, and every
+        // 'simple' popup on screen reacts on its very next frame (both are read live, not
+        // snapshotted — see that component's own doc).
+        const uiAvoidance = this.mainPlayer.getComponent(PlayerUIAvoidanceComponent);
+        if (uiAvoidance) {
+            DevGuiManager.instance.addProperties(uiAvoidance, ['radius'], [0, 200], 'Radius', 'UI Avoidance');
+            DevGuiManager.instance.addToggle(
+                'Show Preview',
+                uiAvoidance.showDebugPreview,
+                value => { uiAvoidance.showDebugPreview = value; },
+                'UI Avoidance',
+            );
+        }
 
         // Dumps every hand-authored design config (resources, tools, actions, items,
         // crafting, shops, queues, buildings, gates, dynamic resource placements, asset

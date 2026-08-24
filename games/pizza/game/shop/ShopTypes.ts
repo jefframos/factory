@@ -23,6 +23,7 @@
 import { ACTION_CONFIG, ActionType, BASE_ACTION_CONFIG } from '../actions/ActionTypes';
 import { ToolId } from '../actions/ToolRegistry';
 import { MilestoneRequirement } from '../data/MilestoneRequirement';
+import { PopupMode } from '../ui/PopupConfig';
 
 /** Texture alias (packed 'ui' image bundle, shared Kenney-style UI kit) shown wherever a shop wants to flag "there's an upgrade ready to buy" — see ShopZone's badge sprite. One shared constant (not per-ShopConfig) since every shop uses the same indicator art; a future shop wanting a different one can still override it locally without this needing to change. */
 export const SHOP_UPGRADE_AVAILABLE_ICON = 'Slider_Level02_Icon_Up_Green';
@@ -55,6 +56,10 @@ export interface ShopConfig {
     levels: ShopUpgradeLevel[];
     /** Optional — when set, this shop's ShopZone isn't spawned at all (see PizzaScene.setupShops(), which registers it as a RequirementRegistry spawn gate) until MilestoneRequirement.ts's isMilestoneRequirementMet() says this is satisfied. Same shared requirement shape GateConfig.requirement/QueueConfig.appearRequirement use. undefined means "always appears" (unchanged from before this field existed). */
     appearRequirement?: MilestoneRequirement;
+    /** Requirements-panel style — see PopupConfig.ts's own doc. undefined behaves as 'complete' (this shop's existing tool-icon + cost panel), unchanged from before this field existed. */
+    popupMode?: PopupMode;
+    /** How high above this shop's own base the requirements panel floats — see PopupConfig.ts's own doc. undefined/0 sits it right at the shop's base instead of floating. */
+    popupBobOffset?: number;
 }
 
 const DEFAULT_SHOP_MESH: ShopMeshConfig = { size: [2, 2, 2], color: 0x8855cc };

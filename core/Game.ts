@@ -21,7 +21,14 @@ export class Game {
 
     public app: PIXI.Application;
     public stageContainer: PIXI.Container;
+    /** The 2D UI root — everything a game's UI ever adds itself to ultimately lives under this (see onResize(), which is what actually scales/positions it to match the design resolution). Prefer uiLayer/notificationLayer/popupLayer below over adding directly here — those three are its own children, ordered so popups always draw over notifications, which always draw over the base UI, regardless of which order each one happens to get built/shown in. */
     public overlayContainer: PIXI.Container;
+    /** Base in-game UI — HUD panels, world-anchored zone popups/nameplates (ScreenAnchorComponent), flying resource icons. The bottom of the three overlay tiers. */
+    public uiLayer: PIXI.Container;
+    /** Toast-style notifications (e.g. "Level Up!"/"New Tool!" banners) — always drawn over uiLayer, always drawn under popupLayer. */
+    public notificationLayer: PIXI.Container;
+    /** Modal-style popups/dialogs — always drawn over everything else. */
+    public popupLayer: PIXI.Container;
     public folderPath: string = '';
     static debugParams: Record<string, any> = {};
     private lastTime: number = performance.now();
@@ -99,6 +106,15 @@ export class Game {
 
         this.stageContainer = new PIXI.Container();
         this.overlayContainer = new PIXI.Container();
+
+        // Plain PIXI list order, not zIndex/sortableChildren — added in this exact order so
+        // popupLayer always renders in front of notificationLayer, which always renders in
+        // front of uiLayer, no matter what order the UI built on top of each one happens to
+        // get constructed/shown in later.
+        this.uiLayer = new PIXI.Container();
+        this.notificationLayer = new PIXI.Container();
+        this.popupLayer = new PIXI.Container();
+        this.overlayContainer.addChild(this.uiLayer, this.notificationLayer, this.popupLayer);
 
         this.app.stage.addChild(this.stageContainer);
         this.app.stage.addChild(this.overlayContainer);

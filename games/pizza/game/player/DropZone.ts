@@ -86,6 +86,16 @@ export default class DropZone extends Entity {
     private readonly createLabelContent: () => PIXI.Container;
     /** Resource types currently draining out via flyOutResource() — guards a second overlapping drain loop starting for the same type (see tryDeposit()). */
     private readonly draining = new Set<ResourceType>();
+    /**
+     * How many units of each type have DEPARTED but not yet LANDED — see flyOutResource()'s
+     * own doc for why this exists: BackpackStorage's real count only drops on LANDING (a
+     * ~0.45s flight), but a new unit departs every FLY_OUT_STAGGER_SEC (0.12s) — reading the
+     * live count alone at departure time would keep seeing "1 left" and sending MORE units out
+     * than the backpack actually holds, crediting GlobalResourceStorage for units that were
+     * never really there. Incremented right before a departure, decremented the instant that
+     * same unit lands (whether or not it still turns out to be creditable).
+     */
+    private readonly inFlightByType = new Map<ResourceType, number>();
     /** True for as long as the player's RigidBody is inside this zone's trigger — flyOutResource()'s per-unit loop checks this before every unit and stops the instant it goes false, rather than a fixed onTriggerEnter burst draining everything regardless of whether the player stuck around. */
     private isPlayerInside = false;
     /** The player entity currently inside this zone — undefined whenever isPlayerInside is false. Kept so flyOutResource() can read the player's CURRENT backpack world position on every unit, not a stale snapshot from whenever the trigger first fired. */
@@ -202,21 +212,29 @@ export default class DropZone extends Entity {
         const toWorld = new THREE.Vector3();
 
         const step = (): void => {
-            const fromWorld = this.isPlayerInside
+            const inFlight = this.inFlightByType.get(type) ?? 0;
+            const fromWorld = this.isPlayerInside && BackpackStorage.getCount(type) - inFlight > 0
                 ? this.player?.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition()
                 : undefined;
 
-            if (!fromWorld || BackpackStorage.getCount(type) <= 0) {
+            if (!fromWorld) {
                 this.draining.delete(type);
                 return;
             }
 
             this.labelAnchor.getWorldPosition(toWorld);
+            this.inFlightByType.set(type, inFlight + 1);
 
             spawnFlyingResourceIcon(this.screenHost, fromWorld.clone(), toWorld.clone(), icon, () => {
-                BackpackStorage.removeOne(type);
-                GlobalResourceStorage.add(type, 1);
-                this.spawnUnitPopup(label);
+                this.inFlightByType.set(type, (this.inFlightByType.get(type) ?? 1) - 1);
+                // Guards against ever crediting GlobalResourceStorage without an actual unit
+                // removed — a pure belt-and-suspenders check now that departures are correctly
+                // reserved above, but cheap enough to keep even so nothing can silently credit
+                // a "ghost" unit again in the future.
+                if (BackpackStorage.removeOne(type)) {
+                    GlobalResourceStorage.add(type, 1);
+                    this.spawnUnitPopup(label);
+                }
             });
 
             gsap.delayedCall(FLY_OUT_STAGGER_SEC, step);

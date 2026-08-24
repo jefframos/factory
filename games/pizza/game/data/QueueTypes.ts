@@ -15,6 +15,7 @@
 import { ResourceType } from '../actions/ResourceTypes';
 import { ItemType } from '../crafting/ItemTypes';
 import { MilestoneRequirement } from './MilestoneRequirement';
+import { PopupMode } from '../ui/PopupConfig';
 
 export interface QueueTaskDef {
     resourceType: ResourceType;
@@ -43,6 +44,10 @@ export interface QueueConfig {
      * before this field existed.
      */
     appearRequirement?: MilestoneRequirement;
+    /** Requirements-panel style — see PopupConfig.ts's own doc. undefined behaves as 'complete' (this queue's existing reward-line + resource-row panel), unchanged from before this field existed. */
+    popupMode?: PopupMode;
+    /** How high above this queue's own base the requirements panel floats — see PopupConfig.ts's own doc. undefined/0 sits it right at the queue's base instead of floating. */
+    popupBobOffset?: number;
 }
 
 /** Applied to every discovered queue unless QUEUE_CONFIG_BY_ID has an override for its id — see this file's own doc. */
@@ -94,7 +99,8 @@ export const QUEUE_CONFIG_BY_ID: Partial<Record<string, QueueConfig>> = {
                 "amount": 15,
                 "rewardAmount": 20
             }
-        ]
+        ],
+        "popupBobOffset": 2
     },
 };
 

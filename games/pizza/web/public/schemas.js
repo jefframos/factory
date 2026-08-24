@@ -11,7 +11,11 @@
 //
 // Field descriptor shapes (see render.js for how each is drawn):
 //   { key, type: 'text' | 'number' | 'boolean', label, optional? }
-//   { key, type: 'select', label, source: <tab id>, optional? }
+//   { key, type: 'select', label, source: <tab id>, optional? } — options sourced live from
+//     another tab's data (or the virtual '$spawnerTileTypes' source).
+//   { key, type: 'select', label, options: [{value, label}, ...], optional? } — a FIXED inline
+//     option list instead of `source` (e.g. popupMode's None/Complete/Simple) — never varies
+//     with another tab's data, so nothing to source live.
 //   { key, type: 'requirement', label, optional? }
 //   { key, type: 'costMap', label, source: <tab id> }
 //   { key, type: 'group', label, fields: [...] }
@@ -47,6 +51,27 @@
 // without touching this file.
 
 const REQUIREMENT_FIELD = { key: null, type: 'requirement', label: 'Requirement' };
+
+/**
+ * Shared requirements-popup fields — appended to every zone-type entity's schema (buildings,
+ * shops, queues, crafting; see PopupConfig.ts's own doc for the shared game-side types these
+ * write). `popupMode` is a FIXED inline option list (see this file's own field-shape doc above),
+ * not sourced from any tab — 'None'/'Complete'/'Simple' are the only three the game code
+ * actually understands (PopupMode). Leaving `popupMode` unset behaves as 'complete' (every
+ * entity's own pre-existing panel, unchanged); leaving `popupBobOffset` unset sits the popup
+ * right at the entity's own base instead of floating above it.
+ */
+const POPUP_FIELDS = [
+    {
+        key: 'popupMode', type: 'select', label: 'Requirements Popup', optional: true,
+        options: [
+            { value: 'complete', label: 'Complete (default)' },
+            { value: 'simple', label: 'Simple (resources only, no header icon)' },
+            { value: 'none', label: 'None (no popup at all)' },
+        ],
+    },
+    { key: 'popupBobOffset', type: 'number', label: 'Popup Height Offset (blank = sit at the entity\'s base)', optional: true },
+];
 
 /**
  * Field rows for the Map tab's two tile lists (see app.js's renderMapTilesTab()) — not a
@@ -92,6 +117,7 @@ const ENTITY_SCHEMAS = {
                 },
             ],
         },
+        ...POPUP_FIELDS,
     ],
     shops: [
         { key: 'name', type: 'text', label: 'Name' },
@@ -109,6 +135,7 @@ const ENTITY_SCHEMAS = {
                 { key: 'resourcePerHit', type: 'number', label: 'Resource Per Hit', optional: true },
             ],
         },
+        ...POPUP_FIELDS,
     ],
     crafting: [
         { key: 'name', type: 'text', label: 'Name' },
@@ -129,6 +156,20 @@ const ENTITY_SCHEMAS = {
                 { key: 'cost', type: 'costMap', label: 'Cost', source: 'resources' },
             ],
         },
+        // Off by default (false/unset) — the table stays the plain placeholder box, exactly
+        // the pre-existing behavior. Turning this on swaps in a real model: either an existing
+        // Tool's own model (Tool takes priority when both are set — e.g. showcase the axe this
+        // table crafts, using the exact model the player wields once they have one) or a
+        // directly-picked model list, same shape as the Resources/Providers tabs' own visual
+        // fields. `float` only does anything while this is on — the box never floats.
+        { key: 'showModel', type: 'boolean', label: 'Show 3D Model (instead of the placeholder box)' },
+        { key: 'toolId', type: 'select', label: 'Use Tool\'s Model', source: 'tools', optional: true },
+        { key: 'models', type: 'modelList', label: 'Models (ignored if a Tool is picked above)' },
+        { key: 'scale', type: 'numberRange', label: 'Scale' },
+        { key: 'rotationDeg', type: 'numberRange', label: 'Rotation (deg)' },
+        { key: 'float', type: 'boolean', label: 'Float (idle up/down bob)' },
+        { key: 'heightOffset', type: 'number', label: 'Height Offset (nudge the model up/down)', optional: true },
+        ...POPUP_FIELDS,
     ],
     // A RESOURCE is the bankable item (Wood/Stone/Berries/Bark/Pebble/GrassFiber) — what
     // actually PRODUCES one (a tree, a stone deposit, a berry bush) is a separate concern,
@@ -222,6 +263,7 @@ const ENTITY_SCHEMAS = {
                 { key: 'rewardAmount', type: 'number', label: 'Reward Amount' },
             ],
         },
+        ...POPUP_FIELDS,
     ],
 };
 

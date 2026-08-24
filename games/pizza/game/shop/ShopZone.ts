@@ -34,6 +34,7 @@ import { spawnFlyingIconFromOverlayPoint } from '../components/FlyingResourceIco
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
+import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer } from '../ui/PopupConfig';
 import { EconomyStorage } from '../data/EconomyStorage';
 import { CURRENCY_CONFIG, CurrencyType } from '../data/EconomyTypes';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
@@ -51,7 +52,6 @@ const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
 const DROPPER_ZONE_COLOR = 0x3388ff;
 /** Corner rounding for the dropper's floor outline — purely cosmetic, the collider itself stays a sharp-cornered box (see RigidBody below). */
 const DROPPER_ZONE_CORNER_RADIUS = 0.3;
-const LABEL_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 1.2, 0);
 const COST_ICON_SIZE = 22;
 const FLY_IN_STAGGER_SEC = 0.12;
 const ICON_BODY_GAP = 4;
@@ -90,6 +90,15 @@ export default class ShopZone extends Entity {
 
     /** True while a coin-deposit loop is already running — guards a second overlapping one starting from another onTriggerStay tick. */
     private draining = false;
+    /**
+     * How many coins have DEPARTED but not yet LANDED — see flyInCoins()'s own doc for why
+     * this exists: EconomyStorage's balance only drops on LANDING (a ~0.45s flight), but a new
+     * coin departs every FLY_IN_STAGGER_SEC (0.12s) — reading the live balance alone at
+     * departure time would keep seeing "still have money" and send out more coins than the
+     * wallet actually holds, over-crediting this shop's progress on landing. Incremented right
+     * before a departure, decremented the instant that same coin lands.
+     */
+    private inFlightCoins = 0;
     /** True for as long as the player's RigidBody is inside this zone's trigger — the deposit loop checks this before every coin and stops the instant it goes false, same convention as BuildingZone/QueueZone. */
     private isPlayerInside = false;
     private player?: MainPlayer;
@@ -208,7 +217,7 @@ export default class ShopZone extends Entity {
 
         const column = new PIXI.Container();
         column.addChild(this.iconRow, this.bodyContainer);
-        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, 'Popup', column);
+        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(this.config.popupMode), column);
         this.refreshLabel();
 
         // The badge depends on EconomyStorage's live balance (see refreshLabel()'s own doc),
@@ -217,7 +226,7 @@ export default class ShopZone extends Entity {
         EconomyStorage.onChange.add(this.handleEconomyChanged);
 
         this.labelAnchor = new THREE.Object3D();
-        this.labelAnchor.position.copy(LABEL_HEIGHT_OFFSET);
+        this.labelAnchor.position.copy(resolvePopupAnchorOffset(this.config.popupBobOffset));
         this.transform.add(this.labelAnchor);
         const labelAnchorWorldPosition = new THREE.Vector3();
 
@@ -225,7 +234,7 @@ export default class ShopZone extends Entity {
             this.screenHost,
             this.labelFrame,
             () => this.labelAnchor.getWorldPosition(labelAnchorWorldPosition),
-            ZONE_LABEL_ANCHOR_OPTIONS,
+            { ...ZONE_LABEL_ANCHOR_OPTIONS, ...resolvePopupAvoidViewer(this.config.popupMode) },
         ));
 
         ShopUpgradeStorage.onChange.add(this.handleShopChanged);
@@ -290,9 +299,18 @@ export default class ShopZone extends Entity {
         return EconomyStorage.getBalance(CurrencyType.Money) >= remaining;
     }
 
-    /** Rewrites the panel's body from ShopUpgradeStorage's current state and re-fits the frame around the new bounds. Icon-first throughout (tool icon, money icon, upgrade-arrow badge) — the only text left is short numbers, not sentences, per this file's own doc. */
+    /** Rewrites the panel's body from ShopUpgradeStorage's current state and re-fits the frame around the new bounds. Icon-first throughout (tool icon, money icon, upgrade-arrow badge) — the only text left is short numbers, not sentences, per this file's own doc. `popupMode: 'none'` (see PopupConfig.ts's own doc) skips all of this and keeps the panel permanently hidden; `'simple'` drops the tool-icon header (iconRow), keeping only the cost/cooldown row. */
     private refreshLabel(): void {
-        this.upgradeBadge.visible = this.isUpgradeAvailable();
+        if (this.config.popupMode === 'none') {
+            this.iconRow.visible = false;
+            this.labelFrame.visible = false;
+            this.labelFrame.fit();
+            return;
+        }
+
+        const showHeader = this.config.popupMode !== 'simple';
+        this.iconRow.visible = showHeader;
+        this.upgradeBadge.visible = showHeader && this.isUpgradeAvailable();
 
         this.bodyContainer.removeChildren().forEach(child => child.destroy({ children: true }));
 
@@ -372,6 +390,7 @@ export default class ShopZone extends Entity {
             return;
         }
         this.draining = true;
+        this.inFlightCoins = 0;
 
         const icon = getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey);
         const toWorld = new THREE.Vector3();
@@ -380,7 +399,11 @@ export default class ShopZone extends Entity {
             const stillWants = this.isPlayerInside
                 && !ShopUpgradeStorage.isMaxLevel(this.shopId, this.config)
                 && !ShopUpgradeStorage.isOnCooldown(this.shopId)
-                && EconomyStorage.getBalance(CurrencyType.Money) > 0;
+                // Subtracting inFlightCoins is what actually prevents over-draining a near-empty
+                // wallet: EconomyStorage's balance only drops on LANDING, but a coin departs
+                // every FLY_IN_STAGGER_SEC — without this, a 1-coin balance would still read
+                // getBalance()>0 for every departure that fires before the first one lands.
+                && EconomyStorage.getBalance(CurrencyType.Money) - this.inFlightCoins > 0;
 
             if (!stillWants) {
                 this.draining = false;
@@ -388,9 +411,13 @@ export default class ShopZone extends Entity {
             }
 
             this.labelAnchor.getWorldPosition(toWorld);
+            this.inFlightCoins++;
 
             spawnFlyingIconFromOverlayPoint(this.screenHost, this.getWalletOverlayPosition, toWorld.clone(), icon, () => {
-                EconomyStorage.spend(CurrencyType.Money, 1);
+                this.inFlightCoins--;
+                if (!EconomyStorage.spend(CurrencyType.Money, 1)) {
+                    return;
+                }
                 ShopUpgradeStorage.addProgress(this.shopId, this.config, 1);
                 if (ShopUpgradeStorage.tryCompleteUpgrade(this.shopId, this.config)) {
                     // Rarity is hardcoded to Common for now — ShopUpgradeLevel has no rarity

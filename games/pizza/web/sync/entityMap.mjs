@@ -52,8 +52,8 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'BUILDING_CONFIG',
         kind: 'enumRecord',
         enumName: 'BuildingId',
-        managedKeys: ['name', 'appearRequirement', 'levels'],
-        optionalKeys: ['appearRequirement'],
+        managedKeys: ['name', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset'],
+        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset'],
         // BuildingLevelConfig also carries a `mesh` field (per-level placeholder art) that
         // this editor doesn't manage — a plain wholesale replacement of the `levels` array
         // (what every OTHER list field in this map gets, since none of their items have
@@ -67,15 +67,22 @@ export const ENTITY_SOURCE_MAP = {
         file: path.join(GAME_DIR, 'shop', 'ShopTypes.ts'),
         exportName: 'SHOP_CONFIG_BY_ID',
         kind: 'partialRecord',
-        managedKeys: ['name', 'tool', 'action', 'appearRequirement', 'levels'],
-        optionalKeys: ['appearRequirement'],
+        managedKeys: ['name', 'tool', 'action', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset'],
+        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset'],
     },
     crafting: {
         file: path.join(GAME_DIR, 'crafting', 'CraftTypes.ts'),
         exportName: 'CRAFT_CONFIG_BY_ID',
         kind: 'partialRecord',
-        managedKeys: ['name', 'recipes', 'destroyOnComplete', 'appearRequirement'],
-        optionalKeys: ['appearRequirement'],
+        // showModel/toolId/models/scale/rotationDeg/float are the table's own visual config
+        // (CraftTableConfig, unlike resources/providers, keeps these INLINE rather than routing
+        // them to AssetLibraryRegistry via externalFields — a craft table isn't a spawnable
+        // AssetLibraryKey the way a resource/provider is, it's a one-off placement) — see
+        // CraftTypes.ts's own doc on each field. `toolId` is a plain string reference into
+        // TOOL_LIBRARY, resolved at runtime by CraftZone.createTableMesh(), not an enum value —
+        // no ENUM_VALUE_FIELDS entry needed for it.
+        managedKeys: ['name', 'recipes', 'destroyOnComplete', 'appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset'],
+        optionalKeys: ['appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset'],
     },
     // A RESOURCE is the bankable item (Wood/Stone/Berries/Bark/Pebble/GrassFiber) — what
     // ends up in BackpackStorage. What actually PRODUCES one is a separate concern — see
@@ -142,8 +149,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_QUEUE_CONFIG',
         byIdExportName: 'QUEUE_CONFIG_BY_ID',
-        managedKeys: ['cooldownSec', 'possibleTasks', 'appearRequirement'],
-        optionalKeys: ['appearRequirement'],
+        managedKeys: ['cooldownSec', 'possibleTasks', 'appearRequirement', 'popupMode', 'popupBobOffset'],
+        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset'],
     },
     tools: {
         file: path.join(GAME_DIR, 'actions', 'ToolRegistry.ts'),

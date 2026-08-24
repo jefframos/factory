@@ -188,7 +188,10 @@ export default class MyGame extends Game {
 
 
 
-        this.overlayContainer.addChild(this.popupManager)
+        // popupLayer (not the base overlayContainer) — the topmost of the three z-ordered
+        // overlay tiers (see core/Game.ts's own doc), so a boot-level popup (game-over, etc.)
+        // always draws over the in-scene HUD and any toast notification.
+        this.popupLayer.addChild(this.popupManager)
         //this.popupManager.registerPopup('confirm', new ConfirmationPopup(), false);
 
 

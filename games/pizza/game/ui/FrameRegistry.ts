@@ -19,8 +19,8 @@ export interface FramePadding {
 }
 
 export interface FrameDef {
-    /** Texture alias inside the packed 'images' bundle — see Assets.getTexture(). */
-    textureKey: string;
+    /** Texture alias inside the packed 'images' bundle — see Assets.getTexture(). Undefined means no background texture at all — FrameComponent.ts falls back to PIXI.Texture.EMPTY, i.e. a fully invisible 9-slice (still occupies/sizes its bounds normally, just renders nothing) — for a frame that's only ever meant to size/position its content, not draw a visible panel behind it. */
+    textureKey?: string;
     /** Border widths (source pixels) PIXI.NineSlicePlane keeps unstretched at each edge/corner — see FrameComponent.ts. */
     padding: FramePadding;
 
@@ -54,6 +54,17 @@ export const FrameRegistry: Record<string, FrameDef> = {
         padding: DEFAULT_PADDING_BUBBLE,
         arrowTexture: 'BubbleFrame03_Arrow_Bottom',
         arrowPivot: { x: 0.5, y: 1 },
+    },
+    /**
+     * The lean "Simple" zone-popup style (see PopupConfig.ts's own doc) — no speech-bubble
+     * arrow, since Simple is the style meant for a popup sitting flush on an entity's own base
+     * rather than floating above it with something to visibly point down at. Texture/padding
+     * are a first-pass estimate off the raw asset's own pixel dimensions (BubbleFrame05_Bg.png
+     * is 222x82) rather than a measured 9-slice spec — cheap to retune (just these two
+     * numbers) if the border ends up looking stretched or over-cropped in practice.
+     */
+    Simple: {
+        padding: uniformPadding(30),
     },
 };
 

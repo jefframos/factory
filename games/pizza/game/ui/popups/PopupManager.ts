@@ -11,9 +11,14 @@
 //
 // init() must run once (see SettingsUIService's own call) before show()
 // works — deferred rather than done in the constructor since a singleton's
-// constructor has no natural place to receive `game.overlayContainer`.
-// Safe to call more than once (no-ops after the first) so every caller can
-// call it defensively without coordinating a single "who calls init()" owner.
+// constructor has no natural place to receive `game.popupLayer`. Safe to
+// call more than once (no-ops after the first) so every caller can call it
+// defensively without coordinating a single "who calls init()" owner.
+//
+// `root` parents under `game.popupLayer` — the topmost of the three
+// z-ordered overlay tiers (see core/Game.ts's own doc: uiLayer <
+// notificationLayer < popupLayer), so a popup always draws over the HUD AND
+// over any toast notification, regardless of add-order.
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
@@ -51,7 +56,7 @@ export class PopupManager {
             return;
         }
         this.root = new PIXI.Container();
-        game.overlayContainer.addChild(this.root);
+        game.popupLayer.addChild(this.root);
     }
 
     /** Shows `popup`, closing (with no transition — see closeImmediate()) whatever's currently open first. */

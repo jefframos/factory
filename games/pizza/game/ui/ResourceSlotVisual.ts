@@ -5,12 +5,12 @@
 // getAssetIcon()) fitted/centered inside it — factored out so anything else
 // that wants to show a resource "in a slot" (BuildingZone's requirement row)
 // renders the same slot instead of hand-rolling its own background/icon-fit
-// logic. Unlike BackpackUI's own slots (a small corner badge overlaid on the
-// icon — fine at BackpackUI's 48px), the count label here renders BELOW the
-// slot, centered — at the smaller sizes a requirement row uses, a corner
-// badge would sit on top of the icon instead of beside it. BackpackUI keeps
-// its own slot bookkeeping (reused/emptied slots, jiggle animation state)
-// and isn't changed to consume this.
+// logic. The count label sits INSIDE the slot's own bottom-right corner —
+// same anchor(1,1)/inset idiom as BackpackUI's own slot count badge — rather
+// than below it, so a row of these reads as one compact icon+count chip
+// instead of icon-then-separate-label-underneath. BackpackUI keeps its own
+// slot bookkeeping (reused/emptied slots, jiggle animation state) and isn't
+// changed to consume this.
 
 import * as PIXI from 'pixi.js';
 import { ResourceType } from '../actions/ResourceTypes';
@@ -25,18 +25,19 @@ const SLOT_BG_TINT = 0x000000;
 const SLOT_BG_ALPHA = 0.5;
 /** Gap left between the icon's edge and the slot background's edge — same value as BackpackUI's ICON_PADDING. */
 const ICON_PADDING = 6;
-/** Gap between the slot background's bottom edge and the count label sitting below it. */
-const LABEL_MARGIN_TOP = 4;
+/** Inset of the count label from the slot's own bottom-right corner — same idiom/values as BackpackUI's own slot count badge (see that file's own label.position.set()). */
+const LABEL_INSET_RIGHT = 4;
+const LABEL_INSET_BOTTOM = 2;
 
 export interface ResourceSlotVisual {
     readonly container: PIXI.Container;
     readonly icon: PIXI.Sprite;
     readonly label: PIXI.Text;
-    /** Total local height of `container` — the slot square plus the label below it — so a caller laying out several of these in a row can size/position around the real footprint instead of just `size`. */
+    /** Total local height of `container` — just the slot square now that the count label sits INSIDE it (bottom-right corner) rather than below — kept as its own field so a caller laying out several of these in a row doesn't need to know that changed. */
     readonly visualHeight: number;
 }
 
-/** Builds one `size`x`size` slot showing `type`'s icon, with `labelText` centered directly below it — same slot look as BackpackUI, sized for wherever it's used. Caller owns positioning/adding `container` and destroying it when done. */
+/** Builds one `size`x`size` slot showing `type`'s icon, with `labelText` in its bottom-right corner — same slot look (and count-badge placement) as BackpackUI, sized for wherever it's used. Caller owns positioning/adding `container` and destroying it when done. */
 export function createResourceSlot(type: ResourceType, size: number, labelText: string): ResourceSlotVisual {
     const container = new PIXI.Container();
 
@@ -54,9 +55,9 @@ export function createResourceSlot(type: ResourceType, size: number, labelText: 
     container.addChild(icon);
 
     const label = new PIXI.Text(labelText, TextStyleRegistry.Body);
-    label.anchor.set(0.5, 0);
-    label.position.set(size / 2, size + LABEL_MARGIN_TOP);
+    label.anchor.set(1, 1);
+    label.position.set(size - LABEL_INSET_RIGHT, size - LABEL_INSET_BOTTOM);
     container.addChild(label);
 
-    return { container, icon, label, visualHeight: size + LABEL_MARGIN_TOP + label.height };
+    return { container, icon, label, visualHeight: size };
 }

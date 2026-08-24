@@ -39,10 +39,12 @@ import gsap from 'gsap';
 import Entity from '../ecs/Entity';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
-import { BendService } from '../services/BendService';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
+import BoxVisualComponent from '../components/BoxVisualComponent';
+import GlbVisualComponent from '../components/GlbVisualComponent';
+import { applyFloatAnimation } from '../components/FloatAnimation';
 import { spawnFlyingResourceIcon } from '../components/FlyingResourceIcon';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
@@ -53,8 +55,11 @@ import { CraftRecipeDef, CraftTableConfig, getCraftConfig } from './CraftTypes';
 import { getItemIcon, ITEM_CONFIG } from './ItemTypes';
 import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
-import { getAssetIcon } from '../world/AssetLibraryRegistry';
+import { getAssetIcon, pickRandom, resolveRange } from '../world/AssetLibraryRegistry';
+import { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
+import { TOOL_LIBRARY } from '../actions/ToolRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
+import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer } from '../ui/PopupConfig';
 import { createResourceSlot } from '../ui/ResourceSlotVisual';
 import MainPlayer from '../player/MainPlayer';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
@@ -73,9 +78,8 @@ const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
 /** Dotted-outline color — distinct from every other zone's own hue (see QueueZone/BuildingZone/ShopZone), so a craft table reads as its own kind of zone on the map until real art exists. */
 const CRAFT_BOX_COLOR = 0xcc44cc;
 const CRAFT_ZONE_CORNER_RADIUS = 0.3;
-const LABEL_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 1.2, 0);
 const FLY_IN_STAGGER_SEC = 0.12;
-/** The table's own placeholder mesh — a plain box until real art exists, same convention as BuildingZone/ShopZone's mesh. */
+/** The table's fallback placeholder mesh (plain box) — used whenever the config doesn't ask for a real model (`showModel`/`toolId`/`models`, see CraftTypes.ts), same convention as BuildingZone/ShopZone's mesh. */
 const TABLE_MESH_SIZE: [number, number, number] = [1.6, 0.9, 1.6];
 const TABLE_MESH_COLOR = 0x7a5a3a;
 /** The active recipe's own output icon — the panel's main image, same "icon-first" idiom ShopZone's tool icon uses. */
@@ -97,11 +101,22 @@ export default class CraftZone extends Entity {
 
     /** Resource types currently mid-drain via flyInResource() — guards a second overlapping drain loop for the same type. */
     private readonly draining = new Set<ResourceType>();
+    /**
+     * How many units of each type have DEPARTED but not yet LANDED — see flyInResource()'s own
+     * doc for why this exists: BackpackStorage/CraftStorage's progress only advance on LANDING
+     * (a ~0.45s flight), but a new unit departs every FLY_IN_STAGGER_SEC (0.12s) — reading the
+     * live backpack count/remaining-cost alone at departure time would keep seeing room for
+     * more and send out units the backpack doesn't actually have, over-crediting on landing.
+     * Incremented right before a departure, decremented the instant that same unit lands.
+     */
+    private readonly inFlightByType = new Map<ResourceType, number>();
     private isPlayerInside = false;
     private player?: MainPlayer;
     private labelAnchor!: THREE.Object3D;
 
-    private tableMesh?: THREE.Mesh;
+    private visual?: BoxVisualComponent | GlbVisualComponent;
+    /** Idle bob loop on `visual`'s mesh (see FloatAnimation.ts) — undefined when the config's `float` is off, or while a GLB model hasn't finished loading yet (see createTableMesh()). */
+    private floatTween?: gsap.core.Tween;
     /** True the instant this table decides it's about to leave the world for good (see flyInResource()'s completion callback) — guards tryDeposit()/flyInResource()'s own step() from starting or continuing a deposit into a table that's already gone. */
     private destroying = false;
 
@@ -182,11 +197,11 @@ export default class CraftZone extends Entity {
 
         const column = new PIXI.Container();
         column.addChild(this.resultIcon, this.bodyContainer);
-        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, 'Popup', column);
+        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(this.config.popupMode), column);
         this.refreshLabel();
 
         this.labelAnchor = new THREE.Object3D();
-        this.labelAnchor.position.copy(LABEL_HEIGHT_OFFSET);
+        this.labelAnchor.position.copy(resolvePopupAnchorOffset(this.config.popupBobOffset));
         this.transform.add(this.labelAnchor);
         const labelAnchorWorldPosition = new THREE.Vector3();
 
@@ -194,7 +209,7 @@ export default class CraftZone extends Entity {
             this.screenHost,
             this.labelFrame,
             () => this.labelAnchor.getWorldPosition(labelAnchorWorldPosition),
-            ZONE_LABEL_ANCHOR_OPTIONS,
+            { ...ZONE_LABEL_ANCHOR_OPTIONS, ...resolvePopupAvoidViewer(this.config.popupMode) },
         ));
 
         CraftStorage.onChange.add(this.handleCraftChanged);
@@ -206,37 +221,79 @@ export default class CraftZone extends Entity {
 
     public override destroy(): void {
         CraftStorage.onChange.remove(this.handleCraftChanged);
-        this.disposeTableMesh();
+        this.floatTween?.kill();
+        this.floatTween = undefined;
+        // this.visual (BoxVisualComponent/GlbVisualComponent) was added via addComponent() —
+        // super.destroy() below tears it down (geometry/material dispose, removeFromParent)
+        // along with every other component on this entity, so no manual disposal needed here
+        // anymore (unlike the old raw-THREE.Mesh version of this file).
         super.destroy();
     }
 
+    /**
+     * Builds this table's visual — a real 3D model (GlbVisualComponent) when the config asks
+     * for one and has a model to show, else the old placeholder box (BoxVisualComponent), same
+     * `models.length > 0 ? Glb : Box` fallback ResourceNode.awake() uses. `toolId` (showing an
+     * existing Tool's own model, e.g. the axe this table crafts) takes priority over a directly-
+     * picked `models` list when both are set. `float` starts an idle bob on whichever visual
+     * actually ends up showing — for the GLB path that only happens once the async model load
+     * resolves (see GlbVisualComponent's `onReady` param), since there's no mesh to animate
+     * before then.
+     */
     private createTableMesh(): void {
-        const material = new THREE.MeshStandardMaterial({ color: TABLE_MESH_COLOR });
-        BendService.applyBend(material);
-
         const [configWidth, height, configDepth] = TABLE_MESH_SIZE;
         const width = this.footprint?.width ?? configWidth;
         const depth = this.footprint?.depth ?? configDepth;
-        const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
-        mesh.position.set(0, height / 2, 0);
-        this.transform.add(mesh);
-        this.tableMesh = mesh;
-    }
+        const centerOffset = new THREE.Vector3(0, height / 2, 0);
 
-    private disposeTableMesh(): void {
-        if (!this.tableMesh) {
+        const models: ModelDefinition[] = this.config.showModel
+            ? (this.config.toolId ? TOOL_LIBRARY[this.config.toolId]?.models : this.config.models) ?? []
+            : [];
+
+        if (models.length > 0) {
+            const scale = resolveRange(this.config.scale ?? 1);
+            const rotationY = resolveRange(this.config.rotationDeg ?? 0) * (Math.PI / 180);
+            // heightOffset only nudges the MODEL — the placeholder box below doesn't need this
+            // knob at all, and applying it there too would visually detach the box from the
+            // table's own footprint for no reason.
+            const modelOffset = centerOffset.clone();
+            modelOffset.y += this.config.heightOffset ?? 0;
+            const glb: GlbVisualComponent = this.addComponent(new GlbVisualComponent(
+                pickRandom(models),
+                modelOffset,
+                scale,
+                rotationY,
+                () => {
+                    if (this.config.float) {
+                        this.floatTween = applyFloatAnimation(glb.mesh);
+                    }
+                },
+            ));
+            this.visual = glb;
             return;
         }
-        gsap.killTweensOf(this.tableMesh.scale);
-        this.tableMesh.geometry.dispose();
-        (this.tableMesh.material as THREE.Material).dispose();
-        this.tableMesh.removeFromParent();
-        this.tableMesh = undefined;
+
+        const box = this.addComponent(new BoxVisualComponent(
+            new THREE.Vector3(width, height, depth),
+            TABLE_MESH_COLOR,
+            centerOffset,
+        ));
+        this.visual = box;
+        if (this.config.float) {
+            this.floatTween = applyFloatAnimation(box.mesh);
+        }
     }
 
-    /** Rewrites the panel from CraftStorage's current state and re-fits the frame around the new bounds. */
+    /** Rewrites the panel from CraftStorage's current state and re-fits the frame around the new bounds. `popupMode: 'none'` (see PopupConfig.ts's own doc) skips all of this and just keeps the panel permanently hidden — checked first since it overrides every other state below (fully-crafted, destroyOnComplete, ...) the same way. */
     private refreshLabel(): void {
         this.bodyContainer.removeChildren().forEach(child => child.destroy({ children: true }));
+
+        if (this.config.popupMode === 'none') {
+            this.resultIcon.visible = false;
+            this.labelFrame.visible = false;
+            this.labelFrame.fit();
+            return;
+        }
 
         if (CraftStorage.isFullyCrafted(this.craftId, this.config)) {
             // A destroyOnComplete table never renders a "fully crafted" state at all — it's
@@ -260,9 +317,15 @@ export default class CraftZone extends Entity {
 
         const recipe = CraftStorage.getNextRecipe(this.craftId, this.config)!;
 
-        this.resultIcon.visible = true;
-        this.resultIcon.texture = getItemIcon(recipe.result.item);
-        this.resultIcon.scale.set(ViewUtils.elementScaler(this.resultIcon, RESULT_ICON_SIZE));
+        // 'simple' (see PopupConfig.ts's own doc) drops the big result-item icon entirely —
+        // only the cost row below renders, same layout math either way since the icon just
+        // never gets added.
+        const showHeader = this.config.popupMode !== 'simple';
+        this.resultIcon.visible = showHeader;
+        if (showHeader) {
+            this.resultIcon.texture = getItemIcon(recipe.result.item);
+            this.resultIcon.scale.set(ViewUtils.elementScaler(this.resultIcon, RESULT_ICON_SIZE));
+        }
 
         const entries = Object.entries(recipe.cost) as [ResourceType, number][];
         const slots = entries.map(([type, need]) => {
@@ -326,11 +389,12 @@ export default class CraftZone extends Entity {
         const toWorld = new THREE.Vector3();
 
         const step = (): void => {
+            const inFlight = this.inFlightByType.get(type) ?? 0;
             const recipe = this.isPlayerInside && !this.destroying ? CraftStorage.getNextRecipe(this.craftId, this.config) : undefined;
             const need = recipe?.cost[type] ?? 0;
-            const remaining = need - CraftStorage.getProgress(this.craftId, type);
+            const remaining = need - CraftStorage.getProgress(this.craftId, type) - inFlight;
 
-            const fromWorld = remaining > 0 && BackpackStorage.getCount(type) > 0
+            const fromWorld = remaining > 0 && BackpackStorage.getCount(type) - inFlight > 0
                 ? this.player?.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition()
                 : undefined;
 
@@ -340,9 +404,13 @@ export default class CraftZone extends Entity {
             }
 
             this.labelAnchor.getWorldPosition(toWorld);
+            this.inFlightByType.set(type, inFlight + 1);
 
             spawnFlyingResourceIcon(this.screenHost, fromWorld.clone(), toWorld.clone(), icon, () => {
-                BackpackStorage.removeOne(type);
+                this.inFlightByType.set(type, (this.inFlightByType.get(type) ?? 1) - 1);
+                if (!BackpackStorage.removeOne(type)) {
+                    return;
+                }
                 CraftStorage.addProgress(this.craftId, this.config, type, 1);
                 const completedRecipe = CraftStorage.tryCompleteRecipe(this.craftId, this.config);
                 if (!completedRecipe) {

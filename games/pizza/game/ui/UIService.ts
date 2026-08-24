@@ -5,9 +5,12 @@
 // future UI (e.g. a building panel) gets added — so the scene itself just
 // builds/updates/destroys ONE thing instead of a field + setup method +
 // per-frame position method + teardown line for every panel. Everything here
-// is a direct child of `game.overlayContainer`; `Game.overlayScreenData` is
-// already expressed in that container's own local space (see that field's
-// own doc in core/Game.ts), so every positionX() below can use its corners
+// is a direct child of `game.uiLayer` now — the bottom of the three
+// z-ordered overlay tiers (see core/Game.ts's own doc: uiLayer <
+// notificationLayer < popupLayer), so a toast notification or modal popup
+// always draws over this HUD. `Game.overlayScreenData` is expressed in the
+// shared `overlayContainer`'s local space, which uiLayer shares (no extra
+// scale/offset of its own), so every positionX() below can use its corners
 // directly with no extra conversion — same reasoning PizzaScene's original
 // positionBackpackUi()/positionGlobalResourcesUi()/positionCameraToggleButton()
 // used before this existed.
@@ -75,16 +78,16 @@ export default class UIService {
         this.game = game;
 
         this.backpackUi = new BackpackUI();
-        this.game.overlayContainer.addChild(this.backpackUi);
+        this.game.uiLayer.addChild(this.backpackUi);
 
         this.globalResourcesUi = new GlobalResourcesUI();
-        //this.game.overlayContainer.addChild(this.globalResourcesUi);
+        //this.game.uiLayer.addChild(this.globalResourcesUi);
 
         this.economyUi = new EconomyUI();
-        this.game.overlayContainer.addChild(this.economyUi);
+        this.game.uiLayer.addChild(this.economyUi);
 
         this.toolLevelUi = new ToolLevelUI();
-        this.game.overlayContainer.addChild(this.toolLevelUi);
+        this.game.uiLayer.addChild(this.toolLevelUi);
 
         this.cameraToggleButton = new BaseButton({
             standard: {
@@ -103,7 +106,7 @@ export default class UIService {
             click: { callback: onCameraToggle },
         });
         this.cameraToggleButton.setLabel('Top-Down View');
-        this.game.overlayContainer.addChild(this.cameraToggleButton);
+        this.game.uiLayer.addChild(this.cameraToggleButton);
 
         this.settingsUi = new SettingsUIService(this.game);
         UpgradeNotificationManager.instance.init(this.game);

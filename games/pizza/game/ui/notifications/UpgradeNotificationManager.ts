@@ -40,13 +40,21 @@ export class UpgradeNotificationManager {
     private readonly queue: UpgradeNotificationOptions[] = [];
     private playing = false;
 
-    /** Call once at boot (see UIService's constructor) — safe to call more than once, same "no-ops after the first" convention as PopupManager.init(). */
+    /**
+     * Call once at boot (see UIService's constructor) — safe to call more than once, same
+     * "no-ops after the first" convention as PopupManager.init(). Parents `layer` under
+     * `game.notificationLayer` — a dedicated tier that's always drawn over `game.uiLayer` (the
+     * HUD, zone nameplates, everything else) and always under `game.popupLayer` (see
+     * core/Game.ts's own doc), regardless of add-order — so unlike before this tiering
+     * existed, playNext() no longer needs to manually re-add `layer` to bring it to the front
+     * of whatever else happened to exist in a single flat overlay container.
+     */
     public init(game: Game): void {
         if (this.layer) {
             return;
         }
         this.layer = new PIXI.Container();
-        game.overlayContainer.addChild(this.layer);
+        game.notificationLayer.addChild(this.layer);
     }
 
     /** Queues `options` to show as a large center-upper callout — see this file's own doc. */
@@ -60,17 +68,6 @@ export class UpgradeNotificationManager {
             return;
         }
 
-        // Re-adding an EXISTING child moves it to the end of its parent's own children list
-        // (PIXI's addChild() is also how you reorder) rather than adding a duplicate — this is
-        // what actually keeps this notification layer drawing on top of EVERYTHING else in
-        // game.overlayContainer, no matter what got added there since init() ran. Without this,
-        // any UI added to overlayContainer AFTER init() (a zone's own ScreenAnchorComponent
-        // nameplate — QueueZone/CraftZone/... — or PopupManager's root, itself added by
-        // SettingsUIService before this manager's own init() call in UIService's constructor)
-        // would draw OVER this layer simply for having been added later, since PIXI renders a
-        // container's children in list order. Bringing this to the front right before every
-        // notification plays means the actual add-order of everything else never matters.
-        this.layer.parent?.addChild(this.layer);
         const options = this.queue.shift();
         if (!options) {
             return;

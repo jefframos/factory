@@ -65,7 +65,10 @@ function projectWorldToOverlay(host: ScreenAnchorHost, world: THREE.Vector3, scr
     }
 
     scratchScreen.set(screen.x, screen.y);
-    return host.overlayContainer.toLocal(scratchScreen, host.overlayContainer.parent ?? undefined, scratchLocal);
+    // `from` omitted — see ScreenAnchorComponent.update()'s own comment on this exact line for
+    // why `host.overlayContainer.parent` is no longer the right (or even safe) choice now that
+    // overlayContainer nests uiLayer/notificationLayer/popupLayer (core/Game.ts).
+    return host.overlayContainer.toLocal(scratchScreen, undefined, scratchLocal);
 }
 
 /**

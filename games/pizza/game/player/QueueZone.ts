@@ -40,6 +40,7 @@ import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { createResourceSlot } from '../ui/ResourceSlotVisual';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
+import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer } from '../ui/PopupConfig';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { QueueStorage } from '../data/QueueStorage';
 import { QueueConfig, getQueueConfig } from '../data/QueueTypes';
@@ -57,7 +58,6 @@ const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
 const QUEUE_BOX_COLOR = 0xcc8800;
 /** Corner rounding for the floor outline — purely cosmetic, the collider itself stays a sharp-cornered box (see RigidBody above). */
 const QUEUE_ZONE_CORNER_RADIUS = 0.3;
-const LABEL_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 1.2, 0);
 /** Where the reward icon departs from — roughly head-height above the zone, same idea as BuildingZone's own popup spawn point. */
 const POPUP_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 2.2, 0);
 /** Vertical gap between the requirements row and the reward line sitting above it — see refreshLabel(). */
@@ -168,7 +168,7 @@ export default class QueueZone extends Entity {
 
         const column = new PIXI.Container();
         column.addChild(this.headerContainer, this.bodyContainer);
-        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, 'Popup', column);
+        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(this.config.popupMode), column);
 
         // ScreenAnchorComponent.update() unconditionally sets ITS OWN content's `visible = true`
         // every frame the anchor is on-screen (see that file's own doc — it only ever hides
@@ -198,7 +198,7 @@ export default class QueueZone extends Entity {
         // since flyInResource() targets the same spot — deposited icons fly to wherever this
         // queue's own UI actually renders, not a point on its placeholder box.
         this.labelAnchor = new THREE.Object3D();
-        this.labelAnchor.position.copy(LABEL_HEIGHT_OFFSET);
+        this.labelAnchor.position.copy(resolvePopupAnchorOffset(this.config.popupBobOffset));
         this.transform.add(this.labelAnchor);
         const labelAnchorWorldPosition = new THREE.Vector3();
 
@@ -206,7 +206,7 @@ export default class QueueZone extends Entity {
             this.screenHost,
             anchorContent,
             () => this.labelAnchor.getWorldPosition(labelAnchorWorldPosition),
-            ZONE_LABEL_ANCHOR_OPTIONS,
+            { ...ZONE_LABEL_ANCHOR_OPTIONS, ...resolvePopupAvoidViewer(this.config.popupMode) },
         ));
 
         QueueStorage.onTaskChanged.add(this.handleTaskChanged);
@@ -279,6 +279,15 @@ export default class QueueZone extends Entity {
         this.headerContainer.removeChildren().forEach(child => child.destroy({ children: true }));
         this.bodyContainer.removeChildren().forEach(child => child.destroy({ children: true }));
 
+        // 'none' (see PopupConfig.ts's own doc) skips the panel entirely, permanently — the
+        // deliverable-based show/hide/fade below never gets a chance to turn it back on.
+        if (this.config.popupMode === 'none') {
+            gsap.killTweensOf(this.labelFrame);
+            this.labelFrame.visible = false;
+            this.wasDeliverable = false;
+            return;
+        }
+
         const state = QueueStorage.getState(this.queueId);
         const task = state.activeTask;
         const deliverable = this.isTaskDeliverable();
@@ -302,20 +311,24 @@ export default class QueueZone extends Entity {
         // Reward line — icon + "+N", centered, sitting in the header area (see this method's
         // own doc). PIXI.Container has no `anchor`, so a bottom-center pivot reproduces the
         // same "bottom edge lands exactly at this container's local y=0" placement a
-        // PIXI.Text with anchor (0.5, 1) gets for free.
-        const rewardIcon = new PIXI.Sprite(getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey));
-        rewardIcon.anchor.set(0, 0.5);
-        rewardIcon.width = REWARD_ICON_SIZE;
-        rewardIcon.height = REWARD_ICON_SIZE;
-        this.headerContainer.addChild(rewardIcon);
+        // PIXI.Text with anchor (0.5, 1) gets for free. 'simple' (see PopupConfig.ts's own doc)
+        // skips this reward line entirely — headerContainer just stays empty (zero size), same
+        // as its own "no active task" state, so the frame naturally shrinks around only the
+        // requirements row below.
+        if (this.config.popupMode !== 'simple') {
+            const rewardIcon = new PIXI.Sprite(getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey));
+            rewardIcon.anchor.set(0, 0.5);
+            rewardIcon.width = REWARD_ICON_SIZE;
+            rewardIcon.height = REWARD_ICON_SIZE;
+            this.headerContainer.addChild(rewardIcon);
 
-        const rewardText = new PIXI.Text(`+${task.rewardAmount}`, TextStyleRegistry.Body);
-        rewardText.anchor.set(0, 0.5);
-        rewardText.position.set(REWARD_ICON_SIZE + 4, 0);
-        this.headerContainer.addChild(rewardText);
+            const rewardText = new PIXI.Text(`+${task.rewardAmount}`, TextStyleRegistry.Body);
+            rewardText.anchor.set(0, 0.5);
+            rewardText.position.set(REWARD_ICON_SIZE + 4, 0);
+            this.headerContainer.addChild(rewardText);
 
-        this.headerContainer.pivot.set(this.headerContainer.width / 2, this.headerContainer.height);
-        const headerHeight = this.headerContainer.height;
+            this.headerContainer.pivot.set(this.headerContainer.width / 2, this.headerContainer.height);
+        }
 
         // Requirements row — currently always exactly one slot (see REQ_SLOT_SIZE's own doc),
         // laid out the same "centered row, bottom edge at y=0" way
@@ -402,7 +415,12 @@ export default class QueueZone extends Entity {
             const stillNeedsThisType = this.isPlayerInside && this.isTaskDeliverable() && task?.resourceType === type
                 && state.progress + this.inFlightCount < task.amount;
 
-            const fromWorld = stillNeedsThisType && BackpackStorage.getCount(type) > 0
+            // Subtracting inFlightCount here too (not just from the task-amount check above) is
+            // what actually closes the over-drain bug: without it, a backpack holding only 1
+            // unit would still read getCount()>0 for every departure that fires before the
+            // first one lands (0.12s stagger vs. a ~0.45s flight), sending out more units than
+            // the backpack really has and over-crediting the task on landing.
+            const fromWorld = stillNeedsThisType && BackpackStorage.getCount(type) - this.inFlightCount > 0
                 ? this.player?.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition()
                 : undefined;
 
@@ -416,7 +434,9 @@ export default class QueueZone extends Entity {
 
             spawnFlyingResourceIcon(this.screenHost, fromWorld.clone(), toWorld.clone(), icon, () => {
                 this.inFlightCount--;
-                BackpackStorage.removeOne(type);
+                if (!BackpackStorage.removeOne(type)) {
+                    return;
+                }
                 QueueStorage.addProgress(this.queueId, 1);
                 const completedTask = QueueStorage.tryCompleteTask(this.queueId, this.config);
                 if (completedTask) {

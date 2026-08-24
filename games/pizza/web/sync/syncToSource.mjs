@@ -188,8 +188,22 @@ function ensureNamedImport(sourceFile, enumName) {
     }
 }
 
+/**
+ * `project` (module-scope, see its own doc) caches every SourceFile it's ever loaded for the
+ * lifetime of this server process — without refreshing here, a direct edit to the real .ts file
+ * made OUTSIDE this editor (hand-editing the code, a git pull, another tool) while the server is
+ * still running would be invisible to it: the next Save would patch the STALE in-memory AST and
+ * silently overwrite that outside edit when it writes back, even though nothing about the Save
+ * itself touched the affected lines. refreshFromFileSystemSync() re-reads the real on-disk
+ * content into the already-cached SourceFile before every use, so this can't happen.
+ */
 function getSourceFile(filePath) {
-    return project.getSourceFile(filePath) ?? project.addSourceFileAtPath(filePath);
+    const existing = project.getSourceFile(filePath);
+    if (existing) {
+        existing.refreshFromFileSystemSync();
+        return existing;
+    }
+    return project.addSourceFileAtPath(filePath);
 }
 
 /** Unwraps a `satisfies` expression (`{...} satisfies Record<string, X>`, TOOL_LIBRARY's own style) down to the object literal it wraps — every other *_CONFIG in this codebase is annotated via `: Record<...> = {...}` instead, where the initializer already IS the object literal directly. */

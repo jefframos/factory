@@ -14,6 +14,7 @@
 
 import { ResourceType } from '../actions/ResourceTypes';
 import { MilestoneRequirement } from './MilestoneRequirement';
+import { PopupMode } from '../ui/PopupConfig';
 
 export enum BuildingId {
     Camp = 'camp',
@@ -59,6 +60,10 @@ export interface BuildingConfig {
     levels: BuildingLevelConfig[];
     /** Optional — when set, this building's BuildingZone isn't spawned at all (see PizzaScene.setupBuildingZone(), which registers it as a RequirementRegistry spawn gate) until MilestoneRequirement.ts's isMilestoneRequirementMet() says this is satisfied. Same shared requirement shape GateConfig.requirement/QueueConfig.appearRequirement use. undefined (the only case today — Camp is the very first building, nothing gates it) means "always appears." */
     appearRequirement?: MilestoneRequirement;
+    /** Requirements-panel style — see PopupConfig.ts's own doc. undefined behaves as 'complete' (this building's existing title + resource-row panel), unchanged from before this field existed. */
+    popupMode?: PopupMode;
+    /** How high above this building's own base the requirements panel floats — see PopupConfig.ts's own doc. undefined/0 sits it right at the building's base instead of floating. */
+    popupBobOffset?: number;
 }
 
 export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
