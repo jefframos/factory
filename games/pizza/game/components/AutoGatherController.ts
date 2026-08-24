@@ -42,7 +42,8 @@ import PlayerActionController from './PlayerActionController';
 import CharacterVisualComponent from './CharacterVisualComponent';
 import ResourceNode from '../player/ResourceNode';
 import { BackpackStorage } from '../data/BackpackStorage';
-import { RESOURCE_CONFIG } from '../actions/ResourceTypes';
+import { ResourceType } from '../actions/ResourceTypes';
+import { PROVIDER_CONFIG, rollProviderDrop } from '../actions/ProviderTypes';
 import { ACTION_CONFIG } from '../actions/ActionTypes';
 import { ItemStorage } from '../crafting/ItemStorage';
 import { ItemType } from '../crafting/ItemTypes';
@@ -95,7 +96,7 @@ export default class AutoGatherController extends Component {
             return;
         }
 
-        if (!ACTION_CONFIG[RESOURCE_CONFIG[node.resourceType].action].cancelOnLeaveRange) {
+        if (!ACTION_CONFIG[PROVIDER_CONFIG[node.providerType].action].cancelOnLeaveRange) {
             return;
         }
 
@@ -138,13 +139,13 @@ export default class AutoGatherController extends Component {
      * check existed would otherwise have silently let them chop it anyway.
      */
     private hasRequiredTool(node: ResourceNode): boolean {
-        const tool = ACTION_CONFIG[RESOURCE_CONFIG[node.resourceType].action].tool;
+        const tool = ACTION_CONFIG[PROVIDER_CONFIG[node.providerType].action].tool;
         return tool === undefined || ItemStorage.hasCount(tool as ItemType, 1);
     }
 
     private tryGather(node: ResourceNode): void {
         const actionController = this.entity.getComponent(PlayerActionController)!;
-        const config = RESOURCE_CONFIG[node.resourceType];
+        const config = PROVIDER_CONFIG[node.providerType];
 
         void actionController.onPlayActionAnimation(config.action, node, hits => this.onHitLanded(node, hits)).then(result => {
             if (result === 'completed') {
@@ -168,12 +169,47 @@ export default class AutoGatherController extends Component {
      * hits that don't finish it off. The chip-flying half no-ops if the FBX character (and
      * therefore the backpack cube) hasn't loaded yet, but the backpack still gets its
      * resources either way.
+     *
+     * The total unit count still comes from the provider's OWN config (amountPerGather *
+     * resourcePerHit * hits) — what actually gets CREDITED per unit is resolved by
+     * rollProviderDrop(), one roll per unit (see ProviderTypes.ts's own doc on why per-unit
+     * rather than per-hit), so a provider with only one drop-table entry still banks 100%
+     * that type exactly as before providers existed, while one with more than one entry
+     * (e.g. a stone deposit set up 90% stone / 10% pebble) converges to that split over a
+     * harvest instead of committing an entire swing to one outcome.
      */
     private onHitLanded(node: ResourceNode, hits: number): void {
-        const config = RESOURCE_CONFIG[node.resourceType];
+        const config = PROVIDER_CONFIG[node.providerType];
         const resourcePerHit = ACTION_CONFIG[config.action].resourcePerHit;
-        const added = BackpackStorage.add(node.resourceType, config.amountPerGather * resourcePerHit * hits);
-        console.log(`[gather] +${added} ${config.label}`);
+        const totalUnits = Math.round(config.amountPerGather * resourcePerHit * hits);
+
+        const creditedCounts = new Map<ResourceType, number>();
+        for (let i = 0; i < totalUnits; i++) {
+            const droppedType = rollProviderDrop(node.providerType);
+            creditedCounts.set(droppedType, (creditedCounts.get(droppedType) ?? 0) + 1);
+        }
+
+        // Track the single BIGGEST credited type/amount this hit — the floating gain popup
+        // shows one icon + one number (see ResourceNode.showResourceGainPopup()'s own doc), so
+        // for a provider with a weighted multi-resource drop table (e.g. a stone deposit's 90%
+        // stone / 10% pebble) the rare minority roll on an otherwise-majority hit just doesn't
+        // get its own popup — showing the majority type's real icon+amount is far better than
+        // showing an unrelated provider icon next to a number that might not even be for it.
+        let added = 0;
+        let topType: ResourceType | undefined;
+        let topAmount = 0;
+        for (const [droppedType, amount] of creditedCounts) {
+            added += BackpackStorage.add(droppedType, amount);
+            if (amount > topAmount) {
+                topType = droppedType;
+                topAmount = amount;
+            }
+        }
+        console.log(`[gather] +${added} from ${config.label}`);
+
+        if (topType !== undefined) {
+            node.showResourceGainPopup(topType, topAmount);
+        }
 
         const character = this.entity.getComponent(CharacterVisualComponent)?.character;
         const backpackWorldPosition = character?.getBackpackWorldPosition();

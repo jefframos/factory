@@ -26,6 +26,8 @@ let spawnerTileTypes = [];
 let dynamicResourceAreaFilter = 'all';
 /** The categorized model catalog from /api/models (see modelsCatalog.mjs) — `{ groups: [{ name, items: [{ key, id, path, fullPath, format }] }] }`. Fetched once at init/restart, same pattern as spawnerTileTypes: small enough to prefetch eagerly rather than lazy-load per field. */
 let modelsCatalog = { groups: [], error: null };
+/** Cache-busting query value appended to every /tiled-asset/ image URL (see makeTileSwatch()) — the browser would otherwise keep serving a stale grounds.png/resources.png from cache after someone repaints the spritesheet on disk, since the URL itself never changes. Bumped on every init() (page load / server restart) and by the Map tab's own "Refresh images" button, so a designer who just re-exported the PNG can see it without a hard reload. */
+let tileImageVersion = Date.now();
 
 const tabsEl = document.getElementById('tabs');
 const contentEl = document.getElementById('content');
@@ -40,6 +42,7 @@ async function fetchJson(url, opts) {
 }
 
 async function init() {
+    tileImageVersion = Date.now();
     manifest = await fetchJson('/api/manifest');
     allData = {};
     for (const entry of manifest) {
@@ -185,7 +188,6 @@ function updateStatus() {
 }
 
 async function persist(tabId) {
-    const status = document.getElementById('save-status');
     try {
         const result = await fetchJson(`/api/data/${tabId}`, {
             method: 'PUT',
@@ -197,7 +199,19 @@ async function persist(tabId) {
         // check is stale the moment any tab's ids could have changed, so drop it rather than
         // show a banner that no longer reflects what's actually on disk.
         mapValidation = null;
+        // Saving mapTiles regenerates grounds.png/resources.png server-side (see
+        // server.mjs's PUT handler) — bump the cache-busting version and rebuild the tab so the
+        // swatches actually show the new file instead of the browser's cached copy of the old
+        // one. Without this, "Save" looks like it did nothing until a manual "Refresh images"
+        // click or a hard reload. Must happen BEFORE re-reading #save-status below — rebuilding
+        // the tab tears down and recreates that element, so grabbing it any earlier would leave
+        // the status message written onto a detached, invisible node.
+        if (tabId === 'mapTiles') {
+            tileImageVersion = Date.now();
+            renderActiveTab();
+        }
         renderTabs();
+        const status = document.getElementById('save-status');
         if (status) {
             if (result.warning) {
                 status.className = 'status error';
@@ -214,6 +228,7 @@ async function persist(tabId) {
             }
         }
     } catch (err) {
+        const status = document.getElementById('save-status');
         if (status) {
             status.className = 'status error';
             status.textContent = `Save failed: ${err.message}`;
@@ -247,10 +262,15 @@ function renderActiveTab() {
     saveBtn.onclick = () => persist(activeId);
     left.appendChild(saveBtn);
 
-    const addBtn = document.createElement('button');
-    addBtn.textContent = manifestEntry.shape === 'array' ? '+ Add item' : '+ Add entry';
-    addBtn.onclick = onAddEntry;
-    left.appendChild(addBtn);
+    if (manifestEntry.shape !== 'mapTiles') {
+        // mapTiles has its own per-section "+ Add ground/resource tile" buttons (see
+        // renderMapTilesTab()) since it holds two independent lists, not one — a single
+        // toolbar-level "+ Add entry" wouldn't know which list to add to.
+        const addBtn = document.createElement('button');
+        addBtn.textContent = manifestEntry.shape === 'array' ? '+ Add item' : '+ Add entry';
+        addBtn.onclick = onAddEntry;
+        left.appendChild(addBtn);
+    }
 
     toolbar.appendChild(left);
     const status = document.createElement('span');
@@ -279,6 +299,11 @@ function renderActiveTab() {
 
     if (activeId === 'dynamicResourcePlacements') {
         renderDynamicResourcesByArea(data, schema);
+        return;
+    }
+
+    if (manifestEntry.shape === 'mapTiles') {
+        renderMapTilesTab(data);
         return;
     }
 
@@ -359,6 +384,128 @@ function renderDynamicResourcesByArea(data, schema) {
             contentEl.appendChild(renderEntryCard(data, index, value, schema, true, false, new Set(), entryLabel));
         }
     }
+}
+
+/**
+ * The Map tab — a lookup table of every tile registered in map/tiles.json, each row showing
+ * the actual sprite it crops from games/pizza/tiled/grounds.png or resources.png (served by
+ * server.mjs's /tiled-asset/ route) next to its editable name/color, so a designer can see what
+ * they're painting in Tiled without alt-tabbing to check a hex color against a filled square.
+ * Resources additionally get a "Provider" dropdown (sourced from the Providers tab) — this is
+ * the actual "which tile spawns which tree" assignment TileMapConfig.ts's
+ * buildResourceSpawnsFromTileMap() reads (see this tab's manifest sourceHint).
+ */
+function renderMapTilesTab(data) {
+    data.tileSize = data.tileSize ?? 32;
+
+    const sizeRow = fieldRow('Tile size (px)');
+    const sizeInput = document.createElement('input');
+    sizeInput.type = 'number';
+    sizeInput.value = data.tileSize;
+    sizeInput.oninput = () => {
+        data.tileSize = Number(sizeInput.value) || 32;
+        markDirty();
+        renderActiveTab();
+    };
+    sizeRow.control.appendChild(sizeInput);
+    const refreshBtn = document.createElement('button');
+    refreshBtn.className = 'small';
+    refreshBtn.textContent = '↻ Refresh images';
+    refreshBtn.title = 'Re-fetch grounds.png/resources.png from disk — use this after repainting a tile in the spritesheet itself';
+    refreshBtn.onclick = () => {
+        tileImageVersion = Date.now();
+        renderActiveTab();
+    };
+    sizeRow.control.appendChild(refreshBtn);
+    contentEl.appendChild(sizeRow.row);
+
+    const numbersRow = fieldRow('Bake tile numbers onto the exported images');
+    const numbersToggle = document.createElement('input');
+    numbersToggle.type = 'checkbox';
+    numbersToggle.checked = !!data.showTileNumbers;
+    numbersToggle.title = 'Regenerates grounds.png/resources.png with each tile\'s id printed on its square — save to apply';
+    numbersToggle.onchange = () => {
+        data.showTileNumbers = numbersToggle.checked;
+        markDirty();
+    };
+    numbersRow.control.appendChild(numbersToggle);
+    contentEl.appendChild(numbersRow.row);
+
+    contentEl.appendChild(sectionLabel('Grounds — base terrain painted on groundLayer'));
+    contentEl.appendChild(renderTileList(data.grounds, '/tiled-asset/grounds.png', data.tileSize, MAP_TILE_FIELDS.groundFields, 'ground tile'));
+
+    contentEl.appendChild(sectionLabel('Resources — gatherable tiles painted on resourcesLayer; assign a Provider to make one spawnable'));
+    contentEl.appendChild(renderTileList(data.resources, '/tiled-asset/resources.png', data.tileSize, MAP_TILE_FIELDS.resourceFields, 'resource tile'));
+}
+
+/** One tile array (grounds or resources) as a list of swatch + field rows, with its own add button — each array index IS the tile id (matched against a Tiled gid via firstgid offset, see TileMapConfig.ts), so rows are ordered, not keyed. */
+function renderTileList(tiles, sheetUrl, tileSize, fields, addLabel) {
+    const wrap = document.createElement('div');
+    wrap.className = 'tile-list';
+
+    tiles.forEach((tile, index) => {
+        const row = document.createElement('div');
+        row.className = 'tile-row';
+        row.appendChild(makeTileSwatch(sheetUrl, index, tileSize, tiles.length));
+
+        const fieldsCol = document.createElement('div');
+        fieldsCol.className = 'tile-row-fields';
+        renderFields(fieldsCol, tile, fields, markDirty);
+        row.appendChild(fieldsCol);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'danger small';
+        removeBtn.textContent = 'Remove';
+        removeBtn.onclick = () => {
+            if (!confirm(`Remove "${tile.name || `tile ${index}`}"? Any Tiled gid pointing at this index (or any index after it) will resolve to the wrong tile until the map is repainted.`)) return;
+            tiles.splice(index, 1);
+            markDirty();
+            renderActiveTab();
+        };
+        row.appendChild(removeBtn);
+
+        wrap.appendChild(row);
+    });
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'primary small';
+    addBtn.textContent = `+ Add ${addLabel}`;
+    addBtn.onclick = () => {
+        tiles.push({ name: '', color: '#ffffff' });
+        markDirty();
+        renderActiveTab();
+    };
+    wrap.appendChild(addBtn);
+
+    return wrap;
+}
+
+/**
+ * A cropped, scaled-up preview of one tile from a single-row spritesheet — background-size
+ * stretches the WHOLE sheet to `count` display-widths, then background-position shifts left by
+ * `index` display-widths, so only that one tile shows. Matches TileMapConfig.ts's own "index N ×
+ * tileSize px, single row" convention exactly (see its own doc). Carries a small id badge in the
+ * corner showing that same index — the array index IS the tile id resolveGroundDef()/
+ * resolveResourceDef() look up by by (gid - firstgid), so this is the number a designer needs to
+ * match against what's painted in Tiled, not just a decoration.
+ */
+function makeTileSwatch(sheetUrl, index, tileSize, count) {
+    const DISPLAY_SCALE = 2;
+    const displaySize = tileSize * DISPLAY_SCALE;
+    const wrap = document.createElement('span');
+    wrap.className = 'tile-swatch';
+    wrap.style.width = `${displaySize}px`;
+    wrap.style.height = `${displaySize}px`;
+    wrap.style.backgroundImage = `url(${sheetUrl}?v=${tileImageVersion})`;
+    wrap.style.backgroundSize = `${count * displaySize}px ${displaySize}px`;
+    wrap.style.backgroundPosition = `-${index * displaySize}px 0`;
+
+    const badge = document.createElement('span');
+    badge.className = 'tile-swatch-id';
+    badge.textContent = index;
+    wrap.appendChild(badge);
+
+    return wrap;
 }
 
 function sectionLabel(text) {

@@ -48,6 +48,26 @@
 
 const REQUIREMENT_FIELD = { key: null, type: 'requirement', label: 'Requirement' };
 
+/**
+ * Field rows for the Map tab's two tile lists (see app.js's renderMapTilesTab()) — not a
+ * normal ENTITY_SCHEMAS entry since mapTiles' data shape (`{tileSize, grounds[], resources[]}`)
+ * isn't a homogeneous record/array of same-shaped entries, so it gets its own bespoke renderer
+ * instead of the generic renderEntryCard()/renderActiveTab() path. `groundFields` has no
+ * provider picker — only a RESOURCE tile spawns a gatherable provider (see TileMapConfig.ts's
+ * RESOURCE_LAYER_NAME); a ground tile is just terrain.
+ */
+const MAP_TILE_FIELDS = {
+    groundFields: [
+        { key: 'name', type: 'text', label: 'Name' },
+        { key: 'color', type: 'text', label: 'Color' },
+    ],
+    resourceFields: [
+        { key: 'name', type: 'text', label: 'Name' },
+        { key: 'color', type: 'text', label: 'Color' },
+        { key: 'providerType', type: 'select', label: 'Provider', source: 'providers', optional: true },
+    ],
+};
+
 const ENTITY_SCHEMAS = {
     gates: [
         { key: 'name', type: 'text', label: 'Name' },
@@ -110,23 +130,48 @@ const ENTITY_SCHEMAS = {
             ],
         },
     ],
+    // A RESOURCE is the bankable item (Wood/Stone/Berries/Bark/Pebble/GrassFiber) — what
+    // actually PRODUCES one (a tree, a stone deposit, a berry bush) is a separate concern,
+    // see the `providers` tab below.
     resources: [
         { key: 'label', type: 'text', label: 'Label' },
         // icon/models/scale/rotationDeg are all stored in a DIFFERENT source file
         // (AssetLibraryRegistry.ts, not ResourceTypes.ts — see entityMap.mjs's
-        // `externalFields` doc) but edited right here so a brand-new resource's full spawn
-        // appearance can be set up in the same place it's created, instead of having to
-        // separately go add a matching entry on the Asset Library tab (which still exists,
-        // for the full add/remove/overview, and for entries with no matching ResourceType
-        // at all — e.g. "money").
+        // `externalFields` doc). For a loose ground-loot resource (bark/pebble/grassFiber —
+        // no provider at all) this IS its whole world appearance. For a provider-dispensed
+        // resource (wood/stone/berries) this happens to be the SAME entry the matching
+        // provider's own visual points at (see the Providers tab) — editing either writes
+        // the same place, on purpose.
+        { key: 'icon', type: 'icon', label: 'Icon', optional: true },
+        { key: 'models', type: 'modelList', label: 'Models' },
+        { key: 'scale', type: 'numberRange', label: 'Scale' },
+        { key: 'rotationDeg', type: 'numberRange', label: 'Rotation (deg)' },
+        { key: 'amountPerGather', type: 'number', label: 'Amount Per Gather (loose pickups only — a provider-dispensed resource uses the PROVIDER\'s own amountPerGather instead)' },
+    ],
+    // A PROVIDER is the world dispenser the player actually chops/mines/forages — action,
+    // life, respawn, and a WEIGHTED DROP TABLE of resources (see the Resources tab above).
+    providers: [
+        { key: 'label', type: 'text', label: 'Label' },
         { key: 'icon', type: 'icon', label: 'Icon', optional: true },
         { key: 'models', type: 'modelList', label: 'Models' },
         { key: 'scale', type: 'numberRange', label: 'Scale' },
         { key: 'rotationDeg', type: 'numberRange', label: 'Rotation (deg)' },
         { key: 'action', type: 'select', label: 'Action', source: 'actions' },
         { key: 'maxLife', type: 'number', label: 'Max Life' },
-        { key: 'amountPerGather', type: 'number', label: 'Amount Per Gather' },
+        { key: 'amountPerGather', type: 'number', label: 'Amount Per Gather (total units per harvest, before the drop table splits them up)' },
         { key: 'respawnSec', type: 'number', label: 'Respawn (sec)' },
+        // Weighted yield table — a single 100%-weight entry is the normal case (a tree only
+        // ever gives wood). Weights are RELATIVE, not required to sum to 100 — a 9/1 split
+        // reads the same as 90/10. e.g. a "stone" deposit dropping 90% stone / 10% pebble:
+        // two rows, {resource: stone, weight: 90} and {resource: pebble, weight: 10}.
+        {
+            key: 'drops', type: 'list', label: 'Drop Table',
+            itemLabel: item => `${item.resourceType ?? '(unset)'} × ${item.weight ?? '?'}`,
+            fields: [
+                { key: 'resourceType', type: 'select', label: 'Resource', source: 'resources' },
+                { key: 'weight', type: 'number', label: 'Weight' },
+            ],
+        },
     ],
     dynamicResourcePlacements: [
         { key: 'resourceType', type: 'select', label: 'Resource', source: 'resources' },

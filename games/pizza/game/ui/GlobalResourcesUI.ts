@@ -28,7 +28,7 @@ import { FrameName } from './FrameRegistry';
 import { TextStyleRegistry } from './TextStyleRegistry';
 import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { ResourceType } from '../actions/ResourceTypes';
-import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
+import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
 
@@ -147,7 +147,7 @@ export default class GlobalResourcesUI extends PIXI.Container {
         const container = new PIXI.Container();
         this.addChild(container);
 
-        const icon = new PIXI.Sprite(getAssetIcon(RESOURCE_ASSET_KEYS[type]));
+        const icon = new PIXI.Sprite(getAssetIcon(resolveResourceAssetKey(type)));
         icon.anchor.set(0, 0.5);
         icon.position.set(0, rowHeight / 2);
         const iconBaseScale = ViewUtils.elementScaler(icon, rowHeight - ICON_PADDING * 2);

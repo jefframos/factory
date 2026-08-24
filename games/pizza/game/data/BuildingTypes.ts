@@ -63,25 +63,46 @@ export interface BuildingConfig {
 
 export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
     [BuildingId.Camp]: {
-        name: 'Camp',
+        name: "Camp",
         baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
         levels: [
             {
                 level: 1,
-                requirements: { [ResourceType.Tree]: 5 },
-                effect: { type: 'backpackCapacity', value: 5, description: '+5 backpack capacity' },
+                requirements: {
+                    "wood": 5
+                },
+                effect: {
+                    "type": "backpackCapacity",
+                    "value": 5,
+                    "description": "+5 backpack capacity"
+                },
                 mesh: { size: [1.4, 1.2, 1.4], color: 0x996633 },
             },
             {
                 level: 2,
-                requirements: { [ResourceType.Tree]: 8, [ResourceType.Stone]: 5 },
-                effect: { type: 'backpackCapacity', value: 10, description: '+10 backpack capacity' },
+                requirements: {
+                    "wood": 8,
+                    "stone": 5
+                },
+                effect: {
+                    "type": "backpackCapacity",
+                    "value": 10,
+                    "description": "+10 backpack capacity"
+                },
                 mesh: { size: [1.8, 1.8, 1.8], color: 0xcc8844 },
             },
             {
                 level: 3,
-                requirements: { [ResourceType.Tree]: 12, [ResourceType.Stone]: 10, [ResourceType.Berries]: 6 },
-                effect: { type: 'gatherSpeed', value: 0.2, description: '+20% gather speed' },
+                requirements: {
+                    "wood": 12,
+                    "stone": 10,
+                    "berries": 6
+                },
+                effect: {
+                    "type": "gatherSpeed",
+                    "value": 0.2,
+                    "description": "+20% gather speed"
+                },
                 mesh: { size: [2.2, 2.6, 2.2], color: 0xffcc55 },
             },
         ],

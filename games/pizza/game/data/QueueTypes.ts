@@ -47,12 +47,24 @@ export interface QueueConfig {
 
 /** Applied to every discovered queue unless QUEUE_CONFIG_BY_ID has an override for its id — see this file's own doc. */
 export const DEFAULT_QUEUE_CONFIG: QueueConfig = {
-    cooldownSec: 30,
-    possibleTasks: [
-        { resourceType: ResourceType.Tree, amount: 10, rewardAmount: 25 },
-        { resourceType: ResourceType.Stone, amount: 8, rewardAmount: 30 },
-        { resourceType: ResourceType.Berries, amount: 15, rewardAmount: 20 },
-    ],
+    "cooldownSec": 30,
+    "possibleTasks": [
+        {
+            "resourceType": ResourceType.Wood,
+            "amount": 10,
+            "rewardAmount": 25
+        },
+        {
+            "resourceType": ResourceType.Stone,
+            "amount": 8,
+            "rewardAmount": 30
+        },
+        {
+            "resourceType": ResourceType.Berries,
+            "amount": 15,
+            "rewardAmount": 20
+        }
+    ]
 };
 
 /** Per-queue-id overrides — e.g. QUEUE_CONFIG_BY_ID['queue1'] = { cooldownSec: 10, possibleTasks: [...] } for a queue that should behave differently from every other one. */
@@ -61,7 +73,28 @@ export const QUEUE_CONFIG_BY_ID: Partial<Record<string, QueueConfig>> = {
     // appearRequirement's own doc. Everything else (cooldown, tasks) stays the default.
     queue1: {
         ...DEFAULT_QUEUE_CONFIG,
-        appearRequirement: { type: 'item', item: ItemType.Pickaxe },
+        appearRequirement: {
+            "type": "item",
+            "item": ItemType.Pickaxe
+        },
+        "cooldownSec": 30,
+        "possibleTasks": [
+            {
+                "resourceType": ResourceType.Wood,
+                "amount": 10,
+                "rewardAmount": 25
+            },
+            {
+                "resourceType": ResourceType.Stone,
+                "amount": 8,
+                "rewardAmount": 30
+            },
+            {
+                "resourceType": ResourceType.Berries,
+                "amount": 15,
+                "rewardAmount": 20
+            }
+        ]
     },
 };
 

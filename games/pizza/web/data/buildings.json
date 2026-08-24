@@ -4,17 +4,17 @@
         "levels": [
             {
                 "level": 1,
-                "requirements": { "tree": 5 },
+                "requirements": { "wood": 5 },
                 "effect": { "type": "backpackCapacity", "value": 5, "description": "+5 backpack capacity" }
             },
             {
                 "level": 2,
-                "requirements": { "tree": 8, "stone": 5 },
+                "requirements": { "wood": 8, "stone": 5 },
                 "effect": { "type": "backpackCapacity", "value": 10, "description": "+10 backpack capacity" }
             },
             {
                 "level": 3,
-                "requirements": { "tree": 12, "stone": 10, "berries": 6 },
+                "requirements": { "wood": 12, "stone": 10, "berries": 6 },
                 "effect": { "type": "gatherSpeed", "value": 0.2, "description": "+20% gather speed" }
             }
         ]

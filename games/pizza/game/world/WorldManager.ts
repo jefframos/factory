@@ -28,7 +28,7 @@ import World from '../ecs/World';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
 import ResourceNode from '../player/ResourceNode';
-import { RESOURCE_CONFIG } from '../actions/ResourceTypes';
+import { PROVIDER_CONFIG } from '../actions/ProviderTypes';
 import {
     FLOOR_SIZE, GROUND_HALF_THICKNESS,
     ResourceSpawnDef
@@ -72,7 +72,7 @@ export default class WorldManager {
         spawns: ResourceSpawnDef[] = buildResourceSpawnsFromTileMap(tileMapAliases.map, tileMapAliases.tiles),
     ) {
         for (const def of spawns) {
-            this.records.set(def.id, { def, life: RESOURCE_CONFIG[def.resourceType].maxLife });
+            this.records.set(def.id, { def, life: PROVIDER_CONFIG[def.providerType].maxLife });
         }
         this.tileMap = new TileMap(threeScene, tileMapAliases.map, tileMapAliases.tiles);
         this.islandMeshBuilder = new IslandMeshBuilder(threeScene);
@@ -147,7 +147,7 @@ export default class WorldManager {
                 record.respawnRemainingSec -= delta;
                 if (record.respawnRemainingSec <= 0) {
                     record.respawnRemainingSec = undefined;
-                    record.life = RESOURCE_CONFIG[record.def.resourceType].maxLife;
+                    record.life = PROVIDER_CONFIG[record.def.providerType].maxLife;
                 }
             }
 
@@ -170,7 +170,7 @@ export default class WorldManager {
     }
 
     private materialize(record: ResourceRecord): void {
-        const node = new ResourceNode(record.def.resourceType, record.def.position, record.life, record.respawnRemainingSec, this.screenHost);
+        const node = new ResourceNode(record.def.providerType, record.def.position, record.life, record.respawnRemainingSec, this.screenHost);
         this.world.add(node);
         this.threeScene.add(node.transform);
         record.node = node;

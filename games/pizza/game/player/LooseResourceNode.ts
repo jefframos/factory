@@ -32,7 +32,7 @@ import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnc
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
-import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
+import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { ASSET_LIBRARY, AssetLibraryEntry, getAssetIcon, pickRandom, resolveRange } from '../world/AssetLibraryRegistry';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 import ViewUtils from 'core/utils/ViewUtils';
@@ -91,8 +91,14 @@ export default class LooseResourceNode extends Entity {
             centerOffset: new THREE.Vector3(0, TRIGGER_HALF_EXTENTS.y, 0),
         }));
 
-        const visualConfig: AssetLibraryEntry = ASSET_LIBRARY[RESOURCE_ASSET_KEYS[this.resourceType]];
-        this.visual = visualConfig.models.length > 0
+        // Can be undefined for a resource type added but never saved through the Resources
+        // tab — see ResourceRegistry.ts's own doc — fall back to the placeholder box instead
+        // of crashing, same as the "no models yet" case just below.
+        const visualConfig: AssetLibraryEntry | undefined = ASSET_LIBRARY[resolveResourceAssetKey(this.resourceType)];
+        if (!visualConfig) {
+            console.warn(`[LooseResourceNode] no AssetLibraryRegistry entry for resource "${this.resourceType}" yet — falling back to a placeholder box. Open the Resources tab and save this resource once (its icon/models fields) to create one.`);
+        }
+        this.visual = visualConfig && visualConfig.models.length > 0
             ? this.addComponent(new GlbVisualComponent(
                 pickRandom(visualConfig.models),
                 new THREE.Vector3(),
@@ -156,13 +162,13 @@ export default class LooseResourceNode extends Entity {
         this.world?.remove(this);
     }
 
-    /** Trimmed-down version of ResourceNode.showGainPopup() — no hit-shake (there's no hit), no resourcePerHit multiplier (no action config to read one from here), just the flat amountPerGather this pickup actually banked. */
+    /** Trimmed-down version of ResourceNode.showResourceGainPopup() — no hit-shake (there's no hit), no resourcePerHit multiplier (no action config to read one from here), just the flat amountPerGather this pickup actually banked. */
     private showGainPopup(amount: number): void {
         if (!this.world || !this.screenHost) {
             return;
         }
 
-        const icon = new PIXI.Sprite(getAssetIcon(RESOURCE_ASSET_KEYS[this.resourceType]));
+        const icon = new PIXI.Sprite(getAssetIcon(resolveResourceAssetKey(this.resourceType)));
         icon.anchor.set(0, 0.5);
         icon.scale.set(ViewUtils.elementScaler(icon, GAIN_POPUP_ICON_SIZE));
 

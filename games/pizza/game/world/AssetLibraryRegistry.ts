@@ -3,7 +3,7 @@
 // Central catalog of spawnable visual assets — trees, rocks, and anything
 // else that gets scattered around the world — keyed by a plain string id
 // rather than tied to any one gameplay concept. ResourceRegistry.ts maps a
-// gameplay ResourceType to an entry here (see RESOURCE_ASSET_KEYS); a future
+// gameplay ResourceType to an entry here (see resolveResourceAssetKey()); a future
 // purely-decorative prop scatterer (bushes, debris — nothing gatherable)
 // could just as well pick straight from ASSET_LIBRARY without ever touching
 // ResourceType.
@@ -67,48 +67,78 @@ export function pickRandom<T>(items: readonly T[]): T {
 export const ASSET_LIBRARY = {
     tree: {
         models: [MODELS.Props.Tree, MODELS.Props.TreeHigh],
-        scale: [1.85, 2.15],
-        rotationDeg: [0, 360],
-        icon: 'wood-log'
+        scale: [
+            1.85,
+            2.15
+        ],
+        rotationDeg: [
+            0,
+            360
+        ],
+        icon: "wood-log"
     },
     stone: {
         // No stone model yet — add one here whenever real art exists; nothing else needs to change.
         models: [MODELS.Props.RocksHigh, MODELS.Props.RocksLow],
         scale: 1,
-        rotationDeg: [0, 360],
-        icon: 'stone-chunk'
+        rotationDeg: [
+            0,
+            360
+        ],
+        icon: "stone-chunk"
     },
     berries: {
         // No berry-bush model yet — add one here whenever real art exists; nothing else needs to change.
         models: [],
         scale: 1,
-        rotationDeg: [0, 360],
-        icon: 'wild-berries'
+        rotationDeg: [
+            0,
+            360
+        ],
+        icon: "wild-berries"
     },
     bark: {
         // Two variants — one is picked at random per spawn (see pickRandom()) so identical logs
         // scattered near each other don't all look the same.
         models: [MODELS.Resources.WoodLogA, MODELS.Resources.WoodLogB],
-        scale: [0.8, 1.1],
-        rotationDeg: [0, 360],
-        icon: 'tree-bark',
+        scale: [
+            0.8,
+            1.1
+        ],
+        rotationDeg: [
+            0,
+            360
+        ],
+        icon: "tree-bark",
     },
     pebble: {
         // Reusing the small stone-chunks model as a stand-in until a dedicated pebble model
         // exists — nothing else needs to change once one does, just swap this list.
         models: [MODELS.Resources.StoneChunksSmall],
-        scale: [0.5, 0.8],
-        rotationDeg: [0, 360],
-        icon: 'sharpening-stone',
+        scale: [
+            0.5,
+            0.8
+        ],
+        rotationDeg: [
+            0,
+            360
+        ],
+        icon: "sharpening-stone",
     },
     grassFiber: {
         // Two variants — one is picked at random per spawn (see pickRandom()); both bank the
         // same flat amountPerGather regardless of which got picked (see ResourceTypes.ts's own
         // doc on ResourceType.GrassFiber).
         models: [MODELS.Pirate.GrassPlant, MODELS.Pirate.Grass],
-        scale: [0.8, 1.2],
-        rotationDeg: [0, 360],
-        icon: 'plant-fiber',
+        scale: [
+            0.8,
+            1.2
+        ],
+        rotationDeg: [
+            0,
+            360
+        ],
+        icon: "plant-fiber",
     },
     money: {
         // No 3D presence at all — money is a currency, never a gatherable world prop.
@@ -117,6 +147,47 @@ export const ASSET_LIBRARY = {
         rotationDeg: 0,
         icon: 'ItemIcon_Money_Bill-2',
     },
+    /**
+     * The berry bush PROVIDER's own world appearance (see ProviderTypes.ts/
+     * ProviderRegistry.ts's resolveProviderAssetKey()) — deliberately a SEPARATE entry from
+     * `berries` above, which is the berries ITEM's own icon (see ResourceRegistry.ts's
+     * resolveResourceAssetKey()). The bush and the thing it drops are different concepts now;
+     * before ProviderTypes.ts existed they shared one conflated entry.
+     */
+    berryBush: {
+        // No berry-bush model yet — add one here whenever real art exists.
+        models: [],
+        scale: 1,
+        rotationDeg: [
+            0,
+            360
+        ],
+        icon: "wild-berries",
+    },
+    "wood": {
+        models: [MODELS.Props.Tree, MODELS.Props.TreeHigh],
+        scale: [
+            1.85,
+            2.15
+        ],
+        rotationDeg: [
+            0,
+            360
+        ],
+        "icon": "wood-log"
+    },
+    "palm": {
+        scale: [
+            1,
+            1
+        ],
+        rotationDeg: [
+            0,
+            360
+        ],
+        icon: "tree-bark",
+        "models": [MODELS.Pirate.PalmBend, MODELS.Pirate.PalmStraight]
+    }
 } satisfies Record<string, AssetLibraryEntry>;
 
 export type AssetLibraryKey = keyof typeof ASSET_LIBRARY;

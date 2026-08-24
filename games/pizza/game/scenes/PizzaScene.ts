@@ -67,7 +67,8 @@ import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { BuildingStorage } from '../data/BuildingStorage';
 import { BUILDING_CONFIG, BuildingId } from '../data/BuildingTypes';
-import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
+import { ResourceType } from '../actions/ResourceTypes';
+import { PROVIDER_CONFIG } from '../actions/ProviderTypes';
 import { ACTION_CONFIG } from '../actions/ActionTypes';
 import { getToolIcon } from '../actions/ToolRegistry';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
@@ -495,14 +496,15 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // one swing counts as — capped by a target's remaining life), and yieldPerHit
         // (amountPerGather * resourcePerHit — the uncapped per-hit yield multiplier). .listen()
         // (see DevGuiManager.addReadout()) keeps these live as ShopUpgradeStorage upgrades
-        // land, no manual refresh wiring needed. Matched to the same RESOURCE_CONFIG entry
-        // whose `action` equals this shop's action, since that's what amountPerGather lives on.
+        // land, no manual refresh wiring needed. Matched to the PROVIDER_CONFIG entry whose
+        // `action` equals this shop's action, since that's what amountPerGather lives on now
+        // (see ProviderTypes.ts — moved off ResourceConfig when providers split out).
         for (const config of Object.values(SHOP_CONFIG_BY_ID)) {
             if (!config) {
                 continue;
             }
-            const resourceConfig = Object.values(RESOURCE_CONFIG).find(r => r.action === config.action);
-            if (!resourceConfig) {
+            const providerConfig = Object.values(PROVIDER_CONFIG).find(p => p.action === config.action);
+            if (!providerConfig) {
                 continue;
             }
             const toolStats = {
@@ -513,7 +515,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     return ACTION_CONFIG[config.action].hitScale;
                 },
                 get yieldPerHit(): number {
-                    return resourceConfig.amountPerGather * ACTION_CONFIG[config.action].resourcePerHit;
+                    return providerConfig.amountPerGather * ACTION_CONFIG[config.action].resourcePerHit;
                 },
             };
             const folderName = config.tool.charAt(0).toUpperCase() + config.tool.slice(1);

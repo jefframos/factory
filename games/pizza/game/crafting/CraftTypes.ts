@@ -72,7 +72,7 @@ export const CRAFT_CONFIG_BY_ID: Partial<Record<string, CraftTableConfig>> = {
                     "amount": 1
                 },
                 "cost": {
-                    "tree": 5
+                    "wood": 5
                 }
             }
         ],

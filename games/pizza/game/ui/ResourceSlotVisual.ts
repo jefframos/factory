@@ -14,7 +14,7 @@
 
 import * as PIXI from 'pixi.js';
 import { ResourceType } from '../actions/ResourceTypes';
-import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
+import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { TextStyleRegistry } from './TextStyleRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
@@ -47,7 +47,7 @@ export function createResourceSlot(type: ResourceType, size: number, labelText: 
     background.height = size;
     container.addChild(background);
 
-    const icon = new PIXI.Sprite(getAssetIcon(RESOURCE_ASSET_KEYS[type]));
+    const icon = new PIXI.Sprite(getAssetIcon(resolveResourceAssetKey(type)));
     icon.anchor.set(0.5);
     icon.position.set(size / 2, size / 2);
     icon.scale.set(ViewUtils.elementScaler(icon, size - ICON_PADDING * 2));

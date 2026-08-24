@@ -52,7 +52,7 @@ import { CraftStorage } from './CraftStorage';
 import { CraftRecipeDef, CraftTableConfig, getCraftConfig } from './CraftTypes';
 import { getItemIcon, ITEM_CONFIG } from './ItemTypes';
 import { ResourceType } from '../actions/ResourceTypes';
-import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
+import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { createResourceSlot } from '../ui/ResourceSlotVisual';
@@ -322,7 +322,7 @@ export default class CraftZone extends Entity {
         }
         this.draining.add(type);
 
-        const icon = getAssetIcon(RESOURCE_ASSET_KEYS[type]);
+        const icon = getAssetIcon(resolveResourceAssetKey(type));
         const toWorld = new THREE.Vector3();
 
         const step = (): void => {

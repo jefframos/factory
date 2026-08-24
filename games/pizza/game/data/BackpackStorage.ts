@@ -43,7 +43,7 @@ export class BackpackStorage {
      * Drops any persisted key that isn't a CURRENT ResourceType — a save written before a
      * ResourceType gets renamed/removed (e.g. WoodLog -> Bark) would otherwise load that old
      * string in as if it were still valid, and every later reader (BackpackUI, RESOURCE_CONFIG
-     * lookups, RESOURCE_ASSET_KEYS/ASSET_LIBRARY) assumes every key here IS one of the current
+     * lookups, resolveResourceAssetKey()/ASSET_LIBRARY) assumes every key here IS one of the current
      * enum's values — one stale key was enough to crash BackpackUI's very first render (see
      * getAssetIcon()'s own doc), taking the whole scene build down with it.
      */

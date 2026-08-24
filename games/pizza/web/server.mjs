@@ -19,11 +19,12 @@ import fsSync from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { exec, spawn } from 'node:child_process';
+import { exec, execSync, spawn } from 'node:child_process';
 import { syncToSource } from './sync/syncToSource.mjs';
 import { validateMap } from './sync/validateMap.mjs';
 import { scanImageAssets } from './sync/imageAssets.mjs';
 import { readSpawnerTileTypes } from './sync/tiledMap.mjs';
+import { generateTilesetImage, GROUND_NUMBER_STYLE, RESOURCE_NUMBER_STYLE } from './sync/tilesetImage.mjs';
 import { readModelsCatalog } from './sync/modelsCatalog.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -33,6 +34,9 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const IMAGES_ROOT = path.join(__dirname, '..', 'raw-assets', 'images');
 const MAP_FILE = path.join(__dirname, '..', 'raw-assets', 'json', 'map', 'testMap1.json');
 const TILES_FILE = path.join(__dirname, '..', 'raw-assets', 'json', 'map', 'tiles.json');
+const TILED_DIR = path.join(__dirname, '..', 'tiled');
+/** The two tileset spritesheets the Map tab crops swatches from — see readTileImage() below; an allowlist (not a path-traversal guard) since these are the only two images that tab ever asks for. */
+const TILED_IMAGE_FILES = new Set(['grounds.png', 'resources.png']);
 const MODELS_REGISTRY_FILE = path.join(__dirname, '..', 'registry', 'assetsRegistry', 'modelsRegistry.ts');
 const PORT = process.env.EDITOR_PORT ? Number(process.env.EDITOR_PORT) : 4600;
 
@@ -150,6 +154,24 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    if (url.pathname.startsWith('/tiled-asset/') && req.method === 'GET') {
+        const name = decodeURIComponent(url.pathname.slice('/tiled-asset/'.length));
+        if (!TILED_IMAGE_FILES.has(name)) {
+            res.writeHead(404);
+            res.end();
+            return;
+        }
+        try {
+            const content = await fs.readFile(path.join(TILED_DIR, name));
+            res.writeHead(200, { 'Content-Type': 'image/png' });
+            res.end(content);
+        } catch {
+            res.writeHead(404);
+            res.end();
+        }
+        return;
+    }
+
     if (url.pathname === '/api/models' && req.method === 'GET') {
         return sendJson(res, 200, readModelsCatalog(MODELS_REGISTRY_FILE));
     }
@@ -192,6 +214,25 @@ const server = http.createServer(async (req, res) => {
                 // actually submitted matters even if the source-file patch below fails.
                 await fs.writeFile(filePath, JSON.stringify(body, null, 4) + '\n', 'utf-8');
 
+                // mapTiles has no TS source for syncToSource to patch — its real runtime
+                // source of truth is map/tiles.json itself (read straight as JSON by
+                // TileMapConfig.ts at runtime, via PIXI.Assets), so a save writes there
+                // directly instead of going through the AST-patch path below.
+                if (id === 'mapTiles') {
+                    await fs.writeFile(TILES_FILE, JSON.stringify(body, null, 4) + '\n', 'utf-8');
+                    // The Tiled spritesheets are DERIVED from tiles.json's own `color` fields
+                    // (see tilesetImage.mjs's own doc) — regenerate both every save so a color
+                    // edit (or a `showTileNumbers` toggle) actually shows up when painting the
+                    // map in Tiled, not just in the flat-quad in-game renderer.
+                    const tileSize = body.tileSize ?? 32;
+                    const showNumbers = !!body.showTileNumbers;
+                    await Promise.all([
+                        fs.writeFile(path.join(TILED_DIR, 'grounds.png'), generateTilesetImage(body.grounds ?? [], tileSize, { showNumbers, numberStyle: GROUND_NUMBER_STYLE })),
+                        fs.writeFile(path.join(TILED_DIR, 'resources.png'), generateTilesetImage(body.resources ?? [], tileSize, { showNumbers, numberStyle: RESOURCE_NUMBER_STYLE })),
+                    ]);
+                    return sendJson(res, 200, { ok: true, syncedToSource: true });
+                }
+
                 let sourceSync;
                 try {
                     sourceSync = await syncToSource(id, body);
@@ -223,6 +264,54 @@ const server = http.createServer(async (req, res) => {
 });
 
 /**
+ * `npm run editor` re-run while a previous instance is still bound to PORT (e.g. after this
+ * process's terminal was closed instead of Ctrl+C'd, or a crash left it orphaned) used to just
+ * sit there retrying EADDRINUSE — meaning that old, possibly stale-code process kept serving
+ * every request instead of the fresh one you just started (exactly what caused the Map tab's
+ * "why didn't my color/image change" bug — the code that fixed it wasn't the code running).
+ * Killing whatever already holds PORT before this process's own listenWithRetry() runs means a
+ * plain re-run of `npm run editor` is always guaranteed to end up on the code on disk right now,
+ * with no separate "restart" step required. Best-effort: if nothing's listening (the normal
+ * case), the lookup command exits non-zero and this is a silent no-op.
+ */
+function killStaleServerOnPort(port) {
+    try {
+        if (process.platform === 'win32') {
+            const output = execSync(`netstat -ano -p tcp | findstr :${port}`, { encoding: 'utf-8' });
+            const pids = new Set(
+                output
+                    .split('\n')
+                    .map(line => line.trim().match(/(\d+)$/)?.[1])
+                    .filter(Boolean),
+            );
+            for (const pid of pids) {
+                if (pid === String(process.pid)) continue;
+                try {
+                    execSync(`taskkill /PID ${pid} /F`, { stdio: 'ignore' });
+                    console.log(`[pizza-editor] killed stale editor process ${pid} still holding port ${port}`);
+                } catch {
+                    // Already gone by the time we got here, or not ours to kill — either way, not fatal.
+                }
+            }
+        } else {
+            const output = execSync(`lsof -ti:${port}`, { encoding: 'utf-8' });
+            for (const pid of output.split('\n').map(s => s.trim()).filter(Boolean)) {
+                if (pid === String(process.pid)) continue;
+                try {
+                    execSync(`kill -9 ${pid}`, { stdio: 'ignore' });
+                    console.log(`[pizza-editor] killed stale editor process ${pid} still holding port ${port}`);
+                } catch {
+                    // Same as above — a race with the process exiting on its own isn't an error.
+                }
+            }
+        }
+    } catch {
+        // netstat/findstr (or lsof) exits non-zero when nothing matches the port — the common
+        // case of "nothing stale to clean up," not a failure worth logging.
+    }
+}
+
+/**
  * A respawned child (see restartServer() below) starts trying to bind before
  * the old process has necessarily released the port yet — retries EADDRINUSE
  * for a few seconds instead of dying immediately, since "the old one hasn't
@@ -250,6 +339,7 @@ function listenWithRetry(attemptsLeft = 20) {
     });
 }
 
+killStaleServerOnPort(PORT);
 listenWithRetry();
 
 /** Best-effort auto-open — a dev convenience, so a failure here (e.g. no GUI/headless CI box) should never crash the server, just skip opening. */

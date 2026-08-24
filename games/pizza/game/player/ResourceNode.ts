@@ -1,16 +1,18 @@
 // ResourceNode.ts
 //
-// A gatherable resource — a tree (real glb prop, see MODELS.Props.Tree) or a
-// stone (cube placeholder until real art exists), see ResourceTypes.ts for
-// the actual per-type numbers/color. Same "dedicated Entity subclass
-// self-configures in awake()" pattern as
-// MainPlayer: `world.add(new ResourceNode(ResourceType.Tree, position))` is
-// the entire setup — trigger RigidBody (Layers.Resource — see
-// AutoGatherController, which listens for it) sized as the gather radius,
-// an optional SOLID RigidBody (Layers.Environment) sized by
-// ResourceConfig.solidRadius that actually blocks the player from walking
-// through (0 = none — Berries stay walk-over-able while Tree/Stone don't),
-// plus the placeholder visual.
+// A gatherable resource PROVIDER — a tree (real glb prop, see
+// MODELS.Props.Tree) or a stone deposit (cube placeholder until real art
+// exists), see ProviderTypes.ts for the actual per-provider numbers/color/
+// drop table (what a provider actually YIELDS is a separate concern from
+// what kind of node it is — see that file's own doc). Same "dedicated
+// Entity subclass self-configures in awake()" pattern as MainPlayer:
+// `world.add(new ResourceNode(ProviderType.Tree, position))` is the entire
+// setup — trigger RigidBody (Layers.Resource — see AutoGatherController,
+// which listens for it) sized as the gather radius, an optional SOLID
+// RigidBody (Layers.Environment) sized by ProviderConfig.solidRadius that
+// actually blocks the player from walking through (0 = none — a berry bush
+// stays walk-over-able while a tree/stone deposit doesn't), plus the
+// placeholder visual.
 //
 // Implements ActionTarget (see PlayerActionController): the node holds
 // `life` and applyHit() chips it down one swing at a time. It does NOT run
@@ -38,9 +40,10 @@ import GlbVisualComponent from '../components/GlbVisualComponent';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import { ActionTarget } from '../components/PlayerActionController';
-import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
-import { ACTION_CONFIG } from '../actions/ActionTypes';
-import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
+import { PROVIDER_CONFIG, ProviderType } from '../actions/ProviderTypes';
+import { ResourceType } from '../actions/ResourceTypes';
+import { resolveProviderAssetKey } from '../actions/ProviderRegistry';
+import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { ASSET_LIBRARY, AssetLibraryEntry, getAssetIcon, pickRandom, resolveRange } from '../world/AssetLibraryRegistry';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 import ViewUtils from 'core/utils/ViewUtils';
@@ -61,7 +64,7 @@ const GAIN_POPUP_ICON_SIZE = 28;
 const GAIN_POPUP_ICON_GAP = 4;
 
 export default class ResourceNode extends Entity implements ActionTarget {
-    public readonly resourceType: ResourceType;
+    public readonly providerType: ProviderType;
 
     private rigidBody!: RigidBody;
     /** Solid, non-trigger collider blocking the player from walking through — only created when ResourceConfig.solidRadius > 0 (see awake()). undefined for walk-over resources like Berries. */
@@ -80,14 +83,14 @@ export default class ResourceNode extends Entity implements ActionTarget {
      * respawning) instead of always popping back in full-life — see WorldManager.ts.
      */
     public constructor(
-        resourceType: ResourceType,
+        providerType: ProviderType,
         position: THREE.Vector3,
-        initialLife: number = RESOURCE_CONFIG[resourceType].maxLife,
+        initialLife: number = PROVIDER_CONFIG[providerType].maxLife,
         initialRespawnRemainingSec?: number,
         screenHost?: ScreenAnchorHost,
     ) {
         super();
-        this.resourceType = resourceType;
+        this.providerType = providerType;
         this.life = initialLife;
         this.respawnRemainingSec = initialRespawnRemainingSec;
         this.screenHost = screenHost;
@@ -114,13 +117,21 @@ export default class ResourceNode extends Entity implements ActionTarget {
             centerOffset: new THREE.Vector3(0, TRIGGER_HALF_EXTENTS.y, 0),
         }));
 
-        const config = RESOURCE_CONFIG[this.resourceType];
+        const config = PROVIDER_CONFIG[this.providerType];
         // Explicitly widened to AssetLibraryEntry — indexing ASSET_LIBRARY with a plain
         // AssetLibraryKey union otherwise infers the narrow PER-ENTRY literal union (each
         // entry's own `models` tuple keeps its own literal element type, from `satisfies
         // Record<...>` — see AssetLibraryRegistry.ts's own doc), which pickRandom() below
         // can't take a `readonly T[]` of once more than one shape of models array exists.
-        const visualConfig: AssetLibraryEntry = ASSET_LIBRARY[RESOURCE_ASSET_KEYS[this.resourceType]];
+        //
+        // Can still be undefined for a provider that was added but never saved through the
+        // Providers tab (its matching AssetLibraryRegistry entry is only created on that
+        // save — see ProviderRegistry.ts's own doc) — fall back to the placeholder box
+        // instead of crashing, same as the "no models yet" case just below.
+        const visualConfig: AssetLibraryEntry | undefined = ASSET_LIBRARY[resolveProviderAssetKey(this.providerType)];
+        if (!visualConfig) {
+            console.warn(`[ResourceNode] no AssetLibraryRegistry entry for provider "${this.providerType}" yet — falling back to a placeholder box. Open the Providers tab and save this provider once (its icon/models fields) to create one.`);
+        }
 
         if (config.solidRadius > 0) {
             const solidHalfExtents = new THREE.Vector3(config.solidRadius, config.solidRadius, config.solidRadius);
@@ -134,7 +145,7 @@ export default class ResourceNode extends Entity implements ActionTarget {
 
         // See AssetLibraryRegistry.ts — an empty models list (no glb yet for this asset)
         // falls back to the old flat-colored box placeholder instead.
-        this.visual = visualConfig.models.length > 0
+        this.visual = visualConfig && visualConfig.models.length > 0
             ? this.addComponent(new GlbVisualComponent(
                 pickRandom(visualConfig.models),
                 new THREE.Vector3(),
@@ -235,12 +246,12 @@ export default class ResourceNode extends Entity implements ActionTarget {
             return false;
         }
 
-        this.deplete(RESOURCE_CONFIG[this.resourceType].respawnSec);
+        this.deplete(PROVIDER_CONFIG[this.providerType].respawnSec);
         return true;
     }
 
-    /** Called when a hit lands on this resource — shake the visual and show the gain popup. Skips the visual feedback (but the hit itself still counts, see applyHit()) if a Tree's glb model hasn't finished loading yet — see GlbVisualComponent's own doc. */
-    public onHit(hitData?: { hits: number }): void {
+    /** Called when a hit lands on this resource — just the shake; the gain popup is triggered separately (see showResourceGainPopup()) once AutoGatherController.onHitLanded() actually knows what got credited. Skips the visual feedback (but the hit itself still counts, see applyHit()) if a Tree's glb model hasn't finished loading yet — see GlbVisualComponent's own doc. */
+    public onHit(): void {
         if (this.visual instanceof GlbVisualComponent && !this.visual.isReady) {
             return;
         }
@@ -263,41 +274,32 @@ export default class ResourceNode extends Entity implements ActionTarget {
                 mesh.position.set(0, 0, 0);
             },
         });
-
-        // Show the floating gain popup — hitData.hits is the (possibly remaining-life-capped)
-        // hit count this swing removed (see PlayerActionController.update()'s own doc), so the
-        // popup's "+N" has to fold that in too, not just gate on truthiness.
-        if (hitData?.hits && this.world) {
-            this.showGainPopup(hitData.hits);
-        }
     }
 
     /**
      * A ScreenAnchorComponent-backed popup (see that file's own doc for the "THROWAWAY"
      * shape) instead of a 3D CanvasTexture sprite — same "PIXI element paired to a 3D point"
      * approach DropZone's deposit popups use, so it gets bend compensation and crisp
-     * screen-space rendering for free instead of a billboarded 3D quad. Shows the resource's
-     * own icon + "+amountPerGather * resourcePerHit * hits" (the actual amount
-     * AutoGatherController.onHitLanded() just banked — see its own doc; the same icon
-     * BackpackUI/GlobalResourcesUI use, see getAssetIcon()) rather than a bare hit count, so a
-     * landed hit reads as a reward, not combat. The rise/fade is still done in world space (a
-     * rising getTargetPosition(), see `progress` below) rather than animating the PIXI
-     * content's own local position directly, since ScreenAnchorComponent overwrites that every
-     * frame from the projected screen point.
+     * screen-space rendering for free instead of a billboarded 3D quad. Shows `resourceType`'s
+     * OWN icon (not the provider's — see ResourceRegistry.ts's own doc; a provider's icon is
+     * only ever meant to help identify it in the editor, never shown in-game) + "+amount",
+     * where both are exactly what AutoGatherController.onHitLanded() just credited to the
+     * backpack (see its own doc for how it resolves which resource(s) a hit actually rolled),
+     * so a landed hit always shows the real item you got, not a stand-in. The rise/fade is
+     * still done in world space (a rising getTargetPosition(), see `progress` below) rather
+     * than animating the PIXI content's own local position directly, since
+     * ScreenAnchorComponent overwrites that every frame from the projected screen point.
      */
-    private showGainPopup(hits: number): void {
-        if (!this.world || !this.screenHost) {
+    public showResourceGainPopup(resourceType: ResourceType, amount: number): void {
+        if (!this.world || !this.screenHost || amount <= 0) {
             return;
         }
 
-        const config = RESOURCE_CONFIG[this.resourceType];
-        const resourcePerHit = ACTION_CONFIG[config.action].resourcePerHit;
-
-        const icon = new PIXI.Sprite(getAssetIcon(RESOURCE_ASSET_KEYS[this.resourceType]));
+        const icon = new PIXI.Sprite(getAssetIcon(resolveResourceAssetKey(resourceType)));
         icon.anchor.set(0, 0.5);
         icon.scale.set(ViewUtils.elementScaler(icon, GAIN_POPUP_ICON_SIZE));
 
-        const text = new PIXI.Text(`+${config.amountPerGather * resourcePerHit * hits}`, TextStyleRegistry.ResourceDamage);
+        const text = new PIXI.Text(`+${amount}`, TextStyleRegistry.ResourceDamage);
         text.style.fill = '#33cc66';
         text.anchor.set(0, 0.5);
         text.position.set(icon.width + GAIN_POPUP_ICON_GAP, 0);
@@ -360,7 +362,7 @@ export default class ResourceNode extends Entity implements ActionTarget {
         this.respawnRemainingSec = undefined;
         // The one place life is restored — a full harvest earns the reset; walking away
         // mid-chop does not (see the `life` field's own doc).
-        this.life = RESOURCE_CONFIG[this.resourceType].maxLife;
+        this.life = PROVIDER_CONFIG[this.providerType].maxLife;
         this.visual.setVisible(true);
         this.world?.physics.register(this.rigidBody);
         if (this.solidBody) {

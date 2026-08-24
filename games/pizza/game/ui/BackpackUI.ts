@@ -35,7 +35,7 @@ import { FrameName } from './FrameRegistry';
 import { TextStyleRegistry } from './TextStyleRegistry';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { ResourceType } from '../actions/ResourceTypes';
-import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
+import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
 
@@ -253,7 +253,7 @@ export default class BackpackUI extends PIXI.Container {
         slot.resourceType = type;
         const size = slot.background.width;
 
-        const icon = new PIXI.Sprite(getAssetIcon(RESOURCE_ASSET_KEYS[type]));
+        const icon = new PIXI.Sprite(getAssetIcon(resolveResourceAssetKey(type)));
         icon.anchor.set(0.5);
         icon.position.set(size / 2, size / 2);
         const baseScale = ViewUtils.elementScaler(icon, size - ICON_PADDING * 2);

@@ -37,7 +37,7 @@ import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
-import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
+import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import MainPlayer from './MainPlayer';
@@ -197,7 +197,7 @@ export default class DropZone extends Entity {
         }
         this.draining.add(type);
 
-        const icon = getAssetIcon(RESOURCE_ASSET_KEYS[type]);
+        const icon = getAssetIcon(resolveResourceAssetKey(type));
         const label = RESOURCE_CONFIG[type].label;
         const toWorld = new THREE.Vector3();
 

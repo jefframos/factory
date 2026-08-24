@@ -5,7 +5,7 @@
 // eyeball/edit independently of "how proximity streaming works" (the class).
 
 import * as THREE from 'three';
-import { ResourceType } from '../actions/ResourceTypes';
+import { ProviderType } from '../actions/ProviderTypes';
 
 /** World-units square for the visible floor plane + its matching physics slab — see WorldManager.buildGround(). */
 export const FLOOR_SIZE = 200;
@@ -20,7 +20,8 @@ export const GROUND_HALF_THICKNESS = 0.5;
 
 export interface ResourceSpawnDef {
     id: string;
-    resourceType: ResourceType;
+    /** Which PROVIDER (tree/stone deposit/berry bush — see ProviderTypes.ts) spawns here, not which resource it yields — a provider's own drop table decides that per unit gathered. */
+    providerType: ProviderType;
     position: THREE.Vector3;
 }
 
@@ -42,19 +43,19 @@ function mulberry32(seed: number): () => number {
     };
 }
 
-/** Every ResourceType procedural spawning picks evenly between — see generateProceduralResourceSpawns(). */
-const PROCEDURAL_RESOURCE_TYPES = [ResourceType.Tree, ResourceType.Stone, ResourceType.Berries];
+/** Every provider type procedural spawning picks evenly between — see generateProceduralResourceSpawns(). */
+const PROCEDURAL_PROVIDER_TYPES = [ProviderType.Tree, ProviderType.Stone, ProviderType.BerryBush];
 
-/** Scatters `count` resource nodes uniformly across a [-halfExtent, halfExtent] square, picking evenly among PROCEDURAL_RESOURCE_TYPES — same seed always yields the same layout. */
+/** Scatters `count` provider nodes uniformly across a [-halfExtent, halfExtent] square, picking evenly among PROCEDURAL_PROVIDER_TYPES — same seed always yields the same layout. */
 export function generateProceduralResourceSpawns(seed: number, count: number, halfExtent: number): ResourceSpawnDef[] {
     const random = mulberry32(seed);
     const spawns: ResourceSpawnDef[] = [];
 
     for (let i = 0; i < count; i++) {
-        const resourceType = PROCEDURAL_RESOURCE_TYPES[Math.floor(random() * PROCEDURAL_RESOURCE_TYPES.length)];
+        const providerType = PROCEDURAL_PROVIDER_TYPES[Math.floor(random() * PROCEDURAL_PROVIDER_TYPES.length)];
         const x = (random() * 2 - 1) * halfExtent;
         const z = (random() * 2 - 1) * halfExtent;
-        spawns.push({ id: `${resourceType}-${i}`, resourceType, position: new THREE.Vector3(x, 0, z) });
+        spawns.push({ id: `${providerType}-${i}`, providerType, position: new THREE.Vector3(x, 0, z) });
     }
 
     return spawns;

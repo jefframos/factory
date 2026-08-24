@@ -77,21 +77,43 @@ export const ENTITY_SOURCE_MAP = {
         managedKeys: ['name', 'recipes', 'destroyOnComplete', 'appearRequirement'],
         optionalKeys: ['appearRequirement'],
     },
+    // A RESOURCE is the bankable item (Wood/Stone/Berries/Bark/Pebble/GrassFiber) — what
+    // ends up in BackpackStorage. What actually PRODUCES one is a separate concern — see
+    // `providers` below (Tree/Stone Deposit/Berry Bush: the world dispensers with an
+    // action/life/respawn cycle and a weighted drop table of resources) — this is the split
+    // ResourceTypes.ts/ProviderTypes.ts now make in the game code itself.
     resources: {
         file: path.join(GAME_DIR, 'actions', 'ResourceTypes.ts'),
         exportName: 'RESOURCE_CONFIG',
         kind: 'enumRecord',
         enumName: 'ResourceType',
-        managedKeys: ['action', 'maxLife', 'amountPerGather', 'respawnSec', 'label'],
-        // The Resources tab ALSO has an 'icon' field in its schema, but ResourceConfig
-        // itself has no `icon` property at all — a resource's icon actually lives in a
-        // DIFFERENT file/export entirely (AssetLibraryRegistry.ts's ASSET_LIBRARY, keyed by
-        // the same id). `externalFields` tells syncToSource.mjs to route that one field to
-        // another mapping in this same file instead of writing it here — see
-        // syncToSource.mjs's syncExternalField() for how. This is what lets a NEW resource's
-        // icon be set right on the Resources tab (the actual ask this was built for) while
-        // the real storage — and the Asset Library tab's own full add/remove/overview — stays
-        // exactly where it already was.
+        managedKeys: ['label', 'amountPerGather'],
+        // The Resources tab ALSO has icon/models/scale/rotationDeg fields, but ResourceConfig
+        // itself carries none of those — see entityMap's own top-of-file doc on
+        // `externalFields`. For a LOOSE ground-loot resource (bark/pebble/grassFiber, no
+        // provider at all) this is the ONLY place its world appearance is set. For a
+        // provider-dispensed resource (wood/stone/berries) it happens to share the same
+        // AssetLibraryRegistry entry the matching provider's own visual fields point at
+        // (see ProviderRegistry.ts's resolveProviderAssetKey()) — editing it from either tab
+        // writes the same entry, which is intentional, not a bug.
+        externalFields: { icon: 'assetLibrary', models: 'assetLibrary', scale: 'assetLibrary', rotationDeg: 'assetLibrary' },
+    },
+    // A PROVIDER is the world dispenser the player actually acts on (chop/mine/gather) — see
+    // this file's own doc on the resources/providers split. `drops` is required
+    // (`ProviderConfig.drops: ResourceDropEntry[]`, never optional) — a provider always has
+    // to say what it gives, even if that's just one 100%-weight entry.
+    providers: {
+        file: path.join(GAME_DIR, 'actions', 'ProviderTypes.ts'),
+        exportName: 'PROVIDER_CONFIG',
+        kind: 'enumRecord',
+        enumName: 'ProviderType',
+        managedKeys: ['label', 'action', 'maxLife', 'amountPerGather', 'respawnSec', 'drops'],
+        // Same reasoning as Resources' own externalFields — a provider's world appearance
+        // lives in AssetLibraryRegistry.ts, keyed by the SAME id as the provider (see
+        // ProviderRegistry.ts's resolveProviderAssetKey() — a plain identity mapping).
+        // This is also what makes a BRAND NEW provider work with no second registration
+        // step: as soon as this tab's Save writes its icon/models/scale/rotationDeg here
+        // (even all-default), resolveProviderAssetKey() finds a matching entry by construction.
         externalFields: { icon: 'assetLibrary', models: 'assetLibrary', scale: 'assetLibrary', rotationDeg: 'assetLibrary' },
     },
     actions: {

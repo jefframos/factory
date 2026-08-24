@@ -25,12 +25,20 @@
 
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
-import { ResourceType } from '../actions/ResourceTypes';
+import { ProviderType } from '../actions/ProviderTypes';
 import { ResourceSpawnDef } from './WorldConfig';
 
 export interface TileDef {
     name: string;
     color: string;
+    /**
+     * Resources tiles only — which PROVIDER (ProviderTypes.ts) a painted cell of this tile
+     * spawns, edited from the pizza web editor's Map tab. Takes precedence over
+     * RESOURCE_NAME_TO_TYPE below when set, so reassigning a resource tile to a different (or
+     * newly-added) provider is a tiles.json edit, not a code change. Stored as a plain string
+     * here (not typed `ProviderType`) since this file is loaded as raw JSON at runtime.
+     */
+    providerType?: string;
 }
 
 export interface TileDefsData {
@@ -211,16 +219,22 @@ export const DEFAULT_TILE_MAP_ALIASES = {
 };
 
 /**
- * Tiled tile names (map/tiles.json's resources[].name) that have a matching gameplay
- * ResourceType — see ResourceTypes.ts. A resource tile whose name isn't listed here
- * (gold, iron, coal, copper, ice_crystal, cactus, mushroom, ...) is skipped by
- * buildResourceSpawnsFromTileMap() until that ResourceType exists; nothing else needs to
- * change here when it does.
+ * Tiled tile names (map/tiles.json's resources[].name) that have a matching PROVIDER (see
+ * ProviderTypes.ts) — a painted resourcesLayer cell is a provider PLACEMENT, not a resource
+ * placement (what it actually yields is the provider's own drop table). A resource tile
+ * whose name isn't listed here (gold, iron, coal, copper, ice_crystal, cactus, mushroom,
+ * ...) is skipped by buildResourceSpawnsFromTileMap() until a matching provider exists;
+ * nothing else needs to change here when it does. The Tiled tile is still named "berries"
+ * (no map/tileset changes needed) even though it now resolves to ProviderType.BerryBush.
+ *
+ * This is only the FALLBACK — map/tiles.json's own resources[].providerType (settable from the
+ * pizza web editor's Map tab) is checked first, see buildResourceSpawnsFromTileMap() below. Kept
+ * around so a tiles.json entry that predates that field still resolves the same way it always did.
  */
-export const RESOURCE_NAME_TO_TYPE: Partial<Record<string, ResourceType>> = {
-    tree: ResourceType.Tree,
-    stone: ResourceType.Stone,
-    berries: ResourceType.Berries,
+export const RESOURCE_NAME_TO_TYPE: Partial<Record<string, ProviderType>> = {
+    tree: ProviderType.Tree,
+    stone: ProviderType.Stone,
+    berries: ProviderType.BerryBush,
 };
 
 /**
@@ -318,11 +332,11 @@ export function buildResourceSpawnsFromTileMap(
 
     for (const { gid, col, row } of iterateLayerCells(layer)) {
         const def = resolveResourceDef(gid, tileDefs, resourceFirstGid);
-        const resourceType = def && RESOURCE_NAME_TO_TYPE[def.name];
-        if (!resourceType) {
+        const providerType = def && ((def.providerType as ProviderType | undefined) ?? RESOURCE_NAME_TO_TYPE[def.name]);
+        if (!providerType) {
             if (def && !warnedNames.has(def.name)) {
                 warnedNames.add(def.name);
-                console.warn(`[TileMapConfig] resource tile "${def.name}" has no matching ResourceType yet — skipping`);
+                console.warn(`[TileMapConfig] resource tile "${def.name}" has no matching provider yet — skipping`);
             }
             continue;
         }
@@ -331,7 +345,7 @@ export function buildResourceSpawnsFromTileMap(
 
         spawns.push({
             id: `${def!.name}-${col}-${row}`,
-            resourceType,
+            providerType,
             position: new THREE.Vector3(x, 0, z),
         });
     }

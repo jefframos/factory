@@ -46,7 +46,7 @@ import { QueueConfig, getQueueConfig } from '../data/QueueTypes';
 import { EconomyStorage } from '../data/EconomyStorage';
 import { CURRENCY_CONFIG, CurrencyType } from '../data/EconomyTypes';
 import { ResourceType } from '../actions/ResourceTypes';
-import { RESOURCE_ASSET_KEYS } from '../actions/ResourceRegistry';
+import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import MainPlayer from './MainPlayer';
 
@@ -393,7 +393,7 @@ export default class QueueZone extends Entity {
         this.drainingType = type;
         this.inFlightCount = 0;
 
-        const icon = getAssetIcon(RESOURCE_ASSET_KEYS[type]);
+        const icon = getAssetIcon(resolveResourceAssetKey(type));
         const toWorld = new THREE.Vector3();
 
         const step = (): void => {

@@ -2,7 +2,7 @@
     "default": {
         "cooldownSec": 30,
         "possibleTasks": [
-            { "resourceType": "tree", "amount": 10, "rewardAmount": 25 },
+            { "resourceType": "wood", "amount": 10, "rewardAmount": 25 },
             { "resourceType": "stone", "amount": 8, "rewardAmount": 30 },
             { "resourceType": "berries", "amount": 15, "rewardAmount": 20 }
         ]
@@ -11,7 +11,7 @@
         "queue1": {
             "cooldownSec": 30,
             "possibleTasks": [
-                { "resourceType": "tree", "amount": 10, "rewardAmount": 25 },
+                { "resourceType": "wood", "amount": 10, "rewardAmount": 25 },
                 { "resourceType": "stone", "amount": 8, "rewardAmount": 30 },
                 { "resourceType": "berries", "amount": 15, "rewardAmount": 20 }
             ],

@@ -1,0 +1,101 @@
+{
+    "tree": {
+        "icon": "wood-log",
+        "models": [
+            "Props.Tree",
+            "Props.TreeHigh"
+        ],
+        "scale": [
+            1.85,
+            2.15
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "label": "Tree",
+        "action": "chop",
+        "maxLife": 5,
+        "amountPerGather": 1,
+        "respawnSec": 60,
+        "drops": [
+            {
+                "resourceType": "wood",
+                "weight": 1
+            }
+        ]
+    },
+    "stone": {
+        "icon": "stone-chunk",
+        "models": [
+            "Props.RocksHigh",
+            "Props.RocksLow"
+        ],
+        "scale": 1,
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "label": "Stone Deposit",
+        "action": "mine",
+        "maxLife": 5,
+        "amountPerGather": 1,
+        "respawnSec": 80,
+        "drops": [
+            {
+                "resourceType": "stone",
+                "weight": 90
+            },
+            {
+                "resourceType": "pebble",
+                "weight": 10
+            }
+        ]
+    },
+    "berryBush": {
+        "icon": "wild-berries",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "label": "Berry Bush",
+        "action": "gather",
+        "maxLife": 2,
+        "amountPerGather": 1,
+        "respawnSec": 50,
+        "drops": [
+            {
+                "resourceType": "berries",
+                "weight": 1
+            }
+        ]
+    },
+    "palm": {
+        "models": [
+            "Pirate.PalmBend",
+            "Pirate.PalmStraight"
+        ],
+        "drops": [
+            {
+                "resourceType": "wood",
+                "weight": 1
+            }
+        ],
+        "label": "PamlTree",
+        "scale": [
+            1,
+            1
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "action": "chop",
+        "respawnSec": 60,
+        "amountPerGather": 1,
+        "maxLife": 10,
+        "icon": "tree-bark"
+    }
+}

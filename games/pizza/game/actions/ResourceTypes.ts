@@ -1,19 +1,22 @@
 // ResourceTypes.ts
 //
-// Data-driven definition of what a ResourceNode can be — which ActionType
-// gathering it plays (see ActionTypes.ts), how much it yields per gather,
-// and how it looks (AutoGatherController/ResourceNode read this instead of
-// hardcoding per-resource branches). Wood/Stone/Berries for now — Iron/
-// Crystal slot in here later without touching ResourceNode/
-// AutoGatherController at all.
-
-import { ActionType } from './ActionTypes';
+// Data-driven definition of a BANKABLE RESOURCE — the actual item that ends
+// up in BackpackStorage (a label + display color + how much one pickup/
+// gather-unit is worth). Deliberately holds NOTHING about how a resource
+// gets INTO the backpack — that's ProviderTypes.ts's job for anything
+// dispensed by a world node (a tree, a stone deposit, a berry bush — see
+// that file's own doc for why this split exists) or DynamicResourceTypes.ts/
+// LooseResourceNode.ts for loose ground loot picked up on contact, no
+// provider/action involved at all. The same resource type can come from
+// either path (or several providers at once, via a weighted drop table) —
+// this file doesn't need to know or care which.
 
 export enum ResourceType {
-    Tree = 'tree',
+    /** What a Tree provider dispenses (see ProviderTypes.ts) — the enum id matches its own display label now (renamed from the historical `Tree = 'tree'`, which predated ProviderTypes.ts's provider/resource split). */
+    Wood = 'wood',
     Stone = 'stone',
     Berries = 'berries',
-    /** Loose ground loot — a wood log's bark, picked up whole (see LooseResourceNode.ts/DynamicResourceSpawner.ts). A separate BackpackStorage bucket from Tree's own "wood," by design: this is dynamically-spawned test loot, not the same pool a chopped tree fills. Scattered on "sand" spawner clusters — see DynamicResourceTypes.ts. */
+    /** Loose ground loot — a wood log's bark, picked up whole (see LooseResourceNode.ts/DynamicResourceSpawner.ts). A separate BackpackStorage bucket from Wood's own pool, by design: this is dynamically-spawned test loot, not the same pool a chopped tree fills. Scattered on "sand" spawner clusters — see DynamicResourceTypes.ts. */
     Bark = 'bark',
     /** Loose ground loot, same instant-pickup shape as Bark (see LooseResourceNode.ts/DynamicResourceSpawner.ts) — scattered on "grass" spawner clusters instead of "sand." A separate BackpackStorage bucket from Stone's own pool, by design, same reasoning as Bark's. */
     Pebble = 'pebble',
@@ -22,98 +25,49 @@ export enum ResourceType {
 }
 
 export interface ResourceConfig {
-    /** Which timed action (see ActionTypes.ts) gathering this resource plays. */
-    action: ActionType;
     /**
-     * How many hit-points this node absorbs before it yields — the player chips this down
-     * hitScale at a time (see ActionConfig), and partial progress SURVIVES walking
-     * away, so this is "how much total work a full harvest is," not a timer. Combined with
-     * the action's hitIntervalSec/hitScale, this is what actually sets time-to-harvest:
-     * 5 life at hitScale 1 per 1s = the design doc's 5 seconds per tree.
+     * How much of this resource one gather/pickup UNIT is worth — for a provider-dispensed
+     * resource (see ProviderTypes.ts), the provider's OWN amountPerGather sets how many total
+     * units a harvest yields; this multiplies each one. For loose ground loot (see
+     * LooseResourceNode.ts), this is read directly — a pickup has no provider/action to also
+     * carry an amountPerGather of its own.
      */
-    maxLife: number;
-    /** How much of this resource one successful gather cycle grants. */
     amountPerGather: number;
-    /** Seconds the node stays depleted (hidden, trigger disabled) before it respawns — see ResourceNode.deplete()/respawn(). */
-    respawnSec: number;
-    /** Display name for UI (drop-zone deposit popup, etc.) — see ScreenAnchorComponent usage in DropZone. */
+    /** Display name for UI (drop-zone deposit popup, backpack slot, etc.). */
     label: string;
-    /** Placeholder color for this resource's primitive mesh (cylinder for Tree, box for Stone — see ResourceNode.ts) until real art exists. */
+    /** Placeholder color for this resource's primitive mesh until real art exists — used by LooseResourceNode's box fallback; a provider-dispensed resource's placeholder color comes from the PROVIDER's own config instead (see ProviderTypes.ts), since that's the thing actually rendered in the world. */
     color: number;
-    /**
-     * Horizontal radius of a SOLID collider centered on the node, blocking the player from
-     * walking through it — separate from the gather-radius trigger (see ResourceNode.awake(),
-     * TRIGGER_HALF_EXTENTS), which stays a trigger regardless so gathering range is unaffected.
-     * 0 means no solid collider at all — the player can walk straight over the node (berry
-     * bushes: low enough to step over). Trees/rocks get a nonzero radius so they physically
-     * block the player like the ground/environment does.
-     */
-    solidRadius: number;
 }
 
 export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
-    [ResourceType.Tree]: {
-        action: ActionType.Chop,
-        maxLife: 5,
+    [ResourceType.Wood]: {
         amountPerGather: 1,
-        respawnSec: 60,
         label: "Wood",
         color: 0x6b4423,
-        solidRadius: 0.5,
     },
     [ResourceType.Stone]: {
-        action: ActionType.Mine,
-        maxLife: 5,
         amountPerGather: 1,
-        respawnSec: 80,
         label: "Stone",
         color: 0x8a8a8a,
-        solidRadius: 0.6,
     },
     [ResourceType.Berries]: {
-        action: ActionType.Gather,
-        maxLife: 2,
         amountPerGather: 1,
-        respawnSec: 50,
         label: "Berries",
         color: 0xcc2244,
-        solidRadius: 0,
     },
     [ResourceType.Bark]: {
-        // action/maxLife/respawnSec/solidRadius below are all UNUSED for Bark — LooseResourceNode
-        // (see that file's own doc) is a deliberately separate, much simpler entity: picked up
-        // instantly on contact, no PlayerActionController channel, no depletion/respawn cycle,
-        // no solid collider at all. Only amountPerGather/label/color (the placeholder-visual
-        // fallback color) are actually read for it. Kept as harmless, honest-looking defaults
-        // rather than removed, since RESOURCE_CONFIG is a `Record<ResourceType, ResourceConfig>`
-        // — every ResourceType needs a complete entry here regardless of which fields its own
-        // pickup path actually reads.
-        action: ActionType.Gather,
-        maxLife: 1,
         amountPerGather: 1,
-        respawnSec: 0,
         label: "Bark",
         color: 0x6b4423,
-        solidRadius: 0,
     },
     [ResourceType.Pebble]: {
-        // Same "most fields unused" shape as Bark — see that entry's own doc.
-        action: ActionType.Gather,
-        maxLife: 1,
         amountPerGather: 1,
-        respawnSec: 0,
         label: "Pebble",
         color: 0x9a9a9a,
-        solidRadius: 0,
     },
     [ResourceType.GrassFiber]: {
-        // Same "most fields unused" shape as Bark/Pebble — see Bark's own doc.
-        action: ActionType.Gather,
-        maxLife: 1,
         amountPerGather: 2,
-        respawnSec: 0,
         label: "Grass Fiber",
         color: 0x6ccb5f,
-        solidRadius: 0,
     },
 };

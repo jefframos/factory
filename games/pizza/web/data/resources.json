@@ -1,29 +1,5 @@
 {
-    "tree": {
-        "action": "chop",
-        "maxLife": 5,
-        "amountPerGather": 1,
-        "respawnSec": 60,
-        "label": "Wood",
-        "icon": "wood-log",
-        "models": [
-            "Props.Tree",
-            "Props.TreeHigh"
-        ],
-        "scale": [
-            1.85,
-            2.15
-        ],
-        "rotationDeg": [
-            0,
-            360
-        ]
-    },
     "stone": {
-        "action": "mine",
-        "maxLife": 5,
-        "amountPerGather": 1,
-        "respawnSec": 80,
         "label": "Stone",
         "icon": "stone-chunk",
         "models": [
@@ -34,13 +10,10 @@
         "rotationDeg": [
             0,
             360
-        ]
+        ],
+        "amountPerGather": 1
     },
     "berries": {
-        "action": "gather",
-        "maxLife": 2,
-        "amountPerGather": 1,
-        "respawnSec": 50,
         "label": "Berries",
         "icon": "wild-berries",
         "models": [],
@@ -48,13 +21,10 @@
         "rotationDeg": [
             0,
             360
-        ]
+        ],
+        "amountPerGather": 1
     },
     "bark": {
-        "action": "gather",
-        "maxLife": 1,
-        "amountPerGather": 1,
-        "respawnSec": 0,
         "label": "Bark",
         "icon": "tree-bark",
         "models": [
@@ -68,13 +38,10 @@
         "rotationDeg": [
             0,
             360
-        ]
+        ],
+        "amountPerGather": 1
     },
     "pebble": {
-        "action": "gather",
-        "maxLife": 1,
-        "amountPerGather": 1,
-        "respawnSec": 0,
         "label": "Pebble",
         "icon": "sharpening-stone",
         "models": [
@@ -87,13 +54,10 @@
         "rotationDeg": [
             0,
             360
-        ]
+        ],
+        "amountPerGather": 1
     },
     "grassFiber": {
-        "action": "gather",
-        "maxLife": 1,
-        "amountPerGather": 2,
-        "respawnSec": 0,
         "label": "Grass Fiber",
         "icon": "plant-fiber",
         "models": [
@@ -107,6 +71,15 @@
         "rotationDeg": [
             0,
             360
-        ]
+        ],
+        "amountPerGather": 2
+    },
+    "wood": {
+        "label": "Wood",
+        "icon": "wood-log",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1
     }
 }

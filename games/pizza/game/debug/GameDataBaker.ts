@@ -25,12 +25,14 @@ import { CRAFT_CONFIG_BY_ID } from '../crafting/CraftTypes';
 import { ITEM_CONFIG } from '../crafting/ItemTypes';
 import { BASE_ACTION_CONFIG } from '../actions/ActionTypes';
 import { RESOURCE_CONFIG } from '../actions/ResourceTypes';
+import { PROVIDER_CONFIG } from '../actions/ProviderTypes';
 import { SHOP_CONFIG_BY_ID } from '../shop/ShopTypes';
 import { DYNAMIC_RESOURCE_PLACEMENTS } from '../world/DynamicResourceTypes';
 
 /** Plain JSON-serializable snapshot of every hand-authored design NUMBER in the game — see this file's own doc for what's deliberately excluded (live player state, all view/presentation data). */
 export interface BakedGameData {
     resources: unknown;
+    providers: unknown;
     dynamicResourcePlacements: unknown;
     actions: unknown;
     items: unknown;
@@ -53,11 +55,16 @@ export interface BakedGameData {
 export function bakeGameData(): BakedGameData {
     return {
         resources: mapRecord(RESOURCE_CONFIG, r => ({
-            action: r.action,
-            maxLife: r.maxLife,
             amountPerGather: r.amountPerGather,
-            respawnSec: r.respawnSec,
             label: r.label,
+        })),
+        providers: mapRecord(PROVIDER_CONFIG, p => ({
+            action: p.action,
+            maxLife: p.maxLife,
+            amountPerGather: p.amountPerGather,
+            respawnSec: p.respawnSec,
+            label: p.label,
+            drops: p.drops,
         })),
         dynamicResourcePlacements: DYNAMIC_RESOURCE_PLACEMENTS.map(p => ({
             resourceType: p.resourceType,
