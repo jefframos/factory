@@ -45,6 +45,20 @@ export interface TileDef {
      * field) falls back to NON_WALKABLE_GROUND_TILES below — see isGroundWalkable().
      */
     walkable?: boolean;
+    /**
+     * Ground tiles only — a painted cell of this tile draws NOTHING at all (no flat-paint
+     * quad, no IslandMeshBuilder raised terrain — see TileMap.build()'s own doc on how each
+     * rendering path skips it) while still counting as a real cell for `walkable` above, so
+     * "an invisible walkway" is just a tile with BOTH `walkable: true` and `transparent: true`
+     * checked — same independent-flags convention as `walkable` itself, not implied by it
+     * either way. Undefined/false (the default) draws normally, unchanged from before this
+     * field existed. NOTE: since IslandMeshBuilder's blob geometry never sees this cell at
+     * all, a transparent tile surrounded by normal land reads as a rounded-edge HOLE/gap in
+     * the terrain (revealing whatever's beneath — water, void) rather than a flush, invisible
+     * patch level with the surrounding ground; that's the tradeoff of skipping it entirely
+     * rather than trying to render it with zero opacity.
+     */
+    transparent?: boolean;
 }
 
 export interface TileDefsData {
@@ -130,32 +144,93 @@ export function getObjectBooleanProperty(obj: TiledObject, propertyName: string)
     return value === true || value === 'true';
 }
 
+/** Coerces one raw TiledObjectProperty value to a number — Tiled exports a "float"/"int"-typed property as a real JSON number, but this also tolerates a numeric STRING (a "string"-typed property someone used for a number by habit) rather than silently treating it as unset. undefined for anything else (missing, or genuinely non-numeric text). */
+function coercePropertyToNumber(value: string | boolean | number | undefined): number | undefined {
+    if (typeof value === 'number') {
+        return value;
+    }
+    if (typeof value === 'string' && value.trim() !== '') {
+        const parsed = Number(value);
+        return Number.isNaN(parsed) ? undefined : parsed;
+    }
+    return undefined;
+}
+
+/** Reads a named numeric ("float"/"int") custom property off a TiledObject — undefined if that object has no property by this name, or it isn't numeric. */
+export function getObjectNumberProperty(obj: TiledObject, propertyName: string): number | undefined {
+    return coercePropertyToNumber(obj.properties?.find(p => p.name === propertyName)?.value);
+}
+
 /**
- * Converts one TiledObject's pixel-space rectangle to world units — both its center position
- * (centered on the rectangle rather than anchored at Tiled's top-left corner) AND its
- * width/depth footprint, same "the tile/pixel grid and the 3D world are different unit
- * systems" conversion tileCellToWorldPosition() does for ground cells, just from pixels
- * instead of col/row. `tileSizePx` is the tileset's pixel tile size (map/tiles.json's
- * `tileSize`, e.g. 32) — the ratio worldUnitsPerTile/tileSizePx is what actually converts
- * pixels to world units, for position AND size alike.
+ * Same TILE-definition lookup as getTiledTileBooleanProperty() (see that function's own doc
+ * for why a tile's OWN properties — not a placed object's — are the normal place for this),
+ * just numeric — e.g. a bridge model's tile carrying `offsetY: 1` so every object placed from
+ * it sits raised by the same amount, without a level designer having to set that per-object
+ * every time. undefined if `gid` doesn't resolve to any tileset/tile, or that tile has no such
+ * property at all.
+ */
+export function getTiledTileNumberProperty(map: TiledMapData, gid: number | undefined, propertyName: string): number | undefined {
+    if (!gid) {
+        return undefined;
+    }
+    const owner = findTilesetOwningGid(map, gid);
+    if (!owner) {
+        return undefined;
+    }
+    const localId = gid - owner.firstgid;
+    const value = owner.tiles?.find(tile => tile.id === localId)?.properties?.find(p => p.name === propertyName)?.value;
+    return coercePropertyToNumber(value);
+}
+
+/**
+ * Converts one TiledObject's pixel-space rectangle to world units — its center position AND
+ * its width/depth footprint AND its own `rotation`, same "the tile/pixel grid and the 3D world
+ * are different unit systems" conversion tileCellToWorldPosition() does for ground cells, just
+ * from pixels instead of col/row. `tileSizePx` is the tileset's pixel tile size (map/
+ * tiles.json's `tileSize`, e.g. 32) — the ratio worldUnitsPerTile/tileSizePx is what actually
+ * converts pixels to world units, for position AND size alike.
+ *
+ * Tiled anchors a plain rectangle object at its TOP-left corner, but a TILE object (one with a
+ * `gid` — see TiledObject.gid's own doc) at its BOTTOM-left instead, and rotates EITHER kind
+ * around that same origin point, not the rectangle's center — rotating a placed object in
+ * Tiled swings its whole footprint around its own corner. So the true center isn't the fixed
+ * local offset a rotation=0 object would have; that offset has to be rotated by the SAME angle,
+ * around the SAME origin, before being added back to (obj.x, obj.y) — see MeshLayerSpawner.ts's
+ * own doc, where this exact fix originated for "meshes"-layer placements; this generalizes it
+ * to every "mapSettings" placement (buildings, gates, queues, droppers, ...) too, since any of
+ * those can equally be drawn as a rotated tile object.
  *
  * Tiled is a 2D top-down editor, so a rect's `width`/`height` are both HORIZONTAL — they map
- * to world X and Z respectively (a footprint), never to the mesh's vertical Y height. There's
- * no third dimension in a Tiled object to derive that from — a spawner combining this with a
- * config-driven mesh should keep that config's own height (Y) and only override X/Z from
- * `width`/`depth` here (see PizzaScene's setupBuildingZone()/setupGates()).
+ * to world X and Z respectively (a footprint, in the object's own UN-rotated local frame),
+ * never to the mesh's vertical Y height. There's no third dimension in a Tiled object to derive
+ * that from — a spawner combining this with a config-driven mesh should keep that config's own
+ * height (Y) and only override X/Z from `width`/`depth` here (see PizzaScene's
+ * setupBuildingZone()/setupGates()). `rotationDeg` is Tiled's own clockwise-degrees value,
+ * unconverted — a caller applying it to a THREE object's Y-axis rotation needs the same sign
+ * flip MeshLayerSpawner.ts's own `rotationY` doc explains (Tiled clockwise vs THREE's
+ * counter-clockwise-positive Y, viewed from above).
  */
 export function objectToWorldRect(
     obj: TiledObject,
     tileSizePx: number,
     worldUnitsPerTile: number,
-): { x: number; z: number; width: number; depth: number } {
+): { x: number; z: number; width: number; depth: number; rotationDeg: number } {
     const scale = worldUnitsPerTile / tileSizePx;
+    const rotationRad = (obj.rotation * Math.PI) / 180;
+    const cos = Math.cos(rotationRad);
+    const sin = Math.sin(rotationRad);
+
+    const localCenterX = obj.width / 2;
+    const localCenterY = obj.gid ? -obj.height / 2 : obj.height / 2;
+    const rotatedCenterX = localCenterX * cos - localCenterY * sin;
+    const rotatedCenterY = localCenterX * sin + localCenterY * cos;
+
     return {
-        x: (obj.x + obj.width / 2) * scale,
-        z: (obj.y + obj.height / 2) * scale,
+        x: (obj.x + rotatedCenterX) * scale,
+        z: (obj.y + rotatedCenterY) * scale,
         width: obj.width * scale,
         depth: obj.height * scale,
+        rotationDeg: obj.rotation,
     };
 }
 

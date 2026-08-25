@@ -81,6 +81,7 @@ import { CameraFocusHost, CameraFocusOptions } from '../camera/CameraFocusHost';
 import { WorldProgressionHost } from '../camera/WorldProgressionHost';
 import { wait } from '../utils/GsapUtils';
 import Gate from '../world/Gate';
+import GateDropZone from '../world/GateDropZone';
 import RequirementRegistry from '../world/RequirementRegistry';
 import { GATE_CONFIG, GateId } from '../data/GateTypes';
 import { GateStorage } from '../data/GateStorage';
@@ -678,7 +679,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             // Fallback width/depth match BuildingTypes.ts's own baseMesh footprint (1x1) —
             // only used if this building isn't found on the Tiled map's "mapSettings" layer
             // at all (see WorldObjectRegistry.require()'s warning).
-            const placement = this.worldObjects.require('building', buildingId, { x: BUILDING_ZONE_OFFSET.x, z: BUILDING_ZONE_OFFSET.z, width: 1, depth: 1 });
+            const placement = this.worldObjects.require('building', buildingId, { x: BUILDING_ZONE_OFFSET.x, z: BUILDING_ZONE_OFFSET.z, width: 1, depth: 1, rotationDeg: 0 });
             const position = new THREE.Vector3(placement.x, BUILDING_ZONE_OFFSET.y, placement.z);
 
             const dropperPlacement = this.worldObjects.getDropperFor(buildingId);
@@ -730,17 +731,71 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             const placement = this.worldObjects.require('gate', id, {
                 x: config.position[0], z: config.position[2],
                 width: config.mesh.size[0], depth: config.mesh.size[2],
+                rotationDeg: 0,
             });
+            // The marker object's OWN rotation (drawn in Tiled — e.g. rotating a placed gate
+            // marker 90° to fit a different opening) — same clockwise-degrees-to-THREE-degrees
+            // sign flip MeshLayerSpawner.ts's own rotationY doc explains, added on TOP of
+            // whatever manual viewRotationOffsetDeg is already set (see GateConfig's own doc),
+            // rather than replacing it: the marker's own facing and a hand-tuned correction for
+            // the shared view's own "forward" are two independent reasons to rotate, and both
+            // should apply together.
+            //
+            // The COLLIDER can't actually rotate along with the visual — this physics module
+            // is AABB-only, "no rotation" at all (see PhysicsConstants.ts's own doc) — so
+            // instead of leaving it at the marker's un-rotated width/depth (visibly wrong the
+            // moment the marker isn't a multiple of 180°, and swapped for 90°/270°), size it as
+            // the smallest AXIS-ALIGNED box that still fully CONTAINS the rotated footprint —
+            // the standard "rotated rect -> AABB" formula. Exact for a 0°/90°/180°/270° marker
+            // (matches the true rotated footprint exactly); conservatively larger than the true
+            // footprint at any other angle, which is the safe direction to be wrong in for a
+            // solid obstacle (a slightly bigger box blocks a bit more space, never lets the
+            // player clip through a corner the visual actually covers).
+            const gateRotationRad = (placement.rotationDeg * Math.PI) / 180;
+            const absCos = Math.abs(Math.cos(gateRotationRad));
+            const absSin = Math.abs(Math.sin(gateRotationRad));
+            const colliderWidth = placement.width * absCos + placement.depth * absSin;
+            const colliderDepth = placement.width * absSin + placement.depth * absCos;
+
             const gate = this.world.add(new Gate(this.screenHost, id, {
                 ...config,
                 position: [placement.x, config.position[1], placement.z],
-                mesh: { ...config.mesh, size: [placement.width, config.mesh.size[1], placement.depth] },
+                mesh: { ...config.mesh, size: [colliderWidth, config.mesh.size[1], colliderDepth] },
+                viewRotationOffsetDeg: (config.viewRotationOffsetDeg ?? 0) - placement.rotationDeg,
             }));
             this.threeScene.add(gate.transform);
 
             if (gate.isRequirementMet()) {
                 GateStorage.unlock(id);
                 this.world.remove(gate);
+                continue;
+            }
+
+            // A 'resource' requirement is NOT a passive "already holding enough" check (see
+            // Gate.isRequirementMet()'s own doc) — it needs an actual GateDropZone the player
+            // walks up to and feeds, so it's deliberately kept OUT of RequirementRegistry's
+            // usual recheck-on-milestone flow (which would otherwise "unlock" it the instant
+            // the player happens to be carrying enough, exactly the passive behavior this is
+            // meant to avoid). The drop zone calls the SAME unlock sequence itself, once its
+            // own target amount is actually reached.
+            if (config.requirement.type === 'resource') {
+                const dropperPlacement = this.worldObjects.getDropperFor(id) ?? placement;
+                const dropZone = this.world.add(new GateDropZone(
+                    id,
+                    config.requirement.resourceType,
+                    config.requirement.amount,
+                    new THREE.Vector3(dropperPlacement.x, 0, dropperPlacement.z),
+                    this.screenHost,
+                    { width: dropperPlacement.width, depth: dropperPlacement.depth },
+                    gate.transform.position.clone().add(new THREE.Vector3(0, config.mesh.size[1] / 2, 0)),
+                    () => {
+                        void gate.playUnlockSequence(this).then(() => {
+                            this.world.remove(gate);
+                        });
+                        this.world.remove(dropZone);
+                    },
+                ));
+                this.threeScene.add(dropZone.transform);
                 continue;
             }
 
@@ -774,6 +829,12 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * (worldWidth/worldDepth in X/Z, the model's own measured height in Y) once the model
      * finishes loading — a purely decorative mesh (the default, `solid` unchecked) gets no
      * collider at all, same as before this property existed.
+     *
+     * `placement.offsetX/Y/Z` (the model's own "offsetX"/"offsetY"/"offsetZ" custom
+     * properties — see MeshLayerSpawner.ts's own doc) nudge the mesh's LOCAL position, e.g. a
+     * bridge model needing `offsetY: 1` to actually rest on the ground instead of half-buried
+     * in it. Applied to the solid RigidBody's own centerOffset too, so the collider follows
+     * wherever the visual actually ends up rather than staying at the entity's un-offset origin.
      */
     private setupMeshLayer(): void {
         for (const placement of getMeshPlacements()) {
@@ -787,7 +848,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             const entity = this.world.spawn();
             entity.transform.position.set(placement.x, 0, placement.z);
 
-            const visual: GlbVisualComponent = new GlbVisualComponent(modelDef, new THREE.Vector3(), 1, 0, () => {
+            const meshOffset = new THREE.Vector3(placement.offsetX, placement.offsetY, placement.offsetZ);
+            const visual: GlbVisualComponent = new GlbVisualComponent(modelDef, meshOffset, 1, 0, () => {
                 const mesh = visual.mesh;
                 const nativeSize = new THREE.Box3().setFromObject(mesh).getSize(new THREE.Vector3());
                 const scaleX = nativeSize.x > 1e-4 ? placement.worldWidth / nativeSize.x : 1;
@@ -810,7 +872,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                         halfExtents,
                         isStatic: true,
                         layer: Layers.Environment,
-                        centerOffset: new THREE.Vector3(0, halfExtents.y, 0),
+                        // Follows the SAME offsetX/Y/Z the visual mesh got (see meshOffset
+                        // above) — a collider that stayed at the entity's own origin while the
+                        // mesh moved (e.g. a bridge's offsetY raising it up) would leave the
+                        // collider floating at the wrong height relative to what's drawn.
+                        centerOffset: new THREE.Vector3(placement.offsetX, placement.offsetY + halfExtents.y, placement.offsetZ),
                     }));
                 }
             });

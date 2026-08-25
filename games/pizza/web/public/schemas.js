@@ -113,6 +113,7 @@ const MAP_TILE_FIELDS = {
         { key: 'name', type: 'text', label: 'Name' },
         { key: 'color', type: 'text', label: 'Color' },
         { key: 'walkable', type: 'boolean', label: 'Walkable' },
+        { key: 'transparent', type: 'boolean', label: 'Transparent (renders nothing — check Walkable too for an invisible walkway)' },
     ],
     resourceFields: [
         { key: 'name', type: 'text', label: 'Name' },
@@ -126,6 +127,8 @@ const ENTITY_SCHEMAS = {
         { key: 'name', type: 'text', label: 'Name' },
         { key: 'requirement', type: 'requirement', label: 'Requirement' },
         { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
+        { key: 'viewRotationOffsetDeg', type: 'number', label: 'View Rotation Offset (deg, added on top of the View\'s own rotation)', optional: true },
+        { key: 'viewScaleMultiplier', type: 'number', label: 'View Scale Multiplier (multiplied onto the View\'s own scale, e.g. 1.5 = 50% bigger)', optional: true },
         { ...FRAME_FIELD, label: 'Icon Panel Frame Override (blank = GateLock)' },
     ],
     buildings: [

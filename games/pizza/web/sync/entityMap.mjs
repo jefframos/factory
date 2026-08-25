@@ -45,8 +45,8 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'GATE_CONFIG',
         kind: 'enumRecord',
         enumName: 'GateId',
-        managedKeys: ['name', 'requirement', 'view', 'frame'],
-        optionalKeys: ['view', 'frame'],
+        managedKeys: ['name', 'requirement', 'view', 'frame', 'viewRotationOffsetDeg', 'viewScaleMultiplier'],
+        optionalKeys: ['view', 'frame', 'viewRotationOffsetDeg', 'viewScaleMultiplier'],
     },
     buildings: {
         file: path.join(GAME_DIR, 'data', 'BuildingTypes.ts'),

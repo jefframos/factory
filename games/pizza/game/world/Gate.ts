@@ -64,8 +64,8 @@ const REQUIREMENT_ICON_SIZE = 40;
 /** Gap between the lock icon and the requirement icon sitting beside it. */
 const ICON_GAP = 10;
 /** Size of the exclamation/check badge overlapping the requirement icon's bottom-right corner. */
-const REQUIREMENT_BADGE_SIZE = 20;
-const REQUIREMENT_BADGE_INSET = 2;
+const REQUIREMENT_BADGE_SIZE = 18;
+const REQUIREMENT_BADGE_INSET = -2;
 
 /** Locked padlock — see buildLabel(). */
 const LOCK_ICON_LOCKED = 'Icon_Lock03';
@@ -116,6 +116,14 @@ export default class Gate extends Entity {
     private lockIcon!: PIXI.Sprite;
     /** Overlaps the requirement icon's corner — Icon_Exclamation while missing, swapped to Icon_Check03_s on unlock (see playUnlockIconSequence()). */
     private requirementBadge!: PIXI.Sprite;
+    /** "have/need" readout for a 'resource' requirement only — see refreshDepositProgressLabel(). undefined for every other requirement type. */
+    private depositProgressLabel?: PIXI.Text;
+
+    private readonly handleDepositChanged = (id: GateId): void => {
+        if (id === this.gateId) {
+            this.refreshDepositProgressLabel();
+        }
+    };
 
     public constructor(screenHost: ScreenAnchorHost, gateId: GateId, config: GateConfig) {
         super();
@@ -125,8 +133,18 @@ export default class Gate extends Entity {
         this.transform.position.set(...config.position);
     }
 
-    /** True once whichever storage backs this gate's requirement kind (see MilestoneRequirement.ts's own doc) says it's already satisfied. */
+    /**
+     * True once whichever storage backs this gate's requirement kind says it's already
+     * satisfied. A 'resource' requirement is the ONE exception to isMilestoneRequirementMet()
+     * (see that function's own doc) — it checks GateStorage's own DEPOSIT progress instead of
+     * BackpackStorage's live count, since a resource-gated gate has to be actually fed via a
+     * GateDropZone (see PizzaScene.setupGates()'s own doc), not opened just because the player
+     * happens to be carrying enough right now.
+     */
     public isRequirementMet(): boolean {
+        if (this.config.requirement.type === 'resource') {
+            return GateStorage.getDepositProgress(this.gateId) >= this.config.requirement.amount;
+        }
         return isMilestoneRequirementMet(this.config.requirement);
     }
 
@@ -144,11 +162,16 @@ export default class Gate extends Entity {
         const resolved = resolveEntityView(this.config.view);
         if (resolved) {
             const [offsetX, offsetY, offsetZ] = resolved.offset;
+            // viewRotationOffsetDeg/viewScaleMultiplier — see GateConfig's own doc on each:
+            // lets more than one gate share the exact same EntityViewRegistry entry (the same
+            // model) while each still faces/sizes correctly for its own spot on the map.
+            const rotationDeg = resolved.rotationDeg + (this.config.viewRotationOffsetDeg ?? 0);
+            const scale = resolved.scale * (this.config.viewScaleMultiplier ?? 1);
             const visual = new GlbVisualComponent(
                 resolved.model,
                 new THREE.Vector3(offsetX, offsetY, offsetZ),
-                resolved.scale,
-                THREE.MathUtils.degToRad(resolved.rotationDeg),
+                scale,
+                THREE.MathUtils.degToRad(rotationDeg),
                 () => { this.mesh = visual.mesh; },
             );
             this.addComponent(visual);
@@ -171,6 +194,26 @@ export default class Gate extends Entity {
             () => labelAnchor.getWorldPosition(labelAnchorWorldPosition),
             ZONE_LABEL_ANCHOR_OPTIONS,
         ));
+
+        if (this.config.requirement.type === 'resource') {
+            GateStorage.onDepositChanged.add(this.handleDepositChanged);
+        }
+    }
+
+    public override destroy(): void {
+        GateStorage.onDepositChanged.remove(this.handleDepositChanged);
+        super.destroy();
+    }
+
+    /** Keeps depositProgressLabel current as GateDropZone drains the backpack — see that field's own doc. No-ops for anything but a 'resource' requirement (the label doesn't exist at all otherwise). */
+    private refreshDepositProgressLabel(): void {
+        if (this.config.requirement.type !== 'resource' || !this.depositProgressLabel) {
+            return;
+        }
+
+        const have = Math.min(GateStorage.getDepositProgress(this.gateId), this.config.requirement.amount);
+        this.depositProgressLabel.text = `${have}/${this.config.requirement.amount}`;
+        this.labelFrame.fit();
     }
 
     /**
@@ -209,6 +252,19 @@ export default class Gate extends Entity {
             levelLabel.anchor.set(0, 1);
             levelLabel.position.set(requirementIconX - REQUIREMENT_ICON_SIZE / 2 + REQUIREMENT_BADGE_INSET, -REQUIREMENT_BADGE_INSET);
             row.addChild(levelLabel);
+        }
+
+        // The other exception to "no text" — a bare resource icon can't say HOW MUCH is still
+        // needed, and unlike the building level (fixed for as long as the gate stands), this
+        // one changes live as a GateDropZone (see that file's own doc) drains the backpack, so
+        // it's built once here but kept current via GateStorage.onDepositChanged (see awake()).
+        if (this.config.requirement.type === 'resource') {
+            const requirement = this.config.requirement;
+            const have = Math.min(GateStorage.getDepositProgress(this.gateId), requirement.amount);
+            this.depositProgressLabel = new PIXI.Text(`${have}/${requirement.amount}`, TextStyleRegistry.Body);
+            this.depositProgressLabel.anchor.set(0, 1);
+            this.depositProgressLabel.position.set(requirementIconX - REQUIREMENT_ICON_SIZE / 2 + REQUIREMENT_BADGE_INSET, -REQUIREMENT_BADGE_INSET);
+            row.addChild(this.depositProgressLabel);
         }
 
         this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, this.config.frame ?? 'GateLock', row);

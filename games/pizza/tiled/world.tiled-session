@@ -20,6 +20,7 @@
             "dynamicWrapping": true
         },
         "testMap1.tmx#resources": {
+            "dynamicWrapping": false,
             "scaleInDock": 1
         },
         "testMap1.tmx#tileset": {
@@ -34,7 +35,7 @@
         "testMap1.tmx"
     ],
     "project": "world.tiled-project",
-    "property.type": "bool",
+    "property.type": "float",
     "recentFiles": [
         "testMap1.tmx"
     ],

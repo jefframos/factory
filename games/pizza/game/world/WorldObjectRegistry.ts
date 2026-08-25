@@ -67,12 +67,13 @@ const WAYPOINT_TARGET_PROPERTY = 'target';
 /** The custom property giving a waypoint's position within its path — see WaypointPlacement's own doc. */
 const WAYPOINT_ORDER_PROPERTY = 'order';
 
-/** width/depth are the rect's HORIZONTAL footprint (Tiled has no 3rd dimension) — see objectToWorldRect()'s own doc for why a spawner should keep its own config's Y height and only override X/Z from these. */
+/** width/depth are the rect's HORIZONTAL footprint (Tiled has no 3rd dimension) — see objectToWorldRect()'s own doc for why a spawner should keep its own config's Y height and only override X/Z from these. `rotationDeg` is Tiled's own clockwise-degrees `rotation`, unconverted — see objectToWorldRect()'s own doc for the sign flip a caller needs applying it to a THREE Y-axis rotation. 0 for an object that was never rotated at all, same as before this field existed. */
 export interface WorldObjectPlacement {
     x: number;
     z: number;
     width: number;
     depth: number;
+    rotationDeg: number;
 }
 
 /** One stop on a waypoint path — see this file's own doc and getWaypoints(). */

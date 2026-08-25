@@ -152,11 +152,19 @@ export default class TileMap {
 
             cells.forEach(({ gid, col, row }, instanceIndex) => {
                 const { x: worldX, z: worldZ } = tileCellToWorldPosition(col, row, this.worldUnitsPerTile);
+                const def = resolveGroundDef(gid, tileDefs, groundFirstGid);
 
-                matrix.makeTranslation(worldX, 0, worldZ);
+                if (def?.transparent) {
+                    // Collapses this instance's quad to nothing rather than translating it
+                    // into place — see TileDef.transparent's own doc. IslandMeshBuilder never
+                    // sees this cell either (skipped below, via layerCells), so no raised
+                    // terrain gets built here in that rendering path.
+                    matrix.makeScale(0, 0, 0);
+                } else {
+                    matrix.makeTranslation(worldX, 0, worldZ);
+                }
                 mesh.setMatrixAt(instanceIndex, matrix);
 
-                const def = resolveGroundDef(gid, tileDefs, groundFirstGid);
                 color.set(def?.color ?? FALLBACK_TILE_COLOR);
                 mesh.setColorAt(instanceIndex, color);
 
@@ -165,7 +173,9 @@ export default class TileMap {
                 }
 
                 this.cellDefs.set(cellKey(col, row), def);
-                layerCells.push({ col, row, def });
+                if (!def.transparent) {
+                    layerCells.push({ col, row, def });
+                }
             });
 
             mesh.instanceMatrix.needsUpdate = true;

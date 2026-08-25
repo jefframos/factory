@@ -28,7 +28,7 @@
 // lookup need here, PizzaScene just wants "everything on this layer, right
 // now," once, at scene build.
 
-import { DEFAULT_TILE_MAP_ALIASES, getObjectBooleanProperty, getTiledTileBooleanProperty, loadTiledMap, loadTileDefs, resolveTiledTileImageName, WORLD_UNITS_PER_TILE } from './TileMapConfig';
+import { DEFAULT_TILE_MAP_ALIASES, getObjectBooleanProperty, getObjectNumberProperty, getTiledTileBooleanProperty, getTiledTileNumberProperty, loadTiledMap, loadTileDefs, resolveTiledTileImageName, WORLD_UNITS_PER_TILE } from './TileMapConfig';
 import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
 
 /** Tiled layer name holding hand-placed model-snapshot placeholder objects — see this file's own doc. */
@@ -46,6 +46,19 @@ export const MESH_LAYER_NAME = 'meshes';
  */
 const SOLID_PROPERTY = 'solid';
 
+/**
+ * Custom NUMBER properties ("float"/"int" in Tiled's Custom Properties panel) nudging the
+ * spawned model's LOCAL position off the placement's own computed center — e.g. a bridge
+ * model whose origin sits at deck height needs `offsetY: 1` to actually rest ON the ground
+ * instead of half-buried in it. Checked in the same two places as SOLID_PROPERTY, same
+ * "tile definition is the normal place, one specific object can override it" reasoning — a
+ * bridge's own vertical offset belongs to the bridge model, not to any one placement of it.
+ * Missing on both = 0 (no offset at all), unchanged from before these properties existed.
+ */
+const OFFSET_X_PROPERTY = 'offsetX';
+const OFFSET_Y_PROPERTY = 'offsetY';
+const OFFSET_Z_PROPERTY = 'offsetZ';
+
 export interface MeshPlacement {
     /** "Group.Key" — see ModelSnapshotTool.resolveModelDef(), the one thing this ref is for. */
     modelRef: string;
@@ -58,6 +71,10 @@ export interface MeshPlacement {
     worldDepth: number;
     /** This object's own "solid" custom property (see SOLID_PROPERTY's own doc) — false unless a level designer explicitly checked it. */
     solid: boolean;
+    /** World-unit nudges applied to the model's own local position, on top of x/z above — see OFFSET_X_PROPERTY's own doc. 0 unless set. */
+    offsetX: number;
+    offsetY: number;
+    offsetZ: number;
 }
 
 /**
@@ -130,6 +147,9 @@ export function getMeshPlacements(
             worldWidth: obj.width * scale,
             worldDepth: obj.height * scale,
             solid: getObjectBooleanProperty(obj, SOLID_PROPERTY) || getTiledTileBooleanProperty(map, obj.gid, SOLID_PROPERTY),
+            offsetX: getObjectNumberProperty(obj, OFFSET_X_PROPERTY) ?? getTiledTileNumberProperty(map, obj.gid, OFFSET_X_PROPERTY) ?? 0,
+            offsetY: getObjectNumberProperty(obj, OFFSET_Y_PROPERTY) ?? getTiledTileNumberProperty(map, obj.gid, OFFSET_Y_PROPERTY) ?? 0,
+            offsetZ: getObjectNumberProperty(obj, OFFSET_Z_PROPERTY) ?? getTiledTileNumberProperty(map, obj.gid, OFFSET_Z_PROPERTY) ?? 0,
         });
     }
 

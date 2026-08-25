@@ -14,5 +14,14 @@
             "buildingId": "camp",
             "level": 2
         }
+    },
+    "gateTest": {
+        "name": "gateTest",
+        "requirement": {
+            "type": "resource",
+            "resourceType": "wood",
+            "amount": 1
+        },
+        "view": "gateAxeView"
     }
 }

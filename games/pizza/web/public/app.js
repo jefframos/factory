@@ -844,7 +844,18 @@ function renderRequirementField(container, obj, field, onDirty) {
 
     function redraw() {
         body.innerHTML = '';
-        if (obj[field.key] === undefined) return;
+        if (obj[field.key] === undefined) {
+            // A REQUIRED requirement field (e.g. a gate's own `requirement` — unlike an
+            // `optional: true` one, which stays hidden until its own checkbox above is
+            // checked) has to self-initialize here, the same way renderCostMap()/etc default
+            // their own value — otherwise a brand-new entry's requirement stays permanently
+            // undefined (no type dropdown ever renders to set it from), and syncToSource.mjs
+            // has nothing to write for it at all since it never sees a defined value to save.
+            if (field.optional) {
+                return;
+            }
+            obj[field.key] = defaultRequirement('resource');
+        }
 
         const typeSelect = document.createElement('select');
         for (const t of Object.keys(REQUIREMENT_TYPE_FIELDS)) {
