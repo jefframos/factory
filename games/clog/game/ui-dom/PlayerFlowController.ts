@@ -203,6 +203,7 @@ export class PlayerFlowController {
             root.appendChild(endGameTitle());
 
             const col = document.createElement('div');
+            col.className = 'end-game-col';
             Object.assign(col.style, {
                 position: 'fixed',
                 left: '50%',
@@ -216,12 +217,14 @@ export class PlayerFlowController {
             });
 
             const rankEl = document.createElement('div');
+            rankEl.className = 'end-game-rank';
             rankEl.textContent = Localization.getString('rank', { rank });
             Object.assign(rankEl.style, { fontSize: '52px', fontWeight: 'bold', color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,0.7)' });
             col.appendChild(rankEl);
 
             const list = document.createElement('div');
-            Object.assign(list.style, { width: '280px', background: 'rgba(16,20,30,0.55)', borderRadius: '10px', overflow: 'hidden' });
+            list.className = 'end-game-list';
+            Object.assign(list.style, { width: '280px', maxWidth: 'calc(100vw - 32px)', boxSizing: 'border-box', background: 'rgba(16,20,30,0.55)', borderRadius: '10px', overflow: 'hidden' });
             for (let i = start; i <= end; i++) list.appendChild(leaderboardRow(i, sorted[i]));
             col.appendChild(list);
 
@@ -602,7 +605,7 @@ function pillButton(label: string, onClick: () => void, opts: { role?: BtnRole; 
  */
 function boostBadge(onClick: () => void): HTMLButtonElement {
     const btn = document.createElement('button');
-    btn.className = 'btn btn-accent btn-md btn-float';
+    btn.className = 'btn btn-accent btn-md btn-float boost-badge';
     Object.assign(btn.style, { display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '180px' });
 
     const iconWrap = document.createElement('div');
@@ -627,6 +630,7 @@ function boostBadge(onClick: () => void): HTMLButtonElement {
 
     const line1 = document.createElement('div');
     line1.textContent = subPrefix.trim();
+    line1.className = 'boost-badge-line1';
     Object.assign(line1.style, { fontSize: '15px', fontWeight: 'bold' });
     textCol.appendChild(line1);
 
@@ -635,6 +639,7 @@ function boostBadge(onClick: () => void): HTMLButtonElement {
 
     const value = document.createElement('span');
     value.textContent = `${START_BOOST_MULTIPLIER}x `;
+    value.className = 'boost-badge-value';
     Object.assign(value.style, {
         fontSize: '20px',
         fontWeight: 'bold',
@@ -643,6 +648,7 @@ function boostBadge(onClick: () => void): HTMLButtonElement {
 
     const suffix = document.createElement('span');
     suffix.textContent = subSuffix.trim();
+    suffix.className = 'boost-badge-suffix';
     Object.assign(suffix.style, {
         fontSize: '18px',
         fontWeight: 'bold',

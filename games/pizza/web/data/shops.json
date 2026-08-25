@@ -54,6 +54,8 @@
                 "cooldownSec": 300,
                 "hitIntervalSec": 0.4
             }
-        ]
+        ],
+        "popupBobOffset": 1,
+        "baseView": "shop1View"
     }
 }

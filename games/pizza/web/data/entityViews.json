@@ -1,0 +1,65 @@
+{
+    "shop1View": {
+        "models": [
+            "Props.BuildingStructure"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 2,
+        "rotationDeg": 0
+    },
+    "tower2view": {
+        "models": [
+            "Pirate.TowerCompleteLarge"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "tower1View": {
+        "models": [
+            "Pirate.TowerBase"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "gateAxeView": {
+        "models": [
+            "Props.Fence"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 4,
+        "rotationDeg": [
+            1,
+            1
+        ]
+    },
+    "ship1View": {
+        "models": [
+            "Pirate.ShipMedium"
+        ],
+        "offset": [
+            0,
+            -1,
+            0
+        ],
+        "scale": 1,
+        "rotationDeg": 0
+    }
+}

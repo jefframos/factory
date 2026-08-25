@@ -275,8 +275,12 @@ export class DomUiRoot {
             return;
         }
 
-
-        return
+        // Uniformly scaling the full 1500x1024 design canvas against a narrow
+        // portrait viewport drives the scale so low the UI becomes unreadable
+        // (contain picks min(scaleX, scaleY), and scaleX collapses on narrow
+        // widths). Layout itself needs to be responsive via CSS instead, so
+        // this stays disabled — see buttons.css.
+        return;
         const viewportWidth =
             window.visualViewport?.width ??
             document.documentElement.clientWidth ??

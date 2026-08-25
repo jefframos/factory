@@ -46,13 +46,13 @@ export const FrameRegistry: Record<string, FrameDef> = {
         padding: DEFAULT_PADDING,
     },
     Info: {
-        textureKey: 'BorderFrame_Round24',
+        textureKey: 'ResourceBar_Single_Btn_Blue1',
         padding: DEFAULT_PADDING_BUBBLE,
     },
     Popup: {
-        textureKey: 'BorderFrame_Round24',
+        textureKey: 'ResourceBar_Single_Btn_Blue1',
         padding: DEFAULT_PADDING_BUBBLE,
-        arrowTexture: 'BubbleFrame03_Arrow_Bottom',
+        //arrowTexture: 'BubbleFrame03_Arrow_Bottom',
         arrowPivot: { x: 0.5, y: 1 },
     },
     /**
@@ -64,7 +64,41 @@ export const FrameRegistry: Record<string, FrameDef> = {
      * numbers) if the border ends up looking stretched or over-cropped in practice.
      */
     Simple: {
-        padding: uniformPadding(30),
+        padding: uniformPadding(20),
+    },
+    /** Gate.ts's icon-only "locked" panel (padlock + requirement icon, no text/arrow) — same bubble asset as Popup, kept as its own named preset so its look can be tuned independently. */
+    GateLock: {
+        textureKey: 'ResourceBar_Single_Btn_Grey',
+        padding: DEFAULT_PADDING_BUBBLE,
+    },
+    /**
+     * Per-entity-TYPE default popup frames (see PopupConfig.ts's own doc on resolvePopupFrameName()) —
+     * BuildingZone/ShopZone/QueueZone/CraftZone each use their own preset here instead of all
+     * four sharing the one 'Popup' frame, so a designer can retexture/repad one entity type's
+     * popup without touching the others. Each config entry can still override its OWN frame
+     * individually (BuildingConfig.frame/ShopConfig.frame/QueueConfig.frame/CraftTableConfig.frame,
+     * settable per-id from the pizza web editor) — these are just the type-wide starting point,
+     * cloned from 'Popup's own look so nothing changes visually until one gets tuned.
+     */
+    BuildingFrame: {
+        textureKey: 'ResourceBar_Single_Btn_Yellow1',
+        padding: DEFAULT_PADDING_BUBBLE,
+        arrowPivot: { x: 0.5, y: 1 },
+    },
+    ShopFrame: {
+        textureKey: 'ResourceBar_Single_Btn_Green1',
+        padding: DEFAULT_PADDING_BUBBLE,
+        arrowPivot: { x: 0.5, y: 1 },
+    },
+    QueueFrame: {
+        textureKey: 'ResourceBar_Single_Btn_Blue1',
+        padding: DEFAULT_PADDING_BUBBLE,
+        arrowPivot: { x: 0.5, y: 1 },
+    },
+    CraftingFrame: {
+        textureKey: 'ResourceBar_Single_Btn_Purple1',
+        padding: DEFAULT_PADDING_BUBBLE,
+        arrowPivot: { x: 0.5, y: 1 },
     },
 };
 

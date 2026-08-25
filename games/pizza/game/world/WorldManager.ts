@@ -117,6 +117,32 @@ export default class WorldManager {
     }
 
     /**
+     * True if a NOT-YET-DEPLETED resource sits within `radius` of `(worldX, worldZ)` — checked
+     * against every record's own `def.position` (see the ResourceRecord interface's own doc),
+     * not just currently-materialized ResourceNode entities, so this stays correct for a
+     * resource that's out of range and dematerialized but still very much occupying its tile.
+     * A record mid-respawn (`respawnRemainingSec !== undefined`) is skipped — there's nothing
+     * actually standing there right now — same "depleted means gone until it respawns"
+     * distinction update() itself already draws. Used by PizzaScene's "is the player on a
+     * stable tile" check (see PlayerPositionStorage.ts's own doc) to rule out saving a
+     * respawn point sitting on top of a tree/deposit/bush.
+     */
+    public hasResourceAt(worldX: number, worldZ: number, radius: number): boolean {
+        const radiusSq = radius * radius;
+        for (const record of this.records.values()) {
+            if (record.respawnRemainingSec !== undefined) {
+                continue;
+            }
+            const dx = record.def.position.x - worldX;
+            const dz = record.def.position.z - worldZ;
+            if (dx * dx + dz * dz <= radiusSq) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Streams resource nodes in/out around the player and keeps every off-screen respawn
      * timer ticking regardless of whether it's currently materialized — see this file's
      * own doc for why that second part matters.

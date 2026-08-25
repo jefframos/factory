@@ -4,19 +4,44 @@
         "levels": [
             {
                 "level": 1,
-                "requirements": { "wood": 5 },
-                "effect": { "type": "backpackCapacity", "value": 5, "description": "+5 backpack capacity" }
+                "requirements": {
+                    "wood": 5
+                },
+                "effect": {
+                    "type": "backpackCapacity",
+                    "value": 5,
+                    "description": "+5 backpack capacity"
+                },
+                "view": "tower2view"
             },
             {
                 "level": 2,
-                "requirements": { "wood": 8, "stone": 5 },
-                "effect": { "type": "backpackCapacity", "value": 10, "description": "+10 backpack capacity" }
+                "requirements": {
+                    "wood": 8,
+                    "stone": 5
+                },
+                "effect": {
+                    "type": "backpackCapacity",
+                    "value": 10,
+                    "description": "+10 backpack capacity"
+                }
             },
             {
                 "level": 3,
-                "requirements": { "wood": 12, "stone": 10, "berries": 6 },
-                "effect": { "type": "gatherSpeed", "value": 0.2, "description": "+20% gather speed" }
+                "requirements": {
+                    "wood": 12,
+                    "stone": 10,
+                    "berries": 6
+                },
+                "effect": {
+                    "type": "gatherSpeed",
+                    "value": 0.2,
+                    "description": "+20% gather speed"
+                }
             }
-        ]
+        ],
+        "baseView": "tower1View",
+        "popupMode": "simple",
+        "icon": "campfire"
     }
 }

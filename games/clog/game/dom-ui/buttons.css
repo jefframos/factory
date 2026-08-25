@@ -423,6 +423,240 @@
     }
 }
 
+/* ── Narrow portrait phones ───────────────────────────────────────────
+   Same reasoning as the landscape breakpoints above, keyed on WIDTH
+   instead of height — the landscape queries never fire for a tall/narrow
+   portrait viewport, so without these, buttons/badges/logo keep their
+   full desktop size on a phone and visually collide (see the reference
+   screenshots this was cloned from).
+*/
+
+/* Standard phone portrait widths. */
+@media (orientation: portrait) and (max-width: 420px) {
+    .btn-sm {
+        --btn-border-width: 10px;
+        padding: 5px 12px;
+        font-size: 12px;
+        gap: 5px;
+    }
+
+    .btn-md {
+        --btn-border-width: 13px;
+        padding: 7px 16px;
+        font-size: 13px;
+        gap: 6px;
+    }
+
+    .btn-lg {
+        --btn-border-width: 16px;
+        padding: 12px 12px;
+        font-size: 17px;
+        gap: 6px;
+    }
+
+    .btn-hug-start {
+        padding-left: 6px;
+    }
+
+    .btn-icon-sm {
+        width: 18px;
+        height: 18px;
+    }
+
+    .btn-icon-md {
+        width: 24px;
+        height: 24px;
+    }
+
+    .btn-icon-lg {
+        width: 28px;
+        height: 28px;
+    }
+
+    .menu-logo {
+        max-width: min(200px, 55vw);
+        max-height: 70px;
+        object-fit: contain;
+    }
+
+    .high-score-badge {
+        min-height: 32px;
+        padding: 4px 12px;
+        gap: 5px;
+        font-size: 12px;
+        border-radius: 16px;
+        box-sizing: border-box;
+    }
+
+    .high-score-badge img,
+    .high-score-badge .high-score-icon {
+        width: 19px;
+        height: 19px;
+        object-fit: contain;
+    }
+
+    .player-name-input {
+        min-height: 40px;
+        padding: 6px 38px 6px 14px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    /* Settings/Sound/Quit are laid out side-by-side (Settings, Sound,
+       +52px each) via inline `left` offsets authored for wide screens —
+       on a narrow phone that row eats into the middle of the screen, so
+       stack them vertically down the left edge instead. `top`/`left` need
+       !important to beat the inline styles set in each button's own
+       constructor (JS only ever touches `display` on QuitButton, so that
+       keeps working through its own inline toggle). */
+    .corner-btn {
+        width: 36px !important;
+        height: 36px !important;
+        left: 10px !important;
+    }
+
+    .corner-btn img {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .corner-btn-settings {
+        top: 10px !important;
+    }
+
+    .corner-btn-sound {
+        top: 54px !important;
+    }
+
+    .corner-btn-quit {
+        top: 98px !important;
+    }
+
+    /* Boot-menu "start bonus" callout — full desktop size (48px icon +
+       two text lines in a 180px pill) doesn't fit next to Shop on a narrow
+       screen and gets clipped/overlapping. */
+    .boost-badge {
+        max-width: 140px !important;
+        gap: 5px !important;
+    }
+
+    .boost-badge img {
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    .boost-badge-line1 {
+        font-size: 11px !important;
+    }
+
+    .boost-badge-value {
+        font-size: 15px !important;
+    }
+
+    .boost-badge-suffix {
+        font-size: 13px !important;
+    }
+}
+
+/* Below ~350px wide, popups (Settings, End Game rank list) should match
+   the screen instead of keeping their authored min-width — ModalOverlay's
+   boxEl and the individual screens above it (SettingsButton, PlayerFlow-
+   Controller's End Game list) set a `minWidth`/fixed `width` around
+   280px, which forces min-width to win over max-width once the viewport
+   drops below it (per spec, min-width beats a conflicting max-width),
+   overflowing the real screen edge. !important is needed everywhere here
+   since these all come from inline styles set in JS. */
+@media (max-width: 350px) {
+    .modal-box {
+        width: calc(100vw - 24px) !important;
+        min-width: 0 !important;
+        max-width: calc(100vw - 24px) !important;
+        padding: 16px 16px !important;
+    }
+
+    .end-game-col {
+        width: calc(100vw - 24px) !important;
+        align-items: center !important;
+    }
+
+    .end-game-list {
+        width: 100% !important;
+        max-width: calc(100vw - 24px) !important;
+    }
+
+    .end-game-rank {
+        font-size: 34px !important;
+    }
+}
+
+/* Small/compact phone portrait widths. */
+@media (orientation: portrait) and (max-width: 340px) {
+    .btn-sm {
+        --btn-border-width: 8px;
+        padding: 4px 9px;
+        font-size: 10px;
+        gap: 4px;
+    }
+
+    .btn-md {
+        --btn-border-width: 10px;
+        padding: 5px 12px;
+        font-size: 11px;
+        gap: 5px;
+    }
+
+    .btn-lg {
+        --btn-border-width: 13px;
+        padding: 9px 10px;
+        font-size: 14px;
+        gap: 5px;
+    }
+
+    .btn-icon-sm {
+        width: 15px;
+        height: 15px;
+    }
+
+    .btn-icon-md {
+        width: 20px;
+        height: 20px;
+    }
+
+    .btn-icon-lg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .menu-logo {
+        max-width: min(160px, 50vw);
+        max-height: 55px;
+    }
+
+    .menu-logo-content {
+        margin-top: 6px !important;
+    }
+
+    .high-score-badge {
+        min-height: 27px;
+        padding: 3px 10px;
+        gap: 4px;
+        font-size: 10px;
+        border-radius: 14px;
+    }
+
+    .high-score-badge img,
+    .high-score-badge .high-score-icon {
+        width: 16px;
+        height: 16px;
+    }
+
+    .player-name-input {
+        min-height: 34px;
+        padding: 5px 32px 5px 12px;
+        font-size: 12px;
+    }
+}
+
 /* Extremely short playable-ad or iframe viewport. */
 @media (orientation: landscape) and (max-height: 450px) {
     .btn-md {

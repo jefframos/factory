@@ -231,9 +231,21 @@ button.small { font-size: 11px; padding: 4px 8px; }
     background: #1f2025;
     max-width: 480px;
 }
-.icon-gallery-search {
-    width: 100%;
+.icon-gallery-controls {
+    display: flex;
+    gap: 8px;
     margin-bottom: 8px;
+}
+.icon-gallery-controls select {
+    background: #14151a;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 5px;
+    padding: 6px 8px;
+    font-size: 12px;
+}
+.icon-gallery-search {
+    flex: 1;
     background: #14151a;
     border: 1px solid var(--border);
     color: var(--text);

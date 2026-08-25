@@ -214,7 +214,7 @@ export default class TileMap {
      * doesn't cover.
      */
     public isWalkableAt(worldX: number, worldZ: number): boolean {
-        return isGroundWalkable(this.getGroundDefAt(worldX, worldZ)?.name);
+        return isGroundWalkable(this.getGroundDefAt(worldX, worldZ));
     }
 
     public destroy(): void {

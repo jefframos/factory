@@ -21,6 +21,7 @@ import { BuildingId } from './BuildingTypes';
 // ToolRegistry's ToolId.
 import { ItemType } from '../crafting/ItemTypes';
 import { MilestoneRequirement } from './MilestoneRequirement';
+import { FrameName } from '../ui/FrameRegistry';
 
 /** Alias kept for readability at GateConfig's own call sites — see this file's own doc for why the underlying type is shared with QueueTypes.ts rather than defined here. */
 export type GateRequirement = MilestoneRequirement;
@@ -45,22 +46,34 @@ export interface GateConfig {
     position: [number, number, number];
     requirement: GateRequirement;
     mesh: GateMeshConfig;
+    /** Optional real-mesh override, keyed into EntityViewRegistry.ts's ENTITY_VIEW_CONFIG — see BuildingLevelConfig.view's own doc for the full convention. undefined keeps the box placeholder (`mesh` above), unchanged from before this field existed. */
+    view?: string;
+    /** Overrides FrameRegistry.ts's 'GateLock' default for THIS gate's own icon panel — see PopupConfig.ts's resolvePopupFrameName()'s own doc/Gate.ts's buildLabel(). undefined uses 'GateLock'. */
+    frame?: FrameName;
 }
 
 export const GATE_CONFIG: Record<GateId, GateConfig> = {
     [GateId.Gate1]: {
-        name: 'North Gate',
+        name: "North Gate",
         position: [0, 0, -16],
-        requirement: { type: 'building', buildingId: BuildingId.Camp, level: 2 },
+        requirement: {
+            "type": "building",
+            "buildingId": BuildingId.Camp,
+            "level": 2
+        },
         mesh: { size: [4, 3, 1], color: 0x555555 },
     },
     [GateId.GateAxe]: {
-        name: 'Axe Gate',
+        name: "Axe Gate",
         // Fallback only — the level designer already drew "gateAxe" on the Tiled map's
         // "mapSettings" layer (see WorldObjectRegistry.ts/PizzaScene.setupGates()), so this
         // exact position is only ever used if that object goes missing.
         position: [-12, 0, 21],
-        requirement: { type: 'item', item: ItemType.Axe },
+        requirement: {
+            "type": "item",
+            "item": ItemType.Axe
+        },
         mesh: { size: [4, 3, 1], color: 0x555555 },
+        "view": "gateAxeView"
     },
 };

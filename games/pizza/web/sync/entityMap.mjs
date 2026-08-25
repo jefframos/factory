@@ -45,30 +45,36 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'GATE_CONFIG',
         kind: 'enumRecord',
         enumName: 'GateId',
-        managedKeys: ['name', 'requirement'],
+        managedKeys: ['name', 'requirement', 'view', 'frame'],
+        optionalKeys: ['view', 'frame'],
     },
     buildings: {
         file: path.join(GAME_DIR, 'data', 'BuildingTypes.ts'),
         exportName: 'BUILDING_CONFIG',
         kind: 'enumRecord',
         enumName: 'BuildingId',
-        managedKeys: ['name', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset'],
-        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset'],
+        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'frame'],
+        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'frame'],
         // BuildingLevelConfig also carries a `mesh` field (per-level placeholder art) that
         // this editor doesn't manage — a plain wholesale replacement of the `levels` array
         // (what every OTHER list field in this map gets, since none of their items have
         // unmanaged siblings) would silently delete every level's mesh. listMerge tells
         // syncToSource.mjs to instead merge each array item by index, touching only the
         // named sub-fields on each existing item and leaving `mesh` alone — see
-        // syncToSource.mjs's upsertArrayByIndex() for the actual merge.
-        listMerge: { levels: ['level', 'requirements', 'effect'] },
+        // syncToSource.mjs's upsertArrayByIndex() for the actual merge. `view` (an optional
+        // EntityViewRegistry id — see BuildingLevelConfig.view's own doc) IS managed here.
+        listMerge: { levels: ['level', 'requirements', 'effect', 'view'] },
     },
     shops: {
         file: path.join(GAME_DIR, 'shop', 'ShopTypes.ts'),
         exportName: 'SHOP_CONFIG_BY_ID',
         kind: 'partialRecord',
-        managedKeys: ['name', 'tool', 'action', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset'],
-        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset'],
+        managedKeys: ['name', 'tool', 'action', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'frame'],
+        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'frame'],
+        // Same "levels has an unmanaged sibling field" reasoning as buildings' own listMerge —
+        // ShopUpgradeLevel's `view` (optional) IS managed here alongside the ladder's own
+        // cost/cooldown/hitInterval/hitScale/resourcePerHit fields.
+        listMerge: { levels: ['cost', 'cooldownSec', 'hitIntervalSec', 'hitScale', 'resourcePerHit', 'view'] },
     },
     crafting: {
         file: path.join(GAME_DIR, 'crafting', 'CraftTypes.ts'),
@@ -81,8 +87,8 @@ export const ENTITY_SOURCE_MAP = {
         // CraftTypes.ts's own doc on each field. `toolId` is a plain string reference into
         // TOOL_LIBRARY, resolved at runtime by CraftZone.createTableMesh(), not an enum value —
         // no ENUM_VALUE_FIELDS entry needed for it.
-        managedKeys: ['name', 'recipes', 'destroyOnComplete', 'appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset'],
-        optionalKeys: ['appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset'],
+        managedKeys: ['name', 'recipes', 'destroyOnComplete', 'appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset', 'frame'],
+        optionalKeys: ['appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset', 'frame'],
     },
     // A RESOURCE is the bankable item (Wood/Stone/Berries/Bark/Pebble/GrassFiber) — what
     // ends up in BackpackStorage. What actually PRODUCES one is a separate concern — see
@@ -149,8 +155,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_QUEUE_CONFIG',
         byIdExportName: 'QUEUE_CONFIG_BY_ID',
-        managedKeys: ['cooldownSec', 'possibleTasks', 'appearRequirement', 'popupMode', 'popupBobOffset'],
-        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset'],
+        managedKeys: ['cooldownSec', 'possibleTasks', 'appearRequirement', 'popupMode', 'popupBobOffset', 'view', 'frame'],
+        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset', 'view', 'frame'],
     },
     tools: {
         file: path.join(GAME_DIR, 'actions', 'ToolRegistry.ts'),
@@ -179,5 +185,48 @@ export const ENTITY_SOURCE_MAP = {
         // is meant to actually delete.
         managedKeys: ['icon', 'models', 'scale', 'rotationDeg'],
         optionalKeys: ['icon'],
+    },
+    // Reusable real-mesh definitions (model + scale/rotation + offset), keyed by a plain
+    // string id a building level, shop level, gate, or queue can OPTIONALLY reference via its
+    // own `view` field — see EntityViewRegistry.ts's own doc. Same open-ended-by-key shape as
+    // assetLibrary/tools; this tab's own Delete button is meant to actually delete an entry,
+    // same reasoning as those two for skipping protectEntries.
+    entityViews: {
+        file: path.join(GAME_DIR, 'world', 'EntityViewRegistry.ts'),
+        exportName: 'ENTITY_VIEW_CONFIG',
+        kind: 'partialRecord',
+        managedKeys: ['models', 'scale', 'rotationDeg', 'offset'],
+    },
+    // The NPC/prop that walks a queue's waypoint path in and out (see QuestGiverEntity.ts's
+    // own doc) — `variants` has no unmanaged sibling fields on any of its items (view/weight/
+    // lootTable are exactly what QuestGiverVariant has), so unlike buildings'/shops' own
+    // `levels` this needs no listMerge — a plain wholesale replacement of the whole array is
+    // always safe here.
+    questGivers: {
+        file: path.join(GAME_DIR, 'data', 'QuestGiverTypes.ts'),
+        exportName: 'QUEST_GIVER_CONFIG_BY_ID',
+        kind: 'partialRecord',
+        managedKeys: ['variants', 'moveSpeed'],
+    },
+    // A selectable player appearance — color/headShape/face/isStarter (see
+    // CharacterViewTypes.ts's own doc). No unmanaged sibling fields on any entry, so a
+    // plain wholesale per-entry upsert (no listMerge — there's no nested list here at all)
+    // is always safe.
+    characterViews: {
+        file: path.join(GAME_DIR, 'data', 'CharacterViewTypes.ts'),
+        exportName: 'CHARACTER_VIEW_CONFIG',
+        kind: 'partialRecord',
+        managedKeys: ['color', 'headShape', 'face', 'isStarter'],
+        optionalKeys: ['isStarter'],
+    },
+    // Reusable, named task pools (see LootTableTypes.ts's own doc) — a QuestGiverVariant
+    // references one of these by id instead of carrying its own possibleTasks list inline, so
+    // the same pool can back more than one variant/queue and so the editor can manage tasks as
+    // a flat, directly-addable list rather than nested two levels deep inside a variant.
+    lootTables: {
+        file: path.join(GAME_DIR, 'data', 'LootTableTypes.ts'),
+        exportName: 'LOOT_TABLE_CONFIG',
+        kind: 'partialRecord',
+        managedKeys: ['possibleTasks'],
     },
 };

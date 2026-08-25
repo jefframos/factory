@@ -48,7 +48,13 @@ export default class PlatformHandler {
         await this.platform?.onAudioChanged?.((enabled) => {
             console.log("AUDIO ENABLED", enabled);
 
-            SoundManager.instance.setMuted(!enabled);
+            // Platform mute (e.g. YouTube's own mute button) must always win
+            // over the in-game toggle — setPlatformMuted keeps it as a
+            // separate flag ANDed against the player's own preference,
+            // rather than sharing setMuted's single Howler.mute() call (see
+            // SoundManager's own docs — that used to let the in-game toggle
+            // undo a platform mute).
+            SoundManager.instance.setPlatformMuted(!enabled);
         });
     }
 

@@ -246,7 +246,7 @@ function renderActiveTab() {
 
     const manifestEntry = manifest.find(e => e.id === activeId);
     sourceHintEl.textContent = manifestEntry?.sourceHint
-        ? `mirrors: ${manifestEntry.sourceHint} (edits here do NOT write back to that file yet)`
+        ? `source: ${manifestEntry.sourceHint}`
         : '';
 
     const toolbar = document.createElement('div');
@@ -430,6 +430,11 @@ function renderMapTilesTab(data) {
     };
     numbersRow.control.appendChild(numbersToggle);
     contentEl.appendChild(numbersRow.row);
+
+    // Ground tiles predating the `walkable` field have no such key yet — treat them as
+    // walkable (matches isGroundWalkable()'s own undefined-is-walkable default) so the
+    // checkbox doesn't show every pre-existing tile as blocked.
+    data.grounds.forEach(tile => { tile.walkable = tile.walkable ?? true; });
 
     contentEl.appendChild(sectionLabel('Grounds — base terrain painted on groundLayer'));
     contentEl.appendChild(renderTileList(data.grounds, '/tiled-asset/grounds.png', data.tileSize, MAP_TILE_FIELDS.groundFields, 'ground tile'));
@@ -684,10 +689,14 @@ function renderFields(container, obj, fields, onDirty) {
             renderList(control, obj, field, onDirty);
         } else if (field.type === 'icon') {
             renderIconField(control, obj, field, onDirty);
+        } else if (field.type === 'faceIcon') {
+            renderFaceIconField(control, obj, field, onDirty);
         } else if (field.type === 'modelList') {
             renderModelListField(control, obj, field, onDirty);
         } else if (field.type === 'numberRange') {
             renderNumberRangeField(control, obj, field, onDirty);
+        } else if (field.type === 'vector3') {
+            renderVector3Field(control, obj, field, onDirty);
         } else if (field.optional && field.type !== 'select') {
             renderOptionalLeaf(control, obj, field, onDirty);
         } else {
@@ -717,6 +726,17 @@ function makeLeafInput(obj, field, onDirty) {
         input.value = obj[field.key] ?? '';
         input.oninput = () => {
             obj[field.key] = input.value === '' ? undefined : Number(input.value);
+            onDirty();
+        };
+        return input;
+    }
+
+    if (field.type === 'color') {
+        const input = document.createElement('input');
+        input.type = 'color';
+        input.value = obj[field.key] ?? '#ffffff';
+        input.oninput = () => {
+            obj[field.key] = input.value;
             onDirty();
         };
         return input;
@@ -994,6 +1014,15 @@ function loadImageAssets() {
     return imageAssetsPromise;
 }
 
+/** Same caching convention as loadImageAssets(), for /api/non-preload-images (see that route's own doc in server.mjs) — the "faceIcon" field type's asset source. */
+let nonPreloadImageAssetsPromise = null;
+function loadNonPreloadImageAssets() {
+    if (!nonPreloadImageAssetsPromise) {
+        nonPreloadImageAssetsPromise = fetchJson('/api/non-preload-images').catch(err => ({ assets: [], error: err.message }));
+    }
+    return nonPreloadImageAssetsPromise;
+}
+
 /**
  * A small `<img>` that resolves its own src asynchronously from the shared image-asset
  * cache — used both for an icon field's own preview and for an entry card's collapsed-row
@@ -1020,12 +1049,57 @@ function makeIconThumb(name, className = 'icon-preview') {
 /**
  * A texture-name field: thumbnail preview + text input (typing a name by
  * hand still works, e.g. for an icon not yet scanned) + a "Browse" toggle
- * that lazily loads /api/images into a filterable thumbnail grid. Clicking
- * a thumbnail sets the field to that image's BARE filename — the exact
+ * that lazily loads /api/images into a FOLDER-navigable thumbnail grid —
+ * a "Folder" dropdown (populated from every distinct asset.bundle) narrows
+ * the grid to one bundle at a time instead of dumping every scanned image
+ * into one flat list; "All folders" goes back to everything. Clicking a
+ * thumbnail sets the field to that image's BARE filename — the exact
  * string the game's own icon fields store (see this field type's own doc
- * in schemas.js).
+ * in schemas.js). Just a thin config wrapper around renderAssetPickerField()
+ * — see that function's own doc for the shared implementation.
  */
 function renderIconField(control, obj, field, onDirty) {
+    renderAssetPickerField(control, obj, field, onDirty, {
+        loadAssets: loadImageAssets,
+        getValue: asset => asset.name,
+        getGroup: asset => asset.bundle,
+        getLabel: asset => asset.name,
+        findAsset: (assets, value) => assets.find(a => a.name === value),
+        groupLabel: 'Folder',
+        notFoundHint: 'not found under raw-assets/images',
+    });
+}
+
+/**
+ * Same folder-navigable picker as renderIconField(), pointed at
+ * /api/non-preload-images instead (see server.mjs's own route doc) — grouped by each
+ * asset's own top-level subfolder ("skins", "islands", ...) rather than a packed bundle
+ * name. Clicking a thumbnail sets the field to that image's full RELATIVE PATH under
+ * images/non-preload (e.g. "skins/pirate.webp") — the convention CharacterViewConfig.face/
+ * ShopStorage.ShopItem.texture actually store, NOT a bare frame name (these files are
+ * addressed by path, never packed into an atlas — see CharacterViewTypes.ts's own doc).
+ */
+function renderFaceIconField(control, obj, field, onDirty) {
+    renderAssetPickerField(control, obj, field, onDirty, {
+        loadAssets: loadNonPreloadImageAssets,
+        getValue: asset => asset.relPath,
+        getGroup: asset => asset.folder,
+        getLabel: asset => asset.name,
+        findAsset: (assets, value) => assets.find(a => a.relPath === value),
+        groupLabel: 'Folder',
+        notFoundHint: 'not found under images/non-preload',
+    });
+}
+
+/**
+ * Shared implementation behind renderIconField()/renderFaceIconField() — a text input
+ * (typing a value by hand still works) + thumbnail preview + a "Browse" toggle opening a
+ * folder-dropdown-filtered, search-filtered thumbnail grid. `config` supplies everything
+ * that differs between an asset source addressed by bare name (packed icons) vs one
+ * addressed by relative path (non-preload faces) — see renderIconField()/
+ * renderFaceIconField()'s own docs for the two current configs.
+ */
+function renderAssetPickerField(control, obj, field, onDirty, config) {
     const wrap = document.createElement('div');
     wrap.className = 'icon-field';
 
@@ -1036,7 +1110,7 @@ function renderIconField(control, obj, field, onDirty) {
     const input = document.createElement('input');
     input.type = 'text';
     input.value = obj[field.key] ?? '';
-    input.placeholder = '(no icon)';
+    input.placeholder = '(none)';
     const browseBtn = document.createElement('button');
     browseBtn.className = 'small';
     browseBtn.textContent = 'Browse…';
@@ -1050,7 +1124,20 @@ function renderIconField(control, obj, field, onDirty) {
 
     function updatePreview() {
         previewSlot.innerHTML = '';
-        previewSlot.appendChild(makeIconThumb(obj[field.key]));
+        const value = obj[field.key];
+        const img = document.createElement('img');
+        img.className = 'icon-preview';
+        if (!value) {
+            img.style.visibility = 'hidden';
+        } else {
+            config.loadAssets().then(({ assets }) => {
+                const asset = config.findAsset(assets, value);
+                img.src = asset ? asset.url : '';
+                img.classList.toggle('missing', !asset);
+                img.title = asset ? `${value} (${config.getGroup(asset)})` : `"${value}" ${config.notFoundHint}`;
+            });
+        }
+        previewSlot.appendChild(img);
     }
 
     input.oninput = () => {
@@ -1059,34 +1146,59 @@ function renderIconField(control, obj, field, onDirty) {
         updatePreview();
     };
 
-    function renderGallery(assets, filterText) {
+    function renderGallery(assets, filterText, folderFilter) {
         gallery.innerHTML = '';
+
+        const controlsRow = document.createElement('div');
+        controlsRow.className = 'icon-gallery-controls';
+
+        const folders = [...new Set(assets.map(config.getGroup))].sort();
+        const folderSelect = document.createElement('select');
+        const allOption = document.createElement('option');
+        allOption.value = '';
+        allOption.textContent = `All ${config.groupLabel.toLowerCase()}s (${assets.length})`;
+        folderSelect.appendChild(allOption);
+        for (const folder of folders) {
+            const option = document.createElement('option');
+            option.value = folder;
+            option.textContent = folder;
+            folderSelect.appendChild(option);
+        }
+        folderSelect.value = folderFilter;
+        folderSelect.title = config.groupLabel;
+        folderSelect.onchange = () => renderGallery(assets, search.value, folderSelect.value);
+        controlsRow.appendChild(folderSelect);
+
         const search = document.createElement('input');
         search.type = 'text';
         search.className = 'icon-gallery-search';
         search.placeholder = 'Filter…';
         search.value = filterText;
-        search.oninput = () => renderGallery(assets, search.value);
-        gallery.appendChild(search);
+        search.oninput = () => renderGallery(assets, search.value, folderSelect.value);
+        controlsRow.appendChild(search);
+
+        gallery.appendChild(controlsRow);
 
         const grid = document.createElement('div');
         grid.className = 'icon-gallery-grid';
-        const filtered = filterText
-            ? assets.filter(a => a.name.toLowerCase().includes(filterText.toLowerCase()))
-            : assets;
+        let filtered = folderFilter ? assets.filter(a => config.getGroup(a) === folderFilter) : assets;
+        if (filterText) {
+            filtered = filtered.filter(a => config.getLabel(a).toLowerCase().includes(filterText.toLowerCase()));
+        }
         for (const asset of filtered.slice(0, 300)) {
             const item = document.createElement('button');
             item.className = 'icon-gallery-item';
-            item.title = `${asset.name} (${asset.bundle})`;
+            item.title = `${config.getLabel(asset)} (${config.getGroup(asset)})`;
             const thumb = document.createElement('img');
             thumb.src = asset.url;
             thumb.loading = 'lazy';
             const label = document.createElement('span');
-            label.textContent = asset.name;
+            label.textContent = config.getLabel(asset);
             item.append(thumb, label);
             item.onclick = () => {
-                obj[field.key] = asset.name;
-                input.value = asset.name;
+                const value = config.getValue(asset);
+                obj[field.key] = value;
+                input.value = value;
                 gallery.hidden = true;
                 onDirty();
                 updatePreview();
@@ -1101,7 +1213,7 @@ function renderIconField(control, obj, field, onDirty) {
         } else if (filtered.length > 300) {
             const hint = document.createElement('p');
             hint.className = 'hint';
-            hint.textContent = `Showing first 300 of ${filtered.length} matches — refine the filter.`;
+            hint.textContent = `Showing first 300 of ${filtered.length} matches — refine the folder/filter.`;
             grid.appendChild(hint);
         }
         gallery.appendChild(grid);
@@ -1112,12 +1224,12 @@ function renderIconField(control, obj, field, onDirty) {
         gallery.hidden = !gallery.hidden;
         if (!gallery.hidden) {
             gallery.innerHTML = '<p class="hint">Loading…</p>';
-            const { assets, error } = await loadImageAssets();
+            const { assets, error } = await config.loadAssets();
             if (error) {
                 gallery.innerHTML = `<p class="hint">Couldn't load images: ${error}</p>`;
                 return;
             }
-            renderGallery(assets, '');
+            renderGallery(assets, '', '');
         }
     };
 
@@ -1322,6 +1434,31 @@ function renderNumberRangeField(control, obj, field, onDirty) {
         control.appendChild(valuesRow);
     }
     redraw();
+}
+
+/** A plain [x, y, z] tuple field (e.g. EntityViewConfig.offset) — three side-by-side number inputs, defaulting to [0, 0, 0] the first time this key is touched. */
+function renderVector3Field(control, obj, field, onDirty) {
+    if (!Array.isArray(obj[field.key])) {
+        obj[field.key] = [0, 0, 0];
+    }
+
+    const row = document.createElement('div');
+    row.className = 'number-range-row';
+
+    ['x', 'y', 'z'].forEach((axisLabel, axisIndex) => {
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.step = 'any';
+        input.title = axisLabel;
+        input.value = obj[field.key][axisIndex] ?? 0;
+        input.oninput = () => {
+            obj[field.key][axisIndex] = Number(input.value);
+            onDirty();
+        };
+        row.appendChild(input);
+    });
+
+    control.appendChild(row);
 }
 
 // ---------------------------------------------------------------------------

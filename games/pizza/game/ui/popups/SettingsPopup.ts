@@ -20,6 +20,7 @@ import { HighScoreStorage } from '../../data/HighScoreStorage';
 import { CraftStorage } from '../../crafting/CraftStorage';
 import { ItemStorage } from '../../crafting/ItemStorage';
 import { DynamicResourceStorage } from '../../world/DynamicResourceStorage';
+import { PlayerPositionStorage } from '../../data/PlayerPositionStorage';
 
 export default class SettingsPopup extends Popup {
     public constructor() {
@@ -46,6 +47,13 @@ export default class SettingsPopup extends Popup {
      * (nothing left to re-seed the starting axe once index.ts's ItemStorage.load() sees an
      * already-empty-but-still-written save), where the reload should land back at "one axe,
      * craft1 available again," the same state a first-ever visit gets.
+     *
+     * PlayerPositionStorage.clearAll() is in this list for exactly the same reason every
+     * gated-progress storage is — GateStorage.clearAll() re-locks every gate, but without also
+     * wiping the saved "last stable tile" the player would reload standing wherever they last
+     * were, which after a real gate re-locks could easily be on the far side of one with no way
+     * back (see this popup's own reload). Clearing it here lets PizzaScene's constructor fall
+     * back to the map's own "playerStart" point instead, same as an actual first-ever visit.
      */
     private handleClearData(): void {
         void Promise.all([
@@ -61,6 +69,7 @@ export default class SettingsPopup extends Popup {
             CraftStorage.clearAll(),
             ItemStorage.resetToDefaults(),
             DynamicResourceStorage.clearAll(),
+            PlayerPositionStorage.clearAll(),
         ]).then(() => window.location.reload());
     }
 }

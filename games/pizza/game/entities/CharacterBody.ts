@@ -13,7 +13,8 @@ import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import { CubeBuilder, colorForValue } from '../builders/CubeBuilder';
 import { TextureBuilder } from '../builders/TextureBuilder';
-import { ShopStorage, SHOP_ITEMS, resolveShopImagePath } from '../data/ShopStorage';
+import { ShopStorage, SHOP_ITEMS, DEFAULT_SKIN_ID, resolveShopImagePath } from '../data/ShopStorage';
+import { CharacterViewConfig } from '../data/CharacterViewTypes';
 import { BendService } from '../services/BendService';
 import AnimatorController from './animation/AnimatorController';
 import { loadCompressedFile, releaseObjectURL } from '../utils/GzipLoader';
@@ -184,13 +185,54 @@ export default class CharacterBody {
 
     /**
      * Player path: colors the body + attaches a CubeBuilder cube (same
-     * look/number/FACE as the real player cube — see CubeBuilder.buildPlayer)
-     * matching `value`'s palette color (see colorForValue), with its face
-     * decal kept in sync with the currently-equipped shop skin.
+     * look/FACE as the real player cube — see CubeBuilder.buildPlayer) matching
+     * `value`'s palette color (see colorForValue), with its face decal kept in
+     * sync with the currently-equipped shop skin. `showNumber: false` — unlike
+     * the merge game this was copied from, pizza has no on-head "value" to
+     * actually display, so the top face stays plain instead of showing a bare
+     * digit that meant nothing here.
      */
     public applyValueColor(value: number): void {
         this.setBodyColor(colorForValue(value));
-        this.mountHeadCube(CubeBuilder.buildPlayer(value, HEAD_CUBE_SIZE), true);
+        this.mountHeadCube(CubeBuilder.buildPlayer(value, HEAD_CUBE_SIZE, undefined, false), true);
+    }
+
+    /**
+     * Player path (Character Views — see CharacterViewTypes.ts's own doc): colors the body +
+     * attaches a CubeBuilder cube built from `config`'s own LITERAL color (not a merge-value
+     * palette lookup, unlike applyValueColor()), with its face decal defaulted to `config.face`
+     * and then kept in sync with whatever the player actually has equipped, same as
+     * applyValueColor()'s own mountHeadCube(..., true) call.
+     */
+    public applyCharacterView(config: CharacterViewConfig): void {
+        this.setBodyColor(config.color);
+        this.mountHeadCube(CubeBuilder.buildCharacterHead(config.color, HEAD_CUBE_SIZE), true);
+        void this.applyDefaultFace(config.face);
+    }
+
+    /**
+     * Loads `facePath` (a CharacterViewConfig.face — see that field's own doc) onto the head
+     * cube, but ONLY if the player hasn't actually equipped a REAL shop skin by the time this
+     * resolves — ShopStorage.getEquippedSkinId() defaults to DEFAULT_SKIN_ID (see that
+     * constant's own doc: "the always-unlocked, no-ad-required starting skin"), which is a
+     * sentinel meaning "nothing meaningfully chosen," not a real equip that should win over
+     * the character's own defined look. applyEquippedFace() (kicked off concurrently by
+     * mountHeadCube() below) draws the exact same distinction — see its own doc — so the two
+     * never fight regardless of which one's async load happens to resolve first.
+     */
+    private async applyDefaultFace(facePath: string): Promise<void> {
+        if (!this.headCube) {
+            return;
+        }
+
+        try {
+            const texture = await TextureBuilder.load(resolveShopImagePath(facePath));
+            if (this.headCube && ShopStorage.getEquippedSkinId() === DEFAULT_SKIN_ID) {
+                CubeBuilder.setFaceTexture(this.headCube, texture);
+            }
+        } catch (e) {
+            console.error('CharacterBody: failed to load Character View default face texture', e);
+        }
     }
 
     /**
@@ -247,13 +289,26 @@ export default class CharacterBody {
         }
     }
 
-    /** Loads whichever skin is CURRENTLY equipped (ignores `itemId` — always re-reads ShopStorage.getEquippedSkinId(), so this doubles as both the initial load and the onEquipChanged live-update handler) and swaps it onto the head cube's face decal. */
+    /**
+     * Loads whichever skin is CURRENTLY equipped (ignores `itemId` — always re-reads
+     * ShopStorage.getEquippedSkinId(), so this doubles as both the initial load and the
+     * onEquipChanged live-update handler) and swaps it onto the head cube's face decal. A
+     * no-op while DEFAULT_SKIN_ID is still equipped (see that constant's own doc) — that's the
+     * "nothing meaningfully chosen yet" sentinel, so whatever's already showing (a Character
+     * View's own default face, or the procedural bot decal) is left alone rather than getting
+     * clobbered by the shop's own starting skin art.
+     */
     private applyEquippedFace = async (): Promise<void> => {
         if (!this.headCube) {
             return;
         }
 
-        const item = SHOP_ITEMS.find(i => i.id === ShopStorage.getEquippedSkinId());
+        const equippedId = ShopStorage.getEquippedSkinId();
+        if (equippedId === DEFAULT_SKIN_ID) {
+            return;
+        }
+
+        const item = SHOP_ITEMS.find(i => i.id === equippedId);
 
         if (!item) {
             return;

@@ -12,9 +12,11 @@
 // but shaped so a future gameplay system can key off `type` without this
 // file changing again.
 
+import * as PIXI from 'pixi.js';
 import { ResourceType } from '../actions/ResourceTypes';
 import { MilestoneRequirement } from './MilestoneRequirement';
 import { PopupMode } from '../ui/PopupConfig';
+import { FrameName } from '../ui/FrameRegistry';
 
 export enum BuildingId {
     Camp = 'camp',
@@ -50,12 +52,18 @@ export interface BuildingLevelConfig {
     effect: BuildingEffect;
     /** What the building looks like once THIS level is cleared — see getMeshConfigForLevel(). */
     mesh: BuildingMeshConfig;
+    /** Optional real-mesh override for this level, keyed into EntityViewRegistry.ts's ENTITY_VIEW_CONFIG — set from the pizza web editor's Map/Entities tabs. When set (and the view actually has a model — see resolveEntityView()), BuildingZone swaps its box placeholder for this glb instead; undefined keeps the box (`mesh` above), unchanged from before this field existed. */
+    view?: string;
 }
 
 export interface BuildingConfig {
     name: string;
+    /** Texture alias (packed 'images'/'ui' bundle) representing this building elsewhere in the UI — e.g. GateConfig's own requirement icon, for a gate whose requirement is reaching one of this building's levels (see Gate.ts's resolveRequirementIcon()). Optional — getBuildingIcon() falls back to a blank white square, same "icon-optional, blank fallback" convention as AssetLibraryEntry.icon. */
+    icon?: string;
     /** What the building looks like before its first level is ever cleared (level 0) — a small foundation/stub, distinct from every subsequent level's own `mesh`. */
     baseMesh: BuildingMeshConfig;
+    /** Optional real-mesh override for level 0 (before any level clears) — see BuildingLevelConfig.view's own doc. */
+    baseView?: string;
     /** Ordered ascending by `level` — BuildingStorage/BuildingZone index into this by `currentLevel` to find the next rung. */
     levels: BuildingLevelConfig[];
     /** Optional — when set, this building's BuildingZone isn't spawned at all (see PizzaScene.setupBuildingZone(), which registers it as a RequirementRegistry spawn gate) until MilestoneRequirement.ts's isMilestoneRequirementMet() says this is satisfied. Same shared requirement shape GateConfig.requirement/QueueConfig.appearRequirement use. undefined (the only case today — Camp is the very first building, nothing gates it) means "always appears." */
@@ -64,6 +72,8 @@ export interface BuildingConfig {
     popupMode?: PopupMode;
     /** How high above this building's own base the requirements panel floats — see PopupConfig.ts's own doc. undefined/0 sits it right at the building's base instead of floating. */
     popupBobOffset?: number;
+    /** Overrides FrameRegistry.ts's 'BuildingFrame' default for THIS building's own popup — see PopupConfig.ts's resolvePopupFrameName()'s own doc. undefined uses the type-wide default. */
+    frame?: FrameName;
 }
 
 export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
@@ -82,6 +92,7 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
                     "description": "+5 backpack capacity"
                 },
                 mesh: { size: [1.4, 1.2, 1.4], color: 0x996633 },
+                "view": "tower2view"
             },
             {
                 level: 2,
@@ -111,6 +122,9 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
                 mesh: { size: [2.2, 2.6, 2.2], color: 0xffcc55 },
             },
         ],
+        "baseView": "tower1View",
+        "popupMode": "simple",
+        "icon": "campfire"
     },
 };
 
@@ -123,4 +137,16 @@ export function getNextLevelConfig(id: BuildingId, currentLevel: number): Buildi
 export function getMeshConfigForLevel(id: BuildingId, level: number): BuildingMeshConfig {
     const config = BUILDING_CONFIG[id];
     return level <= 0 ? config.baseMesh : (config.levels[level - 1]?.mesh ?? config.baseMesh);
+}
+
+/** The building's current EntityViewRegistry id, if this level opted into one — see BuildingLevelConfig.view's own doc. undefined means "keep the box placeholder," same as any level that never sets `view`. */
+export function getViewIdForLevel(id: BuildingId, level: number): string | undefined {
+    const config = BUILDING_CONFIG[id];
+    return level <= 0 ? config.baseView : (config.levels[level - 1]?.view ?? config.baseView);
+}
+
+/** `BUILDING_CONFIG[id]`'s icon, as an actual texture — see BuildingConfig.icon's own doc for the blank-fallback convention. */
+export function getBuildingIcon(id: BuildingId): PIXI.Texture {
+    const icon = BUILDING_CONFIG[id].icon;
+    return icon ? PIXI.Texture.from(icon) : PIXI.Texture.WHITE;
 }

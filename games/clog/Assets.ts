@@ -70,9 +70,9 @@ export default class Assets {
      */
     static readonly AmbientSound = {
         Music: {
-            soundId: 'whale-st',
+            soundId: 'Pong-the-Atmosphere-Dan_Lebo_Lebowitz-Tone-Seeker',
             layer: 'music',
-            masterVolume: 0.05,
+            masterVolume: 0.035,
             duckedVolume: 0.015,
         },
         Gameplay: {

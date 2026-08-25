@@ -24,6 +24,7 @@ import { ACTION_CONFIG, ActionType, BASE_ACTION_CONFIG } from '../actions/Action
 import { ToolId } from '../actions/ToolRegistry';
 import { MilestoneRequirement } from '../data/MilestoneRequirement';
 import { PopupMode } from '../ui/PopupConfig';
+import { FrameName } from '../ui/FrameRegistry';
 
 /** Texture alias (packed 'ui' image bundle, shared Kenney-style UI kit) shown wherever a shop wants to flag "there's an upgrade ready to buy" — see ShopZone's badge sprite. One shared constant (not per-ShopConfig) since every shop uses the same indicator art; a future shop wanting a different one can still override it locally without this needing to change. */
 export const SHOP_UPGRADE_AVAILABLE_ICON = 'Slider_Level02_Icon_Up_Green';
@@ -39,6 +40,8 @@ export interface ShopUpgradeLevel {
     hitScale?: number;
     /** Absolute override (not a delta) for ACTION_CONFIG[config.action].resourcePerHit — omit to leave whatever the previous level left it at. */
     resourcePerHit?: number;
+    /** Optional real-mesh override for the shop's OWN structure once this level is bought, keyed into EntityViewRegistry.ts's ENTITY_VIEW_CONFIG — see BuildingLevelConfig.view's own doc for the full convention. undefined keeps whatever the previous level (or the base `mesh`) already showed, same "sparse override" shape as hitIntervalSec/hitScale/resourcePerHit above. */
+    view?: string;
 }
 
 /** The shop's own placeholder mesh — same shape as BuildingTypes.ts's BuildingMeshConfig, just one fixed mesh (no per-level growth) since a shop's ladder is about the TOOL, not the shop building itself. */
@@ -52,6 +55,8 @@ export interface ShopConfig {
     tool: ToolId;
     action: ActionType;
     mesh: ShopMeshConfig;
+    /** Optional real-mesh override before any upgrade level is bought — see ShopUpgradeLevel.view's own doc. */
+    baseView?: string;
     /** Buying upgrade N+1 (0-indexed here) applies levels[N] — see applyShopLevel(). A shop at levels.length is maxed out (see ShopUpgradeStorage.isMaxLevel()). */
     levels: ShopUpgradeLevel[];
     /** Optional — when set, this shop's ShopZone isn't spawned at all (see PizzaScene.setupShops(), which registers it as a RequirementRegistry spawn gate) until MilestoneRequirement.ts's isMilestoneRequirementMet() says this is satisfied. Same shared requirement shape GateConfig.requirement/QueueConfig.appearRequirement use. undefined means "always appears" (unchanged from before this field existed). */
@@ -60,6 +65,8 @@ export interface ShopConfig {
     popupMode?: PopupMode;
     /** How high above this shop's own base the requirements panel floats — see PopupConfig.ts's own doc. undefined/0 sits it right at the shop's base instead of floating. */
     popupBobOffset?: number;
+    /** Overrides FrameRegistry.ts's 'ShopFrame' default for THIS shop's own popup — see PopupConfig.ts's resolvePopupFrameName()'s own doc. undefined uses the type-wide default. */
+    frame?: FrameName;
 }
 
 const DEFAULT_SHOP_MESH: ShopMeshConfig = { size: [2, 2, 2], color: 0x8855cc };
@@ -129,11 +136,23 @@ export const SHOP_CONFIG_BY_ID: Partial<Record<string, ShopConfig>> = {
                 "hitIntervalSec": 0.4
             }
         ],
+        "popupBobOffset": 1,
+        "baseView": "shop1View"
     },
 };
 
 export function getShopConfig(id: string): ShopConfig | undefined {
     return SHOP_CONFIG_BY_ID[id];
+}
+
+/** The shop's current EntityViewRegistry id for `boughtLevels` upgrades bought so far (0 = none bought yet) — the most recent bought level that actually set a `view` wins, same "sparse override, most recent wins" resolution as applyShopLevel()'s own fields. undefined means "keep the box placeholder." */
+export function getViewIdForShopLevel(config: ShopConfig, boughtLevels: number): string | undefined {
+    for (let i = Math.min(boughtLevels, config.levels.length) - 1; i >= 0; i--) {
+        if (config.levels[i].view !== undefined) {
+            return config.levels[i].view;
+        }
+    }
+    return config.baseView;
 }
 
 /** Mutates ACTION_CONFIG[config.action] in place with whichever fields `level` sets — see this file's own doc. Called both live (the instant a purchase completes — see ShopUpgradeStorage.tryCompleteUpgrade()) and at boot to replay every already-purchased level back onto the fresh, unmutated ACTION_CONFIG default (see reapplyAllShopUpgrades()). */

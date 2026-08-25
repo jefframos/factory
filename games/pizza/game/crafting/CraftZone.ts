@@ -197,7 +197,7 @@ export default class CraftZone extends Entity {
 
         const column = new PIXI.Container();
         column.addChild(this.resultIcon, this.bodyContainer);
-        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(this.config.popupMode), column);
+        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(this.config.popupMode, 'CraftingFrame', this.config.frame), column);
         this.refreshLabel();
 
         this.labelAnchor = new THREE.Object3D();

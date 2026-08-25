@@ -42,8 +42,10 @@ import { getToolIcon } from '../actions/ToolRegistry';
 import { ShopUpgradeStorage } from './ShopUpgradeStorage';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
-import { getShopConfig, ShopConfig, SHOP_UPGRADE_AVAILABLE_ICON } from './ShopTypes';
+import { getShopConfig, getViewIdForShopLevel, ShopConfig, SHOP_UPGRADE_AVAILABLE_ICON } from './ShopTypes';
 import MainPlayer from '../player/MainPlayer';
+import GlbVisualComponent from '../components/GlbVisualComponent';
+import { resolveEntityView } from '../world/EntityViewRegistry';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
@@ -116,11 +118,22 @@ export default class ShopZone extends Entity {
     private labelFrame!: AutoFitFrame;
 
     private shopMesh?: THREE.Mesh;
+    /** The real-glb counterpart to `shopMesh` above, used instead of it when the currently-bought level's `view` id resolves to an actual model (see ShopTypes.ts's getViewIdForShopLevel()/EntityViewRegistry.ts's resolveEntityView()). Mutually exclusive with `shopMesh`. */
+    private shopVisual?: GlbVisualComponent;
+    /** The view id `shopMesh`/`shopVisual` was last built from — lets handleShopChanged() tell "the bought level advanced past a view-bearing entry" (rebuild the mesh) apart from "just the cost/progress display changed" (recompute the label only). */
+    private currentViewId?: string;
 
     private readonly handleShopChanged = (id: string): void => {
-        if (id === this.shopId) {
-            this.refreshLabel();
+        if (id !== this.shopId) {
+            return;
         }
+
+        const boughtLevels = ShopUpgradeStorage.getState(this.shopId).level;
+        if (getViewIdForShopLevel(this.config, boughtLevels) !== this.currentViewId) {
+            this.disposeShopMesh();
+            this.createShopMesh();
+        }
+        this.refreshLabel();
     };
 
     private readonly handleEconomyChanged = (type: CurrencyType): void => {
@@ -217,7 +230,7 @@ export default class ShopZone extends Entity {
 
         const column = new PIXI.Container();
         column.addChild(this.iconRow, this.bodyContainer);
-        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(this.config.popupMode), column);
+        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(this.config.popupMode, 'ShopFrame', this.config.frame), column);
         this.refreshLabel();
 
         // The badge depends on EconomyStorage's live balance (see refreshLabel()'s own doc),
@@ -260,8 +273,28 @@ export default class ShopZone extends Entity {
         }
     }
 
-    /** The shop's own visible structure — one fixed mesh per shop (no per-level growth, unlike BuildingZone — see ShopMeshConfig's own doc). Same plain THREE.BoxGeometry placeholder BuildingZone.createBuildingMesh() uses. */
+    /**
+     * The shop's own visible structure — the box placeholder (`config.mesh`) by default, or a
+     * real glb when the currently-bought level's `view` id resolves to an actual model (see
+     * getViewIdForShopLevel()/EntityViewRegistry.ts's resolveEntityView()). Re-called by
+     * handleShopChanged() whenever a purchase advances past a view-bearing level.
+     */
     private createShopMesh(): void {
+        const boughtLevels = ShopUpgradeStorage.getState(this.shopId).level;
+        this.currentViewId = getViewIdForShopLevel(this.config, boughtLevels);
+        const resolved = resolveEntityView(this.currentViewId);
+
+        if (resolved) {
+            const [offsetX, offsetY, offsetZ] = resolved.offset;
+            this.shopVisual = this.addComponent(new GlbVisualComponent(
+                resolved.model,
+                new THREE.Vector3(offsetX, offsetY, offsetZ),
+                resolved.scale,
+                THREE.MathUtils.degToRad(resolved.rotationDeg),
+            ));
+            return;
+        }
+
         const material = new THREE.MeshStandardMaterial({ color: this.config.mesh.color });
         BendService.applyBend(material);
 
@@ -275,13 +308,17 @@ export default class ShopZone extends Entity {
     }
 
     private disposeShopMesh(): void {
-        if (!this.shopMesh) {
-            return;
+        if (this.shopMesh) {
+            this.shopMesh.geometry.dispose();
+            (this.shopMesh.material as THREE.Material).dispose();
+            this.shopMesh.removeFromParent();
+            this.shopMesh = undefined;
         }
-        this.shopMesh.geometry.dispose();
-        (this.shopMesh.material as THREE.Material).dispose();
-        this.shopMesh.removeFromParent();
-        this.shopMesh = undefined;
+
+        if (this.shopVisual) {
+            this.shopVisual.destroy();
+            this.shopVisual = undefined;
+        }
     }
 
     /**

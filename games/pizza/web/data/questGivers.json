@@ -1,0 +1,12 @@
+{
+    "queue1": {
+        "variants": [
+            {
+                "view": "ship1View",
+                "weight": 1,
+                "lootTable": "queue1BaseLoot"
+            }
+        ],
+        "moveSpeed": 4
+    }
+}

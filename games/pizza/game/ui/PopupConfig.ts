@@ -70,9 +70,22 @@ export type PopupMode = 'none' | 'complete' | 'simple';
 /** Top-center — see this file's own top-of-file doc for why 'simple' popups use this instead of leaving ScreenAnchorOptions.anchor unset (content's own local-origin default). */
 const SIMPLE_POPUP_ANCHOR = { x: 0.5, y: 0 };
 
-/** Which FrameRegistry preset a zone's AutoFitFrame should use for its floating popup — 'simple' gets the arrow-less 'Simple' frame, everything else (including 'none', which never actually builds a frame) keeps the existing 'Popup' speech-bubble. */
-export function resolvePopupFrameName(mode: PopupMode | undefined): FrameName {
-    return mode === 'simple' ? 'Simple' : 'Popup';
+/**
+ * Which FrameRegistry preset a zone's AutoFitFrame should use for its floating popup.
+ * `override` (an entity config's own optional `frame` field — e.g. BuildingConfig.frame,
+ * settable per-id from the pizza web editor) wins unconditionally when set, regardless of
+ * popupMode — a designer's explicit per-entity choice always beats the automatic one.
+ * Otherwise: 'simple' gets the arrow-less 'Simple' frame (same for every entity type — Simple
+ * is about LAYOUT, not per-type branding); everything else (including 'none', which never
+ * actually builds a frame) falls back to `defaultFrame`, the caller's own entity-TYPE preset
+ * (e.g. 'BuildingFrame' for BuildingZone — see FrameRegistry.ts's own doc on why each type
+ * gets its own starting preset instead of every zone sharing 'Popup').
+ */
+export function resolvePopupFrameName(mode: PopupMode | undefined, defaultFrame: FrameName, override: FrameName | undefined = undefined): FrameName {
+    if (override) {
+        return override;
+    }
+    return mode === 'simple' ? 'Simple' : defaultFrame;
 }
 
 /** See `popupBobOffset`'s own doc above — undefined/0 means "right at the entity's own base." */

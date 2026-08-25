@@ -210,6 +210,21 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
 
     public async setItem(key: string, value: string): Promise<void> {
 
+        // Mirrors getItem's local/localStorage fallback — without this,
+        // local dev (and any run outside the real Playables iframe, e.g.
+        // merge1 always resolving to this platform, see its index.ts)
+        // wrote only to the in-memory `saveData` object (flushSaveData's
+        // ytgame.game.saveData?.() call silently no-ops when window.ytgame
+        // isn't the real SDK), which is reset on every page load — nothing
+        // was ever actually persisted, so progress/mute state always reset
+        // to defaults on reload despite getItem correctly reading real
+        // localStorage right after.
+        if (!this.isPlayablesEnv()) {
+            localStorage.setItem(key, value);
+            log("setItem (localStorage)", key, value);
+            return;
+        }
+
         this.saveData[key] = value;
 
         // Chain onto savePromise for ordering, but never let a rejection poison
@@ -244,6 +259,12 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
     }
 
     public async removeItem(key: string): Promise<void> {
+
+        if (!this.isPlayablesEnv()) {
+            localStorage.removeItem(key);
+            log("removeItem (localStorage)", key);
+            return;
+        }
 
         delete this.saveData[key];
 
@@ -298,6 +319,19 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
 
     public async onAudioChanged(callback: (enabled: boolean) => void): Promise<void> {
         await this.waitForYTGame();
+
+        // Outside the real Playables iframe (e.g. local dev — merge1 always
+        // resolves to this platform, see its index.ts), the SDK's reported
+        // audio-enabled state can't be trusted: it may report `false` once
+        // as a safe default and never fire again, since there's no real
+        // YouTube chrome to ever send a "user unmuted" event. Combined with
+        // SoundManager's platform-mute always winning over the in-game
+        // toggle (required for real certification), that stuck `false`
+        // would permanently mute local test builds with no way to clear it.
+        if (!this.isPlayablesEnv()) {
+            log("not in Playables env - skipping onAudioChanged subscription");
+            return;
+        }
 
         window.ytgame.system.onAudioEnabledChange((enabled: boolean) => {
             log("audio change event", enabled);

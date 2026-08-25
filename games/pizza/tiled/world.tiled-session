@@ -16,6 +16,9 @@
                 "y": 160.25
             }
         },
+        "testMap1.tmx#models": {
+            "dynamicWrapping": true
+        },
         "testMap1.tmx#resources": {
             "scaleInDock": 1
         },
@@ -24,16 +27,17 @@
         }
     },
     "last.exportedFilePath": "C:/Users/jfbod/Documents/Projects/projects/hyper/factory/games/pizza/raw-assets/json/map",
-    "last.imagePath": "C:/Users/jfbod/Documents/Projects/projects/hyper/factory/games/pizza/tiled",
+    "last.imagePath": "C:/Users/jfbod/Documents/Projects/projects/hyper/factory/games/pizza/tiled/models",
     "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
     "map.lastUsedFormat": "tmx",
     "openFiles": [
         "testMap1.tmx"
     ],
     "project": "world.tiled-project",
-    "property.type": "string",
+    "property.type": "bool",
     "recentFiles": [
         "testMap1.tmx"
     ],
-    "tileset.embedInMap": true
+    "tileset.embedInMap": true,
+    "tileset.type": 1
 }

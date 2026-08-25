@@ -1,0 +1,9 @@
+{
+    "queue1BaseLoot": {
+        "possibleTasks": [
+            { "resourceType": "wood", "amount": 10, "rewardAmount": 25 },
+            { "resourceType": "stone", "amount": 8, "rewardAmount": 30 },
+            { "resourceType": "berries", "amount": 15, "rewardAmount": 20 }
+        ]
+    }
+}

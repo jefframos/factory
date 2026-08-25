@@ -19,6 +19,7 @@
 import * as THREE from 'three';
 import CharacterBody from './CharacterBody';
 import { ToolId } from '../actions/ToolRegistry';
+import { CharacterViewConfig } from '../data/CharacterViewTypes';
 
 /** Purely cosmetic — fakes an airborne window so the jumpUp→falling→landing chain still plays without any real vertical physics. See jump(). */
 const JUMP_AIRTIME = 0.7;
@@ -76,6 +77,11 @@ export default class ThirdPersonCharacter {
     /** Test hook: colors the body + attaches a matching cube head, both using the same value-based palette the real cube player uses. See CharacterBody.applyValueColor(). */
     public applyColor(value: number): void {
         this.body.applyValueColor(value);
+    }
+
+    /** Applies a Character View (color/headShape/default face — see CharacterViewTypes.ts's own doc) to this character's body. See CharacterBody.applyCharacterView(). */
+    public applyCharacterView(config: CharacterViewConfig): void {
+        this.body.applyCharacterView(config);
     }
 
     public setHeadOffset(x: number, y: number, z: number): void {

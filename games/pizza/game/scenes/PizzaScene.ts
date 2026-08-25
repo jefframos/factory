@@ -85,6 +85,11 @@ import RequirementRegistry from '../world/RequirementRegistry';
 import { GATE_CONFIG, GateId } from '../data/GateTypes';
 import { GateStorage } from '../data/GateStorage';
 import { downloadGameData } from '../debug/GameDataBaker';
+import { PlayerPositionStorage } from '../data/PlayerPositionStorage';
+import { isWalkable } from '../world/TileWalkability';
+import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
+import { getMeshPlacements } from '../world/MeshLayerSpawner';
+import GlbVisualComponent from '../components/GlbVisualComponent';
 
 /**
  * Camera settings data — a spherical orbit around the player instead of a
@@ -183,6 +188,11 @@ const BUILDING_ZONE_OFFSET = new THREE.Vector3(-6, 0, -2);
 const DEFAULT_FOCUS_TRAVEL_SEC = 0.8;
 const DEFAULT_FOCUS_HOLD_SEC = 1.5;
 
+/** How often fixedUpdate() re-checks/persists the player's current position as the new "last stable tile" — see PlayerPositionStorage.ts's own doc. Every tick would be wasteful (this never needs to be more precise than "somewhere in the last couple seconds"). */
+const PLAYER_POSITION_CHECK_INTERVAL_SEC = 2;
+/** How close a NOT-YET-DEPLETED resource has to be to the player's own position to count as "on top of" it — see WorldManager.hasResourceAt(). Roughly half a tile (TileMapConfig.WORLD_UNITS_PER_TILE is 2), tight enough to only reject a position that's actually standing on the resource's own footprint, not merely near it. */
+const PLAYER_STABLE_TILE_RESOURCE_RADIUS = 1;
+
 export default class PizzaScene extends ThreeScene implements CameraFocusHost, WorldProgressionHost {
     /** Owns PhysicsWorld + every spawned Entity — the scene's job is just to spawn things into this and forward its own update()/fixedUpdate() calls here (see World.ts). */
     private readonly world = new World();
@@ -261,6 +271,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * AND gaze move together, continuously, through the whole focus/return trip.
      */
     private readonly smoothedFollowTarget = new THREE.Vector3();
+    /** Seconds since the last stable-tile check/save — see PLAYER_POSITION_CHECK_INTERVAL_SEC's own doc and fixedUpdate(). */
+    private playerPositionCheckAccumSec = 0;
 
     public constructor(game: Game) {
         super(game);
@@ -273,12 +285,17 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // where its eventual character mesh gets parented.
         this.mainPlayer = this.world.add(new MainPlayer(this, this.threeScene, this.screenHost));
 
-        // Drops the player at the Tiled map's "playerStart" point (see
-        // WorldObjectRegistry.ts's own doc) when the level designer has drawn one, instead of
-        // wherever MainPlayer's own transform otherwise defaults to (world origin). No-op
-        // (keeps that default) if the map has no such marker.
+        // Prefer the last STABLE tile the player was confirmed standing on (see
+        // PlayerPositionStorage.ts's own doc — walkable, no resource on top, saved
+        // periodically by fixedUpdate()) over the Tiled map's "playerStart" point (see
+        // WorldObjectRegistry.ts's own doc), which in turn beats wherever MainPlayer's own
+        // transform otherwise defaults to (world origin). No-op (keeps whichever fallback
+        // applies) if neither exists yet — e.g. a brand-new save with no persisted position.
+        const savedPosition = PlayerPositionStorage.getPosition();
         const playerStart = this.worldObjects.getPlayerStart();
-        if (playerStart) {
+        if (savedPosition) {
+            this.mainPlayer.transform.position.set(savedPosition.x, 0, savedPosition.z);
+        } else if (playerStart) {
             this.mainPlayer.transform.position.set(playerStart.x, 0, playerStart.z);
         }
 
@@ -305,6 +322,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         //this.setupDropZone();
         this.setupBuildingZone();
         this.setupGates();
+        this.setupMeshLayer();
         // Built before registerQueueSpawnGates() — a queue's reward flies to this UI's wallet
         // icon (see registerQueueSpawnGates()), so the panel has to exist first.
         this.uiService = new UIService(this.game, () => this.toggleCameraMode());
@@ -380,6 +398,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             'Data',
         );
 
+        this.setupModelSnapshotDevGui();
+
         // Camera far needs updateProjectionMatrix() on every change to actually take
         // effect — addObjectTrigger's callback (unlike addProperties' plain owner[key]=v)
         // is exactly the hook for that side effect.
@@ -452,6 +472,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             'Resources',
         );
         DevGuiManager.instance.addButton(
+            'Clear Player Position',
+            () => void PlayerPositionStorage.clearAll(),
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
             'Add 10 Of Each Resource',
             () => {
                 for (const type of Object.values(ResourceType)) {
@@ -477,6 +502,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 void ShopUpgradeStorage.clearAll();
                 void this.resetCraftingProgress();
                 void this.dynamicResourceSpawner.resetAll();
+                void PlayerPositionStorage.clearAll();
             },
             'Resources',
         );
@@ -559,6 +585,44 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         DevGuiManager.instance.addProperties(CAMERA_SETTINGS, ['pitchDeg'], [0, 89], 'Camera', 'Camera');
         DevGuiManager.instance.addProperties(CAMERA_SETTINGS, ['distance'], [2, 30], 'Camera', 'Camera');
         DevGuiManager.instance.addProperties(CAMERA_SETTINGS, ['followSpeed'], [0.5, 20], 'Camera', 'Camera');
+    }
+
+    /**
+     * Renders any MODELS registry entry from directly overhead and downloads it as a
+     * name-encoded PNG (see ModelSnapshotTool.ts's own doc) — the level-design workflow this
+     * exists for: drop the PNG as a placeholder object on a Tiled object layer, position/rotate
+     * it there by eye, and a future lazy loader reads that layer back, decodes the filename to
+     * a model ref, and spawns the real 3D model in its place. "Snapshot Random Model" is the
+     * quick way to pull a handful of real test images without generating the whole registry.
+     */
+    private setupModelSnapshotDevGui(): void {
+        const modelRefs = ModelSnapshotTool.listModelRefs();
+        if (modelRefs.length > 0) {
+            ModelSnapshotTool.settings.selectedModelRef = modelRefs[0];
+        }
+
+        DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['pixelsPerWorldUnit'], [1, 64], 'Pixels Per World Unit', 'Model Snapshots');
+
+        DevGuiManager.instance.addDropdown(
+            ModelSnapshotTool.settings,
+            'selectedModelRef',
+            modelRefs,
+            () => { /* value already written straight into settings.selectedModelRef */ },
+            'Model To Test',
+            'Model Snapshots',
+        );
+
+        DevGuiManager.instance.addButton('Snapshot Selected Model', () => {
+            void ModelSnapshotTool.snapshotOne(ModelSnapshotTool.settings.selectedModelRef);
+        }, 'Model Snapshots');
+
+        DevGuiManager.instance.addButton('Snapshot Random Model', () => {
+            void ModelSnapshotTool.snapshotRandom();
+        }, 'Model Snapshots');
+
+        DevGuiManager.instance.addButton('Snapshot All Models', () => {
+            void ModelSnapshotTool.snapshotAll();
+        }, 'Model Snapshots');
     }
 
     /** The task's own collision test: a static box offset from spawn along Z only — walking the player into it should stop them instead of clipping through. */
@@ -684,6 +748,74 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 await gate.playUnlockSequence(this);
                 this.world.remove(gate);
             });
+        }
+    }
+
+    /**
+     * Every placeholder drawn on the Tiled map's "meshes" object layer (see
+     * MeshLayerSpawner.ts's own doc) — a level designer drags a ModelSnapshotTool PNG there,
+     * this spawns the REAL 3D model at that decoded position/rotation instead, RESCALED
+     * per-axis to match the placed object's own CURRENT width/depth rather than assuming
+     * native scale — see MeshPlacement.worldWidth/worldDepth's own doc for why a resize done in
+     * Tiled has to actually reach the model, not just its own placeholder image. Deliberately
+     * NOT a single uniform scalar (averaging X/Z into one number, the first version of this
+     * method did): if a designer stretched the placeholder non-uniformly (wider than it is
+     * deep, say), the model needs to actually stretch the same way, not just grow/shrink
+     * proportionally while keeping its original aspect ratio.
+     *
+     * Passes rotationY=0 into GlbVisualComponent and applies the real rotation manually AFTER
+     * measuring the loaded mesh's bounding box — measuring it pre-rotation is what keeps
+     * size.x/size.z reading the model's own un-rotated width/depth, matching the axes Tiled's
+     * width/height are drawn in; measuring AFTER rotation would give a rotated (skewed)
+     * footprint for anything not rotated by a multiple of 90°.
+     *
+     * `placement.solid` (the object's own "solid" custom property — see MeshLayerSpawner.ts's
+     * own doc) adds a static, non-trigger RigidBody sized to the object's SCALED footprint
+     * (worldWidth/worldDepth in X/Z, the model's own measured height in Y) once the model
+     * finishes loading — a purely decorative mesh (the default, `solid` unchecked) gets no
+     * collider at all, same as before this property existed.
+     */
+    private setupMeshLayer(): void {
+        for (const placement of getMeshPlacements()) {
+            const modelDef = ModelSnapshotTool.resolveModelDef(placement.modelRef);
+            if (!modelDef) {
+                // Already warned by getMeshPlacements() itself if this ever happens — this
+                // check is just to satisfy TypeScript, not a second failure mode.
+                continue;
+            }
+
+            const entity = this.world.spawn();
+            entity.transform.position.set(placement.x, 0, placement.z);
+
+            const visual: GlbVisualComponent = new GlbVisualComponent(modelDef, new THREE.Vector3(), 1, 0, () => {
+                const mesh = visual.mesh;
+                const nativeSize = new THREE.Box3().setFromObject(mesh).getSize(new THREE.Vector3());
+                const scaleX = nativeSize.x > 1e-4 ? placement.worldWidth / nativeSize.x : 1;
+                const scaleZ = nativeSize.z > 1e-4 ? placement.worldDepth / nativeSize.z : 1;
+                // No Tiled-side signal for vertical scale (a top-down placement has no height
+                // to resize) — splitting the difference between the two horizontal axes is the
+                // least-arbitrary stand-in, same as this method's own averaging used to do for
+                // every axis before this fix.
+                const scaleY = (scaleX + scaleZ) / 2;
+                mesh.scale.set(scaleX, scaleY, scaleZ);
+                mesh.rotation.y = placement.rotationY;
+
+                if (placement.solid) {
+                    const halfExtents = new THREE.Vector3(
+                        placement.worldWidth / 2,
+                        Math.max(nativeSize.y * scaleY, 0.1) / 2,
+                        placement.worldDepth / 2,
+                    );
+                    entity.addComponent(new RigidBody({
+                        halfExtents,
+                        isStatic: true,
+                        layer: Layers.Environment,
+                        centerOffset: new THREE.Vector3(0, halfExtents.y, 0),
+                    }));
+                }
+            });
+            entity.addComponent(visual);
+            this.threeScene.add(entity.transform);
         }
     }
 
@@ -964,6 +1096,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // Independent of the above — see DynamicResourceSpawner.ts's own doc.
         this.dynamicResourceSpawner.update(playerPosition, delta);
 
+        this.updateStablePlayerPosition(delta, playerPosition);
+
         // Whatever the camera SHOULD end up following — the player, normally, or a
         // focusCameraOn() target while a camera event is in progress. This is an instruction,
         // not where the camera looks THIS frame — see smoothedFollowTarget's own doc for why
@@ -991,6 +1125,39 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     }
 
     /**
+     * Every PLAYER_POSITION_CHECK_INTERVAL_SEC, if the player's CURRENT position is a stable
+     * tile — walkable (TileWalkability.isWalkable()), no not-yet-depleted resource sitting on
+     * top of it (WorldManager.hasResourceAt()), AND the player isn't currently overlapping any
+     * OTHER collider at all — solid or trigger (PhysicsWorld.isOverlappingAny()): a gate/wall
+     * would leave the player stuck, and a queue/shop/building/craft zone's own trigger would
+     * just re-fire that zone's enter logic the instant they respawn — persists it as the
+     * new respawn point (see PlayerPositionStorage.ts's own doc). A position that fails any of
+     * these checks this tick is simply skipped (not an error) — the LAST successfully-saved
+     * position just keeps standing until the player is next confirmed somewhere stable, which
+     * is exactly what makes this safe to check on a plain timer rather than only at some more
+     * "meaningful" moment.
+     */
+    private updateStablePlayerPosition(delta: number, playerPosition: THREE.Vector3): void {
+        this.playerPositionCheckAccumSec += delta;
+        if (this.playerPositionCheckAccumSec < PLAYER_POSITION_CHECK_INTERVAL_SEC) {
+            return;
+        }
+        this.playerPositionCheckAccumSec = 0;
+
+        if (!isWalkable(playerPosition.x, playerPosition.z)) {
+            return;
+        }
+        if (this.worldManager.hasResourceAt(playerPosition.x, playerPosition.z, PLAYER_STABLE_TILE_RESOURCE_RADIUS)) {
+            return;
+        }
+        if (this.world.physics.isOverlappingAny(this.mainPlayer.rigidBody)) {
+            return;
+        }
+
+        PlayerPositionStorage.save(playerPosition.x, playerPosition.z);
+    }
+
+    /**
      * Redirects the camera's own follow-lerp (see fixedUpdate()) from the player onto `target`
      * for a beat, then hands it back — the general "camera visits an event" mechanism
      * BuildingZone's level-up sequence is the first caller of (see CameraFocusHost.ts's own
@@ -1014,7 +1181,15 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         const holdSec = options.holdSec ?? DEFAULT_FOCUS_HOLD_SEC;
         const returnSec = options.returnSec ?? travelSec;
 
+        // Movement is disabled BEFORE the pre-delay (not just before the travel) — see
+        // CameraFocusOptions.preDelaySec's own doc: the whole point is a beat where the
+        // player can already tell something happened (they can't move) but the camera hasn't
+        // cut away yet, not just a delayed camera cut while they're still free to walk off.
         this.mainPlayer.movementController.enabled = false;
+
+        if (options.preDelaySec) {
+            await wait(options.preDelaySec);
+        }
 
         this.cameraFocusPoint = target.clone();
         await wait(travelSec);

@@ -1283,9 +1283,98 @@
          "visible":true,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":6,
+         "name":"meshes",
+         "objects":[
+                {
+                 "gid":21,
+                 "height":129.5,
+                 "id":18,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":34,
+                 "x":-447.5,
+                 "y":512.5
+                }, 
+                {
+                 "gid":22,
+                 "height":8,
+                 "id":19,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":35,
+                 "x":-257.5,
+                 "y":360.5
+                }, 
+                {
+                 "gid":22,
+                 "height":8,
+                 "id":20,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":35,
+                 "x":-291.5,
+                 "y":360.5
+                }, 
+                {
+                 "gid":22,
+                 "height":8,
+                 "id":21,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":35,
+                 "x":-325,
+                 "y":360.5
+                }, 
+                {
+                 "gid":22,
+                 "height":8,
+                 "id":22,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":35,
+                 "x":-160.5,
+                 "y":362
+                }, 
+                {
+                 "gid":23,
+                 "height":26,
+                 "id":23,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":294.195101873724,
+                 "type":"",
+                 "visible":true,
+                 "width":74.2131692155757,
+                 "x":-33.2954400705379,
+                 "y":427.971350635016
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":6,
- "nextobjectid":18,
+ "nextlayerid":7,
+ "nextobjectid":24,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",
@@ -1316,6 +1405,53 @@
          "tilecount":10,
          "tileheight":32,
          "tilewidth":32
+        }, 
+        {
+         "columns":0,
+         "firstgid":21,
+         "grid":
+            {
+             "height":1,
+             "orientation":"orthogonal",
+             "width":1
+            },
+         "margin":0,
+         "name":"models",
+         "spacing":0,
+         "tilecount":3,
+         "tileheight":42,
+         "tiles":[
+                {
+                 "id":0,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Pirate--Crate__34x42.png",
+                 "imageheight":42,
+                 "imagewidth":34,
+                 "properties":[
+                        {
+                         "name":"solid",
+                         "type":"bool",
+                         "value":true
+                        }]
+                }, 
+                {
+                 "id":1,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Props--Fence__35x8.png",
+                 "imageheight":8,
+                 "imagewidth":35,
+                 "properties":[
+                        {
+                         "name":"solid",
+                         "type":"bool",
+                         "value":true
+                        }]
+                }, 
+                {
+                 "id":2,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Props--Bridge__33x26.png",
+                 "imageheight":26,
+                 "imagewidth":33
+                }],
+         "tilewidth":35
         }],
  "tilewidth":32,
  "type":"map",

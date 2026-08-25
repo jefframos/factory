@@ -49,6 +49,8 @@ export class CubeBuilder {
     private static solidMatCache = new Map<number, THREE.MeshStandardMaterial>();
     private static topMatCache = new Map<number, THREE.MeshStandardMaterial>();
     private static numberTexCache = new Map<number, THREE.CanvasTexture>();
+    /** Keyed by literal hex color string (e.g. "#4aba8a"), NOT a merge-game value — see buildCharacterHead()/getColorSolidMaterial(), the Character Views path. */
+    private static colorSolidMatCache = new Map<string, THREE.MeshStandardMaterial>();
     // Single shared material for the face decal plane — value-independent
     // (transparent overlay, not baked per colour), so unlike the caches above
     // this isn't keyed by value.
@@ -194,6 +196,17 @@ export class CubeBuilder {
         return mat;
     }
 
+    /** Plain literal-color body material, shared/cached per color string — see colorSolidMatCache's own doc. */
+    private static getColorSolidMaterial(color: string): THREE.MeshStandardMaterial {
+        let mat = CubeBuilder.colorSolidMatCache.get(color);
+        if (!mat) {
+            mat = new THREE.MeshStandardMaterial({ color });
+            BendService.applyBend(mat);
+            CubeBuilder.colorSolidMatCache.set(color, mat);
+        }
+        return mat;
+    }
+
     private static getFaceDecalMaterial(): THREE.MeshStandardMaterial {
         if (!CubeBuilder.faceDecalMat) {
             const mat = new THREE.MeshStandardMaterial({
@@ -247,13 +260,29 @@ export class CubeBuilder {
         return new THREE.Mesh(geo, [solid, solid, top, solid, solid, solid]);
     }
 
-    /** Rounded cube with a face-decal plane in front of +Z and number on top (+Y = index 2). `faceTexture` is the local player's equipped shop skin — see PlayerEntity.applyEquippedSkin(); omit for bots. */
-    static buildPlayer(value: number, size = 1, faceTexture?: THREE.Texture): THREE.Mesh {
+    /** Rounded cube with a face-decal plane in front of +Z, and (by default) a number on top (+Y = index 2). `faceTexture` is the local player's equipped shop skin — see PlayerEntity.applyEquippedSkin(); omit for bots. `showNumber: false` leaves the top face plain (the same solid body material, still bent/cached) — see CharacterBody.applyValueColor()'s own doc for why the actual player head omits it. */
+    static buildPlayer(value: number, size = 1, faceTexture?: THREE.Texture, showNumber = true): THREE.Mesh {
         const geo = new RoundedBoxGeometry(size, size, size, 4, size * 0.25);
         const solid = CubeBuilder.getSolidMaterial(value);
-        const top = CubeBuilder.getTopMaterial(value);
+        const top = showNumber ? CubeBuilder.getTopMaterial(value) : solid;
         // face order: +X, -X, +Y (top), -Y, +Z (front), -Z
         const mesh = new THREE.Mesh(geo, [solid, solid, top, solid, solid, solid]);
+        mesh.add(CubeBuilder.buildFaceDecal(size, faceTexture));
+        return mesh;
+    }
+
+    /**
+     * Rounded cube for a Character View (see CharacterViewTypes.ts/CharacterBody.
+     * applyCharacterView()) — a plain LITERAL color (no merge-value palette involved) on
+     * every face, no number ever, plus the usual face-decal plane. `headShape` is accepted
+     * (not just `size`) for forward-compatibility even though 'cube' is the only shape that
+     * exists today — see CharacterViewConfig.headShape's own doc; this function is the one
+     * place a future second shape would branch.
+     */
+    static buildCharacterHead(color: string, size = 1, faceTexture?: THREE.Texture): THREE.Mesh {
+        const geo = new RoundedBoxGeometry(size, size, size, 4, size * 0.25);
+        const solid = CubeBuilder.getColorSolidMaterial(color);
+        const mesh = new THREE.Mesh(geo, [solid, solid, solid, solid, solid, solid]);
         mesh.add(CubeBuilder.buildFaceDecal(size, faceTexture));
         return mesh;
     }

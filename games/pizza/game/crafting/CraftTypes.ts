@@ -33,6 +33,7 @@ import MODELS, { ModelDefinition } from '../../registry/assetsRegistry/modelsReg
 import { NumberRange } from '../world/AssetLibraryRegistry';
 import { ToolId } from '../actions/ToolRegistry';
 import { PopupMode } from '../ui/PopupConfig';
+import { FrameName } from '../ui/FrameRegistry';
 
 export interface CraftRecipeDef {
     /** Unique within this table's own `recipes` list — CraftStorage tracks completion per (craftId, recipeId) pair. */
@@ -85,6 +86,8 @@ export interface CraftTableConfig {
     popupMode?: PopupMode;
     /** How high above this table's own base the requirements panel floats — see PopupConfig.ts's own doc. undefined/0 sits it right at the table's base instead of floating. */
     popupBobOffset?: number;
+    /** Overrides FrameRegistry.ts's 'CraftingFrame' default for THIS table's own popup — see PopupConfig.ts's resolvePopupFrameName()'s own doc. undefined uses the type-wide default. */
+    frame?: FrameName;
 }
 
 /** Per-craft-table-id config — see this file's own doc for why (unlike QueueTypes' DEFAULT_QUEUE_CONFIG) there's no fallback for an id not listed here. */

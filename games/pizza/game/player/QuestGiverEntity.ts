@@ -2,9 +2,9 @@
 //
 // The NPC/prop that walks a queue's task in and out along a hand-drawn
 // waypoint path (see WorldObjectRegistry.getWaypoints()/PizzaScene's own
-// doc) — a bare-bones test entity, not an actual interactive NPC yet: picks
-// one of QuestGiverConfig's candidate meshes, loads it via GlbVisualComponent,
-// scale/rotation rolled once from the config's own ranges.
+// doc) — picks one of QuestGiverConfig's VARIANTS (see QuestGiverTypes.ts's
+// own doc: a look via EntityViewRegistry plus a LootTableRegistry id),
+// loads that variant's model via GlbVisualComponent.
 //
 // Waypoints are sorted ascending by order (see getWaypoints()'s own doc) —
 // index 0 is conventionally right next to the queue, the LAST index the
@@ -16,20 +16,20 @@
 //      for why QueueZone gates BOTH deposits and its own panel visibility on
 //      this, not just on whether a task happens to exist: a task can be
 //      active/persisted with no giver actually there yet, e.g. right after a
-//      reload) and tell QueueStorage to start a task RIGHT NOW
-//      (QueueStorage.startTaskNow() — bypasses the normal cooldown timer
-//      entirely; for a giver-driven queue, ARRIVAL is what makes a task
-//      available, not a clock), then stand still, waiting.
+//      reload) and tell QueueStorage to start a task RIGHT NOW, drawn from
+//      THIS CYCLE'S variant's own loot table (QueueStorage.startTaskNow() —
+//      bypasses the normal cooldown timer entirely; for a giver-driven
+//      queue, ARRIVAL is what makes a task available, not a clock), then
+//      stand still, waiting.
 //   3. Every frame, check whether that task has been delivered
 //      (QueueStorage.getState(id).activeTask undefined again). The instant
 //      it has, clear presence and reverse direction, walking back out
 //      (increasing index), one leg at a time.
 //   4. On reaching the LAST waypoint again (fully left), "reshuffle" — tear
-//      down the current mesh and pick a fresh one (pickRandom() again; a
-//      no-op today since queue1 only has one candidate model, but free
-//      variety once a queue's config lists more than one) — then WAITS
-//      there (see `idleAtFarWaypointSec`'s own doc) before turning around
-//      and walking back IN.
+//      down the current mesh and roll a fresh variant (see spawnVisual()/
+//      rollQuestGiverVariant()) — then WAITS there (see
+//      `idleAtFarWaypointSec`'s own doc) before turning around and walking
+//      back IN.
 //
 // Each leg's duration is DERIVED from the real distance between its two
 // waypoints divided by QuestGiverConfig.moveSpeed (world units/sec) — not
@@ -37,8 +37,8 @@
 // apart in Tiled just naturally speeds up or slows down that stretch of the
 // walk at a constant pace. The entity's own yaw EASES toward the direction
 // of travel rather than snapping (see currentYaw/targetYaw and update()),
-// on top of whatever fixed rotationDeg correction the config wants for the
-// model's own "forward."
+// on top of whatever fixed rotation correction the current variant's own
+// EntityViewRegistry entry wants for the model's own "forward."
 //
 // Spawned by PizzaScene.setupQueues() alongside a QueueZone, only when BOTH
 // QuestGiverTypes.getQuestGiverConfig(id) returns something AND the map has
@@ -51,9 +51,10 @@ import Entity from '../ecs/Entity';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 import { QueueStorage } from '../data/QueueStorage';
 import { getQueueConfig } from '../data/QueueTypes';
-import { QuestGiverConfig } from '../data/QuestGiverTypes';
+import { QuestGiverConfig, QuestGiverVariant, rollQuestGiverVariant } from '../data/QuestGiverTypes';
+import { getLootTable } from '../data/LootTableTypes';
 import { WaypointPlacement } from '../world/WorldObjectRegistry';
-import { pickRandom, resolveRange } from '../world/AssetLibraryRegistry';
+import { resolveEntityView } from '../world/EntityViewRegistry';
 
 /** Floor on a single leg's tween duration — guards against a division blip (two waypoints drawn on top of each other) producing a zero/negative-duration gsap tween. */
 const MIN_LEG_DURATION_SEC = 0.05;
@@ -67,6 +68,10 @@ export default class QuestGiverEntity extends Entity {
     private readonly path: THREE.Vector3[];
 
     private visual?: GlbVisualComponent;
+    /** Whichever variant is currently walking this cycle (see spawnVisual()) — undefined only ever momentarily. onArrivedGoingIn() reads this variant's own LootTableRegistry entry (via getLootTable()), not the queue's. */
+    private currentVariant?: QuestGiverVariant;
+    /** True once spawnVisual() has picked a variant at least once — see rollQuestGiverVariant()'s `forceLowestWeight` param and this file's own doc: only the very FIRST pick this session is forced to the rarest variant, every later reshuffle rolls normally. */
+    private hasPickedVariantBefore = false;
     /** Which way the current (or next) leg walks — 'in' decreases the path index (toward the queue), 'out' increases it (toward the exit). */
     private direction: 'in' | 'out' = 'in';
     /** The waypoint index the giver is CURRENTLY standing at — only meaningful between legs; mid-tween, `startLeg()`'s own closure tracks the in-flight from/to directly. */
@@ -159,12 +164,27 @@ export default class QuestGiverEntity extends Entity {
         super.destroy();
     }
 
-    /** Builds this cycle's mesh — a fresh pickRandom() each time (see reshuffleVisual()), scale/rotation rolled once from the config's own ranges. */
+    /**
+     * Rolls this cycle's variant (see rollQuestGiverVariant()) and builds its mesh — the very
+     * first pick this session is forced to the lowest-weight (rarest) variant (see
+     * `hasPickedVariantBefore`'s own doc), every later reshuffle (see reshuffleVisual()) rolls
+     * normally. Skips building a mesh entirely (with a warning) if the picked variant's view
+     * has no model yet — see EntityViewRegistry.resolveEntityView()'s own doc.
+     */
     private spawnVisual(): void {
-        const modelDef = pickRandom(this.config.models);
-        const scale = resolveRange(this.config.scale);
-        const rotationY = resolveRange(this.config.rotationDeg) * (Math.PI / 180);
-        this.visual = this.addComponent(new GlbVisualComponent(modelDef, new THREE.Vector3(), scale, rotationY));
+        const variant = rollQuestGiverVariant(this.config, !this.hasPickedVariantBefore);
+        this.hasPickedVariantBefore = true;
+        this.currentVariant = variant;
+
+        const resolved = resolveEntityView(variant.view);
+        if (!resolved) {
+            console.warn(`[QuestGiverEntity] "${this.queueId}" variant view "${variant.view}" has no model yet — skipping this cycle's visual`);
+            return;
+        }
+
+        const offset = new THREE.Vector3(...resolved.offset);
+        const rotationY = resolved.rotationDeg * (Math.PI / 180);
+        this.visual = this.addComponent(new GlbVisualComponent(resolved.model, offset, resolved.scale, rotationY));
     }
 
     /** Tears down the just-finished cycle's mesh and builds a new one — see this file's own doc on why this happens once per full out-then-in cycle. Entity has no removeComponent(); the destroyed component is simply left in place (its own destroy() already made it inert — no mesh, no further lifecycle calls do anything) rather than compacting the array, an acceptable one-off cost for this test-scope entity. */
@@ -229,7 +249,8 @@ export default class QuestGiverEntity extends Entity {
     private onArrivedGoingIn(): void {
         if (this.currentIndex === 0) {
             QueueStorage.setGiverPresent(this.queueId, true);
-            QueueStorage.startTaskNow(this.queueId, getQueueConfig(this.queueId));
+            const possibleTasks = this.currentVariant ? getLootTable(this.currentVariant.lootTable)?.possibleTasks ?? [] : [];
+            QueueStorage.startTaskNow(this.queueId, possibleTasks);
             this.waitingForDelivery = true;
             return;
         }

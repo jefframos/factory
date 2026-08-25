@@ -168,7 +168,7 @@ export default class QueueZone extends Entity {
 
         const column = new PIXI.Container();
         column.addChild(this.headerContainer, this.bodyContainer);
-        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(this.config.popupMode), column);
+        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(this.config.popupMode, 'QueueFrame', this.config.frame), column);
 
         // ScreenAnchorComponent.update() unconditionally sets ITS OWN content's `visible = true`
         // every frame the anchor is on-screen (see that file's own doc — it only ever hides

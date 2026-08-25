@@ -1,6 +1,6 @@
 import { DomUiRoot } from './DomUiRoot';
 import { ModalOverlay } from './ModalOverlay';
-import { PANEL_TRANSLUCENT_BACKGROUND, panelCloseButton, withTap } from './PanelChrome';
+import { panelCloseButton, withTap } from './PanelChrome';
 import { Localization } from '../i18n/Localization';
 import settingsIcon from './images/settings.png';
 
@@ -21,6 +21,7 @@ export class SettingsButton {
 
     constructor(private readonly buildMenu: (box: HTMLElement, close: () => void) => void) {
         this.element = document.createElement('button');
+        this.element.classList.add('corner-btn', 'corner-btn-settings');
         Object.assign(this.element.style, {
             position: 'fixed',
             top: '12px',
@@ -58,11 +59,18 @@ export class SettingsButton {
     }
 
     private open(): void {
+        // Settings can be opened over the busy End Game/leaderboard text as
+        // well as the 3D world, so it uses the near-opaque default panel
+        // background (not PanelChrome's translucent one, meant for showing
+        // the 3D world through Shop/Boost) plus a dimmed backdrop — without
+        // both, whatever screen was behind it bleeds through and becomes
+        // unreadable underneath the settings content.
         this.overlay.setContent(box => {
             box.appendChild(panelCloseButton(() => this.close()));
-            Object.assign(box.style, { width: '280px', display: 'flex', flexDirection: 'column', gap: '8px' });
+            Object.assign(box.style, { width: '280px', maxWidth: 'calc(100vw - 32px)', boxSizing: 'border-box', maxHeight: '80vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' });
             this.buildMenu(box, () => this.close());
-        }, { background: PANEL_TRANSLUCENT_BACKGROUND });
+        });
+        this.overlay.setDimmed(true);
         this.overlay.show();
     }
 

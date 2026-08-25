@@ -90,11 +90,11 @@ export default class MergeAssets {
     }
     static readonly AmbientSound = {
 
-        AmbientSoundId: 'soundtrack/longnight',
-        AmbientMasterVolume: 0.05,
+        AmbientSoundId: 'Jomon-Grove-The-Mini-Vandals',
+        AmbientMasterVolume: 0.03,
 
-        AmbientSoundId2: 'soundtrack/peace-be-with-you',
-        AmbientMasterVolume2: 0.05,
+        AmbientSoundId2: 'Jomon-Grove-The-Mini-Vandals',
+        AmbientMasterVolume2: 0.03,
 
         AmbientSoundGameplay: 'brittle-rille',
         AmbientMasterVolumeGameplay: 0.1,

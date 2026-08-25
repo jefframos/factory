@@ -29,13 +29,14 @@ import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { ActionType } from '../actions/ActionTypes';
 import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
+import { getStarterCharacterView } from '../data/CharacterViewTypes';
 
 /** Player collider half-extents, roughly a standing human's box. */
 const HALF_EXTENTS = new THREE.Vector3(0.4, 0.9, 0.4);
 /** FBX export scale for this character rig — same value the source project used. */
 const CHARACTER_SCALE = 0.0075;
-/** Cube color/value the head-cube test used — see ThirdPersonCharacter.applyColor(). */
-const HEAD_CUBE_VALUE = 2;
+/** Fallback look if CHARACTER_VIEW_CONFIG has no entry flagged isStarter at all (a misconfigured registry) — see getStarterCharacterView()'s own doc. Matches CharacterViewTypes.ts's own "default" entry, kept separately so this file never has to import that entry directly. */
+const FALLBACK_CHARACTER_VIEW = { color: '#4aba8a', headShape: 'cube' as const, face: 'skins/face-star-1.webp' };
 
 /** Model-registry entries only carry a repo-relative fullPath (e.g. "pizza/models/..."); served at runtime from ./pizza/... (see public/pizza/models). Works on localhost and GitHub Pages. */
 const modelUrl = (fullPath: string): string => `./${fullPath}`;
@@ -71,6 +72,11 @@ export default class MainPlayer extends Entity {
     /** Handle for freezing/unfreezing movement without touching anything else — e.g. `mainPlayer.movementController.enabled = false` for a cutscene or death state. Input keeps being recorded in the background; see PlayerMovementController's own doc for exactly what disabling it does. */
     public get movementController(): PlayerMovementController {
         return this.getComponent(PlayerMovementController)!;
+    }
+
+    /** The player's own physics collider — e.g. for PizzaScene's "is the player standing somewhere safe to respawn" check (see PhysicsWorld.isOverlappingAny()), which needs the player's actual RigidBody rather than a synthetic box. */
+    public get rigidBody(): RigidBody {
+        return this.getComponent(RigidBody)!;
     }
 
     /**
@@ -160,9 +166,11 @@ export default class MainPlayer extends Entity {
         // ToolVisualEntry offset/rotation numbers are wrong" — see CharacterBody's
         // own doc. Remove once tool placement is confirmed working.
         character.debugShowHandMarker();
-        // Test hook — colors the body + attaches a matching cube head, both using the
-        // same value-based palette the real cube player uses.
-        character.applyColor(HEAD_CUBE_VALUE);
+        // Colors the body + attaches the matching head cube for whichever CharacterView is
+        // flagged isStarter (see CharacterViewTypes.ts's own doc) — falls back to a hardcoded
+        // look if the registry has none flagged, rather than crashing on a brand-new/
+        // misconfigured save.
+        character.applyCharacterView(getStarterCharacterView() ?? FALLBACK_CHARACTER_VIEW);
         // Placeholder backpack cube — see CharacterBody.mountBackpackCube()'s own doc for
         // tuning its position live via character.setBackpackOffset(x, y, z).
         character.mountBackpackCube();

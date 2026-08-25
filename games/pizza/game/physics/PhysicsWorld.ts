@@ -82,6 +82,28 @@ export default class PhysicsWorld {
         this.updateContacts();
     }
 
+    /**
+     * True if `body` currently overlaps ANY other body it's allowed to interact with — solid
+     * OR trigger alike — using the same strict AABB check overlaps() itself uses for push-out
+     * resolution, just exposed publicly. For a SOLID other body, normal collide-and-slide
+     * movement already keeps `body` from ever truly interpenetrating it, so that half is
+     * mostly a safety net; the TRIGGER half is the one that actually matters for most callers
+     * — a body can freely stand inside a trigger (that's the whole point of one), so nothing
+     * else would otherwise flag it. e.g. PizzaScene's "is the player standing somewhere safe to
+     * respawn" check (see PlayerPositionStorage.ts's own doc) wants NEITHER kind: not stuck
+     * inside a wall, and not inside a queue/shop/building zone's own trigger either, since
+     * respawning there would just re-trigger its enter logic (or its footprint) immediately.
+     */
+    public isOverlappingAny(body: RigidBody): boolean {
+        for (const other of this.bodies) {
+            if (other === body || !this.shouldInteract(body, other) || !this.overlaps(body, other)) {
+                continue;
+            }
+            return true;
+        }
+        return false;
+    }
+
     /** Only bodies whose layer/mask allow it (see PhysicsConstants.ts's Layers) interact at all — neither physical push-out nor any collision/trigger event. Symmetric: each side's mask has to include the other's layer. */
     private shouldInteract(a: RigidBody, b: RigidBody): boolean {
         return (a.mask & b.layer) !== 0 && (b.mask & a.layer) !== 0;

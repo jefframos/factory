@@ -104,7 +104,7 @@ export class QueueStorage {
             return false;
         }
 
-        return this.rollTask(id, config);
+        return this.rollTask(id, config.possibleTasks);
     }
 
     /**
@@ -112,17 +112,19 @@ export class QueueStorage {
      * requirement is that `id` doesn't already have an active task. Used by QuestGiverEntity
      * once it physically arrives at the queue (order-0 waypoint): for a giver-driven queue,
      * ARRIVAL is what makes a task available, not a timer — see this file's own doc and
-     * tryRollNextTask()'s. Returns whether it actually rolled one, same convention as
-     * tryRollNextTask() (false if a task was already active, or `config.possibleTasks` is
-     * empty).
+     * tryRollNextTask()'s. Takes the task pool directly (`possibleTasks`) rather than a whole
+     * QueueConfig — a giver-driven queue's tasks come from whichever QuestGiverVariant just
+     * arrived (see QuestGiverTypes.ts's own doc), not from QueueConfig.possibleTasks at all.
+     * Returns whether it actually rolled one, same convention as tryRollNextTask() (false if a
+     * task was already active, or `possibleTasks` is empty).
      */
-    static startTaskNow(id: string, config: QueueConfig): boolean {
+    static startTaskNow(id: string, possibleTasks: QueueTaskDef[]): boolean {
         const state = this.state(id);
         if (state.activeTask) {
             return false;
         }
 
-        return this.rollTask(id, config);
+        return this.rollTask(id, possibleTasks);
     }
 
     /**
@@ -149,14 +151,14 @@ export class QueueStorage {
         return this.giverPresent.has(id);
     }
 
-    /** Shared by tryRollNextTask()/startTaskNow() — both have already confirmed `id` has no active task; this just picks one and makes it active. */
-    private static rollTask(id: string, config: QueueConfig): boolean {
-        if (config.possibleTasks.length === 0) {
+    /** Shared by tryRollNextTask()/startTaskNow() — both have already confirmed `id` has no active task; this just picks one out of `possibleTasks` and makes it active. */
+    private static rollTask(id: string, possibleTasks: QueueTaskDef[]): boolean {
+        if (possibleTasks.length === 0) {
             return false;
         }
 
         const state = this.state(id);
-        const task = config.possibleTasks[Math.floor(Math.random() * config.possibleTasks.length)];
+        const task = possibleTasks[Math.floor(Math.random() * possibleTasks.length)];
         state.activeTask = task;
         state.progress = 0;
         state.nextTaskAtEpochMs = undefined;

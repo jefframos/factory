@@ -53,13 +53,39 @@
 const REQUIREMENT_FIELD = { key: null, type: 'requirement', label: 'Requirement' };
 
 /**
+ * FrameRegistry.ts's own preset names, mirrored here as a fixed inline option list (same
+ * "game-side enum-like set, not sourced from any tab" convention as popupMode below) — see
+ * that file's own doc. Each zone TYPE (buildings/shops/queues/crafting) already defaults to
+ * its own preset (BuildingFrame/ShopFrame/QueueFrame/CraftingFrame) without setting this at
+ * all; this field lets ONE SPECIFIC entity override that per-id (e.g. one particular shop
+ * using a fancier frame than every other shop). Gates use their own separate `frame` field
+ * (see the gates schema below) since they have no popupMode/POPUP_FIELDS at all.
+ */
+const FRAME_FIELD = {
+    key: 'frame', type: 'select', label: 'Popup Frame Override (blank = this type\'s own default)', optional: true,
+    options: [
+        { value: 'Main', label: 'Main' },
+        { value: 'Large', label: 'Large' },
+        { value: 'Info', label: 'Info' },
+        { value: 'Popup', label: 'Popup' },
+        { value: 'Simple', label: 'Simple' },
+        { value: 'GateLock', label: 'GateLock' },
+        { value: 'BuildingFrame', label: 'BuildingFrame' },
+        { value: 'ShopFrame', label: 'ShopFrame' },
+        { value: 'QueueFrame', label: 'QueueFrame' },
+        { value: 'CraftingFrame', label: 'CraftingFrame' },
+    ],
+};
+
+/**
  * Shared requirements-popup fields — appended to every zone-type entity's schema (buildings,
  * shops, queues, crafting; see PopupConfig.ts's own doc for the shared game-side types these
  * write). `popupMode` is a FIXED inline option list (see this file's own field-shape doc above),
  * not sourced from any tab — 'None'/'Complete'/'Simple' are the only three the game code
  * actually understands (PopupMode). Leaving `popupMode` unset behaves as 'complete' (every
  * entity's own pre-existing panel, unchanged); leaving `popupBobOffset` unset sits the popup
- * right at the entity's own base instead of floating above it.
+ * right at the entity's own base instead of floating above it; leaving FRAME_FIELD unset uses
+ * this entity type's own default preset (see that field's own doc).
  */
 const POPUP_FIELDS = [
     {
@@ -71,6 +97,7 @@ const POPUP_FIELDS = [
         ],
     },
     { key: 'popupBobOffset', type: 'number', label: 'Popup Height Offset (blank = sit at the entity\'s base)', optional: true },
+    FRAME_FIELD,
 ];
 
 /**
@@ -85,6 +112,7 @@ const MAP_TILE_FIELDS = {
     groundFields: [
         { key: 'name', type: 'text', label: 'Name' },
         { key: 'color', type: 'text', label: 'Color' },
+        { key: 'walkable', type: 'boolean', label: 'Walkable' },
     ],
     resourceFields: [
         { key: 'name', type: 'text', label: 'Name' },
@@ -97,10 +125,14 @@ const ENTITY_SCHEMAS = {
     gates: [
         { key: 'name', type: 'text', label: 'Name' },
         { key: 'requirement', type: 'requirement', label: 'Requirement' },
+        { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
+        { ...FRAME_FIELD, label: 'Icon Panel Frame Override (blank = GateLock)' },
     ],
     buildings: [
         { key: 'name', type: 'text', label: 'Name' },
+        { key: 'icon', type: 'icon', label: 'Icon (shown wherever this building is referenced elsewhere, e.g. a gate requiring one of its levels)', optional: true },
         { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement', optional: true },
+        { key: 'baseView', type: 'select', label: 'Base View (before level 1, optional)', source: 'entityViews', optional: true },
         {
             key: 'levels', type: 'list', label: 'Levels',
             itemLabel: item => `Level ${item.level ?? '?'}`,
@@ -115,6 +147,7 @@ const ENTITY_SCHEMAS = {
                         { key: 'description', type: 'text', label: 'Description' },
                     ],
                 },
+                { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
             ],
         },
         ...POPUP_FIELDS,
@@ -124,6 +157,7 @@ const ENTITY_SCHEMAS = {
         { key: 'tool', type: 'select', label: 'Tool', source: 'tools' },
         { key: 'action', type: 'select', label: 'Action', source: 'actions' },
         { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement', optional: true },
+        { key: 'baseView', type: 'select', label: 'Base View (before any upgrade, optional)', source: 'entityViews', optional: true },
         {
             key: 'levels', type: 'list', label: 'Upgrade Levels',
             itemLabel: (item, i) => `Level ${i + 1} — ${item.cost ?? '?'} coins`,
@@ -133,6 +167,7 @@ const ENTITY_SCHEMAS = {
                 { key: 'hitIntervalSec', type: 'number', label: 'Hit Interval (sec)', optional: true },
                 { key: 'hitScale', type: 'number', label: 'Hit Scale', optional: true },
                 { key: 'resourcePerHit', type: 'number', label: 'Resource Per Hit', optional: true },
+                { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
             ],
         },
         ...POPUP_FIELDS,
@@ -255,6 +290,59 @@ const ENTITY_SCHEMAS = {
         { key: 'cooldownSec', type: 'number', label: 'Cooldown (sec)' },
         { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement', optional: true },
         {
+            key: 'possibleTasks', type: 'list', label: 'Possible Tasks (IGNORED if this queue id has an entry in the Quest Givers tab — a giver-driven queue draws tasks from its current variant\'s Loot Table instead; only used for a queue with no giver at all)',
+            itemLabel: item => item.resourceType || 'task',
+            fields: [
+                { key: 'resourceType', type: 'select', label: 'Resource', source: 'resources' },
+                { key: 'amount', type: 'number', label: 'Amount Required' },
+                { key: 'rewardAmount', type: 'number', label: 'Reward Amount' },
+            ],
+        },
+        { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
+        ...POPUP_FIELDS,
+    ],
+    // Reusable real-mesh definitions — a building level/shop level/gate/queue can OPTIONALLY
+    // point its own `view` field at one of these ids instead of using its placeholder box (see
+    // EntityViewRegistry.ts's own doc). Not itself tied to any one entity kind, same "shared,
+    // joined by id convention" shape as the Asset Library tab.
+    entityViews: [
+        { key: 'models', type: 'modelList', label: 'Models' },
+        { key: 'scale', type: 'numberRange', label: 'Scale' },
+        { key: 'rotationDeg', type: 'numberRange', label: 'Rotation (deg)' },
+        { key: 'offset', type: 'vector3', label: 'Offset (x, y, z)' },
+    ],
+    // The NPC/prop that walks a queue's waypoint path in and out (see QuestGiverEntity.ts's
+    // own doc) — each variant is its own look (an Entity View) PLUS a Loot Table id (see the
+    // lootTables tab below), so "a rarer look gives different/better tasks" is just two
+    // variants pointing at different loot tables with different weights.
+    questGivers: [
+        { key: 'moveSpeed', type: 'number', label: 'Move Speed (world units/sec)' },
+        {
+            key: 'variants', type: 'list', label: 'Variants',
+            itemLabel: (item, i) => `Variant ${i + 1} — weight ${item.weight ?? '?'}`,
+            fields: [
+                { key: 'view', type: 'select', label: 'View', source: 'entityViews' },
+                { key: 'weight', type: 'number', label: 'Weight (lower = rarer; the lowest-weight variant is always what appears first)' },
+                { key: 'lootTable', type: 'select', label: 'Loot Table', source: 'lootTables' },
+            ],
+        },
+    ],
+    // A selectable player appearance — color + head shape + default face (see
+    // CharacterViewTypes.ts's own doc). Exactly one entry should have "Starter" checked —
+    // that's the look MainPlayer spawns with before the player equips a shop skin.
+    characterViews: [
+        { key: 'color', type: 'color', label: 'Color' },
+        {
+            key: 'headShape', type: 'select', label: 'Head Shape',
+            options: [{ value: 'cube', label: 'Cube' }],
+        },
+        { key: 'face', type: 'faceIcon', label: 'Face (images/non-preload)' },
+        { key: 'isStarter', type: 'boolean', label: 'Starter (spawn look until the player equips a shop skin — exactly one view should have this checked)' },
+    ],
+    // Reusable, named task pools — create one here, then point a Quest Giver variant's "Loot
+    // Table" field at it. The same table can back more than one variant.
+    lootTables: [
+        {
             key: 'possibleTasks', type: 'list', label: 'Possible Tasks',
             itemLabel: item => item.resourceType || 'task',
             fields: [
@@ -263,7 +351,6 @@ const ENTITY_SCHEMAS = {
                 { key: 'rewardAmount', type: 'number', label: 'Reward Amount' },
             ],
         },
-        ...POPUP_FIELDS,
     ],
 };
 

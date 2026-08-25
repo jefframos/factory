@@ -18,6 +18,7 @@ export class QuitButton {
 
     constructor(private readonly onQuit: () => void) {
         this.element = document.createElement('button');
+        this.element.classList.add('corner-btn', 'corner-btn-quit');
         Object.assign(this.element.style, {
             position: 'fixed',
             top: '12px',
@@ -28,7 +29,7 @@ export class QuitButton {
             border: 'none',
             background: 'rgba(24, 24, 32, 0.85)',
             cursor: 'pointer',
-            display: 'none', // shown by setEnabled(true) once actually playing
+            display: 'none', // shown by setEnabled(true) once actually playing — overridden to 'flex' by CSS below on narrow screens once JS flips it back on
             alignItems: 'center',
             justifyContent: 'center',
             padding: '0',

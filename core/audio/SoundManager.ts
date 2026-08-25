@@ -37,7 +37,18 @@ export default class SoundManager {
 	public onMuteChange: Signal = new Signal();
 
 	// New State variables
+	/** The player's own in-game mute preference — set by the in-game toggle, persisted, and reloaded on boot. Does NOT by itself decide whether Howler is actually muted — see _platformMuted/applyMuteState. */
 	private _isMuted: boolean = false;
+	/**
+	 * Platform-forced mute (e.g. YouTube Playables' own mute button, via
+	 * PlatformHandler's onAudioChanged) — kept separate from _isMuted so the
+	 * two can't stomp on each other through the same Howler.mute() call.
+	 * Certification (YouTube Playables) requires the platform mute to always
+	 * win regardless of any in-game control, so the effective mute is
+	 * `_isMuted || _platformMuted`, never a plain last-write-wins overwrite.
+	 * Not persisted — it only ever reflects live platform state.
+	 */
+	private _platformMuted: boolean = false;
 
 	private previousMasterSfxVolume: number | null = null;
 	private previousLayerVolumes: Map<string, number> | null = null;
@@ -54,8 +65,7 @@ export default class SoundManager {
 			if (platform?.getItem) {
 				const savedMute = await platform.getItem(key);
 				this._isMuted = savedMute === "true";
-				Howler.mute(this._isMuted);
-				this.onMuteChange.dispatch(this._isMuted);
+				this.applyMuteState();
 				return;
 			}
 		} catch (error) {
@@ -65,8 +75,14 @@ export default class SoundManager {
 		const storage = this.getSafeLocalStorage();
 		const savedMute = storage?.getItem(key) === "true";
 		this._isMuted = savedMute;
-		Howler.mute(this._isMuted);
-		this.onMuteChange.dispatch(this._isMuted);
+		this.applyMuteState();
+	}
+
+	/** Re-applies Howler's actual mute state from both sources and notifies listeners — the only place that ever calls Howler.mute(), so _isMuted (player preference) and _platformMuted (e.g. YouTube's own mute button) can never stomp on each other via separate direct calls. */
+	private applyMuteState(): void {
+		const effective = this._isMuted || this._platformMuted;
+		Howler.mute(effective);
+		this.onMuteChange.dispatch(effective);
 	}
 
 	private getSafeLocalStorage(): Storage | null {
@@ -103,32 +119,50 @@ export default class SoundManager {
 	// --- New Toggle and State Methods ---
 
 	/**
-	 * Returns current mute status
+	 * Returns the current EFFECTIVE mute status (player preference OR
+	 * platform-forced) — what the in-game toggle icon should reflect, since
+	 * it's what's actually audible right now.
 	 */
 	public get isMuted(): boolean {
-		return this._isMuted;
+		return this._isMuted || this._platformMuted;
 	}
 
 	/**
-	 * Toggles the mute state and triggers the signal
+	 * Toggles the PLAYER'S OWN mute preference and triggers the signal.
+	 * While a platform mute (see setPlatformMuted) is active, this still
+	 * updates the stored preference (so it takes effect the moment the
+	 * platform unmutes) but cannot make audio audible by itself — see
+	 * applyMuteState.
 	 */
 	public toggleMute(): void {
 		this.setMuted(!this._isMuted);
 	}
 
 	/**
-	 * Directly set mute state
+	 * Directly set the PLAYER'S OWN mute preference (persisted). Does not
+	 * unilaterally control Howler — see applyMuteState, which ANDs this
+	 * against any platform-forced mute so neither source can override the
+	 * other via a bare last-write-wins Howler.mute() call.
 	 */
 	public setMuted(mute: boolean): void {
 		if (this._isMuted === mute) return;
 
 		this._isMuted = mute;
-		Howler.mute(mute);
-
-		// Persist the choice
 		this.persistMutedState(mute);
+		this.applyMuteState();
+	}
 
-		this.onMuteChange.dispatch(this._isMuted);
+	/**
+	 * Platform-forced mute (e.g. YouTube Playables' onAudioEnabledChange via
+	 * PlatformHandler) — never persisted, since it only ever mirrors live
+	 * platform state, not a player choice. See setMuted/isMuted's own docs
+	 * for why this is a separate flag rather than reusing setMuted.
+	 */
+	public setPlatformMuted(mute: boolean): void {
+		if (this._platformMuted === mute) return;
+
+		this._platformMuted = mute;
+		this.applyMuteState();
 	}
 	// --- Existing Methods Updated/Maintained ---
 

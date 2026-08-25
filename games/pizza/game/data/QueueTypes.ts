@@ -16,6 +16,7 @@ import { ResourceType } from '../actions/ResourceTypes';
 import { ItemType } from '../crafting/ItemTypes';
 import { MilestoneRequirement } from './MilestoneRequirement';
 import { PopupMode } from '../ui/PopupConfig';
+import { FrameName } from '../ui/FrameRegistry';
 
 export interface QueueTaskDef {
     resourceType: ResourceType;
@@ -48,6 +49,10 @@ export interface QueueConfig {
     popupMode?: PopupMode;
     /** How high above this queue's own base the requirements panel floats — see PopupConfig.ts's own doc. undefined/0 sits it right at the queue's base instead of floating. */
     popupBobOffset?: number;
+    /** Optional real-mesh override, keyed into EntityViewRegistry.ts's ENTITY_VIEW_CONFIG — see BuildingLevelConfig.view's own doc for the full convention. undefined keeps QueueZone's own existing hardcoded visual, unchanged from before this field existed. */
+    view?: string;
+    /** Overrides FrameRegistry.ts's 'QueueFrame' default for THIS queue's own popup — see PopupConfig.ts's resolvePopupFrameName()'s own doc. undefined uses the type-wide default. */
+    frame?: FrameName;
 }
 
 /** Applied to every discovered queue unless QUEUE_CONFIG_BY_ID has an override for its id — see this file's own doc. */

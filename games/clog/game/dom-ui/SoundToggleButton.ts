@@ -18,6 +18,7 @@ export class SoundToggleButton {
 
     constructor() {
         this.element = document.createElement('button');
+        this.element.classList.add('corner-btn', 'corner-btn-sound');
         Object.assign(this.element.style, {
             position: 'fixed',
             top: '12px',

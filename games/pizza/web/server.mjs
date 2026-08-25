@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url';
 import { exec, execSync, spawn } from 'node:child_process';
 import { syncToSource } from './sync/syncToSource.mjs';
 import { validateMap } from './sync/validateMap.mjs';
-import { scanImageAssets } from './sync/imageAssets.mjs';
+import { scanImageAssets, scanNonPreloadAssets } from './sync/imageAssets.mjs';
 import { readSpawnerTileTypes } from './sync/tiledMap.mjs';
 import { generateTilesetImage, GROUND_NUMBER_STYLE, RESOURCE_NUMBER_STYLE } from './sync/tilesetImage.mjs';
 import { readModelsCatalog } from './sync/modelsCatalog.mjs';
@@ -32,6 +32,8 @@ const __dirname = path.dirname(__filename);
 const DATA_DIR = path.join(__dirname, 'data');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const IMAGES_ROOT = path.join(__dirname, '..', 'raw-assets', 'images');
+/** The BUILT output (not raw-assets) — see scanNonPreloadAssets()'s own doc for why these are scanned from the pipeline's actual output rather than its PNG sources. */
+const NON_PRELOAD_IMAGES_ROOT = path.join(__dirname, '..', '..', '..', 'public', 'pizza', 'images', 'non-preload');
 const MAP_FILE = path.join(__dirname, '..', 'raw-assets', 'json', 'map', 'testMap1.json');
 const TILES_FILE = path.join(__dirname, '..', 'raw-assets', 'json', 'map', 'tiles.json');
 const TILED_DIR = path.join(__dirname, '..', 'tiled');
@@ -135,6 +137,32 @@ const server = http.createServer(async (req, res) => {
                 url: `/asset-preview/${a.relPath.split('/').map(encodeURIComponent).join('/')}`,
             })),
         });
+    }
+
+    if (url.pathname === '/api/non-preload-images' && req.method === 'GET') {
+        const { assets, error } = scanNonPreloadAssets(NON_PRELOAD_IMAGES_ROOT);
+        return sendJson(res, 200, {
+            error,
+            assets: assets.map(a => ({
+                ...a,
+                url: `/asset-preview-non-preload/${a.relPath.split('/').map(encodeURIComponent).join('/')}`,
+            })),
+        });
+    }
+
+    if (url.pathname.startsWith('/asset-preview-non-preload/') && req.method === 'GET') {
+        const relPath = decodeURIComponent(url.pathname.slice('/asset-preview-non-preload/'.length));
+        const filePath = path.join(NON_PRELOAD_IMAGES_ROOT, path.normalize(relPath).replace(/^(\.\.[/\\])+/, ''));
+        try {
+            const content = await fs.readFile(filePath);
+            const ext = path.extname(filePath).toLowerCase();
+            res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] ?? 'application/octet-stream' });
+            res.end(content);
+        } catch {
+            res.writeHead(404);
+            res.end();
+        }
+        return;
     }
 
     if (url.pathname.startsWith('/asset-preview/') && req.method === 'GET') {

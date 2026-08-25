@@ -39,6 +39,12 @@ export interface TileDef {
      * here (not typed `ProviderType`) since this file is loaded as raw JSON at runtime.
      */
     providerType?: string;
+    /**
+     * Ground tiles only — whether the player can walk onto a painted cell of this tile,
+     * settable from the pizza web editor's Map tab. Undefined (tiles.json predating this
+     * field) falls back to NON_WALKABLE_GROUND_TILES below — see isGroundWalkable().
+     */
+    walkable?: boolean;
 }
 
 export interface TileDefsData {
@@ -72,11 +78,11 @@ export interface TiledLayer {
     name: string;
 }
 
-/** One custom property on a TiledObject, as Tiled's "Custom Properties" panel exports it — see TiledObject's own doc for why this project reads THESE instead of the object's own name/type fields. */
+/** One custom property on a TiledObject, as Tiled's "Custom Properties" panel exports it — see TiledObject's own doc for why this project reads THESE instead of the object's own name/type fields. `value` is typed loosely because Tiled exports a "bool"/"float"/"int" property as an ACTUAL JSON boolean/number, not a string — only a "string"-typed custom property is really a string; see getObjectBooleanProperty() for the one reader that cares about the distinction today. */
 export interface TiledObjectProperty {
     name: string;
     type: string;
-    value: string;
+    value: string | boolean | number;
 }
 
 /**
@@ -100,11 +106,28 @@ export interface TiledObject {
     rotation: number;
     visible: boolean;
     properties?: TiledObjectProperty[];
+    /**
+     * Present ONLY on a "tile object" — one placed by dragging an image (or picking a tile)
+     * straight onto an object layer in Tiled, rather than drawing a plain rectangle — see
+     * MeshLayerSpawner.ts's own doc, the one reader. Unlike a plain rectangle object (x/y at
+     * the TOP-left, per this interface's own doc above), Tiled anchors a TILE object's x/y at
+     * its BOTTOM-left instead — the same convention a tile LAYER cell uses — so converting one
+     * to a world position needs `y - height` (not `y`) for its top edge; see
+     * MeshLayerSpawner.ts's own conversion.
+     */
+    gid?: number;
 }
 
-/** Reads a named custom property off a TiledObject (see its own doc) — undefined if that object has no property by this name. */
+/** Reads a named STRING custom property off a TiledObject (see its own doc) — undefined if that object has no property by this name. Coerces to a string even if Tiled happened to export a non-"string"-typed property under this name, so existing callers (all of which expect a string, e.g. an id/type/target) keep their original signature. */
 export function getObjectProperty(obj: TiledObject, propertyName: string): string | undefined {
-    return obj.properties?.find(p => p.name === propertyName)?.value;
+    const value = obj.properties?.find(p => p.name === propertyName)?.value;
+    return value === undefined ? undefined : String(value);
+}
+
+/** Reads a named "bool"-typed custom property off a TiledObject — see TiledObjectProperty.value's own doc for why Tiled exports these as a real JSON boolean, not the string every OTHER custom property here happens to be. Missing property (never drawn at all) reads as false, same "absence means the default/off state" convention as every other optional flag in this codebase. */
+export function getObjectBooleanProperty(obj: TiledObject, propertyName: string): boolean {
+    const value = obj.properties?.find(p => p.name === propertyName)?.value;
+    return value === true || value === 'true';
 }
 
 /**
@@ -138,6 +161,55 @@ export function objectToWorldRect(
 
 export interface TiledTileset {
     firstgid: number;
+    /** Present on a traditional single-image tileset (grounds.png/resources.png) — one shared sheet, not used by resolveTiledTileImageName()'s own callers today but kept for completeness. */
+    image?: string;
+    /**
+     * Present on an "image collection" tileset instead — one entry per tile, each with its OWN
+     * image path relative to the map file. Tiled auto-generates exactly this shape the moment
+     * a level designer drags a loose PNG onto an object layer (see MeshLayerSpawner.ts's own
+     * doc) — `id` is 0-based, LOCAL to this tileset (subtract firstgid from a gid to get it).
+     * `properties` is the TILE's own custom-properties list (set once, in Tiled, on the tile
+     * definition itself via right-click -> "Tile Properties" — NOT on any one placed object) —
+     * e.g. a "solid" bool checked there applies to EVERY object placed from that tile, which is
+     * exactly the point: "is this crate solid" is a property of the crate, not of one particular
+     * instance of it. See getTiledTileBooleanProperty(), the one reader.
+     */
+    tiles?: { id: number; image: string; properties?: TiledObjectProperty[] }[];
+}
+
+/** Shared by resolveTiledTileImageName()/getTiledTileBooleanProperty() — the tileset with the LARGEST firstgid that's still `<= gid`, or undefined if `gid` is 0/negative or smaller than every tileset's own firstgid. */
+function findTilesetOwningGid(map: TiledMapData, gid: number): TiledTileset | undefined {
+    if (gid <= 0) {
+        return undefined;
+    }
+    const sorted = [...map.tilesets].sort((a, b) => a.firstgid - b.firstgid);
+    let owner: TiledTileset | undefined;
+    for (const tileset of sorted) {
+        if (tileset.firstgid > gid) {
+            break;
+        }
+        owner = tileset;
+    }
+    return owner;
+}
+
+/**
+ * Reads a "bool"-typed custom property set on the TILE DEFINITION `gid` resolves to (see
+ * TiledTileset.tiles' own `properties` doc) — NOT on any placed object. Missing tileset/tile,
+ * or a tile with no such property at all, reads as false, same "absence means off" convention
+ * getObjectBooleanProperty() uses for a placed object's own properties.
+ */
+export function getTiledTileBooleanProperty(map: TiledMapData, gid: number | undefined, propertyName: string): boolean {
+    if (!gid) {
+        return false;
+    }
+    const owner = findTilesetOwningGid(map, gid);
+    if (!owner) {
+        return false;
+    }
+    const localId = gid - owner.firstgid;
+    const value = owner.tiles?.find(tile => tile.id === localId)?.properties?.find(p => p.name === propertyName)?.value;
+    return value === true || value === 'true';
 }
 
 export interface TiledMapData {
@@ -238,16 +310,21 @@ export const RESOURCE_NAME_TO_TYPE: Partial<Record<string, ProviderType>> = {
 };
 
 /**
- * Ground tile names (map/tiles.json's grounds[].name) the player cannot walk onto — see
- * TileMap.isWalkableAt()/TileWalkability.ts, which is the only thing that reads this. A
- * name not listed here (including any new ground added to tiles.json later) is walkable by
- * default, so adding a new ground tile never requires touching this list unless it should
- * block movement.
+ * Ground tile names (map/tiles.json's grounds[].name) the player cannot walk onto — only a
+ * FALLBACK for a tiles.json entry that predates the per-tile `walkable` field (see TileDef),
+ * checked by isGroundWalkable() below. New ground tiles should set `walkable: false` from
+ * the pizza web editor's Map tab instead of being added here.
  */
 export const NON_WALKABLE_GROUND_TILES: ReadonlySet<string> = new Set(['water', 'lava', 'rock']);
 
-export function isGroundWalkable(name: string | undefined): boolean {
-    return name === undefined || !NON_WALKABLE_GROUND_TILES.has(name);
+export function isGroundWalkable(def: TileDef | undefined): boolean {
+    if (def === undefined) {
+        return true;
+    }
+    if (def.walkable !== undefined) {
+        return def.walkable;
+    }
+    return !NON_WALKABLE_GROUND_TILES.has(def.name);
 }
 
 export function loadTiledMap(alias: string): TiledMapData {
@@ -284,6 +361,28 @@ export function getTilesetFirstGids(map: TiledMapData): { groundFirstGid: number
 
 export function resolveGroundDef(gid: number, tileDefs: TileDefsData, groundFirstGid: number): TileDef | undefined {
     return tileDefs.grounds[gid - groundFirstGid];
+}
+
+/**
+ * Resolves ANY gid (not just the ground/resource tilesets getTilesetFirstGids() knows about)
+ * to whichever tileset actually owns it — the one with the LARGEST firstgid that's still
+ * `<= gid` — then reads that tile's own image. For an "image collection" tileset (see
+ * TiledTileset.tiles' own doc) that's the per-tile entry at `gid - tileset.firstgid`; for a
+ * traditional single-sheet tileset it's just the tileset's own shared `image` (good enough for
+ * MeshLayerSpawner.ts's purposes, which only ever deals with one-tile image-collection
+ * tilesets in practice). Returns just the image's own BASENAME (no directory) — the only part
+ * ModelSnapshotTool.decodeModelRef() needs; the rest is Tiled's own relative-path bookkeeping.
+ * undefined if `gid` is 0/negative or doesn't fall inside any known tileset's range at all.
+ */
+export function resolveTiledTileImageName(map: TiledMapData, gid: number): string | undefined {
+    const owner = findTilesetOwningGid(map, gid);
+    if (!owner) {
+        return undefined;
+    }
+
+    const localId = gid - owner.firstgid;
+    const imagePath = owner.tiles?.find(tile => tile.id === localId)?.image ?? owner.image;
+    return imagePath?.split(/[/\\]/).pop();
 }
 
 export function resolveResourceDef(gid: number, tileDefs: TileDefsData, resourceFirstGid: number): TileDef | undefined {

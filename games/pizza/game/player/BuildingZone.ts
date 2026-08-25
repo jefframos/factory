@@ -33,12 +33,14 @@ import { BendService } from '../services/BendService';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
+import GlbVisualComponent from '../components/GlbVisualComponent';
 import { spawnFlyingResourceIcon } from '../components/FlyingResourceIcon';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { BuildingStorage } from '../data/BuildingStorage';
-import { BUILDING_CONFIG, BuildingId, BuildingMeshConfig, getMeshConfigForLevel } from '../data/BuildingTypes';
+import { BUILDING_CONFIG, BuildingId, getMeshConfigForLevel, getViewIdForLevel } from '../data/BuildingTypes';
+import { resolveEntityView } from '../world/EntityViewRegistry';
 import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
@@ -123,8 +125,10 @@ export default class BuildingZone extends Entity {
     private requirementsContainer!: PIXI.Container;
     private labelFrame!: AutoFitFrame;
 
-    /** The building's own visible structure — one per level (see BuildingTypes.ts's BuildingMeshConfig), swapped out on level-up via replaceBuildingMesh(). Undefined only ever momentarily, between disposing the old mesh and creating the new one. */
+    /** The building's own visible structure — one per level (see BuildingTypes.ts's BuildingMeshConfig), swapped out on level-up via replaceBuildingMesh(). Undefined only ever momentarily, between disposing the old mesh and creating the new one. Mutually exclusive with `buildingVisual` below — exactly one of the two is set at a time, depending on whether this level has an EntityViewRegistry `view` id (see createBuildingMesh()). */
     private buildingMesh?: THREE.Mesh;
+    /** The real-glb counterpart to `buildingMesh` above, used instead of it when this level's `view` id resolves to an actual model (see EntityViewRegistry.ts's resolveEntityView()). */
+    private buildingVisual?: GlbVisualComponent;
 
     private readonly handleProgressChanged = (id: BuildingId): void => {
         if (id === this.buildingId) {
@@ -240,7 +244,7 @@ export default class BuildingZone extends Entity {
         // reloading a save mid-upgrade-ladder), no drop-in for this first placement (see
         // createBuildingMesh()'s `dropIn` param) since there's no "before" state to animate
         // FROM yet.
-        this.createBuildingMesh(getMeshConfigForLevel(this.buildingId, BuildingStorage.getLevel(this.buildingId)), false);
+        this.createBuildingMesh(BuildingStorage.getLevel(this.buildingId), false);
 
         // Title anchored (0.5, 1) — bottom-edge-at-position-y — and refreshLabel() always
         // stacks the requirement rows so THEIR block's bottom also lands at local (0,0),
@@ -254,7 +258,7 @@ export default class BuildingZone extends Entity {
 
         const column = new PIXI.Container();
         column.addChild(this.titleText, this.requirementsContainer);
-        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(BUILDING_CONFIG[this.buildingId].popupMode), column);
+        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(BUILDING_CONFIG[this.buildingId].popupMode, 'BuildingFrame', BUILDING_CONFIG[this.buildingId].frame), column);
         this.refreshLabel();
 
         // A dedicated empty node the panel tracks, rather than a raw captured position —
@@ -298,8 +302,25 @@ export default class BuildingZone extends Entity {
         super.destroy();
     }
 
-    /** Builds `config`'s box mesh and parents it under this.transform, replacing whatever createBuildingMesh() built last (see disposeBuildingMesh()). `dropIn` plays the "drops from above, bounces to rest" beat used on a level-up (see replaceBuildingMesh()); pass false for the zone's very first mesh, where there's no prior state to animate FROM. */
-    private createBuildingMesh(config: BuildingMeshConfig, dropIn: boolean): void {
+    /**
+     * Builds this level's visible structure and parents it under this.transform, replacing
+     * whatever createBuildingMesh() built last (see disposeBuildingMesh()). `dropIn` plays the
+     * "drops from above, bounces to rest" beat used on a level-up (see replaceBuildingMesh());
+     * pass false for the zone's very first mesh, where there's no prior state to animate FROM.
+     * Prefers this level's EntityViewRegistry `view` id (a real glb — see BuildingLevelConfig.
+     * view's own doc) when one resolves to an actual model; falls back to the level's own box
+     * placeholder (`mesh`) otherwise, unchanged from before `view` existed.
+     */
+    private createBuildingMesh(level: number, dropIn: boolean): void {
+        const resolved = resolveEntityView(getViewIdForLevel(this.buildingId, level));
+        if (resolved) {
+            this.createBuildingView(resolved, dropIn);
+        } else {
+            this.createBuildingBox(getMeshConfigForLevel(this.buildingId, level), dropIn);
+        }
+    }
+
+    private createBuildingBox(config: ReturnType<typeof getMeshConfigForLevel>, dropIn: boolean): void {
         const material = new THREE.MeshStandardMaterial({ color: config.color });
         BendService.applyBend(material);
 
@@ -317,22 +338,46 @@ export default class BuildingZone extends Entity {
         }
     }
 
+    private createBuildingView(resolved: NonNullable<ReturnType<typeof resolveEntityView>>, dropIn: boolean): void {
+        const [offsetX, offsetY, offsetZ] = resolved.offset;
+        const startY = dropIn ? offsetY + MESH_DROP_START_HEIGHT : offsetY;
+
+        const visual = new GlbVisualComponent(
+            resolved.model,
+            new THREE.Vector3(offsetX, startY, offsetZ),
+            resolved.scale,
+            THREE.MathUtils.degToRad(resolved.rotationDeg),
+            () => {
+                if (dropIn) {
+                    gsap.to(visual.mesh.position, { y: offsetY, duration: MESH_DROP_DURATION_SEC, ease: 'bounce.out' });
+                }
+            },
+        );
+        this.buildingVisual = this.addComponent(visual);
+    }
+
     private disposeBuildingMesh(): void {
-        if (!this.buildingMesh) {
-            return;
+        if (this.buildingMesh) {
+            gsap.killTweensOf(this.buildingMesh.position);
+            this.buildingMesh.geometry.dispose();
+            (this.buildingMesh.material as THREE.Material).dispose();
+            this.buildingMesh.removeFromParent();
+            this.buildingMesh = undefined;
         }
 
-        gsap.killTweensOf(this.buildingMesh.position);
-        this.buildingMesh.geometry.dispose();
-        (this.buildingMesh.material as THREE.Material).dispose();
-        this.buildingMesh.removeFromParent();
-        this.buildingMesh = undefined;
+        if (this.buildingVisual) {
+            if (this.buildingVisual.isReady) {
+                gsap.killTweensOf(this.buildingVisual.mesh.position);
+            }
+            this.buildingVisual.destroy();
+            this.buildingVisual = undefined;
+        }
     }
 
     /** The "remove one, drop-bounce the upgraded version" visual beat — tears down the just-superseded level's mesh and drops the new one in from above. Called as soon as a level clears (see playLevelUpSequence()), so by the time the camera actually arrives (if focusing at all), the building's typically already mid-bounce or freshly landed. */
     private replaceBuildingMesh(level: number): void {
         this.disposeBuildingMesh();
-        this.createBuildingMesh(getMeshConfigForLevel(this.buildingId, level), true);
+        this.createBuildingMesh(level, true);
     }
 
     /** Rewrites the panel's title/requirement slots from BuildingStorage's current state and re-fits the frame around the new bounds. `popupMode: 'none'` (see PopupConfig.ts's own doc) skips all of this and keeps the panel permanently hidden; `'simple'` keeps the requirement slots but drops the title line. */

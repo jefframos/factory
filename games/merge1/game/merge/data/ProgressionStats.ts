@@ -1,6 +1,7 @@
 // data/ProgressionStats.ts
 import GameStorage from "../storage/GameStorage";
 import { CurrencyType } from "./InGameEconomy";
+import PlatformHandler from "core/platforms/PlatformHandler";
 
 export interface IProgressionStats {
     // Economy totals (lifetime)
@@ -75,14 +76,24 @@ export class ProgressionStats {
     private constructor() {
         this.load();
 
-        // Never lose stats on tab close/background
-        window.addEventListener("beforeunload", this.onBeforeUnload);
-        document.addEventListener("visibilitychange", this.onVisibilityChange);
+        // Never lose stats on backgrounding — routed through PlatformHandler's
+        // onPause (backed by ytgame.system.onPause on YouTube Playables, see
+        // YouTubePlayablePlatform's own certification note: raw browser
+        // events like `visibilitychange` are documented there as producing
+        // incorrect pause/resume behavior during ad breaks) rather than
+        // raw `beforeunload`/`visibilitychange` listeners. Those used to
+        // fire on every single reload (since totalPlaySeconds ticks every
+        // frame, `_dirty` is essentially always true) and re-persist this
+        // session's already-in-memory (i.e. stale) full state right as the
+        // page reloaded — which meant an externally-cleared cloud save
+        // (e.g. a "clear save and reload" certification test) got silently
+        // undone by this "safety net" moments before the reload's own
+        // loadData() call ran.
+        PlatformHandler.instance.onPause.add(this.onBeforeUnload, this);
     }
 
     public dispose(): void {
-        window.removeEventListener("beforeunload", this.onBeforeUnload);
-        document.removeEventListener("visibilitychange", this.onVisibilityChange);
+        PlatformHandler.instance.onPause.remove(this.onBeforeUnload, this);
 
         if (this._flushTimer !== null) {
             window.clearTimeout(this._flushTimer);
@@ -167,12 +178,6 @@ export class ProgressionStats {
 
     private onBeforeUnload = (): void => {
         this.flushNow();
-    };
-
-    private onVisibilityChange = (): void => {
-        if (document.visibilityState === "hidden") {
-            this.flushNow();
-        }
     };
 
     // --- Recording helpers ---

@@ -10,6 +10,8 @@
 import * as THREE from 'three';
 
 export interface CameraFocusOptions {
+    /** Seconds to wait, player movement already disabled but the camera still on the player, before the camera actually starts easing onto `target` — a beat to let whatever just happened (a level-up popup, a gate's own reveal) register before the camera cuts away. Omit/0 for no pause at all (the pre-existing behavior). */
+    preDelaySec?: number;
     /** Seconds the camera takes easing from the player onto `target`. */
     travelSec?: number;
     /** Seconds the camera holds on `target` before easing back. */

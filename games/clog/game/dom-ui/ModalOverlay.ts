@@ -32,6 +32,7 @@ export class ModalOverlay {
         });
 
         this.boxEl = document.createElement('div');
+        this.boxEl.classList.add('modal-box');
         Object.assign(this.boxEl.style, {
             display: 'none',
             position: 'relative', // lets a screen (e.g. Shop) anchor a corner close button via position:absolute
@@ -39,6 +40,10 @@ export class ModalOverlay {
             color: '#fff',
             borderRadius: '12px',
             padding: '24px 28px',
+            // box-sizing so padding counts toward maxWidth instead of adding
+            // on top of it — on a screen narrower than ~350px, 90vw content
+            // plus 56px of horizontal padding used to exceed the viewport.
+            boxSizing: 'border-box',
             minWidth: '280px',
             maxWidth: '90vw',
             boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5)',
