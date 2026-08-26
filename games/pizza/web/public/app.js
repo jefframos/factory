@@ -14,6 +14,9 @@
 // persist()) — so a designer can freely poke around without every
 // keystroke hitting the filesystem.
 
+/** Sentinel activeId for the Graph tab (see renderTabs()/renderActiveTab()) — never a real manifest.json entry id, so it can't collide with one. */
+const GRAPH_TAB_ID = '__graph__';
+
 let manifest = [];
 let allData = {};
 let activeId = null;
@@ -60,7 +63,7 @@ async function init() {
         modelsCatalog = { groups: [], error: err.message };
     }
     dirtyTabs.clear();
-    if (!activeId || !manifest.some(e => e.id === activeId)) {
+    if (!activeId || (activeId !== GRAPH_TAB_ID && !manifest.some(e => e.id === activeId))) {
         activeId = manifest[0]?.id ?? null;
     }
     renderTabs();
@@ -89,6 +92,21 @@ function renderTabs() {
         };
         tabsEl.appendChild(btn);
     }
+
+    // The Graph tab (see graph/graph.js) is a read-only VISUALIZATION over the same data every
+    // other tab edits, not a data-editing tab itself — deliberately NOT in manifest.json (which
+    // is the registry of real id-keyed JSON-backed entity types syncToSource.mjs knows how to
+    // write back to source). Appended after the data tabs, same active/click wiring, just with
+    // its own sentinel id instead of a manifest entry.
+    const graphBtn = document.createElement('button');
+    graphBtn.textContent = 'Graph';
+    graphBtn.className = activeId === GRAPH_TAB_ID ? 'active' : '';
+    graphBtn.onclick = () => {
+        activeId = GRAPH_TAB_ID;
+        renderTabs();
+        renderActiveTab();
+    };
+    tabsEl.appendChild(graphBtn);
 }
 
 async function checkMap() {
@@ -242,7 +260,14 @@ async function persist(tabId) {
 
 function renderActiveTab() {
     contentEl.innerHTML = '';
+    contentEl.classList.toggle('graph-tab-active', activeId === GRAPH_TAB_ID);
     if (!activeId) return;
+
+    if (activeId === GRAPH_TAB_ID) {
+        sourceHintEl.textContent = 'A read-only visualization — see the source of any node\'s own data on its own tab to edit it.';
+        renderGraphTab(contentEl);
+        return;
+    }
 
     const manifestEntry = manifest.find(e => e.id === activeId);
     sourceHintEl.textContent = manifestEntry?.sourceHint
