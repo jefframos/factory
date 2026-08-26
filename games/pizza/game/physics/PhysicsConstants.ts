@@ -5,9 +5,33 @@
 // for top-down games, not a real simulation — no mass, no impulses, no
 // rotation, just AABB overlap + push-out per axis.
 
-/** Flip to true to render a wireframe box over every RigidBody's collider (see RigidBody.onAdded()). */
-export const PHYSICS_DEBUG = false;
-export const PHYSICS_TRIGGER_DEBUG = false;
+/**
+ * Whether to render a wireframe box over every RigidBody's collider — `PHYSICS_DEBUG` for
+ * solid colliders, `PHYSICS_TRIGGER_DEBUG` for triggers (see RigidBody.awake()). `let`, not
+ * `const`, so setPhysicsDebugFlags() below can flip them at runtime — see that function's own
+ * doc for why (the pizza web editor's two header toggles, read via a cookie in dev mode).
+ * Both false by default, same as before either was runtime-settable.
+ */
+export let PHYSICS_DEBUG = false;
+export let PHYSICS_TRIGGER_DEBUG = false;
+
+/**
+ * Sets PHYSICS_DEBUG/PHYSICS_TRIGGER_DEBUG at runtime — called once at boot, in dev mode only,
+ * from the game's own cookie read (see game/utils/DebugPhysicsCookie.ts), which mirrors the
+ * pizza web editor header's two "Debug Colliders"/"Debug Triggers" toggles. A field omitted
+ * from `flags` leaves that flag exactly as it already was — undefined never means "turn this
+ * one off," only "this call has nothing to say about it." Must run BEFORE any RigidBody
+ * awake()s (i.e. before the world's entities spawn — see PizzaScene setup), since awake() only
+ * reads these once, at construction time, not every frame.
+ */
+export function setPhysicsDebugFlags(flags: { collider?: boolean; trigger?: boolean }): void {
+    if (flags.collider !== undefined) {
+        PHYSICS_DEBUG = flags.collider;
+    }
+    if (flags.trigger !== undefined) {
+        PHYSICS_TRIGGER_DEBUG = flags.trigger;
+    }
+}
 
 /** World-units/second^2 downward acceleration applied to every RigidBody with useGravity=true. */
 export const GRAVITY = -20;

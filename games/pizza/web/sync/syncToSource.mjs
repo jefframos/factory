@@ -119,9 +119,62 @@ function pick(value, managedKeys) {
     return result;
 }
 
-/** Matches ensureEnumMember()'s own naming convention (id → PascalCase-first-letter member name) — must stay consistent with it, since a value serialized here has to name a member that's actually guaranteed to exist on the enum (ensureEnumMember() runs before any entry using that id is serialized). */
+/** Naive PascalCase guess for a brand-new enum member's name from its id — only correct for INVENTING a new member (ensureEnumMember() runs before any entry using that id is serialized, so the guess and the real member agree at creation time). See resolveEnumMemberName() below for referencing an EXISTING member, where this guess can go stale. */
 function enumMemberName(id) {
     return id.charAt(0).toUpperCase() + id.slice(1);
+}
+
+/**
+ * Looks up the REAL declared name of whichever member of `enumName` currently holds `value`,
+ * wherever that enum actually lives (ENUM_SOURCE_FILES) — used instead of enumMemberName()'s
+ * naive guess when serializing a REFERENCE to an entity that (unlike a brand-new one) might
+ * already exist under a name that no longer matches its own value.
+ *
+ * This matters specifically because of how renameEntity.mjs's rename works: it changes an enum
+ * member's underlying string VALUE but deliberately leaves its declared NAME untouched (so
+ * nothing elsewhere in the codebase that references it symbolically ever dangles — see that
+ * file's own doc). So after e.g. a resource renamed from `crystalCopy` to `iron` (member stays
+ * named `CrystalCopy`, now valued `'iron'`), any LATER save that writes a REFERENCE to that
+ * resource (a provider's drop table, a recipe's cost, a gate's requirement, ...) via the naive
+ * guess would compute `enumMemberName('iron')` = `"Iron"` — a member name that was never
+ * actually created, producing `ResourceType.Iron`, a property that doesn't exist at all. That's
+ * a straight TypeScript compile error, but esbuild-only dev servers (no full type-check) run it
+ * anyway with the reference silently evaluating to `undefined` at runtime — exactly the failure
+ * this function exists to prevent by resolving the real, current member name instead of
+ * guessing one.
+ *
+ * Falls back to the guess when the enum/member can't be resolved (e.g. referencing an id that
+ * hasn't been ensureEnumMember()'d into existence yet within this very save) — same fallback
+ * getPropertyKeyId() already uses for the identical reason.
+ */
+function resolveEnumMemberName(enumName, value, refreshedThisSync) {
+    const declFile = ENUM_SOURCE_FILES[enumName]?.(GAME_DIR);
+    if (!declFile) {
+        return enumMemberName(value);
+    }
+
+    const enumSourceFile = getSourceFile(declFile, refreshedThisSync);
+    const enumDecl = enumSourceFile.getEnum(enumName);
+    const member = enumDecl?.getMembers().find(m => (m.getInitializer()?.getText() ?? '').replace(/^['"]|['"]$/g, '') === value);
+    return member?.getName() ?? enumMemberName(value);
+}
+
+/**
+ * The reverse of resolveEnumMemberName() — given a member's declared NAME, finds its actual
+ * VALUE. `localSourceFile` is checked first (an enum's own `*_CONFIG` file declares it inline,
+ * e.g. ProviderType in ProviderTypes.ts) before falling back to ENUM_SOURCE_FILES (a FOREIGN
+ * reference, e.g. ActionType used inside ProviderTypes.ts). Used by checkConsistency.mjs to
+ * read an `EnumName.Member` expression already sitting in source back into the plain string
+ * value it represents, for comparing against the editor's own JSON mirror (which only ever
+ * stores plain values, never TS syntax). Returns undefined if the enum/member can't be found.
+ */
+function resolveEnumMemberValue(localSourceFile, enumName, memberName, refreshedThisSync) {
+    const localDecl = localSourceFile.getEnum(enumName);
+    const declFile = ENUM_SOURCE_FILES[enumName]?.(GAME_DIR);
+    const enumDecl = localDecl ?? (declFile ? getSourceFile(declFile, refreshedThisSync).getEnum(enumName) : undefined);
+    const member = enumDecl?.getMember(memberName);
+    const valueText = member?.getInitializer()?.getText();
+    return valueText !== undefined ? valueText.replace(/^['"]|['"]$/g, '') : undefined;
 }
 
 /**
@@ -131,10 +184,10 @@ function enumMemberName(id) {
  * every enum name actually referenced so the caller can ensure each one is
  * imported before this text is spliced into the file.
  */
-function serializeValue(value, indent, enumsUsed) {
+function serializeValue(value, indent, enumsUsed, refreshedThisSync) {
     if (Array.isArray(value)) {
         if (value.length === 0) return '[]';
-        const items = value.map(v => `${indent}    ${serializeValue(v, indent + '    ', enumsUsed)}`);
+        const items = value.map(v => `${indent}    ${serializeValue(v, indent + '    ', enumsUsed, refreshedThisSync)}`);
         return `[\n${items.join(',\n')}\n${indent}]`;
     }
     if (value !== null && typeof value === 'object') {
@@ -143,8 +196,8 @@ function serializeValue(value, indent, enumsUsed) {
         const entries = keys.map(key => {
             const enumName = ENUM_VALUE_FIELDS[key];
             const rendered = enumName && typeof value[key] === 'string'
-                ? (enumsUsed.add(enumName), `${enumName}.${enumMemberName(value[key])}`)
-                : serializeValue(value[key], indent + '    ', enumsUsed);
+                ? (enumsUsed.add(enumName), `${enumName}.${resolveEnumMemberName(enumName, value[key], refreshedThisSync)}`)
+                : serializeValue(value[key], indent + '    ', enumsUsed, refreshedThisSync);
             return `${indent}    ${JSON.stringify(key)}: ${rendered}`;
         });
         return `{\n${entries.join(',\n')}\n${indent}}`;
@@ -153,9 +206,9 @@ function serializeValue(value, indent, enumsUsed) {
 }
 
 /** Top-level entry point for turning a value into initializer text — always starts at zero indent since every call site sets a whole property/variable initializer, never a mid-line fragment. */
-function toSourceText(value) {
+function toSourceText(value, refreshedThisSync) {
     const enumsUsed = new Set();
-    const text = serializeValue(value, '', enumsUsed);
+    const text = serializeValue(value, '', enumsUsed, refreshedThisSync);
     return { text, enumsUsed };
 }
 
@@ -196,13 +249,29 @@ function ensureNamedImport(sourceFile, enumName) {
  * silently overwrite that outside edit when it writes back, even though nothing about the Save
  * itself touched the affected lines. refreshFromFileSystemSync() re-reads the real on-disk
  * content into the already-cached SourceFile before every use, so this can't happen.
+ *
+ * `refreshedThisSync` (see syncToSource()'s own doc) is what keeps this from ALSO discarding
+ * this SAME sync pass's own not-yet-saved edits: a tab with more than one externalField
+ * routed into the SAME target file (e.g. providers'/resources' icon+models+scale+rotationDeg,
+ * all → AssetLibraryRegistry.ts) calls getSourceFile() on that one file up to four times
+ * before syncToSource() ever calls file.save() at the very end. Refreshing unconditionally on
+ * every one of those calls re-read the file fresh off disk each time — wiping out whichever
+ * field(s) an EARLIER call in the same pass had just written in memory, so only the LAST
+ * field synced ever actually survived to the final save. Only refreshing the first time a
+ * given path is touched THIS pass (real outside edits are still caught on the very next,
+ * separate HTTP request, which starts a fresh empty Set) fixes that without losing the
+ * original stale-cache protection.
  */
-function getSourceFile(filePath) {
+function getSourceFile(filePath, refreshedThisSync) {
     const existing = project.getSourceFile(filePath);
     if (existing) {
-        existing.refreshFromFileSystemSync();
+        if (!refreshedThisSync.has(filePath)) {
+            existing.refreshFromFileSystemSync();
+            refreshedThisSync.add(filePath);
+        }
         return existing;
     }
+    refreshedThisSync.add(filePath);
     return project.addSourceFileAtPath(filePath);
 }
 
@@ -220,18 +289,32 @@ function getExportObjectLiteral(sourceFile, exportName) {
  * whatever form the source wrote it in — `foo:`, `"foo":`, or (the actual
  * style every hand-authored *_CONFIG record in this codebase uses for its
  * enum-keyed top level, e.g. `[GateId.Gate1]:`) a COMPUTED key referencing
- * an enum member. For that last form there's no enum VALUE available
- * without resolving the enum declaration, so this inverts
- * enumMemberName()'s own convention instead (PascalCase member name →
- * lowercase-first-letter id) — cheap, and correct for every id in this
- * codebase since enumMemberName() only ever changes the first character.
+ * an enum member.
+ *
+ * For that last form, `sourceFile`/`enumName` (when given — every TOP-LEVEL
+ * record call site has both in scope; list-item sub-object call sites don't
+ * and don't need to, since a list item's own fields are never computed
+ * enum-member keys) resolve the member's REAL declared value off the enum
+ * itself, via renameEntity.mjs's own doc: a rename changes an enum member's
+ * underlying string VALUE but deliberately leaves its declared NAME
+ * untouched (so nothing elsewhere in the codebase that references it
+ * symbolically, e.g. `ProviderType.Stone`, ever dangles) — so the OLD
+ * approach here (inverting enumMemberName()'s PascalCase convention on the
+ * member's NAME text alone) would report a stale id forever after a rename,
+ * even though the member's actual value has already changed. Falling back
+ * to that same convention-guess when no enum context is available keeps
+ * every list-item call site's existing (correct, since those never rename)
+ * behavior unchanged.
+ *
  * Getting this wrong would mean findProperty() below fails to recognize an
  * existing computed-key entry and duplicate it with a second, differently-
  * styled property for the same id — exactly the bug this function exists
  * to avoid (caught by testing against GateTypes.ts's actual `[GateId.
- * Gate1]:` style, not just crafting's plain-identifier style).
+ * Gate1]:` style, not just crafting's plain-identifier style — and, more
+ * recently, against a renamed provider's PROVIDER_CONFIG entry silently
+ * duplicating on its very next save).
  */
-function getPropertyKeyId(prop) {
+function getPropertyKeyId(prop, sourceFile, enumName) {
     const assignment = prop.asKind(SyntaxKind.PropertyAssignment);
     if (!assignment) return null;
 
@@ -239,18 +322,42 @@ function getPropertyKeyId(prop) {
     if (nameNode.getKind() === SyntaxKind.ComputedPropertyName) {
         const exprText = nameNode.getExpression().getText();
         const memberName = exprText.split('.').pop();
+
+        const enumMember = sourceFile && enumName ? sourceFile.getEnum(enumName)?.getMember(memberName) : undefined;
+        const enumValueText = enumMember?.getInitializer()?.getText();
+        if (enumValueText !== undefined) {
+            return enumValueText.replace(/^['"]|['"]$/g, '');
+        }
+
         return memberName.charAt(0).toLowerCase() + memberName.slice(1);
     }
 
     return assignment.getName().replace(/^['"]|['"]$/g, '');
 }
 
-/** Finds a property on an object literal by the plain string id it represents — see getPropertyKeyId()'s own doc for why that's not just a matter of comparing name text. */
-function findProperty(objLiteral, id) {
-    return objLiteral.getProperties().find(p => getPropertyKeyId(p) === id);
+/** Finds a property on an object literal by the plain string id it represents — see getPropertyKeyId()'s own doc for why that's not just a matter of comparing name text (and why `sourceFile`/`enumName` matter for a TOP-LEVEL record lookup specifically). */
+function findProperty(objLiteral, id, sourceFile, enumName) {
+    return objLiteral.getProperties().find(p => getPropertyKeyId(p, sourceFile, enumName) === id);
 }
 
-/** Adds a new member to `enumName` for `id` if one doesn't already exist (matched by its string value, e.g. `'gate2'`) — see this file's own doc for why fixed-enum types need this on a brand-new id. */
+/**
+ * Adds a new member to `enumName` for `id` if one doesn't already exist (matched by its string
+ * VALUE, e.g. `'gate2'`) — see this file's own doc for why fixed-enum types need this on a
+ * brand-new id.
+ *
+ * The PascalCase name this guesses for a new member can already be taken by an EXISTING member
+ * under a DIFFERENT value — not just theoretically: renameEntity.mjs's rename deliberately
+ * changes only a member's VALUE, leaving its declared NAME untouched (see that file's own doc
+ * on renameOwnEntry() for why), so after e.g. `CrystalCopy = 'crystalCopy'` gets renamed to
+ * `CrystalCopy = 'iron'`, the name "CrystalCopy" is still sitting right there — and a LATER
+ * save that (for whatever reason — a stale posted payload, a second duplicate under the same
+ * id, ...) asks to ensure a member for id `'crystalCopy'` again would, without this check, add
+ * a SECOND member also named `CrystalCopy` — same name, different value, a straight-up
+ * duplicate-identifier TypeScript compile error (exactly what happened here once already).
+ * Suffixing with an incrementing number until the name is free avoids that collision instead,
+ * the same "pick the next free slot" convention the editor's own id-collision checks
+ * (duplicateEntry(), renameEntity's own newId check) already use.
+ */
 function ensureEnumMember(sourceFile, enumName, id) {
     const enumDecl = sourceFile.getEnum(enumName);
     if (!enumDecl) {
@@ -263,13 +370,18 @@ function ensureEnumMember(sourceFile, enumName, id) {
     if (alreadyExists) {
         return;
     }
-    const memberName = id.charAt(0).toUpperCase() + id.slice(1);
+
+    const baseName = id.charAt(0).toUpperCase() + id.slice(1);
+    let memberName = baseName;
+    for (let suffix = 2; enumDecl.getMember(memberName); suffix++) {
+        memberName = `${baseName}${suffix}`;
+    }
     enumDecl.addMember({ name: memberName, initializer: JSON.stringify(id) });
 }
 
 /** Serializes `value` and makes sure the file it's about to be spliced into actually imports every enum it references, then returns the text alone — the one place enum-import bookkeeping happens, so every call site below just gets plain insertable text. */
-function serialize(sourceFile, value) {
-    const { text, enumsUsed } = toSourceText(value);
+function serialize(sourceFile, value, refreshedThisSync) {
+    const { text, enumsUsed } = toSourceText(value, refreshedThisSync);
     for (const enumName of enumsUsed) {
         ensureNamedImport(sourceFile, enumName);
     }
@@ -289,11 +401,11 @@ function serialize(sourceFile, value) {
  * which shipped `action: "chop"` (a plain string, not assignable to
  * ActionType) for exactly this reason.
  */
-function serializeField(sourceFile, key, value) {
+function serializeField(sourceFile, key, value, refreshedThisSync) {
     const enumName = ENUM_VALUE_FIELDS[key];
     if (enumName && typeof value === 'string') {
         ensureNamedImport(sourceFile, enumName);
-        return `${enumName}.${enumMemberName(value)}`;
+        return `${enumName}.${resolveEnumMemberName(enumName, value, refreshedThisSync)}`;
     }
     if (isModelRefArray(key, value)) {
         ensureModelsDefaultImport(sourceFile);
@@ -303,7 +415,7 @@ function serializeField(sourceFile, key, value) {
         });
         return refs.length === 0 ? '[]' : `[${refs.join(', ')}]`;
     }
-    return serialize(sourceFile, value);
+    return serialize(sourceFile, value, refreshedThisSync);
 }
 
 /**
@@ -318,7 +430,7 @@ function serializeField(sourceFile, key, value) {
  * items beyond the posted length are removed outright (deleting an item
  * necessarily deletes everything on it, managed or not).
  */
-function upsertArrayByIndex(sourceFile, arrayLiteral, itemManagedKeys, postedItems, warnings) {
+function upsertArrayByIndex(sourceFile, arrayLiteral, itemManagedKeys, postedItems, warnings, refreshedThisSync) {
     const existing = arrayLiteral.getElements();
     // Used as a template for any BRAND NEW item appended below (see that branch) — a new
     // item has no prior object of its own to preserve unmanaged fields from, so it borrows
@@ -330,19 +442,19 @@ function upsertArrayByIndex(sourceFile, arrayLiteral, itemManagedKeys, postedIte
         if (index < existing.length) {
             const itemLiteral = existing[index].asKind(SyntaxKind.ObjectLiteralExpression);
             if (itemLiteral) {
-                upsertObjectFields(sourceFile, itemLiteral, itemManagedKeys, [], item, warnings);
+                upsertObjectFields(sourceFile, itemLiteral, itemManagedKeys, [], item, warnings, refreshedThisSync);
                 return;
             }
             // Existing element isn't an object literal (unexpected hand-authored shape) —
             // fall through to a full replacement for just this one index.
             arrayLiteral.removeElement(index);
-            arrayLiteral.insertElement(index, serialize(sourceFile, pick(item, itemManagedKeys)));
+            arrayLiteral.insertElement(index, serialize(sourceFile, pick(item, itemManagedKeys), refreshedThisSync));
             return;
         }
 
         arrayLiteral.addElement('{}');
         const newItemLiteral = arrayLiteral.getElements()[index].asKindOrThrow(SyntaxKind.ObjectLiteralExpression);
-        upsertObjectFields(sourceFile, newItemLiteral, itemManagedKeys, [], item, warnings);
+        upsertObjectFields(sourceFile, newItemLiteral, itemManagedKeys, [], item, warnings, refreshedThisSync);
 
         if (lastExisting) {
             const unmanagedProps = lastExisting.getProperties()
@@ -377,7 +489,7 @@ function upsertArrayByIndex(sourceFile, arrayLiteral, itemManagedKeys, postedIte
  * anything on that entry got saved — exactly what happened to a tool's
  * `icon` before this existed (see entityMap.mjs's `optionalKeys` doc).
  */
-function upsertObjectFields(sourceFile, objLiteral, managedKeys, optionalKeys, data, warnings) {
+function upsertObjectFields(sourceFile, objLiteral, managedKeys, optionalKeys, data, warnings, refreshedThisSync) {
     for (const key of managedKeys) {
         const existing = findProperty(objLiteral, key);
 
@@ -392,7 +504,7 @@ function upsertObjectFields(sourceFile, objLiteral, managedKeys, optionalKeys, d
             continue;
         }
 
-        const text = serializeField(sourceFile, key, data[key]);
+        const text = serializeField(sourceFile, key, data[key], refreshedThisSync);
         if (existing) {
             existing.asKindOrThrow(SyntaxKind.PropertyAssignment).setInitializer(text);
         } else {
@@ -402,8 +514,8 @@ function upsertObjectFields(sourceFile, objLiteral, managedKeys, optionalKeys, d
 }
 
 /** Upserts just the managed fields of one entry (`id`) inside a record object literal — every unmanaged property already on that entry's own object literal (mesh, color, position, ...) is left as-is; only `mapping.managedKeys` are added/replaced/removed, and any key listed in `mapping.listMerge` gets a by-index array merge instead of a wholesale replacement (see upsertArrayByIndex's own doc). */
-function upsertEntryFields(sourceFile, recordLiteral, id, mapping, data, warnings) {
-    let entryProp = findProperty(recordLiteral, id);
+function upsertEntryFields(sourceFile, recordLiteral, id, mapping, data, warnings, refreshedThisSync) {
+    let entryProp = findProperty(recordLiteral, id, sourceFile, mapping.enumName);
     const isNewEntry = !entryProp;
     if (isNewEntry) {
         // Template to clone UNMANAGED fields from — same reasoning as upsertArrayByIndex's
@@ -417,12 +529,19 @@ function upsertEntryFields(sourceFile, recordLiteral, id, mapping, data, warning
             .find(Boolean);
 
         recordLiteral.addPropertyAssignment({ name: JSON.stringify(id), initializer: '{}' });
-        entryProp = findProperty(recordLiteral, id);
+        entryProp = findProperty(recordLiteral, id, sourceFile, mapping.enumName);
         const newEntryLiteral = entryProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializerIfKindOrThrow(SyntaxKind.ObjectLiteralExpression);
 
         if (template) {
+            // `templateProtectKeys` (falls back to `managedKeys`) is a SEPARATE list from what
+            // this call's write loop below actually touches — see syncExternalField()'s own
+            // doc for why: a single-field routed call (managedKeys: [fieldKey]) still needs
+            // every OTHER externally-routed field recognized as "already spoken for" here, so
+            // none of them get wrongly cloned from an unrelated sibling entry, even though this
+            // particular call has no data for them and won't write them itself.
+            const protectedKeys = mapping.templateProtectKeys ?? mapping.managedKeys;
             const unmanagedProps = template.getProperties()
-                .filter(p => !mapping.managedKeys.includes(getPropertyKeyId(p)));
+                .filter(p => !protectedKeys.includes(getPropertyKeyId(p)));
             for (const prop of unmanagedProps) {
                 newEntryLiteral.addPropertyAssignment({
                     name: prop.asKindOrThrow(SyntaxKind.PropertyAssignment).getName(),
@@ -456,7 +575,7 @@ function upsertEntryFields(sourceFile, recordLiteral, id, mapping, data, warning
                 arrayAssignment.setInitializer('[]');
                 arrayLiteral = arrayAssignment.getInitializerIfKindOrThrow(SyntaxKind.ArrayLiteralExpression);
             }
-            upsertArrayByIndex(sourceFile, arrayLiteral, listItemKeys, data[key], warnings);
+            upsertArrayByIndex(sourceFile, arrayLiteral, listItemKeys, data[key], warnings, refreshedThisSync);
             continue;
         }
 
@@ -470,7 +589,7 @@ function upsertEntryFields(sourceFile, recordLiteral, id, mapping, data, warning
             continue;
         }
 
-        const text = serializeField(sourceFile, key, data[key]);
+        const text = serializeField(sourceFile, key, data[key], refreshedThisSync);
         if (existing) {
             existing.asKindOrThrow(SyntaxKind.PropertyAssignment).setInitializer(text);
         } else {
@@ -480,16 +599,16 @@ function upsertEntryFields(sourceFile, recordLiteral, id, mapping, data, warning
 }
 
 /** Upserts every id in `postedRecord` into the exported record at `mapping.exportName`, then (for open-id types only — see this file's own doc) removes any entry present in the source but absent from `postedRecord`. */
-function syncRecord(sourceFile, mapping, postedRecord, warnings) {
+function syncRecord(sourceFile, mapping, postedRecord, warnings, refreshedThisSync) {
     const recordLiteral = getExportObjectLiteral(sourceFile, mapping.exportName);
-    const existingIds = recordLiteral.getProperties().map(getPropertyKeyId).filter(Boolean);
+    const existingIds = recordLiteral.getProperties().map(p => getPropertyKeyId(p, sourceFile, mapping.enumName)).filter(Boolean);
     const postedIds = Object.keys(postedRecord);
 
     for (const id of postedIds) {
         if (mapping.kind === 'enumRecord') {
             ensureEnumMember(sourceFile, mapping.enumName, id);
         }
-        upsertEntryFields(sourceFile, recordLiteral, id, mapping, postedRecord[id], warnings);
+        upsertEntryFields(sourceFile, recordLiteral, id, mapping, postedRecord[id], warnings, refreshedThisSync);
     }
 
     // partialRecord types default to "the whole entity is disposable" (a shop/craft table/
@@ -502,7 +621,7 @@ function syncRecord(sourceFile, mapping, postedRecord, warnings) {
     if (mapping.kind === 'partialRecord' && !mapping.protectEntries) {
         for (const id of existingIds) {
             if (!postedIds.includes(id)) {
-                findProperty(recordLiteral, id)?.remove();
+                findProperty(recordLiteral, id, sourceFile, mapping.enumName)?.remove();
             }
         }
     } else {
@@ -516,18 +635,18 @@ function syncRecord(sourceFile, mapping, postedRecord, warnings) {
 }
 
 /** Replaces the entire array literal at `mapping.exportName` with `postedArray`, wholesale — dynamicResourcePlacements isn't id-keyed, so there's no per-entry upsert to do, and every item is fully editor-owned (no unmanaged fields to preserve). */
-function syncArray(sourceFile, mapping, postedArray) {
+function syncArray(sourceFile, mapping, postedArray, refreshedThisSync) {
     const decl = sourceFile.getVariableDeclarationOrThrow(mapping.exportName);
     const items = postedArray.map(item => pick(item, mapping.managedKeys));
-    decl.setInitializer(serialize(sourceFile, items));
+    decl.setInitializer(serialize(sourceFile, items, refreshedThisSync));
 }
 
 /** Queues are two separate exports in one file — DEFAULT_QUEUE_CONFIG (a single object, replaced wholesale — it carries no unmanaged fields) and QUEUE_CONFIG_BY_ID (an open-id record, synced like any other partialRecord). */
-function syncQueues(sourceFile, mapping, postedQueues, warnings) {
+function syncQueues(sourceFile, mapping, postedQueues, warnings, refreshedThisSync) {
     const defaultDecl = sourceFile.getVariableDeclarationOrThrow(mapping.defaultExportName);
-    defaultDecl.setInitializer(serialize(sourceFile, pick(postedQueues.default ?? {}, mapping.managedKeys)));
+    defaultDecl.setInitializer(serialize(sourceFile, pick(postedQueues.default ?? {}, mapping.managedKeys), refreshedThisSync));
 
-    syncRecord(sourceFile, { ...mapping, exportName: mapping.byIdExportName, kind: 'partialRecord' }, postedQueues.byId ?? {}, warnings);
+    syncRecord(sourceFile, { ...mapping, exportName: mapping.byIdExportName, kind: 'partialRecord' }, postedQueues.byId ?? {}, warnings, refreshedThisSync);
 }
 
 /**
@@ -537,21 +656,37 @@ function syncQueues(sourceFile, mapping, postedQueues, warnings) {
  * AssetLibraryRegistry.ts, not ResourceTypes.ts, despite being edited right
  * on the Resources tab). Deliberately upsert-only and one-directional: an
  * id present in `postedData` with a real value gets upserted into the
- * target file (creating a brand-new target entry, with the same
- * placeholder-cloning as any other new entry, if one doesn't exist yet);
- * an id in the TARGET file that ISN'T in `postedData` at all (e.g.
+ * target file (creating a brand-new, empty target entry if one doesn't
+ * exist yet — see fieldMapping's own doc below for why this deliberately
+ * does NOT let a sibling externally-routed field get placeholder-cloned
+ * from an unrelated entry); an id in the TARGET file that ISN'T in
+ * `postedData` at all (e.g.
  * AssetLibraryRegistry's "money" — a currency with no matching
  * ResourceType, so it never appears in the Resources tab's own ids) is
  * never touched, since that id belongs entirely to the target mapping's
  * own tab to manage. Returns the target SourceFile so the caller can save it.
  */
-function syncExternalField(fieldKey, targetMapping, postedData, warnings) {
-    const targetSourceFile = getSourceFile(targetMapping.file);
+function syncExternalField(fieldKey, targetMapping, postedData, warnings, refreshedThisSync) {
+    const targetSourceFile = getSourceFile(targetMapping.file, refreshedThisSync);
     const recordLiteral = getExportObjectLiteral(targetSourceFile, targetMapping.exportName);
+    // managedKeys stays narrowed to just `fieldKey` — this call only ever WRITES this one
+    // field (every other key is `undefined` in `data` below, on purpose), so a WIDER
+    // managedKeys here would make upsertEntryFields()'s write loop treat every sibling
+    // externally-routed field as "missing from the saved data" on EVERY single-field call —
+    // e.g. writing `icon` alone would spuriously warn that `models`/`scale`/`rotationDeg` are
+    // "missing," once per entry, on every single save (a real regression an earlier version of
+    // this fix introduced — see git history). `templateProtectKeys` is a SEPARATE list (the
+    // target mapping's FULL managedKeys) that only affects upsertEntryFields()'s brand-new-
+    // entry template-clone step (see its own doc) — recognizing every externally-routed field
+    // as already spoken for so NONE of them get wrongly cloned from an unrelated sibling entry
+    // (e.g. a freshly-renamed provider id inheriting some other entry's models/scale), without
+    // also making this narrow call warn about fields it was never trying to write in the first
+    // place.
     const fieldMapping = {
         ...targetMapping,
         managedKeys: [fieldKey],
         optionalKeys: targetMapping.optionalKeys?.includes(fieldKey) ? [fieldKey] : [],
+        templateProtectKeys: targetMapping.managedKeys,
     };
 
     for (const [id, entry] of Object.entries(postedData)) {
@@ -560,13 +695,13 @@ function syncExternalField(fieldKey, targetMapping, postedData, warnings) {
         // resource exists with no icon ever set — only upsert when there's either a real
         // value to write, or the target entry already exists (so clearing an existing value
         // still works).
-        if (!hasValue && !findProperty(recordLiteral, id)) {
+        if (!hasValue && !findProperty(recordLiteral, id, targetSourceFile, targetMapping.enumName)) {
             continue;
         }
         if (targetMapping.kind === 'enumRecord') {
             ensureEnumMember(targetSourceFile, targetMapping.enumName, id);
         }
-        upsertEntryFields(targetSourceFile, recordLiteral, id, fieldMapping, { [fieldKey]: entry?.[fieldKey] }, warnings);
+        upsertEntryFields(targetSourceFile, recordLiteral, id, fieldMapping, { [fieldKey]: entry?.[fieldKey] }, warnings, refreshedThisSync);
     }
 
     return targetSourceFile;
@@ -587,15 +722,22 @@ export async function syncToSource(entityId, postedData) {
         return { skipped: true };
     }
 
-    const sourceFile = getSourceFile(mapping.file);
+    // See getSourceFile()'s own doc — shared across every getSourceFile() call this ONE sync
+    // pass makes (the main mapping's file below, plus every externalFields target file in the
+    // loop after it), so a file touched more than once in the same pass (e.g. AssetLibraryRegistry.ts
+    // via providers'/resources' icon+models+scale+rotationDeg externalFields) only gets refreshed
+    // from disk the FIRST time, not re-refreshed (and its own not-yet-saved edits wiped out) on
+    // every subsequent touch.
+    const refreshedThisSync = new Set();
+    const sourceFile = getSourceFile(mapping.file, refreshedThisSync);
     const warnings = [];
 
     if (mapping.kind === 'array') {
-        syncArray(sourceFile, mapping, postedData);
+        syncArray(sourceFile, mapping, postedData, refreshedThisSync);
     } else if (mapping.kind === 'queues') {
-        syncQueues(sourceFile, mapping, postedData, warnings);
+        syncQueues(sourceFile, mapping, postedData, warnings, refreshedThisSync);
     } else {
-        syncRecord(sourceFile, mapping, postedData, warnings);
+        syncRecord(sourceFile, mapping, postedData, warnings, refreshedThisSync);
     }
 
     const touchedFiles = new Map([[sourceFile.getFilePath(), sourceFile]]);
@@ -604,7 +746,7 @@ export async function syncToSource(entityId, postedData) {
         if (!targetMapping) {
             continue;
         }
-        const targetSourceFile = syncExternalField(fieldKey, targetMapping, postedData, warnings);
+        const targetSourceFile = syncExternalField(fieldKey, targetMapping, postedData, warnings, refreshedThisSync);
         touchedFiles.set(targetSourceFile.getFilePath(), targetSourceFile);
     }
 
@@ -615,3 +757,13 @@ export async function syncToSource(entityId, postedData) {
 
     return { skipped: false, file: mapping.file, warnings };
 }
+
+// Shared with renameEntity.mjs/checkConsistency.mjs — reusing the SAME `project` singleton (not
+// a second, separately cached ts-morph Project) matters: two Projects pointed at the same files
+// on disk would each keep their own independent in-memory AST/dirty-state, so two of these
+// modules touching the same file in the same request window could clobber each other exactly
+// like the getSourceFile() same-pass-refresh bug this file's own history already hit once.
+// Exporting these lower-level helpers (rather than duplicating them) keeps every caller's own
+// id/value resolution identical to every other sync path's — see getPropertyKeyId()'s own doc
+// for why that consistency matters.
+export { project, getSourceFile, getExportObjectLiteral, findProperty, getPropertyKeyId, enumMemberName, resolveEnumMemberValue };

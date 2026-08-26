@@ -380,7 +380,7 @@ export const DEFAULT_TILE_MAP_ALIASES = {
  */
 export const RESOURCE_NAME_TO_TYPE: Partial<Record<string, ProviderType>> = {
     tree: ProviderType.Tree,
-    stone: ProviderType.Stone,
+    stone: ProviderType.StoneDeposit,
     berries: ProviderType.BerryBush,
 };
 

@@ -53,8 +53,8 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'BUILDING_CONFIG',
         kind: 'enumRecord',
         enumName: 'BuildingId',
-        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'frame'],
-        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'frame'],
+        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid'],
+        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid'],
         // BuildingLevelConfig also carries a `mesh` field (per-level placeholder art) that
         // this editor doesn't manage — a plain wholesale replacement of the `levels` array
         // (what every OTHER list field in this map gets, since none of their items have
@@ -69,8 +69,8 @@ export const ENTITY_SOURCE_MAP = {
         file: path.join(GAME_DIR, 'shop', 'ShopTypes.ts'),
         exportName: 'SHOP_CONFIG_BY_ID',
         kind: 'partialRecord',
-        managedKeys: ['name', 'tool', 'action', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'frame'],
-        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'frame'],
+        managedKeys: ['name', 'tool', 'action', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid'],
+        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid'],
         // Same "levels has an unmanaged sibling field" reasoning as buildings' own listMerge —
         // ShopUpgradeLevel's `view` (optional) IS managed here alongside the ladder's own
         // cost/cooldown/hitInterval/hitScale/resourcePerHit fields.
@@ -87,8 +87,8 @@ export const ENTITY_SOURCE_MAP = {
         // CraftTypes.ts's own doc on each field. `toolId` is a plain string reference into
         // TOOL_LIBRARY, resolved at runtime by CraftZone.createTableMesh(), not an enum value —
         // no ENUM_VALUE_FIELDS entry needed for it.
-        managedKeys: ['name', 'recipes', 'destroyOnComplete', 'appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset', 'frame'],
-        optionalKeys: ['appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset', 'frame'],
+        managedKeys: ['name', 'recipes', 'destroyOnComplete', 'appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset', 'frame', 'solid'],
+        optionalKeys: ['appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset', 'frame', 'solid'],
     },
     // A RESOURCE is the bankable item (Wood/Stone/Berries/Bark/Pebble/GrassFiber) — what
     // ends up in BackpackStorage. What actually PRODUCES one is a separate concern — see
@@ -120,7 +120,8 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'PROVIDER_CONFIG',
         kind: 'enumRecord',
         enumName: 'ProviderType',
-        managedKeys: ['label', 'action', 'maxLife', 'amountPerGather', 'respawnSec', 'drops'],
+        managedKeys: ['label', 'action', 'maxLife', 'amountPerGather', 'respawnSec', 'drops', 'solid'],
+        optionalKeys: ['solid'],
         // Same reasoning as Resources' own externalFields — a provider's world appearance
         // lives in AssetLibraryRegistry.ts, keyed by the SAME id as the provider (see
         // ProviderRegistry.ts's resolveProviderAssetKey() — a plain identity mapping).
@@ -155,8 +156,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_QUEUE_CONFIG',
         byIdExportName: 'QUEUE_CONFIG_BY_ID',
-        managedKeys: ['cooldownSec', 'possibleTasks', 'appearRequirement', 'popupMode', 'popupBobOffset', 'view', 'frame'],
-        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset', 'view', 'frame'],
+        managedKeys: ['cooldownSec', 'possibleTasks', 'appearRequirement', 'popupMode', 'popupBobOffset', 'view', 'frame', 'solid'],
+        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset', 'view', 'frame', 'solid'],
     },
     tools: {
         file: path.join(GAME_DIR, 'actions', 'ToolRegistry.ts'),
@@ -180,11 +181,21 @@ export const ENTITY_SOURCE_MAP = {
         // Also a plain `satisfies Record<string, AssetLibraryEntry>` object literal, same as
         // TOOL_LIBRARY — open-ended by key, not enum-backed.
         kind: 'partialRecord',
-        // Every field on AssetLibraryEntry is managed now (icon/models/scale/rotationDeg) —
-        // same reasoning as tools for skipping protectEntries: this tab's own Delete button
-        // is meant to actually delete.
+        // Every field on AssetLibraryEntry is managed now (icon/models/scale/rotationDeg).
         managedKeys: ['icon', 'models', 'scale', 'rotationDeg'],
         optionalKeys: ['icon'],
+        // MUST be protectEntries — unlike tools/shops/crafting, most entries here don't
+        // belong to this tab at all: `resources` and `providers` (see their own
+        // externalFields) upsert INTO this same file by id, so an id like "crystalDeposit"
+        // or "palm" only ever exists here as a byproduct of the Providers tab, never posted
+        // by the Asset Library tab's own listing. Without protectEntries, saving the Asset
+        // Library tab treats every id absent from ITS OWN post as deleted and wipes them —
+        // exactly the "tools" scenario this flag exists for (see that mapping's own doc),
+        // just missed here. This tab's Delete button already goes through the per-field
+        // upsert loop in syncRecord()/syncExternalField(), so protecting whole-entry removal
+        // only takes away the wholesale "vanished from a differently-scoped post" deletion,
+        // not a deliberate single-entry delete.
+        protectEntries: true,
     },
     // Reusable real-mesh definitions (model + scale/rotation + offset), keyed by a plain
     // string id a building level, shop level, gate, or queue can OPTIONALLY reference via its

@@ -75,12 +75,15 @@ export const ASSET_LIBRARY = {
             0,
             360
         ],
-        icon: "wood-log"
+        "icon": "wood-log"
     },
     stone: {
         // No stone model yet — add one here whenever real art exists; nothing else needs to change.
-        models: [MODELS.Props.RocksHigh, MODELS.Props.RocksLow],
-        scale: 1,
+        models: [MODELS.Resources.StoneChunksSmall],
+        scale: [
+            1,
+            1.2
+        ],
         rotationDeg: [
             0,
             360
@@ -145,7 +148,7 @@ export const ASSET_LIBRARY = {
         models: [],
         scale: 1,
         rotationDeg: 0,
-        icon: 'ItemIcon_Money_Bill-2',
+        icon: "ItemIcon_Money_Bill-2",
     },
     /**
      * The berry bush PROVIDER's own world appearance (see ProviderTypes.ts/
@@ -162,31 +165,79 @@ export const ASSET_LIBRARY = {
             0,
             360
         ],
-        icon: "wild-berries",
+        "icon": "wild-berries"
     },
     "wood": {
-        models: [MODELS.Props.Tree, MODELS.Props.TreeHigh],
-        scale: [
-            1.85,
-            2.15
-        ],
-        rotationDeg: [
-            0,
-            360
-        ],
+        models: [],
+        scale: 1,
+        rotationDeg: 0,
         "icon": "wood-log"
     },
+    "crystal": {
+        "icon": "iron-ore",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
     "palm": {
-        scale: [
+        "models": [MODELS.Pirate.PalmBend, MODELS.Pirate.PalmStraight],
+        "scale": [
             1,
             1
         ],
-        rotationDeg: [
+        "rotationDeg": [
             0,
             360
         ],
-        icon: "tree-bark",
-        "models": [MODELS.Pirate.PalmBend, MODELS.Pirate.PalmStraight]
+        "icon": "tree-bark"
+    },
+    "crystalDeposit": {
+        "models": [MODELS.Resources.SilverNuggetLarge],
+        "scale": 4,
+        "rotationDeg": [
+            1,
+            1
+        ],
+        "icon": "iron-ore"
+    },
+    "berry": {
+        "icon": "wild-berries",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "stoneDeposit": {
+        models: [MODELS.Resources.StoneChunksLarge, MODELS.Resources.StoneChunksSmall],
+        scale: [
+            1.5,
+            2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "icon": "stone-chunk"
+    },
+    "iron": {
+        "icon": "iron-ore",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "ironDeposit": {
+        "icon": "iron-ore",
+        "models": [MODELS.Resources.SilverNuggetLarge, MODELS.Resources.SilverNuggetLarge],
+        "scale": [
+            1.5,
+            2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
     }
 } satisfies Record<string, AssetLibraryEntry>;
 

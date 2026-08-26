@@ -47,6 +47,8 @@ import { PROVIDER_CONFIG, rollProviderDrop } from '../actions/ProviderTypes';
 import { ACTION_CONFIG } from '../actions/ActionTypes';
 import { ItemStorage } from '../crafting/ItemStorage';
 import { ItemType } from '../crafting/ItemTypes';
+import { ToolId, getToolIcon } from '../actions/ToolRegistry';
+import PlayerNotificationComponent from './PlayerNotificationComponent';
 
 export default class AutoGatherController extends Component {
     /** Every ResourceNode whose trigger the player is currently standing inside — see this file's own doc. */
@@ -65,6 +67,11 @@ export default class AutoGatherController extends Component {
         }
 
         this.overlapping.add(node);
+
+        if (node.isAvailable && !this.hasRequiredTool(node)) {
+            this.notifyMissingTool(node);
+        }
+
         this.tryGatherNext();
     }
 
@@ -141,6 +148,24 @@ export default class AutoGatherController extends Component {
     private hasRequiredTool(node: ResourceNode): boolean {
         const tool = ACTION_CONFIG[PROVIDER_CONFIG[node.providerType].action].tool;
         return tool === undefined || ItemStorage.hasCount(tool as ItemType, 1);
+    }
+
+    /**
+     * Surfaces `node`'s missing-tool block to the player — a bubble with the required tool's
+     * own icon (+ exclamation badge) over their head, via PlayerNotificationComponent (see that
+     * file's own doc). Only called from onTriggerEnter (a fresh overlap), not from every
+     * tryGatherNext() retry — walking in without the axe shows the bubble once; standing there
+     * doesn't spam it again on every action-completion retry loop. Optional-chained since
+     * PlayerNotificationComponent is only present when MainPlayer was built with a
+     * screenHost (omitted for the headless test harness — see that file's own doc).
+     */
+    private notifyMissingTool(node: ResourceNode): void {
+        const tool = ACTION_CONFIG[PROVIDER_CONFIG[node.providerType].action].tool;
+        if (tool === undefined) {
+            return;
+        }
+
+        this.entity.getComponent(PlayerNotificationComponent)?.showBlocked(getToolIcon(tool as ToolId));
     }
 
     private tryGather(node: ResourceNode): void {

@@ -35,6 +35,7 @@ import gsap from 'gsap';
 import Entity from '../ecs/Entity';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
+import { buildSolidArea } from '../physics/SolidArea';
 import BoxVisualComponent from '../components/BoxVisualComponent';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
@@ -133,14 +134,9 @@ export default class ResourceNode extends Entity implements ActionTarget {
             console.warn(`[ResourceNode] no AssetLibraryRegistry entry for provider "${this.providerType}" yet — falling back to a placeholder box. Open the Providers tab and save this provider once (its icon/models fields) to create one.`);
         }
 
-        if (config.solidRadius > 0) {
-            const solidHalfExtents = new THREE.Vector3(config.solidRadius, config.solidRadius, config.solidRadius);
-            this.solidBody = this.addComponent(new RigidBody({
-                halfExtents: solidHalfExtents,
-                isStatic: true,
-                layer: Layers.Environment,
-                centerOffset: new THREE.Vector3(0, solidHalfExtents.y, 0),
-            }));
+        const solidArea = buildSolidArea(TRIGGER_HALF_EXTENTS, new THREE.Vector3(0, TRIGGER_HALF_EXTENTS.y, 0), config.solid ?? 0);
+        if (solidArea) {
+            this.solidBody = this.addComponent(solidArea);
         }
 
         // See AssetLibraryRegistry.ts — an empty models list (no glb yet for this asset)

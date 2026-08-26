@@ -10,7 +10,16 @@
         <div class="header-row">
             <h1>Pizza — Game Data Editor</h1>
             <div class="header-actions">
+                <label class="toggle-row" title="Sets a cookie the game reads at boot (dev mode only, ?dev in the URL) to render solid-collider wireframes">
+                    <input type="checkbox" id="debug-collider-toggle" />
+                    Debug Colliders
+                </label>
+                <label class="toggle-row" title="Sets a cookie the game reads at boot (dev mode only, ?dev in the URL) to render trigger wireframes">
+                    <input type="checkbox" id="debug-trigger-toggle" />
+                    Debug Triggers
+                </label>
                 <button id="check-map-btn" title="Cross-check ids against the Tiled map">Check map</button>
+                <button id="check-consistency-btn" title="Compare the editor's own data against what's really in the game's source files">Check consistency</button>
                 <button id="restart-btn" title="Restart the editor server">Restart server</button>
             </div>
         </div>
@@ -18,6 +27,18 @@
     </header>
     <nav id="tabs"></nav>
     <main id="content"></main>
+    <div id="consistency-report-overlay" class="report-overlay hidden">
+        <div class="report-panel">
+            <div class="report-panel-header">
+                <h2>Consistency report</h2>
+                <button id="consistency-report-close">Close</button>
+            </div>
+            <textarea id="consistency-report-text" readonly></textarea>
+            <div class="report-panel-footer">
+                <button id="consistency-report-copy" class="primary">Copy to clipboard</button>
+            </div>
+        </div>
+    </div>
     <script src="schemas.js"></script>
     <script src="app.js"></script>
 </body>

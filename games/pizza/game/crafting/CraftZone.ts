@@ -39,6 +39,7 @@ import gsap from 'gsap';
 import Entity from '../ecs/Entity';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
+import { buildSolidArea } from '../physics/SolidArea';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
@@ -180,6 +181,12 @@ export default class CraftZone extends Entity {
             layer: Layers.Trigger,
             centerOffset,
         }));
+
+        const solidArea = buildSolidArea(halfExtents, centerOffset, this.config.solid ?? 0);
+        if (solidArea) {
+            this.addComponent(solidArea);
+        }
+
         this.addComponent(new DottedZoneVisualComponent(
             halfExtents.x * 2,
             halfExtents.z * 2,

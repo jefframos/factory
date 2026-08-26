@@ -56,6 +56,7 @@
             }
         ],
         "popupBobOffset": 1,
-        "baseView": "shop1View"
+        "baseView": "shop1View",
+        "solid": 0.5
     }
 }

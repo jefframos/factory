@@ -24,9 +24,11 @@ import { ResourceType } from './ResourceTypes';
 
 export enum ProviderType {
     Tree = 'tree',
-    Stone = 'stone',
     BerryBush = 'berryBush',
-    Palm = "palm"
+    Palm = "palm",
+    CrystalDeposit = "crystalDeposit",
+    StoneDeposit = "stoneDeposit",
+    IronDeposit = "ironDeposit"
 }
 
 /** One weighted entry in a provider's drop table — weights are relative, not required to sum to 100 (a 9/1 split reads identically to a 90/10 one). */
@@ -52,8 +54,8 @@ export interface ProviderConfig {
     label: string;
     /** Placeholder color for this provider's primitive mesh until real art exists. */
     color: number;
-    /** Horizontal radius of a SOLID collider centered on the node, blocking the player from walking through it — 0 means no solid collider (a berry bush is low enough to step over; a tree/rock isn't). */
-    solidRadius: number;
+    /** 0-1 fraction of this provider's own trigger footprint that becomes a SOLID collider blocking the player — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 means no solid collider at all (walk-through — a berry bush is low enough to step over; a tree/rock isn't). */
+    solid?: number;
     /**
      * Weighted table of what one unit of yield actually turns out to be — see
      * rollProviderDrop(), the one reader (called once per unit yielded, not once per hit, so
@@ -73,30 +75,10 @@ export const PROVIDER_CONFIG: Record<ProviderType, ProviderConfig> = {
         respawnSec: 60,
         label: "Tree",
         color: 0x6b4423,
-        solidRadius: 0.5,
         drops: [
             {
                 "resourceType": ResourceType.Wood,
                 "weight": 1
-            }
-        ],
-    },
-    [ProviderType.Stone]: {
-        action: ActionType.Mine,
-        maxLife: 5,
-        amountPerGather: 1,
-        respawnSec: 80,
-        label: "Stone Deposit",
-        color: 0x8a8a8a,
-        solidRadius: 0.6,
-        drops: [
-            {
-                "resourceType": ResourceType.Stone,
-                "weight": 90
-            },
-            {
-                "resourceType": ResourceType.Pebble,
-                "weight": 10
             }
         ],
     },
@@ -107,7 +89,6 @@ export const PROVIDER_CONFIG: Record<ProviderType, ProviderConfig> = {
         respawnSec: 50,
         label: "Berry Bush",
         color: 0xcc2244,
-        solidRadius: 0,
         drops: [
             {
                 "resourceType": ResourceType.Berries,
@@ -117,7 +98,6 @@ export const PROVIDER_CONFIG: Record<ProviderType, ProviderConfig> = {
     },
     "palm": {
         color: 0x6b4423,
-        solidRadius: 0.5,
         "label": "PamlTree",
         "action": ActionType.Chop,
         "maxLife": 10,
@@ -129,6 +109,59 @@ export const PROVIDER_CONFIG: Record<ProviderType, ProviderConfig> = {
                 "weight": 1
             }
         ]
+    },
+    "crystalDeposit": {
+        color: 0x6b4423,
+        "action": ActionType.Mine,
+        "maxLife": 10,
+        "amountPerGather": 1,
+        "respawnSec": 120,
+        "drops": [
+            {
+                "resourceType": ResourceType.Crystal,
+                "weight": 1
+            }
+        ],
+        "label": "CrystalDeposit",
+        "solid": 1
+    },
+    "stoneDeposit": {
+        color: 0x6b4423,
+        "label": "Stone Deposit",
+        "action": ActionType.Mine,
+        "maxLife": 5,
+        "amountPerGather": 1,
+        "respawnSec": 80,
+        "drops": [
+            {
+                "resourceType": ResourceType.Stone,
+                "weight": 90
+            },
+            {
+                "resourceType": ResourceType.Pebble,
+                "weight": 10
+            }
+        ],
+        "solid": 0.5
+    },
+    "ironDeposit": {
+        color: 0x6b4423,
+        "label": "Iron Deposit",
+        "action": ActionType.Mine,
+        "maxLife": 5,
+        "amountPerGather": 1,
+        "respawnSec": 80,
+        "drops": [
+            {
+                "resourceType": ResourceType.Ir,
+                "weight": 90
+            },
+            {
+                "resourceType": ResourceType.Pebble,
+                "weight": 10
+            }
+        ],
+        "solid": 0.5
     }
 };
 

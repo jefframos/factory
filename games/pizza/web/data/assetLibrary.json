@@ -1,11 +1,182 @@
 {
-    "tree": { "icon": "wood-log", "models": ["Props.Tree", "Props.TreeHigh"], "scale": [1.85, 2.15], "rotationDeg": [0, 360] },
-    "stone": { "icon": "stone-chunk", "models": ["Props.RocksHigh", "Props.RocksLow"], "scale": 1, "rotationDeg": [0, 360] },
-    "berries": { "icon": "wild-berries", "models": [], "scale": 1, "rotationDeg": [0, 360] },
-    "bark": { "icon": "tree-bark", "models": ["Resources.WoodLogA", "Resources.WoodLogB"], "scale": [0.8, 1.1], "rotationDeg": [0, 360] },
-    "pebble": { "icon": "sharpening-stone", "models": ["Resources.StoneChunksSmall"], "scale": [0.5, 0.8], "rotationDeg": [0, 360] },
-    "grassFiber": { "icon": "plant-fiber", "models": ["Pirate.GrassPlant", "Pirate.Grass"], "scale": [0.8, 1.2], "rotationDeg": [0, 360] },
-    "money": { "icon": "ItemIcon_Money_Bill-2", "models": [], "scale": 1, "rotationDeg": 0 },
-    "berryBush": { "icon": "wild-berries", "models": [], "scale": 1, "rotationDeg": [0, 360] },
-    "wood": { "icon": "wood-log", "models": [], "scale": 1, "rotationDeg": 0 }
+    "tree": {
+        "icon": "wood-log",
+        "models": [
+            "Props.Tree",
+            "Props.TreeHigh"
+        ],
+        "scale": [
+            1.85,
+            2.15
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "stone": {
+        "icon": "stone-chunk",
+        "models": [
+            "Resources.StoneChunksSmall"
+        ],
+        "scale": [
+            1,
+            1.2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "berries": {
+        "icon": "wild-berries",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "bark": {
+        "icon": "tree-bark",
+        "models": [
+            "Resources.WoodLogA",
+            "Resources.WoodLogB"
+        ],
+        "scale": [
+            0.8,
+            1.1
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "pebble": {
+        "icon": "sharpening-stone",
+        "models": [
+            "Resources.StoneChunksSmall"
+        ],
+        "scale": [
+            0.5,
+            0.8
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "grassFiber": {
+        "icon": "plant-fiber",
+        "models": [
+            "Pirate.GrassPlant",
+            "Pirate.Grass"
+        ],
+        "scale": [
+            0.8,
+            1.2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "money": {
+        "icon": "ItemIcon_Money_Bill-2",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "wood": {
+        "icon": "wood-log",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "crystal": {
+        "models": [],
+        "icon": "iron-ore",
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "berry": {
+        "icon": "wild-berries",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "stoneDeposit": {
+        "icon": "stone-chunk",
+        "models": [
+            "Resources.StoneChunksLarge",
+            "Resources.StoneChunksSmall"
+        ],
+        "scale": [
+            1.5,
+            2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "berryBush": {
+        "icon": "wild-berries",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "palm": {
+        "icon": "tree-bark",
+        "models": [
+            "Pirate.PalmBend",
+            "Pirate.PalmStraight"
+        ],
+        "scale": [
+            1,
+            1
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "crystalDeposit": {
+        "icon": "iron-ore",
+        "models": [
+            "Resources.SilverNuggetLarge"
+        ],
+        "scale": 4,
+        "rotationDeg": [
+            1,
+            1
+        ]
+    },
+    "iron": {
+        "icon": "iron-ore",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "ironDeposit": {
+        "icon": "iron-ore",
+        "models": [
+            "Resources.SilverNuggetLarge",
+            "Resources.SilverNuggetLarge"
+        ],
+        "scale": [
+            1.5,
+            2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    }
 }

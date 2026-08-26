@@ -71,6 +71,11 @@ export const FrameRegistry: Record<string, FrameDef> = {
         textureKey: 'ResourceBar_Single_Btn_Grey',
         padding: DEFAULT_PADDING_BUBBLE,
     },
+    /** PlayerNotificationComponent's throwaway "action blocked" popup (missing-tool icon + exclamation badge) over the player's own head — same grey bubble as GateLock, kept as its own preset so its look can be tuned independently of the gate's requirement panel. */
+    Blocked: {
+        textureKey: 'ResourceBar_Single_Btn_Grey',
+        padding: DEFAULT_PADDING_BUBBLE,
+    },
     /**
      * Per-entity-TYPE default popup frames (see PopupConfig.ts's own doc on resolvePopupFrameName()) —
      * BuildingZone/ShopZone/QueueZone/CraftZone each use their own preset here instead of all

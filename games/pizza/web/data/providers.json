@@ -25,33 +25,6 @@
             }
         ]
     },
-    "stone": {
-        "icon": "stone-chunk",
-        "models": [
-            "Props.RocksHigh",
-            "Props.RocksLow"
-        ],
-        "scale": 1,
-        "rotationDeg": [
-            0,
-            360
-        ],
-        "label": "Stone Deposit",
-        "action": "mine",
-        "maxLife": 5,
-        "amountPerGather": 1,
-        "respawnSec": 80,
-        "drops": [
-            {
-                "resourceType": "stone",
-                "weight": 90
-            },
-            {
-                "resourceType": "pebble",
-                "weight": 10
-            }
-        ]
-    },
     "berryBush": {
         "icon": "wild-berries",
         "models": [],
@@ -97,5 +70,90 @@
         "amountPerGather": 1,
         "maxLife": 10,
         "icon": "tree-bark"
+    },
+    "crystalDeposit": {
+        "models": [
+            "Resources.SilverNuggetLarge"
+        ],
+        "drops": [
+            {
+                "resourceType": "crystal",
+                "weight": 1
+            }
+        ],
+        "icon": "iron-ore",
+        "scale": 4,
+        "rotationDeg": [
+            1,
+            1
+        ],
+        "action": "mine",
+        "maxLife": 10,
+        "amountPerGather": 1,
+        "respawnSec": 120,
+        "label": "CrystalDeposit",
+        "solid": 1
+    },
+    "stoneDeposit": {
+        "icon": "stone-chunk",
+        "models": [
+            "Resources.StoneChunksLarge",
+            "Resources.StoneChunksSmall"
+        ],
+        "scale": [
+            1.5,
+            2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "label": "Stone Deposit",
+        "action": "mine",
+        "maxLife": 5,
+        "amountPerGather": 1,
+        "respawnSec": 80,
+        "drops": [
+            {
+                "resourceType": "stone",
+                "weight": 90
+            },
+            {
+                "resourceType": "pebble",
+                "weight": 10
+            }
+        ],
+        "solid": 0.5
+    },
+    "ironDeposit": {
+        "icon": "iron-ore",
+        "models": [
+            "Resources.SilverNuggetLarge",
+            "Resources.SilverNuggetLarge"
+        ],
+        "scale": [
+            1.5,
+            2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "label": "Iron Deposit",
+        "action": "mine",
+        "maxLife": 5,
+        "amountPerGather": 1,
+        "respawnSec": 80,
+        "drops": [
+            {
+                "resourceType": "iron",
+                "weight": 90
+            },
+            {
+                "resourceType": "pebble",
+                "weight": 10
+            }
+        ],
+        "solid": 0.5
     }
 }

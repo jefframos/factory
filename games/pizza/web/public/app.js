@@ -541,6 +541,123 @@ function onAddEntry() {
 }
 
 /**
+ * Duplicates one entry in place, right after the original — a deep clone under a fresh,
+ * never-used id (`${key}Copy`, `${key}Copy2`, ... on collision), with its `name`/`label` field
+ * (whichever it has, if either) suffixed " Copy" so the duplicate is visibly distinguishable
+ * in the collapsed list, not just by id. Purely a local `allData` edit, same as onAddEntry()
+ * and the old client-only rename used to be — a brand-new row references nothing by id yet
+ * (nothing points AT it until it's actually saved and, separately, wired up: a cost map
+ * entry added, a drop table row pointed at it, ...), so unlike a RENAME there's no other file
+ * anywhere that could go stale here; the ordinary Save pipeline is all this ever needs.
+ * `container`/`key` mirror renderEntryCard()'s own doc on the same pair.
+ */
+function duplicateEntry(container, key) {
+    const original = container[key];
+    const clone = JSON.parse(JSON.stringify(original));
+
+    if (Array.isArray(container)) {
+        container.splice(Number(key) + 1, 0, clone);
+    } else {
+        let newId = `${key}Copy`;
+        for (let n = 2; container[newId] !== undefined; n++) {
+            newId = `${key}Copy${n}`;
+        }
+        if (typeof clone.name === 'string' && clone.name) {
+            clone.name = `${clone.name} Copy`;
+        } else if (typeof clone.label === 'string' && clone.label) {
+            clone.label = `${clone.label} Copy`;
+        }
+        container[newId] = clone;
+    }
+
+    markDirty();
+    renderActiveTab();
+}
+
+/**
+ * Renames an id-keyed entry via the server's /api/rename/:entityId endpoint (see
+ * renameEntity.mjs's own doc) — a REAL rename: the id changes in this tab's own source .ts
+ * file AND everywhere else that referenced it (AssetLibraryRegistry's matching key,
+ * map/tiles.json's provider placements, drop tables/cost maps/requirement pickers on OTHER
+ * tabs, ...), not just this tab's own local JSON. This deliberately does NOT mutate `allData`
+ * itself the way the old client-only rename used to — the rename can touch OTHER tabs' data on
+ * disk too, so the only correct way to reflect the result is a full init() reload from disk,
+ * same as after a server restart. Any UNSAVED edit in ANY tab (this one or another) is
+ * discarded by that reload, same risk setupRestartButton() already warns about — so this asks
+ * first if anything is dirty, rather than silently losing work.
+ *
+ * A `notFound` response (see renameEntity.mjs's own doc on that flag) means this exact id has
+ * never actually been Saved yet — a fresh "+ Add"/Duplicate row that only exists in THIS
+ * browser's own local draft. There's nothing on disk to rename, and (more importantly) nothing
+ * ANYWHERE ELSE could possibly already reference an id that was never saved — so that case
+ * falls back to the plain local rename the OLD id-input behavior used to always do, no server
+ * round-trip or reload needed at all.
+ */
+async function renameEntry(container, idInput, oldId) {
+    const newId = idInput.value.trim();
+    if (!newId || newId === oldId) {
+        idInput.value = oldId;
+        return;
+    }
+    if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(newId)) {
+        alert('Ids must start with a letter, and contain only letters, digits, and underscores.');
+        idInput.value = oldId;
+        return;
+    }
+    if (dirtyTabs.size > 0 && !confirm('You have unsaved changes on one or more tabs that will be LOST (renaming reloads everything fresh from disk). Rename anyway?')) {
+        idInput.value = oldId;
+        return;
+    }
+
+    idInput.disabled = true;
+    const status = document.getElementById('save-status');
+    try {
+        const res = await fetch(`/api/rename/${activeId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ oldId, newId }),
+        });
+        const result = await res.json();
+        if (!res.ok) {
+            if (result.notFound) {
+                // Never actually Saved — nothing on disk, nothing anywhere else could
+                // reference it yet, so just rename it locally, same as the old id-input
+                // behavior always did. No reload, no lost work, no round-trip needed.
+                if (container[newId] !== undefined) {
+                    idInput.disabled = false;
+                    idInput.value = oldId;
+                    alert('That id already exists.');
+                    return;
+                }
+                container[newId] = container[oldId];
+                delete container[oldId];
+                markDirty();
+                renderActiveTab();
+                return;
+            }
+            throw new Error(result.error ?? `HTTP ${res.status}`);
+        }
+        await init();
+        const refreshedStatus = document.getElementById('save-status');
+        if (refreshedStatus) {
+            refreshedStatus.className = result.warnings?.length > 0 ? 'status error' : 'status ok';
+            refreshedStatus.textContent = result.warnings?.length > 0
+                ? `Renamed "${oldId}" to "${newId}", but: ${result.warnings.join('; ')}`
+                : `Renamed "${oldId}" to "${newId}" everywhere it's referenced.`;
+        }
+    } catch (err) {
+        idInput.disabled = false;
+        idInput.value = oldId;
+        if (status) {
+            status.className = 'status error';
+            status.textContent = `Rename failed: ${err.message}`;
+        } else {
+            alert(`Rename failed: ${err.message}`);
+        }
+    }
+}
+
+/**
  * One collapsible card for a single entry. `container`/`key` identify where
  * this entry actually lives (null container = the queues "default" slot,
  * which can't be renamed or deleted) so rename/delete can mutate the real
@@ -566,22 +683,7 @@ function renderEntryCard(container, key, value, schema, removable, renamable, mi
         const idInput = document.createElement('input');
         idInput.value = key;
         idInput.onclick = e => e.stopPropagation();
-        idInput.onchange = () => {
-            const newId = idInput.value.trim();
-            if (!newId || newId === key) {
-                idInput.value = key;
-                return;
-            }
-            if (container[newId] !== undefined) {
-                alert('That id already exists.');
-                idInput.value = key;
-                return;
-            }
-            container[newId] = container[key];
-            delete container[key];
-            markDirty();
-            renderActiveTab();
-        };
+        idInput.onchange = () => renameEntry(container, idInput, key);
         summary.appendChild(idInput);
     } else {
         const label = document.createElement('span');
@@ -599,6 +701,16 @@ function renderEntryCard(container, key, value, schema, removable, renamable, mi
     }
 
     if (removable) {
+        const duplicateBtn = document.createElement('button');
+        duplicateBtn.className = 'small';
+        duplicateBtn.textContent = 'Duplicate';
+        duplicateBtn.onclick = e => {
+            e.preventDefault();
+            e.stopPropagation();
+            duplicateEntry(container, key);
+        };
+        summary.appendChild(duplicateBtn);
+
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'danger small';
         deleteBtn.textContent = 'Delete';
@@ -1473,6 +1585,105 @@ function renderVector3Field(control, obj, field, onDirty) {
 }
 
 // ---------------------------------------------------------------------------
+// Consistency report — compares the editor's own JSON mirrors against
+// what's really in the game's source .ts files (see checkConsistency.mjs,
+// the server-side implementation). Opens a copyable text overlay so a
+// report can be pasted straight into a chat/issue.
+// ---------------------------------------------------------------------------
+
+async function runCheckConsistency() {
+    const btn = document.getElementById('check-consistency-btn');
+    btn.disabled = true;
+    btn.textContent = 'Checking…';
+    try {
+        const result = await fetchJson('/api/check-consistency');
+        showConsistencyReport(result.report);
+    } catch (err) {
+        showConsistencyReport(`Check failed: ${err.message}`);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Check consistency';
+    }
+}
+
+function showConsistencyReport(text) {
+    const overlay = document.getElementById('consistency-report-overlay');
+    const textarea = document.getElementById('consistency-report-text');
+    textarea.value = text;
+    overlay.classList.remove('hidden');
+}
+
+function setupConsistencyReportOverlay() {
+    const overlay = document.getElementById('consistency-report-overlay');
+    document.getElementById('consistency-report-close').onclick = () => overlay.classList.add('hidden');
+    overlay.onclick = e => {
+        if (e.target === overlay) overlay.classList.add('hidden');
+    };
+    document.getElementById('consistency-report-copy').onclick = async () => {
+        const textarea = document.getElementById('consistency-report-text');
+        const copyBtn = document.getElementById('consistency-report-copy');
+        try {
+            await navigator.clipboard.writeText(textarea.value);
+            copyBtn.textContent = 'Copied!';
+        } catch {
+            // Clipboard API can be unavailable (non-HTTPS, permissions) — fall back to a
+            // manual select so the user can still Ctrl+C it themselves.
+            textarea.select();
+            copyBtn.textContent = 'Select all below and copy manually';
+        }
+        setTimeout(() => { copyBtn.textContent = 'Copy to clipboard'; }, 2000);
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Debug physics header toggles
+// ---------------------------------------------------------------------------
+//
+// Two checkboxes that write ONE metadata cookie (`pizzaDebugPhysics`, JSON —
+// { collider, trigger }) shared with the actual game (see games/pizza/game/
+// utils/DebugPhysicsCookie.ts, the one reader). Cookies aren't port-scoped,
+// only host-scoped, so this reaches the game's own dev server on a
+// different localhost port for free. The game only ever reads this in DEV
+// MODE (launched with ?dev in the URL) — see index.ts — so leaving these on
+// has no effect on a real player build.
+
+const DEBUG_PHYSICS_COOKIE_NAME = 'pizzaDebugPhysics';
+
+function readDebugPhysicsCookie() {
+    const match = document.cookie.split('; ').find(entry => entry.startsWith(`${DEBUG_PHYSICS_COOKIE_NAME}=`));
+    if (!match) {
+        return { collider: false, trigger: false };
+    }
+    try {
+        const parsed = JSON.parse(decodeURIComponent(match.slice(DEBUG_PHYSICS_COOKIE_NAME.length + 1)));
+        return { collider: !!parsed.collider, trigger: !!parsed.trigger };
+    } catch {
+        return { collider: false, trigger: false };
+    }
+}
+
+function writeDebugPhysicsCookie(value) {
+    // 1 year — same convention as any other "remember this until explicitly changed" cookie;
+    // there's nothing session-scoped about a designer's debug-view preference.
+    const maxAgeSec = 60 * 60 * 24 * 365;
+    document.cookie = `${DEBUG_PHYSICS_COOKIE_NAME}=${encodeURIComponent(JSON.stringify(value))}; path=/; max-age=${maxAgeSec}`;
+}
+
+function setupDebugPhysicsToggles() {
+    const colliderToggle = document.getElementById('debug-collider-toggle');
+    const triggerToggle = document.getElementById('debug-trigger-toggle');
+    const current = readDebugPhysicsCookie();
+    colliderToggle.checked = current.collider;
+    triggerToggle.checked = current.trigger;
+
+    const onChange = () => {
+        writeDebugPhysicsCookie({ collider: colliderToggle.checked, trigger: triggerToggle.checked });
+    };
+    colliderToggle.onchange = onChange;
+    triggerToggle.onchange = onChange;
+}
+
+// ---------------------------------------------------------------------------
 // Server restart button
 // ---------------------------------------------------------------------------
 
@@ -1515,5 +1726,8 @@ async function waitForServerAndReload(btn) {
 }
 
 setupRestartButton();
+setupDebugPhysicsToggles();
+setupConsistencyReportOverlay();
 document.getElementById('check-map-btn').onclick = checkMap;
+document.getElementById('check-consistency-btn').onclick = runCheckConsistency;
 init();

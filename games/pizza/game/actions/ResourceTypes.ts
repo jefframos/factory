@@ -22,6 +22,8 @@ export enum ResourceType {
     Pebble = 'pebble',
     /** Loose ground loot, same instant-pickup shape as Bark/Pebble — also scattered on "grass" spawner clusters (see DynamicResourceTypes.ts). Visual varies per spawn between MODELS.Pirate.GrassPlant and MODELS.Pirate.Grass (see AssetLibraryRegistry.ts's own "grassFiber" entry), but every pickup banks the same flat amountPerGather regardless of which model got picked. */
     GrassFiber = 'grassFiber',
+    Crystal = "crystal",
+    Ir = "iron"
 }
 
 export interface ResourceConfig {
@@ -70,4 +72,14 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         label: "Grass Fiber",
         color: 0x6ccb5f,
     },
+    "crystal": {
+        color: 0x6b4423,
+        "label": "Crystal",
+        "amountPerGather": 1
+    },
+    "iron": {
+        color: 0x6b4423,
+        "label": "Iron",
+        "amountPerGather": 1
+    }
 };

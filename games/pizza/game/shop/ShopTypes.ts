@@ -67,6 +67,8 @@ export interface ShopConfig {
     popupBobOffset?: number;
     /** Overrides FrameRegistry.ts's 'ShopFrame' default for THIS shop's own popup — see PopupConfig.ts's resolvePopupFrameName()'s own doc. undefined uses the type-wide default. */
     frame?: FrameName;
+    /** 0-1 fraction of this shop's own trigger footprint that becomes a SOLID collider blocking the player — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default for every shop until a designer opts one in) means no solid collider at all — unchanged walk-through behavior from before this field existed. */
+    solid?: number;
 }
 
 const DEFAULT_SHOP_MESH: ShopMeshConfig = { size: [2, 2, 2], color: 0x8855cc };
@@ -137,7 +139,8 @@ export const SHOP_CONFIG_BY_ID: Partial<Record<string, ShopConfig>> = {
             }
         ],
         "popupBobOffset": 1,
-        "baseView": "shop1View"
+        "baseView": "shop1View",
+        "solid": 0.5
     },
 };
 

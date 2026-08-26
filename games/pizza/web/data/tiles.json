@@ -67,11 +67,12 @@
         {
             "name": "stone",
             "color": "#9A9A9A",
-            "providerType": "stone"
+            "providerType": "stoneDeposit"
         },
         {
             "name": "ice_crystal",
-            "color": "#AEEFFF"
+            "color": "#AEEFFF",
+            "providerType": "crystalDeposit"
         },
         {
             "name": "gold",
@@ -79,7 +80,8 @@
         },
         {
             "name": "iron",
-            "color": "#B0B7C3"
+            "color": "#B0B7C3",
+            "providerType": "ironDeposit"
         },
         {
             "name": "coal",

@@ -12,12 +12,13 @@
             "scale": 2,
             "selectedLayer": 4,
             "viewCenter": {
-                "x": -99.5,
-                "y": 160.25
+                "x": -14.5,
+                "y": 384.75
             }
         },
         "testMap1.tmx#models": {
-            "dynamicWrapping": true
+            "dynamicWrapping": true,
+            "scaleInDock": 1
         },
         "testMap1.tmx#resources": {
             "dynamicWrapping": false,

@@ -44,7 +44,7 @@ function mulberry32(seed: number): () => number {
 }
 
 /** Every provider type procedural spawning picks evenly between — see generateProceduralResourceSpawns(). */
-const PROCEDURAL_PROVIDER_TYPES = [ProviderType.Tree, ProviderType.Stone, ProviderType.BerryBush];
+const PROCEDURAL_PROVIDER_TYPES = [ProviderType.Tree, ProviderType.StoneDeposit, ProviderType.BerryBush];
 
 /** Scatters `count` provider nodes uniformly across a [-halfExtent, halfExtent] square, picking evenly among PROCEDURAL_PROVIDER_TYPES — same seed always yields the same layout. */
 export function generateProceduralResourceSpawns(seed: number, count: number, halfExtent: number): ResourceSpawnDef[] {

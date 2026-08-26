@@ -21,6 +21,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exec, execSync, spawn } from 'node:child_process';
 import { syncToSource } from './sync/syncToSource.mjs';
+import { renameEntity } from './sync/renameEntity.mjs';
+import { checkConsistency } from './sync/checkConsistency.mjs';
 import { validateMap } from './sync/validateMap.mjs';
 import { scanImageAssets, scanNonPreloadAssets } from './sync/imageAssets.mjs';
 import { readSpawnerTileTypes } from './sync/tiledMap.mjs';
@@ -78,6 +80,15 @@ async function loadAllData() {
         allData[entry.id] = JSON.parse(raw);
     }
     return allData;
+}
+
+/** Writes `data` back as `tab`'s own JSON mirror — same file resolveDataFile()/the ordinary PUT /api/data/:id path writes to, exposed separately so renameEntity()'s cross-tab cascade can persist whichever OTHER tabs it touched (see the /api/rename route below). */
+async function writeTabData(tab, data) {
+    const filePath = await resolveDataFile(tab);
+    if (!filePath) {
+        throw new Error(`"${tab}" has no known data file to write`);
+    }
+    await fs.writeFile(filePath, JSON.stringify(data, null, 4) + '\n', 'utf-8');
 }
 
 async function serveStatic(req, res) {
@@ -208,12 +219,44 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, readSpawnerTileTypes(MAP_FILE, TILES_FILE));
     }
 
+    // Read-only: compares every tab's own JSON mirror against what's really in the game's
+    // source .ts files right now (see checkConsistency.mjs's own doc) — the drift class this
+    // whole editor's own bug history has been about, made checkable in one click.
+    if (url.pathname === '/api/check-consistency' && req.method === 'GET') {
+        try {
+            const report = await checkConsistency({ loadAllData });
+            return sendJson(res, 200, { ok: true, report });
+        } catch (err) {
+            return sendJson(res, 500, { error: String(err.message ?? err) });
+        }
+    }
+
     if (url.pathname === '/api/validate-map' && req.method === 'GET') {
         try {
             const allData = await loadAllData();
             return sendJson(res, 200, validateMap(allData));
         } catch (err) {
             return sendJson(res, 500, { error: String(err) });
+        }
+    }
+
+    // Renames an id-keyed entity IN PLACE — see renameEntity.mjs's own doc for why this is a
+    // dedicated operation rather than "type a new id and Save" (which just orphans the old
+    // entry and every other file that referenced its old id string). Body: { oldId, newId }.
+    const renameMatch = url.pathname.match(/^\/api\/rename\/([\w-]+)$/);
+    if (renameMatch && req.method === 'POST') {
+        const [, entityId] = renameMatch;
+        try {
+            const { oldId, newId } = await readJsonBody(req);
+            const result = await renameEntity(entityId, oldId, newId, {
+                loadAllData,
+                writeTabData,
+                tilesFile: TILES_FILE,
+                webTilesFile: path.join(DATA_DIR, 'tiles.json'),
+            });
+            return sendJson(res, 200, { ok: true, warnings: result.warnings });
+        } catch (err) {
+            return sendJson(res, 400, { error: String(err.message ?? err), notFound: !!err.notFound });
         }
     }
 

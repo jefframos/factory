@@ -374,3 +374,53 @@ button.danger { color: var(--danger); }
     border-radius: 2px;
     pointer-events: none;
 }
+
+/* Consistency report overlay — see app.js's runCheckConsistency() */
+.report-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.report-overlay.hidden { display: none; }
+
+.report-panel {
+    width: min(900px, 90vw);
+    height: min(700px, 85vh);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 12px;
+}
+
+.report-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.report-panel-header h2 { margin: 0; font-size: 16px; }
+
+#consistency-report-text {
+    flex: 1;
+    width: 100%;
+    resize: none;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre;
+}
+
+.report-panel-footer { display: flex; justify-content: flex-end; }

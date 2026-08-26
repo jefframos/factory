@@ -136,6 +136,7 @@ const ENTITY_SCHEMAS = {
         { key: 'icon', type: 'icon', label: 'Icon (shown wherever this building is referenced elsewhere, e.g. a gate requiring one of its levels)', optional: true },
         { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement', optional: true },
         { key: 'baseView', type: 'select', label: 'Base View (before level 1, optional)', source: 'entityViews', optional: true },
+        { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
         {
             key: 'levels', type: 'list', label: 'Levels',
             itemLabel: item => `Level ${item.level ?? '?'}`,
@@ -161,6 +162,7 @@ const ENTITY_SCHEMAS = {
         { key: 'action', type: 'select', label: 'Action', source: 'actions' },
         { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement', optional: true },
         { key: 'baseView', type: 'select', label: 'Base View (before any upgrade, optional)', source: 'entityViews', optional: true },
+        { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
         {
             key: 'levels', type: 'list', label: 'Upgrade Levels',
             itemLabel: (item, i) => `Level ${i + 1} — ${item.cost ?? '?'} coins`,
@@ -207,6 +209,7 @@ const ENTITY_SCHEMAS = {
         { key: 'rotationDeg', type: 'numberRange', label: 'Rotation (deg)' },
         { key: 'float', type: 'boolean', label: 'Float (idle up/down bob)' },
         { key: 'heightOffset', type: 'number', label: 'Height Offset (nudge the model up/down)', optional: true },
+        { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
         ...POPUP_FIELDS,
     ],
     // A RESOURCE is the bankable item (Wood/Stone/Berries/Bark/Pebble/GrassFiber) — what
@@ -239,6 +242,7 @@ const ENTITY_SCHEMAS = {
         { key: 'maxLife', type: 'number', label: 'Max Life' },
         { key: 'amountPerGather', type: 'number', label: 'Amount Per Gather (total units per harvest, before the drop table splits them up)' },
         { key: 'respawnSec', type: 'number', label: 'Respawn (sec)' },
+        { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
         // Weighted yield table — a single 100%-weight entry is the normal case (a tree only
         // ever gives wood). Weights are RELATIVE, not required to sum to 100 — a 9/1 split
         // reads the same as 90/10. e.g. a "stone" deposit dropping 90% stone / 10% pebble:
@@ -302,6 +306,7 @@ const ENTITY_SCHEMAS = {
             ],
         },
         { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
+        { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
         ...POPUP_FIELDS,
     ],
     // Reusable real-mesh definitions — a building level/shop level/gate/queue can OPTIONALLY

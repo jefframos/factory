@@ -53,6 +53,8 @@ export interface QueueConfig {
     view?: string;
     /** Overrides FrameRegistry.ts's 'QueueFrame' default for THIS queue's own popup — see PopupConfig.ts's resolvePopupFrameName()'s own doc. undefined uses the type-wide default. */
     frame?: FrameName;
+    /** 0-1 fraction of this queue's own trigger footprint that becomes a SOLID collider blocking the player — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default for every queue until a designer opts one in) means no solid collider at all — unchanged walk-through behavior from before this field existed. */
+    solid?: number;
 }
 
 /** Applied to every discovered queue unless QUEUE_CONFIG_BY_ID has an override for its id — see this file's own doc. */

@@ -29,6 +29,7 @@ import gsap from 'gsap';
 import Entity from '../ecs/Entity';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
+import { buildSolidArea } from '../physics/SolidArea';
 import { BendService } from '../services/BendService';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
@@ -229,6 +230,12 @@ export default class BuildingZone extends Entity {
             layer: Layers.Trigger,
             centerOffset,
         }));
+
+        const solidArea = buildSolidArea(halfExtents, centerOffset, BUILDING_CONFIG[this.buildingId].solid ?? 0);
+        if (solidArea) {
+            this.addComponent(solidArea);
+        }
+
         // Traces the ACTUAL deposit trigger's own footprint/position on the floor — same
         // dotted-outline technique as QueueZone/DropZone. Needed independently of the building's
         // own visual mesh below since a triggerArea (a Tiled "dropper") can sit anywhere on the

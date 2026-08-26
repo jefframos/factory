@@ -13,6 +13,7 @@ import jsonManifest from './manifests/json.json'; // adjust path
 
 import { getPlatformInstance } from 'core/platforms/PlatformFactory';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
+import { applyDebugPhysicsCookie } from './game/utils/DebugPhysicsCookie';
 import Assets from './Assets';
 import PizzaScene from './game/scenes/PizzaScene';
 import { ShopStorage, loadShopItems } from './game/data/ShopStorage';
@@ -209,6 +210,12 @@ export default class MyGame extends Game {
     /** After load: wire up scenes and show first one */
     protected startGame(): void {
 
+        // Dev-mode only, and before PizzaScene builds any entities below — RigidBody.awake()
+        // (see PhysicsConstants.ts) only reads PHYSICS_DEBUG/PHYSICS_TRIGGER_DEBUG once, at
+        // construction time, so this has to run before the world's colliders/triggers spawn.
+        if (Game.debugParams.dev) {
+            applyDebugPhysicsCookie();
+        }
         DevGuiManager.instance.initialize(Game.debugParams.dev);
         PlatformHandler.instance.setupDevPauseToggle();
         const gameplay = this.sceneManager.register<PizzaScene>('game', PizzaScene, this);

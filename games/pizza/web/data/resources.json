@@ -3,10 +3,12 @@
         "label": "Stone",
         "icon": "stone-chunk",
         "models": [
-            "Props.RocksHigh",
-            "Props.RocksLow"
+            "Resources.StoneChunksSmall"
         ],
-        "scale": 1,
+        "scale": [
+            1,
+            1.2
+        ],
         "rotationDeg": [
             0,
             360
@@ -78,6 +80,22 @@
         "label": "Wood",
         "icon": "wood-log",
         "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1
+    },
+    "crystal": {
+        "models": [],
+        "icon": "iron-ore",
+        "label": "Crystal",
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1
+    },
+    "iron": {
+        "models": [],
+        "icon": "iron-ore",
+        "label": "Iron",
         "scale": 1,
         "rotationDeg": 0,
         "amountPerGather": 1

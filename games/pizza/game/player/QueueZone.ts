@@ -32,6 +32,7 @@ import gsap from 'gsap';
 import Entity from '../ecs/Entity';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
+import { buildSolidArea } from '../physics/SolidArea';
 import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
@@ -149,13 +150,20 @@ export default class QueueZone extends Entity {
             ? new THREE.Vector3(this.footprint.width / 2, HALF_EXTENTS.y, this.footprint.depth / 2)
             : HALF_EXTENTS;
 
+        const centerOffset = new THREE.Vector3(0, halfExtents.y, 0);
         const rigidBody = this.addComponent(new RigidBody({
             halfExtents,
             isStatic: true,
             isTrigger: true,
             layer: Layers.Trigger,
-            centerOffset: new THREE.Vector3(0, halfExtents.y, 0),
+            centerOffset,
         }));
+
+        const solidArea = buildSolidArea(halfExtents, centerOffset, this.config.solid ?? 0);
+        if (solidArea) {
+            this.addComponent(solidArea);
+        }
+
         this.addComponent(new DottedZoneVisualComponent(
             halfExtents.x * 2,
             halfExtents.z * 2,

@@ -74,6 +74,8 @@ export interface BuildingConfig {
     popupBobOffset?: number;
     /** Overrides FrameRegistry.ts's 'BuildingFrame' default for THIS building's own popup — see PopupConfig.ts's resolvePopupFrameName()'s own doc. undefined uses the type-wide default. */
     frame?: FrameName;
+    /** 0-1 fraction of this building's own deposit-trigger footprint that becomes a SOLID collider blocking the player — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default for every building until a designer opts one in) means no solid collider at all — unchanged walk-through behavior from before this field existed. */
+    solid?: number;
 }
 
 export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
