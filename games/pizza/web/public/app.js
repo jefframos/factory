@@ -27,14 +27,49 @@ let mapValidation = null;
 let spawnerTileTypes = [];
 /** Which spawner area the Dynamic Resources tab is currently filtered to — 'all' or one area name — see renderDynamicResourcesByArea(). Kept across re-renders of that tab (add/delete/save) but not reset on tab switch, since flipping back to this tab with the same filter still held is the expected behavior, not a surprise. */
 let dynamicResourceAreaFilter = 'all';
+/** Every "spawner"-type object's "id" custom property drawn on the map's mapSettings layer (e.g. "animalSpawner1" — see tiledMap.mjs's readSpawnerShapeIds()) — fetched once at init/restart, backs the '$spawnerShapeIds' virtual select source (see getOptions()) and the Shape Resources tab's own grouping (see renderShapeResourcesByArea()). */
+let spawnerShapeIds = [];
+/** Which spawner shape the Shape Resources tab is currently filtered to — 'all' or one shapeId — same convention as dynamicResourceAreaFilter, see renderShapeResourcesByArea(). */
+let shapeResourceAreaFilter = 'all';
 /** The categorized model catalog from /api/models (see modelsCatalog.mjs) — `{ groups: [{ name, items: [{ key, id, path, fullPath, format }] }] }`. Fetched once at init/restart, same pattern as spawnerTileTypes: small enough to prefetch eagerly rather than lazy-load per field. */
 let modelsCatalog = { groups: [], error: null };
 /** Cache-busting query value appended to every /tiled-asset/ image URL (see makeTileSwatch()) — the browser would otherwise keep serving a stale grounds.png/resources.png from cache after someone repaints the spritesheet on disk, since the URL itself never changes. Bumped on every init() (page load / server restart) and by the Map tab's own "Refresh images" button, so a designer who just re-exported the PNG can see it without a hard reload. */
 let tileImageVersion = Date.now();
 
+/** localStorage key for the "which section/item was open" UI state — see loadUiState()/saveUiState(). */
+const UI_STATE_STORAGE_KEY = 'pizza-editor-ui-state';
+/**
+ * Which entry `<details>` card is expanded on each tab, keyed by tab id then by that entry's
+ * own key/id (a queues tab's 'default' pseudo-entry and an array tab's numeric index both work
+ * the same way here) — restored by renderEntryCard() below, populated from loadUiState() at
+ * init() and kept live by each card's own 'toggle' listener. A tab this editor has never had a
+ * card opened on simply has no entry here, which renderEntryCard() treats as "nothing open,"
+ * not an error.
+ */
+let openEntryByTab = {};
+
 const tabsEl = document.getElementById('tabs');
 const contentEl = document.getElementById('content');
 const sourceHintEl = document.getElementById('source-hint');
+
+/** Reads the last-saved { activeId, openEntryByTab } — see saveUiState()'s own doc. Anything in it that no longer matches current data (a deleted tab/entry) is left for init()/renderEntryCard()'s own existence checks to silently fall back on, not handled here. */
+function loadUiState() {
+    try {
+        return JSON.parse(localStorage.getItem(UI_STATE_STORAGE_KEY)) ?? {};
+    } catch {
+        return {};
+    }
+}
+
+/** Persisted on every tab switch (renderTabs()'s button handlers) and every entry card open/close (renderEntryCard()'s 'toggle' listener) — restored by init()/renderEntryCard() so a page reload (or the editor server's own restart) lands back on the same section and, if it still exists, the same expanded entry. */
+function saveUiState() {
+    try {
+        localStorage.setItem(UI_STATE_STORAGE_KEY, JSON.stringify({ activeId, openEntryByTab }));
+    } catch {
+        // Best-effort — a private window or a full storage quota just means state doesn't
+        // persist across reload, not something worth surfacing as an error.
+    }
+}
 
 async function fetchJson(url, opts) {
     const res = await fetch(url, opts);
@@ -58,11 +93,30 @@ async function init() {
         spawnerTileTypes = [];
     }
     try {
+        const result = await fetchJson('/api/spawner-shape-ids');
+        spawnerShapeIds = result.shapeIds ?? [];
+    } catch {
+        spawnerShapeIds = [];
+    }
+    try {
         modelsCatalog = await fetchJson('/api/models');
     } catch (err) {
         modelsCatalog = { groups: [], error: err.message };
     }
     dirtyTabs.clear();
+
+    // Restore the last-open section (and, per-tab, the last-open entry — see
+    // renderEntryCard()) so a reload/restart lands back where the designer left off, same as
+    // BuildingZone's own persisted-state instinct elsewhere in this codebase. `!activeId` skips
+    // this on anything but a truly fresh load — a live re-init (server restart while a tab was
+    // already active) keeps whatever's already selected in memory instead of overriding it.
+    const savedUiState = loadUiState();
+    openEntryByTab = savedUiState.openEntryByTab ?? {};
+    if (!activeId) {
+        activeId = savedUiState.activeId ?? null;
+    }
+    // Falls back to the first tab whenever the restored (or already-active) id no longer names
+    // a real tab — e.g. the saved section was deleted, or this is the very first-ever load.
     if (!activeId || (activeId !== GRAPH_TAB_ID && !manifest.some(e => e.id === activeId))) {
         activeId = manifest[0]?.id ?? null;
     }
@@ -87,6 +141,7 @@ function renderTabs() {
 
         btn.onclick = () => {
             activeId = entry.id;
+            saveUiState();
             renderTabs();
             renderActiveTab();
         };
@@ -103,6 +158,7 @@ function renderTabs() {
     graphBtn.className = activeId === GRAPH_TAB_ID ? 'active' : '';
     graphBtn.onclick = () => {
         activeId = GRAPH_TAB_ID;
+        saveUiState();
         renderTabs();
         renderActiveTab();
     };
@@ -327,6 +383,11 @@ function renderActiveTab() {
         return;
     }
 
+    if (activeId === 'shapeResourcePlacements') {
+        renderShapeResourcesByArea(data, schema);
+        return;
+    }
+
     if (manifestEntry.shape === 'mapTiles') {
         renderMapTilesTab(data);
         return;
@@ -396,6 +457,69 @@ function renderDynamicResourcesByArea(data, schema) {
 
     if (areasToShow.every(area => !groups.has(area))) {
         contentEl.appendChild(sectionLabel('No dynamic resource placements for this area yet.'));
+        return;
+    }
+
+    for (const area of areasToShow) {
+        const items = groups.get(area);
+        if (!items) continue;
+        const resourceList = items.map(i => i.value.resourceType).filter(Boolean).join(', ') || '(no resource set)';
+        contentEl.appendChild(sectionLabel(`${area} — ${items.length} placement${items.length === 1 ? '' : 's'}: ${resourceList}`));
+        for (const { value, index } of items) {
+            const entryLabel = value.resourceType ? `${value.resourceType} → ${area}` : undefined;
+            contentEl.appendChild(renderEntryCard(data, index, value, schema, true, false, new Set(), entryLabel));
+        }
+    }
+}
+
+/**
+ * Shape Resources gets the same by-area grouping as Dynamic Resources above (see
+ * renderDynamicResourcesByArea()'s own doc for the full reasoning) — just grouped by
+ * `shapeId` (a "spawner"-type object's id on the map) instead of `spawnerTileType`.
+ */
+function renderShapeResourcesByArea(data, schema) {
+    const areaNames = [...new Set(data.map(v => v.shapeId).filter(Boolean))].sort();
+
+    const filterRow = document.createElement('div');
+    filterRow.className = 'field-row';
+    const label = document.createElement('label');
+    label.textContent = 'Filter by spawner shape';
+    filterRow.appendChild(label);
+    const control = document.createElement('div');
+    control.className = 'field-control';
+    const select = document.createElement('select');
+    const allOpt = document.createElement('option');
+    allOpt.value = 'all';
+    allOpt.textContent = `All shapes (${areaNames.length})`;
+    select.appendChild(allOpt);
+    for (const name of areaNames) {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
+    }
+    if (shapeResourceAreaFilter !== 'all' && !areaNames.includes(shapeResourceAreaFilter)) {
+        shapeResourceAreaFilter = 'all';
+    }
+    select.value = shapeResourceAreaFilter;
+    select.onchange = () => {
+        shapeResourceAreaFilter = select.value;
+        renderActiveTab();
+    };
+    control.appendChild(select);
+    filterRow.appendChild(control);
+    contentEl.appendChild(filterRow);
+
+    const groups = new Map();
+    data.forEach((value, index) => {
+        const area = value.shapeId || '(no shape set)';
+        (groups.get(area) ?? groups.set(area, []).get(area)).push({ value, index });
+    });
+
+    const areasToShow = shapeResourceAreaFilter === 'all' ? [...groups.keys()].sort() : [shapeResourceAreaFilter];
+
+    if (areasToShow.every(area => !groups.has(area))) {
+        contentEl.appendChild(sectionLabel('No shape resource placements for this spawner yet.'));
         return;
     }
 
@@ -694,6 +818,21 @@ function renderEntryCard(container, key, value, schema, removable, renamable, mi
     const details = document.createElement('details');
     details.className = 'entry';
 
+    // Restores this card's expanded/collapsed state from the last time this editor was used
+    // (see openEntryByTab's own doc) — String(key) so an array tab's numeric index and a
+    // record tab's string id both compare consistently against what got saved. Only one entry
+    // per tab is ever remembered as "open," matching how a designer actually works this UI:
+    // one card expanded at a time to fill in its fields.
+    details.open = openEntryByTab[activeId] === String(key);
+    details.addEventListener('toggle', () => {
+        if (details.open) {
+            openEntryByTab[activeId] = String(key);
+        } else if (openEntryByTab[activeId] === String(key)) {
+            delete openEntryByTab[activeId];
+        }
+        saveUiState();
+    });
+
     const summary = document.createElement('summary');
 
     // If this entity type has an 'icon' field, show its resolved thumbnail right on the
@@ -776,6 +915,9 @@ function getOptions(sourceId) {
             value: t.name,
             label: t.painted ? t.name : `${t.name} (not painted on a spawner layer yet)`,
         }));
+    }
+    if (sourceId === '$spawnerShapeIds') {
+        return spawnerShapeIds.map(id => ({ value: id, label: id }));
     }
 
     const manifestEntry = manifest.find(e => e.id === sourceId);

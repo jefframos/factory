@@ -68,6 +68,25 @@ export default class GlbVisualComponent extends Component {
             return;
         }
 
+        // ModelLoaderManager caches ONE parsed scene per model id and hands every instance
+        // `cached.clone(true)` — THREE.Object3D.clone() deep-copies the transform hierarchy but
+        // copies each Mesh's `.material` by REFERENCE, not by value (stock three.js behavior).
+        // Left alone, every live instance of e.g. "Props.Tree" shares the exact same Material
+        // objects — mutating one (a hit-flash's emissive, a future per-instance tint, ...)
+        // visibly affects every OTHER tree using that material at the same time, and disposing
+        // one instance's material (see destroy() below) breaks rendering for every other
+        // instance still using it. Cloning here gives THIS instance its own private materials,
+        // fixing both. Geometry is deliberately left shared (see destroy()'s own doc) — nothing
+        // ever mutates geometry per-instance, so there's no correctness reason to duplicate its
+        // (often much larger) buffers.
+        object.traverse(child => {
+            if (child instanceof THREE.Mesh) {
+                child.material = Array.isArray(child.material)
+                    ? child.material.map(material => material.clone())
+                    : child.material.clone();
+            }
+        });
+
         // Same shared uBendOrigin/uBendStrength every other world material uses — without
         // this the prop would sit rigid while the ground curves away from it.
         object.traverse(child => {
@@ -96,9 +115,15 @@ export default class GlbVisualComponent extends Component {
     public destroy(): void {
         this.destroyed = true;
 
+        // Materials are safe to dispose here since load() now clones one private set per
+        // instance (see that method's own doc) — this can no longer break some OTHER live
+        // instance still rendering with what used to be the same shared Material object.
+        // Geometry is deliberately NOT disposed — it's still the raw, un-cloned buffer straight
+        // out of ModelLoaderManager's cache, shared by every instance of this model that
+        // exists or will ever be spawned; disposing it here would break every other tree/prop
+        // of the same kind still visible, or about to be.
         this._mesh?.traverse(child => {
             if (child instanceof THREE.Mesh) {
-                child.geometry.dispose();
                 const materials = Array.isArray(child.material) ? child.material : [child.material];
                 materials.forEach(material => material.dispose());
             }

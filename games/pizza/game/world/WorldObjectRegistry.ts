@@ -26,6 +26,21 @@
 // object just means "whatever MainPlayer's own default position already
 // is" — see getPlayerStart()'s own doc.
 //
+// A "spawner" object is an AREA (rect, ellipse, or freehand polygon — a
+// level designer's choice per object, all three read here) instead of a
+// point/rect placement — e.g. "animalSpawner1", a polygon drawn on
+// mapSettings. Unlike every other type bucketed by (type, id) above, a
+// spawner's whole shape geometry (not just its center) is what callers need,
+// since something spawning INSIDE it (see ShapeResourceSpawner.ts) has to
+// pick a random point that actually lands within the drawn area — a plain
+// center+width/depth rect wouldn't capture an irregular polygon's real
+// footprint. Kept as its OWN map (getShape()/getAllShapes()), parsed
+// alongside the normal (type, id) bucketing above (a spawner object still
+// gets a degenerate zero-size entry in that bucket too, harmlessly unused)
+// rather than replacing it, so nothing already reading `byType`/get()
+// changes behavior. See SpawnerShape's own doc for how each Tiled draw tool
+// maps to a shape kind, and ShapeResourceSpawner.ts for the one consumer.
+//
 // A "waypoint" object is a point (Tiled ellipse, zero width/height) marking
 // one stop on a walked PATH — it carries "order" (an int, where the path
 // runs LOWEST-to-highest, index 0 conventionally right next to whatever it
@@ -57,6 +72,9 @@ const DROPPER_TYPE = 'dropper';
 /** The custom property (NOT "id") a dropper uses to name what it's a trigger area FOR — e.g. a BuildingId. */
 const DROPPER_TARGET_PROPERTY = 'target';
 
+/** The "type" custom property value marking a spawner AREA object — see this file's own doc. */
+const SPAWNER_TYPE = 'spawner';
+
 /** The "id" custom property value marking the player-start point — see this file's own doc. */
 const PLAYER_START_ID = 'playerStart';
 
@@ -76,6 +94,30 @@ export interface WorldObjectPlacement {
     rotationDeg: number;
 }
 
+/**
+ * One spawner AREA's world-space geometry — see this file's own doc for why a spawner needs
+ * its full shape, not just a center point. `kind` follows straight from which Tiled draw tool
+ * made the object: a polygon object (obj.polygon set) -> 'polygon'; an ellipse object
+ * (obj.ellipse === true) -> 'circle'; anything else (a plain drawn rectangle) -> 'rect'.
+ * Rotation is honored for 'polygon' (each vertex rotated the same way objectToWorldRect()
+ * rotates a rect's center) but NOT for 'circle'/'rect' — a rotated circle is still the same
+ * circle, and a rotated rect spawner is treated as its unrotated axis-aligned bounds, which is
+ * an acceptable simplification for a random-point-inside sampler (see
+ * ShapeResourceSpawner.ts's own doc).
+ */
+export interface SpawnerShape {
+    kind: 'polygon' | 'circle' | 'rect';
+    /** World-space centroid/center — always present regardless of kind. */
+    center: { x: number; z: number };
+    /** World-space vertices, in drawn order — 'polygon' only. */
+    points?: { x: number; z: number }[];
+    /** World-units radius — 'circle' only. */
+    radius?: number;
+    /** World-units half-extents from `center` — 'rect' only. */
+    halfWidth?: number;
+    halfDepth?: number;
+}
+
 /** One stop on a waypoint path — see this file's own doc and getWaypoints(). */
 export interface WaypointPlacement {
     /** This waypoint's position within its path — getWaypoints() always returns these sorted ascending, so index 0 of the returned array IS order 0 regardless of the order objects were drawn/exported in. */
@@ -91,6 +133,8 @@ export default class WorldObjectRegistry {
     private readonly dropperPlacementsByTarget = new Map<string, WorldObjectPlacement>();
     /** target (a waypoint's "target" custom property, e.g. a queue id) -> every waypoint drawn for that path, sorted ascending by order once the constructor finishes — see getWaypoints(). */
     private readonly waypointsByTarget = new Map<string, WaypointPlacement[]>();
+    /** id -> that spawner object's full world-space shape — see SpawnerShape's own doc and getShape()/getAllShapes(). */
+    private readonly shapesById = new Map<string, SpawnerShape>();
     /** The map's single "playerStart" point, if drawn — see this file's own doc and getPlayerStart(). */
     private playerStartPlacement?: WorldObjectPlacement;
 
@@ -153,6 +197,15 @@ export default class WorldObjectRegistry {
             }
             bucket.set(id, placement);
 
+            if (type === SPAWNER_TYPE) {
+                const shape = this.readSpawnerShape(obj, tileDefs.tileSize, worldUnitsPerTile);
+                this.shapesById.set(id, shape);
+                console.log(
+                    `  - spawner "${id}" -> kind=${shape.kind} center=(${shape.center.x.toFixed(2)}, ${shape.center.z.toFixed(2)})` +
+                    (shape.kind === 'polygon' ? ` points=${shape.points!.length}` : shape.kind === 'circle' ? ` radius=${shape.radius!.toFixed(2)}` : ` halfWidth=${shape.halfWidth!.toFixed(2)} halfDepth=${shape.halfDepth!.toFixed(2)}`),
+                );
+            }
+
             if (type === DROPPER_TYPE) {
                 const target = getObjectProperty(obj, DROPPER_TARGET_PROPERTY);
                 if (!target) {
@@ -170,6 +223,39 @@ export default class WorldObjectRegistry {
         for (const waypoints of this.waypointsByTarget.values()) {
             waypoints.sort((a, b) => a.order - b.order);
         }
+    }
+
+    /**
+     * Converts a "spawner"-type TiledObject to its full world-space SpawnerShape — see that
+     * interface's own doc for the kind-selection rule and rotation caveat. Mirrors
+     * objectToWorldRect()'s pixel->world `scale` and rotation math (TileMapConfig.ts's own
+     * doc), just applied per-vertex for a polygon instead of once for a rect's center.
+     */
+    private readSpawnerShape(obj: TiledObject, tileSizePx: number, worldUnitsPerTile: number): SpawnerShape {
+        const scale = worldUnitsPerTile / tileSizePx;
+
+        if (obj.polygon && obj.polygon.length > 0) {
+            const rotationRad = (obj.rotation * Math.PI) / 180;
+            const cos = Math.cos(rotationRad);
+            const sin = Math.sin(rotationRad);
+
+            const points = obj.polygon.map(p => {
+                const rotatedX = p.x * cos - p.y * sin;
+                const rotatedY = p.x * sin + p.y * cos;
+                return { x: (obj.x + rotatedX) * scale, z: (obj.y + rotatedY) * scale };
+            });
+            const centroid = points.reduce((sum, p) => ({ x: sum.x + p.x / points.length, z: sum.z + p.z / points.length }), { x: 0, z: 0 });
+
+            return { kind: 'polygon', center: centroid, points };
+        }
+
+        if (obj.ellipse) {
+            const rect = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+            return { kind: 'circle', center: { x: rect.x, z: rect.z }, radius: (rect.width + rect.depth) / 4 };
+        }
+
+        const rect = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+        return { kind: 'rect', center: { x: rect.x, z: rect.z }, halfWidth: rect.width / 2, halfDepth: rect.depth / 2 };
     }
 
     /** Reads one waypoint object's "target"/"order" and appends it to that target's path — see this file's own doc. Warns and skips if either custom property is missing (a waypoint with no target/order can't be placed on any path at all). */
@@ -232,6 +318,16 @@ export default class WorldObjectRegistry {
     /** Every waypoint drawn for `target`'s path, sorted ascending by order (already sorted once at construction — see the constructor's own doc) — index 0 IS order 0. Empty array if `target` has no waypoints at all; callers (QuestGiverEntity.ts) treat fewer than 2 as "no usable path" themselves. */
     public getWaypoints(target: string): readonly WaypointPlacement[] {
         return this.waypointsByTarget.get(target) ?? [];
+    }
+
+    /** The world-space shape (see SpawnerShape's own doc) drawn for spawner `id` — e.g. "animalSpawner1" — or undefined if no such spawner object exists on the map. */
+    public getShape(id: string): SpawnerShape | undefined {
+        return this.shapesById.get(id);
+    }
+
+    /** Every spawner id -> shape found on the map — a fresh copy, same "no accidental live-state mutation" convention as getAllOfType(). */
+    public getAllShapes(): Map<string, SpawnerShape> {
+        return new Map(this.shapesById);
     }
 
     /** The map's "playerStart" point (see this file's own doc), or undefined if the level designer hasn't drawn one — the caller (PizzaScene) falls back to MainPlayer's own default position in that case. */

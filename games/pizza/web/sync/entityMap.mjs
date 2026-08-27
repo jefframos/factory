@@ -45,16 +45,16 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'GATE_CONFIG',
         kind: 'enumRecord',
         enumName: 'GateId',
-        managedKeys: ['name', 'requirement', 'view', 'frame', 'viewRotationOffsetDeg', 'viewScaleMultiplier'],
-        optionalKeys: ['view', 'frame', 'viewRotationOffsetDeg', 'viewScaleMultiplier'],
+        managedKeys: ['name', 'requirement', 'view', 'frame', 'viewRotationOffsetDeg', 'viewScaleMultiplier', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount'],
+        optionalKeys: ['view', 'frame', 'viewRotationOffsetDeg', 'viewScaleMultiplier', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount'],
     },
     buildings: {
         file: path.join(GAME_DIR, 'data', 'BuildingTypes.ts'),
         exportName: 'BUILDING_CONFIG',
         kind: 'enumRecord',
         enumName: 'BuildingId',
-        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid'],
-        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid'],
+        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid', 'updateParticleEffectId', 'updateParticleCount'],
+        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid', 'updateParticleEffectId', 'updateParticleCount'],
         // BuildingLevelConfig also carries a `mesh` field (per-level placeholder art) that
         // this editor doesn't manage — a plain wholesale replacement of the `levels` array
         // (what every OTHER list field in this map gets, since none of their items have
@@ -86,9 +86,11 @@ export const ENTITY_SOURCE_MAP = {
         // AssetLibraryKey the way a resource/provider is, it's a one-off placement) — see
         // CraftTypes.ts's own doc on each field. `toolId` is a plain string reference into
         // TOOL_LIBRARY, resolved at runtime by CraftZone.createTableMesh(), not an enum value —
-        // no ENUM_VALUE_FIELDS entry needed for it.
-        managedKeys: ['name', 'recipes', 'destroyOnComplete', 'appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset', 'frame', 'solid'],
-        optionalKeys: ['appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset', 'frame', 'solid'],
+        // no ENUM_VALUE_FIELDS entry needed for it. `particleEffectId` is likewise a plain
+        // string reference, into PARTICLE_REGISTRY this time (see the `particleEffects`
+        // mapping below) — resolved at runtime by CraftZone.awake()'s ParticleEmitterComponent.
+        managedKeys: ['name', 'recipes', 'destroyOnComplete', 'appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset', 'frame', 'solid', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount'],
+        optionalKeys: ['appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset', 'frame', 'solid', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount'],
     },
     // A RESOURCE is the bankable item (Wood/Stone/Berries/Bark/Pebble/GrassFiber) — what
     // ends up in BackpackStorage. What actually PRODUCES one is a separate concern — see
@@ -120,8 +122,8 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'PROVIDER_CONFIG',
         kind: 'enumRecord',
         enumName: 'ProviderType',
-        managedKeys: ['label', 'action', 'maxLife', 'amountPerGather', 'respawnSec', 'drops', 'solid'],
-        optionalKeys: ['solid'],
+        managedKeys: ['label', 'action', 'maxLife', 'amountPerGather', 'respawnSec', 'drops', 'solid', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount'],
+        optionalKeys: ['solid', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount'],
         // Same reasoning as Resources' own externalFields — a provider's world appearance
         // lives in AssetLibraryRegistry.ts, keyed by the SAME id as the provider (see
         // ProviderRegistry.ts's resolveProviderAssetKey() — a plain identity mapping).
@@ -150,6 +152,15 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'DYNAMIC_RESOURCE_PLACEMENTS',
         kind: 'array',
         managedKeys: ['resourceType', 'spawnerTileType', 'density', 'minDistance', 'checkIntervalSec'],
+    },
+    // Sibling to dynamicResourcePlacements above — same 'array' sync (see syncArray()'s own
+    // doc), just against ShapeResourceTypes.ts/SHAPE_RESOURCE_PLACEMENTS, keyed by shapeId
+    // (a "spawner"-type object's "id" on the map's mapSettings layer) instead of spawnerTileType.
+    shapeResourcePlacements: {
+        file: path.join(GAME_DIR, 'world', 'ShapeResourceTypes.ts'),
+        exportName: 'SHAPE_RESOURCE_PLACEMENTS',
+        kind: 'array',
+        managedKeys: ['resourceType', 'shapeId', 'count', 'minDistance', 'checkIntervalSec'],
     },
     queues: {
         file: path.join(GAME_DIR, 'data', 'QueueTypes.ts'),
@@ -239,5 +250,20 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'LOOT_TABLE_CONFIG',
         kind: 'partialRecord',
         managedKeys: ['possibleTasks'],
+    },
+    // Reusable 2D particle-emitter presets (see ParticleRegistry.ts's own doc) — open-ended by
+    // key, same shape as tools/assetLibrary/entityViews. Every field on ParticleEffectDescriptor
+    // is managed; there's no unmanaged visual/3D sibling data here the way tools/assetLibrary
+    // have, so no protectEntries/listMerge needed.
+    particleEffects: {
+        file: path.join(GAME_DIR, 'vfx', 'ParticleRegistry.ts'),
+        exportName: 'PARTICLE_REGISTRY',
+        kind: 'partialRecord',
+        managedKeys: ['name', 'texture', 'color', 'blendMode', 'fadeInSec', 'fadeOutSec', 'lifetimeSec', 'sizeMin', 'sizeMax', 'riseSpeedMin', 'riseSpeedMax', 'spreadRadius', 'maxOpacity', 'offset', 'burstSpeedMin', 'burstSpeedMax', 'gravity'],
+        // burstSpeedMin/burstSpeedMax/gravity are the only genuinely optional fields on
+        // ParticleEffectDescriptor (see that interface's own doc) — an ambient-only effect like
+        // craftingMyst never sets them, and this list is what tells syncToSource.mjs a MISSING
+        // one means "actually delete it" rather than "this mirror predates the field."
+        optionalKeys: ['burstSpeedMin', 'burstSpeedMax', 'gravity'],
     },
 };

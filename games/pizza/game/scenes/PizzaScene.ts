@@ -28,6 +28,7 @@
 
 import { ThreeScene } from 'core/scene/ThreeScene';
 import * as THREE from 'three';
+import { ParticleSystem } from '../vfx/ParticleSystem';
 import gsap from 'gsap';
 // import { DEFAULT_START_VALUE } from '../ClogConstants';
 // import { PlayerEntity } from '../entities/PlayerEntity';
@@ -62,6 +63,7 @@ import WorldManager from '../world/WorldManager';
 import WorldObjectRegistry from '../world/WorldObjectRegistry';
 import WorldSpawner from '../world/WorldSpawner';
 import DynamicResourceSpawner from '../world/DynamicResourceSpawner';
+import ShapeResourceSpawner from '../world/ShapeResourceSpawner';
 import UIService from '../ui/UIService';
 import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { BackpackStorage } from '../data/BackpackStorage';
@@ -231,6 +233,9 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     /** Scatters loose, dynamically-spawned resources (currently just the test "bark") across worldSpawner's own clusters — see DynamicResourceSpawner.ts/DynamicResourceTypes.ts. */
     private readonly dynamicResourceSpawner = new DynamicResourceSpawner(this.world, this.threeScene, this.screenHost, this.worldSpawner);
 
+    /** Sibling to dynamicResourceSpawner — scatters loose resources inside hand-drawn "spawner" AREA objects (e.g. "animalSpawner1") instead of a painted tile cluster — see ShapeResourceSpawner.ts/ShapeResourceTypes.ts. */
+    private readonly shapeResourceSpawner = new ShapeResourceSpawner(this.world, this.threeScene, this.screenHost, this.worldObjects);
+
     /** Every live CraftZone, keyed by craft id — see setupCraftTables()/resetCraftingProgress()'s own doc for why this has to be tracked rather than just re-derived from the map each time. */
     private readonly craftZones = new Map<string, CraftZone>();
 
@@ -317,6 +322,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         const sun = new THREE.DirectionalLight(0xffffff, 1.0);
         sun.position.set(5, 10, 5);
         this.threeScene.add(sun);
+
+        ParticleSystem.init(this.threeScene);
 
         this.worldManager.buildGround();
         //this.setupTestBox();
@@ -473,6 +480,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             'Resources',
         );
         DevGuiManager.instance.addButton(
+            'Clear Shape Resources',
+            () => void this.shapeResourceSpawner.resetAll(),
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
             'Clear Player Position',
             () => void PlayerPositionStorage.clearAll(),
             'Resources',
@@ -503,6 +515,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 void ShopUpgradeStorage.clearAll();
                 void this.resetCraftingProgress();
                 void this.dynamicResourceSpawner.resetAll();
+                void this.shapeResourceSpawner.resetAll();
                 void PlayerPositionStorage.clearAll();
             },
             'Resources',
@@ -601,6 +614,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         if (modelRefs.length > 0) {
             ModelSnapshotTool.settings.selectedModelRef = modelRefs[0];
         }
+        const groups = ModelSnapshotTool.listGroups();
+        if (groups.length > 0) {
+            ModelSnapshotTool.settings.selectedGroup = groups[0];
+        }
 
         DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['pixelsPerWorldUnit'], [1, 64], 'Pixels Per World Unit', 'Model Snapshots');
 
@@ -623,6 +640,19 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
         DevGuiManager.instance.addButton('Snapshot All Models', () => {
             void ModelSnapshotTool.snapshotAll();
+        }, 'Model Snapshots');
+
+        DevGuiManager.instance.addDropdown(
+            ModelSnapshotTool.settings,
+            'selectedGroup',
+            groups,
+            () => { /* value already written straight into settings.selectedGroup */ },
+            'Group To Snapshot',
+            'Model Snapshots',
+        );
+
+        DevGuiManager.instance.addButton('Snapshot Group', () => {
+            void ModelSnapshotTool.snapshotGroup(ModelSnapshotTool.settings.selectedGroup);
         }, 'Model Snapshots');
     }
 
@@ -1161,6 +1191,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.worldManager.update(playerPosition, delta);
         // Independent of the above — see DynamicResourceSpawner.ts's own doc.
         this.dynamicResourceSpawner.update(playerPosition, delta);
+        this.shapeResourceSpawner.update(playerPosition, delta);
 
         this.updateStablePlayerPosition(delta, playerPosition);
 
@@ -1295,6 +1326,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // and that component exists at all — harmless no-op until then).
         this.world.update(delta);
         this.uiService.update();
+        ParticleSystem.update(delta);
 
         super.update(delta);
     }
@@ -1305,6 +1337,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.world.remove(this.mainPlayer);
         this.worldManager.destroy();
         this.dynamicResourceSpawner.destroy();
+        this.shapeResourceSpawner.destroy();
         this.loadingSpinner?.destroy();
         this.uiService.destroy();
         super.destroy();

@@ -196,7 +196,9 @@ export class Game {
         Game.deltaTime = deltaSeconds;
 
         // --- Fixed Update Accumulator Logic ---
-        this.accumulator += deltaMS;
+        // Clamp catch-up after a long gap (e.g. tab backgrounded for minutes) so we don't
+        // spiral into thousands of synchronous fixedUpdate() calls trying to replay lost time.
+        this.accumulator += Math.min(deltaMS, Game._fixedDeltaTime * 5);
 
         // Run as many fixed updates as needed to "catch up" to real time
         // We pass the fixed step in seconds (e.g., 0.01666 for 60fps)

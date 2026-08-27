@@ -68,6 +68,24 @@ export function readMapObjectIds(mapFilePath) {
     return { byType, error: null };
 }
 
+/** Matches WorldObjectRegistry's SPAWNER_TYPE ("spawner") exactly — the "type" custom property value marking a spawner AREA object (rect/ellipse/polygon) on mapSettings, as opposed to WorldSpawner's own unrelated "spawnerLayer" TILE clusters below. */
+const SPAWNER_OBJECT_TYPE = 'spawner';
+
+/**
+ * Every "id" custom property drawn on a "spawner"-type mapSettings object (e.g.
+ * "animalSpawner1") — backs the Shape Resources tab's '$spawnerShapeIds' virtual select
+ * source, same "ask the real map, not any tab's own data" reasoning readSpawnerTileTypes()
+ * uses. Reuses readMapObjectIds() (already buckets by type/id) rather than re-parsing the
+ * map a second time.
+ */
+export function readSpawnerShapeIds(mapFilePath) {
+    const { byType, error } = readMapObjectIds(mapFilePath);
+    if (error) {
+        return { shapeIds: [], error };
+    }
+    return { shapeIds: [...(byType[SPAWNER_OBJECT_TYPE] ?? [])].sort(), error: null };
+}
+
 /** Matches WorldSpawner.SPAWNER_LAYER_NAME_FILTER exactly — see that file's own doc (substring match, not exact, so "spawnerLayer"/"spawnerLayer2"/etc. all count). */
 const SPAWNER_LAYER_NAME_FILTER = 'spawnerLayer';
 

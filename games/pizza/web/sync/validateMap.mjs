@@ -19,7 +19,11 @@
 //    auto-discovery — included anyway for symmetry/future-proofing.
 //
 // Resources/actions/items/tools/dynamicResourcePlacements have no Tiled
-// placement concept at all and are never checked here.
+// placement concept at all and are never checked here. shapeResourcePlacements
+// IS checked, unlike its dynamicResourcePlacements sibling — a `shapeId`
+// pointing at nothing drawn on the map means that placement silently spawns
+// nothing at all (see ShapeResourceSpawner.tryFillDensity()'s own console.warn),
+// exactly the kind of quiet-typo mismatch this file exists to catch.
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,6 +39,10 @@ const MAP_CHECKED_ENTITIES = {
     queues: { mapType: 'queue', configIds: data => Object.keys(data.byId ?? {}), missingOnMapSeverity: 'info' },
     shops: { mapType: 'shop', configIds: data => Object.keys(data), missingOnMapSeverity: 'error' },
     crafting: { mapType: 'craft', configIds: data => Object.keys(data), missingOnMapSeverity: 'error' },
+    // `configIds` collects every placement's `shapeId` (not the array's own indices — a
+    // shapeResourcePlacements entry has no id of its own, see ShapeResourceTypes.ts) —
+    // deduped via Set since more than one placement can legitimately share the same shape.
+    shapeResourcePlacements: { mapType: 'spawner', configIds: data => [...new Set(data.map(p => p.shapeId).filter(Boolean))], missingOnMapSeverity: 'error' },
 };
 
 /**

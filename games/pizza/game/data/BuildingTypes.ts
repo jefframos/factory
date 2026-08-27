@@ -76,6 +76,10 @@ export interface BuildingConfig {
     frame?: FrameName;
     /** 0-1 fraction of this building's own deposit-trigger footprint that becomes a SOLID collider blocking the player — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default for every building until a designer opts one in) means no solid collider at all — unchanged walk-through behavior from before this field existed. */
     solid?: number;
+    /** Optional one-shot particle burst fired every time this building levels up (see BuildingZone.playLevelUpSequence()) — the "update" slot in the common particleEffectId/updateParticleEffectId/destroyParticleEffectId trio every entity config now carries (see ParticleRegistry.ts). undefined means no burst at all. */
+    updateParticleEffectId?: string;
+    /** How many particles the burst above launches — ignored if updateParticleEffectId isn't set. undefined falls back to a small default (see BuildingZone.playLevelUpSequence()). */
+    updateParticleCount?: number;
 }
 
 export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {

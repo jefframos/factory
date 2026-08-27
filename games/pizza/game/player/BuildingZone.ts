@@ -52,6 +52,7 @@ import { CameraFocusHost } from '../camera/CameraFocusHost';
 import { WorldProgressionHost } from '../camera/WorldProgressionHost';
 import { wait } from '../utils/GsapUtils';
 import MainPlayer from './MainPlayer';
+import { ParticleSystem } from '../vfx/ParticleSystem';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
@@ -78,6 +79,8 @@ const FLY_IN_STAGGER_SEC = 0.12;
 /** How far above its resting height the upgraded mesh starts before dropping in — see replaceBuildingMesh(). */
 const MESH_DROP_START_HEIGHT = 3;
 const MESH_DROP_DURATION_SEC = 0.7;
+/** Fallback for BuildingConfig.updateParticleCount when a building sets updateParticleEffectId but not its own count. */
+const DEFAULT_UPDATE_PARTICLE_COUNT = 24;
 
 /** A separate deposit-trigger rect, in WORLD space — see the constructor's `triggerArea` param doc. */
 export interface BuildingTriggerArea {
@@ -542,6 +545,16 @@ export default class BuildingZone extends Entity {
     private async playLevelUpSequence(level: number): Promise<void> {
         this.spawnLevelUpPopup(level);
         this.replaceBuildingMesh(level);
+
+        // The "update" particle slot (see BuildingConfig.updateParticleEffectId's own doc) —
+        // fired right here, the instant the new level's mesh actually drops in, same "at the
+        // real visual moment, not some later lifecycle callback" reasoning as Gate's own
+        // destroyParticleEffectId (see Gate.collapseMesh()'s own doc).
+        const config = BUILDING_CONFIG[this.buildingId];
+        if (config.updateParticleEffectId) {
+            const burstOrigin = this.transform.position.clone().add(CAMERA_FOCUS_HEIGHT_OFFSET);
+            ParticleSystem.burst(config.updateParticleEffectId, burstOrigin, config.updateParticleCount ?? DEFAULT_UPDATE_PARTICLE_COUNT);
+        }
 
         if (this.cameraFocusHost) {
             const focusTarget = this.transform.position.clone().add(CAMERA_FOCUS_HEIGHT_OFFSET);

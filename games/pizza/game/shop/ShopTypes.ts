@@ -138,7 +138,7 @@ export const SHOP_CONFIG_BY_ID: Partial<Record<string, ShopConfig>> = {
                 "hitIntervalSec": 0.4
             }
         ],
-        "popupBobOffset": 1,
+        "popupBobOffset": 2,
         "baseView": "shop1View",
         "solid": 0.5
     },

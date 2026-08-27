@@ -1,14 +1,14 @@
 {
     "shop1View": {
         "models": [
-            "Props.BuildingStructure"
+            "Tools.Anvil"
         ],
         "offset": [
             0,
             0,
             0
         ],
-        "scale": 2,
+        "scale": 1.5,
         "rotationDeg": 0
     },
     "tower2view": {

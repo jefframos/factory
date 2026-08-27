@@ -55,6 +55,7 @@ export class ModelSnapshotTool {
     public static readonly settings = {
         pixelsPerWorldUnit: 32,
         selectedModelRef: '',
+        selectedGroup: '',
     };
 
     private static renderer: THREE.WebGLRenderer | null = null;
@@ -95,6 +96,17 @@ export class ModelSnapshotTool {
             }
         }
         return refs;
+    }
+
+    /** Every top-level MODELS group name (e.g. "Trees", "Rocks") — the unit `snapshotGroup()` exports as a folder. */
+    public static listGroups(): string[] {
+        return Object.keys(MODELS as Record<string, Record<string, ModelDefinition>>);
+    }
+
+    /** Every "Group.Key" ref belonging to a single MODELS group, in the same order listModelRefs() would produce them. */
+    public static listModelRefsInGroup(group: string): string[] {
+        const groupEntries = (MODELS as Record<string, Record<string, ModelDefinition> | undefined>)[group];
+        return groupEntries ? Object.keys(groupEntries).map(key => `${group}.${key}`) : [];
     }
 
     /** "Group.Key" -> the actual ModelDefinition, or undefined if either half doesn't exist on MODELS. */
@@ -235,6 +247,19 @@ export class ModelSnapshotTool {
     /** "Snapshot All Models" — every entry in MODELS, one PNG each. */
     public static async snapshotAll(): Promise<void> {
         for (const modelRef of this.listModelRefs()) {
+            await this.snapshotOne(modelRef);
+            await new Promise(resolve => setTimeout(resolve, this.BATCH_DELAY_MS));
+        }
+    }
+
+    /** "Snapshot Group" — every entry under a single MODELS group (e.g. all of "Trees"), one PNG each. */
+    public static async snapshotGroup(group: string): Promise<void> {
+        const modelRefs = this.listModelRefsInGroup(group);
+        if (modelRefs.length === 0) {
+            console.warn('ModelSnapshotTool: no models found for group', group);
+            return;
+        }
+        for (const modelRef of modelRefs) {
             await this.snapshotOne(modelRef);
             await new Promise(resolve => setTimeout(resolve, this.BATCH_DELAY_MS));
         }

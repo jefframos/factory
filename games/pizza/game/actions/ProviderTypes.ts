@@ -65,6 +65,12 @@ export interface ProviderConfig {
      * "stone" deposit yield mostly stone with an occasional pebble.
      */
     drops: ResourceDropEntry[];
+    /** Optional continuous ambient particle effect (see ParticleRegistry.ts — PARTICLE_REGISTRY) this node emits for as long as it's NOT depleted — same "common to every entity" slot CraftTableConfig/GateConfig carry, wired via ParticleEmitterComponent in ResourceNode.awake() and toggled off/on by deplete()/respawn(). undefined means no particles at all. */
+    particleEffectId?: string;
+    /** Optional one-shot particle burst fired the instant this node is fully harvested (see ResourceNode.deplete()) — e.g. leaves scattering off a felled tree. undefined means no burst at all. */
+    destroyParticleEffectId?: string;
+    /** How many particles the burst above launches — ignored if destroyParticleEffectId isn't set. undefined falls back to a small default (see ResourceNode.deplete()). */
+    destroyParticleCount?: number;
 }
 
 export const PROVIDER_CONFIG: Record<ProviderType, ProviderConfig> = {
@@ -81,6 +87,8 @@ export const PROVIDER_CONFIG: Record<ProviderType, ProviderConfig> = {
                 "weight": 1
             }
         ],
+        "solid": 0.5,
+        "destroyParticleEffectId": "treeLeafBurst"
     },
     [ProviderType.BerryBush]: {
         action: ActionType.Gather,

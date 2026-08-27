@@ -2,11 +2,22 @@
     "axe": {
         "label": "Axe",
         "icon": "woodcutters-axe",
-        "models": ["Tools.Axe"]
+        "models": [
+            "Tools.Axe"
+        ]
     },
     "pickaxe": {
         "label": "Pickaxe",
         "icon": "mining-pickaxe",
-        "models": ["Tools.Pickaxe"]
+        "models": [
+            "Tools.Pickaxe"
+        ]
+    },
+    "rope": {
+        "models": [
+            "Tools.RopeBundleA"
+        ],
+        "label": "Rope",
+        "icon": "rope-coil"
     }
 }

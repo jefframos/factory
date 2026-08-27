@@ -130,6 +130,15 @@ export interface TiledObject {
      * MeshLayerSpawner.ts's own conversion.
      */
     gid?: number;
+    /**
+     * Present ONLY on a polygon object (Tiled's polygon draw tool) — every vertex, in PIXEL
+     * space, LOCAL to (obj.x, obj.y) (i.e. vertex world position is obj.x + point.x,
+     * obj.y + point.y before any rotation) — see WorldObjectRegistry.ts's shape-spawner
+     * reading, the one consumer.
+     */
+    polygon?: { x: number; y: number }[];
+    /** True only on an ellipse object (Tiled's ellipse/circle draw tool) — width/height give its bounding box, anchored at (x, y) same as a plain rectangle. See WorldObjectRegistry.ts's shape-spawner reading. */
+    ellipse?: boolean;
 }
 
 /** Reads a named STRING custom property off a TiledObject (see its own doc) — undefined if that object has no property by this name. Coerces to a string even if Tiled happened to export a non-"string"-typed property under this name, so existing callers (all of which expect a string, e.g. an id/type/target) keep their original signature. */

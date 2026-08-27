@@ -28,6 +28,7 @@ import { QueueStorage } from './game/data/QueueStorage';
 import { ItemStorage } from './game/crafting/ItemStorage';
 import { CraftStorage } from './game/crafting/CraftStorage';
 import { DynamicResourceStorage } from './game/world/DynamicResourceStorage';
+import { ShapeResourceStorage } from './game/world/ShapeResourceStorage';
 import { ShopUpgradeStorage } from './game/shop/ShopUpgradeStorage';
 import { PlayerPositionStorage } from './game/data/PlayerPositionStorage';
 import { Localization } from './game/i18n/Localization';
@@ -86,6 +87,7 @@ export default class MyGame extends Game {
             await ItemStorage.load();
             await CraftStorage.load();
             await DynamicResourceStorage.load();
+            await ShapeResourceStorage.load();
             await PlayerPositionStorage.load();
             ShopUpgradeStorage.reapplyAllShopUpgrades();
             await Localization.load();

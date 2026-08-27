@@ -45,6 +45,8 @@ import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
 import BoxVisualComponent from '../components/BoxVisualComponent';
 import GlbVisualComponent from '../components/GlbVisualComponent';
+import ParticleEmitterComponent from '../components/ParticleEmitterComponent';
+import ParticleBurstOnDestroyComponent from '../components/ParticleBurstOnDestroyComponent';
 import { applyFloatAnimation } from '../components/FloatAnimation';
 import { spawnFlyingResourceIcon } from '../components/FlyingResourceIcon';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
@@ -88,6 +90,11 @@ const RESULT_ICON_SIZE = 48;
 const ICON_BODY_GAP = 4;
 const REQ_SLOT_SIZE = 56;
 const REQ_SLOT_GAP = 10;
+/** Height above the table's own origin `particleEffectId`'s emitter drifts up from — roughly table-top height, same value regardless of whether this table ends up rendering the placeholder box or a real GLB model. */
+const PARTICLE_EMITTER_HEIGHT = 1.4;
+const PARTICLE_SPAWN_RATE_PER_SEC = 4;
+/** Fallback for CraftTableConfig.destroyParticleCount when a table sets destroyParticleEffectId but not its own count. */
+const DEFAULT_DESTROY_PARTICLE_COUNT = 24;
 
 export default class CraftZone extends Entity {
     private readonly screenHost: ScreenAnchorHost;
@@ -196,6 +203,22 @@ export default class CraftZone extends Entity {
         ));
 
         this.createTableMesh();
+
+        if (this.config.particleEffectId) {
+            this.addComponent(new ParticleEmitterComponent(
+                this.config.particleEffectId,
+                PARTICLE_SPAWN_RATE_PER_SEC,
+                new THREE.Vector3(0, PARTICLE_EMITTER_HEIGHT, 0),
+            ));
+        }
+
+        if (this.config.destroyParticleEffectId) {
+            this.addComponent(new ParticleBurstOnDestroyComponent(
+                this.config.destroyParticleEffectId,
+                this.config.destroyParticleCount ?? DEFAULT_DESTROY_PARTICLE_COUNT,
+                new THREE.Vector3(0, PARTICLE_EMITTER_HEIGHT, 0),
+            ));
+        }
 
         this.resultIcon = new PIXI.Sprite();
         this.resultIcon.anchor.set(0.5, 1);

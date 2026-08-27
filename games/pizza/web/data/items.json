@@ -1,4 +1,11 @@
 {
-    "axe": { "label": "Axe" },
-    "pickaxe": { "label": "Pickaxe" }
+    "axe": {
+        "label": "Axe"
+    },
+    "pickaxe": {
+        "label": "Pickaxe"
+    },
+    "rope": {
+        "label": "Rope"
+    }
 }

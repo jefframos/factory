@@ -130,6 +130,9 @@ const ENTITY_SCHEMAS = {
         { key: 'viewRotationOffsetDeg', type: 'number', label: 'View Rotation Offset (deg, added on top of the View\'s own rotation)', optional: true },
         { key: 'viewScaleMultiplier', type: 'number', label: 'View Scale Multiplier (multiplied onto the View\'s own scale, e.g. 1.5 = 50% bigger)', optional: true },
         { ...FRAME_FIELD, label: 'Icon Panel Frame Override (blank = GateLock)' },
+        { key: 'particleEffectId', type: 'select', label: 'Particle Effect (ambient, while the gate stands)', source: 'particleEffects', optional: true },
+        { key: 'destroyParticleEffectId', type: 'select', label: 'Destroy Particle Effect (fires when the gate finishes collapsing)', source: 'particleEffects', optional: true },
+        { key: 'destroyParticleCount', type: 'number', label: 'Destroy Particle Count', optional: true },
     ],
     buildings: [
         { key: 'name', type: 'text', label: 'Name' },
@@ -154,6 +157,8 @@ const ENTITY_SCHEMAS = {
                 { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
             ],
         },
+        { key: 'updateParticleEffectId', type: 'select', label: 'Update Particle Effect (fires every time this building levels up)', source: 'particleEffects', optional: true },
+        { key: 'updateParticleCount', type: 'number', label: 'Update Particle Count', optional: true },
         ...POPUP_FIELDS,
     ],
     shops: [
@@ -210,6 +215,9 @@ const ENTITY_SCHEMAS = {
         { key: 'float', type: 'boolean', label: 'Float (idle up/down bob)' },
         { key: 'heightOffset', type: 'number', label: 'Height Offset (nudge the model up/down)', optional: true },
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
+        { key: 'particleEffectId', type: 'select', label: 'Particle Effect', source: 'particleEffects', optional: true },
+        { key: 'destroyParticleEffectId', type: 'select', label: 'Destroy Particle Effect (fires when a destroyOnComplete table is removed)', source: 'particleEffects', optional: true },
+        { key: 'destroyParticleCount', type: 'number', label: 'Destroy Particle Count', optional: true },
         ...POPUP_FIELDS,
     ],
     // A RESOURCE is the bankable item (Wood/Stone/Berries/Bark/Pebble/GrassFiber) — what
@@ -255,6 +263,9 @@ const ENTITY_SCHEMAS = {
                 { key: 'weight', type: 'number', label: 'Weight' },
             ],
         },
+        { key: 'particleEffectId', type: 'select', label: 'Particle Effect (ambient, while NOT depleted)', source: 'particleEffects', optional: true },
+        { key: 'destroyParticleEffectId', type: 'select', label: 'Destroy Particle Effect (fires on a full harvest)', source: 'particleEffects', optional: true },
+        { key: 'destroyParticleCount', type: 'number', label: 'Destroy Particle Count', optional: true },
     ],
     dynamicResourcePlacements: [
         { key: 'resourceType', type: 'select', label: 'Resource', source: 'resources' },
@@ -264,6 +275,17 @@ const ENTITY_SCHEMAS = {
         // readSpawnerTileTypes()), not from any tab's own data.
         { key: 'spawnerTileType', type: 'select', label: 'Spawner Tile Type', source: '$spawnerTileTypes' },
         { key: 'density', type: 'number', label: 'Density' },
+        { key: 'minDistance', type: 'number', label: 'Min Distance' },
+        { key: 'checkIntervalSec', type: 'number', label: 'Check Interval (sec)' },
+    ],
+    shapeResourcePlacements: [
+        { key: 'resourceType', type: 'select', label: 'Resource', source: 'resources' },
+        // '$spawnerShapeIds' is not a manifest tab id — app.js's getOptions() special-cases
+        // it to read from /api/spawner-shape-ids (the "id" custom property of every
+        // "spawner"-type object drawn on the map's mapSettings layer — see tiledMap.mjs's
+        // readMapObjectIds()), not from any tab's own data.
+        { key: 'shapeId', type: 'select', label: 'Spawner Shape', source: '$spawnerShapeIds' },
+        { key: 'count', type: 'number', label: 'Count (target instances inside this shape at once)' },
         { key: 'minDistance', type: 'number', label: 'Min Distance' },
         { key: 'checkIntervalSec', type: 'number', label: 'Check Interval (sec)' },
     ],
@@ -346,6 +368,35 @@ const ENTITY_SCHEMAS = {
         },
         { key: 'face', type: 'faceIcon', label: 'Face (images/non-preload)' },
         { key: 'isStarter', type: 'boolean', label: 'Starter (spawn look until the player equips a shop skin — exactly one view should have this checked)' },
+    ],
+    // Reusable 2D particle-emitter presets (see ParticleRegistry.ts's own doc) — create one
+    // here, then pick it by name wherever a "Particle Effect" field appears (e.g. the Crafting
+    // tab). One texture can back several differently-tinted/timed presets; ParticleSystem
+    // batches by texture, not by preset, so that's still one draw call regardless.
+    particleEffects: [
+        { key: 'name', type: 'text', label: 'Name' },
+        { key: 'texture', type: 'faceIcon', label: 'Texture (images/non-preload)' },
+        { key: 'color', type: 'color', label: 'Tint Color' },
+        {
+            key: 'blendMode', type: 'select', label: 'Blend Mode',
+            options: [
+                { value: 'additive', label: 'Additive (glows, brightens overlaps — magic/fire/light)' },
+                { value: 'normal', label: 'Normal (flat alpha blend — cartoonish, no overlap glow)' },
+            ],
+        },
+        { key: 'fadeInSec', type: 'number', label: 'Fade In (sec)' },
+        { key: 'fadeOutSec', type: 'number', label: 'Fade Out (sec)' },
+        { key: 'lifetimeSec', type: 'number', label: 'Lifetime (sec, fade in/out included)' },
+        { key: 'sizeMin', type: 'number', label: 'Size Min (world units)' },
+        { key: 'sizeMax', type: 'number', label: 'Size Max (world units)' },
+        { key: 'riseSpeedMin', type: 'number', label: 'Rise Speed Min (world units/sec — continuous/ambient emitters only)' },
+        { key: 'riseSpeedMax', type: 'number', label: 'Rise Speed Max (world units/sec — continuous/ambient emitters only)' },
+        { key: 'spreadRadius', type: 'number', label: 'Spread Radius (XZ, world units — continuous/ambient emitters only)' },
+        { key: 'maxOpacity', type: 'number', label: 'Max Opacity (0-1)' },
+        { key: 'offset', type: 'vector3', label: 'Offset (x, y, z — nudges on top of wherever the entity places the emitter)' },
+        { key: 'burstSpeedMin', type: 'number', label: 'Burst Speed Min (world units/sec — one-shot bursts only, e.g. on-destroy)', optional: true },
+        { key: 'burstSpeedMax', type: 'number', label: 'Burst Speed Max (world units/sec — one-shot bursts only)', optional: true },
+        { key: 'gravity', type: 'number', label: 'Gravity (world units/sec² — pulls a burst back down; one-shot bursts only)', optional: true },
     ],
     // Reusable, named task pools — create one here, then point a Quest Giver variant's "Loot
     // Table" field at it. The same table can back more than one variant.

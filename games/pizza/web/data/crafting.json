@@ -23,7 +23,8 @@
         "heightOffset": 1,
         "popupMode": "simple",
         "popupBobOffset": 1,
-        "solid": 0.5
+        "solid": 0.5,
+        "particleEffectId": "craftingMyst"
     },
     "craftPickaxe": {
         "name": "Crafting Table",
@@ -52,6 +53,33 @@
         },
         "heightOffset": 0,
         "popupMode": "simple",
-        "popupBobOffset": 0
+        "popupBobOffset": 0,
+        "particleEffectId": "craftingMyst",
+        "destroyParticleEffectId": "destroyBurst"
+    },
+    "craftRope": {
+        "recipes": [
+            {
+                "result": {
+                    "amount": 1,
+                    "item": "rope"
+                },
+                "cost": {
+                    "grassFiber": 10
+                },
+                "id": "ropeRecipe"
+            }
+        ],
+        "models": [],
+        "name": "Rope Crafting",
+        "destroyOnComplete": true,
+        "showModel": true,
+        "toolId": "rope",
+        "scale": 1,
+        "rotationDeg": 0,
+        "float": true,
+        "particleEffectId": "craftingMyst",
+        "popupBobOffset": 0,
+        "popupMode": "simple"
     }
 }

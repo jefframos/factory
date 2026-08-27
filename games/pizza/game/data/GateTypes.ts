@@ -56,6 +56,12 @@ export interface GateConfig {
     viewScaleMultiplier?: number;
     /** Overrides FrameRegistry.ts's 'GateLock' default for THIS gate's own icon panel — see PopupConfig.ts's resolvePopupFrameName()'s own doc/Gate.ts's buildLabel(). undefined uses 'GateLock'. */
     frame?: FrameName;
+    /** Optional continuous ambient particle effect (see ParticleRegistry.ts — PARTICLE_REGISTRY) drifting off this gate for as long as it stands — same "common to every entity" slot CraftTableConfig/ProviderConfig carry, wired via a plain ParticleEmitterComponent in Gate.awake(). undefined means no particles at all. */
+    particleEffectId?: string;
+    /** Optional one-shot particle burst (see ParticleRegistry.ts — PARTICLE_REGISTRY) fired the instant this gate's mesh finishes its collapse animation — see Gate.collapseMesh(). undefined means no burst at all, unchanged from before this field existed. */
+    destroyParticleEffectId?: string;
+    /** How many particles the burst above launches — ignored if destroyParticleEffectId isn't set. undefined falls back to a small default (see Gate.collapseMesh()). */
+    destroyParticleCount?: number;
 }
 
 export const GATE_CONFIG: Record<GateId, GateConfig> = {

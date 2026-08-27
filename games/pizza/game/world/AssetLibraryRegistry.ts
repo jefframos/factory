@@ -238,6 +238,12 @@ export const ASSET_LIBRARY = {
             0,
             360
         ]
+    },
+    "rope": {
+        "icon": "rope-coil",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
     }
 } satisfies Record<string, AssetLibraryEntry>;
 

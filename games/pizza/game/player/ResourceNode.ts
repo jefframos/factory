@@ -38,6 +38,8 @@ import { Layers } from '../physics/PhysicsConstants';
 import { buildSolidArea } from '../physics/SolidArea';
 import BoxVisualComponent from '../components/BoxVisualComponent';
 import GlbVisualComponent from '../components/GlbVisualComponent';
+import ParticleEmitterComponent from '../components/ParticleEmitterComponent';
+import { ParticleSystem } from '../vfx/ParticleSystem';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import { ActionTarget } from '../components/PlayerActionController';
@@ -64,6 +66,66 @@ const GAIN_POPUP_ICON_SIZE = 28;
 /** Gap between the gain popup's icon and its "+N" text. */
 const GAIN_POPUP_ICON_GAP = 4;
 
+/** ProviderConfig.particleEffectId's ambient emitter — same rate CraftZone's own ambient emitter uses. */
+const RESOURCE_PARTICLE_SPAWN_RATE_PER_SEC = 4;
+/** Roughly trunk/bush height — same idea as GAIN_POPUP_BASE_OFFSET but tuned for a particle emitter's own origin rather than a popup's. */
+const RESOURCE_PARTICLE_EMITTER_HEIGHT = 1.2;
+/** Fallback for ProviderConfig.destroyParticleCount when a provider sets destroyParticleEffectId but not its own count. */
+const DEFAULT_DESTROY_PARTICLE_COUNT = 20;
+
+/** onHit()'s shake amplitude, world units — doubled from the original 0.2/0.15 for a punchier hit; see HIT_SHAKE_DURATION_SEC for the other half of "intensity." */
+const HIT_SHAKE_AMPLITUDE_XZ = 0.4;
+const HIT_SHAKE_AMPLITUDE_Y = 0.3;
+/**
+ * onHit()'s rotation-spring kick, radians (~11°) — only x/z are kicked, never y: a
+ * GlbVisualComponent sets `object.rotation.y` once at load to the model's own yaw (see
+ * GlbVisualComponent.load()), and this spring's "rest" position is always (0, currentY, 0), so
+ * touching y here would fight that yaw instead of springing back to it.
+ */
+const HIT_ROTATION_SPRING_AMPLITUDE = 0.2;
+/** Longer than the shake's own 0.08s — an elastic ease needs the extra time to actually read as an overshoot-and-settle wobble rather than a snap. */
+const HIT_ROTATION_SPRING_DURATION_SEC = 0.5;
+/** How long the white flash (see flashWhite()) takes to fade back to the material's own emissive color. */
+const HIT_FLASH_DURATION_SEC = 0.15;
+/** Per-material snapshot of its own (pre-flash) emissive color, taken the FIRST time flashWhite() ever touches that material — not re-captured on every hit, since a hit landing mid-flash would otherwise snapshot the already-white color and the material would never fully recover its real tint. Keyed by the material object itself (WeakMap) so it's automatically garbage-collected along with the material on despawn/dispose. */
+const hitFlashOriginalEmissive = new WeakMap<THREE.Material, THREE.Color>();
+
+/** Materials with an `emissive` color to flash — MeshStandardMaterial/MeshPhysicalMaterial/MeshLambertMaterial/MeshPhongMaterial all have one; MeshBasicMaterial (and anything else) doesn't, and is silently skipped. */
+type EmissiveMaterial = THREE.Material & { emissive: THREE.Color };
+
+function hasEmissive(material: THREE.Material): material is EmissiveMaterial {
+    return 'emissive' in material && (material as EmissiveMaterial).emissive instanceof THREE.Color;
+}
+
+/** Snaps every emissive-capable material under `object` to solid white, then eases each back to its own real emissive color over HIT_FLASH_DURATION_SEC — see hitFlashOriginalEmissive's own doc for why the "real" color is captured once and reused rather than read fresh every hit. Silently does nothing to a material with no `emissive` property (e.g. a plain MeshBasicMaterial). */
+function flashWhite(object: THREE.Object3D): void {
+    object.traverse(child => {
+        if (!(child instanceof THREE.Mesh)) {
+            return;
+        }
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        for (const material of materials) {
+            if (!hasEmissive(material)) {
+                continue;
+            }
+            if (!hitFlashOriginalEmissive.has(material)) {
+                hitFlashOriginalEmissive.set(material, material.emissive.clone());
+            }
+            const original = hitFlashOriginalEmissive.get(material)!;
+
+            gsap.killTweensOf(material.emissive);
+            material.emissive.setRGB(1, 1, 1);
+            gsap.to(material.emissive, {
+                r: original.r,
+                g: original.g,
+                b: original.b,
+                duration: HIT_FLASH_DURATION_SEC,
+                ease: 'power2.out',
+            });
+        }
+    });
+}
+
 export default class ResourceNode extends Entity implements ActionTarget {
     public readonly providerType: ProviderType;
 
@@ -71,6 +133,8 @@ export default class ResourceNode extends Entity implements ActionTarget {
     /** Solid, non-trigger collider blocking the player from walking through — only created when ResourceConfig.solidRadius > 0 (see awake()). undefined for walk-over resources like Berries. */
     private solidBody?: RigidBody;
     private visual!: BoxVisualComponent | GlbVisualComponent;
+    /** Only set when ProviderConfig.particleEffectId is configured — see awake(). Disabled while depleted (deplete()) and re-enabled on respawn() so an ambient effect doesn't keep drifting off an invisible stump during the respawn cooldown. */
+    private particleEmitter?: ParticleEmitterComponent;
     /** Set while depleted; ticked in update() — see deplete()/respawn(). undefined means "available." */
     private respawnRemainingSec?: number;
     /** Remaining hit-points (see ResourceConfig.maxLife). Deliberately NOT reset when an action is cancelled — walking away mid-chop leaves the tree exactly as damaged as it was, and coming back resumes from here. Only a full harvest + respawn restores it (see respawn()). */
@@ -152,6 +216,14 @@ export default class ResourceNode extends Entity implements ActionTarget {
                 STONE_HALF_EXTENTS.clone().multiplyScalar(2), config.color,
                 new THREE.Vector3(0, STONE_HALF_EXTENTS.y, 0),
             ));
+
+        if (config.particleEffectId) {
+            this.particleEmitter = this.addComponent(new ParticleEmitterComponent(
+                config.particleEffectId,
+                RESOURCE_PARTICLE_SPAWN_RATE_PER_SEC,
+                new THREE.Vector3(0, RESOURCE_PARTICLE_EMITTER_HEIGHT, 0),
+            ));
+        }
 
         this.applyInitialState();
     }
@@ -246,7 +318,7 @@ export default class ResourceNode extends Entity implements ActionTarget {
         return true;
     }
 
-    /** Called when a hit lands on this resource — just the shake; the gain popup is triggered separately (see showResourceGainPopup()) once AutoGatherController.onHitLanded() actually knows what got credited. Skips the visual feedback (but the hit itself still counts, see applyHit()) if a Tree's glb model hasn't finished loading yet — see GlbVisualComponent's own doc. */
+    /** Called when a hit lands on this resource — the shake + white flash; the gain popup is triggered separately (see showResourceGainPopup()) once AutoGatherController.onHitLanded() actually knows what got credited. Skips the visual feedback (but the hit itself still counts, see applyHit()) if a Tree's glb model hasn't finished loading yet — see GlbVisualComponent's own doc. */
     public onHit(): void {
         if (this.visual instanceof GlbVisualComponent && !this.visual.isReady) {
             return;
@@ -256,9 +328,9 @@ export default class ResourceNode extends Entity implements ActionTarget {
         // Quick shake
         const shake = { x: 0, y: 0, z: 0 };
         gsap.to(shake, {
-            x: () => (Math.random() - 0.5) * 0.2,
-            y: () => (Math.random() - 0.5) * 0.15,
-            z: () => (Math.random() - 0.5) * 0.2,
+            x: () => (Math.random() - 0.5) * HIT_SHAKE_AMPLITUDE_XZ,
+            y: () => (Math.random() - 0.5) * HIT_SHAKE_AMPLITUDE_Y,
+            z: () => (Math.random() - 0.5) * HIT_SHAKE_AMPLITUDE_XZ,
             duration: 0.08,
             ease: 'power3.out',
             onUpdate: () => {
@@ -270,6 +342,22 @@ export default class ResourceNode extends Entity implements ActionTarget {
                 mesh.position.set(0, 0, 0);
             },
         });
+
+        // Rotation spring — kick x/z away from rest, then let an elastic ease overshoot and
+        // wobble back to 0 rather than easing straight there, so it reads as a springy recoil
+        // instead of just a bigger version of the position shake. killTweensOf guards against a
+        // hit landing mid-wobble fighting the still-running previous spring for control.
+        gsap.killTweensOf(mesh.rotation);
+        mesh.rotation.x = (Math.random() - 0.5) * HIT_ROTATION_SPRING_AMPLITUDE;
+        mesh.rotation.z = (Math.random() - 0.5) * HIT_ROTATION_SPRING_AMPLITUDE;
+        gsap.to(mesh.rotation, {
+            x: 0,
+            z: 0,
+            duration: HIT_ROTATION_SPRING_DURATION_SEC,
+            ease: 'elastic.out(1, 0.4)',
+        });
+
+        flashWhite(mesh);
     }
 
     /**
@@ -339,9 +427,21 @@ export default class ResourceNode extends Entity implements ActionTarget {
         if (this.solidBody) {
             this.world?.physics.unregister(this.solidBody);
         }
+        // No destroy burst here — this node MATERIALIZED already-depleted (see the
+        // constructor's doc), nothing was actually just harvested to celebrate.
+        if (this.particleEmitter) {
+            this.particleEmitter.enabled = false;
+        }
     }
 
     private deplete(respawnSec: number): void {
+        const config = PROVIDER_CONFIG[this.providerType];
+        if (config.destroyParticleEffectId && !(this.visual instanceof GlbVisualComponent && !this.visual.isReady)) {
+            const worldPos = new THREE.Vector3();
+            this.visual.mesh.getWorldPosition(worldPos);
+            ParticleSystem.burst(config.destroyParticleEffectId, worldPos, config.destroyParticleCount ?? DEFAULT_DESTROY_PARTICLE_COUNT);
+        }
+
         this.respawnRemainingSec = respawnSec;
         this.visual.setVisible(false);
         // See this file's own doc — PhysicsWorld doesn't consult RigidBody.enabled, so
@@ -351,6 +451,11 @@ export default class ResourceNode extends Entity implements ActionTarget {
         this.world?.physics.unregister(this.rigidBody);
         if (this.solidBody) {
             this.world?.physics.unregister(this.solidBody);
+        }
+        // A depleted stump/rock shouldn't keep drifting ambient particles while it's
+        // invisible and waiting to respawn — see respawn()'s own re-enable.
+        if (this.particleEmitter) {
+            this.particleEmitter.enabled = false;
         }
     }
 
@@ -363,6 +468,9 @@ export default class ResourceNode extends Entity implements ActionTarget {
         this.world?.physics.register(this.rigidBody);
         if (this.solidBody) {
             this.world?.physics.register(this.solidBody);
+        }
+        if (this.particleEmitter) {
+            this.particleEmitter.enabled = true;
         }
     }
 }

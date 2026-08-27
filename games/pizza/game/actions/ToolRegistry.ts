@@ -44,9 +44,9 @@ export interface ToolVisualEntry {
 
 export const TOOL_LIBRARY = {
     axe: {
-        label: 'Axe',
+        label: "Axe",
         models: [MODELS.Tools.Axe],
-        icon: 'woodcutters-axe',
+        icon: "woodcutters-axe",
         color: 0x6b4423,
         radius: 8,
         length: 100,
@@ -55,9 +55,9 @@ export const TOOL_LIBRARY = {
         rotationDeg: new THREE.Vector3(180, 0, 90),
     },
     pickaxe: {
-        label: 'Pickaxe',
+        label: "Pickaxe",
         models: [MODELS.Tools.Pickaxe],
-        icon: 'mining-pickaxe',
+        icon: "mining-pickaxe",
         color: 0x71716f,
         radius: 8,
         length: 100,
@@ -65,6 +65,17 @@ export const TOOL_LIBRARY = {
         offset: new THREE.Vector3(-20, 20, -15),
         rotationDeg: new THREE.Vector3(180, 0, 90),
     },
+    "rope": {
+        color: 0x6b4423,
+        radius: 8,
+        length: 100,
+        scale: 100,
+        offset: new THREE.Vector3(-20, 20, -15),
+        rotationDeg: new THREE.Vector3(180, 0, 90),
+        "label": "Rope",
+        "icon": "rope-coil",
+        "models": [MODELS.Tools.RopeBundleA]
+    }
 } satisfies Record<string, ToolVisualEntry>;
 
 export type ToolId = keyof typeof TOOL_LIBRARY;

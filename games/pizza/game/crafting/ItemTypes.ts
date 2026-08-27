@@ -17,6 +17,7 @@ import { getToolIcon, ToolId } from '../actions/ToolRegistry';
 export enum ItemType {
     Axe = 'axe',
     Pickaxe = 'pickaxe',
+    Rope = "rope"
 }
 
 export interface ItemConfig {
@@ -26,8 +27,12 @@ export interface ItemConfig {
 }
 
 export const ITEM_CONFIG: Record<ItemType, ItemConfig> = {
-    [ItemType.Axe]: { label: 'Axe', toolId: 'axe' },
-    [ItemType.Pickaxe]: { label: 'Pickaxe', toolId: 'pickaxe' },
+    [ItemType.Axe]: { label: "Axe", toolId: 'axe' },
+    [ItemType.Pickaxe]: { label: "Pickaxe", toolId: 'pickaxe' },
+    "rope": {
+        toolId: 'axe',
+        "label": "Rope"
+    }
 };
 
 /** `ITEM_CONFIG[type]`'s icon, as an actual texture — see ItemConfig.toolId's own doc. */

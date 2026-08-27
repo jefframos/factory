@@ -23,7 +23,9 @@
                 "resourceType": "wood",
                 "weight": 1
             }
-        ]
+        ],
+        "solid": 0.5,
+        "destroyParticleEffectId": "treeLeafBurst"
     },
     "berryBush": {
         "icon": "wild-berries",

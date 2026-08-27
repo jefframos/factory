@@ -5,6 +5,14 @@
       "assets": [
         {
           "alias": [
+            "pets"
+          ],
+          "src": [
+            "pets.webp.json"
+          ]
+        },
+        {
+          "alias": [
             "survive"
           ],
           "src": [

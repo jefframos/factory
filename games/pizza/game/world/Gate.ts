@@ -54,6 +54,8 @@ import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from './AssetLibraryRegistry';
 import { wait } from '../utils/GsapUtils';
 import ViewUtils from 'core/utils/ViewUtils';
+import { ParticleSystem } from '../vfx/ParticleSystem';
+import ParticleEmitterComponent from '../components/ParticleEmitterComponent';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(18);
 /** Extra clearance above the mesh's own top before the icon panel sits — keeps it from touching the gate's roofline. */
@@ -77,6 +79,10 @@ const REQUIREMENT_BADGE_MISSING = 'Icon_Exclamation';
 const REQUIREMENT_BADGE_MET = 'Icon_Check03_s';
 
 const COLLAPSE_DURATION_SEC = 0.7;
+/** Fallback for GateConfig.destroyParticleCount when a gate sets destroyParticleEffectId but not its own count. */
+const DEFAULT_DESTROY_PARTICLE_COUNT = 24;
+/** Spawn rate for GateConfig.particleEffectId's ambient emitter, when set — same rate CraftZone's own ambient emitter uses. */
+const GATE_PARTICLE_SPAWN_RATE_PER_SEC = 4;
 /** Camera holds on the gate a beat longer than the collapse animation itself takes, so the player sees it finish landing before the camera starts easing away. */
 const CAMERA_FOCUS_HOLD_SEC = COLLAPSE_DURATION_SEC + 0.6;
 /** Beat between the milestone actually completing and the camera/collapse/icon sequence starting — the player is already frozen (see CameraFocusHost.focusCameraOn()'s own doc on `preDelaySec`) but nothing visibly happens yet, so the moment reads as "something just landed" before the camera cuts away to show what. */
@@ -181,6 +187,14 @@ export default class Gate extends Entity {
             this.mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
             this.mesh.position.set(0, halfExtents.y, 0);
             this.transform.add(this.mesh);
+        }
+
+        if (this.config.particleEffectId) {
+            this.addComponent(new ParticleEmitterComponent(
+                this.config.particleEffectId,
+                GATE_PARTICLE_SPAWN_RATE_PER_SEC,
+                new THREE.Vector3(0, halfExtents.y, 0),
+            ));
         }
 
         const labelAnchor = new THREE.Object3D();
@@ -291,7 +305,7 @@ export default class Gate extends Entity {
         ]);
     }
 
-    /** Waits out GATE_UNLOCK_PRE_DELAY_SEC (see that constant's own doc — kept in step with focusCameraOn()'s own `preDelaySec` so the gate doesn't visibly collapse before the camera's even looking at it) before actually playing the collapse. */
+    /** Waits out GATE_UNLOCK_PRE_DELAY_SEC (see that constant's own doc — kept in step with focusCameraOn()'s own `preDelaySec` so the gate doesn't visibly collapse before the camera's even looking at it) before actually playing the collapse. Fires destroyParticleEffectId (if set) the instant the collapse finishes — deliberately here, not in Entity.destroy(), since GateManager doesn't actually remove this entity from the world until the WHOLE unlock sequence (camera return, icon fade) is done, several seconds after the mesh itself visibly vanishes; a burst tied to that later moment would land on an already-empty spot. */
     private async collapseMesh(): Promise<void> {
         await wait(GATE_UNLOCK_PRE_DELAY_SEC);
 
@@ -307,7 +321,13 @@ export default class Gate extends Entity {
                 z: 0,
                 duration: COLLAPSE_DURATION_SEC,
                 ease: 'back.in(1.7)',
-                onComplete: resolve,
+                onComplete: () => {
+                    if (this.config.destroyParticleEffectId) {
+                        const burstOrigin = this.transform.position.clone().add(new THREE.Vector3(0, this.config.mesh.size[1] / 2, 0));
+                        ParticleSystem.burst(this.config.destroyParticleEffectId, burstOrigin, this.config.destroyParticleCount ?? DEFAULT_DESTROY_PARTICLE_COUNT);
+                    }
+                    resolve();
+                },
             });
         });
     }

@@ -1296,6 +1296,30 @@
                  "y":464.25
                 }, 
                 {
+                 "height":32,
+                 "id":29,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"craftAxe"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"craft"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":-336.25,
+                 "y":464.25
+                },
+            
+                {
                  "height":64.5,
                  "id":17,
                  "name":"",
@@ -1322,8 +1346,35 @@
                  "width":64.5,
                  "x":-352,
                  "y":448
-                },
-            
+                }, 
+                {
+                 "height":64.5,
+                 "id":28,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"craftAxeDropper"
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"craftAxe"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":64.5,
+                 "x":-352,
+                 "y":448
+                }, 
                 {
                  "height":64.5,
                  "id":27,
@@ -1351,6 +1402,97 @@
                  "width":64.5,
                  "x":-32,
                  "y":464
+                }, 
+                {
+                 "height":32,
+                 "id":30,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"craftRope"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"craft"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":-336.25,
+                 "y":592.25
+                }, 
+                {
+                 "height":64.5,
+                 "id":31,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"craftRopeDropper"
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"craftRope"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":64.5,
+                 "x":-352,
+                 "y":576
+                }, 
+                {
+                 "height":0,
+                 "id":32,
+                 "name":"",
+                 "opacity":1,
+                 "polygon":[
+                        {
+                         "x":0,
+                         "y":0
+                        }, 
+                        {
+                         "x":-117.5,
+                         "y":21.5
+                        }, 
+                        {
+                         "x":-43.5,
+                         "y":136
+                        }, 
+                        {
+                         "x":40,
+                         "y":80
+                        }],
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"animalSpawner1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"spawner"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":-101.5,
+                 "y":475
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1461,7 +1603,7 @@
          "y":0
         }],
  "nextlayerid":7,
- "nextobjectid":28,
+ "nextobjectid":33,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

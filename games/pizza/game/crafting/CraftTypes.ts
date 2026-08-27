@@ -90,6 +90,12 @@ export interface CraftTableConfig {
     frame?: FrameName;
     /** 0-1 fraction of this table's own trigger footprint that becomes a SOLID collider blocking the player — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default for every table until a designer opts one in) means no solid collider at all — unchanged walk-through behavior from before this field existed. */
     solid?: number;
+    /** Optional ambient particle effect (see ParticleRegistry.ts — PARTICLE_REGISTRY) this table continuously emits from just above its own base — see CraftZone.awake(). undefined means no particles at all. */
+    particleEffectId?: string;
+    /** Optional one-shot particle burst fired the instant this table is removed — same "common to every entity" destroy slot GateConfig/ProviderConfig carry (see ParticleBurstOnDestroyComponent). Only ever fires for a `destroyOnComplete` table, since that's the only case a CraftZone entity is ever actually removed. undefined means no burst at all. */
+    destroyParticleEffectId?: string;
+    /** How many particles the burst above launches — ignored if destroyParticleEffectId isn't set. undefined falls back to a small default (see CraftZone.awake()). */
+    destroyParticleCount?: number;
 }
 
 /** Per-craft-table-id config — see this file's own doc for why (unlike QueueTypes' DEFAULT_QUEUE_CONFIG) there's no fallback for an id not listed here. */
@@ -123,7 +129,8 @@ export const CRAFT_CONFIG_BY_ID: Partial<Record<string, CraftTableConfig>> = {
         "heightOffset": 1,
         "popupMode": "simple",
         "popupBobOffset": 1,
-        "solid": 0.5
+        "solid": 0.5,
+        "particleEffectId": "craftingMyst"
     },
     "craftPickaxe": {
         "name": "Crafting Table",
@@ -152,7 +159,34 @@ export const CRAFT_CONFIG_BY_ID: Partial<Record<string, CraftTableConfig>> = {
         },
         "heightOffset": 0,
         "popupMode": "simple",
-        "popupBobOffset": 0
+        "popupBobOffset": 0,
+        "particleEffectId": "craftingMyst",
+        "destroyParticleEffectId": "destroyBurst"
+    },
+    "craftRope": {
+        "name": "Rope Crafting",
+        "recipes": [
+            {
+                "result": {
+                    "amount": 1,
+                    "item": ItemType.Rope
+                },
+                "cost": {
+                    "grassFiber": 10
+                },
+                "id": "ropeRecipe"
+            }
+        ],
+        "destroyOnComplete": true,
+        "models": [],
+        "showModel": true,
+        "toolId": "rope",
+        "scale": 1,
+        "rotationDeg": 0,
+        "float": true,
+        "popupMode": "simple",
+        "popupBobOffset": 0,
+        "particleEffectId": "craftingMyst"
     }
 };
 
