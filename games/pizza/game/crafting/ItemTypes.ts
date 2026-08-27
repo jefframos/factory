@@ -30,7 +30,12 @@ export const ITEM_CONFIG: Record<ItemType, ItemConfig> = {
     [ItemType.Axe]: { label: "Axe", toolId: 'axe' },
     [ItemType.Pickaxe]: { label: "Pickaxe", toolId: 'pickaxe' },
     "rope": {
-        toolId: 'axe',
+        // Was 'axe' — a leftover from before ToolRegistry had its own dedicated 'rope' entry
+        // (real model: MODELS.Tools.RopeBundleA). Nothing currently equips this item's tool
+        // in-hand (catching an animal — see AnimalCatchController.ts — is a presence timer,
+        // not a hand-tool action), but any future UI/inventory view showing this item's icon
+        // should show the rope, not the axe it inherited by copy-paste.
+        toolId: 'rope',
         "label": "Rope"
     }
 };

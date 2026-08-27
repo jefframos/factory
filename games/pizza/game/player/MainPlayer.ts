@@ -24,6 +24,7 @@ import CharacterVisualComponent from '../components/CharacterVisualComponent';
 import FacingComponent from '../components/FacingComponent';
 import PlayerActionController, { ActionResult, ActionTarget } from '../components/PlayerActionController';
 import AutoGatherController from '../components/AutoGatherController';
+import AnimalCatchController from '../components/AnimalCatchController';
 import PlayerUIAvoidanceComponent from '../components/PlayerUIAvoidanceComponent';
 import PlayerNotificationComponent from '../components/PlayerNotificationComponent';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
@@ -115,6 +116,7 @@ export default class MainPlayer extends Entity {
         this.addComponent(new FacingComponent());
         this.addComponent(new PlayerActionController());
         this.addComponent(new AutoGatherController());
+        this.addComponent(new AnimalCatchController());
         if (this.screenHost) {
             this.addComponent(new PlayerUIAvoidanceComponent(this.screenHost));
             this.addComponent(new PlayerNotificationComponent(this.screenHost));

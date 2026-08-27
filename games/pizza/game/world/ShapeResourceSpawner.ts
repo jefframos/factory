@@ -36,8 +36,10 @@
 import * as THREE from 'three';
 import World from '../ecs/World';
 import LooseResourceNode from '../player/LooseResourceNode';
+import AnimalNode from '../player/AnimalNode';
+import { AnimalType } from '../actions/AnimalTypes';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
-import WorldObjectRegistry, { SpawnerShape } from './WorldObjectRegistry';
+import WorldObjectRegistry, { sampleRandomPointInShape } from './WorldObjectRegistry';
 import { SHAPE_RESOURCE_PLACEMENTS, ShapeResourcePlacement, shapePlacementKey } from './ShapeResourceTypes';
 import { ShapeResourceStorage } from './ShapeResourceStorage';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
@@ -47,8 +49,8 @@ const MAX_ATTEMPTS_PER_CHECK = 60;
 
 interface RuntimeRecord {
     position: THREE.Vector3;
-    /** Only set while the player is within resourceLoadRadius of this record — see update(). */
-    node?: LooseResourceNode;
+    /** Only set while the player is within resourceLoadRadius of this record — see update(). A LooseResourceNode for a 'resource' placement, an AnimalNode for an 'animal' one — see materialize()'s own branch. */
+    node?: LooseResourceNode | AnimalNode;
 }
 
 interface ShapeResourceState {
@@ -58,80 +60,6 @@ interface ShapeResourceState {
     readonly records: RuntimeRecord[];
     /** Seconds remaining until the next density check for this placement — see update(). */
     checkTimerSec: number;
-}
-
-/** True if (x, z) falls inside `shape` — see SpawnerShape's own doc for what each kind means. Ray-casting (even-odd rule) for a polygon; plain distance/box check for circle/rect. */
-export function isPointInShape(shape: SpawnerShape, x: number, z: number): boolean {
-    switch (shape.kind) {
-        case 'circle': {
-            const dx = x - shape.center.x;
-            const dz = z - shape.center.z;
-            return dx * dx + dz * dz <= shape.radius! * shape.radius!;
-        }
-        case 'rect':
-            return Math.abs(x - shape.center.x) <= shape.halfWidth! && Math.abs(z - shape.center.z) <= shape.halfDepth!;
-        case 'polygon': {
-            const points = shape.points!;
-            let inside = false;
-            for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
-                const pi = points[i];
-                const pj = points[j];
-                const intersects = (pi.z > z) !== (pj.z > z)
-                    && x < ((pj.x - pi.x) * (z - pi.z)) / (pj.z - pi.z) + pi.x;
-                if (intersects) {
-                    inside = !inside;
-                }
-            }
-            return inside;
-        }
-    }
-}
-
-/** The axis-aligned world-space box tryFillDensity() rejection-samples within before testing isPointInShape() — tight for 'circle'/'rect' (every sampled point is already guaranteed inside for those, see sampleRandomPointInShape()), loose for 'polygon' (its own bounding box, since there's no cheaper uniform-sampling approach for an arbitrary shape). */
-function boundsOf(shape: SpawnerShape): { minX: number; maxX: number; minZ: number; maxZ: number } {
-    switch (shape.kind) {
-        case 'circle':
-            return { minX: shape.center.x - shape.radius!, maxX: shape.center.x + shape.radius!, minZ: shape.center.z - shape.radius!, maxZ: shape.center.z + shape.radius! };
-        case 'rect':
-            return { minX: shape.center.x - shape.halfWidth!, maxX: shape.center.x + shape.halfWidth!, minZ: shape.center.z - shape.halfDepth!, maxZ: shape.center.z + shape.halfDepth! };
-        case 'polygon': {
-            const points = shape.points!;
-            return points.reduce(
-                (b, p) => ({
-                    minX: Math.min(b.minX, p.x), maxX: Math.max(b.maxX, p.x),
-                    minZ: Math.min(b.minZ, p.z), maxZ: Math.max(b.maxZ, p.z),
-                }),
-                { minX: points[0].x, maxX: points[0].x, minZ: points[0].z, maxZ: points[0].z },
-            );
-        }
-    }
-}
-
-/** One uniformly-random point inside `shape`, or undefined if `maxAttempts` of bounding-box rejection sampling all missed (only possible for 'polygon' — 'circle'/'rect' always succeed first try, see below). */
-function sampleRandomPointInShape(shape: SpawnerShape, maxAttempts: number): { x: number; z: number } | undefined {
-    if (shape.kind === 'circle') {
-        // Closed-form disk sampling (sqrt(rand) so points aren't biased toward the center) —
-        // always inside, no rejection needed.
-        const angle = Math.random() * Math.PI * 2;
-        const r = shape.radius! * Math.sqrt(Math.random());
-        return { x: shape.center.x + Math.cos(angle) * r, z: shape.center.z + Math.sin(angle) * r };
-    }
-    if (shape.kind === 'rect') {
-        return {
-            x: shape.center.x + (Math.random() * 2 - 1) * shape.halfWidth!,
-            z: shape.center.z + (Math.random() * 2 - 1) * shape.halfDepth!,
-        };
-    }
-
-    const bounds = boundsOf(shape);
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        const x = bounds.minX + Math.random() * (bounds.maxX - bounds.minX);
-        const z = bounds.minZ + Math.random() * (bounds.maxZ - bounds.minZ);
-        if (isPointInShape(shape, x, z)) {
-            return { x, z };
-        }
-    }
-    return undefined;
 }
 
 export default class ShapeResourceSpawner {
@@ -264,15 +192,51 @@ export default class ShapeResourceSpawner {
         return true;
     }
 
+    /**
+     * Builds the live node for `record` — a LooseResourceNode for a 'resource' placement (the
+     * default, see ShapeResourcePlacement.spawnType's own doc), an AnimalNode for an 'animal'
+     * one. An animal needs its own wander shape re-fetched here (not just at spawn time,
+     * since materialize() also runs every time an already-known record re-enters load
+     * radius) — if the shape's gone missing (a level designer deleted/renamed the spawner
+     * object since this was spawned) this just warns and skips rather than crashing, same
+     * "shouldn't happen with a real map, reads better than silently showing nothing" spirit
+     * WorldSpawner.ts's own gid fallback uses.
+     */
     private materialize(state: ShapeResourceState, record: RuntimeRecord): void {
-        const node = new LooseResourceNode(state.placement.resourceType, record.position, this.screenHost, () => this.handleConsumed(state, record));
+        if ((state.placement.spawnType ?? 'resource') === 'animal') {
+            const shape = this.worldObjects.getShape(state.placement.shapeId);
+            if (!shape) {
+                console.warn(`[ShapeResourceSpawner] no spawner shape found for id "${state.placement.shapeId}" — can't materialize its animal`);
+                return;
+            }
+            const node = new AnimalNode(state.placement.animalType as AnimalType, record.position, this.screenHost, {
+                shape,
+                onCaught: () => this.handleConsumed(state, record),
+            });
+            this.world.add(node);
+            this.threeScene.add(node.transform);
+            record.node = node;
+            node.playSpawnIn();
+            return;
+        }
+
+        const node = new LooseResourceNode(state.placement.resourceType!, record.position, this.screenHost, () => this.handleConsumed(state, record));
         this.world.add(node);
         this.threeScene.add(node.transform);
         record.node = node;
         node.playSpawnIn();
     }
 
-    /** Mirrors DynamicResourceSpawner.dematerialize() — clears `record.node` immediately but defers the actual world.remove() until the despawn tween finishes. */
+    /**
+     * Mirrors DynamicResourceSpawner.dematerialize() — clears `record.node` immediately but
+     * defers the actual world.remove() until the despawn tween finishes. For an animal
+     * placement specifically: `record.position` stays whatever it was at SPAWN time, not
+     * wherever the AnimalNode actually wandered to before the player walked out of range —
+     * so a Pig currently "snaps back" to its original spot on re-approach rather than
+     * resuming from its last wandered position. Acceptable for now (nothing relies on exact
+     * position continuity); track the live AnimalNode's position back into `record` here if
+     * that ever needs fixing.
+     */
     private dematerialize(record: RuntimeRecord): void {
         const node = record.node;
         if (!node) {

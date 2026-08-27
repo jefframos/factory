@@ -40,7 +40,7 @@ export const QUEST_GIVER_CONFIG_BY_ID: Partial<Record<string, QuestGiverConfig>>
             {
                 "view": "ship1View",
                 "weight": 1,
-                "lootTable": "queue1BaseLoot"
+                "lootTable": "animalsRequests"
             }
         ],
         moveSpeed: 4,

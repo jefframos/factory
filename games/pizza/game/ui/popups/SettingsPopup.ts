@@ -20,6 +20,8 @@ import { HighScoreStorage } from '../../data/HighScoreStorage';
 import { CraftStorage } from '../../crafting/CraftStorage';
 import { ItemStorage } from '../../crafting/ItemStorage';
 import { DynamicResourceStorage } from '../../world/DynamicResourceStorage';
+import { ShapeResourceStorage } from '../../world/ShapeResourceStorage';
+import { AnimalFollowStorage } from '../../data/AnimalFollowStorage';
 import { PlayerPositionStorage } from '../../data/PlayerPositionStorage';
 
 export default class SettingsPopup extends Popup {
@@ -36,9 +38,12 @@ export default class SettingsPopup extends Popup {
     }
 
     /**
-     * Same storage list PizzaScene's own dev "Reset Everything" button clears, plus
-     * ShopStorage/HighScoreStorage (which that dev button doesn't touch but genuinely should
-     * for a PLAYER-facing clear). Reloads afterward so a fresh boot picks up the cleared state
+     * Same storage list PizzaScene's own dev "Reset Everything" button clears (including
+     * ShapeResourceStorage/AnimalFollowStorage — the latter's persisted follower list is why a
+     * caught animal used to SURVIVE this clear: with it left out here, a reload just reconstructed
+     * the same followers straight back from an untouched save, per PizzaScene.setupAnimalFollowers()),
+     * plus ShopStorage/HighScoreStorage (which that dev button doesn't touch but genuinely
+     * should for a PLAYER-facing clear). Reloads afterward so a fresh boot picks up the cleared state
      * exactly like a first-ever visit would, rather than trying to reset every in-memory
      * cache/UI by hand.
      *
@@ -69,6 +74,8 @@ export default class SettingsPopup extends Popup {
             CraftStorage.clearAll(),
             ItemStorage.resetToDefaults(),
             DynamicResourceStorage.clearAll(),
+            ShapeResourceStorage.clearAll(),
+            AnimalFollowStorage.clearAll(),
             PlayerPositionStorage.clearAll(),
         ]).then(() => window.location.reload());
     }

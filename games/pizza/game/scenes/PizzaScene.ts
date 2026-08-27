@@ -64,6 +64,8 @@ import WorldObjectRegistry from '../world/WorldObjectRegistry';
 import WorldSpawner from '../world/WorldSpawner';
 import DynamicResourceSpawner from '../world/DynamicResourceSpawner';
 import ShapeResourceSpawner from '../world/ShapeResourceSpawner';
+import AnimalNode from '../player/AnimalNode';
+import { AnimalFollowStorage } from '../data/AnimalFollowStorage';
 import UIService from '../ui/UIService';
 import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { BackpackStorage } from '../data/BackpackStorage';
@@ -305,6 +307,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             this.mainPlayer.transform.position.set(playerStart.x, 0, playerStart.z);
         }
 
+        this.setupAnimalFollowers();
+
         // ThreeScene's constructor already set a far plane (1000, plenty of headroom by
         // default) — applying PERFORMANCE_CONFIG.cameraFar here just makes it the one place
         // that number lives, so the "Camera Far" dev slider (see setupDebugGui()) has
@@ -485,6 +489,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             'Resources',
         );
         DevGuiManager.instance.addButton(
+            'Clear Animal Followers',
+            () => void AnimalFollowStorage.clearAll(),
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
             'Clear Player Position',
             () => void PlayerPositionStorage.clearAll(),
             'Resources',
@@ -516,6 +525,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 void this.resetCraftingProgress();
                 void this.dynamicResourceSpawner.resetAll();
                 void this.shapeResourceSpawner.resetAll();
+                void AnimalFollowStorage.clearAll();
                 void PlayerPositionStorage.clearAll();
             },
             'Resources',
@@ -621,6 +631,17 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
         DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['pixelsPerWorldUnit'], [1, 64], 'Pixels Per World Unit', 'Model Snapshots');
 
+        // Off (default) -> every snapshot renders exactly the same straight-down shot this tool
+        // always took. On -> portraitDistance/portraitPitchDeg/portraitYawDeg below frame an
+        // angled shot instead — same distance/pitch/yaw convention the live gameplay camera
+        // (CAMERA_SETTINGS above) uses, just orbiting the model's own center.
+        DevGuiManager.instance.addToggle('portraitMode', ModelSnapshotTool.settings.portraitMode, (value) => {
+            ModelSnapshotTool.settings.portraitMode = value;
+        }, 'Model Snapshots');
+        DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['portraitDistance'], [1, 30], 'Portrait Distance', 'Model Snapshots');
+        DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['portraitPitchDeg'], [-89, 89], 'Portrait Pitch', 'Model Snapshots');
+        DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['portraitYawDeg'], [-180, 180], 'Portrait Yaw', 'Model Snapshots');
+
         DevGuiManager.instance.addDropdown(
             ModelSnapshotTool.settings,
             'selectedModelRef',
@@ -654,6 +675,24 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         DevGuiManager.instance.addButton('Snapshot Group', () => {
             void ModelSnapshotTool.snapshotGroup(ModelSnapshotTool.settings.selectedGroup);
         }, 'Model Snapshots');
+    }
+
+    /**
+     * Reconstructs whatever the player already owns from a PREVIOUS session —
+     * AnimalFollowStorage only ever persists WHICH AnimalTypes are following (see that file's
+     * own doc), never a live entity, so on every fresh scene build this is what turns that
+     * plain list back into real, moving AnimalNode instances already in follow mode (skips
+     * the wild/catchable phase entirely — see AnimalNode's own `wild` constructor param doc).
+     * Called from the constructor, right after mainPlayer's own position is settled, so
+     * followers spawn already near wherever the player actually starts.
+     */
+    private setupAnimalFollowers(): void {
+        AnimalFollowStorage.getFollowers().forEach(animalType => {
+            const node = new AnimalNode(animalType, this.mainPlayer.transform.position.clone(), this.screenHost);
+            this.world.add(node);
+            this.threeScene.add(node.transform);
+            node.startFollowing(() => this.mainPlayer.transform.position);
+        });
     }
 
     /** The task's own collision test: a static box offset from spawn along Z only — walking the player into it should stop them instead of clipping through. */
@@ -943,7 +982,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
                 const queueZone = this.world.add(new QueueZone(
                     position, this.screenHost, id,
-                    () => this.uiService.economyUi.getIconAnchorPosition(),
+                    () => this.uiService.economyUi.getIconAnchorPosition(CurrencyType.Money),
                     { width: placement.width, depth: placement.depth },
                     config,
                     !hasGiverPath,
@@ -994,7 +1033,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
                 const shopZone = this.world.add(new ShopZone(
                     position, this.screenHost, id,
-                    () => this.uiService.economyUi.getIconAnchorPosition(),
+                    () => this.uiService.economyUi.getIconAnchorPosition(CurrencyType.Money),
                     { width: placement.width, depth: placement.depth },
                     triggerArea,
                 ));

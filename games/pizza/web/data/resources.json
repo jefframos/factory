@@ -107,5 +107,14 @@
         "scale": 1,
         "rotationDeg": 0,
         "amountPerGather": 1
+    },
+    "pig": {
+        "models": [
+            "Pets.AnimalPig"
+        ],
+        "label": "Pig",
+        "icon": "pizza-model-snapshots_Pets-AnimalPig",
+        "scale": 0.5,
+        "rotationDeg": 0
     }
 }

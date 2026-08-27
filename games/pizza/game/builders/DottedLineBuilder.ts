@@ -16,6 +16,16 @@
 //     tracking needed). Cached by (width, depth, radius, style) — same-size
 //     droppers (the common case: most zones share HALF_EXTENTS) share one
 //     texture.
+//   buildCircle()       — a dashed circle outline, same baked-canvas idea as
+//     buildRoundedRect() (see AnimalNode.ts's own capture-zone ring, the one
+//     caller — a wild animal's own catch-trigger radius, so the player can
+//     see exactly where they need to stand). getCircleTexture() is exposed
+//     PUBLIC (unlike the rounded-rect/line tile lookups) specifically so a
+//     caller that needs to swap between two colors of the SAME circle at
+//     runtime (neutral vs. "you're close enough," see
+//     CaptureZoneVisualComponent.ts) can fetch both baked textures directly
+//     without building (and discarding) two throwaway meshes just to get at
+//     them.
 //
 // Both meshes render with depthTest disabled and a high renderOrder — a
 // floor decal a few centimeters above the ground should never flicker
@@ -65,6 +75,9 @@ export class DottedLineBuilder {
     /** One baked outline per unique (width, depth, radius, style) — see buildRoundedRect()'s own doc. Never evicted, same reasoning as lineTileCache. */
     private static readonly roundedRectCache = new Map<string, THREE.CanvasTexture>();
 
+    /** One baked outline per unique (radius, style) — see buildCircle()'s own doc. Never evicted, same reasoning as the other two caches. */
+    private static readonly circleCache = new Map<string, THREE.CanvasTexture>();
+
     /** Straight dotted line on the floor between two XZ points — same look as tower's dashed UI lines, just in world space. */
     public static buildLine(start: THREE.Vector2, end: THREE.Vector2, style: DottedLineStyle = {}): THREE.Mesh {
         const resolved = { ...DEFAULT_STYLE, ...style };
@@ -103,6 +116,57 @@ export class DottedLineBuilder {
         geometry.translate(0, resolved.y, 0);
 
         return DottedLineBuilder.makeMesh(geometry, texture);
+    }
+
+    /** Dashed circle outline centered on local origin — see this file's own doc. */
+    public static buildCircle(radius: number, style: DottedLineStyle = {}): THREE.Mesh {
+        const resolved = { ...DEFAULT_STYLE, ...style };
+        const texture = DottedLineBuilder.getCircleTexture(radius, resolved);
+
+        // Padded by lineWidth so the stroke isn't clipped at the plane's own edge — same
+        // reasoning as buildRoundedRect()'s own padded geometry.
+        const size = (radius + resolved.lineWidth / 2) * 2;
+        const geometry = new THREE.PlaneGeometry(size, size);
+        geometry.rotateX(-Math.PI / 2);
+        geometry.translate(0, resolved.y, 0);
+
+        return DottedLineBuilder.makeMesh(geometry, texture);
+    }
+
+    /** Public — see this file's own doc on why (a caller swapping this circle's own color at runtime needs both baked textures directly, not a mesh per color). Resolves `style` against DEFAULT_STYLE itself, same as buildCircle(), so a caller can pass a bare `{ color }` override. */
+    public static getCircleTexture(radius: number, style: DottedLineStyle = {}): THREE.CanvasTexture {
+        const resolved = { ...DEFAULT_STYLE, ...style };
+        const key = [radius, resolved.dashLength, resolved.gapLength, resolved.lineWidth, resolved.color, resolved.opacity].join('|');
+        const cached = DottedLineBuilder.circleCache.get(key);
+        if (cached) {
+            return cached;
+        }
+
+        const paddedDiameter = (radius + resolved.lineWidth / 2) * 2;
+        const size = Math.max(2, Math.round(paddedDiameter * PX_PER_UNIT));
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d')!;
+
+        const lineWidthPx = resolved.lineWidth * PX_PER_UNIT;
+        const dashPx = resolved.dashLength * PX_PER_UNIT;
+        const gapPx = resolved.gapLength * PX_PER_UNIT;
+        const r = radius * PX_PER_UNIT;
+
+        ctx.lineWidth = lineWidthPx;
+        ctx.strokeStyle = DottedLineBuilder.rgba(resolved.color, resolved.opacity);
+        ctx.setLineDash([dashPx, gapPx]);
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, r, 0, Math.PI * 2);
+        ctx.stroke();
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.wrapS = THREE.ClampToEdgeWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        texture.needsUpdate = true;
+        DottedLineBuilder.circleCache.set(key, texture);
+        return texture;
     }
 
     private static makeMesh(geometry: THREE.BufferGeometry, texture: THREE.CanvasTexture): THREE.Mesh {

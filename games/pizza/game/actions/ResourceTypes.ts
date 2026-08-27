@@ -24,7 +24,9 @@ export enum ResourceType {
     GrassFiber = 'grassFiber',
     Crystal = "crystal",
     Ir = "iron",
-    Rope = "rope"
+    Rope = "rope",
+    /** What catching a Pig (AnimalTypes.ts) banks — see AnimalNode.ts/AnimalCatchController.ts. Not gathered from any Provider/DynamicResource path at all, same "this file doesn't need to know or care which" independence this file's own doc already calls out for Bark/Pebble/GrassFiber. */
+    Pig = "pig"
 }
 
 export interface ResourceConfig {
@@ -86,6 +88,11 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
     "rope": {
         color: 0x6b4423,
         "label": "Rope",
+        "amountPerGather": 1
+    },
+    "pig": {
+        color: 0xe8a1c4,
+        "label": "Pig",
         "amountPerGather": 1
     }
 };

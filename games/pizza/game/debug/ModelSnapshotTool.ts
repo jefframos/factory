@@ -51,11 +51,28 @@ export class ModelSnapshotTool {
     // the browser's multi-download throttling — space batch exports out.
     private static readonly BATCH_DELAY_MS = 150;
 
-    /** Bound live by DevGuiManager controls (see PizzaScene.setupModelSnapshotDevGui()). `pixelsPerWorldUnit` should stay in lockstep with the real map's tile scale (tileSizePx / WORLD_UNITS_PER_TILE) — see this file's own top-of-file doc for why that's not just a cosmetic default. */
+    /**
+     * Bound live by DevGuiManager controls (see PizzaScene.setupModelSnapshotDevGui()).
+     * `pixelsPerWorldUnit` should stay in lockstep with the real map's tile scale
+     * (tileSizePx / WORLD_UNITS_PER_TILE) — see this file's own top-of-file doc for why that's
+     * not just a cosmetic default.
+     *
+     * `portraitMode` on switches every snapshot from the default straight-down orthographic
+     * shot (see frameTopDown()) to an angled one framed by `portraitDistance`/`portraitPitchDeg`/
+     * `portraitYawDeg` instead (see framePortrait()) — same distance/pitch/yaw convention
+     * PizzaScene's own CAMERA_SETTINGS uses for the live gameplay camera, just orbiting a
+     * model's own center instead of the player. Off (the default) leaves every existing
+     * snapshot call — snapshotOne()/snapshotAll()/snapshotGroup() — rendering exactly as it did
+     * before this setting existed.
+     */
     public static readonly settings = {
         pixelsPerWorldUnit: 32,
         selectedModelRef: '',
         selectedGroup: '',
+        portraitMode: false,
+        portraitDistance: 8,
+        portraitPitchDeg: 30,
+        portraitYawDeg: 0,
     };
 
     private static renderer: THREE.WebGLRenderer | null = null;
@@ -116,10 +133,18 @@ export class ModelSnapshotTool {
         return groupEntries?.[key];
     }
 
-    /** The exact filename (no folder) snapshotOne()/snapshotAll() download to — see decodeModelRef() for the inverse. `widthPx`/`heightPx` are purely informational (handy for eyeballing a batch export), never read back by decodeModelRef(). */
-    public static encodeFilename(modelRef: string, widthPx: number, heightPx: number): string {
+    /**
+     * The exact filename (no folder) snapshotOne()/snapshotAll() download to — see
+     * decodeModelRef() for the inverse. `widthPx`/`heightPx` are purely informational (handy for
+     * eyeballing a batch export), never read back by decodeModelRef() — omit them entirely (no
+     * `__WxH` suffix at all) for a portrait-mode shot: those are one-off icon previews, not the
+     * Tiled-placeholder workflow this tool's own top-of-file doc describes, where the exact
+     * pixel size matters for eyeballing relative footprints.
+     */
+    public static encodeFilename(modelRef: string, widthPx?: number, heightPx?: number): string {
         const [group, key] = modelRef.split('.');
-        return `${group}${REF_SEPARATOR}${key}__${widthPx}x${heightPx}.png`;
+        const sizeSuffix = widthPx !== undefined && heightPx !== undefined ? `__${widthPx}x${heightPx}` : '';
+        return `${group}${REF_SEPARATOR}${key}${sizeSuffix}.png`;
     }
 
     /**
@@ -164,6 +189,10 @@ export class ModelSnapshotTool {
         const halfWidth = Math.max(size.x, 0.001) / 2;
         const halfDepth = Math.max(size.z, 0.001) / 2;
 
+        // Explicit every call (not just once in ensureSetup()) — framePortrait() below points
+        // this same shared camera's `up` a different way, so a top-down snapshot right after a
+        // portrait one needs this reset, not just relying on whatever `up` happened to be left at.
+        camera.up.set(0, 0, -1);
         camera.left = -halfWidth;
         camera.right = halfWidth;
         camera.top = halfDepth;
@@ -180,6 +209,73 @@ export class ModelSnapshotTool {
         };
     }
 
+    /**
+     * Sizes/aims the SAME orthographic camera at an angled view instead of straight down — same
+     * distance/pitch/yaw spherical-offset convention PizzaScene's own cameraOffset() uses for the
+     * live gameplay camera (see that function's own doc), orbiting this model's own bounding-box
+     * center rather than the player. Unlike frameTopDown()'s XZ-footprint shortcut (only valid
+     * looking straight down the Y axis), an arbitrary pitch/yaw needs the object's REAL
+     * projected screen-space extents to frame it without clipping — this projects every one of
+     * the box's 8 corners into the camera's own view space (after positioning/aiming it) and
+     * takes the min/max there, exactly like a proper "fit orthographic frustum to bounds" pass.
+     */
+    private static framePortrait(object: THREE.Object3D, camera: THREE.OrthographicCamera): { widthPx: number; heightPx: number } {
+        const { portraitDistance, portraitPitchDeg, portraitYawDeg, pixelsPerWorldUnit } = this.settings;
+        const box = new THREE.Box3().setFromObject(object);
+        const center = box.getCenter(new THREE.Vector3());
+
+        const yaw = portraitYawDeg * (Math.PI / 180);
+        const pitch = portraitPitchDeg * (Math.PI / 180);
+        const horizontal = portraitDistance * Math.cos(pitch);
+        const offset = new THREE.Vector3(
+            horizontal * Math.sin(yaw),
+            portraitDistance * Math.sin(pitch),
+            horizontal * Math.cos(yaw),
+        );
+
+        camera.up.set(0, 1, 0);
+        camera.position.copy(center).add(offset);
+        camera.lookAt(center);
+        // Camera overrides updateMatrixWorld() to also refresh matrixWorldInverse — needed
+        // below to project each corner into this camera's own view space.
+        camera.updateMatrixWorld(true);
+
+        const corners = [
+            new THREE.Vector3(box.min.x, box.min.y, box.min.z),
+            new THREE.Vector3(box.min.x, box.min.y, box.max.z),
+            new THREE.Vector3(box.min.x, box.max.y, box.min.z),
+            new THREE.Vector3(box.min.x, box.max.y, box.max.z),
+            new THREE.Vector3(box.max.x, box.min.y, box.min.z),
+            new THREE.Vector3(box.max.x, box.min.y, box.max.z),
+            new THREE.Vector3(box.max.x, box.max.y, box.min.z),
+            new THREE.Vector3(box.max.x, box.max.y, box.max.z),
+        ];
+
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, maxDist = -Infinity;
+        for (const corner of corners) {
+            const view = corner.clone().applyMatrix4(camera.matrixWorldInverse);
+            minX = Math.min(minX, view.x);
+            maxX = Math.max(maxX, view.x);
+            minY = Math.min(minY, view.y);
+            maxY = Math.max(maxY, view.y);
+            // View space looks down -Z, so a corner's distance FROM the camera is -view.z.
+            maxDist = Math.max(maxDist, -view.z);
+        }
+
+        camera.left = minX;
+        camera.right = maxX;
+        camera.top = maxY;
+        camera.bottom = minY;
+        camera.near = 0.1;
+        camera.far = Math.max(maxDist, 0.001) + 1;
+        camera.updateProjectionMatrix();
+
+        return {
+            widthPx: Math.max(1, Math.round((maxX - minX) * pixelsPerWorldUnit)),
+            heightPx: Math.max(1, Math.round((maxY - minY) * pixelsPerWorldUnit)),
+        };
+    }
+
     private static async renderModel(modelRef: string): Promise<{ dataUrl: string; widthPx: number; heightPx: number }> {
         const def = this.resolveModelDef(modelRef);
         if (!def) {
@@ -190,7 +286,11 @@ export class ModelSnapshotTool {
         const object = await ModelLoaderManager.instance.loadModel(modelUrl(def.fullPath), def.id);
         scene.add(object);
 
-        const { widthPx, heightPx } = this.frameTopDown(object, camera);
+        // portraitMode off -> exactly the same straight-down shot this tool always took (see
+        // this.settings' own doc); on -> the angled distance/pitch/yaw framing instead.
+        const { widthPx, heightPx } = this.settings.portraitMode
+            ? this.framePortrait(object, camera)
+            : this.frameTopDown(object, camera);
         renderer.setSize(widthPx, heightPx, false);
         renderer.setClearColor(0x000000, 0);
         renderer.clear();
@@ -221,7 +321,12 @@ export class ModelSnapshotTool {
         }
         try {
             const { dataUrl, widthPx, heightPx } = await this.renderModel(modelRef);
-            this.download(dataUrl, this.encodeFilename(modelRef, widthPx, heightPx));
+            // Portrait shots are one-off icon previews, not Tiled-placement placeholders — see
+            // encodeFilename()'s own doc for why the size suffix only matters for the latter.
+            const filename = this.settings.portraitMode
+                ? this.encodeFilename(modelRef)
+                : this.encodeFilename(modelRef, widthPx, heightPx);
+            this.download(dataUrl, filename);
         } catch (e) {
             console.error('ModelSnapshotTool: failed to snapshot', modelRef, e);
         }

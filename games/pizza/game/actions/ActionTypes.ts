@@ -98,8 +98,8 @@ export interface ActionConfig {
 }
 
 export const ACTION_CONFIG: Record<ActionType, ActionConfig> = {
-    [ActionType.Chop]: { hitIntervalSec: 1, hitScale: 1, resourcePerHit: 1, hitTime: 0.8, cancelOnLeaveRange: true, animationTrigger: 'chop', tool: 'axe' },
-    [ActionType.Mine]: { hitIntervalSec: 1.5, hitScale: 1, resourcePerHit: 1, hitTime: 0.4, cancelOnLeaveRange: true, animationTrigger: 'mine', tool: 'pickaxe' },
+    [ActionType.Chop]: { hitIntervalSec: 1, hitScale: 1, resourcePerHit: 1, hitTime: 0.8, cancelOnLeaveRange: true, animationTrigger: 'chop', tool: "axe" },
+    [ActionType.Mine]: { hitIntervalSec: 1.5, hitScale: 1, resourcePerHit: 1, hitTime: 0.4, cancelOnLeaveRange: true, animationTrigger: 'mine', tool: "pickaxe" },
     [ActionType.Gather]: { hitIntervalSec: 2, hitScale: 1, resourcePerHit: 1, hitTime: 0.6, cancelOnLeaveRange: true, animationTrigger: 'pick' },
 };
 

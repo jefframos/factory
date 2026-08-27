@@ -526,10 +526,15 @@ function renderShapeResourcesByArea(data, schema) {
     for (const area of areasToShow) {
         const items = groups.get(area);
         if (!items) continue;
-        const resourceList = items.map(i => i.value.resourceType).filter(Boolean).join(', ') || '(no resource set)';
-        contentEl.appendChild(sectionLabel(`${area} — ${items.length} placement${items.length === 1 ? '' : 's'}: ${resourceList}`));
+        // Either half of a placement's identity — its resourceType (Spawn Type = Resource,
+        // the default) or its animalType (Spawn Type = Animal) — see ShapeResourceTypes.ts's
+        // own doc on why only one of the two ever actually applies.
+        const identityOf = value => value.spawnType === 'animal' ? value.animalType : value.resourceType;
+        const itemList = items.map(i => identityOf(i.value)).filter(Boolean).join(', ') || '(nothing set)';
+        contentEl.appendChild(sectionLabel(`${area} — ${items.length} placement${items.length === 1 ? '' : 's'}: ${itemList}`));
         for (const { value, index } of items) {
-            const entryLabel = value.resourceType ? `${value.resourceType} → ${area}` : undefined;
+            const identity = identityOf(value);
+            const entryLabel = identity ? `${identity} → ${area}` : undefined;
             contentEl.appendChild(renderEntryCard(data, index, value, schema, true, false, new Set(), entryLabel));
         }
     }

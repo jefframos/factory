@@ -11,6 +11,8 @@ import { AssetLibraryKey } from '../world/AssetLibraryRegistry';
 
 export enum CurrencyType {
     Money = 'money',
+    Gem = 'gem',
+    Energy = 'energy',
 }
 
 export interface CurrencyConfig {
@@ -24,5 +26,13 @@ export const CURRENCY_CONFIG: Record<CurrencyType, CurrencyConfig> = {
     [CurrencyType.Money]: {
         label: 'Money',
         assetKey: 'money',
+    },
+    [CurrencyType.Gem]: {
+        label: 'Gems',
+        assetKey: 'gem',
+    },
+    [CurrencyType.Energy]: {
+        label: 'Energy',
+        assetKey: 'energy',
     },
 };

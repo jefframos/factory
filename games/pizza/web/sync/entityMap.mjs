@@ -147,6 +147,18 @@ export const ENTITY_SOURCE_MAP = {
         enumName: 'ItemType',
         managedKeys: ['label'],
     },
+    animals: {
+        file: path.join(GAME_DIR, 'actions', 'AnimalTypes.ts'),
+        exportName: 'ANIMAL_CONFIG',
+        kind: 'enumRecord',
+        enumName: 'AnimalType',
+        managedKeys: ['label', 'resourceType', 'captureSec', 'requirementItem', 'requirementAmount', 'wanderSpeed', 'wanderPauseRangeSec', 'triggerRadius'],
+        // requirementItem/requirementAmount are a PAIR (see AnimalConfig's own doc) — either
+        // both set or both left out entirely for a no-requirement animal. triggerRadius is
+        // independently optional — left out entirely falls back to AnimalNode's own
+        // DEFAULT_TRIGGER_RADIUS (1).
+        optionalKeys: ['requirementItem', 'requirementAmount', 'triggerRadius'],
+    },
     dynamicResourcePlacements: {
         file: path.join(GAME_DIR, 'world', 'DynamicResourceTypes.ts'),
         exportName: 'DYNAMIC_RESOURCE_PLACEMENTS',
@@ -160,7 +172,11 @@ export const ENTITY_SOURCE_MAP = {
         file: path.join(GAME_DIR, 'world', 'ShapeResourceTypes.ts'),
         exportName: 'SHAPE_RESOURCE_PLACEMENTS',
         kind: 'array',
-        managedKeys: ['resourceType', 'shapeId', 'count', 'minDistance', 'checkIntervalSec'],
+        // spawnType/resourceType/animalType are ALL optional on a given entry (only whichever
+        // pair spawnType actually selects is meaningful — see ShapeResourceTypes.ts's own doc)
+        // — no separate optionalKeys needed for an 'array' mapping, since syncArray()'s own
+        // pick() (see that function's own doc) already skips any key that's undefined.
+        managedKeys: ['spawnType', 'resourceType', 'animalType', 'shapeId', 'count', 'minDistance', 'checkIntervalSec'],
     },
     queues: {
         file: path.join(GAME_DIR, 'data', 'QueueTypes.ts'),

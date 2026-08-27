@@ -26,12 +26,14 @@ import Assets from '../../Assets';
 import { PopupManager } from './popups/PopupManager';
 import SettingsPopup from './popups/SettingsPopup';
 
-/** Gap between the button row's top/left edges and the actual top-left corner of the screen. */
-const TOP_LEFT_MARGIN = 16;
+/** Gap between the button row's top/left edges and the actual top-left corner of the screen. Exported so UIService (ToolListUI's positioning) can pin something directly under this row without duplicating the margin. */
+export const SETTINGS_ROW_TOP_LEFT_MARGIN = 16;
+const TOP_LEFT_MARGIN = SETTINGS_ROW_TOP_LEFT_MARGIN;
 /** Gap between the settings button and the mute button sitting to its right. */
 const BUTTON_GAP = 10;
-/** Shared square size for both top-left buttons — no button-background art exists yet for pizza's own settings/mute buttons, so PIXI.Texture.EMPTY (icon only, no background box) is the placeholder until real art exists. */
-const BUTTON_SIZE = 48;
+/** Shared square size for both top-left buttons — no button-background art exists yet for pizza's own settings/mute buttons, so PIXI.Texture.EMPTY (icon only, no background box) is the placeholder until real art exists. Exported for the same reason as SETTINGS_ROW_TOP_LEFT_MARGIN — UIService needs this row's height to pin something below it. */
+export const SETTINGS_ROW_BUTTON_SIZE = 48;
+const BUTTON_SIZE = SETTINGS_ROW_BUTTON_SIZE;
 const BUTTON_ICON_SIZE = 42;
 /** Corner-pinned "this matters" badge on the settings button — see BaseButton.addAlertIcon(). Always shown (not conditional on anything) since the ask is simply "mark this button as important," not "only when a setting needs attention." */
 const ALERT_ICON_SIZE = 20;

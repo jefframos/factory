@@ -10,6 +10,7 @@
     { "id": "dynamicResourcePlacements", "label": "Dynamic Resources", "file": "dynamicResourcePlacements.json", "shape": "array", "sourceHint": "games/pizza/game/world/DynamicResourceTypes.ts (DYNAMIC_RESOURCE_PLACEMENTS)" },
     { "id": "shapeResourcePlacements", "label": "Shape Resources", "file": "shapeResourcePlacements.json", "shape": "array", "sourceHint": "games/pizza/game/world/ShapeResourceTypes.ts (SHAPE_RESOURCE_PLACEMENTS)" },
     { "id": "actions", "label": "Actions", "file": "actions.json", "shape": "record", "sourceHint": "games/pizza/game/actions/ActionTypes.ts (BASE_ACTION_CONFIG)" },
+    { "id": "animals", "label": "Animals", "file": "animals.json", "shape": "record", "sourceHint": "games/pizza/game/actions/AnimalTypes.ts (ANIMAL_CONFIG) — an autonomous, wandering catch target; reference one from a Shape Resources placement with Spawn Type = animal" },
     { "id": "items", "label": "Items", "file": "items.json", "shape": "record", "sourceHint": "games/pizza/game/crafting/ItemTypes.ts (ITEM_CONFIG)" },
     { "id": "tools", "label": "Tools", "file": "tools.json", "shape": "record", "sourceHint": "games/pizza/game/actions/ToolRegistry.ts (TOOL_LIBRARY — label/icon only, visuals excluded)" },
     { "id": "assetLibrary", "label": "Asset Library", "file": "assetLibrary.json", "shape": "record", "sourceHint": "games/pizza/game/world/AssetLibraryRegistry.ts (ASSET_LIBRARY — icon only, models/scale/rotation excluded)" },

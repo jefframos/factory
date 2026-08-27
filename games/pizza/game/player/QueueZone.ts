@@ -48,6 +48,8 @@ import { QueueConfig, getQueueConfig } from '../data/QueueTypes';
 import { EconomyStorage } from '../data/EconomyStorage';
 import { CURRENCY_CONFIG, CurrencyType } from '../data/EconomyTypes';
 import { ResourceType } from '../actions/ResourceTypes';
+import { findAnimalTypeForResource, AnimalType } from '../actions/AnimalTypes';
+import { AnimalFollowStorage } from '../data/AnimalFollowStorage';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import MainPlayer from './MainPlayer';
@@ -80,18 +82,30 @@ export default class QueueZone extends Entity {
     /** Where EconomyUI's money icon actually sits on screen right now — see flyRewardToWallet(). A callback (not a fixed point) since UIService repositions that panel every frame. */
     private readonly getWalletOverlayPosition: () => { x: number; y: number };
 
-    /** Resource type currently mid-drain via flyInResource() — guards a second overlapping drain loop for the same active task. Cleared whenever the active task changes (a new task may ask for a different resource). */
+    /** Resource type currently mid-drain via flyInResource()/flyInAnimal() — guards a second overlapping drain loop for the same active task. Cleared whenever the active task changes (a new task may ask for a different resource). */
     private drainingType?: ResourceType;
     /**
-     * How many units have DEPARTED but not yet LANDED for the current drain — see
-     * flyInResource()'s own doc for why this exists: `QueueStorage`'s progress only advances
-     * on landing (0.45s flight), but departures fire every FLY_IN_STAGGER_SEC (0.12s), so
-     * without this, `state.progress` alone can't tell the loop "10 units are already
-     * committed, don't send an 11th" — it would keep departing extra units the task doesn't
-     * need, over-draining the backpack. Incremented right before a departure, decremented the
-     * instant that same unit lands (whether or not it was actually needed).
+     * How many units of a given ResourceType have DEPARTED but not yet LANDED — see
+     * flyInResource()/flyInAnimal()'s own doc for why this exists: `QueueStorage`'s progress
+     * only advances on landing (0.45s flight), but departures fire every FLY_IN_STAGGER_SEC
+     * (0.12s), so without this, `state.progress` alone can't tell the loop "N units are
+     * already committed, don't send another" — it would keep departing extra units the task
+     * doesn't need, over-draining the source. Incremented right before a departure, decremented
+     * the instant that same unit lands (whether or not it was actually needed).
+     *
+     * A Map (keyed by type), same shape BuildingZone.inFlightByType/DropZone.inFlightByType/
+     * CraftZone.inFlightByType already use — NOT a bare per-drain-call counter (an earlier
+     * version of this file used one, reset to 0 at the top of every flyInResource() call,
+     * which was the actual bug: a drain loop stopping and IMMEDIATELY restarting — onTriggerStay
+     * fires every physics tick, well inside a single 0.45s flight — reset the count to 0 while
+     * units were still mid-air, re-opening the departure gate and delivering MORE than the task
+     * actually needed; confirmed with a queue needing 1 of something delivering ALL of it
+     * instead). A Map entry is only ever mutated by increment-on-departure/decrement-on-landing,
+     * never reset wholesale, so it stays correct across any number of loop stop/restarts AND
+     * across a task change mid-flight (a leftover count for an abandoned type just sits under
+     * its own key, harmless, until its own in-flight icons land).
      */
-    private inFlightCount = 0;
+    private readonly inFlightByType = new Map<ResourceType, number>();
     /** True for as long as the player's RigidBody is inside this zone's trigger — flyInResource()'s per-unit loop checks this before every unit and stops the instant it goes false. */
     private isPlayerInside = false;
     /** The player entity currently inside this zone — undefined whenever isPlayerInside is false. */
@@ -382,7 +396,16 @@ export default class QueueZone extends Entity {
 
         this.isPlayerInside = true;
         this.player = player;
-        this.flyInResource(activeTask.resourceType);
+
+        // A task whose resourceType is actually ANIMAL-backed (see findAnimalTypeForResource()'s
+        // own doc — e.g. "bring 1 Pig") delivers from AnimalFollowStorage's own follower list
+        // instead of the backpack — completely different source, same flying-icon payoff.
+        const animalType = findAnimalTypeForResource(activeTask.resourceType);
+        if (animalType) {
+            this.flyInAnimal(activeTask.resourceType, animalType);
+        } else {
+            this.flyInResource(activeTask.resourceType);
+        }
     }
 
     /** Player's RigidBody left this zone's trigger — flyInResource()'s loop reads isPlayerInside before every unit, so clearing it here is the ENTIRE "stop depositing" instruction; nothing further needs to be cancelled explicitly. Same shape as BuildingZone/DropZone's identical handler. */
@@ -400,10 +423,10 @@ export default class QueueZone extends Entity {
      * re-checking isPlayerInside and the task's current identity/progress before every single
      * unit — not a fixed burst computed once at trigger time. Same self-rescheduling step()
      * shape as BuildingZone.flyInResource() — see that file's own doc, EXCEPT the departure
-     * gate also subtracts `inFlightCount` (units already departed but not yet landed) from
+     * gate also subtracts `inFlightByType` (units already departed but not yet landed) from
      * what's still needed — `state.progress` alone lags behind by up to a full flight
      * duration, so gating on it alone would keep departing units the task doesn't need
-     * (see `inFlightCount`'s own doc). No-ops (and clears `drainingType`) the instant the
+     * (see `inFlightByType`'s own doc). No-ops (and clears `drainingType`) the instant the
      * player leaves, the task completes/changes, the backpack runs out, or the FBX character
      * (and so the backpack cube) hasn't loaded yet.
      */
@@ -412,23 +435,23 @@ export default class QueueZone extends Entity {
             return;
         }
         this.drainingType = type;
-        this.inFlightCount = 0;
 
         const icon = getAssetIcon(resolveResourceAssetKey(type));
         const toWorld = new THREE.Vector3();
 
         const step = (): void => {
+            const inFlight = this.inFlightByType.get(type) ?? 0;
             const state = QueueStorage.getState(this.queueId);
             const task = state.activeTask;
             const stillNeedsThisType = this.isPlayerInside && this.isTaskDeliverable() && task?.resourceType === type
-                && state.progress + this.inFlightCount < task.amount;
+                && state.progress + inFlight < task.amount;
 
-            // Subtracting inFlightCount here too (not just from the task-amount check above) is
-            // what actually closes the over-drain bug: without it, a backpack holding only 1
-            // unit would still read getCount()>0 for every departure that fires before the
-            // first one lands (0.12s stagger vs. a ~0.45s flight), sending out more units than
-            // the backpack really has and over-crediting the task on landing.
-            const fromWorld = stillNeedsThisType && BackpackStorage.getCount(type) - this.inFlightCount > 0
+            // Subtracting inFlight here too (not just from the task-amount check above) is what
+            // actually closes the over-drain bug: without it, a backpack holding only 1 unit
+            // would still read getCount()>0 for every departure that fires before the first one
+            // lands (0.12s stagger vs. a ~0.45s flight), sending out more units than the
+            // backpack really has and over-crediting the task on landing.
+            const fromWorld = stillNeedsThisType && BackpackStorage.getCount(type) - inFlight > 0
                 ? this.player?.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition()
                 : undefined;
 
@@ -438,13 +461,64 @@ export default class QueueZone extends Entity {
             }
 
             this.labelAnchor.getWorldPosition(toWorld);
-            this.inFlightCount++;
+            this.inFlightByType.set(type, inFlight + 1);
 
             spawnFlyingResourceIcon(this.screenHost, fromWorld.clone(), toWorld.clone(), icon, () => {
-                this.inFlightCount--;
+                this.inFlightByType.set(type, (this.inFlightByType.get(type) ?? 1) - 1);
                 if (!BackpackStorage.removeOne(type)) {
                     return;
                 }
+                QueueStorage.addProgress(this.queueId, 1);
+                const completedTask = QueueStorage.tryCompleteTask(this.queueId, this.config);
+                if (completedTask) {
+                    this.flyRewardToWallet(completedTask.rewardAmount);
+                }
+            });
+
+            gsap.delayedCall(FLY_IN_STAGGER_SEC, step);
+        };
+
+        step();
+    }
+
+    /**
+     * Same self-rescheduling step() shape (and the same `drainingType`/`inFlightByType`
+     * re-entrancy guards) as flyInResource() — the ONLY thing that actually differs is where a
+     * unit comes from: AnimalFollowStorage.deliverOneFollowerOfType(animalType) instead of
+     * BackpackStorage, which ATOMICALLY picks-and-removes a live follower and hands back the
+     * world position it departed from (or undefined if none are currently following) — see that
+     * method's own doc. Because that removal is already immediate/synchronous (not deferred to
+     * landing the way BackpackStorage.removeOne() is), the landing callback here only needs to
+     * credit QueueStorage's own progress, nothing else.
+     */
+    private flyInAnimal(type: ResourceType, animalType: AnimalType): void {
+        if (this.drainingType === type) {
+            return;
+        }
+        this.drainingType = type;
+
+        const icon = getAssetIcon(resolveResourceAssetKey(type));
+        const toWorld = new THREE.Vector3();
+
+        const step = (): void => {
+            const inFlight = this.inFlightByType.get(type) ?? 0;
+            const state = QueueStorage.getState(this.queueId);
+            const task = state.activeTask;
+            const stillNeedsThisType = this.isPlayerInside && this.isTaskDeliverable() && task?.resourceType === type
+                && state.progress + inFlight < task.amount;
+
+            const departedFrom = stillNeedsThisType ? AnimalFollowStorage.deliverOneFollowerOfType(animalType) : undefined;
+
+            if (!departedFrom) {
+                this.drainingType = undefined;
+                return;
+            }
+
+            this.labelAnchor.getWorldPosition(toWorld);
+            this.inFlightByType.set(type, inFlight + 1);
+
+            spawnFlyingResourceIcon(this.screenHost, new THREE.Vector3(departedFrom.x, departedFrom.y, departedFrom.z), toWorld.clone(), icon, () => {
+                this.inFlightByType.set(type, (this.inFlightByType.get(type) ?? 1) - 1);
                 QueueStorage.addProgress(this.queueId, 1);
                 const completedTask = QueueStorage.tryCompleteTask(this.queueId, this.config);
                 if (completedTask) {

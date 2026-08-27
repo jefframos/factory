@@ -90,23 +90,7 @@ export const QUEUE_CONFIG_BY_ID: Partial<Record<string, QueueConfig>> = {
             "item": ItemType.Pickaxe
         },
         "cooldownSec": 30,
-        "possibleTasks": [
-            {
-                "resourceType": ResourceType.Wood,
-                "amount": 10,
-                "rewardAmount": 25
-            },
-            {
-                "resourceType": ResourceType.Stone,
-                "amount": 8,
-                "rewardAmount": 30
-            },
-            {
-                "resourceType": ResourceType.Berries,
-                "amount": 15,
-                "rewardAmount": 20
-            }
-        ],
+        "possibleTasks": [],
         "popupBobOffset": 2
     },
 };

@@ -178,5 +178,25 @@
             0,
             360
         ]
+    },
+    "pig": {
+        "icon": "pizza-model-snapshots_Pets-AnimalPig",
+        "models": [
+            "Pets.AnimalPig"
+        ],
+        "scale": 0.5,
+        "rotationDeg": 0
+    },
+    "gem": {
+        "icon": "ResourceBar_Single_Icon_Gem",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "energy": {
+        "icon": "ResourceBar_Single_Icon_Energy",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
     }
 }

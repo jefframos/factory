@@ -1,52 +1,30 @@
 // EconomyUI.ts
 //
-// Renders EconomyStorage's money balance (see games/pizza/game/data/
-// EconomyStorage.ts) as a small panel pinned to a screen corner — a trimmed,
-// single-row specialization of GlobalResourcesUI.ts's shape (icon on the
-// left, amount right-aligned, "pop" animated via playGainFeedback() each
-// time the balance grows). Fixed to CurrencyType.Money rather than a
-// dynamic per-type row list like GlobalResourcesUI — the base currency
-// panel always shows, even at 0, since it's the one thing every economy
-// interaction (queue rewards today, a shop spend later) revolves around.
+// Renders EconomyStorage's balances (see games/pizza/game/data/
+// EconomyStorage.ts) as a row of pills pinned to a screen corner — one pill
+// per currency listed in TopBarStyle.ts's TOP_BAR_STYLE.currencies (icon on
+// the left, amount right-aligned, "pop" animated via playGainFeedback() each
+// time a balance grows). No panel title/frame wraps the row — each currency
+// gets its own small framed pill instead, so the topbar reads as a strip of
+// stats rather than a titled "Wallet" panel. All sizing/spacing/frame choice
+// lives in TopBarStyle.ts — this file only lays pills out and reacts to
+// EconomyStorage.onChange.
 //
-// Subscribes to EconomyStorage.onChange ONCE and repaints only when Money
-// actually changes — no per-frame polling. Tracks the last-seen balance
-// purely to compute the gained delta for playGainFeedback(), since onChange
-// itself only reports WHICH currency changed.
+// Subscribes to EconomyStorage.onChange ONCE and repaints only the pill whose
+// currency actually changed — no per-frame polling. Tracks each pill's own
+// last-seen balance purely to compute the gained delta for
+// playGainFeedback(), since onChange itself only reports WHICH currency
+// changed.
 
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import FrameComponent from './FrameComponent';
-import { FrameName } from './FrameRegistry';
 import { TextStyleRegistry } from './TextStyleRegistry';
+import { TOP_BAR_STYLE } from './TopBarStyle';
 import { EconomyStorage } from '../data/EconomyStorage';
 import { CURRENCY_CONFIG, CurrencyType } from '../data/EconomyTypes';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
-
-export interface EconomyUiConfig {
-    /** Width of the row itself, NOT counting `padding` — panelWidth (see that field's own doc) adds padding on both sides on top of this. */
-    contentWidth: number;
-    rowHeight: number;
-    /** Which FrameRegistry entry frames the whole panel — see FrameRegistry.ts. */
-    frame: FrameName;
-    title: string;
-    /** Space between the panel's frame border and its contents (row + title). */
-    padding: number;
-}
-
-const DEFAULT_CONFIG: EconomyUiConfig = {
-    contentWidth: 110,
-    rowHeight: 36,
-    frame: 'Main',
-    title: 'Wallet',
-    padding: 12,
-};
-
-/** Vertical space reserved above the row for the title text. */
-const TITLE_HEIGHT = 22;
-/** Gap left between the icon's edge and the row's own height — see the constructor's ViewUtils.elementScaler() call. */
-const ICON_PADDING = 4;
 
 /** Icon jiggle on a gain — a quick punch-out-and-settle, not a full spin. Same shape as GlobalResourcesUI's own jiggle. */
 const JIGGLE_PUNCH_SCALE = 1.3;
@@ -57,114 +35,130 @@ const JIGGLE_SETTLE_SEC = 0.15;
 const GAIN_POPUP_RISE_PX = 16;
 const GAIN_POPUP_DURATION_SEC = 0.6;
 
-/** The one currency this panel shows — see this file's own doc for why it's fixed rather than a dynamic per-type row list. */
-const DISPLAYED_CURRENCY = CurrencyType.Money;
+interface Pill {
+    readonly container: PIXI.Container;
+    readonly frameComponent: FrameComponent;
+    readonly icon: PIXI.Sprite;
+    readonly iconBaseScale: number;
+    readonly amountLabel: PIXI.Text;
+    readonly currency: CurrencyType;
+    lastBalance: number;
+}
 
 export default class EconomyUI extends PIXI.Container {
-    private readonly config: EconomyUiConfig;
-    /** Last-seen balance — the only way to compute a gain's delta on onChange (see this file's own doc). */
-    private lastBalance = 0;
+    private readonly pills: Pill[] = [];
+    private readonly pillsByCurrency = new Map<CurrencyType, Pill>();
 
-    private frameComponent!: FrameComponent;
-    private titleText!: PIXI.Text;
-    private icon!: PIXI.Sprite;
-    private iconBaseScale = 1;
-    private amountLabel!: PIXI.Text;
-
-    /** The panel's own footprint, in its local space (top-left at (0,0)) — see GlobalResourcesUI's identical field for why UIService reads these every frame to anchor by a corner other than top-left. */
+    /** The row's own footprint, in its local space (top-left at (0,0)) — see GlobalResourcesUI's identical fields for why UIService reads these every frame to anchor by a corner other than top-left. */
     public panelWidth = 0;
     public panelHeight = 0;
 
-    /**
-     * Where the money icon itself actually renders, in THIS panel's PARENT's local space
-     * (i.e. `game.overlayContainer`'s own coordinate system, since UIService adds this panel
-     * as a direct child of that container with no extra scale/rotation) — used by
-     * FlyingResourceIcon.spawnFlyingIconToOverlayPoint() so a queue's reward can fly to
-     * exactly where the wallet icon sits on screen, tracking it live if this panel ever moves
-     * (a resize UIService repositions it for) rather than a position snapshotted once.
-     */
-    public getIconAnchorPosition(target: PIXI.Point = new PIXI.Point()): PIXI.Point {
-        return target.set(this.x + this.icon.x, this.y + this.icon.y);
-    }
-
-    public constructor(config: Partial<EconomyUiConfig> = {}) {
+    public constructor() {
         super();
-        this.config = { ...DEFAULT_CONFIG, ...config };
 
-        const { frame, title, contentWidth, rowHeight } = this.config;
-
-        this.frameComponent = new FrameComponent(frame, 0, 0);
-        this.addChild(this.frameComponent);
-
-        this.titleText = new PIXI.Text(title, TextStyleRegistry.Info);
-        this.titleText.anchor.set(0.5, 0);
-        this.addChild(this.titleText);
-
-        this.icon = new PIXI.Sprite(getAssetIcon(CURRENCY_CONFIG[DISPLAYED_CURRENCY].assetKey));
-        this.icon.anchor.set(0, 0.5);
-        this.icon.position.set(0, rowHeight / 2);
-        this.iconBaseScale = ViewUtils.elementScaler(this.icon, rowHeight - ICON_PADDING * 2);
-        this.icon.scale.set(this.iconBaseScale);
-        this.addChild(this.icon);
-
-        this.amountLabel = new PIXI.Text('0', TextStyleRegistry.Body);
-        this.amountLabel.anchor.set(1, 0.5);
-        this.amountLabel.position.set(contentWidth, rowHeight / 2);
-        this.addChild(this.amountLabel);
+        for (const currency of TOP_BAR_STYLE.currencies) {
+            this.pills.push(this.buildPill(currency));
+        }
 
         this.layout();
 
         EconomyStorage.onChange.add(this.onEconomyChanged, this);
-        // Seeds lastBalance from whatever's already saved (e.g. this panel building after a
-        // reload with existing money) so that read doesn't itself pop as a "gain".
-        this.lastBalance = EconomyStorage.getBalance(DISPLAYED_CURRENCY);
-        this.amountLabel.text = this.lastBalance.toString();
+        // Seeds each pill's lastBalance from whatever's already saved (e.g. this row building
+        // after a reload with existing currency) so that read doesn't itself pop as a "gain".
+        for (const pill of this.pills) {
+            pill.lastBalance = EconomyStorage.getBalance(pill.currency);
+            pill.amountLabel.text = pill.lastBalance.toString();
+        }
+    }
+
+    /**
+     * Where a given currency's icon actually renders, in THIS row's PARENT's local space (i.e.
+     * `game.overlayContainer`'s own coordinate system, since UIService adds this row as a
+     * direct child of that container with no extra scale/rotation) — used by
+     * FlyingResourceIcon.spawnFlyingIconToOverlayPoint() so a queue's reward can fly to exactly
+     * where a currency's pill sits on screen, tracking it live if this row ever moves (a resize
+     * UIService repositions it for) rather than a position snapshotted once. Falls back to this
+     * row's own position if `currency` isn't shown on the topbar.
+     */
+    public getIconAnchorPosition(currency: CurrencyType, target: PIXI.Point = new PIXI.Point()): PIXI.Point {
+        const pill = this.pillsByCurrency.get(currency);
+        if (!pill) {
+            return target.set(this.x, this.y);
+        }
+        return target.set(this.x + pill.container.x + pill.icon.x, this.y + pill.container.y + pill.icon.y);
+    }
+
+    private buildPill(currency: CurrencyType): Pill {
+        const { pillContentWidth, pillHeight, pillFrame, iconPadding } = TOP_BAR_STYLE;
+
+        const container = new PIXI.Container();
+        this.addChild(container);
+
+        const frameComponent = new FrameComponent(pillFrame, 0, 0);
+        frameComponent.setSize(pillContentWidth + TOP_BAR_STYLE.pillPadding * 2, pillHeight);
+        container.addChild(frameComponent);
+
+        const icon = new PIXI.Sprite(getAssetIcon(CURRENCY_CONFIG[currency].assetKey));
+        icon.anchor.set(0, 0.5);
+        icon.position.set(TOP_BAR_STYLE.pillPadding, pillHeight / 2);
+        const iconBaseScale = ViewUtils.elementScaler(icon, pillHeight - iconPadding * 2);
+        icon.scale.set(iconBaseScale);
+        container.addChild(icon);
+
+        const amountLabel = new PIXI.Text('0', TextStyleRegistry.Body);
+        amountLabel.anchor.set(1, 0.5);
+        amountLabel.position.set(TOP_BAR_STYLE.pillPadding + pillContentWidth, pillHeight / 2);
+        container.addChild(amountLabel);
+
+        const pill: Pill = { container, frameComponent, icon, iconBaseScale, amountLabel, currency, lastBalance: 0 };
+        this.pillsByCurrency.set(currency, pill);
+        return pill;
     }
 
     private onEconomyChanged = (type: CurrencyType): void => {
-        if (type !== DISPLAYED_CURRENCY) {
+        const pill = this.pillsByCurrency.get(type);
+        if (!pill) {
             return;
         }
 
-        const balance = EconomyStorage.getBalance(DISPLAYED_CURRENCY);
-        const gained = balance - this.lastBalance;
-        this.lastBalance = balance;
-        this.amountLabel.text = balance.toString();
+        const balance = EconomyStorage.getBalance(type);
+        const gained = balance - pill.lastBalance;
+        pill.lastBalance = balance;
+        pill.amountLabel.text = balance.toString();
 
         if (gained > 0) {
-            this.playGainFeedback(gained);
+            this.playGainFeedback(pill, gained);
         }
     };
 
-    /** Recomputes the panel's footprint and resizes the frame + retitles to match — called once at construction; the row itself never grows/shrinks (fixed to one currency), so nothing else needs to re-layout after. */
+    /** Lays pills out left to right with `pillGap` between them — called once at construction; the row never grows/shrinks (fixed currency list), so nothing else needs to re-layout after. */
     private layout(): void {
-        const { contentWidth, padding } = this.config;
+        const { pillContentWidth, pillHeight, pillGap, pillPadding } = TOP_BAR_STYLE;
+        const pillWidth = pillContentWidth + pillPadding * 2;
 
-        this.panelWidth = contentWidth + padding * 2;
-        this.panelHeight = this.config.rowHeight + padding * 2 + TITLE_HEIGHT;
+        this.pills.forEach((pill, i) => {
+            pill.container.position.set(i * (pillWidth + pillGap), 0);
+        });
 
-        this.titleText.position.set(this.panelWidth / 2, padding * 0.5);
-        this.icon.position.x = padding;
-        this.amountLabel.position.x = padding + contentWidth;
-        this.icon.position.y = padding + TITLE_HEIGHT + this.config.rowHeight / 2;
-        this.amountLabel.position.y = this.icon.position.y;
-
-        this.frameComponent.setSize(this.panelWidth, this.panelHeight);
+        this.panelWidth = this.pills.length > 0
+            ? this.pills.length * pillWidth + (this.pills.length - 1) * pillGap
+            : 0;
+        this.panelHeight = pillHeight;
     }
 
-    /** Money just grew — icon punches out and settles, and a "+N" rises and fades above the amount. Purely decorative; EconomyStorage's balance (already applied by the time onChange fires) is the source of truth regardless. */
-    private playGainFeedback(gained: number): void {
-        gsap.killTweensOf(this.icon.scale);
-        this.icon.scale.set(this.iconBaseScale);
+    /** A currency just grew — icon punches out and settles, and a "+N" rises and fades above the amount. Purely decorative; EconomyStorage's balance (already applied by the time onChange fires) is the source of truth regardless. */
+    private playGainFeedback(pill: Pill, gained: number): void {
+        gsap.killTweensOf(pill.icon.scale);
+        pill.icon.scale.set(pill.iconBaseScale);
         gsap.timeline()
-            .to(this.icon.scale, { x: this.iconBaseScale * JIGGLE_PUNCH_SCALE, y: this.iconBaseScale * JIGGLE_PUNCH_SCALE, duration: JIGGLE_PUNCH_SEC, ease: 'back.out(2)' })
-            .to(this.icon.scale, { x: this.iconBaseScale, y: this.iconBaseScale, duration: JIGGLE_SETTLE_SEC, ease: 'power1.out' });
+            .to(pill.icon.scale, { x: pill.iconBaseScale * JIGGLE_PUNCH_SCALE, y: pill.iconBaseScale * JIGGLE_PUNCH_SCALE, duration: JIGGLE_PUNCH_SEC, ease: 'back.out(2)' })
+            .to(pill.icon.scale, { x: pill.iconBaseScale, y: pill.iconBaseScale, duration: JIGGLE_SETTLE_SEC, ease: 'power1.out' });
 
         const popup = new PIXI.Text(`+${gained}`, TextStyleRegistry.ResourceDamage);
         popup.style.fill = '#33cc66';
         popup.anchor.set(1, 1);
-        popup.position.set(this.amountLabel.position.x, this.amountLabel.position.y - this.config.rowHeight / 2);
-        this.addChild(popup);
+        popup.position.set(pill.amountLabel.position.x, pill.amountLabel.position.y - TOP_BAR_STYLE.pillHeight / 2);
+        pill.container.addChild(popup);
 
         const progress = { t: 0 };
         const baseY = popup.position.y;

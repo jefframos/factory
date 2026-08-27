@@ -279,7 +279,19 @@ const ENTITY_SCHEMAS = {
         { key: 'checkIntervalSec', type: 'number', label: 'Check Interval (sec)' },
     ],
     shapeResourcePlacements: [
-        { key: 'resourceType', type: 'select', label: 'Resource', source: 'resources' },
+        // Not sourced from another tab — a small fixed choice, same as popupMode's own inline
+        // options elsewhere in this file. Only ONE of the two fields below actually applies,
+        // whichever this selects — see ShapeResourceTypes.ts's own doc for why both fields
+        // stay on every entry instead of the form hiding whichever doesn't apply.
+        {
+            key: 'spawnType', type: 'select', label: 'Spawn Type', optional: true,
+            options: [
+                { value: 'resource', label: 'Resource (picked up on contact)' },
+                { value: 'animal', label: 'Animal (wanders, must be caught)' },
+            ],
+        },
+        { key: 'resourceType', type: 'select', label: 'Resource (used when Spawn Type = Resource)', source: 'resources', optional: true },
+        { key: 'animalType', type: 'select', label: 'Animal (used when Spawn Type = Animal)', source: 'animals', optional: true },
         // '$spawnerShapeIds' is not a manifest tab id — app.js's getOptions() special-cases
         // it to read from /api/spawner-shape-ids (the "id" custom property of every
         // "spawner"-type object drawn on the map's mapSettings layer — see tiledMap.mjs's
@@ -288,6 +300,19 @@ const ENTITY_SCHEMAS = {
         { key: 'count', type: 'number', label: 'Count (target instances inside this shape at once)' },
         { key: 'minDistance', type: 'number', label: 'Min Distance' },
         { key: 'checkIntervalSec', type: 'number', label: 'Check Interval (sec)' },
+    ],
+    animals: [
+        { key: 'label', type: 'text', label: 'Label' },
+        { key: 'resourceType', type: 'select', label: 'Resource (world model + caught-state icon — never banked, a catch makes it a follower instead)', source: 'resources' },
+        { key: 'captureSec', type: 'number', label: 'Capture Time (sec) — how long the player must stand in range holding the requirement' },
+        // A PAIR — either both set or both left blank (a bare-handed catch, no item needed at
+        // all). See AnimalTypes.ts's own doc on why "amount" is the closest thing this codebase
+        // has to a "level" for an item today.
+        { key: 'requirementItem', type: 'select', label: 'Required Item (optional — blank means no item needed)', source: 'items', optional: true },
+        { key: 'requirementAmount', type: 'number', label: 'Required Amount', optional: true },
+        { key: 'wanderSpeed', type: 'number', label: 'Wander Speed (world units/sec)' },
+        { key: 'wanderPauseRangeSec', type: 'numberRange', label: 'Wander Pause (sec)' },
+        { key: 'triggerRadius', type: 'number', label: 'Trigger Radius (world units — how close the player must stand to capture; blank defaults to 1)', optional: true },
     ],
     actions: [
         { key: 'hitIntervalSec', type: 'number', label: 'Hit Interval (sec)' },

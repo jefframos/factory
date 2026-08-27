@@ -1,0 +1,14 @@
+{
+    "pig": {
+        "label": "Pig",
+        "resourceType": "pig",
+        "captureSec": 3,
+        "requirementItem": "rope",
+        "wanderSpeed": 1.2,
+        "wanderPauseRangeSec": [
+            1,
+            3
+        ],
+        "triggerRadius": 2
+    }
+}

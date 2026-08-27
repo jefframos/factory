@@ -24,14 +24,29 @@ import BaseButton from 'core/ui/BaseButton';
 import { Game } from 'core/Game';
 import { TextStyleRegistry } from './TextStyleRegistry';
 import BackpackUI from './BackpackUI';
+import BackpackListUI from './BackpackListUI';
+import AnimalFollowUI from './AnimalFollowUI';
+import AnimalDockUI from './AnimalDockUI';
 import GlobalResourcesUI from './GlobalResourcesUI';
 import EconomyUI from './EconomyUI';
 import ToolLevelUI from './ToolLevelUI';
-import SettingsUIService from './SettingsUIService';
+import ToolListUI from './ToolListUI';
+import SettingsUIService, { SETTINGS_ROW_BUTTON_SIZE, SETTINGS_ROW_TOP_LEFT_MARGIN } from './SettingsUIService';
 import { UpgradeNotificationManager } from './notifications/UpgradeNotificationManager';
 
-/** Gap between the backpack HUD panel's bottom edge and the actual bottom of the screen — see positionBackpackUi(). */
+/** Gap between the backpack HUD panel's bottom edge and the actual bottom of the screen — see positionBackpackUi(). Only relevant if backpackUi is switched back on — see that field's own comment. */
 const BACKPACK_UI_BOTTOM_MARGIN = 16;
+
+/** Gap between the backpack LIST's top/left edges and the currency topbar/screen edge — see positionBackpackListUi(). */
+const BACKPACK_LIST_UI_MARGIN = 16;
+/** Extra vertical gap below the currency topbar's own bottom edge before the backpack list starts — see positionBackpackListUi(). */
+const BACKPACK_LIST_UI_TOP_GAP = 10;
+
+/** Gap between the animal-followers HUD panel's bottom edge and the backpack panel's own top edge — see positionAnimalFollowUi(). Only relevant if animalFollowUi is switched back on — see that field's own comment. */
+const ANIMAL_FOLLOW_UI_BOTTOM_MARGIN = 10;
+
+/** Gap between the animal dock's bottom edge and the camera-toggle button's own top edge (it sits directly above that button, same bottom-left column) — see positionAnimalDockUi(). */
+const ANIMAL_DOCK_UI_BOTTOM_MARGIN = 10;
 
 /** Gap between the global-resources HUD panel's top/right edges and the actual top-right corner of the screen — see positionGlobalResourcesUi(). */
 const GLOBAL_RESOURCES_UI_MARGIN = 16;
@@ -42,8 +57,13 @@ const ECONOMY_UI_MARGIN = 16;
 /** Gap between the camera-toggle button's bottom/left edges and the actual bottom-left corner of the screen — see positionCameraToggleButton(). */
 const CAMERA_TOGGLE_BUTTON_MARGIN = 16;
 
-/** Gap between the tool/level HUD panel's bottom/right edges and the actual bottom-right corner of the screen — see positionToolLevelUi(). */
+/** Gap between the tool/level HUD panel's bottom/right edges and the actual bottom-right corner of the screen — see positionToolLevelUi(). Only relevant if toolLevelUi is switched back on — see that field's own comment. */
 const TOOL_LEVEL_UI_MARGIN = 16;
+
+/** Gap between the tool LIST's left edge and the settings row's own left edge — see positionToolListUi(). Reuses SETTINGS_ROW_TOP_LEFT_MARGIN so both rows share the exact same left inset. */
+const TOOL_LIST_UI_MARGIN = SETTINGS_ROW_TOP_LEFT_MARGIN;
+/** Extra vertical gap below the settings/mute button row's own bottom edge before the tool list starts — see positionToolListUi(). */
+const TOOL_LIST_UI_TOP_GAP = 10;
 
 /** The camera-toggle button's own fixed size — shared between the constructor (building it) and positionCameraToggleButton() (which needs the height to land the button's bottom edge, not its top, at the screen's bottom edge). */
 const CAMERA_TOGGLE_BUTTON_SIZE = { width: 160, height: 48 };
@@ -51,17 +71,29 @@ const CAMERA_TOGGLE_BUTTON_SIZE = { width: 160, height: 48 };
 export default class UIService {
     private readonly game: Game;
 
-    /** The backpack HUD panel — see BackpackUI.ts's own doc. Exposed read-only since nothing outside this service should reposition or destroy it directly. */
+    /** The backpack HUD panel — see BackpackUI.ts's own doc. Built but NOT added to the display tree right now (backpackListUi is the one actually shown — see that field's own comment); kept around/updated so switching back is a one-line change in the constructor. Exposed read-only since nothing outside this service should reposition or destroy it directly. */
     public readonly backpackUi: BackpackUI;
+
+    /** The backpack, alternative style — a bare vertical icon+count list (no frame/title), pinned top-right under the currency topbar. This is the one actually wired into the display tree; see BackpackListUI.ts's own doc for why it exists alongside backpackUi instead of replacing it. */
+    public readonly backpackListUi: BackpackListUI;
+
+    /** The animal-followers HUD panel — see AnimalFollowUI.ts's own doc. Built but NOT added to the display tree right now (animalDockUi is the one actually shown — see that field's own comment); kept around/updated so switching back is a one-line change in the constructor. */
+    public readonly animalFollowUi: AnimalFollowUI;
+
+    /** The animal followers, alternative style — a single boxed "dock" pinned bottom-center, no title (just a capacity readout), with each icon idly floating. This is the one actually wired into the display tree; see AnimalDockUI.ts's own doc for why it exists alongside animalFollowUi instead of replacing it. */
+    public readonly animalDockUi: AnimalDockUI;
 
     /** The base-stockpile HUD panel, pinned top-right — see GlobalResourcesUI.ts's own doc. */
     public readonly globalResourcesUi: GlobalResourcesUI;
 
-    /** The money HUD panel, pinned top-right — see EconomyUI.ts's own doc. */
+    /** The currency topbar (money/gems/energy), pinned top-right — see EconomyUI.ts's own doc. */
     public readonly economyUi: EconomyUI;
 
-    /** The tool/level HUD panel, pinned bottom-right — see ToolLevelUI.ts's own doc. */
+    /** The tool/level HUD panel — see ToolLevelUI.ts's own doc. Built but NOT added to the display tree right now (toolListUi is the one actually shown — see that field's own comment); kept around/updated so switching back is a one-line change in the constructor. */
     public readonly toolLevelUi: ToolLevelUI;
+
+    /** The tools, alternative style — a bare vertical icon+level list (no frame/title), pinned top-left under the settings/mute button row. This is the one actually wired into the display tree; see ToolListUI.ts's own doc for why it exists alongside toolLevelUi instead of replacing it. */
+    public readonly toolListUi: ToolListUI;
 
     /** Bottom-left toggle between the normal follow camera and a top-down view. No button texture art exists yet for pizza — PIXI.Texture.WHITE + tint is the same "flat colored placeholder until real art exists" convention BuildingMeshConfig/GateMeshConfig already use for meshes, just applied to a UI button instead. */
     private readonly cameraToggleButton: BaseButton;
@@ -78,7 +110,16 @@ export default class UIService {
         this.game = game;
 
         this.backpackUi = new BackpackUI();
-        this.game.uiLayer.addChild(this.backpackUi);
+        //this.game.uiLayer.addChild(this.backpackUi);
+
+        this.backpackListUi = new BackpackListUI();
+        this.game.uiLayer.addChild(this.backpackListUi);
+
+        this.animalFollowUi = new AnimalFollowUI();
+        //this.game.uiLayer.addChild(this.animalFollowUi);
+
+        this.animalDockUi = new AnimalDockUI();
+        this.game.uiLayer.addChild(this.animalDockUi);
 
         this.globalResourcesUi = new GlobalResourcesUI();
         //this.game.uiLayer.addChild(this.globalResourcesUi);
@@ -87,7 +128,10 @@ export default class UIService {
         this.game.uiLayer.addChild(this.economyUi);
 
         this.toolLevelUi = new ToolLevelUI();
-        this.game.uiLayer.addChild(this.toolLevelUi);
+        //this.game.uiLayer.addChild(this.toolLevelUi);
+
+        this.toolListUi = new ToolListUI();
+        this.game.uiLayer.addChild(this.toolListUi);
 
         this.cameraToggleButton = new BaseButton({
             standard: {
@@ -122,10 +166,16 @@ export default class UIService {
     /** Re-anchors every panel to the current viewport every frame — cheap, and this scene has no resize hook of its own to piggyback on instead. */
     public update(): void {
         this.positionBackpackUi();
+        this.positionAnimalFollowUi();
         this.positionGlobalResourcesUi();
         this.positionEconomyUi();
+        this.positionBackpackListUi();
         this.positionCameraToggleButton();
+        // Reads cameraToggleButton's own just-set position — must run after it (see this
+        // method's own doc on positionAnimalDockUi()).
+        this.positionAnimalDockUi();
         this.positionToolLevelUi();
+        this.positionToolListUi();
         this.settingsUi.update();
     }
 
@@ -139,6 +189,32 @@ export default class UIService {
         this.backpackUi.position.set(
             screen.center.x - this.backpackUi.panelWidth / 2,
             screen.bottomLeft.y - this.backpackUi.panelHeight - BACKPACK_UI_BOTTOM_MARGIN,
+        );
+    }
+
+    /** Bottom-center, stacked directly above the backpack panel (re-reads backpackUi's own current position, already set for this frame by positionBackpackUi() right before this runs — see update()'s own call order) — regardless of viewport size/aspect, and re-run every frame since either panel's own size can change as rows/slots are added. */
+    private positionAnimalFollowUi(): void {
+        const screen = Game.overlayScreenData;
+        if (!screen) {
+            return;
+        }
+
+        this.animalFollowUi.position.set(
+            screen.center.x - this.animalFollowUi.panelWidth / 2,
+            this.backpackUi.position.y - this.animalFollowUi.panelHeight - ANIMAL_FOLLOW_UI_BOTTOM_MARGIN,
+        );
+    }
+
+    /** Bottom-left, stacked directly above the camera-toggle button (re-reads its own current position, already set for this frame by positionCameraToggleButton() right before this runs — see update()'s own call order) — same column, same left inset. Re-run every frame since the list's own size changes as followers join/leave, and it's hidden entirely (panelWidth/panelHeight both 0) at zero followers. */
+    private positionAnimalDockUi(): void {
+        const screen = Game.overlayScreenData;
+        if (!screen) {
+            return;
+        }
+
+        this.animalDockUi.position.set(
+            screen.bottomLeft.x + CAMERA_TOGGLE_BUTTON_MARGIN,
+            this.cameraToggleButton.position.y - this.animalDockUi.panelHeight - ANIMAL_DOCK_UI_BOTTOM_MARGIN,
         );
     }
 
@@ -165,6 +241,19 @@ export default class UIService {
         this.economyUi.position.set(
             screen.topRight.x - this.economyUi.panelWidth - ECONOMY_UI_MARGIN,
             screen.topRight.y + ECONOMY_UI_MARGIN,
+        );
+    }
+
+    /** Top-right, dropped below the currency topbar's own height so it reads as "under the currency" — re-run every frame since either panel's own size can change (the list as resources are gathered/deposited, the topbar's height is otherwise fixed but re-read anyway for consistency). */
+    private positionBackpackListUi(): void {
+        const screen = Game.overlayScreenData;
+        if (!screen) {
+            return;
+        }
+
+        this.backpackListUi.position.set(
+            screen.topRight.x - this.backpackListUi.panelWidth - BACKPACK_LIST_UI_MARGIN,
+            screen.topRight.y + this.economyUi.panelHeight + BACKPACK_LIST_UI_MARGIN + BACKPACK_LIST_UI_TOP_GAP,
         );
     }
 
@@ -211,12 +300,29 @@ export default class UIService {
         );
     }
 
+    /** Top-left, dropped below the settings/mute button row's own fixed height so it reads as "under the settings" — re-run every frame since the list's own height changes as tools are crafted/upgraded. */
+    private positionToolListUi(): void {
+        const screen = Game.overlayScreenData;
+        if (!screen) {
+            return;
+        }
+
+        this.toolListUi.position.set(
+            screen.topLeft.x + TOOL_LIST_UI_MARGIN,
+            screen.topLeft.y + SETTINGS_ROW_TOP_LEFT_MARGIN + SETTINGS_ROW_BUTTON_SIZE + TOOL_LIST_UI_TOP_GAP,
+        );
+    }
+
     public destroy(): void {
         this.backpackUi.destroy();
+        this.backpackListUi.destroy();
+        this.animalFollowUi.destroy();
+        this.animalDockUi.destroy();
         this.globalResourcesUi.destroy();
         this.economyUi.destroy();
         this.cameraToggleButton.destroy();
         this.toolLevelUi.destroy();
+        this.toolListUi.destroy();
         this.settingsUi.destroy();
     }
 }

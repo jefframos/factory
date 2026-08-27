@@ -1,3 +1,10 @@
 [
-    { "resourceType": "crystal", "shapeId": "animalSpawner1", "count": 3, "minDistance": 3, "checkIntervalSec": 5 }
+    {
+        "spawnType": "animal",
+        "animalType": "pig",
+        "shapeId": "animalSpawner1",
+        "count": 1,
+        "minDistance": 3,
+        "checkIntervalSec": 60
+    }
 ]

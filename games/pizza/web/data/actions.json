@@ -1,5 +1,22 @@
 {
-    "chop": { "hitIntervalSec": 1, "hitScale": 1, "resourcePerHit": 1, "cancelOnLeaveRange": true, "tool": "axe" },
-    "mine": { "hitIntervalSec": 1.5, "hitScale": 1, "resourcePerHit": 1, "cancelOnLeaveRange": true, "tool": "pickaxe" },
-    "gather": { "hitIntervalSec": 2, "hitScale": 1, "resourcePerHit": 1, "cancelOnLeaveRange": true }
+    "chop": {
+        "hitIntervalSec": 1,
+        "hitScale": 1,
+        "resourcePerHit": 1,
+        "cancelOnLeaveRange": true,
+        "tool": "axe"
+    },
+    "mine": {
+        "hitIntervalSec": 1.5,
+        "hitScale": 1,
+        "resourcePerHit": 1,
+        "cancelOnLeaveRange": true,
+        "tool": "pickaxe"
+    },
+    "gather": {
+        "hitIntervalSec": 2,
+        "hitScale": 1,
+        "resourcePerHit": 1,
+        "cancelOnLeaveRange": true
+    }
 }

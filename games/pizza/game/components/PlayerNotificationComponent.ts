@@ -9,7 +9,14 @@
 // (whatever the caller passes — a tool icon, an ingredient icon, ...) with
 // a small exclamation badge overlapping its corner, same composition
 // Gate.ts's requirement panel uses for its own "missing" badge, just built
-// fresh per call instead of persistent.
+// fresh per call instead of persistent — plus an OPTIONAL "Lv.N" label
+// (see showBlocked()'s own `requiredLevel` param) for a requirement that's
+// more than "just own one of these," e.g. AnimalCatchController.ts's own
+// "needs rope, and specifically requirementAmount of it" gate — same
+// "Lv.N" wording ToolLevelUI.ts already uses, even though this counts a
+// plain owned-item amount rather than a real shop-upgrade tier (see
+// AnimalTypes.ts's own doc on why "level" is the closest existing
+// vocabulary for that today).
 //
 // Modeled directly on ResourceNode.showResourceGainPopup()'s "throwaway
 // ScreenAnchorComponent" shape: spawns a short-lived world entity carrying
@@ -25,10 +32,11 @@ import Component from '../ecs/Component';
 import Entity from '../ecs/Entity';
 import ScreenAnchorComponent, { ScreenAnchorHost } from './ScreenAnchorComponent';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
+import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
 
-/** World-space offset from the player entity's own transform.position (feet) to where the bubble anchors — above the head, clear of PlayerUIAvoidanceComponent.DEFAULT_HEAD_OFFSET's own point so it doesn't sit right where other popups already dodge. */
-const ANCHOR_OFFSET = new THREE.Vector3(0, 2.3, 0);
+/** World-space offset from the player entity's own transform.position (feet) to where the bubble anchors — above the head, clear of PlayerUIAvoidanceComponent.DEFAULT_HEAD_OFFSET's own point so it doesn't sit right where other popups already dodge. Was 2.3 — sat close enough to the head (~1.6) to read as overlapping it; raised to give it real clearance. */
+const ANCHOR_OFFSET = new THREE.Vector3(0, 3.7, 0);
 /** How long the bubble stays up before ScreenAnchorComponent despawns its entity — long enough to read, short enough not to linger once the player's moved on. */
 const TTL_SEC = 1.4;
 const FRAME_PADDING = uniformFitPadding(14);
@@ -37,6 +45,8 @@ const ICON_SIZE = 36;
 const BADGE_SIZE = 20;
 const BADGE_INSET = -2;
 const BADGE_TEXTURE = 'Icon_Exclamation';
+/** "Lv.N" label sitting under the icon — see showBlocked()'s own `requiredLevel` param. */
+const LEVEL_LABEL_GAP = 2;
 
 export default class PlayerNotificationComponent extends Component {
     private readonly host: ScreenAnchorHost;
@@ -48,8 +58,16 @@ export default class PlayerNotificationComponent extends Component {
         this.host = host;
     }
 
-    /** Pops `icon` (e.g. ToolRegistry.getToolIcon()) with an exclamation badge briefly above the player's own head — call whenever an action gets silently skipped for a reason the player should see. */
-    public showBlocked(icon: PIXI.Texture): void {
+    /**
+     * Pops `icon` (e.g. ToolRegistry.getToolIcon()) with an exclamation badge briefly above the
+     * player's own head — call whenever an action gets silently skipped for a reason the player
+     * should see. `requiredLevel` is OPTIONAL — omit it for a plain "you don't own this at all"
+     * block (AutoGatherController's own tool gate, where owning any amount at all is enough);
+     * pass it when the requirement is more specific than that (AnimalCatchController's own
+     * "needs at least `requirementAmount` of this item" gate) so the player can actually see
+     * WHAT they're short of, not just that they are.
+     */
+    public showBlocked(icon: PIXI.Texture, requiredLevel?: number): void {
         const world = this.entity.world;
         if (!world) {
             return;
@@ -71,6 +89,13 @@ export default class PlayerNotificationComponent extends Component {
 
         const row = new PIXI.Container();
         row.addChild(iconSprite, badge);
+
+        if (requiredLevel !== undefined) {
+            const levelLabel = new PIXI.Text(`Lv.${requiredLevel}`, TextStyleRegistry.Body);
+            levelLabel.anchor.set(0.5, 0);
+            levelLabel.position.set(0, LEVEL_LABEL_GAP);
+            row.addChild(levelLabel);
+        }
 
         const content = new AutoFitFrame(FRAME_PADDING, 'Blocked', row);
 

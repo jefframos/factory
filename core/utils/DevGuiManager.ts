@@ -21,6 +21,10 @@ export class DevGuiManager {
 
         this.isDev = isDev;
         this.gui = new dat.GUI({ width: 200 });
+        // Starts collapsed rather than dat.GUI's own open-by-default — the panel's still
+        // there (top-right title bar) for whoever wants to expand it, it just doesn't cover
+        // the screen on every dev load.
+        this.gui.close();
 
         // 1. Target the main GUI element
         const dom = this.gui.domElement;
@@ -74,9 +78,9 @@ export class DevGuiManager {
 
 
 
-    /** Adds a dropdown (select) bound to `owner[key]`, optionally inside a folder. */
+    /** Adds a dropdown (select) bound to `owner[key]`, optionally inside a folder. `owner` is deliberately `Record<string, unknown>` (not `Record<string, T>`) — the object it's called with (e.g. ModelSnapshotTool.settings) can have OTHER keys of unrelated types (numbers, booleans) alongside the one this dropdown edits; only `key` itself needs to actually be a `T`. */
     public addDropdown<T extends string | number>(
-        owner: Record<string, T>,
+        owner: Record<string, unknown>,
         key: string,
         options: T[],
         onChange: (value: T) => void,

@@ -244,6 +244,33 @@ export const ASSET_LIBRARY = {
         "models": [],
         "scale": 1,
         "rotationDeg": 0
+    },
+    /**
+     * Doubles as BOTH the caught-Pig resource's backpack/UI icon (via ResourceRegistry.ts's
+     * identity mapping — ResourceType.Pig === 'pig') AND AnimalNode's own live world model
+     * while a Pig is still wandering uncaught (see AnimalNode.ts, which resolves its visual the
+     * same way LooseResourceNode does — through resolveResourceAssetKey(ANIMAL_CONFIG[type].resourceType)).
+     * `icon` isn't a real asset yet — see this file's own doc, ModelSnapshotTool.ts (the
+     * top-down-render tool this key's name was chosen to match) can generate one; drop it at
+     * raw-assets/images/survive{tps}/animal-pig.png and run `npm run image` to make this real.
+     */
+    "pig": {
+        "icon": "pizza-model-snapshots_Pets-AnimalPig",
+        "models": [MODELS.Pets.AnimalPig],
+        "scale": 0.5,
+        "rotationDeg": 0
+    },
+    "gem": {
+        "icon": "ResourceBar_Single_Icon_Gem",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "energy": {
+        "icon": "ResourceBar_Single_Icon_Energy",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
     }
 } satisfies Record<string, AssetLibraryEntry>;
 

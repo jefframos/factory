@@ -57,6 +57,11 @@ const ENUM_VALUE_FIELDS = {
     resourceType: 'ResourceType',
     buildingId: 'BuildingId',
     action: 'ActionType',
+    animalType: 'AnimalType',
+    // AnimalConfig.requirementItem (see AnimalTypes.ts) — a SECOND field holding an ItemType
+    // value, distinct from the generic `item` key above (MilestoneRequirement's own {type:
+    // 'item', item} shape) — both map to the same enum, just under different property names.
+    requirementItem: 'ItemType',
 };
 
 /** Where each enum in ENUM_VALUE_FIELDS is actually declared — used to auto-add a named import to a target file that references the enum but doesn't yet import it (e.g. ShopTypes.ts has no reason to import ResourceType until an appearRequirement of type 'resource' needs one). */
@@ -65,6 +70,7 @@ const ENUM_SOURCE_FILES = {
     ResourceType: p => path.join(p, 'actions', 'ResourceTypes.ts'),
     BuildingId: p => path.join(p, 'data', 'BuildingTypes.ts'),
     ActionType: p => path.join(p, 'actions', 'ActionTypes.ts'),
+    AnimalType: p => path.join(p, 'actions', 'AnimalTypes.ts'),
 };
 const GAME_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'game');
 /** games/pizza/registry — one level up from GAME_DIR (games/pizza/game), not under it. */

@@ -5,8 +5,13 @@
 // am I holding, how upgraded is it" readout independent of standing at any
 // particular ShopZone. A tool's level is read off whichever
 // SHOP_CONFIG_BY_ID entry upgrades it (ShopConfig.tool) — a tool with no
-// shop targeting it at all just always reads Lv.0, same "nothing to show,
-// show the honest default" convention as everything else here.
+// shop targeting it at all (or one that's simply never been upgraded yet)
+// reads Lv.1, never Lv.0: ShopUpgradeStorage.getLevel() is 0-INDEXED
+// internally (0 = "no upgrades purchased yet," a plain array index into
+// ShopConfig.levels — see that file's own doc), which is the right
+// representation for code but reads as "not even level 1 yet" to a player,
+// when really owning the tool at all already puts them at its base/default
+// tier. Every level number shown here is that raw index + 1.
 //
 // Rows are rebuilt wholesale (not diffed) whenever ItemStorage's owned set
 // actually changes — see refresh()'s own doc for why a full rebuild is fine
@@ -79,6 +84,9 @@ export default class ToolLevelUI extends AutoFitFrame {
 
         const ownedToolIds = TOOL_IDS.filter(toolId => ItemStorage.hasCount(toolId as ItemType, 1));
 
+        // Nothing owned yet — hide the panel entirely rather than showing an empty frame.
+        this.visible = ownedToolIds.length > 0;
+
         ownedToolIds.forEach((toolId, index) => {
             const row = new PIXI.Container();
             row.position.set(0, -index * (ROW_HEIGHT + ROW_GAP));
@@ -92,7 +100,8 @@ export default class ToolLevelUI extends AutoFitFrame {
 
             const shopId = shopIdForTool(toolId);
             const level = shopId ? ShopUpgradeStorage.getLevel(shopId) : 0;
-            const levelLabel = new PIXI.Text(`Lv.${level}`, TextStyleRegistry.Body);
+            // +1 — see this file's own doc on why the raw 0-indexed level never gets shown as-is.
+            const levelLabel = new PIXI.Text(`Lv.${level + 1}`, TextStyleRegistry.Body);
             levelLabel.anchor.set(0, 0.5);
             levelLabel.position.set(ROW_ICON_SIZE + ROW_ICON_TEXT_GAP, -ROW_HEIGHT / 2);
             row.addChild(levelLabel);

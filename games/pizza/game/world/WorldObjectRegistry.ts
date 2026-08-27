@@ -118,6 +118,80 @@ export interface SpawnerShape {
     halfDepth?: number;
 }
 
+/** True if (x, z) falls inside `shape` — see SpawnerShape's own doc for what each kind means. Ray-casting (even-odd rule) for a polygon; plain distance/box check for circle/rect. Lives here (not ShapeResourceSpawner.ts/AnimalNode.ts, both of which use it) so those two files can share it without importing each other — see AnimalNode.ts's own doc on why that circular import would otherwise happen (it needs this for wander-target picking, ShapeResourceSpawner.ts constructs AnimalNode instances). */
+export function isPointInShape(shape: SpawnerShape, x: number, z: number): boolean {
+    switch (shape.kind) {
+        case 'circle': {
+            const dx = x - shape.center.x;
+            const dz = z - shape.center.z;
+            return dx * dx + dz * dz <= shape.radius! * shape.radius!;
+        }
+        case 'rect':
+            return Math.abs(x - shape.center.x) <= shape.halfWidth! && Math.abs(z - shape.center.z) <= shape.halfDepth!;
+        case 'polygon': {
+            const points = shape.points!;
+            let inside = false;
+            for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+                const pi = points[i];
+                const pj = points[j];
+                const intersects = (pi.z > z) !== (pj.z > z)
+                    && x < ((pj.x - pi.x) * (z - pi.z)) / (pj.z - pi.z) + pi.x;
+                if (intersects) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
+    }
+}
+
+/** The axis-aligned world-space box sampleRandomPointInShape() rejection-samples within before testing isPointInShape() — tight for 'circle'/'rect' (every sampled point is already guaranteed inside for those, see that function's own doc), loose for 'polygon' (its own bounding box, since there's no cheaper uniform-sampling approach for an arbitrary shape). */
+function boundsOfShape(shape: SpawnerShape): { minX: number; maxX: number; minZ: number; maxZ: number } {
+    switch (shape.kind) {
+        case 'circle':
+            return { minX: shape.center.x - shape.radius!, maxX: shape.center.x + shape.radius!, minZ: shape.center.z - shape.radius!, maxZ: shape.center.z + shape.radius! };
+        case 'rect':
+            return { minX: shape.center.x - shape.halfWidth!, maxX: shape.center.x + shape.halfWidth!, minZ: shape.center.z - shape.halfDepth!, maxZ: shape.center.z + shape.halfDepth! };
+        case 'polygon': {
+            const points = shape.points!;
+            return points.reduce(
+                (b, p) => ({
+                    minX: Math.min(b.minX, p.x), maxX: Math.max(b.maxX, p.x),
+                    minZ: Math.min(b.minZ, p.z), maxZ: Math.max(b.maxZ, p.z),
+                }),
+                { minX: points[0].x, maxX: points[0].x, minZ: points[0].z, maxZ: points[0].z },
+            );
+        }
+    }
+}
+
+/** One uniformly-random point inside `shape`, or undefined if `maxAttempts` of bounding-box rejection sampling all missed (only possible for 'polygon' — 'circle'/'rect' always succeed first try). Used by ShapeResourceSpawner.tryFillDensity() (roll a spawn point) and AnimalNode.pickNewWanderTarget() (roll a wander target) alike. */
+export function sampleRandomPointInShape(shape: SpawnerShape, maxAttempts: number): { x: number; z: number } | undefined {
+    if (shape.kind === 'circle') {
+        // Closed-form disk sampling (sqrt(rand) so points aren't biased toward the center) —
+        // always inside, no rejection needed.
+        const angle = Math.random() * Math.PI * 2;
+        const r = shape.radius! * Math.sqrt(Math.random());
+        return { x: shape.center.x + Math.cos(angle) * r, z: shape.center.z + Math.sin(angle) * r };
+    }
+    if (shape.kind === 'rect') {
+        return {
+            x: shape.center.x + (Math.random() * 2 - 1) * shape.halfWidth!,
+            z: shape.center.z + (Math.random() * 2 - 1) * shape.halfDepth!,
+        };
+    }
+
+    const bounds = boundsOfShape(shape);
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const x = bounds.minX + Math.random() * (bounds.maxX - bounds.minX);
+        const z = bounds.minZ + Math.random() * (bounds.maxZ - bounds.minZ);
+        if (isPointInShape(shape, x, z)) {
+            return { x, z };
+        }
+    }
+    return undefined;
+}
+
 /** One stop on a waypoint path — see this file's own doc and getWaypoints(). */
 export interface WaypointPlacement {
     /** This waypoint's position within its path — getWaypoints() always returns these sorted ascending, so index 0 of the returned array IS order 0 regardless of the order objects were drawn/exported in. */

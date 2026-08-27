@@ -100,6 +100,16 @@ export default class ShopZone extends Entity {
      * departure time would keep seeing "still have money" and send out more coins than the
      * wallet actually holds, over-crediting this shop's progress on landing. Incremented right
      * before a departure, decremented the instant that same coin lands.
+     *
+     * Deliberately NEVER reset to 0 anywhere (not even at a fresh flyInCoins() call) — same
+     * "persistent field, only ever incremented on departure / decremented on landing" shape
+     * BuildingZone.inFlightByType/DropZone.inFlightByType/CraftZone.inFlightByType/
+     * QueueZone.inFlightByType all use. A drain loop stopping and IMMEDIATELY restarting
+     * (onTriggerStay fires every physics tick, well inside a single 0.45s flight) is the normal
+     * case, not the exception — resetting this on restart would wipe out the true in-flight
+     * count while coins are still mid-air, re-opening the departure gate and sending out more
+     * than the wallet/level actually calls for (the exact bug confirmed and fixed in
+     * QueueZone.ts's own inFlightByType — see that file's own doc for the worked example).
      */
     private inFlightCoins = 0;
     /** True for as long as the player's RigidBody is inside this zone's trigger — the deposit loop checks this before every coin and stops the instant it goes false, same convention as BuildingZone/QueueZone. */
@@ -434,7 +444,6 @@ export default class ShopZone extends Entity {
             return;
         }
         this.draining = true;
-        this.inFlightCoins = 0;
 
         const icon = getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey);
         const toWorld = new THREE.Vector3();

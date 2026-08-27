@@ -4,7 +4,7 @@
             {
                 "view": "ship1View",
                 "weight": 1,
-                "lootTable": "queue1BaseLoot"
+                "lootTable": "animalsRequests"
             }
         ],
         "moveSpeed": 4

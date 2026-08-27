@@ -40,6 +40,15 @@ export const LOOT_TABLE_CONFIG: Record<string, LootTableConfig> = {
             }
         ],
     },
+    "animalsRequests": {
+        "possibleTasks": [
+            {
+                "resourceType": ResourceType.Pig,
+                "amount": 1,
+                "rewardAmount": 100
+            }
+        ]
+    }
 };
 
 export function getLootTable(id: string): LootTableConfig | undefined {
