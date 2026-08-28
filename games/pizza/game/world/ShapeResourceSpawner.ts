@@ -1,7 +1,7 @@
 // ShapeResourceSpawner.ts
 //
 // Scatters loose, dynamically-spawned resources (see ShapeResourceTypes.ts)
-// inside a hand-drawn "spawner" AREA (WorldObjectRegistry.getShape() — a
+// inside a hand-drawn "spawner" AREA (WorldObjectRegistry.getShapes() — a
 // rect, circle, or freehand polygon, e.g. "animalSpawner1") instead of a
 // WorldSpawner tile cluster — sibling to DynamicResourceSpawner.ts, same
 // persisted-record + load/unload-radius streaming design (see that file's
@@ -9,10 +9,26 @@
 // random CELL from the placement's spawnerTileType cluster" for "roll a
 // random POINT inside the placement's own shape."
 //
-// Every placement gets its own independent runtime state (its own record
-// list + a countdown to its next density check), keyed by
-// ShapeResourceTypes.shapePlacementKey() — same per-placement isolation
-// DynamicResourceSpawner.ts uses.
+// One placement can drive MULTIPLE independent spawn areas — every spawner
+// object sharing the placement's own `shapeId` gets its OWN runtime state
+// (see WorldObjectRegistry.getShapes()'s own doc: a spawner id deliberately
+// collects every instance drawn with it, not just the last one). This is
+// what lets a designer draw "treeSpawner" five times across five different
+// forest clearings and configure it ONCE (one ShapeResourcePlacement, one
+// count/density/minDistance) instead of needing five uniquely-named spawner
+// objects and five near-identical placement entries — each clearing still
+// fills to the SAME target independently, they just don't share a budget
+// with each other. A placement whose shapeId matches exactly one drawn
+// object (the common case, and every placement predating this) behaves
+// exactly as before.
+//
+// Every (placement, shape instance) PAIR gets its own independent runtime
+// state (its own record list + a countdown to its next density check),
+// keyed by ShapeResourceTypes.shapePlacementKey() — suffixed with an
+// instance index ONLY when more than one shape shares that shapeId, so a
+// single-instance placement's already-persisted records aren't orphaned by
+// this — same per-placement isolation DynamicResourceSpawner.ts uses,
+// just one level finer.
 //
 // update(playerPosition, delta) does the same two things per placement,
 // every call, as DynamicResourceSpawner.update():
@@ -37,26 +53,36 @@ import * as THREE from 'three';
 import World from '../ecs/World';
 import LooseResourceNode from '../player/LooseResourceNode';
 import AnimalNode from '../player/AnimalNode';
+import ResourceNode from '../player/ResourceNode';
 import { AnimalType } from '../actions/AnimalTypes';
+import { PROVIDER_CONFIG } from '../actions/ProviderTypes';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
-import WorldObjectRegistry, { sampleRandomPointInShape } from './WorldObjectRegistry';
+import WorldObjectRegistry, { SpawnerShape, sampleRandomPointInShape, shapeArea } from './WorldObjectRegistry';
 import { SHAPE_RESOURCE_PLACEMENTS, ShapeResourcePlacement, shapePlacementKey } from './ShapeResourceTypes';
 import { ShapeResourceStorage } from './ShapeResourceStorage';
+import { WORLD_UNITS_PER_TILE } from './TileMapConfig';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 import ZoneVisibilityManager from './ZoneVisibilityManager';
+import { ZONE_REVEAL_CONFIG } from './FogOfWarConfig';
+import { collectFarmFootprints, FarmFootprint, isInsideAnyFarmFootprint } from './FarmFootprints';
 
 /** Upper bound on how many candidate points tryFillDensity() will roll through in a single check — same "cheap backstop against an unlucky run of minDistance misses" reasoning as DynamicResourceSpawner's own MAX_ATTEMPTS_PER_CHECK, plus here it also has to absorb rejection-sampling misses for a polygon's bounding box. */
 const MAX_ATTEMPTS_PER_CHECK = 60;
 
 interface RuntimeRecord {
     position: THREE.Vector3;
-    /** Only set while the player is within resourceLoadRadius of this record — see update(). A LooseResourceNode for a 'resource' placement, an AnimalNode for an 'animal' one — see materialize()'s own branch. */
-    node?: LooseResourceNode | AnimalNode;
+    /** Only set while the player is within resourceLoadRadius of this record — see update(). A LooseResourceNode for a 'resource' placement, an AnimalNode for an 'animal' one, a real gatherable ResourceNode for a 'provider' one — see materialize()'s own branch. */
+    node?: LooseResourceNode | AnimalNode | ResourceNode;
+    /** `spawnType: 'provider'` records ONLY — mirrors DynamicResourceSpawner's own RuntimeRecord.life/respawnRemainingSec (see that file's own doc): a provider depletes then respawns on a timer FOREVER rather than being consumed-and-gone, so this has to persist across materialize/dematerialize cycles. Always undefined for a 'resource'/'animal' record. */
+    life?: number;
+    respawnRemainingSec?: number;
 }
 
 interface ShapeResourceState {
     readonly placement: ShapeResourcePlacement;
-    /** shapePlacementKey(placement) — ShapeResourceStorage's own persistence key for this placement's records. */
+    /** THIS state's own shape instance, resolved once at construction — see WorldObjectRegistry.getShapes()'s own doc. Every method below reads this directly instead of re-looking it up by shapeId, which would be ambiguous once more than one instance can share an id. */
+    readonly shape: SpawnerShape;
+    /** shapePlacementKey(placement) — ShapeResourceStorage's own persistence key for this state's own records — suffixed with this instance's own index when its shapeId matched more than one drawn object (see this file's own doc), so sibling instances never share (or fight over) each other's persisted records/budget. */
     readonly key: string;
     readonly records: RuntimeRecord[];
     /** Seconds remaining until the next density check for this placement — see update(). */
@@ -65,6 +91,8 @@ interface ShapeResourceState {
 
 export default class ShapeResourceSpawner {
     private readonly states: ShapeResourceState[];
+    /** Every farm plot's own AABB, resolved ONCE (see FarmFootprints.ts's own doc) — tryFillDensity() rejects any candidate point landing inside one, same as it already rejects a too-close-to-another-record candidate. */
+    private readonly farmFootprints: FarmFootprint[];
 
     public constructor(
         private readonly world: World,
@@ -75,19 +103,34 @@ export default class ShapeResourceSpawner {
         /** Solution 2 only (undefined under FogOfWarStyle.BoxCloud — see FogOfWarConfig.ts): a record that streams in inside a closed zone stays invisible until that zone is revealed, exactly like WorldManager's own map-painted resources. */
         private readonly zoneVisibility?: ZoneVisibilityManager,
     ) {
-        // Starts every placement's countdown at 0 rather than checkIntervalSec — same "seed up
-        // to target the instant the scene loads" reasoning as DynamicResourceSpawner's own
-        // constructor.
-        this.states = placements.map(placement => {
-            const key = shapePlacementKey(placement);
-            return {
-                placement,
-                key,
-                records: ShapeResourceStorage.getRecords(key).map(record => ({
-                    position: new THREE.Vector3(record.x, 0, record.z),
-                })),
-                checkTimerSec: 0,
-            };
+        this.farmFootprints = collectFarmFootprints(worldObjects);
+        // Starts every state's countdown at 0 rather than checkIntervalSec — same "seed up to
+        // target the instant the scene loads" reasoning as DynamicResourceSpawner's own
+        // constructor. flatMap: a placement whose shapeId matches N drawn objects (see this
+        // file's own doc) becomes N independent states here, one per object; a placement
+        // matching zero (a typo'd id, or one not drawn yet) contributes nothing at all —
+        // warned once here rather than every tryFillDensity() tick the old single-shape
+        // lookup used to warn on.
+        this.states = placements.flatMap(placement => {
+            const shapes = this.worldObjects.getShapes(placement.shapeId);
+            if (shapes.length === 0) {
+                console.warn(`[ShapeResourceSpawner] no spawner shape found for id "${placement.shapeId}" — check the mapSettings layer`);
+                return [];
+            }
+
+            return shapes.map((shape, shapeIndex) => {
+                const baseKey = shapePlacementKey(placement);
+                const key = shapes.length > 1 ? `${baseKey}#${shapeIndex}` : baseKey;
+                return {
+                    placement,
+                    shape,
+                    key,
+                    records: ShapeResourceStorage.getRecords(key).map(record => ({
+                        position: new THREE.Vector3(record.x, 0, record.z),
+                    })),
+                    checkTimerSec: 0,
+                };
+            });
         });
     }
 
@@ -96,7 +139,7 @@ export default class ShapeResourceSpawner {
         const unloadRadiusSq = PERFORMANCE_CONFIG.resourceUnloadRadius * PERFORMANCE_CONFIG.resourceUnloadRadius;
 
         for (const state of this.states) {
-            this.streamRecords(state, playerPosition, loadRadiusSq, unloadRadiusSq);
+            this.streamRecords(state, playerPosition, delta, loadRadiusSq, unloadRadiusSq);
 
             state.checkTimerSec -= delta;
             if (state.checkTimerSec > 0) {
@@ -133,15 +176,29 @@ export default class ShapeResourceSpawner {
         await ShapeResourceStorage.clearAll();
     }
 
-    private streamRecords(state: ShapeResourceState, playerPosition: THREE.Vector3, loadRadiusSq: number, unloadRadiusSq: number): void {
+    /** See DynamicResourceSpawner.streamRecords()'s own doc for the 'provider'-specific life/respawn bookkeeping this mirrors — pulling a live ResourceNode's own state into the record every tick, and ticking an off-screen depleted one's respawn countdown here so it comes back on schedule instead of freezing while out of range. */
+    private streamRecords(state: ShapeResourceState, playerPosition: THREE.Vector3, delta: number, loadRadiusSq: number, unloadRadiusSq: number): void {
         for (const record of state.records) {
             const distanceSq = record.position.distanceToSquared(playerPosition);
 
             if (record.node) {
+                if (record.node instanceof ResourceNode) {
+                    record.life = record.node.remainingLife;
+                    record.respawnRemainingSec = record.node.respawnRemaining;
+                }
+
                 if (distanceSq > unloadRadiusSq) {
                     this.dematerialize(record);
                 }
                 continue;
+            }
+
+            if ((state.placement.spawnType ?? 'resource') === 'provider' && record.respawnRemainingSec !== undefined) {
+                record.respawnRemainingSec -= delta;
+                if (record.respawnRemainingSec <= 0) {
+                    record.respawnRemainingSec = undefined;
+                    record.life = PROVIDER_CONFIG[state.placement.providerType!].maxLife;
+                }
             }
 
             if (distanceSq <= loadRadiusSq) {
@@ -151,29 +208,29 @@ export default class ShapeResourceSpawner {
     }
 
     /**
-     * Tops up `state`'s TOTAL record count toward its placement's `count` target — see
-     * ShapeResourcePlacement.count's own doc for why this checks the whole shape, not just
-     * nearby records (unlike DynamicResourceSpawner's proximity-scoped density). Skips
-     * entirely (warn once) if `shapeId` doesn't resolve to any drawn spawner object — a level
-     * designer who hasn't drawn it yet, or a placement referencing a typo'd id, shouldn't
-     * throw, just produce nothing.
+     * Tops up `state`'s TOTAL record count toward its placement's own target — `count` for a
+     * small fixed-size shape (the default), or a density-derived target for a large one when
+     * `density` is set and greater than 0 (see ShapeResourcePlacement.density's own doc) — see
+     * that field's own doc for why this checks the whole shape, not just nearby records
+     * (unlike DynamicResourceSpawner's proximity-scoped density). `state.shape` is always
+     * present by this point (see the constructor's own doc — a state is only ever created for
+     * a shapeId that actually resolved to at least one drawn object), so there's no
+     * missing-shape case to guard here anymore.
      */
     private tryFillDensity(state: ShapeResourceState): void {
-        const shape = this.worldObjects.getShape(state.placement.shapeId);
-        if (!shape) {
-            console.warn(`[ShapeResourceSpawner] no spawner shape found for id "${state.placement.shapeId}" — check the mapSettings layer`);
-            return;
-        }
+        const targetCount = state.placement.density
+            ? Math.round((shapeArea(state.shape) / (WORLD_UNITS_PER_TILE * WORLD_UNITS_PER_TILE)) * state.placement.density)
+            : state.placement.count;
 
         let attempts = 0;
-        while (state.records.length < state.placement.count && attempts < MAX_ATTEMPTS_PER_CHECK) {
+        while (state.records.length < targetCount && attempts < MAX_ATTEMPTS_PER_CHECK) {
             attempts++;
-            const point = sampleRandomPointInShape(shape, MAX_ATTEMPTS_PER_CHECK - attempts);
+            const point = sampleRandomPointInShape(state.shape, MAX_ATTEMPTS_PER_CHECK - attempts);
             if (!point) {
                 break;
             }
             const position = new THREE.Vector3(point.x, 0, point.z);
-            if (!this.isFarEnough(position, state)) {
+            if (!this.isFarEnough(position, state) || isInsideAnyFarmFootprint(position.x, position.z, this.farmFootprints)) {
                 continue;
             }
 
@@ -198,12 +255,10 @@ export default class ShapeResourceSpawner {
     /**
      * Builds the live node for `record` — a LooseResourceNode for a 'resource' placement (the
      * default, see ShapeResourcePlacement.spawnType's own doc), an AnimalNode for an 'animal'
-     * one. An animal needs its own wander shape re-fetched here (not just at spawn time,
-     * since materialize() also runs every time an already-known record re-enters load
-     * radius) — if the shape's gone missing (a level designer deleted/renamed the spawner
-     * object since this was spawned) this just warns and skips rather than crashing, same
-     * "shouldn't happen with a real map, reads better than silently showing nothing" spirit
-     * WorldSpawner.ts's own gid fallback uses.
+     * one (wandering within `state.shape`, its OWN resolved shape instance — see the
+     * constructor's own doc), or a real gatherable ResourceNode (carrying this record's own
+     * persisted life/respawnRemainingSec, same as DynamicResourceSpawner's own provider
+     * branch) for a 'provider' one.
      *
      * No-ops entirely (leaves record.node undefined) if this position's zone is still locked
      * — see ZoneVisibilityManager.ts's own doc for why that has to happen HERE, before
@@ -217,21 +272,35 @@ export default class ShapeResourceSpawner {
             return;
         }
 
+        if ((state.placement.spawnType ?? 'resource') === 'provider') {
+            const node = new ResourceNode(state.placement.providerType!, record.position, record.life, record.respawnRemainingSec, this.screenHost);
+            this.world.add(node);
+            this.threeScene.add(node.transform);
+            record.node = node;
+            node.playSpawnIn();
+            this.zoneVisibility?.register(
+                node.transform, record.position.x, record.position.z,
+                undefined, undefined, ZONE_REVEAL_CONFIG.categoryDelaySec.props,
+            );
+            return;
+        }
+
         if ((state.placement.spawnType ?? 'resource') === 'animal') {
-            const shape = this.worldObjects.getShape(state.placement.shapeId);
-            if (!shape) {
-                console.warn(`[ShapeResourceSpawner] no spawner shape found for id "${state.placement.shapeId}" — can't materialize its animal`);
-                return;
-            }
             const node = new AnimalNode(state.placement.animalType as AnimalType, record.position, this.screenHost, {
-                shape,
+                shape: state.shape,
                 onCaught: () => this.handleConsumed(state, record),
             });
             this.world.add(node);
             this.threeScene.add(node.transform);
             record.node = node;
             node.playSpawnIn();
-            this.zoneVisibility?.register(node.transform, record.position.x, record.position.z);
+            // `creatures` category delay — see ZONE_REVEAL_CONFIG.categoryDelaySec's own doc —
+            // so an animal rises LAST, after terrain and props, when echoing a fresh reveal
+            // (see ZoneVisibilityManager.addRegistrant()'s own doc).
+            this.zoneVisibility?.register(
+                node.transform, record.position.x, record.position.z,
+                undefined, undefined, ZONE_REVEAL_CONFIG.categoryDelaySec.creatures,
+            );
             return;
         }
 
@@ -240,7 +309,10 @@ export default class ShapeResourceSpawner {
         this.threeScene.add(node.transform);
         record.node = node;
         node.playSpawnIn();
-        this.zoneVisibility?.register(node.transform, record.position.x, record.position.z);
+        this.zoneVisibility?.register(
+            node.transform, record.position.x, record.position.z,
+            undefined, undefined, ZONE_REVEAL_CONFIG.categoryDelaySec.props,
+        );
     }
 
     /**

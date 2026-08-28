@@ -155,3 +155,164 @@ export function readSpawnerTileTypes(mapFilePath, tilesFilePath) {
     const tileTypes = (tileDefs.grounds ?? []).map(g => ({ name: g.name, painted: paintedNames.has(g.name) }));
     return { tileTypes, error: null };
 }
+
+/** Matches TileMapConfig.ZONE_LAYER_NAME exactly — the tilelayer whose cells mark zone boundaries (see that file's own doc: a cell's LOCAL tile id, gid minus its owning tileset's firstgid, IS the zone number, 0-based — "zone1" in level-designer terms is zoneNumber 0). */
+const ZONE_LAYER_NAME = 'zones';
+
+/** Every gid painted anywhere in `layer`, WITH its absolute (col, row) — same two map shapes iterateLayerGids() above already handles (bounded `data` array vs. infinite-map `chunks`), just also yielding position since a zone's own cell coordinates are the whole point here (unlike iterateLayerGids(), which only needed the gid). Mirrors TileMapConfig.ts's iterateLayerCells() exactly. */
+function* iterateLayerCells(layer) {
+    if (layer.chunks) {
+        for (const chunk of layer.chunks) {
+            for (let i = 0; i < chunk.data.length; i++) {
+                const gid = chunk.data[i];
+                if (gid > 0) {
+                    yield { gid, col: chunk.x + (i % chunk.width), row: chunk.y + Math.floor(i / chunk.width) };
+                }
+            }
+        }
+        return;
+    }
+    const data = layer.data ?? [];
+    const width = layer.width ?? 0;
+    for (let i = 0; i < data.length; i++) {
+        const gid = data[i];
+        if (gid > 0) {
+            yield { gid, col: i % width, row: Math.floor(i / width) };
+        }
+    }
+}
+
+/** The tileset (from `map.tilesets`) with the largest firstgid still `<= gid` — mirrors TileMapConfig.ts's findTilesetOwningGid(). */
+function findTilesetOwningGid(map, gid) {
+    if (gid <= 0) {
+        return undefined;
+    }
+    const sorted = [...(map.tilesets ?? [])].sort((a, b) => a.firstgid - b.firstgid);
+    let owner;
+    for (const tileset of sorted) {
+        if (tileset.firstgid > gid) {
+            break;
+        }
+        owner = tileset;
+    }
+    return owner;
+}
+
+/**
+ * Reads `mapFilePath`'s "zones" tilelayer and groups every painted cell by zone number — the
+ * SAME grouping TileMapConfig.buildZoneTileCells() does at runtime (mirrored here, read-only,
+ * for the same "editor stays independent of game code" reasoning this file's own top doc
+ * gives for readMapObjectIds()) — backs the Zones tab's map visualization and its
+ * auto-discovery of which zone numbers actually exist to edit (see app.js's renderZonesTab()).
+ *
+ * Returns `{ zones: [{ zoneNumber, cellCount, minCol, maxCol, minRow, maxRow, cells }], error }`,
+ * sorted ascending by zoneNumber. `cells` is every (col, row) that zone paints — enough for the
+ * client to draw a small grid visualization without a second round-trip.
+ */
+export function readZoneCells(mapFilePath) {
+    let map;
+    try {
+        map = JSON.parse(fs.readFileSync(mapFilePath, 'utf-8'));
+    } catch (err) {
+        return { zones: [], error: `couldn't read map file: ${err.message}` };
+    }
+
+    const layer = (map.layers ?? []).find(l => l.type === 'tilelayer' && l.name === ZONE_LAYER_NAME);
+    if (!layer) {
+        return { zones: [], error: `no "${ZONE_LAYER_NAME}" tilelayer found in the map` };
+    }
+
+    const byZone = new Map();
+    for (const { gid, col, row } of iterateLayerCells(layer)) {
+        const owner = findTilesetOwningGid(map, gid);
+        if (!owner) {
+            continue;
+        }
+        const zoneNumber = gid - owner.firstgid;
+        (byZone.get(zoneNumber) ?? byZone.set(zoneNumber, []).get(zoneNumber)).push({ col, row });
+    }
+
+    const zones = [...byZone.entries()]
+        .sort(([a], [b]) => a - b)
+        .map(([zoneNumber, cells]) => ({
+            zoneNumber,
+            cellCount: cells.length,
+            minCol: Math.min(...cells.map(c => c.col)),
+            maxCol: Math.max(...cells.map(c => c.col)),
+            minRow: Math.min(...cells.map(c => c.row)),
+            maxRow: Math.max(...cells.map(c => c.row)),
+            cells,
+        }));
+
+    return { zones, error: null };
+}
+
+/** "type" custom property values on a mapSettings object that aren't a real placed ENTITY — a dropper is a second trigger-area rect for something else's own id (not itself a thing), a waypoint is one stop on a path (no identity of its own) — see WorldObjectRegistry.ts's own doc on both. Excluded from readZoneContents() below; every other type ('building', 'gate', 'queue', 'shop', 'craft', 'spawner') is a real placed thing worth showing as "in zone X". */
+const NON_ENTITY_OBJECT_TYPES = new Set(['dropper', 'waypoint']);
+
+/**
+ * Cross-references every mapSettings object's position against the "zones" tilelayer (same
+ * cellToZone lookup readZoneCells() builds, just kept as a Map instead of grouped into arrays)
+ * to answer "what's actually IN zone N" — backs the Graph tab's zone "in zone" edges (see
+ * graph.js's own doc). A "spawner"-type object's id here is a shapeId (e.g.
+ * "animalSpawner1") — the Graph tab cross-references that against SHAPE_RESOURCE_PLACEMENTS
+ * itself (fetched separately) to find which spawner(s) actually reference it, since a spawner
+ * AREA's own placement and what it spawns are two different tabs.
+ *
+ * Best-effort, not exact: a tile-anchored object's `x`/`y` is its BOTTOM-left corner per
+ * objectToWorldRect()'s own doc (an ordinary rect object's is top-left) — this doesn't
+ * distinguish the two, since "roughly which cell is this in" for a graph visualization doesn't
+ * need that precision the way the game's own real placement math does.
+ *
+ * Returns `{ byZone: { [zoneNumber]: { [type]: [id, ...] } }, error }`.
+ */
+export function readZoneContents(mapFilePath) {
+    let map;
+    try {
+        map = JSON.parse(fs.readFileSync(mapFilePath, 'utf-8'));
+    } catch (err) {
+        return { byZone: {}, error: `couldn't read map file: ${err.message}` };
+    }
+
+    const zoneLayer = (map.layers ?? []).find(l => l.type === 'tilelayer' && l.name === ZONE_LAYER_NAME);
+    if (!zoneLayer) {
+        return { byZone: {}, error: `no "${ZONE_LAYER_NAME}" tilelayer found in the map` };
+    }
+
+    const cellToZone = new Map();
+    for (const { gid, col, row } of iterateLayerCells(zoneLayer)) {
+        const owner = findTilesetOwningGid(map, gid);
+        if (owner) {
+            cellToZone.set(`${col},${row}`, gid - owner.firstgid);
+        }
+    }
+
+    const objectLayer = (map.layers ?? []).find(l => l.type === 'objectgroup' && l.name === OBJECTS_LAYER_NAME);
+    const byZone = {};
+    for (const obj of objectLayer?.objects ?? []) {
+        const props = Object.fromEntries((obj.properties ?? []).map(p => [p.name, p.value]));
+        const type = props.type;
+        const id = props.id;
+        if (!type || !id || NON_ENTITY_OBJECT_TYPES.has(type)) {
+            continue;
+        }
+        const col = Math.floor(obj.x / map.tilewidth);
+        const row = Math.floor(obj.y / map.tileheight);
+        const zoneNumber = cellToZone.get(`${col},${row}`);
+        if (zoneNumber === undefined) {
+            continue;
+        }
+        ((byZone[zoneNumber] ??= {})[type] ??= []).push(String(id));
+    }
+
+    // Dedupe — a "craft"/"shop"/etc. id can legitimately have more than one mapSettings
+    // object drawn for it (e.g. a table's own dropper-adjacent duplicate placement), which
+    // would otherwise list/edge the same id twice for no reason.
+    for (const types of Object.values(byZone)) {
+        for (const [type, ids] of Object.entries(types)) {
+            types[type] = [...new Set(ids)];
+        }
+    }
+
+    return { byZone, error: null };
+}

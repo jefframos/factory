@@ -29,6 +29,8 @@ let spawnerTileTypes = [];
 let dynamicResourceAreaFilter = 'all';
 /** Every "spawner"-type object's "id" custom property drawn on the map's mapSettings layer (e.g. "animalSpawner1" — see tiledMap.mjs's readSpawnerShapeIds()) — fetched once at init/restart, backs the '$spawnerShapeIds' virtual select source (see getOptions()) and the Shape Resources tab's own grouping (see renderShapeResourcesByArea()). */
 let spawnerShapeIds = [];
+/** Every zone actually painted on the map's "zones" tilelayer right now — `{ zones: [{zoneNumber, cellCount, minCol, maxCol, minRow, maxRow, cells}], error }` (see tiledMap.mjs's readZoneCells()). Fetched once at init/restart; backs the Zones tab's own map visualization AND its auto-discovery of which zoneNumbers need an entry (see renderZonesTab()). */
+let zoneCells = { zones: [], error: null };
 /** Which spawner shape the Shape Resources tab is currently filtered to — 'all' or one shapeId — same convention as dynamicResourceAreaFilter, see renderShapeResourcesByArea(). */
 let shapeResourceAreaFilter = 'all';
 /** The categorized model catalog from /api/models (see modelsCatalog.mjs) — `{ groups: [{ name, items: [{ key, id, path, fullPath, format }] }] }`. Fetched once at init/restart, same pattern as spawnerTileTypes: small enough to prefetch eagerly rather than lazy-load per field. */
@@ -97,6 +99,11 @@ async function init() {
         spawnerShapeIds = result.shapeIds ?? [];
     } catch {
         spawnerShapeIds = [];
+    }
+    try {
+        zoneCells = await fetchJson('/api/zone-cells');
+    } catch (err) {
+        zoneCells = { zones: [], error: err.message };
     }
     try {
         modelsCatalog = await fetchJson('/api/models');
@@ -224,7 +231,17 @@ function renderMapBanner() {
         const list = document.createElement('ul');
         for (const id of issues.missingInConfig) {
             const li = document.createElement('li');
-            li.textContent = id;
+            li.textContent = id + ' ';
+            // Only offered for a tab this file actually knows how to blank-create into (see
+            // createMissingMapEntry()'s own doc) — a tab this editor doesn't map-check at all
+            // never reaches this branch in the first place (see validateMap.mjs's own
+            // MAP_CHECKED_ENTITIES), so every id landing here always has a real create path.
+            const createBtn = document.createElement('button');
+            createBtn.className = 'small';
+            createBtn.textContent = '+ Create';
+            createBtn.title = `Add a blank entry for "${id}" so you can fill it in`;
+            createBtn.onclick = () => createMissingMapEntry(id);
+            li.appendChild(createBtn);
             list.appendChild(li);
         }
         block.appendChild(list);
@@ -232,6 +249,48 @@ function renderMapBanner() {
     }
 
     return banner;
+}
+
+/** Which field on an ARRAY-shaped tab's entry holds the id validateMap.mjs cross-checks against the map (see that file's own `configIds` doc) — a record-shaped tab (gates/buildings/queues/shops/crafting) doesn't need this, since its own container key already IS that id. */
+const MISSING_IN_CONFIG_ARRAY_FIELD = {
+    shapeResourcePlacements: 'shapeId',
+};
+
+/**
+ * "Drawn on the Tiled map but missing from this tab" convenience (see renderMapBanner()'s own
+ * "+ Create" button) — adds a blank entry pre-filled with just enough to point at `id`, so a
+ * designer can open it and fill in the rest instead of hand-typing the id via "+ Add item"/
+ * "+ Add entry" (see onAddEntry(), whose "just an empty {}" convention this otherwise mirrors
+ * exactly). Safe to call with a stale/already-created id — no-ops instead of creating a
+ * duplicate.
+ */
+function createMissingMapEntry(id) {
+    const manifestEntry = manifest.find(e => e.id === activeId);
+    const data = allData[activeId];
+
+    if (manifestEntry.shape === 'array') {
+        const field = MISSING_IN_CONFIG_ARRAY_FIELD[activeId];
+        if (field && data.some(item => item[field] === id)) {
+            return;
+        }
+        data.push(field ? { [field]: id } : {});
+    } else {
+        const container = manifestEntry.shape === 'queues' ? data.byId : data;
+        if (container[id] !== undefined) {
+            return;
+        }
+        container[id] = {};
+    }
+
+    markDirty();
+    // Optimistically drops this ONE id out of the still-showing missingInConfig list instead
+    // of a full /api/validate-map round-trip — correct until the next explicit "Check map"
+    // click re-validates for real, which is fine since nothing else about the check changed.
+    const issues = mapValidation?.entities[activeId];
+    if (issues) {
+        issues.missingInConfig = issues.missingInConfig.filter(existingId => existingId !== id);
+    }
+    renderActiveTab();
 }
 
 /** Human-readable consequence of a "config id has no matching map object" mismatch — matches what PizzaScene actually does for each entity type (see validateMap.mjs's own doc), so the banner tells a designer what will really happen instead of just "mismatch." */
@@ -343,10 +402,12 @@ function renderActiveTab() {
     saveBtn.onclick = () => persist(activeId);
     left.appendChild(saveBtn);
 
-    if (manifestEntry.shape !== 'mapTiles') {
+    if (manifestEntry.shape !== 'mapTiles' && manifestEntry.shape !== 'zones') {
         // mapTiles has its own per-section "+ Add ground/resource tile" buttons (see
         // renderMapTilesTab()) since it holds two independent lists, not one — a single
-        // toolbar-level "+ Add entry" wouldn't know which list to add to.
+        // toolbar-level "+ Add entry" wouldn't know which list to add to. zones has NO add
+        // button at all — every entry is auto-discovered from the map's own "zones" tilelayer
+        // (see renderZonesTab()), never hand-typed.
         const addBtn = document.createElement('button');
         addBtn.textContent = manifestEntry.shape === 'array' ? '+ Add item' : '+ Add entry';
         addBtn.onclick = onAddEntry;
@@ -369,9 +430,18 @@ function renderActiveTab() {
     const missingOnMap = new Set(mapValidation?.entities[activeId]?.missingOnMap ?? []);
 
     if (manifestEntry.shape === 'queues') {
-        contentEl.appendChild(sectionLabel('Default — used by any queue placed on the map with no id-specific override below'));
+        // farms carries a THIRD, independent single-object export (FARM_TILE_CONFIG — the
+        // empty/prepared tile pair every plot shares, see FarmTypes.ts's own doc) alongside the
+        // usual default/byId pair — rendered here as its own card, above both, since it isn't
+        // per-plot at all and has no schema in common with the price/appearRequirement/solid
+        // fields the entry cards below edit.
+        if (data.tiles) {
+            contentEl.appendChild(sectionLabel('Tile Settings — shared by every farm plot, not per-plot'));
+            contentEl.appendChild(renderEntryCard(null, 'tiles', data.tiles, ENTITY_SCHEMAS.farmTiles ?? [], false, false, missingOnMap, 'Tile Settings'));
+        }
+        contentEl.appendChild(sectionLabel(`Default — used by any ${activeId === 'farms' ? 'plot' : 'queue'} placed on the map with no id-specific override below`));
         contentEl.appendChild(renderEntryCard(null, 'default', data.default, schema, false, false, missingOnMap));
-        contentEl.appendChild(sectionLabel('By queue id — only takes effect for a queue object on the Tiled map with a matching id'));
+        contentEl.appendChild(sectionLabel(`By ${activeId === 'farms' ? 'plot' : 'queue'} id — only takes effect for a${activeId === 'farms' ? ' plot' : ' queue'} object on the Tiled map with a matching id`));
         for (const [id, value] of Object.entries(data.byId ?? {})) {
             contentEl.appendChild(renderEntryCard(data.byId, id, value, schema, true, true, missingOnMap));
         }
@@ -390,6 +460,11 @@ function renderActiveTab() {
 
     if (manifestEntry.shape === 'mapTiles') {
         renderMapTilesTab(data);
+        return;
+    }
+
+    if (manifestEntry.shape === 'zones') {
+        renderZonesTab(data, schema);
         return;
     }
 
@@ -460,13 +535,20 @@ function renderDynamicResourcesByArea(data, schema) {
         return;
     }
 
+    // Either half of a placement's identity — its resourceType (Spawn Type = Resource, the
+    // default) or its providerType (Spawn Type = Provider) — see DynamicResourceTypes.ts's
+    // own doc on why only one of the two ever actually applies. Same helper
+    // renderShapeResourcesByArea() below uses for its own resource/animal/provider split.
+    const identityOf = value => (value.spawnType ?? 'resource') === 'provider' ? value.providerType : value.resourceType;
+
     for (const area of areasToShow) {
         const items = groups.get(area);
         if (!items) continue;
-        const resourceList = items.map(i => i.value.resourceType).filter(Boolean).join(', ') || '(no resource set)';
+        const resourceList = items.map(i => identityOf(i.value)).filter(Boolean).join(', ') || '(nothing set)';
         contentEl.appendChild(sectionLabel(`${area} — ${items.length} placement${items.length === 1 ? '' : 's'}: ${resourceList}`));
         for (const { value, index } of items) {
-            const entryLabel = value.resourceType ? `${value.resourceType} → ${area}` : undefined;
+            const identity = identityOf(value);
+            const entryLabel = identity ? `${identity} → ${area}` : undefined;
             contentEl.appendChild(renderEntryCard(data, index, value, schema, true, false, new Set(), entryLabel));
         }
     }
@@ -527,9 +609,9 @@ function renderShapeResourcesByArea(data, schema) {
         const items = groups.get(area);
         if (!items) continue;
         // Either half of a placement's identity — its resourceType (Spawn Type = Resource,
-        // the default) or its animalType (Spawn Type = Animal) — see ShapeResourceTypes.ts's
-        // own doc on why only one of the two ever actually applies.
-        const identityOf = value => value.spawnType === 'animal' ? value.animalType : value.resourceType;
+        // the default), its animalType (Spawn Type = Animal), or its providerType (Spawn Type
+        // = Provider) — see ShapeResourceTypes.ts's own doc on why only one ever applies.
+        const identityOf = value => value.spawnType === 'animal' ? value.animalType : value.spawnType === 'provider' ? value.providerType : value.resourceType;
         const itemList = items.map(i => identityOf(i.value)).filter(Boolean).join(', ') || '(nothing set)';
         contentEl.appendChild(sectionLabel(`${area} — ${items.length} placement${items.length === 1 ? '' : 's'}: ${itemList}`));
         for (const { value, index } of items) {
@@ -595,6 +677,120 @@ function renderMapTilesTab(data) {
 
     contentEl.appendChild(sectionLabel('Resources — gatherable tiles painted on resourcesLayer; assign a Provider to make one spawnable'));
     contentEl.appendChild(renderTileList(data.resources, '/tiled-asset/resources.png', data.tileSize, MAP_TILE_FIELDS.resourceFields, 'resource tile'));
+}
+
+/** Distinct-enough colors, cycled by zoneNumber % length — see drawZoneCanvas(). Not sourced from any tile's own color (zones aren't a visible tileset, just markers), so this is its own small fixed palette. */
+const ZONE_COLORS = ['#e05252', '#4fa8e0', '#4fd18a', '#e0b34f', '#a06be0', '#e06bb0', '#6be0d1', '#c9e04f'];
+
+/** World-of-tiles preview — one small colored square per painted "zones" cell, laid out at the SAME relative col/row positions the real map uses (so the shape a designer painted in Tiled is recognizable here), scaled to fit within `maxPx` on its longer side. Purely a visual index into "where is zone N" — not an editable canvas; clicking a zone still means scrolling to its entry card below. */
+function drawZoneCanvas(zones, maxPx) {
+    const canvas = document.createElement('canvas');
+    if (zones.length === 0) {
+        canvas.width = 1;
+        canvas.height = 1;
+        return canvas;
+    }
+
+    const minCol = Math.min(...zones.map(z => z.minCol));
+    const maxCol = Math.max(...zones.map(z => z.maxCol));
+    const minRow = Math.min(...zones.map(z => z.minRow));
+    const maxRow = Math.max(...zones.map(z => z.maxRow));
+    const cols = maxCol - minCol + 1;
+    const rows = maxRow - minRow + 1;
+    const cellPx = Math.max(1, Math.floor(maxPx / Math.max(cols, rows)));
+
+    canvas.width = cols * cellPx;
+    canvas.height = rows * cellPx;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    zones.forEach((zone, i) => {
+        ctx.fillStyle = ZONE_COLORS[zone.zoneNumber % ZONE_COLORS.length];
+        for (const cell of zone.cells) {
+            ctx.fillRect((cell.col - minCol) * cellPx, (cell.row - minRow) * cellPx, cellPx, cellPx);
+        }
+    });
+
+    return canvas;
+}
+
+/**
+ * The Zones tab — see manifest.json's own sourceHint. Two halves:
+ *   1. A read-only canvas map (drawZoneCanvas()) colored per zone, plus a legend, so a
+ *      designer can see AT A GLANCE which painted shape is which zone number without cross-
+ *      referencing Tiled.
+ *   2. One entry card per zone number that ACTUALLY EXISTS on the map right now (auto-created
+ *      into `data` here if this is the first time it's been seen — mirrors how mapTiles seeds
+ *      `walkable` defaults inline), each editable via the generic renderEntryCard()/
+ *      renderRequirementField() machinery every other tab already uses — a zone's config is
+ *      just `{ requirement?: MilestoneRequirement }` (see ZoneTypes.ts), nothing special.
+ * A zoneNumber with a saved requirement but NO LONGER painted on the map (e.g. the "zones"
+ * layer got repainted in Tiled since) still gets its own card, under a separate heading —
+ * entityMap.mjs's `protectEntries: true` is what keeps that config from being silently
+ * deleted the next time this tab saves, exactly like assetLibrary's own cross-tab entries.
+ */
+function renderZonesTab(data, schema) {
+    if (zoneCells.error) {
+        contentEl.appendChild(sectionLabel(`Couldn't read zone data from the map: ${zoneCells.error}`));
+    }
+
+    const paintedNumbers = new Set(zoneCells.zones.map(z => z.zoneNumber));
+    for (const zoneNumber of paintedNumbers) {
+        data[String(zoneNumber)] ??= {};
+    }
+
+    if (zoneCells.zones.length > 0) {
+        const mapWrap = document.createElement('div');
+        mapWrap.style.display = 'flex';
+        mapWrap.style.gap = '16px';
+        mapWrap.style.alignItems = 'flex-start';
+        mapWrap.style.marginBottom = '16px';
+
+        mapWrap.appendChild(drawZoneCanvas(zoneCells.zones, 360));
+
+        const legend = document.createElement('div');
+        for (const zone of zoneCells.zones) {
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.alignItems = 'center';
+            row.style.gap = '6px';
+            row.style.marginBottom = '2px';
+            const swatch = document.createElement('span');
+            swatch.style.display = 'inline-block';
+            swatch.style.width = '12px';
+            swatch.style.height = '12px';
+            swatch.style.background = ZONE_COLORS[zone.zoneNumber % ZONE_COLORS.length];
+            row.appendChild(swatch);
+            const label = document.createElement('span');
+            label.textContent = `Zone ${zone.zoneNumber + 1} (zoneNumber ${zone.zoneNumber}) — ${zone.cellCount} cell${zone.cellCount === 1 ? '' : 's'}`;
+            row.appendChild(label);
+            legend.appendChild(row);
+        }
+        mapWrap.appendChild(legend);
+        contentEl.appendChild(mapWrap);
+    } else if (!zoneCells.error) {
+        contentEl.appendChild(sectionLabel('No "zones" tilelayer cells painted on the map yet — paint some in Tiled, then reload this editor.'));
+    }
+
+    const sortedPainted = [...paintedNumbers].sort((a, b) => a - b);
+    if (sortedPainted.length > 0) {
+        contentEl.appendChild(sectionLabel('Painted on the map now'));
+        for (const zoneNumber of sortedPainted) {
+            const zone = zoneCells.zones.find(z => z.zoneNumber === zoneNumber);
+            const entryLabel = `Zone ${zoneNumber + 1} (zoneNumber ${zoneNumber}) — ${zone.cellCount} cell${zone.cellCount === 1 ? '' : 's'}`;
+            contentEl.appendChild(renderEntryCard(data, String(zoneNumber), data[String(zoneNumber)], schema, true, false, new Set(), entryLabel));
+        }
+    }
+
+    const staleNumbers = Object.keys(data).map(Number).filter(n => !paintedNumbers.has(n)).sort((a, b) => a - b);
+    if (staleNumbers.length > 0) {
+        contentEl.appendChild(sectionLabel('Configured, but not currently painted on the map'));
+        for (const zoneNumber of staleNumbers) {
+            const entryLabel = `Zone ${zoneNumber + 1} (zoneNumber ${zoneNumber}) — not on map`;
+            contentEl.appendChild(renderEntryCard(data, String(zoneNumber), data[String(zoneNumber)], schema, true, false, new Set(), entryLabel));
+        }
+    }
 }
 
 /** One tile array (grounds or resources) as a list of swatch + field rows, with its own add button — each array index IS the tile id (matched against a Tiled gid via firstgid offset, see TileMapConfig.ts), so rows are ordered, not keyed. */
@@ -1122,6 +1318,9 @@ function renderRequirementField(container, obj, field, onDirty) {
         }
         if (type === 'item') {
             return { type: 'item', item: getOptions('items')[0]?.value ?? '' };
+        }
+        if (type === 'gate') {
+            return { type: 'gate', gateId: getOptions('gates')[0]?.value ?? '' };
         }
         return { type: 'resource', resourceType: getOptions('resources')[0]?.value ?? '', amount: 1 };
     }

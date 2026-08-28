@@ -19,7 +19,7 @@ import { PopupMode } from '../ui/PopupConfig';
 import { FrameName } from '../ui/FrameRegistry';
 
 export enum BuildingId {
-    Camp = 'camp',
+    Camp = "tower",
 }
 
 export interface BuildingEffect {
@@ -84,7 +84,7 @@ export interface BuildingConfig {
 
 export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
     [BuildingId.Camp]: {
-        name: "Camp",
+        name: "Tower",
         baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
         levels: [
             {
@@ -112,21 +112,8 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
                     "description": "+10 backpack capacity"
                 },
                 mesh: { size: [1.8, 1.8, 1.8], color: 0xcc8844 },
-            },
-            {
-                level: 3,
-                requirements: {
-                    "wood": 12,
-                    "stone": 10,
-                    "berries": 6
-                },
-                effect: {
-                    "type": "gatherSpeed",
-                    "value": 0.2,
-                    "description": "+20% gather speed"
-                },
-                mesh: { size: [2.2, 2.6, 2.2], color: 0xffcc55 },
-            },
+                "view": "tower2view"
+            }
         ],
         "baseView": "tower1View",
         "popupMode": "simple",

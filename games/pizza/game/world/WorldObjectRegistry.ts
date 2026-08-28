@@ -145,6 +145,35 @@ export function isPointInShape(shape: SpawnerShape, x: number, z: number): boole
     }
 }
 
+/**
+ * `shape`'s own area, in world-units² — see ShapeResourcePlacement.density's own doc (that
+ * file's one caller) for why a drawn AREA needs this at all: unlike a WorldSpawner tile
+ * cluster (a known, countable number of cells — see DynamicResourcePlacement.density's own
+ * doc), a rect/circle/polygon spawner has no discrete cell count to rate a density against
+ * until it's actually measured. Exact for 'rect'/'circle'; 'polygon' uses the shoelace
+ * formula (the standard exact-area formula for any simple, non-self-intersecting polygon —
+ * which is all Tiled's own polygon draw tool ever produces) over `points` in their drawn
+ * order, `Math.abs()`'d since the formula's sign otherwise flips with winding direction
+ * (clockwise vs counter-clockwise), which isn't something a level designer thinks about
+ * while drawing.
+ */
+export function shapeArea(shape: SpawnerShape): number {
+    switch (shape.kind) {
+        case 'circle':
+            return Math.PI * shape.radius! * shape.radius!;
+        case 'rect':
+            return shape.halfWidth! * 2 * shape.halfDepth! * 2;
+        case 'polygon': {
+            const points = shape.points!;
+            let sum = 0;
+            for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+                sum += points[j].x * points[i].z - points[i].x * points[j].z;
+            }
+            return Math.abs(sum) / 2;
+        }
+    }
+}
+
 /** The axis-aligned world-space box sampleRandomPointInShape() rejection-samples within before testing isPointInShape() — tight for 'circle'/'rect' (every sampled point is already guaranteed inside for those, see that function's own doc), loose for 'polygon' (its own bounding box, since there's no cheaper uniform-sampling approach for an arbitrary shape). */
 function boundsOfShape(shape: SpawnerShape): { minX: number; maxX: number; minZ: number; maxZ: number } {
     switch (shape.kind) {
@@ -207,8 +236,17 @@ export default class WorldObjectRegistry {
     private readonly dropperPlacementsByTarget = new Map<string, WorldObjectPlacement>();
     /** target (a waypoint's "target" custom property, e.g. a queue id) -> every waypoint drawn for that path, sorted ascending by order once the constructor finishes — see getWaypoints(). */
     private readonly waypointsByTarget = new Map<string, WaypointPlacement[]>();
-    /** id -> that spawner object's full world-space shape — see SpawnerShape's own doc and getShape()/getAllShapes(). */
-    private readonly shapesById = new Map<string, SpawnerShape>();
+    /**
+     * id -> EVERY spawner object drawn with that id, in the order they're stored in the map's
+     * own layer data — see SpawnerShape's own doc and getShape()/getShapes()/getAllShapes().
+     * Plural (not one-per-id) specifically so ShapeResourceSpawner.ts can treat "the same
+     * shapeId drawn N times" as N independent spawn areas sharing one placement config
+     * (e.g. "treeSpawner" drawn in five different forest clearings, one ShapeResourcePlacement
+     * entry) instead of forcing a unique id — and a fresh, separately-budgeted count/density —
+     * per clearing. Every OTHER mapSettings type (gate/building/queue/shop/craft/dropper)
+     * still needs a genuinely UNIQUE id — this plural collection is intentionally spawner-only.
+     */
+    private readonly shapesById = new Map<string, SpawnerShape[]>();
     /** The map's single "playerStart" point, if drawn — see this file's own doc and getPlayerStart(). */
     private playerStartPlacement?: WorldObjectPlacement;
 
@@ -273,9 +311,18 @@ export default class WorldObjectRegistry {
 
             if (type === SPAWNER_TYPE) {
                 const shape = this.readSpawnerShape(obj, tileDefs.tileSize, worldUnitsPerTile);
-                this.shapesById.set(id, shape);
+                // Appended, not set — see shapesById's own doc for why a spawner id
+                // deliberately collects every instance instead of the last one silently
+                // winning (the byType bucket above still only keeps the last placement per id,
+                // but nothing reads that for a spawner-type object — see this file's own doc).
+                let shapes = this.shapesById.get(id);
+                if (!shapes) {
+                    shapes = [];
+                    this.shapesById.set(id, shapes);
+                }
+                shapes.push(shape);
                 console.log(
-                    `  - spawner "${id}" -> kind=${shape.kind} center=(${shape.center.x.toFixed(2)}, ${shape.center.z.toFixed(2)})` +
+                    `  - spawner "${id}"${shapes.length > 1 ? ` [instance ${shapes.length}]` : ''} -> kind=${shape.kind} center=(${shape.center.x.toFixed(2)}, ${shape.center.z.toFixed(2)})` +
                     (shape.kind === 'polygon' ? ` points=${shape.points!.length}` : shape.kind === 'circle' ? ` radius=${shape.radius!.toFixed(2)}` : ` halfWidth=${shape.halfWidth!.toFixed(2)} halfDepth=${shape.halfDepth!.toFixed(2)}`),
                 );
             }
@@ -394,14 +441,26 @@ export default class WorldObjectRegistry {
         return this.waypointsByTarget.get(target) ?? [];
     }
 
-    /** The world-space shape (see SpawnerShape's own doc) drawn for spawner `id` — e.g. "animalSpawner1" — or undefined if no such spawner object exists on the map. */
+    /** The FIRST world-space shape (see SpawnerShape's own doc) drawn for spawner `id` — e.g. "animalSpawner1" — or undefined if no such spawner object exists on the map at all. Prefer getShapes() (plural) for anything that should treat every same-id instance as its own independent area (see that method's own doc) — this singular form exists for a caller that genuinely only ever expects one (nothing left in this codebase actually does, but it's a reasonable single-shape convenience to keep). */
     public getShape(id: string): SpawnerShape | undefined {
-        return this.shapesById.get(id);
+        return this.shapesById.get(id)?.[0];
     }
 
-    /** Every spawner id -> shape found on the map — a fresh copy, same "no accidental live-state mutation" convention as getAllOfType(). */
+    /**
+     * EVERY spawner object drawn with `id` — e.g. five separate "treeSpawner" areas scattered
+     * across different forest clearings, each its own independent SpawnerShape — see
+     * shapesById's own doc for why a spawner id collects instances instead of the last one
+     * winning. Empty array (not undefined) if no such spawner object exists on the map at
+     * all, so a caller can `for...of` it with no existence check, same convention
+     * getWaypoints() uses. This is the one ShapeResourceSpawner.ts actually calls.
+     */
+    public getShapes(id: string): readonly SpawnerShape[] {
+        return this.shapesById.get(id) ?? [];
+    }
+
+    /** Every spawner id -> its FIRST shape found on the map — a fresh copy, same "no accidental live-state mutation" convention as getAllOfType(). See getShape()'s own doc for why this is the first instance, not every one. */
     public getAllShapes(): Map<string, SpawnerShape> {
-        return new Map(this.shapesById);
+        return new Map([...this.shapesById].map(([id, shapes]) => [id, shapes[0]]));
     }
 
     /** The map's "playerStart" point (see this file's own doc), or undefined if the level designer hasn't drawn one — the caller (PizzaScene) falls back to MainPlayer's own default position in that case. */

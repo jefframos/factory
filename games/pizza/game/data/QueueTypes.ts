@@ -86,8 +86,8 @@ export const QUEUE_CONFIG_BY_ID: Partial<Record<string, QueueConfig>> = {
     queue1: {
         ...DEFAULT_QUEUE_CONFIG,
         appearRequirement: {
-            "type": "item",
-            "item": ItemType.Pickaxe
+            "type": "gate",
+            "gateId": "gate1"
         },
         "cooldownSec": 30,
         "possibleTasks": [],

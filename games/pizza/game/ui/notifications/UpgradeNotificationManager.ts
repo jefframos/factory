@@ -12,9 +12,11 @@
 // events (upgrade a tool, then walk into a building level-up) without any of
 // them getting cut off unseen.
 //
-// Only the tool-upgrade call site exists today (see ShopZone.ts and
-// PizzaScene's "Upgrade <shop>" dev-GUI button) — building-upgrade/gate-
-// unlock call sites are follow-up work, not built yet.
+// Call sites so far: ShopZone.ts (tool upgrades, NotificationType.Upgrade),
+// CraftZone.ts (a brand-new crafted tool, NotificationType.NewTool), and
+// FarmZone.ts (buying a farm plot, NotificationType.Unlockable) — a real
+// gate/world-expansion unlock through Gate.ts is still follow-up work, not
+// built yet, despite Unlockable's own name suggesting that first.
 
 import * as PIXI from 'pixi.js';
 import { Game } from 'core/Game';

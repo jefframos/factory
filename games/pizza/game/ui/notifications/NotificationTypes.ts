@@ -10,7 +10,7 @@
 export enum NotificationType {
     /** A tool upgrade (axe, pickaxe, ...) — see ShopZone.ts. */
     Upgrade = 'upgrade',
-    /** A gate/world-expansion unlock — see Gate.ts (call site not wired up yet). */
+    /** A gate/world-expansion unlock — see FarmZone.ts (buying a farm plot). Gate.ts's own unlock isn't wired up to this yet. */
     Unlockable = 'unlockable',
     /** A building leveling up — see BuildingZone.ts (call site not wired up yet). */
     BuildingUpgrade = 'buildingUpgrade',

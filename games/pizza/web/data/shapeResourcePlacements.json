@@ -6,5 +6,13 @@
         "count": 1,
         "minDistance": 3,
         "checkIntervalSec": 60
+    },
+    {
+        "shapeId": "treeSpawner",
+        "spawnType": "provider",
+        "providerType": "tree",
+        "density": 0.2,
+        "minDistance": 3,
+        "checkIntervalSec": 120
     }
 ]

@@ -28,14 +28,14 @@ export const PERFORMANCE_CONFIG = {
      * within this radius — see WorldManager.update(). This is the actual "mesh render
      * radius" knob for resources: raise it to have them appear/stay visible further out.
      */
-    resourceLoadRadius: 30,
+    resourceLoadRadius: 60,
     /**
      * ...and stays materialized until the player drifts out past this LARGER radius —
      * deliberately wider than resourceLoadRadius so a resource sitting right at the
      * boundary doesn't load/unload every frame as the player jitters back and forth across
      * one line. Keep this comfortably above resourceLoadRadius when tuning either.
      */
-    resourceUnloadRadius: 34,
+    resourceUnloadRadius: 68,
 
     /**
      * How long ResourceNode.playSpawnIn()/playDespawnOut() take to scale a resource in/out

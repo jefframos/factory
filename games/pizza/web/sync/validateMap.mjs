@@ -37,6 +37,12 @@ const MAP_CHECKED_ENTITIES = {
     gates: { mapType: 'gate', configIds: data => Object.keys(data), missingOnMapSeverity: 'warning' },
     buildings: { mapType: 'building', configIds: data => Object.keys(data), missingOnMapSeverity: 'warning' },
     queues: { mapType: 'queue', configIds: data => Object.keys(data.byId ?? {}), missingOnMapSeverity: 'info' },
+    // Same "harmless either direction" severity as queues — a farm id missing on the map just
+    // means that override never applies to anything; a farm id drawn on the map but missing
+    // from FARM_PLOT_CONFIG_BY_ID just falls back to DEFAULT_FARM_PLOT_CONFIG (see FarmTypes.
+    // ts's own doc) — surfaced here mainly so a level designer sees every plot they've actually
+    // drawn and can give one its own price/unlock instead of hunting the Tiled map by eye.
+    farms: { mapType: 'farm', configIds: data => Object.keys(data.byId ?? {}), missingOnMapSeverity: 'info' },
     shops: { mapType: 'shop', configIds: data => Object.keys(data), missingOnMapSeverity: 'error' },
     crafting: { mapType: 'craft', configIds: data => Object.keys(data), missingOnMapSeverity: 'error' },
     // `configIds` collects every placement's `shapeId` (not the array's own indices — a

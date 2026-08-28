@@ -38,7 +38,7 @@ export const ENTITY_VIEW_CONFIG: Record<string, EntityViewConfig> = {
         ]
     },
     "tower2view": {
-        "models": [MODELS.Pirate.TowerCompleteLarge],
+        "models": [MODELS.Pirate.TowerCompleteSmall],
         "offset": [
             0,
             0,
@@ -77,6 +77,40 @@ export const ENTITY_VIEW_CONFIG: Record<string, EntityViewConfig> = {
         "offset": [
             0,
             -1,
+            0
+        ]
+    },
+    "tower3view": {
+        "models": [MODELS.Pirate.TowerCompleteLarge],
+        "scale": 1,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            0,
+            0
+        ]
+    },
+    // FarmTypes.ts's FARM_TILE_CONFIG default — see that file's own doc. Placeholder ground
+    // patches (nothing farm-specific in the model registry yet) so the Farms tab's Tile
+    // Settings dropdowns resolve to a REAL glb via resolveEntityView() out of the box, same as
+    // every other view id here, instead of pointing at an id with no models.
+    "farmEmptyView": {
+        "models": [MODELS.Props.PatchGrass],
+        "scale": 2,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            0,
+            0
+        ]
+    },
+    "farmPreparedView": {
+        "models": [MODELS.Props.PatchDirt],
+        "scale": 2,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
             0
         ]
     }

@@ -13,7 +13,7 @@
     },
     "tower2view": {
         "models": [
-            "Pirate.TowerCompleteLarge"
+            "Pirate.TowerCompleteSmall"
         ],
         "offset": [
             0,
@@ -60,6 +60,42 @@
             0
         ],
         "scale": 1,
+        "rotationDeg": 0
+    },
+    "tower3view": {
+        "models": [
+            "Pirate.TowerCompleteLarge"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "farmEmptyView": {
+        "models": [
+            "Props.PatchGrass"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 2,
+        "rotationDeg": 0
+    },
+    "farmPreparedView": {
+        "models": [
+            "Props.PatchDirt"
+        ],
+        "offset": [
+            0,
+            -0.1,
+            0
+        ],
+        "scale": 2,
         "rotationDeg": 0
     }
 }

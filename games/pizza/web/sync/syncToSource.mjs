@@ -62,6 +62,15 @@ const ENUM_VALUE_FIELDS = {
     // value, distinct from the generic `item` key above (MilestoneRequirement's own {type:
     // 'item', item} shape) — both map to the same enum, just under different property names.
     requirementItem: 'ItemType',
+    // DynamicResourceTypes.ts/ShapeResourceTypes.ts's own `providerType` (see each file's own
+    // doc — the placement identity a 'provider'-spawnType entry actually spawns).
+    providerType: 'ProviderType',
+    // MilestoneRequirement.ts's GateMilestoneRequirement (see that file's own doc) — a zone/
+    // gate/building/shop/queue/craft-table requirement of type 'gate'.
+    gateId: 'GateId',
+    // FarmTypes.ts's FarmPlotPrice.currency / CropTypes.ts's CropConfig.plantCost.currency —
+    // both hold a CurrencyType value (see EconomyTypes.ts).
+    currency: 'CurrencyType',
 };
 
 /** Where each enum in ENUM_VALUE_FIELDS is actually declared — used to auto-add a named import to a target file that references the enum but doesn't yet import it (e.g. ShopTypes.ts has no reason to import ResourceType until an appearRequirement of type 'resource' needs one). */
@@ -71,6 +80,9 @@ const ENUM_SOURCE_FILES = {
     BuildingId: p => path.join(p, 'data', 'BuildingTypes.ts'),
     ActionType: p => path.join(p, 'actions', 'ActionTypes.ts'),
     AnimalType: p => path.join(p, 'actions', 'AnimalTypes.ts'),
+    ProviderType: p => path.join(p, 'actions', 'ProviderTypes.ts'),
+    GateId: p => path.join(p, 'data', 'GateTypes.ts'),
+    CurrencyType: p => path.join(p, 'data', 'EconomyTypes.ts'),
 };
 const GAME_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'game');
 /** games/pizza/registry — one level up from GAME_DIR (games/pizza/game), not under it. */
@@ -647,12 +659,25 @@ function syncArray(sourceFile, mapping, postedArray, refreshedThisSync) {
     decl.setInitializer(serialize(sourceFile, items, refreshedThisSync));
 }
 
-/** Queues are two separate exports in one file — DEFAULT_QUEUE_CONFIG (a single object, replaced wholesale — it carries no unmanaged fields) and QUEUE_CONFIG_BY_ID (an open-id record, synced like any other partialRecord). */
+/**
+ * Queues are two separate exports in one file — DEFAULT_QUEUE_CONFIG (a single object, replaced
+ * wholesale — it carries no unmanaged fields) and QUEUE_CONFIG_BY_ID (an open-id record, synced
+ * like any other partialRecord). A mapping can optionally name a THIRD, independent single-object
+ * export (`tileExportName` — see entityMap.mjs's `farms` mapping doc for why FarmTypes.ts's
+ * FARM_TILE_CONFIG needs this instead of just living inside the default/byId pair) — replaced
+ * wholesale the same way the default export is, keyed by its own `tileManagedKeys` rather than
+ * `managedKeys` since it's a completely separate shape.
+ */
 function syncQueues(sourceFile, mapping, postedQueues, warnings, refreshedThisSync) {
     const defaultDecl = sourceFile.getVariableDeclarationOrThrow(mapping.defaultExportName);
     defaultDecl.setInitializer(serialize(sourceFile, pick(postedQueues.default ?? {}, mapping.managedKeys), refreshedThisSync));
 
     syncRecord(sourceFile, { ...mapping, exportName: mapping.byIdExportName, kind: 'partialRecord' }, postedQueues.byId ?? {}, warnings, refreshedThisSync);
+
+    if (mapping.tileExportName) {
+        const tileDecl = sourceFile.getVariableDeclarationOrThrow(mapping.tileExportName);
+        tileDecl.setInitializer(serialize(sourceFile, pick(postedQueues.tiles ?? {}, mapping.tileManagedKeys), refreshedThisSync));
+    }
 }
 
 /**

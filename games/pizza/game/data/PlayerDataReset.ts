@@ -20,6 +20,7 @@ import { DynamicResourceStorage } from '../world/DynamicResourceStorage';
 import { ShapeResourceStorage } from '../world/ShapeResourceStorage';
 import { AnimalFollowStorage } from './AnimalFollowStorage';
 import { PlayerPositionStorage } from './PlayerPositionStorage';
+import { FarmPlotStorage } from './FarmPlotStorage';
 
 /**
  * Same storage list PizzaScene's own dev "Reset Everything" button clears (including
@@ -61,5 +62,6 @@ export function clearAllPlayerData(): void {
         ShapeResourceStorage.clearAll(),
         AnimalFollowStorage.clearAll(),
         PlayerPositionStorage.clearAll(),
+        FarmPlotStorage.clearAll(),
     ]).then(() => window.location.reload());
 }

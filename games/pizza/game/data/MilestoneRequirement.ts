@@ -27,6 +27,12 @@ import { ItemStorage } from '../crafting/ItemStorage';
 import { ItemType } from '../crafting/ItemTypes';
 import { BackpackStorage } from './BackpackStorage';
 import { ResourceType } from '../actions/ResourceTypes';
+import { GateStorage } from './GateStorage';
+// Type-only — GateTypes.ts's own GateConfig.requirement field is typed as MilestoneRequirement,
+// so a plain runtime import here would be circular. GateId is only ever used as a TYPE
+// annotation below (the 'gate' arm's own `gateId` field), never a runtime value, so `import
+// type` erases entirely at compile time and never actually completes that cycle.
+import type { GateId } from './GateTypes';
 
 /** A building must be AT LEAST `level` — the original (and still default) milestone kind. */
 export interface BuildingMilestoneRequirement {
@@ -48,9 +54,15 @@ export interface ResourceMilestoneRequirement {
     amount: number;
 }
 
-export type MilestoneRequirement = BuildingMilestoneRequirement | ItemMilestoneRequirement | ResourceMilestoneRequirement;
+/** `gateId` must already be UNLOCKED — see GateStorage.isUnlocked(). Lets one gate's own unlock double as another zone/queue/shop's own appear/reveal condition, e.g. "zone2 opens once gate1 is passed" — added for ZoneTypes.ts's own per-zone unlock requirement (see that file's own doc), which needed a milestone kind referencing a gate; nothing else required this until then. */
+export interface GateMilestoneRequirement {
+    type: 'gate';
+    gateId: GateId;
+}
 
-/** True once whichever storage backs `requirement`'s own kind says it's already satisfied — the one place that actually reads BuildingStorage/ItemStorage/BackpackStorage for this; callers (Gate.isRequirementMet(), RequirementRegistry) never touch any of those directly. */
+export type MilestoneRequirement = BuildingMilestoneRequirement | ItemMilestoneRequirement | ResourceMilestoneRequirement | GateMilestoneRequirement;
+
+/** True once whichever storage backs `requirement`'s own kind says it's already satisfied — the one place that actually reads BuildingStorage/ItemStorage/BackpackStorage/GateStorage for this; callers (Gate.isRequirementMet(), RequirementRegistry, WorldManager's zone-unlock check) never touch any of those directly. */
 export function isMilestoneRequirementMet(requirement: MilestoneRequirement): boolean {
     switch (requirement.type) {
         case 'building':
@@ -59,5 +71,7 @@ export function isMilestoneRequirementMet(requirement: MilestoneRequirement): bo
             return ItemStorage.hasCount(requirement.item, 1);
         case 'resource':
             return BackpackStorage.getCount(requirement.resourceType) >= requirement.amount;
+        case 'gate':
+            return GateStorage.isUnlocked(requirement.gateId);
     }
 }

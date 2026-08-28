@@ -1,5 +1,23 @@
 [
-    { "resourceType": "bark", "spawnerTileType": "sand", "density": 0.02, "minDistance": 8, "checkIntervalSec": 5 },
-    { "resourceType": "pebble", "spawnerTileType": "grass", "density": 0.02, "minDistance": 8, "checkIntervalSec": 5 },
-    { "resourceType": "grassFiber", "spawnerTileType": "grass", "density": 0.02, "minDistance": 8, "checkIntervalSec": 5 }
+    {
+        "resourceType": "bark",
+        "spawnerTileType": "sand",
+        "density": 0.02,
+        "minDistance": 8,
+        "checkIntervalSec": 5
+    },
+    {
+        "resourceType": "pebble",
+        "spawnerTileType": "grass",
+        "density": 0.02,
+        "minDistance": 8,
+        "checkIntervalSec": 5
+    },
+    {
+        "resourceType": "grassFiber",
+        "spawnerTileType": "grass",
+        "density": 0.02,
+        "minDistance": 8,
+        "checkIntervalSec": 5
+    }
 ]

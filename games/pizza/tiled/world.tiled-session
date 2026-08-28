@@ -9,11 +9,11 @@
             "scaleInEditor": 1
         },
         "testMap1.tmx": {
-            "scale": 2,
-            "selectedLayer": 4,
+            "scale": 1.5,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 40.5,
-                "y": 589.75
+                "x": 393.33333333333337,
+                "y": 161
             }
         },
         "testMap1.tmx#models": {
@@ -25,6 +25,7 @@
             "scaleInDock": 1
         },
         "testMap1.tmx#tileset": {
+            "dynamicWrapping": false,
             "scaleInDock": 1
         }
     },

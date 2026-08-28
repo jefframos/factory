@@ -11,7 +11,7 @@
         "name": "North Gate",
         "requirement": {
             "type": "building",
-            "buildingId": "camp",
+            "buildingId": "tower",
             "level": 2
         }
     },
@@ -19,7 +19,7 @@
         "name": "gateTest",
         "requirement": {
             "type": "resource",
-            "resourceType": "wood",
+            "resourceType": "stone",
             "amount": 1
         },
         "view": "gateAxeView"

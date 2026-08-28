@@ -212,6 +212,2075 @@ const CharactersWatering = {
   nodes: {}
 } as const;
 
+const FoodAdvocadoHalf = {
+  id: 'advocado-half',
+  path: 'food/advocado-half',
+  fullPath: 'pizza/models/food/advocado-half.glb',
+  format: 'glb',
+  nodes: {
+  "AdvocadoHalf": "advocado-half",
+  "Pit": "pit"
+}
+} as const;
+
+const FoodAppleHalf = {
+  id: 'apple-half',
+  path: 'food/apple-half',
+  fullPath: 'pizza/models/food/apple-half.glb',
+  format: 'glb',
+  nodes: {
+  "AppleHalf": "apple-half"
+}
+} as const;
+
+const FoodApple = {
+  id: 'apple',
+  path: 'food/apple',
+  fullPath: 'pizza/models/food/apple.glb',
+  format: 'glb',
+  nodes: {
+  "Apple": "apple"
+}
+} as const;
+
+const FoodAvocado = {
+  id: 'avocado',
+  path: 'food/avocado',
+  fullPath: 'pizza/models/food/avocado.glb',
+  format: 'glb',
+  nodes: {
+  "Avocado": "avocado"
+}
+} as const;
+
+const FoodBaconRaw = {
+  id: 'bacon-raw',
+  path: 'food/bacon-raw',
+  fullPath: 'pizza/models/food/bacon-raw.glb',
+  format: 'glb',
+  nodes: {
+  "BaconRaw": "bacon-raw"
+}
+} as const;
+
+const FoodBacon = {
+  id: 'bacon',
+  path: 'food/bacon',
+  fullPath: 'pizza/models/food/bacon.glb',
+  format: 'glb',
+  nodes: {
+  "Bacon": "bacon"
+}
+} as const;
+
+const FoodBagFlat = {
+  id: 'bag-flat',
+  path: 'food/bag-flat',
+  fullPath: 'pizza/models/food/bag-flat.glb',
+  format: 'glb',
+  nodes: {
+  "BagFlat": "bag-flat"
+}
+} as const;
+
+const FoodBag = {
+  id: 'bag',
+  path: 'food/bag',
+  fullPath: 'pizza/models/food/bag.glb',
+  format: 'glb',
+  nodes: {
+  "Bag": "bag"
+}
+} as const;
+
+const FoodBanana = {
+  id: 'banana',
+  path: 'food/banana',
+  fullPath: 'pizza/models/food/banana.glb',
+  format: 'glb',
+  nodes: {
+  "Banana": "banana"
+}
+} as const;
+
+const FoodBarrel = {
+  id: 'barrel',
+  path: 'food/barrel',
+  fullPath: 'pizza/models/food/barrel.glb',
+  format: 'glb',
+  nodes: {
+  "Barrel": "barrel"
+}
+} as const;
+
+const FoodBeet = {
+  id: 'beet',
+  path: 'food/beet',
+  fullPath: 'pizza/models/food/beet.glb',
+  format: 'glb',
+  nodes: {
+  "Beet": "beet"
+}
+} as const;
+
+const FoodBottleKetchup = {
+  id: 'bottle-ketchup',
+  path: 'food/bottle-ketchup',
+  fullPath: 'pizza/models/food/bottle-ketchup.glb',
+  format: 'glb',
+  nodes: {
+  "BottleKetchup": "bottle-ketchup"
+}
+} as const;
+
+const FoodBottleMusterd = {
+  id: 'bottle-musterd',
+  path: 'food/bottle-musterd',
+  fullPath: 'pizza/models/food/bottle-musterd.glb',
+  format: 'glb',
+  nodes: {
+  "BottleMusterd": "bottle-musterd"
+}
+} as const;
+
+const FoodBottleOil = {
+  id: 'bottle-oil',
+  path: 'food/bottle-oil',
+  fullPath: 'pizza/models/food/bottle-oil.glb',
+  format: 'glb',
+  nodes: {
+  "BottleOil": "bottle-oil"
+}
+} as const;
+
+const FoodBowlBroth = {
+  id: 'bowl-broth',
+  path: 'food/bowl-broth',
+  fullPath: 'pizza/models/food/bowl-broth.glb',
+  format: 'glb',
+  nodes: {
+  "BowlBroth": "bowl-broth",
+  "Group": "Group"
+}
+} as const;
+
+const FoodBowlCereal = {
+  id: 'bowl-cereal',
+  path: 'food/bowl-cereal',
+  fullPath: 'pizza/models/food/bowl-cereal.glb',
+  format: 'glb',
+  nodes: {
+  "BowlCereal": "bowl-cereal"
+}
+} as const;
+
+const FoodBowlSoup = {
+  id: 'bowl-soup',
+  path: 'food/bowl-soup',
+  fullPath: 'pizza/models/food/bowl-soup.glb',
+  format: 'glb',
+  nodes: {
+  "BowlSoup": "bowl-soup"
+}
+} as const;
+
+const FoodBowl = {
+  id: 'bowl',
+  path: 'food/bowl',
+  fullPath: 'pizza/models/food/bowl.glb',
+  format: 'glb',
+  nodes: {
+  "Bowl": "bowl"
+}
+} as const;
+
+const FoodBread = {
+  id: 'bread',
+  path: 'food/bread',
+  fullPath: 'pizza/models/food/bread.glb',
+  format: 'glb',
+  nodes: {
+  "Bread": "bread"
+}
+} as const;
+
+const FoodBroccoli = {
+  id: 'broccoli',
+  path: 'food/broccoli',
+  fullPath: 'pizza/models/food/broccoli.glb',
+  format: 'glb',
+  nodes: {
+  "Broccoli": "broccoli"
+}
+} as const;
+
+const FoodBurgerCheeseDouble = {
+  id: 'burger-cheese-double',
+  path: 'food/burger-cheese-double',
+  fullPath: 'pizza/models/food/burger-cheese-double.glb',
+  format: 'glb',
+  nodes: {
+  "BurgerCheeseDouble": "burger-cheese-double",
+  "BunBottom": "bun-bottom",
+  "BunMiddle": "bun-middle",
+  "BunTop": "bun-top",
+  "Cheese": "cheese",
+  "Patty": "patty"
+}
+} as const;
+
+const FoodBurgerCheese = {
+  id: 'burger-cheese',
+  path: 'food/burger-cheese',
+  fullPath: 'pizza/models/food/burger-cheese.glb',
+  format: 'glb',
+  nodes: {
+  "BurgerCheese": "burger-cheese",
+  "BunBottom": "bun-bottom",
+  "BunTop": "bun-top",
+  "Cheese": "cheese",
+  "Patty": "patty"
+}
+} as const;
+
+const FoodBurgerDouble = {
+  id: 'burger-double',
+  path: 'food/burger-double',
+  fullPath: 'pizza/models/food/burger-double.glb',
+  format: 'glb',
+  nodes: {
+  "BurgerDouble": "burger-double",
+  "BunBottom": "bun-bottom",
+  "BunMiddle": "bun-middle",
+  "BunTop": "bun-top",
+  "Cheese": "cheese",
+  "Patty": "patty",
+  "Salad": "salad",
+  "Tomato": "tomato"
+}
+} as const;
+
+const FoodBurger = {
+  id: 'burger',
+  path: 'food/burger',
+  fullPath: 'pizza/models/food/burger.glb',
+  format: 'glb',
+  nodes: {
+  "Burger": "burger",
+  "BunBottom": "bun-bottom",
+  "BunTop": "bun-top",
+  "Cheese": "cheese",
+  "Patty": "patty",
+  "Salad": "salad",
+  "Tomato": "tomato"
+}
+} as const;
+
+const FoodCabbage = {
+  id: 'cabbage',
+  path: 'food/cabbage',
+  fullPath: 'pizza/models/food/cabbage.glb',
+  format: 'glb',
+  nodes: {
+  "Cabbage": "cabbage"
+}
+} as const;
+
+const FoodCakeBirthday = {
+  id: 'cake-birthday',
+  path: 'food/cake-birthday',
+  fullPath: 'pizza/models/food/cake-birthday.glb',
+  format: 'glb',
+  nodes: {
+  "Slice": "slice"
+}
+} as const;
+
+const FoodCakeSlicer = {
+  id: 'cake-slicer',
+  path: 'food/cake-slicer',
+  fullPath: 'pizza/models/food/cake-slicer.glb',
+  format: 'glb',
+  nodes: {
+  "CakeSlicer": "cake-slicer"
+}
+} as const;
+
+const FoodCake = {
+  id: 'cake',
+  path: 'food/cake',
+  fullPath: 'pizza/models/food/cake.glb',
+  format: 'glb',
+  nodes: {
+  "Slice": "slice"
+}
+} as const;
+
+const FoodCanOpen = {
+  id: 'can-open',
+  path: 'food/can-open',
+  fullPath: 'pizza/models/food/can-open.glb',
+  format: 'glb',
+  nodes: {
+  "CanOpen": "can-open"
+}
+} as const;
+
+const FoodCanSmall = {
+  id: 'can-small',
+  path: 'food/can-small',
+  fullPath: 'pizza/models/food/can-small.glb',
+  format: 'glb',
+  nodes: {
+  "CanSmall": "can-small",
+  "Group": "Group"
+}
+} as const;
+
+const FoodCan = {
+  id: 'can',
+  path: 'food/can',
+  fullPath: 'pizza/models/food/can.glb',
+  format: 'glb',
+  nodes: {
+  "Can": "can"
+}
+} as const;
+
+const FoodCandyBarWrapper = {
+  id: 'candy-bar-wrapper',
+  path: 'food/candy-bar-wrapper',
+  fullPath: 'pizza/models/food/candy-bar-wrapper.glb',
+  format: 'glb',
+  nodes: {
+  "CandyBarWrapper": "candy-bar-wrapper"
+}
+} as const;
+
+const FoodCandyBar = {
+  id: 'candy-bar',
+  path: 'food/candy-bar',
+  fullPath: 'pizza/models/food/candy-bar.glb',
+  format: 'glb',
+  nodes: {
+  "CandyBar": "candy-bar"
+}
+} as const;
+
+const FoodCarrot = {
+  id: 'carrot',
+  path: 'food/carrot',
+  fullPath: 'pizza/models/food/carrot.glb',
+  format: 'glb',
+  nodes: {
+  "Carrot": "carrot"
+}
+} as const;
+
+const FoodCartonSmall = {
+  id: 'carton-small',
+  path: 'food/carton-small',
+  fullPath: 'pizza/models/food/carton-small.glb',
+  format: 'glb',
+  nodes: {
+  "CartonSmall": "carton-small"
+}
+} as const;
+
+const FoodCarton = {
+  id: 'carton',
+  path: 'food/carton',
+  fullPath: 'pizza/models/food/carton.glb',
+  format: 'glb',
+  nodes: {
+  "Carton": "carton"
+}
+} as const;
+
+const FoodCauliflower = {
+  id: 'cauliflower',
+  path: 'food/cauliflower',
+  fullPath: 'pizza/models/food/cauliflower.glb',
+  format: 'glb',
+  nodes: {
+  "Cauliflower": "cauliflower"
+}
+} as const;
+
+const FoodCeleryStick = {
+  id: 'celery-stick',
+  path: 'food/celery-stick',
+  fullPath: 'pizza/models/food/celery-stick.glb',
+  format: 'glb',
+  nodes: {
+  "CeleryStick": "celery-stick"
+}
+} as const;
+
+const FoodCheeseCut = {
+  id: 'cheese-cut',
+  path: 'food/cheese-cut',
+  fullPath: 'pizza/models/food/cheese-cut.glb',
+  format: 'glb',
+  nodes: {
+  "CheeseCut": "cheese-cut"
+}
+} as const;
+
+const FoodCheeseSlicer = {
+  id: 'cheese-slicer',
+  path: 'food/cheese-slicer',
+  fullPath: 'pizza/models/food/cheese-slicer.glb',
+  format: 'glb',
+  nodes: {
+  "CheeseSlicer": "cheese-slicer"
+}
+} as const;
+
+const FoodCheese = {
+  id: 'cheese',
+  path: 'food/cheese',
+  fullPath: 'pizza/models/food/cheese.glb',
+  format: 'glb',
+  nodes: {
+  "Wedge": "wedge"
+}
+} as const;
+
+const FoodCherries = {
+  id: 'cherries',
+  path: 'food/cherries',
+  fullPath: 'pizza/models/food/cherries.glb',
+  format: 'glb',
+  nodes: {
+  "Cherries": "cherries"
+}
+} as const;
+
+const FoodChinese = {
+  id: 'chinese',
+  path: 'food/chinese',
+  fullPath: 'pizza/models/food/chinese.glb',
+  format: 'glb',
+  nodes: {
+  "Chinese": "chinese",
+  "Chopstick": "chopstick"
+}
+} as const;
+
+const FoodChocolateWrapper = {
+  id: 'chocolate-wrapper',
+  path: 'food/chocolate-wrapper',
+  fullPath: 'pizza/models/food/chocolate-wrapper.glb',
+  format: 'glb',
+  nodes: {
+  "ChocolateWrapper": "chocolate-wrapper"
+}
+} as const;
+
+const FoodChocolate = {
+  id: 'chocolate',
+  path: 'food/chocolate',
+  fullPath: 'pizza/models/food/chocolate.glb',
+  format: 'glb',
+  nodes: {
+  "Chocolate": "chocolate"
+}
+} as const;
+
+const FoodChopsticDecorative = {
+  id: 'chopstic-decorative',
+  path: 'food/chopstic-decorative',
+  fullPath: 'pizza/models/food/chopstic-decorative.glb',
+  format: 'glb',
+  nodes: {
+  "ChopsticDecorative": "chopstic-decorative"
+}
+} as const;
+
+const FoodChopstick = {
+  id: 'chopstick',
+  path: 'food/chopstick',
+  fullPath: 'pizza/models/food/chopstick.glb',
+  format: 'glb',
+  nodes: {
+  "Chopstick": "chopstick"
+}
+} as const;
+
+const FoodCocktail = {
+  id: 'cocktail',
+  path: 'food/cocktail',
+  fullPath: 'pizza/models/food/cocktail.glb',
+  format: 'glb',
+  nodes: {
+  "Cocktail": "cocktail",
+  "Straw": "straw",
+  "Lemon": "lemon"
+}
+} as const;
+
+const FoodCoconutHalf = {
+  id: 'coconut-half',
+  path: 'food/coconut-half',
+  fullPath: 'pizza/models/food/coconut-half.glb',
+  format: 'glb',
+  nodes: {
+  "CoconutHalf": "coconut-half"
+}
+} as const;
+
+const FoodCoconut = {
+  id: 'coconut',
+  path: 'food/coconut',
+  fullPath: 'pizza/models/food/coconut.glb',
+  format: 'glb',
+  nodes: {
+  "Coconut": "coconut"
+}
+} as const;
+
+const FoodCookieChocolate = {
+  id: 'cookie-chocolate',
+  path: 'food/cookie-chocolate',
+  fullPath: 'pizza/models/food/cookie-chocolate.glb',
+  format: 'glb',
+  nodes: {
+  "CookieChocolate": "cookie-chocolate"
+}
+} as const;
+
+const FoodCookie = {
+  id: 'cookie',
+  path: 'food/cookie',
+  fullPath: 'pizza/models/food/cookie.glb',
+  format: 'glb',
+  nodes: {
+  "Cookie": "cookie"
+}
+} as const;
+
+const FoodCookingFork = {
+  id: 'cooking-fork',
+  path: 'food/cooking-fork',
+  fullPath: 'pizza/models/food/cooking-fork.glb',
+  format: 'glb',
+  nodes: {
+  "CookingFork": "cooking-fork"
+}
+} as const;
+
+const FoodCookingKnifeChopping = {
+  id: 'cooking-knife-chopping',
+  path: 'food/cooking-knife-chopping',
+  fullPath: 'pizza/models/food/cooking-knife-chopping.glb',
+  format: 'glb',
+  nodes: {
+  "CookingKnifeChopping": "cooking-knife-chopping"
+}
+} as const;
+
+const FoodCookingKnife = {
+  id: 'cooking-knife',
+  path: 'food/cooking-knife',
+  fullPath: 'pizza/models/food/cooking-knife.glb',
+  format: 'glb',
+  nodes: {
+  "CookingKnife": "cooking-knife"
+}
+} as const;
+
+const FoodCookingSpatula = {
+  id: 'cooking-spatula',
+  path: 'food/cooking-spatula',
+  fullPath: 'pizza/models/food/cooking-spatula.glb',
+  format: 'glb',
+  nodes: {
+  "CookingSpatula": "cooking-spatula"
+}
+} as const;
+
+const FoodCookingSpoon = {
+  id: 'cooking-spoon',
+  path: 'food/cooking-spoon',
+  fullPath: 'pizza/models/food/cooking-spoon.glb',
+  format: 'glb',
+  nodes: {
+  "CookingSpoon": "cooking-spoon"
+}
+} as const;
+
+const FoodCornDog = {
+  id: 'corn-dog',
+  path: 'food/corn-dog',
+  fullPath: 'pizza/models/food/corn-dog.glb',
+  format: 'glb',
+  nodes: {
+  "CornDog": "corn-dog",
+  "Dog": "dog"
+}
+} as const;
+
+const FoodCorn = {
+  id: 'corn',
+  path: 'food/corn',
+  fullPath: 'pizza/models/food/corn.glb',
+  format: 'glb',
+  nodes: {
+  "Corn": "corn"
+}
+} as const;
+
+const FoodCroissant = {
+  id: 'croissant',
+  path: 'food/croissant',
+  fullPath: 'pizza/models/food/croissant.glb',
+  format: 'glb',
+  nodes: {
+  "Croissant": "croissant"
+}
+} as const;
+
+const FoodCupCoffee = {
+  id: 'cup-coffee',
+  path: 'food/cup-coffee',
+  fullPath: 'pizza/models/food/cup-coffee.glb',
+  format: 'glb',
+  nodes: {
+  "CupCoffee": "cup-coffee"
+}
+} as const;
+
+const FoodCupSaucer = {
+  id: 'cup-saucer',
+  path: 'food/cup-saucer',
+  fullPath: 'pizza/models/food/cup-saucer.glb',
+  format: 'glb',
+  nodes: {
+  "CupSaucer": "cup-saucer"
+}
+} as const;
+
+const FoodCupTea = {
+  id: 'cup-tea',
+  path: 'food/cup-tea',
+  fullPath: 'pizza/models/food/cup-tea.glb',
+  format: 'glb',
+  nodes: {
+  "CupTea": "cup-tea"
+}
+} as const;
+
+const FoodCup = {
+  id: 'cup',
+  path: 'food/cup',
+  fullPath: 'pizza/models/food/cup.glb',
+  format: 'glb',
+  nodes: {
+  "Cup": "cup"
+}
+} as const;
+
+const FoodCupcake = {
+  id: 'cupcake',
+  path: 'food/cupcake',
+  fullPath: 'pizza/models/food/cupcake.glb',
+  format: 'glb',
+  nodes: {
+  "Cupcake": "cupcake",
+  "Cherry": "cherry",
+  "Cake": "cake"
+}
+} as const;
+
+const FoodCuttingBoardJapanese = {
+  id: 'cutting-board-japanese',
+  path: 'food/cutting-board-japanese',
+  fullPath: 'pizza/models/food/cutting-board-japanese.glb',
+  format: 'glb',
+  nodes: {
+  "CuttingBoardJapanese": "cutting-board-japanese"
+}
+} as const;
+
+const FoodCuttingBoardRound = {
+  id: 'cutting-board-round',
+  path: 'food/cutting-board-round',
+  fullPath: 'pizza/models/food/cutting-board-round.glb',
+  format: 'glb',
+  nodes: {
+  "CuttingBoardRound": "cutting-board-round"
+}
+} as const;
+
+const FoodCuttingBoard = {
+  id: 'cutting-board',
+  path: 'food/cutting-board',
+  fullPath: 'pizza/models/food/cutting-board.glb',
+  format: 'glb',
+  nodes: {
+  "CuttingBoard": "cutting-board"
+}
+} as const;
+
+const FoodDimSum = {
+  id: 'dim-sum',
+  path: 'food/dim-sum',
+  fullPath: 'pizza/models/food/dim-sum.glb',
+  format: 'glb',
+  nodes: {
+  "DimSum": "dim-sum"
+}
+} as const;
+
+const FoodDonutChocolate = {
+  id: 'donut-chocolate',
+  path: 'food/donut-chocolate',
+  fullPath: 'pizza/models/food/donut-chocolate.glb',
+  format: 'glb',
+  nodes: {
+  "DonutChocolate": "donut-chocolate"
+}
+} as const;
+
+const FoodDonutSprinkles = {
+  id: 'donut-sprinkles',
+  path: 'food/donut-sprinkles',
+  fullPath: 'pizza/models/food/donut-sprinkles.glb',
+  format: 'glb',
+  nodes: {
+  "DonutSprinkles": "donut-sprinkles"
+}
+} as const;
+
+const FoodDonut = {
+  id: 'donut',
+  path: 'food/donut',
+  fullPath: 'pizza/models/food/donut.glb',
+  format: 'glb',
+  nodes: {
+  "Donut": "donut"
+}
+} as const;
+
+const FoodEggCooked = {
+  id: 'egg-cooked',
+  path: 'food/egg-cooked',
+  fullPath: 'pizza/models/food/egg-cooked.glb',
+  format: 'glb',
+  nodes: {
+  "EggCooked": "egg-cooked"
+}
+} as const;
+
+const FoodEggCup = {
+  id: 'egg-cup',
+  path: 'food/egg-cup',
+  fullPath: 'pizza/models/food/egg-cup.glb',
+  format: 'glb',
+  nodes: {
+  "EggCup": "egg-cup"
+}
+} as const;
+
+const FoodEggHalf = {
+  id: 'egg-half',
+  path: 'food/egg-half',
+  fullPath: 'pizza/models/food/egg-half.glb',
+  format: 'glb',
+  nodes: {
+  "EggHalf": "egg-half"
+}
+} as const;
+
+const FoodEgg = {
+  id: 'egg',
+  path: 'food/egg',
+  fullPath: 'pizza/models/food/egg.glb',
+  format: 'glb',
+  nodes: {
+  "Egg": "egg"
+}
+} as const;
+
+const FoodEggplant = {
+  id: 'eggplant',
+  path: 'food/eggplant',
+  fullPath: 'pizza/models/food/eggplant.glb',
+  format: 'glb',
+  nodes: {
+  "Eggplant": "eggplant"
+}
+} as const;
+
+const FoodFishBones = {
+  id: 'fish-bones',
+  path: 'food/fish-bones',
+  fullPath: 'pizza/models/food/fish-bones.glb',
+  format: 'glb',
+  nodes: {
+  "FishBones": "fish-bones"
+}
+} as const;
+
+const FoodFish = {
+  id: 'fish',
+  path: 'food/fish',
+  fullPath: 'pizza/models/food/fish.glb',
+  format: 'glb',
+  nodes: {
+  "Fish": "fish"
+}
+} as const;
+
+const FoodFrappe = {
+  id: 'frappe',
+  path: 'food/frappe',
+  fullPath: 'pizza/models/food/frappe.glb',
+  format: 'glb',
+  nodes: {
+  "Frappe": "frappe"
+}
+} as const;
+
+const FoodFriesEmpty = {
+  id: 'fries-empty',
+  path: 'food/fries-empty',
+  fullPath: 'pizza/models/food/fries-empty.glb',
+  format: 'glb',
+  nodes: {
+  "FriesEmpty": "fries-empty"
+}
+} as const;
+
+const FoodFries = {
+  id: 'fries',
+  path: 'food/fries',
+  fullPath: 'pizza/models/food/fries.glb',
+  format: 'glb',
+  nodes: {
+  "Fries": "fries"
+}
+} as const;
+
+const FoodFrikandelSpeciaal = {
+  id: 'frikandel-speciaal',
+  path: 'food/frikandel-speciaal',
+  fullPath: 'pizza/models/food/frikandel-speciaal.glb',
+  format: 'glb',
+  nodes: {
+  "FrikandelSpeciaal": "frikandel-speciaal",
+  "Frikandel": "frikandel",
+  "SauceOnions": "sauce-onions"
+}
+} as const;
+
+const FoodFryingPanLid = {
+  id: 'frying-pan-lid',
+  path: 'food/frying-pan-lid',
+  fullPath: 'pizza/models/food/frying-pan-lid.glb',
+  format: 'glb',
+  nodes: {
+  "FryingPanLid": "frying-pan-lid",
+  "Ignore": "(%ignore)"
+}
+} as const;
+
+const FoodFryingPan = {
+  id: 'frying-pan',
+  path: 'food/frying-pan',
+  fullPath: 'pizza/models/food/frying-pan.glb',
+  format: 'glb',
+  nodes: {
+  "FryingPan": "frying-pan"
+}
+} as const;
+
+const FoodGingerBreadCutter = {
+  id: 'ginger-bread-cutter',
+  path: 'food/ginger-bread-cutter',
+  fullPath: 'pizza/models/food/ginger-bread-cutter.glb',
+  format: 'glb',
+  nodes: {
+  "GingerBreadCutter": "ginger-bread-cutter"
+}
+} as const;
+
+const FoodGingerBread = {
+  id: 'ginger-bread',
+  path: 'food/ginger-bread',
+  fullPath: 'pizza/models/food/ginger-bread.glb',
+  format: 'glb',
+  nodes: {
+  "GingerBread": "ginger-bread"
+}
+} as const;
+
+const FoodGlassWine = {
+  id: 'glass-wine',
+  path: 'food/glass-wine',
+  fullPath: 'pizza/models/food/glass-wine.glb',
+  format: 'glb',
+  nodes: {
+  "GlassWine": "glass-wine"
+}
+} as const;
+
+const FoodGlass = {
+  id: 'glass',
+  path: 'food/glass',
+  fullPath: 'pizza/models/food/glass.glb',
+  format: 'glb',
+  nodes: {
+  "Glass": "glass"
+}
+} as const;
+
+const FoodGrapes = {
+  id: 'grapes',
+  path: 'food/grapes',
+  fullPath: 'pizza/models/food/grapes.glb',
+  format: 'glb',
+  nodes: {
+  "Grapes": "grapes"
+}
+} as const;
+
+const FoodHoney = {
+  id: 'honey',
+  path: 'food/honey',
+  fullPath: 'pizza/models/food/honey.glb',
+  format: 'glb',
+  nodes: {
+  "Honey": "honey"
+}
+} as const;
+
+const FoodHotDogRaw = {
+  id: 'hot-dog-raw',
+  path: 'food/hot-dog-raw',
+  fullPath: 'pizza/models/food/hot-dog-raw.glb',
+  format: 'glb',
+  nodes: {
+  "HotDogRaw": "hot-dog-raw"
+}
+} as const;
+
+const FoodHotDog = {
+  id: 'hot-dog',
+  path: 'food/hot-dog',
+  fullPath: 'pizza/models/food/hot-dog.glb',
+  format: 'glb',
+  nodes: {
+  "HotDog": "hot-dog",
+  "Sauce": "sauce",
+  "Sausage": "sausage"
+}
+} as const;
+
+const FoodIceCreamCne = {
+  id: 'ice-cream-cne',
+  path: 'food/ice-cream-cne',
+  fullPath: 'pizza/models/food/ice-cream-cne.glb',
+  format: 'glb',
+  nodes: {
+  "IceCreamCne": "ice-cream-cne"
+}
+} as const;
+
+const FoodIceCreamCup = {
+  id: 'ice-cream-cup',
+  path: 'food/ice-cream-cup',
+  fullPath: 'pizza/models/food/ice-cream-cup.glb',
+  format: 'glb',
+  nodes: {
+  "IceCreamCup": "ice-cream-cup"
+}
+} as const;
+
+const FoodIceCreamScoopChocolate = {
+  id: 'ice-cream-scoop-chocolate',
+  path: 'food/ice-cream-scoop-chocolate',
+  fullPath: 'pizza/models/food/ice-cream-scoop-chocolate.glb',
+  format: 'glb',
+  nodes: {
+  "IceCreamScoopChocolate": "ice-cream-scoop-chocolate"
+}
+} as const;
+
+const FoodIceCreamScoopMint = {
+  id: 'ice-cream-scoop-mint',
+  path: 'food/ice-cream-scoop-mint',
+  fullPath: 'pizza/models/food/ice-cream-scoop-mint.glb',
+  format: 'glb',
+  nodes: {
+  "IceCreamScoopMint": "ice-cream-scoop-mint"
+}
+} as const;
+
+const FoodIceCream = {
+  id: 'ice-cream',
+  path: 'food/ice-cream',
+  fullPath: 'pizza/models/food/ice-cream.glb',
+  format: 'glb',
+  nodes: {
+  "IceCream": "ice-cream",
+  "Group": "Group"
+}
+} as const;
+
+const FoodKnifeBlock = {
+  id: 'knife-block',
+  path: 'food/knife-block',
+  fullPath: 'pizza/models/food/knife-block.glb',
+  format: 'glb',
+  nodes: {
+  "KnifeBlock": "knife-block",
+  "CookingKnife": "cooking-knife"
+}
+} as const;
+
+const FoodLeek = {
+  id: 'leek',
+  path: 'food/leek',
+  fullPath: 'pizza/models/food/leek.glb',
+  format: 'glb',
+  nodes: {
+  "Leek": "leek"
+}
+} as const;
+
+const FoodLemonHalf = {
+  id: 'lemon-half',
+  path: 'food/lemon-half',
+  fullPath: 'pizza/models/food/lemon-half.glb',
+  format: 'glb',
+  nodes: {
+  "LemonHalf": "lemon-half"
+}
+} as const;
+
+const FoodLemon = {
+  id: 'lemon',
+  path: 'food/lemon',
+  fullPath: 'pizza/models/food/lemon.glb',
+  format: 'glb',
+  nodes: {
+  "Lemon": "lemon"
+}
+} as const;
+
+const FoodLoafBaguette = {
+  id: 'loaf-baguette',
+  path: 'food/loaf-baguette',
+  fullPath: 'pizza/models/food/loaf-baguette.glb',
+  format: 'glb',
+  nodes: {
+  "LoafBaguette": "loaf-baguette"
+}
+} as const;
+
+const FoodLoafRound = {
+  id: 'loaf-round',
+  path: 'food/loaf-round',
+  fullPath: 'pizza/models/food/loaf-round.glb',
+  format: 'glb',
+  nodes: {
+  "LoafRound": "loaf-round"
+}
+} as const;
+
+const FoodLoaf = {
+  id: 'loaf',
+  path: 'food/loaf',
+  fullPath: 'pizza/models/food/loaf.glb',
+  format: 'glb',
+  nodes: {
+  "Loaf": "loaf"
+}
+} as const;
+
+const FoodLollypop = {
+  id: 'lollypop',
+  path: 'food/lollypop',
+  fullPath: 'pizza/models/food/lollypop.glb',
+  format: 'glb',
+  nodes: {
+  "Lollypop": "lollypop"
+}
+} as const;
+
+const FoodMakiRoe = {
+  id: 'maki-roe',
+  path: 'food/maki-roe',
+  fullPath: 'pizza/models/food/maki-roe.glb',
+  format: 'glb',
+  nodes: {
+  "MakiRoe": "maki-roe"
+}
+} as const;
+
+const FoodMakiSalmon = {
+  id: 'maki-salmon',
+  path: 'food/maki-salmon',
+  fullPath: 'pizza/models/food/maki-salmon.glb',
+  format: 'glb',
+  nodes: {
+  "MakiSalmon": "maki-salmon"
+}
+} as const;
+
+const FoodMakiVegetable = {
+  id: 'maki-vegetable',
+  path: 'food/maki-vegetable',
+  fullPath: 'pizza/models/food/maki-vegetable.glb',
+  format: 'glb',
+  nodes: {
+  "MakiVegetable": "maki-vegetable"
+}
+} as const;
+
+const FoodMeatCooked = {
+  id: 'meat-cooked',
+  path: 'food/meat-cooked',
+  fullPath: 'pizza/models/food/meat-cooked.glb',
+  format: 'glb',
+  nodes: {
+  "MeatCooked": "meat-cooked"
+}
+} as const;
+
+const FoodMeatPatty = {
+  id: 'meat-patty',
+  path: 'food/meat-patty',
+  fullPath: 'pizza/models/food/meat-patty.glb',
+  format: 'glb',
+  nodes: {
+  "MeatPatty": "meat-patty"
+}
+} as const;
+
+const FoodMeatRaw = {
+  id: 'meat-raw',
+  path: 'food/meat-raw',
+  fullPath: 'pizza/models/food/meat-raw.glb',
+  format: 'glb',
+  nodes: {
+  "MeatRaw": "meat-raw"
+}
+} as const;
+
+const FoodMeatRibs = {
+  id: 'meat-ribs',
+  path: 'food/meat-ribs',
+  fullPath: 'pizza/models/food/meat-ribs.glb',
+  format: 'glb',
+  nodes: {
+  "MeatRibs": "meat-ribs"
+}
+} as const;
+
+const FoodMeatSausage = {
+  id: 'meat-sausage',
+  path: 'food/meat-sausage',
+  fullPath: 'pizza/models/food/meat-sausage.glb',
+  format: 'glb',
+  nodes: {
+  "MeatSausage": "meat-sausage"
+}
+} as const;
+
+const FoodMeatTenderizer = {
+  id: 'meat-tenderizer',
+  path: 'food/meat-tenderizer',
+  fullPath: 'pizza/models/food/meat-tenderizer.glb',
+  format: 'glb',
+  nodes: {
+  "MeatTenderizer": "meat-tenderizer"
+}
+} as const;
+
+const FoodMincemeatPie = {
+  id: 'mincemeat-pie',
+  path: 'food/mincemeat-pie',
+  fullPath: 'pizza/models/food/mincemeat-pie.glb',
+  format: 'glb',
+  nodes: {
+  "MincemeatPie": "mincemeat-pie"
+}
+} as const;
+
+const FoodMortarPestle = {
+  id: 'mortar-pestle',
+  path: 'food/mortar-pestle',
+  fullPath: 'pizza/models/food/mortar-pestle.glb',
+  format: 'glb',
+  nodes: {
+  "MortarPestle": "mortar-pestle"
+}
+} as const;
+
+const FoodMortar = {
+  id: 'mortar',
+  path: 'food/mortar',
+  fullPath: 'pizza/models/food/mortar.glb',
+  format: 'glb',
+  nodes: {
+  "Mortar": "mortar"
+}
+} as const;
+
+const FoodMuffin = {
+  id: 'muffin',
+  path: 'food/muffin',
+  fullPath: 'pizza/models/food/muffin.glb',
+  format: 'glb',
+  nodes: {
+  "Muffin": "muffin"
+}
+} as const;
+
+const FoodMug = {
+  id: 'mug',
+  path: 'food/mug',
+  fullPath: 'pizza/models/food/mug.glb',
+  format: 'glb',
+  nodes: {
+  "Mug": "mug"
+}
+} as const;
+
+const FoodMushroomHalf = {
+  id: 'mushroom-half',
+  path: 'food/mushroom-half',
+  fullPath: 'pizza/models/food/mushroom-half.glb',
+  format: 'glb',
+  nodes: {
+  "MushroomHalf": "mushroom-half"
+}
+} as const;
+
+const FoodMushroom = {
+  id: 'mushroom',
+  path: 'food/mushroom',
+  fullPath: 'pizza/models/food/mushroom.glb',
+  format: 'glb',
+  nodes: {
+  "Mushroom": "mushroom"
+}
+} as const;
+
+const FoodMusselOpen = {
+  id: 'mussel-open',
+  path: 'food/mussel-open',
+  fullPath: 'pizza/models/food/mussel-open.glb',
+  format: 'glb',
+  nodes: {
+  "MusselOpen": "mussel-open"
+}
+} as const;
+
+const FoodMussel = {
+  id: 'mussel',
+  path: 'food/mussel',
+  fullPath: 'pizza/models/food/mussel.glb',
+  format: 'glb',
+  nodes: {
+  "Mussel": "mussel"
+}
+} as const;
+
+const FoodOnionHalf = {
+  id: 'onion-half',
+  path: 'food/onion-half',
+  fullPath: 'pizza/models/food/onion-half.glb',
+  format: 'glb',
+  nodes: {
+  "OnionHalf": "onion-half"
+}
+} as const;
+
+const FoodOnion = {
+  id: 'onion',
+  path: 'food/onion',
+  fullPath: 'pizza/models/food/onion.glb',
+  format: 'glb',
+  nodes: {
+  "Onion": "onion"
+}
+} as const;
+
+const FoodOrange = {
+  id: 'orange',
+  path: 'food/orange',
+  fullPath: 'pizza/models/food/orange.glb',
+  format: 'glb',
+  nodes: {
+  "Orange": "orange"
+}
+} as const;
+
+const FoodPanStew = {
+  id: 'pan-stew',
+  path: 'food/pan-stew',
+  fullPath: 'pizza/models/food/pan-stew.glb',
+  format: 'glb',
+  nodes: {
+  "PanStew": "pan-stew"
+}
+} as const;
+
+const FoodPan = {
+  id: 'pan',
+  path: 'food/pan',
+  fullPath: 'pizza/models/food/pan.glb',
+  format: 'glb',
+  nodes: {
+  "Pan": "pan"
+}
+} as const;
+
+const FoodPancakes = {
+  id: 'pancakes',
+  path: 'food/pancakes',
+  fullPath: 'pizza/models/food/pancakes.glb',
+  format: 'glb',
+  nodes: {
+  "Pancakes": "pancakes",
+  "Butter": "butter",
+  "Pancake": "pancake"
+}
+} as const;
+
+const FoodPaprikaSlice = {
+  id: 'paprika-slice',
+  path: 'food/paprika-slice',
+  fullPath: 'pizza/models/food/paprika-slice.glb',
+  format: 'glb',
+  nodes: {
+  "PaprikaSlice": "paprika-slice"
+}
+} as const;
+
+const FoodPaprika = {
+  id: 'paprika',
+  path: 'food/paprika',
+  fullPath: 'pizza/models/food/paprika.glb',
+  format: 'glb',
+  nodes: {
+  "Paprika": "paprika"
+}
+} as const;
+
+const FoodPeanutButter = {
+  id: 'peanut-butter',
+  path: 'food/peanut-butter',
+  fullPath: 'pizza/models/food/peanut-butter.glb',
+  format: 'glb',
+  nodes: {
+  "PeanutButter": "peanut-butter"
+}
+} as const;
+
+const FoodPearHalf = {
+  id: 'pear-half',
+  path: 'food/pear-half',
+  fullPath: 'pizza/models/food/pear-half.glb',
+  format: 'glb',
+  nodes: {
+  "PearHalf": "pear-half"
+}
+} as const;
+
+const FoodPear = {
+  id: 'pear',
+  path: 'food/pear',
+  fullPath: 'pizza/models/food/pear.glb',
+  format: 'glb',
+  nodes: {
+  "Pear": "pear"
+}
+} as const;
+
+const FoodPepperMill = {
+  id: 'pepper-mill',
+  path: 'food/pepper-mill',
+  fullPath: 'pizza/models/food/pepper-mill.glb',
+  format: 'glb',
+  nodes: {
+  "PepperMill": "pepper-mill"
+}
+} as const;
+
+const FoodPepper = {
+  id: 'pepper',
+  path: 'food/pepper',
+  fullPath: 'pizza/models/food/pepper.glb',
+  format: 'glb',
+  nodes: {
+  "Pepper": "pepper"
+}
+} as const;
+
+const FoodPie = {
+  id: 'pie',
+  path: 'food/pie',
+  fullPath: 'pizza/models/food/pie.glb',
+  format: 'glb',
+  nodes: {
+  "Pie": "pie"
+}
+} as const;
+
+const FoodPineapple = {
+  id: 'pineapple',
+  path: 'food/pineapple',
+  fullPath: 'pizza/models/food/pineapple.glb',
+  format: 'glb',
+  nodes: {
+  "Pineapple": "pineapple"
+}
+} as const;
+
+const FoodPizzaBox = {
+  id: 'pizza-box',
+  path: 'food/pizza-box',
+  fullPath: 'pizza/models/food/pizza-box.glb',
+  format: 'glb',
+  nodes: {
+  "PizzaBox": "pizza-box",
+  "Lid": "lid"
+}
+} as const;
+
+const FoodPizzaCutter = {
+  id: 'pizza-cutter',
+  path: 'food/pizza-cutter',
+  fullPath: 'pizza/models/food/pizza-cutter.glb',
+  format: 'glb',
+  nodes: {
+  "PizzaCutter": "pizza-cutter"
+}
+} as const;
+
+const FoodPizza = {
+  id: 'pizza',
+  path: 'food/pizza',
+  fullPath: 'pizza/models/food/pizza.glb',
+  format: 'glb',
+  nodes: {
+  "Slice6": "slice6",
+  "Slice1": "slice1",
+  "Slice2": "slice2",
+  "Slice3": "slice3",
+  "Slice4": "slice4",
+  "Slice5": "slice5",
+  "Slice7": "slice7",
+  "Slice8": "slice8"
+}
+} as const;
+
+const FoodPlateBroken = {
+  id: 'plate-broken',
+  path: 'food/plate-broken',
+  fullPath: 'pizza/models/food/plate-broken.glb',
+  format: 'glb',
+  nodes: {
+  "Piece": "piece"
+}
+} as const;
+
+const FoodPlateDeep = {
+  id: 'plate-deep',
+  path: 'food/plate-deep',
+  fullPath: 'pizza/models/food/plate-deep.glb',
+  format: 'glb',
+  nodes: {
+  "PlateDeep": "plate-deep"
+}
+} as const;
+
+const FoodPlateDinner = {
+  id: 'plate-dinner',
+  path: 'food/plate-dinner',
+  fullPath: 'pizza/models/food/plate-dinner.glb',
+  format: 'glb',
+  nodes: {
+  "PlateDinner": "plate-dinner"
+}
+} as const;
+
+const FoodPlateRectangle = {
+  id: 'plate-rectangle',
+  path: 'food/plate-rectangle',
+  fullPath: 'pizza/models/food/plate-rectangle.glb',
+  format: 'glb',
+  nodes: {
+  "PlateRectangle": "plate-rectangle"
+}
+} as const;
+
+const FoodPlateSauerkraut = {
+  id: 'plate-sauerkraut',
+  path: 'food/plate-sauerkraut',
+  fullPath: 'pizza/models/food/plate-sauerkraut.glb',
+  format: 'glb',
+  nodes: {
+  "PlateSauerkraut": "plate-sauerkraut"
+}
+} as const;
+
+const FoodPlate = {
+  id: 'plate',
+  path: 'food/plate',
+  fullPath: 'pizza/models/food/plate.glb',
+  format: 'glb',
+  nodes: {
+  "Plate": "plate"
+}
+} as const;
+
+const FoodPopsicleChocolate = {
+  id: 'popsicle-chocolate',
+  path: 'food/popsicle-chocolate',
+  fullPath: 'pizza/models/food/popsicle-chocolate.glb',
+  format: 'glb',
+  nodes: {
+  "PopsicleChocolate": "popsicle-chocolate"
+}
+} as const;
+
+const FoodPopsicleStick = {
+  id: 'popsicle-stick',
+  path: 'food/popsicle-stick',
+  fullPath: 'pizza/models/food/popsicle-stick.glb',
+  format: 'glb',
+  nodes: {
+  "PopsicleStick": "popsicle-stick"
+}
+} as const;
+
+const FoodPopsicle = {
+  id: 'popsicle',
+  path: 'food/popsicle',
+  fullPath: 'pizza/models/food/popsicle.glb',
+  format: 'glb',
+  nodes: {
+  "Popsicle": "popsicle"
+}
+} as const;
+
+const FoodPotLid = {
+  id: 'pot-lid',
+  path: 'food/pot-lid',
+  fullPath: 'pizza/models/food/pot-lid.glb',
+  format: 'glb',
+  nodes: {
+  "PotLid": "pot-lid"
+}
+} as const;
+
+const FoodPotStewLid = {
+  id: 'pot-stew-lid',
+  path: 'food/pot-stew-lid',
+  fullPath: 'pizza/models/food/pot-stew-lid.glb',
+  format: 'glb',
+  nodes: {
+  "PotStewLid": "pot-stew-lid",
+  "Ignore": "(%ignore)"
+}
+} as const;
+
+const FoodPotStew = {
+  id: 'pot-stew',
+  path: 'food/pot-stew',
+  fullPath: 'pizza/models/food/pot-stew.glb',
+  format: 'glb',
+  nodes: {
+  "PotStew": "pot-stew"
+}
+} as const;
+
+const FoodPot = {
+  id: 'pot',
+  path: 'food/pot',
+  fullPath: 'pizza/models/food/pot.glb',
+  format: 'glb',
+  nodes: {
+  "Pot": "pot"
+}
+} as const;
+
+const FoodPudding = {
+  id: 'pudding',
+  path: 'food/pudding',
+  fullPath: 'pizza/models/food/pudding.glb',
+  format: 'glb',
+  nodes: {
+  "Pudding": "pudding"
+}
+} as const;
+
+const FoodPumpkinBasic = {
+  id: 'pumpkin-basic',
+  path: 'food/pumpkin-basic',
+  fullPath: 'pizza/models/food/pumpkin-basic.glb',
+  format: 'glb',
+  nodes: {
+  "PumpkinBasic": "pumpkin-basic"
+}
+} as const;
+
+const FoodPumpkin = {
+  id: 'pumpkin',
+  path: 'food/pumpkin',
+  fullPath: 'pizza/models/food/pumpkin.glb',
+  format: 'glb',
+  nodes: {
+  "Pumpkin": "pumpkin"
+}
+} as const;
+
+const FoodRadish = {
+  id: 'radish',
+  path: 'food/radish',
+  fullPath: 'pizza/models/food/radish.glb',
+  format: 'glb',
+  nodes: {
+  "Radish": "radish"
+}
+} as const;
+
+const FoodRiceBall = {
+  id: 'rice-ball',
+  path: 'food/rice-ball',
+  fullPath: 'pizza/models/food/rice-ball.glb',
+  format: 'glb',
+  nodes: {
+  "RiceBall": "rice-ball"
+}
+} as const;
+
+const FoodRollingPin = {
+  id: 'rollingPin',
+  path: 'food/rollingPin',
+  fullPath: 'pizza/models/food/rollingPin.glb',
+  format: 'glb',
+  nodes: {
+  "RollingPin": "rollingPin"
+}
+} as const;
+
+const FoodSalad = {
+  id: 'salad',
+  path: 'food/salad',
+  fullPath: 'pizza/models/food/salad.glb',
+  format: 'glb',
+  nodes: {
+  "Salad": "salad"
+}
+} as const;
+
+const FoodSandwich = {
+  id: 'sandwich',
+  path: 'food/sandwich',
+  fullPath: 'pizza/models/food/sandwich.glb',
+  format: 'glb',
+  nodes: {
+  "Sandwich": "sandwich",
+  "Lettuce": "lettuce",
+  "Meat": "meat",
+  "Bun": "bun"
+}
+} as const;
+
+const FoodSausageHalf = {
+  id: 'sausage-half',
+  path: 'food/sausage-half',
+  fullPath: 'pizza/models/food/sausage-half.glb',
+  format: 'glb',
+  nodes: {
+  "SausageHalf": "sausage-half"
+}
+} as const;
+
+const FoodSausage = {
+  id: 'sausage',
+  path: 'food/sausage',
+  fullPath: 'pizza/models/food/sausage.glb',
+  format: 'glb',
+  nodes: {
+  "Sausage": "sausage"
+}
+} as const;
+
+const FoodShakerPepper = {
+  id: 'shaker-pepper',
+  path: 'food/shaker-pepper',
+  fullPath: 'pizza/models/food/shaker-pepper.glb',
+  format: 'glb',
+  nodes: {
+  "ShakerPepper": "shaker-pepper"
+}
+} as const;
+
+const FoodShakerSalt = {
+  id: 'shaker-salt',
+  path: 'food/shaker-salt',
+  fullPath: 'pizza/models/food/shaker-salt.glb',
+  format: 'glb',
+  nodes: {
+  "ShakerSalt": "shaker-salt"
+}
+} as const;
+
+const FoodSkewerVegetables = {
+  id: 'skewer-vegetables',
+  path: 'food/skewer-vegetables',
+  fullPath: 'pizza/models/food/skewer-vegetables.glb',
+  format: 'glb',
+  nodes: {
+  "SkewerVegetables": "skewer-vegetables",
+  "Meat": "meat",
+  "Vegetables": "vegetables"
+}
+} as const;
+
+const FoodSkewer = {
+  id: 'skewer',
+  path: 'food/skewer',
+  fullPath: 'pizza/models/food/skewer.glb',
+  format: 'glb',
+  nodes: {
+  "Skewer": "skewer",
+  "Meat": "meat"
+}
+} as const;
+
+const FoodSodaBottle = {
+  id: 'soda-bottle',
+  path: 'food/soda-bottle',
+  fullPath: 'pizza/models/food/soda-bottle.glb',
+  format: 'glb',
+  nodes: {
+  "SodaBottle": "soda-bottle"
+}
+} as const;
+
+const FoodSodaCanCrushed = {
+  id: 'soda-can-crushed',
+  path: 'food/soda-can-crushed',
+  fullPath: 'pizza/models/food/soda-can-crushed.glb',
+  format: 'glb',
+  nodes: {
+  "SodaCanCrushed": "soda-can-crushed"
+}
+} as const;
+
+const FoodSodaCan = {
+  id: 'soda-can',
+  path: 'food/soda-can',
+  fullPath: 'pizza/models/food/soda-can.glb',
+  format: 'glb',
+  nodes: {
+  "SodaCan": "soda-can"
+}
+} as const;
+
+const FoodSodaGlass = {
+  id: 'soda-glass',
+  path: 'food/soda-glass',
+  fullPath: 'pizza/models/food/soda-glass.glb',
+  format: 'glb',
+  nodes: {
+  "SodaGlass": "soda-glass",
+  "Straw": "straw",
+  "Lemon": "lemon"
+}
+} as const;
+
+const FoodSoda = {
+  id: 'soda',
+  path: 'food/soda',
+  fullPath: 'pizza/models/food/soda.glb',
+  format: 'glb',
+  nodes: {
+  "Soda": "soda"
+}
+} as const;
+
+const FoodSoy = {
+  id: 'soy',
+  path: 'food/soy',
+  fullPath: 'pizza/models/food/soy.glb',
+  format: 'glb',
+  nodes: {
+  "Soy": "soy"
+}
+} as const;
+
+const FoodSteamer = {
+  id: 'steamer',
+  path: 'food/steamer',
+  fullPath: 'pizza/models/food/steamer.glb',
+  format: 'glb',
+  nodes: {
+  "Lid": "lid",
+  "Layer": "layer"
+}
+} as const;
+
+const FoodStrawberry = {
+  id: 'strawberry',
+  path: 'food/strawberry',
+  fullPath: 'pizza/models/food/strawberry.glb',
+  format: 'glb',
+  nodes: {
+  "Strawberry": "strawberry"
+}
+} as const;
+
+const FoodStyrofoamDinner = {
+  id: 'styrofoam-dinner',
+  path: 'food/styrofoam-dinner',
+  fullPath: 'pizza/models/food/styrofoam-dinner.glb',
+  format: 'glb',
+  nodes: {
+  "StyrofoamDinner": "styrofoam-dinner",
+  "Group": "Group",
+  "Lid": "lid"
+}
+} as const;
+
+const FoodStyrofoam = {
+  id: 'styrofoam',
+  path: 'food/styrofoam',
+  fullPath: 'pizza/models/food/styrofoam.glb',
+  format: 'glb',
+  nodes: {
+  "Styrofoam": "styrofoam",
+  "Lid": "lid"
+}
+} as const;
+
+const FoodSub = {
+  id: 'sub',
+  path: 'food/sub',
+  fullPath: 'pizza/models/food/sub.glb',
+  format: 'glb',
+  nodes: {
+  "Sub": "sub",
+  "BunBottom": "bun-bottom",
+  "Lettuce": "lettuce",
+  "Meat": "meat",
+  "Tomato": "tomato",
+  "BunTop": "bun-top"
+}
+} as const;
+
+const FoodSundae = {
+  id: 'sundae',
+  path: 'food/sundae',
+  fullPath: 'pizza/models/food/sundae.glb',
+  format: 'glb',
+  nodes: {
+  "Sundae": "sundae",
+  "Cherry": "cherry",
+  "Straw": "straw"
+}
+} as const;
+
+const FoodSushiEgg = {
+  id: 'sushi-egg',
+  path: 'food/sushi-egg',
+  fullPath: 'pizza/models/food/sushi-egg.glb',
+  format: 'glb',
+  nodes: {
+  "SushiEgg": "sushi-egg"
+}
+} as const;
+
+const FoodSushiSalmon = {
+  id: 'sushi-salmon',
+  path: 'food/sushi-salmon',
+  fullPath: 'pizza/models/food/sushi-salmon.glb',
+  format: 'glb',
+  nodes: {
+  "SushiSalmon": "sushi-salmon"
+}
+} as const;
+
+const FoodTaco = {
+  id: 'taco',
+  path: 'food/taco',
+  fullPath: 'pizza/models/food/taco.glb',
+  format: 'glb',
+  nodes: {
+  "Taco": "taco"
+}
+} as const;
+
+const FoodTajineLid = {
+  id: 'tajine-lid',
+  path: 'food/tajine-lid',
+  fullPath: 'pizza/models/food/tajine-lid.glb',
+  format: 'glb',
+  nodes: {
+  "TajineLid": "tajine-lid"
+}
+} as const;
+
+const FoodTajine = {
+  id: 'tajine',
+  path: 'food/tajine',
+  fullPath: 'pizza/models/food/tajine.glb',
+  format: 'glb',
+  nodes: {
+  "Tajine": "tajine"
+}
+} as const;
+
+const FoodTomatoSlice = {
+  id: 'tomato-slice',
+  path: 'food/tomato-slice',
+  fullPath: 'pizza/models/food/tomato-slice.glb',
+  format: 'glb',
+  nodes: {
+  "TomatoSlice": "tomato-slice"
+}
+} as const;
+
+const FoodTomato = {
+  id: 'tomato',
+  path: 'food/tomato',
+  fullPath: 'pizza/models/food/tomato.glb',
+  format: 'glb',
+  nodes: {
+  "Tomato": "tomato"
+}
+} as const;
+
+const FoodTurkey = {
+  id: 'turkey',
+  path: 'food/turkey',
+  fullPath: 'pizza/models/food/turkey.glb',
+  format: 'glb',
+  nodes: {
+  "Turkey": "turkey",
+  "Leg": "leg"
+}
+} as const;
+
+const FoodUtensilFork = {
+  id: 'utensil-fork',
+  path: 'food/utensil-fork',
+  fullPath: 'pizza/models/food/utensil-fork.glb',
+  format: 'glb',
+  nodes: {
+  "UtensilFork": "utensil-fork"
+}
+} as const;
+
+const FoodUtensilKnife = {
+  id: 'utensil-knife',
+  path: 'food/utensil-knife',
+  fullPath: 'pizza/models/food/utensil-knife.glb',
+  format: 'glb',
+  nodes: {
+  "UtensilKnife": "utensil-knife"
+}
+} as const;
+
+const FoodUtensilSpoon = {
+  id: 'utensil-spoon',
+  path: 'food/utensil-spoon',
+  fullPath: 'pizza/models/food/utensil-spoon.glb',
+  format: 'glb',
+  nodes: {
+  "UtensilSpoon": "utensil-spoon"
+}
+} as const;
+
+const FoodWaffle = {
+  id: 'waffle',
+  path: 'food/waffle',
+  fullPath: 'pizza/models/food/waffle.glb',
+  format: 'glb',
+  nodes: {
+  "Waffle": "waffle"
+}
+} as const;
+
+const FoodWatermelon = {
+  id: 'watermelon',
+  path: 'food/watermelon',
+  fullPath: 'pizza/models/food/watermelon.glb',
+  format: 'glb',
+  nodes: {
+  "Slice": "slice"
+}
+} as const;
+
+const FoodWhippedCream = {
+  id: 'whipped-cream',
+  path: 'food/whipped-cream',
+  fullPath: 'pizza/models/food/whipped-cream.glb',
+  format: 'glb',
+  nodes: {
+  "WhippedCream": "whipped-cream"
+}
+} as const;
+
+const FoodWhisk = {
+  id: 'whisk',
+  path: 'food/whisk',
+  fullPath: 'pizza/models/food/whisk.glb',
+  format: 'glb',
+  nodes: {
+  "Whisk": "whisk"
+}
+} as const;
+
+const FoodWholeHam = {
+  id: 'whole-ham',
+  path: 'food/whole-ham',
+  fullPath: 'pizza/models/food/whole-ham.glb',
+  format: 'glb',
+  nodes: {
+  "WholeHam": "whole-ham"
+}
+} as const;
+
+const FoodWholerHam = {
+  id: 'wholer-ham',
+  path: 'food/wholer-ham',
+  fullPath: 'pizza/models/food/wholer-ham.glb',
+  format: 'glb',
+  nodes: {
+  "WholerHam": "wholer-ham"
+}
+} as const;
+
+const FoodWineRed = {
+  id: 'wine-red',
+  path: 'food/wine-red',
+  fullPath: 'pizza/models/food/wine-red.glb',
+  format: 'glb',
+  nodes: {
+  "WineRed": "wine-red"
+}
+} as const;
+
+const FoodWineWhite = {
+  id: 'wine-white',
+  path: 'food/wine-white',
+  fullPath: 'pizza/models/food/wine-white.glb',
+  format: 'glb',
+  nodes: {
+  "WineWhite": "wine-white"
+}
+} as const;
+
 const PetsAnimalBeaver = {
   id: 'animal-beaver',
   path: 'pets/animal-beaver',
@@ -2194,6 +4263,208 @@ export const MODELS = {
     StandingPICKAXE: CharactersStandingPICKAXE,
     TestIdle: CharactersTestIdle,
     Watering: CharactersWatering
+  },
+  Food: {
+    AdvocadoHalf: FoodAdvocadoHalf,
+    AppleHalf: FoodAppleHalf,
+    Apple: FoodApple,
+    Avocado: FoodAvocado,
+    BaconRaw: FoodBaconRaw,
+    Bacon: FoodBacon,
+    BagFlat: FoodBagFlat,
+    Bag: FoodBag,
+    Banana: FoodBanana,
+    Barrel: FoodBarrel,
+    Beet: FoodBeet,
+    BottleKetchup: FoodBottleKetchup,
+    BottleMusterd: FoodBottleMusterd,
+    BottleOil: FoodBottleOil,
+    BowlBroth: FoodBowlBroth,
+    BowlCereal: FoodBowlCereal,
+    BowlSoup: FoodBowlSoup,
+    Bowl: FoodBowl,
+    Bread: FoodBread,
+    Broccoli: FoodBroccoli,
+    BurgerCheeseDouble: FoodBurgerCheeseDouble,
+    BurgerCheese: FoodBurgerCheese,
+    BurgerDouble: FoodBurgerDouble,
+    Burger: FoodBurger,
+    Cabbage: FoodCabbage,
+    CakeBirthday: FoodCakeBirthday,
+    CakeSlicer: FoodCakeSlicer,
+    Cake: FoodCake,
+    CanOpen: FoodCanOpen,
+    CanSmall: FoodCanSmall,
+    Can: FoodCan,
+    CandyBarWrapper: FoodCandyBarWrapper,
+    CandyBar: FoodCandyBar,
+    Carrot: FoodCarrot,
+    CartonSmall: FoodCartonSmall,
+    Carton: FoodCarton,
+    Cauliflower: FoodCauliflower,
+    CeleryStick: FoodCeleryStick,
+    CheeseCut: FoodCheeseCut,
+    CheeseSlicer: FoodCheeseSlicer,
+    Cheese: FoodCheese,
+    Cherries: FoodCherries,
+    Chinese: FoodChinese,
+    ChocolateWrapper: FoodChocolateWrapper,
+    Chocolate: FoodChocolate,
+    ChopsticDecorative: FoodChopsticDecorative,
+    Chopstick: FoodChopstick,
+    Cocktail: FoodCocktail,
+    CoconutHalf: FoodCoconutHalf,
+    Coconut: FoodCoconut,
+    CookieChocolate: FoodCookieChocolate,
+    Cookie: FoodCookie,
+    CookingFork: FoodCookingFork,
+    CookingKnifeChopping: FoodCookingKnifeChopping,
+    CookingKnife: FoodCookingKnife,
+    CookingSpatula: FoodCookingSpatula,
+    CookingSpoon: FoodCookingSpoon,
+    CornDog: FoodCornDog,
+    Corn: FoodCorn,
+    Croissant: FoodCroissant,
+    CupCoffee: FoodCupCoffee,
+    CupSaucer: FoodCupSaucer,
+    CupTea: FoodCupTea,
+    Cup: FoodCup,
+    Cupcake: FoodCupcake,
+    CuttingBoardJapanese: FoodCuttingBoardJapanese,
+    CuttingBoardRound: FoodCuttingBoardRound,
+    CuttingBoard: FoodCuttingBoard,
+    DimSum: FoodDimSum,
+    DonutChocolate: FoodDonutChocolate,
+    DonutSprinkles: FoodDonutSprinkles,
+    Donut: FoodDonut,
+    EggCooked: FoodEggCooked,
+    EggCup: FoodEggCup,
+    EggHalf: FoodEggHalf,
+    Egg: FoodEgg,
+    Eggplant: FoodEggplant,
+    FishBones: FoodFishBones,
+    Fish: FoodFish,
+    Frappe: FoodFrappe,
+    FriesEmpty: FoodFriesEmpty,
+    Fries: FoodFries,
+    FrikandelSpeciaal: FoodFrikandelSpeciaal,
+    FryingPanLid: FoodFryingPanLid,
+    FryingPan: FoodFryingPan,
+    GingerBreadCutter: FoodGingerBreadCutter,
+    GingerBread: FoodGingerBread,
+    GlassWine: FoodGlassWine,
+    Glass: FoodGlass,
+    Grapes: FoodGrapes,
+    Honey: FoodHoney,
+    HotDogRaw: FoodHotDogRaw,
+    HotDog: FoodHotDog,
+    IceCreamCne: FoodIceCreamCne,
+    IceCreamCup: FoodIceCreamCup,
+    IceCreamScoopChocolate: FoodIceCreamScoopChocolate,
+    IceCreamScoopMint: FoodIceCreamScoopMint,
+    IceCream: FoodIceCream,
+    KnifeBlock: FoodKnifeBlock,
+    Leek: FoodLeek,
+    LemonHalf: FoodLemonHalf,
+    Lemon: FoodLemon,
+    LoafBaguette: FoodLoafBaguette,
+    LoafRound: FoodLoafRound,
+    Loaf: FoodLoaf,
+    Lollypop: FoodLollypop,
+    MakiRoe: FoodMakiRoe,
+    MakiSalmon: FoodMakiSalmon,
+    MakiVegetable: FoodMakiVegetable,
+    MeatCooked: FoodMeatCooked,
+    MeatPatty: FoodMeatPatty,
+    MeatRaw: FoodMeatRaw,
+    MeatRibs: FoodMeatRibs,
+    MeatSausage: FoodMeatSausage,
+    MeatTenderizer: FoodMeatTenderizer,
+    MincemeatPie: FoodMincemeatPie,
+    MortarPestle: FoodMortarPestle,
+    Mortar: FoodMortar,
+    Muffin: FoodMuffin,
+    Mug: FoodMug,
+    MushroomHalf: FoodMushroomHalf,
+    Mushroom: FoodMushroom,
+    MusselOpen: FoodMusselOpen,
+    Mussel: FoodMussel,
+    OnionHalf: FoodOnionHalf,
+    Onion: FoodOnion,
+    Orange: FoodOrange,
+    PanStew: FoodPanStew,
+    Pan: FoodPan,
+    Pancakes: FoodPancakes,
+    PaprikaSlice: FoodPaprikaSlice,
+    Paprika: FoodPaprika,
+    PeanutButter: FoodPeanutButter,
+    PearHalf: FoodPearHalf,
+    Pear: FoodPear,
+    PepperMill: FoodPepperMill,
+    Pepper: FoodPepper,
+    Pie: FoodPie,
+    Pineapple: FoodPineapple,
+    PizzaBox: FoodPizzaBox,
+    PizzaCutter: FoodPizzaCutter,
+    Pizza: FoodPizza,
+    PlateBroken: FoodPlateBroken,
+    PlateDeep: FoodPlateDeep,
+    PlateDinner: FoodPlateDinner,
+    PlateRectangle: FoodPlateRectangle,
+    PlateSauerkraut: FoodPlateSauerkraut,
+    Plate: FoodPlate,
+    PopsicleChocolate: FoodPopsicleChocolate,
+    PopsicleStick: FoodPopsicleStick,
+    Popsicle: FoodPopsicle,
+    PotLid: FoodPotLid,
+    PotStewLid: FoodPotStewLid,
+    PotStew: FoodPotStew,
+    Pot: FoodPot,
+    Pudding: FoodPudding,
+    PumpkinBasic: FoodPumpkinBasic,
+    Pumpkin: FoodPumpkin,
+    Radish: FoodRadish,
+    RiceBall: FoodRiceBall,
+    RollingPin: FoodRollingPin,
+    Salad: FoodSalad,
+    Sandwich: FoodSandwich,
+    SausageHalf: FoodSausageHalf,
+    Sausage: FoodSausage,
+    ShakerPepper: FoodShakerPepper,
+    ShakerSalt: FoodShakerSalt,
+    SkewerVegetables: FoodSkewerVegetables,
+    Skewer: FoodSkewer,
+    SodaBottle: FoodSodaBottle,
+    SodaCanCrushed: FoodSodaCanCrushed,
+    SodaCan: FoodSodaCan,
+    SodaGlass: FoodSodaGlass,
+    Soda: FoodSoda,
+    Soy: FoodSoy,
+    Steamer: FoodSteamer,
+    Strawberry: FoodStrawberry,
+    StyrofoamDinner: FoodStyrofoamDinner,
+    Styrofoam: FoodStyrofoam,
+    Sub: FoodSub,
+    Sundae: FoodSundae,
+    SushiEgg: FoodSushiEgg,
+    SushiSalmon: FoodSushiSalmon,
+    Taco: FoodTaco,
+    TajineLid: FoodTajineLid,
+    Tajine: FoodTajine,
+    TomatoSlice: FoodTomatoSlice,
+    Tomato: FoodTomato,
+    Turkey: FoodTurkey,
+    UtensilFork: FoodUtensilFork,
+    UtensilKnife: FoodUtensilKnife,
+    UtensilSpoon: FoodUtensilSpoon,
+    Waffle: FoodWaffle,
+    Watermelon: FoodWatermelon,
+    WhippedCream: FoodWhippedCream,
+    Whisk: FoodWhisk,
+    WholeHam: FoodWholeHam,
+    WholerHam: FoodWholerHam,
+    WineRed: FoodWineRed,
+    WineWhite: FoodWineWhite
   },
   Pets: {
     AnimalBeaver: PetsAnimalBeaver,

@@ -30,6 +30,14 @@ const GRAPH_KIND_STYLE = {
     craft: { color: '#f778ba', label: 'Craft table' },
     queue: { color: '#79c0ff', label: 'Queue' },
     gate: { color: '#e5484d', label: 'Gate' },
+    animal: { color: '#ffa657', label: 'Animal' },
+    // Two distinct kinds (not one shared "spawner") since they come from two different tabs
+    // with two different id shapes (array index either way, but a different array — see
+    // lookupRawEntry()'s own doc) — kept visually close (both greens, unlike any other kind
+    // here) so they still read as "the same FAMILY of thing" at a glance.
+    dynamicSpawner: { color: '#56d364', label: 'Dynamic Spawner (tile area)' },
+    shapeSpawner: { color: '#2ea043', label: 'Shape Spawner (drawn area)' },
+    zone: { color: '#f2cc60', label: 'Zone' },
 };
 
 /** Which real editor tab (a manifest.json id) each node kind's own data actually lives on — used by showNodeDetail()'s "Open <tab> tab" button. `queue` intentionally points at 'queues' even though a queue's own entry lives under its `byId` sub-object, not the tab's top level — switching tabs is all this does, not deep-linking to the specific entry. */
@@ -43,6 +51,10 @@ const GRAPH_KIND_TAB = {
     craft: 'crafting',
     queue: 'queues',
     gate: 'gates',
+    animal: 'animals',
+    dynamicSpawner: 'dynamicResourcePlacements',
+    shapeSpawner: 'shapeResourcePlacements',
+    zone: 'zones',
 };
 
 let cy;
@@ -57,11 +69,22 @@ function loadGraphImageAssets() {
     return graphImageAssetsPromise;
 }
 
-/** Fetches every tab this graph draws from, in parallel — a subset of what init() fetches for the whole editor, since not every tab (actions, entityViews, lootTables, characterViews, dynamicResourcePlacements, mapTiles) contributes a node or edge here. */
+/**
+ * Fetches every tab this graph draws from, in parallel — a subset of what init() fetches for
+ * the whole editor, since not every tab (actions, entityViews, lootTables, characterViews,
+ * mapTiles) contributes a node or edge here. Also pulls the two map-derived, read-only zone
+ * endpoints (see tiledMap.mjs's readZoneCells()/readZoneContents()) — `zoneCells` for which
+ * zoneNumbers actually exist to draw a node for, `zoneContents` for the "in zone" edges (see
+ * buildGraphElements()'s own doc on both).
+ */
 async function loadGraphData() {
-    const ids = ['resources', 'items', 'tools', 'providers', 'buildings', 'shops', 'crafting', 'gates', 'queues'];
-    const entries = await Promise.all(ids.map(async id => [id, await fetch(`/api/data/${id}`).then(r => r.json())]));
-    return Object.fromEntries(entries);
+    const ids = ['resources', 'items', 'tools', 'providers', 'buildings', 'shops', 'crafting', 'gates', 'queues', 'animals', 'dynamicResourcePlacements', 'shapeResourcePlacements', 'zones'];
+    const [entries, zoneCells, zoneContents] = await Promise.all([
+        Promise.all(ids.map(async id => [id, await fetch(`/api/data/${id}`).then(r => r.json())])),
+        fetch('/api/zone-cells').then(r => r.json()).catch(() => ({ zones: [], error: 'fetch failed' })),
+        fetch('/api/zone-contents').then(r => r.json()).catch(() => ({ byZone: {}, error: 'fetch failed' })),
+    ]);
+    return { ...Object.fromEntries(entries), zoneCells, zoneContents };
 }
 
 /** True if `req` (a MilestoneRequirement — see MilestoneRequirement.ts) names a real source node this graph already has, given its own `type` discriminant. Returns the node id it points at, or undefined for a requirement that isn't fully filled in yet. */
@@ -70,6 +93,7 @@ function requirementSourceNodeId(req) {
     if (req.type === 'building' && req.buildingId) return `building:${req.buildingId}`;
     if (req.type === 'item' && req.item) return `item:${req.item}`;
     if (req.type === 'resource' && req.resourceType) return `resource:${req.resourceType}`;
+    if (req.type === 'gate' && req.gateId) return `gate:${req.gateId}`;
     return undefined;
 }
 
@@ -104,8 +128,17 @@ function buildGraphElements(data, iconByName) {
         return nodeId;
     }
 
+    // Every EXISTING caller only ever names a source/target this function already knows is
+    // safe (every entity loop below adds a node for EVERY entry in its own data source
+    // upfront, before anything can reference it — see e.g. the resources loop, which is why a
+    // building's cost requirement referencing a resourceType always finds a node already
+    // there). The zone "in zone" edges added below are the first caller that DOESN'T have that
+    // guarantee — an id painted on the map's mapSettings layer (e.g. a typo'd gate id with no
+    // matching GATE_CONFIG entry) has no corresponding node — so this silently skips a dangling
+    // reference instead of handing Cytoscape an edge to a node id that was never created,
+    // which throws and blanks the whole graph rather than just omitting one bad edge.
     function addEdge(source, target, label) {
-        if (!source || !target) return;
+        if (!source || !target || !nodes.has(source) || !nodes.has(target)) return;
         edges.push({ data: { id: `${source}->${target}:${edges.length}`, source, target, label: label ?? '' } });
     }
 
@@ -185,6 +218,109 @@ function buildGraphElements(data, iconByName) {
         const gateNodeId = addNode('gate', id, g.name, undefined);
         const reqSource = requirementSourceNodeId(g.requirement);
         if (reqSource) addEdge(reqSource, gateNodeId, 'unlocks');
+    }
+
+    for (const [id, a] of Object.entries(data.animals ?? {})) {
+        // An animal's OWN world model AND caught-state icon are the AssetLibraryRegistry entry
+        // keyed by its `resourceType` (never actually banked to BackpackStorage — see
+        // AnimalTypes.ts's own doc) — same lookup pattern a provider's own resource drop uses
+        // elsewhere in this function, just for the node's OWN icon this time instead of an edge
+        // target's.
+        const animalNodeId = addNode('animal', id, a.label, data.resources?.[a.resourceType]?.icon);
+        // requirementItem/requirementAmount is its OWN flat pair (see AnimalConfig's own doc) —
+        // NOT a MilestoneRequirement, so requirementSourceNodeId()/the 'unlocks' convention
+        // every other kind uses doesn't apply here; drawn as its own "needs" edge instead.
+        if (a.requirementItem) {
+            const itemNodeId = addNode('item', a.requirementItem, data.items?.[a.requirementItem]?.label, data.tools?.[a.requirementItem]?.icon);
+            addEdge(itemNodeId, animalNodeId, `needs ×${a.requirementAmount ?? 1}`);
+        }
+    }
+
+    // Dynamic Resources — one placement per (spawnType, resourceType|providerType,
+    // spawnerTileType) combination, scattered across a painted ground TYPE (e.g. every
+    // "grass" cell), not one drawn area — see DynamicResourceTypes.ts's own doc. Node id is
+    // the array INDEX (this tab's shape is 'array', not id-keyed — same convention
+    // getOptions() already uses for it), since two placements can otherwise share the exact
+    // same identity/terrain pair. 'provider' spawns a REAL gatherable provider — reuses the
+    // SAME 'provider' node the providers loop above already created (a tree scattered here is
+    // still the same tree a resourcesLayer-painted one would be), not a new kind.
+    (data.dynamicResourcePlacements ?? []).forEach((placement, index) => {
+        const isProvider = (placement.spawnType ?? 'resource') === 'provider';
+        const identity = isProvider ? placement.providerType : placement.resourceType;
+        if (!identity) return;
+        const spawnerNodeId = addNode('dynamicSpawner', String(index), `${identity} @ ${placement.spawnerTileType || '?'}`, undefined);
+        if (isProvider) {
+            const providerNodeId = addNode('provider', identity, data.providers?.[identity]?.label, data.providers?.[identity]?.icon);
+            addEdge(spawnerNodeId, providerNodeId, 'spawns');
+        } else {
+            const resourceNodeId = addNode('resource', identity, data.resources?.[identity]?.label, data.resources?.[identity]?.icon);
+            addEdge(spawnerNodeId, resourceNodeId, 'spawns');
+        }
+    });
+
+    // Shape Resources — sibling to Dynamic Resources above, drawn as one hand-placed AREA
+    // (a "spawner"-type mapSettings object, its own id = this placement's shapeId) instead of
+    // a painted ground type — see ShapeResourceTypes.ts's own doc. spawnType picks whether
+    // this spawns a loose resource, an AnimalNode, or a real gatherable provider (see that
+    // file's own doc on why only one of resourceType/animalType/providerType is ever
+    // meaningful on a given entry) — 'provider' reuses the SAME 'provider' node the providers
+    // loop above already created, same reasoning as the Dynamic Resources loop above.
+    (data.shapeResourcePlacements ?? []).forEach((placement, index) => {
+        const spawnType = placement.spawnType ?? 'resource';
+        const identity = spawnType === 'animal' ? placement.animalType : spawnType === 'provider' ? placement.providerType : placement.resourceType;
+        if (!identity) return;
+        const spawnerNodeId = addNode('shapeSpawner', String(index), `${identity} @ ${placement.shapeId || '?'}`, undefined);
+        if (spawnType === 'animal') {
+            const animalNodeId = addNode('animal', identity, data.animals?.[identity]?.label, data.resources?.[data.animals?.[identity]?.resourceType]?.icon);
+            addEdge(spawnerNodeId, animalNodeId, 'spawns');
+        } else if (spawnType === 'provider') {
+            const providerNodeId = addNode('provider', identity, data.providers?.[identity]?.label, data.providers?.[identity]?.icon);
+            addEdge(spawnerNodeId, providerNodeId, 'spawns');
+        } else {
+            const resourceNodeId = addNode('resource', identity, data.resources?.[identity]?.label, data.resources?.[identity]?.icon);
+            addEdge(spawnerNodeId, resourceNodeId, 'spawns');
+        }
+    });
+
+    // Zones — one node per zoneNumber the map's own "zones" tilelayer actually paints right
+    // now (data.zoneCells, see tiledMap.mjs's readZoneCells()), NOT every key in data.zones —
+    // a zone number with a saved requirement but no longer painted (see app.js's own "not
+    // currently painted" section on the Zones tab) still has config, but showing it here would
+    // draw a node for a zone that doesn't really exist on the map anymore.
+    //
+    // Two edge kinds converge on a zone node: its OWN unlock requirement (same 'unlocks'
+    // convention every other requirement-gated kind uses) and "in zone" edges FROM whatever's
+    // actually placed inside it (data.zoneContents, see readZoneContents()'s own doc) — a
+    // gate/building/shop/queue/craft table's own node already exists from the loops above, so
+    // this only needs to draw the edge, not re-create the node. A "spawner"-type mapSettings
+    // object's id is a shapeId, which isn't itself a graph node — it's cross-referenced
+    // against shapeResourcePlacements to find which spawner NODE(s) actually reference that
+    // shapeId (usually one, but nothing stops two placements sharing an area).
+    const ZONE_CONTENT_KIND_BY_MAP_TYPE = { gate: 'gate', building: 'building', shop: 'shop', queue: 'queue', craft: 'craft' };
+    for (const zone of data.zoneCells?.zones ?? []) {
+        const zoneNodeId = addNode('zone', String(zone.zoneNumber), `Zone ${zone.zoneNumber + 1}`, undefined);
+
+        const reqSource = requirementSourceNodeId(data.zones?.[String(zone.zoneNumber)]?.requirement);
+        if (reqSource) addEdge(reqSource, zoneNodeId, 'unlocks');
+
+        const contents = data.zoneContents?.byZone?.[String(zone.zoneNumber)] ?? {};
+        for (const [mapType, ids] of Object.entries(contents)) {
+            if (mapType === 'spawner') {
+                for (const shapeId of ids) {
+                    data.shapeResourcePlacements?.forEach((placement, index) => {
+                        if (placement.shapeId === shapeId) {
+                            addEdge(`shapeSpawner:${index}`, zoneNodeId, 'in zone');
+                        }
+                    });
+                }
+                continue;
+            }
+            const kind = ZONE_CONTENT_KIND_BY_MAP_TYPE[mapType];
+            if (!kind) continue;
+            for (const id of ids) {
+                addEdge(`${kind}:${id}`, zoneNodeId, 'in zone');
+            }
+        }
     }
 
     return { nodes: [...nodes.values()], edges };
@@ -268,6 +404,11 @@ function buildLegend() {
 function lookupRawEntry(kind, rawId) {
     if (!lastGraphData) return undefined;
     if (kind === 'queue') return lastGraphData.queues?.byId?.[rawId];
+    // dynamicResourcePlacements/shapeResourcePlacements are both 'array'-shaped tabs (see
+    // getOptions()'s own 'array' branch) — rawId is the array INDEX (a string, per addNode()'s
+    // own template-literal id), not an entity id, same reasoning buildGraphElements()'s own
+    // per-placement node-id doc gives.
+    if (kind === 'dynamicSpawner' || kind === 'shapeSpawner') return lastGraphData[GRAPH_KIND_TAB[kind]]?.[Number(rawId)];
     return lastGraphData[GRAPH_KIND_TAB[kind]]?.[rawId];
 }
 

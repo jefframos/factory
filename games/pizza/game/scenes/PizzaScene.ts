@@ -53,6 +53,11 @@ import { getShopConfig, SHOP_CONFIG_BY_ID } from '../shop/ShopTypes';
 import { ShopUpgradeStorage } from '../shop/ShopUpgradeStorage';
 import CraftZone, { CraftTriggerArea } from '../crafting/CraftZone';
 import { getCraftConfig } from '../crafting/CraftTypes';
+import FarmZone from '../world/FarmZone';
+import FarmPlotTile from '../world/FarmPlotTile';
+import { computeFarmGrid, FARM_GRID_CELL_SIZE, FARM_GRID_APPEAR_STAGGER_SEC } from '../world/FarmGrid';
+import { getFarmPlotConfig } from '../data/FarmTypes';
+import { FarmPlotStorage } from '../data/FarmPlotStorage';
 import { CraftStorage } from '../crafting/CraftStorage';
 import { ItemStorage } from '../crafting/ItemStorage';
 import { ItemType } from '../crafting/ItemTypes';
@@ -60,7 +65,7 @@ import { QueueStorage } from '../data/QueueStorage';
 import { EconomyStorage } from '../data/EconomyStorage';
 import { CurrencyType } from '../data/EconomyTypes';
 import WorldManager from '../world/WorldManager';
-import WorldObjectRegistry from '../world/WorldObjectRegistry';
+import WorldObjectRegistry, { WorldObjectPlacement } from '../world/WorldObjectRegistry';
 import WorldSpawner from '../world/WorldSpawner';
 import DynamicResourceSpawner from '../world/DynamicResourceSpawner';
 import ShapeResourceSpawner from '../world/ShapeResourceSpawner';
@@ -69,6 +74,7 @@ import { AnimalFollowStorage } from '../data/AnimalFollowStorage';
 import UIService from '../ui/UIService';
 import InGameButtonList from '../ui/InGameButtonList';
 import { clearAllPlayerData } from '../data/PlayerDataReset';
+import { ZONE_REVEAL_CONFIG } from '../world/FogOfWarConfig';
 import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { BuildingStorage } from '../data/BuildingStorage';
@@ -110,8 +116,8 @@ import GlbVisualComponent from '../components/GlbVisualComponent';
  * viewport aspect ratio (narrow phones vs. wide desktops).
  */
 const CAMERA_SETTINGS = {
-    yawDeg: 0,
-    pitchDeg: 38,
+    yawDeg: 5,
+    pitchDeg: 45,
     distance: 15,
     followSpeed: 10,
 };
@@ -235,7 +241,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private readonly worldSpawner = new WorldSpawner();
 
     /** Scatters loose, dynamically-spawned resources (currently just the test "bark") across worldSpawner's own clusters — see DynamicResourceSpawner.ts/DynamicResourceTypes.ts. */
-    private readonly dynamicResourceSpawner = new DynamicResourceSpawner(this.world, this.threeScene, this.screenHost, this.worldSpawner, undefined, this.worldManager.getZoneVisibilityManager());
+    private readonly dynamicResourceSpawner = new DynamicResourceSpawner(this.world, this.threeScene, this.screenHost, this.worldSpawner, this.worldObjects, undefined, this.worldManager.getZoneVisibilityManager());
 
     /** Sibling to dynamicResourceSpawner — scatters loose resources inside hand-drawn "spawner" AREA objects (e.g. "animalSpawner1") instead of a painted tile cluster — see ShapeResourceSpawner.ts/ShapeResourceTypes.ts. */
     private readonly shapeResourceSpawner = new ShapeResourceSpawner(this.world, this.threeScene, this.screenHost, this.worldObjects, undefined, this.worldManager.getZoneVisibilityManager());
@@ -343,6 +349,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupDebugButtons();
         this.registerQueueSpawnGates();
         this.registerShopSpawnGates();
+        this.setupFarms();
         this.setupCraftTables();
         this.setupDebugGui();
         this.threeScene.add(this.mainPlayer.transform);
@@ -502,9 +509,19 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             'Resources',
         );
         DevGuiManager.instance.addButton(
+            'Clear Farms',
+            () => void FarmPlotStorage.clearAll(),
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
             'Add 10 Of Each Resource',
             () => {
+                // Skips Pig — see setupDebugButtons()'s own doc on why an animal-caught
+                // resource isn't something a plain "add 10" credit should ever hand out.
                 for (const type of Object.values(ResourceType)) {
+                    if (type === ResourceType.Pig) {
+                        continue;
+                    }
                     BackpackStorage.add(type, 10);
                 }
             },
@@ -530,6 +547,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 void this.shapeResourceSpawner.resetAll();
                 void AnimalFollowStorage.clearAll();
                 void PlayerPositionStorage.clearAll();
+                void FarmPlotStorage.clearAll();
             },
             'Resources',
         );
@@ -699,16 +717,30 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     }
 
     /**
-     * "Clear Data" and "Open Next Zone" — quick, always-visible in-game buttons (see
-     * InGameButtonList.ts's own doc) for testing the zone-lock system without opening the
-     * Settings popup or the dev GUI overlay every time. "Clear Data" is the exact same reset +
-     * reload as the Settings popup's own button (see PlayerDataReset.ts). "Open Next Zone"
-     * calls WorldManager.revealNextZone() — a debug-only sequential unlock, one zone per click,
-     * independent of any real requirement/trigger system.
+     * "Clear Data", "Open Next Zone", "Add 100 Money", "Add 10 Of Each Resource" — quick,
+     * always-visible in-game buttons (see InGameButtonList.ts's own doc) for testing without
+     * opening the Settings popup or the dev GUI overlay every time. "Clear Data" is the exact
+     * same reset + reload as the Settings popup's own button (see PlayerDataReset.ts). "Open
+     * Next Zone" calls WorldManager.revealNextZone() — a debug-only sequential unlock, one zone
+     * per click, independent of any real requirement/trigger system. The last two mirror the
+     * dev GUI's own "Add 100 Money"/"Add 10 Of Each Resource" buttons (see setupDebugGui()) —
+     * EXCEPT this one skips ResourceType.Pig, unlike that dev-GUI version: Pig is what catching
+     * an animal via AnimalCatchController banks (see ResourceTypes.ts's own doc), not something
+     * a plain BackpackStorage credit should ever hand out for free — an animal isn't "a simple
+     * resource" the way Wood/Stone/Berries/Bark/Pebble/GrassFiber/Crystal/Iron/Rope are.
      */
     private setupDebugButtons(): void {
         InGameButtonList.registerButton('Clear Data', () => clearAllPlayerData());
         InGameButtonList.registerButton('Open Next Zone', () => this.worldManager.revealNextZone());
+        InGameButtonList.registerButton('Add 100 Money', () => EconomyStorage.add(CurrencyType.Money, 100));
+        InGameButtonList.registerButton('Add 10 Resources', () => {
+            for (const type of Object.values(ResourceType)) {
+                if (type === ResourceType.Pig) {
+                    continue;
+                }
+                BackpackStorage.add(type, 10);
+            }
+        });
     }
 
     /** The task's own collision test: a static box offset from spawn along Z only — walking the player into it should stop them instead of clipping through. */
@@ -1022,6 +1054,67 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     }
 
     /**
+     * Registers one SPAWN gate (see RequirementRegistry.ts's own doc) per "farm" object found on
+     * the Tiled map's "mapSettings" layer, keyed off FarmPlotConfig.appearRequirement — same
+     * auto-discovery-plus-spawn-gate shape as registerQueueSpawnGates(), since a plot's id
+     * likewise comes straight from whatever's drawn on the map. Unlike shops/crafting, an id
+     * with no FARM_PLOT_CONFIG_BY_ID override is never skipped — getFarmPlotConfig() already
+     * falls back to DEFAULT_FARM_PLOT_CONFIG (see FarmTypes.ts's own doc), same "always has a
+     * sensible default" reasoning queues use.
+     *
+     * A plot already owned (FarmPlotStorage.isOwned(), from a previous session) skips FarmZone
+     * entirely and spawns straight into its real per-tile FarmPlotTile grid via
+     * spawnFarmGrid() — see that method's own doc. Everything else spawns the "for sale"
+     * FarmZone (whole-area trigger + price popup — see that file's own doc), which itself calls
+     * spawnFarmGrid() the instant it's bought.
+     */
+    private setupFarms(): void {
+        for (const [id, placement] of this.worldObjects.getAllOfType('farm')) {
+            const config = getFarmPlotConfig(id);
+
+            this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
+                if (FarmPlotStorage.isOwned(id)) {
+                    this.spawnFarmGrid(id, placement);
+                    return;
+                }
+
+                const position = new THREE.Vector3(placement.x, 0, placement.z);
+                const farmZone = this.world.add(new FarmZone(
+                    position, this.screenHost, id,
+                    () => this.uiService.economyUi.getIconAnchorPosition(config.price.currency),
+                    { width: placement.width, depth: placement.depth },
+                    config,
+                    () => this.spawnFarmGrid(id, placement),
+                ));
+                this.threeScene.add(farmZone.transform);
+                this.registerZoneVisibility(farmZone.transform, position.x, position.z, placement.width, placement.depth);
+            });
+        }
+    }
+
+    /**
+     * Spawns one FarmPlotTile per FarmGrid.computeFarmGrid() cell within `placement`'s own
+     * footprint — the OWNED state of a farm plot (see FarmGrid.ts's own doc for why this is a
+     * grid of individually-collidered cells, not one giant patch). Called either straight from
+     * setupFarms() for a plot already owned at boot, or from a FarmZone's own onPurchased
+     * callback the instant it's bought — either way this is the ONLY place FarmPlotTile gets
+     * spawned, so the two paths can never disagree on layout.
+     */
+    private spawnFarmGrid(id: string, placement: WorldObjectPlacement): void {
+        const cells = computeFarmGrid(placement.width, placement.depth);
+        cells.forEach((cell, index) => {
+            const position = new THREE.Vector3(placement.x + cell.localX, 0, placement.z + cell.localZ);
+            // Staggered by grid index (row-major, see FarmGrid.computeFarmGrid()) — each cell's
+            // own pop-in tween (see FarmPlotTile.ts's own doc) starts a beat after the last, so
+            // buying a plot ripples its whole grid into existence instead of every tile
+            // snapping in on the same frame.
+            const tile = this.world.add(new FarmPlotTile(position, id, cell.col, cell.row, index * FARM_GRID_APPEAR_STAGGER_SEC));
+            this.threeScene.add(tile.transform);
+            this.registerZoneVisibility(tile.transform, position.x, position.z, FARM_GRID_CELL_SIZE, FARM_GRID_CELL_SIZE);
+        });
+    }
+
+    /**
      * Registers one SPAWN gate per "shop" object found on the Tiled map's "mapSettings" layer
      * whose id has a matching ShopConfig (see ShopTypes.SHOP_CONFIG_BY_ID) — auto-discovery
      * like registerQueueSpawnGates(), since a shop's id is likewise whatever's drawn on the
@@ -1147,7 +1240,13 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * meshes/resource nodes.
      */
     private registerZoneVisibility(transform: THREE.Object3D, worldX: number, worldZ: number, width: number, depth: number): void {
-        this.worldManager.getZoneVisibilityManager()?.register(transform, worldX, worldZ, width, depth);
+        // `props` category delay — see ZONE_REVEAL_CONFIG.categoryDelaySec's own doc — so a
+        // building/gate/queue/shop/craft-table/mesh-prop rises AFTER the terrain it sits on
+        // when echoing a fresh zone reveal (see ZoneVisibilityManager.addRegistrant()'s own
+        // doc), same tier every other non-terrain, non-creature object uses.
+        this.worldManager.getZoneVisibilityManager().register(
+            transform, worldX, worldZ, width, depth, ZONE_REVEAL_CONFIG.categoryDelaySec.props,
+        );
     }
 
     /**

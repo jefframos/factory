@@ -105,6 +105,12 @@ export const FrameRegistry: Record<string, FrameDef> = {
         padding: DEFAULT_PADDING_BUBBLE,
         arrowPivot: { x: 0.5, y: 1 },
     },
+    /** FarmZone's own price popup (see that file's own doc) — shares ShopFrame's green texture (a purchase, same as a shop upgrade) but kept as its own preset so it can be retuned independently. */
+    FarmFrame: {
+        textureKey: 'ResourceBar_Single_Btn_Green1',
+        padding: DEFAULT_PADDING_BUBBLE,
+        arrowPivot: { x: 0.5, y: 1 },
+    },
 };
 
 export type FrameName = keyof typeof FrameRegistry;

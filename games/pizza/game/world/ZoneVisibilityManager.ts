@@ -32,12 +32,28 @@
 // all resolves to permanently locked/hidden.
 
 import * as THREE from 'three';
+import gsap from 'gsap';
 import { buildZoneTileCells, DEFAULT_TILE_MAP_ALIASES, WORLD_UNITS_PER_TILE } from './TileMapConfig';
-import { FOG_OF_WAR_CONFIG } from './FogOfWarConfig';
+import { FOG_OF_WAR_CONFIG, ZONE_REVEAL_CONFIG } from './FogOfWarConfig';
 
 interface Registrant {
     object: THREE.Object3D;
     zones: number[];
+    /** World-space position this registrant is anchored at — used ONLY to time the rise-animation's wave delay by distance from a reveal's `origin` (see revealZone()'s own doc); the plain instant-visibility path never reads this. */
+    worldX: number;
+    worldZ: number;
+    /** `object.position.y` at the moment this was registered — the rise animation's target, and what SETTING it should restore to whenever it plays. */
+    baseY: number;
+    /** Last visibility this manager actually applied — lets revealZone() tell a hidden->visible TRANSITION (which gets the rise animation) apart from a registrant that was already visible (which doesn't need to replay it). */
+    visible: boolean;
+    /** Flat extra delay stacked on top of the wave-travel delay — see ZONE_REVEAL_CONFIG.categoryDelaySec's own doc for why terrain/props/creatures need to rise in that order rather than all at once. */
+    categoryDelaySec: number;
+}
+
+/** One past revealZone() call's own (origin, when) — see findEchoOrigin()'s own doc for why a LATE registration (a resource/animal materializing after the fact) needs to look this up instead of always popping in instantly. */
+interface RevealRecord {
+    origin: THREE.Vector3;
+    atMs: number;
 }
 
 function cellKey(col: number, row: number): string {
@@ -50,6 +66,8 @@ export default class ZoneVisibilityManager {
     private readonly registrants: Registrant[] = [];
     /** zoneNumber -> every registrant that overlaps it — so revealZone() only re-checks entries that could possibly change, not the whole list. */
     private readonly registrantsByZone = new Map<number, Registrant[]>();
+    /** zoneNumber -> that reveal's own (origin, when) — see findEchoOrigin()'s own doc. Only ever set by revealZone() calls that were given an `origin`; a zone revealed with none (e.g. buildGround()'s initial zone-0 reveal) just never gets an entry, so a late registration into it correctly falls back to an instant, un-delayed pop. */
+    private readonly revealRecords = new Map<number, RevealRecord>();
 
     public constructor(
         private readonly worldUnitsPerTile: number = WORLD_UNITS_PER_TILE,
@@ -68,10 +86,13 @@ export default class ZoneVisibilityManager {
      * centered at (worldX, worldZ). width/depth default to a single tile, good enough for a
      * point entity (a resource node); pass an entity's real footprint (BuildingZone/ShopZone/
      * QueueZone/CraftZone/Gate's own `{width, depth}`) for anything bigger. Sets the object's
-     * initial visibility immediately from the zones' CURRENT reveal state.
+     * initial visibility immediately from the zones' CURRENT reveal state — see
+     * ZONE_REVEAL_CONFIG.categoryDelaySec's own doc for what `categoryDelaySec` is for (default
+     * 0 — pass ZONE_REVEAL_CONFIG.categoryDelaySec.props/creatures for anything that should
+     * rise after plain terrain).
      */
-    public register(object: THREE.Object3D, worldX: number, worldZ: number, width = this.worldUnitsPerTile, depth = this.worldUnitsPerTile): void {
-        this.addRegistrant(object, this.zonesForFootprint(worldX, worldZ, width, depth));
+    public register(object: THREE.Object3D, worldX: number, worldZ: number, width = this.worldUnitsPerTile, depth = this.worldUnitsPerTile, categoryDelaySec = 0): void {
+        this.addRegistrant(object, this.zonesForFootprint(worldX, worldZ, width, depth), worldX, worldZ, categoryDelaySec);
     }
 
     /**
@@ -79,17 +100,22 @@ export default class ZoneVisibilityManager {
      * to (e.g. IslandMeshBuilder, which builds one merged mesh per zone already and would
      * otherwise have to re-derive that from the mesh's own geometry bounds). Pass an empty
      * array for "belongs to no zone" (permanently hidden — see this file's own doc).
+     * `worldX`/`worldZ` (a representative point — e.g. that mesh's own cells' centroid) only
+     * feed the rise-animation's wave delay (see this file's own doc); default (0, 0) if
+     * omitted, which just means "no wave delay" for that registrant. `categoryDelaySec` — see
+     * register()'s own doc.
      */
-    public registerWithZones(object: THREE.Object3D, zones: number[]): void {
-        this.addRegistrant(object, zones);
+    public registerWithZones(object: THREE.Object3D, zones: number[], worldX = 0, worldZ = 0, categoryDelaySec = 0): void {
+        this.addRegistrant(object, zones, worldX, worldZ, categoryDelaySec);
     }
 
-    /** Stops driving `object`'s visibility — call when a registered entity is torn down (e.g. WorldManager.dematerialize()) so its Registrant doesn't linger forever. Leaves `object.visible` as it last was. */
+    /** Stops driving `object`'s visibility — call when a registered entity is torn down (e.g. WorldManager.dematerialize()) so its Registrant doesn't linger forever. Leaves `object.visible` as it last was. Also cancels any in-flight rise tween (see playRiseAnimation()) — a registrant torn down mid-rise (dematerialized right as its zone unlocks) shouldn't keep animating a position nobody's driving anymore. */
     public unregister(object: THREE.Object3D): void {
         const index = this.registrants.findIndex(r => r.object === object);
         if (index === -1) {
             return;
         }
+        gsap.killTweensOf(object.position);
         const [registrant] = this.registrants.splice(index, 1);
         for (const zoneNumber of registrant.zones) {
             const list = this.registrantsByZone.get(zoneNumber);
@@ -100,14 +126,43 @@ export default class ZoneVisibilityManager {
         }
     }
 
-    /** Reveals `zoneNumber` (0-based, see TileMapConfig.buildZoneTileCells()'s own doc — "zone1" is zoneNumber 0) and updates every registrant that overlaps it. Idempotent. */
-    public revealZone(zoneNumber: number): void {
+    /**
+     * Reveals `zoneNumber` (0-based, see TileMapConfig.buildZoneTileCells()'s own doc —
+     * "zone1" is zoneNumber 0) and updates every registrant that overlaps it. Idempotent.
+     *
+     * `origin` (typically the player's own position at the moment this fires — see
+     * WorldManager.revealNextZone()) is what makes this a SHOCKWAVE rather than an instant
+     * pop: a registrant transitioning from hidden to visible plays a rise-from-below tween
+     * (see playRiseAnimation()) delayed by its own distance from `origin`, at
+     * ZONE_REVEAL_CONFIG.waveSpeed — the exact same speed ZoneRevealEffect's ring travels at,
+     * so the two visually line up. Omit `origin` (e.g. buildGround()'s own initial zone-0
+     * reveal, with no meaningful player position yet) for an instant, un-delayed pop instead.
+     * A registrant that was ALREADY visible (its zones were revealed some other way — 'any'
+     * overlap mode, or FOG_OF_WAR_CONFIG changed) is left alone rather than replaying the rise.
+     */
+    public revealZone(zoneNumber: number, origin?: THREE.Vector3): void {
         if (this.revealedZones.has(zoneNumber)) {
             return;
         }
         this.revealedZones.add(zoneNumber);
+        if (origin) {
+            // See findEchoOrigin()'s own doc — a resource/animal that only gets CREATED (and
+            // so only calls register()) one or more frames after this, once its own
+            // materialize() gate opens, still needs to look this up to play the same wave
+            // instead of popping in instantly.
+            this.revealRecords.set(zoneNumber, { origin: origin.clone(), atMs: performance.now() });
+        }
+
         for (const registrant of this.registrantsByZone.get(zoneNumber) ?? []) {
-            this.applyVisibility(registrant);
+            const wasVisible = registrant.visible;
+            const nowVisible = this.resolveVisible(registrant.zones);
+            registrant.visible = nowVisible;
+
+            if (nowVisible && !wasVisible) {
+                this.playRiseAnimation(registrant, origin);
+            } else {
+                registrant.object.visible = nowVisible;
+            }
         }
     }
 
@@ -133,8 +188,8 @@ export default class ZoneVisibilityManager {
         return this.resolveVisible(this.zonesForFootprint(worldX, worldZ, width, depth));
     }
 
-    private addRegistrant(object: THREE.Object3D, zones: number[]): void {
-        const registrant: Registrant = { object, zones };
+    private addRegistrant(object: THREE.Object3D, zones: number[], worldX: number, worldZ: number, categoryDelaySec: number): void {
+        const registrant: Registrant = { object, zones, worldX, worldZ, baseY: object.position.y, visible: false, categoryDelaySec };
         this.registrants.push(registrant);
         for (const zoneNumber of zones) {
             let list = this.registrantsByZone.get(zoneNumber);
@@ -144,7 +199,50 @@ export default class ZoneVisibilityManager {
             }
             list.push(registrant);
         }
-        this.applyVisibility(registrant);
+
+        const visible = this.resolveVisible(zones);
+        registrant.visible = visible;
+        if (!visible) {
+            object.visible = false;
+            return;
+        }
+
+        // A LATE registration (a resource/animal only just materialized, one or more frames
+        // after its zone's own revealZone() already ran — see materialize()'s own doc across
+        // WorldManager/DynamicResourceSpawner/ShapeResourceSpawner) still echoes that reveal's
+        // wave instead of popping in instantly, as long as it's within the echo window — see
+        // findEchoOrigin()'s own doc. Outside that window (a resource streamed in during
+        // ordinary exploration of a long-since-revealed zone), it just appears normally — it
+        // likely already played its own spawn-in tween (e.g. ResourceNode.playSpawnIn())
+        // right before this call anyway.
+        const echoOrigin = this.findEchoOrigin(zones);
+        if (echoOrigin !== undefined) {
+            this.playRiseAnimation(registrant, echoOrigin);
+        } else {
+            object.visible = true;
+        }
+    }
+
+    /**
+     * The freshest still-within-window reveal origin among `zones`, or undefined if none of
+     * them were revealed recently enough (see ZONE_REVEAL_CONFIG.revealEchoWindowMs's own
+     * doc) — or were revealed with no origin at all (an instant, un-delayed reveal, e.g.
+     * buildGround()'s own zone-0). Only ever called for a registrant that's ALREADY resolved
+     * visible=true, so every zone checked here is guaranteed revealed; this only decides
+     * whether that reveal is recent enough to still be worth echoing.
+     */
+    private findEchoOrigin(zones: number[]): THREE.Vector3 | undefined {
+        const now = performance.now();
+        let freshest: RevealRecord | undefined;
+        for (const zoneNumber of zones) {
+            const record = this.revealRecords.get(zoneNumber);
+            if (record && now - record.atMs <= ZONE_REVEAL_CONFIG.revealEchoWindowMs) {
+                if (!freshest || record.atMs > freshest.atMs) {
+                    freshest = record;
+                }
+            }
+        }
+        return freshest?.origin;
     }
 
     /** Every zone number the tile-grid cells under (worldX, worldZ, width, depth) carry — a cell with no zone contributes nothing, so a footprint entirely outside any zone resolves to an empty array (permanently locked/hidden — see this file's own doc). */
@@ -176,7 +274,34 @@ export default class ZoneVisibilityManager {
             : zones.every(zoneNumber => this.revealedZones.has(zoneNumber));
     }
 
-    private applyVisibility(registrant: Registrant): void {
-        registrant.object.visible = this.resolveVisible(registrant.zones);
+    /**
+     * "Appear from the bottom" — see revealZone()'s own doc. `delay` (the object's own
+     * distance from `origin` at ZONE_REVEAL_CONFIG.waveSpeed, PLUS its own categoryDelaySec —
+     * see ZONE_REVEAL_CONFIG.categoryDelaySec's own doc for why terrain/props/creatures stack
+     * in that order even at the SAME distance from the wave's origin) is when the RISE itself
+     * should visibly start — the object stays fully HIDDEN for that entire wait (position is
+     * set to its sunken start now, but visible stays false until onStart actually fires once
+     * the delay elapses), not sitting there sunk-and-visible the whole time. Setting
+     * `object.visible = true` up front, before the delay, was the actual bug: it rendered the
+     * object motionless at its sunken position for the whole wave/category delay — reading
+     * as "stuck underwater," not "about to rise" — instead of only appearing once it's
+     * actually animating.
+     */
+    private playRiseAnimation(registrant: Registrant, origin?: THREE.Vector3): void {
+        const object = registrant.object;
+        object.visible = false;
+        object.position.y = registrant.baseY - ZONE_REVEAL_CONFIG.riseDistance;
+
+        const waveDelay = origin
+            ? Math.hypot(registrant.worldX - origin.x, registrant.worldZ - origin.z) / ZONE_REVEAL_CONFIG.waveSpeed
+            : 0;
+
+        gsap.to(object.position, {
+            y: registrant.baseY,
+            duration: ZONE_REVEAL_CONFIG.riseDurationSec,
+            delay: waveDelay + registrant.categoryDelaySec,
+            ease: 'back.out(1.4)',
+            onStart: () => { object.visible = true; },
+        });
     }
 }

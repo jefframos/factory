@@ -24,8 +24,8 @@
             "cooldownSec": 30,
             "possibleTasks": [],
             "appearRequirement": {
-                "type": "item",
-                "item": "pickaxe"
+                "type": "gate",
+                "gateId": "gate1"
             },
             "popupBobOffset": 2
         }

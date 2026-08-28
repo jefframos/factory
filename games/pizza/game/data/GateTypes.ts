@@ -95,7 +95,7 @@ export const GATE_CONFIG: Record<GateId, GateConfig> = {
         "view": "gateAxeView",
         "requirement": {
             "type": "resource",
-            "resourceType": ResourceType.Wood,
+            "resourceType": ResourceType.Stone,
             "amount": 1
         }
     }

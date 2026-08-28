@@ -6,6 +6,7 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 export default class ModelLoaderManager {
   private static _instance: ModelLoaderManager;
   private _cache: Map<string, THREE.Object3D> = new Map();
+  private _inflight: Map<string, Promise<THREE.Object3D>> = new Map();
 
   private _gltfLoader = new GLTFLoader();
   private _fbxLoader = new FBXLoader();
@@ -34,35 +35,47 @@ export default class ModelLoaderManager {
       return this._cache.get(cacheId)!.clone(true);
     }
 
-    // 2. Determine extension
-    const extension = path.split('.').pop()?.toLowerCase();
-    let loadedObject: THREE.Object3D;
+    // 2. Join an in-flight load if one is already underway, so concurrent
+    // requests for the same model don't each trigger their own fetch.
+    if (this._inflight.has(cacheId)) {
+      const loadedObject = await this._inflight.get(cacheId)!;
+      return loadedObject.clone(true);
+    }
 
-    try {
+    // 3. Determine extension
+    const extension = path.split('.').pop()?.toLowerCase();
+
+    const loadPromise = (async (): Promise<THREE.Object3D> => {
       switch (extension) {
         case 'glb':
-        case 'gltf':
+        case 'gltf': {
           const gltf = await this._gltfLoader.loadAsync(path);
-          loadedObject = gltf.scene;
-          break;
+          return gltf.scene;
+        }
         case 'fbx':
-          loadedObject = await this._fbxLoader.loadAsync(path);
-          break;
+          return await this._fbxLoader.loadAsync(path);
         case 'obj':
-          loadedObject = await this._objLoader.loadAsync(path);
-          break;
+          return await this._objLoader.loadAsync(path);
         default:
           throw new Error(`Unknown format for path: ${path}`);
       }
+    })();
 
-      // 3. Cache the original
+    this._inflight.set(cacheId, loadPromise);
+
+    try {
+      const loadedObject = await loadPromise;
+
+      // 4. Cache the original
       this._cache.set(cacheId, loadedObject);
 
-      // 4. Return a clone
+      // 5. Return a clone
       return loadedObject.clone(true);
     } catch (error) {
       console.error(`❌ ModelLoaderManager: Error loading [${path}]`, error);
       throw error;
+    } finally {
+      this._inflight.delete(cacheId);
     }
   }
 

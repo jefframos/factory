@@ -1,0 +1,21 @@
+{
+    "default": {
+        "price": {
+            "currency": "money",
+            "amount": 50
+        }
+    },
+    "byId": {
+        "farm1": {
+            "price": {
+                "currency": "money",
+                "amount": 10
+            }
+        }
+    },
+    "tiles": {
+        "empty": "farmEmptyView",
+        "prepared": "farmPreparedView",
+        "icon": "medicinal-herbs"
+    }
+}

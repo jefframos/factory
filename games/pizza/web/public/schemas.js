@@ -61,6 +61,13 @@ const REQUIREMENT_FIELD = { key: null, type: 'requirement', label: 'Requirement'
  * using a fancier frame than every other shop). Gates use their own separate `frame` field
  * (see the gates schema below) since they have no popupMode/POPUP_FIELDS at all.
  */
+/** EconomyTypes.ts's CurrencyType, mirrored as a fixed inline option list (same "game-side enum-like set, not sourced from any tab" convention as FRAME_FIELD/popupMode) — used by any 'select' field pricing something in one of these. */
+const CURRENCY_OPTIONS = [
+    { value: 'money', label: 'Money' },
+    { value: 'gem', label: 'Gems' },
+    { value: 'energy', label: 'Energy' },
+];
+
 const FRAME_FIELD = {
     key: 'frame', type: 'select', label: 'Popup Frame Override (blank = this type\'s own default)', optional: true,
     options: [
@@ -123,6 +130,14 @@ const MAP_TILE_FIELDS = {
 };
 
 const ENTITY_SCHEMAS = {
+    // Keyed by zoneNumber (a stringified number, e.g. "0" = "zone1" — see ZoneTypes.ts's own
+    // doc), NOT by an entity id like every other tab here — entries are auto-discovered from
+    // the real map's "zones" tilelayer (see renderZonesTab() in app.js), not hand-typed. A
+    // zone with no requirement set just has no automatic unlock (still openable via the
+    // in-game debug "Open Next Zone" button).
+    zones: [
+        { key: 'requirement', type: 'requirement', label: 'Unlock Requirement', optional: true },
+    ],
     gates: [
         { key: 'name', type: 'text', label: 'Name' },
         { key: 'requirement', type: 'requirement', label: 'Requirement' },
@@ -268,7 +283,19 @@ const ENTITY_SCHEMAS = {
         { key: 'destroyParticleCount', type: 'number', label: 'Destroy Particle Count', optional: true },
     ],
     dynamicResourcePlacements: [
-        { key: 'resourceType', type: 'select', label: 'Resource', source: 'resources' },
+        // Not sourced from another tab — a small fixed choice, same as shapeResourcePlacements'
+        // own Spawn Type field below. Only ONE of the two fields below actually applies,
+        // whichever this selects — see DynamicResourceTypes.ts's own doc for why both fields
+        // stay on every entry instead of the form hiding whichever doesn't apply.
+        {
+            key: 'spawnType', type: 'select', label: 'Spawn Type', optional: true,
+            options: [
+                { value: 'resource', label: 'Resource (loose pickup on contact)' },
+                { value: 'provider', label: 'Provider (real gatherable tree/deposit/bush, respawns over time)' },
+            ],
+        },
+        { key: 'resourceType', type: 'select', label: 'Resource (used when Spawn Type = Resource)', source: 'resources', optional: true },
+        { key: 'providerType', type: 'select', label: 'Provider (used when Spawn Type = Provider)', source: 'providers', optional: true },
         // '$spawnerTileTypes' is not a manifest tab id — app.js's getOptions() special-cases
         // it to read from /api/spawner-tile-types (ground tile names actually resolvable off
         // a "spawnerLayer" tilelayer on the real Tiled map — see tiledMap.mjs's
@@ -280,24 +307,27 @@ const ENTITY_SCHEMAS = {
     ],
     shapeResourcePlacements: [
         // Not sourced from another tab — a small fixed choice, same as popupMode's own inline
-        // options elsewhere in this file. Only ONE of the two fields below actually applies,
-        // whichever this selects — see ShapeResourceTypes.ts's own doc for why both fields
+        // options elsewhere in this file. Only ONE of the fields below actually applies,
+        // whichever this selects — see ShapeResourceTypes.ts's own doc for why all three
         // stay on every entry instead of the form hiding whichever doesn't apply.
         {
             key: 'spawnType', type: 'select', label: 'Spawn Type', optional: true,
             options: [
                 { value: 'resource', label: 'Resource (picked up on contact)' },
                 { value: 'animal', label: 'Animal (wanders, must be caught)' },
+                { value: 'provider', label: 'Provider (real gatherable tree/deposit/bush, respawns over time)' },
             ],
         },
         { key: 'resourceType', type: 'select', label: 'Resource (used when Spawn Type = Resource)', source: 'resources', optional: true },
         { key: 'animalType', type: 'select', label: 'Animal (used when Spawn Type = Animal)', source: 'animals', optional: true },
+        { key: 'providerType', type: 'select', label: 'Provider (used when Spawn Type = Provider)', source: 'providers', optional: true },
         // '$spawnerShapeIds' is not a manifest tab id — app.js's getOptions() special-cases
         // it to read from /api/spawner-shape-ids (the "id" custom property of every
         // "spawner"-type object drawn on the map's mapSettings layer — see tiledMap.mjs's
         // readMapObjectIds()), not from any tab's own data.
         { key: 'shapeId', type: 'select', label: 'Spawner Shape', source: '$spawnerShapeIds' },
-        { key: 'count', type: 'number', label: 'Count (target instances inside this shape at once)' },
+        { key: 'count', type: 'number', label: 'Count (target instances inside this shape at once — ignored if Density below is set above 0)' },
+        { key: 'density', type: 'number', label: 'Density (target instances per tile-area of the shape — for a LARGE shape; overrides Count when > 0)', optional: true },
         { key: 'minDistance', type: 'number', label: 'Min Distance' },
         { key: 'checkIntervalSec', type: 'number', label: 'Check Interval (sec)' },
     ],
@@ -355,6 +385,63 @@ const ENTITY_SCHEMAS = {
         { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
         ...POPUP_FIELDS,
+    ],
+    // Farm plot entries — both the shared "default" and each entry in "byId" — see FarmTypes.
+    // ts's own doc. Ids come from the map's own "farm"-typed mapSettings objects, same
+    // auto-discovery-by-id convention as queues. Deliberately does NOT include `tiles` —
+    // FARM_TILE_CONFIG is a single game-wide export, not per-plot (see FARM_TILE_FIELDS below,
+    // rendered once at the top of the Farms tab instead of on every entry card).
+    farms: [
+        {
+            key: 'price', type: 'group', label: 'Price',
+            fields: [
+                { key: 'currency', type: 'select', label: 'Currency', options: CURRENCY_OPTIONS },
+                { key: 'amount', type: 'number', label: 'Amount' },
+            ],
+        },
+        { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement (this plot\'s own unlock, on top of its zone needing to already be revealed)', optional: true },
+        // No multi-select field type exists in the editor's render engine yet (see this file's
+        // own field-shape doc) — allowedCrops is left off this schema for now, so a plot always
+        // shows as "any crop"; edit FarmTypes.ts by hand for a plot that needs the real
+        // restriction until that field type exists.
+        { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
+    ],
+    // FARM_TILE_CONFIG's own two fields — the empty/prepared tile pair EVERY farm plot shares
+    // (see FarmTypes.ts's own doc for why this is a single game-wide export, not per-plot).
+    // Rendered once, above the Default/By-id cards, by app.js's renderFarmsTab() — not a normal
+    // ENTITY_SCHEMAS entry read through the generic per-id card path the rest of this file backs.
+    farmTiles: [
+        { key: 'empty', type: 'select', label: 'Empty (shown before ANY plot is bought)', source: 'entityViews', optional: true },
+        { key: 'prepared', type: 'select', label: 'Prepared (shown once a plot is bought, before anything is planted)', source: 'entityViews', optional: true },
+        { key: 'icon', type: 'icon', label: 'Notification Icon (shown in the "Farm Unlocked!" popup when ANY plot is bought)', optional: true },
+    ],
+    // A plantable crop — game-design content (Wheat, ...), not read from the map at all (see
+    // CropTypes.ts's own doc); a Farms tab plot references one of these by id via its own
+    // Allowed Crops field.
+    crops: [
+        { key: 'name', type: 'text', label: 'Name' },
+        {
+            key: 'plantCost', type: 'group', label: 'Plant Cost',
+            fields: [
+                { key: 'currency', type: 'select', label: 'Currency', options: CURRENCY_OPTIONS },
+                { key: 'amount', type: 'number', label: 'Amount' },
+            ],
+        },
+        {
+            key: 'stages', type: 'list', label: 'Growth Stages (ordered seedling -> harvestable; the LAST stage is the harvestable one)',
+            itemLabel: (item, i) => `Stage ${i + 1} — ${item.tile || 'tile?'}`,
+            fields: [
+                { key: 'durationSec', type: 'number', label: 'Duration (sec, ignored on the last/harvestable stage)' },
+                { key: 'tile', type: 'text', label: 'Tile' },
+            ],
+        },
+        {
+            key: 'yield', type: 'group', label: 'Harvest Yield',
+            fields: [
+                { key: 'resourceType', type: 'select', label: 'Resource', source: 'resources' },
+                { key: 'amount', type: 'number', label: 'Amount' },
+            ],
+        },
     ],
     // Reusable real-mesh definitions — a building level/shop level/gate/queue can OPTIONALLY
     // point its own `view` field at one of these ids instead of using its placeholder box (see
@@ -450,5 +537,11 @@ const REQUIREMENT_TYPE_FIELDS = {
     resource: [
         { key: 'resourceType', type: 'select', label: 'Resource', source: 'resources' },
         { key: 'amount', type: 'number', label: 'Amount' },
+    ],
+    // Added for the Zones tab — "this zone unlocks once gate X is unlocked" — but usable from
+    // any other Requirement field too (gates/buildings/shops/queues/crafting all share this
+    // same widget). See MilestoneRequirement.ts's own GateMilestoneRequirement doc.
+    gate: [
+        { key: 'gateId', type: 'select', label: 'Gate', source: 'gates' },
     ],
 };

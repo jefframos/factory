@@ -37,7 +37,7 @@ import { ClusterMeshBuilder } from '../builders/ClusterMeshBuilder';
 import { createWaterMaterial } from '../builders/WaterMaterial';
 import { BendService } from '../services/BendService';
 import TileMap, { GroundCell } from './TileMap';
-import { GROUND_LAYER_Y_STEP } from './TileMapConfig';
+import { GROUND_LAYER_Y_STEP, tileCellToWorldPosition } from './TileMapConfig';
 import {
     ISLAND_DEFAULT_TILE,
     ISLAND_NON_LAND_TILES,
@@ -127,7 +127,20 @@ export default class IslandMeshBuilder {
                 for (const [zoneNumber, zoneCells] of byZone) {
                     const mesh = this.buildTileGroup(name, zoneCells, worldUnitsPerTile, layerYOffset);
                     if (mesh) {
-                        zoneVisibility.registerWithZones(mesh, zoneNumber === NO_ZONE ? [] : [zoneNumber]);
+                        // Centroid of this zone-partitioned group's own cells — only feeds
+                        // ZoneRevealEffect's rise-animation delay (see
+                        // ZoneVisibilityManager.registerWithZones()'s own doc), not anything
+                        // about the mesh's actual position/geometry.
+                        let sumX = 0, sumZ = 0;
+                        for (const cell of zoneCells) {
+                            const { x, z } = tileCellToWorldPosition(cell.col, cell.row, worldUnitsPerTile);
+                            sumX += x;
+                            sumZ += z;
+                        }
+                        zoneVisibility.registerWithZones(
+                            mesh, zoneNumber === NO_ZONE ? [] : [zoneNumber],
+                            sumX / zoneCells.length, sumZ / zoneCells.length,
+                        );
                     }
                 }
             }

@@ -38,9 +38,12 @@ import IslandMeshBuilder from './IslandMeshBuilder';
 import { buildResourceSpawnsFromTileMap, DEFAULT_TILE_MAP_ALIASES } from './TileMapConfig';
 import FogOfWarManager from './FogOfWarManager';
 import ZoneVisibilityManager from './ZoneVisibilityManager';
-import { FOG_OF_WAR_CONFIG, FogOfWarStyle } from './FogOfWarConfig';
+import { playZoneRevealShockwave } from './ZoneRevealEffect';
+import { FOG_OF_WAR_CONFIG, FogOfWarStyle, ZONE_REVEAL_CONFIG } from './FogOfWarConfig';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
+import { ZONE_CONFIG } from '../data/ZoneTypes';
+import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
 
 /** Flip to false to fall back to TileMap's own flat-color quad paint instead of IslandMeshBuilder's raised, rounded-corner island + water — see buildGround(). */
 const USE_ISLAND_MESH = true;
@@ -65,6 +68,8 @@ export default class WorldManager {
     private readonly zoneVisibility: ZoneVisibilityManager;
     /** zone1 (zoneNumber 0) is revealed in the constructor — see this file's own doc — so this starts at 1: the next zoneNumber revealNextZone() reveals. Purely a debug/test convenience (see PizzaScene's "Open Next Zone" button) for walking through the unlock sequence one zone at a time without a real requirement/trigger system yet. */
     private nextZoneToReveal = 1;
+    /** The player's own position as of the most recent update() call — see revealNextZone()'s own doc for why it needs this: the shockwave/rise-animation effect (ZoneRevealEffect.ts, ZoneVisibilityManager.revealZone()'s `origin` param) has to expand from wherever the player is actually standing, not from world origin. Starts at world origin (a reasonable stand-in before the first update() call, e.g. if a debug button somehow fires before the first frame ticks). */
+    private lastPlayerPosition = new THREE.Vector3();
 
     /**
      * `spawns` defaults to reading the map's resourcesLayer (see
@@ -105,17 +110,56 @@ export default class WorldManager {
     /**
      * Debug/test convenience (see PizzaScene's "Open Next Zone" button, InGameButtonList.ts) —
      * reveals whichever zoneNumber comes after the last one this called revealed (starting at
-     * 1, since zone 0 is already revealed at buildGround() — see nextZoneToReveal's own doc),
-     * through BOTH the always-on zoneVisibility AND, when active, fogOfWarManager — same pair
-     * buildGround() reveals zone 0 through. No-op past the last zone the map's "zones" layer
-     * actually paints (revealZone() itself just finds nothing to reveal); doesn't warn, since
-     * "already fully unlocked" is a completely normal state to call this in, not a mistake.
+     * 1, since zone 0 is already revealed at buildGround() — see nextZoneToReveal's own doc).
+     * No-op past the last zone the map's "zones" layer actually paints (revealZoneWithEffect()
+     * itself just finds nothing to reveal); doesn't warn, since "already fully unlocked" is a
+     * completely normal state to call this in, not a mistake. Bypasses ZONE_CONFIG entirely —
+     * this is for manually walking through the sequence while testing, independent of whatever
+     * real requirement (if any) a zone's own ZoneTypes.ts entry has configured.
      */
     public revealNextZone(): void {
-        const zoneNumber = this.nextZoneToReveal++;
+        this.revealZoneWithEffect(this.nextZoneToReveal++);
+    }
+
+    /**
+     * Checks every zoneNumber with a `requirement` configured in ZONE_CONFIG (see
+     * ZoneTypes.ts's own doc — set from the pizza web editor's Zones tab) and reveals any
+     * that's both not-yet-revealed and now met, through the same revealZoneWithEffect() path
+     * revealNextZone() uses (same shockwave/rise treatment either way). Called every frame
+     * from update() — cheap (ZONE_CONFIG only ever has as many entries as the map has zones,
+     * and isMilestoneRequirementMet() is a single storage lookup), same "just rescan, no
+     * event wiring needed" reasoning update()'s own resource-streaming loop already uses.
+     */
+    private checkZoneRequirements(): void {
+        for (const [zoneNumberKey, entry] of Object.entries(ZONE_CONFIG)) {
+            if (!entry?.requirement) {
+                continue;
+            }
+            const zoneNumber = Number(zoneNumberKey);
+            if (this.zoneVisibility.isZoneRevealed(zoneNumber)) {
+                continue;
+            }
+            if (isMilestoneRequirementMet(entry.requirement)) {
+                this.revealZoneWithEffect(zoneNumber);
+            }
+        }
+    }
+
+    /**
+     * The actual reveal, shared by revealNextZone() and checkZoneRequirements() — through
+     * BOTH the always-on zoneVisibility AND, when active, fogOfWarManager (same pair
+     * buildGround() reveals zone 0 through), passing lastPlayerPosition as the reveal's
+     * `origin` (see ZoneVisibilityManager.revealZone()'s own doc) and firing the matching
+     * shockwave ring (ZoneRevealEffect.ts) from that same point, at the same
+     * ZONE_REVEAL_CONFIG.waveSpeed — that's what makes the newly-visible ground/resources/
+     * buildings rise up in sync with the ring sweeping past them, instead of just popping in
+     * all at once.
+     */
+    private revealZoneWithEffect(zoneNumber: number): void {
         this.fogOfWarManager?.revealZone(zoneNumber);
-        this.zoneVisibility.revealZone(zoneNumber);
-        console.log(`[WorldManager] revealNextZone() -> zone${zoneNumber + 1} (zoneNumber ${zoneNumber})`);
+        this.zoneVisibility.revealZone(zoneNumber, this.lastPlayerPosition);
+        playZoneRevealShockwave(this.threeScene, this.lastPlayerPosition);
+        console.log(`[WorldManager] revealed zone${zoneNumber + 1} (zoneNumber ${zoneNumber})`);
     }
 
     /**
@@ -196,6 +240,10 @@ export default class WorldManager {
      * own doc for why that second part matters.
      */
     public update(playerPosition: THREE.Vector3, delta: number): void {
+        // See lastPlayerPosition's own doc — revealNextZone() needs a recent player position
+        // to expand the reveal shockwave from, and this is the only place one's available.
+        this.lastPlayerPosition.copy(playerPosition);
+
         // Read fresh each call, not cached — PERFORMANCE_CONFIG's radii are a live dat.GUI
         // slider target (see PerformanceConfig.ts's own doc), so a cached squared value
         // would freeze at whatever it was on the first frame.
@@ -230,6 +278,7 @@ export default class WorldManager {
             }
         }
 
+        this.checkZoneRequirements();
         this.fogOfWarManager?.update(delta);
     }
 
@@ -270,8 +319,14 @@ export default class WorldManager {
         node.playSpawnIn();
         // Only matters under FogOfWarStyle.HideEntities (BoxCloud's opaque box already
         // covers this) — registered anyway since it's a harmless no-op otherwise, and this
-        // point is already known unlocked so it's immediately visible.
-        this.zoneVisibility.register(node.transform, record.def.position.x, record.def.position.z);
+        // point is already known unlocked so it's immediately visible. `props` category delay
+        // — see ZONE_REVEAL_CONFIG.categoryDelaySec's own doc — so a resource rising as part
+        // of a fresh zone reveal's echo (see ZoneVisibilityManager.addRegistrant()'s own doc)
+        // rises AFTER the terrain it's standing on, not at the same instant.
+        this.zoneVisibility.register(
+            node.transform, record.def.position.x, record.def.position.z,
+            undefined, undefined, ZONE_REVEAL_CONFIG.categoryDelaySec.props,
+        );
     }
 
     /**

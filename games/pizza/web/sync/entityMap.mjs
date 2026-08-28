@@ -40,6 +40,22 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const GAME_DIR = path.resolve(__dirname, '..', '..', 'game');
 
 export const ENTITY_SOURCE_MAP = {
+    // Keyed by zoneNumber (a stringified number — see ZoneTypes.ts's own doc: "zone1" in
+    // level-designer terms is zoneNumber 0), NOT an arbitrary designer-typed id like every
+    // other partialRecord tab here. protectEntries: true for the same reason assetLibrary
+    // has it — the Zones tab's OWN render (see app.js's renderZonesTab()) auto-discovers and
+    // re-adds every zoneNumber actually painted on the map every time it's opened, so a
+    // config-only entry (a requirement set for a zone number the map doesn't currently paint,
+    // e.g. mid-edit in Tiled) shouldn't get silently deleted just because one save's POST
+    // happened not to include it.
+    zones: {
+        file: path.join(GAME_DIR, 'data', 'ZoneTypes.ts'),
+        exportName: 'ZONE_CONFIG',
+        kind: 'partialRecord',
+        managedKeys: ['requirement'],
+        optionalKeys: ['requirement'],
+        protectEntries: true,
+    },
     gates: {
         file: path.join(GAME_DIR, 'data', 'GateTypes.ts'),
         exportName: 'GATE_CONFIG',
@@ -163,7 +179,11 @@ export const ENTITY_SOURCE_MAP = {
         file: path.join(GAME_DIR, 'world', 'DynamicResourceTypes.ts'),
         exportName: 'DYNAMIC_RESOURCE_PLACEMENTS',
         kind: 'array',
-        managedKeys: ['resourceType', 'spawnerTileType', 'density', 'minDistance', 'checkIntervalSec'],
+        // spawnType/resourceType/providerType are ALL optional on a given entry (only
+        // whichever one `spawnType` actually selects is meaningful — see
+        // DynamicResourceTypes.ts's own doc) — no separate optionalKeys needed for an 'array'
+        // mapping, since syncArray()'s own pick() already skips any key that's undefined.
+        managedKeys: ['spawnType', 'resourceType', 'providerType', 'spawnerTileType', 'density', 'minDistance', 'checkIntervalSec'],
     },
     // Sibling to dynamicResourcePlacements above — same 'array' sync (see syncArray()'s own
     // doc), just against ShapeResourceTypes.ts/SHAPE_RESOURCE_PLACEMENTS, keyed by shapeId
@@ -172,11 +192,12 @@ export const ENTITY_SOURCE_MAP = {
         file: path.join(GAME_DIR, 'world', 'ShapeResourceTypes.ts'),
         exportName: 'SHAPE_RESOURCE_PLACEMENTS',
         kind: 'array',
-        // spawnType/resourceType/animalType are ALL optional on a given entry (only whichever
-        // pair spawnType actually selects is meaningful — see ShapeResourceTypes.ts's own doc)
-        // — no separate optionalKeys needed for an 'array' mapping, since syncArray()'s own
-        // pick() (see that function's own doc) already skips any key that's undefined.
-        managedKeys: ['spawnType', 'resourceType', 'animalType', 'shapeId', 'count', 'minDistance', 'checkIntervalSec'],
+        // spawnType/resourceType/animalType/providerType are ALL optional on a given entry
+        // (only whichever one spawnType actually selects is meaningful — see
+        // ShapeResourceTypes.ts's own doc) — no separate optionalKeys needed for an 'array'
+        // mapping, since syncArray()'s own pick() (see that function's own doc) already skips
+        // any key that's undefined.
+        managedKeys: ['spawnType', 'resourceType', 'animalType', 'providerType', 'shapeId', 'count', 'density', 'minDistance', 'checkIntervalSec'],
     },
     queues: {
         file: path.join(GAME_DIR, 'data', 'QueueTypes.ts'),
@@ -185,6 +206,35 @@ export const ENTITY_SOURCE_MAP = {
         byIdExportName: 'QUEUE_CONFIG_BY_ID',
         managedKeys: ['cooldownSec', 'possibleTasks', 'appearRequirement', 'popupMode', 'popupBobOffset', 'view', 'frame', 'solid'],
         optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset', 'view', 'frame', 'solid'],
+    },
+    // A FARM PLOT — a "farm"-typed object drawn on the Tiled map's "mapSettings" layer (see
+    // WorldObjectRegistry.ts), open-ended by id like queues/shops/crafting, not enum-backed.
+    // Same {default, byId} two-export shape as queues (kind: 'queues') since every plot not
+    // explicitly overridden here should just use DEFAULT_FARM_PLOT_CONFIG — see FarmTypes.ts's
+    // own doc. Unlike queues, a THIRD export (`tileExportName`) exists alongside default/byId —
+    // FARM_TILE_CONFIG, the single game-wide empty/prepared tile pair every plot shares (see
+    // FarmTypes.ts's own doc for why this is deliberately NOT per-plot) — synced separately by
+    // syncQueues() via `tileExportName`/`tileManagedKeys`, replacing that export wholesale
+    // (same "single object, no unmanaged fields" reasoning DEFAULT_QUEUE_CONFIG's own wholesale
+    // replace already uses).
+    farms: {
+        file: path.join(GAME_DIR, 'data', 'FarmTypes.ts'),
+        kind: 'queues',
+        defaultExportName: 'DEFAULT_FARM_PLOT_CONFIG',
+        byIdExportName: 'FARM_PLOT_CONFIG_BY_ID',
+        managedKeys: ['price', 'appearRequirement', 'allowedCrops', 'solid'],
+        optionalKeys: ['appearRequirement', 'allowedCrops', 'solid'],
+        tileExportName: 'FARM_TILE_CONFIG',
+        tileManagedKeys: ['empty', 'prepared', 'icon'],
+    },
+    // A CROP — game-design content (Wheat, ...), small and fixed like BuildingId/ItemType, so
+    // enum-backed rather than an open id-map like farms above — see CropTypes.ts's own doc.
+    crops: {
+        file: path.join(GAME_DIR, 'data', 'CropTypes.ts'),
+        exportName: 'CROP_CONFIG',
+        kind: 'enumRecord',
+        enumName: 'CropId',
+        managedKeys: ['name', 'plantCost', 'stages', 'yield'],
     },
     tools: {
         file: path.join(GAME_DIR, 'actions', 'ToolRegistry.ts'),

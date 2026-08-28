@@ -1,13 +1,14 @@
 // DynamicResourceSpawner.ts
 //
-// Scatters loose, dynamically-spawned resources (see DynamicResourceTypes.ts
-// — currently test "bark"/"pebble" placements) across WorldSpawner's own
-// tile clusters, one PLACEMENT at a time (see DynamicResourceTypes.ts's own
-// doc for why a placement — a (resourceType, spawnerTileType) pair — is the
-// actual unit of work here, not just a resource) — but, unlike a plain
+// Scatters loose, dynamically-spawned resources OR real gatherable providers (see
+// DynamicResourceTypes.ts's own `spawnType` doc — currently test "bark"/"pebble" placements,
+// plus whatever 'provider' placements a designer adds for a tree/deposit/bush that should
+// spawn over time instead of sitting hard-placed on the map) across WorldSpawner's own
+// tile clusters, one PLACEMENT at a time (see DynamicResourceTypes.ts's own doc for why a
+// placement is the actual unit of work here, not just a resource) — but, unlike a plain
 // "spawn N and forget," every instance is tracked as PERSISTED DATA
 // (DynamicResourceStorage.ts) independent of whether it's currently
-// rendered, and only gets a live LooseResourceNode (mesh + physics) while
+// rendered, and only gets a live LooseResourceNode/ResourceNode (mesh + physics) while
 // the player is actually nearby. Same load/unload-radius streaming idea
 // WorldManager.ts already uses for map-painted resources, reusing the exact
 // same PERFORMANCE_CONFIG.resourceLoadRadius/resourceUnloadRadius knobs (and
@@ -51,6 +52,8 @@
 import * as THREE from 'three';
 import World from '../ecs/World';
 import LooseResourceNode from '../player/LooseResourceNode';
+import ResourceNode from '../player/ResourceNode';
+import { PROVIDER_CONFIG } from '../actions/ProviderTypes';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { tileCellToWorldPosition, WORLD_UNITS_PER_TILE } from './TileMapConfig';
 import WorldSpawner from './WorldSpawner';
@@ -58,6 +61,9 @@ import { DYNAMIC_RESOURCE_PLACEMENTS, DynamicResourcePlacement, placementKey } f
 import { DynamicResourceStorage } from './DynamicResourceStorage';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 import ZoneVisibilityManager from './ZoneVisibilityManager';
+import { ZONE_REVEAL_CONFIG } from './FogOfWarConfig';
+import WorldObjectRegistry from './WorldObjectRegistry';
+import { collectFarmFootprints, FarmFootprint, isInsideAnyFarmFootprint } from './FarmFootprints';
 
 /** Upper bound on how many candidate cells tryFillDensity() will roll through in a single check — a cheap backstop against an unlucky run of minDistance misses, not a normal-case limit (a healthy area fills well within this). */
 const MAX_ATTEMPTS_PER_CHECK = 40;
@@ -66,8 +72,17 @@ interface RuntimeRecord {
     col: number;
     row: number;
     position: THREE.Vector3;
-    /** Only set while the player is within resourceLoadRadius of this record — see update(). */
-    node?: LooseResourceNode;
+    /** Only set while the player is within resourceLoadRadius of this record — see update(). A LooseResourceNode for a 'resource' placement, a real gatherable ResourceNode for a 'provider' one — see materialize()'s own branch. */
+    node?: LooseResourceNode | ResourceNode;
+    /**
+     * `spawnType: 'provider'` records ONLY — mirrors WorldManager's own ResourceRecord.life/
+     * respawnRemainingSec (see that file's own doc): a provider isn't consumed-and-gone like a
+     * loose pickup, it depletes then respawns on a timer FOREVER, so this has to persist across
+     * materialize/dematerialize cycles the same way. Always undefined for a 'resource' record —
+     * a one-shot pickup has no life/respawn state to carry.
+     */
+    life?: number;
+    respawnRemainingSec?: number;
 }
 
 interface DynamicResourceState {
@@ -83,16 +98,20 @@ export default class DynamicResourceSpawner {
     private readonly states: DynamicResourceState[];
     /** Every eligible (col, row) cell for a given spawnerTileType, resolved ONCE from WorldSpawner (the map's own painted layout never changes at runtime) — see collectCellsForType(). Populated lazily per distinct spawnerTileType actually used by a placement, not eagerly for every cluster on the map. */
     private readonly cellsByTileType = new Map<string, { col: number; row: number; position: THREE.Vector3 }[]>();
+    /** Every farm plot's own AABB, resolved ONCE (see FarmFootprints.ts's own doc) — tryFillDensity() rejects any candidate cell landing inside one, same as it already rejects a too-close-to-another-record candidate. */
+    private readonly farmFootprints: FarmFootprint[];
 
     public constructor(
         private readonly world: World,
         private readonly threeScene: THREE.Scene,
         private readonly screenHost: ScreenAnchorHost,
         private readonly worldSpawner: WorldSpawner,
+        worldObjects: WorldObjectRegistry,
         placements: readonly DynamicResourcePlacement[] = DYNAMIC_RESOURCE_PLACEMENTS,
         /** Solution 2 only (undefined under FogOfWarStyle.BoxCloud — see FogOfWarConfig.ts): a record that streams in inside a closed zone stays invisible until that zone is revealed, exactly like WorldManager's own map-painted resources. */
         private readonly zoneVisibility?: ZoneVisibilityManager,
     ) {
+        this.farmFootprints = collectFarmFootprints(worldObjects);
         // Starts every placement's countdown at 0 rather than checkIntervalSec — see this
         // file's own doc on why that's what seeds an area up to its target density the instant
         // the player first gets near it, with no separate "starting density" concept needed.
@@ -116,7 +135,7 @@ export default class DynamicResourceSpawner {
         const unloadRadiusSq = PERFORMANCE_CONFIG.resourceUnloadRadius * PERFORMANCE_CONFIG.resourceUnloadRadius;
 
         for (const state of this.states) {
-            this.streamRecords(state, playerPosition, loadRadiusSq, unloadRadiusSq);
+            this.streamRecords(state, playerPosition, delta, loadRadiusSq, unloadRadiusSq);
 
             state.checkTimerSec -= delta;
             if (state.checkTimerSec > 0) {
@@ -161,16 +180,41 @@ export default class DynamicResourceSpawner {
         await DynamicResourceStorage.clearAll();
     }
 
-    /** Materializes/dematerializes every already-known record for `state` by distance to the player — same load/unload hysteresis gap WorldManager.update() uses, and the same reasoning: a record right at one exact radius shouldn't load/unload every frame as the player jitters across it. */
-    private streamRecords(state: DynamicResourceState, playerPosition: THREE.Vector3, loadRadiusSq: number, unloadRadiusSq: number): void {
+    /**
+     * Materializes/dematerializes every already-known record for `state` by distance to the
+     * player — same load/unload hysteresis gap WorldManager.update() uses, and the same
+     * reasoning: a record right at one exact radius shouldn't load/unload every frame as the
+     * player jitters across it.
+     *
+     * For a 'provider' record specifically (see RuntimeRecord.life's own doc), this also
+     * mirrors WorldManager.update()'s OTHER job: a live ResourceNode's life/respawn state is
+     * pulled into the record every tick (so dematerializing never loses progress), and an
+     * off-screen depleted one keeps its own respawn countdown ticking here — a tree chopped
+     * down, walked away from, and returned to five minutes later should be grown back exactly
+     * on schedule, not frozen at the moment it went out of range.
+     */
+    private streamRecords(state: DynamicResourceState, playerPosition: THREE.Vector3, delta: number, loadRadiusSq: number, unloadRadiusSq: number): void {
         for (const record of state.records) {
             const distanceSq = record.position.distanceToSquared(playerPosition);
 
             if (record.node) {
+                if (record.node instanceof ResourceNode) {
+                    record.life = record.node.remainingLife;
+                    record.respawnRemainingSec = record.node.respawnRemaining;
+                }
+
                 if (distanceSq > unloadRadiusSq) {
                     this.dematerialize(record);
                 }
                 continue;
+            }
+
+            if ((state.placement.spawnType ?? 'resource') === 'provider' && record.respawnRemainingSec !== undefined) {
+                record.respawnRemainingSec -= delta;
+                if (record.respawnRemainingSec <= 0) {
+                    record.respawnRemainingSec = undefined;
+                    record.life = PROVIDER_CONFIG[state.placement.providerType!].maxLife;
+                }
             }
 
             if (distanceSq <= loadRadiusSq) {
@@ -205,7 +249,7 @@ export default class DynamicResourceSpawner {
         while (nearbyRecordCount < targetCount && attempts < MAX_ATTEMPTS_PER_CHECK) {
             attempts++;
             const cell = nearbyCells[Math.floor(Math.random() * nearbyCells.length)];
-            if (!this.isFarEnough(cell.position, state)) {
+            if (!this.isFarEnough(cell.position, state) || isInsideAnyFarmFootprint(cell.position.x, cell.position.z, this.farmFootprints)) {
                 continue;
             }
 
@@ -250,21 +294,41 @@ export default class DynamicResourceSpawner {
         return true;
     }
 
-    /** No-ops entirely (leaves record.node undefined) if this position's zone is still locked — see ZoneVisibilityManager.ts's own doc for why that has to happen HERE, before creating anything, rather than spawning a real node (mesh + trigger) and merely hiding it. streamRecords()'s per-frame distance check retries this every tick a record is in range, so the moment its zone unlocks, the very next tick materializes it for real. */
+    /**
+     * No-ops entirely (leaves record.node undefined) if this position's zone is still locked
+     * — see ZoneVisibilityManager.ts's own doc for why that has to happen HERE, before
+     * creating anything, rather than spawning a real node (mesh + trigger) and merely hiding
+     * it. streamRecords()'s per-frame distance check retries this every tick a record is in
+     * range, so the moment its zone unlocks, the very next tick materializes it for real.
+     *
+     * Branches on `state.placement.spawnType` — 'provider' (see DynamicResourceTypes.ts's own
+     * doc) creates a real gatherable ResourceNode carrying this record's own persisted life/
+     * respawnRemainingSec (so it resumes exactly as damaged/depleted as it was, same as
+     * WorldManager's own map-painted resources); 'resource' (or omitted, the original
+     * behavior) creates a one-shot LooseResourceNode pickup instead.
+     */
     private materialize(state: DynamicResourceState, record: RuntimeRecord): void {
         if (this.zoneVisibility && !this.zoneVisibility.isPositionUnlocked(record.position.x, record.position.z)) {
             return;
         }
 
-        const node = new LooseResourceNode(state.placement.resourceType, record.position, this.screenHost, () => this.handleConsumed(state, record));
+        let node: LooseResourceNode | ResourceNode;
+        if ((state.placement.spawnType ?? 'resource') === 'provider') {
+            node = new ResourceNode(state.placement.providerType!, record.position, record.life, record.respawnRemainingSec, this.screenHost);
+        } else {
+            node = new LooseResourceNode(state.placement.resourceType!, record.position, this.screenHost, () => this.handleConsumed(state, record));
+        }
         this.world.add(node);
         this.threeScene.add(node.transform);
         record.node = node;
         node.playSpawnIn();
-        this.zoneVisibility?.register(node.transform, record.position.x, record.position.z);
+        this.zoneVisibility?.register(
+            node.transform, record.position.x, record.position.z,
+            undefined, undefined, ZONE_REVEAL_CONFIG.categoryDelaySec.props,
+        );
     }
 
-    /** Mirrors WorldManager.dematerialize() — clears `record.node` immediately (so update() won't touch this record again until it's back in range) but defers the actual world.remove() until the despawn tween finishes. */
+    /** Mirrors WorldManager.dematerialize() — clears `record.node` immediately (so update() won't touch this record again until it's back in range) but defers the actual world.remove() until the despawn tween finishes. streamRecords() already pulled a ResourceNode's own life/respawnRemainingSec into the record before calling this. */
     private dematerialize(record: RuntimeRecord): void {
         const node = record.node;
         if (!node) {

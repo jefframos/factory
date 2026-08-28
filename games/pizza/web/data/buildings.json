@@ -1,6 +1,6 @@
 {
-    "camp": {
-        "name": "Camp",
+    "tower": {
+        "name": "Tower",
         "levels": [
             {
                 "level": 1,
@@ -24,20 +24,8 @@
                     "type": "backpackCapacity",
                     "value": 10,
                     "description": "+10 backpack capacity"
-                }
-            },
-            {
-                "level": 3,
-                "requirements": {
-                    "wood": 12,
-                    "stone": 10,
-                    "berries": 6
                 },
-                "effect": {
-                    "type": "gatherSpeed",
-                    "value": 0.2,
-                    "description": "+20% gather speed"
-                }
+                "view": "tower2view"
             }
         ],
         "baseView": "tower1View",
