@@ -46,9 +46,12 @@ import {
     TileConfig,
 } from './MeshConfig';
 import { deriveWaterTones, parseHexColor } from './IslandStorage';
+import ZoneVisibilityManager from './ZoneVisibilityManager';
 
 /** Margin (world units) added around the painted cells' bounding box when sizing the water plane, so the shoreline never runs right up against the plane's own edge. */
 const WATER_MARGIN = 20;
+/** Map key standing in for "this cell carries no zone at all" — see build()'s zone-partitioning branch. Distinct from any real zone number (which are always >= 0, see TileMapConfig.buildZoneTileCells()'s own doc). */
+const NO_ZONE = -1;
 /** Fallback water base color (map/tiles.json's "water" ground normally supplies this — see build()) if the map has no water tile at all. */
 const FALLBACK_WATER_COLOR = 0x3a8dff;
 
@@ -70,8 +73,16 @@ export default class IslandMeshBuilder {
      * than z-fighting/merging with them. The water plane is only ever built once, sized and
      * colored off the BASE layer (layerIndex 0) — water is a base-terrain feature, not
      * something an overlay decoration layer should redefine.
+     *
+     * `zoneVisibility`, when passed (FOG_OF_WAR_CONFIG.style === HideEntities — see
+     * WorldManager.buildGround()), further partitions each tile name's cells by zone number
+     * BEFORE flood-filling — a merged blob never straddles a zone boundary, since two cells
+     * on opposite sides of one couldn't otherwise be shown/hidden independently — and
+     * registers each resulting mesh with it so its visibility tracks that zone's reveal
+     * state. Left undefined (solution 1 — FogOfWarManager's own opaque boxes handle hiding
+     * instead), every land tile name merges into a single mesh same as before this existed.
      */
-    public build(tileMap: TileMap): void {
+    public build(tileMap: TileMap, zoneVisibility?: ZoneVisibilityManager): void {
         const layers = tileMap.getGroundCellLayers();
         const worldUnitsPerTile = tileMap.getWorldUnitsPerTile();
 
@@ -98,7 +109,27 @@ export default class IslandMeshBuilder {
 
             const layerYOffset = layerIndex * GROUND_LAYER_Y_STEP;
             for (const [name, namedCells] of byName) {
-                this.buildTileGroup(name, namedCells, worldUnitsPerTile, layerYOffset);
+                if (!zoneVisibility) {
+                    this.buildTileGroup(name, namedCells, worldUnitsPerTile, layerYOffset);
+                    continue;
+                }
+
+                const byZone = new Map<number, GroundCell[]>();
+                for (const cell of namedCells) {
+                    const zoneNumber = zoneVisibility.getZoneForCell(cell.col, cell.row) ?? NO_ZONE;
+                    let bucket = byZone.get(zoneNumber);
+                    if (!bucket) {
+                        bucket = [];
+                        byZone.set(zoneNumber, bucket);
+                    }
+                    bucket.push(cell);
+                }
+                for (const [zoneNumber, zoneCells] of byZone) {
+                    const mesh = this.buildTileGroup(name, zoneCells, worldUnitsPerTile, layerYOffset);
+                    if (mesh) {
+                        zoneVisibility.registerWithZones(mesh, zoneNumber === NO_ZONE ? [] : [zoneNumber]);
+                    }
+                }
             }
 
             if (layerIndex === 0) {
@@ -123,8 +154,8 @@ export default class IslandMeshBuilder {
         }
     }
 
-    /** Flood-fills every connected blob of `name`'s cells, builds each blob's geometry, and merges them all into one mesh — mirrors BoundlessChunk.buildTileGroup(), minus the RoomGrid dependency (a plain col/row Set stands in for it here). `yOffset` lifts the WHOLE merged mesh (on top of each tile's own cfg.height/depthBelow) — see build()'s own doc on why an overlay layer's blobs sit above the base layer's instead of merging into them. */
-    private buildTileGroup(name: string, namedCells: GroundCell[], worldUnitsPerTile: number, yOffset: number): void {
+    /** Flood-fills every connected blob of `name`'s cells, builds each blob's geometry, and merges them all into one mesh — mirrors BoundlessChunk.buildTileGroup(), minus the RoomGrid dependency (a plain col/row Set stands in for it here). `yOffset` lifts the WHOLE merged mesh (on top of each tile's own cfg.height/depthBelow) — see build()'s own doc on why an overlay layer's blobs sit above the base layer's instead of merging into them. Returns the built mesh (undefined if `namedCells` was empty) — see build()'s zone-partitioning branch, the one caller that needs it to register with ZoneVisibilityManager. */
+    private buildTileGroup(name: string, namedCells: GroundCell[], worldUnitsPerTile: number, yOffset: number): THREE.Mesh | undefined {
         const cfg = resolveTileConfig(name);
         const cellSet = new Set(namedCells.map(({ col, row }) => `${col},${row}`));
         const byKey = new Map(namedCells.map(c => [`${c.col},${c.row}`, c]));
@@ -162,7 +193,7 @@ export default class IslandMeshBuilder {
         }
 
         if (geometries.length === 0) {
-            return;
+            return undefined;
         }
 
         let merged: THREE.BufferGeometry;
@@ -194,6 +225,7 @@ export default class IslandMeshBuilder {
         mesh.frustumCulled = false;
         this.threeScene.add(mesh);
         this.meshes.push(mesh);
+        return mesh;
     }
 
     /** One big plane under/around every painted cell, sized to the ground layer's actual bounding box rather than a hardcoded world size — an infinite Tiled map has no fixed extent (see TileMapConfig.ts's own doc on why tile coords are never centered), so this is computed from whatever's actually painted. */

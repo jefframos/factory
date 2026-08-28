@@ -36,6 +36,9 @@ import {
 import TileMap from './TileMap';
 import IslandMeshBuilder from './IslandMeshBuilder';
 import { buildResourceSpawnsFromTileMap, DEFAULT_TILE_MAP_ALIASES } from './TileMapConfig';
+import FogOfWarManager from './FogOfWarManager';
+import ZoneVisibilityManager from './ZoneVisibilityManager';
+import { FOG_OF_WAR_CONFIG, FogOfWarStyle } from './FogOfWarConfig';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 
@@ -56,6 +59,12 @@ export default class WorldManager {
     private readonly tileMap: TileMap;
     /** Builds 3D island geometry + water from tileMap's parsed ground cells — see its own doc. Reassign `USE_ISLAND_MESH` below to `false` to go back to TileMap's own flat-color paint instead. */
     private readonly islandMeshBuilder: IslandMeshBuilder;
+    /** Opaque box-volume visual (FOG_OF_WAR_CONFIG.style === BoxCloud only) — runs ALONGSIDE zoneVisibility, not instead of it (see ZoneVisibilityManager.ts's own doc for why lock enforcement is always on regardless of style). undefined under HideEntities. */
+    private readonly fogOfWarManager?: FogOfWarManager;
+    /** The zone-lock authority — ALWAYS constructed regardless of FOG_OF_WAR_CONFIG.style, since walkability and materialize-gating (see ZoneVisibilityManager.ts's own doc) must hold no matter how a locked zone is rendered. Exposed via getZoneVisibilityManager() so PizzaScene can register buildings/shops/queues/gates the same way WorldManager registers its own ground/resources. */
+    private readonly zoneVisibility: ZoneVisibilityManager;
+    /** zone1 (zoneNumber 0) is revealed in the constructor — see this file's own doc — so this starts at 1: the next zoneNumber revealNextZone() reveals. Purely a debug/test convenience (see PizzaScene's "Open Next Zone" button) for walking through the unlock sequence one zone at a time without a real requirement/trigger system yet. */
+    private nextZoneToReveal = 1;
 
     /**
      * `spawns` defaults to reading the map's resourcesLayer (see
@@ -74,8 +83,39 @@ export default class WorldManager {
         for (const def of spawns) {
             this.records.set(def.id, { def, life: PROVIDER_CONFIG[def.providerType].maxLife });
         }
-        this.tileMap = new TileMap(threeScene, tileMapAliases.map, tileMapAliases.tiles);
+        // Built BEFORE tileMap so TileMap.isWalkableAt() can consult it from the start —
+        // always constructed regardless of FOG_OF_WAR_CONFIG.style, see this field's own doc.
+        this.zoneVisibility = new ZoneVisibilityManager(undefined, tileMapAliases.map);
+        this.tileMap = new TileMap(threeScene, tileMapAliases.map, tileMapAliases.tiles, undefined, this.zoneVisibility);
         this.islandMeshBuilder = new IslandMeshBuilder(threeScene);
+
+        // FOG_OF_WAR_CONFIG.style only picks the ADDITIONAL visual on top of always-on lock
+        // enforcement (see ZoneVisibilityManager.ts's own doc) — a one-line config edit, not a
+        // code change, to compare the two looks.
+        if (FOG_OF_WAR_CONFIG.style === FogOfWarStyle.BoxCloud) {
+            this.fogOfWarManager = new FogOfWarManager(threeScene, undefined, tileMapAliases.map);
+        }
+    }
+
+    /** The zone-lock authority (see its own doc) — PizzaScene reads this to register buildings/shops/queues/gates so their visibility tracks zone reveal state the same way WorldManager's own ground/resources do. */
+    public getZoneVisibilityManager(): ZoneVisibilityManager {
+        return this.zoneVisibility;
+    }
+
+    /**
+     * Debug/test convenience (see PizzaScene's "Open Next Zone" button, InGameButtonList.ts) —
+     * reveals whichever zoneNumber comes after the last one this called revealed (starting at
+     * 1, since zone 0 is already revealed at buildGround() — see nextZoneToReveal's own doc),
+     * through BOTH the always-on zoneVisibility AND, when active, fogOfWarManager — same pair
+     * buildGround() reveals zone 0 through. No-op past the last zone the map's "zones" layer
+     * actually paints (revealZone() itself just finds nothing to reveal); doesn't warn, since
+     * "already fully unlocked" is a completely normal state to call this in, not a mistake.
+     */
+    public revealNextZone(): void {
+        const zoneNumber = this.nextZoneToReveal++;
+        this.fogOfWarManager?.revealZone(zoneNumber);
+        this.zoneVisibility.revealZone(zoneNumber);
+        console.log(`[WorldManager] revealNextZone() -> zone${zoneNumber + 1} (zoneNumber ${zoneNumber})`);
     }
 
     /**
@@ -112,8 +152,16 @@ export default class WorldManager {
         this.tileMap.build(!USE_ISLAND_MESH);
 
         if (USE_ISLAND_MESH) {
-            this.islandMeshBuilder.build(this.tileMap);
+            this.islandMeshBuilder.build(this.tileMap, this.zoneVisibility);
         }
+
+        this.fogOfWarManager?.build(this.tileMap);
+        // zone1 (zoneNumber 0, see TileMapConfig.ZONE_LAYER_NAME's own doc) is unlocked from
+        // the moment the game starts — every other zone stays locked (unwalkable, nothing
+        // materializes in it, and hidden/fogged depending on style) until something else (a
+        // future unlock flow) calls revealZone() for it.
+        this.fogOfWarManager?.revealZone(0);
+        this.zoneVisibility.revealZone(0);
     }
 
     /**
@@ -181,6 +229,8 @@ export default class WorldManager {
                 this.materialize(record);
             }
         }
+
+        this.fogOfWarManager?.update(delta);
     }
 
     /** Tears down every currently-materialized node plus the tile map mesh — for scene teardown, mirroring World.remove() cleanup elsewhere. */
@@ -193,9 +243,24 @@ export default class WorldManager {
         }
         this.tileMap.destroy();
         this.islandMeshBuilder.destroy();
+        this.fogOfWarManager?.destroy();
     }
 
+    /**
+     * No-ops entirely (leaves record.node undefined) if this position's zone is still locked
+     * — see ZoneVisibilityManager.ts's own doc for why that has to happen HERE, before
+     * creating anything, rather than creating a real ResourceNode (mesh + RigidBody + gather
+     * trigger) and merely hiding it: a hidden-but-live node still has a working trigger area,
+     * so it could still be gathered despite being invisible. update()'s per-frame distance
+     * check retries this every frame a record is in range, so the moment its zone unlocks
+     * (revealZone()), the very next tick materializes it for real — no extra reveal hook
+     * needed.
+     */
     private materialize(record: ResourceRecord): void {
+        if (!this.zoneVisibility.isPositionUnlocked(record.def.position.x, record.def.position.z)) {
+            return;
+        }
+
         const node = new ResourceNode(record.def.providerType, record.def.position, record.life, record.respawnRemainingSec, this.screenHost);
         this.world.add(node);
         this.threeScene.add(node.transform);
@@ -203,6 +268,10 @@ export default class WorldManager {
         // See RESOURCE_POP_IN_SEC's own doc (WorldConfig.ts) — scales in instead of
         // snapping straight to full size the instant this streams into LOAD_RADIUS.
         node.playSpawnIn();
+        // Only matters under FogOfWarStyle.HideEntities (BoxCloud's opaque box already
+        // covers this) — registered anyway since it's a harmless no-op otherwise, and this
+        // point is already known unlocked so it's immediately visible.
+        this.zoneVisibility.register(node.transform, record.def.position.x, record.def.position.z);
     }
 
     /**
@@ -220,6 +289,7 @@ export default class WorldManager {
         record.life = node.remainingLife;
         record.respawnRemainingSec = node.respawnRemaining;
         record.node = undefined;
+        this.zoneVisibility.unregister(node.transform);
         node.playDespawnOut(() => this.world.remove(node));
     }
 }

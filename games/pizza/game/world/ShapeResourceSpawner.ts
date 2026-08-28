@@ -43,6 +43,7 @@ import WorldObjectRegistry, { sampleRandomPointInShape } from './WorldObjectRegi
 import { SHAPE_RESOURCE_PLACEMENTS, ShapeResourcePlacement, shapePlacementKey } from './ShapeResourceTypes';
 import { ShapeResourceStorage } from './ShapeResourceStorage';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
+import ZoneVisibilityManager from './ZoneVisibilityManager';
 
 /** Upper bound on how many candidate points tryFillDensity() will roll through in a single check — same "cheap backstop against an unlucky run of minDistance misses" reasoning as DynamicResourceSpawner's own MAX_ATTEMPTS_PER_CHECK, plus here it also has to absorb rejection-sampling misses for a polygon's bounding box. */
 const MAX_ATTEMPTS_PER_CHECK = 60;
@@ -71,6 +72,8 @@ export default class ShapeResourceSpawner {
         private readonly screenHost: ScreenAnchorHost,
         private readonly worldObjects: WorldObjectRegistry,
         placements: readonly ShapeResourcePlacement[] = SHAPE_RESOURCE_PLACEMENTS,
+        /** Solution 2 only (undefined under FogOfWarStyle.BoxCloud — see FogOfWarConfig.ts): a record that streams in inside a closed zone stays invisible until that zone is revealed, exactly like WorldManager's own map-painted resources. */
+        private readonly zoneVisibility?: ZoneVisibilityManager,
     ) {
         // Starts every placement's countdown at 0 rather than checkIntervalSec — same "seed up
         // to target the instant the scene loads" reasoning as DynamicResourceSpawner's own
@@ -201,8 +204,19 @@ export default class ShapeResourceSpawner {
      * object since this was spawned) this just warns and skips rather than crashing, same
      * "shouldn't happen with a real map, reads better than silently showing nothing" spirit
      * WorldSpawner.ts's own gid fallback uses.
+     *
+     * No-ops entirely (leaves record.node undefined) if this position's zone is still locked
+     * — see ZoneVisibilityManager.ts's own doc for why that has to happen HERE, before
+     * creating anything, rather than spawning a real node (mesh + trigger/catch area) and
+     * merely hiding it: a hidden-but-live AnimalNode could still be caught despite being
+     * invisible. streamRecords()'s per-frame distance check retries this every tick a record
+     * is in range, so the moment its zone unlocks, the very next tick materializes it for real.
      */
     private materialize(state: ShapeResourceState, record: RuntimeRecord): void {
+        if (this.zoneVisibility && !this.zoneVisibility.isPositionUnlocked(record.position.x, record.position.z)) {
+            return;
+        }
+
         if ((state.placement.spawnType ?? 'resource') === 'animal') {
             const shape = this.worldObjects.getShape(state.placement.shapeId);
             if (!shape) {
@@ -217,6 +231,7 @@ export default class ShapeResourceSpawner {
             this.threeScene.add(node.transform);
             record.node = node;
             node.playSpawnIn();
+            this.zoneVisibility?.register(node.transform, record.position.x, record.position.z);
             return;
         }
 
@@ -225,6 +240,7 @@ export default class ShapeResourceSpawner {
         this.threeScene.add(node.transform);
         record.node = node;
         node.playSpawnIn();
+        this.zoneVisibility?.register(node.transform, record.position.x, record.position.z);
     }
 
     /**
@@ -243,6 +259,7 @@ export default class ShapeResourceSpawner {
             return;
         }
         record.node = undefined;
+        this.zoneVisibility?.unregister(node.transform);
         node.playDespawnOut(() => this.world.remove(node));
     }
 
@@ -251,6 +268,9 @@ export default class ShapeResourceSpawner {
         const index = state.records.indexOf(record);
         if (index !== -1) {
             state.records.splice(index, 1);
+        }
+        if (record.node) {
+            this.zoneVisibility?.unregister(record.node.transform);
         }
         record.node = undefined;
         ShapeResourceStorage.removeRecord(state.key, { x: record.position.x, z: record.position.z });

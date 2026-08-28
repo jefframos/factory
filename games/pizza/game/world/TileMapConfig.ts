@@ -262,7 +262,7 @@ export interface TiledTileset {
 }
 
 /** Shared by resolveTiledTileImageName()/getTiledTileBooleanProperty() — the tileset with the LARGEST firstgid that's still `<= gid`, or undefined if `gid` is 0/negative or smaller than every tileset's own firstgid. */
-function findTilesetOwningGid(map: TiledMapData, gid: number): TiledTileset | undefined {
+export function findTilesetOwningGid(map: TiledMapData, gid: number): TiledTileset | undefined {
     if (gid <= 0) {
         return undefined;
     }
@@ -356,6 +356,8 @@ export function* iterateLayerCells(layer: TiledLayer): Iterable<TiledCell> {
 
 export const GROUND_LAYER_NAME = 'groundLayer';
 export const RESOURCE_LAYER_NAME = 'resourcesLayer';
+/** Fog-of-war zone layer (the "zones" tilelayer already painted in testMap1.json) — a painted cell's LOCAL tile id (gid - its tileset's own firstgid) IS the zone number, 0-based: gid 1 (local id 0, the ground tileset's first tile) is zone 0 ("zone1"), gid 2 is zone 1 ("zone2"), and so on. See buildZoneTileCells(). */
+export const ZONE_LAYER_NAME = 'zones';
 
 /** World-units per Tiled grid cell — independent of Tiled's own pixel tilewidth/tileheight (which only matters for the tileset image). Bump this to change how "zoomed in" the painted map looks without touching map data. */
 export const WORLD_UNITS_PER_TILE = 2;
@@ -534,4 +536,45 @@ export function buildResourceSpawnsFromTileMap(
     }
 
     return spawns;
+}
+
+/** One tile-grid cell (absolute col/row, see iterateLayerCells()) painted with a given zone number in ZONE_LAYER_NAME. */
+export interface ZoneCell {
+    col: number;
+    row: number;
+}
+
+/**
+ * Reads ZONE_LAYER_NAME's painted cells and groups them by zone number — see
+ * ZONE_LAYER_NAME's own doc for why a cell's LOCAL tile id (not its raw gid) is the zone
+ * number. Zone numbers are 0-based here (zone 0 = "zone1" in level-designer terms) so
+ * FogOfWarManager can use them directly as a Map key / mask value without an off-by-one.
+ * Returns an empty Map if the map has no zoneLayer at all — same "fails open, just nothing
+ * to reveal" convention as buildResourceSpawnsFromTileMap() finding no resourcesLayer.
+ */
+export function buildZoneTileCells(
+    mapAlias: string = DEFAULT_TILE_MAP_ALIASES.map,
+): Map<number, ZoneCell[]> {
+    const map = loadTiledMap(mapAlias);
+    const layer = findLayer(map, ZONE_LAYER_NAME);
+    const zones = new Map<number, ZoneCell[]>();
+    if (!layer) {
+        return zones;
+    }
+
+    for (const { gid, col, row } of iterateLayerCells(layer)) {
+        const owner = findTilesetOwningGid(map, gid);
+        if (!owner) {
+            continue;
+        }
+        const zoneNumber = gid - owner.firstgid;
+        let cells = zones.get(zoneNumber);
+        if (!cells) {
+            cells = [];
+            zones.set(zoneNumber, cells);
+        }
+        cells.push({ col, row });
+    }
+
+    return zones;
 }

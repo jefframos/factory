@@ -57,6 +57,7 @@ import WorldSpawner from './WorldSpawner';
 import { DYNAMIC_RESOURCE_PLACEMENTS, DynamicResourcePlacement, placementKey } from './DynamicResourceTypes';
 import { DynamicResourceStorage } from './DynamicResourceStorage';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
+import ZoneVisibilityManager from './ZoneVisibilityManager';
 
 /** Upper bound on how many candidate cells tryFillDensity() will roll through in a single check — a cheap backstop against an unlucky run of minDistance misses, not a normal-case limit (a healthy area fills well within this). */
 const MAX_ATTEMPTS_PER_CHECK = 40;
@@ -89,6 +90,8 @@ export default class DynamicResourceSpawner {
         private readonly screenHost: ScreenAnchorHost,
         private readonly worldSpawner: WorldSpawner,
         placements: readonly DynamicResourcePlacement[] = DYNAMIC_RESOURCE_PLACEMENTS,
+        /** Solution 2 only (undefined under FogOfWarStyle.BoxCloud — see FogOfWarConfig.ts): a record that streams in inside a closed zone stays invisible until that zone is revealed, exactly like WorldManager's own map-painted resources. */
+        private readonly zoneVisibility?: ZoneVisibilityManager,
     ) {
         // Starts every placement's countdown at 0 rather than checkIntervalSec — see this
         // file's own doc on why that's what seeds an area up to its target density the instant
@@ -247,12 +250,18 @@ export default class DynamicResourceSpawner {
         return true;
     }
 
+    /** No-ops entirely (leaves record.node undefined) if this position's zone is still locked — see ZoneVisibilityManager.ts's own doc for why that has to happen HERE, before creating anything, rather than spawning a real node (mesh + trigger) and merely hiding it. streamRecords()'s per-frame distance check retries this every tick a record is in range, so the moment its zone unlocks, the very next tick materializes it for real. */
     private materialize(state: DynamicResourceState, record: RuntimeRecord): void {
+        if (this.zoneVisibility && !this.zoneVisibility.isPositionUnlocked(record.position.x, record.position.z)) {
+            return;
+        }
+
         const node = new LooseResourceNode(state.placement.resourceType, record.position, this.screenHost, () => this.handleConsumed(state, record));
         this.world.add(node);
         this.threeScene.add(node.transform);
         record.node = node;
         node.playSpawnIn();
+        this.zoneVisibility?.register(node.transform, record.position.x, record.position.z);
     }
 
     /** Mirrors WorldManager.dematerialize() — clears `record.node` immediately (so update() won't touch this record again until it's back in range) but defers the actual world.remove() until the despawn tween finishes. */
@@ -262,6 +271,7 @@ export default class DynamicResourceSpawner {
             return;
         }
         record.node = undefined;
+        this.zoneVisibility?.unregister(node.transform);
         node.playDespawnOut(() => this.world.remove(node));
     }
 
@@ -270,6 +280,9 @@ export default class DynamicResourceSpawner {
         const index = state.records.indexOf(record);
         if (index !== -1) {
             state.records.splice(index, 1);
+        }
+        if (record.node) {
+            this.zoneVisibility?.unregister(record.node.transform);
         }
         record.node = undefined;
         DynamicResourceStorage.removeRecord(state.key, { col: record.col, row: record.row });

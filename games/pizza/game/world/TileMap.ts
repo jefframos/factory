@@ -42,6 +42,7 @@ import {
     WORLD_UNITS_PER_TILE,
 } from './TileMapConfig';
 import { clearWalkabilityQuery, setWalkabilityQuery } from './TileWalkability';
+import ZoneVisibilityManager from './ZoneVisibilityManager';
 
 /** Key `cellDefs` is stored under — same col/row pair iterateLayerCells() yields. */
 function cellKey(col: number, row: number): string {
@@ -86,6 +87,8 @@ export default class TileMap {
         private readonly mapAlias: string = DEFAULT_TILE_MAP_ALIASES.map,
         private readonly tilesAlias: string = DEFAULT_TILE_MAP_ALIASES.tiles,
         private readonly worldUnitsPerTile: number = WORLD_UNITS_PER_TILE,
+        /** See isWalkableAt()'s own doc — a locked zone (or a cell with no zone at all) is never walkable, regardless of FOG_OF_WAR_CONFIG.style. */
+        private readonly zoneVisibility?: ZoneVisibilityManager,
     ) { }
 
     /**
@@ -216,15 +219,27 @@ export default class TileMap {
     }
 
     /**
-     * Fails OPEN, not closed: a position with no painted ground cell (map not built yet,
-     * outside the painted area, or this TileMap never had a groundLayer at all) is walkable
-     * — only a cell that's both painted AND listed in NON_WALKABLE_GROUND_TILES blocks
-     * movement. That's what keeps this purely additive (see this file's class doc and
+     * Fails OPEN, not closed, for a position with NO painted ground cell at all (map not
+     * built yet, outside the painted area, or this TileMap never had a groundLayer at all) —
+     * that's what keeps this purely additive (see this file's class doc and
      * TileWalkability.ts) instead of accidentally trapping the player anywhere the map
-     * doesn't cover.
+     * doesn't cover. A position that DOES have a painted cell is walkable only if it's not
+     * listed in NON_WALKABLE_GROUND_TILES AND (when zoneVisibility is set — see the
+     * constructor's own doc) its zone is currently unlocked, treating a locked zone exactly
+     * like water: not something the player can just walk into, in either fog style.
      */
     public isWalkableAt(worldX: number, worldZ: number): boolean {
-        return isGroundWalkable(this.getGroundDefAt(worldX, worldZ));
+        const def = this.getGroundDefAt(worldX, worldZ);
+        if (def === undefined) {
+            return true;
+        }
+        if (!isGroundWalkable(def)) {
+            return false;
+        }
+        if (!this.zoneVisibility) {
+            return true;
+        }
+        return this.zoneVisibility.isPositionUnlocked(worldX, worldZ);
     }
 
     public destroy(): void {

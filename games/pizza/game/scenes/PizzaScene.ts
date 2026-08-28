@@ -67,6 +67,8 @@ import ShapeResourceSpawner from '../world/ShapeResourceSpawner';
 import AnimalNode from '../player/AnimalNode';
 import { AnimalFollowStorage } from '../data/AnimalFollowStorage';
 import UIService from '../ui/UIService';
+import InGameButtonList from '../ui/InGameButtonList';
+import { clearAllPlayerData } from '../data/PlayerDataReset';
 import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { BuildingStorage } from '../data/BuildingStorage';
@@ -233,10 +235,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private readonly worldSpawner = new WorldSpawner();
 
     /** Scatters loose, dynamically-spawned resources (currently just the test "bark") across worldSpawner's own clusters — see DynamicResourceSpawner.ts/DynamicResourceTypes.ts. */
-    private readonly dynamicResourceSpawner = new DynamicResourceSpawner(this.world, this.threeScene, this.screenHost, this.worldSpawner);
+    private readonly dynamicResourceSpawner = new DynamicResourceSpawner(this.world, this.threeScene, this.screenHost, this.worldSpawner, undefined, this.worldManager.getZoneVisibilityManager());
 
     /** Sibling to dynamicResourceSpawner — scatters loose resources inside hand-drawn "spawner" AREA objects (e.g. "animalSpawner1") instead of a painted tile cluster — see ShapeResourceSpawner.ts/ShapeResourceTypes.ts. */
-    private readonly shapeResourceSpawner = new ShapeResourceSpawner(this.world, this.threeScene, this.screenHost, this.worldObjects);
+    private readonly shapeResourceSpawner = new ShapeResourceSpawner(this.world, this.threeScene, this.screenHost, this.worldObjects, undefined, this.worldManager.getZoneVisibilityManager());
 
     /** Every live CraftZone, keyed by craft id — see setupCraftTables()/resetCraftingProgress()'s own doc for why this has to be tracked rather than just re-derived from the map each time. */
     private readonly craftZones = new Map<string, CraftZone>();
@@ -338,6 +340,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // Built before registerQueueSpawnGates() — a queue's reward flies to this UI's wallet
         // icon (see registerQueueSpawnGates()), so the panel has to exist first.
         this.uiService = new UIService(this.game, () => this.toggleCameraMode());
+        this.setupDebugButtons();
         this.registerQueueSpawnGates();
         this.registerShopSpawnGates();
         this.setupCraftTables();
@@ -695,6 +698,19 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         });
     }
 
+    /**
+     * "Clear Data" and "Open Next Zone" — quick, always-visible in-game buttons (see
+     * InGameButtonList.ts's own doc) for testing the zone-lock system without opening the
+     * Settings popup or the dev GUI overlay every time. "Clear Data" is the exact same reset +
+     * reload as the Settings popup's own button (see PlayerDataReset.ts). "Open Next Zone"
+     * calls WorldManager.revealNextZone() — a debug-only sequential unlock, one zone per click,
+     * independent of any real requirement/trigger system.
+     */
+    private setupDebugButtons(): void {
+        InGameButtonList.registerButton('Clear Data', () => clearAllPlayerData());
+        InGameButtonList.registerButton('Open Next Zone', () => this.worldManager.revealNextZone());
+    }
+
     /** The task's own collision test: a static box offset from spawn along Z only — walking the player into it should stop them instead of clipping through. */
     private setupTestBox(): void {
         const box = this.world.spawn();
@@ -719,6 +735,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private setupDropZone(): void {
         const dropZone = this.world.add(new DropZone(DROP_ZONE_OFFSET, this.screenHost));
         this.threeScene.add(dropZone.transform);
+        this.registerZoneVisibility(dropZone.transform, DROP_ZONE_OFFSET.x, DROP_ZONE_OFFSET.z, 1, 1);
     }
 
     /**
@@ -769,6 +786,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     triggerArea,
                 ));
                 this.threeScene.add(buildingZone.transform);
+                this.registerZoneVisibility(buildingZone.transform, position.x, position.z, placement.width, placement.depth);
             });
         }
 
@@ -833,6 +851,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 viewRotationOffsetDeg: (config.viewRotationOffsetDeg ?? 0) - placement.rotationDeg,
             }));
             this.threeScene.add(gate.transform);
+            this.registerZoneVisibility(gate.transform, placement.x, placement.z, colliderWidth, colliderDepth);
 
             if (gate.isRequirementMet()) {
                 GateStorage.unlock(id);
@@ -865,6 +884,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     },
                 ));
                 this.threeScene.add(dropZone.transform);
+                this.registerZoneVisibility(dropZone.transform, dropperPlacement.x, dropperPlacement.z, dropperPlacement.width, dropperPlacement.depth);
                 continue;
             }
 
@@ -951,6 +971,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             });
             entity.addComponent(visual);
             this.threeScene.add(entity.transform);
+            this.registerZoneVisibility(entity.transform, placement.x, placement.z, placement.worldWidth, placement.worldDepth);
         }
     }
 
@@ -989,10 +1010,12 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 ));
                 this.threeScene.add(queueZone.transform);
                 this.queueZones.set(id, queueZone);
+                this.registerZoneVisibility(queueZone.transform, position.x, position.z, placement.width, placement.depth);
 
                 if (hasGiverPath) {
                     const questGiver = this.world.add(new QuestGiverEntity(id, waypoints, questGiverConfig!));
                     this.threeScene.add(questGiver.transform);
+                    this.registerZoneVisibility(questGiver.transform, position.x, position.z, placement.width, placement.depth);
                 }
             });
         }
@@ -1038,6 +1061,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     triggerArea,
                 ));
                 this.threeScene.add(shopZone.transform);
+                this.registerZoneVisibility(shopZone.transform, position.x, position.z, placement.width, placement.depth);
             });
         }
     }
@@ -1109,7 +1133,21 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             ));
             this.threeScene.add(craftZone.transform);
             this.craftZones.set(id, craftZone);
+            this.registerZoneVisibility(craftZone.transform, position.x, position.z, placement.width, placement.depth);
         }
+    }
+
+    /**
+     * Registers `transform` with WorldManager's ZoneVisibilityManager (solution 2 — see
+     * FogOfWarConfig.ts) so its visibility tracks whichever zone(s) its footprint overlaps —
+     * a one-line no-op under FogOfWarStyle.BoxCloud (getZoneVisibilityManager() returns
+     * undefined there; solution 1's opaque boxes handle hiding instead). Every building/gate/
+     * drop-zone/queue/quest-giver/shop/craft-table spawn site calls this right after adding
+     * its own transform to threeScene, mirroring how WorldManager registers its own ground
+     * meshes/resource nodes.
+     */
+    private registerZoneVisibility(transform: THREE.Object3D, worldX: number, worldZ: number, width: number, depth: number): void {
+        this.worldManager.getZoneVisibilityManager()?.register(transform, worldX, worldZ, width, depth);
     }
 
     /**

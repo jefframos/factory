@@ -77,6 +77,8 @@ interface Row {
     readonly iconBaseScale: number;
     readonly label: PIXI.Text;
     readonly resourceType: ResourceType;
+    /** In-flight "+N" popup rise/fade tweens (see playGainFeedback()) — killed in removeRow() so a gain popup mid-animation doesn't outlive its row's container. */
+    readonly popupTweens: gsap.core.Tween[];
 }
 
 export default class BackpackListUI extends PIXI.Container {
@@ -161,7 +163,7 @@ export default class BackpackListUI extends PIXI.Container {
         icon.scale.set(iconBaseScale);
         container.addChild(icon);
 
-        const row: Row = { container, iconBg, icon, iconBaseScale, label, resourceType: type };
+        const row: Row = { container, iconBg, icon, iconBaseScale, label, resourceType: type, popupTweens: [] };
         this.rows.push(row);
         this.rowsByType.set(type, row);
         this.layout();
@@ -176,6 +178,8 @@ export default class BackpackListUI extends PIXI.Container {
         }
 
         gsap.killTweensOf(row.icon.scale);
+        row.popupTweens.forEach(tween => tween.kill());
+        row.popupTweens.length = 0;
         row.container.destroy({ children: true });
         this.rowsByType.delete(type);
 
@@ -219,7 +223,7 @@ export default class BackpackListUI extends PIXI.Container {
 
         const progress = { t: 0 };
         const baseY = popup.position.y;
-        gsap.to(progress, {
+        const tween = gsap.to(progress, {
             t: 1,
             duration: GAIN_POPUP_DURATION_SEC,
             ease: 'power2.out',
@@ -227,8 +231,15 @@ export default class BackpackListUI extends PIXI.Container {
                 popup.position.y = baseY - progress.t * GAIN_POPUP_RISE_PX;
                 popup.alpha = 1 - progress.t;
             },
-            onComplete: () => popup.destroy(),
+            onComplete: () => {
+                const index = row.popupTweens.indexOf(tween);
+                if (index !== -1) {
+                    row.popupTweens.splice(index, 1);
+                }
+                popup.destroy();
+            },
         });
+        row.popupTweens.push(tween);
     }
 
     public override destroy(options?: Parameters<PIXI.Container['destroy']>[0]): void {

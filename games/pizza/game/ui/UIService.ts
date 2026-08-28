@@ -19,10 +19,8 @@
 // manager object" shape as WorldManager/GateManager, just for 2D HUD instead
 // of 3D world state.
 
-import * as PIXI from 'pixi.js';
 import BaseButton from 'core/ui/BaseButton';
 import { Game } from 'core/Game';
-import { TextStyleRegistry } from './TextStyleRegistry';
 import BackpackUI from './BackpackUI';
 import BackpackListUI from './BackpackListUI';
 import AnimalFollowUI from './AnimalFollowUI';
@@ -33,6 +31,7 @@ import ToolLevelUI from './ToolLevelUI';
 import ToolListUI from './ToolListUI';
 import SettingsUIService, { SETTINGS_ROW_BUTTON_SIZE, SETTINGS_ROW_TOP_LEFT_MARGIN } from './SettingsUIService';
 import { UpgradeNotificationManager } from './notifications/UpgradeNotificationManager';
+import InGameButtonList from './InGameButtonList';
 
 /** Gap between the backpack HUD panel's bottom edge and the actual bottom of the screen — see positionBackpackUi(). Only relevant if backpackUi is switched back on — see that field's own comment. */
 const BACKPACK_UI_BOTTOM_MARGIN = 16;
@@ -54,7 +53,7 @@ const GLOBAL_RESOURCES_UI_MARGIN = 16;
 /** Gap between the economy (money) HUD panel's top/right edges and the actual top-right corner of the screen — see positionEconomyUi(). Same spot globalResourcesUi would occupy (that panel is currently not added to the display tree), so no visual collision. */
 const ECONOMY_UI_MARGIN = 16;
 
-/** Gap between the camera-toggle button's bottom/left edges and the actual bottom-left corner of the screen — see positionCameraToggleButton(). */
+/** Gap between the in-game button list's own top edge and the animal dock's bottom edge — see positionAnimalDockUi(). Distinct from InGameButtonList's OWN internal SCREEN_MARGIN (its bottom/left inset from the screen edge, not this stacking gap). */
 const CAMERA_TOGGLE_BUTTON_MARGIN = 16;
 
 /** Gap between the tool/level HUD panel's bottom/right edges and the actual bottom-right corner of the screen — see positionToolLevelUi(). Only relevant if toolLevelUi is switched back on — see that field's own comment. */
@@ -64,9 +63,6 @@ const TOOL_LEVEL_UI_MARGIN = 16;
 const TOOL_LIST_UI_MARGIN = SETTINGS_ROW_TOP_LEFT_MARGIN;
 /** Extra vertical gap below the settings/mute button row's own bottom edge before the tool list starts — see positionToolListUi(). */
 const TOOL_LIST_UI_TOP_GAP = 10;
-
-/** The camera-toggle button's own fixed size — shared between the constructor (building it) and positionCameraToggleButton() (which needs the height to land the button's bottom edge, not its top, at the screen's bottom edge). */
-const CAMERA_TOGGLE_BUTTON_SIZE = { width: 160, height: 48 };
 
 export default class UIService {
     private readonly game: Game;
@@ -95,7 +91,10 @@ export default class UIService {
     /** The tools, alternative style — a bare vertical icon+level list (no frame/title), pinned top-left under the settings/mute button row. This is the one actually wired into the display tree; see ToolListUI.ts's own doc for why it exists alongside toolLevelUi instead of replacing it. */
     public readonly toolListUi: ToolListUI;
 
-    /** Bottom-left toggle between the normal follow camera and a top-down view. No button texture art exists yet for pizza — PIXI.Texture.WHITE + tint is the same "flat colored placeholder until real art exists" convention BuildingMeshConfig/GateMeshConfig already use for meshes, just applied to a UI button instead. */
+    /** Bottom-left stack of small utility buttons — see InGameButtonList.ts's own doc. The camera-toggle button (this service's own registration, right below) is always the first one registered, so it stays anchored in the exact bottom-most slot a standalone button used to occupy. */
+    private readonly inGameButtonList: InGameButtonList;
+
+    /** Bottom-left toggle between the normal follow camera and a top-down view — registered on inGameButtonList like any other debug button (see PizzaScene.ts's own "Clear Data"/"Open Next Zone" registrations), just done here since UIService is what owns the camera-toggle callback. No button texture art exists yet for pizza — PIXI.Texture.WHITE + tint is the same "flat colored placeholder until real art exists" convention BuildingMeshConfig/GateMeshConfig already use for meshes, just applied to a UI button instead (see InGameButtonList.ts's own styling). */
     private readonly cameraToggleButton: BaseButton;
 
     /** Top-left mute + settings buttons, and the settings panel the gear button opens — see SettingsUIService.ts's own doc. */
@@ -133,24 +132,13 @@ export default class UIService {
         this.toolListUi = new ToolListUI();
         this.game.uiLayer.addChild(this.toolListUi);
 
-        this.cameraToggleButton = new BaseButton({
-            standard: {
-                width: CAMERA_TOGGLE_BUTTON_SIZE.width, height: CAMERA_TOGGLE_BUTTON_SIZE.height,
-                texture: PIXI.Texture.WHITE, tint: 0x2255aa,
-                fontStyle: new PIXI.TextStyle(TextStyleRegistry.Body),
-                fontColor: 0xffffff,
-            },
-            over: { tint: 0x336ecb },
-            down: { tint: 0x163d7a },
-            // The callback belongs on CLICK, not STANDARD — BaseButton.setState() fires
-            // attr.callback() unconditionally whenever it transitions INTO that state (see
-            // core/ui/BaseButton.ts's setState()), and setState(STANDARD) runs on
-            // construction AND every mouse-out, not just clicks. Putting the callback there
-            // would fire it on load and on every hover-away.
-            click: { callback: onCameraToggle },
-        });
-        this.cameraToggleButton.setLabel('Top-Down View');
-        this.game.uiLayer.addChild(this.cameraToggleButton);
+        this.inGameButtonList = new InGameButtonList();
+        this.game.uiLayer.addChild(this.inGameButtonList);
+        // Registered FIRST, before anything else (PizzaScene's own "Clear Data"/"Open Next
+        // Zone" buttons — see InGameButtonList.ts's own doc) gets a chance to register —
+        // that's what keeps this in the exact bottom-most slot a standalone button used to sit
+        // in, regardless of what else gets added later.
+        this.cameraToggleButton = InGameButtonList.registerButton('Top-Down View', onCameraToggle);
 
         this.settingsUi = new SettingsUIService(this.game);
         UpgradeNotificationManager.instance.init(this.game);
@@ -170,8 +158,8 @@ export default class UIService {
         this.positionGlobalResourcesUi();
         this.positionEconomyUi();
         this.positionBackpackListUi();
-        this.positionCameraToggleButton();
-        // Reads cameraToggleButton's own just-set position — must run after it (see this
+        this.inGameButtonList.update();
+        // Reads inGameButtonList's own just-set position — must run after it (see this
         // method's own doc on positionAnimalDockUi()).
         this.positionAnimalDockUi();
         this.positionToolLevelUi();
@@ -205,7 +193,7 @@ export default class UIService {
         );
     }
 
-    /** Bottom-left, stacked directly above the camera-toggle button (re-reads its own current position, already set for this frame by positionCameraToggleButton() right before this runs — see update()'s own call order) — same column, same left inset. Re-run every frame since the list's own size changes as followers join/leave, and it's hidden entirely (panelWidth/panelHeight both 0) at zero followers. */
+    /** Bottom-left, stacked directly above the WHOLE in-game button list (re-reads its own current top edge, already set for this frame by inGameButtonList.update() right before this runs — see update()'s own call order) — same column, same left inset. Re-run every frame since the list's own size changes as followers join/leave (and it's hidden entirely — panelWidth/panelHeight both 0 — at zero followers) AND since the button list's own height changes as more buttons get registered. */
     private positionAnimalDockUi(): void {
         const screen = Game.overlayScreenData;
         if (!screen) {
@@ -214,7 +202,7 @@ export default class UIService {
 
         this.animalDockUi.position.set(
             screen.bottomLeft.x + CAMERA_TOGGLE_BUTTON_MARGIN,
-            this.cameraToggleButton.position.y - this.animalDockUi.panelHeight - ANIMAL_DOCK_UI_BOTTOM_MARGIN,
+            this.inGameButtonList.getTopScreenY() - this.animalDockUi.panelHeight - ANIMAL_DOCK_UI_BOTTOM_MARGIN,
         );
     }
 
@@ -254,26 +242,6 @@ export default class UIService {
         this.backpackListUi.position.set(
             screen.topRight.x - this.backpackListUi.panelWidth - BACKPACK_LIST_UI_MARGIN,
             screen.topRight.y + this.economyUi.panelHeight + BACKPACK_LIST_UI_MARGIN + BACKPACK_LIST_UI_TOP_GAP,
-        );
-    }
-
-    /**
-     * Bottom-left, regardless of viewport size/aspect. BaseButton's anchor param only affects
-     * its INTERNAL pivot (see updateTexturePosition() — it sets both `pivot` and `x`/`y` to
-     * the same offset, which cancel out to the same rendered rect regardless of anchor), so
-     * this container's origin is always the button's own TOP-LEFT corner — same as BackpackUI,
-     * which is why this subtracts the full height, not just a margin, to land the button's
-     * BOTTOM edge (not its top) at the screen's bottom edge.
-     */
-    private positionCameraToggleButton(): void {
-        const screen = Game.overlayScreenData;
-        if (!screen) {
-            return;
-        }
-
-        this.cameraToggleButton.position.set(
-            screen.bottomLeft.x + CAMERA_TOGGLE_BUTTON_MARGIN,
-            screen.bottomLeft.y - CAMERA_TOGGLE_BUTTON_SIZE.height - CAMERA_TOGGLE_BUTTON_MARGIN,
         );
     }
 
@@ -320,7 +288,10 @@ export default class UIService {
         this.animalDockUi.destroy();
         this.globalResourcesUi.destroy();
         this.economyUi.destroy();
-        this.cameraToggleButton.destroy();
+        // Destroys every registered button (including cameraToggleButton, a child of it — see
+        // InGameButtonList.ts's own doc) as one call, `{ children: true }` — no separate
+        // cameraToggleButton.destroy() needed, and calling it twice would double-destroy.
+        this.inGameButtonList.destroy();
         this.toolLevelUi.destroy();
         this.toolListUi.destroy();
         this.settingsUi.destroy();
