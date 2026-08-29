@@ -50,6 +50,22 @@ import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { ASSET_LIBRARY, AssetLibraryEntry, getAssetIcon, pickRandom, resolveRange } from '../world/AssetLibraryRegistry';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 import ViewUtils from 'core/utils/ViewUtils';
+import { OcclusionFadeConfig } from '../services/BendService';
+
+/**
+ * Trees/rocks are exactly the props that fully swallow the player when they walk behind one
+ * (see BendService.applyOcclusionFade) — a wide-ish radius since trunks/canopies are chunky,
+ * and a low but non-zero minOpacity so the player reads as a faint silhouette instead of an
+ * invisible disappearance.
+ */
+const RESOURCE_NODE_OCCLUSION_FADE: OcclusionFadeConfig = {
+    radius: 1.4,
+    fadeWidth: 1.2,
+    minOpacity: 0.25,
+    // Flip to compare the smooth alpha blend (false) against a dithered discard cutout (true) —
+    // see OcclusionFadeConfig.dither's own doc.
+    dither: true,
+};
 
 /** Gather-radius trigger half-extents — bigger than the visual mesh itself, so the player doesn't have to walk INTO the trunk/rock to trigger gathering. */
 const TRIGGER_HALF_EXTENTS = new THREE.Vector3(1, 1, 1);
@@ -211,6 +227,8 @@ export default class ResourceNode extends Entity implements ActionTarget {
                 new THREE.Vector3(),
                 resolveRange(visualConfig.scale),
                 resolveRange(visualConfig.rotationDeg) * (Math.PI / 180),
+                undefined,
+                RESOURCE_NODE_OCCLUSION_FADE,
             ))
             : this.addComponent(new BoxVisualComponent(
                 STONE_HALF_EXTENTS.clone().multiplyScalar(2), config.color,

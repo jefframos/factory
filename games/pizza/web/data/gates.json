@@ -2,10 +2,14 @@
     "gateAxe": {
         "name": "Axe Gate",
         "requirement": {
-            "type": "item",
-            "item": "axe"
+            "type": "resource",
+            "resourceType": "wood",
+            "amount": 5
         },
-        "view": "gateAxeView"
+        "view": "gateAxeView",
+        "particleEffectId": "gateMyst",
+        "destroyParticleEffectId": "destroyBurst",
+        "cameraFocusHeightOffset": 5
     },
     "gate1": {
         "name": "North Gate",
@@ -13,7 +17,10 @@
             "type": "building",
             "buildingId": "tower",
             "level": 2
-        }
+        },
+        "particleEffectId": "gateMyst",
+        "destroyParticleEffectId": "destroyBurst",
+        "cameraFocusHeightOffset": 2
     },
     "gateTest": {
         "name": "gateTest",
@@ -22,6 +29,9 @@
             "resourceType": "stone",
             "amount": 1
         },
-        "view": "gateAxeView"
+        "view": "gateAxeView",
+        "destroyParticleEffectId": "destroyBurst",
+        "particleEffectId": "gateMyst",
+        "cameraFocusHeightOffset": 2
     }
 }

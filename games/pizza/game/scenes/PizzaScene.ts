@@ -118,7 +118,7 @@ import GlbVisualComponent from '../components/GlbVisualComponent';
 const CAMERA_SETTINGS = {
     yawDeg: 5,
     pitchDeg: 45,
-    distance: 15,
+    distance: 12,
     followSpeed: 10,
 };
 
@@ -202,6 +202,9 @@ const DEFAULT_FOCUS_TRAVEL_SEC = 0.8;
 const DEFAULT_FOCUS_HOLD_SEC = 1.5;
 
 /** How often fixedUpdate() re-checks/persists the player's current position as the new "last stable tile" — see PlayerPositionStorage.ts's own doc. Every tick would be wasteful (this never needs to be more precise than "somewhere in the last couple seconds"). */
+/** Vertical offset from playerPosition (feet/base) up to roughly torso height — see BendService.applyOcclusionFade's own doc for why occlusion targets this instead of the base. Tune this against the actual character model's height. */
+const OCCLUSION_TARGET_HEIGHT_OFFSET = 0.9;
+
 const PLAYER_POSITION_CHECK_INTERVAL_SEC = 2;
 /** How close a NOT-YET-DEPLETED resource has to be to the player's own position to count as "on top of" it — see WorldManager.hasResourceAt(). Roughly half a tile (TileMapConfig.WORLD_UNITS_PER_TILE is 2), tight enough to only reject a position that's actually standing on the resource's own footprint, not merely near it. */
 const PLAYER_STABLE_TILE_RESOURCE_RADIUS = 1;
@@ -287,6 +290,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * AND gaze move together, continuously, through the whole focus/return trip.
      */
     private readonly smoothedFollowTarget = new THREE.Vector3();
+    /** Scratch vector for updateOcclusionTarget() below — reused per fixedUpdate() to avoid an allocation every step. */
+    private readonly occlusionTargetScratch = new THREE.Vector3();
     /** Seconds since the last stable-tile check/save — see PLAYER_POSITION_CHECK_INTERVAL_SEC's own doc and fixedUpdate(). */
     private playerPositionCheckAccumSec = 0;
 
@@ -1362,6 +1367,12 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
          */
         BendService.updateOrigin(playerPosition);
 
+        // Occlusion targets roughly torso height, not the feet uBendOrigin above tracks —
+        // see OCCLUSION_TARGET_HEIGHT_OFFSET's own doc.
+        BendService.updateOcclusionTarget(
+            this.occlusionTargetScratch.copy(playerPosition).setY(playerPosition.y + OCCLUSION_TARGET_HEIGHT_OFFSET),
+        );
+
         // Streams resource nodes in/out around the player and keeps off-screen respawn
         // timers ticking — see WorldManager.update()'s own doc.
         this.worldManager.update(playerPosition, delta);
@@ -1395,6 +1406,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.threeCamera.up.copy(cameraUpVector(CAMERA_SETTINGS.yawDeg, offset));
         this.threeCamera.position.copy(this.smoothedFollowTarget).add(offset);
         this.threeCamera.lookAt(this.smoothedFollowTarget);
+
+        // Feeds BendService.applyOcclusionFade()'s camera->player cutout — same clock as the
+        // camera move itself above, so there's no lag between where the camera actually is
+        // and what the occlusion shader thinks it is.
+        BendService.updateCameraPosition(this.threeCamera.position);
     }
 
     /**

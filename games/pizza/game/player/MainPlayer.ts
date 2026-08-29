@@ -32,6 +32,8 @@ import { ActionType } from '../actions/ActionTypes';
 import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
 import { getStarterCharacterView } from '../data/CharacterViewTypes';
+import { ItemStorage } from '../crafting/ItemStorage';
+import { ItemType } from '../crafting/ItemTypes';
 
 /** Player collider half-extents, roughly a standing human's box. */
 const HALF_EXTENTS = new THREE.Vector3(0.4, 0.9, 0.4);
@@ -43,6 +45,18 @@ const FALLBACK_CHARACTER_VIEW = { color: '#4aba8a', headShape: 'cube' as const, 
 /** Model-registry entries only carry a repo-relative fullPath (e.g. "pizza/models/..."); served at runtime from ./pizza/... (see public/pizza/models). Works on localhost and GitHub Pages. */
 const modelUrl = (fullPath: string): string => `./${fullPath}`;
 
+/**
+ * Action-layer clips gated behind actually owning the matching tool — see loadCharacter()'s
+ * own doc. Idle/run/pick are the only clips every player needs from frame one (pick is
+ * bare-handed gathering); chop/mine are dead weight on first load for a brand-new save,
+ * which starts with zero items (see ItemStorage.ts's own doc), so they're loaded lazily
+ * instead of blocking the initial spinner.
+ */
+const TOOL_ACTION_ANIMATIONS: Partial<Record<ItemType, { trigger: string; modelPath: string }>> = {
+    [ItemType.Axe]: { trigger: 'chop', modelPath: MODELS.Characters.StandingMeleeAttackDownwardCHOP.fullPath },
+    [ItemType.Pickaxe]: { trigger: 'mine', modelPath: MODELS.Characters.StandingPICKAXE.fullPath },
+};
+
 export default class MainPlayer extends Entity {
     private readonly inputHost: MovementInputHost;
     /** Only needed for loadCharacter() to parent the loaded rig's container directly into the 3D scene — CharacterVisualComponent itself deliberately doesn't do this (see its own doc: ThirdPersonCharacter.update() sets the container's position in WORLD space, so it can't be a child of entity.transform without double-applying that offset). */
@@ -50,6 +64,11 @@ export default class MainPlayer extends Entity {
     private thirdPersonCharacter?: ThirdPersonCharacter;
     /** Guards loadCharacter()'s continuation against attaching a component to an entity that got destroyed (or pooled/reused as something else) while the FBX load was still in flight. */
     private destroyed = false;
+
+    /** Trigger ids (e.g. 'chop') already registered/in-flight — see registerToolAnimation(), guards against double-loading the same clip if ItemStorage.onChange fires again for a tool already owned. */
+    private readonly registeredToolAnimations = new Set<string>();
+    /** Bound ItemStorage.onChange listener — see loadCharacter(); torn down in destroy() so a destroyed player doesn't keep loading clips for an entity that's gone. */
+    private itemStorageListener?: (type: ItemType) => void;
 
     /** Optional — powers PlayerUIAvoidanceComponent (see awake()), which needs a way to project the player's head into screen space. Omitted by the headless test harness (scripts/test-gather.ts), which has no PIXI/overlay at all — the player just doesn't get a UI-avoidance region there, since there's no UI to avoid. */
     private readonly screenHost?: ScreenAnchorHost;
@@ -142,11 +161,18 @@ export default class MainPlayer extends Entity {
     }
 
     /**
-     * Loads the FBX character + its animation clips and wires up the same
-     * idle/run/jump state graph the source project used (see
-     * ThirdPersonCharacter.setUp()), then attaches CharacterVisualComponent
-     * so it starts tracking the RigidBody that's already been moving this
-     * whole time. See this class's own doc — movement never waits on this.
+     * Loads the FBX character + the clips every player needs from the very first frame
+     * (idle/run/pick — pick covers bare-handed gathering) and wires up the same idle/run/jump
+     * state graph the source project used (see ThirdPersonCharacter.setUp()), then attaches
+     * CharacterVisualComponent so it starts tracking the RigidBody that's already been moving
+     * this whole time. See this class's own doc — movement never waits on this.
+     *
+     * chop/mine are deliberately NOT awaited here — see TOOL_ACTION_ANIMATIONS's own doc:
+     * they're only worth the load time once the player actually owns the matching tool, so
+     * they're kicked off separately (in the background, for whatever's already owned) once
+     * this resolves, and picked up lazily via ItemStorage.onChange the moment a new one is
+     * crafted. That keeps the loading-spinner window (see PizzaScene.loadPlayerCharacter())
+     * as short as possible for a brand-new save, which starts with zero tools.
      */
     public async loadCharacter(): Promise<void> {
         const character = new ThirdPersonCharacter();
@@ -159,11 +185,6 @@ export default class MainPlayer extends Entity {
         // await character.registerAnimation('falling', modelUrl(MODELS.Characters.FallingIdle.fullPath));
         // await character.registerAnimation('landing', modelUrl(MODELS.Characters.Landing.fullPath));
         // await character.registerAnimation('roll', modelUrl(MODELS.Characters.Roll.fullPath));
-        // Ids here MUST match ACTION_CONFIG's animationTrigger values ('chop'/'mine'/'pick') —
-        // that's what PlayerActionController plays on the animator's ACTION layer, not the
-        // idle/run/jump board (see AnimatorController's own doc).
-        await character.registerAnimation('chop', modelUrl(MODELS.Characters.StandingMeleeAttackDownwardCHOP.fullPath));
-        await character.registerAnimation('mine', modelUrl(MODELS.Characters.StandingPICKAXE.fullPath));
         character.setUp();
         // DEBUG — permanent marker at the RightHand bone's own origin, so tool
         // placement bugs can be narrowed to "the bone tracking is wrong" vs "the
@@ -188,10 +209,44 @@ export default class MainPlayer extends Entity {
         this.threeScene.add(character.container);
         this.thirdPersonCharacter = character;
         this.addComponent(new CharacterVisualComponent(character));
+
+        // Load chop/mine now for whatever tool the player already owns (a returning save),
+        // and subscribe so crafting a NEW tool later loads its clip too — see
+        // TOOL_ACTION_ANIMATIONS's own doc. Neither branch is awaited: same "cosmetic, never
+        // gates gameplay" contract as the rest of loadCharacter() — PlayerActionController
+        // already no-ops chop/mine harmlessly (no visible swing, hits still land, see its own
+        // doc) until whichever of these resolves.
+        for (const [itemType, anim] of Object.entries(TOOL_ACTION_ANIMATIONS) as [ItemType, { trigger: string; modelPath: string }][]) {
+            if (ItemStorage.hasCount(itemType, 1)) {
+                void this.registerToolAnimation(anim);
+            }
+        }
+
+        this.itemStorageListener = (itemType: ItemType) => {
+            const anim = TOOL_ACTION_ANIMATIONS[itemType];
+            if (anim) {
+                void this.registerToolAnimation(anim);
+            }
+        };
+        ItemStorage.onChange.add(this.itemStorageListener);
+    }
+
+    /** Registers one tool's action-layer clip on the loaded character, if it isn't already registered/in-flight — see TOOL_ACTION_ANIMATIONS's own doc. */
+    private async registerToolAnimation(anim: { trigger: string; modelPath: string }): Promise<void> {
+        if (!this.thirdPersonCharacter || this.registeredToolAnimations.has(anim.trigger)) {
+            return;
+        }
+
+        this.registeredToolAnimations.add(anim.trigger);
+        await this.thirdPersonCharacter.registerAnimation(anim.trigger, modelUrl(anim.modelPath));
     }
 
     public override destroy(): void {
         this.destroyed = true;
+        if (this.itemStorageListener) {
+            ItemStorage.onChange.remove(this.itemStorageListener);
+            this.itemStorageListener = undefined;
+        }
         // CharacterVisualComponent.destroy() (if it was ever attached — see loadCharacter())
         // already destroys `character` as part of the component teardown below; nothing
         // extra to do here if the FBX load never got that far.

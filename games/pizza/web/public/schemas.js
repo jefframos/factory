@@ -148,6 +148,7 @@ const ENTITY_SCHEMAS = {
         { key: 'particleEffectId', type: 'select', label: 'Particle Effect (ambient, while the gate stands)', source: 'particleEffects', optional: true },
         { key: 'destroyParticleEffectId', type: 'select', label: 'Destroy Particle Effect (fires when the gate finishes collapsing)', source: 'particleEffects', optional: true },
         { key: 'destroyParticleCount', type: 'number', label: 'Destroy Particle Count', optional: true },
+        { key: 'cameraFocusHeightOffset', type: 'number', label: 'Camera Focus Height Offset (raises the camera\'s look-at point during the unlock sequence, which pushes the gate lower on screen — blank = centered on the gate)', optional: true },
     ],
     buildings: [
         { key: 'name', type: 'text', label: 'Name' },

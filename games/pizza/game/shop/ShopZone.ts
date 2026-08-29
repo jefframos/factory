@@ -281,13 +281,25 @@ export default class ShopZone extends Entity {
         super.destroy();
     }
 
-    /** Ticks the cooldown countdown TEXT every frame while on cooldown — same reasoning as QueueZone.update()'s identical tick: nothing else re-dispatches onChange purely because a second elapsed, so the "Ns" readout would otherwise freeze at whatever it said the moment the level completed. Cheap no-op the rest of the time. */
+    /**
+     * True as of the last update() tick — lets update() below tell "still counting down"
+     * apart from "just finished this frame," so it can fire exactly one extra refreshLabel()
+     * the moment the cooldown expires. Without that trailing call, the panel would freeze on
+     * whatever it last rendered ("0s") forever: nothing else re-dispatches onChange purely
+     * because a second elapsed, and this loop stops calling refreshLabel() the instant
+     * isOnCooldown() goes false, one tick too early to ever repaint the next-upgrade view.
+     */
+    private wasOnCooldown = false;
+
+    /** Ticks the cooldown countdown TEXT every frame while on cooldown — same reasoning as QueueZone.update()'s identical tick — and repaints once more on the transition out, so the panel swaps over to the next upgrade's cost row (or "MAX") the instant the countdown reaches 0 instead of sitting frozen on "0s". Cheap no-op the rest of the time. */
     public override update(delta: number): void {
         super.update(delta);
 
-        if (ShopUpgradeStorage.isOnCooldown(this.shopId)) {
+        const onCooldown = ShopUpgradeStorage.isOnCooldown(this.shopId);
+        if (onCooldown || this.wasOnCooldown) {
             this.refreshLabel();
         }
+        this.wasOnCooldown = onCooldown;
     }
 
     /**

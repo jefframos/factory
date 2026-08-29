@@ -49,6 +49,10 @@ export default class MyGame extends Game {
 
     constructor() {
         super({ resolution: Math.min(2, devicePixelRatio), backgroundAlpha: 0 }, false);
+        const scl = 0.85
+        Game.DESIGN_WIDTH = 720 * scl
+        Game.DESIGN_HEIGHT = 1080 * scl
+        this.onResize()
         this.loaderScene = new HtmlLoader(loaderConfig);
         PIXI.Ticker.shared.maxFPS = 60;
 

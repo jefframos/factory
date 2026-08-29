@@ -100,14 +100,6 @@
         "rotationDeg": 0,
         "amountPerGather": 1
     },
-    "rope": {
-        "models": [],
-        "label": "Rope",
-        "icon": "rope-coil",
-        "scale": 1,
-        "rotationDeg": 0,
-        "amountPerGather": 1
-    },
     "pig": {
         "models": [
             "Pets.AnimalPig"

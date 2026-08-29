@@ -1,5 +1,26 @@
 import * as THREE from 'three';
 
+/** Tunable knobs for BendService.applyOcclusionFade() — see that method's own doc. */
+export interface OcclusionFadeConfig {
+    /** World-unit radius around the camera->player line that's fully cut out. Default 1.2. */
+    radius?: number;
+    /** Extra distance beyond `radius` over which opacity eases back up to maxOpacity. Default 1.5. */
+    fadeWidth?: number;
+    /** Opacity for a fragment sitting right on the camera->player line. Default 0.15. */
+    minOpacity?: number;
+    /** Opacity once past radius+fadeWidth, i.e. the material's normal look. Default 1.0. */
+    maxOpacity?: number;
+    /**
+     * When true, cuts fragments out via a per-pixel dithered discard instead of alpha-blending
+     * diffuseColor.a. Keeps the material fully OPAQUE (transparent stays false) — no blend
+     * sorting against other transparent props, no depth-write-off artifacts, closer to the
+     * "true cutout" the stencil alternative would have given, just cheaper. The tradeoff is a
+     * visible stipple/noise texture in the faded region instead of a smooth fade — that's the
+     * whole point of flipping this on to compare against the default smooth blend. Default false.
+     */
+    dither?: boolean;
+}
+
 /**
  * Radial world-bend: the ground curves away from the player in all directions.
  *
@@ -12,8 +33,17 @@ import * as THREE from 'three';
  */
 export class BendService {
     public static uniforms = {
-        uBendOrigin:   { value: new THREE.Vector3() },
+        uBendOrigin: { value: new THREE.Vector3() },
         uBendStrength: { value: 0.002 },
+        /** World-space camera position, read by applyOcclusionFade() — see updateCameraPosition(). */
+        uOccCameraPos: { value: new THREE.Vector3() },
+        /**
+         * The "player" end of the occlusion segment — deliberately its OWN uniform rather than
+         * reusing uBendOrigin (the player's base/feet, which is what the ground-bend math
+         * needs). Occlusion reads much better centered on the character's torso/head, since
+         * that's the mass a tree trunk actually swallows — see updateOcclusionTarget().
+         */
+        uOccPlayerPos: { value: new THREE.Vector3() },
     };
 
     /** Remembers the last non-zero strength so setEnabled(true) restores whatever it was tuned to, rather than a hardcoded default. */
@@ -21,6 +51,20 @@ export class BendService {
 
     public static updateOrigin(position: THREE.Vector3): void {
         this.uniforms.uBendOrigin.value.copy(position);
+    }
+
+    /** Feeds the camera's current world position to every material bent via applyOcclusionFade(). Call once per render frame (see PizzaScene.update()). */
+    public static updateCameraPosition(position: THREE.Vector3): void {
+        this.uniforms.uOccCameraPos.value.copy(position);
+    }
+
+    /**
+     * Sets the "player" end of the occlusion segment. `position` should already be wherever
+     * you want the cutout centered on (e.g. playerPosition + a vertical offset for torso/head
+     * height) — this method doesn't add anything itself, so the caller controls the offset.
+     */
+    public static updateOcclusionTarget(position: THREE.Vector3): void {
+        this.uniforms.uOccPlayerPos.value.copy(position);
     }
 
     /**
@@ -65,8 +109,8 @@ export class BendService {
         material.onBeforeCompile = (shader, renderer) => {
             prev(shader, renderer);
             shader.uniforms.uFadeFrom = { value: fadeFrom };
-            shader.uniforms.uFadeTo   = { value: fadeTo };
-            shader.vertexShader   = 'varying float vWorldY;\n' + shader.vertexShader;
+            shader.uniforms.uFadeTo = { value: fadeTo };
+            shader.vertexShader = 'varying float vWorldY;\n' + shader.vertexShader;
             shader.fragmentShader = 'uniform float uFadeFrom;\nuniform float uFadeTo;\nvarying float vWorldY;\n' + shader.fragmentShader;
             shader.vertexShader = shader.vertexShader.replace(
                 '#include <begin_vertex>',
@@ -93,7 +137,7 @@ export class BendService {
             prev(shader, renderer);
             shader.uniforms.uBendOrigin = BendService.uniforms.uBendOrigin;
             shader.uniforms.uDistFadeStart = { value: fadeStart };
-            shader.uniforms.uDistFadeEnd   = { value: fadeEnd };
+            shader.uniforms.uDistFadeEnd = { value: fadeEnd };
             shader.vertexShader = 'varying vec2 vWorldXZ;\n' + shader.vertexShader;
             shader.fragmentShader = [
                 'uniform vec3  uBendOrigin;',
@@ -108,6 +152,114 @@ export class BendService {
             shader.fragmentShader = shader.fragmentShader.replace(
                 '#include <alphamap_fragment>',
                 '#include <alphamap_fragment>\nfloat _xzDist = length(vWorldXZ - uBendOrigin.xz);\ndiffuseColor.a *= 1.0 - smoothstep(uDistFadeStart, uDistFadeEnd, _xzDist);',
+            );
+        };
+        material.needsUpdate = true;
+    }
+
+    /**
+     * Camera-occlusion cutout: fades diffuseColor.a for any fragment sitting close to the
+     * camera→player line, so props between the camera and the character thin out instead of
+     * fully hiding them. Cheaper than a stencil-mask pass — no extra render target or draw
+     * call, just a per-fragment distance-to-segment test reusing the SAME uBendOrigin (player
+     * position) uniform every bent material already reads, plus the shared uOccCameraPos
+     * uniform updated once per frame from PizzaScene (see updateCameraPosition()).
+     *
+     * `config` is per-material on purpose (unlike uBendStrength/uBendOrigin, which are shared
+     * globals) — a thin fence post and a big prop shed both want to occlude, but with very
+     * different radius/opacity so the fence barely dims while the shed cuts out hard.
+     */
+    private static readonly occludedMaterials = new WeakSet<THREE.Material>();
+
+    public static applyOcclusionFade(material: THREE.Material, config: OcclusionFadeConfig = {}): void {
+        if (BendService.occludedMaterials.has(material)) {
+            return;
+        }
+        BendService.occludedMaterials.add(material);
+
+        const radius = config.radius ?? 1.2;
+        const fadeWidth = Math.max(config.fadeWidth ?? 1.5, 0.001); // 0 would divide-by-zero in smoothstep
+        const minOpacity = config.minOpacity ?? 0.15;
+        const maxOpacity = config.maxOpacity ?? 1.0;
+        const dither = config.dither ?? false;
+
+        // Dithered discard needs no blending at all — leave the material opaque. The smooth
+        // path still needs alpha blending, same as every other *Fade method in this file.
+        material.transparent = !dither;
+        const prev = material.onBeforeCompile;
+        material.onBeforeCompile = (shader, renderer) => {
+            prev(shader, renderer);
+            shader.uniforms.uOccCameraPos = BendService.uniforms.uOccCameraPos;
+            shader.uniforms.uOccPlayerPos = BendService.uniforms.uOccPlayerPos;
+            shader.uniforms.uOccRadius = { value: radius };
+            shader.uniforms.uOccFadeWidth = { value: fadeWidth };
+            shader.uniforms.uOccMinOpacity = { value: minOpacity };
+            shader.uniforms.uOccMaxOpacity = { value: maxOpacity };
+
+            shader.vertexShader = 'varying vec3 vOccWorldPos;\n' + shader.vertexShader;
+            // Ordered 4x4 Bayer matrix, evaluated with an if-chain instead of a dynamically-
+            // indexed array (GLSL ES 1.00 / WebGL1 doesn't allow indexing an array with a
+            // non-constant expression) — same 16 evenly-spaced threshold levels every classic
+            // ordered-dither implementation uses, giving a regular stipple grid instead of the
+            // clumpy look a pure hash/noise threshold produces.
+            const bayerFn = dither ? `
+                float _occBayer4x4(vec2 fragCoord) {
+                    int ix = int(mod(fragCoord.x, 4.0));
+                    int iy = int(mod(fragCoord.y, 4.0));
+                    int index = ix + iy * 4;
+                    if (index == 0)  return 0.0  / 16.0;
+                    if (index == 1)  return 8.0  / 16.0;
+                    if (index == 2)  return 2.0  / 16.0;
+                    if (index == 3)  return 10.0 / 16.0;
+                    if (index == 4)  return 12.0 / 16.0;
+                    if (index == 5)  return 4.0  / 16.0;
+                    if (index == 6)  return 14.0 / 16.0;
+                    if (index == 7)  return 6.0  / 16.0;
+                    if (index == 8)  return 3.0  / 16.0;
+                    if (index == 9)  return 11.0 / 16.0;
+                    if (index == 10) return 1.0  / 16.0;
+                    if (index == 11) return 9.0  / 16.0;
+                    if (index == 12) return 15.0 / 16.0;
+                    if (index == 13) return 7.0  / 16.0;
+                    if (index == 14) return 13.0 / 16.0;
+                    return 5.0 / 16.0;
+                }
+            ` : '';
+            shader.fragmentShader = [
+                'uniform vec3  uOccCameraPos;',
+                'uniform vec3  uOccPlayerPos;',
+                'uniform float uOccRadius;',
+                'uniform float uOccFadeWidth;',
+                'uniform float uOccMinOpacity;',
+                'uniform float uOccMaxOpacity;',
+                'varying vec3  vOccWorldPos;',
+                bayerFn,
+            ].join('\n') + '\n' + shader.fragmentShader;
+            shader.vertexShader = shader.vertexShader.replace(
+                '#include <begin_vertex>',
+                '#include <begin_vertex>\nvOccWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;',
+            );
+            // Distance from this fragment to the closest point on the camera->player segment
+            // (clamped projection `h`, standard point-to-segment formula) — fragments near
+            // that line are "in the way" regardless of how far along the line they sit.
+            //
+            // _occAlpha is shared by both branches below: it's exactly what the smooth path
+            // multiplies into diffuseColor.a, and exactly what the dithered path compares a
+            // per-pixel noise threshold against — same falloff curve, two different ways of
+            // expressing it on screen.
+            const occlusionTail = dither
+                ? `float _occDitherThreshold = _occBayer4x4(gl_FragCoord.xy);
+                if (_occDitherThreshold > _occAlpha) discard;`
+                : 'diffuseColor.a *= _occAlpha;';
+            shader.fragmentShader = shader.fragmentShader.replace(
+                '#include <alphamap_fragment>',
+                `#include <alphamap_fragment>
+                vec3 _occPa = vOccWorldPos - uOccCameraPos;
+                vec3 _occBa = uOccPlayerPos - uOccCameraPos;
+                float _occH = clamp(dot(_occPa, _occBa) / max(dot(_occBa, _occBa), 0.0001), 0.0, 1.0);
+                float _occDist = length(_occPa - _occBa * _occH);
+                float _occAlpha = mix(uOccMinOpacity, uOccMaxOpacity, smoothstep(uOccRadius, uOccRadius + uOccFadeWidth, _occDist));
+                ${occlusionTail}`,
             );
         };
         material.needsUpdate = true;
@@ -133,7 +285,7 @@ export class BendService {
         const prev = material.onBeforeCompile;
         material.onBeforeCompile = (shader, renderer) => {
             prev(shader, renderer);
-            shader.uniforms.uBendOrigin   = BendService.uniforms.uBendOrigin;
+            shader.uniforms.uBendOrigin = BendService.uniforms.uBendOrigin;
             shader.uniforms.uBendStrength = BendService.uniforms.uBendStrength;
 
             shader.vertexShader = `

@@ -62,6 +62,8 @@ export interface GateConfig {
     destroyParticleEffectId?: string;
     /** How many particles the burst above launches — ignored if destroyParticleEffectId isn't set. undefined falls back to a small default (see Gate.collapseMesh()). */
     destroyParticleCount?: number;
+    /** Added on top of the gate's own height (mesh size[1]/2) when picking the camera's look-at point during playUnlockSequence() — see Gate.ts's own doc. Raising this moves the look-at point higher in world space, which pushes the gate LOWER on screen (useful for keeping it clear of top-anchored UI). undefined/0 = no change, unchanged from before this field existed. */
+    cameraFocusHeightOffset?: number;
 }
 
 export const GATE_CONFIG: Record<GateId, GateConfig> = {
@@ -74,6 +76,9 @@ export const GATE_CONFIG: Record<GateId, GateConfig> = {
             "level": 2
         },
         mesh: { size: [4, 3, 1], color: 0x555555 },
+        "particleEffectId": "gateMyst",
+        "destroyParticleEffectId": "destroyBurst",
+        "cameraFocusHeightOffset": 2
     },
     [GateId.GateAxe]: {
         name: "Axe Gate",
@@ -82,11 +87,15 @@ export const GATE_CONFIG: Record<GateId, GateConfig> = {
         // exact position is only ever used if that object goes missing.
         position: [-12, 0, 21],
         requirement: {
-            "type": "item",
-            "item": ItemType.Axe
+            "type": "resource",
+            "resourceType": ResourceType.Wood,
+            "amount": 5
         },
         mesh: { size: [4, 3, 1], color: 0x555555 },
-        "view": "gateAxeView"
+        "view": "gateAxeView",
+        "particleEffectId": "gateMyst",
+        "destroyParticleEffectId": "destroyBurst",
+        "cameraFocusHeightOffset": 5
     },
     "gateTest": {
         position: [0, 0, -16],
@@ -97,6 +106,9 @@ export const GATE_CONFIG: Record<GateId, GateConfig> = {
             "type": "resource",
             "resourceType": ResourceType.Stone,
             "amount": 1
-        }
+        },
+        "particleEffectId": "gateMyst",
+        "destroyParticleEffectId": "destroyBurst",
+        "cameraFocusHeightOffset": 2
     }
 };

@@ -30,6 +30,18 @@ export default class ParticleEmitterComponent extends Component {
 
     public update(delta: number): void {
         this.accumulatorSec += delta;
+
+        // ZoneVisibilityManager hides a not-yet-unlocked zone's entities by setting
+        // transform.visible = false (see that file's own doc) — it has no idea this component
+        // exists, so without this check the emitter keeps ticking and spawning into the
+        // shared, always-rendered ParticleSystem batch regardless, leaking particles from a
+        // gate/zone that's supposed to be fully hidden. Accumulator still advances above so a
+        // burst doesn't fire the instant the zone reveals; only the spawn itself is skipped.
+        if (!this.entity.transform.visible) {
+            this.accumulatorSec = Math.min(this.accumulatorSec, this.spawnIntervalSec);
+            return;
+        }
+
         while (this.accumulatorSec >= this.spawnIntervalSec) {
             this.accumulatorSec -= this.spawnIntervalSec;
 

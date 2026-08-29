@@ -101,10 +101,10 @@ export const PARTICLE_REGISTRY: Record<string, ParticleEffectDescriptor> = {
     },
     /** Demo burst preset — a neutral spark shower for anything using ParticleBurstOnDestroyComponent (see Gate.ts's own `destroyBurstEffectId`) that hasn't picked its own effect yet. */
     destroyBurst: {
-        name: 'Destroy Burst (Spark)',
-        texture: 'particles/spark_03.webp',
-        color: '#ffe8a3',
-        blendMode: 'normal',
+        name: "Destroy Burst (Spark)",
+        texture: "particles/spark_03.webp",
+        color: "#ffe8a3",
+        blendMode: "normal",
         fadeInSec: 0.05,
         fadeOutSec: 0.35,
         lifetimeSec: 0.6,
@@ -114,17 +114,21 @@ export const PARTICLE_REGISTRY: Record<string, ParticleEffectDescriptor> = {
         riseSpeedMax: 0,
         spreadRadius: 0,
         maxOpacity: 1,
-        offset: [0, 0, 0],
+        offset: [
+            0,
+            0,
+            0
+        ],
         burstSpeedMin: 2,
         burstSpeedMax: 4.5,
         gravity: 9,
     },
     /** Same setup as craftingMyst (same texture/blend/fade/size shape) tuned as a burst instead of an ambient drift, tinted leaf-green for a tree — see ProviderTypes.ts's Tree entry's own `destroyParticleEffectId`. */
     treeLeafBurst: {
-        name: 'Tree Leaf Burst (Green)',
-        texture: 'particles/star_06.webp',
-        color: '#8bc34a',
-        blendMode: 'additive',
+        name: "Tree Leaf Burst (Green)",
+        texture: "particles/star_06.webp",
+        color: "#8bc34a",
+        blendMode: "additive",
         fadeInSec: 0.05,
         fadeOutSec: 0.6,
         lifetimeSec: 0.9,
@@ -134,11 +138,35 @@ export const PARTICLE_REGISTRY: Record<string, ParticleEffectDescriptor> = {
         riseSpeedMax: 0,
         spreadRadius: 0,
         maxOpacity: 1,
-        offset: [0, 0, 0],
+        offset: [
+            0,
+            0,
+            0
+        ],
         burstSpeedMin: 2,
         burstSpeedMax: 4,
         gravity: 8,
     },
+    "gateMyst": {
+        "name": "Gate Myst",
+        "texture": "particles/star_08.webp",
+        "color": "#ff9980",
+        "blendMode": "additive",
+        "fadeInSec": 0.5,
+        "fadeOutSec": 1,
+        "lifetimeSec": 2.2,
+        "sizeMin": 0.9,
+        "sizeMax": 1.4,
+        "riseSpeedMin": 0.15,
+        "riseSpeedMax": 1.3,
+        "spreadRadius": 1,
+        "maxOpacity": 1,
+        "offset": [
+            0,
+            -0.5,
+            0
+        ]
+    }
 };
 
 export function getParticleEffect(id: string): ParticleEffectDescriptor {

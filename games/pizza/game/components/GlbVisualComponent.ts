@@ -16,7 +16,7 @@
 import * as THREE from 'three';
 import Component from '../ecs/Component';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
-import { BendService } from '../services/BendService';
+import { BendService, OcclusionFadeConfig } from '../services/BendService';
 import { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
 
 /** Same `./` + repo-relative convention every other model load in pizza uses (see PizzaScene.ts/MainPlayer.ts's modelUrl()) — resolves e.g. "pizza/models/props/tree.glb" against public/pizza/models/. */
@@ -30,16 +30,19 @@ export default class GlbVisualComponent extends Component {
     private readonly rotationY: number;
     /** Fired once, right after the model finishes loading and `this.mesh` becomes safe to read — for a caller that needs to do something to the mesh itself (e.g. CraftZone's float animation) but can't just do it inline after `new GlbVisualComponent(...)` returns, since the load is always asynchronous. */
     private readonly onReady?: () => void;
+    /** Opt-in camera->player cutout (see BendService.applyOcclusionFade) — undefined means this prop never fades, e.g. small decorative clutter that's fine to just hide the player briefly. Pass `{}` for the defaults, or tune radius/fadeWidth/min/maxOpacity per prop (a shed wants a harder cutout than a fence post). */
+    private readonly occlusionFade?: OcclusionFadeConfig;
     private _mesh?: THREE.Object3D;
     private destroyed = false;
 
-    public constructor(modelDef: ModelDefinition, centerOffset: THREE.Vector3 = new THREE.Vector3(), scale = 1, rotationY = 0, onReady?: () => void) {
+    public constructor(modelDef: ModelDefinition, centerOffset: THREE.Vector3 = new THREE.Vector3(), scale = 1, rotationY = 0, onReady?: () => void, occlusionFade?: OcclusionFadeConfig) {
         super();
         this.modelDef = modelDef;
         this.centerOffset = centerOffset;
         this.scale = scale;
         this.rotationY = rotationY;
         this.onReady = onReady;
+        this.occlusionFade = occlusionFade;
     }
 
     public get mesh(): THREE.Object3D {
@@ -95,6 +98,17 @@ export default class GlbVisualComponent extends Component {
                 materials.forEach(material => BendService.applyBend(material));
             }
         });
+
+        // Opt-in per this.occlusionFade — see its own doc for why this isn't applied
+        // unconditionally the way applyBend() is above.
+        if (this.occlusionFade) {
+            object.traverse(child => {
+                if (child instanceof THREE.Mesh) {
+                    const materials = Array.isArray(child.material) ? child.material : [child.material];
+                    materials.forEach(material => BendService.applyOcclusionFade(material, this.occlusionFade));
+                }
+            });
+        }
 
         object.position.copy(this.centerOffset);
         object.scale.setScalar(this.scale);

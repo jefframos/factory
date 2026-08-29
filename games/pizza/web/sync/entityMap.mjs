@@ -61,8 +61,8 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'GATE_CONFIG',
         kind: 'enumRecord',
         enumName: 'GateId',
-        managedKeys: ['name', 'requirement', 'view', 'frame', 'viewRotationOffsetDeg', 'viewScaleMultiplier', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount'],
-        optionalKeys: ['view', 'frame', 'viewRotationOffsetDeg', 'viewScaleMultiplier', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount'],
+        managedKeys: ['name', 'requirement', 'view', 'frame', 'viewRotationOffsetDeg', 'viewScaleMultiplier', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount', 'cameraFocusHeightOffset'],
+        optionalKeys: ['view', 'frame', 'viewRotationOffsetDeg', 'viewScaleMultiplier', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount', 'cameraFocusHeightOffset'],
     },
     buildings: {
         file: path.join(GAME_DIR, 'data', 'BuildingTypes.ts'),

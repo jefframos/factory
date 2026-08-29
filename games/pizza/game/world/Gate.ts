@@ -297,7 +297,11 @@ export default class Gate extends Entity {
     public async playUnlockSequence(cameraFocusHost: CameraFocusHost): Promise<void> {
         GateStorage.unlock(this.gateId);
 
-        const focusTarget = this.transform.position.clone().add(new THREE.Vector3(0, this.config.mesh.size[1] / 2, 0));
+        // Look-at point sits at the gate's own mid-height PLUS the configurable
+        // cameraFocusHeightOffset (see GateConfig's own doc) — raising the look-at point in
+        // world space is what pushes the gate itself lower on screen, since the camera keeps
+        // whatever it's looking at centered.
+        const focusTarget = this.transform.position.clone().add(new THREE.Vector3(0, this.config.mesh.size[1] / 2 + (this.config.cameraFocusHeightOffset ?? 0), 0));
         await Promise.all([
             cameraFocusHost.focusCameraOn(focusTarget, { holdSec: CAMERA_FOCUS_HOLD_SEC, preDelaySec: GATE_UNLOCK_PRE_DELAY_SEC, travelSec: GATE_CAMERA_TRAVEL_SEC }),
             this.collapseMesh(),
