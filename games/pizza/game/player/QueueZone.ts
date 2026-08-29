@@ -53,12 +53,11 @@ import { AnimalFollowStorage } from '../data/AnimalFollowStorage';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import MainPlayer from './MainPlayer';
+import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
 const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
-/** Dotted-outline color — distinct from DropZone's green/BuildingZone's own mesh, so a queue reads as its own kind of zone on the map until real art exists. */
-const QUEUE_BOX_COLOR = 0xcc8800;
 /** Corner rounding for the floor outline — purely cosmetic, the collider itself stays a sharp-cornered box (see RigidBody above). */
 const QUEUE_ZONE_CORNER_RADIUS = 0.3;
 /** Where the reward icon departs from — roughly head-height above the zone, same idea as BuildingZone's own popup spawn point. */
@@ -182,7 +181,7 @@ export default class QueueZone extends Entity {
             halfExtents.x * 2,
             halfExtents.z * 2,
             QUEUE_ZONE_CORNER_RADIUS,
-            { color: QUEUE_BOX_COLOR },
+            { color: getZoneColor(ZoneColorKind.Queue) },
         ));
 
         this.headerContainer = new PIXI.Container();

@@ -32,11 +32,10 @@ import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from './AssetLibraryRegistry';
 import MainPlayer from '../player/MainPlayer';
+import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 
 /** Same fixed trigger height every other deposit zone (BuildingZone/QueueZone/DropZone) uses — a gate's own footprint has no vertical dimension to derive one from either. */
 const HALF_EXTENTS_Y = 0.75;
-/** Same outline color/corner-rounding every other zone's dotted floor trace uses. */
-const DROPPER_ZONE_COLOR = 0x3388ff;
 const DROPPER_ZONE_CORNER_RADIUS = 0.3;
 /** Same per-unit departure cadence BuildingZone.flyInResource() uses. */
 const FLY_IN_STAGGER_SEC = 0.12;
@@ -97,7 +96,7 @@ export default class GateDropZone extends Entity {
             halfExtents.x * 2,
             halfExtents.z * 2,
             DROPPER_ZONE_CORNER_RADIUS,
-            { color: DROPPER_ZONE_COLOR },
+            { color: getZoneColor(ZoneColorKind.GateDropper) },
             centerOffset,
         ));
 

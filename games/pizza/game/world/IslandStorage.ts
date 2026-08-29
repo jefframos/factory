@@ -111,10 +111,11 @@ export function shadeColor(color: number, t: number): number {
 /** Derives the 4-tone water shader palette (see WaterMaterial.ts) from one base color. */
 export function deriveWaterTones(base: number): WaterColors {
     return {
-        deep: saturateColor(base, 0.5),
+        deep: shadeColor(base, 0.05),
         mid: base,
-        bright: shadeColor(saturateColor(base, 0.5), 0.12),
-        foam: shadeColor(base, 0.75),
+        bright: shadeColor(base, 0.06),
+        // bright: shadeColor(saturateColor(base, 0.15), 0.12),
+        foam: shadeColor(base, 0.1),
     };
 }
 

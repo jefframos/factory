@@ -1,48 +1,34 @@
 // PopupButtonStyles.ts
 //
-// Named button "roles" for popup content — each maps to one of the three
-// Button01_s_* nine-slice button textures actually delivered
-// (games/pizza/raw-assets/images/ui{tps}/Button01_s_*.png, 35px nine-slice
-// border baked into every one of them — see BUTTON_NINE_SLICE_PADDING).
-// This is the "somewhere to add the primary button" slot the button-role
-// system exists for: 'primary' is already wired to Green (the obvious
-// go/confirm color) — add a new role here (or repoint an existing one) any
-// time a popup needs a different emphasis level, rather than hand-rolling
-// texture/tint per popup call site.
+// Named button "roles" for popup content — thin wrapper over ButtonLibrary.ts
+// (the single shared source every button in the game pulls its art from, see
+// that file's own doc) so popup content can ask for a semantic ROLE
+// ('primary'/'secondary'/'accent') instead of a raw color, the same way
+// FrameRegistry.ts's named frame presets sit in front of raw texture keys.
+// 'primary' is wired to green (the obvious go/confirm color) — add a new
+// role here (or repoint an existing one) any time a popup needs a different
+// emphasis level, rather than hand-rolling a ButtonLibrary call per site.
 
-import * as PIXI from 'pixi.js';
 import BaseButton from 'core/ui/BaseButton';
-import { TextStyleRegistry } from '../TextStyleRegistry';
+import { createLibraryButton, LibraryButtonColor } from '../ButtonLibrary';
 
 export type PopupButtonRole = 'primary' | 'secondary' | 'accent';
 
-const ROLE_TEXTURES: Record<PopupButtonRole, string> = {
-    primary: 'Button01_s_Green',
-    secondary: 'Button01_s_Gray',
-    accent: 'Button01_s_Mint',
+const ROLE_COLOR: Record<PopupButtonRole, LibraryButtonColor> = {
+    primary: 'green',
+    secondary: 'grey',
+    accent: 'yellow',
 };
-
-/** Nine-slice border width baked into every Button01_s_* asset — same uniformPadding() idea FrameRegistry.ts uses for its own BorderFrame assets, just a different asset family/padding value. */
-const BUTTON_NINE_SLICE_PADDING = 35;
 
 export const POPUP_BUTTON_WIDTH = 220;
 export const POPUP_BUTTON_HEIGHT = 64;
 
-/** Builds a BaseButton styled for `role`, with standard/over/down feedback baked in so every popup button behaves the same without repeating the state table at each call site. */
+/** Builds a BaseButton styled for `role` — see ButtonLibrary.createLibraryButton() for the actual shared feedback/texture plumbing. */
 export function createPopupButton(label: string, role: PopupButtonRole, onClick: () => void): BaseButton {
-    const button = new BaseButton({
-        standard: {
-            width: POPUP_BUTTON_WIDTH, height: POPUP_BUTTON_HEIGHT,
-            texture: PIXI.Texture.from(ROLE_TEXTURES[role]),
-            allPadding: BUTTON_NINE_SLICE_PADDING,
-            fontStyle: new PIXI.TextStyle(TextStyleRegistry.Body),
-            fontColor: 0xffffff,
-            fitText: 0.75,
-        },
-        over: { tint: 0xdddddd },
-        down: { tint: 0xaaaaaa },
-        click: { callback: onClick },
+    return createLibraryButton({
+        color: ROLE_COLOR[role],
+        width: POPUP_BUTTON_WIDTH, height: POPUP_BUTTON_HEIGHT,
+        label,
+        onClick,
     });
-    button.setLabel(label);
-    return button;
 }

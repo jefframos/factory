@@ -2,11 +2,17 @@
     "0": {},
     "1": {
         "requirement": {
+            "type": "trigger",
+            "triggerId": "walkTutorialTrigger"
+        }
+    },
+    "2": {
+        "requirement": {
             "type": "gate",
             "gateId": "gateAxe"
         }
     },
-    "2": {
+    "3": {
         "requirement": {
             "type": "item",
             "item": "pickaxe"

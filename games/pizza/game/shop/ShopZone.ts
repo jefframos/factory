@@ -47,12 +47,11 @@ import { getShopConfig, getViewIdForShopLevel, ShopConfig, SHOP_UPGRADE_AVAILABL
 import MainPlayer from '../player/MainPlayer';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 import { resolveEntityView } from '../world/EntityViewRegistry';
+import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
 const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
-/** Dotted-outline color for this shop's deposit trigger — same technique/consistency as QueueZone/DropZone/BuildingZone's own outlines. */
-const DROPPER_ZONE_COLOR = 0x3388ff;
 /** Corner rounding for the dropper's floor outline — purely cosmetic, the collider itself stays a sharp-cornered box (see RigidBody below). */
 const DROPPER_ZONE_CORNER_RADIUS = 0.3;
 const COST_ICON_SIZE = 22;
@@ -216,7 +215,7 @@ export default class ShopZone extends Entity {
             halfExtents.x * 2,
             halfExtents.z * 2,
             DROPPER_ZONE_CORNER_RADIUS,
-            { color: DROPPER_ZONE_COLOR },
+            { color: getZoneColor(ZoneColorKind.ShopDropper) },
             centerOffset,
         ));
 

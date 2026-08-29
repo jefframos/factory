@@ -1,10 +1,10 @@
 // Popup.ts
 //
 // Base class for anything shown through PopupManager — owns the shared
-// chrome (AutoFitFrame panel, centered title, corner close button) so a
-// concrete popup (SettingsPopup, future ones) only has to describe its OWN
-// content via buildContent(), not rebuild alignment/frame/close-button
-// plumbing every time.
+// chrome (AutoFitFrame panel, a header row with the title and close button
+// side by side) so a concrete popup (SettingsPopup, future ones) only has to
+// describe its OWN content via buildContent(), not rebuild alignment/frame/
+// close-button plumbing every time.
 //
 // Content lays out inside a FIXED-WIDTH column (`contentWidth`) rather than
 // auto-sizing from whatever children happen to be added — anchoring the
@@ -16,18 +16,20 @@
 // of what's added.
 
 import * as PIXI from 'pixi.js';
-import BaseButton from 'core/ui/BaseButton';
 import Assets from '../../../Assets';
 import { TextStyleRegistry } from '../TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../AutoFitFrame';
 import { FrameName } from '../FrameRegistry';
+import { createLibraryButton } from '../ButtonLibrary';
 
-const CLOSE_BUTTON_SIZE = 36;
-const CLOSE_BUTTON_ICON_SIZE = 18;
-/** How far the close button sits past contentWidth's right edge / above the title's top edge — a corner badge overlapping the panel's own border, same "pinned to the corner" idiom QueueZone's upgrade badge uses on its tool icon. */
-const CLOSE_BUTTON_INSET = 6;
+const CLOSE_BUTTON_SIZE = 48;
+const CLOSE_BUTTON_ICON_SIZE = 30;
+/** Gap between the title's own reserved width and the close button — see this constructor's own titleAreaWidth math. */
+const TITLE_CLOSE_GAP = 10;
 const TITLE_CONTENT_GAP = 20;
 const PANEL_PADDING = 28;
+/** Smaller than TextStyleRegistry.Title's own 32px — a popup header shares its row with the close button now (see this constructor's own doc), and the full-size Title style ran wide enough to overlap it on a narrow popup (e.g. SettingsPopup's 220px content column). */
+const TITLE_FONT_SIZE = 22;
 
 export interface PopupOptions {
     /** Column width every child (title, buildContent's own content) lays out against — see this file's own doc. */
@@ -52,35 +54,40 @@ export default abstract class Popup {
 
         const column = new PIXI.Container();
 
-        const titleText = new PIXI.Text(title, TextStyleRegistry.Title);
-        titleText.anchor.set(0.5, 0);
-        titleText.position.set(this.contentWidth / 2, 0);
+        // Header row — title and close button share one row rather than the close button
+        // floating above the title as a corner badge. The title is centered within its OWN
+        // reserved width (contentWidth minus the close button's own column + gap), NOT the full
+        // contentWidth — centering across the full width would let a long title run underneath
+        // the button instead of stopping short of it. Both are vertically centered against
+        // whichever of them is taller (see headerHeight below).
+        const titleAreaWidth = this.contentWidth - CLOSE_BUTTON_SIZE - TITLE_CLOSE_GAP;
+        const titleText = new PIXI.Text(title, { ...TextStyleRegistry.Title, fontSize: TITLE_FONT_SIZE });
+        const headerHeight = Math.max(titleText.height, CLOSE_BUTTON_SIZE);
+        titleText.anchor.set(0.5, 0.5);
+        titleText.position.set(titleAreaWidth / 2, headerHeight / 2);
         column.addChild(titleText);
 
         const content = new PIXI.Container();
-        content.position.set(0, titleText.height + TITLE_CONTENT_GAP);
+        content.position.set(0, headerHeight + TITLE_CONTENT_GAP);
         column.addChild(content);
 
         // Populated AFTER content is already positioned/parented — buildContent() only ever
         // needs to add children into it, never worry about its own placement within column.
         this.buildContent(content, this.contentWidth);
 
-        const closeButton = new BaseButton({
-            standard: {
-                width: CLOSE_BUTTON_SIZE, height: CLOSE_BUTTON_SIZE,
-                texture: PIXI.Texture.WHITE, tint: 0x222233,
-                iconTexture: PIXI.Texture.from(Assets.Textures.Icons.Close),
-                iconSize: { width: CLOSE_BUTTON_ICON_SIZE, height: CLOSE_BUTTON_ICON_SIZE },
-                centerIconHorizontally: true,
-                centerIconVertically: true,
-            },
-            over: { tint: 0x333344 },
-            down: { tint: 0x11111a },
-            click: { callback: () => this.requestClose() },
+        // Every close button in the game goes through this one spot — see ButtonLibrary.ts's
+        // own doc for why 'red' is the fixed, non-configurable color here (a close action should
+        // always read the same way, regardless of which popup it's closing).
+        const closeButton = createLibraryButton({
+            color: 'red',
+            width: CLOSE_BUTTON_SIZE, height: CLOSE_BUTTON_SIZE,
+            iconTexture: PIXI.Texture.from(Assets.Textures.Icons.Close),
+            iconSize: { width: CLOSE_BUTTON_ICON_SIZE, height: CLOSE_BUTTON_ICON_SIZE },
+            onClick: () => this.requestClose(),
         });
         closeButton.position.set(
-            this.contentWidth - CLOSE_BUTTON_SIZE / 2 + CLOSE_BUTTON_INSET,
-            -CLOSE_BUTTON_SIZE / 2 - CLOSE_BUTTON_INSET,
+            this.contentWidth - CLOSE_BUTTON_SIZE,
+            headerHeight / 2 - CLOSE_BUTTON_SIZE / 2,
         );
         column.addChild(closeButton);
 

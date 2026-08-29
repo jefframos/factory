@@ -32,6 +32,7 @@ import ToolListUI from './ToolListUI';
 import SettingsUIService, { SETTINGS_ROW_BUTTON_SIZE, SETTINGS_ROW_TOP_LEFT_MARGIN } from './SettingsUIService';
 import { UpgradeNotificationManager } from './notifications/UpgradeNotificationManager';
 import InGameButtonList from './InGameButtonList';
+import BackpackButton from './BackpackButton';
 
 /** Gap between the backpack HUD panel's bottom edge and the actual bottom of the screen — see positionBackpackUi(). Only relevant if backpackUi is switched back on — see that field's own comment. */
 const BACKPACK_UI_BOTTOM_MARGIN = 16;
@@ -100,6 +101,9 @@ export default class UIService {
     /** Top-left mute + settings buttons, and the settings panel the gear button opens — see SettingsUIService.ts's own doc. */
     private readonly settingsUi: SettingsUIService;
 
+    /** Bottom-left button that opens InventoryPopup — see BackpackButton.ts's own doc. */
+    private readonly backpackButton: BackpackButton;
+
     /**
      * `onCameraToggle` is a callback into the scene rather than this service importing
      * PizzaScene directly — same structural-interface style ScreenAnchorHost already uses
@@ -143,6 +147,9 @@ export default class UIService {
         this.settingsUi = new SettingsUIService(this.game);
         UpgradeNotificationManager.instance.init(this.game);
 
+        this.backpackButton = new BackpackButton();
+        this.game.uiLayer.addChild(this.backpackButton);
+
         this.update();
     }
 
@@ -165,6 +172,7 @@ export default class UIService {
         this.positionToolLevelUi();
         this.positionToolListUi();
         this.settingsUi.update();
+        this.backpackButton.update();
     }
 
     /** Bottom-center, regardless of viewport size/aspect. */
@@ -295,5 +303,6 @@ export default class UIService {
         this.toolLevelUi.destroy();
         this.toolListUi.destroy();
         this.settingsUi.destroy();
+        this.backpackButton.destroy();
     }
 }

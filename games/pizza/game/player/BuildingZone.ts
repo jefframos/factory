@@ -53,12 +53,11 @@ import { WorldProgressionHost } from '../camera/WorldProgressionHost';
 import { wait } from '../utils/GsapUtils';
 import MainPlayer from './MainPlayer';
 import { ParticleSystem } from '../vfx/ParticleSystem';
+import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
 const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
-/** Dotted-outline color for this building's deposit trigger — same technique/consistency as QueueZone/DropZone's own outlines, distinct hue so a building's dropper reads as its own kind of zone. */
-const DROPPER_ZONE_COLOR = 0x3388ff;
 /** Corner rounding for the dropper's floor outline — purely cosmetic, the collider itself stays a sharp-cornered box (see RigidBody below). */
 const DROPPER_ZONE_CORNER_RADIUS = 0.3;
 const POPUP_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 2.2, 0);
@@ -247,7 +246,7 @@ export default class BuildingZone extends Entity {
             halfExtents.x * 2,
             halfExtents.z * 2,
             DROPPER_ZONE_CORNER_RADIUS,
-            { color: DROPPER_ZONE_COLOR },
+            { color: getZoneColor(ZoneColorKind.BuildingDropper) },
             centerOffset,
         ));
         // The zone's actual visible structure — starts at whatever level it's already at (e.g.

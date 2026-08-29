@@ -37,6 +37,7 @@ import { ASSET_LIBRARY, AssetLibraryEntry, getAssetIcon, pickRandom, resolveRang
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 import ViewUtils from 'core/utils/ViewUtils';
 import MainPlayer from './MainPlayer';
+import ResourceNodeRegistry from './ResourceNodeRegistry';
 
 /** Pickup-trigger half-extents — smaller than ResourceNode's own gather-radius trigger (1,1,1): this is "bumped into," not "stood near" — see this file's own doc. */
 const TRIGGER_HALF_EXTENTS = new THREE.Vector3(0.6, 0.6, 0.6);
@@ -111,6 +112,16 @@ export default class LooseResourceNode extends Entity {
             ));
 
         rigidBody.onTriggerEnter.add(other => this.tryPickup(other));
+
+        // See ResourceNodeRegistry's own doc for why loose ground loot needs to register here
+        // too, not just harvestable ResourceNodes — some ResourceType values (e.g. bark) are
+        // ONLY ever this.
+        ResourceNodeRegistry.register(this);
+    }
+
+    public override destroy(): void {
+        ResourceNodeRegistry.unregister(this);
+        super.destroy();
     }
 
     /**

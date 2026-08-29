@@ -175,6 +175,13 @@ export default class ZoneVisibilityManager {
         return this.cellToZone.get(cellKey(col, row));
     }
 
+    /** getZoneForCell(), from a world-space point instead of an already-converted tile cell — the col/row math itself (worldX/worldUnitsPerTile, floored) used to be duplicated ad hoc by every caller that only had a live THREE.Vector3 (ZoneTutorialController's own currentZoneNumber(), MovementTutorialOverlay's own zone check) rather than a tile cell; this is that conversion, centralized once. */
+    public getZoneForPosition(worldX: number, worldZ: number): number | undefined {
+        const col = Math.floor(worldX / this.worldUnitsPerTile);
+        const row = Math.floor(worldZ / this.worldUnitsPerTile);
+        return this.getZoneForCell(col, row);
+    }
+
     /**
      * True if a point (or small footprint — width/depth default to one tile) at (worldX,
      * worldZ) is unlocked right now — same zones-then-overlapMode resolution register() uses,

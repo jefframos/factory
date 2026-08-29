@@ -1,0 +1,34 @@
+{
+    "0": {
+        "steps": [
+            {
+                "kind": "trigger",
+                "triggerId": "walkTutorialTrigger"
+            }
+        ],
+        "arrowTextureId": "arrow-down",
+        "use3dArrow": false
+    },
+    "1": {
+        "steps": [
+            {
+                "kind": "craft",
+                "craftId": "craftAxe"
+            },
+            {
+                "kind": "gate",
+                "gateId": "gateAxe"
+            }
+        ],
+        "arrowTextureId": "arrow-down"
+    },
+    "2": {
+        "steps": []
+    },
+    "3": {
+        "steps": []
+    },
+    "4": {
+        "steps": []
+    }
+}

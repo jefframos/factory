@@ -17,6 +17,7 @@ import { ItemType } from '../crafting/ItemTypes';
 import { MilestoneRequirement } from './MilestoneRequirement';
 import { PopupMode } from '../ui/PopupConfig';
 import { FrameName } from '../ui/FrameRegistry';
+import { GateId } from "./GateTypes";
 
 export interface QueueTaskDef {
     resourceType: ResourceType;
@@ -87,11 +88,12 @@ export const QUEUE_CONFIG_BY_ID: Partial<Record<string, QueueConfig>> = {
         ...DEFAULT_QUEUE_CONFIG,
         appearRequirement: {
             "type": "gate",
-            "gateId": "gate1"
+            "gateId": GateId.Gate1
         },
         "cooldownSec": 30,
         "possibleTasks": [],
-        "popupBobOffset": 2
+        "popupBobOffset": 2,
+        "view": "ship1View"
     },
 };
 

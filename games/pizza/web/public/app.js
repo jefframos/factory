@@ -1322,6 +1322,9 @@ function renderRequirementField(container, obj, field, onDirty) {
         if (type === 'gate') {
             return { type: 'gate', gateId: getOptions('gates')[0]?.value ?? '' };
         }
+        if (type === 'trigger') {
+            return { type: 'trigger', triggerId: getOptions('triggers')[0]?.value ?? '' };
+        }
         return { type: 'resource', resourceType: getOptions('resources')[0]?.value ?? '', amount: 1 };
     }
 

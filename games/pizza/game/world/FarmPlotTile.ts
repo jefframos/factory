@@ -36,9 +36,8 @@ import GlbVisualComponent from '../components/GlbVisualComponent';
 import { FARM_TILE_CONFIG } from '../data/FarmTypes';
 import { resolveEntityView } from './EntityViewRegistry';
 import { FARM_GRID_CELL_SIZE } from './FarmGrid';
+import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 
-/** Green — an owned, ready-to-use cell, distinct from FarmZone's own red "not bought yet" outline (see that file's own doc). Hidden by default (see this file's own doc on `setVisible`) rather than removed — a future "select a tile to plant" interaction can flip it back on without rebuilding the component. */
-const FARM_TILE_OUTLINE_COLOR = 0x55cc55;
 const FARM_TILE_CORNER_RADIUS = 0.2;
 const PLACEHOLDER_HEIGHT = 0.1;
 const PLACEHOLDER_COLOR = 0x7a5a3a;
@@ -80,10 +79,11 @@ export default class FarmPlotTile extends Entity {
             FARM_GRID_CELL_SIZE,
             FARM_GRID_CELL_SIZE,
             FARM_TILE_CORNER_RADIUS,
-            { color: FARM_TILE_OUTLINE_COLOR },
+            { color: getZoneColor(ZoneColorKind.FarmPlot) },
         ));
-        // Hidden for now (see FARM_TILE_OUTLINE_COLOR's own doc) — kept, not removed, so it's
-        // ready to flip back on later with no rebuild.
+        // Hidden for now — an owned, ready-to-use cell, distinct from FarmZone's own "not
+        // bought yet" outline (see that file's own doc). Kept, not removed, so it's ready to
+        // flip back on later with no rebuild — see this file's own doc on `setVisible`.
         outline.setVisible(false);
 
         this.transform.scale.setScalar(0);

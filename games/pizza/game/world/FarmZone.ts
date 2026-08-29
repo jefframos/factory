@@ -53,9 +53,8 @@ import { computeFarmGrid, FARM_GRID_CELL_SIZE } from './FarmGrid';
 import MainPlayer from '../player/MainPlayer';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
+import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 
-/** Red — not bought yet, distinct from FarmPlotTile's own green "owned" outline. */
-const FARM_ZONE_OUTLINE_COLOR = 0xcc4444;
 const FARM_ZONE_CORNER_RADIUS = 0.2;
 const PLACEHOLDER_HEIGHT = 0.1;
 const PLACEHOLDER_EMPTY_COLOR = 0x77aa55;
@@ -128,7 +127,7 @@ export default class FarmZone extends Entity {
             width,
             depth,
             FARM_ZONE_CORNER_RADIUS,
-            { color: FARM_ZONE_OUTLINE_COLOR },
+            { color: getZoneColor(ZoneColorKind.Farm) },
         ));
 
         this.buildEmptyGridPreview(width, depth);

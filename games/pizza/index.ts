@@ -33,6 +33,8 @@ import { ShapeResourceStorage } from './game/world/ShapeResourceStorage';
 import { AnimalFollowStorage } from './game/data/AnimalFollowStorage';
 import { ShopUpgradeStorage } from './game/shop/ShopUpgradeStorage';
 import { PlayerPositionStorage } from './game/data/PlayerPositionStorage';
+import { TutorialProgressStorage } from './game/tutorial/TutorialProgressStorage';
+import { TriggerStorage } from './game/data/TriggerStorage';
 import { Localization } from './game/i18n/Localization';
 import loaderConfig from './loader.config';
 
@@ -97,6 +99,8 @@ export default class MyGame extends Game {
             await ShapeResourceStorage.load();
             await AnimalFollowStorage.load();
             await PlayerPositionStorage.load();
+            await TutorialProgressStorage.load();
+            await TriggerStorage.load();
             ShopUpgradeStorage.reapplyAllShopUpgrades();
             await Localization.load();
 

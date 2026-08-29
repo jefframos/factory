@@ -54,10 +54,14 @@ import { ShopUpgradeStorage } from '../shop/ShopUpgradeStorage';
 import CraftZone, { CraftTriggerArea } from '../crafting/CraftZone';
 import { getCraftConfig } from '../crafting/CraftTypes';
 import FarmZone from '../world/FarmZone';
+import Trigger from '../world/Trigger';
 import FarmPlotTile from '../world/FarmPlotTile';
 import { computeFarmGrid, FARM_GRID_CELL_SIZE, FARM_GRID_APPEAR_STAGGER_SEC } from '../world/FarmGrid';
 import { getFarmPlotConfig } from '../data/FarmTypes';
+import { getTriggerConfig } from '../data/TriggerTypes';
+import { TriggerStorage } from '../data/TriggerStorage';
 import { FarmPlotStorage } from '../data/FarmPlotStorage';
+import { TutorialProgressStorage } from '../tutorial/TutorialProgressStorage';
 import { CraftStorage } from '../crafting/CraftStorage';
 import { ItemStorage } from '../crafting/ItemStorage';
 import { ItemType } from '../crafting/ItemTypes';
@@ -66,6 +70,8 @@ import { EconomyStorage } from '../data/EconomyStorage';
 import { CurrencyType } from '../data/EconomyTypes';
 import WorldManager from '../world/WorldManager';
 import WorldObjectRegistry, { WorldObjectPlacement } from '../world/WorldObjectRegistry';
+import ZoneTutorialController from '../tutorial/ZoneTutorialController';
+import MovementTutorialOverlay from '../tutorial/MovementTutorialOverlay';
 import WorldSpawner from '../world/WorldSpawner';
 import DynamicResourceSpawner from '../world/DynamicResourceSpawner';
 import ShapeResourceSpawner from '../world/ShapeResourceSpawner';
@@ -201,6 +207,9 @@ const BUILDING_ZONE_OFFSET = new THREE.Vector3(-6, 0, -2);
 const DEFAULT_FOCUS_TRAVEL_SEC = 0.8;
 const DEFAULT_FOCUS_HOLD_SEC = 1.5;
 
+/** How long a zone reveal briefly freezes player movement for — see the worldManager.onZoneRevealed subscription in this scene's constructor. Long enough to read as "wait, something happened," short enough not to feel like the player lost control. */
+const ZONE_UNLOCK_FREEZE_SEC = 1;
+
 /** How often fixedUpdate() re-checks/persists the player's current position as the new "last stable tile" — see PlayerPositionStorage.ts's own doc. Every tick would be wasteful (this never needs to be more precise than "somewhere in the last couple seconds"). */
 /** Vertical offset from playerPosition (feet/base) up to roughly torso height — see BendService.applyOcclusionFade's own doc for why occlusion targets this instead of the base. Tune this against the actual character model's height. */
 const OCCLUSION_TARGET_HEIGHT_OFFSET = 0.9;
@@ -258,6 +267,22 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     /** Central "spawn once a requirement is met" / "unlock once a requirement is met" system shared by queues, shops, buildings, and gates — see RequirementRegistry.ts's own doc. */
     private readonly requirementRegistry = new RequirementRegistry();
 
+    /** Points a screen-space arrow at whatever the player's current zone's tutorial (see ZoneTutorialTypes.ts) wants them to do next — see ZoneTutorialController.ts's own doc. Driven once per fixedUpdate(), same call-site pattern as worldManager.update(). */
+    private readonly zoneTutorialController = new ZoneTutorialController(
+        this.world,
+        this.screenHost,
+        this.worldObjects,
+        this.worldManager.getZoneVisibilityManager(),
+        () => this.mainPlayer.transform.position,
+    );
+
+    /** The fresh-game "move the character" hand animation, zone-0-only — see MovementTutorialOverlay.ts's own doc. Driven once per render-rate update(), same call-site pattern as uiService.update() (a screen-fixed overlay, not tied to the physics step). */
+    private readonly movementTutorialOverlay = new MovementTutorialOverlay(
+        this.game,
+        () => this.mainPlayer.transform.position,
+        this.worldManager.getZoneVisibilityManager(),
+    );
+
     /** The player — self-contained (RigidBody, PlayerMovementController, collision events all wired up in its own awake()). See MainPlayer.ts. */
     private readonly mainPlayer: MainPlayer;
 
@@ -305,6 +330,12 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // input host (a Pixi container with worldToScreen()) and `this.threeScene` as
         // where its eventual character mesh gets parented.
         this.mainPlayer = this.world.add(new MainPlayer(this, this.threeScene, this.screenHost));
+
+        // Wired here (not as a field initializer, alongside worldManager's own construction
+        // above) because it needs this.mainPlayer, which doesn't exist yet at that point — see
+        // freezePlayerMovementBriefly()'s own doc for why a zone reveal gets a short freeze
+        // instead of the full focusCameraOn() camera trip a gate's own unlock uses.
+        this.worldManager.onZoneRevealed.add(() => void this.freezePlayerMovementBriefly(ZONE_UNLOCK_FREEZE_SEC));
 
         // Prefer the last STABLE tile the player was confirmed standing on (see
         // PlayerPositionStorage.ts's own doc — walkable, no resource on top, saved
@@ -355,6 +386,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.registerQueueSpawnGates();
         this.registerShopSpawnGates();
         this.setupFarms();
+        this.setupTriggers();
         this.setupCraftTables();
         this.setupDebugGui();
         this.threeScene.add(this.mainPlayer.transform);
@@ -519,6 +551,16 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             'Resources',
         );
         DevGuiManager.instance.addButton(
+            'Clear Tutorial Progress',
+            () => void TutorialProgressStorage.clearAll(),
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
+            'Clear Triggers',
+            () => void TriggerStorage.clearAll(),
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
             'Add 10 Of Each Resource',
             () => {
                 // Skips Pig — see setupDebugButtons()'s own doc on why an animal-caught
@@ -553,6 +595,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 void AnimalFollowStorage.clearAll();
                 void PlayerPositionStorage.clearAll();
                 void FarmPlotStorage.clearAll();
+                void TutorialProgressStorage.clearAll();
+                void TriggerStorage.clearAll();
             },
             'Resources',
         );
@@ -1098,6 +1142,41 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     }
 
     /**
+     * One Trigger entity per placed "trigger" mapSettings object (see TriggerTypes.ts's own
+     * doc) — a config-less placement (no getTriggerConfig(id) entry yet, e.g. a level designer
+     * drew the volume on the map before opening the Triggers tab) just defaults to
+     * destroyOnTrigger: false rather than being skipped; a trigger has nothing to misconfigure
+     * beyond that one flag now that it carries no effect of its own.
+     *
+     * onActivated is exactly TriggerStorage.activate() (see that file's own doc for why a
+     * Trigger entity never touches any storage or effect itself) plus a requirementRegistry
+     * recheck — the same "storage changed, now recheck every gate" pairing
+     * notifyBuildingLevelUp()/notifyItemCrafted() below already use for their own milestone
+     * kinds, needed here so a Gate whose requirement is `{type: 'trigger', ...}` actually
+     * unlocks the instant this fires rather than waiting for some unrelated event to trigger a
+     * recheck. A zone's own 'trigger' requirement needs no such nudge — WorldManager already
+     * polls ZONE_CONFIG every frame regardless.
+     */
+    private setupTriggers(): void {
+        for (const [id, placement] of this.worldObjects.getAllOfType('trigger')) {
+            const destroyOnTrigger = getTriggerConfig(id)?.destroyOnTrigger ?? false;
+
+            const position = new THREE.Vector3(placement.x, 0, placement.z);
+            const trigger = this.world.add(new Trigger(
+                position,
+                { width: placement.width, depth: placement.depth },
+                destroyOnTrigger,
+                () => {
+                    TriggerStorage.activate(id);
+                    void this.requirementRegistry.recheckAll();
+                },
+            ));
+            this.threeScene.add(trigger.transform);
+            this.registerZoneVisibility(trigger.transform, position.x, position.z, placement.width, placement.depth);
+        }
+    }
+
+    /**
      * Spawns one FarmPlotTile per FarmGrid.computeFarmGrid() cell within `placement`'s own
      * footprint — the OWNED state of a farm plot (see FarmGrid.ts's own doc for why this is a
      * grid of individually-collidered cells, not one giant patch). Called either straight from
@@ -1379,6 +1458,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // Independent of the above — see DynamicResourceSpawner.ts's own doc.
         this.dynamicResourceSpawner.update(playerPosition, delta);
         this.shapeResourceSpawner.update(playerPosition, delta);
+        // Independent of the above too — see ZoneTutorialController.ts's own doc.
+        this.zoneTutorialController.update();
 
         this.updateStablePlayerPosition(delta, playerPosition);
 
@@ -1474,7 +1555,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // CameraFocusOptions.preDelaySec's own doc: the whole point is a beat where the
         // player can already tell something happened (they can't move) but the camera hasn't
         // cut away yet, not just a delayed camera cut while they're still free to walk off.
-        this.mainPlayer.movementController.enabled = false;
+        this.freezePlayerMovement();
 
         if (options.preDelaySec) {
             await wait(options.preDelaySec);
@@ -1489,7 +1570,37 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.cameraFocusPoint = null;
         await wait(returnSec);
 
-        this.mainPlayer.movementController.enabled = true;
+        this.unfreezePlayerMovement();
+    }
+
+    /**
+     * Reference-counted (not a plain boolean) since a gate's own focusCameraOn() trip and a
+     * zone-reveal freeze (see the worldManager.onZoneRevealed subscription in this scene's
+     * constructor) can legitimately overlap — an unlock gate's requirement being met is exactly
+     * what a zone reveal is often gated on (MilestoneRequirement.ts's own 'gate' kind), so both
+     * can fire back-to-back. A plain boolean would let whichever one's timer finishes FIRST
+     * re-enable movement out from under the other still-in-progress freeze; counting how many
+     * freezes are currently active only lets go once the LAST one clears.
+     */
+    private movementFreezeCount = 0;
+
+    private freezePlayerMovement(): void {
+        this.movementFreezeCount++;
+        this.mainPlayer.movementController.enabled = false;
+    }
+
+    private unfreezePlayerMovement(): void {
+        this.movementFreezeCount = Math.max(0, this.movementFreezeCount - 1);
+        if (this.movementFreezeCount === 0) {
+            this.mainPlayer.movementController.enabled = true;
+        }
+    }
+
+    /** ZONE_UNLOCK_FREEZE_SEC's own timed freeze — see the worldManager.onZoneRevealed subscription in this scene's constructor for why a zone reveal gets this instead of a full focusCameraOn() trip (no camera move, just a beat to let the shockwave/rise animation read before the player can walk off mid-reveal). */
+    private async freezePlayerMovementBriefly(durationSec: number): Promise<void> {
+        this.freezePlayerMovement();
+        await wait(durationSec);
+        this.unfreezePlayerMovement();
     }
 
     /**
@@ -1518,6 +1629,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // and that component exists at all — harmless no-op until then).
         this.world.update(delta);
         this.uiService.update();
+        this.movementTutorialOverlay.update(delta);
         ParticleSystem.update(delta);
 
         super.update(delta);
@@ -1530,6 +1642,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.worldManager.destroy();
         this.dynamicResourceSpawner.destroy();
         this.shapeResourceSpawner.destroy();
+        this.zoneTutorialController.destroy();
+        this.movementTutorialOverlay.destroy();
         this.loadingSpinner?.destroy();
         this.uiService.destroy();
         super.destroy();

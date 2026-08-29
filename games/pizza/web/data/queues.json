@@ -27,7 +27,8 @@
                 "type": "gate",
                 "gateId": "gate1"
             },
-            "popupBobOffset": 2
+            "popupBobOffset": 2,
+            "view": "ship1View"
         }
     }
 }

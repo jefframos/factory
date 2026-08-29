@@ -24,6 +24,7 @@
 // to call buildFloor()/setupGround().
 
 import * as THREE from 'three';
+import { Signal } from 'signals';
 import World from '../ecs/World';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
@@ -70,6 +71,8 @@ export default class WorldManager {
     private nextZoneToReveal = 1;
     /** The player's own position as of the most recent update() call — see revealNextZone()'s own doc for why it needs this: the shockwave/rise-animation effect (ZoneRevealEffect.ts, ZoneVisibilityManager.revealZone()'s `origin` param) has to expand from wherever the player is actually standing, not from world origin. Starts at world origin (a reasonable stand-in before the first update() call, e.g. if a debug button somehow fires before the first frame ticks). */
     private lastPlayerPosition = new THREE.Vector3();
+    /** Dispatched (with the revealed zoneNumber) every time revealZoneWithEffect() actually reveals one — PizzaScene subscribes to briefly freeze player movement, same reasoning Gate.playUnlockSequence()'s own focusCameraOn() call already freezes it for a gate's camera trip: give the shockwave/rise animation a moment to finish before the player can walk off mid-reveal. */
+    public readonly onZoneRevealed: Signal = new Signal();
 
     /**
      * `spawns` defaults to reading the map's resourcesLayer (see
@@ -154,12 +157,18 @@ export default class WorldManager {
      * ZONE_REVEAL_CONFIG.waveSpeed — that's what makes the newly-visible ground/resources/
      * buildings rise up in sync with the ring sweeping past them, instead of just popping in
      * all at once.
+     *
+     * A zone gated on a 'trigger' MilestoneRequirement (see MilestoneRequirement.ts/
+     * Trigger.ts) goes through this exact same path too, with zero code of its own — it's just
+     * another requirement kind checkZoneRequirements() already polls every frame, same as
+     * building/item/resource/gate.
      */
     private revealZoneWithEffect(zoneNumber: number): void {
         this.fogOfWarManager?.revealZone(zoneNumber);
         this.zoneVisibility.revealZone(zoneNumber, this.lastPlayerPosition);
         playZoneRevealShockwave(this.threeScene, this.lastPlayerPosition);
         console.log(`[WorldManager] revealed zone${zoneNumber + 1} (zoneNumber ${zoneNumber})`);
+        this.onZoneRevealed.dispatch(zoneNumber);
     }
 
     /**

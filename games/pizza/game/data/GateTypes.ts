@@ -32,7 +32,6 @@ export enum GateId {
     Gate1 = 'gate1',
     /** Opens once the player crafts their first axe (see CraftTypes.ts's "craftAxe" table) — already drawn on the Tiled map. */
     GateAxe = 'gateAxe',
-    GateTest = "gateTest"
 }
 
 /** Placeholder box art, same convention as BuildingTypes.ts's BuildingMeshConfig — plain numbers so this data file stays engine-import-free. */
@@ -96,19 +95,5 @@ export const GATE_CONFIG: Record<GateId, GateConfig> = {
         "particleEffectId": "gateMyst",
         "destroyParticleEffectId": "destroyBurst",
         "cameraFocusHeightOffset": 5
-    },
-    "gateTest": {
-        position: [0, 0, -16],
-        mesh: { size: [4, 3, 1], color: 0x555555 },
-        "name": "gateTest",
-        "view": "gateAxeView",
-        "requirement": {
-            "type": "resource",
-            "resourceType": ResourceType.Stone,
-            "amount": 1
-        },
-        "particleEffectId": "gateMyst",
-        "destroyParticleEffectId": "destroyBurst",
-        "cameraFocusHeightOffset": 2
     }
 };

@@ -21,6 +21,8 @@ import { ShapeResourceStorage } from '../world/ShapeResourceStorage';
 import { AnimalFollowStorage } from './AnimalFollowStorage';
 import { PlayerPositionStorage } from './PlayerPositionStorage';
 import { FarmPlotStorage } from './FarmPlotStorage';
+import { TutorialProgressStorage } from '../tutorial/TutorialProgressStorage';
+import { TriggerStorage } from './TriggerStorage';
 
 /**
  * Same storage list PizzaScene's own dev "Reset Everything" button clears (including
@@ -44,6 +46,12 @@ import { FarmPlotStorage } from './FarmPlotStorage';
  * were, which after a real gate re-locks could easily be on the far side of one with no way
  * back. Clearing it here lets PizzaScene's constructor fall back to the map's own
  * "playerStart" point instead, same as an actual first-ever visit.
+ *
+ * TutorialProgressStorage.clearAll() is here for the same "gated progress must reset alongside
+ * the systems it gates" reason — CraftStorage/GateStorage above re-lock the axe recipe/gate
+ * themselves, but without also wiping the saved completed-step index, ZoneTutorialController
+ * would reload thinking the player already finished a step whose real backing progress just
+ * got wiped out from under it.
  */
 export function clearAllPlayerData(): void {
     void Promise.all([
@@ -63,5 +71,7 @@ export function clearAllPlayerData(): void {
         AnimalFollowStorage.clearAll(),
         PlayerPositionStorage.clearAll(),
         FarmPlotStorage.clearAll(),
+        TutorialProgressStorage.clearAll(),
+        TriggerStorage.clearAll(),
     ]).then(() => window.location.reload());
 }

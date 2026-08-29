@@ -28,6 +28,7 @@ import { ItemType } from '../crafting/ItemTypes';
 import { BackpackStorage } from './BackpackStorage';
 import { ResourceType } from '../actions/ResourceTypes';
 import { GateStorage } from './GateStorage';
+import { TriggerStorage } from './TriggerStorage';
 // Type-only — GateTypes.ts's own GateConfig.requirement field is typed as MilestoneRequirement,
 // so a plain runtime import here would be circular. GateId is only ever used as a TYPE
 // annotation below (the 'gate' arm's own `gateId` field), never a runtime value, so `import
@@ -60,9 +61,15 @@ export interface GateMilestoneRequirement {
     gateId: GateId;
 }
 
-export type MilestoneRequirement = BuildingMilestoneRequirement | ItemMilestoneRequirement | ResourceMilestoneRequirement | GateMilestoneRequirement;
+/** `triggerId` must have been walked into at least once — see TriggerStorage.isActivated()/Trigger.ts. Lets a designer-placed trigger volume unlock a zone/gate/queue/shop/etc without any of them needing their own trigger-specific code — same "one shared requirement union, plug into whatever" reasoning GateMilestoneRequirement's own doc gives for why a gate's unlock can double as a zone's. */
+export interface TriggerMilestoneRequirement {
+    type: 'trigger';
+    triggerId: string;
+}
 
-/** True once whichever storage backs `requirement`'s own kind says it's already satisfied — the one place that actually reads BuildingStorage/ItemStorage/BackpackStorage/GateStorage for this; callers (Gate.isRequirementMet(), RequirementRegistry, WorldManager's zone-unlock check) never touch any of those directly. */
+export type MilestoneRequirement = BuildingMilestoneRequirement | ItemMilestoneRequirement | ResourceMilestoneRequirement | GateMilestoneRequirement | TriggerMilestoneRequirement;
+
+/** True once whichever storage backs `requirement`'s own kind says it's already satisfied — the one place that actually reads BuildingStorage/ItemStorage/BackpackStorage/GateStorage/TriggerStorage for this; callers (Gate.isRequirementMet(), RequirementRegistry, WorldManager's zone-unlock check) never touch any of those directly. */
 export function isMilestoneRequirementMet(requirement: MilestoneRequirement): boolean {
     switch (requirement.type) {
         case 'building':
@@ -73,5 +80,7 @@ export function isMilestoneRequirementMet(requirement: MilestoneRequirement): bo
             return BackpackStorage.getCount(requirement.resourceType) >= requirement.amount;
         case 'gate':
             return GateStorage.isUnlocked(requirement.gateId);
+        case 'trigger':
+            return TriggerStorage.isActivated(requirement.triggerId);
     }
 }

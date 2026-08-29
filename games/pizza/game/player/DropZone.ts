@@ -41,13 +41,12 @@ import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import MainPlayer from './MainPlayer';
+import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 
 /** Breathing room between the nameplate's text and its AutoFitFrame border — separate from the frame asset's OWN 9-slice padding (see FrameRegistry.ts). */
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
 const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
-/** Dotted-outline color — green reads as "deposit here," distinct from QueueZone/BuildingZone's own outlines. */
-const DROP_ZONE_COLOR = 0x33cc66;
 /** Corner rounding for the floor outline — purely cosmetic, the collider itself stays a sharp-cornered box (see RigidBody below). */
 const DROP_ZONE_CORNER_RADIUS = 0.3;
 /** How far above the zone each unit's "+1" popup starts. */
@@ -128,7 +127,7 @@ export default class DropZone extends Entity {
             HALF_EXTENTS.x * 2,
             HALF_EXTENTS.z * 2,
             DROP_ZONE_CORNER_RADIUS,
-            { color: DROP_ZONE_COLOR },
+            { color: getZoneColor(ZoneColorKind.DropZone) },
         ));
 
         // A dedicated empty node the nameplate tracks, rather than a raw captured position —

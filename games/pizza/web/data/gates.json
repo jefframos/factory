@@ -21,17 +21,5 @@
         "particleEffectId": "gateMyst",
         "destroyParticleEffectId": "destroyBurst",
         "cameraFocusHeightOffset": 2
-    },
-    "gateTest": {
-        "name": "gateTest",
-        "requirement": {
-            "type": "resource",
-            "resourceType": "stone",
-            "amount": 1
-        },
-        "view": "gateAxeView",
-        "destroyParticleEffectId": "destroyBurst",
-        "particleEffectId": "gateMyst",
-        "cameraFocusHeightOffset": 2
     }
 }

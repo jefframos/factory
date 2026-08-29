@@ -111,6 +111,11 @@ export const FrameRegistry: Record<string, FrameDef> = {
         padding: DEFAULT_PADDING_BUBBLE,
         arrowPivot: { x: 0.5, y: 1 },
     },
+    /** InventoryPopup's own panel shape (see popups/InventoryPopup.ts) — a bordered item-frame plate rather than the speech-bubble 'Popup' style, no arrow. 64px border on every side, per the source asset's own bake. */
+    ItemFrame: {
+        textureKey: 'ItemFrame03_Single_Navy',
+        padding: uniformPadding(64),
+    },
 };
 
 export type FrameName = keyof typeof FrameRegistry;

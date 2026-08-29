@@ -56,6 +56,36 @@ export const ENTITY_SOURCE_MAP = {
         optionalKeys: ['requirement'],
         protectEntries: true,
     },
+    // Keyed by zoneNumber, same convention (and same protectEntries reasoning — see that
+    // entry's own doc) as `zones` just above: the Zone Tutorials tab auto-discovers zoneNumbers
+    // from the same painted "zones" tilelayer, so a config-only entry for a zoneNumber not
+    // currently painted shouldn't get silently deleted just because one save's POST happened
+    // not to include it.
+    zoneTutorials: {
+        file: path.join(GAME_DIR, 'tutorial', 'ZoneTutorialTypes.ts'),
+        exportName: 'ZONE_TUTORIAL_CONFIG',
+        kind: 'partialRecord',
+        // `steps` has no unmanaged sibling fields on any of its items (ZoneTutorialStep is
+        // exactly {kind, craftId, gateId, triggerId} — see ZoneTutorialTypes.ts), same "no
+        // listMerge needed" reasoning as questGivers' own `variants` — a plain wholesale
+        // replacement of the whole array is always safe here.
+        managedKeys: ['steps', 'arrowTextureId', 'use3dArrow'],
+        optionalKeys: ['arrowTextureId', 'use3dArrow'],
+        protectEntries: true,
+    },
+    // A single dotted-outline color per named zone kind (dropper/trigger/queue/craft/farm/...) —
+    // see ZoneColorTypes.ts's own doc for why this was pulled out of nine separate hardcoded
+    // constants scattered across BuildingZone.ts/ShopZone.ts/GateDropZone.ts/DropZone.ts/
+    // Trigger.ts/CraftZone.ts/QueueZone.ts/FarmZone.ts/FarmPlotTile.ts. Fixed, small,
+    // hand-authored set (one entry per ZoneColorKind, never designer-added/removed) — same
+    // enumRecord reasoning as Gate/Building, not an open id-map like Shops/Crafting.
+    colors: {
+        file: path.join(GAME_DIR, 'data', 'ZoneColorTypes.ts'),
+        exportName: 'ZONE_COLOR_CONFIG',
+        kind: 'enumRecord',
+        enumName: 'ZoneColorKind',
+        managedKeys: ['color'],
+    },
     gates: {
         file: path.join(GAME_DIR, 'data', 'GateTypes.ts'),
         exportName: 'GATE_CONFIG',
@@ -226,6 +256,24 @@ export const ENTITY_SOURCE_MAP = {
         optionalKeys: ['appearRequirement', 'allowedCrops', 'solid'],
         tileExportName: 'FARM_TILE_CONFIG',
         tileManagedKeys: ['empty', 'prepared', 'icon'],
+    },
+    // A TRIGGER — a "trigger"-typed object drawn on the Tiled map's "mapSettings" layer (see
+    // WorldObjectRegistry.ts), open-ended by id like shops/crafting, not enum-backed. Unlike
+    // zones/zoneTutorials (also placed-on-map, but auto-discovered from the "zones" tilelayer
+    // every time the tab opens), a trigger's id is manually typed by the designer to match
+    // whatever they named the Tiled object — same convention shops/crafting/queues already use
+    // for their own map-placed, open-ended ids — so no protectEntries/auto-discovery here.
+    //
+    // Deliberately carries NO effect/action config of its own (that lived here briefly, then
+    // moved out — see TriggerTypes.ts's own doc) — a trigger only ever manages
+    // destroyOnTrigger; what activating it actually DOES is configured on whichever Zone/Gate/
+    // etc's own `requirement` field references it (REQUIREMENT_TYPE_FIELDS.trigger in
+    // schemas.js), via MilestoneRequirement.ts's 'trigger' kind.
+    triggers: {
+        file: path.join(GAME_DIR, 'data', 'TriggerTypes.ts'),
+        exportName: 'TRIGGER_CONFIG_BY_ID',
+        kind: 'partialRecord',
+        managedKeys: ['destroyOnTrigger'],
     },
     // A CROP — game-design content (Wheat, ...), small and fixed like BuildingId/ItemType, so
     // enum-backed rather than an open id-map like farms above — see CropTypes.ts's own doc.

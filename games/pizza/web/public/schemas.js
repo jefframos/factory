@@ -138,6 +138,33 @@ const ENTITY_SCHEMAS = {
     zones: [
         { key: 'requirement', type: 'requirement', label: 'Unlock Requirement', optional: true },
     ],
+    // Keyed by zoneNumber, same auto-discovery-from-the-map convention as `zones` just above.
+    // A step's `craftId`/`gateId`/`triggerId` are ALL present on the field list below but only
+    // one is ever meaningful per entry (whichever `kind` selects) — same "extra field just sits
+    // unused" convention buildings' `levels`/providers' `drops` list items already tolerate;
+    // there's no conditional-field support in this schema engine to hide the other two. A
+    // 'trigger' step has no resource to gather — the arrow just points at that trigger's placed
+    // location until it activates (see ZoneTutorialController.ts's own doc).
+    zoneTutorials: [
+        {
+            key: 'steps', type: 'list', label: 'Steps (walked through in order)',
+            itemLabel: item => item.kind === 'craft' ? `Craft: ${item.craftId ?? '?'}` : item.kind === 'gate' ? `Gate: ${item.gateId ?? '?'}` : `Trigger: ${item.triggerId ?? '?'}`,
+            fields: [
+                { key: 'kind', type: 'select', label: 'Kind', options: [{ value: 'craft', label: 'Craft' }, { value: 'gate', label: 'Gate' }, { value: 'trigger', label: 'Trigger' }] },
+                { key: 'craftId', type: 'select', label: 'Craft Table (if Kind = Craft)', source: 'crafting', optional: true },
+                { key: 'gateId', type: 'select', label: 'Gate (if Kind = Gate)', source: 'gates', optional: true },
+                { key: 'triggerId', type: 'select', label: 'Trigger (if Kind = Trigger)', source: 'triggers', optional: true },
+            ],
+        },
+        { key: 'arrowTextureId', type: 'icon', label: 'Arrow Icon' },
+        { key: 'use3dArrow', type: 'boolean', label: 'Use 3D Arrow (not implemented yet — screen-space arrow always shows regardless)' },
+    ],
+    // One fixed row per ZoneColorKind — see ZoneColorTypes.ts's own doc. The label spells out
+    // which entity type each kind actually renders on, since "buildingDropper"/"gateDropper"
+    // read as near-identical ids at a glance otherwise.
+    colors: [
+        { key: 'color', type: 'color', label: 'Color' },
+    ],
     gates: [
         { key: 'name', type: 'text', label: 'Name' },
         { key: 'requirement', type: 'requirement', label: 'Requirement' },
@@ -235,6 +262,15 @@ const ENTITY_SCHEMAS = {
         { key: 'destroyParticleEffectId', type: 'select', label: 'Destroy Particle Effect (fires when a destroyOnComplete table is removed)', source: 'particleEffects', optional: true },
         { key: 'destroyParticleCount', type: 'number', label: 'Destroy Particle Count', optional: true },
         ...POPUP_FIELDS,
+    ],
+    // A TRIGGER — a placed volume (drawn as a "trigger"-typed object on the map's mapSettings
+    // layer, matched here by the SAME id) that marks itself activated the instant the player
+    // walks into it. Carries no effect of its own — reference this trigger's id from any
+    // Requirement field elsewhere (Zones' Unlock Requirement, a Gate's own Requirement, ...)
+    // via that field's "Trigger" kind (see REQUIREMENT_TYPE_FIELDS.trigger below) to make
+    // something actually happen when it fires.
+    triggers: [
+        { key: 'destroyOnTrigger', type: 'boolean', label: 'Destroy On Trigger (one-shot switch — leave off to let it re-activate every time the player re-enters)' },
     ],
     // A RESOURCE is the bankable item (Wood/Stone/Berries/Bark/Pebble/GrassFiber) — what
     // actually PRODUCES one (a tree, a stone deposit, a berry bush) is a separate concern,
@@ -544,5 +580,11 @@ const REQUIREMENT_TYPE_FIELDS = {
     // same widget). See MilestoneRequirement.ts's own GateMilestoneRequirement doc.
     gate: [
         { key: 'gateId', type: 'select', label: 'Gate', source: 'gates' },
+    ],
+    // Added alongside the Trigger tab — "this zone/gate unlocks once trigger volume X fires."
+    // See TriggerTypes.ts's own doc for why a trigger itself carries no effect config: this
+    // field, on whichever entity actually cares, IS the effect.
+    trigger: [
+        { key: 'triggerId', type: 'select', label: 'Trigger', source: 'triggers' },
     ],
 };

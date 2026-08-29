@@ -44,11 +44,12 @@ const Body: Partial<PIXI.TextStyle> = {
     dropShadowAlpha: 0.7,
     dropShadowDistance: 2,
     dropShadowAngle: Math.PI / 2,
-    fontSize: 16,
+    fontSize: 18,
 };
 
 export const TextStyleRegistry = {
     Body,
+    Inventory: { ...Body, fontSize: 22, strokeThickness: 4 } as Partial<PIXI.TextStyle>,
     /** Bigger heading variant of Body, using MainFontTitle's family — general section/panel titles. */
     Title: { ...Body, fontFamily: Assets.MainFontTitle.fontFamily, fontSize: 32, strokeThickness: 4 } as Partial<PIXI.TextStyle>,
 

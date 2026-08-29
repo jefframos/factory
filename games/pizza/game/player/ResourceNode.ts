@@ -51,6 +51,7 @@ import { ASSET_LIBRARY, AssetLibraryEntry, getAssetIcon, pickRandom, resolveRang
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 import ViewUtils from 'core/utils/ViewUtils';
 import { OcclusionFadeConfig } from '../services/BendService';
+import ResourceNodeRegistry from './ResourceNodeRegistry';
 
 /**
  * Trees/rocks are exactly the props that fully swallow the player when they walk behind one
@@ -244,6 +245,15 @@ export default class ResourceNode extends Entity implements ActionTarget {
         }
 
         this.applyInitialState();
+
+        // See ResourceNodeRegistry.ts's own doc — makes this instance findable by
+        // ZoneTutorialController's gather-phase arrow the moment it's materialized.
+        ResourceNodeRegistry.register(this);
+    }
+
+    public override destroy(): void {
+        ResourceNodeRegistry.unregister(this);
+        super.destroy();
     }
 
     /**

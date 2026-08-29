@@ -900,27 +900,27 @@
         "h": 132
       }
     },
-    "ItemFrame03_Single_Yellow": {
+    "Label_Badge01_Gey": {
       "frame": {
         "x": 404,
         "y": 716,
-        "w": 128,
-        "h": 130
+        "w": 129,
+        "h": 132
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 128,
-        "h": 130
+        "w": 129,
+        "h": 132
       },
       "sourceSize": {
-        "w": 128,
-        "h": 130
+        "w": 129,
+        "h": 132
       }
     },
-    "ItemFrame03_Single_Red": {
+    "ItemFrame03_Single_Yellow": {
       "frame": {
         "x": 669,
         "y": 644,
@@ -940,9 +940,9 @@
         "h": 130
       }
     },
-    "ItemFrame03_Single_Purple": {
+    "ItemFrame03_Single_Red": {
       "frame": {
-        "x": 534,
+        "x": 535,
         "y": 699,
         "w": 128,
         "h": 130
@@ -960,7 +960,7 @@
         "h": 130
       }
     },
-    "ItemFrame03_Single_Navy": {
+    "ItemFrame03_Single_Purple": {
       "frame": {
         "x": 803,
         "y": 2,
@@ -980,7 +980,7 @@
         "h": 130
       }
     },
-    "ItemFrame03_Single_Green": {
+    "ItemFrame03_Single_Navy": {
       "frame": {
         "x": 803,
         "y": 132,
@@ -1000,7 +1000,7 @@
         "h": 130
       }
     },
-    "ItemFrame03_Single_Gray": {
+    "ItemFrame03_Single_Green": {
       "frame": {
         "x": 738,
         "y": 262,
@@ -1020,10 +1020,30 @@
         "h": 130
       }
     },
-    "ItemFrame03_Single_Blue": {
+    "ItemFrame03_Single_Gray": {
       "frame": {
         "x": 803,
         "y": 394,
+        "w": 128,
+        "h": 130
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 130
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 130
+      }
+    },
+    "ItemFrame03_Single_Blue": {
+      "frame": {
+        "x": 803,
+        "y": 524,
         "w": 128,
         "h": 130
       },
@@ -1102,7 +1122,7 @@
     },
     "ItemFrame01_Single_OffWhite": {
       "frame": {
-        "x": 666,
+        "x": 667,
         "y": 774,
         "w": 60,
         "h": 122
@@ -1122,7 +1142,7 @@
     },
     "ItemFrame01_Single_Navy": {
       "frame": {
-        "x": 790,
+        "x": 791,
         "y": 774,
         "w": 60,
         "h": 122
@@ -1143,11 +1163,11 @@
     "ItemFrame01_Single_Hologram1": {
       "frame": {
         "x": 801,
-        "y": 644,
+        "y": 654,
         "w": 60,
         "h": 122
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1162,8 +1182,8 @@
     },
     "ItemFrame01_Single_Green": {
       "frame": {
-        "x": 803,
-        "y": 524,
+        "x": 2,
+        "y": 874,
         "w": 60,
         "h": 122
       },
@@ -1182,12 +1202,12 @@
     },
     "ItemFrame01_Single_Gray": {
       "frame": {
-        "x": 863,
-        "y": 586,
+        "x": 126,
+        "y": 874,
         "w": 60,
         "h": 122
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1202,7 +1222,7 @@
     },
     "ItemFrame01_Single_Blue": {
       "frame": {
-        "x": 2,
+        "x": 250,
         "y": 874,
         "w": 60,
         "h": 122
@@ -1242,7 +1262,7 @@
     },
     "Image_Effect_Light03": {
       "frame": {
-        "x": 534,
+        "x": 535,
         "y": 829,
         "w": 322,
         "h": 129
@@ -1282,8 +1302,8 @@
     },
     "handHud": {
       "frame": {
-        "x": 863,
-        "y": 710,
+        "x": 404,
+        "y": 850,
         "w": 62,
         "h": 70
       },
@@ -1302,7 +1322,7 @@
     },
     "Glow_Circle02": {
       "frame": {
-        "x": 665,
+        "x": 666,
         "y": 836,
         "w": 279,
         "h": 279
@@ -1362,8 +1382,8 @@
     },
     "equal-2": {
       "frame": {
-        "x": 925,
-        "y": 586,
+        "x": 915,
+        "y": 716,
         "w": 110,
         "h": 109
       },
@@ -1380,30 +1400,10 @@
         "h": 128
       }
     },
-    "down": {
-      "frame": {
-        "x": 126,
-        "y": 874,
-        "w": 54,
-        "h": 64
-      },
-      "rotated": true,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 54,
-        "h": 64
-      },
-      "sourceSize": {
-        "w": 54,
-        "h": 64
-      }
-    },
     "CardFrame04_FocusGlow": {
       "frame": {
-        "x": 404,
-        "y": 848,
+        "x": 374,
+        "y": 914,
         "w": 108,
         "h": 108
       },
@@ -1422,8 +1422,8 @@
     },
     "CardFrame02_n_Light": {
       "frame": {
-        "x": 803,
-        "y": 586,
+        "x": 801,
+        "y": 716,
         "w": 56,
         "h": 56
       },
@@ -1442,12 +1442,12 @@
     },
     "card1": {
       "frame": {
-        "x": 279,
-        "y": 958,
+        "x": 318,
+        "y": 1024,
         "w": 192,
         "h": 145
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1462,12 +1462,12 @@
     },
     "Button_Tapered_Yellow": {
       "frame": {
-        "x": 1119,
-        "y": 365,
+        "x": 935,
+        "y": 406,
         "w": 185,
         "h": 194
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1483,11 +1483,11 @@
     "Button_SkillBtn_Red": {
       "frame": {
         "x": 935,
-        "y": 698,
+        "y": 602,
         "w": 128,
         "h": 107
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1502,8 +1502,8 @@
     },
     "Button_SkillBtn_Orange": {
       "frame": {
-        "x": 1036,
-        "y": 552,
+        "x": 947,
+        "y": 828,
         "w": 128,
         "h": 107
       },
@@ -1522,12 +1522,12 @@
     },
     "Button_SkillBtn_Dark": {
       "frame": {
-        "x": 935,
-        "y": 406,
+        "x": 1026,
+        "y": 711,
         "w": 128,
         "h": 107
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1542,8 +1542,8 @@
     },
     "Button_SkillBtn_Blue": {
       "frame": {
-        "x": 1315,
-        "y": 365,
+        "x": 1065,
+        "y": 602,
         "w": 128,
         "h": 107
       },
@@ -1562,12 +1562,12 @@
     },
     "Button01_s_Yellow": {
       "frame": {
-        "x": 1445,
-        "y": 365,
+        "x": 666,
+        "y": 1117,
         "w": 70,
         "h": 114
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1582,8 +1582,8 @@
     },
     "Button01_s_White_Light1_fill": {
       "frame": {
-        "x": 192,
-        "y": 874,
+        "x": 279,
+        "y": 936,
         "w": 58,
         "h": 92
       },
@@ -1602,8 +1602,8 @@
     },
     "Button01_s_White_Light1": {
       "frame": {
-        "x": 426,
-        "y": 958,
+        "x": 782,
+        "y": 1117,
         "w": 62,
         "h": 96
       },
@@ -1622,8 +1622,8 @@
     },
     "Button01_s_White_Bg": {
       "frame": {
-        "x": 286,
-        "y": 874,
+        "x": 880,
+        "y": 1117,
         "w": 70,
         "h": 114
       },
@@ -1642,8 +1642,8 @@
     },
     "Button01_s_Sky": {
       "frame": {
-        "x": 1044,
-        "y": 406,
+        "x": 947,
+        "y": 958,
         "w": 70,
         "h": 114
       },
@@ -1662,12 +1662,12 @@
     },
     "Button01_s_Red": {
       "frame": {
-        "x": 1315,
-        "y": 474,
+        "x": 996,
+        "y": 1074,
         "w": 70,
         "h": 114
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1682,8 +1682,8 @@
     },
     "Button01_s_Purple": {
       "frame": {
-        "x": 1431,
-        "y": 481,
+        "x": 1019,
+        "y": 958,
         "w": 70,
         "h": 114
       },
@@ -1702,12 +1702,12 @@
     },
     "Button01_s_PInk": {
       "frame": {
-        "x": 1315,
-        "y": 546,
+        "x": 1068,
+        "y": 1074,
         "w": 70,
         "h": 114
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1722,8 +1722,8 @@
     },
     "Button01_s_Mint": {
       "frame": {
-        "x": 1431,
-        "y": 597,
+        "x": 1056,
+        "y": 820,
         "w": 70,
         "h": 114
       },
@@ -1742,12 +1742,12 @@
     },
     "Button01_s_Green": {
       "frame": {
-        "x": 665,
-        "y": 1117,
+        "x": 1091,
+        "y": 936,
         "w": 70,
         "h": 114
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1762,12 +1762,12 @@
     },
     "Button01_s_Gray": {
       "frame": {
-        "x": 781,
-        "y": 1117,
+        "x": 1128,
+        "y": 820,
         "w": 70,
         "h": 114
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -1782,8 +1782,8 @@
     },
     "Button01_s_DarkGray": {
       "frame": {
-        "x": 897,
-        "y": 1117,
+        "x": 1156,
+        "y": 711,
         "w": 70,
         "h": 114
       },
@@ -1802,8 +1802,8 @@
     },
     "Button01_s_Blue": {
       "frame": {
-        "x": 426,
-        "y": 1022,
+        "x": 1140,
+        "y": 1052,
         "w": 70,
         "h": 114
       },
@@ -1822,8 +1822,8 @@
     },
     "BubbleFrame05__BgShadow": {
       "frame": {
-        "x": 1145,
-        "y": 618,
+        "x": 1163,
+        "y": 936,
         "w": 248,
         "h": 97
       },
@@ -1842,8 +1842,8 @@
     },
     "BubbleFrame05_Bg": {
       "frame": {
-        "x": 1044,
-        "y": 682,
+        "x": 1122,
+        "y": 365,
         "w": 222,
         "h": 82
       },
@@ -1882,8 +1882,8 @@
     },
     "BubbleFrame01_White": {
       "frame": {
-        "x": 946,
-        "y": 828,
+        "x": 1413,
+        "y": 365,
         "w": 78,
         "h": 84
       },
@@ -1902,8 +1902,8 @@
     },
     "BubbleFrame01_Hexagon_Bg_Yellow": {
       "frame": {
-        "x": 1013,
-        "y": 908,
+        "x": 1272,
+        "y": 445,
         "w": 250,
         "h": 243
       },
@@ -1921,66 +1921,6 @@
       }
     },
     "BubbleFrame01_Hexagon_Bg_Purpple": {
-      "frame": {
-        "x": 1258,
-        "y": 717,
-        "w": 250,
-        "h": 243
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 250,
-        "h": 243
-      },
-      "sourceSize": {
-        "w": 250,
-        "h": 243
-      }
-    },
-    "BubbleFrame01_Hexagon_Bg_Grey": {
-      "frame": {
-        "x": 1258,
-        "y": 962,
-        "w": 250,
-        "h": 243
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 250,
-        "h": 243
-      },
-      "sourceSize": {
-        "w": 250,
-        "h": 243
-      }
-    },
-    "BubbleFrame01_Hexagon_Bg_Green": {
-      "frame": {
-        "x": 1013,
-        "y": 1160,
-        "w": 250,
-        "h": 243
-      },
-      "rotated": true,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 250,
-        "h": 243
-      },
-      "sourceSize": {
-        "w": 250,
-        "h": 243
-      }
-    },
-    "BubbleFrame01_Hexagon_Bg_Blue": {
       "frame": {
         "x": 2,
         "y": 1208,
@@ -2000,14 +1940,74 @@
         "h": 243
       }
     },
+    "BubbleFrame01_Hexagon_Bg_Grey": {
+      "frame": {
+        "x": 254,
+        "y": 1208,
+        "w": 250,
+        "h": 243
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 250,
+        "h": 243
+      },
+      "sourceSize": {
+        "w": 250,
+        "h": 243
+      }
+    },
+    "BubbleFrame01_Hexagon_Bg_Green": {
+      "frame": {
+        "x": 506,
+        "y": 1190,
+        "w": 250,
+        "h": 243
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 250,
+        "h": 243
+      },
+      "sourceSize": {
+        "w": 250,
+        "h": 243
+      }
+    },
+    "BubbleFrame01_Hexagon_Bg_Blue": {
+      "frame": {
+        "x": 751,
+        "y": 1189,
+        "w": 250,
+        "h": 243
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 250,
+        "h": 243
+      },
+      "sourceSize": {
+        "w": 250,
+        "h": 243
+      }
+    },
     "BubbleFrame01_Bg": {
       "frame": {
-        "x": 426,
-        "y": 1138,
+        "x": 1206,
+        "y": 365,
         "w": 72,
         "h": 78
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -2022,12 +2022,12 @@
     },
     "bubble": {
       "frame": {
-        "x": 506,
-        "y": 1153,
+        "x": 1200,
+        "y": 783,
         "w": 185,
         "h": 146
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 4,
@@ -2042,8 +2042,8 @@
     },
     "BorderFrame_Squrare_Inner": {
       "frame": {
-        "x": 1044,
-        "y": 522,
+        "x": 374,
+        "y": 874,
         "w": 27,
         "h": 27
       },
@@ -2082,8 +2082,8 @@
     },
     "BorderFrame_Round30": {
       "frame": {
-        "x": 1145,
-        "y": 552,
+        "x": 1195,
+        "y": 589,
         "w": 64,
         "h": 75
       },
@@ -2102,8 +2102,8 @@
     },
     "BorderFrame_Round24": {
       "frame": {
-        "x": 1222,
-        "y": 552,
+        "x": 1206,
+        "y": 445,
         "w": 62,
         "h": 62
       },
@@ -2142,12 +2142,12 @@
     },
     "BorderFrame_Round20_Single_Yellow": {
       "frame": {
-        "x": 927,
-        "y": 536,
+        "x": 484,
+        "y": 850,
         "w": 44,
         "h": 48
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -2182,8 +2182,8 @@
     },
     "BannerFrame03_Single": {
       "frame": {
-        "x": 654,
-        "y": 1189,
+        "x": 1140,
+        "y": 1168,
         "w": 338,
         "h": 114
       },
@@ -2202,8 +2202,8 @@
     },
     "back1": {
       "frame": {
-        "x": 279,
-        "y": 1205,
+        "x": 1212,
+        "y": 1035,
         "w": 130,
         "h": 130
       },
@@ -2242,8 +2242,8 @@
     },
     "arrow-right-2": {
       "frame": {
-        "x": 946,
-        "y": 908,
+        "x": 1195,
+        "y": 655,
         "w": 64,
         "h": 54
       },
@@ -2282,8 +2282,8 @@
     },
     "arrow-left-2": {
       "frame": {
-        "x": 946,
-        "y": 964,
+        "x": 1206,
+        "y": 509,
         "w": 64,
         "h": 54
       },
@@ -2300,14 +2300,114 @@
         "h": 54
       }
     },
+    "arrow-down": {
+      "frame": {
+        "x": 1280,
+        "y": 365,
+        "w": 54,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 54,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 54,
+        "h": 64
+      }
+    },
+    "chest-lid": {
+      "frame": {
+        "x": 484,
+        "y": 896,
+        "w": 124,
+        "h": 49
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 124,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 124,
+        "h": 49
+      }
+    },
+    "chest-lid-open": {
+      "frame": {
+        "x": 1387,
+        "y": 697,
+        "w": 117,
+        "h": 72
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 117,
+        "h": 72
+      },
+      "sourceSize": {
+        "w": 117,
+        "h": 72
+      }
+    },
+    "chest-inner": {
+      "frame": {
+        "x": 512,
+        "y": 1022,
+        "w": 112,
+        "h": 20
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 20
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 20
+      }
+    },
+    "chest-front": {
+      "frame": {
+        "x": 1387,
+        "y": 771,
+        "w": 121,
+        "h": 66
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 121,
+        "h": 66
+      },
+      "sourceSize": {
+        "w": 121,
+        "h": 66
+      }
+    },
     "Star-empty": {
       "frame": {
-        "x": 1128,
-        "y": 717,
+        "x": 1344,
+        "y": 1035,
         "w": 133,
         "h": 127
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -2322,8 +2422,8 @@
     },
     "Star-empty-small": {
       "frame": {
-        "x": 254,
-        "y": 1412,
+        "x": 279,
+        "y": 996,
         "w": 38,
         "h": 37
       },
@@ -2342,8 +2442,8 @@
     },
     "speedModifier": {
       "frame": {
-        "x": 293,
-        "y": 1337,
+        "x": 996,
+        "y": 1190,
         "w": 113,
         "h": 118
       },
@@ -2362,12 +2462,12 @@
     },
     "ShopItem_s_GemPack_1_large": {
       "frame": {
-        "x": 413,
-        "y": 1340,
+        "x": 996,
+        "y": 1305,
         "w": 128,
         "h": 103
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -2382,8 +2482,8 @@
     },
     "ShopItem_s_GemPack_1": {
       "frame": {
-        "x": 946,
-        "y": 1020,
+        "x": 1272,
+        "y": 697,
         "w": 80,
         "h": 65
       },
@@ -2402,12 +2502,12 @@
     },
     "ShopItem_s_CoinPack_1": {
       "frame": {
-        "x": 1258,
-        "y": 1207,
+        "x": 1116,
+        "y": 1284,
         "w": 219,
         "h": 167
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -2422,8 +2522,8 @@
     },
     "presentFast": {
       "frame": {
-        "x": 654,
-        "y": 1305,
+        "x": 1337,
+        "y": 1284,
         "w": 115,
         "h": 136
       },
@@ -2442,12 +2542,12 @@
     },
     "present5": {
       "frame": {
-        "x": 771,
-        "y": 1305,
+        "x": 2,
+        "y": 1453,
         "w": 106,
         "h": 119
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -2461,46 +2561,6 @@
       }
     },
     "present4": {
-      "frame": {
-        "x": 879,
-        "y": 1305,
-        "w": 105,
-        "h": 119
-      },
-      "rotated": true,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 105,
-        "h": 119
-      },
-      "sourceSize": {
-        "w": 105,
-        "h": 119
-      }
-    },
-    "present3": {
-      "frame": {
-        "x": 2,
-        "y": 1453,
-        "w": 105,
-        "h": 119
-      },
-      "rotated": true,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 105,
-        "h": 119
-      },
-      "sourceSize": {
-        "w": 105,
-        "h": 119
-      }
-    },
-    "present2": {
       "frame": {
         "x": 123,
         "y": 1453,
@@ -2520,9 +2580,49 @@
         "h": 119
       }
     },
-    "present1": {
+    "present3": {
       "frame": {
         "x": 244,
+        "y": 1453,
+        "w": 105,
+        "h": 119
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 105,
+        "h": 119
+      },
+      "sourceSize": {
+        "w": 105,
+        "h": 119
+      }
+    },
+    "present2": {
+      "frame": {
+        "x": 365,
+        "y": 1453,
+        "w": 105,
+        "h": 119
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 105,
+        "h": 119
+      },
+      "sourceSize": {
+        "w": 105,
+        "h": 119
+      }
+    },
+    "present1": {
+      "frame": {
+        "x": 486,
         "y": 1453,
         "w": 105,
         "h": 119
@@ -2562,12 +2662,12 @@
     },
     "PictoIcon_Refresh_3-2": {
       "frame": {
-        "x": 318,
-        "y": 1152,
+        "x": 859,
+        "y": 716,
         "w": 51,
         "h": 50
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 7,
@@ -2582,12 +2682,12 @@
     },
     "PictoIcon_Music_1_Off": {
       "frame": {
-        "x": 1427,
-        "y": 1207,
+        "x": 1454,
+        "y": 1284,
         "w": 71,
         "h": 61
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -2602,12 +2702,12 @@
     },
     "PictoIcon_Music_1": {
       "frame": {
-        "x": 1427,
-        "y": 1270,
+        "x": 1454,
+        "y": 1357,
         "w": 66,
         "h": 61
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -2622,12 +2722,12 @@
     },
     "PictoIcon_Home_2-2": {
       "frame": {
-        "x": 771,
-        "y": 1428,
+        "x": 607,
+        "y": 1442,
         "w": 126,
         "h": 117
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -2642,12 +2742,12 @@
     },
     "PictoIcon_Home_1-2": {
       "frame": {
-        "x": 413,
-        "y": 1445,
+        "x": 996,
+        "y": 1435,
         "w": 120,
         "h": 111
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 5,
@@ -2662,8 +2762,8 @@
     },
     "PictoIcon_Bulb_Charge-2": {
       "frame": {
-        "x": 973,
-        "y": 536,
+        "x": 1336,
+        "y": 365,
         "w": 47,
         "h": 57
       },
@@ -2682,12 +2782,12 @@
     },
     "PictoIcon_Bulb-2": {
       "frame": {
-        "x": 1128,
-        "y": 852,
+        "x": 1387,
+        "y": 839,
         "w": 47,
         "h": 57
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 9,
@@ -2702,8 +2802,8 @@
     },
     "PictoIcon_Aiming_2-2": {
       "frame": {
-        "x": 1427,
-        "y": 1333,
+        "x": 1436,
+        "y": 839,
         "w": 57,
         "h": 57
       },
@@ -2722,8 +2822,8 @@
     },
     "PictoIcon_Aiming_1-2": {
       "frame": {
-        "x": 1427,
-        "y": 1392,
+        "x": 1413,
+        "y": 898,
         "w": 57,
         "h": 57
       },
@@ -2742,8 +2842,8 @@
     },
     "moreCoin": {
       "frame": {
-        "x": 890,
-        "y": 1428,
+        "x": 1337,
+        "y": 1425,
         "w": 121,
         "h": 128
       },
@@ -2762,12 +2862,12 @@
     },
     "missionUp": {
       "frame": {
-        "x": 543,
-        "y": 1443,
+        "x": 1109,
+        "y": 1453,
         "w": 105,
         "h": 114
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -2782,12 +2882,12 @@
     },
     "ItemIcon_Video-2": {
       "frame": {
-        "x": 1013,
-        "y": 1451,
+        "x": 1225,
+        "y": 1453,
         "w": 102,
         "h": 107
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 13,
@@ -2802,12 +2902,12 @@
     },
     "ItemIcon_TV_AdBlock": {
       "frame": {
-        "x": 650,
-        "y": 1443,
+        "x": 735,
+        "y": 1442,
         "w": 109,
         "h": 116
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 10,
@@ -2822,12 +2922,12 @@
     },
     "ItemIcon_Trophy_Silver-2": {
       "frame": {
-        "x": 1117,
-        "y": 1428,
+        "x": 846,
+        "y": 1441,
         "w": 125,
         "h": 93
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -2842,8 +2942,8 @@
     },
     "ItemIcon_Trophy_Gold-2": {
       "frame": {
-        "x": 1212,
-        "y": 1428,
+        "x": 1517,
+        "y": 2,
         "w": 125,
         "h": 93
       },
@@ -2862,8 +2962,8 @@
     },
     "ItemIcon_Trophy_Bronze-2": {
       "frame": {
-        "x": 1307,
-        "y": 1428,
+        "x": 1517,
+        "y": 129,
         "w": 125,
         "h": 93
       },
@@ -2882,8 +2982,8 @@
     },
     "ItemIcon_Ticket_Red-2": {
       "frame": {
-        "x": 1517,
-        "y": 2,
+        "x": 1495,
+        "y": 839,
         "w": 124,
         "h": 114
       },
@@ -2902,8 +3002,8 @@
     },
     "ItemIcon_Ticket_Gold-2": {
       "frame": {
-        "x": 1503,
-        "y": 481,
+        "x": 1482,
+        "y": 256,
         "w": 126,
         "h": 98
       },
@@ -2922,8 +3022,8 @@
     },
     "ItemIcon_Star_Silver": {
       "frame": {
-        "x": 1503,
-        "y": 581,
+        "x": 1460,
+        "y": 1425,
         "w": 133,
         "h": 127
       },
@@ -2942,8 +3042,8 @@
     },
     "ItemIcon_Star_Silver-small": {
       "frame": {
-        "x": 254,
-        "y": 1337,
+        "x": 279,
+        "y": 1036,
         "w": 38,
         "h": 37
       },
@@ -2962,8 +3062,8 @@
     },
     "ItemIcon_Star_Red-2": {
       "frame": {
-        "x": 1517,
-        "y": 128,
+        "x": 1480,
+        "y": 965,
         "w": 114,
         "h": 109
       },
@@ -2982,8 +3082,8 @@
     },
     "ItemIcon_Star_Purple-2": {
       "frame": {
-        "x": 1517,
-        "y": 239,
+        "x": 1480,
+        "y": 1076,
         "w": 114,
         "h": 109
       },
@@ -3002,8 +3102,8 @@
     },
     "ItemIcon_Star_Gold": {
       "frame": {
-        "x": 1495,
-        "y": 1270,
+        "x": 2,
+        "y": 1561,
         "w": 133,
         "h": 127
       },
@@ -3022,12 +3122,12 @@
     },
     "ItemIcon_Star_Gold-small": {
       "frame": {
-        "x": 1013,
-        "y": 1412,
+        "x": 279,
+        "y": 1076,
         "w": 38,
         "h": 37
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -3042,8 +3142,8 @@
     },
     "ItemIcon_Star_Bronze": {
       "frame": {
-        "x": 1486,
-        "y": 1399,
+        "x": 137,
+        "y": 1561,
         "w": 133,
         "h": 127
       },
@@ -3062,12 +3162,12 @@
     },
     "ItemIcon_Star_Bronze-small": {
       "frame": {
-        "x": 1053,
-        "y": 1412,
+        "x": 947,
+        "y": 1074,
         "w": 38,
         "h": 37
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -3082,8 +3182,8 @@
     },
     "ItemIcon_Star_Blue-2": {
       "frame": {
-        "x": 1517,
-        "y": 350,
+        "x": 1334,
+        "y": 1555,
         "w": 114,
         "h": 109
       },
@@ -3102,12 +3202,12 @@
     },
     "ItemIcon_Shop_old-2": {
       "frame": {
-        "x": 1510,
-        "y": 716,
+        "x": 1225,
+        "y": 1557,
         "w": 113,
         "h": 103
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 7,
@@ -3122,12 +3222,12 @@
     },
     "ItemIcon_Shop-2": {
       "frame": {
-        "x": 413,
-        "y": 1212,
+        "x": 1510,
+        "y": 697,
         "w": 100,
         "h": 91
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -3142,12 +3242,12 @@
     },
     "ItemIcon_Money_Coin-Copy": {
       "frame": {
-        "x": 543,
-        "y": 1340,
+        "x": 272,
+        "y": 1561,
         "w": 98,
         "h": 104
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 15,
@@ -3162,12 +3262,12 @@
     },
     "ItemIcon_Money_Bill-2": {
       "frame": {
-        "x": 1510,
-        "y": 821,
+        "x": 372,
+        "y": 1561,
         "w": 105,
         "h": 118
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 11,
@@ -3182,8 +3282,8 @@
     },
     "ItemIcon_MemoPad-OLD-2": {
       "frame": {
-        "x": 1510,
-        "y": 928,
+        "x": 479,
+        "y": 1560,
         "w": 100,
         "h": 110
       },
@@ -3202,8 +3302,8 @@
     },
     "ItemIcon_MemoPad-2": {
       "frame": {
-        "x": 1402,
-        "y": 1451,
+        "x": 1499,
+        "y": 356,
         "w": 76,
         "h": 84
       },
@@ -3222,8 +3322,8 @@
     },
     "ItemIcon_Medalstand-2": {
       "frame": {
-        "x": 1510,
-        "y": 1030,
+        "x": 591,
+        "y": 1561,
         "w": 125,
         "h": 101
       },
@@ -3242,12 +3342,12 @@
     },
     "ItemIcon_Heart_Red-2": {
       "frame": {
-        "x": 1510,
-        "y": 1157,
+        "x": 694,
+        "y": 1561,
         "w": 112,
         "h": 96
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 8,
@@ -3262,8 +3362,8 @@
     },
     "ItemIcon_Gift_Green-2": {
       "frame": {
-        "x": 365,
-        "y": 1558,
+        "x": 1450,
+        "y": 1560,
         "w": 107,
         "h": 105
       },
@@ -3282,8 +3382,8 @@
     },
     "ItemIcon_Gift_Blue-2": {
       "frame": {
-        "x": 650,
-        "y": 1558,
+        "x": 792,
+        "y": 1560,
         "w": 107,
         "h": 105
       },
@@ -3302,12 +3402,12 @@
     },
     "ItemIcon_Gem_Star_Blue-2": {
       "frame": {
-        "x": 472,
-        "y": 1559,
+        "x": 899,
+        "y": 1560,
         "w": 108,
         "h": 106
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 10,
@@ -3322,8 +3422,8 @@
     },
     "ItemIcon_Clover_Green-2": {
       "frame": {
-        "x": 1402,
-        "y": 1537,
+        "x": 1007,
+        "y": 1560,
         "w": 112,
         "h": 114
       },
@@ -3342,12 +3442,12 @@
     },
     "ItemIcon_Chest_Wood-2": {
       "frame": {
-        "x": 2,
+        "x": 1121,
         "y": 1560,
         "w": 120,
         "h": 96
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 4,
@@ -3362,12 +3462,12 @@
     },
     "ItemIcon_Chest_Skull": {
       "frame": {
-        "x": 757,
-        "y": 1560,
+        "x": 1612,
+        "y": 2,
         "w": 125,
         "h": 104
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 1,
@@ -3382,8 +3482,8 @@
     },
     "ItemIcon_Chest_Premium-2": {
       "frame": {
-        "x": 884,
-        "y": 1558,
+        "x": 1589,
+        "y": 1187,
         "w": 122,
         "h": 97
       },
@@ -3402,8 +3502,8 @@
     },
     "ItemIcon_Chest_Gold-2": {
       "frame": {
-        "x": 124,
-        "y": 1560,
+        "x": 1596,
+        "y": 965,
         "w": 117,
         "h": 95
       },
@@ -3422,12 +3522,12 @@
     },
     "ItemIcon_Chest_Gem-2": {
       "frame": {
-        "x": 1516,
-        "y": 1528,
+        "x": 1612,
+        "y": 129,
         "w": 114,
         "h": 102
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 7,
@@ -3442,8 +3542,8 @@
     },
     "ItemIcon_Calendar_Check-2": {
       "frame": {
-        "x": 1117,
-        "y": 1555,
+        "x": 1612,
+        "y": 245,
         "w": 98,
         "h": 107
       },
@@ -3462,8 +3562,8 @@
     },
     "ItemIcon_Bag_Gray-2": {
       "frame": {
-        "x": 1217,
-        "y": 1555,
+        "x": 1612,
+        "y": 354,
         "w": 108,
         "h": 101
       },
@@ -3482,12 +3582,12 @@
     },
     "ItemIcon_Bag_Brown-2": {
       "frame": {
-        "x": 243,
-        "y": 1560,
+        "x": 1612,
+        "y": 464,
         "w": 108,
         "h": 101
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 10,
@@ -3502,8 +3602,8 @@
     },
     "Icon_Timer": {
       "frame": {
-        "x": 582,
-        "y": 1559,
+        "x": 1413,
+        "y": 957,
         "w": 64,
         "h": 73
       },
@@ -3522,12 +3622,12 @@
     },
     "Icon_Ticket02": {
       "frame": {
-        "x": 1633,
-        "y": 2,
+        "x": 2,
+        "y": 1690,
         "w": 252,
         "h": 197
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -3542,8 +3642,8 @@
     },
     "Icon_Ticket01": {
       "frame": {
-        "x": 1631,
-        "y": 461,
+        "x": 1517,
+        "y": 442,
         "w": 115,
         "h": 93
       },
@@ -3562,8 +3662,8 @@
     },
     "Icon_Skip": {
       "frame": {
-        "x": 1320,
-        "y": 1555,
+        "x": 1517,
+        "y": 1187,
         "w": 57,
         "h": 56
       },
@@ -3582,12 +3682,12 @@
     },
     "Icon_Setting": {
       "frame": {
-        "x": 1625,
-        "y": 716,
+        "x": 1517,
+        "y": 559,
         "w": 78,
         "h": 87
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -3602,8 +3702,8 @@
     },
     "Icon_Property": {
       "frame": {
-        "x": 1726,
-        "y": 256,
+        "x": 1517,
+        "y": 1245,
         "w": 60,
         "h": 60
       },
@@ -3622,8 +3722,8 @@
     },
     "Icon_Pause": {
       "frame": {
-        "x": 1633,
-        "y": 256,
+        "x": 272,
+        "y": 1667,
         "w": 61,
         "h": 64
       },
@@ -3642,8 +3742,8 @@
     },
     "Icon_Menu_Hamburger": {
       "frame": {
-        "x": 1726,
-        "y": 318,
+        "x": 1612,
+        "y": 574,
         "w": 68,
         "h": 61
       },
@@ -3662,12 +3762,12 @@
     },
     "Icon_Megaphone": {
       "frame": {
-        "x": 1633,
-        "y": 381,
+        "x": 1517,
+        "y": 639,
         "w": 59,
         "h": 56
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -3682,8 +3782,8 @@
     },
     "Icon_MapPoint_old": {
       "frame": {
-        "x": 1691,
-        "y": 381,
+        "x": 1612,
+        "y": 637,
         "w": 79,
         "h": 77
       },
@@ -3702,8 +3802,8 @@
     },
     "Icon_MapPoint": {
       "frame": {
-        "x": 1726,
-        "y": 460,
+        "x": 1612,
+        "y": 716,
         "w": 102,
         "h": 99
       },
@@ -3722,8 +3822,8 @@
     },
     "Icon_Lock03": {
       "frame": {
-        "x": 1726,
-        "y": 561,
+        "x": 792,
+        "y": 1669,
         "w": 71,
         "h": 93
       },
@@ -3742,8 +3842,8 @@
     },
     "Icon_Lock02": {
       "frame": {
-        "x": 1632,
-        "y": 578,
+        "x": 694,
+        "y": 1675,
         "w": 83,
         "h": 86
       },
@@ -3762,8 +3862,8 @@
     },
     "Icon_Lock01_s": {
       "frame": {
-        "x": 1632,
-        "y": 663,
+        "x": 1611,
+        "y": 817,
         "w": 51,
         "h": 71
       },
@@ -3822,8 +3922,8 @@
     },
     "Icon_Close02": {
       "frame": {
-        "x": 1008,
-        "y": 1560,
+        "x": 1611,
+        "y": 870,
         "w": 75,
         "h": 75
       },
@@ -3842,8 +3942,8 @@
     },
     "Icon_Check03_s": {
       "frame": {
-        "x": 1320,
-        "y": 1613,
+        "x": 479,
+        "y": 1662,
         "w": 55,
         "h": 51
       },
@@ -3862,12 +3962,12 @@
     },
     "Icon_Check02": {
       "frame": {
-        "x": 370,
-        "y": 1152,
+        "x": 536,
+        "y": 1662,
         "w": 54,
         "h": 48
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -3882,12 +3982,12 @@
     },
     "Icon_Check01": {
       "frame": {
-        "x": 1788,
-        "y": 256,
+        "x": 1339,
+        "y": 697,
         "w": 43,
         "h": 42
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -3902,8 +4002,8 @@
     },
     "Icon_Back": {
       "frame": {
-        "x": 1720,
-        "y": 634,
+        "x": 586,
+        "y": 1688,
         "w": 91,
         "h": 78
       },
@@ -3922,12 +4022,12 @@
     },
     "goldenTap": {
       "frame": {
-        "x": 1613,
-        "y": 1030,
+        "x": 1330,
+        "y": 1666,
         "w": 118,
         "h": 136
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -3942,12 +4042,12 @@
     },
     "freeze-icon": {
       "frame": {
-        "x": 1632,
-        "y": 1150,
+        "x": 782,
+        "y": 1742,
         "w": 128,
         "h": 141
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -3962,8 +4062,8 @@
     },
     "eye": {
       "frame": {
-        "x": 365,
-        "y": 1452,
+        "x": 887,
+        "y": 1676,
         "w": 64,
         "h": 42
       },
@@ -3982,8 +4082,8 @@
     },
     "coin-small-pile": {
       "frame": {
-        "x": 1622,
-        "y": 928,
+        "x": 931,
+        "y": 1670,
         "w": 87,
         "h": 65
       },
@@ -4002,12 +4102,12 @@
     },
     "coin-pile_large": {
       "frame": {
-        "x": 1621,
-        "y": 1399,
+        "x": 1589,
+        "y": 1286,
         "w": 132,
         "h": 126
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 7,
@@ -4022,12 +4122,12 @@
     },
     "coin-pile": {
       "frame": {
-        "x": 1755,
-        "y": 1280,
+        "x": 912,
+        "y": 1804,
         "w": 75,
         "h": 72
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 4,
@@ -4042,8 +4142,8 @@
     },
     "bomb-icon": {
       "frame": {
-        "x": 1632,
-        "y": 1527,
+        "x": 986,
+        "y": 1759,
         "w": 128,
         "h": 156
       },
@@ -4062,102 +4162,22 @@
     },
     "bolt-icon": {
       "frame": {
-        "x": 1689,
-        "y": 805,
+        "x": 338,
+        "y": 1715,
         "w": 128,
         "h": 189
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 128,
-        "h": 189
-      },
-      "sourceSize": {
-        "w": 128,
-        "h": 189
-      }
-    },
-    "chest-lid": {
-      "frame": {
-        "x": 1705,
-        "y": 714,
-        "w": 124,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 124,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 124,
-        "h": 49
-      }
-    },
-    "chest-lid-open": {
-      "frame": {
-        "x": 1630,
-        "y": 1280,
-        "w": 117,
-        "h": 72
       },
       "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 117,
-        "h": 72
+        "w": 128,
+        "h": 189
       },
       "sourceSize": {
-        "w": 117,
-        "h": 72
-      }
-    },
-    "chest-inner": {
-      "frame": {
-        "x": 498,
-        "y": 1022,
-        "w": 112,
-        "h": 20
-      },
-      "rotated": true,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 112,
-        "h": 20
-      },
-      "sourceSize": {
-        "w": 112,
-        "h": 20
-      }
-    },
-    "chest-front": {
-      "frame": {
-        "x": 1755,
-        "y": 1354,
-        "w": 121,
-        "h": 66
-      },
-      "rotated": true,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 121,
-        "h": 66
-      },
-      "sourceSize": {
-        "w": 121,
-        "h": 66
+        "w": 128,
+        "h": 189
       }
     }
   },
@@ -4167,8 +4187,8 @@
     "image": "ui.webp",
     "format": "RGBA8888",
     "size": {
-      "w": 1832,
-      "h": 1667
+      "w": 1718,
+      "h": 1889
     },
     "scale": 1,
     "related_multi_packs": []

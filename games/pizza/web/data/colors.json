@@ -1,0 +1,29 @@
+{
+    "buildingDropper": {
+        "color": "#3388ff"
+    },
+    "shopDropper": {
+        "color": "#3388ff"
+    },
+    "gateDropper": {
+        "color": "#3388ff"
+    },
+    "dropZone": {
+        "color": "#33cc66"
+    },
+    "trigger": {
+        "color": "#1ed242"
+    },
+    "craftTable": {
+        "color": "#cc44cc"
+    },
+    "queue": {
+        "color": "#cc8800"
+    },
+    "farm": {
+        "color": "#cc4444"
+    },
+    "farmPlot": {
+        "color": "#55cc55"
+    }
+}

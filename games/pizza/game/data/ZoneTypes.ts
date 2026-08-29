@@ -28,20 +28,26 @@ export const ZONE_CONFIG: Partial<Record<number, ZoneConfigEntry>> = {
     },
     "1": {
         "requirement": {
-            "type": "gate",
-            "gateId": GateId.GateAxe
+            "type": "trigger",
+            "triggerId": "walkTutorialTrigger"
         }
     },
     "2": {
         "requirement": {
-            "type": "item",
-            "item": ItemType.Pickaxe
+            "type": "gate",
+            "gateId": GateId.GateAxe
         }
     },
     "4": {
         "requirement": {
             "type": "gate",
             "gateId": GateId.Gate1
+        }
+    },
+    "3": {
+        "requirement": {
+            "type": "item",
+            "item": ItemType.Pickaxe
         }
     }
 };

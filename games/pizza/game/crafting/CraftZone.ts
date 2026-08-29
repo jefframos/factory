@@ -68,6 +68,7 @@ import MainPlayer from '../player/MainPlayer';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
 import { WorldProgressionHost } from '../camera/WorldProgressionHost';
+import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 
 /** A separate deposit-trigger rect, in WORLD space — see the constructor's `triggerArea` param doc. Same shape as BuildingZone's BuildingTriggerArea/ShopZone's ShopTriggerArea. */
 export interface CraftTriggerArea {
@@ -78,8 +79,6 @@ export interface CraftTriggerArea {
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
 const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
-/** Dotted-outline color — distinct from every other zone's own hue (see QueueZone/BuildingZone/ShopZone), so a craft table reads as its own kind of zone on the map until real art exists. */
-const CRAFT_BOX_COLOR = 0xcc44cc;
 const CRAFT_ZONE_CORNER_RADIUS = 0.3;
 const FLY_IN_STAGGER_SEC = 0.12;
 /** The table's fallback placeholder mesh (plain box) — used whenever the config doesn't ask for a real model (`showModel`/`toolId`/`models`, see CraftTypes.ts), same convention as BuildingZone/ShopZone's mesh. */
@@ -198,7 +197,7 @@ export default class CraftZone extends Entity {
             halfExtents.x * 2,
             halfExtents.z * 2,
             CRAFT_ZONE_CORNER_RADIUS,
-            { color: CRAFT_BOX_COLOR },
+            { color: getZoneColor(ZoneColorKind.CraftTable) },
             centerOffset,
         ));
 
