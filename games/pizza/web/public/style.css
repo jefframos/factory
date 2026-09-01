@@ -89,6 +89,23 @@ nav#tabs button.active {
     border-bottom-color: var(--panel);
 }
 
+/* Purely visual grouping (manifest.json's own `group` field, set per tab) — there are 20+ tabs
+   now, a flat undifferentiated row of buttons makes it hard to tell at a glance which ones are
+   related (e.g. Crops/Seeds/Farms all being "farming"). Each group gets a colored top border
+   always, plus a faint tint of that same color once active — the inactive/muted text color
+   above is untouched so this reads as a category hint, not a second "active" signal. */
+nav#tabs button.tab-group-world { border-top: 2px solid #5b8def; }
+nav#tabs button.tab-group-farming { border-top: 2px solid #3fb950; }
+nav#tabs button.tab-group-progression { border-top: 2px solid #d29922; }
+nav#tabs button.tab-group-economy { border-top: 2px solid #ff7a45; }
+nav#tabs button.tab-group-system { border-top: 2px solid #9a6cd0; }
+
+nav#tabs button.tab-group-world.active { background: rgba(91, 141, 239, 0.14); }
+nav#tabs button.tab-group-farming.active { background: rgba(63, 185, 80, 0.14); }
+nav#tabs button.tab-group-progression.active { background: rgba(210, 153, 34, 0.14); }
+nav#tabs button.tab-group-economy.active { background: rgba(255, 122, 69, 0.14); }
+nav#tabs button.tab-group-system.active { background: rgba(154, 108, 208, 0.14); }
+
 main#content { padding: 20px 24px 60px; max-width: 900px; }
 
 /* The Graph tab (see public/graph/graph.js) wants the full viewport width, not the 900px cap

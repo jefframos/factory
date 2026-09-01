@@ -97,5 +97,17 @@
         ],
         "scale": 2,
         "rotationDeg": 0
+    },
+    "bananaView": {
+        "models": [
+            "Food.Banana"
+        ],
+        "offset": [
+            0,
+            -0.1,
+            0
+        ],
+        "scale": 2,
+        "rotationDeg": 0
     }
 }

@@ -136,7 +136,12 @@ function renderTabs() {
     for (const entry of manifest) {
         const btn = document.createElement('button');
         btn.textContent = entry.label + (dirtyTabs.has(entry.id) ? ' •' : '');
-        btn.className = entry.id === activeId ? 'active' : '';
+        // manifest.json's own `group` field (world/farming/progression/economy/system) — purely
+        // a visual grouping so a designer can tell at a glance which of the now 20+ tabs belong
+        // together, no functional effect. See style.css's own `.tab-group-*` rules for the actual
+        // color-per-group palette; a tab with no group (shouldn't happen, but harmless) just
+        // renders unstyled.
+        btn.className = [entry.id === activeId ? 'active' : '', entry.group ? `tab-group-${entry.group}` : ''].filter(Boolean).join(' ');
 
         const issues = mapValidation?.entities[entry.id];
         if (issues && (issues.missingOnMap.length > 0 || issues.missingInConfig.length > 0)) {

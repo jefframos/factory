@@ -108,8 +108,8 @@ export const PROVIDER_CONFIG: Record<ProviderType, ProviderConfig> = {
         color: 0x6b4423,
         "label": "PamlTree",
         "action": ActionType.Chop,
-        "maxLife": 10,
-        "amountPerGather": 1,
+        "maxLife": 3,
+        "amountPerGather": 2,
         "respawnSec": 60,
         "drops": [
             {

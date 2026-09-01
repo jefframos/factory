@@ -69,8 +69,8 @@
         ],
         "action": "chop",
         "respawnSec": 60,
-        "amountPerGather": 1,
-        "maxLife": 10,
+        "amountPerGather": 2,
+        "maxLife": 3,
         "icon": "tree-bark"
     },
     "crystalDeposit": {

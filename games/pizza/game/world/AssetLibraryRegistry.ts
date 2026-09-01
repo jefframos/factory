@@ -271,6 +271,10 @@ export const ASSET_LIBRARY = {
         "models": [],
         "scale": 1,
         "rotationDeg": 0
+    },
+    "wheatSeed": {
+        "icon": "BorderFrame_Round20_Single_Yellow",
+        "models": []
     }
 } satisfies Record<string, AssetLibraryEntry>;
 

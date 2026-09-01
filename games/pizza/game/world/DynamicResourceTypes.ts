@@ -80,8 +80,8 @@ export const DYNAMIC_RESOURCE_PLACEMENTS: DynamicResourcePlacement[] = [
     {
         "resourceType": ResourceType.Bark,
         "spawnerTileType": "sand",
-        "density": 0.02,
-        "minDistance": 8,
+        "density": 0.2,
+        "minDistance": 1,
         "checkIntervalSec": 5
     },
     {

@@ -45,6 +45,7 @@ import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 import { ZONE_CONFIG } from '../data/ZoneTypes';
 import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
+import { DebugZoneRevealCookie } from '../utils/DebugZoneRevealCookie';
 
 /** Flip to false to fall back to TileMap's own flat-color quad paint instead of IslandMeshBuilder's raised, rounded-corner island + water — see buildGround(). */
 const USE_ISLAND_MESH = true;
@@ -67,7 +68,7 @@ export default class WorldManager {
     private readonly fogOfWarManager?: FogOfWarManager;
     /** The zone-lock authority — ALWAYS constructed regardless of FOG_OF_WAR_CONFIG.style, since walkability and materialize-gating (see ZoneVisibilityManager.ts's own doc) must hold no matter how a locked zone is rendered. Exposed via getZoneVisibilityManager() so PizzaScene can register buildings/shops/queues/gates the same way WorldManager registers its own ground/resources. */
     private readonly zoneVisibility: ZoneVisibilityManager;
-    /** zone1 (zoneNumber 0) is revealed in the constructor — see this file's own doc — so this starts at 1: the next zoneNumber revealNextZone() reveals. Purely a debug/test convenience (see PizzaScene's "Open Next Zone" button) for walking through the unlock sequence one zone at a time without a real requirement/trigger system yet. */
+    /** zone1 (zoneNumber 0) is revealed in the constructor — see this file's own doc — so this starts at 1: the next zoneNumber revealNextZone() reveals. Purely a debug/test convenience (see PizzaScene's "Open Next Zone"/"Teleport: Next" buttons) for walking through the unlock sequence one zone at a time without a real requirement/trigger system yet. Actually seeded from DebugZoneRevealCookie in buildGround() (catching zoneVisibility itself up to match, since a fresh page load starts THAT with a blank revealedZones set regardless of this counter) — 1 here is just the pre-catch-up default. */
     private nextZoneToReveal = 1;
     /** The player's own position as of the most recent update() call — see revealNextZone()'s own doc for why it needs this: the shockwave/rise-animation effect (ZoneRevealEffect.ts, ZoneVisibilityManager.revealZone()'s `origin` param) has to expand from wherever the player is actually standing, not from world origin. Starts at world origin (a reasonable stand-in before the first update() call, e.g. if a debug button somehow fires before the first frame ticks). */
     private lastPlayerPosition = new THREE.Vector3();
@@ -122,6 +123,25 @@ export default class WorldManager {
      */
     public revealNextZone(): void {
         this.revealZoneWithEffect(this.nextZoneToReveal++);
+        // Persisted on every debug reveal (not just once at the end of a revealUpToZone() loop)
+        // so even a single "Open Next Zone" click survives a reload — see
+        // DebugZoneRevealCookie.ts's own doc.
+        DebugZoneRevealCookie.setNextZoneToReveal(this.nextZoneToReveal);
+    }
+
+    /**
+     * Debug/test convenience (see the "Teleport" button, InGameButtonList.ts) — reveals every
+     * zone from wherever revealNextZone() last left off up through `zoneNumber` (inclusive), so
+     * a debug-teleport straight into e.g. zone 5 doesn't strand the player in a bubble of
+     * revealed ground surrounded by locked/hidden zones 1-4 it never walked through normally.
+     * Just a loop over the same revealNextZone() path (same shockwave/rise treatment per zone,
+     * same bypass-ZONE_CONFIG debug semantics) — no separate reveal logic of its own. A no-op
+     * for a zoneNumber already covered by a prior reveal (nextZoneToReveal already past it).
+     */
+    public revealUpToZone(zoneNumber: number): void {
+        while (this.nextZoneToReveal <= zoneNumber) {
+            this.revealNextZone();
+        }
     }
 
     /**
@@ -215,6 +235,20 @@ export default class WorldManager {
         // future unlock flow) calls revealZone() for it.
         this.fogOfWarManager?.revealZone(0);
         this.zoneVisibility.revealZone(0);
+
+        // Catches zoneVisibility (and nextZoneToReveal itself) up to match whatever a PRIOR
+        // session's debug reveals had already unlocked (see DebugZoneRevealCookie.ts's own
+        // doc) — a fresh page load always starts zoneVisibility.revealedZones as a blank Set
+        // regardless of this cookie, so without this a tester who'd debug-unlocked through
+        // zone 5 last session would reload back into a locked zone 1. No origin passed (see
+        // revealZone()'s own doc) — an instant, un-delayed pop for every zone being caught up
+        // at once, not a travelling shockwave from nowhere meaningful.
+        const persistedNextZoneToReveal = DebugZoneRevealCookie.getNextZoneToReveal();
+        for (let zone = 1; zone < persistedNextZoneToReveal; zone++) {
+            this.fogOfWarManager?.revealZone(zone);
+            this.zoneVisibility.revealZone(zone);
+        }
+        this.nextZoneToReveal = persistedNextZoneToReveal;
     }
 
     /**

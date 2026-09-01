@@ -1,18 +1,72 @@
 {
     "wheat": {
         "name": "Wheat",
-        "plantCost": {
-            "currency": "money",
-            "amount": 5
-        },
         "stages": [
-            { "durationSec": 20, "tile": "cropWheatSeedling" },
-            { "durationSec": 20, "tile": "cropWheatGrowing" },
-            { "durationSec": 0, "tile": "cropWheatReady" }
+            {
+                "durationSec": 20,
+                "mesh": "bananaView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "mesh": "bananaView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "mesh": "bananaView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            }
         ],
         "yield": {
             "resourceType": "wood",
             "amount": 1
-        }
+        },
+        "initialMesh": "bananaView"
     }
 }

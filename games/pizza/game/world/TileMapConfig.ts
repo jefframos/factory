@@ -421,8 +421,15 @@ export function loadTileDefs(alias: string): TileDefsData {
     return PIXI.Assets.get(alias) as TileDefsData;
 }
 
+// NOT gated on layer.visible — that's a Tiled EDITOR convenience (hide a layer while working on
+// another one), not gameplay data. A map author toggling a layer off in Tiled to reduce visual
+// clutter used to silently zero out whatever that layer fed (zone membership, ground meshes,
+// resource spawns — every caller of findLayer()/findLayers() routes through here) until it got
+// toggled back on. Runtime visibility is something THIS game drives itself where it matters (see
+// ZoneVisibilityManager.ts's own object.visible toggling), never something Tiled-authored data
+// should gate.
 export function findLayer(map: TiledMapData, name: string): TiledLayer | undefined {
-    return map.layers.find(layer => layer.type === 'tilelayer' && layer.visible && layer.name === name);
+    return map.layers.find(layer => layer.type === 'tilelayer' && layer.name === name);
 }
 
 /**
@@ -434,7 +441,7 @@ export function findLayer(map: TiledMapData, name: string): TiledLayer | undefin
  * substring — see TileMap.ts's build(), the one caller.
  */
 export function findLayers(map: TiledMapData, name: string): TiledLayer[] {
-    return map.layers.filter(layer => layer.type === 'tilelayer' && layer.visible && layer.name.includes(name));
+    return map.layers.filter(layer => layer.type === 'tilelayer' && layer.name.includes(name));
 }
 
 /** See this file's own doc — recovers the ground/resource tileset gid ranges by firstgid order rather than hardcoding either. */

@@ -453,23 +453,31 @@ const ENTITY_SCHEMAS = {
         { key: 'icon', type: 'icon', label: 'Notification Icon (shown in the "Farm Unlocked!" popup when ANY plot is bought)', optional: true },
     ],
     // A plantable crop — game-design content (Wheat, ...), not read from the map at all (see
-    // CropTypes.ts's own doc); a Farms tab plot references one of these by id via its own
-    // Allowed Crops field.
+    // CropTypes.ts's own doc). What it COSTS to plant lives on the Seeds tab instead (a seed's
+    // own Crop field points here) — a crop itself only owns its growth ladder and harvest yield.
     crops: [
         { key: 'name', type: 'text', label: 'Name' },
-        {
-            key: 'plantCost', type: 'group', label: 'Plant Cost',
-            fields: [
-                { key: 'currency', type: 'select', label: 'Currency', options: CURRENCY_OPTIONS },
-                { key: 'amount', type: 'number', label: 'Amount' },
-            ],
-        },
+        { key: 'initialMesh', type: 'select', label: 'Initial Mesh (shown the instant a seed is planted, before Stage 1\'s own mesh takes over — optional)', source: 'entityViews', optional: true },
         {
             key: 'stages', type: 'list', label: 'Growth Stages (ordered seedling -> harvestable; the LAST stage is the harvestable one)',
-            itemLabel: (item, i) => `Stage ${i + 1} — ${item.tile || 'tile?'}`,
+            itemLabel: (item, i) => `Stage ${i + 1} — ${item.mesh || '(inherits previous mesh)'}`,
             fields: [
                 { key: 'durationSec', type: 'number', label: 'Duration (sec, ignored on the last/harvestable stage)' },
-                { key: 'tile', type: 'text', label: 'Tile' },
+                { key: 'mesh', type: 'select', label: 'Mesh (optional — omitted keeps showing whichever mesh was already up)', source: 'entityViews', optional: true },
+                {
+                    key: 'start', type: 'group', label: 'Start (at this stage\'s own elapsed time 0)',
+                    fields: [
+                        { key: 'offset', type: 'vector3', label: 'Offset (x, y, z)' },
+                        { key: 'scale', type: 'number', label: 'Scale' },
+                    ],
+                },
+                {
+                    key: 'end', type: 'group', label: 'End (reached once this stage\'s Duration has fully elapsed)',
+                    fields: [
+                        { key: 'offset', type: 'vector3', label: 'Offset (x, y, z)' },
+                        { key: 'scale', type: 'number', label: 'Scale' },
+                    ],
+                },
             ],
         },
         {
@@ -479,6 +487,20 @@ const ENTITY_SCHEMAS = {
                 { key: 'amount', type: 'number', label: 'Amount' },
             ],
         },
+    ],
+    // A SEED — the bankable, plantable item (see SeedTypes.ts's own doc for why this is
+    // separate from both Crops and Resources). `cropId` is what a Farm Plot Tile's own
+    // seed-picker uses to know which Crops tab entry planting this seed starts growing;
+    // planting always costs exactly one seed, no separate Plant Cost field.
+    seeds: [
+        { key: 'label', type: 'text', label: 'Label' },
+        { key: 'cropId', type: 'select', label: 'Crop (what this seed grows into when planted)', source: 'crops' },
+        // icon/models/scale/rotationDeg are stored in AssetLibraryRegistry.ts, not SeedTypes.ts —
+        // same externalFields split Resources/Providers already use (see those tabs' own doc).
+        { key: 'icon', type: 'icon', label: 'Icon', optional: true },
+        { key: 'models', type: 'modelList', label: 'Models' },
+        { key: 'scale', type: 'numberRange', label: 'Scale' },
+        { key: 'rotationDeg', type: 'numberRange', label: 'Rotation (deg)' },
     ],
     // Reusable real-mesh definitions — a building level/shop level/gate/queue can OPTIONALLY
     // point its own `view` field at one of these ids instead of using its placeholder box (see

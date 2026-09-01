@@ -68,9 +68,10 @@ const ENUM_VALUE_FIELDS = {
     // MilestoneRequirement.ts's GateMilestoneRequirement (see that file's own doc) — a zone/
     // gate/building/shop/queue/craft-table requirement of type 'gate'.
     gateId: 'GateId',
-    // FarmTypes.ts's FarmPlotPrice.currency / CropTypes.ts's CropConfig.plantCost.currency —
-    // both hold a CurrencyType value (see EconomyTypes.ts).
+    // FarmTypes.ts's FarmPlotPrice.currency — a CurrencyType value (see EconomyTypes.ts).
     currency: 'CurrencyType',
+    // SeedTypes.ts's SeedConfig.cropId — which CropTypes.ts CROP_CONFIG entry a seed plants.
+    cropId: 'CropId',
 };
 
 /** Where each enum in ENUM_VALUE_FIELDS is actually declared — used to auto-add a named import to a target file that references the enum but doesn't yet import it (e.g. ShopTypes.ts has no reason to import ResourceType until an appearRequirement of type 'resource' needs one). */
@@ -83,6 +84,7 @@ const ENUM_SOURCE_FILES = {
     ProviderType: p => path.join(p, 'actions', 'ProviderTypes.ts'),
     GateId: p => path.join(p, 'data', 'GateTypes.ts'),
     CurrencyType: p => path.join(p, 'data', 'EconomyTypes.ts'),
+    CropId: p => path.join(p, 'data', 'CropTypes.ts'),
 };
 const GAME_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'game');
 /** games/pizza/registry — one level up from GAME_DIR (games/pizza/game), not under it. */

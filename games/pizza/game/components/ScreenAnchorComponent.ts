@@ -457,7 +457,7 @@ export default class ScreenAnchorComponent extends Component {
             const pointerTargetAlpha = distOutside > showThreshold ? 1 : 0;
             const pointerAlphaT = 1 - Math.exp(-POINTER_ALPHA_SMOOTHING_SPEED * delta);
             this.smoothedPointerAlpha += (pointerTargetAlpha - this.smoothedPointerAlpha) * pointerAlphaT;
-            this.pointer.alpha = this.smoothedPointerAlpha = 1;
+            this.pointer.alpha = this.smoothedPointerAlpha;
 
             // Fully faded out (settled at 0, not just momentarily dipped below 1) is the only
             // case worth skipping the position/rotation update for below — anywhere above that,

@@ -277,12 +277,30 @@ export const ENTITY_SOURCE_MAP = {
     },
     // A CROP — game-design content (Wheat, ...), small and fixed like BuildingId/ItemType, so
     // enum-backed rather than an open id-map like farms above — see CropTypes.ts's own doc.
+    // Carries no cost/currency of its own any more — planting a crop costs exactly one of
+    // whichever `seeds` entry (below) points its own `cropId` back at this one; that link lives
+    // entirely on the Seeds tab's side.
     crops: {
         file: path.join(GAME_DIR, 'data', 'CropTypes.ts'),
         exportName: 'CROP_CONFIG',
         kind: 'enumRecord',
         enumName: 'CropId',
-        managedKeys: ['name', 'plantCost', 'stages', 'yield'],
+        managedKeys: ['name', 'initialMesh', 'stages', 'yield'],
+        optionalKeys: ['initialMesh'],
+    },
+    // A SEED — the bankable, plantable item (see SeedTypes.ts's own doc for why this is its own
+    // enum/file/storage rather than folded into `crops` or `resources`). `cropId` is the ONLY
+    // link between a seed and what it grows into — enum-backed like `crops`, so a brand new
+    // seed id also needs a matching new SeedId enum member (ensureEnumMember handles that, same
+    // as any other enumRecord tab). Icon/models/scale/rotationDeg route to AssetLibraryRegistry.ts,
+    // same externalFields convention `resources`/`providers` already use.
+    seeds: {
+        file: path.join(GAME_DIR, 'data', 'SeedTypes.ts'),
+        exportName: 'SEED_CONFIG',
+        kind: 'enumRecord',
+        enumName: 'SeedId',
+        managedKeys: ['label', 'cropId'],
+        externalFields: { icon: 'assetLibrary', models: 'assetLibrary', scale: 'assetLibrary', rotationDeg: 'assetLibrary' },
     },
     tools: {
         file: path.join(GAME_DIR, 'actions', 'ToolRegistry.ts'),

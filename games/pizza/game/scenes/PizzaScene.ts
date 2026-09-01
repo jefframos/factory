@@ -57,10 +57,13 @@ import FarmZone from '../world/FarmZone';
 import Trigger from '../world/Trigger';
 import FarmPlotTile from '../world/FarmPlotTile';
 import { computeFarmGrid, FARM_GRID_CELL_SIZE, FARM_GRID_APPEAR_STAGGER_SEC } from '../world/FarmGrid';
-import { getFarmPlotConfig } from '../data/FarmTypes';
+import { getFarmPlotConfig, FarmPlotConfig } from '../data/FarmTypes';
 import { getTriggerConfig } from '../data/TriggerTypes';
 import { TriggerStorage } from '../data/TriggerStorage';
 import { FarmPlotStorage } from '../data/FarmPlotStorage';
+import { FarmCropStorage } from '../data/FarmCropStorage';
+import { SeedId } from '../data/SeedTypes';
+import { SeedStorage } from '../data/SeedStorage';
 import { TutorialProgressStorage } from '../tutorial/TutorialProgressStorage';
 import { CraftStorage } from '../crafting/CraftStorage';
 import { ItemStorage } from '../crafting/ItemStorage';
@@ -285,6 +288,9 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
     /** The player — self-contained (RigidBody, PlayerMovementController, collision events all wired up in its own awake()). See MainPlayer.ts. */
     private readonly mainPlayer: MainPlayer;
+
+    /** Which "teleporter" object (see WorldObjectRegistry.getAllOfType('teleporter')) the debug "Teleport: Next" button jumps to on its NEXT click — see teleportToNextTeleporter()'s own doc. Wraps back to 0 once past the last one. */
+    private nextTeleporterIndex = 0;
 
     /** Shown while the player character loads, destroyed the instant it resolves — see loadPlayerCharacter(). Tracked as a field too so destroy() can clean it up if the scene is torn down mid-load. */
     private loadingSpinner?: LoadingSpinner;
@@ -580,6 +586,15 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             'Resources',
         );
         DevGuiManager.instance.addButton(
+            'Add 5 of every Seed',
+            () => {
+                for (const seedId of Object.values(SeedId)) {
+                    SeedStorage.add(seedId, 5);
+                }
+            },
+            'Resources',
+        );
+        DevGuiManager.instance.addButton(
             'Reset Everything',
             () => {
                 void GlobalResourceStorage.clearAll();
@@ -595,6 +610,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 void AnimalFollowStorage.clearAll();
                 void PlayerPositionStorage.clearAll();
                 void FarmPlotStorage.clearAll();
+                void FarmCropStorage.clearAll();
+                void SeedStorage.clearAll();
                 void TutorialProgressStorage.clearAll();
                 void TriggerStorage.clearAll();
             },
@@ -781,6 +798,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private setupDebugButtons(): void {
         InGameButtonList.registerButton('Clear Data', () => clearAllPlayerData());
         InGameButtonList.registerButton('Open Next Zone', () => this.worldManager.revealNextZone());
+        InGameButtonList.registerButton('Teleport: Next', () => this.teleportToNextTeleporter());
+        InGameButtonList.registerButton('Unlock All Tools', () => this.unlockAllTools());
         InGameButtonList.registerButton('Add 100 Money', () => EconomyStorage.add(CurrencyType.Money, 100));
         InGameButtonList.registerButton('Add 10 Resources', () => {
             for (const type of Object.values(ResourceType)) {
@@ -790,6 +809,60 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 BackpackStorage.add(type, 10);
             }
         });
+        InGameButtonList.registerButton('Add 5 Seeds', () => {
+            for (const seedId of Object.values(SeedId)) {
+                SeedStorage.add(seedId, 5);
+            }
+        });
+    }
+
+    /**
+     * Debug/test convenience — cycles through every "teleporter" object drawn on the Tiled
+     * map's mapSettings layer (see WorldObjectRegistry.ts's own doc for the (type, id) bucketing
+     * every other placed object already uses; a plain teleporter needs no special-case parsing
+     * there, it just falls into that generic bucket), one per click, wrapping back to the first
+     * once past the last. Sorted by id with `numeric: true` (not plain string order) so
+     * "teleporter2" sorts before "teleporter10" — the natural authoring order a level designer
+     * would expect a "next" button to cycle through, not ASCII order.
+     *
+     * Before actually moving the player, reveals every zone up through whichever zone the
+     * target teleporter sits in (see WorldManager.revealUpToZone()) — landing in zone 5 with
+     * zones 1-4 still locked/hidden would strand the player in an isolated bubble of unlocked
+     * ground, unable to walk back out the normal way. A teleporter with no zone underneath it at
+     * all (getZoneForPosition() returns undefined) skips that step — nothing to reveal.
+     */
+    private teleportToNextTeleporter(): void {
+        const teleporters = [...this.worldObjects.getAllOfType('teleporter').entries()]
+            .sort(([idA], [idB]) => idA.localeCompare(idB, undefined, { numeric: true }));
+        if (teleporters.length === 0) {
+            console.warn('[PizzaScene] no "teleporter" objects found on the Tiled map\'s mapSettings layer');
+            return;
+        }
+
+        this.nextTeleporterIndex %= teleporters.length;
+        const [id, placement] = teleporters[this.nextTeleporterIndex];
+        this.nextTeleporterIndex = (this.nextTeleporterIndex + 1) % teleporters.length;
+
+        const zoneNumber = this.worldManager.getZoneVisibilityManager().getZoneForPosition(placement.x, placement.z);
+        if (zoneNumber !== undefined) {
+            this.worldManager.revealUpToZone(zoneNumber);
+        }
+
+        this.mainPlayer.transform.position.set(placement.x, 0, placement.z);
+        // Zeroed, not left as-is — see WorldManager.revealUpToZone()'s own doc's sibling
+        // reasoning: a teleport is a discrete position SET, not a physics move, so whatever
+        // velocity the player was carrying (e.g. mid-run) would otherwise resume from the new
+        // spot next physics step instead of the player landing at rest.
+        this.mainPlayer.rigidBody.velocity.set(0, 0, 0);
+        PlayerPositionStorage.save(placement.x, placement.z);
+        console.log(`[PizzaScene] teleported to "${id}"${zoneNumber !== undefined ? ` (zone ${zoneNumber})` : ''}`);
+    }
+
+    /** Debug/test convenience — grants ownership of every tool (see ItemTypes.ts's own ItemType enum) at once, same ItemStorage.add() every real crafting recipe already credits through, so a tester doesn't have to grind each one's own craft-table recipe just to try later content that assumes a fully-equipped player. */
+    private unlockAllTools(): void {
+        for (const type of Object.values(ItemType)) {
+            ItemStorage.add(type, 1);
+        }
     }
 
     /** The task's own collision test: a static box offset from spawn along Z only — walking the player into it should stop them instead of clipping through. */
@@ -1123,7 +1196,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
             this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
                 if (FarmPlotStorage.isOwned(id)) {
-                    this.spawnFarmGrid(id, placement);
+                    this.spawnFarmGrid(id, placement, config);
                     return;
                 }
 
@@ -1133,7 +1206,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     () => this.uiService.economyUi.getIconAnchorPosition(config.price.currency),
                     { width: placement.width, depth: placement.depth },
                     config,
-                    () => this.spawnFarmGrid(id, placement),
+                    () => this.spawnFarmGrid(id, placement, config),
                 ));
                 this.threeScene.add(farmZone.transform);
                 this.registerZoneVisibility(farmZone.transform, position.x, position.z, placement.width, placement.depth);
@@ -1184,7 +1257,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * callback the instant it's bought — either way this is the ONLY place FarmPlotTile gets
      * spawned, so the two paths can never disagree on layout.
      */
-    private spawnFarmGrid(id: string, placement: WorldObjectPlacement): void {
+    private spawnFarmGrid(id: string, placement: WorldObjectPlacement, config: FarmPlotConfig): void {
         const cells = computeFarmGrid(placement.width, placement.depth);
         cells.forEach((cell, index) => {
             const position = new THREE.Vector3(placement.x + cell.localX, 0, placement.z + cell.localZ);
@@ -1192,7 +1265,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             // own pop-in tween (see FarmPlotTile.ts's own doc) starts a beat after the last, so
             // buying a plot ripples its whole grid into existence instead of every tile
             // snapping in on the same frame.
-            const tile = this.world.add(new FarmPlotTile(position, id, cell.col, cell.row, index * FARM_GRID_APPEAR_STAGGER_SEC));
+            const tile = this.world.add(new FarmPlotTile(
+                position, id, cell.col, cell.row,
+                this.screenHost, config,
+                index * FARM_GRID_APPEAR_STAGGER_SEC,
+            ));
             this.threeScene.add(tile.transform);
             this.registerZoneVisibility(tile.transform, position.x, position.z, FARM_GRID_CELL_SIZE, FARM_GRID_CELL_SIZE);
         });

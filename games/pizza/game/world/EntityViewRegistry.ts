@@ -113,6 +113,16 @@ export const ENTITY_VIEW_CONFIG: Record<string, EntityViewConfig> = {
             -0.1,
             0
         ]
+    },
+    "bananaView": {
+        "models": [MODELS.Food.Banana],
+        "scale": 2,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
     }
 };
 

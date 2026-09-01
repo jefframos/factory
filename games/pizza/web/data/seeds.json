@@ -1,0 +1,8 @@
+{
+    "wheatSeed": {
+        "label": "Wheat Seed",
+        "cropId": "wheat",
+        "models": [],
+        "icon": "BorderFrame_Round20_Single_Yellow"
+    }
+}
