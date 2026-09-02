@@ -474,6 +474,38 @@ const ENTITY_SCHEMAS = {
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
         { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
     ],
+    // A CRAFTING RECIPE — the shared pool every Crafting Table picks from (see
+    // CraftingRecipeTypes.ts's own doc): ingredients -> one result, registered once by its own
+    // hand-typed id so more than one table can list the same recipe without duplicating it.
+    craftingRecipes: [
+        { key: 'ingredients', type: 'costMap', label: 'Ingredients', source: 'resources' },
+        {
+            key: 'result', type: 'group', label: 'Result',
+            fields: [
+                { key: 'resourceType', type: 'select', label: 'Resource', source: 'resources' },
+                { key: 'amount', type: 'number', label: 'Amount' },
+            ],
+        },
+    ],
+    // A CRAFTING TABLE — tap-a-recipe-row-to-craft, any recipe, any number of times (unlike the
+    // Crafting tab below, a single-active-recipe auto-drain table). Ids come from the map's own
+    // "craftTable"-typed mapSettings objects, same auto-discovery-by-id convention as marts.
+    // `recipes` is just a list of Crafting Recipes tab ids — add a recipe there first, then pick
+    // it here (see CraftingTableTypes.ts's own doc for why the ingredients/result themselves
+    // aren't edited a second time on this tab).
+    craftingTables: [
+        { key: 'name', type: 'text', label: 'Name' },
+        {
+            key: 'recipes', type: 'list', label: 'Recipes (pick from the Crafting Recipes tab)',
+            itemLabel: item => item.recipeId || 'recipe',
+            fields: [
+                { key: 'recipeId', type: 'select', label: 'Recipe', source: 'craftingRecipes' },
+            ],
+        },
+        { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement', optional: true },
+        { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
+        { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
+    ],
     // FARM_TILE_CONFIG's own two fields — the empty/prepared tile pair EVERY farm plot shares
     // (see FarmTypes.ts's own doc for why this is a single game-wide export, not per-plot).
     // Rendered once, above the Default/By-id cards, by app.js's renderFarmsTab() — not a normal

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="9" nextobjectid="44">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="9" nextobjectid="46">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -1248,10 +1248,23 @@
     <property name="type" value="craft"/>
    </properties>
   </object>
+  <object id="45" x="-656.25" y="16.25" width="32" height="32">
+   <properties>
+    <property name="id" value="forge1"/>
+    <property name="type" value="craftTable"/>
+   </properties>
+  </object>
   <object id="17" x="-192" y="512" width="64.5" height="64.5">
    <properties>
     <property name="id" value="craftAxeDropper"/>
     <property name="target" value="craftAxe"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="44" x="-672" y="0" width="64.5" height="64.5">
+   <properties>
+    <property name="id" value="forge1dropper"/>
+    <property name="target" value="forge1"/>
     <property name="type" value="dropper"/>
    </properties>
   </object>

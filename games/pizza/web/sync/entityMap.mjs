@@ -278,6 +278,31 @@ export const ENTITY_SOURCE_MAP = {
         managedKeys: ['name', 'offers', 'appearRequirement', 'solid', 'view'],
         optionalKeys: ['appearRequirement', 'solid', 'view'],
     },
+    // The shared recipe pool every Crafting Table lists from by id — see CraftingRecipeTypes.ts's
+    // own doc. Open-ended by hand-typed id, same `kind: 'partialRecord'` shape as `crafting`/
+    // `shops` below (a level designer invents new recipe ids freely from this tab).
+    craftingRecipes: {
+        file: path.join(GAME_DIR, 'data', 'CraftingRecipeTypes.ts'),
+        exportName: 'CRAFTING_RECIPE_CONFIG',
+        kind: 'partialRecord',
+        managedKeys: ['ingredients', 'result'],
+    },
+    // A CRAFTING TABLE — a "craftTable"-typed object drawn on the Tiled map's "mapSettings"
+    // layer, open-ended by id like marts/shops/farms. Same {default, byId} two-export shape as
+    // marts (kind: 'queues') — every table not explicitly overridden here just uses
+    // DEFAULT_CRAFTING_TABLE_CONFIG (empty recipes, see CraftingTableTypes.ts's own doc). NOT
+    // the same entity as the "crafting" tab below (CraftTypes.ts's own single-active-recipe
+    // auto-drain table) — this one is a tap-a-recipe-row-to-craft popup, any recipe, any
+    // number of times, the same "walk up, tap Open, transact" shape as marts. `recipes` is a
+    // list of `craftingRecipes` tab ids, not embedded ingredient data (see that tab's own doc).
+    craftingTables: {
+        file: path.join(GAME_DIR, 'data', 'CraftingTableTypes.ts'),
+        kind: 'queues',
+        defaultExportName: 'DEFAULT_CRAFTING_TABLE_CONFIG',
+        byIdExportName: 'CRAFTING_TABLE_CONFIG_BY_ID',
+        managedKeys: ['name', 'recipes', 'appearRequirement', 'solid', 'view'],
+        optionalKeys: ['appearRequirement', 'solid', 'view'],
+    },
     // A TRIGGER — a "trigger"-typed object drawn on the Tiled map's "mapSettings" layer (see
     // WorldObjectRegistry.ts), open-ended by id like shops/crafting, not enum-backed. Unlike
     // zones/zoneTutorials (also placed-on-map, but auto-discovered from the "zones" tilelayer

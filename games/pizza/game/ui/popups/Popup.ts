@@ -108,6 +108,21 @@ export default abstract class Popup {
     /** Concrete popups implement this — add whatever this popup needs into `content`, laid out against `contentWidth` (e.g. `x: contentWidth / 2 - button.width / 2` to center a button). Called once, during construction, before the panel frame is fit around the final size. */
     protected abstract buildContent(content: PIXI.Container, contentWidth: number): void;
 
+    /**
+     * Re-measures the panel frame around `content`'s CURRENT bounds and re-centers `root`'s own
+     * pivot to match — call this any time content added/removed AFTER buildContent() actually
+     * changes size (e.g. a reactive re-render that adds/removes rows), same "nothing watches
+     * this automatically" reasoning AutoFitFrame.fit()'s own doc gives. Without the pivot re-
+     * centering here too, a popup that grows/shrinks after its first render would visually drift
+     * off whatever screen position PopupManager set it to, since `root.pivot` (set once in the
+     * constructor, from the FIRST fit) would otherwise still be centered on the OLD bounds.
+     */
+    protected refitFrame(): void {
+        this.frame.fit();
+        const bounds = this.root.getLocalBounds();
+        this.root.pivot.set(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    }
+
     /** PopupManager wires this via bindClose() right before showing the popup — lets content added in buildContent() (e.g. a "Done" button) close the popup without needing to know PopupManager exists. */
     protected requestClose(): void {
         this.onCloseRequested?.();

@@ -1772,6 +1772,29 @@
                  "y":528.25
                 }, 
                 {
+                 "height":32,
+                 "id":45,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"forge1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"craftTable"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":-656.25,
+                 "y":16.25
+                }, 
+                {
                  "height":64.5,
                  "id":17,
                  "name":"",
@@ -1798,6 +1821,35 @@
                  "width":64.5,
                  "x":-192,
                  "y":512
+                },
+            
+                {
+                 "height":64.5,
+                 "id":44,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"forge1dropper"
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"forge1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":64.5,
+                 "x":-672,
+                 "y":0
                 }, 
                 {
                  "height":32,
@@ -1821,8 +1873,7 @@
                  "width":32,
                  "x":335.75,
                  "y":240.25
-                },
-            
+                }, 
                 {
                  "height":64.5,
                  "id":31,
@@ -2236,7 +2287,7 @@
          "y":0
         }],
  "nextlayerid":9,
- "nextobjectid":44,
+ "nextobjectid":46,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

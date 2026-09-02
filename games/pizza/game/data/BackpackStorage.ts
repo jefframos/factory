@@ -100,6 +100,19 @@ export class BackpackStorage {
         return true;
     }
 
+    /** Removes exactly `amount`, only if at least that many are currently held — otherwise a no-op returning false, same all-or-nothing semantics CraftingTablePopup.ts needs when consuming a recipe's own multi-ingredient list (never partially deduct one ingredient if a later one turns out short). */
+    static remove(type: ResourceType, amount: number): boolean {
+        const current = this.getCount(type);
+        if (amount <= 0 || current < amount) {
+            return false;
+        }
+
+        this.counts.set(type, current - amount);
+        this.onChange.dispatch(type);
+        void this.persist();
+        return true;
+    }
+
     /** Empties everything at once and returns what it held — see DropZone.tryDeposit()'s fallback for when there's no loaded backpack cube to animate a gradual drain from (e.g. the FBX character hasn't finished loading yet). Prefer removeOne() for the normal animated path. */
     static drainAll(): Map<ResourceType, number> {
         const drained = this.getAll();

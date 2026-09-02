@@ -179,6 +179,19 @@ export const ASSET_LIBRARY = {
         "scale": 1,
         "rotationDeg": 0
     },
+    clothRoll: {
+        // No glb yet — crafted-only resource (see ResourceTypes.ts's own doc), icon-only for now.
+        models: [],
+        scale: 1,
+        rotationDeg: 0,
+        icon: "cloth-roll",
+    },
+    hardwoodPlanks: {
+        models: [],
+        scale: 1,
+        rotationDeg: 0,
+        icon: "hardwood-planks",
+    },
     "wheat": {
         "models": [],
         "scale": 1,

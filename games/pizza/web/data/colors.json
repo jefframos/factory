@@ -8,6 +8,9 @@
     "martDropper": {
         "color": "#3388ff"
     },
+    "craftingTableDropper": {
+        "color": "#cc44cc"
+    },
     "gateDropper": {
         "color": "#3388ff"
     },

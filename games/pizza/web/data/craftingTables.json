@@ -1,0 +1,23 @@
+{
+    "default": {
+        "name": "Crafting Table",
+        "recipes": []
+    },
+    "byId": {
+        "forge1": {
+            "recipes": [
+                {
+                    "recipeId": "stone"
+                },
+                {
+                    "recipeId": "clothRoll"
+                },
+                {
+                    "recipeId": "hardwoodPlanks"
+                }
+            ],
+            "name": "Forge 1",
+            "solid": 0.5
+        }
+    }
+}

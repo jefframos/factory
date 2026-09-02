@@ -50,9 +50,11 @@ import QuestGiverEntity from '../player/QuestGiverEntity';
 import { getQuestGiverConfig } from '../data/QuestGiverTypes';
 import ShopZone, { ShopTriggerArea } from '../shop/ShopZone';
 import MartZone, { MartTriggerArea } from '../shop/MartZone';
+import CraftingTableZone, { CraftingTableTriggerArea } from '../shop/CraftingTableZone';
 import FarmSeedPicker from '../world/FarmSeedPicker';
 import FarmCropHud from '../world/FarmCropHud';
 import { getMartConfig } from '../data/MartTypes';
+import { getCraftingTableConfig } from '../data/CraftingTableTypes';
 import { getShopConfig, SHOP_CONFIG_BY_ID } from '../shop/ShopTypes';
 import { ShopUpgradeStorage } from '../shop/ShopUpgradeStorage';
 import CraftZone, { CraftTriggerArea } from '../crafting/CraftZone';
@@ -401,6 +403,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.registerQueueSpawnGates();
         this.registerShopSpawnGates();
         this.setupMarts();
+        this.setupCraftingTables();
         this.setupFarms();
         this.setupTriggers();
         this.setupCraftTables();
@@ -1384,6 +1387,44 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 ));
                 this.threeScene.add(martZone.transform);
                 this.registerZoneVisibility(martZone.transform, position.x, position.z, placement.width, placement.depth);
+            });
+        }
+    }
+
+    /**
+     * Spawns one CraftingTableZone per "craftTable" object found on the Tiled map's
+     * "mapSettings" layer — same auto-discovery-by-id, same dropper-or-own-footprint trigger
+     * resolution, same spawn-gate-via-RequirementRegistry shape as setupMarts() just above (see
+     * that method's own doc); a "craftTable" id with no CraftingTableConfig override just falls
+     * back to DEFAULT_CRAFTING_TABLE_CONFIG (empty recipes), same "always has a sensible
+     * default" reasoning setupMarts() uses. NOT related to setupCraftTables() below (the
+     * existing, unrelated single-active-recipe crafting entity) — see CraftingTableTypes.ts's
+     * own top doc for why these are two separate systems living side by side.
+     */
+    private setupCraftingTables(): void {
+        for (const [id, placement] of this.worldObjects.getAllOfType('craftTable')) {
+            const config = getCraftingTableConfig(id);
+
+            this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
+                const position = new THREE.Vector3(placement.x, 0, placement.z);
+                const dropperPlacement = this.worldObjects.getDropperFor(id);
+                const triggerArea: CraftingTableTriggerArea | undefined = dropperPlacement
+                    ? {
+                        position: new THREE.Vector3(dropperPlacement.x, 0, dropperPlacement.z),
+                        footprint: { width: dropperPlacement.width, depth: dropperPlacement.depth },
+                    }
+                    : undefined;
+
+                const craftingTableZone = this.world.add(new CraftingTableZone(
+                    position, this.screenHost, id,
+                    { width: placement.width, depth: placement.depth },
+                    config,
+                    () => this.freezePlayerMovement(),
+                    () => this.unfreezePlayerMovement(),
+                    triggerArea,
+                ));
+                this.threeScene.add(craftingTableZone.transform);
+                this.registerZoneVisibility(craftingTableZone.transform, position.x, position.z, placement.width, placement.depth);
             });
         }
     }

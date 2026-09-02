@@ -99,6 +99,18 @@
         "scale": 1,
         "rotationDeg": 0
     },
+    "clothRoll": {
+        "models": [],
+        "icon": "cloth-roll",
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "hardwoodPlanks": {
+        "models": [],
+        "icon": "hardwood-planks",
+        "scale": 1,
+        "rotationDeg": 0
+    },
     "berry": {
         "icon": "wild-berries",
         "models": [],

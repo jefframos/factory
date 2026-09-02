@@ -24,6 +24,10 @@ export enum ResourceType {
     GrassFiber = 'grassFiber',
     Crystal = "crystal",
     Ir = "iron",
+    /** A CraftingRecipeTypes.ts ingredient/output — no provider/pickup path of its own yet, only ever gained by crafting it at a table (see CraftingTableTypes.ts's own doc). */
+    ClothRoll = "clothRoll",
+    /** Same "crafted-only, for now" reasoning as ClothRoll above. */
+    HardwoodPlanks = "hardwoodPlanks",
     /** What catching a Pig (AnimalTypes.ts) banks — see AnimalNode.ts/AnimalCatchController.ts. Not gathered from any Provider/DynamicResource path at all, same "this file doesn't need to know or care which" independence this file's own doc already calls out for Bark/Pebble/GrassFiber. */
     Pig = "pig",
     /** CropTypes.ts's Wheat crop's own harvest yield — see ResourceConfig.category's own doc for why this is 'farm'-category (Farm tab only) rather than a main-HUD resource. */
@@ -132,6 +136,16 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         color: 0x6b4423,
         "label": "Iron",
         "amountPerGather": 1
+    },
+    [ResourceType.ClothRoll]: {
+        amountPerGather: 1,
+        label: "Cloth Roll",
+        color: 0xd9c9a3,
+    },
+    [ResourceType.HardwoodPlanks]: {
+        amountPerGather: 1,
+        label: "Hardwood Planks",
+        color: 0x8a5a2b,
     },
     "pig": {
         color: 0xe8a1c4,

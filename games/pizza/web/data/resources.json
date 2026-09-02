@@ -102,6 +102,22 @@
         "rotationDeg": 0,
         "amountPerGather": 1
     },
+    "clothRoll": {
+        "models": [],
+        "icon": "cloth-roll",
+        "label": "Cloth Roll",
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1
+    },
+    "hardwoodPlanks": {
+        "models": [],
+        "icon": "hardwood-planks",
+        "label": "Hardwood Planks",
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1
+    },
     "pig": {
         "models": [
             "Pets.AnimalPig"

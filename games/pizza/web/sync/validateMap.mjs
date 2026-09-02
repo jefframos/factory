@@ -47,6 +47,10 @@ const MAP_CHECKED_ENTITIES = {
     // override never applies; one drawn but not overridden just falls back to
     // DEFAULT_MART_CONFIG (see MartTypes.ts's own doc).
     marts: { mapType: 'mart', configIds: data => Object.keys(data.byId ?? {}), missingOnMapSeverity: 'info' },
+    // Same reasoning/severity as marts just above — a "craftTable" id missing on the map means
+    // that override never applies; one drawn but not overridden just falls back to
+    // DEFAULT_CRAFTING_TABLE_CONFIG (see CraftingTableTypes.ts's own doc).
+    craftingTables: { mapType: 'craftTable', configIds: data => Object.keys(data.byId ?? {}), missingOnMapSeverity: 'info' },
     shops: { mapType: 'shop', configIds: data => Object.keys(data), missingOnMapSeverity: 'error' },
     crafting: { mapType: 'craft', configIds: data => Object.keys(data), missingOnMapSeverity: 'error' },
     // `configIds` collects every placement's `shapeId` (not the array's own indices — a
