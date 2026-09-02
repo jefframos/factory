@@ -25,7 +25,18 @@
 import { CropId } from './CropTypes';
 
 export enum SeedId {
-    WheatSeed = 'wheatSeed',
+    BeetSeed = 'beetSeed',
+    BroccoliSeed = 'broccoliSeed',
+    CabbageSeed = 'cabbageSeed',
+    CarrotSeed = 'carrotSeed',
+    CauliflowerSeed = 'cauliflowerSeed',
+    CornSeed = 'cornSeed',
+    LeekSeed = 'leekSeed',
+    MushroomSeed = 'mushroomSeed',
+    PumpkinBasicSeed = 'pumpkinBasicSeed',
+    StrawberrySeed = 'strawberrySeed',
+    TomatoSeed = 'tomatoSeed',
+    WatermelonSeed = 'watermelonSeed',
 }
 
 export interface SeedConfig {
@@ -35,8 +46,52 @@ export interface SeedConfig {
 }
 
 export const SEED_CONFIG: Record<SeedId, SeedConfig> = {
-    [SeedId.WheatSeed]: {
-        label: "Wheat Seed",
-        cropId: CropId.Wheat,
+    [SeedId.BeetSeed]: {
+        label: "Beet Seed",
+        cropId: CropId.Beet,
+    },
+    [SeedId.BroccoliSeed]: {
+        label: "Broccoli Seed",
+        cropId: CropId.Broccoli,
+    },
+    [SeedId.CabbageSeed]: {
+        label: "Cabbage Seed",
+        cropId: CropId.Cabbage,
+    },
+    [SeedId.CarrotSeed]: {
+        label: "Carrot Seed",
+        cropId: CropId.Carrot,
+    },
+    [SeedId.CauliflowerSeed]: {
+        label: "Cauliflower Seed",
+        cropId: CropId.Cauliflower,
+    },
+    [SeedId.CornSeed]: {
+        label: "Corn Seed",
+        cropId: CropId.Corn,
+    },
+    [SeedId.LeekSeed]: {
+        label: "Leek Seed",
+        cropId: CropId.Leek,
+    },
+    [SeedId.MushroomSeed]: {
+        label: "Mushroom Seed",
+        cropId: CropId.Mushroom,
+    },
+    [SeedId.PumpkinBasicSeed]: {
+        label: "Pumpkin (Basic) Seed",
+        cropId: CropId.PumpkinBasic,
+    },
+    [SeedId.StrawberrySeed]: {
+        label: "Strawberry Seed",
+        cropId: CropId.Strawberry,
+    },
+    [SeedId.TomatoSeed]: {
+        label: "Tomato Seed",
+        cropId: CropId.Tomato,
+    },
+    [SeedId.WatermelonSeed]: {
+        label: "Watermelon Seed",
+        cropId: CropId.Watermelon,
     },
 };

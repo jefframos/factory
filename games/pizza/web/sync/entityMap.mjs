@@ -148,7 +148,13 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'RESOURCE_CONFIG',
         kind: 'enumRecord',
         enumName: 'ResourceType',
-        managedKeys: ['label', 'amountPerGather'],
+        managedKeys: ['label', 'amountPerGather', 'category', 'price', 'sellable'],
+        // Unset means 'main' (see ResourceConfig.category's own doc) — a mirror/entry that
+        // predates this field just leaves it alone rather than getting force-set to 'main'.
+        // `price`/`sellable` are MartTypes.ts's own concern (see that file's own doc) — unset
+        // price means this resource can never be bought/sold at any mart at all; unset sellable
+        // means true whenever a price IS set.
+        optionalKeys: ['category', 'price', 'sellable'],
         // The Resources tab ALSO has icon/models/scale/rotationDeg fields, but ResourceConfig
         // itself carries none of those — see entityMap's own top-of-file doc on
         // `externalFields`. For a LOOSE ground-loot resource (bark/pebble/grassFiber, no
@@ -255,7 +261,22 @@ export const ENTITY_SOURCE_MAP = {
         managedKeys: ['price', 'appearRequirement', 'allowedCrops', 'solid'],
         optionalKeys: ['appearRequirement', 'allowedCrops', 'solid'],
         tileExportName: 'FARM_TILE_CONFIG',
-        tileManagedKeys: ['empty', 'prepared', 'icon'],
+        tileManagedKeys: ['empty', 'prepared', 'icon', 'availableTint', 'occupiedTint'],
+    },
+    // A MART — a "mart"-typed object drawn on the Tiled map's "mapSettings" layer, open-ended
+    // by id like shops/crafting/farms, not enum-backed. Same {default, byId} two-export shape
+    // as queues/farms (kind: 'queues' — see that shared mechanism's own doc on farms above) —
+    // every mart not explicitly overridden here just uses DEFAULT_MART_CONFIG (empty offers,
+    // see MartTypes.ts's own doc), same "always has a sensible default" reasoning farms use
+    // rather than shops' own "skip with a warning" (a mart with nothing configured is just an
+    // empty, harmless general store, not a shop with no idea which tool to upgrade).
+    marts: {
+        file: path.join(GAME_DIR, 'data', 'MartTypes.ts'),
+        kind: 'queues',
+        defaultExportName: 'DEFAULT_MART_CONFIG',
+        byIdExportName: 'MART_CONFIG_BY_ID',
+        managedKeys: ['name', 'offers', 'appearRequirement', 'solid', 'view'],
+        optionalKeys: ['appearRequirement', 'solid', 'view'],
     },
     // A TRIGGER — a "trigger"-typed object drawn on the Tiled map's "mapSettings" layer (see
     // WorldObjectRegistry.ts), open-ended by id like shops/crafting, not enum-backed. Unlike

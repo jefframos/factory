@@ -33,6 +33,8 @@ let spawnerShapeIds = [];
 let zoneCells = { zones: [], error: null };
 /** Which spawner shape the Shape Resources tab is currently filtered to — 'all' or one shapeId — same convention as dynamicResourceAreaFilter, see renderShapeResourcesByArea(). */
 let shapeResourceAreaFilter = 'all';
+/** Which ResourceConfig.category the Resources tab is currently filtered to — 'all', 'main', 'farm', or 'animal' — see renderResourcesByCategory(). Same "kept across re-renders, not reset on tab switch" convention as dynamicResourceAreaFilter. */
+let resourceCategoryFilter = 'all';
 /** The categorized model catalog from /api/models (see modelsCatalog.mjs) — `{ groups: [{ name, items: [{ key, id, path, fullPath, format }] }] }`. Fetched once at init/restart, same pattern as spawnerTileTypes: small enough to prefetch eagerly rather than lazy-load per field. */
 let modelsCatalog = { groups: [], error: null };
 /** Cache-busting query value appended to every /tiled-asset/ image URL (see makeTileSwatch()) — the browser would otherwise keep serving a stale grounds.png/resources.png from cache after someone repaints the spritesheet on disk, since the URL itself never changes. Bumped on every init() (page load / server restart) and by the Map tab's own "Refresh images" button, so a designer who just re-exported the PNG can see it without a hard reload. */
@@ -463,6 +465,11 @@ function renderActiveTab() {
         return;
     }
 
+    if (activeId === 'resources') {
+        renderResourcesByCategory(data, schema, missingOnMap);
+        return;
+    }
+
     if (manifestEntry.shape === 'mapTiles') {
         renderMapTilesTab(data);
         return;
@@ -624,6 +631,60 @@ function renderShapeResourcesByArea(data, schema) {
             const entryLabel = identity ? `${identity} → ${area}` : undefined;
             contentEl.appendChild(renderEntryCard(data, index, value, schema, true, false, new Set(), entryLabel));
         }
+    }
+}
+
+/**
+ * Resources gets a category filter (All / Main / Farm / Animal — see ResourceConfig.category's
+ * own doc) instead of a plain flat list — this enum has grown from a handful of true
+ * gatherable resources into a mix of main-HUD resources, crop harvest yields, and
+ * animal-catch payouts, and a flat A-Z list makes those hard to tell apart at a glance. Same
+ * filter-dropdown shape renderDynamicResourcesByArea()/renderShapeResourcesByArea() already
+ * use, just filtering by `category` instead of by map area.
+ */
+function renderResourcesByCategory(data, schema, missingOnMap) {
+    const CATEGORY_LABELS = { main: 'Main', farm: 'Farm', animal: 'Animal' };
+    const ids = Object.keys(data);
+
+    const filterRow = document.createElement('div');
+    filterRow.className = 'field-row';
+    const label = document.createElement('label');
+    label.textContent = 'Filter by category';
+    filterRow.appendChild(label);
+    const control = document.createElement('div');
+    control.className = 'field-control';
+    const select = document.createElement('select');
+    const allOpt = document.createElement('option');
+    allOpt.value = 'all';
+    allOpt.textContent = `All (${ids.length})`;
+    select.appendChild(allOpt);
+    for (const [value, categoryLabel] of Object.entries(CATEGORY_LABELS)) {
+        const count = ids.filter(id => (data[id].category || 'main') === value).length;
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = `${categoryLabel} (${count})`;
+        select.appendChild(opt);
+    }
+    select.value = resourceCategoryFilter;
+    select.onchange = () => {
+        resourceCategoryFilter = select.value;
+        renderActiveTab();
+    };
+    control.appendChild(select);
+    filterRow.appendChild(control);
+    contentEl.appendChild(filterRow);
+
+    // Unset on an entry means 'main' — same default ResourceConfig.category's own doc
+    // describes at runtime (undefined = shown on the main-screen panels).
+    const idsToShow = ids.filter(id => resourceCategoryFilter === 'all' || (data[id].category || 'main') === resourceCategoryFilter);
+
+    if (idsToShow.length === 0) {
+        contentEl.appendChild(sectionLabel('No resources in this category yet.'));
+        return;
+    }
+
+    for (const id of idsToShow) {
+        contentEl.appendChild(renderEntryCard(data, id, data[id], schema, true, true, missingOnMap));
     }
 }
 

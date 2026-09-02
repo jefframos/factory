@@ -1085,11 +1085,11 @@
          "id":2,
          "name":"resourcesLayer",
          "opacity":1,
-         "startx":-32,
+         "startx":-16,
          "starty":-32,
          "type":"tilelayer",
          "visible":true,
-         "width":64,
+         "width":48,
          "x":0,
          "y":0
         }, 
@@ -2052,6 +2052,57 @@
                  "width":0,
                  "x":-740.5,
                  "y":-75
+                }, 
+                {
+                 "height":32,
+                 "id":42,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"farmShop"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"mart"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":-800,
+                 "y":0
+                }, 
+                {
+                 "height":96,
+                 "id":43,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"farmShopArea"
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"farmShop"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":96,
+                 "x":-832,
+                 "y":-32
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2185,7 +2236,7 @@
          "y":0
         }],
  "nextlayerid":9,
- "nextobjectid":42,
+ "nextobjectid":44,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

@@ -43,6 +43,10 @@ const MAP_CHECKED_ENTITIES = {
     // ts's own doc) — surfaced here mainly so a level designer sees every plot they've actually
     // drawn and can give one its own price/unlock instead of hunting the Tiled map by eye.
     farms: { mapType: 'farm', configIds: data => Object.keys(data.byId ?? {}), missingOnMapSeverity: 'info' },
+    // Same reasoning/severity as farms just above — a mart id missing on the map means that
+    // override never applies; one drawn but not overridden just falls back to
+    // DEFAULT_MART_CONFIG (see MartTypes.ts's own doc).
+    marts: { mapType: 'mart', configIds: data => Object.keys(data.byId ?? {}), missingOnMapSeverity: 'info' },
     shops: { mapType: 'shop', configIds: data => Object.keys(data), missingOnMapSeverity: 'error' },
     crafting: { mapType: 'craft', configIds: data => Object.keys(data), missingOnMapSeverity: 'error' },
     // `configIds` collects every placement's `shapeId` (not the array's own indices — a

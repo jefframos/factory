@@ -41,6 +41,19 @@ import { ResourceType } from '../actions/ResourceTypes';
 
 export enum CropId {
     Wheat = 'wheat',
+    Beet = 'beet',
+    Broccoli = 'broccoli',
+    Cabbage = 'cabbage',
+    Carrot = 'carrot',
+    Cauliflower = 'cauliflower',
+    Corn = 'corn',
+    Leek = 'leek',
+    Mushroom = 'mushroom',
+    PumpkinBasic = 'pumpkinBasic',
+    Pumpkin = 'pumpkin',
+    Strawberry = 'strawberry',
+    Tomato = 'tomato',
+    Watermelon = 'watermelon',
 }
 
 /** [x, y, z] world-unit offset (same plain-numbers convention as EntityViewRegistry.EntityViewConfig.offset) plus a uniform scale — one lerp endpoint for a growth stage. */
@@ -78,7 +91,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
         name: "Wheat",
         stages: [
             {
-                "durationSec": 20,
+                "durationSec": 1,
                 "mesh": "bananaView",
                 "start": {
                     "offset": [
@@ -98,7 +111,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
                 }
             },
             {
-                "durationSec": 20,
+                "durationSec": 10,
                 "mesh": "bananaView",
                 "start": {
                     "offset": [
@@ -139,10 +152,894 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
             }
         ],
         yield: {
-            "resourceType": ResourceType.Wood,
+            "resourceType": ResourceType.Wheat,
             "amount": 1
         },
         "initialMesh": "bananaView"
+    },
+    [CropId.Beet]: {
+        name: "Beet",
+        stages: [
+            {
+                "durationSec": 5,
+                "mesh": "cropBeetView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 2
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 5
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 5
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        -0.5,
+                        0
+                    ],
+                    "scale": 6
+                }
+            }
+        ],
+        yield: {
+            "resourceType": ResourceType.Beet,
+            "amount": 1
+        },
+        initialMesh: "cropBeetView",
+    },
+    [CropId.Broccoli]: {
+        name: "Broccoli",
+        stages: [
+            {
+                "durationSec": 20,
+                "mesh": "cropBroccoliView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        -0.5,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        yield: {
+            "resourceType": ResourceType.Broccoli,
+            "amount": 1
+        },
+        initialMesh: "cropBroccoliView",
+    },
+    [CropId.Cabbage]: {
+        name: "Cabbage",
+        stages: [
+            {
+                "durationSec": 20,
+                "mesh": "cropCabbageView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        yield: {
+            "resourceType": ResourceType.Cabbage,
+            "amount": 1
+        },
+        initialMesh: "cropCabbageView",
+    },
+    [CropId.Carrot]: {
+        name: "Carrot",
+        stages: [
+            {
+                "durationSec": 20,
+                "mesh": "cropCarrotView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        -1.5,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        yield: {
+            "resourceType": ResourceType.Carrot,
+            "amount": 1
+        },
+        initialMesh: "cropCarrotView",
+    },
+    [CropId.Cauliflower]: {
+        name: "Cauliflower",
+        stages: [
+            {
+                "durationSec": 20,
+                "mesh": "cropCauliflowerView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        yield: {
+            "resourceType": ResourceType.Cauliflower,
+            "amount": 1
+        },
+        initialMesh: "cropCauliflowerView",
+    },
+    [CropId.Corn]: {
+        name: "Corn",
+        stages: [
+            {
+                "durationSec": 20,
+                "mesh": "cropCornView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        yield: {
+            "resourceType": ResourceType.Corn,
+            "amount": 1
+        },
+        initialMesh: "cropCornView",
+    },
+    [CropId.Leek]: {
+        name: "Leek",
+        stages: [
+            {
+                "durationSec": 20,
+                "mesh": "cropLeekView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        -1.5,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        yield: {
+            "resourceType": ResourceType.Leek,
+            "amount": 1
+        },
+        initialMesh: "cropLeekView",
+    },
+    [CropId.Mushroom]: {
+        name: "Mushroom",
+        stages: [
+            {
+                "durationSec": 20,
+                "mesh": "cropMushroomView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 5
+                }
+            }
+        ],
+        yield: {
+            "resourceType": ResourceType.Mushroom,
+            "amount": 1
+        },
+        initialMesh: "cropMushroomView",
+    },
+    [CropId.PumpkinBasic]: {
+        name: "Pumpkin (Basic)",
+        stages: [
+            {
+                "durationSec": 20,
+                "mesh": "cropPumpkinBasicView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        yield: {
+            "resourceType": ResourceType.PumpkinBasic,
+            "amount": 1
+        },
+        initialMesh: "cropPumpkinBasicView",
+    },
+    [CropId.Pumpkin]: {
+        name: "Pumpkin",
+        stages: [
+            {
+                "durationSec": 20,
+                "mesh": "cropPumpkinView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            }
+        ],
+        yield: {
+            "resourceType": ResourceType.Pumpkin,
+            "amount": 1
+        },
+        initialMesh: "cropPumpkinView",
+    },
+    [CropId.Strawberry]: {
+        name: "Strawberry",
+        stages: [
+            {
+                "durationSec": 20,
+                "mesh": "cropStrawberryView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        yield: {
+            "resourceType": ResourceType.Strawberry,
+            "amount": 1
+        },
+        initialMesh: "cropStrawberryView",
+    },
+    [CropId.Tomato]: {
+        name: "Tomato",
+        stages: [
+            {
+                "durationSec": 20,
+                "mesh": "cropTomatoView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        yield: {
+            "resourceType": ResourceType.Tomato,
+            "amount": 1
+        },
+        initialMesh: "cropTomatoView",
+    },
+    [CropId.Watermelon]: {
+        name: "Watermelon",
+        stages: [
+            {
+                "durationSec": 20,
+                "mesh": "cropWatermelonView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        yield: {
+            "resourceType": ResourceType.Watermelon,
+            "amount": 1
+        },
+        initialMesh: "cropWatermelonView",
     },
 };
 

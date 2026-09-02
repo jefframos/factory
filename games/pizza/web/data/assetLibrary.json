@@ -198,5 +198,187 @@
         "models": [],
         "scale": 1,
         "rotationDeg": 0
+    },
+    "beet": {
+        "models": [
+            "Food.Beet"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Beet"
+    },
+    "beetSeed": {
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Beet"
+    },
+    "broccoli": {
+        "models": [
+            "Food.Broccoli"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Broccoli"
+    },
+    "broccoliSeed": {
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Broccoli"
+    },
+    "cabbage": {
+        "models": [
+            "Food.Cabbage"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Cabbage"
+    },
+    "cabbageSeed": {
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Cabbage"
+    },
+    "carrot": {
+        "models": [
+            "Food.Carrot"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Carrot"
+    },
+    "carrotSeed": {
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Carrot"
+    },
+    "cauliflower": {
+        "models": [
+            "Food.Cauliflower"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Cauliflower"
+    },
+    "cauliflowerSeed": {
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Cauliflower"
+    },
+    "corn": {
+        "models": [
+            "Food.Corn"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Corn"
+    },
+    "cornSeed": {
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Corn"
+    },
+    "leek": {
+        "models": [
+            "Food.Leek"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Leek"
+    },
+    "leekSeed": {
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Leek"
+    },
+    "mushroom": {
+        "models": [
+            "Food.Mushroom"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Mushroom"
+    },
+    "mushroomSeed": {
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Mushroom"
+    },
+    "pumpkinBasic": {
+        "models": [
+            "Food.PumpkinBasic"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-PumpkinBasic"
+    },
+    "pumpkinBasicSeed": {
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-PumpkinBasic"
+    },
+    "pumpkin": {
+        "models": [
+            "Food.Pumpkin"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Pumpkin"
+    },
+    "pumpkinSeed": {
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Pumpkin"
+    },
+    "strawberry": {
+        "models": [
+            "Food.Strawberry"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Strawberry"
+    },
+    "strawberrySeed": {
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Strawberry"
+    },
+    "tomato": {
+        "models": [
+            "Food.Tomato"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Tomato"
+    },
+    "tomatoSeed": {
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Tomato"
+    },
+    "watermelon": {
+        "models": [
+            "Food.Watermelon"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Watermelon"
+    },
+    "watermelonSeed": {
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Watermelon"
     }
 }

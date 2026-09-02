@@ -64,6 +64,8 @@ import BoxVisualComponent from '../components/BoxVisualComponent';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import CaptureZoneVisualComponent, { CaptureZoneState } from '../components/CaptureZoneVisualComponent';
+import BarComponent from '../ui/BarComponent';
+import { MIN_BAR_HEIGHT } from '../ui/BarRegistry';
 import { ANIMAL_CONFIG, AnimalType } from '../actions/AnimalTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { ASSET_LIBRARY, AssetLibraryEntry, pickRandom, resolveRange } from '../world/AssetLibraryRegistry';
@@ -111,18 +113,14 @@ function turnTowardSmoothed(current: number, target: number, rate: number, delta
     return current + diff * (1 - Math.exp(-rate * delta));
 }
 
-/** World-space offset the capture-progress bar sits above this animal's own position — see showCaptureProgress(). */
-const CAPTURE_BAR_OFFSET = new THREE.Vector3(0, 1.8, 0);
-const CAPTURE_BAR_WIDTH = 40;
-const CAPTURE_BAR_HEIGHT = 7;
-const CAPTURE_BAR_BG_COLOR = 0x000000;
-const CAPTURE_BAR_BG_ALPHA = 0.5;
-const CAPTURE_BAR_FILL_COLOR = 0x33cc66;
+/** World-space offset the capture-progress bar sits above this animal's own position — see showCaptureProgress(). Raised further than a thin custom bar would need since BarComponent's own MIN_BAR_HEIGHT (56) makes the whole readout noticeably taller. */
+const CAPTURE_BAR_OFFSET = new THREE.Vector3(0, 2.1, 0);
+const CAPTURE_BAR_WIDTH = 100;
 
 /** Requirement-item icon (e.g. the rope a Pig needs) shown sitting on top of the capture bar — see showCaptureProgress(). Purely to associate WHAT the player needs with the bar filling up; only built at all when the animal actually has a requirementItem (see AnimalTypes.ts's own doc — some catches are bare-handed). */
-const CAPTURE_BAR_ICON_SIZE = 20;
+const CAPTURE_BAR_ICON_SIZE = 24;
 /** Vertical gap between the icon's own bottom edge and the bar's top edge. */
-const CAPTURE_BAR_ICON_GAP = 3;
+const CAPTURE_BAR_ICON_GAP = 6;
 
 /** Same rising-popup shape as the resource-gain one, just a bare heart icon (no "+N" text) — see showCaughtPopup(). */
 const HEART_POPUP_ICON = 'ItemIcon_Heart_Red-2';
@@ -192,7 +190,7 @@ export default class AnimalNode extends Entity {
 
     /** The throwaway entity backing the capture-progress bar (see showCaptureProgress()) — undefined whenever no capture is in progress. A fresh one is spawned per capture ATTEMPT rather than built once in awake(), since Entity has no removeComponent() (see this file's own doc) — despawning the whole entity is the only way to make it disappear between attempts. */
     private captureBarEntity?: Entity;
-    private captureBarFill?: PIXI.Sprite;
+    private captureBar?: BarComponent;
     /** The floor ring tracing this animal's own catch trigger — built only in 'wild' mode (see awake()), hidden (never rebuilt) the instant startFollowing() runs. See setCaptureState() for what actually drives its color. */
     private captureZoneVisual?: CaptureZoneVisualComponent;
 
@@ -636,22 +634,16 @@ export default class AnimalNode extends Entity {
         }
 
         if (!this.captureBarEntity) {
-            const bg = PIXI.Sprite.from(PIXI.Texture.WHITE);
-            bg.tint = CAPTURE_BAR_BG_COLOR;
-            bg.alpha = CAPTURE_BAR_BG_ALPHA;
-            bg.anchor.set(0.5, 0.5);
-            bg.width = CAPTURE_BAR_WIDTH;
-            bg.height = CAPTURE_BAR_HEIGHT;
-
-            const fill = PIXI.Sprite.from(PIXI.Texture.WHITE);
-            fill.tint = CAPTURE_BAR_FILL_COLOR;
-            fill.anchor.set(0, 0.5);
-            fill.position.set(-CAPTURE_BAR_WIDTH / 2, 0);
-            fill.height = CAPTURE_BAR_HEIGHT;
-            this.captureBarFill = fill;
+            // BarComponent is top-left anchored (a NineSlicePlane pair, no PIXI `anchor` concept
+            // of its own — see that file's own doc) — offset so its own vertical CENTER sits at
+            // this content's local (0,0), same "bar centered on the anchor point" look the old
+            // anchor(0.5,0.5) bg sprite had.
+            const bar = new BarComponent('Green', CAPTURE_BAR_WIDTH, MIN_BAR_HEIGHT);
+            bar.position.set(-CAPTURE_BAR_WIDTH / 2, -MIN_BAR_HEIGHT / 2);
+            this.captureBar = bar;
 
             const content = new PIXI.Container();
-            content.addChild(bg, fill);
+            content.addChild(bar);
 
             // Sits on top of the bar so it's obvious WHAT the player's holding is being
             // credited toward — see this constant's own doc. No icon at all for a bare-handed
@@ -662,7 +654,7 @@ export default class AnimalNode extends Entity {
                 requirementIcon.anchor.set(0.5, 1);
                 requirementIcon.width = CAPTURE_BAR_ICON_SIZE;
                 requirementIcon.height = CAPTURE_BAR_ICON_SIZE;
-                requirementIcon.position.set(0, -CAPTURE_BAR_HEIGHT / 2 - CAPTURE_BAR_ICON_GAP);
+                requirementIcon.position.set(0, -MIN_BAR_HEIGHT / 2 - CAPTURE_BAR_ICON_GAP);
                 content.addChild(requirementIcon);
             }
 
@@ -674,9 +666,7 @@ export default class AnimalNode extends Entity {
             ));
         }
 
-        if (this.captureBarFill) {
-            this.captureBarFill.width = Math.max(0.0001, CAPTURE_BAR_WIDTH * Math.min(1, Math.max(0, fraction)));
-        }
+        this.captureBar?.setProgress(fraction);
     }
 
     /** Despawns the capture-progress bar (if one's showing) — called both on a cancelled attempt and a completed one (AnimalCatchController/startFollowing()). No-ops if nothing's currently showing. */
@@ -685,7 +675,7 @@ export default class AnimalNode extends Entity {
             this.world.despawn(this.captureBarEntity);
         }
         this.captureBarEntity = undefined;
-        this.captureBarFill = undefined;
+        this.captureBar = undefined;
     }
 
     /** Called by AnimalCatchController's own onTriggerEnter/Exit — see CaptureZoneVisualComponent.ts's own doc for what each state means. No-ops harmlessly once this stops being wild (captureZoneVisual is undefined by then). */

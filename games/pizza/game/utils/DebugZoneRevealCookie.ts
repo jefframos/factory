@@ -51,4 +51,10 @@ export class DebugZoneRevealCookie {
         this.cached = nextZoneToReveal;
         writeCookie(nextZoneToReveal);
     }
+
+    /** Debug/dev reset — see PlayerDataReset.ts's own doc on why a player-facing "Clear Data" has to reach this too: without it, a session that ever used "Open Next Zone"/"Teleport: Next" would reload a Clear Data wipe straight back into whatever zone that debug reveal last left off at, instead of the fresh zone1-only state every other cleared storage reset to. Resets back to 1 (nothing manually unlocked past zone1/zoneNumber 0) — same as never having set the cookie at all. */
+    static clear(): void {
+        this.cached = 1;
+        writeCookie(1);
+    }
 }

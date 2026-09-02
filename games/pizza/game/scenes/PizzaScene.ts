@@ -49,6 +49,10 @@ import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
 import QuestGiverEntity from '../player/QuestGiverEntity';
 import { getQuestGiverConfig } from '../data/QuestGiverTypes';
 import ShopZone, { ShopTriggerArea } from '../shop/ShopZone';
+import MartZone, { MartTriggerArea } from '../shop/MartZone';
+import FarmSeedPicker from '../world/FarmSeedPicker';
+import FarmCropHud from '../world/FarmCropHud';
+import { getMartConfig } from '../data/MartTypes';
 import { getShopConfig, SHOP_CONFIG_BY_ID } from '../shop/ShopTypes';
 import { ShopUpgradeStorage } from '../shop/ShopUpgradeStorage';
 import CraftZone, { CraftTriggerArea } from '../crafting/CraftZone';
@@ -62,6 +66,7 @@ import { getTriggerConfig } from '../data/TriggerTypes';
 import { TriggerStorage } from '../data/TriggerStorage';
 import { FarmPlotStorage } from '../data/FarmPlotStorage';
 import { FarmCropStorage } from '../data/FarmCropStorage';
+import { DebugZoneRevealCookie } from '../utils/DebugZoneRevealCookie';
 import { SeedId } from '../data/SeedTypes';
 import { SeedStorage } from '../data/SeedStorage';
 import { TutorialProgressStorage } from '../tutorial/TutorialProgressStorage';
@@ -248,6 +253,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
     /** Owns the ground + every resource node's position/gather/respawn state, streaming ResourceNode entities in/out by proximity to the player — see WorldManager.ts. */
     private readonly worldManager = new WorldManager(this.world, this.threeScene, this.screenHost);
+    /** The ONE shared seed-picker popup every FarmPlotTile hands its own show()/hide() calls to — see FarmSeedPicker.ts's own doc for why this is a single instance rather than one built per tile. No 3D mesh of its own (just a PIXI overlay component), so unlike worldManager/most other entities here it's never added to threeScene. */
+    private readonly farmSeedPicker = this.world.add(new FarmSeedPicker(this.screenHost));
+    /** The ONE shared growth-status HUD every FarmPlotTile hands its own show()/hide()-equivalent register()/unregister() calls to — see FarmCropHud.ts's own doc for why this is a single instance rather than one built per tile, same reasoning as farmSeedPicker above. */
+    private readonly farmCropHud = this.world.add(new FarmCropHud(this.screenHost));
 
     /** Hand-placed building/gate/etc. spawn points read from the Tiled map's "mapSettings" objectgroup layer — see WorldObjectRegistry.ts. Built once here (same loadTiledMap()/loadTileDefs() reads WorldManager's TileMap already does — no extra cost) and read by setupBuildingZone()/setupGates() below. */
     private readonly worldObjects = new WorldObjectRegistry();
@@ -391,6 +400,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupDebugButtons();
         this.registerQueueSpawnGates();
         this.registerShopSpawnGates();
+        this.setupMarts();
         this.setupFarms();
         this.setupTriggers();
         this.setupCraftTables();
@@ -614,6 +624,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 void SeedStorage.clearAll();
                 void TutorialProgressStorage.clearAll();
                 void TriggerStorage.clearAll();
+                // See PlayerDataReset.ts's own doc on why this dev-only cookie needs clearing
+                // too — without it, a session that ever used "Open Next Zone"/"Teleport: Next"
+                // would have this button reset every real storage but leave zone visibility
+                // stuck wherever that debug reveal last left off.
+                DebugZoneRevealCookie.clear();
             },
             'Resources',
         );
@@ -728,6 +743,17 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['portraitDistance'], [1, 30], 'Portrait Distance', 'Model Snapshots');
         DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['portraitPitchDeg'], [-89, 89], 'Portrait Pitch', 'Model Snapshots');
         DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['portraitYawDeg'], [-180, 180], 'Portrait Yaw', 'Model Snapshots');
+
+        // Off (default) -> portrait shots keep their usual variable-size, tight-fit-to-model
+        // output (unchanged). On -> every portrait shot instead renders at a fixed
+        // portraitTextureSizePx square with the model padded to fill it (see
+        // ModelSnapshotTool.settings.portraitFillTexture's own doc) — the setting to flip on
+        // when producing actual game icon assets, not Tiled-placeholder previews.
+        DevGuiManager.instance.addToggle('portraitFillTexture', ModelSnapshotTool.settings.portraitFillTexture, (value) => {
+            ModelSnapshotTool.settings.portraitFillTexture = value;
+        }, 'Model Snapshots');
+        DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['portraitTextureSizePx'], [32, 2048], 'Portrait Texture Size (px)', 'Model Snapshots');
+        DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['portraitPaddingPercent'], [0, 45], 'Portrait Padding (% per side)', 'Model Snapshots');
 
         DevGuiManager.instance.addDropdown(
             ModelSnapshotTool.settings,
@@ -1267,7 +1293,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             // snapping in on the same frame.
             const tile = this.world.add(new FarmPlotTile(
                 position, id, cell.col, cell.row,
-                this.screenHost, config,
+                this.screenHost, config, this.farmSeedPicker, this.farmCropHud,
                 index * FARM_GRID_APPEAR_STAGGER_SEC,
             ));
             this.threeScene.add(tile.transform);
@@ -1316,6 +1342,48 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 ));
                 this.threeScene.add(shopZone.transform);
                 this.registerZoneVisibility(shopZone.transform, position.x, position.z, placement.width, placement.depth);
+            });
+        }
+    }
+
+    /**
+     * Registers one SPAWN gate per "mart" object found on the Tiled map's "mapSettings" layer,
+     * keyed off MartConfig.appearRequirement — same auto-discovery-plus-spawn-gate shape as
+     * registerShopSpawnGates()/setupFarms(). Unlike shops (no sensible default, skipped with a
+     * warning if unconfigured), a mart id with no MART_CONFIG_BY_ID override is never skipped —
+     * getMartConfig() already falls back to DEFAULT_MART_CONFIG (empty offers — see
+     * MartTypes.ts's own doc), same "always has a sensible default" reasoning farms use.
+     *
+     * Same dropper-or-own-footprint trigger resolution as registerShopSpawnGates()/
+     * setupBuildingZone(): a Tiled "dropper" object targeting this mart's id (see
+     * WorldObjectRegistry.ts) stands in for the mart's own footprint as the interaction trigger
+     * when the level designer has placed one, falling back to the mart's own footprint
+     * otherwise — see MartZone.ts's own doc.
+     */
+    private setupMarts(): void {
+        for (const [id, placement] of this.worldObjects.getAllOfType('mart')) {
+            const config = getMartConfig(id);
+
+            this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
+                const position = new THREE.Vector3(placement.x, 0, placement.z);
+                const dropperPlacement = this.worldObjects.getDropperFor(id);
+                const triggerArea: MartTriggerArea | undefined = dropperPlacement
+                    ? {
+                        position: new THREE.Vector3(dropperPlacement.x, 0, dropperPlacement.z),
+                        footprint: { width: dropperPlacement.width, depth: dropperPlacement.depth },
+                    }
+                    : undefined;
+
+                const martZone = this.world.add(new MartZone(
+                    position, this.screenHost, id,
+                    { width: placement.width, depth: placement.depth },
+                    config,
+                    () => this.freezePlayerMovement(),
+                    () => this.unfreezePlayerMovement(),
+                    triggerArea,
+                ));
+                this.threeScene.add(martZone.transform);
+                this.registerZoneVisibility(martZone.transform, position.x, position.z, placement.width, placement.depth);
             });
         }
     }

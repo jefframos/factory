@@ -64,6 +64,20 @@ export class ModelSnapshotTool {
      * model's own center instead of the player. Off (the default) leaves every existing
      * snapshot call — snapshotOne()/snapshotAll()/snapshotGroup() — rendering exactly as it did
      * before this setting existed.
+     *
+     * `portraitFillTexture` is an ADDITIONAL opt-in on top of `portraitMode` (only consulted at
+     * all while that's also on — see framePortrait()'s own doc), for producing actual GAME ICON
+     * assets rather than Tiled-placeholder previews: framePortrait()'s default behavior tightly
+     * fits the orthographic frustum (and therefore the output PNG's own pixel dimensions) to
+     * each model's real screen-space footprint, which is exactly right for the Tiled-placeholder
+     * workflow (see this file's own top-of-file doc) but means a small model comes out as a tiny
+     * image — no good for an icon that needs to fill a fixed texture size. With this on, every
+     * portrait shot instead renders at a FIXED `portraitTextureSizePx` square, with the model's
+     * longest screen-space dimension filling `(100 - portraitPaddingPercent * 2)`% of that
+     * square (so `portraitPaddingPercent` is the margin on EACH side, not the total) — same
+     * "consistent icon canvas regardless of the model's real size" framing a UI icon sheet
+     * needs. Off (the default) leaves framePortrait() exactly as it was before this setting
+     * existed.
      */
     public static readonly settings = {
         pixelsPerWorldUnit: 32,
@@ -73,6 +87,9 @@ export class ModelSnapshotTool {
         portraitDistance: 8,
         portraitPitchDeg: 30,
         portraitYawDeg: 0,
+        portraitFillTexture: false,
+        portraitTextureSizePx: 512,
+        portraitPaddingPercent: 10,
     };
 
     private static renderer: THREE.WebGLRenderer | null = null;
@@ -262,18 +279,62 @@ export class ModelSnapshotTool {
             maxDist = Math.max(maxDist, -view.z);
         }
 
+        camera.near = 0.1;
+        camera.far = Math.max(maxDist, 0.001) + 1;
+
+        // See settings.portraitFillTexture's own doc — a fixed-size, padded frustum instead of
+        // the tight footprint-fit frustum right below, so every icon comes out the same texture
+        // size regardless of how big the source model's real footprint is.
+        if (this.settings.portraitFillTexture) {
+            return this.applyFillTextureFraming(camera, minX, maxX, minY, maxY);
+        }
+
         camera.left = minX;
         camera.right = maxX;
         camera.top = maxY;
         camera.bottom = minY;
-        camera.near = 0.1;
-        camera.far = Math.max(maxDist, 0.001) + 1;
         camera.updateProjectionMatrix();
 
         return {
             widthPx: Math.max(1, Math.round((maxX - minX) * pixelsPerWorldUnit)),
             heightPx: Math.max(1, Math.round((maxY - minY) * pixelsPerWorldUnit)),
         };
+    }
+
+    /**
+     * The settings.portraitFillTexture framing — replaces framePortrait()'s usual tight
+     * footprint-fit frustum with a SQUARE one, sized so the model's longest screen-space
+     * dimension (whichever of width/height is bigger — the shorter one just ends up with extra
+     * margin instead of being stretched) fills `portraitTextureSizePx` minus
+     * `portraitPaddingPercent` on each side, centered on the model's own screen-space center.
+     * Output pixel dimensions are always exactly `portraitTextureSizePx` square — unlike every
+     * other framing method here, `pixelsPerWorldUnit` plays no part in this one at all, since
+     * the whole point is a texture size that's independent of the model's real-world scale.
+     */
+    private static applyFillTextureFraming(
+        camera: THREE.OrthographicCamera,
+        minX: number, maxX: number, minY: number, maxY: number,
+    ): { widthPx: number; heightPx: number } {
+        const { portraitTextureSizePx, portraitPaddingPercent } = this.settings;
+
+        const width = maxX - minX;
+        const height = maxY - minY;
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+
+        // Margin on EACH side (see settings.portraitFillTexture's own doc), clamped so a
+        // careless 50+% value can never invert/zero out the fill fraction.
+        const fillFraction = Math.max(0.05, 1 - (portraitPaddingPercent / 100) * 2);
+        const frustumSize = Math.max(width, height, 0.001) / fillFraction;
+        const halfSize = frustumSize / 2;
+
+        camera.left = centerX - halfSize;
+        camera.right = centerX + halfSize;
+        camera.top = centerY + halfSize;
+        camera.bottom = centerY - halfSize;
+        camera.updateProjectionMatrix();
+
+        return { widthPx: portraitTextureSizePx, heightPx: portraitTextureSizePx };
     }
 
     private static async renderModel(modelRef: string): Promise<{ dataUrl: string; widthPx: number; heightPx: number }> {

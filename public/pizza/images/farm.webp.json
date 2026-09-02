@@ -1,0 +1,276 @@
+{
+  "frames": {
+    "pizza-model-snapshots_Food-Watermelon": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 38,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 13,
+        "y": 13,
+        "w": 38,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    },
+    "pizza-model-snapshots_Food-Tomato": {
+      "frame": {
+        "x": 42,
+        "y": 2,
+        "w": 43,
+        "h": 41
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 11,
+        "y": 13,
+        "w": 43,
+        "h": 41
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    },
+    "pizza-model-snapshots_Food-Strawberry": {
+      "frame": {
+        "x": 2,
+        "y": 45,
+        "w": 32,
+        "h": 43
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 16,
+        "y": 11,
+        "w": 32,
+        "h": 43
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    },
+    "pizza-model-snapshots_Food-PumpkinBasic": {
+      "frame": {
+        "x": 47,
+        "y": 45,
+        "w": 46,
+        "h": 38
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 9,
+        "y": 16,
+        "w": 46,
+        "h": 38
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    },
+    "pizza-model-snapshots_Food-Pumpkin": {
+      "frame": {
+        "x": 87,
+        "y": 2,
+        "w": 44,
+        "h": 36
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 16,
+        "w": 44,
+        "h": 36
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    },
+    "pizza-model-snapshots_Food-Mushroom": {
+      "frame": {
+        "x": 2,
+        "y": 79,
+        "w": 40,
+        "h": 43
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 12,
+        "y": 10,
+        "w": 40,
+        "h": 43
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    },
+    "pizza-model-snapshots_Food-Leek": {
+      "frame": {
+        "x": 47,
+        "y": 93,
+        "w": 14,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 25,
+        "y": 6,
+        "w": 14,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    },
+    "pizza-model-snapshots_Food-Corn": {
+      "frame": {
+        "x": 2,
+        "y": 121,
+        "w": 40,
+        "h": 38
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 13,
+        "y": 14,
+        "w": 40,
+        "h": 38
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    },
+    "pizza-model-snapshots_Food-Cauliflower": {
+      "frame": {
+        "x": 63,
+        "y": 93,
+        "w": 46,
+        "h": 41
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 9,
+        "y": 11,
+        "w": 46,
+        "h": 41
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    },
+    "pizza-model-snapshots_Food-Carrot": {
+      "frame": {
+        "x": 63,
+        "y": 136,
+        "w": 18,
+        "h": 45
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 23,
+        "y": 10,
+        "w": 18,
+        "h": 45
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    },
+    "pizza-model-snapshots_Food-Cabbage": {
+      "frame": {
+        "x": 125,
+        "y": 2,
+        "w": 46,
+        "h": 41
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 9,
+        "y": 11,
+        "w": 46,
+        "h": 41
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    },
+    "pizza-model-snapshots_Food-Broccoli": {
+      "frame": {
+        "x": 87,
+        "y": 50,
+        "w": 40,
+        "h": 43
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 12,
+        "y": 10,
+        "w": 40,
+        "h": 43
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    },
+    "pizza-model-snapshots_Food-Beet": {
+      "frame": {
+        "x": 110,
+        "y": 136,
+        "w": 20,
+        "h": 52
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 22,
+        "y": 5,
+        "w": 20,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      }
+    }
+  },
+  "meta": {
+    "app": "http://github.com/pixijs/assetpack",
+    "version": "1.0",
+    "image": "farm.webp",
+    "format": "RGBA8888",
+    "size": {
+      "w": 168,
+      "h": 161
+    },
+    "scale": 1,
+    "related_multi_packs": []
+  }
+}

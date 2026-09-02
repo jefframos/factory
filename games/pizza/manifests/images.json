@@ -5,6 +5,14 @@
       "assets": [
         {
           "alias": [
+            "farm"
+          ],
+          "src": [
+            "farm.webp.json"
+          ]
+        },
+        {
+          "alias": [
             "pets"
           ],
           "src": [

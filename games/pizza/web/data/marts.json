@@ -1,0 +1,27 @@
+{
+    "default": {
+        "name": "General Store",
+        "offers": [
+            {
+                "resourceType": "cabbage"
+            },
+            {
+                "resourceType": "crystal"
+            }
+        ]
+    },
+    "byId": {
+        "farmShop": {
+            "offers": [
+                {
+                    "resourceType": "cabbage"
+                },
+                {
+                    "resourceType": "cauliflower"
+                }
+            ],
+            "name": "Farm Shop",
+            "solid": 0.5
+        }
+    }
+}

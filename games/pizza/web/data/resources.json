@@ -13,7 +13,9 @@
             0,
             360
         ],
-        "amountPerGather": 1
+        "amountPerGather": 1,
+        "price": 2,
+        "sellable": true
     },
     "berries": {
         "label": "Berries",
@@ -107,6 +109,161 @@
         "label": "Pig",
         "icon": "pizza-model-snapshots_Pets-AnimalPig",
         "scale": 0.5,
-        "rotationDeg": 0
+        "rotationDeg": 0,
+        "category": "animal"
+    },
+    "wheat": {
+        "label": "Wheat",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "icon": "bedroll"
+    },
+    "beet": {
+        "label": "Beet",
+        "icon": "pizza-model-snapshots_Food-Beet",
+        "models": [
+            "Food.Beet"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm"
+    },
+    "broccoli": {
+        "label": "Broccoli",
+        "icon": "pizza-model-snapshots_Food-Broccoli",
+        "models": [
+            "Food.Broccoli"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm"
+    },
+    "cabbage": {
+        "label": "Cabbage",
+        "icon": "pizza-model-snapshots_Food-Cabbage",
+        "models": [
+            "Food.Cabbage"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 4
+    },
+    "carrot": {
+        "label": "Carrot",
+        "icon": "pizza-model-snapshots_Food-Carrot",
+        "models": [
+            "Food.Carrot"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm"
+    },
+    "cauliflower": {
+        "label": "Cauliflower",
+        "icon": "pizza-model-snapshots_Food-Cauliflower",
+        "models": [
+            "Food.Cauliflower"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 5
+    },
+    "corn": {
+        "label": "Corn",
+        "icon": "pizza-model-snapshots_Food-Corn",
+        "models": [
+            "Food.Corn"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm"
+    },
+    "leek": {
+        "label": "Leek",
+        "icon": "pizza-model-snapshots_Food-Leek",
+        "models": [
+            "Food.Leek"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm"
+    },
+    "mushroom": {
+        "label": "Mushroom",
+        "icon": "pizza-model-snapshots_Food-Mushroom",
+        "models": [
+            "Food.Mushroom"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm"
+    },
+    "pumpkinBasic": {
+        "label": "Pumpkin (Basic)",
+        "icon": "pizza-model-snapshots_Food-PumpkinBasic",
+        "models": [
+            "Food.PumpkinBasic"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm"
+    },
+    "pumpkin": {
+        "label": "Pumpkin",
+        "icon": "pizza-model-snapshots_Food-Pumpkin",
+        "models": [
+            "Food.Pumpkin"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm"
+    },
+    "strawberry": {
+        "label": "Strawberry",
+        "icon": "pizza-model-snapshots_Food-Strawberry",
+        "models": [
+            "Food.Strawberry"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm"
+    },
+    "tomato": {
+        "label": "Tomato",
+        "icon": "pizza-model-snapshots_Food-Tomato",
+        "models": [
+            "Food.Tomato"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm"
+    },
+    "watermelon": {
+        "label": "Watermelon",
+        "icon": "pizza-model-snapshots_Food-Watermelon",
+        "models": [
+            "Food.Watermelon"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm"
     }
 }

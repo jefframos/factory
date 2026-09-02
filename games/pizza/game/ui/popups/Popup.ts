@@ -117,4 +117,25 @@ export default abstract class Popup {
     public bindClose(onCloseRequested: () => void): void {
         this.onCloseRequested = onCloseRequested;
     }
+
+    /**
+     * Optional lifecycle hook — override to run cleanup the moment PopupManager actually starts
+     * closing THIS popup, regardless of which of the three paths triggered it: the header's own
+     * close button (via requestClose()), tapping the darkened backdrop (PopupManager.show()'s
+     * own backdrop handler calls close() directly, bypassing requestClose() entirely), or this
+     * popup getting silently replaced by a new show() call (closeImmediate()). A popup that
+     * needs to undo something for as long as it was open (e.g. MartZone freezing player
+     * movement while its MartPopup is up) needs exactly this — requestClose() alone misses the
+     * backdrop-tap and get-replaced cases. Fires once, synchronously, right as the close
+     * begins (before any exit animation finishes) — see notifyClosed(), PopupManager's own
+     * caller.
+     */
+    protected onClosed(): void {
+        // No-op by default — most popups have nothing to undo on close.
+    }
+
+    /** PopupManager's own call into onClosed() — public because PopupManager is a different class and onClosed() itself stays protected (an implementation detail concrete popups override, not something external code should invoke directly). */
+    public notifyClosed(): void {
+        this.onClosed();
+    }
 }

@@ -1,10 +1,78 @@
 {
-    "wheat": {
-        "name": "Wheat",
+    "beet": {
+        "name": "Beet",
+        "stages": [
+            {
+                "durationSec": 5,
+                "mesh": "cropBeetView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 2
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 5
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 5
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        -0.5,
+                        0
+                    ],
+                    "scale": 6
+                }
+            }
+        ],
+        "yield": {
+            "resourceType": "beet",
+            "amount": 1
+        },
+        "initialMesh": "cropBeetView"
+    },
+    "broccoli": {
+        "name": "Broccoli",
         "stages": [
             {
                 "durationSec": 20,
-                "mesh": "bananaView",
+                "mesh": "cropBroccoliView",
                 "start": {
                     "offset": [
                         0,
@@ -24,7 +92,6 @@
             },
             {
                 "durationSec": 20,
-                "mesh": "bananaView",
                 "start": {
                     "offset": [
                         0,
@@ -44,7 +111,550 @@
             },
             {
                 "durationSec": 0,
-                "mesh": "bananaView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        -0.5,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        "yield": {
+            "resourceType": "broccoli",
+            "amount": 1
+        },
+        "initialMesh": "cropBroccoliView"
+    },
+    "cabbage": {
+        "name": "Cabbage",
+        "stages": [
+            {
+                "durationSec": 20,
+                "mesh": "cropCabbageView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        "yield": {
+            "resourceType": "cabbage",
+            "amount": 1
+        },
+        "initialMesh": "cropCabbageView"
+    },
+    "carrot": {
+        "name": "Carrot",
+        "stages": [
+            {
+                "durationSec": 20,
+                "mesh": "cropCarrotView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        -1.5,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        "yield": {
+            "resourceType": "carrot",
+            "amount": 1
+        },
+        "initialMesh": "cropCarrotView"
+    },
+    "cauliflower": {
+        "name": "Cauliflower",
+        "stages": [
+            {
+                "durationSec": 20,
+                "mesh": "cropCauliflowerView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        "yield": {
+            "resourceType": "cauliflower",
+            "amount": 1
+        },
+        "initialMesh": "cropCauliflowerView"
+    },
+    "corn": {
+        "name": "Corn",
+        "stages": [
+            {
+                "durationSec": 20,
+                "mesh": "cropCornView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        "yield": {
+            "resourceType": "corn",
+            "amount": 1
+        },
+        "initialMesh": "cropCornView"
+    },
+    "leek": {
+        "name": "Leek",
+        "stages": [
+            {
+                "durationSec": 20,
+                "mesh": "cropLeekView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        -1.5,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        "yield": {
+            "resourceType": "leek",
+            "amount": 1
+        },
+        "initialMesh": "cropLeekView"
+    },
+    "mushroom": {
+        "name": "Mushroom",
+        "stages": [
+            {
+                "durationSec": 20,
+                "mesh": "cropMushroomView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 5
+                }
+            }
+        ],
+        "yield": {
+            "resourceType": "mushroom",
+            "amount": 1
+        },
+        "initialMesh": "cropMushroomView"
+    },
+    "pumpkinBasic": {
+        "name": "Pumpkin (Basic)",
+        "stages": [
+            {
+                "durationSec": 20,
+                "mesh": "cropPumpkinBasicView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        "yield": {
+            "resourceType": "pumpkinBasic",
+            "amount": 1
+        },
+        "initialMesh": "cropPumpkinBasicView"
+    },
+    "pumpkin": {
+        "name": "Pumpkin",
+        "stages": [
+            {
+                "durationSec": 20,
+                "mesh": "cropPumpkinView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
                 "start": {
                     "offset": [
                         0,
@@ -64,9 +674,213 @@
             }
         ],
         "yield": {
-            "resourceType": "wood",
+            "resourceType": "pumpkin",
             "amount": 1
         },
-        "initialMesh": "bananaView"
+        "initialMesh": "cropPumpkinView"
+    },
+    "strawberry": {
+        "name": "Strawberry",
+        "stages": [
+            {
+                "durationSec": 20,
+                "mesh": "cropStrawberryView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        "yield": {
+            "resourceType": "strawberry",
+            "amount": 1
+        },
+        "initialMesh": "cropStrawberryView"
+    },
+    "tomato": {
+        "name": "Tomato",
+        "stages": [
+            {
+                "durationSec": 20,
+                "mesh": "cropTomatoView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        "yield": {
+            "resourceType": "tomato",
+            "amount": 1
+        },
+        "initialMesh": "cropTomatoView"
+    },
+    "watermelon": {
+        "name": "Watermelon",
+        "stages": [
+            {
+                "durationSec": 20,
+                "mesh": "cropWatermelonView",
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.2
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                }
+            },
+            {
+                "durationSec": 20,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 0.6
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                }
+            },
+            {
+                "durationSec": 0,
+                "start": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 1
+                },
+                "end": {
+                    "offset": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "scale": 4
+                }
+            }
+        ],
+        "yield": {
+            "resourceType": "watermelon",
+            "amount": 1
+        },
+        "initialMesh": "cropWatermelonView"
     }
 }

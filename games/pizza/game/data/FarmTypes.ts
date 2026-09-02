@@ -64,9 +64,13 @@ export interface FarmPlotTiles {
     prepared?: string;
     /** Bare texture-name string (packed 'images'/etc. bundle — same "icon" field shape used across this codebase, e.g. BuildingConfig.icon/ItemConfig-via-toolId), representing FARMING as a whole rather than any one plot's own look — shown in FarmZone's "Farm Unlocked!" notification (see UpgradeNotificationManager) the instant a plot is bought. Shared across every plot for the same reason empty/prepared are (see this file's own doc): there's no per-plot notification, just "a farm got unlocked." */
     icon?: string;
+    /** Hex color string (e.g. '#ffffff') tinting the PREPARED tile mesh while a cell is EMPTY — FarmPlotTile.ts applies this every time FarmCropStorage says nothing's planted there. Undefined falls back to a plain white ('#ffffff' — i.e. no visible tint at all, the mesh's own real colors show through). */
+    availableTint?: string;
+    /** Same as `availableTint`, applied instead while a cell has something planted/growing — typically a DARKER shade than `availableTint` so an occupied cell visually contrasts against the available ones around it at a glance, without needing a separate mesh/overlay. Undefined falls back to a medium gray. */
+    occupiedTint?: string;
 }
 
-/** The SAME empty/prepared tile-view pair (plus the shared notification icon) used by every farm plot on the map — see this file's own doc for why this isn't per-plot. Edited once, from the top of the pizza web editor's Farms tab. Tiles default to EntityViewRegistry.ts's placeholder ground-patch views (farmEmptyView/farmPreparedView) until a designer picks something farm-specific; `icon` defaults to a placeholder ('medicinal-herbs', from the 'survive' bundle) until real farm art exists. */
+/** The SAME empty/prepared tile-view pair (plus the shared notification icon and available/occupied tints) used by every farm plot on the map — see this file's own doc for why this isn't per-plot. Edited once, from the top of the pizza web editor's Farms tab. Tiles default to EntityViewRegistry.ts's placeholder ground-patch views (farmEmptyView/farmPreparedView) until a designer picks something farm-specific; `icon` defaults to a placeholder ('medicinal-herbs', from the 'survive' bundle) until real farm art exists. */
 export const FARM_TILE_CONFIG: FarmPlotTiles = {
     "empty": "farmEmptyView",
     "prepared": "farmPreparedView",

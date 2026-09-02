@@ -5,13 +5,26 @@
 // content; the title/close button/panel chrome/backdrop-click-to-close/
 // transition are all handled generically by Popup/PopupManager.
 //
-// Bottom tab strip (Tools / Resources, more tabs can be appended to TABS
-// below later — e.g. a future "Farm" tab) switches which body content is
-// shown, same "small standalone list, no shared tab component exists yet"
-// approach as PopupManager's own exploration found — see this popup's own
-// tab-row building code. Body content is a plain rebuild-on-switch (same
-// "just a couple of rows" reasoning as ToolListUI.refresh()'s own doc), not
-// diffed, since switching tabs is rare compared to a live stat tick.
+// Bottom tab strip (Tools / Resources / Farm, more tabs can be appended to
+// TABS below later) switches which body content is shown, same "small
+// standalone list, no shared tab component exists yet" approach as
+// PopupManager's own exploration found — see this popup's own tab-row
+// building code. Body content is a plain rebuild-on-switch (same "just a
+// couple of rows" reasoning as ToolListUI.refresh()'s own doc), not diffed,
+// since switching tabs is rare compared to a live stat tick.
+//
+// Resources vs. Farm is a split by ResourceConfig.category (see that
+// field's own doc): Resources shows only 'main'-category BackpackStorage
+// holdings — the same ones GlobalResourcesUI/BackpackListUI already put on
+// the always-visible main-screen panels — while Farm shows 'farm'-category
+// holdings (a crop's own harvest yield) PLUS every held SeedTypes.ts seed
+// (SeedStorage, a wholly separate bank — see that file's own doc), since
+// both only matter once the player's actually farming and would otherwise
+// clutter the main Resources grid with one entry per crop. Farm further
+// splits its own two sources into labeled sub-sections (Seeds above Crops —
+// see renderFarmSection()) rather than one merged grid, since a seed and
+// the crop it grows into are conceptually different things even though
+// both only live on this one tab.
 //
 // The body reserves a FIXED footprint (BODY_WIDTH x BODY_HEIGHT, spacer
 // added once and never removed) regardless of which tab is showing — Popup
@@ -40,12 +53,14 @@ import { ShopUpgradeStorage } from '../../shop/ShopUpgradeStorage';
 import { SHOP_CONFIG_BY_ID } from '../../shop/ShopTypes';
 import { ACTION_CONFIG } from '../../actions/ActionTypes';
 import { BackpackStorage } from '../../data/BackpackStorage';
-import { ResourceType } from '../../actions/ResourceTypes';
+import { RESOURCE_CONFIG, ResourceType } from '../../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../../actions/ResourceRegistry';
 import { getAssetIcon } from '../../world/AssetLibraryRegistry';
+import { SeedStorage } from '../../data/SeedStorage';
+import { SeedId } from '../../data/SeedTypes';
 import { LevelBadgeStyle } from '../LevelBadgeStyle';
 
-type TabId = 'tools' | 'resources';
+type TabId = 'tools' | 'resources' | 'farm';
 
 interface TabDef {
     id: TabId;
@@ -56,6 +71,7 @@ interface TabDef {
 const TABS: TabDef[] = [
     { id: 'tools', label: 'Tools' },
     { id: 'resources', label: 'Resources' },
+    { id: 'farm', label: 'Farm' },
 ];
 
 const BODY_WIDTH = 450;
@@ -88,6 +104,10 @@ const RESOURCE_GRID_COLUMNS = 5;
 const RESOURCE_CELL_SIZE = 80;
 const RESOURCE_CELL_GAP = 10;
 const RESOURCE_ICON_SIZE = 44;
+
+/** Farm tab's own Seeds/Crops sub-headers (see renderFarmTab()) — same TextStyleRegistry.Inventory style every other label in this popup uses (tab labels, tool names, "No X yet" empty states), just so a sub-header doesn't read as a different UI language from the rest of the popup. */
+const FARM_SECTION_HEADER_HEIGHT = 26;
+const FARM_SECTION_GAP = 18;
 
 /** Every tool id in TOOL_LIBRARY's own declaration order — same convention as ToolListUI.TOOL_IDS. ToolId and ItemType share the exact same string values (see ItemTypes.ts's own doc), so casting one to the other below is safe. */
 const TOOL_IDS = Object.keys(TOOL_LIBRARY) as ToolId[];
@@ -127,16 +147,27 @@ export default class InventoryPopup extends Popup {
         }
     };
 
+    /** Shared by BOTH BackpackStorage (farm-category holdings) and SeedStorage — either one changing can affect what the Farm tab shows, so both wire to this same handler rather than each needing its own. */
+    private readonly handleFarmChanged = (): void => {
+        if (this.activeTab === 'farm') {
+            this.renderActiveTab();
+        }
+    };
+
     public constructor() {
         super('Backpack', { contentWidth: BODY_WIDTH, frame: 'ItemFrame' });
 
         ItemStorage.onChange.add(this.handleToolsChanged);
         ShopUpgradeStorage.onChange.add(this.handleToolsChanged);
         BackpackStorage.onChange.add(this.handleResourcesChanged);
+        BackpackStorage.onChange.add(this.handleFarmChanged);
+        SeedStorage.onChange.add(this.handleFarmChanged);
         this.root.once('destroyed', () => {
             ItemStorage.onChange.remove(this.handleToolsChanged);
             ShopUpgradeStorage.onChange.remove(this.handleToolsChanged);
             BackpackStorage.onChange.remove(this.handleResourcesChanged);
+            BackpackStorage.onChange.remove(this.handleFarmChanged);
+            SeedStorage.onChange.remove(this.handleFarmChanged);
         });
     }
 
@@ -222,8 +253,10 @@ export default class InventoryPopup extends Popup {
 
         if (this.activeTab === 'tools') {
             this.renderToolsTab();
-        } else {
+        } else if (this.activeTab === 'resources') {
             this.renderResourcesTab();
+        } else {
+            this.renderFarmTab();
         }
     }
 
@@ -297,22 +330,62 @@ export default class InventoryPopup extends Popup {
 
     private renderResourcesTab(): void {
         const counts = BackpackStorage.getAll();
-        const heldTypes = Object.values(ResourceType).filter(type => counts.get(type));
+        // 'main'-category only (the default when ResourceConfig.category is unset) — a crop's
+        // own 'farm'-category harvest yield shows on the Farm tab instead, see this file's own
+        // top doc.
+        const heldTypes = Object.values(ResourceType)
+            .filter(type => counts.get(type) && RESOURCE_CONFIG[type]?.category !== 'farm');
 
-        if (heldTypes.length === 0) {
-            const empty = new PIXI.Text('No resources yet.', TextStyleRegistry.Body);
-            empty.position.set(0, 0);
+        this.renderIconCountGrid(
+            heldTypes.map(type => ({ texture: getAssetIcon(resolveResourceAssetKey(type)), count: counts.get(type) ?? 0 })),
+            'No resources yet.',
+            0,
+        );
+    }
+
+    /** 'farm'-category BackpackStorage holdings (a crop's own harvest yield) PLUS every held SeedTypes.ts seed, each in its OWN labeled sub-section (Seeds above Crops) — see this file's own top doc for why these two share a tab despite being two different banks. Seeds route their icon through AssetLibraryRegistry under the SAME id as the SeedId itself (see entityMap.mjs's `seeds` mapping's own externalFields), same join-by-id convention getAssetIcon()/resolveResourceAssetKey() already use for resources. */
+    private renderFarmTab(): void {
+        const seedCounts = SeedStorage.getAll();
+        const heldSeedIds = Object.values(SeedId).filter(id => seedCounts.get(id));
+        const seedEntries = heldSeedIds.map(id => ({ texture: getAssetIcon(id), count: seedCounts.get(id) ?? 0 }));
+
+        const backpackCounts = BackpackStorage.getAll();
+        const farmResourceTypes = Object.values(ResourceType)
+            .filter(type => backpackCounts.get(type) && RESOURCE_CONFIG[type]?.category === 'farm');
+        const cropEntries = farmResourceTypes.map(type => ({ texture: getAssetIcon(resolveResourceAssetKey(type)), count: backpackCounts.get(type) ?? 0 }));
+
+        let y = 0;
+        y += this.renderFarmSection('Seeds', seedEntries, 'No seeds yet.', y);
+        y += FARM_SECTION_GAP;
+        this.renderFarmSection('Crops', cropEntries, 'No crops harvested yet.', y);
+    }
+
+    /** One labeled sub-section of the Farm tab — a header (same TextStyleRegistry.Inventory style every other label in this popup uses) followed by its own icon grid, stacked starting at `startY` so renderFarmTab() can lay Seeds directly above Crops without either one needing to know the other's height ahead of time. Returns the total vertical space this section actually used (header + grid, whatever the grid's own empty-state/row-count ends up being) so the caller can stack the next section right after it. */
+    private renderFarmSection(title: string, entries: { texture: PIXI.Texture; count: number }[], emptyText: string, startY: number): number {
+        const header = new PIXI.Text(title, TextStyleRegistry.Inventory);
+        header.position.set(0, startY);
+        this.body.addChild(header);
+
+        const gridHeight = this.renderIconCountGrid(entries, emptyText, startY + FARM_SECTION_HEADER_HEIGHT);
+        return FARM_SECTION_HEADER_HEIGHT + gridHeight;
+    }
+
+    /** Shared grid-of-icon-cells layout — same shape Resources/Farm both want (icon bg + icon + count label, RESOURCE_GRID_COLUMNS wide), just fed a pre-resolved (texture, count) list instead of each tab re-deriving its own source data inline. `startY` lets renderFarmSection() stack more than one of these vertically; Resources (only ever one grid, no sections) always passes 0. Returns the vertical space actually used, same reason renderFarmSection() needs it. Empty-state text uses TextStyleRegistry.Inventory — same style as every other label in this popup (tab labels, tool names, farm section headers above), not TextStyleRegistry.Body, so "No X yet" never reads as a different UI language from the rest of the popup. */
+    private renderIconCountGrid(entries: { texture: PIXI.Texture; count: number }[], emptyText: string, startY: number): number {
+        if (entries.length === 0) {
+            const empty = new PIXI.Text(emptyText, TextStyleRegistry.Inventory);
+            empty.position.set(0, startY);
             this.body.addChild(empty);
-            return;
+            return empty.height;
         }
 
-        heldTypes.forEach((type, index) => {
+        entries.forEach(({ texture, count }, index) => {
             const col = index % RESOURCE_GRID_COLUMNS;
             const row = Math.floor(index / RESOURCE_GRID_COLUMNS);
             const cell = new PIXI.Container();
             cell.position.set(
                 col * (RESOURCE_CELL_SIZE + RESOURCE_CELL_GAP),
-                row * (RESOURCE_CELL_SIZE + RESOURCE_CELL_GAP),
+                startY + row * (RESOURCE_CELL_SIZE + RESOURCE_CELL_GAP),
             );
             this.body.addChild(cell);
 
@@ -323,18 +396,20 @@ export default class InventoryPopup extends Popup {
             iconBg.height = RESOURCE_CELL_SIZE;
             cell.addChild(iconBg);
 
-            const icon = new PIXI.Sprite(getAssetIcon(resolveResourceAssetKey(type)));
+            const icon = new PIXI.Sprite(texture);
             icon.anchor.set(0.5, 0.5);
             icon.width = RESOURCE_ICON_SIZE;
             icon.height = RESOURCE_ICON_SIZE;
             icon.position.set(RESOURCE_CELL_SIZE / 2, RESOURCE_CELL_SIZE / 2 - 4);
             cell.addChild(icon);
 
-            const count = counts.get(type) ?? 0;
             const label = new PIXI.Text(count.toString(), { ...TextStyleRegistry.Body, fontSize: 14 });
             label.anchor.set(0.5, 1);
             label.position.set(RESOURCE_CELL_SIZE / 2, RESOURCE_CELL_SIZE - 2);
             cell.addChild(label);
         });
+
+        const rows = Math.ceil(entries.length / RESOURCE_GRID_COLUMNS);
+        return rows * (RESOURCE_CELL_SIZE + RESOURCE_CELL_GAP) - RESOURCE_CELL_GAP;
     }
 }

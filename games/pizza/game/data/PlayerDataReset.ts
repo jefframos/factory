@@ -21,8 +21,11 @@ import { ShapeResourceStorage } from '../world/ShapeResourceStorage';
 import { AnimalFollowStorage } from './AnimalFollowStorage';
 import { PlayerPositionStorage } from './PlayerPositionStorage';
 import { FarmPlotStorage } from './FarmPlotStorage';
+import { FarmCropStorage } from './FarmCropStorage';
+import { SeedStorage } from './SeedStorage';
 import { TutorialProgressStorage } from '../tutorial/TutorialProgressStorage';
 import { TriggerStorage } from './TriggerStorage';
+import { DebugZoneRevealCookie } from '../utils/DebugZoneRevealCookie';
 
 /**
  * Same storage list PizzaScene's own dev "Reset Everything" button clears (including
@@ -52,8 +55,27 @@ import { TriggerStorage } from './TriggerStorage';
  * themselves, but without also wiping the saved completed-step index, ZoneTutorialController
  * would reload thinking the player already finished a step whose real backing progress just
  * got wiped out from under it.
+ *
+ * FarmCropStorage/SeedStorage clear alongside FarmPlotStorage for the exact same "gated
+ * progress must reset alongside the systems it gates" reason as TutorialProgressStorage above —
+ * FarmPlotStorage.clearAll() re-locks every plot back to "for sale," but a per-cell planted
+ * crop is keyed by farmId/col/row (see FarmCropStorage.tileKey()), not by plot ownership, so
+ * without ALSO clearing it here, re-buying the exact same plot after a reset would spawn its
+ * FarmPlotTile grid straight back into whatever was growing there before the reset (including
+ * an already-ready-to-harvest crop) — the plot itself looked reset, but what's growing on it
+ * wasn't. SeedStorage clears for the plainer reason every other bankable-item storage here does:
+ * a "Clear Data" wipe should leave the player with none, same as a first-ever visit.
+ *
+ * DebugZoneRevealCookie.clear() is the ONE entry here that isn't a *Storage.ts/PlatformHandler
+ * value — see that file's own doc for why "Open Next Zone"/"Teleport: Next" persist through a
+ * plain cookie instead. It still has to be reset alongside everything else above: without this,
+ * a session that ever used either debug tool would have Clear Data reload straight back into
+ * whatever zone that manual reveal last left off at (WorldManager.buildGround() replays this
+ * cookie's own catch-up loop on every boot), instead of the fresh zone1-only state a real
+ * first-ever visit gets — the exact bug report that added this line.
  */
 export function clearAllPlayerData(): void {
+    DebugZoneRevealCookie.clear();
     void Promise.all([
         GlobalResourceStorage.clearAll(),
         BackpackStorage.clearAll(),
@@ -71,6 +93,8 @@ export function clearAllPlayerData(): void {
         AnimalFollowStorage.clearAll(),
         PlayerPositionStorage.clearAll(),
         FarmPlotStorage.clearAll(),
+        FarmCropStorage.clearAll(),
+        SeedStorage.clearAll(),
         TutorialProgressStorage.clearAll(),
         TriggerStorage.clearAll(),
     ]).then(() => window.location.reload());

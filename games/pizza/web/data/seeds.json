@@ -1,8 +1,98 @@
 {
-    "wheatSeed": {
-        "label": "Wheat Seed",
-        "cropId": "wheat",
+    "beetSeed": {
+        "label": "Beet Seed",
+        "cropId": "beet",
         "models": [],
-        "icon": "BorderFrame_Round20_Single_Yellow"
+        "icon": "pizza-model-snapshots_Food-Beet",
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "broccoliSeed": {
+        "label": "Broccoli Seed",
+        "cropId": "broccoli",
+        "models": [],
+        "icon": "pizza-model-snapshots_Food-Broccoli",
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "cabbageSeed": {
+        "label": "Cabbage Seed",
+        "cropId": "cabbage",
+        "models": [],
+        "icon": "pizza-model-snapshots_Food-Cabbage",
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "carrotSeed": {
+        "label": "Carrot Seed",
+        "cropId": "carrot",
+        "models": [],
+        "icon": "pizza-model-snapshots_Food-Carrot",
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "cauliflowerSeed": {
+        "label": "Cauliflower Seed",
+        "cropId": "cauliflower",
+        "models": [],
+        "icon": "pizza-model-snapshots_Food-Cauliflower",
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "cornSeed": {
+        "label": "Corn Seed",
+        "cropId": "corn",
+        "models": [],
+        "icon": "pizza-model-snapshots_Food-Corn",
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "leekSeed": {
+        "label": "Leek Seed",
+        "cropId": "leek",
+        "models": [],
+        "icon": "pizza-model-snapshots_Food-Leek",
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "mushroomSeed": {
+        "label": "Mushroom Seed",
+        "cropId": "mushroom",
+        "models": [],
+        "icon": "pizza-model-snapshots_Food-Mushroom",
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "pumpkinBasicSeed": {
+        "label": "Pumpkin (Basic) Seed",
+        "cropId": "pumpkinBasic",
+        "models": [],
+        "icon": "pizza-model-snapshots_Food-PumpkinBasic",
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "strawberrySeed": {
+        "label": "Strawberry Seed",
+        "cropId": "strawberry",
+        "models": [],
+        "icon": "pizza-model-snapshots_Food-Strawberry",
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "tomatoSeed": {
+        "label": "Tomato Seed",
+        "cropId": "tomato",
+        "models": [],
+        "icon": "pizza-model-snapshots_Food-Tomato",
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "watermelonSeed": {
+        "label": "Watermelon Seed",
+        "cropId": "watermelon",
+        "models": [],
+        "icon": "pizza-model-snapshots_Food-Watermelon",
+        "scale": 1,
+        "rotationDeg": 0
     }
 }

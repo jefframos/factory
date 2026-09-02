@@ -101,6 +101,7 @@ export class PopupManager {
         }
         const { layer, backdrop } = this.current;
         this.current = undefined;
+        popup.notifyClosed();
 
         const timeline = ACTIVE_POPUP_TRANSITION.playOut({ root: popup.root, backdrop }, () => {
             layer.destroy({ children: true });
@@ -121,6 +122,7 @@ export class PopupManager {
             return;
         }
         const { popup, layer, backdrop } = this.current;
+        popup.notifyClosed();
         gsap.killTweensOf(popup.root);
         gsap.killTweensOf(popup.root.scale);
         if (backdrop) {

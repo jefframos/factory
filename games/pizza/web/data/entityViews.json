@@ -109,5 +109,161 @@
         ],
         "scale": 2,
         "rotationDeg": 0
+    },
+    "cropBeetView": {
+        "models": [
+            "Food.Beet"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropBroccoliView": {
+        "models": [
+            "Food.Broccoli"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropCabbageView": {
+        "models": [
+            "Food.Cabbage"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropCarrotView": {
+        "models": [
+            "Food.Carrot"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropCauliflowerView": {
+        "models": [
+            "Food.Cauliflower"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropCornView": {
+        "models": [
+            "Food.Corn"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropLeekView": {
+        "models": [
+            "Food.Leek"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropMushroomView": {
+        "models": [
+            "Food.Mushroom"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropPumpkinBasicView": {
+        "models": [
+            "Food.PumpkinBasic"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropPumpkinView": {
+        "models": [
+            "Food.Pumpkin"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropStrawberryView": {
+        "models": [
+            "Food.Strawberry"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropTomatoView": {
+        "models": [
+            "Food.Tomato"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropWatermelonView": {
+        "models": [
+            "Food.Watermelon"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
     }
 }

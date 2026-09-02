@@ -82,7 +82,7 @@ export default class MovementTutorialOverlay {
 
         this.container = new PIXI.Container();
         this.container.visible = false;
-        this.container.addChild(this.buildDashedPath());
+        //this.container.addChild(this.buildDashedPath());
 
         this.hand = new PIXI.Sprite(PIXI.Texture.from('tutorial_hand_2'));
         // (0.1, 0.1), not centered — tutorial_hand_2's own art has its fingertip near the

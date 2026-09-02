@@ -179,6 +179,95 @@ export const ASSET_LIBRARY = {
         "scale": 1,
         "rotationDeg": 0
     },
+    "wheat": {
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "bedroll"
+    },
+    // The rest of CropTypes.ts's own farm crops' RESOURCE icon (see ResourceTypes.ts's own
+    // matching entries) — one per pizza-model-snapshots_Food-<Key>.png under
+    // raw-assets/images/farm{tps}/, reusing the same real MODELS.Food.<Key> model these crops
+    // already grow in the world (see EntityViewRegistry.ts's own crop*View entries) as this
+    // resource's own icon/world-prop appearance.
+    "beet": {
+        "models": [MODELS.Food.Beet],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Beet"
+    },
+    "broccoli": {
+        "models": [MODELS.Food.Broccoli],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Broccoli"
+    },
+    "cabbage": {
+        "models": [MODELS.Food.Cabbage],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Cabbage"
+    },
+    "carrot": {
+        "models": [MODELS.Food.Carrot],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Carrot"
+    },
+    "cauliflower": {
+        "models": [MODELS.Food.Cauliflower],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Cauliflower"
+    },
+    "corn": {
+        "models": [MODELS.Food.Corn],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Corn"
+    },
+    "leek": {
+        "models": [MODELS.Food.Leek],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Leek"
+    },
+    "mushroom": {
+        "models": [MODELS.Food.Mushroom],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Mushroom"
+    },
+    "pumpkinBasic": {
+        "models": [MODELS.Food.PumpkinBasic],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-PumpkinBasic"
+    },
+    "pumpkin": {
+        "models": [MODELS.Food.Pumpkin],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Pumpkin"
+    },
+    "strawberry": {
+        "models": [MODELS.Food.Strawberry],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Strawberry"
+    },
+    "tomato": {
+        "models": [MODELS.Food.Tomato],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Tomato"
+    },
+    "watermelon": {
+        "models": [MODELS.Food.Watermelon],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Watermelon"
+    },
     "palm": {
         "models": [MODELS.Pirate.PalmBend, MODELS.Pirate.PalmStraight],
         "scale": [
@@ -272,9 +361,88 @@ export const ASSET_LIBRARY = {
         "scale": 1,
         "rotationDeg": 0
     },
-    "wheatSeed": {
-        "icon": "BorderFrame_Round20_Single_Yellow",
-        "models": []
+    // The rest of CropTypes.ts's own farm crops' SEED icon (see SeedTypes.ts's own matching
+    // SeedId entries) — reuses the same pizza-model-snapshots_Food-<Key>.png the grown
+    // resource's own icon uses (see the resource entries just above), same "seed packet shows
+    // the vegetable itself" convention as most farming games. `models` stays empty, same as
+    // wheatSeed above — a seed is a small icon-only inventory item, never a 3D world pickup.
+    "beetSeed": {
+        "icon": "pizza-model-snapshots_Food-Beet",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "broccoliSeed": {
+        "icon": "pizza-model-snapshots_Food-Broccoli",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "cabbageSeed": {
+        "icon": "pizza-model-snapshots_Food-Cabbage",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "carrotSeed": {
+        "icon": "pizza-model-snapshots_Food-Carrot",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "cauliflowerSeed": {
+        "icon": "pizza-model-snapshots_Food-Cauliflower",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "cornSeed": {
+        "icon": "pizza-model-snapshots_Food-Corn",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "leekSeed": {
+        "icon": "pizza-model-snapshots_Food-Leek",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "mushroomSeed": {
+        "icon": "pizza-model-snapshots_Food-Mushroom",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "pumpkinBasicSeed": {
+        "icon": "pizza-model-snapshots_Food-PumpkinBasic",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "pumpkinSeed": {
+        "icon": "pizza-model-snapshots_Food-Pumpkin",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "strawberrySeed": {
+        "icon": "pizza-model-snapshots_Food-Strawberry",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "tomatoSeed": {
+        "icon": "pizza-model-snapshots_Food-Tomato",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "watermelonSeed": {
+        "icon": "pizza-model-snapshots_Food-Watermelon",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
     }
 } satisfies Record<string, AssetLibraryEntry>;
 

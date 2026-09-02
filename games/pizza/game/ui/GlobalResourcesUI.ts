@@ -27,7 +27,7 @@ import FrameComponent from './FrameComponent';
 import { FrameName } from './FrameRegistry';
 import { TextStyleRegistry } from './TextStyleRegistry';
 import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
-import { ResourceType } from '../actions/ResourceTypes';
+import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
@@ -119,6 +119,13 @@ export default class GlobalResourcesUI extends PIXI.Container {
     }
 
     private onGlobalResourceChanged = (type: ResourceType): void => {
+        // Farm-category resources (a crop's own harvest yield — see ResourceConfig.category's
+        // own doc) never show on this always-visible main-screen panel, only in InventoryPopup's
+        // Farm tab — same skip BackpackListUI.onBackpackChanged() applies.
+        if (RESOURCE_CONFIG[type]?.category === 'farm') {
+            return;
+        }
+
         const previous = this.lastCounts.get(type) ?? 0;
         const count = GlobalResourceStorage.getCount(type);
         this.lastCounts.set(type, count);

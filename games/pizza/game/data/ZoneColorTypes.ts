@@ -21,6 +21,7 @@
 export enum ZoneColorKind {
     BuildingDropper = 'buildingDropper',
     ShopDropper = 'shopDropper',
+    MartDropper = 'martDropper',
     GateDropper = 'gateDropper',
     DropZone = 'dropZone',
     Trigger = 'trigger',
@@ -38,6 +39,7 @@ export interface ZoneColorConfig {
 export const ZONE_COLOR_CONFIG: Record<ZoneColorKind, ZoneColorConfig> = {
     [ZoneColorKind.BuildingDropper]: { color: "#3388ff" },
     [ZoneColorKind.ShopDropper]: { color: "#3388ff" },
+    [ZoneColorKind.MartDropper]: { color: "#3388ff" },
     [ZoneColorKind.GateDropper]: { color: "#3388ff" },
     [ZoneColorKind.DropZone]: { color: "#33cc66" },
     [ZoneColorKind.Trigger]: { color: "#1ed242" },

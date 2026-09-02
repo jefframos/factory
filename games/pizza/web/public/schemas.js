@@ -289,6 +289,16 @@ const ENTITY_SCHEMAS = {
         { key: 'scale', type: 'numberRange', label: 'Scale' },
         { key: 'rotationDeg', type: 'numberRange', label: 'Rotation (deg)' },
         { key: 'amountPerGather', type: 'number', label: 'Amount Per Gather (loose pickups only — a provider-dispensed resource uses the PROVIDER\'s own amountPerGather instead)' },
+        {
+            key: 'category', type: 'select', label: 'Category (purely a filter/classification label below — only "Farm" actually changes runtime behavior, hiding it from the main-screen panels in favor of InventoryPopup\'s own Farm tab)', optional: true,
+            options: [
+                { value: 'main', label: 'Main (default — shown on the main-screen resource panels)' },
+                { value: 'farm', label: 'Farm (a crop\'s own harvest yield — Backpack popup\'s Farm tab only, not the main screen)' },
+                { value: 'animal', label: 'Animal (what catching an Animals-tab entry banks, e.g. Pig — still shown on the main screen, same as Main)' },
+            ],
+        },
+        { key: 'price', type: 'number', label: 'Mart Price (base price a Mart buys/sells this at — blank means this resource can never be bought or sold at any mart)', optional: true },
+        { key: 'sellable', type: 'boolean', label: 'Sellable To Marts (blocks selling this resource back even though it has a Mart Price — still buyable; meaningless with no Mart Price set)', optional: true },
     ],
     // A PROVIDER is the world dispenser the player actually chops/mines/forages — action,
     // life, respawn, and a WEIGHTED DROP TABLE of resources (see the Resources tab above).
@@ -443,6 +453,27 @@ const ENTITY_SCHEMAS = {
         // restriction until that field type exists.
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
     ],
+    // Mart entries — both the shared "default" and each entry in "byId" — see MartTypes.ts's
+    // own doc. Ids come from the map's own "mart"-typed mapSettings objects, same
+    // auto-discovery-by-id convention as farms/queues. A mart buys/sells arbitrary quantities
+    // (no per-item purchase limit, unlike the single-tool-upgrade Shops tab) — what it SELLS is
+    // this entry's own `offers` list; what it BUYS BACK is every Resources-tab entry with a
+    // Mart Price and Sellable not unchecked, regardless of whether it's also in `offers` (see
+    // MartTypes.ts's own top doc).
+    marts: [
+        { key: 'name', type: 'text', label: 'Name' },
+        {
+            key: 'offers', type: 'list', label: 'For Sale (what this mart sells TO the player)',
+            itemLabel: item => item.resourceType || 'offer',
+            fields: [
+                { key: 'resourceType', type: 'select', label: 'Resource (must have a Mart Price set on the Resources tab to actually be buyable)', source: 'resources' },
+                { key: 'priceMultiplier', type: 'number', label: 'Price Multiplier (multiplies the resource\'s own Mart Price for buying here — blank defaults to 1x)', optional: true },
+            ],
+        },
+        { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement', optional: true },
+        { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
+        { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
+    ],
     // FARM_TILE_CONFIG's own two fields — the empty/prepared tile pair EVERY farm plot shares
     // (see FarmTypes.ts's own doc for why this is a single game-wide export, not per-plot).
     // Rendered once, above the Default/By-id cards, by app.js's renderFarmsTab() — not a normal
@@ -451,6 +482,8 @@ const ENTITY_SCHEMAS = {
         { key: 'empty', type: 'select', label: 'Empty (shown before ANY plot is bought)', source: 'entityViews', optional: true },
         { key: 'prepared', type: 'select', label: 'Prepared (shown once a plot is bought, before anything is planted)', source: 'entityViews', optional: true },
         { key: 'icon', type: 'icon', label: 'Notification Icon (shown in the "Farm Unlocked!" popup when ANY plot is bought)', optional: true },
+        { key: 'availableTint', type: 'color', label: 'Available Tint (Prepared tile mesh while a cell is EMPTY — blank = white / no tint)', optional: true },
+        { key: 'occupiedTint', type: 'color', label: 'Occupied Tint (Prepared tile mesh while a cell has something planted — usually darker than Available Tint, to contrast)', optional: true },
     ],
     // A plantable crop — game-design content (Wheat, ...), not read from the map at all (see
     // CropTypes.ts's own doc). What it COSTS to plant lives on the Seeds tab instead (a seed's
