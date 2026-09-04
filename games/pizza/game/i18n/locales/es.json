@@ -33,5 +33,7 @@
     "you": "Tú",
     "boostButtonLabel": "BOOST",
     "quitRun": "Terminar la partida ",
-    "quitRunConfirm": "¿Quieres terminar tu carrera ahora y pasar directamente a la pantalla de puntuación final?"
+    "quitRunConfirm": "¿Quieres terminar tu carrera ahora y pasar directamente a la pantalla de puntuación final?",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

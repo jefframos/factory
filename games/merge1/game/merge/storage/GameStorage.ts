@@ -92,9 +92,12 @@ export default class GameStorage {
     // Internal cache to ensure all systems share the same object in memory
     private _cachedState: IFarmSaveData | null = null;
     private _isHydrated = false;
-    private _hasMutatedBeforeHydration = false;
     private _hydrationPromise: Promise<void> | null = null;
     private _writeQueue: Promise<void> = Promise.resolve();
+
+    // Mutations made before the platform load resolves are replayed on top of
+    // the loaded save once it arrives, instead of being discarded or discarding it.
+    private _pendingMutations: Array<(state: IFarmSaveData) => IFarmSaveData> = [];
 
     public static get instance(): GameStorage {
         return this._instance || (this._instance = new GameStorage());
@@ -133,11 +136,22 @@ export default class GameStorage {
                 return;
             }
 
-            const parsed = JSON.parse(raw) as IFarmSaveData;
+            let loaded = JSON.parse(raw) as IFarmSaveData;
 
-            // If state changed locally before hydration completed, keep newest local state.
-            if (!this._cachedState || !this._hasMutatedBeforeHydration) {
-                this._cachedState = parsed;
+            // Replay any mutations that happened locally while this load was in
+            // flight on top of the real save, so the freshly-loaded progress is
+            // never thrown away in favor of the pre-hydration default state.
+            for (const mutate of this._pendingMutations) {
+                loaded = mutate(loaded);
+            }
+            const hadPendingMutations = this._pendingMutations.length > 0;
+            this._pendingMutations = [];
+
+            this._cachedState = loaded;
+
+            if (hadPendingMutations) {
+                // The reconciled state differs from what's on disk - persist it.
+                void this.persist();
             }
         } catch (e) {
             console.error("GameStorage: Failed to hydrate save data from platform. Keeping local cache.", e);
@@ -172,7 +186,9 @@ export default class GameStorage {
         // Merge patch into state
         this._cachedState = { ...currentState, ...patch };
         if (!this._isHydrated) {
-            this._hasMutatedBeforeHydration = true;
+            // Remember this patch so it can be replayed on top of the real
+            // loaded save once hydration resolves (see hydrateFromPlatform).
+            this._pendingMutations.push((state) => ({ ...state, ...patch }));
         }
 
         // Commit to disk
@@ -184,9 +200,11 @@ export default class GameStorage {
      * Updates the cache simultaneously to prevent "stale data" reads.
      */
     public saveFullState(data: IFarmSaveData): void {
-        this._cachedState = { ...data };
+        const snapshot = { ...data };
+        this._cachedState = snapshot;
         if (!this._isHydrated) {
-            this._hasMutatedBeforeHydration = true;
+            // A full overwrite replaces whatever the loaded save turns out to be.
+            this._pendingMutations.push(() => ({ ...snapshot }));
         }
         void this.persist();
     }
@@ -269,7 +287,7 @@ export default class GameStorage {
      */
     public resetGameProgress(reload: boolean = false): void {
         this._cachedState = this.createEmptyState();
-        this._hasMutatedBeforeHydration = false;
+        this._pendingMutations = [];
         this._isHydrated = true;
         void this.persist();
 

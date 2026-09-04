@@ -33,5 +33,7 @@
     "you": "Dumneavoastră",
     "boostButtonLabel": "Impuls",
     "quitRun": "Încheiere rulare",
-    "quitRunConfirm": "Încheiați cursa acum și mergeți direct la ecranul cu scorul final?"
+    "quitRunConfirm": "Încheiați cursa acum și mergeți direct la ecranul cu scorul final?",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

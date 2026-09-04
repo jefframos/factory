@@ -154,9 +154,11 @@ const ENTITY_SCHEMAS = {
                 { key: 'craftId', type: 'select', label: 'Craft Table (if Kind = Craft)', source: 'crafting', optional: true },
                 { key: 'gateId', type: 'select', label: 'Gate (if Kind = Gate)', source: 'gates', optional: true },
                 { key: 'triggerId', type: 'select', label: 'Trigger (if Kind = Trigger)', source: 'triggers', optional: true },
+                { key: 'iconTextureId', type: 'icon', label: 'Icon Override (blank = tutorial\'s own Arrow Icon below)', optional: true },
+                { key: 'offset', type: 'vector3', label: 'Icon Offset (x, y, z — world units nudged onto the target position; default 0,0,0)' },
             ],
         },
-        { key: 'arrowTextureId', type: 'icon', label: 'Arrow Icon' },
+        { key: 'arrowTextureId', type: 'icon', label: 'Arrow Icon (fallback for any step above with no Icon Override set)' },
         { key: 'use3dArrow', type: 'boolean', label: 'Use 3D Arrow (not implemented yet — screen-space arrow always shows regardless)' },
     ],
     // One fixed row per ZoneColorKind — see ZoneColorTypes.ts's own doc. The label spells out

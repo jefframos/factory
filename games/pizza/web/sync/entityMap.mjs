@@ -66,9 +66,9 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'ZONE_TUTORIAL_CONFIG',
         kind: 'partialRecord',
         // `steps` has no unmanaged sibling fields on any of its items (ZoneTutorialStep is
-        // exactly {kind, craftId, gateId, triggerId} — see ZoneTutorialTypes.ts), same "no
-        // listMerge needed" reasoning as questGivers' own `variants` — a plain wholesale
-        // replacement of the whole array is always safe here.
+        // exactly {kind, craftId, gateId, triggerId, iconTextureId, offset} — see
+        // ZoneTutorialTypes.ts), same "no listMerge needed" reasoning as questGivers' own
+        // `variants` — a plain wholesale replacement of the whole array is always safe here.
         managedKeys: ['steps', 'arrowTextureId', 'use3dArrow'],
         optionalKeys: ['arrowTextureId', 'use3dArrow'],
         protectEntries: true,

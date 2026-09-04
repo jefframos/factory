@@ -33,5 +33,7 @@
     "you": "You",
     "boostButtonLabel": "बढ़ा",
     "quitRun": "एंड रन",
-    "quitRunConfirm": "अभी अपना रन समाप्त करें और सीधे अंतिम स्कोर स्क्रीन पर जाएं?"
+    "quitRunConfirm": "अभी अपना रन समाप्त करें और सीधे अंतिम स्कोर स्क्रीन पर जाएं?",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

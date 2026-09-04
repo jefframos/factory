@@ -33,5 +33,7 @@
     "you": "Dig",
     "boostButtonLabel": "BOOST",
     "quitRun": "Afslut kørsel",
-    "quitRunConfirm": "Afslut dit løb nu, og gå direkte til skærmbilledet med den endelige score?"
+    "quitRunConfirm": "Afslut dit løb nu, og gå direkte til skærmbilledet med den endelige score?",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

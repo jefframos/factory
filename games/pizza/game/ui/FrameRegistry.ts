@@ -116,6 +116,19 @@ export const FrameRegistry: Record<string, FrameDef> = {
         textureKey: 'ItemFrame03_Single_Navy',
         padding: uniformPadding(64),
     },
+    /**
+     * A plain rounded-corner square backdrop — everywhere else this same texture is used
+     * (BackpackUI/AnimalDockUI/ResourceSlotVisual/... — see that texture key's own usages) it's
+     * a small, always-square icon-slot background stretched as a plain Sprite, never 9-sliced;
+     * this is the first spot that needs it behind non-square content (MovementTutorialOverlay's
+     * text prompt), where a plain stretch would visibly warp its rounded corners. 10px border on
+     * every side is a first-pass estimate off the raw asset's own small 35x38px size, not a
+     * measured 9-slice spec — retune if the corners look stretched/over-cropped in practice.
+     */
+    PromptBg: {
+        textureKey: 'BorderFrame_Squrare_Bg',
+        padding: uniformPadding(10),
+    },
 };
 
 export type FrameName = keyof typeof FrameRegistry;

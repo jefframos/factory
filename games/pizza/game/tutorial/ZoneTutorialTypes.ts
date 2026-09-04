@@ -17,10 +17,18 @@
 // ZoneTutorialController's own doc for why it skips the gather/deliver phase machinery
 // entirely.
 //
-// arrowTextureId/use3dArrow live at the CONFIG level (one per zone), not per-step — a zone's
-// tutorial is one guided flow with one arrow style throughout; nothing today needs a
-// mid-tutorial style switch, and per-step would just mean repeating the same value on every
-// entry.
+// use3dArrow lives at the CONFIG level (one per zone), not per-step — nothing today needs a
+// mid-tutorial arrow-STYLE (2D vs 3D) switch. arrowTextureId ALSO lives at the config level as
+// the tutorial's overall fallback icon, but each step can override it via its own
+// `iconTextureId` — a multi-step tutorial commonly wants a different icon per step (e.g. an axe
+// icon while gathering wood, then a hammer icon while crafting), so the override is per-step
+// while the config-level value stays as the "good enough for every step that doesn't care" base.
+//
+// `offset` is a per-step 3D world-space nudge applied ON TOP of whatever position the step's
+// own target already resolves to (a gather ResourceNode, or a deliver craft table/gate/trigger's
+// placed location — see ZoneTutorialController.resolveStepOffset()) — same `[x, y, z]` tuple
+// shape (and editor 'vector3' field) EntityViewRegistry.ts's own `offset` already uses, not a
+// plain `{x,y,z}` object. Optional; an unset step behaves exactly as if it were `[0, 0, 0]`.
 
 import { GateId } from '../data/GateTypes';
 
@@ -28,18 +36,30 @@ export interface ZoneTutorialCraftStep {
     kind: 'craft';
     /** A CraftTypes.ts CRAFT_CONFIG_BY_ID key — see ZoneTutorialController's own doc for how its required (resourceType, amount) and completion are resolved. */
     craftId: string;
+    /** See this file's own top-of-file doc on why this lives per-step. Optional — ZoneTutorialController falls back to the config's own arrowTextureId (then DEFAULT_ARROW_TEXTURE_ID) when unset. */
+    iconTextureId?: string;
+    /** See this file's own top-of-file doc on `offset`. Optional — unset behaves as `[0, 0, 0]`. */
+    offset?: [number, number, number];
 }
 
 export interface ZoneTutorialGateStep {
     kind: 'gate';
     /** A GateTypes.ts GateId — ONLY a gate whose own `requirement` is a 'resource' kind is actually usable here (see ZoneTutorialController's own doc); any other requirement kind is skipped gracefully with a console.warn. */
     gateId: GateId;
+    /** See ZoneTutorialCraftStep.iconTextureId's own doc — same per-step override, same fallback chain. */
+    iconTextureId?: string;
+    /** See this file's own top-of-file doc on `offset`. Optional — unset behaves as `[0, 0, 0]`. */
+    offset?: [number, number, number];
 }
 
 export interface ZoneTutorialTriggerStep {
     kind: 'trigger';
     /** A TriggerTypes.ts TRIGGER_CONFIG_BY_ID key AND the matching Tiled "trigger" object's own id (see WorldObjectRegistry.ts) — the arrow points at that placed volume's location until TriggerStorage marks it activated. No resource/amount to resolve at all, unlike the other two kinds. */
     triggerId: string;
+    /** See ZoneTutorialCraftStep.iconTextureId's own doc — same per-step override, same fallback chain. */
+    iconTextureId?: string;
+    /** See this file's own top-of-file doc on `offset`. Optional — unset behaves as `[0, 0, 0]`. */
+    offset?: [number, number, number];
 }
 
 export type ZoneTutorialStep = ZoneTutorialCraftStep | ZoneTutorialGateStep | ZoneTutorialTriggerStep;
@@ -84,7 +104,12 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
         steps: [
             {
                 "kind": "trigger",
-                "triggerId": "walkTutorialTrigger"
+                "triggerId": "walkTutorialTrigger",
+                "offset": [
+                    0,
+                    -2,
+                    0
+                ]
             }
         ],
         // Placeholder — 'pointer' is a real frame in ui.webp's atlas (confirmed against
@@ -93,29 +118,65 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
         // slider sub-icon, contains that substring) — PIXI.Texture.from() silently falls back
         // to treating an unknown key as an image URL, so that guess 404'd instead of erroring
         // loudly. Swap for a real compass-arrow asset once one exists.
-        arrowTextureId: "arrow-down",
-        use3dArrow: false,
+        arrowTextureId: "tutorialHand2",
+        use3dArrow: true,
     },
     "1": {
         "steps": [
             {
                 "kind": "craft",
-                "craftId": "craftAxe"
+                "craftId": "craftAxe",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ],
+                "iconTextureId": "tutorialHand2"
             },
             {
                 "kind": "gate",
-                "gateId": GateId.GateAxe
+                "gateId": GateId.GateAxe,
+                "offset": [
+                    0,
+                    0,
+                    0
+                ],
+                "iconTextureId": "woodcutters-axe"
+            },
+            {
+                "kind": "gate",
+                "gateId": GateId.GateWood,
+                "offset": [
+                    0,
+                    0,
+                    0
+                ],
+                "iconTextureId": "woodcutters-axe"
             }
         ],
-        "arrowTextureId": "arrow-down"
+        "arrowTextureId": "woodcutters-axe"
     },
     "2": {
-        "steps": []
+        "steps": [
+            {
+                "offset": [
+                    0,
+                    0,
+                    0
+                ],
+                "craftId": "craftPickaxe",
+                "iconTextureId": "tutorialHand2",
+                "kind": "craft"
+            }
+        ]
     },
     "4": {
         "steps": []
     },
     "3": {
+        "steps": []
+    },
+    "10": {
         "steps": []
     }
 };

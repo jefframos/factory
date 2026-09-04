@@ -2,9 +2,8 @@
     "gateAxe": {
         "name": "Axe Gate",
         "requirement": {
-            "type": "resource",
-            "resourceType": "wood",
-            "amount": 5
+            "type": "item",
+            "item": "axe"
         },
         "view": "gateAxeView",
         "particleEffectId": "gateMyst",
@@ -21,5 +20,17 @@
         "particleEffectId": "gateMyst",
         "destroyParticleEffectId": "destroyBurst",
         "cameraFocusHeightOffset": 2
+    },
+    "gateWood": {
+        "name": "Wood Gate",
+        "requirement": {
+            "type": "resource",
+            "resourceType": "wood",
+            "amount": 5
+        },
+        "view": "gateAxeView",
+        "particleEffectId": "gateMyst",
+        "destroyParticleEffectId": "destroyBurst",
+        "cameraFocusHeightOffset": 5
     }
 }

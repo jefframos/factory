@@ -33,5 +33,7 @@
     "you": "Kau",
     "boostButtonLabel": "Tingkatkan",
     "quitRun": "Akhiri Lari",
-    "quitRunConfirm": "Akhiri lari Anda sekarang dan langsung ke layar skor akhir?"
+    "quitRunConfirm": "Akhiri lari Anda sekarang dan langsung ke layar skor akhir?",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

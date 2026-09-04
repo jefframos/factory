@@ -33,5 +33,7 @@
     "you": "あなたは",
     "boostButtonLabel": "BOOST",
     "quitRun": "実行を終了",
-    "quitRunConfirm": "今すぐ実行を終了し、最終スコア画面に直接移動しますか？"
+    "quitRunConfirm": "今すぐ実行を終了し、最終スコア画面に直接移動しますか？",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

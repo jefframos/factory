@@ -33,5 +33,7 @@
     "you": "Możesz pobrać",
     "boostButtonLabel": "BOOST",
     "quitRun": "Zakończ przebieg",
-    "quitRunConfirm": "Zakończyć bieg teraz i przejść bezpośrednio do ekranu końcowego wyniku?"
+    "quitRunConfirm": "Zakończyć bieg teraz i przejść bezpośrednio do ekranu końcowego wyniku?",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

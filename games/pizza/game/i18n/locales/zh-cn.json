@@ -33,5 +33,7 @@
     "you": "你",
     "boostButtonLabel": "BOOST",
     "quitRun": "结束运行",
-    "quitRunConfirm": "现在结束您的运行并直接转到最终得分屏幕？"
+    "quitRunConfirm": "现在结束您的运行并直接转到最终得分屏幕？",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

@@ -33,5 +33,7 @@
     "you": "Ви",
     "boostButtonLabel": "Посилити",
     "quitRun": "Завершити запуск",
-    "quitRunConfirm": "Завершити пробіжку зараз і перейти прямо до екрана остаточного рахунку?"
+    "quitRunConfirm": "Завершити пробіжку зараз і перейти прямо до екрана остаточного рахунку?",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

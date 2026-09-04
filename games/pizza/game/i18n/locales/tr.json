@@ -33,5 +33,7 @@
     "you": "Sen",
     "boostButtonLabel": "Boost",
     "quitRun": "Çalıştırmayı Sonlandır",
-    "quitRunConfirm": "Koşunuzu şimdi bitirip doğrudan final skoru ekranına mı geçeceksiniz?"
+    "quitRunConfirm": "Koşunuzu şimdi bitirip doğrudan final skoru ekranına mı geçeceksiniz?",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

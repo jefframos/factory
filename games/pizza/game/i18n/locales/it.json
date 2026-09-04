@@ -33,5 +33,7 @@
     "you": "Tu",
     "boostButtonLabel": "POTENZIAMENTO",
     "quitRun": "Termina esecuzione",
-    "quitRunConfirm": "Termina subito la corsa e vai direttamente alla schermata del punteggio finale?"
+    "quitRunConfirm": "Termina subito la corsa e vai direttamente alla schermata del punteggio finale?",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

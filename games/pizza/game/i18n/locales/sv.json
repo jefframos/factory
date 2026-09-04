@@ -33,5 +33,7 @@
     "you": "Du",
     "boostButtonLabel": "BOOST",
     "quitRun": "Avsluta körning",
-    "quitRunConfirm": "Avsluta din löprunda nu och gå direkt till slutresultatet?"
+    "quitRunConfirm": "Avsluta din löprunda nu och gå direkt till slutresultatet?",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

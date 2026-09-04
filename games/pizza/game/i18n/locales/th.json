@@ -33,5 +33,7 @@
     "you": "คุณจะ",
     "boostButtonLabel": "บูต",
     "quitRun": "สิ้นสุดการเรียกใช้",
-    "quitRunConfirm": "จบการทำงานของคุณตอนนี้และตรงไปที่หน้าจอคะแนนสุดท้าย?"
+    "quitRunConfirm": "จบการทำงานของคุณตอนนี้และตรงไปที่หน้าจอคะแนนสุดท้าย?",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

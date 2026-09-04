@@ -33,5 +33,7 @@
     "you": "You",
     "boostButtonLabel": "BELEBEND",
     "quitRun": "Endlauf",
-    "quitRunConfirm": "Beenden Sie jetzt Ihren Lauf und gehen Sie direkt zum Endergebnisbildschirm?"
+    "quitRunConfirm": "Beenden Sie jetzt Ihren Lauf und gehen Sie direkt zum Endergebnisbildschirm?",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

@@ -3,6 +3,7 @@ import { IEntityData } from "../data/MergeSaveTypes";
 import GameStorage, { IFarmSaveData } from "../storage/GameStorage";
 import { CoinManager } from "./CoinManager";
 import { EntityManager } from "./EntityManager";
+import PlatformHandler from "core/platforms/PlatformHandler";
 
 // Room save slice (keep local to avoid circular dependencies)
 export interface IRoomMergeSaveState {
@@ -30,7 +31,22 @@ export class GameSaveManager {
     public constructor(
         private readonly entities: EntityManager,
         private readonly coins: CoinManager
-    ) { }
+    ) {
+        // The debounced save above can be up to saveCooldownMs behind the runtime
+        // state - flush it immediately on backgrounding so a reload right after
+        // placing/merging entities doesn't lose that last unsaved window.
+        PlatformHandler.instance.onPause.add(this.onBeforeUnload, this);
+    }
+
+    public dispose(): void {
+        PlatformHandler.instance.onPause.remove(this.onBeforeUnload, this);
+    }
+
+    private readonly onBeforeUnload = (): void => {
+        if (this.dirty) {
+            this.flushNow();
+        }
+    };
 
     public markDirty(): void {
         this.dirty = true;

@@ -33,5 +33,7 @@
     "you": "나",
     "boostButtonLabel": "부스트",
     "quitRun": "실행 종료",
-    "quitRunConfirm": "지금 달리기를 종료하고 바로 최종 점수 화면으로 이동하시겠습니까?"
+    "quitRunConfirm": "지금 달리기를 종료하고 바로 최종 점수 화면으로 이동하시겠습니까?",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

@@ -448,6 +448,9 @@ button.danger { color: var(--danger); }
 .report-panel-footer { display: flex; justify-content: flex-end; }
 
 /* Graph tab — see public/graph/graph.js */
+.graph-subtabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.graph-subtabs button.active { background: var(--accent); border-color: var(--accent); color: #1c1d21; font-weight: 600; }
+
 .graph-split-row {
     display: flex;
     align-items: stretch;

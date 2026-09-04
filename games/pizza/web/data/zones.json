@@ -9,7 +9,7 @@
     "2": {
         "requirement": {
             "type": "gate",
-            "gateId": "gateAxe"
+            "gateId": "gateWood"
         }
     },
     "3": {
@@ -23,5 +23,6 @@
             "type": "gate",
             "gateId": "gate1"
         }
-    }
+    },
+    "10": {}
 }

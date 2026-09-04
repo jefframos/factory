@@ -85,10 +85,10 @@ export const DYNAMIC_RESOURCE_PLACEMENTS: DynamicResourcePlacement[] = [
         "checkIntervalSec": 5
     },
     {
-        "resourceType": ResourceType.Pebble,
+        "resourceType": ResourceType.Stone,
         "spawnerTileType": "grass",
         "density": 0.02,
-        "minDistance": 8,
+        "minDistance": 5,
         "checkIntervalSec": 5
     },
     {

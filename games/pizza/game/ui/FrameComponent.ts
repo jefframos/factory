@@ -46,4 +46,9 @@ export default class FrameComponent extends PIXI.Container {
             );
         }
     }
+
+    /** Tints the 9-sliced plane itself — NOT a Container-level property (Container has no visual tint of its own; PIXI.Container.alpha still works untouched via this.alpha, propagating to children including the plane). For a translucent solid-color backdrop rather than the frame texture's own colors — see MovementTutorialOverlay's prompt background for the first caller. */
+    public setTint(tint: number): void {
+        this.plane.tint = tint;
+    }
 }

@@ -60,6 +60,9 @@ export default class ZoneTutorialController {
     private activeStepKey?: string;
     private unsubscribeCompletion?: () => void;
 
+    /** The textureId last applied to `arrow` via applyStepIcon() — tracked so switching steps only calls ZoneTutorialArrow.setTexture() (a real texture reassignment) when the resolved icon actually changes, not every single frame. */
+    private activeIconTextureId?: string;
+
     public constructor(
         world: World,
         host: ScreenAnchorHost,
@@ -97,6 +100,7 @@ export default class ZoneTutorialController {
         }
 
         const step = config.steps[completedCount];
+        this.applyStepIcon(config, step);
         this.subscribeToCompletion(zoneNumber, step, completedCount);
 
         if (step.kind === 'trigger') {
@@ -117,7 +121,7 @@ export default class ZoneTutorialController {
 
         const have = BackpackStorage.getCount(requirement.resourceType);
         if (have < requirement.amount) {
-            this.pointAtGatherTarget(requirement.resourceType, playerPosition);
+            this.pointAtGatherTarget(requirement.resourceType, playerPosition, step);
         } else {
             this.pointAtDeliverTarget(step);
         }
@@ -141,11 +145,23 @@ export default class ZoneTutorialController {
         const arrowTextureId = config.arrowTextureId ?? DEFAULT_ARROW_TEXTURE_ID;
         if (!this.arrow) {
             this.arrow = new ZoneTutorialArrow(this.world, this.host, arrowTextureId);
-        } else {
-            this.arrow.setTexture(arrowTextureId);
+            this.activeIconTextureId = arrowTextureId;
         }
+        // Deliberately doesn't set the texture on an already-existing arrow here anymore —
+        // applyStepIcon() (called right after, from update()) resolves and applies the CURRENT
+        // step's own icon immediately, which would just be overwritten a line later otherwise.
         // TODO: 3D arrow not implemented yet — screen-space only for now (see
         // ZoneTutorialConfig.use3dArrow's own doc). config.use3dArrow is intentionally unread.
+    }
+
+    /** Resolves the current step's own icon — `step.iconTextureId` if set, else the zone tutorial's own `arrowTextureId`, else DEFAULT_ARROW_TEXTURE_ID (see ZoneTutorialTypes.ts's own doc on why the override lives per-step) — and applies it to the arrow only when it actually changed. */
+    private applyStepIcon(config: ZoneTutorialConfig, step: ZoneTutorialStep): void {
+        const iconTextureId = step.iconTextureId ?? config.arrowTextureId ?? DEFAULT_ARROW_TEXTURE_ID;
+        if (this.activeIconTextureId === iconTextureId) {
+            return;
+        }
+        this.activeIconTextureId = iconTextureId;
+        this.arrow?.setTexture(iconTextureId);
     }
 
     private deactivate(): void {
@@ -203,14 +219,20 @@ export default class ZoneTutorialController {
         return getCraftConfig(craftId)?.recipes[0]?.id;
     }
 
-    private pointAtGatherTarget(resourceType: ResourceType, playerPosition: THREE.Vector3): void {
+    /** `step.offset` (see ZoneTutorialTypes.ts's own doc) as a real Vector3 — defaults to `(0, 0, 0)` when unset, same as every other optional per-step field here. */
+    private stepOffset(step: ZoneTutorialStep): THREE.Vector3 {
+        const [x, y, z] = step.offset ?? [0, 0, 0];
+        return new THREE.Vector3(x, y, z);
+    }
+
+    private pointAtGatherTarget(resourceType: ResourceType, playerPosition: THREE.Vector3, step: ZoneTutorialStep): void {
         const node = ResourceNodeRegistry.findNearest(resourceType, playerPosition);
         if (!node) {
             console.warn(`[ZoneTutorialController] no live ResourceNode currently produces "${resourceType}" — can't point the gather arrow anywhere (data misconfiguration, or every source is out of range/depleted)`);
             this.arrow?.hide();
             return;
         }
-        this.arrow?.update(node.position);
+        this.arrow?.update(node.position.clone().add(this.stepOffset(step)));
     }
 
     private pointAtDeliverTarget(step: ZoneTutorialStep): void {
@@ -222,7 +244,8 @@ export default class ZoneTutorialController {
             this.arrow?.hide();
             return;
         }
-        this.arrow?.update(new THREE.Vector3(placement.x, 0, placement.z), DELIVER_TARGET_HEIGHT_OFFSET);
+        const target = new THREE.Vector3(placement.x, 0, placement.z).add(this.stepOffset(step));
+        this.arrow?.update(target, DELIVER_TARGET_HEIGHT_OFFSET);
     }
 
     private subscribeToCompletion(zoneNumber: number, step: ZoneTutorialStep, completedCount: number): void {

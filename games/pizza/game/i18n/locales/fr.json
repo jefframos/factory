@@ -33,5 +33,7 @@
     "you": "pour vous",
     "boostButtonLabel": "BOOST",
     "quitRun": "-",
-    "quitRunConfirm": "Terminer votre course maintenant et aller directement à l'écran de score final ?"
+    "quitRunConfirm": "Terminer votre course maintenant et aller directement à l'écran de score final ?",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }

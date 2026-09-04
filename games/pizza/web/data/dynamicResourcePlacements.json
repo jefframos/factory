@@ -7,10 +7,10 @@
         "checkIntervalSec": 5
     },
     {
-        "resourceType": "pebble",
+        "resourceType": "stone",
         "spawnerTileType": "grass",
         "density": 0.02,
-        "minDistance": 8,
+        "minDistance": 5,
         "checkIntervalSec": 5
     },
     {

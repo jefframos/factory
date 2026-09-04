@@ -80,7 +80,7 @@ function interpolate(template: string, vars: StringVars): string {
  *   the element is discarded, or the registry keeps it alive.
  */
 class LocalizationService {
-    private static readonly STORAGE_KEY = 'CLOG_LOCALE';
+    private static readonly STORAGE_KEY = 'PIZZA_LOCALE';
 
     static readonly instance = new LocalizationService();
 

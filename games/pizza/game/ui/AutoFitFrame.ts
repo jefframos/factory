@@ -50,6 +50,16 @@ export default class AutoFitFrame extends PIXI.Container {
         this.fit();
     }
 
+    /** Passes through to the underlying FrameComponent's own setTint() — see that method's own doc. */
+    public setTint(tint: number): void {
+        this.frame.setTint(tint);
+    }
+
+    /** Sets alpha on the underlying FrameComponent ONLY, not `content` — this.alpha (inherited from PIXI.Container) would multiply into content's own alpha too since it's a sibling child of this same container, which is exactly the bug this method exists to avoid (see MovementTutorialOverlay's fade-out, which needs its background frame to fade independently of its text staying fully opaque). */
+    public setAlpha(alpha: number): void {
+        this.frame.alpha = alpha;
+    }
+
     /** Re-measures `content` and resizes/repositions the frame to match — call after changing content's own size (new text, ...). */
     public fit(): void {
         const bounds = this.content.getLocalBounds();

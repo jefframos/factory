@@ -35,7 +35,7 @@ export const ZONE_CONFIG: Partial<Record<number, ZoneConfigEntry>> = {
     "2": {
         "requirement": {
             "type": "gate",
-            "gateId": GateId.GateAxe
+            "gateId": GateId.GateWood
         }
     },
     "4": {
@@ -49,5 +49,6 @@ export const ZONE_CONFIG: Partial<Record<number, ZoneConfigEntry>> = {
             "type": "item",
             "item": ItemType.Pickaxe
         }
-    }
+    },
+    "10": {}
 };

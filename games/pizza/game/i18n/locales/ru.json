@@ -33,5 +33,7 @@
     "you": "Вы",
     "boostButtonLabel": "увеличение",
     "quitRun": ";End Run =====================================================",
-    "quitRunConfirm": "Завершить забег сейчас и перейти прямо к экрану итогового счета?"
+    "quitRunConfirm": "Завершить забег сейчас и перейти прямо к экрану итогового счета?",
+    "movementTutorialHintTouch": "Drag anywhere on the screen to move!",
+    "movementTutorialHintMouse": "Drag with your mouse, or press WASD, to move!"
 }
