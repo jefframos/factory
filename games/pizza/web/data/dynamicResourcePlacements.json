@@ -17,7 +17,7 @@
         "resourceType": "grassFiber",
         "spawnerTileType": "grass",
         "density": 0.02,
-        "minDistance": 8,
+        "minDistance": 4,
         "checkIntervalSec": 5
     }
 ]

@@ -78,11 +78,11 @@ export interface ZoneTutorialConfig {
      */
     arrowTextureId?: string;
     /**
-     * Placeholder for a future real 3D world-space arrow (e.g. a floating indicator hovering
-     * over the actual target in 3D, rather than a flat screen-space overlay) — NOT implemented
-     * yet, see ZoneTutorialController's own hook. The screen-space arrow (ZoneTutorialArrow.ts)
-     * always renders regardless of this flag's value. Optional, same reasoning as
-     * arrowTextureId above; defaults to false (screen-space only).
+     * When true, this zone's tutorial ADDITIONALLY points a real 3D world-space arrow orbiting
+     * the player (ZoneTutorial3dArrow.ts) — on top of, not instead of, the default flat
+     * screen-space overlay (ZoneTutorialArrow.ts, always on regardless of this flag) — see
+     * ZoneTutorialController's own doc on updateArrow()/hideArrow(), the one pair of call sites
+     * that drives both together. Optional; defaults to false (screen-space only).
      */
     use3dArrow?: boolean;
 }
@@ -154,7 +154,8 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
                 "iconTextureId": "woodcutters-axe"
             }
         ],
-        "arrowTextureId": "woodcutters-axe"
+        "arrowTextureId": "woodcutters-axe",
+        "use3dArrow": true
     },
     "2": {
         "steps": [
@@ -168,7 +169,8 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
                 "iconTextureId": "tutorialHand2",
                 "kind": "craft"
             }
-        ]
+        ],
+        "use3dArrow": true
     },
     "4": {
         "steps": []

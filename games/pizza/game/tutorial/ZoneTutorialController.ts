@@ -1,13 +1,19 @@
 // ZoneTutorialController.ts
 //
 // Drives ONE zone's ZoneTutorialConfig (see ZoneTutorialTypes.ts) at a time — whichever zone
-// the player is currently standing in — repointing a screen-space arrow (ZoneTutorialArrow.ts)
-// at whatever the CURRENT step still needs: first the nearest live ResourceNode that can gather
-// the step's required resource ("gather phase"), then — once the backpack already holds
-// enough — the craft table/gate that's actually waiting on it ("deliver phase"). Run once per
-// frame from PizzaScene.fixedUpdate(), the same call-site pattern worldManager.update() uses,
-// since the gather/deliver phase has to react instantly to the backpack changing and to the
-// player crossing between zones.
+// the player is currently standing in — repointing an arrow at whatever the CURRENT step still
+// needs: first the nearest live ResourceNode that can gather the step's required resource
+// ("gather phase"), then — once the backpack already holds enough — the craft table/gate that's
+// actually waiting on it ("deliver phase"). Run once per frame from PizzaScene.fixedUpdate(),
+// the same call-site pattern worldManager.update() uses, since the gather/deliver phase has to
+// react instantly to the backpack changing and to the player crossing between zones.
+//
+// Two arrow implementations share that same (player, target) pointing job, and run TOGETHER,
+// never as a replacement for each other — a flat screen-space sprite (ZoneTutorialArrow.ts,
+// always on) plus a real 3D mesh orbiting the player (ZoneTutorial3dArrow.ts, ADDITIONALLY, only
+// while the active zone's own config.use3dArrow is true) — see updateArrow()/hideArrow() for the
+// one call site everything else goes through so neither pointAtGatherTarget() nor
+// pointAtDeliverTarget() has to know whether the 3D one is even in play.
 //
 // TutorialProgressStorage.ts persists ONLY the completed-step index — gather-vs-deliver is
 // deliberately never saved (see that file's own doc): resolveStepRequirement()'s (resourceType,
@@ -39,6 +45,7 @@ import { GateStorage } from '../data/GateStorage';
 import { TriggerStorage } from '../data/TriggerStorage';
 import ResourceNodeRegistry from '../player/ResourceNodeRegistry';
 import ZoneTutorialArrow, { DELIVER_TARGET_HEIGHT_OFFSET } from './ZoneTutorialArrow';
+import ZoneTutorial3dArrow from './ZoneTutorial3dArrow';
 
 interface ResolvedStepRequirement {
     resourceType: ResourceType;
@@ -48,12 +55,17 @@ interface ResolvedStepRequirement {
 export default class ZoneTutorialController {
     private readonly world: World;
     private readonly host: ScreenAnchorHost;
+    private readonly scene: THREE.Scene;
     private readonly worldObjects: WorldObjectRegistry;
     private readonly zoneVisibility: ZoneVisibilityManager;
     private readonly getPlayerPosition: () => THREE.Vector3;
 
     private arrow?: ZoneTutorialArrow;
-    /** The zone number `arrow` is currently configured for — undefined means no tutorial active right now (no config for the player's zone, or that zone's already fully done). */
+    /** The real-3D arrow (see that file's own doc) — used INSTEAD OF `arrow` whenever the active zone's own config.use3dArrow is true (see activateZone()/updateArrow()), never both at once. */
+    private arrow3d?: ZoneTutorial3dArrow;
+    /** Which of the two arrows above updateArrow()/hideArrow() should actually drive — resolved once per activateZone() call from the zone's own config, not re-read every frame. */
+    private use3dArrow = false;
+    /** The zone number `arrow`/`arrow3d` are currently configured for — undefined means no tutorial active right now (no config for the player's zone, or that zone's already fully done). */
     private activeZoneNumber?: number;
 
     /** Identifies the (zoneNumber, completedCount) pair `unsubscribeCompletion` is currently listening for — resubscribed whenever this doesn't match the CURRENT step, so a stale listener from a step already advanced past never fires late. */
@@ -66,12 +78,14 @@ export default class ZoneTutorialController {
     public constructor(
         world: World,
         host: ScreenAnchorHost,
+        scene: THREE.Scene,
         worldObjects: WorldObjectRegistry,
         zoneVisibility: ZoneVisibilityManager,
         getPlayerPosition: () => THREE.Vector3,
     ) {
         this.world = world;
         this.host = host;
+        this.scene = scene;
         this.worldObjects = worldObjects;
         this.zoneVisibility = zoneVisibility;
         this.getPlayerPosition = getPlayerPosition;
@@ -115,7 +129,7 @@ export default class ZoneTutorialController {
         if (!requirement) {
             // Already console.warn()'d inside resolveStepRequirement() — nothing sane to point
             // at, so just hide rather than show a stale/wrong arrow.
-            this.arrow?.hide();
+            this.hideArrow();
             return;
         }
 
@@ -132,6 +146,8 @@ export default class ZoneTutorialController {
         this.deactivate();
         this.arrow?.destroy();
         this.arrow = undefined;
+        this.arrow3d?.destroy();
+        this.arrow3d = undefined;
     }
 
     private currentZoneNumber(playerPosition: THREE.Vector3): number | undefined {
@@ -141,6 +157,7 @@ export default class ZoneTutorialController {
     private activateZone(zoneNumber: number, config: ZoneTutorialConfig): void {
         this.activeZoneNumber = zoneNumber;
         this.unsubscribeCompletionListener();
+        this.use3dArrow = config.use3dArrow ?? false;
 
         const arrowTextureId = config.arrowTextureId ?? DEFAULT_ARROW_TEXTURE_ID;
         if (!this.arrow) {
@@ -150,8 +167,28 @@ export default class ZoneTutorialController {
         // Deliberately doesn't set the texture on an already-existing arrow here anymore —
         // applyStepIcon() (called right after, from update()) resolves and applies the CURRENT
         // step's own icon immediately, which would just be overwritten a line later otherwise.
-        // TODO: 3D arrow not implemented yet — screen-space only for now (see
-        // ZoneTutorialConfig.use3dArrow's own doc). config.use3dArrow is intentionally unread.
+
+        if (this.use3dArrow && !this.arrow3d) {
+            this.arrow3d = new ZoneTutorial3dArrow(this.scene);
+        } else if (!this.use3dArrow) {
+            // This zone doesn't want the 3D arrow — make sure a lap from a PREVIOUS zone that
+            // did isn't left showing.
+            this.arrow3d?.hide();
+        }
+    }
+
+    /** Drives BOTH arrows toward `target` — the flat 2D one always (unconditionally, exactly as before the 3D one existed), plus the 3D one too whenever the active zone's own config.use3dArrow is set (see this.use3dArrow) — they're additive, never a replacement for each other. The ONE call site pointAtGatherTarget()/pointAtDeliverTarget() both go through. `heightOffset` only means anything to the 2D arrow (see ZoneTutorialArrow.update()'s own doc); the 3D arrow ignores it — its own hover height is relative to the PLAYER, not the target (see ZoneTutorial3dArrow.ts's own doc). */
+    private updateArrow(target: THREE.Vector3, heightOffset?: number): void {
+        this.arrow?.update(target, heightOffset);
+        if (this.use3dArrow) {
+            this.arrow3d?.update(this.getPlayerPosition(), target);
+        }
+    }
+
+    /** Hides both arrows — see updateArrow()'s own doc on why both are always driven together. */
+    private hideArrow(): void {
+        this.arrow?.hide();
+        this.arrow3d?.hide();
     }
 
     /** Resolves the current step's own icon — `step.iconTextureId` if set, else the zone tutorial's own `arrowTextureId`, else DEFAULT_ARROW_TEXTURE_ID (see ZoneTutorialTypes.ts's own doc on why the override lives per-step) — and applies it to the arrow only when it actually changed. */
@@ -168,6 +205,7 @@ export default class ZoneTutorialController {
         this.activeZoneNumber = undefined;
         this.unsubscribeCompletionListener();
         this.arrow?.hide();
+        this.arrow3d?.hide();
     }
 
     /**
@@ -229,10 +267,10 @@ export default class ZoneTutorialController {
         const node = ResourceNodeRegistry.findNearest(resourceType, playerPosition);
         if (!node) {
             console.warn(`[ZoneTutorialController] no live ResourceNode currently produces "${resourceType}" — can't point the gather arrow anywhere (data misconfiguration, or every source is out of range/depleted)`);
-            this.arrow?.hide();
+            this.hideArrow();
             return;
         }
-        this.arrow?.update(node.position.clone().add(this.stepOffset(step)));
+        this.updateArrow(node.position.clone().add(this.stepOffset(step)));
     }
 
     private pointAtDeliverTarget(step: ZoneTutorialStep): void {
@@ -241,11 +279,11 @@ export default class ZoneTutorialController {
         const placement = this.worldObjects.get(type, id);
         if (!placement) {
             console.warn(`[ZoneTutorialController] no "${type}" object "${id}" found on the Tiled map — can't point the deliver arrow anywhere`);
-            this.arrow?.hide();
+            this.hideArrow();
             return;
         }
         const target = new THREE.Vector3(placement.x, 0, placement.z).add(this.stepOffset(step));
-        this.arrow?.update(target, DELIVER_TARGET_HEIGHT_OFFSET);
+        this.updateArrow(target, DELIVER_TARGET_HEIGHT_OFFSET);
     }
 
     private subscribeToCompletion(zoneNumber: number, step: ZoneTutorialStep, completedCount: number): void {

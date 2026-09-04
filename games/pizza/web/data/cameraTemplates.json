@@ -1,0 +1,26 @@
+{
+    "default": {
+        "yawDeg": 0,
+        "pitchDeg": 45,
+        "distance": 12,
+        "followSpeed": 10
+    },
+    "far1": {
+        "yawDeg": 0,
+        "pitchDeg": 45,
+        "distance": 16,
+        "followSpeed": 10
+    },
+    "close1": {
+        "yawDeg": 0,
+        "pitchDeg": 45,
+        "distance": 10,
+        "followSpeed": 10
+    },
+    "far2": {
+        "yawDeg": 0,
+        "pitchDeg": 50,
+        "distance": 20,
+        "followSpeed": 10
+    }
+}

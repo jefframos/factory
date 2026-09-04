@@ -137,6 +137,18 @@ const ENTITY_SCHEMAS = {
     // in-game debug "Open Next Zone" button).
     zones: [
         { key: 'requirement', type: 'requirement', label: 'Unlock Requirement', optional: true },
+        { key: 'cameraTemplateId', type: 'select', label: 'Camera Template (blank = the Camera Templates tab\'s own "default" entry)', source: 'cameraTemplates', optional: true },
+    ],
+    // Free-designer-id (NOT zoneNumber-keyed, unlike `zones`/`zoneTutorials` above) — a "default"
+    // entry is expected to always exist (see CameraTemplateTypes.ts's own doc); deleting it just
+    // means every zone with no Camera Template of its own falls back to whatever
+    // getCameraTemplate()'s OWN hardcoded fallback ends up resolving, which is itself the
+    // "default" id — i.e. don't actually delete it, this schema just doesn't stop you.
+    cameraTemplates: [
+        { key: 'yawDeg', type: 'number', label: 'Yaw (deg)' },
+        { key: 'pitchDeg', type: 'number', label: 'Pitch (deg, 0 = level with the player, 90 = straight overhead)' },
+        { key: 'distance', type: 'number', label: 'Distance' },
+        { key: 'followSpeed', type: 'number', label: 'Follow Speed (higher = snappier)' },
     ],
     // Keyed by zoneNumber, same auto-discovery-from-the-map convention as `zones` just above.
     // A step's `craftId`/`gateId`/`triggerId` are ALL present on the field list below but only

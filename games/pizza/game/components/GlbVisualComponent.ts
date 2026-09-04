@@ -104,8 +104,7 @@ export default class GlbVisualComponent extends Component {
         if (this.occlusionFade) {
             object.traverse(child => {
                 if (child instanceof THREE.Mesh) {
-                    const materials = Array.isArray(child.material) ? child.material : [child.material];
-                    materials.forEach(material => BendService.applyOcclusionFade(material, this.occlusionFade));
+                    BendService.applyOcclusionFade(child, this.occlusionFade);
                 }
             });
         }

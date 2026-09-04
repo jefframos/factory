@@ -60,9 +60,10 @@ import ResourceNodeRegistry from './ResourceNodeRegistry';
  * invisible disappearance.
  */
 const RESOURCE_NODE_OCCLUSION_FADE: OcclusionFadeConfig = {
-    radius: 1.4,
+    radius: 1.5,
     fadeWidth: 1.2,
     minOpacity: 0.25,
+    minOccluderHeight: 2.5,
     // Flip to compare the smooth alpha blend (false) against a dithered discard cutout (true) —
     // see OcclusionFadeConfig.dither's own doc.
     dither: true,

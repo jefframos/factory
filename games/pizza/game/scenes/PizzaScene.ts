@@ -65,6 +65,8 @@ import FarmPlotTile from '../world/FarmPlotTile';
 import { computeFarmGrid, FARM_GRID_CELL_SIZE, FARM_GRID_APPEAR_STAGGER_SEC } from '../world/FarmGrid';
 import { getFarmPlotConfig, FarmPlotConfig } from '../data/FarmTypes';
 import { getTriggerConfig } from '../data/TriggerTypes';
+import { ZONE_CONFIG } from '../data/ZoneTypes';
+import { DEFAULT_CAMERA_TEMPLATE_ID, getCameraTemplate } from '../data/CameraTemplateTypes';
 import { TriggerStorage } from '../data/TriggerStorage';
 import { FarmPlotStorage } from '../data/FarmPlotStorage';
 import { FarmCropStorage } from '../data/FarmCropStorage';
@@ -131,12 +133,11 @@ import GlbVisualComponent from '../components/GlbVisualComponent';
  * frame from PLAY_HALF_W/H so the same play area stays framed regardless of
  * viewport aspect ratio (narrow phones vs. wide desktops).
  */
-const CAMERA_SETTINGS = {
-    yawDeg: 5,
-    pitchDeg: 45,
-    distance: 12,
-    followSpeed: 10,
-};
+// A plain OWN copy (not the CAMERA_TEMPLATE_CONFIG entry itself) — gsap.to() below (both
+// toggleCameraMode() and applyCameraTemplateForZone()) tweens this object's properties in
+// place, and the dev-GUI sliders bind straight to it too; mutating the shared config entry
+// itself would corrupt the "default" template's own on-disk values the moment either fires.
+const CAMERA_SETTINGS = { ...getCameraTemplate(DEFAULT_CAMERA_TEMPLATE_ID) };
 
 /** CAMERA_SETTINGS.pitchDeg/distance the camera eases BACK to when the top-down toggle (see UIService's camera-toggle button) is switched off — captured from CAMERA_SETTINGS' own initial values so a dev-GUI tweak to the normal follow angle before ever toggling still gets restored correctly. */
 const DEFAULT_CAMERA_PITCH_DEG = CAMERA_SETTINGS.pitchDeg;
@@ -146,6 +147,8 @@ const TOP_DOWN_CAMERA_PITCH_DEG = 90;
 const TOP_DOWN_CAMERA_DISTANCE = 35;
 /** How long toggling the camera mode takes to ease pitch/distance to their new values — instant would read as a jump-cut; this is a smooth top-down/follow transition instead. */
 const CAMERA_MODE_TRANSITION_SEC = 0.8;
+/** How long crossing into a zone with a different camera template takes to ease into its settings — see applyCameraTemplateForZone()'s own doc. Same "smooth, not a jump-cut" reasoning as CAMERA_MODE_TRANSITION_SEC, just a touch longer since a zone crossing is a bigger context change than a manual toggle. */
+const CAMERA_TEMPLATE_TRANSITION_SEC = 1.2;
 
 /** The game's own design resolution (see Game.DESIGN_WIDTH/HEIGHT) is the aspect ratio CAMERA_SETTINGS.distance was tuned against. Anything taller/narrower than that zooms out to show more; landscape/wider viewports keep the original distance untouched. */
 const REFERENCE_ASPECT = Game.DESIGN_WIDTH / Game.DESIGN_HEIGHT;
@@ -285,6 +288,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private readonly zoneTutorialController = new ZoneTutorialController(
         this.world,
         this.screenHost,
+        this.threeScene,
         this.worldObjects,
         this.worldManager.getZoneVisibilityManager(),
         () => this.mainPlayer.transform.position,
@@ -311,6 +315,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
     /** Which mode toggleCameraMode() last switched TO — CAMERA_SETTINGS.pitchDeg/distance are tweened, not snapped, so this (not CAMERA_SETTINGS' current mid-tween value) is the source of truth for what the button should say/do next. */
     private isTopDownCamera = false;
+
+    /** The CAMERA_TEMPLATE_CONFIG id currently (or mid-tween-toward) applied — see applyCameraTemplateForZone(). Starts at DEFAULT_CAMERA_TEMPLATE_ID, matching CAMERA_SETTINGS' own seed value, so the very first zone crossing correctly detects "no change" if that zone doesn't set its own template. */
+    private activeCameraTemplateId: string = DEFAULT_CAMERA_TEMPLATE_ID;
+    /** Which zoneNumber applyCameraTemplateForZone() last resolved a template for — undefined before the player's first fixedUpdate(). Tracked so the (cheap, but not free) zone lookup + template resolve only happens when the player's OWN zone actually changes, not every single frame. */
+    private activeCameraZoneNumber?: number;
 
     /**
      * When set, fixedUpdate()'s camera follow targets THIS instead of the player — see
@@ -1566,6 +1575,41 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     }
 
     /**
+     * Resolves whichever zone `playerPosition` is currently in to its own ZoneConfigEntry.
+     * cameraTemplateId (see ZoneTypes.ts's own doc), falling back to DEFAULT_CAMERA_TEMPLATE_ID
+     * for a zone with no entry/no template set — same fallback CameraTemplateTypes.
+     * getCameraTemplate() applies for a stale/typo'd id. Only actually does anything (the zone
+     * lookup, the template resolve, the tween) when either the player's own zone number OR the
+     * resolved template id for it has changed since last call — called every fixedUpdate() tick
+     * (same call-site pattern as zoneTutorialController.update()), so this guard is what keeps
+     * that cheap for every frame the player spends standing still inside one zone.
+     *
+     * Same "tween the live CAMERA_SETTINGS object in place" mechanism toggleCameraMode() uses
+     * for its own top-down/follow switch — fixedUpdate()'s existing follow logic reads
+     * CAMERA_SETTINGS fresh every step regardless of which of the two most recently tweened it.
+     */
+    private applyCameraTemplateForZone(playerPosition: THREE.Vector3): void {
+        const zoneNumber = this.worldManager.getZoneVisibilityManager().getZoneForPosition(playerPosition.x, playerPosition.z);
+        if (zoneNumber === this.activeCameraZoneNumber) {
+            return;
+        }
+        this.activeCameraZoneNumber = zoneNumber;
+
+        const templateId = (zoneNumber !== undefined ? ZONE_CONFIG[zoneNumber]?.cameraTemplateId : undefined) ?? DEFAULT_CAMERA_TEMPLATE_ID;
+        if (templateId === this.activeCameraTemplateId) {
+            return;
+        }
+        this.activeCameraTemplateId = templateId;
+
+        gsap.killTweensOf(CAMERA_SETTINGS);
+        gsap.to(CAMERA_SETTINGS, {
+            ...getCameraTemplate(templateId),
+            duration: CAMERA_TEMPLATE_TRANSITION_SEC,
+            ease: 'power2.inOut',
+        });
+    }
+
+    /**
      * Shows a spinner while MainPlayer.loadCharacter() does its thing (FBX mesh +
      * animation clips) — purely cosmetic UI orchestration; the player itself never
      * waits on this (see this file's own doc, and MainPlayer.loadCharacter()'s).
@@ -1646,6 +1690,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.shapeResourceSpawner.update(playerPosition, delta);
         // Independent of the above too — see ZoneTutorialController.ts's own doc.
         this.zoneTutorialController.update();
+        // Same "the player's own zone drives something" idea as the tutorial controller above,
+        // just for the camera's own settings instead — see applyCameraTemplateForZone()'s own
+        // doc for why this is cheap to call unconditionally every tick.
+        this.applyCameraTemplateForZone(playerPosition);
 
         this.updateStablePlayerPosition(delta, playerPosition);
 

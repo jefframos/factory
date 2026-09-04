@@ -52,9 +52,18 @@ export const ENTITY_SOURCE_MAP = {
         file: path.join(GAME_DIR, 'data', 'ZoneTypes.ts'),
         exportName: 'ZONE_CONFIG',
         kind: 'partialRecord',
-        managedKeys: ['requirement'],
-        optionalKeys: ['requirement'],
+        managedKeys: ['requirement', 'cameraTemplateId'],
+        optionalKeys: ['requirement', 'cameraTemplateId'],
         protectEntries: true,
+    },
+    // Free-designer-id, NOT zoneNumber-keyed — same partialRecord shape as `crafting`'s own
+    // entry below, not `zones`'/`zoneTutorials`' auto-discovered-from-the-map one, so no
+    // protectEntries here: a template a designer deletes here should actually go away.
+    cameraTemplates: {
+        file: path.join(GAME_DIR, 'data', 'CameraTemplateTypes.ts'),
+        exportName: 'CAMERA_TEMPLATE_CONFIG',
+        kind: 'partialRecord',
+        managedKeys: ['yawDeg', 'pitchDeg', 'distance', 'followSpeed'],
     },
     // Keyed by zoneNumber, same convention (and same protectEntries reasoning — see that
     // entry's own doc) as `zones` just above: the Zone Tutorials tab auto-discovers zoneNumbers

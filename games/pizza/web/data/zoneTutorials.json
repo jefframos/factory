@@ -47,7 +47,8 @@
                 "iconTextureId": "woodcutters-axe"
             }
         ],
-        "arrowTextureId": "woodcutters-axe"
+        "arrowTextureId": "woodcutters-axe",
+        "use3dArrow": true
     },
     "2": {
         "steps": [
@@ -61,7 +62,8 @@
                 "iconTextureId": "tutorialHand2",
                 "kind": "craft"
             }
-        ]
+        ],
+        "use3dArrow": true
     },
     "3": {
         "steps": []

@@ -1,5 +1,7 @@
 {
-    "0": {},
+    "0": {
+        "cameraTemplateId": "close1"
+    },
     "1": {
         "requirement": {
             "type": "trigger",
@@ -10,19 +12,22 @@
         "requirement": {
             "type": "gate",
             "gateId": "gateWood"
-        }
+        },
+        "cameraTemplateId": "far1"
     },
     "3": {
         "requirement": {
             "type": "item",
             "item": "pickaxe"
-        }
+        },
+        "cameraTemplateId": "far2"
     },
     "4": {
         "requirement": {
             "type": "gate",
             "gateId": "gate1"
-        }
+        },
+        "cameraTemplateId": "far2"
     },
     "10": {}
 }

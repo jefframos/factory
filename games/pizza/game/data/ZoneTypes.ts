@@ -20,11 +20,14 @@ import { GateId } from "./GateTypes";
 
 export interface ZoneConfigEntry {
     requirement?: MilestoneRequirement;
+    /** A CameraTemplateTypes.ts CAMERA_TEMPLATE_CONFIG key — the camera lerps to this template's settings the moment the player crosses into this zone (see PizzaScene.ts's own applyCameraTemplateForZone()). Optional; unset means "use DEFAULT_CAMERA_TEMPLATE_ID," same fallback CameraTemplateTypes.getCameraTemplate() applies for a stale/typo'd id too. */
+    cameraTemplateId?: string;
 }
 
 /** zoneNumber -> its own config — see this file's own doc. Sparse: only zones a level designer has actually set a requirement for need an entry at all. */
 export const ZONE_CONFIG: Partial<Record<number, ZoneConfigEntry>> = {
     "0": {
+        "cameraTemplateId": "close1"
     },
     "1": {
         "requirement": {
@@ -36,19 +39,22 @@ export const ZONE_CONFIG: Partial<Record<number, ZoneConfigEntry>> = {
         "requirement": {
             "type": "gate",
             "gateId": GateId.GateWood
-        }
+        },
+        "cameraTemplateId": "far1"
     },
     "4": {
         "requirement": {
             "type": "gate",
             "gateId": GateId.Gate1
-        }
+        },
+        "cameraTemplateId": "far2"
     },
     "3": {
         "requirement": {
             "type": "item",
             "item": ItemType.Pickaxe
-        }
+        },
+        "cameraTemplateId": "far2"
     },
     "10": {}
 };

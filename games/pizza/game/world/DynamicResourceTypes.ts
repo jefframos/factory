@@ -95,7 +95,7 @@ export const DYNAMIC_RESOURCE_PLACEMENTS: DynamicResourcePlacement[] = [
         "resourceType": ResourceType.GrassFiber,
         "spawnerTileType": "grass",
         "density": 0.02,
-        "minDistance": 8,
+        "minDistance": 4,
         "checkIntervalSec": 5
     }
 ];
