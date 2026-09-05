@@ -123,23 +123,121 @@ function buildGame(game) {
     return platform;
 }
 
+// Deterministic hue from the game's name, so a given game always gets the
+// same tile color across rebuilds instead of a random one each time.
+function hueForGame(name) {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return Math.abs(hash) % 360;
+}
+
+function displayName(game) {
+    return game.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function writeIndexPage(games) {
-    const links = games
-        .filter((game) => fs.existsSync(resolve(cachedBuildsRoot, game, 'index.html')))
-        .map((game) => `        <li><a href="./${game}/index.html">${game}</a></li>`)
+    const playable = games.filter((game) => fs.existsSync(resolve(cachedBuildsRoot, game, 'index.html')));
+
+    const cards = playable
+        .map((game) => {
+            const hue = hueForGame(game);
+            const gradient = `linear-gradient(155deg, hsl(${hue}, 70%, 58%), hsl(${(hue + 40) % 360}, 75%, 42%))`;
+            return `        <a class="card" href="./${game}/index.html">
+            <div class="tile" style="background:${gradient}">
+                <span class="icon">🎮</span>
+            </div>
+            <div class="label">${displayName(game)}</div>
+        </a>`;
+        })
         .join('\n');
 
     const html = `<!doctype html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>Cached game builds</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Game Builds</title>
+    <style>
+        :root { color-scheme: dark; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #0e0e16;
+            color: #f2f2f7;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 48px 24px 64px;
+        }
+        header {
+            max-width: 1200px;
+            margin: 0 auto 36px;
+        }
+        h1 {
+            margin: 0 0 6px;
+            font-size: 32px;
+            letter-spacing: -0.02em;
+        }
+        p.subtitle {
+            margin: 0;
+            color: #9a9aab;
+            font-size: 15px;
+        }
+        .grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #1a1a26;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px) scale(1.03);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+        }
+        .tile {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .icon {
+            font-size: 42px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+        }
+        .label {
+            padding: 10px 12px;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .empty {
+            max-width: 1200px;
+            margin: 0 auto;
+            color: #9a9aab;
+        }
+    </style>
 </head>
 <body>
-    <h1>Cached game builds</h1>
-    <ul>
-${links}
-    </ul>
+    <header>
+        <h1>🎮 Game Builds</h1>
+        <p class="subtitle">${playable.length} game${playable.length === 1 ? '' : 's'} · last updated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC</p>
+    </header>
+    <div class="grid">
+${cards || '        <p class="empty">No cached builds yet.</p>'}
+    </div>
 </body>
 </html>
 `;

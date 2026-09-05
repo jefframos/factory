@@ -1,23 +1,152 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>Cached game builds</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Game Builds</title>
+    <style>
+        :root { color-scheme: dark; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #0e0e16;
+            color: #f2f2f7;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 48px 24px 64px;
+        }
+        header {
+            max-width: 1200px;
+            margin: 0 auto 36px;
+        }
+        h1 {
+            margin: 0 0 6px;
+            font-size: 32px;
+            letter-spacing: -0.02em;
+        }
+        p.subtitle {
+            margin: 0;
+            color: #9a9aab;
+            font-size: 15px;
+        }
+        .grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #1a1a26;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px) scale(1.03);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+        }
+        .tile {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .icon {
+            font-size: 42px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+        }
+        .label {
+            padding: 10px 12px;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .empty {
+            max-width: 1200px;
+            margin: 0 auto;
+            color: #9a9aab;
+        }
+    </style>
 </head>
 <body>
-    <h1>Cached game builds</h1>
-    <ul>
-        <li><a href="./clog/index.html">clog</a></li>
-        <li><a href="./farm/index.html">farm</a></li>
-        <li><a href="./game2/index.html">game2</a></li>
-        <li><a href="./game3/index.html">game3</a></li>
-        <li><a href="./game4/index.html">game4</a></li>
-        <li><a href="./hex/index.html">hex</a></li>
-        <li><a href="./merge1/index.html">merge1</a></li>
-        <li><a href="./net/index.html">net</a></li>
-        <li><a href="./pizza/index.html">pizza</a></li>
-        <li><a href="./pizza copy/index.html">pizza copy</a></li>
-        <li><a href="./tower/index.html">tower</a></li>
-    </ul>
+    <header>
+        <h1>🎮 Game Builds</h1>
+        <p class="subtitle">11 games · last updated 2026-09-05 15:54 UTC</p>
+    </header>
+    <div class="grid">
+        <a class="card" href="./clog/index.html">
+            <div class="tile" style="background:linear-gradient(155deg, hsl(241, 70%, 58%), hsl(281, 75%, 42%))">
+                <span class="icon">🎮</span>
+            </div>
+            <div class="label">Clog</div>
+        </a>
+        <a class="card" href="./farm/index.html">
+            <div class="tile" style="background:linear-gradient(155deg, hsl(302, 70%, 58%), hsl(342, 75%, 42%))">
+                <span class="icon">🎮</span>
+            </div>
+            <div class="label">Farm</div>
+        </a>
+        <a class="card" href="./game2/index.html">
+            <div class="tile" style="background:linear-gradient(155deg, hsl(160, 70%, 58%), hsl(200, 75%, 42%))">
+                <span class="icon">🎮</span>
+            </div>
+            <div class="label">Game2</div>
+        </a>
+        <a class="card" href="./game3/index.html">
+            <div class="tile" style="background:linear-gradient(155deg, hsl(161, 70%, 58%), hsl(201, 75%, 42%))">
+                <span class="icon">🎮</span>
+            </div>
+            <div class="label">Game3</div>
+        </a>
+        <a class="card" href="./game4/index.html">
+            <div class="tile" style="background:linear-gradient(155deg, hsl(162, 70%, 58%), hsl(202, 75%, 42%))">
+                <span class="icon">🎮</span>
+            </div>
+            <div class="label">Game4</div>
+        </a>
+        <a class="card" href="./hex/index.html">
+            <div class="tile" style="background:linear-gradient(155deg, hsl(235, 70%, 58%), hsl(275, 75%, 42%))">
+                <span class="icon">🎮</span>
+            </div>
+            <div class="label">Hex</div>
+        </a>
+        <a class="card" href="./merge1/index.html">
+            <div class="tile" style="background:linear-gradient(155deg, hsl(159, 70%, 58%), hsl(199, 75%, 42%))">
+                <span class="icon">🎮</span>
+            </div>
+            <div class="label">Merge1</div>
+        </a>
+        <a class="card" href="./net/index.html">
+            <div class="tile" style="background:linear-gradient(155deg, hsl(237, 70%, 58%), hsl(277, 75%, 42%))">
+                <span class="icon">🎮</span>
+            </div>
+            <div class="label">Net</div>
+        </a>
+        <a class="card" href="./pizza/index.html">
+            <div class="tile" style="background:linear-gradient(155deg, hsl(48, 70%, 58%), hsl(88, 75%, 42%))">
+                <span class="icon">🎮</span>
+            </div>
+            <div class="label">Pizza</div>
+        </a>
+        <a class="card" href="./pizza copy/index.html">
+            <div class="tile" style="background:linear-gradient(155deg, hsl(293, 70%, 58%), hsl(333, 75%, 42%))">
+                <span class="icon">🎮</span>
+            </div>
+            <div class="label">Pizza Copy</div>
+        </a>
+        <a class="card" href="./tower/index.html">
+            <div class="tile" style="background:linear-gradient(155deg, hsl(81, 70%, 58%), hsl(121, 75%, 42%))">
+                <span class="icon">🎮</span>
+            </div>
+            <div class="label">Tower</div>
+        </a>
+    </div>
 </body>
 </html>
