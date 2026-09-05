@@ -10,6 +10,7 @@ const projectRoot = resolve(__dirname, '../../');
 
 const cachedBuildsRoot = resolve(projectRoot, 'cachedBuilds');
 const registryPath = resolve(cachedBuildsRoot, 'registry.json');
+const envPath = resolve(projectRoot, '.env');
 
 const force = process.argv.includes('--force');
 
@@ -34,20 +35,20 @@ function collectFiles(dir) {
 }
 
 /**
- * Hashes a game's own source (games/<name> + public/<name>, if it exists) so
- * we can tell whether it changed since the last cached build. core/ is
- * intentionally excluded — a shared-engine edit does not invalidate a game's
+ * Hashes a game's own source (games/<name>, including its raw-assets) so we
+ * can tell whether it changed since the last cached build. public/<name> is
+ * intentionally NOT hashed: it's a derived artifact that `npm run all`
+ * regenerates from raw-assets on every rebuild, and it gets deleted for
+ * every OTHER game each time `npm run all` runs, so it isn't a stable input.
+ * core/ is also excluded — a shared-engine edit does not invalidate a game's
  * cache under this script.
  * @param {string} game
  */
 function hashGame(game) {
-    const dirs = [resolve(projectRoot, 'games', game), resolve(projectRoot, 'public', game)];
     const hash = crypto.createHash('sha256');
-    for (const dir of dirs) {
-        for (const file of collectFiles(dir)) {
-            hash.update(relative(projectRoot, file));
-            hash.update(fs.readFileSync(file));
-        }
+    for (const file of collectFiles(resolve(projectRoot, 'games', game))) {
+        hash.update(relative(projectRoot, file));
+        hash.update(fs.readFileSync(file));
     }
     return hash.digest('hex');
 }
@@ -71,59 +72,55 @@ function readMeta(game) {
     }
 }
 
-function writeMeta(game, hash) {
+function writeMeta(game, hash, platform) {
     const metaPath = resolve(cachedBuildsRoot, game, '.cache-meta.json');
     fs.writeFileSync(
         metaPath,
-        JSON.stringify({ hash, platform: 'default', builtAt: new Date().toISOString() }, null, 4) + '\n'
+        JSON.stringify({ hash, platform, builtAt: new Date().toISOString() }, null, 4) + '\n'
     );
 }
 
-/**
- * vite.config.ts's publicDir points at the whole public/ root (not scoped
- * per game), so a `vite build` for any game copies every other game's
- * public/<name> folder into its output too. Strips those foreign folders
- * out of the cached build so e.g. building "clog" doesn't carry a copy of
- * public/pizza. Never touches vite.config.ts, so dist/build-all are
- * unaffected.
- * @param {string} game
- * @param {string} outDir
- */
-function stripForeignPublicDirs(game, outDir) {
-    const publicRoot = resolve(projectRoot, 'public');
-    if (!fs.existsSync(publicRoot)) return;
-
-    for (const entry of fs.readdirSync(publicRoot, { withFileTypes: true })) {
-        if (entry.name === game) continue;
-        const foreign = resolve(outDir, entry.name);
-        if (fs.existsSync(foreign)) {
-            fs.rmSync(foreign, { recursive: true, force: true });
-        }
-    }
+// Mirrors vite.config.ts's own fallback: merge1 has no generic "default"
+// platform entry and only ships on YouTube Playables, so a plain `npm run
+// build` (no VITE_PLATFORM set) lands in dist/_builds_merge1/youtube instead
+// of .../default. Every other game lands in .../default.
+function defaultPlatformFor(game) {
+    return game === 'merge1' ? 'youtube' : 'default';
 }
 
 /**
- * Builds into a scratch dir and only swaps it into the real cache dir on
- * success, so a failing rebuild can't wipe out a previously-good cached
- * build for that game (vite's --emptyOutDir clears the target up front).
+ * Runs the real pipeline for one game, exactly as you'd run it by hand:
+ * `npm run all --<game>` (switches .env's GAME, deletes every other game's
+ * public/<name> folder, repacks assets) then `npm run build` (the normal
+ * single-platform build). Only once that succeeds do we copy the real
+ * dist/_builds_<game>/<platform> output into a scratch dir and swap it into
+ * the cache dir — so a failing rebuild can't wipe out a previously-good
+ * cached build for that game.
  * @param {string} game
  */
 function buildGame(game) {
+    console.log(`   - Packing assets for "${game}"...`);
+    execSync(`npm run all -- "--${game}"`, { stdio: 'inherit', cwd: projectRoot });
+
+    console.log(`   - Building "${game}"...`);
+    execSync('npm run build', { stdio: 'inherit', cwd: projectRoot });
+
+    const platform = defaultPlatformFor(game);
+    const distDir = resolve(projectRoot, 'dist', `_builds_${game}`, platform);
+    if (!fs.existsSync(distDir)) {
+        throw new Error(`Expected build output at ${distDir}, but it doesn't exist.`);
+    }
+
     const finalDir = resolve(cachedBuildsRoot, game);
     const tmpDir = resolve(cachedBuildsRoot, '.tmp', game);
     fs.rmSync(tmpDir, { recursive: true, force: true });
-
-    console.log(`   - Compiling "${game}"...`);
-    execSync(`npx vite build --outDir "${tmpDir}" --emptyOutDir`, {
-        stdio: 'inherit',
-        cwd: projectRoot,
-        env: { ...process.env, GAME: game, VITE_PLATFORM: 'default' },
-    });
-
-    stripForeignPublicDirs(game, tmpDir);
+    fs.mkdirSync(dirname(tmpDir), { recursive: true });
+    fs.cpSync(distDir, tmpDir, { recursive: true });
 
     fs.rmSync(finalDir, { recursive: true, force: true });
     fs.renameSync(tmpDir, finalDir);
+
+    return platform;
 }
 
 function writeIndexPage(games) {
@@ -160,37 +157,49 @@ function run() {
         return;
     }
 
+    // npm run all rewrites .env's GAME line as it cycles through games;
+    // restore your actual local GAME selection when this script is done.
+    const originalEnv = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf-8') : null;
+
     console.log(`\n🚀 Checking ${registry.length} registered game(s)${force ? ' (--force: rebuilding all)' : ''}`);
 
     let rebuilt = 0;
     let skipped = 0;
     const failedGames = [];
 
-    for (const game of registry) {
-        const gameDir = resolve(projectRoot, 'games', game);
-        if (!fs.existsSync(gameDir)) {
-            console.warn(`⚠️  Skipping "${game}": games/${game} no longer exists.`);
-            continue;
-        }
-
-        const currentHash = hashGame(game);
-        const previousMeta = readMeta(game);
-        const needsBuild = force || !previousMeta || previousMeta.hash !== currentHash;
-
-        if (needsBuild) {
-            try {
-                buildGame(game);
-                writeMeta(game, currentHash);
-                console.log(`✅ Rebuilt "${game}"`);
-                rebuilt++;
-            } catch (err) {
-                console.error(`❌ Failed to build "${game}", skipping it. Previous cache (if any) left untouched.`);
-                console.error(`   ${err.message}`);
-                failedGames.push(game);
+    try {
+        for (const game of registry) {
+            const gameDir = resolve(projectRoot, 'games', game);
+            if (!fs.existsSync(gameDir)) {
+                console.warn(`⚠️  Skipping "${game}": games/${game} no longer exists.`);
+                continue;
             }
+
+            const currentHash = hashGame(game);
+            const previousMeta = readMeta(game);
+            const needsBuild = force || !previousMeta || previousMeta.hash !== currentHash;
+
+            if (needsBuild) {
+                try {
+                    const platform = buildGame(game);
+                    writeMeta(game, currentHash, platform);
+                    console.log(`✅ Rebuilt "${game}"`);
+                    rebuilt++;
+                } catch (err) {
+                    console.error(`❌ Failed to build "${game}", skipping it. Previous cache (if any) left untouched.`);
+                    console.error(`   ${err.message}`);
+                    failedGames.push(game);
+                }
+            } else {
+                console.log(`⏭️  Using cached build for "${game}" (unchanged)`);
+                skipped++;
+            }
+        }
+    } finally {
+        if (originalEnv !== null) {
+            fs.writeFileSync(envPath, originalEnv);
         } else {
-            console.log(`⏭️  Using cached build for "${game}" (unchanged)`);
-            skipped++;
+            fs.rmSync(envPath, { force: true });
         }
     }
 

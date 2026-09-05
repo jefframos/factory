@@ -117,6 +117,86 @@
         },
         {
           "alias": [
+            "Hover.wav"
+          ],
+          "src": [
+            "Hover.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Jomon-Grove-The-Mini-Vandals.mp3"
+          ],
+          "src": [
+            "Jomon-Grove-The-Mini-Vandals.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Pitched-Tapping-Glass.wav"
+          ],
+          "src": [
+            "Pitched-Tapping-Glass.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "PopupOpen.wav"
+          ],
+          "src": [
+            "PopupOpen.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Positive-Open.wav"
+          ],
+          "src": [
+            "Positive-Open.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ScoreUpdate.mp3"
+          ],
+          "src": [
+            "ScoreUpdate.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Synth-Appear-01.m4a"
+          ],
+          "src": [
+            "Synth-Appear-01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Synth-Whoosh-Small-01.m4a"
+          ],
+          "src": [
+            "Synth-Whoosh-Small-01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Tap.wav"
+          ],
+          "src": [
+            "Tap.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Whoosh.wav"
+          ],
+          "src": [
+            "Whoosh.mp3"
+          ]
+        },
+        {
+          "alias": [
             "diamond-sparkle.mp3"
           ],
           "src": [
@@ -165,14 +245,6 @@
         },
         {
           "alias": [
-            "Hover.wav"
-          ],
-          "src": [
-            "Hover.mp3"
-          ]
-        },
-        {
-          "alias": [
             "hpp-increase20.wav"
           ],
           "src": [
@@ -213,82 +285,10 @@
         },
         {
           "alias": [
-            "Jomon-Grove-The-Mini-Vandals.mp3"
-          ],
-          "src": [
-            "Jomon-Grove-The-Mini-Vandals.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Pitched-Tapping-Glass.wav"
-          ],
-          "src": [
-            "Pitched-Tapping-Glass.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "PopupOpen.wav"
-          ],
-          "src": [
-            "PopupOpen.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Positive-Open.wav"
-          ],
-          "src": [
-            "Positive-Open.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "ScoreUpdate.mp3"
-          ],
-          "src": [
-            "ScoreUpdate.mp3"
-          ]
-        },
-        {
-          "alias": [
             "soundtrack/longnight.mp3"
           ],
           "src": [
             "soundtrack/longnight.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Synth-Appear-01.m4a"
-          ],
-          "src": [
-            "Synth-Appear-01.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Synth-Whoosh-Small-01.m4a"
-          ],
-          "src": [
-            "Synth-Whoosh-Small-01.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Tap.wav"
-          ],
-          "src": [
-            "Tap.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Whoosh.wav"
-          ],
-          "src": [
-            "Whoosh.mp3"
           ]
         }
       ]

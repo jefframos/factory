@@ -3,11 +3,13 @@ import { pixiManifest } from '@assetpack/core/manifest';
 import dotenv from 'dotenv';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { ensureFolderExists } from '../folderUtils/folderUtils.mjs';
 import json from '../pack/json.mjs';
 
 dotenv.config();
 
 const GAME = process.env.GAME;
+const WATCH = process.env.WATCH === 'true';
 
 if (!GAME) {
     console.error('❌ Please specify GAME=game1 in your .env file');
@@ -20,6 +22,8 @@ const __dirname = dirname(__filename);
 const rawJson = resolve(__dirname, `../../games/${GAME}/raw-assets/json`);
 const outputJson = resolve(__dirname, `../../public/${GAME}/json`);
 const outputManifest = resolve(__dirname, `../../games/${GAME}/manifests`);
+
+ensureFolderExists(rawJson);
 
 const pack = new AssetPack({
     entry: rawJson,
@@ -35,8 +39,12 @@ const pack = new AssetPack({
     ]
 });
 
-console.log(`👀 Watching ${rawJson} for changes...`);
-
-pack.watch(() => {
-    console.log('✅ Rebuilt JSON assets');
-});
+if (WATCH) {
+    console.log(`👀 Watching ${rawJson} for changes...`);
+    pack.watch(() => {
+        console.log('✅ Rebuilt JSON assets');
+    });
+} else {
+    await pack.run();
+    console.log('✅ Built JSON assets');
+}

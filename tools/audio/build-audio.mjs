@@ -3,6 +3,7 @@ import { pixiManifest } from '@assetpack/core/manifest';
 import dotenv from 'dotenv';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { ensureFolderExists } from '../folderUtils/folderUtils.mjs';
 import { sanitizeAssetNames } from '../folderUtils/sanitizeAssetNames.mjs';
 import audio from '../pack/audio.mjs';
 
@@ -22,6 +23,8 @@ const __dirname = dirname(__filename);
 const rawAudio = resolve(__dirname, `../../games/${GAME}/raw-assets/audio`);
 const outputAudio = resolve(__dirname, `../../public/${GAME}/audio`);
 const outputManifest = resolve(__dirname, `../../games/${GAME}/manifests`);
+
+ensureFolderExists(rawAudio);
 
 const renamedAudioFiles = sanitizeAssetNames(rawAudio, (msg) => console.log(msg));
 if (renamedAudioFiles > 0) {

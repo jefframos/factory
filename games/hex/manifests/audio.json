@@ -5,34 +5,34 @@
       "assets": [
         {
           "alias": [
-            "Applause Cheering.mp3"
+            "Applause-Cheering.mp3"
           ],
           "src": [
-            "Applause Cheering.mp3"
+            "Applause-Cheering.mp3"
           ]
         },
         {
           "alias": [
-            "Bonus Fly Anim.wav"
+            "Bonus-Fly-Anim.wav"
           ],
           "src": [
-            "Bonus Fly Anim.mp3"
+            "Bonus-Fly-Anim.mp3"
           ]
         },
         {
           "alias": [
-            "Bonus Highlights.wav"
+            "Bonus-Highlights.wav"
           ],
           "src": [
-            "Bonus Highlights.mp3"
+            "Bonus-Highlights.mp3"
           ]
         },
         {
           "alias": [
-            "Bonus Screen Popup.wav"
+            "Bonus-Screen-Popup.wav"
           ],
           "src": [
-            "Bonus Screen Popup.mp3"
+            "Bonus-Screen-Popup.mp3"
           ]
         },
         {
@@ -45,18 +45,18 @@
         },
         {
           "alias": [
-            "Chest Appear.wav"
+            "Chest-Appear.wav"
           ],
           "src": [
-            "Chest Appear.mp3"
+            "Chest-Appear.mp3"
           ]
         },
         {
           "alias": [
-            "Chest Open.wav"
+            "Chest-Open.wav"
           ],
           "src": [
-            "Chest Open.mp3"
+            "Chest-Open.mp3"
           ]
         },
         {
@@ -85,26 +85,98 @@
         },
         {
           "alias": [
-            "diamond-sparkle.mp3"
+            "Doppler-Whoosh-10.mp4"
           ],
           "src": [
-            "diamond-sparkle.mp3"
+            "Doppler-Whoosh-10.mp3"
           ]
         },
         {
           "alias": [
-            "Doppler Whoosh 10.mp4"
+            "Doppler-Whoosh-13.mp4"
           ],
           "src": [
-            "Doppler Whoosh 10.mp3"
+            "Doppler-Whoosh-13.mp3"
           ]
         },
         {
           "alias": [
-            "Doppler Whoosh 13.mp4"
+            "Hover.wav"
           ],
           "src": [
-            "Doppler Whoosh 13.mp3"
+            "Hover.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Pitched-Tapping-Glass.wav"
+          ],
+          "src": [
+            "Pitched-Tapping-Glass.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "PopupOpen.wav"
+          ],
+          "src": [
+            "PopupOpen.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Positive-Open.wav"
+          ],
+          "src": [
+            "Positive-Open.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ScoreUpdate.mp3"
+          ],
+          "src": [
+            "ScoreUpdate.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Synth-Appear-01.m4a"
+          ],
+          "src": [
+            "Synth-Appear-01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Synth-Whoosh-Small-01.m4a"
+          ],
+          "src": [
+            "Synth-Whoosh-Small-01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Tap.wav"
+          ],
+          "src": [
+            "Tap.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Whoosh.wav"
+          ],
+          "src": [
+            "Whoosh.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "diamond-sparkle.mp3"
+          ],
+          "src": [
+            "diamond-sparkle.mp3"
           ]
         },
         {
@@ -117,42 +189,34 @@
         },
         {
           "alias": [
-            "grab (1).wav"
+            "grab-1.wav"
           ],
           "src": [
-            "grab (1).mp3"
+            "grab-1.mp3"
           ]
         },
         {
           "alias": [
-            "grab (2).wav"
+            "grab-2.wav"
           ],
           "src": [
-            "grab (2).mp3"
+            "grab-2.mp3"
           ]
         },
         {
           "alias": [
-            "grab (3).wav"
+            "grab-3.wav"
           ],
           "src": [
-            "grab (3).mp3"
+            "grab-3.mp3"
           ]
         },
         {
           "alias": [
-            "grab (4).wav"
+            "grab-4.wav"
           ],
           "src": [
-            "grab (4).mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Hover.wav"
-          ],
-          "src": [
-            "Hover.mp3"
+            "grab-4.mp3"
           ]
         },
         {
@@ -197,74 +261,10 @@
         },
         {
           "alias": [
-            "Pitched-Tapping-Glass.wav"
-          ],
-          "src": [
-            "Pitched-Tapping-Glass.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "PopupOpen.wav"
-          ],
-          "src": [
-            "PopupOpen.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Positive Open.wav"
-          ],
-          "src": [
-            "Positive Open.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "ScoreUpdate.mp3"
-          ],
-          "src": [
-            "ScoreUpdate.mp3"
-          ]
-        },
-        {
-          "alias": [
             "soundtrack/longnight.mp3"
           ],
           "src": [
             "soundtrack/longnight.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Synth-Appear-01.m4a"
-          ],
-          "src": [
-            "Synth-Appear-01.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Synth-Whoosh-Small-01.m4a"
-          ],
-          "src": [
-            "Synth-Whoosh-Small-01.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Tap.wav"
-          ],
-          "src": [
-            "Tap.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Whoosh.wav"
-          ],
-          "src": [
-            "Whoosh.mp3"
           ]
         }
       ]

@@ -13,6 +13,22 @@
         },
         {
           "alias": [
+            "Pong-the-Atmosphere-Dan_Lebo_Lebowitz-Tone-Seeker.mp3"
+          ],
+          "src": [
+            "Pong-the-Atmosphere-Dan_Lebo_Lebowitz-Tone-Seeker.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Tap.wav"
+          ],
+          "src": [
+            "Tap.mp3"
+          ]
+        },
+        {
+          "alias": [
             "footstep_wood_000.ogg"
           ],
           "src": [
@@ -129,22 +145,6 @@
           ],
           "src": [
             "phaserUp2.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Pong-the-Atmosphere-Dan_Lebo_Lebowitz-Tone-Seeker.mp3"
-          ],
-          "src": [
-            "Pong-the-Atmosphere-Dan_Lebo_Lebowitz-Tone-Seeker.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Tap.wav"
-          ],
-          "src": [
-            "Tap.mp3"
           ]
         }
       ]

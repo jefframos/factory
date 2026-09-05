@@ -8,7 +8,7 @@ export interface ModelDefinition {
   readonly nodes: Record<string, string>;
 }
 
-const DeliveryFlat = {
+const CarsDeliveryFlat = {
   id: 'delivery-flat',
   path: 'cars/delivery-flat',
   fullPath: 'net/models/cars/delivery-flat.glb',
@@ -22,7 +22,7 @@ const DeliveryFlat = {
 }
 } as const;
 
-const Delivery = {
+const CarsDelivery = {
   id: 'delivery',
   path: 'cars/delivery',
   fullPath: 'net/models/cars/delivery.glb',
@@ -37,7 +37,7 @@ const Delivery = {
 }
 } as const;
 
-const Firetruck = {
+const CarsFiretruck = {
   id: 'firetruck',
   path: 'cars/firetruck',
   fullPath: 'net/models/cars/firetruck.glb',
@@ -52,7 +52,7 @@ const Firetruck = {
 }
 } as const;
 
-const GarbageTruck = {
+const CarsGarbageTruck = {
   id: 'garbage-truck',
   path: 'cars/garbage-truck',
   fullPath: 'net/models/cars/garbage-truck.glb',
@@ -68,7 +68,7 @@ const GarbageTruck = {
 }
 } as const;
 
-const HatchbackSports = {
+const CarsHatchbackSports = {
   id: 'hatchback-sports',
   path: 'cars/hatchback-sports',
   fullPath: 'net/models/cars/hatchback-sports.glb',
@@ -82,7 +82,7 @@ const HatchbackSports = {
 }
 } as const;
 
-const PoliceKenney = {
+const CarsPoliceKenney = {
   id: 'policeKenney',
   path: 'cars/policeKenney',
   fullPath: 'net/models/cars/policeKenney.glb',
@@ -97,7 +97,7 @@ const PoliceKenney = {
 }
 } as const;
 
-const RaceFuture = {
+const CarsRaceFuture = {
   id: 'race-future',
   path: 'cars/race-future',
   fullPath: 'net/models/cars/race-future.glb',
@@ -111,7 +111,7 @@ const RaceFuture = {
 }
 } as const;
 
-const Race = {
+const CarsRace = {
   id: 'race',
   path: 'cars/race',
   fullPath: 'net/models/cars/race.glb',
@@ -125,7 +125,7 @@ const Race = {
 }
 } as const;
 
-const SedanSports = {
+const CarsSedanSports = {
   id: 'sedan-sports',
   path: 'cars/sedan-sports',
   fullPath: 'net/models/cars/sedan-sports.glb',
@@ -140,7 +140,7 @@ const SedanSports = {
 }
 } as const;
 
-const Sedan = {
+const CarsSedan = {
   id: 'sedan',
   path: 'cars/sedan',
   fullPath: 'net/models/cars/sedan.glb',
@@ -154,7 +154,7 @@ const Sedan = {
 }
 } as const;
 
-const SuvLuxury = {
+const CarsSuvLuxury = {
   id: 'suv-luxury',
   path: 'cars/suv-luxury',
   fullPath: 'net/models/cars/suv-luxury.glb',
@@ -168,7 +168,7 @@ const SuvLuxury = {
 }
 } as const;
 
-const Suv = {
+const CarsSuv = {
   id: 'suv',
   path: 'cars/suv',
   fullPath: 'net/models/cars/suv.glb',
@@ -183,7 +183,7 @@ const Suv = {
 }
 } as const;
 
-const Taxi = {
+const CarsTaxi = {
   id: 'taxi',
   path: 'cars/taxi',
   fullPath: 'net/models/cars/taxi.glb',
@@ -197,7 +197,7 @@ const Taxi = {
 }
 } as const;
 
-const TractorPolice = {
+const CarsTractorPolice = {
   id: 'tractor-police',
   path: 'cars/tractor-police',
   fullPath: 'net/models/cars/tractor-police.glb',
@@ -212,7 +212,7 @@ const TractorPolice = {
 }
 } as const;
 
-const TractorShovel = {
+const CarsTractorShovel = {
   id: 'tractor-shovel',
   path: 'cars/tractor-shovel',
   fullPath: 'net/models/cars/tractor-shovel.glb',
@@ -227,7 +227,7 @@ const TractorShovel = {
 }
 } as const;
 
-const Tractor = {
+const CarsTractor = {
   id: 'tractor',
   path: 'cars/tractor',
   fullPath: 'net/models/cars/tractor.glb',
@@ -241,7 +241,7 @@ const Tractor = {
 }
 } as const;
 
-const TruckFlat = {
+const CarsTruckFlat = {
   id: 'truck-flat',
   path: 'cars/truck-flat',
   fullPath: 'net/models/cars/truck-flat.glb',
@@ -255,7 +255,7 @@ const TruckFlat = {
 }
 } as const;
 
-const Truck = {
+const CarsTruck = {
   id: 'truck',
   path: 'cars/truck',
   fullPath: 'net/models/cars/truck.glb',
@@ -269,7 +269,7 @@ const Truck = {
 }
 } as const;
 
-const Van = {
+const CarsVan = {
   id: 'van',
   path: 'cars/van',
   fullPath: 'net/models/cars/van.glb',
@@ -283,27 +283,32 @@ const Van = {
 }
 } as const;
 
+// Grouped by top-level raw-assets/models folder (the '{...}' tag stripped) — e.g.
+// raw-assets/models/characters{m}/... becomes MODELS.Characters.<name>. Files with no
+// containing folder land in MODELS.Root.
 export const MODELS = {
-  DeliveryFlat,
-  Delivery,
-  Firetruck,
-  GarbageTruck,
-  HatchbackSports,
-  PoliceKenney,
-  RaceFuture,
-  Race,
-  SedanSports,
-  Sedan,
-  SuvLuxury,
-  Suv,
-  Taxi,
-  TractorPolice,
-  TractorShovel,
-  Tractor,
-  TruckFlat,
-  Truck,
-  Van
+  Cars: {
+    DeliveryFlat: CarsDeliveryFlat,
+    Delivery: CarsDelivery,
+    Firetruck: CarsFiretruck,
+    GarbageTruck: CarsGarbageTruck,
+    HatchbackSports: CarsHatchbackSports,
+    PoliceKenney: CarsPoliceKenney,
+    RaceFuture: CarsRaceFuture,
+    Race: CarsRace,
+    SedanSports: CarsSedanSports,
+    Sedan: CarsSedan,
+    SuvLuxury: CarsSuvLuxury,
+    Suv: CarsSuv,
+    Taxi: CarsTaxi,
+    TractorPolice: CarsTractorPolice,
+    TractorShovel: CarsTractorShovel,
+    Tractor: CarsTractor,
+    TruckFlat: CarsTruckFlat,
+    Truck: CarsTruck,
+    Van: CarsVan
+  }
 } as const;
 
-export type ModelKey = keyof typeof MODELS;
+export type ModelGroup = keyof typeof MODELS;
 export default MODELS;

@@ -21,6 +21,54 @@
         },
         {
           "alias": [
+            "Explosion_01.mp3"
+          ],
+          "src": [
+            "Explosion_01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Explosion_02.mp3"
+          ],
+          "src": [
+            "Explosion_02.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Explosion_03.mp3"
+          ],
+          "src": [
+            "Explosion_03.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "From-Here-on-In-Everet-Almond.mp3"
+          ],
+          "src": [
+            "From-Here-on-In-Everet-Almond.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Tap.wav"
+          ],
+          "src": [
+            "Tap.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Whoosh.wav"
+          ],
+          "src": [
+            "Whoosh.mp3"
+          ]
+        },
+        {
+          "alias": [
             "diamond-sparkle.mp3"
           ],
           "src": [
@@ -33,30 +81,6 @@
           ],
           "src": [
             "drop.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Explosion_01.mp3"
-          ],
-          "src": [
-            "Explosion_01.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Explosion_02.mp3"
-          ],
-          "src": [
-            "Explosion_02.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Explosion_03.mp3"
-          ],
-          "src": [
-            "Explosion_03.mp3"
           ]
         },
         {
@@ -97,14 +121,6 @@
           ],
           "src": [
             "footstep_wood_004.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "From-Here-on-In-Everet-Almond.mp3"
-          ],
-          "src": [
-            "From-Here-on-In-Everet-Almond.mp3"
           ]
         },
         {
@@ -285,26 +301,10 @@
         },
         {
           "alias": [
-            "Tap.wav"
-          ],
-          "src": [
-            "Tap.mp3"
-          ]
-        },
-        {
-          "alias": [
             "tapped.wav"
           ],
           "src": [
             "tapped.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Whoosh.wav"
-          ],
-          "src": [
-            "Whoosh.mp3"
           ]
         }
       ]

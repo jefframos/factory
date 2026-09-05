@@ -5,18 +5,10 @@
       "assets": [
         {
           "alias": [
-            "Applause Cheering.mp3"
+            "Applause-Cheering.mp3"
           ],
           "src": [
-            "Applause Cheering.webm"
-          ]
-        },
-        {
-          "alias": [
-            "brittle-rille.mp3"
-          ],
-          "src": [
-            "brittle-rille.webm"
+            "Applause-Cheering.mp3"
           ]
         },
         {
@@ -24,7 +16,7 @@
             "Bubbles.wav"
           ],
           "src": [
-            "Bubbles.webm"
+            "Bubbles.mp3"
           ]
         },
         {
@@ -32,7 +24,7 @@
             "Coin1.wav"
           ],
           "src": [
-            "Coin1.webm"
+            "Coin1.mp3"
           ]
         },
         {
@@ -40,7 +32,7 @@
             "Coin2.mp3"
           ],
           "src": [
-            "Coin2.webm"
+            "Coin2.mp3"
           ]
         },
         {
@@ -48,15 +40,7 @@
             "Hover.wav"
           ],
           "src": [
-            "Hover.webm"
-          ]
-        },
-        {
-          "alias": [
-            "peace-be-with-you.mp3"
-          ],
-          "src": [
-            "peace-be-with-you.webm"
+            "Hover.mp3"
           ]
         },
         {
@@ -64,15 +48,15 @@
             "Pitched-Tapping-Glass.wav"
           ],
           "src": [
-            "Pitched-Tapping-Glass.webm"
+            "Pitched-Tapping-Glass.mp3"
           ]
         },
         {
           "alias": [
-            "Positive Open.wav"
+            "Positive-Open.wav"
           ],
           "src": [
-            "Positive Open.webm"
+            "Positive-Open.mp3"
           ]
         },
         {
@@ -80,7 +64,7 @@
             "ScoreUpdate.mp3"
           ],
           "src": [
-            "ScoreUpdate.webm"
+            "ScoreUpdate.mp3"
           ]
         },
         {
@@ -88,7 +72,7 @@
             "Synth-Appear-01.m4a"
           ],
           "src": [
-            "Synth-Appear-01.webm"
+            "Synth-Appear-01.mp3"
           ]
         },
         {
@@ -96,7 +80,7 @@
             "Synth-Whoosh-Small-01.m4a"
           ],
           "src": [
-            "Synth-Whoosh-Small-01.webm"
+            "Synth-Whoosh-Small-01.mp3"
           ]
         },
         {
@@ -104,7 +88,7 @@
             "Tap.wav"
           ],
           "src": [
-            "Tap.webm"
+            "Tap.mp3"
           ]
         },
         {
@@ -112,7 +96,23 @@
             "Whoosh.wav"
           ],
           "src": [
-            "Whoosh.webm"
+            "Whoosh.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "brittle-rille.mp3"
+          ],
+          "src": [
+            "brittle-rille.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "peace-be-with-you.mp3"
+          ],
+          "src": [
+            "peace-be-with-you.mp3"
           ]
         }
       ]

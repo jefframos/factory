@@ -3,6 +3,7 @@ import { pixiManifest } from '@assetpack/core/manifest';
 import dotenv from 'dotenv';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { ensureFolderExists } from '../folderUtils/folderUtils.mjs';
 import font from '../pack/font.mjs';
 
 dotenv.config();
@@ -21,6 +22,8 @@ const __dirname = dirname(__filename);
 const rawFonts = resolve(__dirname, `../../games/${GAME}/raw-assets/fonts`);
 const outputFonts = resolve(__dirname, `../../public/${GAME}/fonts`);
 const outputManifest = resolve(__dirname, `../../games/${GAME}/manifests`);
+
+ensureFolderExists(rawFonts);
 
 const pack = new AssetPack({
     entry: rawFonts,

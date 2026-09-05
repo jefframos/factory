@@ -5,34 +5,34 @@
       "assets": [
         {
           "alias": [
-            "Applause Cheering.mp3"
+            "Applause-Cheering.mp3"
           ],
           "src": [
-            "Applause Cheering.webm"
+            "Applause-Cheering.mp3"
           ]
         },
         {
           "alias": [
-            "Bonus Fly Anim.wav"
+            "Bonus-Fly-Anim.wav"
           ],
           "src": [
-            "Bonus Fly Anim.webm"
+            "Bonus-Fly-Anim.mp3"
           ]
         },
         {
           "alias": [
-            "Bonus Highlights.wav"
+            "Bonus-Highlights.wav"
           ],
           "src": [
-            "Bonus Highlights.webm"
+            "Bonus-Highlights.mp3"
           ]
         },
         {
           "alias": [
-            "Bonus Screen Popup.wav"
+            "Bonus-Screen-Popup.wav"
           ],
           "src": [
-            "Bonus Screen Popup.webm"
+            "Bonus-Screen-Popup.mp3"
           ]
         },
         {
@@ -40,23 +40,23 @@
             "Bubbles.wav"
           ],
           "src": [
-            "Bubbles.webm"
+            "Bubbles.mp3"
           ]
         },
         {
           "alias": [
-            "Chest Appear.wav"
+            "Chest-Appear.wav"
           ],
           "src": [
-            "Chest Appear.webm"
+            "Chest-Appear.mp3"
           ]
         },
         {
           "alias": [
-            "Chest Open.wav"
+            "Chest-Open.wav"
           ],
           "src": [
-            "Chest Open.webm"
+            "Chest-Open.mp3"
           ]
         },
         {
@@ -64,7 +64,7 @@
             "Claim.wav"
           ],
           "src": [
-            "Claim.webm"
+            "Claim.mp3"
           ]
         },
         {
@@ -72,7 +72,7 @@
             "Coin1.wav"
           ],
           "src": [
-            "Coin1.webm"
+            "Coin1.mp3"
           ]
         },
         {
@@ -80,71 +80,23 @@
             "Coin2.mp3"
           ],
           "src": [
-            "Coin2.webm"
+            "Coin2.mp3"
           ]
         },
         {
           "alias": [
-            "diamond-sparkle.mp3"
+            "Doppler-Whoosh-10.mp4"
           ],
           "src": [
-            "diamond-sparkle.webm"
+            "Doppler-Whoosh-10.mp3"
           ]
         },
         {
           "alias": [
-            "Doppler Whoosh 10.mp4"
+            "Doppler-Whoosh-13.mp4"
           ],
           "src": [
-            "Doppler Whoosh 10.webm"
-          ]
-        },
-        {
-          "alias": [
-            "Doppler Whoosh 13.mp4"
-          ],
-          "src": [
-            "Doppler Whoosh 13.webm"
-          ]
-        },
-        {
-          "alias": [
-            "drop.wav"
-          ],
-          "src": [
-            "drop.webm"
-          ]
-        },
-        {
-          "alias": [
-            "grab (1).wav"
-          ],
-          "src": [
-            "grab (1).webm"
-          ]
-        },
-        {
-          "alias": [
-            "grab (2).wav"
-          ],
-          "src": [
-            "grab (2).webm"
-          ]
-        },
-        {
-          "alias": [
-            "grab (3).wav"
-          ],
-          "src": [
-            "grab (3).webm"
-          ]
-        },
-        {
-          "alias": [
-            "grab (4).wav"
-          ],
-          "src": [
-            "grab (4).webm"
+            "Doppler-Whoosh-13.mp3"
           ]
         },
         {
@@ -152,47 +104,7 @@
             "Hover.wav"
           ],
           "src": [
-            "Hover.webm"
-          ]
-        },
-        {
-          "alias": [
-            "hpp-increase20.wav"
-          ],
-          "src": [
-            "hpp-increase20.webm"
-          ]
-        },
-        {
-          "alias": [
-            "hpp-yay1.wav"
-          ],
-          "src": [
-            "hpp-yay1.webm"
-          ]
-        },
-        {
-          "alias": [
-            "hpp-yay2.wav"
-          ],
-          "src": [
-            "hpp-yay2.webm"
-          ]
-        },
-        {
-          "alias": [
-            "hpp-yay3.wav"
-          ],
-          "src": [
-            "hpp-yay3.webm"
-          ]
-        },
-        {
-          "alias": [
-            "hpp-yay4.wav"
-          ],
-          "src": [
-            "hpp-yay4.webm"
+            "Hover.mp3"
           ]
         },
         {
@@ -200,7 +112,7 @@
             "Pitched-Tapping-Glass.wav"
           ],
           "src": [
-            "Pitched-Tapping-Glass.webm"
+            "Pitched-Tapping-Glass.mp3"
           ]
         },
         {
@@ -208,15 +120,15 @@
             "PopupOpen.wav"
           ],
           "src": [
-            "PopupOpen.webm"
+            "PopupOpen.mp3"
           ]
         },
         {
           "alias": [
-            "Positive Open.wav"
+            "Positive-Open.wav"
           ],
           "src": [
-            "Positive Open.webm"
+            "Positive-Open.mp3"
           ]
         },
         {
@@ -224,15 +136,7 @@
             "ScoreUpdate.mp3"
           ],
           "src": [
-            "ScoreUpdate.webm"
-          ]
-        },
-        {
-          "alias": [
-            "soundtrack/longnight.mp3"
-          ],
-          "src": [
-            "soundtrack/longnight.webm"
+            "ScoreUpdate.mp3"
           ]
         },
         {
@@ -240,7 +144,7 @@
             "Synth-Appear-01.m4a"
           ],
           "src": [
-            "Synth-Appear-01.webm"
+            "Synth-Appear-01.mp3"
           ]
         },
         {
@@ -248,7 +152,7 @@
             "Synth-Whoosh-Small-01.m4a"
           ],
           "src": [
-            "Synth-Whoosh-Small-01.webm"
+            "Synth-Whoosh-Small-01.mp3"
           ]
         },
         {
@@ -256,7 +160,7 @@
             "Tap.wav"
           ],
           "src": [
-            "Tap.webm"
+            "Tap.mp3"
           ]
         },
         {
@@ -264,7 +168,103 @@
             "Whoosh.wav"
           ],
           "src": [
-            "Whoosh.webm"
+            "Whoosh.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "diamond-sparkle.mp3"
+          ],
+          "src": [
+            "diamond-sparkle.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "drop.wav"
+          ],
+          "src": [
+            "drop.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "grab-1.wav"
+          ],
+          "src": [
+            "grab-1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "grab-2.wav"
+          ],
+          "src": [
+            "grab-2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "grab-3.wav"
+          ],
+          "src": [
+            "grab-3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "grab-4.wav"
+          ],
+          "src": [
+            "grab-4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-increase20.wav"
+          ],
+          "src": [
+            "hpp-increase20.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay1.wav"
+          ],
+          "src": [
+            "hpp-yay1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay2.wav"
+          ],
+          "src": [
+            "hpp-yay2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay3.wav"
+          ],
+          "src": [
+            "hpp-yay3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay4.wav"
+          ],
+          "src": [
+            "hpp-yay4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "soundtrack/longnight.mp3"
+          ],
+          "src": [
+            "soundtrack/longnight.mp3"
           ]
         }
       ]

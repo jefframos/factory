@@ -8,98 +8,98 @@ export interface ModelDefinition {
   readonly nodes: Record<string, string>;
 }
 
-const CharacterMedium = {
-  id: 'characterMedium',
-  path: 'characters/default/characterMedium',
-  fullPath: 'pizza/models/characters/default/characterMedium.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const FallingIdle = {
+const CharactersFallingIdle = {
   id: 'FallingIdle',
   path: 'characters/default/FallingIdle',
-  fullPath: 'pizza/models/characters/default/FallingIdle.fbx',
+  fullPath: 'pizza copy/models/characters/default/FallingIdle.fbx',
   format: 'fbx',
   nodes: {}
 } as const;
 
-const Idle = {
-  id: 'idle',
-  path: 'characters/default/idle',
-  fullPath: 'pizza/models/characters/default/idle.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const Idle2 = {
-  id: 'idle2',
-  path: 'characters/default/idle2',
-  fullPath: 'pizza/models/characters/default/idle2.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const Jump = {
-  id: 'jump',
-  path: 'characters/default/jump',
-  fullPath: 'pizza/models/characters/default/jump.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const JumpingUp = {
+const CharactersJumpingUp = {
   id: 'JumpingUp',
   path: 'characters/default/JumpingUp',
-  fullPath: 'pizza/models/characters/default/JumpingUp.fbx',
+  fullPath: 'pizza copy/models/characters/default/JumpingUp.fbx',
   format: 'fbx',
   nodes: {}
 } as const;
 
-const Landing = {
+const CharactersLanding = {
   id: 'Landing',
   path: 'characters/default/Landing',
-  fullPath: 'pizza/models/characters/default/Landing.fbx',
+  fullPath: 'pizza copy/models/characters/default/Landing.fbx',
   format: 'fbx',
   nodes: {}
 } as const;
 
-const Roll = {
+const CharactersRoll = {
   id: 'Roll',
   path: 'characters/default/Roll',
-  fullPath: 'pizza/models/characters/default/Roll.fbx',
+  fullPath: 'pizza copy/models/characters/default/Roll.fbx',
   format: 'fbx',
   nodes: {}
 } as const;
 
-const Run = {
-  id: 'run',
-  path: 'characters/default/run',
-  fullPath: 'pizza/models/characters/default/run.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const Running = {
+const CharactersRunning = {
   id: 'Running',
   path: 'characters/default/Running',
-  fullPath: 'pizza/models/characters/default/Running.fbx',
+  fullPath: 'pizza copy/models/characters/default/Running.fbx',
   format: 'fbx',
   nodes: {}
 } as const;
 
-const StandToRoll = {
+const CharactersStandToRoll = {
   id: 'Stand To Roll',
   path: 'characters/default/Stand To Roll',
-  fullPath: 'pizza/models/characters/default/Stand To Roll.fbx',
+  fullPath: 'pizza copy/models/characters/default/Stand To Roll.fbx',
   format: 'fbx',
   nodes: {}
 } as const;
 
-const TestIdle = {
+const CharactersCharacterMedium = {
+  id: 'characterMedium',
+  path: 'characters/default/characterMedium',
+  fullPath: 'pizza copy/models/characters/default/characterMedium.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
+const CharactersIdle = {
+  id: 'idle',
+  path: 'characters/default/idle',
+  fullPath: 'pizza copy/models/characters/default/idle.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
+const CharactersIdle2 = {
+  id: 'idle2',
+  path: 'characters/default/idle2',
+  fullPath: 'pizza copy/models/characters/default/idle2.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
+const CharactersJump = {
+  id: 'jump',
+  path: 'characters/default/jump',
+  fullPath: 'pizza copy/models/characters/default/jump.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
+const CharactersRun = {
+  id: 'run',
+  path: 'characters/default/run',
+  fullPath: 'pizza copy/models/characters/default/run.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
+const CharactersTestIdle = {
   id: 'test_idle',
   path: 'characters/default/test_idle',
-  fullPath: 'pizza/models/characters/default/test_idle.glb',
+  fullPath: 'pizza copy/models/characters/default/test_idle.glb',
   format: 'glb',
   nodes: {
   "Root": "Root",
@@ -164,20 +164,25 @@ const TestIdle = {
 }
 } as const;
 
+// Grouped by top-level raw-assets/models folder (the '{...}' tag stripped) — e.g.
+// raw-assets/models/characters{m}/... becomes MODELS.Characters.<name>. Files with no
+// containing folder land in MODELS.Root.
 export const MODELS = {
-  CharacterMedium,
-  FallingIdle,
-  Idle,
-  Idle2,
-  Jump,
-  JumpingUp,
-  Landing,
-  Roll,
-  Run,
-  Running,
-  StandToRoll,
-  TestIdle
+  Characters: {
+    FallingIdle: CharactersFallingIdle,
+    JumpingUp: CharactersJumpingUp,
+    Landing: CharactersLanding,
+    Roll: CharactersRoll,
+    Running: CharactersRunning,
+    StandToRoll: CharactersStandToRoll,
+    CharacterMedium: CharactersCharacterMedium,
+    Idle: CharactersIdle,
+    Idle2: CharactersIdle2,
+    Jump: CharactersJump,
+    Run: CharactersRun,
+    TestIdle: CharactersTestIdle
+  }
 } as const;
 
-export type ModelKey = keyof typeof MODELS;
+export type ModelGroup = keyof typeof MODELS;
 export default MODELS;
