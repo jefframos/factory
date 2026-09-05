@@ -1,8 +1,16 @@
-import crypto from 'crypto';
 import { execSync } from 'child_process';
 import fs from 'fs';
-import { dirname, relative, resolve } from 'path';
+import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import {
+    defaultPlatformFor,
+    hashGame,
+    loadRegistry,
+    promoteToCache,
+    readMeta,
+    writeIndexPage,
+    writeMeta,
+} from './cache-lib.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -15,87 +23,14 @@ const envPath = resolve(projectRoot, '.env');
 const force = process.argv.includes('--force');
 
 /**
- * Recursively collects all files under a directory, returned as paths
- * relative to `projectRoot` (stable across machines), sorted.
- * @param {string} dir Absolute path
- * @returns {string[]}
- */
-function collectFiles(dir) {
-    if (!fs.existsSync(dir)) return [];
-    const out = [];
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = resolve(dir, entry.name);
-        if (entry.isDirectory()) {
-            out.push(...collectFiles(full));
-        } else if (entry.isFile()) {
-            out.push(full);
-        }
-    }
-    return out.sort();
-}
-
-/**
- * Hashes a game's own source (games/<name>, including its raw-assets) so we
- * can tell whether it changed since the last cached build. public/<name> is
- * intentionally NOT hashed: it's a derived artifact that `npm run all`
- * regenerates from raw-assets on every rebuild, and it gets deleted for
- * every OTHER game each time `npm run all` runs, so it isn't a stable input.
- * core/ is also excluded — a shared-engine edit does not invalidate a game's
- * cache under this script.
- * @param {string} game
- */
-function hashGame(game) {
-    const hash = crypto.createHash('sha256');
-    for (const file of collectFiles(resolve(projectRoot, 'games', game))) {
-        hash.update(relative(projectRoot, file));
-        hash.update(fs.readFileSync(file));
-    }
-    return hash.digest('hex');
-}
-
-function loadRegistry() {
-    if (!fs.existsSync(registryPath)) return [];
-    try {
-        return JSON.parse(fs.readFileSync(registryPath, 'utf-8'));
-    } catch {
-        return [];
-    }
-}
-
-function readMeta(game) {
-    const metaPath = resolve(cachedBuildsRoot, game, '.cache-meta.json');
-    if (!fs.existsSync(metaPath)) return null;
-    try {
-        return JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
-    } catch {
-        return null;
-    }
-}
-
-function writeMeta(game, hash, platform) {
-    const metaPath = resolve(cachedBuildsRoot, game, '.cache-meta.json');
-    fs.writeFileSync(
-        metaPath,
-        JSON.stringify({ hash, platform, builtAt: new Date().toISOString() }, null, 4) + '\n'
-    );
-}
-
-// Mirrors vite.config.ts's own fallback: merge1 has no generic "default"
-// platform entry and only ships on YouTube Playables, so a plain `npm run
-// build` (no VITE_PLATFORM set) lands in dist/_builds_merge1/youtube instead
-// of .../default. Every other game lands in .../default.
-function defaultPlatformFor(game) {
-    return game === 'merge1' ? 'youtube' : 'default';
-}
-
-/**
  * Runs the real pipeline for one game, exactly as you'd run it by hand:
  * `npm run all --<game>` (switches .env's GAME, deletes every other game's
- * public/<name> folder, repacks assets) then `npm run build` (the normal
- * single-platform build). Only once that succeeds do we copy the real
- * dist/_builds_<game>/<platform> output into a scratch dir and swap it into
- * the cache dir — so a failing rebuild can't wipe out a previously-good
- * cached build for that game.
+ * public/<name> folder, repacks assets) then `vite build` (the normal
+ * single-platform build — called directly, not via `npm run build`, so this
+ * loop doesn't also trigger the postbuild cache-sync hook per game). Only
+ * once that succeeds do we copy the real dist/_builds_<game>/<platform>
+ * output into the cache — so a failing rebuild can't wipe out a
+ * previously-good cached build for that game.
  * @param {string} game
  */
 function buildGame(game) {
@@ -103,7 +38,7 @@ function buildGame(game) {
     execSync(`npm run all -- "--${game}"`, { stdio: 'inherit', cwd: projectRoot });
 
     console.log(`   - Building "${game}"...`);
-    execSync('npm run build', { stdio: 'inherit', cwd: projectRoot });
+    execSync('npx vite build', { stdio: 'inherit', cwd: projectRoot });
 
     const platform = defaultPlatformFor(game);
     const distDir = resolve(projectRoot, 'dist', `_builds_${game}`, platform);
@@ -111,142 +46,13 @@ function buildGame(game) {
         throw new Error(`Expected build output at ${distDir}, but it doesn't exist.`);
     }
 
-    const finalDir = resolve(cachedBuildsRoot, game);
-    const tmpDir = resolve(cachedBuildsRoot, '.tmp', game);
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-    fs.mkdirSync(dirname(tmpDir), { recursive: true });
-    fs.cpSync(distDir, tmpDir, { recursive: true });
-
-    fs.rmSync(finalDir, { recursive: true, force: true });
-    fs.renameSync(tmpDir, finalDir);
-
+    promoteToCache(cachedBuildsRoot, game, distDir);
     return platform;
-}
-
-// Deterministic hue from the game's name, so a given game always gets the
-// same tile color across rebuilds instead of a random one each time.
-function hueForGame(name) {
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return Math.abs(hash) % 360;
-}
-
-function displayName(game) {
-    return game.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function writeIndexPage(games) {
-    const playable = games.filter((game) => fs.existsSync(resolve(cachedBuildsRoot, game, 'index.html')));
-
-    const cards = playable
-        .map((game) => {
-            const hue = hueForGame(game);
-            const gradient = `linear-gradient(155deg, hsl(${hue}, 70%, 58%), hsl(${(hue + 40) % 360}, 75%, 42%))`;
-            return `        <a class="card" href="./${game}/index.html">
-            <div class="tile" style="background:${gradient}">
-                <span class="icon">🎮</span>
-            </div>
-            <div class="label">${displayName(game)}</div>
-        </a>`;
-        })
-        .join('\n');
-
-    const html = `<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Game Builds</title>
-    <style>
-        :root { color-scheme: dark; }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: #0e0e16;
-            color: #f2f2f7;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            padding: 48px 24px 64px;
-        }
-        header {
-            max-width: 1200px;
-            margin: 0 auto 36px;
-        }
-        h1 {
-            margin: 0 0 6px;
-            font-size: 32px;
-            letter-spacing: -0.02em;
-        }
-        p.subtitle {
-            margin: 0;
-            color: #9a9aab;
-            font-size: 15px;
-        }
-        .grid {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 20px;
-        }
-        .card {
-            display: block;
-            text-decoration: none;
-            color: inherit;
-            border-radius: 16px;
-            overflow: hidden;
-            background: #1a1a26;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-        .card:hover {
-            transform: translateY(-4px) scale(1.03);
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
-        }
-        .tile {
-            aspect-ratio: 1 / 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .icon {
-            font-size: 42px;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
-        }
-        .label {
-            padding: 10px 12px;
-            font-size: 14px;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .empty {
-            max-width: 1200px;
-            margin: 0 auto;
-            color: #9a9aab;
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>🎮 Game Builds</h1>
-        <p class="subtitle">${playable.length} game${playable.length === 1 ? '' : 's'} · last updated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC</p>
-    </header>
-    <div class="grid">
-${cards || '        <p class="empty">No cached builds yet.</p>'}
-    </div>
-</body>
-</html>
-`;
-    fs.writeFileSync(resolve(cachedBuildsRoot, 'index.html'), html);
 }
 
 function run() {
     fs.mkdirSync(cachedBuildsRoot, { recursive: true });
-    const registry = loadRegistry();
+    const registry = loadRegistry(registryPath);
 
     if (registry.length === 0) {
         console.log(
@@ -273,14 +79,14 @@ function run() {
                 continue;
             }
 
-            const currentHash = hashGame(game);
-            const previousMeta = readMeta(game);
+            const currentHash = hashGame(projectRoot, game);
+            const previousMeta = readMeta(cachedBuildsRoot, game);
             const needsBuild = force || !previousMeta || previousMeta.hash !== currentHash;
 
             if (needsBuild) {
                 try {
                     const platform = buildGame(game);
-                    writeMeta(game, currentHash, platform);
+                    writeMeta(cachedBuildsRoot, game, currentHash, platform);
                     console.log(`✅ Rebuilt "${game}"`);
                     rebuilt++;
                 } catch (err) {
@@ -301,7 +107,7 @@ function run() {
         }
     }
 
-    writeIndexPage(registry);
+    writeIndexPage(cachedBuildsRoot, registry);
     console.log(`\n✨ Done. Rebuilt ${rebuilt}, reused ${skipped}, failed ${failedGames.length}.`);
     if (failedGames.length > 0) {
         console.log(`   Failed: ${failedGames.join(', ')}`);

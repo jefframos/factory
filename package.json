@@ -6,6 +6,7 @@
         "start": "vite",
         "editor": "node tools/editor/run-editor.mjs",
         "build": "vite build",
+        "postbuild": "node tools/build/sync-cached-build.mjs",
         "build-all": "node tools/build/build-platforms.mjs",
         "build:cached": "node tools/build/build-cached.mjs",
         "assets": "cross-env node tools/build-assets.mjs && npm run build:json",
