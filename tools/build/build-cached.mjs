@@ -80,6 +80,29 @@ function writeMeta(game, hash) {
 }
 
 /**
+ * vite.config.ts's publicDir points at the whole public/ root (not scoped
+ * per game), so a `vite build` for any game copies every other game's
+ * public/<name> folder into its output too. Strips those foreign folders
+ * out of the cached build so e.g. building "clog" doesn't carry a copy of
+ * public/pizza. Never touches vite.config.ts, so dist/build-all are
+ * unaffected.
+ * @param {string} game
+ * @param {string} outDir
+ */
+function stripForeignPublicDirs(game, outDir) {
+    const publicRoot = resolve(projectRoot, 'public');
+    if (!fs.existsSync(publicRoot)) return;
+
+    for (const entry of fs.readdirSync(publicRoot, { withFileTypes: true })) {
+        if (entry.name === game) continue;
+        const foreign = resolve(outDir, entry.name);
+        if (fs.existsSync(foreign)) {
+            fs.rmSync(foreign, { recursive: true, force: true });
+        }
+    }
+}
+
+/**
  * Builds into a scratch dir and only swaps it into the real cache dir on
  * success, so a failing rebuild can't wipe out a previously-good cached
  * build for that game (vite's --emptyOutDir clears the target up front).
@@ -96,6 +119,8 @@ function buildGame(game) {
         cwd: projectRoot,
         env: { ...process.env, GAME: game, VITE_PLATFORM: 'default' },
     });
+
+    stripForeignPublicDirs(game, tmpDir);
 
     fs.rmSync(finalDir, { recursive: true, force: true });
     fs.renameSync(tmpDir, finalDir);
