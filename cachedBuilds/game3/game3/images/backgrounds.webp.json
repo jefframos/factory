@@ -480,126 +480,6 @@
         "h": 770
       }
     },
-    "rocks0006": {
-      "frame": {
-        "x": 95,
-        "y": 180,
-        "w": 69,
-        "h": 47
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 7,
-        "y": 0,
-        "w": 69,
-        "h": 47
-      },
-      "sourceSize": {
-        "w": 83,
-        "h": 47
-      }
-    },
-    "rocks0005": {
-      "frame": {
-        "x": 166,
-        "y": 180,
-        "w": 39,
-        "h": 30
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 22,
-        "y": 13,
-        "w": 39,
-        "h": 30
-      },
-      "sourceSize": {
-        "w": 83,
-        "h": 47
-      }
-    },
-    "rocks0004": {
-      "frame": {
-        "x": 166,
-        "y": 221,
-        "w": 44,
-        "h": 31
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 21,
-        "y": 14,
-        "w": 44,
-        "h": 31
-      },
-      "sourceSize": {
-        "w": 83,
-        "h": 47
-      }
-    },
-    "rocks0003": {
-      "frame": {
-        "x": 94,
-        "y": 98,
-        "w": 49,
-        "h": 29
-      },
-      "rotated": true,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 18,
-        "y": 15,
-        "w": 49,
-        "h": 29
-      },
-      "sourceSize": {
-        "w": 83,
-        "h": 47
-      }
-    },
-    "rocks0002": {
-      "frame": {
-        "x": 79,
-        "y": 257,
-        "w": 83,
-        "h": 44
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 3,
-        "w": 83,
-        "h": 44
-      },
-      "sourceSize": {
-        "w": 83,
-        "h": 47
-      }
-    },
-    "rocks0001": {
-      "frame": {
-        "x": 94,
-        "y": 149,
-        "w": 32,
-        "h": 23
-      },
-      "rotated": false,
-      "trimmed": true,
-      "spriteSourceSize": {
-        "x": 23,
-        "y": 20,
-        "w": 32,
-        "h": 23
-      },
-      "sourceSize": {
-        "w": 83,
-        "h": 47
-      }
-    },
     "desert_tree-2": {
       "frame": {
         "x": 2,
@@ -623,7 +503,7 @@
     "desert_tree-1": {
       "frame": {
         "x": 2,
-        "y": 303,
+        "y": 272,
         "w": 146,
         "h": 249
       },
@@ -642,8 +522,8 @@
     },
     "desert_bush04": {
       "frame": {
-        "x": 2,
-        "y": 554,
+        "x": 95,
+        "y": 180,
         "w": 81,
         "h": 67
       },
@@ -663,7 +543,7 @@
     "desert_bush03": {
       "frame": {
         "x": 2,
-        "y": 637,
+        "y": 523,
         "w": 63,
         "h": 63
       },
@@ -683,7 +563,7 @@
     "desert_bush02": {
       "frame": {
         "x": 150,
-        "y": 303,
+        "y": 263,
         "w": 58,
         "h": 41
       },
@@ -703,11 +583,11 @@
     "desert_bush01": {
       "frame": {
         "x": 67,
-        "y": 637,
+        "y": 523,
         "w": 83,
         "h": 56
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 0,
@@ -722,12 +602,12 @@
     },
     "cactus0002": {
       "frame": {
-        "x": 125,
-        "y": 554,
+        "x": 67,
+        "y": 581,
         "w": 61,
         "h": 109
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
@@ -742,8 +622,8 @@
     },
     "cactus0001": {
       "frame": {
-        "x": 361,
-        "y": 738,
+        "x": 2,
+        "y": 644,
         "w": 74,
         "h": 88
       },
@@ -758,6 +638,126 @@
       "sourceSize": {
         "w": 74,
         "h": 89
+      }
+    },
+    "rocks0006": {
+      "frame": {
+        "x": 150,
+        "y": 323,
+        "w": 69,
+        "h": 47
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 7,
+        "y": 0,
+        "w": 69,
+        "h": 47
+      },
+      "sourceSize": {
+        "w": 83,
+        "h": 47
+      }
+    },
+    "rocks0005": {
+      "frame": {
+        "x": 94,
+        "y": 98,
+        "w": 39,
+        "h": 30
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 22,
+        "y": 13,
+        "w": 39,
+        "h": 30
+      },
+      "sourceSize": {
+        "w": 83,
+        "h": 47
+      }
+    },
+    "rocks0004": {
+      "frame": {
+        "x": 152,
+        "y": 394,
+        "w": 44,
+        "h": 31
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 21,
+        "y": 14,
+        "w": 44,
+        "h": 31
+      },
+      "sourceSize": {
+        "w": 83,
+        "h": 47
+      }
+    },
+    "rocks0003": {
+      "frame": {
+        "x": 164,
+        "y": 180,
+        "w": 49,
+        "h": 29
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 18,
+        "y": 15,
+        "w": 49,
+        "h": 29
+      },
+      "sourceSize": {
+        "w": 83,
+        "h": 47
+      }
+    },
+    "rocks0002": {
+      "frame": {
+        "x": 152,
+        "y": 427,
+        "w": 83,
+        "h": 44
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 3,
+        "w": 83,
+        "h": 44
+      },
+      "sourceSize": {
+        "w": 83,
+        "h": 47
+      }
+    },
+    "rocks0001": {
+      "frame": {
+        "x": 94,
+        "y": 139,
+        "w": 32,
+        "h": 23
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 23,
+        "y": 20,
+        "w": 32,
+        "h": 23
+      },
+      "sourceSize": {
+        "w": 83,
+        "h": 47
       }
     }
   },
