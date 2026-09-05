@@ -1,11 +1,12 @@
-name: Build & Publish Cached Games
+name: Publish Cached Games
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'cachedBuilds/**'
 
 permissions:
-  contents: write
   pages: write
   id-token: write
 
@@ -14,40 +15,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - run: npm ci
-
-      - name: Build changed games, reuse cache for the rest
-        run: npm run build:cached
-
-      - name: Commit updated cachedBuilds
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add cachedBuilds
-          git diff --cached --quiet || git commit -m "chore: update cached builds [skip ci]"
-          git push
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: cachedBuilds
-
   deploy:
-    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: cachedBuilds
+
       - id: deployment
         uses: actions/deploy-pages@v4
