@@ -7,6 +7,7 @@
         "editor": "node tools/editor/run-editor.mjs",
         "build": "vite build",
         "build-all": "node tools/build/build-platforms.mjs",
+        "build:cached": "node tools/build/build-cached.mjs",
         "assets": "cross-env node tools/build-assets.mjs && npm run build:json",
         "json": "node tools/json/build-json.mjs",
         "zip": "ts-node scripts/zip-game.ts",

@@ -15,6 +15,32 @@ if (!GAME) {
     throw new Error('Please specify the GAME environment variable in your .env file (GAME=game1)');
 }
 
+// Rescans games/ into cachedBuilds/registry.json every time the dev server
+// starts, so a newly added folder is picked up on the next `npm start` for
+// any game, not just its own. Only the cached-build script
+// (tools/build/build-cached.mjs) reads this list; `apply: 'serve'` means this
+// never runs during `vite build`, so build/build-all behavior is untouched.
+function syncGameRegistry(): Plugin {
+    return {
+        name: 'sync-game-registry',
+        apply: 'serve',
+        configResolved() {
+            const gamesRoot = resolve(__dirname, 'games');
+            const registryPath = resolve(__dirname, 'cachedBuilds/registry.json');
+            fs.mkdirSync(resolve(__dirname, 'cachedBuilds'), { recursive: true });
+
+            const games = fs
+                .readdirSync(gamesRoot, { withFileTypes: true })
+                .filter((entry) => entry.isDirectory())
+                .map((entry) => entry.name)
+                .sort();
+
+            fs.writeFileSync(registryPath, JSON.stringify(games, null, 4) + '\n');
+            console.log(`📋 Synced ${games.length} game folder(s) for cached builds.`);
+        },
+    };
+}
+
 // Some platforms require an SDK script (e.g. YouTube Playables' game_api
 // script) to load before the game bundle. platforms.config.json can declare
 // this per-platform as "apiScript": "<url>"; this plugin injects it as the
@@ -41,7 +67,7 @@ export default defineConfig({
     root: `games/${GAME}`,
     base: './',
     publicDir: resolve(__dirname, 'public'),
-    plugins: [injectPlatformApiScript(resolve(__dirname, `games/${GAME}`), PLATFORM)],
+    plugins: [injectPlatformApiScript(resolve(__dirname, `games/${GAME}`), PLATFORM), syncGameRegistry()],
     resolve: {
         alias: {
             'core': resolve(__dirname, 'core'),

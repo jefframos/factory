@@ -15,6 +15,7 @@ dist-ssr
 .assetpack/
 public/assets/
 dist/
+cachedBuilds/.tmp/
 
 # Editor directories and files
 .vscode/*

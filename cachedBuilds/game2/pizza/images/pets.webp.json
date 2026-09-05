@@ -1,0 +1,496 @@
+{
+  "frames": {
+    "pizza-model-snapshots_Pets-AnimalTiger": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 92,
+        "h": 139
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 9,
+        "y": 11,
+        "w": 92,
+        "h": 139
+      },
+      "sourceSize": {
+        "w": 115,
+        "h": 165
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalPolar": {
+      "frame": {
+        "x": 96,
+        "y": 2,
+        "w": 88,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 9,
+        "y": 15,
+        "w": 88,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 102,
+        "h": 140
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalPig": {
+      "frame": {
+        "x": 96,
+        "y": 112,
+        "w": 88,
+        "h": 107
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 8,
+        "y": 20,
+        "w": 88,
+        "h": 107
+      },
+      "sourceSize": {
+        "w": 101,
+        "h": 143
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalPenguin": {
+      "frame": {
+        "x": 186,
+        "y": 2,
+        "w": 138,
+        "h": 100
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 9,
+        "y": 24,
+        "w": 138,
+        "h": 100
+      },
+      "sourceSize": {
+        "w": 158,
+        "h": 148
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalParrot": {
+      "frame": {
+        "x": 2,
+        "y": 221,
+        "w": 137,
+        "h": 122
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 11,
+        "y": 21,
+        "w": 137,
+        "h": 122
+      },
+      "sourceSize": {
+        "w": 167,
+        "h": 170
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalPanda": {
+      "frame": {
+        "x": 186,
+        "y": 142,
+        "w": 94,
+        "h": 114
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 11,
+        "y": 9,
+        "w": 94,
+        "h": 114
+      },
+      "sourceSize": {
+        "w": 107,
+        "h": 139
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalMonkey": {
+      "frame": {
+        "x": 288,
+        "y": 2,
+        "w": 123,
+        "h": 132
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 11,
+        "y": 14,
+        "w": 123,
+        "h": 132
+      },
+      "sourceSize": {
+        "w": 152,
+        "h": 161
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalLion": {
+      "frame": {
+        "x": 288,
+        "y": 136,
+        "w": 107,
+        "h": 138
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 6,
+        "y": 14,
+        "w": 107,
+        "h": 138
+      },
+      "sourceSize": {
+        "w": 133,
+        "h": 169
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalKoala": {
+      "frame": {
+        "x": 2,
+        "y": 345,
+        "w": 123,
+        "h": 107
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 9,
+        "y": 16,
+        "w": 123,
+        "h": 107
+      },
+      "sourceSize": {
+        "w": 143,
+        "h": 140
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalHog": {
+      "frame": {
+        "x": 127,
+        "y": 345,
+        "w": 92,
+        "h": 110
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 11,
+        "y": 14,
+        "w": 92,
+        "h": 110
+      },
+      "sourceSize": {
+        "w": 108,
+        "h": 142
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalGiraffe": {
+      "frame": {
+        "x": 221,
+        "y": 276,
+        "w": 101,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 5,
+        "y": 28,
+        "w": 101,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 120,
+        "h": 152
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalFox": {
+      "frame": {
+        "x": 413,
+        "y": 2,
+        "w": 89,
+        "h": 125
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 31,
+        "w": 89,
+        "h": 125
+      },
+      "sourceSize": {
+        "w": 116,
+        "h": 175
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalFish": {
+      "frame": {
+        "x": 324,
+        "y": 276,
+        "w": 118,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 12,
+        "y": 19,
+        "w": 118,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 137,
+        "h": 145
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalElephant": {
+      "frame": {
+        "x": 2,
+        "y": 457,
+        "w": 117,
+        "h": 114
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 14,
+        "y": 14,
+        "w": 117,
+        "h": 114
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 147
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalDog": {
+      "frame": {
+        "x": 413,
+        "y": 129,
+        "w": 89,
+        "h": 107
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 9,
+        "y": 20,
+        "w": 89,
+        "h": 107
+      },
+      "sourceSize": {
+        "w": 103,
+        "h": 145
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalDeer": {
+      "frame": {
+        "x": 118,
+        "y": 457,
+        "w": 99,
+        "h": 119
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 8,
+        "y": 32,
+        "w": 99,
+        "h": 119
+      },
+      "sourceSize": {
+        "w": 121,
+        "h": 171
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalCrab": {
+      "frame": {
+        "x": 219,
+        "y": 457,
+        "w": 145,
+        "h": 107
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 8,
+        "y": 17,
+        "w": 145,
+        "h": 107
+      },
+      "sourceSize": {
+        "w": 167,
+        "h": 140
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalCow": {
+      "frame": {
+        "x": 366,
+        "y": 386,
+        "w": 100,
+        "h": 107
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 6,
+        "y": 23,
+        "w": 100,
+        "h": 107
+      },
+      "sourceSize": {
+        "w": 119,
+        "h": 147
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalChick": {
+      "frame": {
+        "x": 504,
+        "y": 2,
+        "w": 136,
+        "h": 100
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 24,
+        "w": 136,
+        "h": 100
+      },
+      "sourceSize": {
+        "w": 158,
+        "h": 148
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalCaterpillar": {
+      "frame": {
+        "x": 504,
+        "y": 140,
+        "w": 94,
+        "h": 107
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 9,
+        "y": 30,
+        "w": 94,
+        "h": 107
+      },
+      "sourceSize": {
+        "w": 111,
+        "h": 150
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalCat": {
+      "frame": {
+        "x": 366,
+        "y": 488,
+        "w": 88,
+        "h": 138
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 6,
+        "y": 11,
+        "w": 88,
+        "h": 138
+      },
+      "sourceSize": {
+        "w": 107,
+        "h": 161
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalBunny": {
+      "frame": {
+        "x": 506,
+        "y": 249,
+        "w": 88,
+        "h": 118
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 6,
+        "y": 33,
+        "w": 88,
+        "h": 118
+      },
+      "sourceSize": {
+        "w": 99,
+        "h": 163
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalBee": {
+      "frame": {
+        "x": 506,
+        "y": 369,
+        "w": 89,
+        "h": 133
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 8,
+        "y": 19,
+        "w": 89,
+        "h": 133
+      },
+      "sourceSize": {
+        "w": 104,
+        "h": 163
+      }
+    },
+    "pizza-model-snapshots_Pets-AnimalBeaver": {
+      "frame": {
+        "x": 2,
+        "y": 578,
+        "w": 88,
+        "h": 126
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 8,
+        "y": 9,
+        "w": 88,
+        "h": 126
+      },
+      "sourceSize": {
+        "w": 108,
+        "h": 150
+      }
+    }
+  },
+  "meta": {
+    "app": "http://github.com/pixijs/assetpack",
+    "version": "1.0",
+    "image": "pets.webp",
+    "format": "RGBA8888",
+    "size": {
+      "w": 606,
+      "h": 668
+    },
+    "scale": 1,
+    "related_multi_packs": []
+  }
+}
