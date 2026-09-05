@@ -320,129 +320,9 @@
         "h": 200
       }
     },
-    "fast_food_6": {
-      "frame": {
-        "x": 204,
-        "y": 608,
-        "w": 200,
-        "h": 200
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 200,
-        "h": 200
-      },
-      "sourceSize": {
-        "w": 200,
-        "h": 200
-      }
-    },
-    "fast_food_5": {
-      "frame": {
-        "x": 406,
-        "y": 608,
-        "w": 200,
-        "h": 200
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 200,
-        "h": 200
-      },
-      "sourceSize": {
-        "w": 200,
-        "h": 200
-      }
-    },
-    "fast_food_4": {
-      "frame": {
-        "x": 608,
-        "y": 608,
-        "w": 200,
-        "h": 200
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 200,
-        "h": 200
-      },
-      "sourceSize": {
-        "w": 200,
-        "h": 200
-      }
-    },
-    "fast_food_3": {
-      "frame": {
-        "x": 982,
-        "y": 2,
-        "w": 200,
-        "h": 200
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 200,
-        "h": 200
-      },
-      "sourceSize": {
-        "w": 200,
-        "h": 200
-      }
-    },
-    "fast_food_2": {
-      "frame": {
-        "x": 810,
-        "y": 204,
-        "w": 200,
-        "h": 200
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 200,
-        "h": 200
-      },
-      "sourceSize": {
-        "w": 200,
-        "h": 200
-      }
-    },
-    "fast_food_1": {
-      "frame": {
-        "x": 810,
-        "y": 406,
-        "w": 200,
-        "h": 200
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 200,
-        "h": 200
-      },
-      "sourceSize": {
-        "w": 200,
-        "h": 200
-      }
-    },
     "fantasy_nature_6": {
       "frame": {
-        "x": 810,
+        "x": 204,
         "y": 608,
         "w": 200,
         "h": 200
@@ -462,6 +342,126 @@
     },
     "fantasy_nature_5": {
       "frame": {
+        "x": 406,
+        "y": 608,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "fantasy_nature_4": {
+      "frame": {
+        "x": 608,
+        "y": 608,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "fantasy_nature_3": {
+      "frame": {
+        "x": 982,
+        "y": 2,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "fantasy_nature_2": {
+      "frame": {
+        "x": 810,
+        "y": 204,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "fantasy_nature_1": {
+      "frame": {
+        "x": 810,
+        "y": 406,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "fast_food_6": {
+      "frame": {
+        "x": 810,
+        "y": 608,
+        "w": 200,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 200,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 200,
+        "h": 200
+      }
+    },
+    "fast_food_5": {
+      "frame": {
         "x": 2,
         "y": 989,
         "w": 200,
@@ -480,7 +480,7 @@
         "h": 200
       }
     },
-    "fantasy_nature_4": {
+    "fast_food_4": {
       "frame": {
         "x": 204,
         "y": 810,
@@ -500,7 +500,7 @@
         "h": 200
       }
     },
-    "fantasy_nature_3": {
+    "fast_food_3": {
       "frame": {
         "x": 406,
         "y": 810,
@@ -520,7 +520,7 @@
         "h": 200
       }
     },
-    "fantasy_nature_2": {
+    "fast_food_2": {
       "frame": {
         "x": 608,
         "y": 810,
@@ -540,7 +540,7 @@
         "h": 200
       }
     },
-    "fantasy_nature_1": {
+    "fast_food_1": {
       "frame": {
         "x": 810,
         "y": 810,
@@ -800,7 +800,7 @@
         "h": 200
       }
     },
-    "cute_food_6": {
+    "cute_animals_6": {
       "frame": {
         "x": 1386,
         "y": 2,
@@ -820,7 +820,7 @@
         "h": 200
       }
     },
-    "cute_food_5": {
+    "cute_animals_5": {
       "frame": {
         "x": 1367,
         "y": 204,
@@ -840,7 +840,7 @@
         "h": 200
       }
     },
-    "cute_food_4": {
+    "cute_animals_4": {
       "frame": {
         "x": 1214,
         "y": 406,
@@ -860,7 +860,7 @@
         "h": 200
       }
     },
-    "cute_food_3": {
+    "cute_animals_3": {
       "frame": {
         "x": 1214,
         "y": 608,
@@ -880,7 +880,7 @@
         "h": 200
       }
     },
-    "cute_food_2": {
+    "cute_animals_2": {
       "frame": {
         "x": 1214,
         "y": 810,
@@ -900,7 +900,7 @@
         "h": 200
       }
     },
-    "cute_food_1": {
+    "cute_animals_1": {
       "frame": {
         "x": 1214,
         "y": 1012,
@@ -920,7 +920,7 @@
         "h": 200
       }
     },
-    "cute_animals_6": {
+    "cute_food_6": {
       "frame": {
         "x": 2,
         "y": 1393,
@@ -940,7 +940,7 @@
         "h": 200
       }
     },
-    "cute_animals_5": {
+    "cute_food_5": {
       "frame": {
         "x": 204,
         "y": 1214,
@@ -960,7 +960,7 @@
         "h": 200
       }
     },
-    "cute_animals_4": {
+    "cute_food_4": {
       "frame": {
         "x": 406,
         "y": 1214,
@@ -980,7 +980,7 @@
         "h": 200
       }
     },
-    "cute_animals_3": {
+    "cute_food_3": {
       "frame": {
         "x": 608,
         "y": 1214,
@@ -1000,7 +1000,7 @@
         "h": 200
       }
     },
-    "cute_animals_2": {
+    "cute_food_2": {
       "frame": {
         "x": 810,
         "y": 1214,
@@ -1020,7 +1020,7 @@
         "h": 200
       }
     },
-    "cute_animals_1": {
+    "cute_food_1": {
       "frame": {
         "x": 1012,
         "y": 1214,
