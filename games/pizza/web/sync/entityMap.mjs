@@ -124,12 +124,14 @@ export const ENTITY_SOURCE_MAP = {
         file: path.join(GAME_DIR, 'shop', 'ShopTypes.ts'),
         exportName: 'SHOP_CONFIG_BY_ID',
         kind: 'partialRecord',
-        managedKeys: ['name', 'tool', 'action', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid'],
+        // The old per-level array (`levels`, with its own listMerge) is gone — a shop's ladder
+        // is now a plain min/max range PER ATTRIBUTE (`attributes`, a ToolAttributeRanges —
+        // see ShopTypes.ts's own doc) plus a level count/cost formula (`totalLevels`,
+        // `baseCost`, `costScale`) and one flat `cooldownSec`. `attributes` has no unmanaged
+        // sibling fields on any of its nested {min,max} objects, so it's a plain wholesale
+        // replace like every other non-list managed key here — no listMerge needed.
+        managedKeys: ['name', 'tool', 'action', 'appearRequirement', 'attributes', 'totalLevels', 'baseCost', 'costScale', 'cooldownSec', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid'],
         optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid'],
-        // Same "levels has an unmanaged sibling field" reasoning as buildings' own listMerge —
-        // ShopUpgradeLevel's `view` (optional) IS managed here alongside the ladder's own
-        // cost/cooldown/hitInterval/hitScale/resourcePerHit fields.
-        listMerge: { levels: ['cost', 'cooldownSec', 'hitIntervalSec', 'hitScale', 'resourcePerHit', 'view'] },
     },
     crafting: {
         file: path.join(GAME_DIR, 'crafting', 'CraftTypes.ts'),

@@ -55,7 +55,7 @@ import FarmSeedPicker from '../world/FarmSeedPicker';
 import FarmCropHud from '../world/FarmCropHud';
 import { getMartConfig } from '../data/MartTypes';
 import { getCraftingTableConfig } from '../data/CraftingTableTypes';
-import { getShopConfig, SHOP_CONFIG_BY_ID } from '../shop/ShopTypes';
+import { getShopConfig, getUpgradeCost, SHOP_CONFIG_BY_ID } from '../shop/ShopTypes';
 import { ShopUpgradeStorage } from '../shop/ShopUpgradeStorage';
 import CraftZone, { CraftTriggerArea } from '../crafting/CraftZone';
 import { getCraftConfig } from '../crafting/CraftTypes';
@@ -661,10 +661,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             DevGuiManager.instance.addButton(
                 `Upgrade ${config.name}`,
                 () => {
-                    const cost = config.levels[ShopUpgradeStorage.getLevel(id)]?.cost;
-                    if (cost === undefined) {
+                    if (ShopUpgradeStorage.isMaxLevel(id, config)) {
                         return;
                     }
+                    const cost = getUpgradeCost(config, ShopUpgradeStorage.getLevel(id));
                     ShopUpgradeStorage.addProgress(id, config, cost);
                     if (ShopUpgradeStorage.tryCompleteUpgrade(id, config)) {
                         UpgradeNotificationManager.instance.show({
@@ -712,9 +712,15 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 get yieldPerHit(): number {
                     return providerConfig.amountPerGather * ACTION_CONFIG[config.action].resourcePerHit;
                 },
+                get hitAngleDeg(): number {
+                    return ACTION_CONFIG[config.action].hitAngleDeg;
+                },
+                get hitRangeMeters(): number {
+                    return ACTION_CONFIG[config.action].hitRangeMeters;
+                },
             };
             const folderName = config.tool.charAt(0).toUpperCase() + config.tool.slice(1);
-            DevGuiManager.instance.addReadout(toolStats, ['hitIntervalSec', 'hitScale', 'yieldPerHit'], config.name, folderName);
+            DevGuiManager.instance.addReadout(toolStats, ['hitIntervalSec', 'hitScale', 'yieldPerHit', 'hitAngleDeg', 'hitRangeMeters'], config.name, folderName);
         }
 
         // Live sliders bound directly to CAMERA_SETTINGS — cameraOffset()/fixedUpdate() read

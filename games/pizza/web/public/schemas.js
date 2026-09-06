@@ -225,16 +225,48 @@ const ENTITY_SCHEMAS = {
         { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement', optional: true },
         { key: 'baseView', type: 'select', label: 'Base View (before any upgrade, optional)', source: 'entityViews', optional: true },
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
+        { key: 'totalLevels', type: 'number', label: 'Total Upgrade Levels (purchases needed to reach max — level N/totalLevels blends every attribute N/totalLevels of the way from Min to Max)' },
+        { key: 'baseCost', type: 'number', label: 'Base Cost (coins for the FIRST upgrade)' },
+        { key: 'costScale', type: 'number', label: 'Cost Scale (each subsequent upgrade costs this many times the previous one — cost = baseCost * costScale ^ levelsAlreadyBought)' },
+        { key: 'cooldownSec', type: 'number', label: 'Cooldown (sec, after buying any level, before the next purchase can start)' },
         {
-            key: 'levels', type: 'list', label: 'Upgrade Levels',
-            itemLabel: (item, i) => `Level ${i + 1} — ${item.cost ?? '?'} coins`,
+            key: 'attributes', type: 'group', label: 'Attribute Ranges (Min = level 0/never upgraded, Max = fully maxed)',
             fields: [
-                { key: 'cost', type: 'number', label: 'Cost' },
-                { key: 'cooldownSec', type: 'number', label: 'Cooldown (sec)' },
-                { key: 'hitIntervalSec', type: 'number', label: 'Hit Interval (sec)', optional: true },
-                { key: 'hitScale', type: 'number', label: 'Hit Scale', optional: true },
-                { key: 'resourcePerHit', type: 'number', label: 'Resource Per Hit', optional: true },
-                { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
+                {
+                    key: 'damage', type: 'group', label: 'Damage (hits one swing counts as)',
+                    fields: [
+                        { key: 'min', type: 'number', label: 'Min' },
+                        { key: 'max', type: 'number', label: 'Max' },
+                    ],
+                },
+                {
+                    key: 'hitAngleDeg', type: 'group', label: 'Hit Angle (deg, full AoE cone aperture)',
+                    fields: [
+                        { key: 'min', type: 'number', label: 'Min' },
+                        { key: 'max', type: 'number', label: 'Max' },
+                    ],
+                },
+                {
+                    key: 'hitRangeMeters', type: 'group', label: 'Hit Range (meters, how far that cone reaches)',
+                    fields: [
+                        { key: 'min', type: 'number', label: 'Min' },
+                        { key: 'max', type: 'number', label: 'Max' },
+                    ],
+                },
+                {
+                    key: 'speed', type: 'group', label: 'Speed (attacks per second)',
+                    fields: [
+                        { key: 'min', type: 'number', label: 'Min' },
+                        { key: 'max', type: 'number', label: 'Max' },
+                    ],
+                },
+                {
+                    key: 'resourcePerHit', type: 'group', label: 'Resource Per Hit (yield banked per hit)',
+                    fields: [
+                        { key: 'min', type: 'number', label: 'Min' },
+                        { key: 'max', type: 'number', label: 'Max' },
+                    ],
+                },
             ],
         },
         ...POPUP_FIELDS,

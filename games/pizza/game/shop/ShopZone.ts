@@ -43,7 +43,7 @@ import { getToolIcon } from '../actions/ToolRegistry';
 import { ShopUpgradeStorage } from './ShopUpgradeStorage';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
-import { getShopConfig, getViewIdForShopLevel, ShopConfig, SHOP_UPGRADE_AVAILABLE_ICON } from './ShopTypes';
+import { getShopConfig, getUpgradeCost, getViewIdForShopLevel, ShopConfig, SHOP_UPGRADE_AVAILABLE_ICON } from './ShopTypes';
 import MainPlayer from '../player/MainPlayer';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 import { resolveEntityView } from '../world/EntityViewRegistry';
@@ -360,7 +360,7 @@ export default class ShopZone extends Entity {
         }
 
         const state = ShopUpgradeStorage.getState(this.shopId);
-        const remaining = 0//this.config.levels[state.level].cost - state.progress;
+        const remaining = getUpgradeCost(this.config, state.level) - state.progress;
         return EconomyStorage.getBalance(CurrencyType.Money) >= remaining;
     }
 
@@ -392,7 +392,7 @@ export default class ShopZone extends Entity {
             bodyHeight = cooldownText.height;
         } else {
             const state = ShopUpgradeStorage.getState(this.shopId);
-            const cost = this.config.levels[state.level].cost;
+            const cost = getUpgradeCost(this.config, state.level);
 
             const row = new PIXI.Container();
             const icon = new PIXI.Sprite(getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey));
@@ -484,7 +484,7 @@ export default class ShopZone extends Entity {
                 }
                 ShopUpgradeStorage.addProgress(this.shopId, this.config, 1);
                 if (ShopUpgradeStorage.tryCompleteUpgrade(this.shopId, this.config)) {
-                    // Rarity is hardcoded to Common for now — ShopUpgradeLevel has no rarity
+                    // Rarity is hardcoded to Common for now — ShopConfig has no rarity-by-level
                     // field yet (see ShopTypes.ts). Wire it up to actually vary per level once
                     // that's added.
                     UpgradeNotificationManager.instance.show({

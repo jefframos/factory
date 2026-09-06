@@ -36,15 +36,17 @@
 // bank the result, and always have somewhere to go next while still
 // standing in range of one."
 
+import * as THREE from 'three';
 import Component from '../ecs/Component';
 import RigidBody from '../physics/RigidBody';
-import PlayerActionController from './PlayerActionController';
+import PlayerActionController, { ActionTarget } from './PlayerActionController';
 import CharacterVisualComponent from './CharacterVisualComponent';
 import ResourceNode from '../player/ResourceNode';
+import ResourceNodeRegistry from '../player/ResourceNodeRegistry';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { ResourceType } from '../actions/ResourceTypes';
 import { PROVIDER_CONFIG, rollProviderDrop } from '../actions/ProviderTypes';
-import { ACTION_CONFIG } from '../actions/ActionTypes';
+import { ACTION_CONFIG, ActionType } from '../actions/ActionTypes';
 import { ItemStorage } from '../crafting/ItemStorage';
 import { ItemType } from '../crafting/ItemTypes';
 import { ToolId, getToolIcon } from '../actions/ToolRegistry';
@@ -172,7 +174,12 @@ export default class AutoGatherController extends Component {
         const actionController = this.entity.getComponent(PlayerActionController)!;
         const config = PROVIDER_CONFIG[node.providerType];
 
-        void actionController.onPlayActionAnimation(config.action, node, hits => this.onHitLanded(node, hits)).then(result => {
+        void actionController.onPlayActionAnimation(
+            config.action,
+            node,
+            (target, hits) => this.onHitLanded(target, hits),
+            () => this.getConeTargets(node, config.action),
+        ).then(result => {
             if (result === 'completed') {
                 console.log(`[gather] fully harvested ${config.label}`);
             }
@@ -183,12 +190,68 @@ export default class AutoGatherController extends Component {
     }
 
     /**
-     * Fired on every landed swing (see PlayerActionController's onHit param), not just once at
-     * the end — banks amountPerGather * resourcePerHit * hits immediately and flies a small
-     * placeholder chip from the node to wherever the backpack cube currently sits, purely as
-     * visual feedback for the bank. `hits` is whatever PlayerActionController.update() actually
-     * removed this swing — already capped at the node's remaining life for a killing blow (see
-     * that file's own doc) — but resourcePerHit (read fresh off ACTION_CONFIG, see
+     * Every other available ResourceNode caught in the tool's current hit cone alongside
+     * `primary` — see PlayerActionController's getAdditionalTargets param, which calls this
+     * fresh on every hit tick rather than once at swing start.
+     *
+     * The cone's own facing direction is the character's ACTUAL current visual forward — read
+     * off CharacterBody's own rotated container (`container.quaternion`), not the raw
+     * origin -> primary.position vector FacingComponent merely feeds toward. Those two only
+     * agree at the instant a swing starts: CharacterBody.faceDirection() sets a `targetRotation`
+     * that the body then slerps toward over several frames (ROTATION_SLERP, see its own doc),
+     * AND movement input (never frozen during an action, see PlayerActionController's own doc)
+     * overwrites that same targetRotation every frame it's held — so mid-swing, while the
+     * player is still turning or is actively walking a different way, the model can easily be
+     * facing somewhere other than straight at `primary`. Basing the cone on the real rotation
+     * keeps what gets hit matching what's actually on screen instead of an idealized "already
+     * perfectly aimed" assumption. Falls back to the raw vector toward `primary` only if the FBX
+     * character hasn't loaded yet (no container to read a rotation off of at all).
+     */
+    private getConeTargets(primary: ResourceNode, action: ActionType): ActionTarget[] {
+        const origin = this.entity.transform.position;
+        const character = this.entity.getComponent(CharacterVisualComponent)?.character;
+
+        let dirX: number;
+        let dirZ: number;
+        if (character) {
+            const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(character.container.quaternion);
+            const len = Math.hypot(forward.x, forward.z);
+            if (len < 1e-6) {
+                return [];
+            }
+            dirX = forward.x / len;
+            dirZ = forward.z / len;
+        } else {
+            const dx = primary.position.x - origin.x;
+            const dz = primary.position.z - origin.z;
+            const len = Math.hypot(dx, dz);
+            if (len < 1e-6) {
+                return [];
+            }
+            dirX = dx / len;
+            dirZ = dz / len;
+        }
+
+        const config = ACTION_CONFIG[action];
+        const halfAngleRad = (config.hitAngleDeg * Math.PI / 180) / 2;
+        return ResourceNodeRegistry
+            .findInCone(origin, dirX, dirZ, action, config.hitRangeMeters, halfAngleRad)
+            .filter(node => node !== primary);
+    }
+
+    /**
+     * Fired on every landed swing — on the primary target AND on every extra AoE cone target
+     * alike (see PlayerActionController's onHit param and its getAdditionalTargets doc) — not
+     * just once at the end. `target` is only ever a ResourceNode in this game (the other
+     * ActionTarget implementor would be some future non-resource damageable, see
+     * PlayerActionController's own doc); a target this component didn't itself hand out here
+     * is silently ignored rather than assumed to be one.
+     *
+     * Banks amountPerGather * resourcePerHit * hits immediately and flies a small placeholder
+     * chip from the node to wherever the backpack cube currently sits, purely as visual
+     * feedback for the bank. `hits` is whatever PlayerActionController.update() actually removed
+     * this swing for THIS target — already capped at its own remaining life for a killing blow
+     * (see that file's own doc) — but resourcePerHit (read fresh off ACTION_CONFIG, see
      * ActionTypes.ts's own doc) is NOT capped the same way, so a resourcePerHit upgrade banks
      * proportionally more per hit all the way through the tree's very last hit, not just on
      * hits that don't finish it off. The chip-flying half no-ops if the FBX character (and
@@ -203,7 +266,12 @@ export default class AutoGatherController extends Component {
      * (e.g. a stone deposit set up 90% stone / 10% pebble) converges to that split over a
      * harvest instead of committing an entire swing to one outcome.
      */
-    private onHitLanded(node: ResourceNode, hits: number): void {
+    private onHitLanded(target: ActionTarget, hits: number): void {
+        if (!(target instanceof ResourceNode)) {
+            return;
+        }
+        const node = target;
+
         const config = PROVIDER_CONFIG[node.providerType];
         const resourcePerHit = ACTION_CONFIG[config.action].resourcePerHit;
         const totalUnits = Math.round(config.amountPerGather * resourcePerHit * hits);

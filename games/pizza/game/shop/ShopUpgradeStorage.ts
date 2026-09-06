@@ -18,13 +18,13 @@
 
 import { Signal } from 'signals';
 import PlatformHandler from 'core/platforms/PlatformHandler';
-import { applyShopLevel, resetAllActionConfigs, SHOP_CONFIG_BY_ID, ShopConfig } from './ShopTypes';
+import { applyShopLevel, getUpgradeCost, resetAllActionConfigs, SHOP_CONFIG_BY_ID, ShopConfig } from './ShopTypes';
 
 const STORAGE_KEY = 'PIZZA_SHOP_UPGRADES';
 
 interface ShopUpgradeState {
     level: number;
-    /** Money deposited toward levels[level]'s cost — reset to 0 whenever a purchase completes. Meaningless once the shop is already maxed out. */
+    /** Money deposited toward getUpgradeCost(config, level) — reset to 0 whenever a purchase completes. Meaningless once the shop is already maxed out. */
     progress: number;
     /** Epoch ms the next purchase becomes available at — undefined while never on cooldown yet, treated the same as "already passed" (see tryStartDeposit()). */
     nextUpgradeAtEpochMs?: number;
@@ -55,13 +55,10 @@ export class ShopUpgradeStorage {
         }
     }
 
-    /** Replays every already-bought level of every configured shop back onto ACTION_CONFIG — call once at boot, right after load(). ACTION_CONFIG itself starts out at its hand-authored base values every session (it's a plain module-level const, not persisted), so without this a reload would silently forget every previously-purchased upgrade's effect even though `level` itself survived the reload. */
+    /** Reapplies every configured shop's current level back onto ACTION_CONFIG — call once at boot, right after load(). ACTION_CONFIG itself starts out at its hand-authored base values every session (it's a plain module-level const, not persisted), so without this a reload would silently forget every previously-purchased upgrade's effect even though `level` itself survived the reload. applyShopLevel() computes each attribute from scratch off `level` (see its own doc), so — unlike the old sparse per-level array — there's no history to replay here, just one call per shop. */
     static reapplyAllShopUpgrades(): void {
         for (const [id, config] of Object.entries(SHOP_CONFIG_BY_ID) as [string, ShopConfig][]) {
-            const level = this.getLevel(id);
-            for (let i = 0; i < level; i++) {
-                applyShopLevel(config, config.levels[i]);
-            }
+            applyShopLevel(config, this.getLevel(id));
         }
     }
 
@@ -84,7 +81,7 @@ export class ShopUpgradeStorage {
     }
 
     static isMaxLevel(id: string, config: ShopConfig): boolean {
-        return this.getLevel(id) >= config.levels.length;
+        return this.getLevel(id) >= config.totalLevels;
     }
 
     /** True while `id`'s cooldown from its last purchase hasn't elapsed yet — mirrors QueueStorage.tryRollNextTask()'s "never set == already passed" treatment for a shop that's never bought anything. */
@@ -114,7 +111,7 @@ export class ShopUpgradeStorage {
         }
 
         const state = this.state(id);
-        const cost = config.levels[state.level].cost;
+        const cost = getUpgradeCost(config, state.level);
         const accepted = Math.min(amount, cost - state.progress);
         if (accepted <= 0) {
             return 0;
@@ -128,29 +125,30 @@ export class ShopUpgradeStorage {
 
     /**
      * Completes `id`'s next level once its full cost has been deposited — bumps `level`,
-     * resets progress, starts the cooldown, and applies the just-bought level's ActionConfig
-     * changes live (see applyShopLevel()). Returns the just-bought level (undefined if it
-     * isn't actually fully funded yet or the shop is maxed), same "call unconditionally, check
-     * the return value" convention as QueueStorage.tryCompleteTask().
+     * resets progress, starts the cooldown, and applies the newly-bought level's ActionConfig
+     * changes live (see applyShopLevel()). Returns the just-bought level NUMBER (undefined if
+     * it isn't actually fully funded yet or the shop is maxed), same "call unconditionally,
+     * check the return value" convention as QueueStorage.tryCompleteTask() — there's no more
+     * per-level object to hand back, just the ladder's own formula.
      */
-    static tryCompleteUpgrade(id: string, config: ShopConfig) {
+    static tryCompleteUpgrade(id: string, config: ShopConfig): number | undefined {
         if (this.isMaxLevel(id, config)) {
             return undefined;
         }
 
         const state = this.state(id);
-        const level = config.levels[state.level];
-        if (state.progress < level.cost) {
+        const cost = getUpgradeCost(config, state.level);
+        if (state.progress < cost) {
             return undefined;
         }
 
         state.level += 1;
         state.progress = 0;
-        state.nextUpgradeAtEpochMs = Date.now() + level.cooldownSec * 1000;
-        applyShopLevel(config, level);
+        state.nextUpgradeAtEpochMs = Date.now() + config.cooldownSec * 1000;
+        applyShopLevel(config, state.level);
         this.onChange.dispatch(id);
         void this.persist();
-        return level;
+        return state.level;
     }
 
     private static async persist(): Promise<void> {

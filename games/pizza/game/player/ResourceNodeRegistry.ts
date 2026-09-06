@@ -25,6 +25,7 @@
 import * as THREE from 'three';
 import { ResourceType } from '../actions/ResourceTypes';
 import { PROVIDER_CONFIG } from '../actions/ProviderTypes';
+import { ActionType } from '../actions/ActionTypes';
 import ResourceNode from './ResourceNode';
 import LooseResourceNode from './LooseResourceNode';
 
@@ -75,5 +76,53 @@ export default class ResourceNodeRegistry {
         }
 
         return nearest;
+    }
+
+    /**
+     * Every currently-available ResourceNode whose own action is `action`, standing within
+     * `rangeMeters` of `origin` and inside a `halfAngleRad`-wide cone straddling
+     * (facingDirX, facingDirZ) — the AoE hit query AutoGatherController runs fresh on every
+     * landed swing (see PlayerActionController.update()'s getAdditionalTargets, not just once
+     * at swing start, so wandering resources or ones that respawn mid-swing are picked up
+     * correctly). Purely horizontal (XZ), matching FacingComponent's own (dx, dz)-only facing
+     * — height differences between the player and a node never affect the cone.
+     *
+     * LooseResourceNode never matches — it has no ActionConfig/hitAngleDeg/hitRangeMeters of
+     * its own to check against (see GatherTarget's own doc: it's instant-pickup loot, not a
+     * chop/mine target).
+     */
+    static findInCone(origin: THREE.Vector3, facingDirX: number, facingDirZ: number, action: ActionType, rangeMeters: number, halfAngleRad: number): ResourceNode[] {
+        const found: ResourceNode[] = [];
+        const rangeSq = rangeMeters * rangeMeters;
+        const cosHalfAngle = Math.cos(halfAngleRad);
+
+        for (const node of this.liveNodes) {
+            if (!(node instanceof ResourceNode) || !node.isAvailable) {
+                continue;
+            }
+            if (PROVIDER_CONFIG[node.providerType].action !== action) {
+                continue;
+            }
+
+            const dx = node.position.x - origin.x;
+            const dz = node.position.z - origin.z;
+            const distSq = dx * dx + dz * dz;
+            if (distSq > rangeSq) {
+                continue;
+            }
+            // On top of the player (no meaningful direction to check against) — always inside the cone.
+            if (distSq < 1e-6) {
+                found.push(node);
+                continue;
+            }
+
+            const invLen = 1 / Math.sqrt(distSq);
+            const dot = dx * invLen * facingDirX + dz * invLen * facingDirZ;
+            if (dot >= cosHalfAngle) {
+                found.push(node);
+            }
+        }
+
+        return found;
     }
 }

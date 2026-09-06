@@ -97,7 +97,10 @@ export function bakeGameData(): BakedGameData {
             name: s.name,
             tool: s.tool,
             action: s.action,
-            levels: s.levels,
+            attributes: s.attributes,
+            totalLevels: s.totalLevels,
+            baseCost: s.baseCost,
+            costScale: s.costScale,
             appearRequirement: s.appearRequirement,
         })),
         queues: {

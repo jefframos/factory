@@ -3,58 +3,32 @@
         "name": "Axe Shop",
         "tool": "axe",
         "action": "chop",
-        "levels": [
-            {
-                "cost": 10,
-                "cooldownSec": 300,
-                "hitIntervalSec": 0.85
+        "attributes": {
+            "damage": {
+                "min": 1,
+                "max": 4
             },
-            {
-                "cost": 120,
-                "cooldownSec": 300,
-                "hitScale": 2
+            "hitAngleDeg": {
+                "min": 30,
+                "max": 360
             },
-            {
-                "cost": 250,
-                "cooldownSec": 300,
-                "resourcePerHit": 2
+            "hitRangeMeters": {
+                "min": 1.5,
+                "max": 3
             },
-            {
-                "cost": 450,
-                "cooldownSec": 300,
-                "hitIntervalSec": 0.7
+            "speed": {
+                "min": 1,
+                "max": 2.5
             },
-            {
-                "cost": 800,
-                "cooldownSec": 300,
-                "hitScale": 3
-            },
-            {
-                "cost": 1300,
-                "cooldownSec": 300,
-                "resourcePerHit": 3
-            },
-            {
-                "cost": 2000,
-                "cooldownSec": 300,
-                "hitIntervalSec": 0.55
-            },
-            {
-                "cost": 3000,
-                "cooldownSec": 300,
-                "hitScale": 4
-            },
-            {
-                "cost": 4400,
-                "cooldownSec": 300,
-                "resourcePerHit": 4
-            },
-            {
-                "cost": 6400,
-                "cooldownSec": 300,
-                "hitIntervalSec": 0.4
+            "resourcePerHit": {
+                "min": 1,
+                "max": 4
             }
-        ],
+        },
+        "totalLevels": 10,
+        "baseCost": 10,
+        "costScale": 2.05,
+        "cooldownSec": 300,
         "popupBobOffset": 2,
         "baseView": "shop1View",
         "solid": 0.5

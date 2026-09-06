@@ -19,7 +19,7 @@
 // Chop's default hitScale 1/1s hitIntervalSec is the design doc's "5 seconds
 // per tree".
 //
-// Tool upgrades (M4) are THREE independent knobs, not one:
+// Tool upgrades (M4) are independent knobs, not one:
 //   - hitIntervalSec: swings faster, no change to yield per swing.
 //   - hitScale: how many hits one swing counts as — shrinks the hit COUNT
 //     needed to clear a target (a level whose hitScale reaches 5 one-shots
@@ -33,6 +33,11 @@
 //     hits' worth (capped) at 3 each = 9 in one swing, then the last 2
 //     life's worth (hitScale capped to 2) banks 2*3 = 6 more — 15 total,
 //     not the 5 a hitScale-only reading of "5 life = 5 wood" would suggest.
+//   - hitAngleDeg / hitRangeMeters: the swing's hit CONE — at level 0 narrow/
+//     short enough that only the primary (faced) target is ever inside it;
+//     widening either turns one swing into an AoE clip across neighboring
+//     resources too. See ActionConfig's own doc on each field, and
+//     ResourceNodeRegistry.findInCone() for the actual query.
 
 import { ToolId } from './ToolRegistry';
 
@@ -95,12 +100,30 @@ export interface ActionConfig {
     animationTrigger: string;
     /** Which ToolRegistry entry (see ToolRegistry.ts) PlayerActionController shows in the right hand for the action's duration — see CharacterBody.showTool(). undefined means bare hands (Gather). */
     tool?: ToolId;
+    /**
+     * Full aperture, in degrees, of the hit CONE every landed swing checks for extra targets —
+     * see ResourceNodeRegistry.findInCone(), which AutoGatherController queries fresh on every
+     * hit tick (not just once at swing start). A level-0 tool's cone is narrow enough that only
+     * the resource the player is actually facing (the swing's own primary target) ever falls
+     * inside it; widening this is what lets one swing also clip neighboring resources standing
+     * around it. Symmetric around the player's own facing direction (the vector toward the
+     * primary target — see PlayerActionController.onPlayActionAnimation()), so e.g. 60 here means
+     * ±30° off center.
+     */
+    hitAngleDeg: number;
+    /**
+     * How far, in world units from the player, that same hit cone reaches — see
+     * ResourceNodeRegistry.findInCone(). Independent of hitAngleDeg: a wide-but-short cone
+     * clips everything immediately around the player, a narrow-but-long one reaches deep in
+     * a line, and upgrades can widen either knob (or both) separately.
+     */
+    hitRangeMeters: number;
 }
 
 export const ACTION_CONFIG: Record<ActionType, ActionConfig> = {
-    [ActionType.Chop]: { hitIntervalSec: 1, hitScale: 1, resourcePerHit: 1, hitTime: 0.8, cancelOnLeaveRange: true, animationTrigger: 'chop', tool: "axe" },
-    [ActionType.Mine]: { hitIntervalSec: 1.5, hitScale: 1, resourcePerHit: 1, hitTime: 0.4, cancelOnLeaveRange: true, animationTrigger: 'mine', tool: "pickaxe" },
-    [ActionType.Gather]: { hitIntervalSec: 2, hitScale: 1, resourcePerHit: 1, hitTime: 0.6, cancelOnLeaveRange: true, animationTrigger: 'pick' },
+    [ActionType.Chop]: { hitIntervalSec: 1, hitScale: 1, resourcePerHit: 1, hitTime: 0.8, cancelOnLeaveRange: true, animationTrigger: 'chop', tool: "axe", hitAngleDeg: 30, hitRangeMeters: 1.5 },
+    [ActionType.Mine]: { hitIntervalSec: 1.5, hitScale: 1, resourcePerHit: 1, hitTime: 0.4, cancelOnLeaveRange: true, animationTrigger: 'mine', tool: "pickaxe", hitAngleDeg: 30, hitRangeMeters: 1.5 },
+    [ActionType.Gather]: { hitIntervalSec: 2, hitScale: 1, resourcePerHit: 1, hitTime: 0.6, cancelOnLeaveRange: true, animationTrigger: 'pick', hitAngleDeg: 30, hitRangeMeters: 1.2 },
 };
 
 /**

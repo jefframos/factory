@@ -29,8 +29,11 @@
 //      within the cycle) reaches hitTime, then rolls the cycle over —
 //      subtracting hitIntervalSec rather than resetting to 0, so a long frame
 //      that overshoots by a bit doesn't lose that overshoot from the next
-//      cycle. Deals hitScale hits to the target (ActionTarget.applyHit) and
-//      finishes as 'completed' the moment the target reports itself depleted.
+//      cycle. Deals hitScale hits to the target (ActionTarget.applyHit), plus
+//      whatever extra ActionTargets getAdditionalTargets() (re-queried fresh
+//      every tick — an AoE hit cone, see its own doc) currently reports, and
+//      finishes as 'completed' the moment the PRIMARY target reports itself
+//      depleted — extras never gate completion, only bonus yield.
 //   5. on either ending, clears facing, fades the action layer back out and
 //      hides the tool again (stopAction()/showTool(undefined) — leaving
 //      idle/run as the sole driver of every bone again) and resolves the
@@ -123,15 +126,28 @@ export default class PlayerActionController extends Component {
     private cycleElapsedSec = 0;
     private resolveCurrent?: (result: ActionResult) => void;
     /**
-     * Fired every time a hit actually lands (see update()) — see onPlayActionAnimation()'s
-     * `onHit` param. Deliberately separate from ActionTarget.onHit: that's the TARGET's own
-     * feedback (shake, damage popup); this is the CALLER's (e.g. AutoGatherController flying a
-     * resource chip toward the backpack and banking its yield), and the target itself has no
-     * reason to know about it. Passed the ACTUAL (possibly capped, see update()'s own doc) hit
-     * count this swing removed, not just a "something landed" ping — the caller multiplies
-     * that by its own resourcePerHit to bank a yield (see AutoGatherController.onHitLanded()).
+     * Fired every time a hit actually lands, on the PRIMARY target and on every additional
+     * cone target alike (see update()) — see onPlayActionAnimation()'s `onHit` param.
+     * Deliberately separate from ActionTarget.onHit: that's the TARGET's own feedback (shake,
+     * damage popup); this is the CALLER's (e.g. AutoGatherController flying a resource chip
+     * toward the backpack and banking its yield), and the target itself has no reason to know
+     * about it. Passed which ActionTarget was hit (so the caller can bank each one's own
+     * yield separately — a cone catching three trees banks three times, not once) and the
+     * ACTUAL (possibly capped per-target, see update()'s own doc) hit count that swing removed
+     * from it.
      */
-    private onHitCallback?: (hits: number) => void;
+    private onHitCallback?: (target: ActionTarget, hits: number) => void;
+    /**
+     * Recomputed on EVERY hit tick (never cached from swing start) — every extra ActionTarget
+     * this swing should also hit alongside the primary `currentTarget`, e.g. neighboring trees
+     * caught in the tool's current hit cone (see ResourceNodeRegistry.findInCone(), which
+     * AutoGatherController's implementation of this queries against ACTION_CONFIG's live,
+     * upgradeable hitAngleDeg/hitRangeMeters). undefined/omitted means "no AoE, primary target
+     * only" — this component itself never knows what a cone or a ResourceNode is; it just hits
+     * whatever list it's handed. Doesn't affect completion: only the PRIMARY target depleting
+     * ends the action (see update()) — extras are a bonus, not a substitute.
+     */
+    private getAdditionalTargets?: () => ActionTarget[];
 
     public get isBusy(): boolean {
         return this.currentAction !== undefined;
@@ -153,7 +169,7 @@ export default class PlayerActionController extends Component {
      * (`await controller.onPlayActionAnimation(...)`); only the reentrancy failure mode
      * differs, on purpose.
      */
-    public onPlayActionAnimation(action: ActionType, target: ActionTarget, onHit?: (hits: number) => void): Promise<ActionResult> {
+    public onPlayActionAnimation(action: ActionType, target: ActionTarget, onHit?: (target: ActionTarget, hits: number) => void, getAdditionalTargets?: () => ActionTarget[]): Promise<ActionResult> {
         if (this.isBusy) {
             throw new Error(`PlayerActionController: already playing ${this.currentAction}, can't start ${action}`);
         }
@@ -162,12 +178,13 @@ export default class PlayerActionController extends Component {
         const character = this.entity.getComponent(CharacterVisualComponent)?.character;
         const clipDurationSec = character?.animator.getClipDuration(config.animationTrigger);
         const playbackSpeed = animationSpeedFor(config, clipDurationSec);
-        console.log(`[action] start ${action} (trigger: ${config.animationTrigger}, ${config.hitScale}x hits worth ${config.resourcePerHit}/hit every ${config.hitIntervalSec.toFixed(2)}s, playback: ${playbackSpeed.toFixed(2)}x)`);
+        console.log(`[action] start ${action} (trigger: ${config.animationTrigger}, ${config.hitScale}x hits worth ${config.resourcePerHit}/hit every ${config.hitIntervalSec.toFixed(2)}s, playback: ${playbackSpeed.toFixed(2)}x, cone: ${config.hitAngleDeg}°/${config.hitRangeMeters}m)`);
 
         this.currentAction = action;
         this.currentTarget = target;
         this.cycleElapsedSec = 0;
         this.onHitCallback = onHit;
+        this.getAdditionalTargets = getAdditionalTargets;
 
         this.entity.getComponent(FacingComponent)?.faceToward(target.position);
         character?.getAnimation(config.animationTrigger).setSpeed(playbackSpeed);
@@ -224,8 +241,22 @@ export default class PlayerActionController extends Component {
             ? Math.min(config.hitScale, target.remainingLife)
             : config.hitScale;
         target.onHit?.({ hits });
-        this.onHitCallback?.(hits);
+        this.onHitCallback?.(target, hits);
         const depleted = target.applyHit(hits);
+
+        // AoE side hits — re-queried fresh THIS tick (see getAdditionalTargets's own doc), so a
+        // neighboring tree that's since respawned, depleted, or drifted out of the cone is
+        // never stale. Each extra is capped by its OWN remainingLife independently of the
+        // primary target, and never affects whether this swing/action completes — only the
+        // primary depleting does that, right below.
+        for (const extra of this.getAdditionalTargets?.() ?? []) {
+            const extraHits = extra.remainingLife !== undefined
+                ? Math.min(config.hitScale, extra.remainingLife)
+                : config.hitScale;
+            extra.onHit?.({ hits: extraHits });
+            this.onHitCallback?.(extra, extraHits);
+            extra.applyHit(extraHits);
+        }
 
         if (depleted && this.isBusy) {
             console.log(`[action] complete ${this.currentAction}`);
@@ -237,6 +268,7 @@ export default class PlayerActionController extends Component {
         this.currentAction = undefined;
         this.currentTarget = undefined;
         this.onHitCallback = undefined;
+        this.getAdditionalTargets = undefined;
 
         this.entity.getComponent(FacingComponent)?.clearTarget();
         const character = this.entity.getComponent(CharacterVisualComponent)?.character;
