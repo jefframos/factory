@@ -17,7 +17,7 @@
         "action": "chop",
         "maxLife": 5,
         "amountPerGather": 1,
-        "respawnSec": 60,
+        "respawnSec": 30,
         "drops": [
             {
                 "resourceType": "wood",

@@ -54,6 +54,8 @@ export interface BuildingLevelConfig {
     mesh: BuildingMeshConfig;
     /** Optional real-mesh override for this level, keyed into EntityViewRegistry.ts's ENTITY_VIEW_CONFIG — set from the pizza web editor's Map/Entities tabs. When set (and the view actually has a model — see resolveEntityView()), BuildingZone swaps its box placeholder for this glb instead; undefined keeps the box (`mesh` above), unchanged from before this field existed. */
     view?: string;
+    /** Forces this level's reveal sweep (see BuildingZone.playRevealEffect()) to its full 100% fill regardless of where this level sits within a run of consecutive levels sharing the same `view`/mesh — see getFillFractionForLevel()'s own doc. undefined/false uses the computed run-position fraction instead, unchanged from before this field existed. */
+    fillFull?: boolean;
 }
 
 export interface BuildingConfig {
@@ -64,6 +66,8 @@ export interface BuildingConfig {
     baseMesh: BuildingMeshConfig;
     /** Optional real-mesh override for level 0 (before any level clears) — see BuildingLevelConfig.view's own doc. */
     baseView?: string;
+    /** See BuildingLevelConfig.fillFull's own doc — same override, for level 0 (baseView) instead of a levels[] entry. */
+    baseFillFull?: boolean;
     /** Ordered ascending by `level` — BuildingStorage/BuildingZone index into this by `currentLevel` to find the next rung. */
     levels: BuildingLevelConfig[];
     /** Optional — when set, this building's BuildingZone isn't spawned at all (see PizzaScene.setupBuildingZone(), which registers it as a RequirementRegistry spawn gate) until MilestoneRequirement.ts's isMilestoneRequirementMet() says this is satisfied. Same shared requirement shape GateConfig.requirement/QueueConfig.appearRequirement use. undefined (the only case today — Camp is the very first building, nothing gates it) means "always appears." */
@@ -113,11 +117,45 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
                 },
                 mesh: { size: [1.8, 1.8, 1.8], color: 0xcc8844 },
                 "view": "tower2view"
+            },
+            {
+                "level": 3,
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                mesh: { size: [1.8, 1.8, 1.8], color: 0xcc8844 }
+            },
+            {
+                "level": 4,
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                mesh: { size: [1.8, 1.8, 1.8], color: 0xcc8844 }
+            },
+            {
+                "level": 5,
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                mesh: { size: [1.8, 1.8, 1.8], color: 0xcc8844 }
+            },
+            {
+                "level": 6,
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                mesh: { size: [1.8, 1.8, 1.8], color: 0xcc8844 }
             }
         ],
         "baseView": "tower1View",
         "popupMode": "simple",
-        "icon": "campfire"
+        "icon": "campfire",
+        "updateParticleEffectId": "gateMyst",
+        "solid": 0.8
     },
 };
 
@@ -132,11 +170,71 @@ export function getMeshConfigForLevel(id: BuildingId, level: number): BuildingMe
     return level <= 0 ? config.baseMesh : (config.levels[level - 1]?.mesh ?? config.baseMesh);
 }
 
-/** The building's current EntityViewRegistry id, if this level opted into one — see BuildingLevelConfig.view's own doc. undefined means "keep the box placeholder," same as any level that never sets `view`. */
+/**
+ * The building's current EntityViewRegistry id — this level's own `view` if it set one, else
+ * whichever more RECENT level did (walking back down the ladder, not straight to `baseView` —
+ * e.g. camp's level 3 sets no `view` of its own, so it keeps level 2's "tower2view" rather than
+ * reverting to level 1's base look), else `baseView` if NO earlier level ever set one either.
+ * undefined only when neither this level, any earlier level, nor baseView ever set a `view` —
+ * "keep the box placeholder," same as before this fallback chain existed.
+ */
 export function getViewIdForLevel(id: BuildingId, level: number): string | undefined {
     const config = BUILDING_CONFIG[id];
-    return level <= 0 ? config.baseView : (config.levels[level - 1]?.view ?? config.baseView);
+    for (let l = Math.max(0, level); l > 0; l--) {
+        const view = config.levels[l - 1]?.view;
+        if (view) {
+            return view;
+        }
+    }
+    return config.baseView;
 }
+
+/**
+ * How much of `level`'s mesh should be filled by BuildingZone's reveal sweep (see
+ * BuildingZone.playRevealEffect()) — 1 (fully built) unless this level's own view id is shared
+ * with adjacent levels (e.g. camp's level 1 and level 2 both resolving to "tower2view", the
+ * SAME glb reused across a run of levels rather than a new mesh per level), in which case it's
+ * this level's 1-based position within that run divided by the run's total length — so the
+ * shared mesh visibly fills up a bit more with each level cleared instead of jumping straight
+ * to 100% the moment it first appears, only reaching full at the run's last level. A level with
+ * BuildingLevelConfig.fillFull (or BuildingConfig.baseFillFull for level 0) set overrides this
+ * to 1 regardless of its run position — e.g. a designer wanting the very first appearance of a
+ * base mesh to already read as "complete" before any upgrade fills a LATER mesh incrementally.
+ */
+export function getFillFractionForLevel(id: BuildingId, level: number): number {
+    const config = BUILDING_CONFIG[id];
+    const maxLevel = config.levels.length;
+    const clampedLevel = Math.max(0, Math.min(level, maxLevel));
+
+    if (clampedLevel === 0 ? config.baseFillFull : config.levels[clampedLevel - 1]?.fillFull) {
+        return 1;
+    }
+
+    const viewId = getViewIdForLevel(id, clampedLevel);
+    let start = clampedLevel;
+    while (start > 0 && getViewIdForLevel(id, start - 1) === viewId) {
+        start--;
+    }
+    let end = clampedLevel;
+    while (end < maxLevel && getViewIdForLevel(id, end + 1) === viewId) {
+        end++;
+    }
+
+    const runLength = end - start + 1;
+    const positionInRun = clampedLevel - start + 1;
+    const linearFraction = positionInRun / runLength;
+
+    // A straight positionInRun/runLength reads as "basically nothing built" for an early level
+    // in a long run (e.g. 1/6 = 17%) — sqrt() front-loads the perceptible growth (1/6 -> 41%,
+    // 2/6 -> 58%, ...) while still landing exactly on 1 for the run's own last level, so a
+    // level-up always visibly ADDS to the mesh without the first few rungs of a long run
+    // looking like the building barely exists. MIN_VISIBLE_FILL_FRACTION is a floor on top of
+    // that for a pathologically long run where even the eased curve would still start low.
+    return Math.max(MIN_VISIBLE_FILL_FRACTION, Math.sqrt(linearFraction));
+}
+
+/** Floor under getFillFractionForLevel()'s eased run-position curve — see that function's own doc. Never lets even the very first level of a long shared-mesh run render as "basically invisible." */
+const MIN_VISIBLE_FILL_FRACTION = 0.25;
 
 /** `BUILDING_CONFIG[id]`'s icon, as an actual texture — see BuildingConfig.icon's own doc for the blank-fallback convention. */
 export function getBuildingIcon(id: BuildingId): PIXI.Texture {

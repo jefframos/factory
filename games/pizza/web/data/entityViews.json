@@ -25,7 +25,7 @@
     },
     "tower1View": {
         "models": [
-            "Pirate.TowerBase"
+            "Pirate.TowerRoof"
         ],
         "offset": [
             0,

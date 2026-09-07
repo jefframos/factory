@@ -229,46 +229,6 @@ const ENTITY_SCHEMAS = {
         { key: 'baseCost', type: 'number', label: 'Base Cost (coins for the FIRST upgrade)' },
         { key: 'costScale', type: 'number', label: 'Cost Scale (each subsequent upgrade costs this many times the previous one — cost = baseCost * costScale ^ levelsAlreadyBought)' },
         { key: 'cooldownSec', type: 'number', label: 'Cooldown (sec, after buying any level, before the next purchase can start)' },
-        {
-            key: 'attributes', type: 'group', label: 'Attribute Ranges (Min = level 0/never upgraded, Max = fully maxed)',
-            fields: [
-                {
-                    key: 'damage', type: 'group', label: 'Damage (hits one swing counts as)',
-                    fields: [
-                        { key: 'min', type: 'number', label: 'Min' },
-                        { key: 'max', type: 'number', label: 'Max' },
-                    ],
-                },
-                {
-                    key: 'hitAngleDeg', type: 'group', label: 'Hit Angle (deg, full AoE cone aperture)',
-                    fields: [
-                        { key: 'min', type: 'number', label: 'Min' },
-                        { key: 'max', type: 'number', label: 'Max' },
-                    ],
-                },
-                {
-                    key: 'hitRangeMeters', type: 'group', label: 'Hit Range (meters, how far that cone reaches)',
-                    fields: [
-                        { key: 'min', type: 'number', label: 'Min' },
-                        { key: 'max', type: 'number', label: 'Max' },
-                    ],
-                },
-                {
-                    key: 'speed', type: 'group', label: 'Speed (attacks per second)',
-                    fields: [
-                        { key: 'min', type: 'number', label: 'Min' },
-                        { key: 'max', type: 'number', label: 'Max' },
-                    ],
-                },
-                {
-                    key: 'resourcePerHit', type: 'group', label: 'Resource Per Hit (yield banked per hit)',
-                    fields: [
-                        { key: 'min', type: 'number', label: 'Min' },
-                        { key: 'max', type: 'number', label: 'Max' },
-                    ],
-                },
-            ],
-        },
         ...POPUP_FIELDS,
     ],
     crafting: [
@@ -451,6 +411,46 @@ const ENTITY_SCHEMAS = {
         { key: 'label', type: 'text', label: 'Label' },
         { key: 'icon', type: 'icon', label: 'Icon' },
         { key: 'models', type: 'modelList', label: 'Models' },
+        {
+            key: 'attributes', type: 'group', label: 'Upgrade Attribute Ranges (Min = level 0/never upgraded, Max = fully maxed) — optional, only needed if a shop upgrades this tool', optional: true,
+            fields: [
+                {
+                    key: 'damage', type: 'group', label: 'Damage (hits one swing counts as)',
+                    fields: [
+                        { key: 'min', type: 'number', label: 'Min' },
+                        { key: 'max', type: 'number', label: 'Max' },
+                    ],
+                },
+                {
+                    key: 'hitAngleDeg', type: 'group', label: 'Hit Angle (deg, full AoE cone aperture)',
+                    fields: [
+                        { key: 'min', type: 'number', label: 'Min' },
+                        { key: 'max', type: 'number', label: 'Max' },
+                    ],
+                },
+                {
+                    key: 'hitRangeMeters', type: 'group', label: 'Hit Range (meters, how far that cone reaches)',
+                    fields: [
+                        { key: 'min', type: 'number', label: 'Min' },
+                        { key: 'max', type: 'number', label: 'Max' },
+                    ],
+                },
+                {
+                    key: 'speed', type: 'group', label: 'Speed (attacks per second)',
+                    fields: [
+                        { key: 'min', type: 'number', label: 'Min' },
+                        { key: 'max', type: 'number', label: 'Max' },
+                    ],
+                },
+                {
+                    key: 'resourcePerHit', type: 'group', label: 'Resource Per Hit (yield banked per hit)',
+                    fields: [
+                        { key: 'min', type: 'number', label: 'Min' },
+                        { key: 'max', type: 'number', label: 'Max' },
+                    ],
+                },
+            ],
+        },
     ],
     // AssetLibraryRegistry.ts's icon is optional there (`icon?: string`, falls back to a
     // blank white square — see getAssetIcon()), unlike ToolVisualEntry.icon which is
@@ -692,6 +692,15 @@ const ENTITY_SCHEMAS = {
                 { key: 'rewardAmount', type: 'number', label: 'Reward Amount' },
             ],
         },
+    ],
+    // Global player-balance knobs (see PlayerConfig.ts's own doc) — only ever meant to have one
+    // entry, "default", but reuses the same open-ended partialRecord list every other id-keyed
+    // tab (shops/tools/crafting/...) already renders with, rather than a bespoke single-form tab.
+    player: [
+        { key: 'walkSpeed', type: 'number', label: 'Walk Speed (world units/sec)' },
+        { key: 'runSpeedMultiplier', type: 'number', label: 'Run Speed Multiplier (applied to Walk Speed while sprinting)' },
+        { key: 'resourceDetectionRadius', type: 'number', label: 'Resource Detection Radius (world units — how far away a resource can be auto-gathered from)' },
+        { key: 'resourceDetectionAngleDeg', type: 'number', label: 'Resource Detection Angle (deg, full aperture — how wide a facing cone counts as "in front of the player")' },
     ],
 };
 

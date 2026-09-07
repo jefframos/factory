@@ -1,0 +1,8 @@
+{
+    "default": {
+        "walkSpeed": 5,
+        "runSpeedMultiplier": 1.8,
+        "resourceDetectionRadius": 2,
+        "resourceDetectionAngleDeg": 120
+    }
+}

@@ -27,6 +27,8 @@ import AutoGatherController from '../components/AutoGatherController';
 import AnimalCatchController from '../components/AnimalCatchController';
 import PlayerUIAvoidanceComponent from '../components/PlayerUIAvoidanceComponent';
 import PlayerNotificationComponent from '../components/PlayerNotificationComponent';
+import ActionConeDebugComponent from '../components/ActionConeDebugComponent';
+import { getPlayerConfig } from '../data/PlayerConfig';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { ActionType } from '../actions/ActionTypes';
 import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
@@ -136,6 +138,7 @@ export default class MainPlayer extends Entity {
         this.addComponent(new PlayerActionController());
         this.addComponent(new AutoGatherController());
         this.addComponent(new AnimalCatchController());
+        this.addComponent(new ActionConeDebugComponent());
         if (this.screenHost) {
             this.addComponent(new PlayerUIAvoidanceComponent(this.screenHost));
             this.addComponent(new PlayerNotificationComponent(this.screenHost));
@@ -175,7 +178,11 @@ export default class MainPlayer extends Entity {
      * as short as possible for a brand-new save, which starts with zero tools.
      */
     public async loadCharacter(): Promise<void> {
-        const character = new ThirdPersonCharacter();
+        const playerConfig = getPlayerConfig();
+        const character = new ThirdPersonCharacter({
+            walkSpeed: playerConfig.walkSpeed,
+            runSpeedMultiplier: playerConfig.runSpeedMultiplier,
+        });
 
         await character.loadMesh(modelUrl(MODELS.Characters.CharacterMedium.fullPath));
         await character.registerAnimation('idle', modelUrl(MODELS.Characters.Idle.fullPath));

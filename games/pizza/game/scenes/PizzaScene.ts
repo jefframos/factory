@@ -99,8 +99,8 @@ import { BuildingStorage } from '../data/BuildingStorage';
 import { BUILDING_CONFIG, BuildingId } from '../data/BuildingTypes';
 import { ResourceType } from '../actions/ResourceTypes';
 import { PROVIDER_CONFIG } from '../actions/ProviderTypes';
-import { ACTION_CONFIG } from '../actions/ActionTypes';
-import { getToolIcon } from '../actions/ToolRegistry';
+import { ACTION_CONFIG, ActionType } from '../actions/ActionTypes';
+import { getToolIcon, TOOL_LIBRARY } from '../actions/ToolRegistry';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
@@ -857,6 +857,18 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             for (const seedId of Object.values(SeedId)) {
                 SeedStorage.add(seedId, 5);
             }
+        });
+
+        // Read fresh every frame (see InGameButtonList.registerText()'s own doc) — ACTION_CONFIG.
+        // chop is live, mutated in place by a shop upgrade (see ShopTypes.applyShopLevel()), so
+        // this always reflects whatever the axe's CURRENT level actually produces, not just its
+        // level-0 defaults — the same numbers ActionConeDebugComponent's wireframe is drawn from.
+        InGameButtonList.registerText(() => {
+            if (!TOOL_LIBRARY.axe.attributes) {
+                return 'Axe: no upgrade attributes configured';
+            }
+            const c = ACTION_CONFIG[ActionType.Chop];
+            return `Axe (live): damage ${c.hitScale.toFixed(2)} | angle ${c.hitAngleDeg.toFixed(0)}° | range ${c.hitRangeMeters.toFixed(2)}m | speed ${(1 / c.hitIntervalSec).toFixed(2)}/s | resource/hit ${c.resourcePerHit.toFixed(2)}`;
         });
     }
 
@@ -1681,6 +1693,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
          * that distance at ~0, so it never sinks.
          */
         BendService.updateOrigin(playerPosition);
+        BendService.updateTime(delta);
 
         // Occlusion targets roughly torso height, not the feet uBendOrigin above tracks —
         // see OCCLUSION_TARGET_HEIGHT_OFFSET's own doc.

@@ -27,6 +27,7 @@ import { BASE_ACTION_CONFIG } from '../actions/ActionTypes';
 import { RESOURCE_CONFIG } from '../actions/ResourceTypes';
 import { PROVIDER_CONFIG } from '../actions/ProviderTypes';
 import { SHOP_CONFIG_BY_ID } from '../shop/ShopTypes';
+import { ToolVisualEntry, TOOL_LIBRARY } from '../actions/ToolRegistry';
 import { DYNAMIC_RESOURCE_PLACEMENTS } from '../world/DynamicResourceTypes';
 
 /** Plain JSON-serializable snapshot of every hand-authored design NUMBER in the game — see this file's own doc for what's deliberately excluded (live player state, all view/presentation data). */
@@ -97,7 +98,9 @@ export function bakeGameData(): BakedGameData {
             name: s.name,
             tool: s.tool,
             action: s.action,
-            attributes: s.attributes,
+            // Lives on the tool being upgraded now, not the shop itself — see
+            // ToolVisualEntry.attributes' own doc in ToolRegistry.ts.
+            attributes: (TOOL_LIBRARY[s.tool] as ToolVisualEntry).attributes,
             totalLevels: s.totalLevels,
             baseCost: s.baseCost,
             costScale: s.costScale,

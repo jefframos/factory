@@ -45,6 +45,8 @@ const BUTTON_GAP = 8;
 const SCREEN_MARGIN = 16;
 /** The always-visible toggle button occupies the same footprint/gap as every other row — same width/height/BUTTON_GAP, just pinned unconditionally at local y=0 (see the constructor's own doc) instead of stacking with the collapsible rows above it. */
 const TOGGLE_RESERVED_HEIGHT = BUTTON_SIZE.height + BUTTON_GAP;
+/** Gap between the topmost button row (hideButton) and the info text sitting above it — see registerText(). */
+const INFO_TEXT_GAP = 8;
 
 export default class InGameButtonList extends PIXI.Container {
     /** Whichever instance was constructed most recently — see this file's own doc for why a bare static method needs this. */
@@ -56,6 +58,9 @@ export default class InGameButtonList extends PIXI.Container {
     private readonly toggleButton: BaseButton;
     /** Always the topmost row (see repositionHideButton()) — see this file's own doc for what it does. Lives in buttonsColumn (not a direct child of `this`, unlike toggleButton) since it's part of the collapsible menu, only visible/reachable while expanded. */
     private readonly hideButton: BaseButton;
+    /** Live-updated read-only text sitting above every registered button (see registerText()) — one shared PIXI.Text, its content rebuilt every frame by joining every registered getter with a newline, rather than one Text object per registration; debug info like this rarely needs independently-clickable/positioned rows the way buttons do. Lives in buttonsColumn, same visibility rules as every button row. */
+    private readonly infoText: PIXI.Text;
+    private readonly infoTextGetters: Array<() => string> = [];
     private expanded: boolean;
 
     public constructor() {
@@ -88,6 +93,13 @@ export default class InGameButtonList extends PIXI.Container {
             onClick: () => this.hideForSession(),
         });
         this.buttonsColumn.addChild(this.hideButton);
+
+        this.infoText = new PIXI.Text('', new PIXI.TextStyle({
+            fontFamily: 'Arial', fontSize: 14, fill: 0xffffff,
+            dropShadow: true, dropShadowDistance: 1, dropShadowAlpha: 0.8,
+        }));
+        this.buttonsColumn.addChild(this.infoText);
+
         this.repositionHideButton();
     }
 
@@ -120,6 +132,20 @@ export default class InGameButtonList extends PIXI.Container {
         return InGameButtonList.current.addButton(label, onClick);
     }
 
+    /**
+     * Registers one more line of live, read-only debug text shown ABOVE every button row (see
+     * `infoText`'s own doc) — `getText` is called fresh every frame (see update()), so it's
+     * always safe to read live/mutable state (ACTION_CONFIG, ShopUpgradeStorage, ...) directly
+     * inside it rather than snapshotting anything at registration time. Every registered line
+     * (across every caller) joins into the SAME PIXI.Text, in registration order, one per line.
+     */
+    public static registerText(getText: () => string): void {
+        if (!InGameButtonList.current) {
+            throw new Error('[InGameButtonList] registerText() called before any instance exists — UIService constructs one at scene build, before anything else registers a button.');
+        }
+        InGameButtonList.current.infoTextGetters.push(getText);
+    }
+
     /** This list's own top edge, in absolute screen space — AnimalDockUi (see UIService.positionAnimalDockUi()) stacks directly above the WHOLE list instead of the single camera-toggle button it used to anchor off, so it always clears however many buttons have been registered, PLUS the permanent hideButton row above them AND the always-visible toggle row below them (see TOGGLE_RESERVED_HEIGHT) — all reserved unconditionally, whether the stack is currently expanded/collapsed/hidden-for-session, so AnimalDockUi never jumps when any of that changes. */
     public getTopScreenY(): number {
         return this.position.y + this.topLocalY();
@@ -128,13 +154,20 @@ export default class InGameButtonList extends PIXI.Container {
     /** Bottom-left, regardless of viewport size/aspect — same corner/margin the old standalone camera-toggle button anchored to directly. Call every frame, same as every other HUD panel here. */
     public update(): void {
         const screen = Game.overlayScreenData;
-        if (!screen) {
-            return;
+        if (screen) {
+            this.position.set(
+                screen.bottomLeft.x + SCREEN_MARGIN,
+                screen.bottomLeft.y - SCREEN_MARGIN,
+            );
         }
-        this.position.set(
-            screen.bottomLeft.x + SCREEN_MARGIN,
-            screen.bottomLeft.y - SCREEN_MARGIN,
-        );
+
+        // Rebuilt fresh every frame (see registerText()'s own doc) — height can change from one
+        // frame to the next (a line growing/shrinking, or the very first getter registering
+        // after construction), so reposition alongside it rather than only on button changes.
+        if (this.infoTextGetters.length > 0) {
+            this.infoText.text = this.infoTextGetters.map(getText => getText()).join('\n');
+            this.repositionInfoText();
+        }
     }
 
     private addButton(label: string, onClick: () => void): BaseButton {
@@ -169,12 +202,24 @@ export default class InGameButtonList extends PIXI.Container {
     private repositionHideButton(): void {
         const index = this.buttons.length;
         this.hideButton.position.set(0, -(index + 1) * BUTTON_SIZE.height - index * BUTTON_GAP - TOGGLE_RESERVED_HEIGHT);
+        this.repositionInfoText();
     }
 
-    /** Local Y (relative to this container's own bottom-anchor origin — see update()) of the topmost row's TOP edge — hideButton (see this file's own doc), ALWAYS one row above however many buttons are registered, plus the reserved toggle row below everything (see getTopScreenY()'s own doc for why that's unconditional). */
-    private topLocalY(): number {
+    /** Sits directly above hideButton (the topmost button row), its own bottom edge INFO_TEXT_GAP above hideButton's top edge — same "current top edge + gap" idiom every other row here uses. No-op (never actually seen, since update() only calls this while infoTextGetters is non-empty) while nothing's registered — infoText.height would just be 0 either way, an empty PIXI.Text taking up no space. */
+    private repositionInfoText(): void {
+        this.infoText.position.set(0, this.rowsTopLocalY() - INFO_TEXT_GAP - this.infoText.height);
+    }
+
+    /** Local Y (relative to this container's own bottom-anchor origin — see update()) of the topmost BUTTON row's TOP edge — hideButton (see this file's own doc), ALWAYS one row above however many buttons are registered, plus the reserved toggle row below everything. Doesn't include infoText's own space — see topLocalY() for the version that does. */
+    private rowsTopLocalY(): number {
         const rows = this.buttons.length + 1; // +1 for the permanent hideButton row
         return -(rows * BUTTON_SIZE.height + (rows - 1) * BUTTON_GAP) - TOGGLE_RESERVED_HEIGHT;
+    }
+
+    /** rowsTopLocalY(), minus infoText's own reserved space when anything's actually registered (see getTopScreenY()'s own doc for why that reservation must be unconditional once present, so AnimalDockUi never jumps as the text's content/height changes frame to frame). */
+    private topLocalY(): number {
+        const infoSpace = this.infoTextGetters.length > 0 ? INFO_TEXT_GAP + this.infoText.height : 0;
+        return this.rowsTopLocalY() - infoSpace;
     }
 
     public destroy(): void {

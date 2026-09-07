@@ -125,4 +125,28 @@ export default class ResourceNodeRegistry {
 
         return found;
     }
+
+    /**
+     * Every currently-available ResourceNode within `radiusMeters` of `origin` — pure distance,
+     * no facing/cone filter (unlike findInCone, which is the swing's own hit-AoE query). This is
+     * AutoGatherController's own "what's close enough to even notice" pool: it picks which of
+     * these to actually auto-target (nearest one inside the player's facing cone) and which to
+     * flag as missing-tool, but doesn't need the registry to know anything about facing at all —
+     * see that file's own doc for the full radius+cone gathering redesign.
+     */
+    static findWithinRadius(origin: THREE.Vector3, radiusMeters: number): ResourceNode[] {
+        const found: ResourceNode[] = [];
+        const radiusSq = radiusMeters * radiusMeters;
+
+        for (const node of this.liveNodes) {
+            if (!(node instanceof ResourceNode) || !node.isAvailable) {
+                continue;
+            }
+            if (node.position.distanceToSquared(origin) <= radiusSq) {
+                found.push(node);
+            }
+        }
+
+        return found;
+    }
 }

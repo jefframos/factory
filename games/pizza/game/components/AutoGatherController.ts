@@ -1,20 +1,28 @@
 // AutoGatherController.ts
 //
-// The "no interaction required" half of the design doc: tracks every
-// ResourceNode whose gather-radius trigger (Layers.Resource) the player is
-// CURRENTLY overlapping (see `overlapping`, not just the one being acted
-// on), and — if the player isn't already busy — starts the matching action
-// via PlayerActionController against the first available one, the same
-// onPlayActionAnimation() entry point anything else would use.
+// The "no interaction required" half of the design doc: every frame,
+// notices every available ResourceNode within PlayerConfig's own
+// resourceDetectionRadius (see getPlayerConfig(), plain distance — no
+// facing/cone filter), and — if the player isn't already busy — starts the
+// matching action via PlayerActionController against whichever in-range,
+// tool-owned node is BOTH the nearest one AND currently inside the player's
+// own facing cone (resourceDetectionAngleDeg, symmetric around the same
+// real visual-forward direction getConeTargets() below reads). A resource
+// sitting in range but off to the side/behind is noticed (see
+// updateMissingToolNotifications()) but never auto-targeted until the
+// player turns toward it — this is the actual answer to "the player
+// shouldn't have to stand directly on the tile": distance now matters
+// (resourceDetectionRadius), but so does DIRECTION (resourceDetectionAngleDeg),
+// so walking past several resources without facing any of them doesn't
+// start chopping/mining one at random.
 //
-// Tracking every overlap (not just "the one that triggered this") matters
-// once the player stands where two resources' triggers overlap: only the
-// FIRST one's onTriggerEnter fires while walking in — the second one's
-// already-fired-and-forgotten. Finishing the first action needs to check
-// `overlapping` itself for "is there another one right here" rather than
-// waiting for a fresh onTriggerEnter that will never come — that's what
-// tryGatherNext() being called both from onTriggerEnter AND from every
-// action's completion/cancellation is for (see that method's own doc).
+// Replaces what used to be a physics-trigger-driven design (RigidBody
+// onTriggerEnter/onTriggerExit against each ResourceNode's own gather-radius
+// trigger, Layers.Resource) with a plain per-frame registry scan — simpler
+// once "in range" needed to mean "within a tunable radius" rather than "the
+// player physically overlaps this exact box," and it needs re-evaluating
+// continuously anyway (the target set changes as the player turns, not just
+// as they walk).
 //
 // This component banks amountPerGather * resourcePerHit * hits on EVERY
 // landed swing (see onHitLanded()), not just once at the end — matching the
@@ -26,21 +34,21 @@
 // whatever hits already landed; nothing is refunded, same as the node's own
 // damage persisting (see ResourceNode.life's doc).
 //
-// Leaving a node's trigger cancels the in-flight action against THAT node
-// (when the action's cancelOnLeaveRange says so) — the node keeps its
-// remaining life, so wandering off and returning resumes the same tree.
+// The current target falling out of resourceDetectionRadius cancels the
+// in-flight action against it (when the action's cancelOnLeaveRange says
+// so) — the node keeps its remaining life, so wandering off and returning
+// resumes the same tree.
 //
-// Deliberately doesn't touch movement/facing/timing/damage itself — those
-// live in PlayerActionController/FacingComponent/the action config; this
-// component's only job is "notice resources, kick off the right action,
-// bank the result, and always have somewhere to go next while still
-// standing in range of one."
+// Deliberately doesn't touch movement/timing/damage itself — those live in
+// PlayerActionController/the action config; this component's only job is
+// "notice resources, kick off the right action, bank the result, and always
+// have somewhere to go next while still in range/facing one."
 
 import * as THREE from 'three';
 import Component from '../ecs/Component';
-import RigidBody from '../physics/RigidBody';
 import PlayerActionController, { ActionTarget } from './PlayerActionController';
 import CharacterVisualComponent from './CharacterVisualComponent';
+import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
 import ResourceNode from '../player/ResourceNode';
 import ResourceNodeRegistry from '../player/ResourceNodeRegistry';
 import { BackpackStorage } from '../data/BackpackStorage';
@@ -50,92 +58,132 @@ import { ACTION_CONFIG, ActionType } from '../actions/ActionTypes';
 import { ItemStorage } from '../crafting/ItemStorage';
 import { ItemType } from '../crafting/ItemTypes';
 import { ToolId, getToolIcon } from '../actions/ToolRegistry';
+import { getPlayerConfig } from '../data/PlayerConfig';
 import PlayerNotificationComponent from './PlayerNotificationComponent';
 
 export default class AutoGatherController extends Component {
-    /** Every ResourceNode whose trigger the player is currently standing inside — see this file's own doc. */
-    private readonly overlapping = new Set<ResourceNode>();
-
-    public awake(): void {
-        const rigidBody = this.entity.getComponent(RigidBody)!;
-        rigidBody.onTriggerEnter.add(other => this.onTriggerEnter(other));
-        rigidBody.onTriggerExit.add(other => this.onTriggerExit(other));
-    }
-
-    private onTriggerEnter(other: RigidBody): void {
-        const node = other.entity;
-        if (!(node instanceof ResourceNode)) {
-            return;
-        }
-
-        this.overlapping.add(node);
-
-        if (node.isAvailable && !this.hasRequiredTool(node)) {
-            this.notifyMissingTool(node);
-        }
-
-        this.tryGatherNext();
-    }
-
     /**
-     * Player left something's trigger — untrack it, and cancel the in-flight action if that
-     * something is what we're currently acting on.
-     *
-     * The `node.isAvailable` guard is what separates "walked away" from "just finished it":
-     * a node depleting inside applyHit() unregisters its own RigidBody, and
-     * PhysicsWorld.unregister() fires onTriggerExit synchronously for the pair — so this
-     * handler runs mid-completion, while PlayerActionController is still technically busy
-     * with that very target. Without the guard, every successful harvest would cancel
-     * itself a beat before it could report 'completed', and nothing would ever be banked.
+     * Every in-range node found missing its tool as of the LAST frame — diffed against this
+     * frame's fresh scan in updateMissingToolNotifications() so a designer/player only sees the
+     * "missing tool" bubble once per approach, same one-shot feel the old onTriggerEnter path
+     * had, rather than every single frame the node stays in range.
      */
-    private onTriggerExit(other: RigidBody): void {
-        const node = other.entity;
-        if (!(node instanceof ResourceNode)) {
-            return;
-        }
+    private readonly lastMissingTool = new Set<ResourceNode>();
 
-        this.overlapping.delete(node);
-
-        if (!node.isAvailable) {
-            return;
-        }
-
+    public update(): void {
         const actionController = this.entity.getComponent(PlayerActionController)!;
-        if (actionController.target !== node) {
-            return;
+        const origin = this.entity.transform.position;
+        const candidates = ResourceNodeRegistry.findWithinRadius(origin, getPlayerConfig().resourceDetectionRadius);
+
+        this.updateMissingToolNotifications(candidates);
+
+        if (actionController.isBusy) {
+            this.cancelIfTargetOutOfRange(actionController, candidates);
         }
 
-        if (!ACTION_CONFIG[PROVIDER_CONFIG[node.providerType].action].cancelOnLeaveRange) {
-            return;
-        }
-
-        actionController.cancel();
-        // cancel() resolves synchronously — the action's own .then() (see tryGather()) will
-        // also call tryGatherNext() on the next microtask, but doing it here too means the
-        // player doesn't wait even that long if another overlapping node is available right now.
-        this.tryGatherNext();
-    }
-
-    /**
-     * Starts gathering the first available node still in `overlapping` — called from
-     * onTriggerEnter (a genuinely new overlap) AND every time an action finishes, whether it
-     * completed or was cancelled (see tryGather()'s .then() and onTriggerExit()). That second
-     * call site is the actual point of this method: without it, finishing one resource while
-     * still standing inside another's trigger left the player idle until they physically left
-     * and re-entered a trigger to get a fresh onTriggerEnter.
-     */
-    private tryGatherNext(): void {
-        const actionController = this.entity.getComponent(PlayerActionController)!;
+        // cancelIfTargetOutOfRange() resolves synchronously (see PlayerActionController.cancel()'s
+        // own doc) — isBusy is already false again by here if it just cancelled, so falling
+        // through to pick a fresh target the SAME frame (rather than waiting a tick) is safe.
         if (actionController.isBusy) {
             return;
         }
 
-        for (const node of this.overlapping) {
-            if (node.isAvailable && this.hasRequiredTool(node)) {
-                this.tryGather(node);
-                return;
+        const character = this.entity.getComponent(CharacterVisualComponent)?.character;
+        const node = this.pickTarget(origin, character, candidates);
+        if (node) {
+            this.tryGather(node);
+        }
+    }
+
+    /** Notifies (once per node, see `lastMissingTool`'s own doc) every in-range node the player currently lacks the tool for. */
+    private updateMissingToolNotifications(candidates: ResourceNode[]): void {
+        const currentMissingTool = new Set<ResourceNode>();
+        for (const node of candidates) {
+            if (this.hasRequiredTool(node)) {
+                continue;
+            }
+            currentMissingTool.add(node);
+            if (!this.lastMissingTool.has(node)) {
+                this.notifyMissingTool(node);
             }
         }
+        this.lastMissingTool.clear();
+        for (const node of currentMissingTool) {
+            this.lastMissingTool.add(node);
+        }
+    }
+
+    /**
+     * Cancels the in-flight action if its target has fallen out of `candidates` (i.e. out of
+     * resourceDetectionRadius) and its action says cancelOnLeaveRange — the distance-driven
+     * replacement for the old onTriggerExit handler. A depleted target isn't "out of range," it's
+     * just gone (still `isAvailable === false`, already filtered out of `candidates` for that
+     * reason too) — but that's fine here: PlayerActionController.update() itself is what ends the
+     * action once its target reports depleted, this method never needs to special-case it.
+     */
+    private cancelIfTargetOutOfRange(actionController: PlayerActionController, candidates: ResourceNode[]): void {
+        const target = actionController.target;
+        if (!(target instanceof ResourceNode)) {
+            return;
+        }
+        if (!ACTION_CONFIG[PROVIDER_CONFIG[target.providerType].action].cancelOnLeaveRange) {
+            return;
+        }
+        if (candidates.includes(target)) {
+            return;
+        }
+        actionController.cancel();
+    }
+
+    /**
+     * Of every in-range, tool-owned candidate, the NEAREST one whose direction from `origin`
+     * falls inside the player's own current facing cone (resourceDetectionAngleDeg, symmetric
+     * around real visual forward) — or undefined if none qualify. The facing direction is read
+     * off CharacterBody's own rotated container (`container.quaternion`), same "actual current
+     * visual forward, not the idealized facing target" reasoning getConeTargets() below uses for
+     * the swing's own hit cone — so what gets auto-targeted matches what's actually on screen.
+     * Falls back to ignoring the facing cone entirely (nearest in range wins) if the FBX
+     * character hasn't loaded yet, same permissive fallback getConeTargets() uses.
+     */
+    private pickTarget(origin: THREE.Vector3, character: ThirdPersonCharacter | undefined, candidates: ResourceNode[]): ResourceNode | undefined {
+        let dirX = 0;
+        let dirZ = 0;
+        let haveFacing = false;
+        if (character) {
+            const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(character.container.quaternion);
+            const len = Math.hypot(forward.x, forward.z);
+            if (len > 1e-6) {
+                dirX = forward.x / len;
+                dirZ = forward.z / len;
+                haveFacing = true;
+            }
+        }
+        const cosHalfAngle = Math.cos((getPlayerConfig().resourceDetectionAngleDeg * Math.PI / 180) / 2);
+
+        let nearest: ResourceNode | undefined;
+        let nearestDistSq = Infinity;
+        for (const node of candidates) {
+            if (!this.hasRequiredTool(node)) {
+                continue;
+            }
+
+            const dx = node.position.x - origin.x;
+            const dz = node.position.z - origin.z;
+            const distSq = dx * dx + dz * dz;
+            if (haveFacing && distSq > 1e-6) {
+                const invLen = 1 / Math.sqrt(distSq);
+                const dot = dx * invLen * dirX + dz * invLen * dirZ;
+                if (dot < cosHalfAngle) {
+                    continue;
+                }
+            }
+
+            if (distSq < nearestDistSq) {
+                nearestDistSq = distSq;
+                nearest = node;
+            }
+        }
+        return nearest;
     }
 
     /**
@@ -155,9 +203,9 @@ export default class AutoGatherController extends Component {
     /**
      * Surfaces `node`'s missing-tool block to the player — a bubble with the required tool's
      * own icon (+ exclamation badge) over their head, via PlayerNotificationComponent (see that
-     * file's own doc). Only called from onTriggerEnter (a fresh overlap), not from every
-     * tryGatherNext() retry — walking in without the axe shows the bubble once; standing there
-     * doesn't spam it again on every action-completion retry loop. Optional-chained since
+     * file's own doc). Only called once per node per approach (see updateMissingToolNotifications()
+     * / `lastMissingTool`'s own doc) — entering detection range without the axe shows the bubble
+     * once; standing there doesn't spam it again every frame. Optional-chained since
      * PlayerNotificationComponent is only present when MainPlayer was built with a
      * screenHost (omitted for the headless test harness — see that file's own doc).
      */
@@ -183,9 +231,9 @@ export default class AutoGatherController extends Component {
             if (result === 'completed') {
                 console.log(`[gather] fully harvested ${config.label}`);
             }
-            // Either ending (completed or cancelled) may leave the player still standing in
-            // another resource's trigger — see this method's own doc / tryGatherNext()'s.
-            this.tryGatherNext();
+            // Nothing else to do here — update() re-scans for a fresh target every frame
+            // regardless of how the last action ended, so the very next frame already picks up
+            // wherever this leaves off.
         });
     }
 

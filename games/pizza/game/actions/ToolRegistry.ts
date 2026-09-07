@@ -14,6 +14,41 @@ import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import MODELS, { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
 
+/** A single attribute's span across a shop's whole upgrade ladder — see ToolAttributeRanges' own doc. */
+export interface AttributeRange {
+    /** What this attribute reads as at level 0 (nothing bought yet) — should match this action's hand-authored ACTION_CONFIG default (see ActionTypes.ts/BASE_ACTION_CONFIG), so a fresh tool and a never-upgraded one are indistinguishable. */
+    min: number;
+    /** What this attribute reads as once the ladder is fully maxed (totalLevels bought). */
+    max: number;
+}
+
+/**
+ * The 5 upgradeable knobs a tool's shop ladder scales between (see ActionTypes.ts's
+ * ActionConfig for what each actually drives in-game) — every one of these is written so
+ * "bigger number = stronger," including `speed`: that's attacks PER SECOND, not
+ * ACTION_CONFIG.hitIntervalSec's seconds-per-attack, so ShopTypes.applyShopLevel() inverts it
+ * (hitIntervalSec = 1 / speed) rather than lerping hitIntervalSec directly, which would
+ * otherwise make "faster" read as a SMALLER max than min.
+ *
+ * Lives on the TOOL (ToolVisualEntry.attributes below), not the shop that sells it — a shop is
+ * just a storefront (cost/cooldown/which building) for upgrading whichever tool it names via
+ * `tool: ToolId`; the ladder's actual min/max numbers belong to the tool being upgraded, so two
+ * different shops could in principle sell upgrades for the same tool without disagreeing about
+ * its range. See ShopTypes.ts's own doc.
+ */
+export interface ToolAttributeRanges {
+    /** hitScale — hits one swing counts as ("damage"), capped by a target's own remaining life. */
+    damage: AttributeRange;
+    /** hitAngleDeg — full aperture of the AoE hit cone every swing checks for extra targets. */
+    hitAngleDeg: AttributeRange;
+    /** hitRangeMeters — how far that same hit cone reaches. */
+    hitRangeMeters: AttributeRange;
+    /** Attacks per second — inverted into ACTION_CONFIG.hitIntervalSec (seconds per attack) by ShopTypes.applyShopLevel(). */
+    speed: AttributeRange;
+    /** resourcePerHit — yield banked per hit, never capped by a target's remaining life (see ActionTypes.ts's own doc). */
+    resourcePerHit: AttributeRange;
+}
+
 export interface ToolVisualEntry {
     /** Human-readable name — shown wherever a tool needs a display label (e.g. the web editor's Tools tab, ToolLevelUI). Not gameplay data; purely for anything that wants to show a name instead of the raw id. */
     label: string;
@@ -40,6 +75,13 @@ export interface ToolVisualEntry {
     offset: THREE.Vector3;
     /** Local rotation (degrees, XYZ euler) so the tool reads as held along the hand/forearm rather than sticking straight out. */
     rotationDeg: THREE.Vector3;
+    /**
+     * This tool's own upgrade ladder range — undefined for a tool no shop ever upgrades (e.g.
+     * "rope" below). A ShopConfig that names this tool via `tool: ToolId` (see ShopTypes.ts)
+     * reads its min/max numbers from HERE, not from the shop's own config — the shop is just
+     * the storefront (cost/cooldown/appearance), the tool owns what it upgrades between.
+     */
+    attributes?: ToolAttributeRanges;
 }
 
 export const TOOL_LIBRARY = {
@@ -53,6 +95,28 @@ export const TOOL_LIBRARY = {
         scale: 100,
         offset: new THREE.Vector3(-20, 20, -15),
         rotationDeg: new THREE.Vector3(180, 0, 90),
+        attributes: {
+            "damage": {
+                "min": 1,
+                "max": 4
+            },
+            "hitAngleDeg": {
+                "min": 45,
+                "max": 360
+            },
+            "hitRangeMeters": {
+                "min": 3,
+                "max": 10
+            },
+            "speed": {
+                "min": 1,
+                "max": 2.5
+            },
+            "resourcePerHit": {
+                "min": 1,
+                "max": 10
+            }
+        },
     },
     pickaxe: {
         label: "Pickaxe",
@@ -64,6 +128,28 @@ export const TOOL_LIBRARY = {
         scale: 100,
         offset: new THREE.Vector3(-20, 20, -15),
         rotationDeg: new THREE.Vector3(180, 0, 90),
+        "attributes": {
+            "damage": {
+                "min": 1,
+                "max": 4
+            },
+            "hitAngleDeg": {
+                "min": 45,
+                "max": 180
+            },
+            "hitRangeMeters": {
+                "min": 1,
+                "max": 4
+            },
+            "speed": {
+                "min": 1,
+                "max": 2.5
+            },
+            "resourcePerHit": {
+                "min": 1,
+                "max": 10
+            }
+        }
     },
     "rope": {
         color: 0x6b4423,
@@ -74,7 +160,14 @@ export const TOOL_LIBRARY = {
         rotationDeg: new THREE.Vector3(180, 0, 90),
         "label": "Rope",
         "icon": "rope-coil",
-        "models": [MODELS.Tools.RopeBundleA]
+        "models": [MODELS.Tools.RopeBundleA],
+        "attributes": {
+            "damage": {},
+            "hitAngleDeg": {},
+            "hitRangeMeters": {},
+            "speed": {},
+            "resourcePerHit": {}
+        }
     }
 } satisfies Record<string, ToolVisualEntry>;
 

@@ -26,10 +26,40 @@
                     "description": "+10 backpack capacity"
                 },
                 "view": "tower2view"
+            },
+            {
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                "level": 3
+            },
+            {
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                "level": 4
+            },
+            {
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                "level": 5
+            },
+            {
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                "level": 6
             }
         ],
         "baseView": "tower1View",
         "popupMode": "simple",
-        "icon": "campfire"
+        "icon": "campfire",
+        "updateParticleEffectId": "gateMyst",
+        "solid": 0.8
     }
 }

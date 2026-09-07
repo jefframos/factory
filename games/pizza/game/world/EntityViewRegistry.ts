@@ -48,7 +48,7 @@ export const ENTITY_VIEW_CONFIG: Record<string, EntityViewConfig> = {
         "rotationDeg": 0
     },
     "tower1View": {
-        "models": [MODELS.Pirate.TowerBase],
+        "models": [MODELS.Pirate.TowerRoof],
         "scale": 1,
         "rotationDeg": 0,
         "offset": [
@@ -134,79 +134,131 @@ export const ENTITY_VIEW_CONFIG: Record<string, EntityViewConfig> = {
         "models": [MODELS.Food.Beet],
         "scale": 1.5,
         "rotationDeg": 0,
-        "offset": [0, -0.1, 0]
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
     },
     "cropBroccoliView": {
         "models": [MODELS.Food.Broccoli],
         "scale": 1.5,
         "rotationDeg": 0,
-        "offset": [0, -0.1, 0]
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
     },
     "cropCabbageView": {
         "models": [MODELS.Food.Cabbage],
         "scale": 1.5,
         "rotationDeg": 0,
-        "offset": [0, -0.1, 0]
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
     },
     "cropCarrotView": {
         "models": [MODELS.Food.Carrot],
         "scale": 1.5,
         "rotationDeg": 0,
-        "offset": [0, -0.1, 0]
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
     },
     "cropCauliflowerView": {
         "models": [MODELS.Food.Cauliflower],
         "scale": 1.5,
         "rotationDeg": 0,
-        "offset": [0, -0.1, 0]
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
     },
     "cropCornView": {
         "models": [MODELS.Food.Corn],
         "scale": 1.5,
         "rotationDeg": 0,
-        "offset": [0, -0.1, 0]
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
     },
     "cropLeekView": {
         "models": [MODELS.Food.Leek],
         "scale": 1.5,
         "rotationDeg": 0,
-        "offset": [0, -0.1, 0]
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
     },
     "cropMushroomView": {
         "models": [MODELS.Food.Mushroom],
         "scale": 1.5,
         "rotationDeg": 0,
-        "offset": [0, -0.1, 0]
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
     },
     "cropPumpkinBasicView": {
         "models": [MODELS.Food.PumpkinBasic],
         "scale": 1.5,
         "rotationDeg": 0,
-        "offset": [0, -0.1, 0]
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
     },
     "cropPumpkinView": {
         "models": [MODELS.Food.Pumpkin],
         "scale": 1.5,
         "rotationDeg": 0,
-        "offset": [0, -0.1, 0]
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
     },
     "cropStrawberryView": {
         "models": [MODELS.Food.Strawberry],
         "scale": 1.5,
         "rotationDeg": 0,
-        "offset": [0, -0.1, 0]
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
     },
     "cropTomatoView": {
         "models": [MODELS.Food.Tomato],
         "scale": 1.5,
         "rotationDeg": 0,
-        "offset": [0, -0.1, 0]
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
     },
     "cropWatermelonView": {
         "models": [MODELS.Food.Watermelon],
         "scale": 1.5,
         "rotationDeg": 0,
-        "offset": [0, -0.1, 0]
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
     }
 };
 

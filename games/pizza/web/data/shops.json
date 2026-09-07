@@ -3,28 +3,6 @@
         "name": "Axe Shop",
         "tool": "axe",
         "action": "chop",
-        "attributes": {
-            "damage": {
-                "min": 1,
-                "max": 4
-            },
-            "hitAngleDeg": {
-                "min": 30,
-                "max": 360
-            },
-            "hitRangeMeters": {
-                "min": 1.5,
-                "max": 3
-            },
-            "speed": {
-                "min": 1,
-                "max": 2.5
-            },
-            "resourcePerHit": {
-                "min": 1,
-                "max": 4
-            }
-        },
         "totalLevels": 10,
         "baseCost": 10,
         "costScale": 2.05,

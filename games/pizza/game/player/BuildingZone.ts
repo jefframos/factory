@@ -40,7 +40,7 @@ import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { BuildingStorage } from '../data/BuildingStorage';
-import { BUILDING_CONFIG, BuildingId, getMeshConfigForLevel, getViewIdForLevel } from '../data/BuildingTypes';
+import { BUILDING_CONFIG, BuildingId, getFillFractionForLevel, getMeshConfigForLevel, getViewIdForLevel } from '../data/BuildingTypes';
 import { resolveEntityView } from '../world/EntityViewRegistry';
 import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
@@ -75,9 +75,10 @@ const TITLE_SLOTS_GAP = 4;
 const REQ_SLOT_SIZE = 56;
 const REQ_SLOT_GAP = 10;
 const FLY_IN_STAGGER_SEC = 0.12;
-/** How far above its resting height the upgraded mesh starts before dropping in — see replaceBuildingMesh(). */
-const MESH_DROP_START_HEIGHT = 3;
+/** How long the reveal sweep takes on a level-up mesh swap — see playRevealEffect(). */
 const MESH_DROP_DURATION_SEC = 0.7;
+/** How long awaitingReentry stays true after a level clears before auto-clearing on its own — see that field's own doc. A player who stays standing in the zone through the whole level-up beat can resume depositing toward the NEXT level after this, without having to walk out and back in. */
+const REENTRY_TIMEOUT_SEC = 3;
 /** Fallback for BuildingConfig.updateParticleCount when a building sets updateParticleEffectId but not its own count. */
 const DEFAULT_UPDATE_PARTICLE_COUNT = 24;
 
@@ -90,6 +91,8 @@ export interface BuildingTriggerArea {
 export default class BuildingZone extends Entity {
     private readonly screenHost: ScreenAnchorHost;
     private readonly buildingId: BuildingId;
+    /** This zone's own intended resting world-Y, captured once from the constructor's `position` — deliberately NOT read back off `this.transform.position.y` later, since ZoneVisibilityManager parks a newly-registered zone below this Y and animates it rising back up (see playRevealEffect()'s own doc on why that transient sunken position, if read mid-rise, corrupts the reveal shader's bounds). */
+    private readonly restY: number;
     /** Optional — when omitted, playLevelUpSequence() just times the reveal off LEVEL_UP_REVEAL_DELAY_SEC instead of an actual camera trip. See CameraFocusHost.ts's own doc. */
     private readonly cameraFocusHost?: CameraFocusHost;
     /** Optional — when given, notified at the very end of playLevelUpSequence() so chained world-progression checks (e.g. a gate unlocking) run AFTER this building's own camera trip is fully done, never concurrently with it. See WorldProgressionHost.ts's own doc. */
@@ -115,13 +118,21 @@ export default class BuildingZone extends Entity {
      * to start any new drain and flyInResource()'s step() loop halts on its next tick, so
      * depositing stops for the whole level-up transition instead of continuing to feed the
      * NEXT level's requirements while the mesh-swap/camera sequence is still playing. Only
-     * clears once the player actually LEAVES this zone's trigger (see handleTriggerExit()) —
-     * even after the transition finishes, standing in place doesn't auto-resume; the building
-     * is "dirty" until they leave and walk back in, same as a fresh visit.
+     * clears the instant the player LEAVES this zone's trigger (see handleTriggerExit()), OR —
+     * if they just stand there instead — after REENTRY_TIMEOUT_SEC on its own (see
+     * reentryTimer), so someone who stays put through the whole level-up sequence doesn't have
+     * to walk out and back in just to nudge this back to false; it only ever needs a deliberate
+     * leave-and-return when they wander off mid-transition and reentryTimer never gets to fire.
      */
     private awaitingReentry = false;
+    /** Clears awaitingReentry on its own after REENTRY_TIMEOUT_SEC — see that field's own doc. Killed/replaced on every handleLevelUp() (a level-up starts its own fresh window rather than extending one already ticking down from a PRIOR level's clear) and on handleTriggerExit()/destroy() (nothing left to time out once the player's gone or this zone is torn down). */
+    private reentryTimer?: gsap.core.Tween;
     /** Where deposited icons fly TO — the same anchor this zone's own requirements panel tracks (see awake()), i.e. wherever this building's UI is actually rendered on screen, not a point on the building's 3D mesh. */
     private labelAnchor!: THREE.Object3D;
+    /** The dropper's dotted floor outline — hidden once BuildingStorage.isMaxLevel() (see refreshLabel()), since there's nothing left to deposit into and the final mesh should just stand there uninterrupted. */
+    private dropperVisual!: DottedZoneVisualComponent;
+    /** Owns the requirements panel's on-screen positioning/pointer — force-hidden at max level (see refreshLabel()) so its own `content.visible = true` (whenever the target is on-screen) can't override labelFrame.visible back to true, and so its avoidViewer pointer sprite stops showing too. Undefined only for the very first refreshLabel() call in awake(), which runs before this component is constructed. */
+    private labelScreenAnchor?: ScreenAnchorComponent;
 
     private titleText!: PIXI.Text;
     /** Holds either a single horizontal row of requirement slots (see ResourceSlotVisual.ts) or a lone "MAX LEVEL" text — rebuilt wholesale by refreshLabel() rather than diffed, since it only ever has a handful of children. */
@@ -132,6 +143,8 @@ export default class BuildingZone extends Entity {
     private buildingMesh?: THREE.Mesh;
     /** The real-glb counterpart to `buildingMesh` above, used instead of it when this level's `view` id resolves to an actual model (see EntityViewRegistry.ts's resolveEntityView()). */
     private buildingVisual?: GlbVisualComponent;
+    /** The view id `buildingMesh`/`buildingVisual` was last built from — lets replaceBuildingMesh() tell "the new level shares this SAME mesh with the one just cleared" (grow the existing reveal fill in place, no dispose/recreate) apart from "the new level actually swaps in a different mesh" (see getFillFractionForLevel()'s own doc on why a run of levels can share one view id). Undefined only before the very first createBuildingMesh() call. */
+    private currentViewId?: string;
 
     private readonly handleProgressChanged = (id: BuildingId): void => {
         if (id === this.buildingId) {
@@ -149,6 +162,10 @@ export default class BuildingZone extends Entity {
         // straight off the landing icon that completed it) — see awaitingReentry's own doc.
         // Anything already in flight still lands normally; this only stops NEW departures.
         this.awaitingReentry = true;
+        this.reentryTimer?.kill();
+        this.reentryTimer = gsap.delayedCall(REENTRY_TIMEOUT_SEC, () => {
+            this.awaitingReentry = false;
+        });
 
         // Fire-and-forget from the Signal's perspective — BuildingStorage.onLevelUp is a
         // synchronous callback, but the sequence it kicks off (popup, camera travel/hold/
@@ -197,6 +214,7 @@ export default class BuildingZone extends Entity {
         this.footprint = footprint;
         this.triggerArea = triggerArea;
         this.transform.position.copy(position);
+        this.restY = position.y;
     }
 
     public override awake(): void {
@@ -242,7 +260,7 @@ export default class BuildingZone extends Entity {
         // dotted-outline technique as QueueZone/DropZone. Needed independently of the building's
         // own visual mesh below since a triggerArea (a Tiled "dropper") can sit anywhere on the
         // map, entirely apart from where the building itself is drawn — see triggerArea's own doc.
-        this.addComponent(new DottedZoneVisualComponent(
+        this.dropperVisual = this.addComponent(new DottedZoneVisualComponent(
             halfExtents.x * 2,
             halfExtents.z * 2,
             DROPPER_ZONE_CORNER_RADIUS,
@@ -268,7 +286,6 @@ export default class BuildingZone extends Entity {
         const column = new PIXI.Container();
         column.addChild(this.titleText, this.requirementsContainer);
         this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(BUILDING_CONFIG[this.buildingId].popupMode, 'BuildingFrame', BUILDING_CONFIG[this.buildingId].frame), column);
-        this.refreshLabel();
 
         // A dedicated empty node the panel tracks, rather than a raw captured position —
         // parented under this.transform so it moves with the zone for free. Stored as a field
@@ -283,12 +300,20 @@ export default class BuildingZone extends Entity {
         // that file's own doc. avoidViewer (only for 'simple' — see PopupConfig.ts's own doc)
         // slides the panel aside instead of letting it land on the player, who's typically
         // standing right on this zone's own base once they're close enough to interact.
-        this.addComponent(new ScreenAnchorComponent(
+        this.labelScreenAnchor = this.addComponent(new ScreenAnchorComponent(
             this.screenHost,
             this.labelFrame,
             () => this.labelAnchor.getWorldPosition(labelAnchorWorldPosition),
             { ...ZONE_LABEL_ANCHOR_OPTIONS, ...resolvePopupAvoidViewer(BUILDING_CONFIG[this.buildingId].popupMode) },
         ));
+
+        // Deliberately called only now, AFTER labelScreenAnchor exists — refreshLabel() calls
+        // this.labelScreenAnchor?.setForceHidden() at max level, and a building that's ALREADY
+        // maxed when it first spawns (e.g. loaded from a save) would otherwise have that one
+        // call silently no-op on an as-yet-undefined labelScreenAnchor, with no later
+        // progress/level-up event ever coming along to call refreshLabel() again — leaving its
+        // ScreenAnchorComponent (and avoidViewer pointer) stuck showing forever.
+        this.refreshLabel();
 
         BuildingStorage.onProgressChanged.add(this.handleProgressChanged);
         BuildingStorage.onLevelUp.add(this.handleLevelUp);
@@ -307,29 +332,38 @@ export default class BuildingZone extends Entity {
     public override destroy(): void {
         BuildingStorage.onProgressChanged.remove(this.handleProgressChanged);
         BuildingStorage.onLevelUp.remove(this.handleLevelUp);
+        this.reentryTimer?.kill();
         this.disposeBuildingMesh();
         super.destroy();
     }
 
     /**
      * Builds this level's visible structure and parents it under this.transform, replacing
-     * whatever createBuildingMesh() built last (see disposeBuildingMesh()). `dropIn` plays the
-     * "drops from above, bounces to rest" beat used on a level-up (see replaceBuildingMesh());
-     * pass false for the zone's very first mesh, where there's no prior state to animate FROM.
-     * Prefers this level's EntityViewRegistry `view` id (a real glb — see BuildingLevelConfig.
-     * view's own doc) when one resolves to an actual model; falls back to the level's own box
-     * placeholder (`mesh`) otherwise, unchanged from before `view` existed.
+     * whatever createBuildingMesh() built last (see disposeBuildingMesh()). Always a FRESH
+     * mesh — callers that instead want to grow the fill on the mesh already standing (a level
+     * whose `view` is unchanged from the one just cleared — see getFillFractionForLevel()'s own
+     * doc) go through replaceBuildingMesh()'s own same-view branch and never reach here at all.
+     * `dropIn` plays the reveal-sweep beat (see playRevealEffect()); pass false for the zone's
+     * very first mesh, where there's no prior state to animate FROM — it's set directly to this
+     * level's target fill fraction instead. Prefers this level's EntityViewRegistry `view` id (a
+     * real glb — see BuildingLevelConfig.view's own doc) when one resolves to an actual model;
+     * falls back to the level's own box placeholder (`mesh`) otherwise, unchanged from before
+     * `view` existed.
      */
     private createBuildingMesh(level: number, dropIn: boolean): void {
-        const resolved = resolveEntityView(getViewIdForLevel(this.buildingId, level));
+        const viewId = getViewIdForLevel(this.buildingId, level);
+        this.currentViewId = viewId;
+        const targetFraction = getFillFractionForLevel(this.buildingId, level);
+
+        const resolved = resolveEntityView(viewId);
         if (resolved) {
-            this.createBuildingView(resolved, dropIn);
+            this.createBuildingView(resolved, dropIn, targetFraction);
         } else {
-            this.createBuildingBox(getMeshConfigForLevel(this.buildingId, level), dropIn);
+            this.createBuildingBox(getMeshConfigForLevel(this.buildingId, level), dropIn, targetFraction);
         }
     }
 
-    private createBuildingBox(config: ReturnType<typeof getMeshConfigForLevel>, dropIn: boolean): void {
+    private createBuildingBox(config: ReturnType<typeof getMeshConfigForLevel>, dropIn: boolean, targetFraction: number): void {
         const material = new THREE.MeshStandardMaterial({ color: config.color });
         BendService.applyBend(material);
 
@@ -337,37 +371,82 @@ export default class BuildingZone extends Entity {
         const width = this.footprint?.width ?? configWidth;
         const depth = this.footprint?.depth ?? configDepth;
         const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
-        const restY = height / 2;
-        mesh.position.set(0, dropIn ? restY + MESH_DROP_START_HEIGHT : restY, 0);
+        mesh.position.set(0, height / 2, 0);
         this.transform.add(mesh);
         this.buildingMesh = mesh;
 
-        if (dropIn) {
-            gsap.to(mesh.position, { y: restY, duration: MESH_DROP_DURATION_SEC, ease: 'bounce.out' });
-        }
+        this.playRevealEffect(mesh, dropIn, targetFraction);
     }
 
-    private createBuildingView(resolved: NonNullable<ReturnType<typeof resolveEntityView>>, dropIn: boolean): void {
+    private createBuildingView(resolved: NonNullable<ReturnType<typeof resolveEntityView>>, dropIn: boolean, targetFraction: number): void {
         const [offsetX, offsetY, offsetZ] = resolved.offset;
-        const startY = dropIn ? offsetY + MESH_DROP_START_HEIGHT : offsetY;
 
         const visual = new GlbVisualComponent(
             resolved.model,
-            new THREE.Vector3(offsetX, startY, offsetZ),
+            new THREE.Vector3(offsetX, offsetY, offsetZ),
             resolved.scale,
             THREE.MathUtils.degToRad(resolved.rotationDeg),
-            () => {
-                if (dropIn) {
-                    gsap.to(visual.mesh.position, { y: offsetY, duration: MESH_DROP_DURATION_SEC, ease: 'bounce.out' });
-                }
-            },
+            // The glb loads asynchronously — the reveal sweep needs the finished mesh's
+            // world bounds, so it's set up here rather than right after construction.
+            () => this.playRevealEffect(visual.mesh, dropIn, targetFraction),
         );
         this.buildingVisual = this.addComponent(visual);
     }
 
+    /** Shared by every material a reveal sweep is applied to (see playRevealEffect()) — kept as an instance field so disposeBuildingMesh() can kill an in-flight sweep, and so replaceBuildingMesh()'s same-view branch can grow an ALREADY-applied sweep further without re-touching any material. */
+    private readonly revealProgress = { value: 0 };
+
+    /**
+     * Sweeps a bottom-to-top reveal cutout (see BendService.applyReveal's own doc) across every
+     * material of `root`, over its own world-space Y bounds, up to `targetFraction` (1 = fully
+     * built — see getFillFractionForLevel()'s own doc for why a level mid-run stops short of
+     * that). `dropIn` false (the zone's very first mesh, or a save reloaded already past level
+     * 0) snaps straight to `targetFraction` with no animation, since there's no prior state to
+     * grow FROM; `dropIn` true (an actual level-up) animates 0 -> targetFraction instead, the
+     * "grows in from the ground" beat that replaces the old drop-from-above/bounce one.
+     */
+    private playRevealEffect(root: THREE.Object3D, dropIn: boolean, targetFraction: number): void {
+        // `root` was just parented under this.transform this SAME tick (either the box mesh
+        // built a few lines up, or a GlbVisualComponent's onReady) — its (and its ancestors')
+        // matrixWorld hasn't necessarily been recomputed by the renderer yet, and Box3 reads
+        // world positions straight off matrixWorld. Skipping this risked bounds computed from a
+        // stale/identity matrix — collapsing min/max toward the wrong Y range and discarding
+        // almost the entire mesh under the reveal shader below, i.e. the building silently
+        // rendering as "not there" instead of at its correct fill level.
+        root.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(root);
+        // ZoneVisibilityManager parks a newly-registered zone `riseDistance` units BELOW restY
+        // and animates it rising back up over time (see that file's own reveal-on-approach
+        // logic) — this can still be mid-rise the instant a GLB's onReady fires, so the world
+        // bounds Box3 just measured may be sitting `riseDistance` units too low. Correcting by
+        // the gap between this.transform.position.y (live, possibly still sunken) and restY
+        // (this zone's own known FINAL resting Y, captured once in the constructor) re-bases
+        // the bounds to where they'll actually end up once the rise finishes, so the reveal
+        // shader's min/max — fixed at creation time, never re-measured per frame — stays
+        // correct regardless of how far into that rise animation this happened to run.
+        const riseCorrection = this.restY - this.transform.position.y;
+        const correctedMinY = bounds.min.y + riseCorrection;
+        const correctedMaxY = bounds.max.y + riseCorrection;
+        // A few glbs also carry geometry that dips below this zone's own ground level (a buried
+        // foundation) — Box3 has no idea that part is invisible, so clamping the bottom to restY
+        // keeps the fill fraction tracking what's actually visible above ground.
+        const revealMinY = Math.max(correctedMinY, this.restY);
+        this.revealProgress.value = dropIn ? 0 : targetFraction;
+        root.traverse(child => {
+            if (child instanceof THREE.Mesh) {
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                materials.forEach(material => BendService.applyReveal(material, revealMinY, correctedMaxY, this.revealProgress));
+            }
+        });
+        if (dropIn) {
+            gsap.to(this.revealProgress, { value: targetFraction, duration: MESH_DROP_DURATION_SEC, ease: 'power2.out' });
+        }
+    }
+
     private disposeBuildingMesh(): void {
+        gsap.killTweensOf(this.revealProgress);
+
         if (this.buildingMesh) {
-            gsap.killTweensOf(this.buildingMesh.position);
             this.buildingMesh.geometry.dispose();
             (this.buildingMesh.material as THREE.Material).dispose();
             this.buildingMesh.removeFromParent();
@@ -375,66 +454,84 @@ export default class BuildingZone extends Entity {
         }
 
         if (this.buildingVisual) {
-            if (this.buildingVisual.isReady) {
-                gsap.killTweensOf(this.buildingVisual.mesh.position);
-            }
             this.buildingVisual.destroy();
             this.buildingVisual = undefined;
         }
     }
 
-    /** The "remove one, drop-bounce the upgraded version" visual beat — tears down the just-superseded level's mesh and drops the new one in from above. Called as soon as a level clears (see playLevelUpSequence()), so by the time the camera actually arrives (if focusing at all), the building's typically already mid-bounce or freshly landed. */
+    /**
+     * The "remove one, reveal the upgraded version" visual beat — called as soon as a level
+     * clears (see playLevelUpSequence()), so by the time the camera actually arrives (if
+     * focusing at all), the building's typically already mid-sweep or freshly revealed.
+     *
+     * Two cases, per getFillFractionForLevel()'s own doc on runs of levels sharing one `view`:
+     *   - This level's view id is the SAME as the one just cleared (still mid-run, e.g. camp's
+     *     level 1 -> level 2 both "tower2view") — the mesh already standing is still the
+     *     correct one, so it's left completely alone; only the shared revealProgress uniform
+     *     grows from its current value up to this level's (higher) target fraction.
+     *   - The view id actually changed (a genuinely new mesh, or the run just ended) — tears
+     *     down the just-superseded mesh and builds/sweeps in the new one from scratch, exactly
+     *     as before.
+     */
     private replaceBuildingMesh(level: number): void {
+        const viewId = getViewIdForLevel(this.buildingId, level);
+        const sameView = viewId === this.currentViewId && (this.buildingMesh || this.buildingVisual);
+        if (sameView) {
+            const targetFraction = getFillFractionForLevel(this.buildingId, level);
+            gsap.to(this.revealProgress, { value: targetFraction, duration: MESH_DROP_DURATION_SEC, ease: 'power2.out' });
+            return;
+        }
+
         this.disposeBuildingMesh();
         this.createBuildingMesh(level, true);
     }
 
-    /** Rewrites the panel's title/requirement slots from BuildingStorage's current state and re-fits the frame around the new bounds. `popupMode: 'none'` (see PopupConfig.ts's own doc) skips all of this and keeps the panel permanently hidden; `'simple'` keeps the requirement slots but drops the title line. */
+    /** Rewrites the panel's title/requirement slots from BuildingStorage's current state and re-fits the frame around the new bounds. `popupMode: 'none'` (see PopupConfig.ts's own doc) skips all of this and keeps the panel permanently hidden; `'simple'` keeps the requirement slots but drops the title line. At max level there's nothing left to deposit or read, so the whole panel and the dropper's dotted outline are hidden instead — just the finished mesh stays. */
     private refreshLabel(): void {
         const config = BUILDING_CONFIG[this.buildingId];
 
-        if (config.popupMode === 'none') {
+        const maxLevel = BuildingStorage.isMaxLevel(this.buildingId);
+        this.dropperVisual.setVisible(!maxLevel);
+        this.labelScreenAnchor?.setForceHidden(maxLevel);
+
+        if (config.popupMode === 'none' || maxLevel) {
             this.titleText.visible = false;
             this.labelFrame.visible = false;
             this.labelFrame.fit();
             return;
         }
 
+        // Always shown now, even in 'simple' mode — a level number above the requirement slots
+        // is the one piece of context a bare icon-first popup still needs (was previously
+        // dropped entirely for 'simple', leaving no way to tell the building's current level
+        // without opening a menu). 'simple' gets the short "Lv1" form; every other mode keeps
+        // the fuller "{name} Lv.1".
         const level = BuildingStorage.getLevel(this.buildingId);
-        const showTitle = config.popupMode !== 'simple';
-        this.titleText.visible = showTitle;
-        this.titleText.text = showTitle ? `${config.name} Lv.${level}` : '';
+        this.titleText.visible = true;
+        this.titleText.text = config.popupMode === 'simple' ? `Lv${level}` : `${config.name} Lv.${level}`;
 
         this.requirementsContainer.removeChildren().forEach(child => child.destroy({ children: true }));
 
-        let requirementsHeight: number;
-        if (BuildingStorage.isMaxLevel(this.buildingId)) {
-            const maxLevelText = new PIXI.Text('MAX LEVEL', TextStyleRegistry.Body);
-            maxLevelText.anchor.set(0.5, 1);
-            this.requirementsContainer.addChild(maxLevelText);
-            requirementsHeight = maxLevelText.height;
-        } else {
-            const next = BuildingStorage.getNextLevelConfig(this.buildingId)!;
-            const entries = Object.entries(next.requirements) as [ResourceType, number][];
+        const next = BuildingStorage.getNextLevelConfig(this.buildingId)!;
+        const entries = Object.entries(next.requirements) as [ResourceType, number][];
 
-            const slots = entries.map(([type, need]) => {
-                const have = BuildingStorage.getProgress(this.buildingId, type);
-                return createResourceSlot(type, REQ_SLOT_SIZE, `${have}/${need}`);
-            });
-            // All slots share the same size/font, so their visualHeight (slot + label below
-            // it) is identical in practice — max() just guards against a future label style
-            // that could vary per-entry.
-            requirementsHeight = Math.max(REQ_SLOT_SIZE, ...slots.map(slot => slot.visualHeight));
+        const slots = entries.map(([type, need]) => {
+            const have = BuildingStorage.getProgress(this.buildingId, type);
+            return createResourceSlot(type, REQ_SLOT_SIZE, `${have}/${need}`);
+        });
+        // All slots share the same size/font, so their visualHeight (slot + label below
+        // it) is identical in practice — max() just guards against a future label style
+        // that could vary per-entry.
+        const requirementsHeight = Math.max(REQ_SLOT_SIZE, ...slots.map(slot => slot.visualHeight));
 
-            // One horizontal row, centered — same slot visual as BackpackUI (see
-            // ResourceSlotVisual.ts) — with its bottom edge (below each slot's label) landing
-            // exactly at y=0 (see this file's own doc).
-            const rowWidth = entries.length * REQ_SLOT_SIZE + Math.max(0, entries.length - 1) * REQ_SLOT_GAP;
-            slots.forEach((slot, index) => {
-                slot.container.position.set(-rowWidth / 2 + index * (REQ_SLOT_SIZE + REQ_SLOT_GAP), -requirementsHeight);
-                this.requirementsContainer.addChild(slot.container);
-            });
-        }
+        // One horizontal row, centered — same slot visual as BackpackUI (see
+        // ResourceSlotVisual.ts) — with its bottom edge (below each slot's label) landing
+        // exactly at y=0 (see this file's own doc).
+        const rowWidth = entries.length * REQ_SLOT_SIZE + Math.max(0, entries.length - 1) * REQ_SLOT_GAP;
+        slots.forEach((slot, index) => {
+            slot.container.position.set(-rowWidth / 2 + index * (REQ_SLOT_SIZE + REQ_SLOT_GAP), -requirementsHeight);
+            this.requirementsContainer.addChild(slot.container);
+        });
 
         this.titleText.position.set(0, -(requirementsHeight + TITLE_SLOTS_GAP));
         this.labelFrame.fit();
@@ -474,6 +571,8 @@ export default class BuildingZone extends Entity {
         this.isPlayerInside = false;
         this.player = undefined;
         this.awaitingReentry = false;
+        this.reentryTimer?.kill();
+        this.reentryTimer = undefined;
     }
 
     /**

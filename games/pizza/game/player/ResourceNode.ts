@@ -7,12 +7,16 @@
 // what kind of node it is — see that file's own doc). Same "dedicated
 // Entity subclass self-configures in awake()" pattern as MainPlayer:
 // `world.add(new ResourceNode(ProviderType.Tree, position))` is the entire
-// setup — trigger RigidBody (Layers.Resource — see AutoGatherController,
-// which listens for it) sized as the gather radius, an optional SOLID
-// RigidBody (Layers.Environment) sized by ProviderConfig.solidRadius that
-// actually blocks the player from walking through (0 = none — a berry bush
-// stays walk-over-able while a tree/stone deposit doesn't), plus the
-// placeholder visual.
+// setup — a trigger RigidBody (Layers.Resource, sized as TRIGGER_HALF_EXTENTS)
+// plus an optional SOLID RigidBody (Layers.Environment) sized by
+// ProviderConfig.solidRadius that actually blocks the player from walking
+// through (0 = none — a berry bush stays walk-over-able while a tree/stone
+// deposit doesn't), plus the placeholder visual. The trigger RigidBody is no
+// longer what makes a node gatherable — AutoGatherController.ts now scans
+// ResourceNodeRegistry by plain radius/facing every frame instead of
+// listening for Layers.Resource overlap (see that file's own doc) — but it's
+// left in place as a convenient, already-correctly-sized debug wireframe
+// (PHYSICS_TRIGGER_DEBUG) and in case something else wants overlap events later.
 //
 // Implements ActionTarget (see PlayerActionController): the node holds
 // `life` and applyHit() chips it down one swing at a time. It does NOT run

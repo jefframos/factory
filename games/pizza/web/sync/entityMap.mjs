@@ -21,9 +21,10 @@
 // "missing" as "skip, don't touch" by default is the safe direction to err
 // in — a required field project should never lose data to a stale mirror.
 //
-// `tools` manages `label` and `icon` — every OTHER field on TOOL_LIBRARY
-// (color, hand offset/rotation, THREE.Vector3 instances, the 3D `models`
-// list) is purely visual/3D-specific and deliberately untouched. `icon` is
+// `tools` manages `label`, `icon`, and `attributes` (this tool's own upgrade
+// ladder range) — every OTHER field on TOOL_LIBRARY (color, hand offset/
+// rotation, THREE.Vector3 instances, the 3D `models` list) is purely
+// visual/3D-specific and deliberately untouched. `icon` is
 // the one visual-ish field that IS safe to manage here: it's just a bare
 // texture-name string (same "icon" field shape used across this codebase —
 // AssetLibraryRegistry, ItemConfig-via-toolId), not a 3D asset reference,
@@ -125,12 +126,12 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'SHOP_CONFIG_BY_ID',
         kind: 'partialRecord',
         // The old per-level array (`levels`, with its own listMerge) is gone — a shop's ladder
-        // is now a plain min/max range PER ATTRIBUTE (`attributes`, a ToolAttributeRanges —
-        // see ShopTypes.ts's own doc) plus a level count/cost formula (`totalLevels`,
-        // `baseCost`, `costScale`) and one flat `cooldownSec`. `attributes` has no unmanaged
-        // sibling fields on any of its nested {min,max} objects, so it's a plain wholesale
-        // replace like every other non-list managed key here — no listMerge needed.
-        managedKeys: ['name', 'tool', 'action', 'appearRequirement', 'attributes', 'totalLevels', 'baseCost', 'costScale', 'cooldownSec', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid'],
+        // is now just a level count/cost formula (`totalLevels`, `baseCost`, `costScale`) and
+        // one flat `cooldownSec`. The actual min/max range PER ATTRIBUTE lives on the TOOL being
+        // upgraded (`tool`, resolved into TOOL_LIBRARY[tool].attributes — see the `tools`
+        // mapping below and ToolRegistry.ts's own doc), not on the shop — a shop is just the
+        // storefront (cost/cooldown/appearance) for whichever tool it names.
+        managedKeys: ['name', 'tool', 'action', 'appearRequirement', 'totalLevels', 'baseCost', 'costScale', 'cooldownSec', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid'],
         optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid'],
     },
     crafting: {
@@ -373,7 +374,14 @@ export const ENTITY_SOURCE_MAP = {
         // deliberate, whole-entry action the tab itself fully owns — protectEntries only ever
         // needs to matter for a DIFFERENT tab's cross-sync into a shared file (see
         // syncExternalField()'s own doc — it never deletes anything on its own regardless).
-        managedKeys: ['label', 'icon', 'models'],
+        // `attributes` (ToolAttributeRanges — see ToolRegistry.ts's own doc) is this tool's own
+        // upgrade-ladder min/max range, optional (a tool no shop ever upgrades, e.g. "rope",
+        // has none) and with no unmanaged sibling fields on its nested {min,max} objects, so
+        // it's a plain wholesale replace like every other non-list managed key — no listMerge
+        // needed. Formerly lived on ShopConfig; moved here since the range describes the TOOL,
+        // not whichever shop happens to sell its upgrades.
+        managedKeys: ['label', 'icon', 'models', 'attributes'],
+        optionalKeys: ['attributes'],
     },
     assetLibrary: {
         file: path.join(GAME_DIR, 'world', 'AssetLibraryRegistry.ts'),
@@ -454,5 +462,15 @@ export const ENTITY_SOURCE_MAP = {
         // craftingMyst never sets them, and this list is what tells syncToSource.mjs a MISSING
         // one means "actually delete it" rather than "this mirror predates the field."
         optionalKeys: ['burstSpeedMin', 'burstSpeedMax', 'gravity'],
+    },
+    // Global player-balance knobs (see PlayerConfig.ts's own doc) — reuses the same open-ended
+    // partialRecord shape shops/tools/crafting already use, even though there's only ever meant
+    // to be ONE entry here ("default"), purely so this needed no new editor-side machinery. Every
+    // field on PlayerConfigEntry is managed; none are optional.
+    player: {
+        file: path.join(GAME_DIR, 'data', 'PlayerConfig.ts'),
+        exportName: 'PLAYER_CONFIG_BY_ID',
+        kind: 'partialRecord',
+        managedKeys: ['walkSpeed', 'runSpeedMultiplier', 'resourceDetectionRadius', 'resourceDetectionAngleDeg'],
     },
 };

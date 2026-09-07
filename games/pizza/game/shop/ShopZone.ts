@@ -74,6 +74,8 @@ export default class ShopZone extends Entity {
     private readonly screenHost: ScreenAnchorHost;
     private readonly shopId: string;
     private readonly config: ShopConfig;
+    /** This zone's own intended resting world-Y, captured once from the constructor's `position` — see BuildingZone's identical field for why this must NOT be read back off `this.transform.position.y` later (ZoneVisibilityManager's transient sunk-then-rise animation). */
+    private readonly restY: number;
     /** Overrides HALF_EXTENTS' X/Z from the shop's OWN footprint (a Tiled object's rect) — same reasoning as BuildingZone's own `footprint` param. Undefined means "use HALF_EXTENTS." Ignored when `triggerArea` is given — see that param's own doc. */
     private readonly footprint?: { width: number; depth: number };
     /**
@@ -141,7 +143,9 @@ export default class ShopZone extends Entity {
         const boughtLevels = ShopUpgradeStorage.getState(this.shopId).level;
         if (getViewIdForShopLevel(this.config, boughtLevels) !== this.currentViewId) {
             this.disposeShopMesh();
-            this.createShopMesh();
+            // reveal=true only here — an upgrade swapping in a new mesh — not on the initial
+            // awake() build, which should just appear normally.
+            this.createShopMesh(true);
         }
         this.refreshLabel();
     };
@@ -173,6 +177,7 @@ export default class ShopZone extends Entity {
         this.footprint = footprint;
         this.triggerArea = triggerArea;
         this.transform.position.copy(position);
+        this.restY = position.y;
     }
 
     public override awake(): void {
@@ -307,7 +312,7 @@ export default class ShopZone extends Entity {
      * getViewIdForShopLevel()/EntityViewRegistry.ts's resolveEntityView()). Re-called by
      * handleShopChanged() whenever a purchase advances past a view-bearing level.
      */
-    private createShopMesh(): void {
+    private createShopMesh(reveal: boolean = false): void {
         const boughtLevels = ShopUpgradeStorage.getState(this.shopId).level;
         this.currentViewId = getViewIdForShopLevel(this.config, boughtLevels);
         const resolved = resolveEntityView(this.currentViewId);
@@ -319,6 +324,9 @@ export default class ShopZone extends Entity {
                 new THREE.Vector3(offsetX, offsetY, offsetZ),
                 resolved.scale,
                 THREE.MathUtils.degToRad(resolved.rotationDeg),
+                // The glb loads asynchronously — the reveal sweep needs the finished mesh's
+                // world bounds, so it's set up in onReady rather than right after construction.
+                reveal ? () => this.playRevealEffect(this.shopVisual!.mesh) : undefined,
             ));
             return;
         }
@@ -333,6 +341,38 @@ export default class ShopZone extends Entity {
         mesh.position.set(0, height / 2, 0);
         this.transform.add(mesh);
         this.shopMesh = mesh;
+
+        if (reveal) {
+            this.playRevealEffect(mesh);
+        }
+    }
+
+    /**
+     * Sweeps a bottom-to-top reveal cutout (see BendService.applyReveal's own doc) across
+     * every material of `root`, over its own world-space Y bounds — used when a building
+     * upgrade swaps in a new mesh, so the new level "grows in" instead of just popping in.
+     */
+    private playRevealEffect(root: THREE.Object3D): void {
+        // See BuildingZone.playRevealEffect()'s own doc — `root` was just parented this same
+        // tick, so its matrixWorld chain needs forcing before Box3 reads world positions off it.
+        root.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(root);
+        // See BuildingZone.playRevealEffect()'s own doc — this.transform.position.y can still
+        // be mid-rise (ZoneVisibilityManager's sunk-then-rise-into-view animation) the instant
+        // this runs, so correct the measured bounds to where they'll end up once it settles at
+        // restY, then clamp the bottom to that same restY (some glbs carry a buried
+        // foundation/base mesh below their actual visible ground level).
+        const riseCorrection = this.restY - this.transform.position.y;
+        const correctedMaxY = bounds.max.y + riseCorrection;
+        const revealMinY = Math.max(bounds.min.y + riseCorrection, this.restY);
+        const progress = { value: 0 };
+        root.traverse(child => {
+            if (child instanceof THREE.Mesh) {
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                materials.forEach(material => BendService.applyReveal(material, revealMinY, correctedMaxY, progress));
+            }
+        });
+        gsap.to(progress, { value: 1, duration: 0.6, ease: 'power2.out' });
     }
 
     private disposeShopMesh(): void {

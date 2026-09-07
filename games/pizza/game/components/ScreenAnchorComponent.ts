@@ -172,6 +172,9 @@ export default class ScreenAnchorComponent extends Component {
     /** Eased toward 1 every frame content is shown — see ALPHA_FADE_IN_SPEED's own doc. `undefined` (reset by hideContent()) means "start the next appearance from 0," so re-appearing always fades in from invisible instead of popping straight to full opacity. */
     private smoothedAlpha?: number;
 
+    /** Set via setForceHidden() — an owner-driven "there's nothing to show here anymore" override (e.g. a maxed-out BuildingZone/ShopZone), checked before any of the distance/on-screen logic below so it can't be overridden back to visible by `content.visible = true` on a later frame the moment the target comes back on-screen. */
+    private forceHidden = false;
+
     /**
      * `getTargetPosition` is a function, not a fixed Vector3, so the tracked point can
      * keep moving (an entity's own transform.position, a point offset above it, another
@@ -221,7 +224,17 @@ export default class ScreenAnchorComponent extends Component {
         }
     }
 
+    /** See forceHidden's own doc. Idempotent — safe to call every refreshLabel()-style repaint regardless of whether the state actually changed. */
+    public setForceHidden(hidden: boolean): void {
+        this.forceHidden = hidden;
+    }
+
     public update(delta: number): void {
+        if (this.forceHidden) {
+            this.hideContent();
+            return;
+        }
+
         if (this.remainingSec !== undefined) {
             this.remainingSec -= delta;
             if (this.remainingSec <= 0) {

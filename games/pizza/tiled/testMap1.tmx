@@ -1155,7 +1155,7 @@
   </data>
  </layer>
  <objectgroup id="3" name="mapSettings">
-  <object id="1" x="352" y="-448" width="64" height="64">
+  <object id="1" x="-160" y="-64" width="64" height="64">
    <properties>
     <property name="id" value="tower"/>
     <property name="type" value="building"/>
@@ -1173,7 +1173,7 @@
     <property name="type" value="queue"/>
    </properties>
   </object>
-  <object id="4" x="352" y="-416" width="64.5" height="64.5">
+  <object id="4" x="-160" y="-32" width="64.5" height="64.5">
    <properties>
     <property name="id" value="dropper1"/>
     <property name="target" value="tower"/>
@@ -1204,13 +1204,13 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="10" x="0" y="-800" width="65" height="65">
+  <object id="10" x="-288" y="-128" width="65" height="65">
    <properties>
     <property name="id" value="shop1"/>
     <property name="type" value="shop"/>
    </properties>
   </object>
-  <object id="11" x="0" y="-768" width="64.5" height="64.5">
+  <object id="11" x="-288" y="-96" width="64.5" height="64.5">
    <properties>
     <property name="id" value="dropperShop1"/>
     <property name="target" value="shop1"/>
@@ -1273,26 +1273,6 @@
     <property name="target" value="forge1"/>
     <property name="type" value="dropper"/>
    </properties>
-  </object>
-  <object id="30" x="335.75" y="240.25" width="32" height="32">
-   <properties>
-    <property name="id" value="craftRope"/>
-    <property name="type" value="craft"/>
-   </properties>
-  </object>
-  <object id="31" x="320" y="224" width="64.5" height="64.5">
-   <properties>
-    <property name="id" value="craftRopeDropper"/>
-    <property name="target" value="craftRope"/>
-    <property name="type" value="dropper"/>
-   </properties>
-  </object>
-  <object id="32" x="489.833" y="106">
-   <properties>
-    <property name="id" value="animalSpawner1"/>
-    <property name="type" value="spawner"/>
-   </properties>
-   <polygon points="187,17 -73,27.5 -46,291 159.762,320.597 261,242"/>
   </object>
   <object id="35" x="219.333" y="-736.667">
    <properties>
@@ -1361,6 +1341,26 @@
     <property name="type" value="spawner"/>
    </properties>
    <polygon points="0,0 -60.6667,58 -19.3333,130 108,132 106.667,58"/>
+  </object>
+  <object id="32" x="489.833" y="106">
+   <properties>
+    <property name="id" value="animalSpawner1"/>
+    <property name="type" value="spawner"/>
+   </properties>
+   <polygon points="187,17 -73,27.5 -46,291 159.762,320.597 261,242"/>
+  </object>
+  <object id="31" x="320" y="224" width="64.5" height="64.5">
+   <properties>
+    <property name="id" value="craftRopeDropper"/>
+    <property name="target" value="craftRope"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="30" x="335.75" y="240.25" width="32" height="32">
+   <properties>
+    <property name="id" value="craftRope"/>
+    <property name="type" value="craft"/>
+   </properties>
   </object>
  </objectgroup>
 </map>

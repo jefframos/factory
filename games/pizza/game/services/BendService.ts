@@ -64,6 +64,8 @@ export class BendService {
          * that's the mass a tree trunk actually swallows — see updateOcclusionTarget().
          */
         uOccPlayerPos: { value: new THREE.Vector3() },
+        /** Running clock driving applyReveal()'s wavy fill line — see updateTime()'s own doc. */
+        uTime: { value: 0 },
     };
 
     /** Remembers the last non-zero strength so setEnabled(true) restores whatever it was tuned to, rather than a hardcoded default. */
@@ -85,6 +87,11 @@ export class BendService {
      */
     public static updateOcclusionTarget(position: THREE.Vector3): void {
         this.uniforms.uOccPlayerPos.value.copy(position);
+    }
+
+    /** Advances uTime by `delta` seconds — call once per frame (see PizzaScene.fixedUpdate()). Every material bent via applyReveal() reads this SAME uniform, so every in-progress fill line ripples on one shared clock rather than drifting relative to each other. */
+    public static updateTime(delta: number): void {
+        this.uniforms.uTime.value += delta;
     }
 
     /**
@@ -346,6 +353,77 @@ export class BendService {
      * call it as many times as convenient on the same material with no ill effect.
      */
     private static readonly bentMaterials = new WeakSet<THREE.Material>();
+
+    /**
+     * Same "guard chained onBeforeCompile against duplicate injection" reasoning as
+     * bentMaterials above — applyReveal() can be called once per submesh material of a
+     * multi-primitive GLB, and a glTF export commonly reuses one material across several.
+     */
+    private static readonly revealedMaterials = new WeakSet<THREE.Material>();
+
+    /**
+     * Bottom-to-top reveal cutout: discards any fragment above a world-Y threshold that
+     * sweeps from `minY` to `maxY` as `progress.value` goes 0 -> 1, plus a thin glowing edge
+     * band right at the sweep line. Meant for a building-upgrade mesh swap — build the new
+     * mesh, call this once per material with the SAME `progress` object shared across every
+     * material of that mesh (so multi-material GLBs sweep together), then tween
+     * `progress.value` from 0 to 1 (e.g. via gsap.to(progress, { value: 1, ... })).
+     *
+     * Uses world-Y (via modelMatrix), not local-Y, so `minY`/`maxY` — a Box3 computed once
+     * over the whole mesh — mean the same one sweep height for every submesh regardless of
+     * each primitive's own local origin, the same reasoning applyBottomFade's vWorldY uses.
+     */
+    public static applyReveal(material: THREE.Material, minY: number, maxY: number, progress: { value: number }): void {
+        if (BendService.revealedMaterials.has(material)) {
+            return;
+        }
+        BendService.revealedMaterials.add(material);
+
+        material.transparent = true;
+        const prev = material.onBeforeCompile;
+        material.onBeforeCompile = (shader, renderer) => {
+            prev(shader, renderer);
+            shader.uniforms.uRevealMinY = { value: minY };
+            shader.uniforms.uRevealMaxY = { value: maxY };
+            shader.uniforms.uRevealProgress = progress;
+            shader.uniforms.uTime = BendService.uniforms.uTime;
+            shader.vertexShader = 'varying float vRevealWorldY;\nvarying vec2 vRevealWorldXZ;\n' + shader.vertexShader;
+            shader.fragmentShader = [
+                'uniform float uRevealMinY;',
+                'uniform float uRevealMaxY;',
+                'uniform float uRevealProgress;',
+                'uniform float uTime;',
+                'varying float vRevealWorldY;',
+                'varying vec2 vRevealWorldXZ;',
+            ].join('\n') + '\n' + shader.fragmentShader;
+            shader.vertexShader = shader.vertexShader.replace(
+                '#include <begin_vertex>',
+                `#include <begin_vertex>
+                vec4 _revealWorld = modelMatrix * vec4(position, 1.0);
+                vRevealWorldY = _revealWorld.y;
+                vRevealWorldXZ = _revealWorld.xz;`,
+            );
+            shader.fragmentShader = shader.fragmentShader.replace(
+                '#include <alphamap_fragment>',
+                `#include <alphamap_fragment>
+                if (uRevealProgress < 0.999) {
+                    float _revealLine = mix(uRevealMinY, uRevealMaxY, uRevealProgress);
+                    // A gentle ripple around the fill line — two overlapping sine waves (different
+                    // frequency/speed) traveling across the mesh's own XZ footprint, so the edge
+                    // reads as a living, sloshing surface instead of a perfectly flat cutoff while
+                    // it's still filling. Fades to 0 (a flat line again) as progress nears 1, so
+                    // the FINISHED mesh settles down instead of rippling forever.
+                    float _revealWave = sin(vRevealWorldXZ.x * 3.0 + vRevealWorldXZ.y * 2.0 + uTime * 2.0) * 0.05
+                        + sin(vRevealWorldXZ.x * 5.5 - vRevealWorldXZ.y * 4.0 + uTime * 3.3) * 0.03;
+                    _revealLine += _revealWave * (uRevealMaxY - uRevealMinY) * (1.0 - uRevealProgress);
+                    if (vRevealWorldY > _revealLine) discard;
+                    float _revealGlow = smoothstep(_revealLine - 0.15, _revealLine, vRevealWorldY);
+                    diffuseColor.rgb += _revealGlow * vec3(0.6, 0.9, 1.0);
+                }`,
+            );
+        };
+        material.needsUpdate = true;
+    }
 
     public static applyBend(material: THREE.Material): void {
         if (BendService.bentMaterials.has(material)) {

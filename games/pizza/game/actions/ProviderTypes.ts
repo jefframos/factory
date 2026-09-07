@@ -78,7 +78,7 @@ export const PROVIDER_CONFIG: Record<ProviderType, ProviderConfig> = {
         action: ActionType.Chop,
         maxLife: 5,
         amountPerGather: 1,
-        respawnSec: 60,
+        respawnSec: 30,
         label: "Tree",
         color: 0x6b4423,
         drops: [

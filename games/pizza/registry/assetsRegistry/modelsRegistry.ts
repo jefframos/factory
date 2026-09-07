@@ -8,6 +8,14 @@ export interface ModelDefinition {
   readonly nodes: Record<string, string>;
 }
 
+const CharactersCharacterMedium = {
+  id: 'characterMedium',
+  path: 'characters/default/characterMedium',
+  fullPath: 'pizza/models/characters/default/characterMedium.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
 const CharactersDigging = {
   id: 'Digging',
   path: 'characters/default/Digging',
@@ -20,6 +28,30 @@ const CharactersFallingIdle = {
   id: 'FallingIdle',
   path: 'characters/default/FallingIdle',
   fullPath: 'pizza/models/characters/default/FallingIdle.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
+const CharactersIdle = {
+  id: 'idle',
+  path: 'characters/default/idle',
+  fullPath: 'pizza/models/characters/default/idle.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
+const CharactersIdle2 = {
+  id: 'idle2',
+  path: 'characters/default/idle2',
+  fullPath: 'pizza/models/characters/default/idle2.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
+const CharactersJump = {
+  id: 'jump',
+  path: 'characters/default/jump',
+  fullPath: 'pizza/models/characters/default/jump.fbx',
   format: 'fbx',
   nodes: {}
 } as const;
@@ -64,6 +96,14 @@ const CharactersRoll = {
   nodes: {}
 } as const;
 
+const CharactersRun = {
+  id: 'run',
+  path: 'characters/default/run',
+  fullPath: 'pizza/models/characters/default/run.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
 const CharactersRunning = {
   id: 'Running',
   path: 'characters/default/Running',
@@ -92,54 +132,6 @@ const CharactersStandingPICKAXE = {
   id: 'StandingPICKAXE',
   path: 'characters/default/StandingPICKAXE',
   fullPath: 'pizza/models/characters/default/StandingPICKAXE.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersWatering = {
-  id: 'Watering',
-  path: 'characters/default/Watering',
-  fullPath: 'pizza/models/characters/default/Watering.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersCharacterMedium = {
-  id: 'characterMedium',
-  path: 'characters/default/characterMedium',
-  fullPath: 'pizza/models/characters/default/characterMedium.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersIdle = {
-  id: 'idle',
-  path: 'characters/default/idle',
-  fullPath: 'pizza/models/characters/default/idle.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersIdle2 = {
-  id: 'idle2',
-  path: 'characters/default/idle2',
-  fullPath: 'pizza/models/characters/default/idle2.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersJump = {
-  id: 'jump',
-  path: 'characters/default/jump',
-  fullPath: 'pizza/models/characters/default/jump.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
-const CharactersRun = {
-  id: 'run',
-  path: 'characters/default/run',
-  fullPath: 'pizza/models/characters/default/run.fbx',
   format: 'fbx',
   nodes: {}
 } as const;
@@ -210,6 +202,14 @@ const CharactersTestIdle = {
   "RightToes": "RightToes",
   "RightToesEnd": "RightToes_end"
 }
+} as const;
+
+const CharactersWatering = {
+  id: 'Watering',
+  path: 'characters/default/Watering',
+  fullPath: 'pizza/models/characters/default/Watering.fbx',
+  format: 'fbx',
+  nodes: {}
 } as const;
 
 const FoodAdvocadoHalf = {
@@ -3650,6 +3650,16 @@ const PropsWeaponBow = {
 }
 } as const;
 
+const ResourcesSilverNuggets = {
+  id: 'Silver_Nuggets',
+  path: 'resources/Silver_Nuggets',
+  fullPath: 'pizza/models/resources/Silver_Nuggets.gltf',
+  format: 'gltf',
+  nodes: {
+  "SilverNuggets": "Silver_Nuggets"
+}
+} as const;
+
 const ResourcesSilverNuggetLarge = {
   id: 'Silver_Nugget_Large',
   path: 'resources/Silver_Nugget_Large',
@@ -3677,16 +3687,6 @@ const ResourcesSilverNuggetSmall = {
   format: 'gltf',
   nodes: {
   "SilverNuggetSmall": "Silver_Nugget_Small"
-}
-} as const;
-
-const ResourcesSilverNuggets = {
-  id: 'Silver_Nuggets',
-  path: 'resources/Silver_Nuggets',
-  fullPath: 'pizza/models/resources/Silver_Nuggets.gltf',
-  format: 'gltf',
-  nodes: {
-  "SilverNuggets": "Silver_Nuggets"
 }
 } as const;
 
@@ -4069,26 +4069,6 @@ const ToolsScissors = {
 }
 } as const;
 
-const ToolsScrewA = {
-  id: 'screw_A',
-  path: 'tools/gltf/screw_A',
-  fullPath: 'pizza/models/tools/gltf/screw_A.gltf',
-  format: 'gltf',
-  nodes: {
-  "ScrewA": "screw_A"
-}
-} as const;
-
-const ToolsScrewB = {
-  id: 'screw_B',
-  path: 'tools/gltf/screw_B',
-  fullPath: 'pizza/models/tools/gltf/screw_B.gltf',
-  format: 'gltf',
-  nodes: {
-  "ScrewB": "screw_B"
-}
-} as const;
-
 const ToolsScrewdriverALong = {
   id: 'screwdriver_A_long',
   path: 'tools/gltf/screwdriver_A_long',
@@ -4169,6 +4149,26 @@ const ToolsScrewdriverBShortColor = {
 }
 } as const;
 
+const ToolsScrewA = {
+  id: 'screw_A',
+  path: 'tools/gltf/screw_A',
+  fullPath: 'pizza/models/tools/gltf/screw_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "ScrewA": "screw_A"
+}
+} as const;
+
+const ToolsScrewB = {
+  id: 'screw_B',
+  path: 'tools/gltf/screw_B',
+  fullPath: 'pizza/models/tools/gltf/screw_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "ScrewB": "screw_B"
+}
+} as const;
+
 const ToolsShovel = {
   id: 'shovel',
   path: 'tools/gltf/shovel',
@@ -4245,24 +4245,24 @@ const ToolsWrenchB = {
 // containing folder land in MODELS.Root.
 export const MODELS = {
   Characters: {
+    CharacterMedium: CharactersCharacterMedium,
     Digging: CharactersDigging,
     FallingIdle: CharactersFallingIdle,
+    Idle: CharactersIdle,
+    Idle2: CharactersIdle2,
+    Jump: CharactersJump,
     JumpingUp: CharactersJumpingUp,
     Landing: CharactersLanding,
     PickFruit: CharactersPickFruit,
     PlantTree: CharactersPlantTree,
     Roll: CharactersRoll,
+    Run: CharactersRun,
     Running: CharactersRunning,
     StandToRoll: CharactersStandToRoll,
     StandingMeleeAttackDownwardCHOP: CharactersStandingMeleeAttackDownwardCHOP,
     StandingPICKAXE: CharactersStandingPICKAXE,
-    Watering: CharactersWatering,
-    CharacterMedium: CharactersCharacterMedium,
-    Idle: CharactersIdle,
-    Idle2: CharactersIdle2,
-    Jump: CharactersJump,
-    Run: CharactersRun,
-    TestIdle: CharactersTestIdle
+    TestIdle: CharactersTestIdle,
+    Watering: CharactersWatering
   },
   Food: {
     AdvocadoHalf: FoodAdvocadoHalf,
@@ -4590,10 +4590,10 @@ export const MODELS = {
     WeaponBow: PropsWeaponBow
   },
   Resources: {
+    SilverNuggets: ResourcesSilverNuggets,
     SilverNuggetLarge: ResourcesSilverNuggetLarge,
     SilverNuggetMedium: ResourcesSilverNuggetMedium,
     SilverNuggetSmall: ResourcesSilverNuggetSmall,
-    SilverNuggets: ResourcesSilverNuggets,
     StoneChunksLarge: ResourcesStoneChunksLarge,
     StoneChunksSmall: ResourcesStoneChunksSmall,
     WoodLogA: ResourcesWoodLogA,
@@ -4633,8 +4633,6 @@ export const MODELS = {
     RopeBundleB: ToolsRopeBundleB,
     Saw: ToolsSaw,
     Scissors: ToolsScissors,
-    ScrewA: ToolsScrewA,
-    ScrewB: ToolsScrewB,
     ScrewdriverALong: ToolsScrewdriverALong,
     ScrewdriverALongColor: ToolsScrewdriverALongColor,
     ScrewdriverAShort: ToolsScrewdriverAShort,
@@ -4643,6 +4641,8 @@ export const MODELS = {
     ScrewdriverBLongColor: ToolsScrewdriverBLongColor,
     ScrewdriverBShort: ToolsScrewdriverBShort,
     ScrewdriverBShortColor: ToolsScrewdriverBShortColor,
+    ScrewA: ToolsScrewA,
+    ScrewB: ToolsScrewB,
     Shovel: ToolsShovel,
     Tongs: ToolsTongs,
     Torch: ToolsTorch,
