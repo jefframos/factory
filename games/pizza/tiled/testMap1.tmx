@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="9" nextobjectid="48">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="9" nextobjectid="50">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -9,7 +9,7 @@
  <tileset firstgid="12" name="resources" tilewidth="32" tileheight="32" tilecount="10" columns="10">
   <image source="resources.png" width="320" height="32"/>
  </tileset>
- <tileset firstgid="22" name="models" tilewidth="80" tileheight="80" tilecount="4" columns="0">
+ <tileset firstgid="22" name="models" tilewidth="116" tileheight="117" tilecount="6" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="0">
    <properties>
@@ -34,6 +34,12 @@
     <property name="offsetY" type="float" value="-0.3"/>
    </properties>
    <image source="models/pizza-model-snapshots_Pirate--Platform__80x80.png" width="80" height="80"/>
+  </tile>
+  <tile id="4">
+   <image source="models/pizza-model-snapshots_Pirate--TowerCompleteLarge__116x116.png" width="116" height="116"/>
+  </tile>
+  <tile id="5">
+   <image source="models/pizza-model-snapshots_Pirate--TowerCompleteSmall__107x117.png" width="107" height="117"/>
   </tile>
  </tileset>
  <layer id="1" name="groundLayer" width="30" height="20" opacity="0.41">
@@ -1155,12 +1161,6 @@
   </data>
  </layer>
  <objectgroup id="3" name="mapSettings">
-  <object id="1" x="-160" y="-64" width="64" height="64">
-   <properties>
-    <property name="id" value="tower"/>
-    <property name="type" value="building"/>
-   </properties>
-  </object>
   <object id="2" x="160" y="-480" width="192" height="32">
    <properties>
     <property name="id" value="gate1"/>
@@ -1173,7 +1173,7 @@
     <property name="type" value="queue"/>
    </properties>
   </object>
-  <object id="4" x="-160" y="-32" width="64.5" height="64.5">
+  <object id="4" x="-64" y="-96" width="64.5" height="64.5">
    <properties>
     <property name="id" value="dropper1"/>
     <property name="target" value="tower"/>
@@ -1311,6 +1311,20 @@
     <property name="id" value="farmShopArea"/>
     <property name="target" value="farmShop"/>
     <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="48" gid="22" x="-64" y="128" width="64" height="74">
+   <properties>
+    <property name="id" value="tower2"/>
+    <property name="type" value="building"/>
+    <property name="useOwnMesh" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="49" gid="26" x="-69.6667" y="-66.6667" width="75.6667" height="75.6667">
+   <properties>
+    <property name="id" value="tower"/>
+    <property name="type" value="building"/>
+    <property name="useOwnMesh" type="bool" value="true"/>
    </properties>
   </object>
  </objectgroup>

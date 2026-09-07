@@ -196,6 +196,8 @@ const ENTITY_SCHEMAS = {
         { key: 'icon', type: 'icon', label: 'Icon (shown wherever this building is referenced elsewhere, e.g. a gate requiring one of its levels)', optional: true },
         { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement', optional: true },
         { key: 'baseView', type: 'select', label: 'Base View (before level 1, optional)', source: 'entityViews', optional: true },
+        { key: 'baseFillFull', type: 'boolean', label: 'Base Fill Full (level 0 renders 100% built, regardless of run position)', optional: true },
+        { key: 'baseFillFraction', type: 'number', label: 'Base Fill Fraction (0-1 — how built level 0 already looks before any deposit; later levels sharing its mesh grow linearly from here up to 1. Blank = default eased curve)', optional: true },
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
         {
             key: 'levels', type: 'list', label: 'Levels',
@@ -212,6 +214,7 @@ const ENTITY_SCHEMAS = {
                     ],
                 },
                 { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
+                { key: 'fillFull', type: 'boolean', label: 'Fill Full (this level renders 100% built, regardless of run position)', optional: true },
             ],
         },
         { key: 'updateParticleEffectId', type: 'select', label: 'Update Particle Effect (fires every time this building levels up)', source: 'particleEffects', optional: true },

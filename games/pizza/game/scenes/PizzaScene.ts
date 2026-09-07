@@ -99,13 +99,15 @@ import { BuildingStorage } from '../data/BuildingStorage';
 import { BUILDING_CONFIG, BuildingId } from '../data/BuildingTypes';
 import { ResourceType } from '../actions/ResourceTypes';
 import { PROVIDER_CONFIG } from '../actions/ProviderTypes';
-import { ACTION_CONFIG, ActionType } from '../actions/ActionTypes';
-import { getToolIcon, TOOL_LIBRARY } from '../actions/ToolRegistry';
+import { ACTION_CONFIG } from '../actions/ActionTypes';
+import { getToolIcon } from '../actions/ToolRegistry';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
 import PlayerUIAvoidanceComponent from '../components/PlayerUIAvoidanceComponent';
 import SetupThree from 'core/scene/SetupThree';
+import DebugFlyCameraController from '../debug/DebugFlyCameraController';
+import PlayerMovementController from '../components/PlayerMovementController';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 import { CameraFocusHost, CameraFocusOptions } from '../camera/CameraFocusHost';
 import { WorldProgressionHost } from '../camera/WorldProgressionHost';
@@ -304,6 +306,9 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     /** The player — self-contained (RigidBody, PlayerMovementController, collision events all wired up in its own awake()). See MainPlayer.ts. */
     private readonly mainPlayer: MainPlayer;
 
+    /** Debug-only PC free-fly camera (see DebugFlyCameraController.ts's own doc) — OFF by default, toggled via the "Toggle Fly Camera" debug button (see setupDebugButtons()). */
+    private readonly flyCamera: DebugFlyCameraController;
+
     /** Which "teleporter" object (see WorldObjectRegistry.getAllOfType('teleporter')) the debug "Teleport: Next" button jumps to on its NEXT click — see teleportToNextTeleporter()'s own doc. Wraps back to 0 once past the last one. */
     private nextTeleporterIndex = 0;
 
@@ -356,6 +361,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // input host (a Pixi container with worldToScreen()) and `this.threeScene` as
         // where its eventual character mesh gets parented.
         this.mainPlayer = this.world.add(new MainPlayer(this, this.threeScene, this.screenHost));
+        this.flyCamera = new DebugFlyCameraController(this.threeCamera, SetupThree.renderer.domElement);
 
         // Wired here (not as a field initializer, alongside worldManager's own construction
         // above) because it needs this.mainPlayer, which doesn't exist yet at that point — see
@@ -844,6 +850,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         InGameButtonList.registerButton('Open Next Zone', () => this.worldManager.revealNextZone());
         InGameButtonList.registerButton('Teleport: Next', () => this.teleportToNextTeleporter());
         InGameButtonList.registerButton('Unlock All Tools', () => this.unlockAllTools());
+        InGameButtonList.registerButton('Toggle Fly Camera', () => this.toggleFlyCamera());
         InGameButtonList.registerButton('Add 100 Money', () => EconomyStorage.add(CurrencyType.Money, 100));
         InGameButtonList.registerButton('Add 10 Resources', () => {
             for (const type of Object.values(ResourceType)) {
@@ -858,18 +865,23 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 SeedStorage.add(seedId, 5);
             }
         });
+    }
 
-        // Read fresh every frame (see InGameButtonList.registerText()'s own doc) — ACTION_CONFIG.
-        // chop is live, mutated in place by a shop upgrade (see ShopTypes.applyShopLevel()), so
-        // this always reflects whatever the axe's CURRENT level actually produces, not just its
-        // level-0 defaults — the same numbers ActionConeDebugComponent's wireframe is drawn from.
-        InGameButtonList.registerText(() => {
-            if (!TOOL_LIBRARY.axe.attributes) {
-                return 'Axe: no upgrade attributes configured';
-            }
-            const c = ACTION_CONFIG[ActionType.Chop];
-            return `Axe (live): damage ${c.hitScale.toFixed(2)} | angle ${c.hitAngleDeg.toFixed(0)}° | range ${c.hitRangeMeters.toFixed(2)}m | speed ${(1 / c.hitIntervalSec).toFixed(2)}/s | resource/hit ${c.resourcePerHit.toFixed(2)}`;
-        });
+    /**
+     * Flips DebugFlyCameraController on/off (see its own doc for the controls) and, in lockstep,
+     * disables/re-enables the player's own PlayerMovementController — otherwise WASD would ALSO
+     * walk the player character underneath the free-floating camera while flying. Re-enabling
+     * relies on PlayerMovementController.enabled's own documented contract (zeroes velocity
+     * immediately on disable, just stops reading input while disabled) rather than tearing
+     * anything down, so toggling back off resumes normal play exactly where the player was left.
+     */
+    private toggleFlyCamera(): void {
+        const enabling = !this.flyCamera.isEnabled();
+        this.flyCamera.setEnabled(enabling);
+        const movement = this.mainPlayer.getComponent(PlayerMovementController);
+        if (movement) {
+            movement.enabled = !enabling;
+        }
     }
 
     /**
@@ -989,11 +1001,13 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 buildingsWithoutDropper.push(buildingId);
             }
 
+            const ownMesh = this.worldObjects.getOwnMesh('building', buildingId);
             this.requirementRegistry.registerSpawnGate(buildingId, BUILDING_CONFIG[buildingId].appearRequirement, () => {
                 const buildingZone = this.world.add(new BuildingZone(
                     position, this.screenHost, buildingId, this, this,
                     { width: placement.width, depth: placement.depth },
                     triggerArea,
+                    ownMesh,
                 ));
                 this.threeScene.add(buildingZone.transform);
                 this.registerZoneVisibility(buildingZone.transform, position.x, position.z, placement.width, placement.depth);
@@ -1716,30 +1730,37 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
         this.updateStablePlayerPosition(delta, playerPosition);
 
-        // Whatever the camera SHOULD end up following — the player, normally, or a
-        // focusCameraOn() target while a camera event is in progress. This is an instruction,
-        // not where the camera looks THIS frame — see smoothedFollowTarget's own doc for why
-        // that distinction matters (jumping straight to this would snap the camera's gaze
-        // instantly even though position still eased smoothly).
-        const desiredTarget = this.cameraFocusPoint ?? playerPosition;
-        const followT = 1 - Math.exp(-CAMERA_SETTINGS.followSpeed * delta);
-        this.smoothedFollowTarget.lerp(desiredTarget, followT);
+        if (this.flyCamera.isEnabled()) {
+            // Debug free-fly camera takes over entirely — see DebugFlyCameraController.ts's own
+            // doc. Skips the normal follow-camera math below completely (this.threeCamera.up/
+            // position/lookAt would otherwise fight it every single frame).
+            this.flyCamera.update(delta);
+        } else {
+            // Whatever the camera SHOULD end up following — the player, normally, or a
+            // focusCameraOn() target while a camera event is in progress. This is an instruction,
+            // not where the camera looks THIS frame — see smoothedFollowTarget's own doc for why
+            // that distinction matters (jumping straight to this would snap the camera's gaze
+            // instantly even though position still eased smoothly).
+            const desiredTarget = this.cameraFocusPoint ?? playerPosition;
+            const followT = 1 - Math.exp(-CAMERA_SETTINGS.followSpeed * delta);
+            this.smoothedFollowTarget.lerp(desiredTarget, followT);
 
-        // Position is set DIRECTLY from smoothedFollowTarget (rigidly offset, not a second
-        // independent lerp toward it) — see smoothedFollowTarget's own doc for the ONE lag
-        // stage this is meant to be. A second lerp here used to make position chase an
-        // already-lagging target: two decoupled first-order lags never perfectly track each
-        // other frame-to-frame, so the vector from camera.position to the lookAt target
-        // (this.smoothedFollowTarget) drifted slightly off `offset` during any transient
-        // (walking, stopping, turning) — a constant tiny rotation of the view direction even
-        // though yawDeg/pitchDeg never changed, which reads as motion sickness. Deriving
-        // position straight from the same smoothed point keeps camera.position and the lookAt
-        // target ALWAYS exactly `offset` apart, so the rig translates with lag but never
-        // rotates relative to the player on its own.
-        const offset = cameraOffset(this.threeCamera);
-        this.threeCamera.up.copy(cameraUpVector(CAMERA_SETTINGS.yawDeg, offset));
-        this.threeCamera.position.copy(this.smoothedFollowTarget).add(offset);
-        this.threeCamera.lookAt(this.smoothedFollowTarget);
+            // Position is set DIRECTLY from smoothedFollowTarget (rigidly offset, not a second
+            // independent lerp toward it) — see smoothedFollowTarget's own doc for the ONE lag
+            // stage this is meant to be. A second lerp here used to make position chase an
+            // already-lagging target: two decoupled first-order lags never perfectly track each
+            // other frame-to-frame, so the vector from camera.position to the lookAt target
+            // (this.smoothedFollowTarget) drifted slightly off `offset` during any transient
+            // (walking, stopping, turning) — a constant tiny rotation of the view direction even
+            // though yawDeg/pitchDeg never changed, which reads as motion sickness. Deriving
+            // position straight from the same smoothed point keeps camera.position and the lookAt
+            // target ALWAYS exactly `offset` apart, so the rig translates with lag but never
+            // rotates relative to the player on its own.
+            const offset = cameraOffset(this.threeCamera);
+            this.threeCamera.up.copy(cameraUpVector(CAMERA_SETTINGS.yawDeg, offset));
+            this.threeCamera.position.copy(this.smoothedFollowTarget).add(offset);
+            this.threeCamera.lookAt(this.smoothedFollowTarget);
+        }
 
         // Feeds BendService.applyOcclusionFade()'s camera->player cutout — same clock as the
         // camera move itself above, so there's no lag between where the camera actually is
@@ -1896,6 +1917,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.dynamicResourceSpawner.destroy();
         this.shapeResourceSpawner.destroy();
         this.zoneTutorialController.destroy();
+        this.flyCamera.destroy();
         this.movementTutorialOverlay.destroy();
         this.loadingSpinner?.destroy();
         this.uiService.destroy();

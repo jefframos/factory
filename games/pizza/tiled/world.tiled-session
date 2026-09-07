@@ -9,11 +9,11 @@
             "scaleInEditor": 1
         },
         "testMap1.tmx": {
-            "scale": 1.5,
+            "scale": 3,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": -412,
-                "y": -85.66666666666663
+                "x": -103.66666666666663,
+                "y": -54.166666666666686
             }
         },
         "testMap1.tmx#models": {
@@ -37,7 +37,7 @@
         "testMap1.tmx"
     ],
     "project": "world.tiled-project",
-    "property.type": "string",
+    "property.type": "bool",
     "recentFiles": [
         "testMap1.tmx"
     ],

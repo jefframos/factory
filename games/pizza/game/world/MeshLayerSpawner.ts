@@ -28,7 +28,7 @@
 // lookup need here, PizzaScene just wants "everything on this layer, right
 // now," once, at scene build.
 
-import { DEFAULT_TILE_MAP_ALIASES, getObjectBooleanProperty, getObjectNumberProperty, getTiledTileBooleanProperty, getTiledTileNumberProperty, loadTiledMap, loadTileDefs, resolveTiledTileImageName, WORLD_UNITS_PER_TILE } from './TileMapConfig';
+import { DEFAULT_TILE_MAP_ALIASES, getObjectBooleanProperty, getObjectNumberProperty, getTiledTileBooleanProperty, getTiledTileNumberProperty, loadTiledMap, loadTileDefs, resolveTiledTileImageName, TiledMapData, TiledObject, WORLD_UNITS_PER_TILE } from './TileMapConfig';
 import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
 
 /** Tiled layer name holding hand-placed model-snapshot placeholder objects — see this file's own doc. */
@@ -58,6 +58,55 @@ const SOLID_PROPERTY = 'solid';
 const OFFSET_X_PROPERTY = 'offsetX';
 const OFFSET_Y_PROPERTY = 'offsetY';
 const OFFSET_Z_PROPERTY = 'offsetZ';
+
+/**
+ * Decodes a Tiled tile-OBJECT's own assigned image (drag a ModelSnapshotTool PNG onto it —
+ * same mechanism this whole file uses for the "meshes" layer, just callable against ANY object
+ * on ANY layer) back into a MODELS registry ref + rotation/offset — see this file's own doc for
+ * the full snapshot-to-model pipeline. Shared by getMeshPlacements() below (every object on the
+ * "meshes" layer) and WorldObjectRegistry's "useOwnMesh" handling (one specific mapSettings
+ * object opting its OWN assigned image into being resolved as a real model too, right where
+ * that object's position/footprint already lives) — both need the exact same decode, just
+ * applied to objects from different layers. Returns undefined for a plain rect object (no
+ * `gid` — nothing was ever dragged onto it) or one whose image doesn't decode to a KNOWN model
+ * ref (not one of ModelSnapshotTool's own snapshots, or one whose model got renamed/removed
+ * since) — the caller decides what "no mesh" means for its own object type.
+ */
+export interface DecodedObjectModel {
+    /** "Group.Key" — see ModelSnapshotTool.resolveModelDef(), the one thing this ref is for. */
+    modelRef: string;
+    /** Radians, THREE Y-axis yaw — converted from Tiled's clockwise-degrees `rotation`. */
+    rotationY: number;
+    /** World-unit nudges applied to the model's own local position — see MeshPlacement.offsetX's own doc. 0 unless set. */
+    offsetX: number;
+    offsetY: number;
+    offsetZ: number;
+}
+
+export function decodeObjectModel(obj: TiledObject, map: TiledMapData): DecodedObjectModel | undefined {
+    if (!obj.gid) {
+        return undefined;
+    }
+
+    const imageName = resolveTiledTileImageName(map, obj.gid);
+    const modelRef = imageName ? ModelSnapshotTool.decodeModelRef(imageName) : undefined;
+    if (!modelRef || !ModelSnapshotTool.resolveModelDef(modelRef)) {
+        return undefined;
+    }
+
+    const rotationRad = (obj.rotation * Math.PI) / 180;
+    return {
+        modelRef,
+        // Tiled's `rotation` is clockwise degrees as viewed in its own top-down 2D editor;
+        // THREE's +Y-axis rotation is counter-clockwise when viewed from above (looking down
+        // -Y) by the right-hand rule — hence the sign flip. Best-effort: flip this if a rotated
+        // placement still reads mirrored in practice.
+        rotationY: -rotationRad,
+        offsetX: getObjectNumberProperty(obj, OFFSET_X_PROPERTY) ?? getTiledTileNumberProperty(map, obj.gid, OFFSET_X_PROPERTY) ?? 0,
+        offsetY: getObjectNumberProperty(obj, OFFSET_Y_PROPERTY) ?? getTiledTileNumberProperty(map, obj.gid, OFFSET_Y_PROPERTY) ?? 0,
+        offsetZ: getObjectNumberProperty(obj, OFFSET_Z_PROPERTY) ?? getTiledTileNumberProperty(map, obj.gid, OFFSET_Z_PROPERTY) ?? 0,
+    };
+}
 
 export interface MeshPlacement {
     /** "Group.Key" — see ModelSnapshotTool.resolveModelDef(), the one thing this ref is for. */
@@ -105,10 +154,9 @@ export function getMeshPlacements(
             continue;
         }
 
-        const imageName = resolveTiledTileImageName(map, obj.gid);
-        const modelRef = imageName ? ModelSnapshotTool.decodeModelRef(imageName) : undefined;
-        if (!modelRef || !ModelSnapshotTool.resolveModelDef(modelRef)) {
-            console.warn(`[MeshLayerSpawner] object #${obj.id} on "${MESH_LAYER_NAME}" (image "${imageName ?? '?'}") doesn't decode to a known model — skipping`);
+        const decoded = decodeObjectModel(obj, map);
+        if (!decoded) {
+            console.warn(`[MeshLayerSpawner] object #${obj.id} on "${MESH_LAYER_NAME}" doesn't decode to a known model — skipping`);
             continue;
         }
 
@@ -136,20 +184,16 @@ export function getMeshPlacements(
         const centerYpx = obj.y + rotatedCenterY;
 
         placements.push({
-            modelRef,
+            modelRef: decoded.modelRef,
             x: centerXpx * scale,
             z: centerYpx * scale,
-            // Tiled's `rotation` is clockwise degrees as viewed in its own top-down 2D
-            // editor; THREE's +Y-axis rotation is counter-clockwise when viewed from above
-            // (looking down -Y) by the right-hand rule — hence the sign flip. Best-effort:
-            // flip this if a rotated placement still reads mirrored in practice.
-            rotationY: -rotationRad,
+            rotationY: decoded.rotationY,
             worldWidth: obj.width * scale,
             worldDepth: obj.height * scale,
             solid: getObjectBooleanProperty(obj, SOLID_PROPERTY) || getTiledTileBooleanProperty(map, obj.gid, SOLID_PROPERTY),
-            offsetX: getObjectNumberProperty(obj, OFFSET_X_PROPERTY) ?? getTiledTileNumberProperty(map, obj.gid, OFFSET_X_PROPERTY) ?? 0,
-            offsetY: getObjectNumberProperty(obj, OFFSET_Y_PROPERTY) ?? getTiledTileNumberProperty(map, obj.gid, OFFSET_Y_PROPERTY) ?? 0,
-            offsetZ: getObjectNumberProperty(obj, OFFSET_Z_PROPERTY) ?? getTiledTileNumberProperty(map, obj.gid, OFFSET_Z_PROPERTY) ?? 0,
+            offsetX: decoded.offsetX,
+            offsetY: decoded.offsetY,
+            offsetZ: decoded.offsetZ,
         });
     }
 

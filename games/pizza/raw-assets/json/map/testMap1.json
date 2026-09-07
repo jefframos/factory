@@ -1421,29 +1421,6 @@
          "name":"mapSettings",
          "objects":[
                 {
-                 "height":64,
-                 "id":1,
-                 "name":"",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"string",
-                         "value":"tower"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"building"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":64,
-                 "x":-160,
-                 "y":-64
-                }, 
-                {
                  "height":32,
                  "id":2,
                  "name":"",
@@ -1514,8 +1491,8 @@
                  "type":"",
                  "visible":true,
                  "width":64.5,
-                 "x":-160,
-                 "y":-32
+                 "x":-64,
+                 "y":-96
                 }, 
                 {
                  "ellipse":true,
@@ -1816,8 +1793,7 @@
                  "width":32,
                  "x":-656.25,
                  "y":16.25
-                },
-            
+                }, 
                 {
                  "height":64.5,
                  "id":17,
@@ -1845,7 +1821,8 @@
                  "width":64.5,
                  "x":-192,
                  "y":576
-                }, 
+                },
+            
                 {
                  "height":64.5,
                  "id":44,
@@ -2038,6 +2015,64 @@
                  "width":96,
                  "x":-832,
                  "y":-32
+                }, 
+                {
+                 "gid":22,
+                 "height":74,
+                 "id":48,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"tower2"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"building"
+                        }, 
+                        {
+                         "name":"useOwnMesh",
+                         "type":"bool",
+                         "value":true
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":64,
+                 "x":-64,
+                 "y":128
+                }, 
+                {
+                 "gid":26,
+                 "height":75.6666666666667,
+                 "id":49,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"tower"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"building"
+                        }, 
+                        {
+                         "name":"useOwnMesh",
+                         "type":"bool",
+                         "value":true
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":75.6666666666667,
+                 "x":-69.6666666666667,
+                 "y":-66.6666666666667
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2323,7 +2358,7 @@
          "y":0
         }],
  "nextlayerid":9,
- "nextobjectid":48,
+ "nextobjectid":50,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",
@@ -2367,8 +2402,8 @@
          "margin":0,
          "name":"models",
          "spacing":0,
-         "tilecount":4,
-         "tileheight":80,
+         "tilecount":6,
+         "tileheight":117,
          "tiles":[
                 {
                  "id":0,
@@ -2417,8 +2452,20 @@
                          "type":"float",
                          "value":-0.3
                         }]
+                }, 
+                {
+                 "id":4,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Pirate--TowerCompleteLarge__116x116.png",
+                 "imageheight":116,
+                 "imagewidth":116
+                }, 
+                {
+                 "id":5,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Pirate--TowerCompleteSmall__107x117.png",
+                 "imageheight":117,
+                 "imagewidth":107
                 }],
-         "tilewidth":80
+         "tilewidth":116
         }],
  "tilewidth":32,
  "type":"map",

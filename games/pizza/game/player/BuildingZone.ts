@@ -42,6 +42,8 @@ import { BackpackStorage } from '../data/BackpackStorage';
 import { BuildingStorage } from '../data/BuildingStorage';
 import { BUILDING_CONFIG, BuildingId, getFillFractionForLevel, getMeshConfigForLevel, getViewIdForLevel } from '../data/BuildingTypes';
 import { resolveEntityView } from '../world/EntityViewRegistry';
+import { DecodedObjectModel } from '../world/MeshLayerSpawner';
+import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
 import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
@@ -177,6 +179,8 @@ export default class BuildingZone extends Entity {
     private readonly footprint?: { width: number; depth: number };
     /** Optional separate deposit-trigger rect — see the constructor's `triggerArea` param doc. Undefined means "trigger the building's own footprint," same as before this existed. */
     private readonly triggerArea?: BuildingTriggerArea;
+    /** See the constructor's `ownMesh` param doc — consulted by resolveOwnMeshFallback(). */
+    private readonly ownMesh?: DecodedObjectModel;
 
     public constructor(
         position: THREE.Vector3,
@@ -205,6 +209,16 @@ export default class BuildingZone extends Entity {
          * own footprint," same as before this param existed.
          */
         triggerArea?: BuildingTriggerArea,
+        /**
+         * This building's own decoded "useOwnMesh" fallback (see
+         * WorldObjectRegistry.getOwnMesh()'s own doc) — a real model decoded straight off the
+         * SAME mapSettings object's own dragged-on image, used by createBuildingMesh() when
+         * this building has no `view`/`baseView` configured in BuildingTypes.ts at all (see
+         * resolveOwnMeshFallback()). Undefined (the default) — the checkbox was never set, or
+         * was set but nothing usable decoded from it — skips that fallback entirely, unchanged
+         * from before this param existed.
+         */
+        ownMesh?: DecodedObjectModel,
     ) {
         super();
         this.screenHost = screenHost;
@@ -213,6 +227,7 @@ export default class BuildingZone extends Entity {
         this.worldProgressionHost = worldProgressionHost;
         this.footprint = footprint;
         this.triggerArea = triggerArea;
+        this.ownMesh = ownMesh;
         this.transform.position.copy(position);
         this.restY = position.y;
     }
@@ -355,12 +370,52 @@ export default class BuildingZone extends Entity {
         this.currentViewId = viewId;
         const targetFraction = getFillFractionForLevel(this.buildingId, level);
 
-        const resolved = resolveEntityView(viewId);
-        if (resolved) {
-            this.createBuildingView(resolved, dropIn, targetFraction);
-        } else {
-            this.createBuildingBox(getMeshConfigForLevel(this.buildingId, level), dropIn, targetFraction);
+        const entityView = resolveEntityView(viewId);
+        if (entityView) {
+            this.createBuildingView(entityView, dropIn, targetFraction, false);
+            return;
         }
+
+        const ownMeshView = this.resolveOwnMeshFallback();
+        if (ownMeshView) {
+            this.createBuildingView(ownMeshView, dropIn, targetFraction, true);
+            return;
+        }
+
+        this.createBuildingBox(getMeshConfigForLevel(this.buildingId, level), dropIn, targetFraction);
+    }
+
+    /**
+     * Falls back to `this.ownMesh` — this building's own mapSettings object's decoded
+     * "useOwnMesh" model (see WorldObjectRegistry.getOwnMesh()'s own doc), passed in through
+     * the constructor — for a building with no `view`/`baseView` configured in BuildingTypes.ts
+     * at all. Only ever consulted when resolveEntityView() already came back empty (see
+     * createBuildingMesh()), so a building WITH a real configured view never touches this.
+     * `rotationDeg` is deliberately 0 here (unlike a normal EntityViewRegistry view) — the real
+     * rotation is applied manually AFTER createBuildingView()'s fit-to-footprint scaling
+     * measures the model's UNROTATED native bounding box (see that method's own doc for why
+     * measuring pre-rotation matters); `scale` is likewise a placeholder 1 (fit-to-footprint
+     * computes and applies the real per-axis scale itself once the model's actually loaded).
+     * Undefined if this building's "useOwnMesh" checkbox was never set (or was set but nothing
+     * usable decoded from it) — createBuildingMesh() falls through to the plain box placeholder
+     * in that case.
+     */
+    private resolveOwnMeshFallback(): ReturnType<typeof resolveEntityView> {
+        if (!this.ownMesh) {
+            return undefined;
+        }
+
+        const model = ModelSnapshotTool.resolveModelDef(this.ownMesh.modelRef);
+        if (!model) {
+            return undefined;
+        }
+
+        return {
+            model,
+            scale: 1,
+            rotationDeg: 0,
+            offset: [this.ownMesh.offsetX, this.ownMesh.offsetY, this.ownMesh.offsetZ],
+        };
     }
 
     private createBuildingBox(config: ReturnType<typeof getMeshConfigForLevel>, dropIn: boolean, targetFraction: number): void {
@@ -378,7 +433,21 @@ export default class BuildingZone extends Entity {
         this.playRevealEffect(mesh, dropIn, targetFraction);
     }
 
-    private createBuildingView(resolved: NonNullable<ReturnType<typeof resolveEntityView>>, dropIn: boolean, targetFraction: number): void {
+    /**
+     * `fitToFootprint` (true only for resolveOwnMeshFallback()'s result) rescales the loaded
+     * model, per-axis, to match this building's OWN mapSettings placement rect (`this.footprint`
+     * — the same width/depth a Tiled level designer resizes right there, same as any other
+     * building) instead of trusting `resolved.scale` (which resolveOwnMeshFallback() always
+     * sets to a placeholder 1) — same "the drawn rect's CURRENT size has to reach the real
+     * model too" reasoning as PizzaScene.setupMeshLayer()'s own identical fit, just against
+     * this building's footprint instead of a meshes-layer placement's worldWidth/worldDepth.
+     * Measures the model's bounding box BEFORE applying `resolved.rotationDeg` (always 0 for
+     * that caller) so size.x/size.z read the model's own un-rotated width/depth on the same
+     * axes the footprint's width/depth are drawn in, then applies the real rotation manually
+     * afterward — measuring AFTER rotation would give a skewed footprint for anything not
+     * rotated by a multiple of 90°, same pitfall that method's own doc calls out.
+     */
+    private createBuildingView(resolved: NonNullable<ReturnType<typeof resolveEntityView>>, dropIn: boolean, targetFraction: number, fitToFootprint: boolean): void {
         const [offsetX, offsetY, offsetZ] = resolved.offset;
 
         const visual = new GlbVisualComponent(
@@ -388,7 +457,20 @@ export default class BuildingZone extends Entity {
             THREE.MathUtils.degToRad(resolved.rotationDeg),
             // The glb loads asynchronously — the reveal sweep needs the finished mesh's
             // world bounds, so it's set up here rather than right after construction.
-            () => this.playRevealEffect(visual.mesh, dropIn, targetFraction),
+            () => {
+                if (fitToFootprint && this.footprint) {
+                    const mesh = visual.mesh;
+                    const nativeSize = new THREE.Box3().setFromObject(mesh).getSize(new THREE.Vector3());
+                    const scaleX = nativeSize.x > 1e-4 ? this.footprint.width / nativeSize.x : 1;
+                    const scaleZ = nativeSize.z > 1e-4 ? this.footprint.depth / nativeSize.z : 1;
+                    // No vertical-scale signal from a top-down footprint rect — splitting the
+                    // difference between the two horizontal axes is the least-arbitrary
+                    // stand-in, same as setupMeshLayer()'s own identical averaging.
+                    mesh.scale.set(scaleX, (scaleX + scaleZ) / 2, scaleZ);
+                    mesh.rotation.y = this.ownMesh ? this.ownMesh.rotationY : 0;
+                }
+                this.playRevealEffect(visual.mesh, dropIn, targetFraction);
+            },
         );
         this.buildingVisual = this.addComponent(visual);
     }

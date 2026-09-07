@@ -20,6 +20,7 @@ import { FrameName } from '../ui/FrameRegistry';
 
 export enum BuildingId {
     Camp = "tower",
+    Tower2 = "tower2"
 }
 
 export interface BuildingEffect {
@@ -68,6 +69,20 @@ export interface BuildingConfig {
     baseView?: string;
     /** See BuildingLevelConfig.fillFull's own doc — same override, for level 0 (baseView) instead of a levels[] entry. */
     baseFillFull?: boolean;
+    /**
+     * 0-1 — how much of the base mesh's run (see getFillFractionForLevel()'s own doc) should
+     * already read as "built" right from level 0, before a single unit's ever been deposited.
+     * Only applies to a run that STARTS at level 0 (base and however many levels after it share
+     * one mesh) — a later, genuinely different mesh's own run always starts filling from
+     * scratch regardless of this. Every level within that run then grows LINEARLY from this
+     * floor up to 1 at the run's last level (e.g. 0.1 with a 3-level run: level 0 -> 0.1,
+     * level 1 -> 0.4, level 2 -> 0.7, level 3 -> 1) instead of the eased position/length curve
+     * getFillFractionForLevel() uses elsewhere — a designer who's explicitly set this floor has
+     * already made the "don't look empty at low levels" call themselves, so the extra easing
+     * would just fight their own number. undefined (the default) leaves that run on the usual
+     * eased curve, unchanged from before this field existed.
+     */
+    baseFillFraction?: number;
     /** Ordered ascending by `level` — BuildingStorage/BuildingZone index into this by `currentLevel` to find the next rung. */
     levels: BuildingLevelConfig[];
     /** Optional — when set, this building's BuildingZone isn't spawned at all (see PizzaScene.setupBuildingZone(), which registers it as a RequirementRegistry spawn gate) until MilestoneRequirement.ts's isMilestoneRequirementMet() says this is satisfied. Same shared requirement shape GateConfig.requirement/QueueConfig.appearRequirement use. undefined (the only case today — Camp is the very first building, nothing gates it) means "always appears." */
@@ -101,8 +116,7 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
                     "value": 5,
                     "description": "+5 backpack capacity"
                 },
-                mesh: { size: [1.4, 1.2, 1.4], color: 0x996633 },
-                "view": "tower2view"
+                mesh: { size: [1.4, 1.2, 1.4], color: 0x996633 }
             },
             {
                 level: 2,
@@ -115,8 +129,7 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
                     "value": 10,
                     "description": "+10 backpack capacity"
                 },
-                mesh: { size: [1.8, 1.8, 1.8], color: 0xcc8844 },
-                "view": "tower2view"
+                mesh: { size: [1.8, 1.8, 1.8], color: 0xcc8844 }
             },
             {
                 "level": 3,
@@ -151,12 +164,36 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
                 mesh: { size: [1.8, 1.8, 1.8], color: 0xcc8844 }
             }
         ],
-        "baseView": "tower1View",
         "popupMode": "simple",
         "icon": "campfire",
         "updateParticleEffectId": "gateMyst",
-        "solid": 0.8
+        "solid": 0.8,
+        "baseFillFraction": 0.1
     },
+    "tower2": {
+        baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
+        "name": "Tower2",
+        "icon": "animal-hide",
+        "levels": [{
+            "level": 1,
+            "requirements": {
+                "stone": 1
+            },
+            "effect": {}
+        },
+        {
+            "level": 2,
+            "requirements": {
+                "stone": 1
+            },
+            "effect": {}
+        }
+        ],
+        "solid": 1,
+        "popupMode": "simple",
+        "updateParticleEffectId": "gateMyst",
+        "baseFillFraction": 0.1
+    }
 };
 
 /** `undefined` once every level in the ladder is already cleared (see BuildingStorage.isMaxLevel()). */
@@ -223,6 +260,12 @@ export function getFillFractionForLevel(id: BuildingId, level: number): number {
     const runLength = end - start + 1;
     const positionInRun = clampedLevel - start + 1;
     const linearFraction = positionInRun / runLength;
+
+    // A run starting at level 0 with an explicit baseFillFraction — see that field's own doc —
+    // grows LINEARLY from that designer-chosen floor up to 1, instead of the eased curve below.
+    if (start === 0 && config.baseFillFraction !== undefined) {
+        return config.baseFillFraction + (1 - config.baseFillFraction) * linearFraction;
+    }
 
     // A straight positionInRun/runLength reads as "basically nothing built" for an early level
     // in a long run (e.g. 1/6 = 17%) — sqrt() front-loads the perceptible growth (1/6 -> 41%,

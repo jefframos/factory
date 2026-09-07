@@ -450,7 +450,7 @@ function serializeField(sourceFile, key, value, refreshedThisSync) {
  * items beyond the posted length are removed outright (deleting an item
  * necessarily deletes everything on it, managed or not).
  */
-function upsertArrayByIndex(sourceFile, arrayLiteral, itemManagedKeys, postedItems, warnings, refreshedThisSync) {
+function upsertArrayByIndex(sourceFile, arrayLiteral, itemManagedKeys, itemOptionalKeys, postedItems, warnings, refreshedThisSync) {
     const existing = arrayLiteral.getElements();
     // Used as a template for any BRAND NEW item appended below (see that branch) — a new
     // item has no prior object of its own to preserve unmanaged fields from, so it borrows
@@ -462,7 +462,7 @@ function upsertArrayByIndex(sourceFile, arrayLiteral, itemManagedKeys, postedIte
         if (index < existing.length) {
             const itemLiteral = existing[index].asKind(SyntaxKind.ObjectLiteralExpression);
             if (itemLiteral) {
-                upsertObjectFields(sourceFile, itemLiteral, itemManagedKeys, [], item, warnings, refreshedThisSync);
+                upsertObjectFields(sourceFile, itemLiteral, itemManagedKeys, itemOptionalKeys, item, warnings, refreshedThisSync);
                 return;
             }
             // Existing element isn't an object literal (unexpected hand-authored shape) —
@@ -474,7 +474,7 @@ function upsertArrayByIndex(sourceFile, arrayLiteral, itemManagedKeys, postedIte
 
         arrayLiteral.addElement('{}');
         const newItemLiteral = arrayLiteral.getElements()[index].asKindOrThrow(SyntaxKind.ObjectLiteralExpression);
-        upsertObjectFields(sourceFile, newItemLiteral, itemManagedKeys, [], item, warnings, refreshedThisSync);
+        upsertObjectFields(sourceFile, newItemLiteral, itemManagedKeys, itemOptionalKeys, item, warnings, refreshedThisSync);
 
         if (lastExisting) {
             const unmanagedProps = lastExisting.getProperties()
@@ -582,8 +582,16 @@ function upsertEntryFields(sourceFile, recordLiteral, id, mapping, data, warning
     }
 
     for (const key of mapping.managedKeys) {
-        const listItemKeys = mapping.listMerge?.[key];
-        if (listItemKeys && Array.isArray(data[key])) {
+        const listMergeEntry = mapping.listMerge?.[key];
+        if (listMergeEntry && Array.isArray(data[key])) {
+            // `listMerge[key]` is either a plain array (every item field required — the
+            // original, still-supported shape) or `{ keys, optionalKeys }` when some of a
+            // list item's own fields are genuinely optional (see entityMap.mjs's buildings
+            // `levels` mapping for why: `view`/`fillFull` need to actually delete from source
+            // when a designer clears them, not get stuck "left UNCHANGED" forever).
+            const itemManagedKeys = Array.isArray(listMergeEntry) ? listMergeEntry : listMergeEntry.keys;
+            const itemOptionalKeys = Array.isArray(listMergeEntry) ? [] : (listMergeEntry.optionalKeys ?? []);
+
             let existingArrayProp = findProperty(entryLiteral, key);
             if (!existingArrayProp) {
                 entryLiteral.addPropertyAssignment({ name: JSON.stringify(key), initializer: '[]' });
@@ -595,7 +603,7 @@ function upsertEntryFields(sourceFile, recordLiteral, id, mapping, data, warning
                 arrayAssignment.setInitializer('[]');
                 arrayLiteral = arrayAssignment.getInitializerIfKindOrThrow(SyntaxKind.ArrayLiteralExpression);
             }
-            upsertArrayByIndex(sourceFile, arrayLiteral, listItemKeys, data[key], warnings, refreshedThisSync);
+            upsertArrayByIndex(sourceFile, arrayLiteral, itemManagedKeys, itemOptionalKeys, data[key], warnings, refreshedThisSync);
             continue;
         }
 

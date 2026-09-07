@@ -11,8 +11,7 @@
                     "type": "backpackCapacity",
                     "value": 5,
                     "description": "+5 backpack capacity"
-                },
-                "view": "tower2view"
+                }
             },
             {
                 "level": 2,
@@ -24,8 +23,7 @@
                     "type": "backpackCapacity",
                     "value": 10,
                     "description": "+10 backpack capacity"
-                },
-                "view": "tower2view"
+                }
             },
             {
                 "requirements": {
@@ -56,10 +54,34 @@
                 "level": 6
             }
         ],
-        "baseView": "tower1View",
         "popupMode": "simple",
         "icon": "campfire",
         "updateParticleEffectId": "gateMyst",
-        "solid": 0.8
+        "solid": 0.8,
+        "baseFillFraction": 0.1
+    },
+    "tower2": {
+        "levels": [
+            {
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                "level": 1
+            },
+            {
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                "level": 2
+            }
+        ],
+        "name": "Tower2",
+        "icon": "animal-hide",
+        "solid": 1,
+        "popupMode": "simple",
+        "updateParticleEffectId": "gateMyst",
+        "baseFillFraction": 0.1
     }
 }

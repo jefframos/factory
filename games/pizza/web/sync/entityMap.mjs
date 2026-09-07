@@ -109,8 +109,8 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'BUILDING_CONFIG',
         kind: 'enumRecord',
         enumName: 'BuildingId',
-        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid', 'updateParticleEffectId', 'updateParticleCount'],
-        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid', 'updateParticleEffectId', 'updateParticleCount'],
+        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'solid', 'updateParticleEffectId', 'updateParticleCount'],
+        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'solid', 'updateParticleEffectId', 'updateParticleCount'],
         // BuildingLevelConfig also carries a `mesh` field (per-level placeholder art) that
         // this editor doesn't manage — a plain wholesale replacement of the `levels` array
         // (what every OTHER list field in this map gets, since none of their items have
@@ -119,7 +119,12 @@ export const ENTITY_SOURCE_MAP = {
         // named sub-fields on each existing item and leaving `mesh` alone — see
         // syncToSource.mjs's upsertArrayByIndex() for the actual merge. `view` (an optional
         // EntityViewRegistry id — see BuildingLevelConfig.view's own doc) IS managed here.
-        listMerge: { levels: ['level', 'requirements', 'effect', 'view'] },
+        // `view`/`fillFull` are optionalKeys here too (not just plain array members) — without
+        // that, upsertArrayByIndex/upsertObjectFields would treat them as REQUIRED on every
+        // level item, refusing to ever delete one a designer clears in the editor (warning
+        // "left UNCHANGED in source" instead) even though BuildingLevelConfig itself marks both
+        // `view?`/`fillFull?` as optional.
+        listMerge: { levels: { keys: ['level', 'requirements', 'effect', 'view', 'fillFull'], optionalKeys: ['view', 'fillFull'] } },
     },
     shops: {
         file: path.join(GAME_DIR, 'shop', 'ShopTypes.ts'),

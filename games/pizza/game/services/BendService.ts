@@ -411,11 +411,15 @@ export class BendService {
                     // A gentle ripple around the fill line — two overlapping sine waves (different
                     // frequency/speed) traveling across the mesh's own XZ footprint, so the edge
                     // reads as a living, sloshing surface instead of a perfectly flat cutoff while
-                    // it's still filling. Fades to 0 (a flat line again) as progress nears 1, so
-                    // the FINISHED mesh settles down instead of rippling forever.
+                    // it's still filling. A FIXED world-unit amplitude (not scaled by the mesh's
+                    // own height) — scaling by height used to make a tall building's ripple
+                    // several units tall (ugly, cartoonish sloshing) while a short one barely
+                    // showed anything; a flat amplitude reads as the same-sized ripple on
+                    // anything, tall or short. Fades to 0 (a flat line again) as progress nears
+                    // 1, so the FINISHED mesh settles down instead of rippling forever.
                     float _revealWave = sin(vRevealWorldXZ.x * 3.0 + vRevealWorldXZ.y * 2.0 + uTime * 2.0) * 0.05
                         + sin(vRevealWorldXZ.x * 5.5 - vRevealWorldXZ.y * 4.0 + uTime * 3.3) * 0.03;
-                    _revealLine += _revealWave * (uRevealMaxY - uRevealMinY) * (1.0 - uRevealProgress);
+                    _revealLine += _revealWave * (1.0 - uRevealProgress);
                     if (vRevealWorldY > _revealLine) discard;
                     float _revealGlow = smoothstep(_revealLine - 0.15, _revealLine, vRevealWorldY);
                     diffuseColor.rgb += _revealGlow * vec3(0.6, 0.9, 1.0);
