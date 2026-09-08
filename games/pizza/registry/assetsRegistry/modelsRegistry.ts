@@ -8,6 +8,777 @@ export interface ModelDefinition {
   readonly nodes: Record<string, string>;
 }
 
+const CastleBridgeDraw = {
+  id: 'bridge-draw',
+  path: 'castle/bridge-draw',
+  fullPath: 'pizza/models/castle/bridge-draw.glb',
+  format: 'glb',
+  nodes: {
+  "BridgeDraw": "bridge-draw"
+}
+} as const;
+
+const CastleBridgeStraightPillar = {
+  id: 'bridge-straight-pillar',
+  path: 'castle/bridge-straight-pillar',
+  fullPath: 'pizza/models/castle/bridge-straight-pillar.glb',
+  format: 'glb',
+  nodes: {
+  "BridgeStraightPillar": "bridge-straight-pillar"
+}
+} as const;
+
+const CastleBridgeStraight = {
+  id: 'bridge-straight',
+  path: 'castle/bridge-straight',
+  fullPath: 'pizza/models/castle/bridge-straight.glb',
+  format: 'glb',
+  nodes: {
+  "BridgeStraight": "bridge-straight"
+}
+} as const;
+
+const CastleDoor = {
+  id: 'door',
+  path: 'castle/door',
+  fullPath: 'pizza/models/castle/door.glb',
+  format: 'glb',
+  nodes: {
+  "Door": "door"
+}
+} as const;
+
+const CastleFlagBannerLong = {
+  id: 'flag-banner-long',
+  path: 'castle/flag-banner-long',
+  fullPath: 'pizza/models/castle/flag-banner-long.glb',
+  format: 'glb',
+  nodes: {
+  "FlagBannerLong": "flag-banner-long"
+}
+} as const;
+
+const CastleFlagBannerShort = {
+  id: 'flag-banner-short',
+  path: 'castle/flag-banner-short',
+  fullPath: 'pizza/models/castle/flag-banner-short.glb',
+  format: 'glb',
+  nodes: {
+  "FlagBannerShort": "flag-banner-short"
+}
+} as const;
+
+const CastleFlagPennant = {
+  id: 'flag-pennant',
+  path: 'castle/flag-pennant',
+  fullPath: 'pizza/models/castle/flag-pennant.glb',
+  format: 'glb',
+  nodes: {
+  "FlagPennant": "flag-pennant"
+}
+} as const;
+
+const CastleFlagWide = {
+  id: 'flag-wide',
+  path: 'castle/flag-wide',
+  fullPath: 'pizza/models/castle/flag-wide.glb',
+  format: 'glb',
+  nodes: {
+  "FlagWide": "flag-wide"
+}
+} as const;
+
+const CastleFlag = {
+  id: 'flag',
+  path: 'castle/flag',
+  fullPath: 'pizza/models/castle/flag.glb',
+  format: 'glb',
+  nodes: {
+  "Flag": "flag"
+}
+} as const;
+
+const CastleGate = {
+  id: 'gate',
+  path: 'castle/gate',
+  fullPath: 'pizza/models/castle/gate.glb',
+  format: 'glb',
+  nodes: {
+  "Gate": "gate"
+}
+} as const;
+
+const CastleGroundHills = {
+  id: 'ground-hills',
+  path: 'castle/ground-hills',
+  fullPath: 'pizza/models/castle/ground-hills.glb',
+  format: 'glb',
+  nodes: {
+  "GroundHills": "ground-hills"
+}
+} as const;
+
+const CastleGround = {
+  id: 'ground',
+  path: 'castle/ground',
+  fullPath: 'pizza/models/castle/ground.glb',
+  format: 'glb',
+  nodes: {
+  "Ground": "ground"
+}
+} as const;
+
+const CastleMetalGate = {
+  id: 'metal-gate',
+  path: 'castle/metal-gate',
+  fullPath: 'pizza/models/castle/metal-gate.glb',
+  format: 'glb',
+  nodes: {
+  "MetalGate": "metal-gate"
+}
+} as const;
+
+const CastleRocksLarge = {
+  id: 'rocks-large',
+  path: 'castle/rocks-large',
+  fullPath: 'pizza/models/castle/rocks-large.glb',
+  format: 'glb',
+  nodes: {
+  "RocksLarge": "rocks-large"
+}
+} as const;
+
+const CastleRocksSmall = {
+  id: 'rocks-small',
+  path: 'castle/rocks-small',
+  fullPath: 'pizza/models/castle/rocks-small.glb',
+  format: 'glb',
+  nodes: {
+  "RocksSmall": "rocks-small"
+}
+} as const;
+
+const CastleSiegeBallistaDemolished = {
+  id: 'siege-ballista-demolished',
+  path: 'castle/siege-ballista-demolished',
+  fullPath: 'pizza/models/castle/siege-ballista-demolished.glb',
+  format: 'glb',
+  nodes: {
+  "SiegeBallistaDemolished": "siege-ballista-demolished"
+}
+} as const;
+
+const CastleSiegeBallista = {
+  id: 'siege-ballista',
+  path: 'castle/siege-ballista',
+  fullPath: 'pizza/models/castle/siege-ballista.glb',
+  format: 'glb',
+  nodes: {
+  "SiegeBallista": "siege-ballista",
+  "Arrow": "arrow",
+  "Wheel": "wheel"
+}
+} as const;
+
+const CastleSiegeCatapultDemolished = {
+  id: 'siege-catapult-demolished',
+  path: 'castle/siege-catapult-demolished',
+  fullPath: 'pizza/models/castle/siege-catapult-demolished.glb',
+  format: 'glb',
+  nodes: {
+  "SiegeCatapultDemolished": "siege-catapult-demolished"
+}
+} as const;
+
+const CastleSiegeCatapult = {
+  id: 'siege-catapult',
+  path: 'castle/siege-catapult',
+  fullPath: 'pizza/models/castle/siege-catapult.glb',
+  format: 'glb',
+  nodes: {
+  "SiegeCatapult": "siege-catapult",
+  "Catapult": "catapult",
+  "Wheel": "wheel"
+}
+} as const;
+
+const CastleSiegeRamDemolished = {
+  id: 'siege-ram-demolished',
+  path: 'castle/siege-ram-demolished',
+  fullPath: 'pizza/models/castle/siege-ram-demolished.glb',
+  format: 'glb',
+  nodes: {
+  "SiegeRamDemolished": "siege-ram-demolished"
+}
+} as const;
+
+const CastleSiegeRam = {
+  id: 'siege-ram',
+  path: 'castle/siege-ram',
+  fullPath: 'pizza/models/castle/siege-ram.glb',
+  format: 'glb',
+  nodes: {
+  "SiegeRam": "siege-ram",
+  "Ram": "ram",
+  "Wheel": "wheel"
+}
+} as const;
+
+const CastleSiegeTowerDemolished = {
+  id: 'siege-tower-demolished',
+  path: 'castle/siege-tower-demolished',
+  fullPath: 'pizza/models/castle/siege-tower-demolished.glb',
+  format: 'glb',
+  nodes: {
+  "SiegeTowerDemolished": "siege-tower-demolished"
+}
+} as const;
+
+const CastleSiegeTower = {
+  id: 'siege-tower',
+  path: 'castle/siege-tower',
+  fullPath: 'pizza/models/castle/siege-tower.glb',
+  format: 'glb',
+  nodes: {
+  "SiegeTower": "siege-tower",
+  "Wheel": "wheel"
+}
+} as const;
+
+const CastleSiegeTrebuchetDemolished = {
+  id: 'siege-trebuchet-demolished',
+  path: 'castle/siege-trebuchet-demolished',
+  fullPath: 'pizza/models/castle/siege-trebuchet-demolished.glb',
+  format: 'glb',
+  nodes: {
+  "SiegeTrebuchetDemolished": "siege-trebuchet-demolished"
+}
+} as const;
+
+const CastleSiegeTrebuchet = {
+  id: 'siege-trebuchet',
+  path: 'castle/siege-trebuchet',
+  fullPath: 'pizza/models/castle/siege-trebuchet.glb',
+  format: 'glb',
+  nodes: {
+  "SiegeTrebuchet": "siege-trebuchet",
+  "Arm": "arm",
+  "Catapult": "catapult",
+  "Weight": "weight",
+  "Wheel": "wheel"
+}
+} as const;
+
+const CastleStairsStoneSquare = {
+  id: 'stairs-stone-square',
+  path: 'castle/stairs-stone-square',
+  fullPath: 'pizza/models/castle/stairs-stone-square.glb',
+  format: 'glb',
+  nodes: {
+  "StairsStoneSquare": "stairs-stone-square"
+}
+} as const;
+
+const CastleStairsStone = {
+  id: 'stairs-stone',
+  path: 'castle/stairs-stone',
+  fullPath: 'pizza/models/castle/stairs-stone.glb',
+  format: 'glb',
+  nodes: {
+  "StairsStone": "stairs-stone"
+}
+} as const;
+
+const CastleTowerBase = {
+  id: 'tower-base',
+  path: 'castle/tower-base',
+  fullPath: 'pizza/models/castle/tower-base.glb',
+  format: 'glb',
+  nodes: {
+  "TowerBase": "tower-base"
+}
+} as const;
+
+const CastleTowerHexagonBase = {
+  id: 'tower-hexagon-base',
+  path: 'castle/tower-hexagon-base',
+  fullPath: 'pizza/models/castle/tower-hexagon-base.glb',
+  format: 'glb',
+  nodes: {
+  "TowerHexagonBase": "tower-hexagon-base"
+}
+} as const;
+
+const CastleTowerHexagonMid = {
+  id: 'tower-hexagon-mid',
+  path: 'castle/tower-hexagon-mid',
+  fullPath: 'pizza/models/castle/tower-hexagon-mid.glb',
+  format: 'glb',
+  nodes: {
+  "TowerHexagonMid": "tower-hexagon-mid"
+}
+} as const;
+
+const CastleTowerHexagonRoofSecondary = {
+  id: 'tower-hexagon-roof-secondary',
+  path: 'castle/tower-hexagon-roof-secondary',
+  fullPath: 'pizza/models/castle/tower-hexagon-roof-secondary.glb',
+  format: 'glb',
+  nodes: {
+  "TowerHexagonRoofSecondary": "tower-hexagon-roof-secondary"
+}
+} as const;
+
+const CastleTowerHexagonRoof = {
+  id: 'tower-hexagon-roof',
+  path: 'castle/tower-hexagon-roof',
+  fullPath: 'pizza/models/castle/tower-hexagon-roof.glb',
+  format: 'glb',
+  nodes: {
+  "TowerHexagonRoof": "tower-hexagon-roof"
+}
+} as const;
+
+const CastleTowerHexagonTopWood = {
+  id: 'tower-hexagon-top-wood',
+  path: 'castle/tower-hexagon-top-wood',
+  fullPath: 'pizza/models/castle/tower-hexagon-top-wood.glb',
+  format: 'glb',
+  nodes: {
+  "TowerHexagonTopWood": "tower-hexagon-top-wood"
+}
+} as const;
+
+const CastleTowerHexagonTop = {
+  id: 'tower-hexagon-top',
+  path: 'castle/tower-hexagon-top',
+  fullPath: 'pizza/models/castle/tower-hexagon-top.glb',
+  format: 'glb',
+  nodes: {
+  "TowerHexagonTop": "tower-hexagon-top"
+}
+} as const;
+
+const CastleTowerSlantRoof = {
+  id: 'tower-slant-roof',
+  path: 'castle/tower-slant-roof',
+  fullPath: 'pizza/models/castle/tower-slant-roof.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSlantRoof": "tower-slant-roof"
+}
+} as const;
+
+const CastleTowerSquareArch = {
+  id: 'tower-square-arch',
+  path: 'castle/tower-square-arch',
+  fullPath: 'pizza/models/castle/tower-square-arch.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareArch": "tower-square-arch"
+}
+} as const;
+
+const CastleTowerSquareBaseBorder = {
+  id: 'tower-square-base-border',
+  path: 'castle/tower-square-base-border',
+  fullPath: 'pizza/models/castle/tower-square-base-border.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareBaseBorder": "tower-square-base-border"
+}
+} as const;
+
+const CastleTowerSquareBaseColor = {
+  id: 'tower-square-base-color',
+  path: 'castle/tower-square-base-color',
+  fullPath: 'pizza/models/castle/tower-square-base-color.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareBaseColor": "tower-square-base-color"
+}
+} as const;
+
+const CastleTowerSquareBase = {
+  id: 'tower-square-base',
+  path: 'castle/tower-square-base',
+  fullPath: 'pizza/models/castle/tower-square-base.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareBase": "tower-square-base"
+}
+} as const;
+
+const CastleTowerSquareMidColor = {
+  id: 'tower-square-mid-color',
+  path: 'castle/tower-square-mid-color',
+  fullPath: 'pizza/models/castle/tower-square-mid-color.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareMidColor": "tower-square-mid-color"
+}
+} as const;
+
+const CastleTowerSquareMidDoor = {
+  id: 'tower-square-mid-door',
+  path: 'castle/tower-square-mid-door',
+  fullPath: 'pizza/models/castle/tower-square-mid-door.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareMidDoor": "tower-square-mid-door"
+}
+} as const;
+
+const CastleTowerSquareMidOpenSimple = {
+  id: 'tower-square-mid-open-simple',
+  path: 'castle/tower-square-mid-open-simple',
+  fullPath: 'pizza/models/castle/tower-square-mid-open-simple.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareMidOpenSimple": "tower-square-mid-open-simple"
+}
+} as const;
+
+const CastleTowerSquareMidOpen = {
+  id: 'tower-square-mid-open',
+  path: 'castle/tower-square-mid-open',
+  fullPath: 'pizza/models/castle/tower-square-mid-open.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareMidOpen": "tower-square-mid-open"
+}
+} as const;
+
+const CastleTowerSquareMidWindows = {
+  id: 'tower-square-mid-windows',
+  path: 'castle/tower-square-mid-windows',
+  fullPath: 'pizza/models/castle/tower-square-mid-windows.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareMidWindows": "tower-square-mid-windows"
+}
+} as const;
+
+const CastleTowerSquareMid = {
+  id: 'tower-square-mid',
+  path: 'castle/tower-square-mid',
+  fullPath: 'pizza/models/castle/tower-square-mid.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareMid": "tower-square-mid"
+}
+} as const;
+
+const CastleTowerSquareRoof = {
+  id: 'tower-square-roof',
+  path: 'castle/tower-square-roof',
+  fullPath: 'pizza/models/castle/tower-square-roof.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareRoof": "tower-square-roof"
+}
+} as const;
+
+const CastleTowerSquareTopColor = {
+  id: 'tower-square-top-color',
+  path: 'castle/tower-square-top-color',
+  fullPath: 'pizza/models/castle/tower-square-top-color.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareTopColor": "tower-square-top-color"
+}
+} as const;
+
+const CastleTowerSquareTopRoofHighWindows = {
+  id: 'tower-square-top-roof-high-windows',
+  path: 'castle/tower-square-top-roof-high-windows',
+  fullPath: 'pizza/models/castle/tower-square-top-roof-high-windows.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareTopRoofHighWindows": "tower-square-top-roof-high-windows"
+}
+} as const;
+
+const CastleTowerSquareTopRoofHigh = {
+  id: 'tower-square-top-roof-high',
+  path: 'castle/tower-square-top-roof-high',
+  fullPath: 'pizza/models/castle/tower-square-top-roof-high.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareTopRoofHigh": "tower-square-top-roof-high"
+}
+} as const;
+
+const CastleTowerSquareTopRoofRounded = {
+  id: 'tower-square-top-roof-rounded',
+  path: 'castle/tower-square-top-roof-rounded',
+  fullPath: 'pizza/models/castle/tower-square-top-roof-rounded.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareTopRoofRounded": "tower-square-top-roof-rounded"
+}
+} as const;
+
+const CastleTowerSquareTopRoof = {
+  id: 'tower-square-top-roof',
+  path: 'castle/tower-square-top-roof',
+  fullPath: 'pizza/models/castle/tower-square-top-roof.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareTopRoof": "tower-square-top-roof"
+}
+} as const;
+
+const CastleTowerSquareTop = {
+  id: 'tower-square-top',
+  path: 'castle/tower-square-top',
+  fullPath: 'pizza/models/castle/tower-square-top.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquareTop": "tower-square-top"
+}
+} as const;
+
+const CastleTowerSquare = {
+  id: 'tower-square',
+  path: 'castle/tower-square',
+  fullPath: 'pizza/models/castle/tower-square.glb',
+  format: 'glb',
+  nodes: {
+  "TowerSquare": "tower-square"
+}
+} as const;
+
+const CastleTowerTop = {
+  id: 'tower-top',
+  path: 'castle/tower-top',
+  fullPath: 'pizza/models/castle/tower-top.glb',
+  format: 'glb',
+  nodes: {
+  "TowerTop": "tower-top"
+}
+} as const;
+
+const CastleTreeLarge = {
+  id: 'tree-large',
+  path: 'castle/tree-large',
+  fullPath: 'pizza/models/castle/tree-large.glb',
+  format: 'glb',
+  nodes: {
+  "TreeLarge": "tree-large"
+}
+} as const;
+
+const CastleTreeLog = {
+  id: 'tree-log',
+  path: 'castle/tree-log',
+  fullPath: 'pizza/models/castle/tree-log.glb',
+  format: 'glb',
+  nodes: {
+  "TreeLog": "tree-log"
+}
+} as const;
+
+const CastleTreeSmall = {
+  id: 'tree-small',
+  path: 'castle/tree-small',
+  fullPath: 'pizza/models/castle/tree-small.glb',
+  format: 'glb',
+  nodes: {
+  "TreeSmall": "tree-small"
+}
+} as const;
+
+const CastleTreeTrunk = {
+  id: 'tree-trunk',
+  path: 'castle/tree-trunk',
+  fullPath: 'pizza/models/castle/tree-trunk.glb',
+  format: 'glb',
+  nodes: {
+  "TreeTrunk": "tree-trunk"
+}
+} as const;
+
+const CastleWallCornerHalfTower = {
+  id: 'wall-corner-half-tower',
+  path: 'castle/wall-corner-half-tower',
+  fullPath: 'pizza/models/castle/wall-corner-half-tower.glb',
+  format: 'glb',
+  nodes: {
+  "WallCornerHalfTower": "wall-corner-half-tower"
+}
+} as const;
+
+const CastleWallCornerHalf = {
+  id: 'wall-corner-half',
+  path: 'castle/wall-corner-half',
+  fullPath: 'pizza/models/castle/wall-corner-half.glb',
+  format: 'glb',
+  nodes: {
+  "WallCornerHalf": "wall-corner-half"
+}
+} as const;
+
+const CastleWallCornerSlant = {
+  id: 'wall-corner-slant',
+  path: 'castle/wall-corner-slant',
+  fullPath: 'pizza/models/castle/wall-corner-slant.glb',
+  format: 'glb',
+  nodes: {
+  "WallCornerSlant": "wall-corner-slant"
+}
+} as const;
+
+const CastleWallCorner = {
+  id: 'wall-corner',
+  path: 'castle/wall-corner',
+  fullPath: 'pizza/models/castle/wall-corner.glb',
+  format: 'glb',
+  nodes: {
+  "WallCorner": "wall-corner"
+}
+} as const;
+
+const CastleWallDoorway = {
+  id: 'wall-doorway',
+  path: 'castle/wall-doorway',
+  fullPath: 'pizza/models/castle/wall-doorway.glb',
+  format: 'glb',
+  nodes: {
+  "WallDoorway": "wall-doorway"
+}
+} as const;
+
+const CastleWallHalfModular = {
+  id: 'wall-half-modular',
+  path: 'castle/wall-half-modular',
+  fullPath: 'pizza/models/castle/wall-half-modular.glb',
+  format: 'glb',
+  nodes: {
+  "WallHalfModular": "wall-half-modular"
+}
+} as const;
+
+const CastleWallHalf = {
+  id: 'wall-half',
+  path: 'castle/wall-half',
+  fullPath: 'pizza/models/castle/wall-half.glb',
+  format: 'glb',
+  nodes: {
+  "WallHalf": "wall-half"
+}
+} as const;
+
+const CastleWallNarrowCorner = {
+  id: 'wall-narrow-corner',
+  path: 'castle/wall-narrow-corner',
+  fullPath: 'pizza/models/castle/wall-narrow-corner.glb',
+  format: 'glb',
+  nodes: {
+  "WallNarrowCorner": "wall-narrow-corner"
+}
+} as const;
+
+const CastleWallNarrowGate = {
+  id: 'wall-narrow-gate',
+  path: 'castle/wall-narrow-gate',
+  fullPath: 'pizza/models/castle/wall-narrow-gate.glb',
+  format: 'glb',
+  nodes: {
+  "WallNarrowGate": "wall-narrow-gate"
+}
+} as const;
+
+const CastleWallNarrowStairsRail = {
+  id: 'wall-narrow-stairs-rail',
+  path: 'castle/wall-narrow-stairs-rail',
+  fullPath: 'pizza/models/castle/wall-narrow-stairs-rail.glb',
+  format: 'glb',
+  nodes: {
+  "WallNarrowStairsRail": "wall-narrow-stairs-rail"
+}
+} as const;
+
+const CastleWallNarrowStairs = {
+  id: 'wall-narrow-stairs',
+  path: 'castle/wall-narrow-stairs',
+  fullPath: 'pizza/models/castle/wall-narrow-stairs.glb',
+  format: 'glb',
+  nodes: {
+  "WallNarrowStairs": "wall-narrow-stairs"
+}
+} as const;
+
+const CastleWallNarrowWoodFence = {
+  id: 'wall-narrow-wood-fence',
+  path: 'castle/wall-narrow-wood-fence',
+  fullPath: 'pizza/models/castle/wall-narrow-wood-fence.glb',
+  format: 'glb',
+  nodes: {
+  "WallNarrowWoodFence": "wall-narrow-wood-fence"
+}
+} as const;
+
+const CastleWallNarrowWood = {
+  id: 'wall-narrow-wood',
+  path: 'castle/wall-narrow-wood',
+  fullPath: 'pizza/models/castle/wall-narrow-wood.glb',
+  format: 'glb',
+  nodes: {
+  "WallNarrowWood": "wall-narrow-wood"
+}
+} as const;
+
+const CastleWallNarrow = {
+  id: 'wall-narrow',
+  path: 'castle/wall-narrow',
+  fullPath: 'pizza/models/castle/wall-narrow.glb',
+  format: 'glb',
+  nodes: {
+  "WallNarrow": "wall-narrow"
+}
+} as const;
+
+const CastleWallPillar = {
+  id: 'wall-pillar',
+  path: 'castle/wall-pillar',
+  fullPath: 'pizza/models/castle/wall-pillar.glb',
+  format: 'glb',
+  nodes: {
+  "WallPillar": "wall-pillar"
+}
+} as const;
+
+const CastleWallStud = {
+  id: 'wall-stud',
+  path: 'castle/wall-stud',
+  fullPath: 'pizza/models/castle/wall-stud.glb',
+  format: 'glb',
+  nodes: {
+  "WallStud": "wall-stud"
+}
+} as const;
+
+const CastleWallToNarrow = {
+  id: 'wall-to-narrow',
+  path: 'castle/wall-to-narrow',
+  fullPath: 'pizza/models/castle/wall-to-narrow.glb',
+  format: 'glb',
+  nodes: {
+  "WallToNarrow": "wall-to-narrow"
+}
+} as const;
+
+const CastleWall = {
+  id: 'wall',
+  path: 'castle/wall',
+  fullPath: 'pizza/models/castle/wall.glb',
+  format: 'glb',
+  nodes: {
+  "Wall": "wall"
+}
+} as const;
+
 const CharactersCharacterMedium = {
   id: 'characterMedium',
   path: 'characters/default/characterMedium',
@@ -20,6 +791,14 @@ const CharactersDigging = {
   id: 'Digging',
   path: 'characters/default/Digging',
   fullPath: 'pizza/models/characters/default/Digging.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
+const CharactersExcited = {
+  id: 'Excited',
+  path: 'characters/default/Excited',
+  fullPath: 'pizza/models/characters/default/Excited.fbx',
   format: 'fbx',
   nodes: {}
 } as const;
@@ -136,6 +915,14 @@ const CharactersStandingPICKAXE = {
   nodes: {}
 } as const;
 
+const CharactersTalking = {
+  id: 'Talking',
+  path: 'characters/default/Talking',
+  fullPath: 'pizza/models/characters/default/Talking.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
 const CharactersTestIdle = {
   id: 'test_idle',
   path: 'characters/default/test_idle',
@@ -202,6 +989,14 @@ const CharactersTestIdle = {
   "RightToes": "RightToes",
   "RightToesEnd": "RightToes_end"
 }
+} as const;
+
+const CharactersWalking = {
+  id: 'Walking',
+  path: 'characters/default/Walking',
+  fullPath: 'pizza/models/characters/default/Walking.fbx',
+  format: 'fbx',
+  nodes: {}
 } as const;
 
 const CharactersWatering = {
@@ -3740,6 +4535,817 @@ const ResourcesWoodLogStack = {
 }
 } as const;
 
+const SurvivalBarrelOpen = {
+  id: 'barrel-open',
+  path: 'survival/barrel-open',
+  fullPath: 'pizza/models/survival/barrel-open.glb',
+  format: 'glb',
+  nodes: {
+  "BarrelOpen": "barrel-open"
+}
+} as const;
+
+const SurvivalBarrel = {
+  id: 'barrel',
+  path: 'survival/barrel',
+  fullPath: 'pizza/models/survival/barrel.glb',
+  format: 'glb',
+  nodes: {
+  "Barrel": "barrel"
+}
+} as const;
+
+const SurvivalBedrollFrame = {
+  id: 'bedroll-frame',
+  path: 'survival/bedroll-frame',
+  fullPath: 'pizza/models/survival/bedroll-frame.glb',
+  format: 'glb',
+  nodes: {
+  "BedrollFrame": "bedroll-frame"
+}
+} as const;
+
+const SurvivalBedrollPacked = {
+  id: 'bedroll-packed',
+  path: 'survival/bedroll-packed',
+  fullPath: 'pizza/models/survival/bedroll-packed.glb',
+  format: 'glb',
+  nodes: {
+  "BedrollPacked": "bedroll-packed"
+}
+} as const;
+
+const SurvivalBedroll = {
+  id: 'bedroll',
+  path: 'survival/bedroll',
+  fullPath: 'pizza/models/survival/bedroll.glb',
+  format: 'glb',
+  nodes: {
+  "Bedroll": "bedroll",
+  "Blanket": "blanket"
+}
+} as const;
+
+const SurvivalBottleLarge = {
+  id: 'bottle-large',
+  path: 'survival/bottle-large',
+  fullPath: 'pizza/models/survival/bottle-large.glb',
+  format: 'glb',
+  nodes: {
+  "BottleLarge": "bottle-large"
+}
+} as const;
+
+const SurvivalBottle = {
+  id: 'bottle',
+  path: 'survival/bottle',
+  fullPath: 'pizza/models/survival/bottle.glb',
+  format: 'glb',
+  nodes: {
+  "Bottle": "bottle"
+}
+} as const;
+
+const SurvivalBoxLargeOpen = {
+  id: 'box-large-open',
+  path: 'survival/box-large-open',
+  fullPath: 'pizza/models/survival/box-large-open.glb',
+  format: 'glb',
+  nodes: {
+  "BoxLargeOpen": "box-large-open"
+}
+} as const;
+
+const SurvivalBoxLarge = {
+  id: 'box-large',
+  path: 'survival/box-large',
+  fullPath: 'pizza/models/survival/box-large.glb',
+  format: 'glb',
+  nodes: {
+  "BoxLarge": "box-large"
+}
+} as const;
+
+const SurvivalBoxOpen = {
+  id: 'box-open',
+  path: 'survival/box-open',
+  fullPath: 'pizza/models/survival/box-open.glb',
+  format: 'glb',
+  nodes: {
+  "BoxOpen": "box-open"
+}
+} as const;
+
+const SurvivalBox = {
+  id: 'box',
+  path: 'survival/box',
+  fullPath: 'pizza/models/survival/box.glb',
+  format: 'glb',
+  nodes: {
+  "Box": "box"
+}
+} as const;
+
+const SurvivalBucket = {
+  id: 'bucket',
+  path: 'survival/bucket',
+  fullPath: 'pizza/models/survival/bucket.glb',
+  format: 'glb',
+  nodes: {
+  "Bucket": "bucket"
+}
+} as const;
+
+const SurvivalCampfireFishingStand = {
+  id: 'campfire-fishing-stand',
+  path: 'survival/campfire-fishing-stand',
+  fullPath: 'pizza/models/survival/campfire-fishing-stand.glb',
+  format: 'glb',
+  nodes: {
+  "CampfireFishingStand": "campfire-fishing-stand"
+}
+} as const;
+
+const SurvivalCampfirePit = {
+  id: 'campfire-pit',
+  path: 'survival/campfire-pit',
+  fullPath: 'pizza/models/survival/campfire-pit.glb',
+  format: 'glb',
+  nodes: {
+  "CampfirePit": "campfire-pit",
+  "Wood": "wood"
+}
+} as const;
+
+const SurvivalCampfireStand = {
+  id: 'campfire-stand',
+  path: 'survival/campfire-stand',
+  fullPath: 'pizza/models/survival/campfire-stand.glb',
+  format: 'glb',
+  nodes: {
+  "CampfireStand": "campfire-stand"
+}
+} as const;
+
+const SurvivalChest = {
+  id: 'chest',
+  path: 'survival/chest',
+  fullPath: 'pizza/models/survival/chest.glb',
+  format: 'glb',
+  nodes: {
+  "Chest": "chest",
+  "Lid": "lid"
+}
+} as const;
+
+const SurvivalFenceDoorway = {
+  id: 'fence-doorway',
+  path: 'survival/fence-doorway',
+  fullPath: 'pizza/models/survival/fence-doorway.glb',
+  format: 'glb',
+  nodes: {
+  "FenceDoorway": "fence-doorway",
+  "Group": "Group"
+}
+} as const;
+
+const SurvivalFenceFortified = {
+  id: 'fence-fortified',
+  path: 'survival/fence-fortified',
+  fullPath: 'pizza/models/survival/fence-fortified.glb',
+  format: 'glb',
+  nodes: {
+  "FenceFortified": "fence-fortified"
+}
+} as const;
+
+const SurvivalFence = {
+  id: 'fence',
+  path: 'survival/fence',
+  fullPath: 'pizza/models/survival/fence.glb',
+  format: 'glb',
+  nodes: {
+  "Fence": "fence"
+}
+} as const;
+
+const SurvivalFishLarge = {
+  id: 'fish-large',
+  path: 'survival/fish-large',
+  fullPath: 'pizza/models/survival/fish-large.glb',
+  format: 'glb',
+  nodes: {
+  "FishLarge": "fish-large"
+}
+} as const;
+
+const SurvivalFish = {
+  id: 'fish',
+  path: 'survival/fish',
+  fullPath: 'pizza/models/survival/fish.glb',
+  format: 'glb',
+  nodes: {
+  "Fish": "fish"
+}
+} as const;
+
+const SurvivalFloorHole = {
+  id: 'floor-hole',
+  path: 'survival/floor-hole',
+  fullPath: 'pizza/models/survival/floor-hole.glb',
+  format: 'glb',
+  nodes: {
+  "FloorHole": "floor-hole"
+}
+} as const;
+
+const SurvivalFloorOld = {
+  id: 'floor-old',
+  path: 'survival/floor-old',
+  fullPath: 'pizza/models/survival/floor-old.glb',
+  format: 'glb',
+  nodes: {
+  "FloorOld": "floor-old"
+}
+} as const;
+
+const SurvivalFloor = {
+  id: 'floor',
+  path: 'survival/floor',
+  fullPath: 'pizza/models/survival/floor.glb',
+  format: 'glb',
+  nodes: {
+  "Floor": "floor"
+}
+} as const;
+
+const SurvivalGrassLarge = {
+  id: 'grass-large',
+  path: 'survival/grass-large',
+  fullPath: 'pizza/models/survival/grass-large.glb',
+  format: 'glb',
+  nodes: {
+  "GrassLarge": "grass-large"
+}
+} as const;
+
+const SurvivalGrass = {
+  id: 'grass',
+  path: 'survival/grass',
+  fullPath: 'pizza/models/survival/grass.glb',
+  format: 'glb',
+  nodes: {
+  "Grass": "grass"
+}
+} as const;
+
+const SurvivalMetalPanelNarrow = {
+  id: 'metal-panel-narrow',
+  path: 'survival/metal-panel-narrow',
+  fullPath: 'pizza/models/survival/metal-panel-narrow.glb',
+  format: 'glb',
+  nodes: {
+  "MetalPanelNarrow": "metal-panel-narrow"
+}
+} as const;
+
+const SurvivalMetalPanelScrewsHalf = {
+  id: 'metal-panel-screws-half',
+  path: 'survival/metal-panel-screws-half',
+  fullPath: 'pizza/models/survival/metal-panel-screws-half.glb',
+  format: 'glb',
+  nodes: {
+  "MetalPanelScrewsHalf": "metal-panel-screws-half"
+}
+} as const;
+
+const SurvivalMetalPanelScrewsNarrow = {
+  id: 'metal-panel-screws-narrow',
+  path: 'survival/metal-panel-screws-narrow',
+  fullPath: 'pizza/models/survival/metal-panel-screws-narrow.glb',
+  format: 'glb',
+  nodes: {
+  "MetalPanelScrewsNarrow": "metal-panel-screws-narrow"
+}
+} as const;
+
+const SurvivalMetalPanelScrews = {
+  id: 'metal-panel-screws',
+  path: 'survival/metal-panel-screws',
+  fullPath: 'pizza/models/survival/metal-panel-screws.glb',
+  format: 'glb',
+  nodes: {
+  "MetalPanelScrews": "metal-panel-screws"
+}
+} as const;
+
+const SurvivalMetalPanel = {
+  id: 'metal-panel',
+  path: 'survival/metal-panel',
+  fullPath: 'pizza/models/survival/metal-panel.glb',
+  format: 'glb',
+  nodes: {
+  "MetalPanel": "metal-panel"
+}
+} as const;
+
+const SurvivalPatchGrassLarge = {
+  id: 'patch-grass-large',
+  path: 'survival/patch-grass-large',
+  fullPath: 'pizza/models/survival/patch-grass-large.glb',
+  format: 'glb',
+  nodes: {
+  "PatchGrassLarge": "patch-grass-large"
+}
+} as const;
+
+const SurvivalPatchGrass = {
+  id: 'patch-grass',
+  path: 'survival/patch-grass',
+  fullPath: 'pizza/models/survival/patch-grass.glb',
+  format: 'glb',
+  nodes: {
+  "PatchGrass": "patch-grass"
+}
+} as const;
+
+const SurvivalResourcePlanks = {
+  id: 'resource-planks',
+  path: 'survival/resource-planks',
+  fullPath: 'pizza/models/survival/resource-planks.glb',
+  format: 'glb',
+  nodes: {
+  "ResourcePlanks": "resource-planks"
+}
+} as const;
+
+const SurvivalResourceStoneLarge = {
+  id: 'resource-stone-large',
+  path: 'survival/resource-stone-large',
+  fullPath: 'pizza/models/survival/resource-stone-large.glb',
+  format: 'glb',
+  nodes: {
+  "ResourceStoneLarge": "resource-stone-large"
+}
+} as const;
+
+const SurvivalResourceStone = {
+  id: 'resource-stone',
+  path: 'survival/resource-stone',
+  fullPath: 'pizza/models/survival/resource-stone.glb',
+  format: 'glb',
+  nodes: {
+  "ResourceStone": "resource-stone"
+}
+} as const;
+
+const SurvivalResourceWood = {
+  id: 'resource-wood',
+  path: 'survival/resource-wood',
+  fullPath: 'pizza/models/survival/resource-wood.glb',
+  format: 'glb',
+  nodes: {
+  "ResourceWood": "resource-wood"
+}
+} as const;
+
+const SurvivalRockA = {
+  id: 'rock-a',
+  path: 'survival/rock-a',
+  fullPath: 'pizza/models/survival/rock-a.glb',
+  format: 'glb',
+  nodes: {
+  "RockA": "rock-a"
+}
+} as const;
+
+const SurvivalRockB = {
+  id: 'rock-b',
+  path: 'survival/rock-b',
+  fullPath: 'pizza/models/survival/rock-b.glb',
+  format: 'glb',
+  nodes: {
+  "RockB": "rock-b"
+}
+} as const;
+
+const SurvivalRockC = {
+  id: 'rock-c',
+  path: 'survival/rock-c',
+  fullPath: 'pizza/models/survival/rock-c.glb',
+  format: 'glb',
+  nodes: {
+  "RockC": "rock-c"
+}
+} as const;
+
+const SurvivalRockFlatGrass = {
+  id: 'rock-flat-grass',
+  path: 'survival/rock-flat-grass',
+  fullPath: 'pizza/models/survival/rock-flat-grass.glb',
+  format: 'glb',
+  nodes: {
+  "RockFlatGrass": "rock-flat-grass"
+}
+} as const;
+
+const SurvivalRockFlat = {
+  id: 'rock-flat',
+  path: 'survival/rock-flat',
+  fullPath: 'pizza/models/survival/rock-flat.glb',
+  format: 'glb',
+  nodes: {
+  "RockFlat": "rock-flat"
+}
+} as const;
+
+const SurvivalRockSandA = {
+  id: 'rock-sand-a',
+  path: 'survival/rock-sand-a',
+  fullPath: 'pizza/models/survival/rock-sand-a.glb',
+  format: 'glb',
+  nodes: {
+  "RockSandA": "rock-sand-a"
+}
+} as const;
+
+const SurvivalRockSandB = {
+  id: 'rock-sand-b',
+  path: 'survival/rock-sand-b',
+  fullPath: 'pizza/models/survival/rock-sand-b.glb',
+  format: 'glb',
+  nodes: {
+  "RockSandB": "rock-sand-b"
+}
+} as const;
+
+const SurvivalRockSandC = {
+  id: 'rock-sand-c',
+  path: 'survival/rock-sand-c',
+  fullPath: 'pizza/models/survival/rock-sand-c.glb',
+  format: 'glb',
+  nodes: {
+  "RockSandC": "rock-sand-c"
+}
+} as const;
+
+const SurvivalSignpostSingle = {
+  id: 'signpost-single',
+  path: 'survival/signpost-single',
+  fullPath: 'pizza/models/survival/signpost-single.glb',
+  format: 'glb',
+  nodes: {
+  "SignpostSingle": "signpost-single"
+}
+} as const;
+
+const SurvivalSignpost = {
+  id: 'signpost',
+  path: 'survival/signpost',
+  fullPath: 'pizza/models/survival/signpost.glb',
+  format: 'glb',
+  nodes: {
+  "Signpost": "signpost"
+}
+} as const;
+
+const SurvivalStructureCanvas = {
+  id: 'structure-canvas',
+  path: 'survival/structure-canvas',
+  fullPath: 'pizza/models/survival/structure-canvas.glb',
+  format: 'glb',
+  nodes: {
+  "StructureCanvas": "structure-canvas"
+}
+} as const;
+
+const SurvivalStructureFloor = {
+  id: 'structure-floor',
+  path: 'survival/structure-floor',
+  fullPath: 'pizza/models/survival/structure-floor.glb',
+  format: 'glb',
+  nodes: {
+  "StructureFloor": "structure-floor",
+  "Group": "Group"
+}
+} as const;
+
+const SurvivalStructureMetalDoorway = {
+  id: 'structure-metal-doorway',
+  path: 'survival/structure-metal-doorway',
+  fullPath: 'pizza/models/survival/structure-metal-doorway.glb',
+  format: 'glb',
+  nodes: {
+  "StructureMetalDoorway": "structure-metal-doorway",
+  "Group": "Group"
+}
+} as const;
+
+const SurvivalStructureMetalFloor = {
+  id: 'structure-metal-floor',
+  path: 'survival/structure-metal-floor',
+  fullPath: 'pizza/models/survival/structure-metal-floor.glb',
+  format: 'glb',
+  nodes: {
+  "StructureMetalFloor": "structure-metal-floor"
+}
+} as const;
+
+const SurvivalStructureMetalRoof = {
+  id: 'structure-metal-roof',
+  path: 'survival/structure-metal-roof',
+  fullPath: 'pizza/models/survival/structure-metal-roof.glb',
+  format: 'glb',
+  nodes: {
+  "StructureMetalRoof": "structure-metal-roof"
+}
+} as const;
+
+const SurvivalStructureMetalWall = {
+  id: 'structure-metal-wall',
+  path: 'survival/structure-metal-wall',
+  fullPath: 'pizza/models/survival/structure-metal-wall.glb',
+  format: 'glb',
+  nodes: {
+  "StructureMetalWall": "structure-metal-wall"
+}
+} as const;
+
+const SurvivalStructureMetal = {
+  id: 'structure-metal',
+  path: 'survival/structure-metal',
+  fullPath: 'pizza/models/survival/structure-metal.glb',
+  format: 'glb',
+  nodes: {
+  "StructureMetal": "structure-metal"
+}
+} as const;
+
+const SurvivalStructureRoof = {
+  id: 'structure-roof',
+  path: 'survival/structure-roof',
+  fullPath: 'pizza/models/survival/structure-roof.glb',
+  format: 'glb',
+  nodes: {
+  "StructureRoof": "structure-roof",
+  "Group": "Group"
+}
+} as const;
+
+const SurvivalStructure = {
+  id: 'structure',
+  path: 'survival/structure',
+  fullPath: 'pizza/models/survival/structure.glb',
+  format: 'glb',
+  nodes: {
+  "Structure": "structure"
+}
+} as const;
+
+const SurvivalTentCanvasHalf = {
+  id: 'tent-canvas-half',
+  path: 'survival/tent-canvas-half',
+  fullPath: 'pizza/models/survival/tent-canvas-half.glb',
+  format: 'glb',
+  nodes: {
+  "TentCanvasHalf": "tent-canvas-half"
+}
+} as const;
+
+const SurvivalTentCanvas = {
+  id: 'tent-canvas',
+  path: 'survival/tent-canvas',
+  fullPath: 'pizza/models/survival/tent-canvas.glb',
+  format: 'glb',
+  nodes: {
+  "TentCanvas": "tent-canvas"
+}
+} as const;
+
+const SurvivalTent = {
+  id: 'tent',
+  path: 'survival/tent',
+  fullPath: 'pizza/models/survival/tent.glb',
+  format: 'glb',
+  nodes: {
+  "Tent": "tent"
+}
+} as const;
+
+const SurvivalToolAxeUpgraded = {
+  id: 'tool-axe-upgraded',
+  path: 'survival/tool-axe-upgraded',
+  fullPath: 'pizza/models/survival/tool-axe-upgraded.glb',
+  format: 'glb',
+  nodes: {
+  "ToolAxeUpgraded": "tool-axe-upgraded"
+}
+} as const;
+
+const SurvivalToolAxe = {
+  id: 'tool-axe',
+  path: 'survival/tool-axe',
+  fullPath: 'pizza/models/survival/tool-axe.glb',
+  format: 'glb',
+  nodes: {
+  "ToolAxe": "tool-axe"
+}
+} as const;
+
+const SurvivalToolHammerUpgraded = {
+  id: 'tool-hammer-upgraded',
+  path: 'survival/tool-hammer-upgraded',
+  fullPath: 'pizza/models/survival/tool-hammer-upgraded.glb',
+  format: 'glb',
+  nodes: {
+  "ToolHammerUpgraded": "tool-hammer-upgraded"
+}
+} as const;
+
+const SurvivalToolHammer = {
+  id: 'tool-hammer',
+  path: 'survival/tool-hammer',
+  fullPath: 'pizza/models/survival/tool-hammer.glb',
+  format: 'glb',
+  nodes: {
+  "ToolHammer": "tool-hammer"
+}
+} as const;
+
+const SurvivalToolHoeUpgraded = {
+  id: 'tool-hoe-upgraded',
+  path: 'survival/tool-hoe-upgraded',
+  fullPath: 'pizza/models/survival/tool-hoe-upgraded.glb',
+  format: 'glb',
+  nodes: {
+  "ToolHoeUpgraded": "tool-hoe-upgraded"
+}
+} as const;
+
+const SurvivalToolHoe = {
+  id: 'tool-hoe',
+  path: 'survival/tool-hoe',
+  fullPath: 'pizza/models/survival/tool-hoe.glb',
+  format: 'glb',
+  nodes: {
+  "ToolHoe": "tool-hoe"
+}
+} as const;
+
+const SurvivalToolPickaxeUpgraded = {
+  id: 'tool-pickaxe-upgraded',
+  path: 'survival/tool-pickaxe-upgraded',
+  fullPath: 'pizza/models/survival/tool-pickaxe-upgraded.glb',
+  format: 'glb',
+  nodes: {
+  "ToolPickaxeUpgraded": "tool-pickaxe-upgraded"
+}
+} as const;
+
+const SurvivalToolPickaxe = {
+  id: 'tool-pickaxe',
+  path: 'survival/tool-pickaxe',
+  fullPath: 'pizza/models/survival/tool-pickaxe.glb',
+  format: 'glb',
+  nodes: {
+  "ToolPickaxe": "tool-pickaxe"
+}
+} as const;
+
+const SurvivalToolShovelUpgraded = {
+  id: 'tool-shovel-upgraded',
+  path: 'survival/tool-shovel-upgraded',
+  fullPath: 'pizza/models/survival/tool-shovel-upgraded.glb',
+  format: 'glb',
+  nodes: {
+  "ToolShovelUpgraded": "tool-shovel-upgraded"
+}
+} as const;
+
+const SurvivalToolShovel = {
+  id: 'tool-shovel',
+  path: 'survival/tool-shovel',
+  fullPath: 'pizza/models/survival/tool-shovel.glb',
+  format: 'glb',
+  nodes: {
+  "ToolShovel": "tool-shovel"
+}
+} as const;
+
+const SurvivalTreeAutumnTall = {
+  id: 'tree-autumn-tall',
+  path: 'survival/tree-autumn-tall',
+  fullPath: 'pizza/models/survival/tree-autumn-tall.glb',
+  format: 'glb',
+  nodes: {
+  "TreeAutumnTall": "tree-autumn-tall"
+}
+} as const;
+
+const SurvivalTreeAutumnTrunk = {
+  id: 'tree-autumn-trunk',
+  path: 'survival/tree-autumn-trunk',
+  fullPath: 'pizza/models/survival/tree-autumn-trunk.glb',
+  format: 'glb',
+  nodes: {
+  "TreeAutumnTrunk": "tree-autumn-trunk"
+}
+} as const;
+
+const SurvivalTreeAutumn = {
+  id: 'tree-autumn',
+  path: 'survival/tree-autumn',
+  fullPath: 'pizza/models/survival/tree-autumn.glb',
+  format: 'glb',
+  nodes: {
+  "TreeAutumn": "tree-autumn"
+}
+} as const;
+
+const SurvivalTreeLogSmall = {
+  id: 'tree-log-small',
+  path: 'survival/tree-log-small',
+  fullPath: 'pizza/models/survival/tree-log-small.glb',
+  format: 'glb',
+  nodes: {
+  "TreeLogSmall": "tree-log-small"
+}
+} as const;
+
+const SurvivalTreeLog = {
+  id: 'tree-log',
+  path: 'survival/tree-log',
+  fullPath: 'pizza/models/survival/tree-log.glb',
+  format: 'glb',
+  nodes: {
+  "TreeLog": "tree-log"
+}
+} as const;
+
+const SurvivalTreeTall = {
+  id: 'tree-tall',
+  path: 'survival/tree-tall',
+  fullPath: 'pizza/models/survival/tree-tall.glb',
+  format: 'glb',
+  nodes: {
+  "TreeTall": "tree-tall"
+}
+} as const;
+
+const SurvivalTreeTrunk = {
+  id: 'tree-trunk',
+  path: 'survival/tree-trunk',
+  fullPath: 'pizza/models/survival/tree-trunk.glb',
+  format: 'glb',
+  nodes: {
+  "TreeTrunk": "tree-trunk"
+}
+} as const;
+
+const SurvivalTree = {
+  id: 'tree',
+  path: 'survival/tree',
+  fullPath: 'pizza/models/survival/tree.glb',
+  format: 'glb',
+  nodes: {
+  "Tree": "tree"
+}
+} as const;
+
+const SurvivalWorkbenchAnvil = {
+  id: 'workbench-anvil',
+  path: 'survival/workbench-anvil',
+  fullPath: 'pizza/models/survival/workbench-anvil.glb',
+  format: 'glb',
+  nodes: {
+  "WorkbenchAnvil": "workbench-anvil",
+  "Hammer": "hammer"
+}
+} as const;
+
+const SurvivalWorkbenchGrind = {
+  id: 'workbench-grind',
+  path: 'survival/workbench-grind',
+  fullPath: 'pizza/models/survival/workbench-grind.glb',
+  format: 'glb',
+  nodes: {
+  "WorkbenchGrind": "workbench-grind",
+  "Wheel": "wheel"
+}
+} as const;
+
+const SurvivalWorkbench = {
+  id: 'workbench',
+  path: 'survival/workbench',
+  fullPath: 'pizza/models/survival/workbench.glb',
+  format: 'glb',
+  nodes: {
+  "Workbench": "workbench",
+  "Paper": "paper",
+  "Hammer": "hammer"
+}
+} as const;
+
 const ToolsAnvil = {
   id: 'anvil',
   path: 'tools/gltf/anvil',
@@ -4244,9 +5850,88 @@ const ToolsWrenchB = {
 // raw-assets/models/characters{m}/... becomes MODELS.Characters.<name>. Files with no
 // containing folder land in MODELS.Root.
 export const MODELS = {
+  Castle: {
+    BridgeDraw: CastleBridgeDraw,
+    BridgeStraightPillar: CastleBridgeStraightPillar,
+    BridgeStraight: CastleBridgeStraight,
+    Door: CastleDoor,
+    FlagBannerLong: CastleFlagBannerLong,
+    FlagBannerShort: CastleFlagBannerShort,
+    FlagPennant: CastleFlagPennant,
+    FlagWide: CastleFlagWide,
+    Flag: CastleFlag,
+    Gate: CastleGate,
+    GroundHills: CastleGroundHills,
+    Ground: CastleGround,
+    MetalGate: CastleMetalGate,
+    RocksLarge: CastleRocksLarge,
+    RocksSmall: CastleRocksSmall,
+    SiegeBallistaDemolished: CastleSiegeBallistaDemolished,
+    SiegeBallista: CastleSiegeBallista,
+    SiegeCatapultDemolished: CastleSiegeCatapultDemolished,
+    SiegeCatapult: CastleSiegeCatapult,
+    SiegeRamDemolished: CastleSiegeRamDemolished,
+    SiegeRam: CastleSiegeRam,
+    SiegeTowerDemolished: CastleSiegeTowerDemolished,
+    SiegeTower: CastleSiegeTower,
+    SiegeTrebuchetDemolished: CastleSiegeTrebuchetDemolished,
+    SiegeTrebuchet: CastleSiegeTrebuchet,
+    StairsStoneSquare: CastleStairsStoneSquare,
+    StairsStone: CastleStairsStone,
+    TowerBase: CastleTowerBase,
+    TowerHexagonBase: CastleTowerHexagonBase,
+    TowerHexagonMid: CastleTowerHexagonMid,
+    TowerHexagonRoofSecondary: CastleTowerHexagonRoofSecondary,
+    TowerHexagonRoof: CastleTowerHexagonRoof,
+    TowerHexagonTopWood: CastleTowerHexagonTopWood,
+    TowerHexagonTop: CastleTowerHexagonTop,
+    TowerSlantRoof: CastleTowerSlantRoof,
+    TowerSquareArch: CastleTowerSquareArch,
+    TowerSquareBaseBorder: CastleTowerSquareBaseBorder,
+    TowerSquareBaseColor: CastleTowerSquareBaseColor,
+    TowerSquareBase: CastleTowerSquareBase,
+    TowerSquareMidColor: CastleTowerSquareMidColor,
+    TowerSquareMidDoor: CastleTowerSquareMidDoor,
+    TowerSquareMidOpenSimple: CastleTowerSquareMidOpenSimple,
+    TowerSquareMidOpen: CastleTowerSquareMidOpen,
+    TowerSquareMidWindows: CastleTowerSquareMidWindows,
+    TowerSquareMid: CastleTowerSquareMid,
+    TowerSquareRoof: CastleTowerSquareRoof,
+    TowerSquareTopColor: CastleTowerSquareTopColor,
+    TowerSquareTopRoofHighWindows: CastleTowerSquareTopRoofHighWindows,
+    TowerSquareTopRoofHigh: CastleTowerSquareTopRoofHigh,
+    TowerSquareTopRoofRounded: CastleTowerSquareTopRoofRounded,
+    TowerSquareTopRoof: CastleTowerSquareTopRoof,
+    TowerSquareTop: CastleTowerSquareTop,
+    TowerSquare: CastleTowerSquare,
+    TowerTop: CastleTowerTop,
+    TreeLarge: CastleTreeLarge,
+    TreeLog: CastleTreeLog,
+    TreeSmall: CastleTreeSmall,
+    TreeTrunk: CastleTreeTrunk,
+    WallCornerHalfTower: CastleWallCornerHalfTower,
+    WallCornerHalf: CastleWallCornerHalf,
+    WallCornerSlant: CastleWallCornerSlant,
+    WallCorner: CastleWallCorner,
+    WallDoorway: CastleWallDoorway,
+    WallHalfModular: CastleWallHalfModular,
+    WallHalf: CastleWallHalf,
+    WallNarrowCorner: CastleWallNarrowCorner,
+    WallNarrowGate: CastleWallNarrowGate,
+    WallNarrowStairsRail: CastleWallNarrowStairsRail,
+    WallNarrowStairs: CastleWallNarrowStairs,
+    WallNarrowWoodFence: CastleWallNarrowWoodFence,
+    WallNarrowWood: CastleWallNarrowWood,
+    WallNarrow: CastleWallNarrow,
+    WallPillar: CastleWallPillar,
+    WallStud: CastleWallStud,
+    WallToNarrow: CastleWallToNarrow,
+    Wall: CastleWall
+  },
   Characters: {
     CharacterMedium: CharactersCharacterMedium,
     Digging: CharactersDigging,
+    Excited: CharactersExcited,
     FallingIdle: CharactersFallingIdle,
     Idle: CharactersIdle,
     Idle2: CharactersIdle2,
@@ -4261,7 +5946,9 @@ export const MODELS = {
     StandToRoll: CharactersStandToRoll,
     StandingMeleeAttackDownwardCHOP: CharactersStandingMeleeAttackDownwardCHOP,
     StandingPICKAXE: CharactersStandingPICKAXE,
+    Talking: CharactersTalking,
     TestIdle: CharactersTestIdle,
+    Walking: CharactersWalking,
     Watering: CharactersWatering
   },
   Food: {
@@ -4599,6 +6286,88 @@ export const MODELS = {
     WoodLogA: ResourcesWoodLogA,
     WoodLogB: ResourcesWoodLogB,
     WoodLogStack: ResourcesWoodLogStack
+  },
+  Survival: {
+    BarrelOpen: SurvivalBarrelOpen,
+    Barrel: SurvivalBarrel,
+    BedrollFrame: SurvivalBedrollFrame,
+    BedrollPacked: SurvivalBedrollPacked,
+    Bedroll: SurvivalBedroll,
+    BottleLarge: SurvivalBottleLarge,
+    Bottle: SurvivalBottle,
+    BoxLargeOpen: SurvivalBoxLargeOpen,
+    BoxLarge: SurvivalBoxLarge,
+    BoxOpen: SurvivalBoxOpen,
+    Box: SurvivalBox,
+    Bucket: SurvivalBucket,
+    CampfireFishingStand: SurvivalCampfireFishingStand,
+    CampfirePit: SurvivalCampfirePit,
+    CampfireStand: SurvivalCampfireStand,
+    Chest: SurvivalChest,
+    FenceDoorway: SurvivalFenceDoorway,
+    FenceFortified: SurvivalFenceFortified,
+    Fence: SurvivalFence,
+    FishLarge: SurvivalFishLarge,
+    Fish: SurvivalFish,
+    FloorHole: SurvivalFloorHole,
+    FloorOld: SurvivalFloorOld,
+    Floor: SurvivalFloor,
+    GrassLarge: SurvivalGrassLarge,
+    Grass: SurvivalGrass,
+    MetalPanelNarrow: SurvivalMetalPanelNarrow,
+    MetalPanelScrewsHalf: SurvivalMetalPanelScrewsHalf,
+    MetalPanelScrewsNarrow: SurvivalMetalPanelScrewsNarrow,
+    MetalPanelScrews: SurvivalMetalPanelScrews,
+    MetalPanel: SurvivalMetalPanel,
+    PatchGrassLarge: SurvivalPatchGrassLarge,
+    PatchGrass: SurvivalPatchGrass,
+    ResourcePlanks: SurvivalResourcePlanks,
+    ResourceStoneLarge: SurvivalResourceStoneLarge,
+    ResourceStone: SurvivalResourceStone,
+    ResourceWood: SurvivalResourceWood,
+    RockA: SurvivalRockA,
+    RockB: SurvivalRockB,
+    RockC: SurvivalRockC,
+    RockFlatGrass: SurvivalRockFlatGrass,
+    RockFlat: SurvivalRockFlat,
+    RockSandA: SurvivalRockSandA,
+    RockSandB: SurvivalRockSandB,
+    RockSandC: SurvivalRockSandC,
+    SignpostSingle: SurvivalSignpostSingle,
+    Signpost: SurvivalSignpost,
+    StructureCanvas: SurvivalStructureCanvas,
+    StructureFloor: SurvivalStructureFloor,
+    StructureMetalDoorway: SurvivalStructureMetalDoorway,
+    StructureMetalFloor: SurvivalStructureMetalFloor,
+    StructureMetalRoof: SurvivalStructureMetalRoof,
+    StructureMetalWall: SurvivalStructureMetalWall,
+    StructureMetal: SurvivalStructureMetal,
+    StructureRoof: SurvivalStructureRoof,
+    Structure: SurvivalStructure,
+    TentCanvasHalf: SurvivalTentCanvasHalf,
+    TentCanvas: SurvivalTentCanvas,
+    Tent: SurvivalTent,
+    ToolAxeUpgraded: SurvivalToolAxeUpgraded,
+    ToolAxe: SurvivalToolAxe,
+    ToolHammerUpgraded: SurvivalToolHammerUpgraded,
+    ToolHammer: SurvivalToolHammer,
+    ToolHoeUpgraded: SurvivalToolHoeUpgraded,
+    ToolHoe: SurvivalToolHoe,
+    ToolPickaxeUpgraded: SurvivalToolPickaxeUpgraded,
+    ToolPickaxe: SurvivalToolPickaxe,
+    ToolShovelUpgraded: SurvivalToolShovelUpgraded,
+    ToolShovel: SurvivalToolShovel,
+    TreeAutumnTall: SurvivalTreeAutumnTall,
+    TreeAutumnTrunk: SurvivalTreeAutumnTrunk,
+    TreeAutumn: SurvivalTreeAutumn,
+    TreeLogSmall: SurvivalTreeLogSmall,
+    TreeLog: SurvivalTreeLog,
+    TreeTall: SurvivalTreeTall,
+    TreeTrunk: SurvivalTreeTrunk,
+    Tree: SurvivalTree,
+    WorkbenchAnvil: SurvivalWorkbenchAnvil,
+    WorkbenchGrind: SurvivalWorkbenchGrind,
+    Workbench: SurvivalWorkbench
   },
   Tools: {
     Anvil: ToolsAnvil,

@@ -664,7 +664,7 @@
          "startx":-32,
          "starty":-16,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":64,
          "x":0,
          "y":0
@@ -876,7 +876,7 @@
          "startx":-16,
          "starty":-16,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":48,
          "x":0,
          "y":0
@@ -1088,7 +1088,7 @@
          "startx":-16,
          "starty":-32,
          "type":"tilelayer",
-         "visible":true,
+         "visible":false,
          "width":48,
          "x":0,
          "y":0
@@ -1601,7 +1601,30 @@
                  "type":"",
                  "visible":true,
                  "width":65,
-                 "x":-288,
+                 "x":-352,
+                 "y":-128
+                }, 
+                {
+                 "height":65,
+                 "id":55,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"shop2"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"shop"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":65,
+                 "x":-256,
                  "y":-128
                 }, 
                 {
@@ -1629,8 +1652,36 @@
                  "type":"",
                  "visible":true,
                  "width":64.5,
-                 "x":-288,
-                 "y":-96
+                 "x":-352,
+                 "y":-122
+                }, 
+                {
+                 "height":64.5,
+                 "id":56,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"dropperShop2"
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"shop2"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":64.5,
+                 "x":-256,
+                 "y":-122
                 }, 
                 {
                  "height":32,
@@ -1770,7 +1821,8 @@
                  "width":32,
                  "x":-176.25,
                  "y":592.25
-                }, 
+                },
+            
                 {
                  "height":32,
                  "id":45,
@@ -1791,8 +1843,8 @@
                  "type":"",
                  "visible":true,
                  "width":32,
-                 "x":-656.25,
-                 "y":16.25
+                 "x":-272.25,
+                 "y":144.25
                 }, 
                 {
                  "height":64.5,
@@ -1821,8 +1873,7 @@
                  "width":64.5,
                  "x":-192,
                  "y":576
-                },
-            
+                }, 
                 {
                  "height":64.5,
                  "id":44,
@@ -1848,8 +1899,8 @@
                  "type":"",
                  "visible":true,
                  "width":64.5,
-                 "x":-672,
-                 "y":0
+                 "x":-288,
+                 "y":128
                 }, 
                 {
                  "height":0,
@@ -1985,8 +2036,8 @@
                  "type":"",
                  "visible":true,
                  "width":32,
-                 "x":-800,
-                 "y":0
+                 "x":0,
+                 "y":192
                 }, 
                 {
                  "height":96,
@@ -2013,8 +2064,8 @@
                  "type":"",
                  "visible":true,
                  "width":96,
-                 "x":-832,
-                 "y":-32
+                 "x":-32,
+                 "y":160
                 }, 
                 {
                  "gid":22,
@@ -2047,7 +2098,7 @@
                 }, 
                 {
                  "gid":26,
-                 "height":75.6666666666667,
+                 "height":75.6667,
                  "id":49,
                  "name":"",
                  "opacity":1,
@@ -2070,9 +2121,9 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":75.6666666666667,
-                 "x":-69.6666666666667,
-                 "y":-66.6666666666667
+                 "width":75.6667,
+                 "x":-69.6667,
+                 "y":-66.6667
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2123,6 +2174,58 @@
                  "width":64,
                  "x":-128,
                  "y":864
+                }, 
+                {
+                 "gid":33,
+                 "height":48,
+                 "id":50,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48,
+                 "x":-32,
+                 "y":48
+                }, 
+                {
+                 "gid":32,
+                 "height":32,
+                 "id":52,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":-32,
+                 "y":0
+                }, 
+                {
+                 "gid":32,
+                 "height":32,
+                 "id":53,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":-128,
+                 "y":0
+                }, 
+                {
+                 "gid":34,
+                 "height":32,
+                 "id":54,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":90,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":-128,
+                 "y":0
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2358,7 +2461,7 @@
          "y":0
         }],
  "nextlayerid":9,
- "nextobjectid":50,
+ "nextobjectid":58,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",
@@ -2402,7 +2505,7 @@
          "margin":0,
          "name":"models",
          "spacing":0,
-         "tilecount":6,
+         "tilecount":13,
          "tileheight":117,
          "tiles":[
                 {
@@ -2464,6 +2567,59 @@
                  "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Pirate--TowerCompleteSmall__107x117.png",
                  "imageheight":117,
                  "imagewidth":107
+                }, 
+                {
+                 "id":6,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Castle--TowerSquare__32x32.png",
+                 "imageheight":32,
+                 "imagewidth":32
+                }, 
+                {
+                 "id":8,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Castle--Wall__32x32.png",
+                 "imageheight":32,
+                 "imagewidth":32
+                }, 
+                {
+                 "id":9,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Castle--WallCorner__32x32.png",
+                 "imageheight":32,
+                 "imagewidth":32
+                }, 
+                {
+                 "id":10,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Castle--WallCornerHalf__32x32.png",
+                 "imageheight":32,
+                 "imagewidth":32
+                }, 
+                {
+                 "id":11,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Castle--WallCornerHalfTower__48x48.png",
+                 "imageheight":48,
+                 "imagewidth":48,
+                 "properties":[
+                        {
+                         "name":"offsetX",
+                         "type":"float",
+                         "value":-0.5
+                        }, 
+                        {
+                         "name":"offsetZ",
+                         "type":"float",
+                         "value":-0.5
+                        }]
+                }, 
+                {
+                 "id":12,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Castle--WallCornerSlant__32x32.png",
+                 "imageheight":32,
+                 "imagewidth":32
+                }, 
+                {
+                 "id":13,
+                 "image":"..\/..\/..\/tiled\/models\/pizza-model-snapshots_Castle--WallHalf__32x32.png",
+                 "imageheight":32,
+                 "imagewidth":32
                 }],
          "tilewidth":116
         }],

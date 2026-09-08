@@ -89,10 +89,23 @@ export const SHOP_CONFIG_BY_ID: Partial<Record<string, ShopConfig>> = {
         baseCost: 10,
         costScale: 2.05,
         cooldownSec: 300,
-        popupBobOffset: 2,
+        popupBobOffset: 3,
         baseView: "shop1View",
         solid: 0.5,
     },
+    "shop2": {
+        mesh: DEFAULT_SHOP_MESH,
+        "name": "Pickaxe Shop",
+        "tool": "pickaxe",
+        "action": ActionType.Chop,
+        "totalLevels": 10,
+        "baseCost": 10,
+        "costScale": 2.05,
+        "cooldownSec": 300,
+        "popupBobOffset": 3,
+        "baseView": "shop2View",
+        "solid": 0.5
+    }
 };
 
 export function getShopConfig(id: string): ShopConfig | undefined {

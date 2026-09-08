@@ -63,7 +63,8 @@ export const CRAFTING_TABLE_CONFIG_BY_ID: Partial<Record<string, CraftingTableCo
                 "recipeId": "hardwoodPlanks"
             }
         ],
-        "solid": 0.5
+        "solid": 0.5,
+        "view": "workbench"
     }
 };
 

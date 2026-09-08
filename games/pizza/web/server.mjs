@@ -25,7 +25,7 @@ import { renameEntity } from './sync/renameEntity.mjs';
 import { checkConsistency } from './sync/checkConsistency.mjs';
 import { validateMap } from './sync/validateMap.mjs';
 import { scanImageAssets, scanNonPreloadAssets } from './sync/imageAssets.mjs';
-import { readSpawnerTileTypes, readSpawnerShapeIds, readZoneCells, readZoneContents } from './sync/tiledMap.mjs';
+import { readSpawnerTileTypes, readSpawnerShapeIds, readZoneCells, readZoneContents, readMapSize } from './sync/tiledMap.mjs';
 import { generateTilesetImage, GROUND_NUMBER_STYLE, RESOURCE_NUMBER_STYLE } from './sync/tilesetImage.mjs';
 import { readModelsCatalog } from './sync/modelsCatalog.mjs';
 
@@ -229,6 +229,10 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/zone-contents' && req.method === 'GET') {
         return sendJson(res, 200, readZoneContents(MAP_FILE));
+    }
+
+    if (url.pathname === '/api/map-size' && req.method === 'GET') {
+        return sendJson(res, 200, readMapSize(MAP_FILE));
     }
 
     // Read-only: compares every tab's own JSON mirror against what's really in the game's

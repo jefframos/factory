@@ -16,6 +16,8 @@
 
 /** Sentinel activeId for the Graph tab (see renderTabs()/renderActiveTab()) — never a real manifest.json entry id, so it can't collide with one. */
 const GRAPH_TAB_ID = '__graph__';
+/** Sentinel activeId for the Map Suggestions tab (see renderTabs()/renderActiveTab()/renderMapSuggestionsTab()) — same "read-only, not a manifest entry" convention as GRAPH_TAB_ID. */
+const MAP_SUGGESTIONS_TAB_ID = '__map_suggestions__';
 
 let manifest = [];
 let allData = {};
@@ -37,6 +39,15 @@ let shapeResourceAreaFilter = 'all';
 let resourceCategoryFilter = 'all';
 /** The categorized model catalog from /api/models (see modelsCatalog.mjs) — `{ groups: [{ name, items: [{ key, id, path, fullPath, format }] }] }`. Fetched once at init/restart, same pattern as spawnerTileTypes: small enough to prefetch eagerly rather than lazy-load per field. */
 let modelsCatalog = { groups: [], error: null };
+/** The real map's own tile-grid dimensions (see /api/map-size, tiledMap.mjs's readMapSize()) — fetched once at init/restart, backs the Map Suggestions tab's own scaling of its archetype layouts (authored against a fixed reference grid, see MAP_SUGGESTION_REFERENCE_COLS/ROWS) to this map's actual size. */
+let mapSize = { width: 0, height: 0, tileWidth: 0, tileHeight: 0, error: null };
+/** Which Map Suggestions archetype is currently shown — persists across re-renders the same way dynamicResourceAreaFilter does, see renderMapSuggestionsTab(). */
+let mapSuggestionArchetype = 'loop';
+/** Re-rolled by the Map Suggestions tab's own "Shuffle" button — same seeded-jitter convention as MapLayoutSuggestionTool.ts (the in-game dev-GUI counterpart this tab mirrors), so a given seed always jitters the same way. */
+let mapSuggestionSeed = 1;
+/** Which zone key (if any) the Map Suggestions tab's legend/canvas currently has focused — see focusMapSuggestionZone(). */
+let mapSuggestionFocusKey = null;
+
 /** Cache-busting query value appended to every /tiled-asset/ image URL (see makeTileSwatch()) — the browser would otherwise keep serving a stale grounds.png/resources.png from cache after someone repaints the spritesheet on disk, since the URL itself never changes. Bumped on every init() (page load / server restart) and by the Map tab's own "Refresh images" button, so a designer who just re-exported the PNG can see it without a hard reload. */
 let tileImageVersion = Date.now();
 
@@ -112,6 +123,11 @@ async function init() {
     } catch (err) {
         modelsCatalog = { groups: [], error: err.message };
     }
+    try {
+        mapSize = await fetchJson('/api/map-size');
+    } catch (err) {
+        mapSize = { width: 0, height: 0, tileWidth: 0, tileHeight: 0, error: err.message };
+    }
     dirtyTabs.clear();
 
     // Restore the last-open section (and, per-tab, the last-open entry — see
@@ -126,7 +142,7 @@ async function init() {
     }
     // Falls back to the first tab whenever the restored (or already-active) id no longer names
     // a real tab — e.g. the saved section was deleted, or this is the very first-ever load.
-    if (!activeId || (activeId !== GRAPH_TAB_ID && !manifest.some(e => e.id === activeId))) {
+    if (!activeId || (activeId !== GRAPH_TAB_ID && activeId !== MAP_SUGGESTIONS_TAB_ID && !manifest.some(e => e.id === activeId))) {
         activeId = manifest[0]?.id ?? null;
     }
     renderTabs();
@@ -177,6 +193,19 @@ function renderTabs() {
         renderActiveTab();
     };
     tabsEl.appendChild(graphBtn);
+
+    // Same "read-only visualization, not a manifest entry" convention as the Graph tab above —
+    // see renderMapSuggestionsTab()'s own doc.
+    const suggestionsBtn = document.createElement('button');
+    suggestionsBtn.textContent = 'Map Suggestions';
+    suggestionsBtn.className = activeId === MAP_SUGGESTIONS_TAB_ID ? 'active' : '';
+    suggestionsBtn.onclick = () => {
+        activeId = MAP_SUGGESTIONS_TAB_ID;
+        saveUiState();
+        renderTabs();
+        renderActiveTab();
+    };
+    tabsEl.appendChild(suggestionsBtn);
 }
 
 async function checkMap() {
@@ -388,6 +417,12 @@ function renderActiveTab() {
     if (activeId === GRAPH_TAB_ID) {
         sourceHintEl.textContent = 'A read-only visualization — see the source of any node\'s own data on its own tab to edit it.';
         renderGraphTab(contentEl);
+        return;
+    }
+
+    if (activeId === MAP_SUGGESTIONS_TAB_ID) {
+        sourceHintEl.textContent = 'A design sketch, not real data — nothing here writes to the map or any tab. Move real zones/objects in Tiled to match.';
+        renderMapSuggestionsTab(contentEl);
         return;
     }
 
@@ -779,6 +814,366 @@ function drawZoneCanvas(zones, maxPx) {
     });
 
     return canvas;
+}
+
+/**
+ * Grid coordinates below are authored against this fixed reference grid, matching
+ * MapLayoutSuggestionTool.ts (the in-game `?dev` dat.GUI counterpart to this tab — same three
+ * archetypes, same jitter rule) so a designer sees the identical layout here and in-engine.
+ * Deliberately NOT rescaled to this particular map's real width/height (see
+ * renderMapSuggestionsTab()) — rescaling would distort the hand-tuned proportions between
+ * zones; instead the real map's own bounds are drawn as an outline INSIDE this same reference
+ * grid, so a designer can see at a glance whether their map is bigger or smaller than what an
+ * archetype assumes.
+ */
+const MAP_SUGGESTION_REFERENCE_COLS = 30;
+const MAP_SUGGESTION_REFERENCE_ROWS = 18;
+
+const MAP_SUGGESTION_ZONE_COLOR = {
+    spawn: '#e8e8ea',
+    hub: '#c99a6c',
+    shop: '#ff7a52',
+    mart: '#f0ae52',
+    farm: '#6fc298',
+    craft: '#7db3d8',
+    queue: '#c07eb0',
+    gate: '#e5484d',
+    wall: '#8b9382',
+};
+
+const MAP_SUGGESTION_ZONE_LABEL = {
+    spawn: 'Spawn',
+    hub: 'Hub / Building',
+    shop: 'Tool Shop',
+    mart: 'Mart',
+    farm: 'Farm Zone',
+    craft: 'Craft Tables',
+    queue: 'Quest Queue',
+    gate: 'Gate',
+    wall: 'Castle Wall',
+};
+
+const MAP_SUGGESTION_ZONE_DESC = {
+    spawn: 'Where the player enters each session — everything reachable from here in the first look matters most.',
+    hub: 'The leveled main building. The session\'s long-term anchor.',
+    shop: 'Buys tool levels with Money on a geometric cost curve — the fast, cheap "one more upgrade" loop.',
+    mart: 'Secondary trade point — best used as the sink for a second currency once one exists.',
+    farm: 'Plantable crop plots that tick over time — the natural home for offline/idle accrual.',
+    craft: 'Turns raw resources into tools and items. A starter table doubles as the onboarding beat.',
+    queue: 'Delivery tasks, flat Money reward. Space these along natural walking paths, not clustered.',
+    gate: 'A requirement-gated blocker — plays an unlock sequence once its condition is met, then opens permanently.',
+    wall: 'Decorative perimeter dressing (the corner-tower / wall-half kit) — reads as a boundary, not a system.',
+};
+
+/** Three hand-tuned stances, not a random scatter — "Shuffle" only jitters positions WITHIN whichever archetype is selected, see renderMapSuggestionsTab(). Kept in exact sync with games/pizza/game/debug/MapLayoutSuggestionTool.ts. */
+const MAP_SUGGESTION_ARCHETYPES = {
+    loop: {
+        label: 'Compact Loop',
+        blurb: 'Everything inside a two-minute walk of spawn — fast pick, quickly hooked.',
+        zones: [
+            { key: 'spawn', col: 14, row: 10, w: 1, h: 1 },
+            { key: 'hub', col: 12, row: 6, w: 4, h: 4 },
+            { key: 'shop', col: 17, row: 7, w: 2, h: 2 },
+            { key: 'mart', col: 17, row: 11, w: 2, h: 2 },
+            { key: 'craft', col: 9, row: 11, w: 3, h: 2 },
+            { key: 'farm', col: 8, row: 2, w: 6, h: 4 },
+            { key: 'queue', col: 19, row: 5, w: 1, h: 1, n: 1 },
+            { key: 'queue', col: 19, row: 14, w: 1, h: 1, n: 2 },
+            { key: 'queue', col: 6, row: 9, w: 1, h: 1, n: 3 },
+            { key: 'gate', col: 24, row: 10, w: 1, h: 2 },
+        ],
+        path: ['spawn', 'hub', 'shop', 'mart', 'craft', 'farm'],
+    },
+    ring: {
+        label: 'Ring Around the Keep',
+        blurb: 'Wall + gates do real RequirementRegistry work; farm sits outside the walls.',
+        zones: [
+            { key: 'wall', col: 9, row: 4, w: 12, h: 10 },
+            { key: 'spawn', col: 14, row: 13, w: 1, h: 1 },
+            { key: 'hub', col: 11, row: 6, w: 5, h: 5 },
+            { key: 'shop', col: 17, row: 6, w: 2, h: 2 },
+            { key: 'mart', col: 8, row: 10, w: 2, h: 2 },
+            { key: 'craft', col: 17, row: 10, w: 2, h: 2 },
+            { key: 'gate', col: 13, row: 4, w: 2, h: 1 },
+            { key: 'gate', col: 20, row: 8, w: 1, h: 2 },
+            { key: 'farm', col: 1, row: 12, w: 6, h: 5 },
+            { key: 'queue', col: 14, row: 1, w: 1, h: 1, n: 1 },
+            { key: 'queue', col: 23, row: 8, w: 1, h: 1, n: 2 },
+        ],
+        path: ['spawn', 'hub', 'shop', 'craft', 'mart'],
+    },
+    valley: {
+        label: 'Sprawling Valley',
+        blurb: 'Spawn to a far gate, left to right — built for longer sessions / prestige.',
+        zones: [
+            { key: 'spawn', col: 2, row: 9, w: 1, h: 1 },
+            { key: 'queue', col: 5, row: 9, w: 1, h: 1, n: 1 },
+            { key: 'shop', col: 8, row: 6, w: 2, h: 2 },
+            { key: 'craft', col: 8, row: 11, w: 2, h: 2 },
+            { key: 'hub', col: 12, row: 6, w: 4, h: 4 },
+            { key: 'mart', col: 18, row: 9, w: 2, h: 2 },
+            { key: 'farm', col: 22, row: 4, w: 6, h: 5 },
+            { key: 'queue', col: 21, row: 12, w: 1, h: 1, n: 2 },
+            { key: 'gate', col: 28, row: 8, w: 1, h: 2 },
+        ],
+        path: ['spawn', 'queue1', 'shop', 'craft', 'hub', 'mart', 'farm'],
+    },
+};
+
+/** mulberry32 — deterministic per seed, so "Shuffle" is a reproducible variant, not just noise. */
+function mapSuggestionRng(seed) {
+    let a = seed;
+    return function () {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+/** Applies this seed's jitter to an archetype's zones — wall/gate keep their exact authored position (jittering a gate could open it into open air), every other zone gets a small nudge. */
+function jitterMapSuggestionZones(archetype, seed) {
+    const rand = mapSuggestionRng(seed * 977);
+    return archetype.zones.map(z => {
+        const amount = z.key === 'wall' || z.key === 'gate' ? 0 : 1;
+        const jitter = () => Math.round((rand() - 0.5) * 2 * amount);
+        return { ...z, col: z.col + jitter(), row: z.row + jitter() };
+    });
+}
+
+function mapSuggestionZoneAt(zones, ref) {
+    const match = ref.match(/\d+$/);
+    const n = match ? Number(match[0]) : undefined;
+    const key = ref.replace(/\d+$/, '');
+    return zones.find(z => z.key === key && (n === undefined ? z.n === undefined : z.n === n));
+}
+
+/** Draws one archetype (at `seed`'s jitter) plus the real map's own bounds outline — canvas pixel size fits `maxPx` on the reference grid's longer side, same "fit to frame" convention drawZoneCanvas() uses for the Zones tab. `focusKey` (if any) gets a brighter fill + white outline so clicking a zone/legend row is visible on the canvas itself. */
+function drawMapSuggestionCanvas(archetype, seed, focusKey, maxPx) {
+    const cols = MAP_SUGGESTION_REFERENCE_COLS;
+    const rows = MAP_SUGGESTION_REFERENCE_ROWS;
+    const cellPx = Math.max(4, Math.floor(maxPx / Math.max(cols, rows)));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = cols * cellPx;
+    canvas.height = rows * cellPx;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#14151a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#26272c';
+    ctx.lineWidth = 1;
+    for (let c = 0; c <= cols; c++) { ctx.beginPath(); ctx.moveTo(c * cellPx, 0); ctx.lineTo(c * cellPx, canvas.height); ctx.stroke(); }
+    for (let r = 0; r <= rows; r++) { ctx.beginPath(); ctx.moveTo(0, r * cellPx); ctx.lineTo(canvas.width, r * cellPx); ctx.stroke(); }
+
+    // The real map's own bounds, drawn inside the same reference grid — see this file's own
+    // doc on why the archetype itself is never rescaled to match.
+    if (!mapSize.error && mapSize.width > 0 && mapSize.height > 0) {
+        ctx.strokeStyle = '#5b8def';
+        ctx.setLineDash([cellPx * 0.4, cellPx * 0.25]);
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, 0, Math.min(mapSize.width, cols * 4) * cellPx, Math.min(mapSize.height, rows * 4) * cellPx);
+        ctx.setLineDash([]);
+    }
+
+    const zones = jitterMapSuggestionZones(archetype, seed);
+    const centerOf = z => ({ x: (z.col + z.w / 2) * cellPx, y: (z.row + z.h / 2) * cellPx });
+
+    const wall = zones.find(z => z.key === 'wall');
+    if (wall) {
+        ctx.strokeStyle = MAP_SUGGESTION_ZONE_COLOR.wall;
+        ctx.lineWidth = Math.max(3, cellPx * 0.22);
+        ctx.setLineDash([cellPx * 0.5, cellPx * 0.28]);
+        ctx.strokeRect(wall.col * cellPx, wall.row * cellPx, wall.w * cellPx, wall.h * cellPx);
+        ctx.setLineDash([]);
+    }
+
+    let prev = mapSuggestionZoneAt(zones, 'spawn');
+    ctx.strokeStyle = '#e8e8ea';
+    ctx.globalAlpha = 0.3;
+    ctx.lineWidth = Math.max(1.5, cellPx * 0.06);
+    ctx.setLineDash([cellPx * 0.18, cellPx * 0.22]);
+    for (const ref of archetype.path.slice(1)) {
+        const next = mapSuggestionZoneAt(zones, ref);
+        if (prev && next) {
+            const p1 = centerOf(prev), p2 = centerOf(next);
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+        }
+        prev = next ?? prev;
+    }
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+
+    for (const zone of zones) {
+        if (zone.key === 'wall') continue;
+        const color = MAP_SUGGESTION_ZONE_COLOR[zone.key];
+        const focused = focusKey === zone.key;
+        const x = zone.col * cellPx, y = zone.row * cellPx, w = zone.w * cellPx, h = zone.h * cellPx;
+
+        if (zone.key === 'spawn') {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(x + w / 2, y); ctx.lineTo(x + w, y + h / 2); ctx.lineTo(x + w / 2, y + h); ctx.lineTo(x, y + h / 2);
+            ctx.closePath();
+            ctx.fill();
+            continue;
+        }
+
+        ctx.globalAlpha = focused ? 1 : 0.85;
+        ctx.fillStyle = color;
+        ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+        ctx.globalAlpha = 1;
+        if (focused) {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+        }
+
+        if (w >= cellPx * 1.5 && zone.key !== 'gate') {
+            ctx.fillStyle = '#14151a';
+            ctx.font = `bold ${Math.max(9, Math.floor(cellPx * 0.32))}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText((zone.key + (zone.n ?? '')).toUpperCase(), x + w / 2, y + h / 2);
+        }
+    }
+
+    canvas.__zones = zones;
+    canvas.__cellPx = cellPx;
+    return canvas;
+}
+
+/**
+ * The Map Suggestions tab — a read-only design sketch, same "not a manifest entry" convention
+ * as the Graph tab. Draws the same three hand-tuned zone-layout archetypes
+ * games/pizza/game/debug/MapLayoutSuggestionTool.ts overlays live in-engine (behind `?dev`'s
+ * dat.GUI), here as a canvas the designer can browse without launching the game — pick an
+ * archetype, Shuffle for a jittered variant, click a zone (on the canvas or in the legend) to
+ * read what real system it maps to. Nothing here writes to any tab or the map file.
+ */
+function renderMapSuggestionsTab(container) {
+    const archKey = mapSuggestionArchetype;
+    const archetype = MAP_SUGGESTION_ARCHETYPES[archKey];
+
+    const subtabs = document.createElement('div');
+    subtabs.className = 'graph-subtabs';
+    for (const key of Object.keys(MAP_SUGGESTION_ARCHETYPES)) {
+        const btn = document.createElement('button');
+        btn.textContent = MAP_SUGGESTION_ARCHETYPES[key].label;
+        btn.className = key === archKey ? 'active' : '';
+        btn.onclick = () => {
+            mapSuggestionArchetype = key;
+            mapSuggestionSeed = 1;
+            mapSuggestionFocusKey = null;
+            renderActiveTab();
+        };
+        subtabs.appendChild(btn);
+    }
+    container.appendChild(subtabs);
+
+    if (mapSize.error) {
+        container.appendChild(sectionLabel(`Couldn't read the map's own size, showing suggestions with no bounds overlay: ${mapSize.error}`));
+    }
+
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.gap = '18px';
+    row.style.alignItems = 'flex-start';
+    row.style.flexWrap = 'wrap';
+
+    const canvasCol = document.createElement('div');
+    const canvas = drawMapSuggestionCanvas(archetype, mapSuggestionSeed, mapSuggestionFocusKey, 520);
+    canvas.style.borderRadius = '6px';
+    canvas.style.cursor = 'pointer';
+    canvas.onclick = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scale = canvas.width / rect.width;
+        const gx = ((e.clientX - rect.left) * scale) / canvas.__cellPx;
+        const gy = ((e.clientY - rect.top) * scale) / canvas.__cellPx;
+        const hit = [...canvas.__zones].reverse().find(z => z.key !== 'wall' && gx >= z.col && gx <= z.col + z.w && gy >= z.row && gy <= z.row + z.h);
+        if (hit) {
+            mapSuggestionFocusKey = hit.key;
+            renderActiveTab();
+        }
+    };
+    canvasCol.appendChild(canvas);
+
+    const controls = document.createElement('div');
+    controls.style.display = 'flex';
+    controls.style.gap = '10px';
+    controls.style.marginTop = '10px';
+    controls.style.alignItems = 'center';
+
+    const shuffleBtn = document.createElement('button');
+    shuffleBtn.className = 'primary';
+    shuffleBtn.textContent = 'Shuffle this layout';
+    shuffleBtn.onclick = () => {
+        mapSuggestionSeed += 1;
+        renderActiveTab();
+    };
+    controls.appendChild(shuffleBtn);
+
+    const seedTag = document.createElement('span');
+    seedTag.className = 'hint';
+    seedTag.textContent = `seed ${mapSuggestionSeed}${mapSize.width ? ` · map is ${mapSize.width}×${mapSize.height} tiles` : ''}`;
+    controls.appendChild(seedTag);
+
+    canvasCol.appendChild(controls);
+    row.appendChild(canvasCol);
+
+    const sidebar = document.createElement('div');
+    sidebar.style.minWidth = '260px';
+    sidebar.style.flex = '1';
+
+    const focusBox = document.createElement('div');
+    focusBox.style.marginBottom = '14px';
+    const focusTitle = document.createElement('h3');
+    focusTitle.style.margin = '0 0 4px';
+    focusTitle.style.fontSize = '15px';
+    const focusDesc = document.createElement('p');
+    focusDesc.className = 'hint';
+    focusDesc.style.fontFamily = 'inherit';
+    focusDesc.style.fontSize = '13px';
+    focusDesc.style.color = 'var(--text)';
+    if (mapSuggestionFocusKey) {
+        focusTitle.textContent = MAP_SUGGESTION_ZONE_LABEL[mapSuggestionFocusKey];
+        focusDesc.textContent = MAP_SUGGESTION_ZONE_DESC[mapSuggestionFocusKey];
+    } else {
+        focusTitle.textContent = archetype.label;
+        focusDesc.textContent = archetype.blurb;
+    }
+    focusBox.appendChild(focusTitle);
+    focusBox.appendChild(focusDesc);
+    sidebar.appendChild(focusBox);
+
+    const legend = document.createElement('div');
+    legend.className = 'graph-legend';
+    legend.style.flexDirection = 'column';
+    const seenKeys = new Set();
+    for (const zone of jitterMapSuggestionZones(archetype, mapSuggestionSeed)) {
+        if (seenKeys.has(zone.key)) continue;
+        seenKeys.add(zone.key);
+        const item = document.createElement('div');
+        item.className = 'graph-legend-item';
+        item.style.cursor = 'pointer';
+        item.style.opacity = mapSuggestionFocusKey && mapSuggestionFocusKey !== zone.key ? '0.6' : '1';
+        const swatch = document.createElement('span');
+        swatch.className = 'graph-legend-swatch';
+        swatch.style.background = MAP_SUGGESTION_ZONE_COLOR[zone.key];
+        item.appendChild(swatch);
+        const label = document.createElement('span');
+        label.textContent = MAP_SUGGESTION_ZONE_LABEL[zone.key];
+        item.appendChild(label);
+        item.onclick = () => {
+            mapSuggestionFocusKey = zone.key;
+            renderActiveTab();
+        };
+        legend.appendChild(item);
+    }
+    sidebar.appendChild(legend);
+    row.appendChild(sidebar);
+
+    container.appendChild(row);
 }
 
 /**

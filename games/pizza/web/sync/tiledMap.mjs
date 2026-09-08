@@ -316,3 +316,19 @@ export function readZoneContents(mapFilePath) {
 
     return { byZone, error: null };
 }
+
+/**
+ * The map's own tile-grid dimensions (`width`/`height`/`tilewidth`/`tileheight`, straight off
+ * Tiled's top-level map JSON) — backs the Map Suggestions tab (see app.js's
+ * renderMapSuggestionsTab()), which draws its archetype layouts scaled to the REAL map's own
+ * col/row count instead of a made-up canvas size, so a suggestion actually overlays sensibly
+ * regardless of how big this particular map is.
+ */
+export function readMapSize(mapFilePath) {
+    try {
+        const map = JSON.parse(fs.readFileSync(mapFilePath, 'utf-8'));
+        return { width: map.width, height: map.height, tileWidth: map.tilewidth, tileHeight: map.tileheight, error: null };
+    } catch (err) {
+        return { width: 0, height: 0, tileWidth: 0, tileHeight: 0, error: `couldn't read map file: ${err.message}` };
+    }
+}

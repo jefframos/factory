@@ -17,7 +17,8 @@
                 }
             ],
             "name": "Forge 1",
-            "solid": 0.5
+            "solid": 0.5,
+            "view": "workbench"
         }
     }
 }

@@ -74,7 +74,8 @@ export const MART_CONFIG_BY_ID: Partial<Record<string, MartConfig>> = {
                 "resourceType": ResourceType.Cauliflower
             }
         ],
-        "solid": 0.5
+        "solid": 0.5,
+        "view": "tent"
     }
 };
 

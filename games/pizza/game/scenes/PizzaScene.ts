@@ -121,6 +121,7 @@ import { downloadGameData } from '../debug/GameDataBaker';
 import { PlayerPositionStorage } from '../data/PlayerPositionStorage';
 import { isWalkable } from '../world/TileWalkability';
 import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
+import { MapLayoutSuggestionTool, MapLayoutArchetype } from '../debug/MapLayoutSuggestionTool';
 import { getMeshPlacements } from '../world/MeshLayerSpawner';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 
@@ -492,6 +493,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         );
 
         this.setupModelSnapshotDevGui();
+        this.setupMapLayoutSuggestionDevGui();
 
         // Camera far needs updateProjectionMatrix() on every change to actually take
         // effect — addObjectTrigger's callback (unlike addProperties' plain owner[key]=v)
@@ -812,6 +814,36 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         DevGuiManager.instance.addButton('Snapshot Group', () => {
             void ModelSnapshotTool.snapshotGroup(ModelSnapshotTool.settings.selectedGroup);
         }, 'Model Snapshots');
+    }
+
+    /**
+     * "Show Suggestion" draws a ghost overlay of a hand-tuned zone-layout archetype directly on
+     * the live map, at the map's own tile scale — see MapLayoutSuggestionTool.ts's own doc.
+     * Purely a design-review sketch: nothing here spawns real zones or edits the Tiled map.
+     */
+    private setupMapLayoutSuggestionDevGui(): void {
+        const archetypes: MapLayoutArchetype[] = ['loop', 'ring', 'valley'];
+
+        DevGuiManager.instance.addDropdown(
+            MapLayoutSuggestionTool.settings,
+            'archetype',
+            archetypes,
+            () => { /* value already written straight into settings.archetype */ },
+            'Archetype',
+            'Map Layout Suggestions',
+        );
+
+        DevGuiManager.instance.addButton('Show Suggestion', () => {
+            MapLayoutSuggestionTool.show(this.threeScene);
+        }, 'Map Layout Suggestions');
+
+        DevGuiManager.instance.addButton('Shuffle Suggestion', () => {
+            MapLayoutSuggestionTool.reroll(this.threeScene);
+        }, 'Map Layout Suggestions');
+
+        DevGuiManager.instance.addButton('Clear Suggestion', () => {
+            MapLayoutSuggestionTool.clear();
+        }, 'Map Layout Suggestions');
     }
 
     /**

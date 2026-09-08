@@ -28,8 +28,8 @@ export interface EntityViewConfig {
 /** Per-view-id config, set from the pizza web editor's "Entity Views" tab — empty by default; every building/shop/gate/queue keeps using its own box placeholder until a level/config entry opts in with a `view` id. */
 export const ENTITY_VIEW_CONFIG: Record<string, EntityViewConfig> = {
     "shop1View": {
-        "models": [MODELS.Tools.Anvil],
-        "scale": 1.5,
+        "models": [MODELS.Survival.WorkbenchGrind],
+        "scale": 6,
         "rotationDeg": 0,
         "offset": [
             0,
@@ -257,6 +257,36 @@ export const ENTITY_VIEW_CONFIG: Record<string, EntityViewConfig> = {
         "offset": [
             0,
             -0.1,
+            0
+        ]
+    },
+    "shop2View": {
+        "models": [MODELS.Survival.WorkbenchAnvil],
+        "scale": 6,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            0,
+            0
+        ]
+    },
+    "workbench": {
+        "models": [MODELS.Survival.Workbench],
+        "scale": 6,
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "rotationDeg": 0
+    },
+    "tent": {
+        "models": [MODELS.Survival.TentCanvas],
+        "scale": 7,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            0,
             0
         ]
     }

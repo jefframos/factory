@@ -1,14 +1,14 @@
 {
     "shop1View": {
         "models": [
-            "Tools.Anvil"
+            "Survival.WorkbenchGrind"
         ],
         "offset": [
             0,
             0,
             0
         ],
-        "scale": 1.5,
+        "scale": 6,
         "rotationDeg": 0
     },
     "tower2view": {
@@ -265,5 +265,41 @@
             -0.1,
             0
         ]
+    },
+    "shop2View": {
+        "models": [
+            "Survival.WorkbenchAnvil"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 6,
+        "rotationDeg": 0
+    },
+    "workbench": {
+        "models": [
+            "Survival.Workbench"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 6,
+        "rotationDeg": 0
+    },
+    "tent": {
+        "models": [
+            "Survival.TentCanvas"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 7,
+        "rotationDeg": 0
     }
 }
