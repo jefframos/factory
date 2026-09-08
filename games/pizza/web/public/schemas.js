@@ -129,6 +129,28 @@ const MAP_TILE_FIELDS = {
     ],
 };
 
+// Every key under MODELS.Characters in modelsRegistry.ts that is actually an animation clip
+// (CharacterMedium is the base mesh, not a clip, so it's excluded) — kept as a fixed inline
+// list rather than `source` because these come from the auto-generated model registry, not
+// another editor tab. Shared by every animation-clip field on the Player tab (see PlayerConfig.ts's
+// own PlayerAnimationConfig doc) so all eight fields offer the same dropdown.
+const CHARACTER_ANIMATION_OPTIONS = [
+    'Digging', 'Excited', 'FallingIdle', 'Idle', 'Jump', 'JumpingUp', 'Landing', 'PickFruit',
+    'PlantTree', 'Roll', 'Run', 'Running', 'StandToRoll', 'StandingMeleeAttackDownwardCHOP',
+    'StandingPICKAXE', 'Talking', 'TestIdle', 'Walking', 'Watering',
+].map(name => ({ value: name, label: name }));
+
+const ANIMATION_CLIP_FIELDS = [
+    { key: 'idle', type: 'select', label: 'Idle', options: CHARACTER_ANIMATION_OPTIONS },
+    { key: 'walk', type: 'select', label: 'Walk', options: CHARACTER_ANIMATION_OPTIONS },
+    { key: 'run', type: 'select', label: 'Run', options: CHARACTER_ANIMATION_OPTIONS },
+    { key: 'jumpUp', type: 'select', label: 'Jump Up', options: CHARACTER_ANIMATION_OPTIONS },
+    { key: 'falling', type: 'select', label: 'Falling', options: CHARACTER_ANIMATION_OPTIONS },
+    { key: 'landing', type: 'select', label: 'Landing', options: CHARACTER_ANIMATION_OPTIONS },
+    { key: 'talk', type: 'select', label: 'Talk (quest-giver offer pose, unused by the player itself)', options: CHARACTER_ANIMATION_OPTIONS },
+    { key: 'happy', type: 'select', label: 'Happy (quest-giver completion pose, unused by the player itself)', options: CHARACTER_ANIMATION_OPTIONS },
+];
+
 const ENTITY_SCHEMAS = {
     // Keyed by zoneNumber (a stringified number, e.g. "0" = "zone1" — see ZoneTypes.ts's own
     // doc), NOT by an entity id like every other tab here — entries are auto-discovered from
@@ -522,6 +544,8 @@ const ENTITY_SCHEMAS = {
         { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement', optional: true },
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
         { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
+        { key: 'npcId', type: 'select', label: 'NPC (optional — spawns an animated NPC at this mart)', source: 'npcs', optional: true },
+        { key: 'npcOffset', type: 'vector3', label: 'NPC Offset (x, y, z — nudges off the mart\'s own center; only used when NPC is set)', optional: true },
     ],
     // A CRAFTING RECIPE — the shared pool every Crafting Table picks from (see
     // CraftingRecipeTypes.ts's own doc): ingredients -> one result, registered once by its own
@@ -654,6 +678,15 @@ const ENTITY_SCHEMAS = {
         { key: 'face', type: 'faceIcon', label: 'Face (images/non-preload)' },
         { key: 'isStarter', type: 'boolean', label: 'Starter (spawn look until the player equips a shop skin — exactly one view should have this checked)' },
     ],
+    // A stationary NPC's own look — first-pass NPC system, just a Character Views tab id (see
+    // NpcTypes.ts's own doc). Assign one to a Mart's own "NPC" field (Marts tab) to spawn it
+    // there. Free-designer id, same shape as Character Views itself.
+    npcs: [
+        { key: 'characterViewId', type: 'select', label: 'Character View', source: 'characterViews' },
+        { key: 'scale', type: 'number', label: 'Scale (uniform; blank defaults to 0.0075, same rig scale the player itself uses)', optional: true },
+        { key: 'viewRadius', type: 'number', label: 'View Radius (world units — blank means this NPC never looks at the player at all)', optional: true },
+        { key: 'viewAngleDeg', type: 'number', label: 'View Angle (deg, full aperture — how wide a facing cone counts as "in front of the NPC"; only used when View Radius is set)', optional: true },
+    ],
     // Reusable 2D particle-emitter presets (see ParticleRegistry.ts's own doc) — create one
     // here, then pick it by name wherever a "Particle Effect" field appears (e.g. the Crafting
     // tab). One texture can back several differently-tinted/timed presets; ParticleSystem
@@ -704,6 +737,12 @@ const ENTITY_SCHEMAS = {
         { key: 'runSpeedMultiplier', type: 'number', label: 'Run Speed Multiplier (applied to Walk Speed while sprinting)' },
         { key: 'resourceDetectionRadius', type: 'number', label: 'Resource Detection Radius (world units — how far away a resource can be auto-gathered from)' },
         { key: 'resourceDetectionAngleDeg', type: 'number', label: 'Resource Detection Angle (deg, full aperture — how wide a facing cone counts as "in front of the player")' },
+        { key: 'idleToWalkSpeed', type: 'number', label: 'Idle -> Walk Deadzone (near-zero stick magnitude at/below which the animator sits in Idle)' },
+        { key: 'walkToRunSpeed', type: 'number', label: 'Walk -> Run Threshold (0-1, fraction of full analog stick deflection at/above which Walk switches to Run — e.g. 0.75 = past 75%)' },
+        {
+            key: 'animations', type: 'group', label: 'Animations (clip id must match a MODELS.Characters key)',
+            fields: ANIMATION_CLIP_FIELDS,
+        },
     ],
 };
 

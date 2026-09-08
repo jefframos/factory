@@ -134,16 +134,32 @@ export default class CharacterBody {
         return this.animator.registerAnimation(id, url);
     }
 
-    /** Registers the idle/run/jump state graph — call once after loadMesh()/registerAnimation() for every clip below have resolved. NPCs that only ever register 'idle' can still call this safely: transitions referencing unregistered clips simply never fire (speed stays 0, grounded/verticalSpeed are never set to anything by an idling body — see update()). */
-    public setUp(): void {
+    /**
+     * Registers the idle/walk/run/jump state graph — call once after loadMesh()/registerAnimation()
+     * for every clip below have resolved. NPCs that only ever register 'idle' can still call this
+     * safely: transitions referencing unregistered clips simply never fire (speed stays 0,
+     * grounded/verticalSpeed are never set to anything by an idling body — see update()).
+     *
+     * `idleToWalkSpeed`/`walkToRunSpeed` split vars.speed into three bands (idle / walk / run).
+     * vars.speed is the RAW analog stick magnitude (0-1, see update()), not a world-units/sec
+     * speed — since input is analog, walkToRunSpeed is a 0-1 fraction of full stick deflection
+     * (default 0.75: run once pushed past 75% of the way to the edge), not an absolute speed. See
+     * PlayerConfig.ts's own PlayerConfigEntry doc, the single source both the player and any NPC
+     * reusing this class should read these from, rather than hand-tuning per caller.
+     */
+    public setUp(idleToWalkSpeed = 0.01, walkToRunSpeed = 0.75): void {
         this.animator.registerAnimatorBoard('idle');
         const board = this.animator.animatorBoard!;
 
-        board.registerTransition('idle', 'run', 0.25, (vars) => (vars.speed as number) > 0.01 && vars.grounded === true);
-        board.registerTransition('run', 'idle', 0.5, (vars) => (vars.speed as number) <= 0.01 && vars.grounded === true);
+        board.registerTransition('idle', 'walk', 0.25, (vars) => (vars.speed as number) > idleToWalkSpeed && (vars.speed as number) < walkToRunSpeed && vars.grounded === true);
+        board.registerTransition('walk', 'idle', 0.25, (vars) => (vars.speed as number) <= idleToWalkSpeed && vars.grounded === true);
+        board.registerTransition('walk', 'run', 0.25, (vars) => (vars.speed as number) >= walkToRunSpeed && vars.grounded === true);
+        board.registerTransition('run', 'walk', 0.25, (vars) => (vars.speed as number) < walkToRunSpeed && (vars.speed as number) > idleToWalkSpeed && vars.grounded === true);
+        board.registerTransition('run', 'idle', 0.5, (vars) => (vars.speed as number) <= idleToWalkSpeed && vars.grounded === true);
 
-        board.registerTransition('falling', 'run', 0.15, (vars) => (vars.speed as number) > 0.01 && vars.grounded === true);
-        board.registerTransition('landing', 'idle', 0.15, (vars) => (vars.speed as number) <= 0.01 && vars.grounded === true);
+        board.registerTransition('falling', 'run', 0.15, (vars) => (vars.speed as number) >= walkToRunSpeed && vars.grounded === true);
+        board.registerTransition('falling', 'walk', 0.15, (vars) => (vars.speed as number) > idleToWalkSpeed && (vars.speed as number) < walkToRunSpeed && vars.grounded === true);
+        board.registerTransition('landing', 'idle', 0.15, (vars) => (vars.speed as number) <= idleToWalkSpeed && vars.grounded === true);
 
         board.registerTransition('any', 'jumpUp', 0.1, undefined, 'jump');
         board.registerTransition('jumpUp', 'falling', 0.5, (vars) => (vars.verticalSpeed as number) > 0.01);
@@ -153,7 +169,18 @@ export default class CharacterBody {
         // animationTrigger field) do NOT go through this board at all: they run on
         // AnimatorController's separate, concurrent action layer (see playActionLayer()/
         // stopActionLayer() below and that class's own doc) so the player keeps walking
-        // normally (this board stays on idle/run) while the upper body swings.
+        // normally (this board stays on idle/walk/run) while the upper body swings.
+        //
+        // 'talk'/'happy' (quest giver offer/completion poses — see PlayerConfig.ts's
+        // PlayerAnimationConfig) are deliberately NOT wired into this board at all: they're
+        // one-shot poses a quest-giver NPC plays directly via AnimatorController.play()/mix()
+        // while stationary, not states this movement graph should ever transition into on
+        // its own (see QuestGiverTypes.ts).
+    }
+
+    /** Public bone lookup — e.g. so a caller can build an EntityBoneLookAt.ts against one of this body's own bones (a "Neck" bone, plus a child like "Head" as its aim reference) without CharacterBody needing to know anything about look-at logic itself. Same case-insensitive traversal findBoneByName() (used internally for Head/Chest/RightHand) uses. */
+    public getBone(name: string): THREE.Object3D | undefined {
+        return this.findBoneByName(name);
     }
 
     /** Starts the action layer's upper-body-only clip for `trigger` (chop/mine/pick — see AnimatorController's own doc) — runs on top of whatever this board is currently doing (idle/run/jump), not instead of it. */
@@ -232,6 +259,37 @@ export default class CharacterBody {
             }
         } catch (e) {
             console.error('CharacterBody: failed to load Character View default face texture', e);
+        }
+    }
+
+    /**
+     * NPC path (see NpcEntity.ts) for showing a real CharacterView look — same body color +
+     * head-cube-with-face as applyCharacterView(), but deliberately WITHOUT that method's
+     * `mountHeadCube(..., true)` equipped-skin sync: ShopStorage.getEquippedSkinId() is the
+     * PLAYER's own global shop equip, not per-character, so wiring an NPC's head cube into it
+     * (as applyCharacterView() does) meant every NPC's face silently got overwritten by
+     * whatever skin the player happened to have equipped, the moment they equipped one — see
+     * applyEquippedFace()'s own doc. This always shows exactly `config.face`, full stop.
+     */
+    public applyNpcView(config: CharacterViewConfig): void {
+        this.setBodyColor(config.color);
+        this.mountHeadCube(CubeBuilder.buildCharacterHead(config.color, HEAD_CUBE_SIZE), false);
+        void this.applyFaceTexture(config.face);
+    }
+
+    /** Unconditionally loads `facePath` onto the head cube — see applyNpcView()'s own doc for why this doesn't share applyDefaultFace()'s DEFAULT_SKIN_ID gate. */
+    private async applyFaceTexture(facePath: string): Promise<void> {
+        if (!this.headCube) {
+            return;
+        }
+
+        try {
+            const texture = await TextureBuilder.load(resolveShopImagePath(facePath));
+            if (this.headCube) {
+                CubeBuilder.setFaceTexture(this.headCube, texture);
+            }
+        } catch (e) {
+            console.error('CharacterBody: failed to load NPC face texture', e);
         }
     }
 
@@ -348,6 +406,17 @@ export default class CharacterBody {
             return;
         }
 
+        // getWorldScale() reads matrixWorld, which is normally only refreshed once a frame by
+        // the renderer's own updateMatrixWorld() pass — NOT recomputed on demand. Calling this
+        // synchronously, straight off an async load chain, races that: if every asset in the
+        // chain resolves from the browser's own HTTP cache (e.g. an NPC loading the exact same
+        // clip URLs the player already warmed up moments earlier — see NpcEntity.ts), the whole
+        // await chain can finish inside one microtask flush with ZERO render frames in between,
+        // leaving this bone's matrixWorld stale (identity) and producing a wildly wrong
+        // boneWorldScale — a gigantic, misplaced head cube. Forcing it fresh here removes the
+        // frame-timing dependency entirely instead of "usually" working because real network/
+        // decompression latency happened to let a frame slip in.
+        this.headBone.updateWorldMatrix(true, false);
         const boneWorldScale = new THREE.Vector3();
         this.headBone.getWorldScale(boneWorldScale);
 
@@ -434,6 +503,9 @@ export default class CharacterBody {
             return;
         }
 
+        // See applyHeadTransform()'s own doc for why this can't just trust matrixWorld already
+        // being fresh.
+        this.backpackBone.updateWorldMatrix(true, false);
         const boneWorldScale = new THREE.Vector3();
         this.backpackBone.getWorldScale(boneWorldScale);
 
@@ -637,6 +709,9 @@ export default class CharacterBody {
         handBone.add(holder);
         this.toolHolder = holder;
 
+        // See applyHeadTransform()'s own doc for why this can't just trust matrixWorld already
+        // being fresh.
+        handBone.updateWorldMatrix(true, false);
         const boneWorldScale = new THREE.Vector3();
         handBone.getWorldScale(boneWorldScale);
         holder.scale.set(1 / boneWorldScale.x, 1 / boneWorldScale.y, 1 / boneWorldScale.z);

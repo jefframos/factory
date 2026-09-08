@@ -1,0 +1,10 @@
+{
+    "default": {
+        "characterViewId": "purple"
+    },
+    "shopper1": {
+        "characterViewId": "violet",
+        "viewRadius": 3,
+        "viewAngleDeg": 180
+    }
+}

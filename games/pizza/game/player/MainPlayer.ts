@@ -38,8 +38,8 @@ import { ItemType } from '../crafting/ItemTypes';
 
 /** Player collider half-extents, roughly a standing human's box. */
 const HALF_EXTENTS = new THREE.Vector3(0.4, 0.9, 0.4);
-/** FBX export scale for this character rig — same value the source project used. */
-const CHARACTER_SCALE = 0.0075;
+/** FBX export scale for this character rig — same value the source project used. Exported so NpcEntity.ts can default to the same rig scale (see NpcTypes.ts's own `scale` field doc). */
+export const CHARACTER_SCALE = 0.0075;
 /** Fallback look if CHARACTER_VIEW_CONFIG has no entry flagged isStarter at all (a misconfigured registry) — see getStarterCharacterView()'s own doc. Matches CharacterViewTypes.ts's own "default" entry, kept separately so this file never has to import that entry directly. */
 const FALLBACK_CHARACTER_VIEW = { color: '#4aba8a', headShape: 'cube' as const, face: 'skins/face-star-1.webp' };
 
@@ -182,15 +182,17 @@ export default class MainPlayer extends Entity {
             runSpeedMultiplier: playerConfig.runSpeedMultiplier,
         });
 
+        const anim = playerConfig.animations;
         await character.loadMesh(modelUrl(MODELS.Characters.CharacterMedium.fullPath));
-        await character.registerAnimation('idle', modelUrl(MODELS.Characters.Idle.fullPath));
-        await character.registerAnimation('run', modelUrl(MODELS.Characters.Running.fullPath));
+        await character.registerAnimation('idle', modelUrl(MODELS.Characters[anim.idle as keyof typeof MODELS.Characters].fullPath));
+        await character.registerAnimation('walk', modelUrl(MODELS.Characters[anim.walk as keyof typeof MODELS.Characters].fullPath));
+        await character.registerAnimation('run', modelUrl(MODELS.Characters[anim.run as keyof typeof MODELS.Characters].fullPath));
         await character.registerAnimation('pick', modelUrl(MODELS.Characters.PickFruit.fullPath));
-        // await character.registerAnimation('jumpUp', modelUrl(MODELS.Characters.JumpingUp.fullPath));
-        // await character.registerAnimation('falling', modelUrl(MODELS.Characters.FallingIdle.fullPath));
-        // await character.registerAnimation('landing', modelUrl(MODELS.Characters.Landing.fullPath));
+        // await character.registerAnimation('jumpUp', modelUrl(MODELS.Characters[anim.jumpUp as keyof typeof MODELS.Characters].fullPath));
+        // await character.registerAnimation('falling', modelUrl(MODELS.Characters[anim.falling as keyof typeof MODELS.Characters].fullPath));
+        // await character.registerAnimation('landing', modelUrl(MODELS.Characters[anim.landing as keyof typeof MODELS.Characters].fullPath));
         // await character.registerAnimation('roll', modelUrl(MODELS.Characters.Roll.fullPath));
-        character.setUp();
+        character.setUp(playerConfig.idleToWalkSpeed, playerConfig.walkToRunSpeed);
         // DEBUG — permanent marker at the RightHand bone's own origin, so tool
         // placement bugs can be narrowed to "the bone tracking is wrong" vs "the
         // ToolVisualEntry offset/rotation numbers are wrong" — see CharacterBody's

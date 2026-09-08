@@ -292,8 +292,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_MART_CONFIG',
         byIdExportName: 'MART_CONFIG_BY_ID',
-        managedKeys: ['name', 'offers', 'appearRequirement', 'solid', 'view'],
-        optionalKeys: ['appearRequirement', 'solid', 'view'],
+        managedKeys: ['name', 'offers', 'appearRequirement', 'solid', 'view', 'npcId', 'npcOffset'],
+        optionalKeys: ['appearRequirement', 'solid', 'view', 'npcId', 'npcOffset'],
     },
     // The shared recipe pool every Crafting Table lists from by id — see CraftingRecipeTypes.ts's
     // own doc. Open-ended by hand-typed id, same `kind: 'partialRecord'` shape as `crafting`/
@@ -443,6 +443,16 @@ export const ENTITY_SOURCE_MAP = {
         managedKeys: ['color', 'headShape', 'face', 'isStarter'],
         optionalKeys: ['isStarter'],
     },
+    // A stationary NPC's own look — just a CharacterViewTypes.ts id today (see NpcTypes.ts's own
+    // doc). Free-designer id, same partialRecord shape as characterViews itself; a Marts-tab
+    // entry's own `npcId` field points here to spawn one.
+    npcs: {
+        file: path.join(GAME_DIR, 'data', 'NpcTypes.ts'),
+        exportName: 'NPC_CONFIG_BY_ID',
+        kind: 'partialRecord',
+        managedKeys: ['characterViewId', 'scale', 'viewRadius', 'viewAngleDeg'],
+        optionalKeys: ['scale', 'viewRadius', 'viewAngleDeg'],
+    },
     // Reusable, named task pools (see LootTableTypes.ts's own doc) — a QuestGiverVariant
     // references one of these by id instead of carrying its own possibleTasks list inline, so
     // the same pool can back more than one variant/queue and so the editor can manage tasks as
@@ -476,6 +486,9 @@ export const ENTITY_SOURCE_MAP = {
         file: path.join(GAME_DIR, 'data', 'PlayerConfig.ts'),
         exportName: 'PLAYER_CONFIG_BY_ID',
         kind: 'partialRecord',
-        managedKeys: ['walkSpeed', 'runSpeedMultiplier', 'resourceDetectionRadius', 'resourceDetectionAngleDeg'],
+        managedKeys: [
+            'walkSpeed', 'runSpeedMultiplier', 'resourceDetectionRadius', 'resourceDetectionAngleDeg',
+            'idleToWalkSpeed', 'walkToRunSpeed', 'animations',
+        ],
     },
 };

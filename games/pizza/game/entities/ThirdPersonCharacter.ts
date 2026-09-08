@@ -70,8 +70,8 @@ export default class ThirdPersonCharacter {
     }
 
     /** Registers the idle/run/jump state graph — call once after loadMesh()/registerAnimation() for every clip have resolved. */
-    public setUp(): void {
-        this.body.setUp();
+    public setUp(idleToWalkSpeed?: number, walkToRunSpeed?: number): void {
+        this.body.setUp(idleToWalkSpeed, walkToRunSpeed);
     }
 
     /** Test hook: colors the body + attaches a matching cube head, both using the same value-based palette the real cube player uses. See CharacterBody.applyValueColor(). */

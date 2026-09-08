@@ -50,6 +50,8 @@ import QuestGiverEntity from '../player/QuestGiverEntity';
 import { getQuestGiverConfig } from '../data/QuestGiverTypes';
 import ShopZone, { ShopTriggerArea } from '../shop/ShopZone';
 import MartZone, { MartTriggerArea } from '../shop/MartZone';
+import NpcEntity from '../world/NpcEntity';
+import { getNpcConfig } from '../data/NpcTypes';
 import CraftingTableZone, { CraftingTableTriggerArea } from '../shop/CraftingTableZone';
 import FarmSeedPicker from '../world/FarmSeedPicker';
 import FarmCropHud from '../world/FarmCropHud';
@@ -1460,6 +1462,18 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 ));
                 this.threeScene.add(martZone.transform);
                 this.registerZoneVisibility(martZone.transform, position.x, position.z, placement.width, placement.depth);
+
+                if (config.npcId) {
+                    const npcConfig = getNpcConfig(config.npcId);
+                    if (npcConfig) {
+                        const [offsetX, offsetY, offsetZ] = config.npcOffset ?? [0, 0, 0];
+                        const npcPosition = position.clone().add(new THREE.Vector3(offsetX, offsetY, offsetZ));
+                        const npc = this.world.add(new NpcEntity(npcPosition, npcConfig, () => this.mainPlayer.transform.position));
+                        this.threeScene.add(npc.transform);
+                    } else {
+                        console.warn(`[PizzaScene] mart "${id}" references npcId "${config.npcId}" with no NpcConfig entry — skipping NPC spawn`);
+                    }
+                }
             });
         }
     }
@@ -1934,6 +1948,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // whatever fixedUpdate's physics step last resolved (once the FBX character has loaded
         // and that component exists at all — harmless no-op until then).
         this.world.update(delta);
+        // Runs only once every entity's own update() above has resolved this frame — see
+        // Entity.lateUpdate()'s own doc. NpcEntity is the one caller today (its neck look-at
+        // needs mainPlayer's fully-current-frame position, not whatever it was before this
+        // frame's own movement resolved).
+        this.world.lateUpdate(delta);
         this.uiService.update();
         this.movementTutorialOverlay.update(delta);
         ParticleSystem.update(delta);

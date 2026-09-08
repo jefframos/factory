@@ -77,6 +77,18 @@ export default class Entity {
         }
     }
 
+    /**
+     * A SECOND per-frame pass, run by World only after EVERY entity's own update() this frame has
+     * already run (see World.lateUpdate()) — for anything that needs to react to another entity's
+     * fully-resolved-for-this-frame state rather than whatever it was before this frame's own
+     * movement/animation updates (e.g. NpcEntity's own neck look-at, which needs the player's
+     * current-frame position, not last frame's). Base implementation is a no-op — override in a
+     * subclass that actually needs this second pass; nothing changes for every other entity.
+     */
+    public lateUpdate(delta: number): void {
+        // Overridden by subclasses that need a guaranteed-after-every-update() pass — see NpcEntity.ts.
+    }
+
     /** Calls start() on any component that doesn't have it yet — every component present before the entity's first tick starts together then; a component added later (e.g. once an async asset load resolves) gets its start() on the very next tick, before its own first update()/fixedUpdate(). */
     private runPendingStarts(): void {
         for (const component of this.components) {

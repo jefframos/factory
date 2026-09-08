@@ -47,6 +47,10 @@ export interface MartConfig {
     solid?: number;
     /** EntityViewRegistry.ts id for this mart's own real-mesh look — same "string key resolved via resolveEntityView()" join every other view field in this codebase uses. Undefined/an id with no models yet falls back to a placeholder box. */
     view?: string;
+    /** NpcTypes.ts id — optional; when set, an animated NPC (see NpcEntity.ts) spawns alongside this mart, wearing that NpcConfig's CharacterView. undefined (the default) means no NPC spawns here at all. */
+    npcId?: string;
+    /** World-unit [x, y, z] nudge off the mart's own position (see PizzaScene.setupMarts()) — undefined/[0,0,0] (the default) puts the NPC right at the mart's own center. Only read when `npcId` is set. */
+    npcOffset?: [number, number, number];
 }
 
 /** Applied to every discovered "mart" object unless MART_CONFIG_BY_ID has an override for its id — see this file's own doc. Empty offers by default; a level designer stocks it from the pizza web editor's Marts tab. */
@@ -59,6 +63,11 @@ export const DEFAULT_MART_CONFIG: MartConfig = {
         {
             "resourceType": ResourceType.Crystal
         }
+    ],
+    "npcOffset": [
+        0,
+        0,
+        0
     ]
 };
 
@@ -75,7 +84,13 @@ export const MART_CONFIG_BY_ID: Partial<Record<string, MartConfig>> = {
             }
         ],
         "solid": 0.5,
-        "view": "tent"
+        "view": "tent",
+        "npcId": "shopper1",
+        "npcOffset": [
+            0,
+            0,
+            2
+        ]
     }
 };
 

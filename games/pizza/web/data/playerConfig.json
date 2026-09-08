@@ -3,6 +3,18 @@
         "walkSpeed": 5,
         "runSpeedMultiplier": 1.8,
         "resourceDetectionRadius": 2,
-        "resourceDetectionAngleDeg": 120
+        "resourceDetectionAngleDeg": 120,
+        "idleToWalkSpeed": 0.01,
+        "walkToRunSpeed": 0.75,
+        "animations": {
+            "idle": "Idle",
+            "walk": "Walking",
+            "run": "Running",
+            "jumpUp": "JumpingUp",
+            "falling": "FallingIdle",
+            "landing": "Landing",
+            "talk": "Talking",
+            "happy": "Excited"
+        }
     }
 }

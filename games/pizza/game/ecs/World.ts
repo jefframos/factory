@@ -64,6 +64,13 @@ export default class World {
         }
     }
 
+    /** See Entity.lateUpdate()'s own doc — call this AFTER update() every frame, never interleaved with it, so every entity's own update() has already run before any entity's lateUpdate() does. */
+    public lateUpdate(delta: number): void {
+        for (const entity of this.entities) {
+            entity.lateUpdate(delta);
+        }
+    }
+
     public fixedUpdate(delta: number): void {
         for (const entity of this.entities) {
             entity.fixedUpdate(delta);

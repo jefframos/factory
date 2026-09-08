@@ -12,6 +12,27 @@
 // `partialRecord` mapping, identical to how shops/tools/crafting already
 // work. getPlayerConfig() is the one read path everything else should use.
 
+/**
+ * The idle/run/jump state graph's own clip bindings (see CharacterBody.setUp()) — each field
+ * is a clip id that must match one of `MODELS.Characters`' own keys (modelsRegistry.ts), e.g.
+ * "Idle", "Walking", "Running", "JumpingUp", "FallingIdle", "Landing", "Talking", "Excited".
+ * NPCs reusing CharacterBody (see that file's own doc) read this same table so a quest giver's
+ * idle/walk/talk/happy poses stay in lockstep with the player's without hand-editing code —
+ * see CharacterBody.setUp()'s own doc for how `walk`/`talk`/`happy` slot into the board.
+ */
+export interface PlayerAnimationConfig {
+    idle: string;
+    walk: string;
+    run: string;
+    jumpUp: string;
+    falling: string;
+    landing: string;
+    /** Played while a quest giver NPC is offering/explaining a task — see QuestGiverTypes.ts. Unused by the player's own board today. */
+    talk: string;
+    /** Played once on task completion/delivery (give/deliver) — see QuestGiverTypes.ts. Unused by the player's own board today. */
+    happy: string;
+}
+
 export interface PlayerConfigEntry {
     /** Base ground speed, world units/second, while not sprinting — read into ThirdPersonCharacter's own CharacterConfig (see MainPlayer.loadCharacter()). */
     walkSpeed: number;
@@ -32,6 +53,22 @@ export interface PlayerConfigEntry {
      * player turns toward it.
      */
     resourceDetectionAngleDeg: number;
+    /**
+     * vars.speed at/below which the board sits in "idle" (see CharacterBody.setUp()). vars.speed
+     * is `Math.hypot(moveInputX, moveInputZ)` — the RAW analog stick magnitude (0 = centered, 1 =
+     * fully deflected), not a world-units/sec speed, so this is a near-zero deadzone, not a fraction
+     * of walkSpeed.
+     */
+    idleToWalkSpeed: number;
+    /**
+     * vars.speed at/above which the board switches from "walk" to "run" — since the stick is
+     * analog, this is the normalized 0-1 fraction of full deflection (e.g. 0.75 = "run once the
+     * stick is pushed past 75% of the way to the edge"), not a world-units/sec speed. Must be
+     * greater than idleToWalkSpeed and at most 1. See CharacterBody.setUp().
+     */
+    walkToRunSpeed: number;
+    /** The idle/run/jump board's clip bindings — see PlayerAnimationConfig's own doc. */
+    animations: PlayerAnimationConfig;
 }
 
 const DEFAULT_PLAYER_CONFIG: PlayerConfigEntry = {
@@ -39,6 +76,18 @@ const DEFAULT_PLAYER_CONFIG: PlayerConfigEntry = {
     runSpeedMultiplier: 1.8,
     resourceDetectionRadius: 3,
     resourceDetectionAngleDeg: 120,
+    idleToWalkSpeed: 0.01,
+    walkToRunSpeed: 0.75,
+    animations: {
+        idle: 'Idle',
+        walk: 'Walking',
+        run: 'Running',
+        jumpUp: 'JumpingUp',
+        falling: 'FallingIdle',
+        landing: 'Landing',
+        talk: 'Talking',
+        happy: 'Excited',
+    },
 };
 
 export const PLAYER_CONFIG_BY_ID: Partial<Record<string, PlayerConfigEntry>> = {

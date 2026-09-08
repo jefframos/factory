@@ -8,6 +8,11 @@
             {
                 "resourceType": "crystal"
             }
+        ],
+        "npcOffset": [
+            0,
+            0,
+            0
         ]
     },
     "byId": {
@@ -22,7 +27,13 @@
             ],
             "name": "Farm Shop",
             "solid": 0.5,
-            "view": "tent"
+            "view": "tent",
+            "npcOffset": [
+                0,
+                0,
+                2
+            ],
+            "npcId": "shopper1"
         }
     }
 }
