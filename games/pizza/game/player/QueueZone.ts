@@ -454,7 +454,7 @@ export default class QueueZone extends Entity {
             text.position.set(0, 0);
 
             badge.position.set(0, -(text.height + REWARD_BADGE_TEXT_GAP + badge.height / 2));
-            icon.position.copy(badge.position);
+            icon.position.copyFrom(badge.position);
 
             const callout = new PIXI.Container();
             callout.addChild(badge, icon, text);

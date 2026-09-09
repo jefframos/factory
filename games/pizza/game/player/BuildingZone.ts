@@ -59,6 +59,9 @@ import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
+/** THREE's Y-axis — see resolveOwnMeshFallbacks()'s own doc on rotating an own-mesh piece's manual offsetX/Z nudge around it. */
+const UP_AXIS = new THREE.Vector3(0, 1, 0);
+
 const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
 /** Corner rounding for the dropper's floor outline — purely cosmetic, the collider itself stays a sharp-cornered box (see RigidBody below). */
 const DROPPER_ZONE_CORNER_RADIUS = 0.3;
@@ -519,15 +522,26 @@ export default class BuildingZone extends Entity {
                 continue;
             }
 
+            // entry.offsetX/Z (this piece's own "offsetX"/"offsetZ" Tiled custom properties —
+            // see MeshLayerSpawner.OFFSET_X_PROPERTY's own doc) are a level designer's manual
+            // nudge for wherever this model's own pivot sits relative to its placeholder's rect
+            // center — e.g. a corner-pivoted model needing offsetX/Z to visually center itself.
+            // That nudge is meaningless in a fixed WORLD direction once this piece is rotated
+            // (it has to turn WITH the model, same as everything else about this placement) —
+            // rotating it by this SAME entry.rotationY that createBuildingView() applies to
+            // mesh.rotation.y is what keeps it pointing the same way RELATIVE to the model as
+            // the model itself turns.
+            const rotatedOffset = new THREE.Vector3(entry.offsetX, 0, entry.offsetZ).applyAxisAngle(UP_AXIS, entry.rotationY);
+
             results.push({
                 resolved: {
                     model,
                     scale: 1,
                     rotationDeg: 0,
                     offset: [
-                        entry.x - this.transform.position.x + entry.offsetX,
+                        entry.x - this.transform.position.x + rotatedOffset.x,
                         entry.offsetY,
-                        entry.z - this.transform.position.z + entry.offsetZ,
+                        entry.z - this.transform.position.z + rotatedOffset.z,
                     ],
                 },
                 footprint: { width: entry.width, depth: entry.depth },
@@ -590,13 +604,32 @@ export default class BuildingZone extends Entity {
             () => {
                 if (fitFootprint) {
                     const mesh = visual.mesh;
-                    const nativeSize = new THREE.Box3().setFromObject(mesh).getSize(new THREE.Vector3());
+                    const box = new THREE.Box3().setFromObject(mesh);
+                    const nativeSize = box.getSize(new THREE.Vector3());
                     const scaleX = nativeSize.x > 1e-4 ? fitFootprint.width / nativeSize.x : 1;
                     const scaleZ = nativeSize.z > 1e-4 ? fitFootprint.depth / nativeSize.z : 1;
                     // No vertical-scale signal from a top-down footprint rect — splitting the
                     // difference between the two horizontal axes is the least-arbitrary
                     // stand-in, same as setupMeshLayer()'s own identical averaging.
-                    mesh.scale.set(scaleX, (scaleX + scaleZ) / 2, scaleZ);
+                    const scaleY = (scaleX + scaleZ) / 2;
+
+                    // Same box-center-vs-pivot correction as PizzaScene.setupMeshLayer() — see
+                    // that method's own doc. X/Z only, deliberately — Y stays the vertical
+                    // pivot-at-base convention every prop already relies on, untouched by this
+                    // or by the Y-axis rotation below. box.getCenter() is WORLD space,
+                    // mesh.position is LOCAL to `this.transform` (this zone's own world
+                    // position) — worldToLocal() re-expresses the box center in that SAME local
+                    // frame so this isolates the model's own intrinsic pivot-to-center offset.
+                    const localBoxCenter = mesh.parent!.worldToLocal(box.getCenter(new THREE.Vector3()));
+                    const pivotToCenterXZ = new THREE.Vector3(
+                        (localBoxCenter.x - mesh.position.x) * scaleX,
+                        0,
+                        (localBoxCenter.z - mesh.position.z) * scaleZ,
+                    ).applyAxisAngle(UP_AXIS, rotationY ?? 0);
+                    mesh.position.x -= pivotToCenterXZ.x;
+                    mesh.position.z -= pivotToCenterXZ.z;
+
+                    mesh.scale.set(scaleX, scaleY, scaleZ);
                     mesh.rotation.y = rotationY ?? 0;
                 }
                 this.playRevealEffect(visual.mesh, dropIn, targetFraction);

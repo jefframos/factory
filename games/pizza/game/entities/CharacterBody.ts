@@ -152,6 +152,11 @@ export default class CharacterBody {
         const board = this.animator.animatorBoard!;
 
         board.registerTransition('idle', 'walk', 0.25, (vars) => (vars.speed as number) > idleToWalkSpeed && (vars.speed as number) < walkToRunSpeed && vars.grounded === true);
+        // Keyboard input (unlike an analog stick) jumps straight from 0 to a normalized 1.0
+        // magnitude with no intermediate frame in the walk band — without this direct
+        // transition, that speed value never satisfies idle->walk's upper bound and the
+        // character never leaves 'idle' at all when moved by keyboard.
+        board.registerTransition('idle', 'run', 0.25, (vars) => (vars.speed as number) >= walkToRunSpeed && vars.grounded === true);
         board.registerTransition('walk', 'idle', 0.25, (vars) => (vars.speed as number) <= idleToWalkSpeed && vars.grounded === true);
         board.registerTransition('walk', 'run', 0.25, (vars) => (vars.speed as number) >= walkToRunSpeed && vars.grounded === true);
         board.registerTransition('run', 'walk', 0.25, (vars) => (vars.speed as number) < walkToRunSpeed && (vars.speed as number) > idleToWalkSpeed && vars.grounded === true);

@@ -211,6 +211,9 @@ function cameraUpVector(yawDeg: number, offset: THREE.Vector3): THREE.Vector3 {
     return right.cross(forward).normalize();
 }
 
+/** THREE's Y-axis — see setupMeshLayer()'s own doc on rotating a mesh placement's manual offsetX/Y/Z nudge around it. */
+const UP_AXIS = new THREE.Vector3(0, 1, 0);
+
 /** Test obstacle: a static box offset from spawn along Z only — see setupTestBox(). Walking into it should stop the player instead of passing through. */
 const TEST_BOX_HALF_EXTENTS = new THREE.Vector3(0.5, 0.5, 0.5);
 const TEST_BOX_OFFSET_Z = 4;
@@ -1200,10 +1203,20 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             const entity = this.world.spawn();
             entity.transform.position.set(placement.x, 0, placement.z);
 
-            const meshOffset = new THREE.Vector3(placement.offsetX, placement.offsetY, placement.offsetZ);
+            // offsetX/Y/Z (Tiled custom properties — see OFFSET_X_PROPERTY's own doc) are a
+            // level designer's manual nudge for wherever this model's own pivot sits relative
+            // to its placeholder's rect center — e.g. a corner-pivoted model needing offsetX/Z
+            // to visually center itself. That nudge is meaningless in a fixed WORLD direction
+            // once the object is rotated (it has to turn WITH the model, same as everything
+            // else about this placement) — rotating it by this SAME placement.rotationY that
+            // mesh.rotation.y gets below is what keeps it pointing the same way RELATIVE to the
+            // model as the model itself turns. Y is untouched by a Y-axis rotation regardless.
+            const meshOffset = new THREE.Vector3(placement.offsetX, placement.offsetY, placement.offsetZ)
+                .applyAxisAngle(UP_AXIS, placement.rotationY);
             const visual: GlbVisualComponent = new GlbVisualComponent(modelDef, meshOffset, 1, 0, () => {
                 const mesh = visual.mesh;
-                const nativeSize = new THREE.Box3().setFromObject(mesh).getSize(new THREE.Vector3());
+                const box = new THREE.Box3().setFromObject(mesh);
+                const nativeSize = box.getSize(new THREE.Vector3());
                 const scaleX = nativeSize.x > 1e-4 ? placement.worldWidth / nativeSize.x : 1;
                 const scaleZ = nativeSize.z > 1e-4 ? placement.worldDepth / nativeSize.z : 1;
                 // No Tiled-side signal for vertical scale (a top-down placement has no height
@@ -1211,6 +1224,31 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 // least-arbitrary stand-in, same as this method's own averaging used to do for
                 // every axis before this fix.
                 const scaleY = (scaleX + scaleZ) / 2;
+
+                // ModelSnapshotTool frames its placeholder snapshot around the model's own
+                // BOUNDING-BOX center (see frameTopDown()), not its local origin/pivot — so
+                // `placement.x/z` (this Tiled rect's own rotated center) is where that box
+                // center belongs. For a model whose pivot ISN'T at its own box center (e.g. a
+                // corner-pivoted piece, unlike a symmetric prop where the two coincide) THREE
+                // still scales/rotates around the pivot, not the box center, so without this
+                // correction the box center visibly swings away from `placement.x/z` as
+                // rotation grows. X/Z ONLY, deliberately — Y positioning stays exactly the
+                // vertical-pivot-at-base convention every other prop already relies on, and a
+                // Y-axis rotation never touches Y anyway. `box.getCenter()` is WORLD space,
+                // `mesh.position` is LOCAL to `entity.transform` (which itself sits at
+                // `placement.x/z`, a large non-zero world offset) — worldToLocal() re-expresses
+                // the box center in that SAME local frame so this isolates the model's own
+                // intrinsic pivot-to-center offset instead of also picking up entity.transform's
+                // own world position.
+                const localBoxCenter = mesh.parent!.worldToLocal(box.getCenter(new THREE.Vector3()));
+                const pivotToCenterXZ = new THREE.Vector3(
+                    (localBoxCenter.x - mesh.position.x) * scaleX,
+                    0,
+                    (localBoxCenter.z - mesh.position.z) * scaleZ,
+                ).applyAxisAngle(UP_AXIS, placement.rotationY);
+                mesh.position.x -= pivotToCenterXZ.x;
+                mesh.position.z -= pivotToCenterXZ.z;
+
                 mesh.scale.set(scaleX, scaleY, scaleZ);
                 mesh.rotation.y = placement.rotationY;
 
