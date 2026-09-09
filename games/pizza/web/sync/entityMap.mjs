@@ -109,8 +109,8 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'BUILDING_CONFIG',
         kind: 'enumRecord',
         enumName: 'BuildingId',
-        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'solid', 'updateParticleEffectId', 'updateParticleCount'],
-        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'solid', 'updateParticleEffectId', 'updateParticleCount'],
+        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'anchorAtDropper'],
+        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'anchorAtDropper'],
         // BuildingLevelConfig also carries a `mesh` field (per-level placeholder art) that
         // this editor doesn't manage — a plain wholesale replacement of the `levels` array
         // (what every OTHER list field in this map gets, since none of their items have
@@ -422,15 +422,16 @@ export const ENTITY_SOURCE_MAP = {
         managedKeys: ['models', 'scale', 'rotationDeg', 'offset'],
     },
     // The NPC/prop that walks a queue's waypoint path in and out (see QuestGiverEntity.ts's
-    // own doc) — `variants` has no unmanaged sibling fields on any of its items (view/weight/
-    // lootTable are exactly what QuestGiverVariant has), so unlike buildings'/shops' own
-    // `levels` this needs no listMerge — a plain wholesale replacement of the whole array is
-    // always safe here.
+    // own doc) — `variants` has no unmanaged sibling fields on any of its items (view/npc/
+    // weight/lootTable are exactly what QuestGiverVariant has), so unlike buildings'/shops'
+    // own `levels` this needs no listMerge — a plain wholesale replacement of the whole array
+    // is always safe here.
     questGivers: {
         file: path.join(GAME_DIR, 'data', 'QuestGiverTypes.ts'),
         exportName: 'QUEST_GIVER_CONFIG_BY_ID',
         kind: 'partialRecord',
-        managedKeys: ['variants', 'moveSpeed'],
+        managedKeys: ['variants', 'moveSpeed', 'maxEntities', 'queueSpacing', 'spawnIntervalSec'],
+        optionalKeys: ['maxEntities', 'queueSpacing', 'spawnIntervalSec'],
     },
     // A selectable player appearance — color/headShape/face/isStarter (see
     // CharacterViewTypes.ts's own doc). No unmanaged sibling fields on any entry, so a

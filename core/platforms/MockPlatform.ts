@@ -16,6 +16,33 @@ export default class MockPlatform implements IPlatformConnection {
         await Promise.resolve();
     }
 
+    public async firstFrameReady(): Promise<void> {
+        await Promise.resolve();
+    }
+
+    /**
+     * Backed by plain browser localStorage — same recipe Poki/CrazyGames/GameDistribution's own
+     * platform wrappers use, just without a real SDK to defer to. This was MISSING entirely
+     * until now (the class declared `implements IPlatformConnection` without actually providing
+     * these three required methods) — every *Storage.ts here calls PlatformHandler.instance.
+     * platform.getItem/setItem unconditionally, no fallback, so on this platform every one of
+     * them was silently failing its persist()/load() every time (caught by whichever ones wrap
+     * the call in a try/catch, like QueueStorage.load(); an uncaught promise rejection for the
+     * ones that don't, like QueueStorage.persist()) — the actual cause behind local/dev testing
+     * losing all progress on every reload, not just queues.
+     */
+    public async setItem(key: string, value: string): Promise<void> {
+        localStorage.setItem(key, value);
+    }
+
+    public async getItem(key: string): Promise<string | null> {
+        return localStorage.getItem(key);
+    }
+
+    public async removeItem(key: string): Promise<void> {
+        localStorage.removeItem(key);
+    }
+
     public async startLoad(): Promise<void> {
         console.debug("Mock Platform: Starting load...");
         // Insert Poki SDK logic for load start if available

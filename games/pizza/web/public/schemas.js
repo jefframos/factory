@@ -220,7 +220,8 @@ const ENTITY_SCHEMAS = {
         { key: 'baseView', type: 'select', label: 'Base View (before level 1, optional)', source: 'entityViews', optional: true },
         { key: 'baseFillFull', type: 'boolean', label: 'Base Fill Full (level 0 renders 100% built, regardless of run position)', optional: true },
         { key: 'baseFillFraction', type: 'number', label: 'Base Fill Fraction (0-1 — how built level 0 already looks before any deposit; later levels sharing its mesh grow linearly from here up to 1. Blank = default eased curve)', optional: true },
-        { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
+        { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default; ignored if Solid From Map is checked)', optional: true },
+        { key: 'solidFromMap', type: 'boolean', label: 'Solid From Map (ignore Solid above — instead, one collider per "useOwnMesh" piece, sized to that piece\'s own bounds, using its own \'solid\' map property. Lets e.g. walls be solid while a floor piece sharing the same id stays walk-through)', optional: true },
         {
             key: 'levels', type: 'list', label: 'Levels',
             itemLabel: item => `Level ${item.level ?? '?'}`,
@@ -241,6 +242,7 @@ const ENTITY_SCHEMAS = {
         },
         { key: 'updateParticleEffectId', type: 'select', label: 'Update Particle Effect (fires every time this building levels up)', source: 'particleEffects', optional: true },
         { key: 'updateParticleCount', type: 'number', label: 'Update Particle Count', optional: true },
+        { key: 'anchorAtDropper', type: 'boolean', label: 'Anchor Popup/Particles At Dropper (requirements panel, Level Up! callout, and update particle burst all spawn at this building\'s own dropper instead of its mesh — falls back to the mesh if it has no dropper)', optional: true },
         ...POPUP_FIELDS,
     ],
     shops: [
@@ -656,11 +658,15 @@ const ENTITY_SCHEMAS = {
     // variants pointing at different loot tables with different weights.
     questGivers: [
         { key: 'moveSpeed', type: 'number', label: 'Move Speed (world units/sec)' },
+        { key: 'maxEntities', type: 'number', label: 'Max Entities In Line (blank/1 = today\'s single-giver behavior)', optional: true },
+        { key: 'queueSpacing', type: 'number', label: 'Queue Spacing (world units a queued giver keeps behind the one ahead of it — only matters above 1 entity)', optional: true },
+        { key: 'spawnIntervalSec', type: 'number', label: 'Spawn Interval (sec between each ADDITIONAL giver beyond the first — only matters above 1 entity)', optional: true },
         {
             key: 'variants', type: 'list', label: 'Variants',
             itemLabel: (item, i) => `Variant ${i + 1} — weight ${item.weight ?? '?'}`,
             fields: [
-                { key: 'view', type: 'select', label: 'View', source: 'entityViews' },
+                { key: 'view', type: 'select', label: 'View (static mesh — leave blank if using NPC below)', source: 'entityViews', optional: true },
+                { key: 'npc', type: 'select', label: 'NPC (animated, walks/idles instead of a static mesh — leave blank if using View above)', source: 'npcs', optional: true },
                 { key: 'weight', type: 'number', label: 'Weight (lower = rarer; the lowest-weight variant is always what appears first)' },
                 { key: 'lootTable', type: 'select', label: 'Loot Table', source: 'lootTables' },
             ],

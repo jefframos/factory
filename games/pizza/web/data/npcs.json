@@ -6,5 +6,10 @@
         "characterViewId": "violet",
         "viewRadius": 3,
         "viewAngleDeg": 180
+    },
+    "shopper2": {
+        "characterViewId": "cyan",
+        "viewRadius": 3,
+        "viewAngleDeg": 180
     }
 }

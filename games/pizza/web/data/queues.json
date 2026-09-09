@@ -29,6 +29,12 @@
             },
             "popupBobOffset": 2,
             "view": "ship1View"
+        },
+        "queue2": {
+            "cooldownSec": 30,
+            "possibleTasks": [],
+            "popupBobOffset": 3,
+            "view": "ship1View"
         }
     }
 }

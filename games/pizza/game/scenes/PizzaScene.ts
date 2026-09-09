@@ -46,7 +46,7 @@ import BuildingZone, { BuildingTriggerArea } from '../player/BuildingZone';
 import QueueZone from '../player/QueueZone';
 import { getQueueConfig } from '../data/QueueTypes';
 import { isMilestoneRequirementMet } from '../data/MilestoneRequirement';
-import QuestGiverEntity from '../player/QuestGiverEntity';
+import QuestGiverGroup from '../player/QuestGiverGroup';
 import { getQuestGiverConfig } from '../data/QuestGiverTypes';
 import ShopZone, { ShopTriggerArea } from '../shop/ShopZone';
 import MartZone, { MartTriggerArea } from '../shop/MartZone';
@@ -881,6 +881,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      */
     private setupDebugButtons(): void {
         InGameButtonList.registerButton('Clear Data', () => clearAllPlayerData());
+        // Narrower than 'Clear Data' — resets every queue's active task/progress/cooldown
+        // WITHOUT touching backpack/economy/buildings/etc, and without the full-page reload
+        // clearAllPlayerData() does. Notifies every live QueueZone via onTaskChanged (see
+        // QueueStorage.clearAll()'s own doc), so panels update immediately in place.
+        InGameButtonList.registerButton('Clear Queue States', () => void QueueStorage.clearAll());
         InGameButtonList.registerButton('Open Next Zone', () => this.worldManager.revealNextZone());
         InGameButtonList.registerButton('Teleport: Next', () => this.teleportToNextTeleporter());
         InGameButtonList.registerButton('Unlock All Tools', () => this.unlockAllTools());
@@ -1035,13 +1040,13 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 buildingsWithoutDropper.push(buildingId);
             }
 
-            const ownMesh = this.worldObjects.getOwnMesh('building', buildingId);
+            const ownMeshes = this.worldObjects.getOwnMeshes('building', buildingId);
             this.requirementRegistry.registerSpawnGate(buildingId, BUILDING_CONFIG[buildingId].appearRequirement, () => {
                 const buildingZone = this.world.add(new BuildingZone(
                     position, this.screenHost, buildingId, this, this,
                     { width: placement.width, depth: placement.depth },
                     triggerArea,
-                    ownMesh,
+                    ownMeshes,
                 ));
                 this.threeScene.add(buildingZone.transform);
                 this.registerZoneVisibility(buildingZone.transform, position.x, position.z, placement.width, placement.depth);
@@ -1259,22 +1264,35 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 const waypoints = this.worldObjects.getWaypoints(id);
                 const hasGiverPath = questGiverConfig !== undefined && waypoints.length >= 2;
 
+                // Built BEFORE QueueZone (reversed from before this override existed) so QueueZone
+                // can be handed a live reference to it right away — see this file's own doc on
+                // getPopupAnchorOverride's own param for why: whichever giver a QuestGiverGroup
+                // currently has actually serving the task is exactly where the queue's task
+                // panel should float instead of a fixed point above the queue itself, and
+                // there's nothing else queueZone needs from questGiverGroup that would force the
+                // opposite order. QuestGiverGroup owns spawning 1+ QuestGiverEntity instances
+                // itself (see that file's own doc on QuestGiverConfig.maxEntities) — this scene
+                // never constructs a QuestGiverEntity directly any more.
+                let questGiverGroup: QuestGiverGroup | undefined;
+                if (hasGiverPath) {
+                    questGiverGroup = this.world.add(new QuestGiverGroup(id, waypoints, questGiverConfig!, position, () => this.mainPlayer.transform.position, giver => {
+                        this.threeScene.add(giver.transform);
+                        this.registerZoneVisibility(giver.transform, position.x, position.z, placement.width, placement.depth);
+                    }));
+                }
+
                 const queueZone = this.world.add(new QueueZone(
                     position, this.screenHost, id,
                     () => this.uiService.economyUi.getIconAnchorPosition(CurrencyType.Money),
                     { width: placement.width, depth: placement.depth },
                     config,
                     !hasGiverPath,
+                    () => questGiverGroup?.getActiveHeadWorldPosition(),
+                    () => questGiverGroup?.playHappyAnimationForActiveGiver(),
                 ));
                 this.threeScene.add(queueZone.transform);
                 this.queueZones.set(id, queueZone);
                 this.registerZoneVisibility(queueZone.transform, position.x, position.z, placement.width, placement.depth);
-
-                if (hasGiverPath) {
-                    const questGiver = this.world.add(new QuestGiverEntity(id, waypoints, questGiverConfig!));
-                    this.threeScene.add(questGiver.transform);
-                    this.registerZoneVisibility(questGiver.transform, position.x, position.z, placement.width, placement.depth);
-                }
             });
         }
     }

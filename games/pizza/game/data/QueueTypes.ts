@@ -95,6 +95,12 @@ export const QUEUE_CONFIG_BY_ID: Partial<Record<string, QueueConfig>> = {
         "popupBobOffset": 2,
         "view": "ship1View"
     },
+    "queue2": {
+        "cooldownSec": 30,
+        "possibleTasks": [],
+        "popupBobOffset": 3,
+        "view": "ship1View"
+    }
 };
 
 /** The config a queue with this id should use — its own override if QUEUE_CONFIG_BY_ID has one, else DEFAULT_QUEUE_CONFIG. */

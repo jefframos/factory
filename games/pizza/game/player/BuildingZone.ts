@@ -42,7 +42,7 @@ import { BackpackStorage } from '../data/BackpackStorage';
 import { BuildingStorage } from '../data/BuildingStorage';
 import { BUILDING_CONFIG, BuildingId, getFillFractionForLevel, getMeshConfigForLevel, getViewIdForLevel } from '../data/BuildingTypes';
 import { resolveEntityView } from '../world/EntityViewRegistry';
-import { DecodedObjectModel } from '../world/MeshLayerSpawner';
+import { OwnMeshPlacement } from '../world/WorldObjectRegistry';
 import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
 import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
@@ -141,12 +141,23 @@ export default class BuildingZone extends Entity {
     private requirementsContainer!: PIXI.Container;
     private labelFrame!: AutoFitFrame;
 
-    /** The building's own visible structure — one per level (see BuildingTypes.ts's BuildingMeshConfig), swapped out on level-up via replaceBuildingMesh(). Undefined only ever momentarily, between disposing the old mesh and creating the new one. Mutually exclusive with `buildingVisual` below — exactly one of the two is set at a time, depending on whether this level has an EntityViewRegistry `view` id (see createBuildingMesh()). */
+    /** The building's own visible structure — one per level (see BuildingTypes.ts's BuildingMeshConfig), swapped out on level-up via replaceBuildingMesh(). Undefined only ever momentarily, between disposing the old mesh and creating the new one. Mutually exclusive with `buildingVisuals` below — exactly one of the two is ever populated at a time, depending on whether this level has an EntityViewRegistry `view` id (see createBuildingMesh()). */
     private buildingMesh?: THREE.Mesh;
-    /** The real-glb counterpart to `buildingMesh` above, used instead of it when this level's `view` id resolves to an actual model (see EntityViewRegistry.ts's resolveEntityView()). */
-    private buildingVisual?: GlbVisualComponent;
+    /**
+     * The real-glb counterpart(s) to `buildingMesh` above, used instead of it when this level's
+     * `view` id resolves to an actual model (see EntityViewRegistry.ts's resolveEntityView()) —
+     * always exactly one entry in that case — OR when this building falls back to its own
+     * "useOwnMesh" objects (see resolveOwnMeshFallbacks()), which can carry SEVERAL entries: a
+     * level designer can share one id across multiple drawn objects (e.g. two floor pieces
+     * that together make up "floor1"), and every one of them gets its own GlbVisualComponent
+     * here so they all show/fill together off the SAME shared `revealProgress`. Empty (not
+     * populated at all) whenever `buildingMesh` above is the one in use instead.
+     */
+    private buildingVisuals: GlbVisualComponent[] = [];
     /** The view id `buildingMesh`/`buildingVisual` was last built from — lets replaceBuildingMesh() tell "the new level shares this SAME mesh with the one just cleared" (grow the existing reveal fill in place, no dispose/recreate) apart from "the new level actually swaps in a different mesh" (see getFillFractionForLevel()'s own doc on why a run of levels can share one view id). Undefined only before the very first createBuildingMesh() call. */
     private currentViewId?: string;
+    /** BuildingConfig.solidFromMap's per-piece colliders — see addSolidAreasFromMap()'s own doc. Built/torn down in lockstep with `buildingVisuals` (createBuildingMesh()/disposeBuildingMesh()), NOT once in awake(), so a piece never collides while its own mesh isn't actually visible. Always empty for a building that doesn't set `solidFromMap`. */
+    private solidColliders: RigidBody[] = [];
 
     private readonly handleProgressChanged = (id: BuildingId): void => {
         if (id === this.buildingId) {
@@ -179,8 +190,8 @@ export default class BuildingZone extends Entity {
     private readonly footprint?: { width: number; depth: number };
     /** Optional separate deposit-trigger rect — see the constructor's `triggerArea` param doc. Undefined means "trigger the building's own footprint," same as before this existed. */
     private readonly triggerArea?: BuildingTriggerArea;
-    /** See the constructor's `ownMesh` param doc — consulted by resolveOwnMeshFallback(). */
-    private readonly ownMesh?: DecodedObjectModel;
+    /** See the constructor's `ownMeshes` param doc — consulted by resolveOwnMeshFallbacks(). */
+    private readonly ownMeshes: readonly OwnMeshPlacement[];
 
     public constructor(
         position: THREE.Vector3,
@@ -203,22 +214,29 @@ export default class BuildingZone extends Entity {
          * PizzaScene.setupBuildingZone()). When given, the PLAYER-FACING trigger (what
          * actually starts a deposit) sits here instead of on the building's own footprint —
          * e.g. a building drawn somewhere the player can't walk up to, with its real
-         * drop-off spot placed elsewhere on the map. The building's own visual mesh,
-         * nameplate, and camera-focus point are all UNAFFECTED — they stay exactly where
-         * `position`/`footprint` say regardless. Undefined means "trigger the building's
-         * own footprint," same as before this param existed.
+         * drop-off spot placed elsewhere on the map. The building's own visual mesh and
+         * camera-focus point are always UNAFFECTED — they stay exactly where
+         * `position`/`footprint` say regardless. The requirements panel/level-up callout and
+         * level-up particle burst are ALSO unaffected by default, UNLESS this building's own
+         * BuildingConfig.anchorAtDropper opts them into following this triggerArea instead —
+         * see that field's own doc and getFxAnchorPosition(). Undefined `triggerArea` means
+         * "trigger the building's own footprint" (and anchorAtDropper, if set, has nothing to
+         * switch to — falls back to the mesh), same as before this param existed.
          */
         triggerArea?: BuildingTriggerArea,
         /**
-         * This building's own decoded "useOwnMesh" fallback (see
-         * WorldObjectRegistry.getOwnMesh()'s own doc) — a real model decoded straight off the
-         * SAME mapSettings object's own dragged-on image, used by createBuildingMesh() when
-         * this building has no `view`/`baseView` configured in BuildingTypes.ts at all (see
-         * resolveOwnMeshFallback()). Undefined (the default) — the checkbox was never set, or
-         * was set but nothing usable decoded from it — skips that fallback entirely, unchanged
-         * from before this param existed.
+         * This building's own decoded "useOwnMesh" fallback(s) (see
+         * WorldObjectRegistry.getOwnMeshes()'s own doc) — every real model decoded off a
+         * mapSettings object sharing this building's own id with its "useOwnMesh" checkbox
+         * set, used by createBuildingMesh() when this building has no `view`/`baseView`
+         * configured in BuildingTypes.ts at all (see resolveOwnMeshFallbacks()). Several
+         * objects can share one id (e.g. two pieces that together make up one composite
+         * building) — every one of them gets its own mesh, each at its own drawn position, all
+         * filling together (see this.buildingVisuals's own doc). Empty array (the default) —
+         * the checkbox was never set on any matching object, or was set but nothing usable
+         * decoded from it — skips that fallback entirely, same as before this param existed.
          */
-        ownMesh?: DecodedObjectModel,
+        ownMeshes: readonly OwnMeshPlacement[] = [],
     ) {
         super();
         this.screenHost = screenHost;
@@ -227,9 +245,27 @@ export default class BuildingZone extends Entity {
         this.worldProgressionHost = worldProgressionHost;
         this.footprint = footprint;
         this.triggerArea = triggerArea;
-        this.ownMesh = ownMesh;
+        this.ownMeshes = ownMeshes;
         this.transform.position.copy(position);
         this.restY = position.y;
+    }
+
+    /**
+     * This zone's own FX anchor, in WORLD space — the shared backing point for the persistent
+     * requirements panel (`labelAnchor`, set up in awake()), the rising "Level Up!" callout
+     * (see spawnLevelUpPopup()), and the level-up particle burst (see playLevelUpSequence()).
+     * Resolves to this building's own dropper/triggerArea position when
+     * BuildingConfig.anchorAtDropper is set AND a dropper actually exists (see that field's own
+     * doc) — falls back to this zone's own visual-mesh position (`this.transform.position`)
+     * otherwise, unchanged from before that field existed. Deliberately NOT the camera-focus
+     * point playLevelUpSequence() sends the camera to — that always stays at the mesh, per
+     * anchorAtDropper's own doc.
+     */
+    private getFxAnchorPosition(): THREE.Vector3 {
+        if (BUILDING_CONFIG[this.buildingId].anchorAtDropper && this.triggerArea) {
+            return this.triggerArea.position.clone();
+        }
+        return this.transform.position.clone();
     }
 
     public override awake(): void {
@@ -266,9 +302,15 @@ export default class BuildingZone extends Entity {
             centerOffset,
         }));
 
-        const solidArea = buildSolidArea(halfExtents, centerOffset, BUILDING_CONFIG[this.buildingId].solid ?? 0);
-        if (solidArea) {
-            this.addComponent(solidArea);
+        // solidFromMap's per-piece colliders are built/torn down alongside the visual mesh
+        // itself instead of once here — see createBuildingMesh()/disposeBuildingMesh() — so a
+        // piece that isn't visible yet (e.g. this building's own targetFraction <= 0, before
+        // its first level clears) never blocks the player with an invisible wall.
+        if (!BUILDING_CONFIG[this.buildingId].solidFromMap) {
+            const solidArea = buildSolidArea(halfExtents, centerOffset, BUILDING_CONFIG[this.buildingId].solid ?? 0);
+            if (solidArea) {
+                this.addComponent(solidArea);
+            }
         }
 
         // Traces the ACTUAL deposit trigger's own footprint/position on the floor — same
@@ -306,8 +348,12 @@ export default class BuildingZone extends Entity {
         // parented under this.transform so it moves with the zone for free. Stored as a field
         // (not just a local) since flyInResource() targets the same spot — deposited icons fly
         // to wherever this building's own UI actually renders, not a point on its 3D mesh.
+        // getFxAnchorPosition() is a WORLD point (the mesh position, or the dropper's when
+        // anchorAtDropper opts in — see that field's own doc); converted to a LOCAL offset here
+        // since labelAnchor is parented under this.transform, then the panel's own bob height
+        // stacks on top the same way it always has.
         this.labelAnchor = new THREE.Object3D();
-        this.labelAnchor.position.copy(resolvePopupAnchorOffset(BUILDING_CONFIG[this.buildingId].popupBobOffset));
+        this.labelAnchor.position.copy(this.getFxAnchorPosition().sub(this.transform.position).add(resolvePopupAnchorOffset(BUILDING_CONFIG[this.buildingId].popupBobOffset)));
         this.transform.add(this.labelAnchor);
         const labelAnchorWorldPosition = new THREE.Vector3();
 
@@ -344,6 +390,42 @@ export default class BuildingZone extends Entity {
         rigidBody.onTriggerExit.add(other => this.handleTriggerExit(other));
     }
 
+    /**
+     * BuildingConfig.solidFromMap's own behavior (see that field's own doc) — one solid
+     * RigidBody PER `this.ownMeshes` entry whose own map-drawn `solid` fraction is > 0, sized
+     * to THAT piece's own drawn width/depth (not the shared trigger `halfExtents`/
+     * `centerOffset` the default single-collider branch in awake() uses) and positioned at its
+     * own local offset from this zone's transform — same X/Z-relative-to-transform.position
+     * math resolveOwnMeshFallbacks() uses to place each piece's own visual. Height (Y) reuses
+     * HALF_EXTENTS.y, same fixed "roughly building-sized" guess every other collider here
+     * falls back to — a Tiled rect has no vertical dimension to derive a real one from. A
+     * building with no own-mesh pieces at all (or none with a positive `solid`) simply gets no
+     * collider — nothing here to source per-piece solidity from. Called from createBuildingMesh()
+     * — right alongside the visual pieces it's colliding for, so a piece never has a collider
+     * without also having a visible mesh (see that method's own doc) — NOT from awake()
+     * unconditionally; every RigidBody built here is tracked in `this.solidColliders` so
+     * disposeBuildingMesh() can tear them down in lockstep with the mesh they belong to.
+     */
+    private addSolidAreasFromMap(): void {
+        for (const entry of this.ownMeshes) {
+            if (entry.solid <= 0) {
+                continue;
+            }
+
+            const pieceHalfExtents = new THREE.Vector3(entry.width / 2, HALF_EXTENTS.y, entry.depth / 2);
+            const pieceCenterOffset = new THREE.Vector3(
+                entry.x - this.transform.position.x,
+                pieceHalfExtents.y,
+                entry.z - this.transform.position.z,
+            );
+
+            const solidArea = buildSolidArea(pieceHalfExtents, pieceCenterOffset, entry.solid);
+            if (solidArea) {
+                this.solidColliders.push(this.addComponent(solidArea));
+            }
+        }
+    }
+
     public override destroy(): void {
         BuildingStorage.onProgressChanged.remove(this.handleProgressChanged);
         BuildingStorage.onLevelUp.remove(this.handleLevelUp);
@@ -364,21 +446,42 @@ export default class BuildingZone extends Entity {
      * real glb — see BuildingLevelConfig.view's own doc) when one resolves to an actual model;
      * falls back to the level's own box placeholder (`mesh`) otherwise, unchanged from before
      * `view` existed.
+     *
+     * A `targetFraction` of 0 or below (see getFillFractionForLevel()'s own doc on a negative
+     * `baseFillFraction`) builds NOTHING at all — leaves buildingMesh/buildingVisuals empty
+     * rather than a mesh sitting there with its reveal sweep parked at the very bottom (which
+     * would still show a thin sliver at the base, not truly nothing). replaceBuildingMesh()'s
+     * own `sameView` check already treats "nothing currently built" the same as a genuine view
+     * change — the next level-up that actually reaches a positive fraction disposes (a no-op,
+     * since there's nothing to dispose) and calls back in here with `dropIn: true`, sweeping the
+     * mesh in from scratch exactly like a fresh view swap would. BuildingConfig.solidFromMap's
+     * own per-piece colliders (see addSolidAreasFromMap()) are built right here too, for the
+     * exact same reason — a piece with a positive `targetFraction` gets both its visual AND its
+     * collider together; a piece that isn't visible yet gets neither.
      */
     private createBuildingMesh(level: number, dropIn: boolean): void {
         const viewId = getViewIdForLevel(this.buildingId, level);
         this.currentViewId = viewId;
         const targetFraction = getFillFractionForLevel(this.buildingId, level);
-
-        const entityView = resolveEntityView(viewId);
-        if (entityView) {
-            this.createBuildingView(entityView, dropIn, targetFraction, false);
+        if (targetFraction <= 0) {
             return;
         }
 
-        const ownMeshView = this.resolveOwnMeshFallback();
-        if (ownMeshView) {
-            this.createBuildingView(ownMeshView, dropIn, targetFraction, true);
+        if (BUILDING_CONFIG[this.buildingId].solidFromMap) {
+            this.addSolidAreasFromMap();
+        }
+
+        const entityView = resolveEntityView(viewId);
+        if (entityView) {
+            this.createBuildingView(entityView, dropIn, targetFraction);
+            return;
+        }
+
+        const ownMeshViews = this.resolveOwnMeshFallbacks();
+        if (ownMeshViews.length > 0) {
+            for (const { resolved, footprint, rotationY } of ownMeshViews) {
+                this.createBuildingView(resolved, dropIn, targetFraction, footprint, rotationY);
+            }
             return;
         }
 
@@ -386,36 +489,53 @@ export default class BuildingZone extends Entity {
     }
 
     /**
-     * Falls back to `this.ownMesh` — this building's own mapSettings object's decoded
-     * "useOwnMesh" model (see WorldObjectRegistry.getOwnMesh()'s own doc), passed in through
-     * the constructor — for a building with no `view`/`baseView` configured in BuildingTypes.ts
-     * at all. Only ever consulted when resolveEntityView() already came back empty (see
-     * createBuildingMesh()), so a building WITH a real configured view never touches this.
-     * `rotationDeg` is deliberately 0 here (unlike a normal EntityViewRegistry view) — the real
-     * rotation is applied manually AFTER createBuildingView()'s fit-to-footprint scaling
-     * measures the model's UNROTATED native bounding box (see that method's own doc for why
-     * measuring pre-rotation matters); `scale` is likewise a placeholder 1 (fit-to-footprint
-     * computes and applies the real per-axis scale itself once the model's actually loaded).
-     * Undefined if this building's "useOwnMesh" checkbox was never set (or was set but nothing
-     * usable decoded from it) — createBuildingMesh() falls through to the plain box placeholder
-     * in that case.
+     * Falls back to `this.ownMeshes` — every one of this building's own mapSettings objects'
+     * decoded "useOwnMesh" models (see WorldObjectRegistry.getOwnMeshes()'s own doc), passed in
+     * through the constructor — for a building with no `view`/`baseView` configured in
+     * BuildingTypes.ts at all. Only ever consulted when resolveEntityView() already came back
+     * empty (see createBuildingMesh()), so a building WITH a real configured view never touches
+     * this. Each entry's own `x`/`z` is converted here to a LOCAL offset relative to this
+     * zone's own transform.position — the zone sits at whichever ONE placement PizzaScene
+     * resolved as this building's canonical position (see setupBuildingZone()), but each
+     * own-mesh object can be drawn anywhere on the map, so this is what lets several of them
+     * (sharing one id) each render at their OWN drawn spot instead of collapsing onto that one
+     * shared position. `rotationDeg` is deliberately 0 here (unlike a normal EntityViewRegistry
+     * view) — the real rotation is applied manually AFTER createBuildingView()'s fit-to-footprint
+     * scaling measures the model's UNROTATED native bounding box (see that method's own doc for
+     * why measuring pre-rotation matters); `scale` is likewise a placeholder 1 (fit-to-footprint
+     * computes and applies the real per-axis scale itself once the model's actually loaded). An
+     * entry whose modelRef no longer resolves to a real model (e.g. renamed/removed) is silently
+     * skipped rather than aborting the whole building — the rest still show. Empty array if this
+     * building's "useOwnMesh" checkbox was never set on any matching object (or none of them
+     * decoded to a usable model) — createBuildingMesh() falls through to the plain box
+     * placeholder in that case.
      */
-    private resolveOwnMeshFallback(): ReturnType<typeof resolveEntityView> {
-        if (!this.ownMesh) {
-            return undefined;
+    private resolveOwnMeshFallbacks(): { resolved: NonNullable<ReturnType<typeof resolveEntityView>>; footprint: { width: number; depth: number }; rotationY: number }[] {
+        const results: { resolved: NonNullable<ReturnType<typeof resolveEntityView>>; footprint: { width: number; depth: number }; rotationY: number }[] = [];
+
+        for (const entry of this.ownMeshes) {
+            const model = ModelSnapshotTool.resolveModelDef(entry.modelRef);
+            if (!model) {
+                continue;
+            }
+
+            results.push({
+                resolved: {
+                    model,
+                    scale: 1,
+                    rotationDeg: 0,
+                    offset: [
+                        entry.x - this.transform.position.x + entry.offsetX,
+                        entry.offsetY,
+                        entry.z - this.transform.position.z + entry.offsetZ,
+                    ],
+                },
+                footprint: { width: entry.width, depth: entry.depth },
+                rotationY: entry.rotationY,
+            });
         }
 
-        const model = ModelSnapshotTool.resolveModelDef(this.ownMesh.modelRef);
-        if (!model) {
-            return undefined;
-        }
-
-        return {
-            model,
-            scale: 1,
-            rotationDeg: 0,
-            offset: [this.ownMesh.offsetX, this.ownMesh.offsetY, this.ownMesh.offsetZ],
-        };
+        return results;
     }
 
     private createBuildingBox(config: ReturnType<typeof getMeshConfigForLevel>, dropIn: boolean, targetFraction: number): void {
@@ -434,20 +554,30 @@ export default class BuildingZone extends Entity {
     }
 
     /**
-     * `fitToFootprint` (true only for resolveOwnMeshFallback()'s result) rescales the loaded
-     * model, per-axis, to match this building's OWN mapSettings placement rect (`this.footprint`
-     * — the same width/depth a Tiled level designer resizes right there, same as any other
-     * building) instead of trusting `resolved.scale` (which resolveOwnMeshFallback() always
-     * sets to a placeholder 1) — same "the drawn rect's CURRENT size has to reach the real
-     * model too" reasoning as PizzaScene.setupMeshLayer()'s own identical fit, just against
-     * this building's footprint instead of a meshes-layer placement's worldWidth/worldDepth.
-     * Measures the model's bounding box BEFORE applying `resolved.rotationDeg` (always 0 for
-     * that caller) so size.x/size.z read the model's own un-rotated width/depth on the same
-     * axes the footprint's width/depth are drawn in, then applies the real rotation manually
+     * `fitFootprint` (only ever given for a resolveOwnMeshFallbacks() result — see that
+     * method's own doc) rescales the loaded model, per-axis, to match that ONE own-mesh
+     * object's own drawn width/depth — same "the drawn rect's CURRENT size has to reach the
+     * real model too" reasoning as PizzaScene.setupMeshLayer()'s own identical fit, just
+     * against this one object's own footprint instead of a meshes-layer placement's
+     * worldWidth/worldDepth (and, since createBuildingMesh() can call this once per own-mesh
+     * entry, each gets fit to ITS OWN footprint rather than one shared size) — instead of
+     * trusting `resolved.scale` (which resolveOwnMeshFallbacks() always sets to a placeholder
+     * 1). Measures the model's bounding box BEFORE applying `resolved.rotationDeg` (always 0
+     * for that caller) so size.x/size.z read the model's own un-rotated width/depth on the same
+     * axes the footprint's width/depth are drawn in, then applies `rotationY` manually
      * afterward — measuring AFTER rotation would give a skewed footprint for anything not
-     * rotated by a multiple of 90°, same pitfall that method's own doc calls out.
+     * rotated by a multiple of 90°, same pitfall that method's own doc calls out. Undefined
+     * `fitFootprint` (the EntityViewRegistry `view`/`baseView` path) skips all of this and
+     * just trusts `resolved.scale`/`resolved.rotationDeg` as-is, unchanged from before this
+     * fallback path existed.
      */
-    private createBuildingView(resolved: NonNullable<ReturnType<typeof resolveEntityView>>, dropIn: boolean, targetFraction: number, fitToFootprint: boolean): void {
+    private createBuildingView(
+        resolved: NonNullable<ReturnType<typeof resolveEntityView>>,
+        dropIn: boolean,
+        targetFraction: number,
+        fitFootprint?: { width: number; depth: number },
+        rotationY?: number,
+    ): void {
         const [offsetX, offsetY, offsetZ] = resolved.offset;
 
         const visual = new GlbVisualComponent(
@@ -458,21 +588,21 @@ export default class BuildingZone extends Entity {
             // The glb loads asynchronously — the reveal sweep needs the finished mesh's
             // world bounds, so it's set up here rather than right after construction.
             () => {
-                if (fitToFootprint && this.footprint) {
+                if (fitFootprint) {
                     const mesh = visual.mesh;
                     const nativeSize = new THREE.Box3().setFromObject(mesh).getSize(new THREE.Vector3());
-                    const scaleX = nativeSize.x > 1e-4 ? this.footprint.width / nativeSize.x : 1;
-                    const scaleZ = nativeSize.z > 1e-4 ? this.footprint.depth / nativeSize.z : 1;
+                    const scaleX = nativeSize.x > 1e-4 ? fitFootprint.width / nativeSize.x : 1;
+                    const scaleZ = nativeSize.z > 1e-4 ? fitFootprint.depth / nativeSize.z : 1;
                     // No vertical-scale signal from a top-down footprint rect — splitting the
                     // difference between the two horizontal axes is the least-arbitrary
                     // stand-in, same as setupMeshLayer()'s own identical averaging.
                     mesh.scale.set(scaleX, (scaleX + scaleZ) / 2, scaleZ);
-                    mesh.rotation.y = this.ownMesh ? this.ownMesh.rotationY : 0;
+                    mesh.rotation.y = rotationY ?? 0;
                 }
                 this.playRevealEffect(visual.mesh, dropIn, targetFraction);
             },
         );
-        this.buildingVisual = this.addComponent(visual);
+        this.buildingVisuals.push(this.addComponent(visual));
     }
 
     /** Shared by every material a reveal sweep is applied to (see playRevealEffect()) — kept as an instance field so disposeBuildingMesh() can kill an in-flight sweep, and so replaceBuildingMesh()'s same-view branch can grow an ALREADY-applied sweep further without re-touching any material. */
@@ -535,10 +665,15 @@ export default class BuildingZone extends Entity {
             this.buildingMesh = undefined;
         }
 
-        if (this.buildingVisual) {
-            this.buildingVisual.destroy();
-            this.buildingVisual = undefined;
+        for (const visual of this.buildingVisuals) {
+            visual.destroy();
         }
+        this.buildingVisuals = [];
+
+        for (const collider of this.solidColliders) {
+            collider.destroy();
+        }
+        this.solidColliders = [];
     }
 
     /**
@@ -557,7 +692,7 @@ export default class BuildingZone extends Entity {
      */
     private replaceBuildingMesh(level: number): void {
         const viewId = getViewIdForLevel(this.buildingId, level);
-        const sameView = viewId === this.currentViewId && (this.buildingMesh || this.buildingVisual);
+        const sameView = viewId === this.currentViewId && (this.buildingMesh || this.buildingVisuals.length > 0);
         if (sameView) {
             const targetFraction = getFillFractionForLevel(this.buildingId, level);
             gsap.to(this.revealProgress, { value: targetFraction, duration: MESH_DROP_DURATION_SEC, ease: 'power2.out' });
@@ -732,7 +867,7 @@ export default class BuildingZone extends Entity {
         // destroyParticleEffectId (see Gate.collapseMesh()'s own doc).
         const config = BUILDING_CONFIG[this.buildingId];
         if (config.updateParticleEffectId) {
-            const burstOrigin = this.transform.position.clone().add(CAMERA_FOCUS_HEIGHT_OFFSET);
+            const burstOrigin = this.getFxAnchorPosition().add(CAMERA_FOCUS_HEIGHT_OFFSET);
             ParticleSystem.burst(config.updateParticleEffectId, burstOrigin, config.updateParticleCount ?? DEFAULT_UPDATE_PARTICLE_COUNT);
         }
 
@@ -757,7 +892,7 @@ export default class BuildingZone extends Entity {
         const text = new PIXI.Text(`Level Up! Lv.${level}`, TextStyleRegistry.Notification);
         text.anchor.set(0.5, 1);
 
-        const basePosition = this.transform.position.clone().add(POPUP_HEIGHT_OFFSET);
+        const basePosition = this.getFxAnchorPosition().add(POPUP_HEIGHT_OFFSET);
         const progress = { t: 0 };
         const risenPosition = new THREE.Vector3();
 

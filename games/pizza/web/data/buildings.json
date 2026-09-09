@@ -83,5 +83,23 @@
         "popupMode": "simple",
         "updateParticleEffectId": "gateMyst",
         "baseFillFraction": 0.1
+    },
+    "floor1": {
+        "levels": [
+            {
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                "level": 1
+            }
+        ],
+        "name": "Tower2 Copy",
+        "icon": "animal-hide",
+        "popupMode": "simple",
+        "updateParticleEffectId": "gateMyst",
+        "baseFillFraction": -1,
+        "anchorAtDropper": true,
+        "solidFromMap": true
     }
 }

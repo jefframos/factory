@@ -811,6 +811,14 @@ const CharactersFallingIdle = {
   nodes: {}
 } as const;
 
+const CharactersHappyIdle = {
+  id: 'HappyIdle',
+  path: 'characters/default/HappyIdle',
+  fullPath: 'pizza/models/characters/default/HappyIdle.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
 const CharactersIdle = {
   id: 'idle',
   path: 'characters/default/idle',
@@ -891,18 +899,10 @@ const CharactersRunning = {
   nodes: {}
 } as const;
 
-const CharactersStandToRoll = {
-  id: 'Stand To Roll',
-  path: 'characters/default/Stand To Roll',
-  fullPath: 'pizza/models/characters/default/Stand To Roll.fbx',
-  format: 'fbx',
-  nodes: {}
-} as const;
-
 const CharactersStandingMeleeAttackDownwardCHOP = {
-  id: 'StandingMeleeAttack DownwardCHOP',
-  path: 'characters/default/StandingMeleeAttack DownwardCHOP',
-  fullPath: 'pizza/models/characters/default/StandingMeleeAttack DownwardCHOP.fbx',
+  id: 'StandingMeleeAttackDownwardCHOP',
+  path: 'characters/default/StandingMeleeAttackDownwardCHOP',
+  fullPath: 'pizza/models/characters/default/StandingMeleeAttackDownwardCHOP.fbx',
   format: 'fbx',
   nodes: {}
 } as const;
@@ -911,6 +911,14 @@ const CharactersStandingPICKAXE = {
   id: 'StandingPICKAXE',
   path: 'characters/default/StandingPICKAXE',
   fullPath: 'pizza/models/characters/default/StandingPICKAXE.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
+const CharactersStandToRoll = {
+  id: 'StandToRoll',
+  path: 'characters/default/StandToRoll',
+  fullPath: 'pizza/models/characters/default/StandToRoll.fbx',
   format: 'fbx',
   nodes: {}
 } as const;
@@ -5933,6 +5941,7 @@ export const MODELS = {
     Digging: CharactersDigging,
     Excited: CharactersExcited,
     FallingIdle: CharactersFallingIdle,
+    HappyIdle: CharactersHappyIdle,
     Idle: CharactersIdle,
     Idle2: CharactersIdle2,
     Jump: CharactersJump,
@@ -5943,9 +5952,9 @@ export const MODELS = {
     Roll: CharactersRoll,
     Run: CharactersRun,
     Running: CharactersRunning,
-    StandToRoll: CharactersStandToRoll,
     StandingMeleeAttackDownwardCHOP: CharactersStandingMeleeAttackDownwardCHOP,
     StandingPICKAXE: CharactersStandingPICKAXE,
+    StandToRoll: CharactersStandToRoll,
     Talking: CharactersTalking,
     TestIdle: CharactersTestIdle,
     Walking: CharactersWalking,

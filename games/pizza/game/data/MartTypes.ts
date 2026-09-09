@@ -85,7 +85,7 @@ export const MART_CONFIG_BY_ID: Partial<Record<string, MartConfig>> = {
         ],
         "solid": 0.5,
         "view": "tent",
-        "npcId": "shopper1",
+        "npcId": "shopper2",
         "npcOffset": [
             0,
             0,

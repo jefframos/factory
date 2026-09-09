@@ -57,6 +57,7 @@
 import {
     DEFAULT_TILE_MAP_ALIASES,
     getObjectBooleanProperty,
+    getObjectNumberProperty,
     getObjectProperty,
     loadTiledMap,
     loadTileDefs,
@@ -77,12 +78,31 @@ export const OBJECTS_LAYER_NAME = 'mapSettings';
  * for a building with no `view`/`baseView` configured in BuildingTypes.ts at all. Deliberately
  * everything-in-one-place: a level designer configures a building's mesh sourcing right where
  * its position/footprint/dropper already live, rather than needing a SEPARATE object on a
- * different layer cross-referenced by id. See BuildingZone.resolveOwnMeshFallback(), the one
- * consumer — unset (the default), or set but the object has no image of its own dragged onto
- * it (no `gid`) or that image doesn't decode to a known model, all mean "no fallback available
- * here," same as before this property existed.
+ * different layer cross-referenced by id. Multiple objects can share the same "id" (e.g. two
+ * pieces that together make up one composite building) — see ownMeshesByKey's own doc for why
+ * every one of them is kept instead of the last one winning. See
+ * BuildingZone.resolveOwnMeshFallbacks(), the one consumer — unset (the default), or set but
+ * the object has no image of its own dragged onto it (no `gid`) or that image doesn't decode to
+ * a known model, all mean "no fallback available from THIS object," same as before this
+ * property existed.
  */
 const USE_OWN_MESH_PROPERTY = 'useOwnMesh';
+
+/**
+ * Custom NUMBER property (Tiled's "Custom Properties" panel, type "float"/"int"), set on a
+ * "building" object right here on mapSettings — this ONE piece's own solid fraction, same 0-1
+ * semantics as SolidArea.ts's own doc (0/undefined = walk-through, 1 = a collider matching this
+ * piece's own full drawn bounds, 0.5 = the same box at half that size). Only meaningful for a
+ * building that also has USE_OWN_MESH_PROPERTY checked (see that constant's own doc) AND whose
+ * own BuildingConfig.solidFromMap opts into per-piece colliders (see that field's own doc and
+ * BuildingZone.addSolidAreasFromMap(), the one consumer) — lets a level designer draw a
+ * composite building out of several pieces sharing one id (e.g. separate wall and floor
+ * pieces) and mark only SOME of them solid (the walls, not the floor), instead of the single
+ * BuildingConfig.solid fraction applying uniformly to the whole building's trigger footprint.
+ * Missing/0 on a piece (the default, same as before this property existed) means that ONE
+ * piece stays walk-through — it doesn't affect any other piece sharing the same id.
+ */
+const OWN_MESH_SOLID_PROPERTY = 'solid';
 
 /** The "type" custom property value marking a dropper rect — see this file's own doc. */
 const DROPPER_TYPE = 'dropper';
@@ -109,6 +129,23 @@ export interface WorldObjectPlacement {
     width: number;
     depth: number;
     rotationDeg: number;
+}
+
+/**
+ * One "useOwnMesh"-checked object's own decoded model PLUS its own world placement — see
+ * USE_OWN_MESH_PROPERTY's own doc. `x`/`z`/`width`/`depth` are THIS object's own drawn
+ * position/footprint (same shape as WorldObjectPlacement, minus `rotationDeg` — `rotationY`
+ * from DecodedObjectModel already carries the converted THREE-space rotation), so a caller
+ * combining several of these sharing one id (see ownMeshesByKey's own doc) can place each mesh
+ * at its own spot instead of collapsing them all onto one shared position. `solid` is THIS
+ * piece's own OWN_MESH_SOLID_PROPERTY value (0 if unset) — see that constant's own doc.
+ */
+export interface OwnMeshPlacement extends DecodedObjectModel {
+    x: number;
+    z: number;
+    width: number;
+    depth: number;
+    solid: number;
 }
 
 /**
@@ -266,8 +303,18 @@ export default class WorldObjectRegistry {
     private readonly shapesById = new Map<string, SpawnerShape[]>();
     /** The map's single "playerStart" point, if drawn — see this file's own doc and getPlayerStart(). */
     private playerStartPlacement?: WorldObjectPlacement;
-    /** `"${type}:${id}"` -> its own decoded model, for every object whose USE_OWN_MESH_PROPERTY was checked AND whose own dragged-on image actually decoded to a real model — see that constant's own doc and getOwnMesh(), the one reader. Keyed by (type, id) together, not id alone, since an id is only guaranteed unique WITHIN one type's own bucket (see byType's own doc). */
-    private readonly ownMeshByKey = new Map<string, DecodedObjectModel>();
+    /**
+     * `"${type}:${id}"` -> EVERY object sharing that (type, id) whose USE_OWN_MESH_PROPERTY was
+     * checked AND whose own dragged-on image actually decoded to a real model — see that
+     * constant's own doc and getOwnMeshes(), the one reader. Plural (not one-per-key), same
+     * "collect every instance, don't let the last one silently win" reasoning as shapesById —
+     * a level designer can draw several mesh pieces sharing one id (e.g. two floor pieces that
+     * together make up "floor1") and have every one of them show up, each at its own drawn
+     * position, instead of only the last one surviving. Keyed by (type, id) together, not id
+     * alone, since an id is only guaranteed unique WITHIN one type's own bucket (see byType's
+     * own doc).
+     */
+    private readonly ownMeshesByKey = new Map<string, OwnMeshPlacement[]>();
 
     public constructor(
         mapAlias: string = DEFAULT_TILE_MAP_ALIASES.map,
@@ -331,9 +378,22 @@ export default class WorldObjectRegistry {
             if (getObjectBooleanProperty(obj, USE_OWN_MESH_PROPERTY)) {
                 const decoded = decodeObjectModel(obj, map);
                 if (decoded) {
-                    this.ownMeshByKey.set(`${type}:${id}`, decoded);
+                    const key = `${type}:${id}`;
+                    let entries = this.ownMeshesByKey.get(key);
+                    if (!entries) {
+                        entries = [];
+                        this.ownMeshesByKey.set(key, entries);
+                    }
+                    entries.push({
+                        ...decoded,
+                        x: placement.x,
+                        z: placement.z,
+                        width: placement.width,
+                        depth: placement.depth,
+                        solid: getObjectNumberProperty(obj, OWN_MESH_SOLID_PROPERTY) ?? 0,
+                    });
                 } else {
-                    console.warn(`[WorldObjectRegistry] "${id}" (type "${type}") has "${USE_OWN_MESH_PROPERTY}" checked but no image of its own dragged onto it (or it doesn't decode to a known model) — no mesh fallback available`);
+                    console.warn(`[WorldObjectRegistry] "${id}" (type "${type}") has "${USE_OWN_MESH_PROPERTY}" checked but no image of its own dragged onto it (or it doesn't decode to a known model) — no mesh fallback available from this object`);
                 }
             }
 
@@ -433,9 +493,9 @@ export default class WorldObjectRegistry {
         waypoints.push({ order, x, z });
     }
 
-    /** `(type, id)`'s own decoded model (see USE_OWN_MESH_PROPERTY's own doc) — undefined unless that object had the checkbox checked AND its own dragged-on image actually decoded to a real model. */
-    public getOwnMesh(type: string, id: string): DecodedObjectModel | undefined {
-        return this.ownMeshByKey.get(`${type}:${id}`);
+    /** Every "useOwnMesh" object sharing (type, id) — see ownMeshesByKey's own doc. Empty array (not undefined) if none were drawn/checked at all, same "no existence check needed" convention as getShapes()/getWaypoints(). */
+    public getOwnMeshes(type: string, id: string): readonly OwnMeshPlacement[] {
+        return this.ownMeshesByKey.get(`${type}:${id}`) ?? [];
     }
 
     /** The placement for `id` within `type`'s bucket, or undefined if no such object exists on the map — callers decide what "not found" means (fall back to a hardcoded position, skip spawning, ...); this never warns on its own, see require() for the warn-and-fall-back convenience below. */

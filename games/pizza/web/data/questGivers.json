@@ -8,5 +8,23 @@
             }
         ],
         "moveSpeed": 4
+    },
+    "queue2": {
+        "variants": [
+            {
+                "weight": 0.5,
+                "lootTable": "queue1BaseLoot",
+                "npc": "shopper1"
+            },
+            {
+                "npc": "shopper2",
+                "weight": 0.5,
+                "lootTable": "queue1BaseLoot"
+            }
+        ],
+        "moveSpeed": 4,
+        "maxEntities": 3,
+        "queueSpacing": 2,
+        "spawnIntervalSec": 5
     }
 }

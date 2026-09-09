@@ -31,8 +31,8 @@ import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import BoxVisualComponent from '../components/BoxVisualComponent';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
-import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
-import { TextStyleRegistry } from '../ui/TextStyleRegistry';
+import BaseButton from 'core/ui/BaseButton';
+import { createLibraryButton } from '../ui/ButtonLibrary';
 import { CraftingTableConfig } from '../data/CraftingTableTypes';
 import { resolveEntityView } from '../world/EntityViewRegistry';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
@@ -45,10 +45,9 @@ const PLACEHOLDER_HEIGHT = 1.5;
 const PLACEHOLDER_COLOR = 0x7a5a3a;
 /** Same value/reasoning as MartZone.BUTTON_HEIGHT_OFFSET's own doc. */
 const BUTTON_HEIGHT_OFFSET = new THREE.Vector3(0, 2.6, 0);
-/** Same value/reasoning as MartZone.BUTTON_FRAME_PADDING's own doc. */
-const BUTTON_FRAME_PADDING = uniformFitPadding(20);
 const BUTTON_WIDTH = 160;
 const BUTTON_HEIGHT = 52;
+const BUTTON_ICON_SIZE = 40;
 
 /** A separate deposit-trigger rect, in WORLD space — from a Tiled "dropper" object targeting this table (see this file's own top doc). Same shape as MartZone's own MartTriggerArea. */
 export interface CraftingTableTriggerArea {
@@ -66,7 +65,7 @@ export default class CraftingTableZone extends Entity {
     private readonly unfreezePlayerMovement: () => void;
 
     private isPlayerInside = false;
-    private buttonContent!: AutoFitFrame;
+    private buttonContent!: BaseButton;
 
     public constructor(
         position: THREE.Vector3,
@@ -150,20 +149,15 @@ export default class CraftingTableZone extends Entity {
     }
 
     private buildOpenButton(): void {
-        const spacer = new PIXI.Graphics();
-        spacer.beginFill(0x000000, 0).drawRect(0, 0, BUTTON_WIDTH, BUTTON_HEIGHT).endFill();
-
-        const label = new PIXI.Text('Craft', TextStyleRegistry.Inventory);
-        label.anchor.set(0.5, 0.5);
-        label.position.set(BUTTON_WIDTH / 2, BUTTON_HEIGHT / 2);
-
-        const row = new PIXI.Container();
-        row.addChild(spacer, label);
-        row.eventMode = 'static';
-        row.cursor = 'pointer';
-        row.on('pointertap', () => this.openTable());
-
-        this.buttonContent = new AutoFitFrame(BUTTON_FRAME_PADDING, 'FarmFrame', row);
+        this.buttonContent = createLibraryButton({
+            color: 'blue',
+            width: BUTTON_WIDTH, height: BUTTON_HEIGHT,
+            label: 'Craft',
+            iconTexture: PIXI.Texture.from('craftingIcon'),
+            iconSize: { width: BUTTON_ICON_SIZE, height: BUTTON_ICON_SIZE },
+            iconAlign: 'left',
+            onClick: () => this.openTable(),
+        });
 
         const triggerPosition = this.triggerArea?.position ?? this.transform.position;
         const anchorPosition = new THREE.Vector3();
@@ -171,7 +165,10 @@ export default class CraftingTableZone extends Entity {
             this.screenHost,
             this.buttonContent,
             () => anchorPosition.copy(triggerPosition).add(BUTTON_HEIGHT_OFFSET),
-            { avoidViewer: true, anchor: { x: 0.5, y: 1 } },
+            // See MartZone's identical ScreenAnchorComponent call for why: a plain BaseButton has
+            // no thick decorative border for the avoidViewer pointer's default negative padding
+            // to hide inside, so it needs a positive override to sit outside the button's edge.
+            { avoidViewer: true, anchor: { x: 0.5, y: 1 }, pointerEdgePadding: 8 },
         ));
     }
 

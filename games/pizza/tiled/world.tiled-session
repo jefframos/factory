@@ -37,7 +37,7 @@
         "testMap1.tmx"
     ],
     "project": "world.tiled-project",
-    "property.type": "bool",
+    "property.type": "float",
     "recentFiles": [
         "testMap1.tmx"
     ],

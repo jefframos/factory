@@ -16,10 +16,20 @@
 // rather than a second config layer embedded inline. rollQuestGiverVariant()
 // below is the one place that picks which variant shows up for a given
 // cycle.
+//
+// A variant's LOOK is either a static `view` (an EntityViewRegistry glb —
+// the original, still-default shape: a boat, a cart, ...) OR an `npc` (an
+// NpcTypes.ts id — an animated CharacterBody rig instead, walking the exact
+// same waypoint path via idle/walk animation states rather than sitting in
+// one fixed pose the whole way — see QuestGiverEntity.spawnNpcVisual()).
+// Exactly one of the two should be set per variant; `npc` wins if a variant
+// somehow sets both (see QuestGiverEntity.spawnVisual()).
 
 export interface QuestGiverVariant {
-    /** EntityViewRegistry id — this variant's look, set from the pizza web editor's Entity Views tab (see EntityViewRegistry.ts's own doc). */
-    view: string;
+    /** EntityViewRegistry id — this variant's look, set from the pizza web editor's Entity Views tab (see EntityViewRegistry.ts's own doc). Mutually exclusive with `npc` — see this file's own top doc. */
+    view?: string;
+    /** NpcTypes.ts id — walks this variant as an animated CharacterBody NPC instead of a static glb (see QuestGiverEntity.spawnNpcVisual()). Mutually exclusive with `view` — see this file's own top doc. */
+    npc?: string;
     /** Relative weight for how often this variant is picked — see rollQuestGiverVariant(). Lower = rarer, higher = more common; weights are relative, not required to sum to 100, same convention as ProviderConfig.drops' own weight. */
     weight: number;
     /** LootTableRegistry id — rolled when THIS variant's giver arrives at the queue (see QuestGiverEntity.onArrivedGoingIn()/LootTableTypes.getLootTable()), so whichever variant showed up this cycle determines the task pool. */
@@ -31,6 +41,19 @@ export interface QuestGiverConfig {
     variants: QuestGiverVariant[];
     /** World units per second the giver walks its waypoint path at — shared across every variant for this queue (the PATH's own pace, not tied to which variant happens to be walking it this cycle). See QuestGiverEntity.ts's own doc on why leg durations are DERIVED from this and each leg's real distance, not hand-tuned per queue. */
     moveSpeed: number;
+    /**
+     * Max concurrent givers walking this queue's path at once — see QuestGiverGroup.ts's own
+     * doc. Undefined (or <= 1) is EXACTLY today's single-giver behavior: only ever one giver,
+     * unconstrained, identical to before this field existed. A value > 1 lines that many up
+     * single-file instead, `queueSpacing` world units apart — only the FRONT one (closest to
+     * the queue) ever actually arrives/starts the task/waits for delivery; every other one just
+     * holds its spot in line until the one ahead of it moves on.
+     */
+    maxEntities?: number;
+    /** World units of following distance a queued (non-front) giver keeps behind whichever OTHER giver is currently closer to the queue — only meaningful when `maxEntities` > 1. Undefined falls back to QuestGiverGroup.ts's own default. */
+    queueSpacing?: number;
+    /** Seconds between spawning each ADDITIONAL giver beyond the first, once `maxEntities` > 1 (the first always spawns immediately, same as today). Undefined falls back to QuestGiverGroup.ts's own default. Ignored entirely when `maxEntities` <= 1. */
+    spawnIntervalSec?: number;
 }
 
 /** Per-queue-id quest giver, keyed by the same string id the Tiled "queue" object uses (see WorldObjectRegistry.getAllOfType()/PizzaScene.setupQueues()). Empty/missing entry means that queue has no giver at all. */
@@ -45,6 +68,24 @@ export const QUEST_GIVER_CONFIG_BY_ID: Partial<Record<string, QuestGiverConfig>>
         ],
         moveSpeed: 4,
     },
+    "queue2": {
+        "variants": [
+            {
+                "weight": 0.5,
+                "lootTable": "queue1BaseLoot",
+                "npc": "shopper1"
+            },
+            {
+                "npc": "shopper2",
+                "weight": 0.5,
+                "lootTable": "queue1BaseLoot"
+            }
+        ],
+        "moveSpeed": 4,
+        "maxEntities": 3,
+        "queueSpacing": 2,
+        "spawnIntervalSec": 5
+    }
 };
 
 /** The config for `id`'s quest giver, or undefined if it has none — see this file's own doc. */

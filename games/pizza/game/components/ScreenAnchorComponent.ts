@@ -81,7 +81,7 @@ const ALPHA_FADE_IN_SPEED = 10;
 
 /** Same exponential-decay easing as POSITION_SMOOTHING_SPEED, applied to how much `avoidViewer` currently pushes content aside — without its own easing this would snap sideways the instant the viewer crosses into `radius` (and snap back the instant they leave), which reads as a jump-cut; smoothing it makes the dodge itself feel like a deliberate little slide. */
 const AVOID_SMOOTHING_SPEED = 8;
-/** Content-local units the pointer's root is nudged away from content's own center, along the same direction as its clamped boundary point — 0 sits it exactly ON the boundary (the previous behavior), positive pushes it OUTSIDE the popup (floating just past the edge), negative pulls it INSIDE (overlapping the frame's own border). Tune this to taste once real pointer art exists — a triangle/arrow asset will usually want a small negative value so its tip visually meets the frame instead of hovering just past it. */
+/** Content-local units the pointer's root is nudged away from content's own center, along the same direction as its clamped boundary point — 0 sits it exactly ON the boundary (the previous behavior), positive pushes it OUTSIDE the popup (floating just past the edge), negative pulls it INSIDE (overlapping the frame's own border). This default assumes content wrapped in a thick-bordered AutoFitFrame ('FarmFrame''s ~30px nine-slice border) — pulling the pointer inward lands it in that empty border, clear of any real content. Content with little/no border of its own (e.g. a plain BaseButton, whose label sits right up against its edges) should override via ScreenAnchorOptions.pointerEdgePadding instead of relying on this shared default, or the pointer ends up overlapping the label. */
 const POINTER_EDGE_PADDING = -20;
 /** How far (content-local units) the TRUE target must sit outside content's own rect before the pointer is considered "meaningfully displaced" and fades toward visible — below this it fades toward invisible instead. Deliberately measured from the target-vs-rect geometry itself (see distOutside in update()), not avoidViewer's own push magnitude — those two ease on different schedules and drifting out of sync was exactly what caused the pointer to visibly slide toward content's center right before vanishing (see smoothedPointerAlpha's own doc). */
 const POINTER_SHOW_THRESHOLD = 0;
@@ -134,6 +134,8 @@ export interface ScreenAnchorOptions {
      * the pointer for a couple frames on its way to settling back to nothing.
      */
     pointerAlwaysVisible?: boolean;
+    /** Overrides POINTER_EDGE_PADDING for this instance — see that constant's own doc. Set this on content with little/no decorative border of its own (e.g. a plain BaseButton) so the pointer doesn't land on top of the label. */
+    pointerEdgePadding?: number;
 }
 
 export default class ScreenAnchorComponent extends Component {
@@ -488,8 +490,9 @@ export default class ScreenAnchorComponent extends Component {
                 const centerX = bounds.x + bounds.width / 2;
                 const centerY = bounds.y + bounds.height / 2;
                 const outLen = Math.hypot(boundaryX - centerX, boundaryY - centerY) || 1;
-                const pointerX = boundaryX + ((boundaryX - centerX) / outLen) * POINTER_EDGE_PADDING;
-                const pointerY = boundaryY + ((boundaryY - centerY) / outLen) * POINTER_EDGE_PADDING;
+                const edgePadding = this.options.pointerEdgePadding ?? POINTER_EDGE_PADDING;
+                const pointerX = boundaryX + ((boundaryX - centerX) / outLen) * edgePadding;
+                const pointerY = boundaryY + ((boundaryY - centerY) / outLen) * edgePadding;
 
                 this.pointer.position.set(pointerX, pointerY);
                 // Points AT the true target (in the same content-local space) — the entity this

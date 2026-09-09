@@ -38,8 +38,8 @@ import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import BoxVisualComponent from '../components/BoxVisualComponent';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
-import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
-import { TextStyleRegistry } from '../ui/TextStyleRegistry';
+import BaseButton from 'core/ui/BaseButton';
+import { createLibraryButton } from '../ui/ButtonLibrary';
 import { MartConfig } from '../data/MartTypes';
 import { resolveEntityView } from '../world/EntityViewRegistry';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
@@ -50,12 +50,11 @@ import { PopupManager } from '../ui/popups/PopupManager';
 const MART_ZONE_CORNER_RADIUS = 0.2;
 const PLACEHOLDER_HEIGHT = 1.5;
 const PLACEHOLDER_COLOR = 0x4a6fa5;
-/** How far above the trigger's own ground-level position the "Open Shop" button floats — raised a bit further than a first pass to give the frame's own arrow (see BUTTON_FRAME_PADDING's own doc) clean room below the label without crowding the player's own head. */
-const BUTTON_HEIGHT_OFFSET = new THREE.Vector3(0, 2.6, 0);
-/** 'FarmFrame's own baked-in speech-bubble tail needs real clearance below the content to render cleanly (its 9-slice border widths are a fixed 30px, see FrameRegistry.ts's own DEFAULT_PADDING_BUBBLE) — same order of magnitude as CraftZone's/FarmZone's own LABEL_FRAME_PADDING (15), which never shows this overlap since their content (a real icon + requirement rows) is naturally tall enough on its own; see buildOpenShopButton()'s own doc on why this button's short text-only content needed BOTH this bump and an explicit spacer to get the same clearance. */
-const BUTTON_FRAME_PADDING = uniformFitPadding(20);
+/** How far above the trigger's own ground-level position the "Open Shop" button floats. */
+const BUTTON_HEIGHT_OFFSET = new THREE.Vector3(0, 3, 0);
 const BUTTON_WIDTH = 160;
 const BUTTON_HEIGHT = 52;
+const BUTTON_ICON_SIZE = 40;
 
 /** A separate deposit-trigger rect, in WORLD space — from a Tiled "dropper" object targeting this mart (see this file's own top doc). Same shape as ShopZone's own ShopTriggerArea/BuildingZone's own BuildingTriggerArea. */
 export interface MartTriggerArea {
@@ -75,7 +74,7 @@ export default class MartZone extends Entity {
     private readonly unfreezePlayerMovement: () => void;
 
     private isPlayerInside = false;
-    private buttonContent!: AutoFitFrame;
+    private buttonContent!: BaseButton;
 
     public constructor(
         position: THREE.Vector3,
@@ -174,26 +173,15 @@ export default class MartZone extends Entity {
     }
 
     private buildOpenShopButton(): void {
-        // Locks row's own reported bounds to the FULL nominal BUTTON_WIDTH x BUTTON_HEIGHT box —
-        // without this, AutoFitFrame.fit() measures only the label's own tight rendered bounds
-        // (a single short line of text), producing a frame far smaller than 'FarmFrame's own
-        // baked-in speech-bubble tail needs to clear, which is what made that tail visibly
-        // overlap the label instead of sitting cleanly below it. Same "invisible spacer" trick
-        // InventoryPopup/MartPopup already use for their own fixed-size bodies.
-        const spacer = new PIXI.Graphics();
-        spacer.beginFill(0x000000, 0).drawRect(0, 0, BUTTON_WIDTH, BUTTON_HEIGHT).endFill();
-
-        const label = new PIXI.Text('Open Shop', TextStyleRegistry.Inventory);
-        label.anchor.set(0.5, 0.5);
-        label.position.set(BUTTON_WIDTH / 2, BUTTON_HEIGHT / 2);
-
-        const row = new PIXI.Container();
-        row.addChild(spacer, label);
-        row.eventMode = 'static';
-        row.cursor = 'pointer';
-        row.on('pointertap', () => this.openMart());
-
-        this.buttonContent = new AutoFitFrame(BUTTON_FRAME_PADDING, 'FarmFrame', row);
+        this.buttonContent = createLibraryButton({
+            color: 'blue',
+            width: BUTTON_WIDTH, height: BUTTON_HEIGHT,
+            label: 'Shop',
+            iconTexture: PIXI.Texture.from('ItemIcon_Shop_old-2'),
+            iconSize: { width: BUTTON_ICON_SIZE, height: BUTTON_ICON_SIZE },
+            iconAlign: 'left',
+            onClick: () => this.openMart(),
+        });
 
         // Anchors to the TRIGGER's own position (this.triggerArea, when a dropper stands in for
         // one — falls back to this entity's own position otherwise) rather than the mart's own
@@ -205,7 +193,11 @@ export default class MartZone extends Entity {
             this.screenHost,
             this.buttonContent,
             () => anchorPosition.copy(triggerPosition).add(BUTTON_HEIGHT_OFFSET),
-            { avoidViewer: true, anchor: { x: 0.5, y: 1 } },
+            // Plain BaseButton has no thick decorative border to hide the pointer inside (unlike
+            // the AutoFitFrame-wrapped content every other avoidViewer zone still uses) — a
+            // positive pointerEdgePadding floats it just past the button's own edge instead of
+            // ScreenAnchorComponent's default negative padding, which would land it on the label.
+            { avoidViewer: true, anchor: { x: 0.5, y: 1 }, pointerEdgePadding: 8 },
         ));
     }
 

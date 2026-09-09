@@ -20,7 +20,8 @@ import { FrameName } from '../ui/FrameRegistry';
 
 export enum BuildingId {
     Camp = "tower",
-    Tower2 = "tower2"
+    Tower2 = "tower2",
+    Floor1 = "floor1"
 }
 
 export interface BuildingEffect {
@@ -93,12 +94,48 @@ export interface BuildingConfig {
     popupBobOffset?: number;
     /** Overrides FrameRegistry.ts's 'BuildingFrame' default for THIS building's own popup — see PopupConfig.ts's resolvePopupFrameName()'s own doc. undefined uses the type-wide default. */
     frame?: FrameName;
-    /** 0-1 fraction of this building's own deposit-trigger footprint that becomes a SOLID collider blocking the player — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default for every building until a designer opts one in) means no solid collider at all — unchanged walk-through behavior from before this field existed. */
+    /** 0-1 fraction of this building's own deposit-trigger footprint that becomes a SOLID collider blocking the player — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default for every building until a designer opts one in) means no solid collider at all — unchanged walk-through behavior from before this field existed. Ignored when `solidFromMap` is set — see that field's own doc. */
     solid?: number;
+    /**
+     * When true, `solid` above is ignored entirely and BuildingZone instead builds ONE solid
+     * collider PER "useOwnMesh" piece this building is drawn from (see
+     * WorldObjectRegistry.OwnMeshPlacement.solid's own doc / BuildingZone.addSolidAreasFromMap()),
+     * each sized to THAT piece's own drawn bounds (not the shared trigger footprint) and only
+     * for pieces whose own map-drawn "solid" custom property is actually set — 1 for a collider
+     * matching that piece's full bounds, 0.5 for half that size, same 0-1 fraction semantics as
+     * `solid` above, just scoped per piece instead of to the whole building. Lets a composite
+     * building assembled from several pieces sharing one id (e.g. separate wall and floor
+     * pieces — see the multi-mesh support this building type already has) collide only on the
+     * pieces a designer actually marked (the walls), leaving the rest (the floor) walk-through,
+     * something one single whole-footprint `solid` fraction can't express. A building with no
+     * "useOwnMesh" pieces at all has nothing to source per-piece solidity from — this flag then
+     * just means "no solid collider," same as `solid: 0`. These colliders track the building's
+     * OWN visibility, not just its spawn time — a piece with `solid` set still has no collider
+     * for as long as its mesh itself isn't showing yet (e.g. a negative `baseFillFraction`
+     * hiding everything before the first level clears — see that field's own doc), and gets one
+     * the instant its mesh actually drops in. undefined/false (the default) keeps the single
+     * `solid`-driven collider, unchanged from before this field existed.
+     */
+    solidFromMap?: boolean;
     /** Optional one-shot particle burst fired every time this building levels up (see BuildingZone.playLevelUpSequence()) — the "update" slot in the common particleEffectId/updateParticleEffectId/destroyParticleEffectId trio every entity config now carries (see ParticleRegistry.ts). undefined means no burst at all. */
     updateParticleEffectId?: string;
     /** How many particles the burst above launches — ignored if updateParticleEffectId isn't set. undefined falls back to a small default (see BuildingZone.playLevelUpSequence()). */
     updateParticleCount?: number;
+    /**
+     * When true, the requirements panel (both its persistent nameplate and the rising
+     * "Level Up!" callout — see BuildingZone.spawnLevelUpPopup()) and the `updateParticleEffectId`
+     * burst above all anchor to this building's own Tiled "dropper" (see
+     * WorldObjectRegistry.ts's own doc / the BuildingZone constructor's `triggerArea` param
+     * doc) instead of the building's own visual-mesh position — e.g. a building drawn
+     * somewhere the player can't actually stand next to, whose real walk-up-and-deposit spot
+     * (and so where their eyes/camera actually are when the feedback fires) is elsewhere on
+     * the map entirely. Falls back to the mesh position when this building has no dropper at
+     * all — nothing to switch to. Doesn't affect the visual mesh itself, or the camera-focus
+     * point BuildingZone.playLevelUpSequence() sends the camera to on level-up, both of which
+     * always stay at the mesh regardless. undefined/false (the default) keeps every one of
+     * these at the mesh position, unchanged from before this field existed.
+     */
+    anchorAtDropper?: boolean;
 }
 
 export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
@@ -193,6 +230,23 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         "popupMode": "simple",
         "updateParticleEffectId": "gateMyst",
         "baseFillFraction": 0.1
+    },
+    "floor1": {
+        baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
+        "name": "Tower2 Copy",
+        "icon": "animal-hide",
+        "levels": [{
+            "level": 1,
+            "requirements": {
+                "stone": 1
+            },
+            "effect": {}
+        }],
+        "popupMode": "simple",
+        "updateParticleEffectId": "gateMyst",
+        "baseFillFraction": -1,
+        "anchorAtDropper": true,
+        "solidFromMap": true
     }
 };
 
@@ -263,7 +317,15 @@ export function getFillFractionForLevel(id: BuildingId, level: number): number {
 
     // A run starting at level 0 with an explicit baseFillFraction — see that field's own doc —
     // grows LINEARLY from that designer-chosen floor up to 1, instead of the eased curve below.
+    // A NEGATIVE baseFillFraction is a separate designer sentinel, not just a lower floor: it
+    // means "don't show any mesh at all until the first level clears" — level 0's own fraction
+    // is forced to exactly 0 (BuildingZone.createBuildingMesh() skips building any visual at
+    // all for a <= 0 fraction, rather than a thin near-invisible sliver) regardless of what the
+    // raw linear formula below would otherwise compute for this run's length.
     if (start === 0 && config.baseFillFraction !== undefined) {
+        if (config.baseFillFraction < 0 && clampedLevel === 0) {
+            return 0;
+        }
         return config.baseFillFraction + (1 - config.baseFillFraction) * linearFraction;
     }
 

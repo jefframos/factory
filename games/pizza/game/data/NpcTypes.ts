@@ -40,6 +40,11 @@ export const NPC_CONFIG_BY_ID: Partial<Record<string, NpcConfig>> = {
         "characterViewId": "violet",
         "viewRadius": 3,
         "viewAngleDeg": 180
+    },
+    "shopper2": {
+        "characterViewId": "cyan",
+        "viewRadius": 3,
+        "viewAngleDeg": 180
     }
 };
 

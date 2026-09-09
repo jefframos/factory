@@ -19,7 +19,11 @@
 // place rather than rebuilt-and-re-added) — showing the active task's
 // requirement + reward, and hidden entirely (not a bubble/placeholder)
 // whenever there's no active task at all (cooldown, or waiting for a
-// giver to walk one in).
+// giver to walk one in). Tracks a fixed point above the queue itself by
+// default (`labelAnchor`) — UNLESS an optional `getPopupAnchorOverride`
+// callback (see that field's own doc) returns a real position, which
+// PizzaScene wires to the queue's own QuestGiverEntity so an `npc` variant's
+// panel floats over its actual head instead.
 //
 // Queue ids come straight from whatever's drawn on the Tiled map (see
 // WorldObjectRegistry.getAllOfType()/PizzaScene.setupQueues()) rather than
@@ -68,9 +72,28 @@ const HEADER_BODY_GAP = 6;
 const REQ_SLOT_SIZE = 56;
 const REQ_SLOT_GAP = 10;
 const REWARD_ICON_SIZE = 22;
+/** Same badge NotificationRarity.Common/LevelBadgeStyle's tier-2 use — see UpgradeStyle.ts/LevelBadgeStyle.ts's own usage — for the completion callout (see checkForCompletion()/refreshLabel()). Plain sprite, not nine-sliced (no FrameRegistry entry exists for it — neither of those existing call sites frames it either). */
+const REWARD_BADGE_TEXTURE_KEY = 'Label_Badge01_Green';
+/** Real asset is 129x132 (see public/pizza/images/ui.webp.json) — height/width, applied on top of REWARD_BADGE_SIZE so the badge doesn't stretch off-square. */
+const REWARD_BADGE_ASPECT = 132 / 129;
+const REWARD_BADGE_SIZE = 64;
+/** Smaller than the badge itself so it reads as "sitting inside" it, not covering its own border art. */
+const REWARD_BADGE_ICON_SIZE = 32;
+/** Gap between the badge's own bottom edge and the "+N" caption below it — same icon-then-caption composition as UpgradeNotificationView's own badge+subtitle, just without that view's ribbon/spin effects (see this file's own doc on why this is the simpler, in-world version instead of reusing that screen-overlay system directly). */
+const REWARD_BADGE_TEXT_GAP = 6;
 const FLY_IN_STAGGER_SEC = 0.12;
 /** How long the panel takes to fade in on becoming deliverable — see refreshLabel()'s own doc. Disappearing stays instant, same "pop out is fine, pop in isn't" convention ScreenAnchorComponent's own alpha fade uses. */
 const LABEL_FADE_IN_SEC = 0.25;
+/**
+ * How long the panel HOLDS a clear "+N" completion callout (see checkForCompletion()) before
+ * actually completing the task in QueueStorage (which is what starts the money icon's own
+ * flight to the wallet, AND what a giver-driven queue's QuestGiverEntity polls to know it's
+ * finally free to leave — see that file's own doc). Without this pause, the reward requirement
+ * row disappeared and the giver started walking out the SAME frame the last unit landed — the
+ * amount earned was never actually legible, just a number that was there one frame and gone
+ * (replaced by an already-in-flight icon) the next.
+ */
+const REWARD_POPUP_HOLD_SEC = 2;
 
 export default class QueueZone extends Entity {
     private readonly screenHost: ScreenAnchorHost;
@@ -80,6 +103,20 @@ export default class QueueZone extends Entity {
     private readonly footprint?: { width: number; depth: number };
     /** Where EconomyUI's money icon actually sits on screen right now — see flyRewardToWallet(). A callback (not a fixed point) since UIService repositions that panel every frame. */
     private readonly getWalletOverlayPosition: () => { x: number; y: number };
+    /**
+     * Live override for the task panel's own tracked BASE position — undefined (the default)
+     * keeps `labelAnchor`'s fixed point above the queue itself, unchanged from before this
+     * existed. PizzaScene wires this to QuestGiverEntity.getNpcHeadWorldPosition() (see
+     * registerQueueSpawnGates()), which itself only ever returns a real position while THIS
+     * cycle's giver is an animated `npc` variant with its rig already loaded — a static `view`
+     * variant (or no giver at all) always reads back undefined here, so the panel only ever
+     * actually moves to "over the NPC's head" for a queue that has one. The queue's own
+     * `popupBobOffset` still applies ON TOP of this override, same as it does for `labelAnchor`
+     * — see awake()'s own ScreenAnchorComponent target callback.
+     */
+    private readonly getPopupAnchorOverride?: () => THREE.Vector3 | undefined;
+    /** Fires once, right when a task's full amount lands — BEFORE the REWARD_POPUP_HOLD_SEC pause even starts (see checkForCompletion()). PizzaScene wires this to QuestGiverGroup.playHappyAnimationForActiveGiver() so an `npc` variant plays its "happy" pose for the same window the reward callout holds, instead of just standing there (or already walking away) while the number's still on screen. Undefined (the default) is a no-op — a static-`view` giver (or no giver at all) has no animation to trigger anyway. */
+    private readonly onTaskDelivered?: () => void;
 
     /** Resource type currently mid-drain via flyInResource()/flyInAnimal() — guards a second overlapping drain loop for the same active task. Cleared whenever the active task changes (a new task may ask for a different resource). */
     private drainingType?: ResourceType;
@@ -129,6 +166,10 @@ export default class QueueZone extends Entity {
      * when a giver+path exists for this queue's id.
      */
     private readonly autoRollTasks: boolean;
+    /** Set once, in destroy() — guards checkForCompletion()'s own delayedCall so it never fires any further completion/reward logic after this zone is torn down (same pattern QuestGiverEntity's own `destroyed` flag uses). */
+    private destroyed = false;
+    /** Set the instant a task's full amount lands, cleared the instant checkForCompletion()'s own REWARD_POPUP_HOLD_SEC pause actually completes it — see that method's own doc. Guards against starting a second overlapping pause (shouldn't happen — nothing can add MORE progress once a task is already fully delivered — but cheap to guard anyway) and is what refreshLabel() checks to render the callout instead of the normal progress row. */
+    private pendingCompletionRewardAmount?: number;
 
     private readonly handleTaskChanged = (id: string): void => {
         if (id === this.queueId) {
@@ -145,6 +186,10 @@ export default class QueueZone extends Entity {
         config: QueueConfig = getQueueConfig(queueId),
         /** See `autoRollTasks`'s own doc. Defaults to true — unchanged behavior for a queue with no giver. */
         autoRollTasks = true,
+        /** See `getPopupAnchorOverride`'s own doc. Undefined (the default) keeps every existing caller's fixed-anchor panel unchanged. */
+        getPopupAnchorOverride?: () => THREE.Vector3 | undefined,
+        /** See `onTaskDelivered`'s own doc. Undefined (the default) is a no-op — every existing caller keeps behaving exactly as before this existed. */
+        onTaskDelivered?: () => void,
     ) {
         super();
         this.screenHost = screenHost;
@@ -153,6 +198,8 @@ export default class QueueZone extends Entity {
         this.footprint = footprint;
         this.config = config;
         this.autoRollTasks = autoRollTasks;
+        this.getPopupAnchorOverride = getPopupAnchorOverride;
+        this.onTaskDelivered = onTaskDelivered;
         this.transform.position.copy(position);
     }
 
@@ -218,15 +265,28 @@ export default class QueueZone extends Entity {
         // parented under this.transform so it moves with the zone for free. Stored as a field
         // since flyInResource() targets the same spot — deposited icons fly to wherever this
         // queue's own UI actually renders, not a point on its placeholder box.
+        // Same offset either way — see popupBobOffsetVec's own doc — computed once here rather
+        // than re-derived from this.config every frame.
+        const popupBobOffsetVec = resolvePopupAnchorOffset(this.config.popupBobOffset);
+
         this.labelAnchor = new THREE.Object3D();
-        this.labelAnchor.position.copy(resolvePopupAnchorOffset(this.config.popupBobOffset));
+        this.labelAnchor.position.copy(popupBobOffsetVec);
         this.transform.add(this.labelAnchor);
         const labelAnchorWorldPosition = new THREE.Vector3();
 
         this.addComponent(new ScreenAnchorComponent(
             this.screenHost,
             anchorContent,
-            () => this.labelAnchor.getWorldPosition(labelAnchorWorldPosition),
+            () => {
+                // getPopupAnchorOverride() already returns a fresh Vector3 each call (see
+                // QuestGiverEntity.getNpcHeadWorldPosition()'s own doc) — safe to mutate in place
+                // rather than allocating yet another one just to add this offset on top. Applying
+                // the SAME popupBobOffset here as labelAnchor's own position keeps a designer's
+                // per-queue tuning meaningful for an `npc` variant too, instead of that config
+                // silently doing nothing the moment a queue's giver happens to be animated.
+                const override = this.getPopupAnchorOverride?.();
+                return override ? override.add(popupBobOffsetVec) : this.labelAnchor.getWorldPosition(labelAnchorWorldPosition);
+            },
             { ...ZONE_LABEL_ANCHOR_OPTIONS, ...resolvePopupAvoidViewer(this.config.popupMode) },
         ));
 
@@ -240,6 +300,7 @@ export default class QueueZone extends Entity {
     }
 
     public override destroy(): void {
+        this.destroyed = true;
         QueueStorage.onTaskChanged.remove(this.handleTaskChanged);
         super.destroy();
     }
@@ -254,16 +315,16 @@ export default class QueueZone extends Entity {
      * cooldown countdown TEXT every frame while on cooldown — see `cooldownText`'s own doc for
      * why that can't just be event-driven like everything else here.
      *
-     * ALSO proactively retries QueueStorage.tryCompleteTask() every frame — not just reactively
-     * inside flyInResource()'s landing callback. That reactive-only check is normally enough
-     * (progress reaching the required amount and the completion check happen in the exact same
-     * callback), but it's not a real guarantee: a task whose progress ever ends up at or past
-     * its required amount WITHOUT that exact callback also completing it (an interrupted
-     * session, a save edited/migrated externally, ...) had NO other path back to completion —
-     * it would just sit there fully delivered forever, "10/10" and stuck, since nothing else
-     * ever re-checked it. This is a cheap no-op the overwhelming majority of frames, same as
-     * tryRollNextTask() above, and makes completion self-healing regardless of how a task got
-     * into that state.
+     * ALSO proactively retries checkForCompletion() every frame — not just reactively inside
+     * flyInResource()'s landing callback. That reactive-only check is normally enough (progress
+     * reaching the required amount and the completion check happen in the exact same callback),
+     * but it's not a real guarantee: a task whose progress ever ends up at or past its required
+     * amount WITHOUT that exact callback also noticing (an interrupted session, a save
+     * edited/migrated externally, ...) had NO other path back to completion — it would just sit
+     * there fully delivered forever, "10/10" and stuck, since nothing else ever re-checked it.
+     * This is a cheap no-op the overwhelming majority of frames (checkForCompletion() itself
+     * guards against starting a second overlapping reward pause), same as tryRollNextTask()
+     * above, and makes completion self-healing regardless of how a task got into that state.
      */
     public override update(delta: number): void {
         super.update(delta);
@@ -272,10 +333,48 @@ export default class QueueZone extends Entity {
             QueueStorage.tryRollNextTask(this.queueId, this.config);
         }
 
-        const completedTask = QueueStorage.tryCompleteTask(this.queueId, this.config);
-        if (completedTask) {
-            this.flyRewardToWallet(completedTask.rewardAmount);
+        this.checkForCompletion();
+    }
+
+    /**
+     * Called once a task's full amount has landed (from flyInResource()/flyInAnimal()'s own
+     * landing callback, or proactively every frame from update() — see that method's own doc) —
+     * shows a clear "+N" reward callout (see refreshLabel()) and fires `onTaskDelivered` (the
+     * giver's own happy-animation hook) IMMEDIATELY, then holds that callout for
+     * REWARD_POPUP_HOLD_SEC before actually completing the task in QueueStorage (which is what
+     * starts the money icon's own flight to the wallet, AND what a giver-driven queue's
+     * QuestGiverEntity polls to know it's finally free to leave). `pendingCompletionRewardAmount`
+     * guards against starting a second overlapping pause on a later call this same window (the
+     * task is already fully delivered by then — nothing can add more progress to it — but this
+     * is also what makes update()'s own proactive retry a true no-op rather than re-triggering
+     * the callout/animation every single frame of the hold).
+     */
+    private checkForCompletion(): void {
+        if (this.pendingCompletionRewardAmount !== undefined) {
+            return;
         }
+
+        const state = QueueStorage.getState(this.queueId);
+        const task = state.activeTask;
+        if (!task || state.progress < task.amount) {
+            return;
+        }
+
+        this.pendingCompletionRewardAmount = task.rewardAmount;
+        this.onTaskDelivered?.();
+        this.refreshLabel();
+
+        gsap.delayedCall(REWARD_POPUP_HOLD_SEC, () => {
+            if (this.destroyed) {
+                return;
+            }
+
+            this.pendingCompletionRewardAmount = undefined;
+            const completedTask = QueueStorage.tryCompleteTask(this.queueId, this.config);
+            if (completedTask) {
+                this.flyRewardToWallet(completedTask.rewardAmount);
+            }
+        });
     }
 
     /**
@@ -326,6 +425,59 @@ export default class QueueZone extends Entity {
         this.wasDeliverable = deliverable;
 
         if (!task || !deliverable) {
+            return;
+        }
+
+        // Holds a badge-style "+N" callout in place of the normal reward line + requirements row
+        // for as long as checkForCompletion()'s own REWARD_POPUP_HOLD_SEC pause lasts — see that
+        // method's own doc for why: without this, the reward amount only ever showed as a small
+        // number sitting ABOVE a row that vanished the same instant the last unit landed, easy to
+        // miss entirely once the giver started walking off right alongside it. Styled after the
+        // notification system's own badge+icon+caption composition (see UpgradeNotificationView.ts)
+        // but deliberately simpler (no ribbon, no spinning shine) and IN-WORLD rather than a
+        // screen-space overlay toast — this panel already tracks the right in-world position (the
+        // queue/giver's own popup anchor, see awake()'s own ScreenAnchorComponent), so this just
+        // reuses that instead of spawning a second, separate anchored popup on top of it.
+        if (this.pendingCompletionRewardAmount !== undefined) {
+            const badge = new PIXI.Sprite(PIXI.Texture.from(REWARD_BADGE_TEXTURE_KEY));
+            badge.anchor.set(0.5, 0.5);
+            badge.width = REWARD_BADGE_SIZE;
+            badge.height = REWARD_BADGE_SIZE * REWARD_BADGE_ASPECT;
+
+            const icon = new PIXI.Sprite(getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey));
+            icon.anchor.set(0.5, 0.5);
+            icon.width = REWARD_BADGE_ICON_SIZE;
+            icon.height = REWARD_BADGE_ICON_SIZE;
+
+            const text = new PIXI.Text(`+${this.pendingCompletionRewardAmount}`, TextStyleRegistry.Notification);
+            text.anchor.set(0.5, 1);
+            text.position.set(0, 0);
+
+            badge.position.set(0, -(text.height + REWARD_BADGE_TEXT_GAP + badge.height / 2));
+            icon.position.copy(badge.position);
+
+            const callout = new PIXI.Container();
+            callout.addChild(badge, icon, text);
+            this.bodyContainer.addChild(callout);
+
+            // Fit the FRAME at the callout's natural (scale 1) size FIRST — AutoFitFrame.fit()
+            // just measures content's bounds at the moment it's called, so calling it AFTER
+            // scaling the callout down to 0 (below) would size the frame around nothing, leaving
+            // it collapsed/clipped for the whole pop-in instead of already the right size to pop
+            // INTO (same "frame doesn't resize along with it" look every other icon-punch
+            // animation in this game already has — see the jiggle convention this reuses).
+            this.labelFrame.fit();
+
+            // Pop-scale entrance — the same back.out(2) "jiggle punch" idiom already used all
+            // over this game's UI (GlobalResourcesUI's/BackpackListUI's own gain jiggle,
+            // MartPopup.playRowFeedback(), ...) rather than a new easing invented just for this.
+            // Safe to play unconditionally here (not re-triggered every frame of the hold) since
+            // this whole branch only actually runs once per completion — refreshLabel() isn't
+            // called again until either QueueStorage.onTaskChanged fires (nothing does, for the
+            // WHOLE hold — see checkForCompletion()'s own doc) or the hold itself ends and clears
+            // `pendingCompletionRewardAmount`, which takes this branch out of the picture entirely.
+            callout.scale.set(0);
+            gsap.to(callout.scale, { x: 1, y: 1, duration: 0.4, ease: 'back.out(2)' });
             return;
         }
 
@@ -468,10 +620,7 @@ export default class QueueZone extends Entity {
                     return;
                 }
                 QueueStorage.addProgress(this.queueId, 1);
-                const completedTask = QueueStorage.tryCompleteTask(this.queueId, this.config);
-                if (completedTask) {
-                    this.flyRewardToWallet(completedTask.rewardAmount);
-                }
+                this.checkForCompletion();
             });
 
             gsap.delayedCall(FLY_IN_STAGGER_SEC, step);
@@ -519,10 +668,7 @@ export default class QueueZone extends Entity {
             spawnFlyingResourceIcon(this.screenHost, new THREE.Vector3(departedFrom.x, departedFrom.y, departedFrom.z), toWorld.clone(), icon, () => {
                 this.inFlightByType.set(type, (this.inFlightByType.get(type) ?? 1) - 1);
                 QueueStorage.addProgress(this.queueId, 1);
-                const completedTask = QueueStorage.tryCompleteTask(this.queueId, this.config);
-                if (completedTask) {
-                    this.flyRewardToWallet(completedTask.rewardAmount);
-                }
+                this.checkForCompletion();
             });
 
             gsap.delayedCall(FLY_IN_STAGGER_SEC, step);

@@ -36,6 +36,7 @@ import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer } from '../ui/PopupConfig';
+import { FrameRegistry } from '../ui/FrameRegistry';
 import { EconomyStorage } from '../data/EconomyStorage';
 import { CURRENCY_CONFIG, CurrencyType } from '../data/EconomyTypes';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
@@ -55,14 +56,20 @@ const HALF_EXTENTS = new THREE.Vector3(1.25, 0.75, 1.25);
 /** Corner rounding for the dropper's floor outline — purely cosmetic, the collider itself stays a sharp-cornered box (see RigidBody below). */
 const DROPPER_ZONE_CORNER_RADIUS = 0.3;
 const COST_ICON_SIZE = 22;
+/** Gap between the cost row's money icon and its "progress/cost" text — see refreshLabel(). */
+const COST_ICON_TEXT_GAP = 10;
 const FLY_IN_STAGGER_SEC = 0.12;
-const ICON_BODY_GAP = 4;
+/** Frame texture swapped in via labelFrame.setTexture() while ShopUpgradeStorage.isOnCooldown() — see refreshLabel(). */
+const COOLDOWN_FRAME_TEXTURE = 'ResourceBar_Single_Btn_Grey';
+/** Frame texture swapped in via labelFrame.setTexture() while isUpgradeAvailable() — see refreshLabel(). */
+const AVAILABLE_FRAME_TEXTURE = 'ResourceBar_Single_Btn_Orange1';
+const ICON_BODY_GAP = 22;
 /** The tool's own icon (see ToolRegistry.getToolIcon()) — the panel's main image, replacing what used to be a text nameplate ("less text, more images"). */
-const TOOL_ICON_SIZE = 48;
+const TOOL_ICON_SIZE = 40;
 /** Size of the "upgrade available" action badge (see SHOP_UPGRADE_AVAILABLE_ICON) pinned at the tool icon's bottom-right corner — same spot/idiom a level number badge would use (BackpackUI's slot count), just flagging the ACTION ("upgrade") instead of a quantity. */
-const UPGRADE_BADGE_SIZE = 24;
+const UPGRADE_BADGE_SIZE = 18;
 /** Inset from the tool icon's own corner, in each axis — a small overlap reads as "pinned to the icon" rather than "floating separately beside it." */
-const UPGRADE_BADGE_INSET = 4;
+const UPGRADE_BADGE_INSET = -2;
 
 /** A separate deposit-trigger rect, in WORLD space — see the constructor's `triggerArea` param doc. Same shape as BuildingZone's BuildingTriggerArea. */
 export interface ShopTriggerArea {
@@ -128,6 +135,8 @@ export default class ShopZone extends Entity {
     /** SHOP_UPGRADE_AVAILABLE_ICON — overlaps the tool icon's top-right corner whenever the player already has enough money on hand to fund the rest of the next level right now, so it reads as "come spend here" from a glance rather than needing to walk up and check. Toggled in refreshLabel(); never shown once maxed. */
     private upgradeBadge!: PIXI.Sprite;
     private labelFrame!: AutoFitFrame;
+    /** labelFrame's own starting texture (from FrameRegistry, per resolvePopupFrameName()'s pick) — what refreshLabel() restores labelFrame to via setTexture() once neither COOLDOWN_FRAME_TEXTURE nor AVAILABLE_FRAME_TEXTURE applies. Undefined for a frame with no background texture at all (e.g. 'Simple', popupMode 'simple') — refreshLabel() leaves those alone entirely rather than painting a background where there was deliberately none. */
+    private defaultFrameTexture?: string;
 
     private shopMesh?: THREE.Mesh;
     /** The real-glb counterpart to `shopMesh` above, used instead of it when the currently-bought level's `view` id resolves to an actual model (see ShopTypes.ts's getViewIdForShopLevel()/EntityViewRegistry.ts's resolveEntityView()). Mutually exclusive with `shopMesh`. */
@@ -251,7 +260,9 @@ export default class ShopZone extends Entity {
 
         const column = new PIXI.Container();
         column.addChild(this.iconRow, this.bodyContainer);
-        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(this.config.popupMode, 'ShopFrame', this.config.frame), column);
+        const frameName = resolvePopupFrameName(this.config.popupMode, 'ShopFrame', this.config.frame);
+        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, frameName, column);
+        this.defaultFrameTexture = FrameRegistry[frameName].textureKey;
         this.refreshLabel();
 
         // The badge depends on EconomyStorage's live balance (see refreshLabel()'s own doc),
@@ -417,6 +428,21 @@ export default class ShopZone extends Entity {
         this.iconRow.visible = showHeader;
         this.upgradeBadge.visible = showHeader && this.isUpgradeAvailable();
 
+        // Recolors the whole panel to flag its current state at a glance — grey while on
+        // cooldown, orange the moment the player can afford to finish the next level right now
+        // (same condition upgradeBadge already keys off), the entity-type's own default
+        // otherwise. Skipped entirely for a frame with no background texture to begin with (e.g.
+        // 'Simple' popups) rather than painting one in where there was deliberately none.
+        if (this.defaultFrameTexture !== undefined) {
+            if (ShopUpgradeStorage.isOnCooldown(this.shopId)) {
+                this.labelFrame.setTexture(COOLDOWN_FRAME_TEXTURE);
+            } else if (this.isUpgradeAvailable()) {
+                this.labelFrame.setTexture(AVAILABLE_FRAME_TEXTURE);
+            } else {
+                this.labelFrame.setTexture(this.defaultFrameTexture);
+            }
+        }
+
         this.bodyContainer.removeChildren().forEach(child => child.destroy({ children: true }));
 
         let bodyHeight: number;
@@ -426,10 +452,25 @@ export default class ShopZone extends Entity {
             this.bodyContainer.addChild(maxLevelText);
             bodyHeight = maxLevelText.height;
         } else if (ShopUpgradeStorage.isOnCooldown(this.shopId)) {
+            // Same icon+text row shape as the cost row below — the cooldown box is naturally
+            // wider than "MAX" (it carries a "Xm Ys" countdown), so a timer icon fills that extra
+            // width with something meaningful instead of empty space.
+            const row = new PIXI.Container();
+            const icon = new PIXI.Sprite(PIXI.Texture.from('Icon_Timer'));
+            icon.anchor.set(0, 0.5);
+            icon.width = COST_ICON_SIZE;
+            icon.height = COST_ICON_SIZE;
+            row.addChild(icon);
+
             const cooldownText = new PIXI.Text(formatCooldown(ShopUpgradeStorage.getCooldownRemainingSec(this.shopId)), TextStyleRegistry.Body);
-            cooldownText.anchor.set(0.5, 1);
-            this.bodyContainer.addChild(cooldownText);
-            bodyHeight = cooldownText.height;
+            cooldownText.anchor.set(0, 0.5);
+            cooldownText.position.set(COST_ICON_SIZE + COST_ICON_TEXT_GAP, 0);
+            row.addChild(cooldownText);
+
+            row.pivot.set(row.width / 2, row.height / 2);
+            row.position.set(0, -row.height / 2);
+            this.bodyContainer.addChild(row);
+            bodyHeight = row.height;
         } else {
             const state = ShopUpgradeStorage.getState(this.shopId);
             const cost = getUpgradeCost(this.config, state.level);
@@ -443,7 +484,7 @@ export default class ShopZone extends Entity {
 
             const costText = new PIXI.Text(`${state.progress}/${cost}`, TextStyleRegistry.Body);
             costText.anchor.set(0, 0.5);
-            costText.position.set(COST_ICON_SIZE + 4, 0);
+            costText.position.set(COST_ICON_SIZE + COST_ICON_TEXT_GAP, 0);
             row.addChild(costText);
 
             row.pivot.set(row.width / 2, row.height / 2);

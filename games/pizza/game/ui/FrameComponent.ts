@@ -47,6 +47,11 @@ export default class FrameComponent extends PIXI.Container {
         }
     }
 
+    /** Swaps the 9-sliced plane's own texture in place, keeping this frame's border widths (padding) as originally constructed — for a caller that wants to switch between textures from the SAME asset family (e.g. FrameRegistry's various ResourceBar_Single_Btn_* bubble presets, all baked with the same border) without recreating the frame. A texture with meaningfully different border proportions will look stretched/cropped since the 9-slice widths don't change. */
+    public setTexture(textureKey: string): void {
+        this.plane.texture = PIXI.Texture.from(textureKey);
+    }
+
     /** Tints the 9-sliced plane itself — NOT a Container-level property (Container has no visual tint of its own; PIXI.Container.alpha still works untouched via this.alpha, propagating to children including the plane). For a translucent solid-color backdrop rather than the frame texture's own colors — see MovementTutorialOverlay's prompt background for the first caller. */
     public setTint(tint: number): void {
         this.plane.tint = tint;

@@ -47,8 +47,8 @@ export const CAMERA_TEMPLATE_CONFIG: Partial<Record<string, CameraTemplateConfig
     },
     "far2": {
         "yawDeg": 0,
-        "pitchDeg": 70,
-        "distance": 20,
+        "pitchDeg": 55,
+        "distance": 18,
         "followSpeed": 10
     }
 };

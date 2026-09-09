@@ -97,7 +97,7 @@ export const SHOP_CONFIG_BY_ID: Partial<Record<string, ShopConfig>> = {
         mesh: DEFAULT_SHOP_MESH,
         "name": "Pickaxe Shop",
         "tool": "pickaxe",
-        "action": ActionType.Chop,
+        "action": ActionType.Mine,
         "totalLevels": 10,
         "baseCost": 10,
         "costScale": 2.05,

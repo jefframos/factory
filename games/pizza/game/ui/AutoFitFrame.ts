@@ -55,6 +55,11 @@ export default class AutoFitFrame extends PIXI.Container {
         this.frame.setTint(tint);
     }
 
+    /** Passes through to the underlying FrameComponent's own setTexture() — see that method's own doc. */
+    public setTexture(textureKey: string): void {
+        this.frame.setTexture(textureKey);
+    }
+
     /** Sets alpha on the underlying FrameComponent ONLY, not `content` — this.alpha (inherited from PIXI.Container) would multiply into content's own alpha too since it's a sibling child of this same container, which is exactly the bug this method exists to avoid (see MovementTutorialOverlay's fade-out, which needs its background frame to fade independently of its text staying fully opaque). */
     public setAlpha(alpha: number): void {
         this.frame.alpha = alpha;

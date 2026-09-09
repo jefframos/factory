@@ -33,8 +33,8 @@ export function uniformPadding(px: number): FramePadding {
 }
 
 /** Every BorderFrame_Round20_* asset was exported with the same 22px border on every side — see uniformPadding(). Override per-frame below if a different asset ever needs asymmetric padding. */
-const DEFAULT_PADDING = uniformPadding(22);
-const DEFAULT_PADDING_BUBBLE = uniformPadding(30);
+const DEFAULT_PADDING = uniformPadding(25);
+const DEFAULT_PADDING_BUBBLE = uniformPadding(28);
 
 export const FrameRegistry: Record<string, FrameDef> = {
     Main: {
@@ -64,7 +64,7 @@ export const FrameRegistry: Record<string, FrameDef> = {
      * numbers) if the border ends up looking stretched or over-cropped in practice.
      */
     Simple: {
-        padding: uniformPadding(20),
+        padding: uniformPadding(30),
     },
     /** Gate.ts's icon-only "locked" panel (padlock + requirement icon, no text/arrow) — same bubble asset as Popup, kept as its own named preset so its look can be tuned independently. */
     GateLock: {
@@ -98,6 +98,7 @@ export const FrameRegistry: Record<string, FrameDef> = {
     QueueFrame: {
         textureKey: 'ResourceBar_Single_Btn_Blue1',
         padding: DEFAULT_PADDING_BUBBLE,
+        arrowTexture: 'BubbleFrame04_Blue_Arrow',
         arrowPivot: { x: 0.5, y: 1 },
     },
     CraftingFrame: {

@@ -477,8 +477,10 @@ function upsertArrayByIndex(sourceFile, arrayLiteral, itemManagedKeys, itemOptio
         upsertObjectFields(sourceFile, newItemLiteral, itemManagedKeys, itemOptionalKeys, item, warnings, refreshedThisSync);
 
         if (lastExisting) {
+            // See the identical guard/comment in upsertEntryFields' own template-cloning block —
+            // a `...spread` property has no key/initializer of its own to copy.
             const unmanagedProps = lastExisting.getProperties()
-                .filter(p => !itemManagedKeys.includes(getPropertyKeyId(p)));
+                .filter(p => p.getKind() === SyntaxKind.PropertyAssignment && !itemManagedKeys.includes(getPropertyKeyId(p)));
             for (const prop of unmanagedProps) {
                 newItemLiteral.addPropertyAssignment({
                     name: prop.asKindOrThrow(SyntaxKind.PropertyAssignment).getName(),
@@ -560,8 +562,13 @@ function upsertEntryFields(sourceFile, recordLiteral, id, mapping, data, warning
             // none of them get wrongly cloned from an unrelated sibling entry, even though this
             // particular call has no data for them and won't write them itself.
             const protectedKeys = mapping.templateProtectKeys ?? mapping.managedKeys;
+            // Only real `key: value` properties are clonable this way — a hand-authored template
+            // entry can also carry a `...spread` (see QueueTypes.ts's queue1, `...DEFAULT_QUEUE_
+            // CONFIG`), which getPropertyKeyId() correctly reports as `null` (not a managed key,
+            // so it wouldn't get filtered out by the check above) but has no name/initializer of
+            // its own to copy — asKindOrThrow(PropertyAssignment) below would throw on it.
             const unmanagedProps = template.getProperties()
-                .filter(p => !protectedKeys.includes(getPropertyKeyId(p)));
+                .filter(p => p.getKind() === SyntaxKind.PropertyAssignment && !protectedKeys.includes(getPropertyKeyId(p)));
             for (const prop of unmanagedProps) {
                 newEntryLiteral.addPropertyAssignment({
                     name: prop.asKindOrThrow(SyntaxKind.PropertyAssignment).getName(),

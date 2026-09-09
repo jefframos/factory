@@ -45,6 +45,11 @@ const BUTTON_TEXTURE_BY_COLOR: Record<LibraryButtonColor, string> = {
  */
 export const BUTTON_NINE_SLICE_PADDING = 16;
 
+/** Left-edge gap for an `iconAlign: 'left'` icon — see LibraryButtonConfig.iconAlign's own doc. */
+const ICON_LEFT_PADDING = 12;
+/** How far a label shifts right (on top of its own centering) to make room for a left-aligned icon — see iconLeftAligned's own usage below. */
+const TEXT_ICON_SHIFT = 10;
+
 /** Texture alias inside the packed 'images' bundle for `color` — exposed directly for the rare caller that needs the raw texture (e.g. a plain PIXI.Sprite background) rather than a full interactive button. */
 export function libraryButtonTexture(color: LibraryButtonColor): PIXI.Texture {
     return PIXI.Texture.from(BUTTON_TEXTURE_BY_COLOR[color]);
@@ -61,11 +66,21 @@ export interface LibraryButtonConfig {
     /** Icon centered on top of the button art — omit for a text-only button (e.g. PopupButtonStyles' "Clear Data"). */
     iconTexture?: PIXI.Texture;
     iconSize?: { width: number; height: number };
+    /**
+     * Where the icon sits when BOTH an icon and a label are given. 'center' (the default) stacks
+     * it in the middle behind the label, same as every existing icon-only button (close,
+     * backpack, settings, ...) — fine there since none of those also carry a label, but would
+     * otherwise render the label right on top of the icon. 'left' instead pins it near the
+     * button's own left edge (ICON_LEFT_PADDING in, vertically centered), reading as an
+     * icon-prefixed label instead of an overlap. Ignored for icon-only buttons (no label).
+     */
+    iconAlign?: 'center' | 'left';
 }
 
 /** Builds a BaseButton styled from the shared library, with standard/over/down feedback baked in so every button in the game behaves the same without repeating the state table at each call site. */
 export function createLibraryButton(config: LibraryButtonConfig): BaseButton {
     const hasIcon = config.iconTexture !== undefined;
+    const iconLeftAligned = hasIcon && config.label !== undefined && config.iconAlign === 'left';
     const button = new BaseButton({
         standard: {
             width: config.width, height: config.height,
@@ -73,8 +88,14 @@ export function createLibraryButton(config: LibraryButtonConfig): BaseButton {
             allPadding: BUTTON_NINE_SLICE_PADDING,
             iconTexture: config.iconTexture,
             iconSize: config.iconSize,
-            centerIconHorizontally: hasIcon,
-            centerIconVertically: hasIcon,
+            textOffset: new PIXI.Point(iconLeftAligned ? TEXT_ICON_SHIFT : 0, -2),
+            // Left-aligned icons position themselves via iconAnchor/iconOffset below instead —
+            // centerIconVertically assumes the sprite's default (0,0) top-left anchor, which
+            // would double up with the (0, 0.5) anchor iconAnchor sets for a left-aligned icon.
+            centerIconHorizontally: hasIcon && !iconLeftAligned,
+            centerIconVertically: hasIcon && !iconLeftAligned,
+            iconAnchor: iconLeftAligned ? new PIXI.Point(0, 0.5) : undefined,
+            iconOffset: iconLeftAligned ? new PIXI.Point(ICON_LEFT_PADDING, config.height / 2 - 2) : undefined,
             fontStyle: config.label !== undefined
                 ? new PIXI.TextStyle({ ...TextStyleRegistry.Body, ...(config.fontSize !== undefined ? { fontSize: config.fontSize } : {}) })
                 : undefined,
