@@ -36,6 +36,7 @@ import { CROP_CONFIG, CropId, getCropTotalGrowSec, isCropReady } from '../data/C
 import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from './AssetLibraryRegistry';
+import { createIconSlotBackground } from '../ui/IconSlotRegistry';
 
 /** World-space offset above the crop TILE's own ground-level position — see this file's own top doc for why this tracks the tile, not the player. Raised further than a single-line-of-text HUD would need since BarComponent's own MIN_BAR_HEIGHT (56) makes the whole readout noticeably taller. */
 const HUD_OFFSET = new THREE.Vector3(0, 2.3, 0);
@@ -45,9 +46,6 @@ const BAR_WIDTH = 100;
 /** The resource icon shown ABOVE the bar/button — see this file's own top doc. Same "square tinted backdrop behind a smaller icon" composition InventoryPopup's/FarmSeedPicker's own grid cells use. */
 const ICON_SIZE = 40;
 const ICON_BG_SIZE = 48;
-const ICON_BG_TEXTURE_KEY = 'BorderFrame_Squrare_Bg';
-const ICON_BG_TINT = 0x000000;
-const ICON_BG_ALPHA = 0.5;
 /** Gap between the icon's own bottom edge and the bar/button row below it. */
 const ICON_GAP = 8;
 /** Checkmark badge overlapping the resource icon's own bottom-right corner once ready — same corner-badge idiom ShopZone's own SHOP_UPGRADE_AVAILABLE_ICON badge uses on its tool icon. */
@@ -96,12 +94,8 @@ export default class FarmCropHud extends Entity {
         const rowTopY = -MIN_BAR_HEIGHT;
         const iconCenterY = rowTopY - ICON_GAP - ICON_BG_SIZE / 2 - 10;
 
-        const iconBg = new PIXI.Sprite(PIXI.Texture.from(ICON_BG_TEXTURE_KEY));
-        iconBg.tint = ICON_BG_TINT;
-        iconBg.alpha = ICON_BG_ALPHA;
+        const iconBg = createIconSlotBackground(ICON_BG_SIZE, 'Crop');
         iconBg.anchor.set(0.5, 0.5);
-        iconBg.width = ICON_BG_SIZE;
-        iconBg.height = ICON_BG_SIZE;
         iconBg.position.set(0, iconCenterY);
 
         this.resourceIcon = new PIXI.Sprite();

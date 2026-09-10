@@ -98,13 +98,18 @@ export default class ToolLevelUI extends AutoFitFrame {
             icon.position.set(0, -ROW_HEIGHT / 2);
             row.addChild(icon);
 
-            const shopId = shopIdForTool(toolId);
-            const level = shopId ? ShopUpgradeStorage.getLevel(shopId) : 0;
-            // +1 — see this file's own doc on why the raw 0-indexed level never gets shown as-is.
-            const levelLabel = new PIXI.Text(`Lv.${level + 1}`, TextStyleRegistry.Body);
-            levelLabel.anchor.set(0, 0.5);
-            levelLabel.position.set(ROW_ICON_SIZE + ROW_ICON_TEXT_GAP, -ROW_HEIGHT / 2);
-            row.addChild(levelLabel);
+            // maxLevel 0 (rope/hammer — see ToolVisualEntry.maxLevel's own doc) means this tool
+            // never upgrades, so a permanent "Lv.1" would just be noise — skip the label
+            // entirely rather than show a level that can never change.
+            if (TOOL_LIBRARY[toolId].maxLevel > 0) {
+                const shopId = shopIdForTool(toolId);
+                const level = shopId ? ShopUpgradeStorage.getLevel(shopId) : 0;
+                // +1 — see this file's own doc on why the raw 0-indexed level never gets shown as-is.
+                const levelLabel = new PIXI.Text(`Lv.${level + 1}`, TextStyleRegistry.Body);
+                levelLabel.anchor.set(0, 0.5);
+                levelLabel.position.set(ROW_ICON_SIZE + ROW_ICON_TEXT_GAP, -ROW_HEIGHT / 2);
+                row.addChild(levelLabel);
+            }
 
             this.column.addChild(row);
         });

@@ -187,6 +187,33 @@ export const CRAFT_CONFIG_BY_ID: Partial<Record<string, CraftTableConfig>> = {
         "popupMode": "simple",
         "popupBobOffset": 0,
         "particleEffectId": "craftingMyst"
+    },
+    "craftHammer": {
+        "name": "Rope Crafting Copy",
+        "recipes": [
+            {
+                "result": {
+                    "amount": 1,
+                    "item": ItemType.Hammer
+                },
+                "cost": {
+                    "grassFiber": 10
+                },
+                "id": "hammerRecipe"
+            }
+        ],
+        "destroyOnComplete": true,
+        "showModel": true,
+        "toolId": "hammer",
+        "models": [],
+        "scale": 2,
+        "rotationDeg": 0,
+        "float": true,
+        "popupMode": "simple",
+        "popupBobOffset": 0,
+        "particleEffectId": "craftingMyst",
+        "heightOffset": 0,
+        "destroyParticleEffectId": "destroyBurst"
     }
 };
 

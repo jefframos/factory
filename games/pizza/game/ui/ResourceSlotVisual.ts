@@ -17,12 +17,9 @@ import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { TextStyleRegistry } from './TextStyleRegistry';
+import { createIconSlotBackground, styleForResourceType } from './IconSlotRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
 
-/** Same texture/tint/alpha BackpackUI uses for its slot backgrounds — see BackpackUI.ts's own SLOT_BG_* constants. */
-const SLOT_BG_TEXTURE_KEY = 'BorderFrame_Squrare_Bg';
-const SLOT_BG_TINT = 0x000000;
-const SLOT_BG_ALPHA = 0.5;
 /** Gap left between the icon's edge and the slot background's edge — same value as BackpackUI's ICON_PADDING. */
 const ICON_PADDING = 6;
 /** Inset of the count label from the slot's own bottom-right corner — same idiom/values as BackpackUI's own slot count badge (see that file's own label.position.set()). */
@@ -41,11 +38,7 @@ export interface ResourceSlotVisual {
 export function createResourceSlot(type: ResourceType, size: number, labelText: string): ResourceSlotVisual {
     const container = new PIXI.Container();
 
-    const background = new PIXI.Sprite(PIXI.Texture.from(SLOT_BG_TEXTURE_KEY));
-    background.tint = SLOT_BG_TINT;
-    background.alpha = SLOT_BG_ALPHA;
-    background.width = size;
-    background.height = size;
+    const background = createIconSlotBackground(size, styleForResourceType(type));
     container.addChild(background);
 
     const icon = new PIXI.Sprite(getAssetIcon(resolveResourceAssetKey(type)));

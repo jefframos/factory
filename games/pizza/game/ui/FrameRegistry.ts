@@ -26,6 +26,20 @@ export interface FrameDef {
 
     arrowTexture?: string
     arrowPivot?: { x: number, y: number }
+    /** Fine-tune nudge (screen pixels, in the frame's own unadjusted size space — unaffected by scaleAdjust) added on top of arrowPivot's computed position — see FrameComponent.setSize(). Undefined is {x:0,y:0}, i.e. no nudge — unchanged behavior for every frame that hasn't needed this. */
+    arrowOffset?: { x: number, y: number }
+    /**
+     * Renders the underlying NineSlicePlane at `requestedSize * scaleAdjust`, then scales the
+     * plane itself back down by `1 / scaleAdjust` so the frame's final on-screen size is
+     * unchanged — see FrameComponent.setSize(). Since the border widths above are fixed texture
+     * pixels that don't scale with the plane's own width/height (only the stretchy middle does),
+     * asking for a bigger plane makes those borders a smaller fraction of the total, so they end
+     * up thinner (and the middle less aggressively stretched) once scaled back down — useful for
+     * a small/low-res source texture whose 9-slice otherwise looks chunky or over-stretched at
+     * the sizes this frame actually gets used at. Undefined (or 1) is a no-op — the default,
+     * unchanged behavior for every frame that hasn't needed this.
+     */
+    scaleAdjust?: number
 }
 
 export function uniformPadding(px: number): FramePadding {
@@ -96,10 +110,16 @@ export const FrameRegistry: Record<string, FrameDef> = {
         arrowPivot: { x: 0.5, y: 1 },
     },
     QueueFrame: {
-        textureKey: 'ResourceBar_Single_Btn_Blue1',
-        padding: DEFAULT_PADDING_BUBBLE,
-        arrowTexture: 'BubbleFrame04_Blue_Arrow',
+        textureKey: 'request-bubble',
+        padding: { bottom: 25, top: 25, left: 25, right: 25 },
+        arrowTexture: 'request-tip',
         arrowPivot: { x: 0.5, y: 1 },
+        arrowOffset: { x: 0, y: -6 }, // tune here if the tip doesn't sit flush against the body
+        // See FrameDef.scaleAdjust's own doc — request-bubble.png is small (132x96), so at this
+        // frame's actual (content-fit) on-screen size the fixed borders ate up most of the
+        // panel, squeezing the stretchy middle (and the tail baked into it) down hard. Bump to
+        // 3 if it still looks off.
+        scaleAdjust: 2,
     },
     CraftingFrame: {
         textureKey: 'ResourceBar_Single_Btn_Purple1',

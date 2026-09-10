@@ -34,6 +34,7 @@ import { BackpackStorage } from '../data/BackpackStorage';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
+import { createIconSlotBackground } from './IconSlotRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
 
 export interface BackpackListUiConfig {
@@ -63,10 +64,6 @@ const JIGGLE_SETTLE_SEC = 0.15;
 const GAIN_POPUP_RISE_PX = 16;
 const GAIN_POPUP_DURATION_SEC = 0.6;
 
-/** Same square backing BackpackUI/AnimalFollowUI/ResourceSlotVisual tint behind every resource icon (see those files' own SLOT_BG_* constants) — reused here so this list's icons contrast the same way against the 3D map instead of floating with no backing at all. */
-const ICON_BG_TEXTURE_KEY = 'BorderFrame_Squrare_Bg';
-const ICON_BG_TINT = 0x000000;
-const ICON_BG_ALPHA = 0.5;
 /** Gap left between the icon's own edge and its background square's edge — same value as BackpackUI/ResourceSlotVisual's own ICON_PADDING. */
 const ICON_PADDING = -3;
 
@@ -149,12 +146,11 @@ export default class BackpackListUI extends PIXI.Container {
         label.position.set(labelWidth, rowHeight / 2);
         container.addChild(label);
 
-        const iconBg = new PIXI.Sprite(PIXI.Texture.from(ICON_BG_TEXTURE_KEY));
-        iconBg.tint = ICON_BG_TINT;
-        iconBg.alpha = ICON_BG_ALPHA;
+        // 'Resource', not a per-type lookup — this panel already filters 'farm'-category
+        // resources out entirely (see onBackpackChanged()'s own doc), so every row it ever shows
+        // is guaranteed to be one, never 'Crop'.
+        const iconBg = createIconSlotBackground(iconSize, 'Resource');
         iconBg.anchor.set(1, 0.5);
-        iconBg.width = iconSize;
-        iconBg.height = iconSize;
         iconBg.position.set(labelWidth + labelGap + iconSize, rowHeight / 2);
         container.addChild(iconBg);
 

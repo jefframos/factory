@@ -59,6 +59,7 @@ import { getAssetIcon } from '../../world/AssetLibraryRegistry';
 import { SeedStorage } from '../../data/SeedStorage';
 import { SeedId } from '../../data/SeedTypes';
 import { LevelBadgeStyle } from '../LevelBadgeStyle';
+import { createIconSlotBackground, IconSlotName } from '../IconSlotRegistry';
 
 type TabId = 'tools' | 'resources' | 'farm';
 
@@ -86,11 +87,6 @@ const TAB_OVERLAP = 2;
 
 const TAB_ACTIVE_TEXTURE = 'Label_Parallelogram_Yellow';
 const TAB_INACTIVE_TEXTURE = 'Label_Parallelogram_Gray';
-
-/** Same square icon backing ToolListUI/BackpackListUI already tint behind every icon — reused here for the same "reads clearly against a busy background" reasoning, even though this popup's background is the darkened backdrop rather than the 3D map. */
-const ICON_BG_TEXTURE_KEY = 'BorderFrame_Squrare_Bg';
-const ICON_BG_TINT = 0x000000;
-const ICON_BG_ALPHA = 0.5;
 
 const TOOL_ROW_HEIGHT = 80;
 const TOOL_ROW_GAP = 10;
@@ -275,12 +271,8 @@ export default class InventoryPopup extends Popup {
             row.position.set(0, index * (TOOL_ROW_HEIGHT + TOOL_ROW_GAP));
             this.body.addChild(row);
 
-            const iconBg = new PIXI.Sprite(PIXI.Texture.from(ICON_BG_TEXTURE_KEY));
-            iconBg.tint = ICON_BG_TINT;
-            iconBg.alpha = ICON_BG_ALPHA;
+            const iconBg = createIconSlotBackground(TOOL_ICON_SIZE, 'Tool');
             iconBg.anchor.set(0, 0.5);
-            iconBg.width = TOOL_ICON_SIZE;
-            iconBg.height = TOOL_ICON_SIZE;
             iconBg.position.set(0, TOOL_ROW_HEIGHT / 2);
             row.addChild(iconBg);
 
@@ -292,21 +284,29 @@ export default class InventoryPopup extends Popup {
             row.addChild(icon);
 
             const shopId = shopIdForTool(toolId);
-            // +1 — same reasoning as ToolListUI's own doc: owning the tool at all already puts
-            // a player at its base tier, so this never reads "level 0".
-            const level = (shopId ? ShopUpgradeStorage.getLevel(shopId) : 0) + 1;
 
-            const badge = new PIXI.Sprite(PIXI.Texture.from(LevelBadgeStyle.badgeTextureForLevel(level)));
-            badge.anchor.set(0.5, 0.5);
-            badge.width = TOOL_BADGE_SIZE;
-            badge.height = TOOL_BADGE_SIZE;
-            badge.position.set(TOOL_ICON_SIZE, TOOL_ROW_HEIGHT / 2 + TOOL_ICON_SIZE / 2);
-            row.addChild(badge);
+            // maxLevel 0 (rope/hammer — see ToolVisualEntry.maxLevel's own doc) means this tool
+            // never upgrades, so a permanent "Lv.1" badge would just be noise — skip it
+            // entirely rather than show a level that can never change. nameLabel/statsLabel
+            // below are positioned off TOOL_ICON_SIZE, not the badge, so skipping it doesn't
+            // shift anything else in the row.
+            if (TOOL_LIBRARY[toolId].maxLevel > 0) {
+                // +1 — same reasoning as ToolListUI's own doc: owning the tool at all already
+                // puts a player at its base tier, so this never reads "level 0".
+                const level = (shopId ? ShopUpgradeStorage.getLevel(shopId) : 0) + 1;
 
-            const badgeLabel = new PIXI.Text(level.toString(), { ...TextStyleRegistry.Inventory, fontSize: 13 });
-            badgeLabel.anchor.set(0.5, 0.5);
-            badgeLabel.position.copyFrom(badge.position);
-            row.addChild(badgeLabel);
+                const badge = new PIXI.Sprite(PIXI.Texture.from(LevelBadgeStyle.badgeTextureForLevel(level)));
+                badge.anchor.set(0.5, 0.5);
+                badge.width = TOOL_BADGE_SIZE;
+                badge.height = TOOL_BADGE_SIZE;
+                badge.position.set(TOOL_ICON_SIZE, TOOL_ROW_HEIGHT / 2 + TOOL_ICON_SIZE / 2);
+                row.addChild(badge);
+
+                const badgeLabel = new PIXI.Text(level.toString(), { ...TextStyleRegistry.Inventory, fontSize: 13 });
+                badgeLabel.anchor.set(0.5, 0.5);
+                badgeLabel.position.copyFrom(badge.position);
+                row.addChild(badgeLabel);
+            }
 
             const textX = TOOL_ICON_SIZE + TOOL_LABEL_GAP;
 
@@ -317,8 +317,11 @@ export default class InventoryPopup extends Popup {
 
             const config = shopId ? SHOP_CONFIG_BY_ID[shopId] : undefined;
             const stats = config ? ACTION_CONFIG[config.action] : undefined;
+            // hitScale/resourcePerHit are lerped floats (see ShopTypes.applyShopLevel()) — at a
+            // mid-ladder level they can land on values like 2.3333333333333335, unreadable
+            // un-rounded. toFixed(1) matches hitIntervalSec's own existing rounding below.
             const statsText = stats
-                ? `Speed ${stats.hitIntervalSec.toFixed(2)}s  x${stats.hitScale}  +${stats.resourcePerHit}/hit`
+                ? `Speed ${stats.hitIntervalSec.toFixed(2)}s  x${stats.hitScale.toFixed(1)}  +${stats.resourcePerHit.toFixed(1)}/hit`
                 : '';
             const statsLabel = new PIXI.Text(statsText, { ...TextStyleRegistry.Inventory, fontSize: 16 });
             statsLabel.alpha = 0.8;
@@ -340,6 +343,7 @@ export default class InventoryPopup extends Popup {
             heldTypes.map(type => ({ texture: getAssetIcon(resolveResourceAssetKey(type)), count: counts.get(type) ?? 0 })),
             'No resources yet.',
             0,
+            'Resource',
         );
     }
 
@@ -355,23 +359,23 @@ export default class InventoryPopup extends Popup {
         const cropEntries = farmResourceTypes.map(type => ({ texture: getAssetIcon(resolveResourceAssetKey(type)), count: backpackCounts.get(type) ?? 0 }));
 
         let y = 0;
-        y += this.renderFarmSection('Seeds', seedEntries, 'No seeds yet.', y);
+        y += this.renderFarmSection('Seeds', seedEntries, 'No seeds yet.', y, 'Crop');
         y += FARM_SECTION_GAP;
-        this.renderFarmSection('Crops', cropEntries, 'No crops harvested yet.', y);
+        this.renderFarmSection('Crops', cropEntries, 'No crops harvested yet.', y, 'Crop');
     }
 
     /** One labeled sub-section of the Farm tab — a header (same TextStyleRegistry.Inventory style every other label in this popup uses) followed by its own icon grid, stacked starting at `startY` so renderFarmTab() can lay Seeds directly above Crops without either one needing to know the other's height ahead of time. Returns the total vertical space this section actually used (header + grid, whatever the grid's own empty-state/row-count ends up being) so the caller can stack the next section right after it. */
-    private renderFarmSection(title: string, entries: { texture: PIXI.Texture; count: number }[], emptyText: string, startY: number): number {
+    private renderFarmSection(title: string, entries: { texture: PIXI.Texture; count: number }[], emptyText: string, startY: number, style: IconSlotName): number {
         const header = new PIXI.Text(title, TextStyleRegistry.Inventory);
         header.position.set(0, startY);
         this.body.addChild(header);
 
-        const gridHeight = this.renderIconCountGrid(entries, emptyText, startY + FARM_SECTION_HEADER_HEIGHT);
+        const gridHeight = this.renderIconCountGrid(entries, emptyText, startY + FARM_SECTION_HEADER_HEIGHT, style);
         return FARM_SECTION_HEADER_HEIGHT + gridHeight;
     }
 
-    /** Shared grid-of-icon-cells layout — same shape Resources/Farm both want (icon bg + icon + count label, RESOURCE_GRID_COLUMNS wide), just fed a pre-resolved (texture, count) list instead of each tab re-deriving its own source data inline. `startY` lets renderFarmSection() stack more than one of these vertically; Resources (only ever one grid, no sections) always passes 0. Returns the vertical space actually used, same reason renderFarmSection() needs it. Empty-state text uses TextStyleRegistry.Inventory — same style as every other label in this popup (tab labels, tool names, farm section headers above), not TextStyleRegistry.Body, so "No X yet" never reads as a different UI language from the rest of the popup. */
-    private renderIconCountGrid(entries: { texture: PIXI.Texture; count: number }[], emptyText: string, startY: number): number {
+    /** Shared grid-of-icon-cells layout — same shape Resources/Farm both want (icon bg + icon + count label, RESOURCE_GRID_COLUMNS wide), just fed a pre-resolved (texture, count) list instead of each tab re-deriving its own source data inline. `startY` lets renderFarmSection() stack more than one of these vertically; Resources (only ever one grid, no sections) always passes 0. `style` picks the IconSlotRegistry preset for every cell's background — Resources passes 'Resource', both Farm sub-sections pass 'Crop' (see this file's own callers). Returns the vertical space actually used, same reason renderFarmSection() needs it. Empty-state text uses TextStyleRegistry.Inventory — same style as every other label in this popup (tab labels, tool names, farm section headers above), not TextStyleRegistry.Body, so "No X yet" never reads as a different UI language from the rest of the popup. */
+    private renderIconCountGrid(entries: { texture: PIXI.Texture; count: number }[], emptyText: string, startY: number, style: IconSlotName): number {
         if (entries.length === 0) {
             const empty = new PIXI.Text(emptyText, TextStyleRegistry.Inventory);
             empty.position.set(0, startY);
@@ -389,11 +393,7 @@ export default class InventoryPopup extends Popup {
             );
             this.body.addChild(cell);
 
-            const iconBg = new PIXI.Sprite(PIXI.Texture.from(ICON_BG_TEXTURE_KEY));
-            iconBg.tint = ICON_BG_TINT;
-            iconBg.alpha = ICON_BG_ALPHA;
-            iconBg.width = RESOURCE_CELL_SIZE;
-            iconBg.height = RESOURCE_CELL_SIZE;
+            const iconBg = createIconSlotBackground(RESOURCE_CELL_SIZE, style);
             cell.addChild(iconBg);
 
             const icon = new PIXI.Sprite(texture);

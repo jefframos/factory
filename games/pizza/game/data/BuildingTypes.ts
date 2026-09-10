@@ -17,6 +17,7 @@ import { ResourceType } from '../actions/ResourceTypes';
 import { MilestoneRequirement } from './MilestoneRequirement';
 import { PopupMode } from '../ui/PopupConfig';
 import { FrameName } from '../ui/FrameRegistry';
+import { ToolId } from '../actions/ToolRegistry';
 
 export enum BuildingId {
     Camp = "tower",
@@ -64,6 +65,17 @@ export interface BuildingConfig {
     name: string;
     /** Texture alias (packed 'images'/'ui' bundle) representing this building elsewhere in the UI — e.g. GateConfig's own requirement icon, for a gate whose requirement is reaching one of this building's levels (see Gate.ts's resolveRequirementIcon()). Optional — getBuildingIcon() falls back to a blank white square, same "icon-optional, blank fallback" convention as AssetLibraryEntry.icon. */
     icon?: string;
+    /**
+     * ToolRegistry id the player must own (checked via ItemStorage — see
+     * ItemType/ToolId sharing the same string values, same cast idiom
+     * AutoGatherController.hasRequiredTool() uses) before BuildingZone will let
+     * them deposit into ANY level of this building at all. undefined means no
+     * tool needed — unchanged deposit-on-approach behavior from before this
+     * field existed. Checked once per fresh trigger overlap; while missing,
+     * BuildingZone shows PlayerNotificationComponent's "missing tool" popup
+     * instead of draining the backpack — see BuildingZone.tryDeposit().
+     */
+    requiredTool?: ToolId;
     /** What the building looks like before its first level is ever cleared (level 0) — a small foundation/stub, distinct from every subsequent level's own `mesh`. */
     baseMesh: BuildingMeshConfig;
     /** Optional real-mesh override for level 0 (before any level clears) — see BuildingLevelConfig.view's own doc. */
@@ -141,6 +153,7 @@ export interface BuildingConfig {
 export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
     [BuildingId.Camp]: {
         name: "Tower",
+        requiredTool: 'hammer',
         baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
         levels: [
             {
@@ -210,6 +223,7 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
     "tower2": {
         baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
         "name": "Tower2",
+        requiredTool: 'hammer',
         "icon": "animal-hide",
         "levels": [{
             "level": 1,
@@ -234,6 +248,7 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
     "floor1": {
         baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
         "name": "Tower2 Copy",
+        requiredTool: 'hammer',
         "icon": "animal-hide",
         "levels": [{
             "level": 1,

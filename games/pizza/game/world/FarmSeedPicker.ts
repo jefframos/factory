@@ -48,6 +48,7 @@ import { CropId } from '../data/CropTypes';
 import { SEED_CONFIG, SeedId } from '../data/SeedTypes';
 import { SeedStorage } from '../data/SeedStorage';
 import { AssetLibraryKey, getAssetIcon } from './AssetLibraryRegistry';
+import { createIconSlotBackground } from '../ui/IconSlotRegistry';
 
 /** World-space offset ABOVE THE PLAYER's own transform.position (feet) the picker anchors to — same order of magnitude as PlayerUIAvoidanceComponent's own DEFAULT_HEAD_OFFSET (1.6), raised a bit further than a first pass so the grid's own frame (and its baked-in arrow, see PICKER_FRAME_PADDING's own doc) clears the head/shoulders with real room to spare before avoidViewer's sideways push even has to kick in. */
 const PICKER_HEAD_OFFSET = new THREE.Vector3(0, 2.5, 0);
@@ -58,9 +59,6 @@ const SEED_GRID_COLUMNS = 4;
 const SEED_CELL_SIZE = 56;
 const SEED_CELL_GAP = 8;
 const SEED_ICON_SIZE = 38;
-const SEED_ICON_BG_TEXTURE_KEY = 'BorderFrame_Squrare_Bg';
-const SEED_ICON_BG_TINT = 0x000000;
-const SEED_ICON_BG_ALPHA = 0.5;
 
 interface Candidate {
     position: THREE.Vector3;
@@ -214,11 +212,7 @@ export default class FarmSeedPicker extends Entity {
             cell.on('pointertap', () => active.onPlant(seedId));
             this.pickerRow.addChild(cell);
 
-            const iconBg = new PIXI.Sprite(PIXI.Texture.from(SEED_ICON_BG_TEXTURE_KEY));
-            iconBg.tint = SEED_ICON_BG_TINT;
-            iconBg.alpha = SEED_ICON_BG_ALPHA;
-            iconBg.width = SEED_CELL_SIZE;
-            iconBg.height = SEED_CELL_SIZE;
+            const iconBg = createIconSlotBackground(SEED_CELL_SIZE, 'Crop');
             cell.addChild(iconBg);
 
             const icon = new PIXI.Sprite(getAssetIcon(seedId as unknown as AssetLibraryKey));

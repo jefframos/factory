@@ -385,7 +385,11 @@ export const ENTITY_SOURCE_MAP = {
         // it's a plain wholesale replace like every other non-list managed key — no listMerge
         // needed. Formerly lived on ShopConfig; moved here since the range describes the TOOL,
         // not whichever shop happens to sell its upgrades.
-        managedKeys: ['label', 'icon', 'models', 'attributes'],
+        // `maxLevel` (ToolVisualEntry.maxLevel — see ToolRegistry.ts's own doc) is required,
+        // same reasoning as `models`'s own comment above: every tool must explicitly state
+        // whether it has an upgrade ladder (>0) or not (0, e.g. "rope"/"hammer"), so the UI
+        // knows whether to show a level at all — NOT in optionalKeys.
+        managedKeys: ['label', 'icon', 'models', 'maxLevel', 'attributes'],
         optionalKeys: ['attributes'],
     },
     assetLibrary: {

@@ -81,5 +81,32 @@
         "particleEffectId": "craftingMyst",
         "popupBobOffset": 0,
         "popupMode": "simple"
+    },
+    "craftHammer": {
+        "recipes": [
+            {
+                "result": {
+                    "amount": 1,
+                    "item": "hammer"
+                },
+                "cost": {
+                    "grassFiber": 10
+                },
+                "id": "hammerRecipe"
+            }
+        ],
+        "models": [],
+        "name": "Rope Crafting Copy",
+        "destroyOnComplete": true,
+        "showModel": true,
+        "toolId": "hammer",
+        "scale": 2,
+        "rotationDeg": 0,
+        "float": true,
+        "particleEffectId": "craftingMyst",
+        "popupBobOffset": 0,
+        "popupMode": "simple",
+        "heightOffset": 0,
+        "destroyParticleEffectId": "destroyBurst"
     }
 }

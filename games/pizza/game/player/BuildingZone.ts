@@ -54,6 +54,11 @@ import { CameraFocusHost } from '../camera/CameraFocusHost';
 import { WorldProgressionHost } from '../camera/WorldProgressionHost';
 import { wait } from '../utils/GsapUtils';
 import MainPlayer from './MainPlayer';
+import { getToolIcon } from '../actions/ToolRegistry';
+import { ItemStorage } from '../crafting/ItemStorage';
+import { ItemType } from '../crafting/ItemTypes';
+import { createIconSlotBackground } from '../ui/IconSlotRegistry';
+import ViewUtils from 'core/utils/ViewUtils';
 import { ParticleSystem } from '../vfx/ParticleSystem';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 
@@ -79,6 +84,12 @@ const TITLE_SLOTS_GAP = 4;
 /** One requirement slot per required resource, laid out in a single horizontal row — same slot visual as BackpackUI (see ResourceSlotVisual.ts). */
 const REQ_SLOT_SIZE = 56;
 const REQ_SLOT_GAP = 10;
+/** BuildingConfig.requiredTool's own "missing tool" slot (see refreshLabel()) — same REQ_SLOT_SIZE as a normal requirement slot so the panel doesn't visibly resize switching between the two states, same ICON_PADDING convention ResourceSlotVisual.ts uses. */
+const MISSING_TOOL_ICON_PADDING = 6;
+/** Exclamation badge overlapping the tool icon's bottom-right corner — same composition/texture/inset as PlayerNotificationComponent's own "missing requirement" badge (and Gate.ts's REQUIREMENT_BADGE_MISSING before it). */
+const MISSING_TOOL_BADGE_SIZE = 22;
+const MISSING_TOOL_BADGE_INSET = -2;
+const MISSING_TOOL_BADGE_TEXTURE = 'Icon_Exclamation';
 const FLY_IN_STAGGER_SEC = 0.12;
 /** How long the reveal sweep takes on a level-up mesh swap — see playRevealEffect(). */
 const MESH_DROP_DURATION_SEC = 0.7;
@@ -164,6 +175,13 @@ export default class BuildingZone extends Entity {
 
     private readonly handleProgressChanged = (id: BuildingId): void => {
         if (id === this.buildingId) {
+            this.refreshLabel();
+        }
+    };
+
+    /** Keeps the persistent panel's missing-tool state (see refreshLabel()) live — crafting BuildingConfig.requiredTool while standing right next to this building (or having it drained some other way) should flip the panel immediately, not just the next time some unrelated deposit/level-up event happens to call refreshLabel() anyway. */
+    private readonly handleItemChanged = (type: ItemType): void => {
+        if (type === BUILDING_CONFIG[this.buildingId].requiredTool) {
             this.refreshLabel();
         }
     };
@@ -381,6 +399,7 @@ export default class BuildingZone extends Entity {
 
         BuildingStorage.onProgressChanged.add(this.handleProgressChanged);
         BuildingStorage.onLevelUp.add(this.handleLevelUp);
+        ItemStorage.onChange.add(this.handleItemChanged);
 
         // onTriggerStay (not just onTriggerEnter) makes this a CONTINUOUS deposit — every
         // physics step the player is still standing here, tryDeposit() gets another chance to
@@ -432,6 +451,7 @@ export default class BuildingZone extends Entity {
     public override destroy(): void {
         BuildingStorage.onProgressChanged.remove(this.handleProgressChanged);
         BuildingStorage.onLevelUp.remove(this.handleLevelUp);
+        ItemStorage.onChange.remove(this.handleItemChanged);
         this.reentryTimer?.kill();
         this.disposeBuildingMesh();
         super.destroy();
@@ -751,6 +771,43 @@ export default class BuildingZone extends Entity {
             return;
         }
 
+        this.requirementsContainer.removeChildren().forEach(child => child.destroy({ children: true }));
+
+        // BuildingConfig.requiredTool gates the WHOLE panel content, not just the deposit
+        // itself (see tryDeposit()) — showing "3/8 wood" alongside "missing hammer" would read
+        // as "I can deposit, I just need more wood," which isn't true here: nothing can be
+        // deposited at all until the tool's owned. So this replaces the normal title +
+        // resource-row entirely with just the tool's own icon (badged, same composition
+        // PlayerNotificationComponent.showBlocked() uses for its own transient version of this)
+        // rather than showing both at once. Reacts live to ItemStorage.onChange (see
+        // handleItemChanged()) — no proximity/trigger tracking needed, since this panel's own
+        // ScreenAnchorComponent already only shows it once the player's close enough anyway.
+        const requiredTool = config.requiredTool;
+        if (requiredTool !== undefined && !ItemStorage.hasCount(requiredTool as ItemType, 1)) {
+            this.titleText.visible = false;
+
+            const slot = new PIXI.Container();
+            slot.position.set(-REQ_SLOT_SIZE / 2, -REQ_SLOT_SIZE);
+            this.requirementsContainer.addChild(slot);
+
+            slot.addChild(createIconSlotBackground(REQ_SLOT_SIZE, 'Tool'));
+
+            const icon = new PIXI.Sprite(getToolIcon(requiredTool));
+            icon.anchor.set(0.5);
+            icon.position.set(REQ_SLOT_SIZE / 2, REQ_SLOT_SIZE / 2);
+            icon.scale.set(ViewUtils.elementScaler(icon, REQ_SLOT_SIZE - MISSING_TOOL_ICON_PADDING * 2));
+            slot.addChild(icon);
+
+            const badge = new PIXI.Sprite(PIXI.Texture.from(MISSING_TOOL_BADGE_TEXTURE));
+            badge.anchor.set(1, 1);
+            badge.scale.set(ViewUtils.elementScaler(badge, MISSING_TOOL_BADGE_SIZE));
+            badge.position.set(REQ_SLOT_SIZE - MISSING_TOOL_BADGE_INSET, REQ_SLOT_SIZE - MISSING_TOOL_BADGE_INSET);
+            slot.addChild(badge);
+
+            this.labelFrame.fit();
+            return;
+        }
+
         // Always shown now, even in 'simple' mode — a level number above the requirement slots
         // is the one piece of context a bare icon-first popup still needs (was previously
         // dropped entirely for 'simple', leaving no way to tell the building's current level
@@ -759,8 +816,6 @@ export default class BuildingZone extends Entity {
         const level = BuildingStorage.getLevel(this.buildingId);
         this.titleText.visible = true;
         this.titleText.text = config.popupMode === 'simple' ? `Lv${level}` : `${config.name} Lv.${level}`;
-
-        this.requirementsContainer.removeChildren().forEach(child => child.destroy({ children: true }));
 
         const next = BuildingStorage.getNextLevelConfig(this.buildingId)!;
         const entries = Object.entries(next.requirements) as [ResourceType, number][];
@@ -790,6 +845,17 @@ export default class BuildingZone extends Entity {
     private tryDeposit(other: RigidBody): void {
         const player = other.entity;
         if (!(player instanceof MainPlayer) || BuildingStorage.isMaxLevel(this.buildingId) || this.awaitingReentry) {
+            return;
+        }
+
+        // BuildingConfig.requiredTool (e.g. the hammer) gates depositing into ANY level of this
+        // building at all — checked before touching isPlayerInside/BackpackStorage so a player
+        // without it never starts draining resources they can't actually spend here yet. The
+        // PERSISTENT panel (see refreshLabel()) is what actually shows this — it already reacts
+        // to ItemStorage.onChange, so there's nothing left to do here beyond refusing the
+        // deposit itself.
+        const requiredTool = BUILDING_CONFIG[this.buildingId].requiredTool;
+        if (requiredTool !== undefined && !ItemStorage.hasCount(requiredTool as ItemType, 1)) {
             return;
         }
 

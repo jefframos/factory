@@ -35,6 +35,7 @@ import { SHOP_CONFIG_BY_ID } from '../shop/ShopTypes';
 import { getToolIcon, ToolId, TOOL_LIBRARY } from '../actions/ToolRegistry';
 import { ItemStorage } from '../crafting/ItemStorage';
 import { ItemType } from '../crafting/ItemTypes';
+import { createIconSlotBackground } from './IconSlotRegistry';
 
 export interface ToolListUiConfig {
     rowHeight: number;
@@ -51,10 +52,6 @@ const DEFAULT_CONFIG: ToolListUiConfig = {
     labelGap: 8,
 };
 
-/** Same square backing BackpackListUI.ts tints behind every resource icon (see that file's own ICON_BG_* constants) — reused here so tool icons contrast the same way against the 3D map instead of floating with no backing at all. */
-const ICON_BG_TEXTURE_KEY = 'BorderFrame_Squrare_Bg';
-const ICON_BG_TINT = 0x000000;
-const ICON_BG_ALPHA = 0.5;
 /** Gap left between the icon's own edge and its background square's edge. */
 const ICON_PADDING = 4;
 
@@ -114,12 +111,8 @@ export default class ToolListUI extends PIXI.Container {
             row.position.set(0, index * (rowHeight + rowGap));
             this.column.addChild(row);
 
-            const iconBg = new PIXI.Sprite(PIXI.Texture.from(ICON_BG_TEXTURE_KEY));
-            iconBg.tint = ICON_BG_TINT;
-            iconBg.alpha = ICON_BG_ALPHA;
+            const iconBg = createIconSlotBackground(iconSize, 'Tool');
             iconBg.anchor.set(0, 0.5);
-            iconBg.width = iconSize;
-            iconBg.height = iconSize;
             iconBg.position.set(0, rowHeight / 2);
             row.addChild(iconBg);
 
@@ -133,15 +126,20 @@ export default class ToolListUI extends PIXI.Container {
             icon.position.set(iconSize / 2, rowHeight / 2);
             row.addChild(icon);
 
-            const shopId = shopIdForTool(toolId);
-            const level = shopId ? ShopUpgradeStorage.getLevel(shopId) : 0;
-            // +1 — same reasoning as ToolLevelUI's own doc: ShopUpgradeStorage.getLevel() is
-            // 0-indexed internally, but owning the tool at all already puts a player at its
-            // base tier, so this never reads "Lv.0" to the player.
-            const levelLabel = new PIXI.Text(`Lv.${level + 1}`, TextStyleRegistry.Body);
-            levelLabel.anchor.set(0, 0.5);
-            levelLabel.position.set(iconSize + labelGap, rowHeight / 2);
-            row.addChild(levelLabel);
+            // maxLevel 0 (rope/hammer — see ToolVisualEntry.maxLevel's own doc) means this tool
+            // never upgrades, so a permanent "Lv.1" would just be noise — skip the label
+            // entirely rather than show a level that can never change.
+            if (TOOL_LIBRARY[toolId].maxLevel > 0) {
+                const shopId = shopIdForTool(toolId);
+                const level = shopId ? ShopUpgradeStorage.getLevel(shopId) : 0;
+                // +1 — same reasoning as ToolLevelUI's own doc: ShopUpgradeStorage.getLevel() is
+                // 0-indexed internally, but owning the tool at all already puts a player at its
+                // base tier, so this never reads "Lv.0" to the player.
+                const levelLabel = new PIXI.Text(`Lv.${level + 1}`, TextStyleRegistry.Body);
+                levelLabel.anchor.set(0, 0.5);
+                levelLabel.position.set(iconSize + labelGap, rowHeight / 2);
+                row.addChild(levelLabel);
+            }
         });
 
         this.panelWidth = ownedToolIds.length > 0

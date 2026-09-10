@@ -5,6 +5,7 @@
         "models": [
             "Tools.Axe"
         ],
+        "maxLevel": 10,
         "attributes": {
             "damage": {
                 "min": 1,
@@ -34,6 +35,7 @@
         "models": [
             "Tools.Pickaxe"
         ],
+        "maxLevel": 10,
         "attributes": {
             "damage": {
                 "min": 1,
@@ -63,6 +65,22 @@
         ],
         "label": "Rope",
         "icon": "rope-coil",
+        "maxLevel": 0,
+        "attributes": {
+            "damage": {},
+            "hitAngleDeg": {},
+            "hitRangeMeters": {},
+            "speed": {},
+            "resourcePerHit": {}
+        }
+    },
+    "hammer": {
+        "models": [
+            "Tools.Hammer"
+        ],
+        "label": "Hammer",
+        "icon": "crafting-hammer",
+        "maxLevel": 0,
         "attributes": {
             "damage": {},
             "hitAngleDeg": {},

@@ -35,6 +35,7 @@ import { AnimalFollowStorage, MAX_FOLLOWERS } from '../data/AnimalFollowStorage'
 import { ANIMAL_CONFIG, AnimalType } from '../actions/AnimalTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
+import { createIconSlotBackground } from './IconSlotRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
 
 export interface AnimalDockUiConfig {
@@ -58,10 +59,6 @@ const DEFAULT_CONFIG: AnimalDockUiConfig = {
     floatDurationSec: 1.6,
 };
 
-/** Same square backing BackpackListUI/ToolListUI tint behind every resource/tool icon (see those files' own ICON_BG_* constants) — reused here so follower icons contrast the same way against the 3D map instead of floating with no backing at all. */
-const ICON_BG_TEXTURE_KEY = 'BorderFrame_Squrare_Bg';
-const ICON_BG_TINT = 0x000000;
-const ICON_BG_ALPHA = 0.5;
 /** Gap left between the icon's own edge and its background square's edge. */
 const ICON_PADDING = 6;
 
@@ -156,12 +153,8 @@ export default class AnimalDockUI extends PIXI.Container {
         const container = new PIXI.Container();
         this.addChild(container);
 
-        const iconBg = new PIXI.Sprite(PIXI.Texture.from(ICON_BG_TEXTURE_KEY));
-        iconBg.tint = ICON_BG_TINT;
-        iconBg.alpha = ICON_BG_ALPHA;
+        const iconBg = createIconSlotBackground(iconSize);
         iconBg.anchor.set(0, 0.5);
-        iconBg.width = iconSize;
-        iconBg.height = iconSize;
         iconBg.position.set(0, this.config.rowHeight / 2);
         container.addChild(iconBg);
 

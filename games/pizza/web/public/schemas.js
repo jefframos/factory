@@ -438,6 +438,7 @@ const ENTITY_SCHEMAS = {
         { key: 'label', type: 'text', label: 'Label' },
         { key: 'icon', type: 'icon', label: 'Icon' },
         { key: 'models', type: 'modelList', label: 'Models' },
+        { key: 'maxLevel', type: 'number', label: 'Max Level (0 = never upgraded, e.g. rope/hammer — hides the level UI wherever this tool appears)' },
         {
             key: 'attributes', type: 'group', label: 'Upgrade Attribute Ranges (Min = level 0/never upgraded, Max = fully maxed) — optional, only needed if a shop upgrades this tool', optional: true,
             fields: [

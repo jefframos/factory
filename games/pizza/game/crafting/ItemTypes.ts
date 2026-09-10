@@ -17,7 +17,8 @@ import { getToolIcon, ToolId } from '../actions/ToolRegistry';
 export enum ItemType {
     Axe = 'axe',
     Pickaxe = 'pickaxe',
-    Rope = "rope"
+    Rope = "rope",
+    Hammer = 'hammer'
 }
 
 export interface ItemConfig {
@@ -37,7 +38,8 @@ export const ITEM_CONFIG: Record<ItemType, ItemConfig> = {
         // should show the rope, not the axe it inherited by copy-paste.
         toolId: 'rope',
         "label": "Rope"
-    }
+    },
+    [ItemType.Hammer]: { label: "Hammer", toolId: 'hammer' }
 };
 
 /** `ITEM_CONFIG[type]`'s icon, as an actual texture — see ItemConfig.toolId's own doc. */

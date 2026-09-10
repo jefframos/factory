@@ -36,6 +36,7 @@ import { AnimalFollowStorage, MAX_FOLLOWERS } from '../data/AnimalFollowStorage'
 import { ANIMAL_CONFIG, AnimalType } from '../actions/AnimalTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
+import { createIconSlotBackground } from './IconSlotRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
 
 export interface AnimalFollowUiConfig {
@@ -59,10 +60,6 @@ const DEFAULT_CONFIG: AnimalFollowUiConfig = {
     padding: 14,
 };
 
-/** Same flat-square placeholder BackpackUI's own slot background uses. */
-const SLOT_BG_TEXTURE_KEY = 'BorderFrame_Squrare_Bg';
-const SLOT_BG_TINT = 0x000000;
-const SLOT_BG_ALPHA = 0.5;
 /** Vertical space reserved above the slot grid for the title/capacity text. */
 const TITLE_HEIGHT = 22;
 
@@ -128,11 +125,7 @@ export default class AnimalFollowUI extends PIXI.Container {
         const container = new PIXI.Container();
         this.addChild(container);
 
-        const background = new PIXI.Sprite(PIXI.Texture.from(SLOT_BG_TEXTURE_KEY));
-        background.tint = SLOT_BG_TINT;
-        background.alpha = SLOT_BG_ALPHA;
-        background.width = slotSize;
-        background.height = slotSize;
+        const background = createIconSlotBackground(slotSize);
         container.addChild(background);
 
         const slot: Slot = { container, background };

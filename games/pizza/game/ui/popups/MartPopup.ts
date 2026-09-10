@@ -35,6 +35,7 @@ import { RESOURCE_CONFIG, ResourceType } from '../../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../../actions/ResourceRegistry';
 import { getAssetIcon } from '../../world/AssetLibraryRegistry';
 import { getMartBuyPrice, getMartSellPrice, MartConfig } from '../../data/MartTypes';
+import { createIconSlotBackground, styleForResourceType } from '../IconSlotRegistry';
 
 type MartTabId = 'buy' | 'sell';
 
@@ -57,10 +58,6 @@ const TAB_PADDING_X = 30;
 const TAB_OVERLAP = 2;
 const TAB_ACTIVE_TEXTURE = 'Label_Parallelogram_Yellow';
 const TAB_INACTIVE_TEXTURE = 'Label_Parallelogram_Gray';
-
-const ICON_BG_TEXTURE_KEY = 'BorderFrame_Squrare_Bg';
-const ICON_BG_TINT = 0x000000;
-const ICON_BG_ALPHA = 0.5;
 
 const ROW_HEIGHT = 64;
 const ROW_GAP = 8;
@@ -276,12 +273,8 @@ export default class MartPopup extends Popup {
         row.position.set(0, index * (ROW_HEIGHT + ROW_GAP));
         this.body.addChild(row);
 
-        const iconBg = new PIXI.Sprite(PIXI.Texture.from(ICON_BG_TEXTURE_KEY));
-        iconBg.tint = ICON_BG_TINT;
-        iconBg.alpha = ICON_BG_ALPHA;
+        const iconBg = createIconSlotBackground(ROW_ICON_SIZE, styleForResourceType(resourceType));
         iconBg.anchor.set(0, 0.5);
-        iconBg.width = ROW_ICON_SIZE;
-        iconBg.height = ROW_ICON_SIZE;
         iconBg.position.set(0, ROW_HEIGHT / 2);
         row.addChild(iconBg);
 

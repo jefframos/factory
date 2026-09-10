@@ -33,6 +33,7 @@ import gsap from 'gsap';
 import FrameComponent from './FrameComponent';
 import { FrameName } from './FrameRegistry';
 import { TextStyleRegistry } from './TextStyleRegistry';
+import { createIconSlotBackground } from './IconSlotRegistry';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
@@ -60,10 +61,6 @@ const DEFAULT_CONFIG: BackpackUiConfig = {
     padding: 14,
 };
 
-/** Plain flat square, tinted/alpha'd in code below rather than needing a pre-darkened asset variant — see addSlot(). */
-const SLOT_BG_TEXTURE_KEY = 'BorderFrame_Squrare_Bg';
-const SLOT_BG_TINT = 0x000000;
-const SLOT_BG_ALPHA = 0.5;
 /** Vertical space reserved above the slot grid for the title text. */
 const TITLE_HEIGHT = 22;
 
@@ -141,11 +138,10 @@ export default class BackpackUI extends PIXI.Container {
         const container = new PIXI.Container();
         this.addChild(container);
 
-        const background = new PIXI.Sprite(PIXI.Texture.from(SLOT_BG_TEXTURE_KEY));
-        background.tint = SLOT_BG_TINT;
-        background.alpha = SLOT_BG_ALPHA;
-        background.width = slotSize;
-        background.height = slotSize;
+        // 'Resource', not a per-type lookup — this panel already filters 'farm'-category
+        // resources out entirely (see onBackpackChanged()'s own doc), so every slot it ever
+        // shows is guaranteed to be one, never 'Crop'.
+        const background = createIconSlotBackground(slotSize, 'Resource');
         container.addChild(background);
 
         const slot: Slot = { container, background };

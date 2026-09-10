@@ -76,6 +76,17 @@ export interface ToolVisualEntry {
     /** Local rotation (degrees, XYZ euler) so the tool reads as held along the hand/forearm rather than sticking straight out. */
     rotationDeg: THREE.Vector3;
     /**
+     * How many levels this tool's upgrade ladder has — 0 for a tool no shop ever upgrades (e.g.
+     * "rope"/"hammer" below, which only ever sit at their level-0 stats). Every UI that shows a
+     * tool's level (ToolLevelUI, ToolListUI, InventoryPopup's tool row) hides that level entirely
+     * for a maxLevel-0 tool instead of showing a permanent, meaningless "Lv.1" — see each of
+     * those files' own doc. Should match whatever ShopConfig.totalLevels a shop targeting this
+     * tool via `tool: ToolId` (see ShopTypes.ts) actually uses, though nothing enforces that
+     * automatically today — this is purely a UI-visibility flag, not itself read by the upgrade
+     * math (ShopTypes.applyShopLevel() reads `attributes`/ShopConfig.totalLevels directly).
+     */
+    maxLevel: number;
+    /**
      * This tool's own upgrade ladder range — undefined for a tool no shop ever upgrades (e.g.
      * "rope" below). A ShopConfig that names this tool via `tool: ToolId` (see ShopTypes.ts)
      * reads its min/max numbers from HERE, not from the shop's own config — the shop is just
@@ -95,6 +106,7 @@ export const TOOL_LIBRARY = {
         scale: 100,
         offset: new THREE.Vector3(-20, 20, -15),
         rotationDeg: new THREE.Vector3(180, 0, 90),
+        maxLevel: 10,
         attributes: {
             "damage": {
                 "min": 1,
@@ -128,6 +140,7 @@ export const TOOL_LIBRARY = {
         scale: 100,
         offset: new THREE.Vector3(-20, 20, -15),
         rotationDeg: new THREE.Vector3(180, 0, 90),
+        maxLevel: 10,
         "attributes": {
             "damage": {
                 "min": 1,
@@ -161,6 +174,26 @@ export const TOOL_LIBRARY = {
         "label": "Rope",
         "icon": "rope-coil",
         "models": [MODELS.Tools.RopeBundleA],
+        maxLevel: 0,
+        "attributes": {
+            "damage": {},
+            "hitAngleDeg": {},
+            "hitRangeMeters": {},
+            "speed": {},
+            "resourcePerHit": {}
+        }
+    },
+    "hammer": {
+        color: 0x6b4423,
+        radius: 8,
+        length: 100,
+        scale: 100,
+        offset: new THREE.Vector3(-20, 20, -15),
+        rotationDeg: new THREE.Vector3(180, 0, 90),
+        "label": "Hammer",
+        "icon": "crafting-hammer",
+        "models": [MODELS.Tools.Hammer],
+        maxLevel: 0,
         "attributes": {
             "damage": {},
             "hitAngleDeg": {},

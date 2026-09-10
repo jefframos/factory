@@ -3,14 +3,19 @@ import { FrameName, FrameRegistry } from './FrameRegistry';
 
 export default class FrameComponent extends PIXI.Container {
     private readonly plane: PIXI.NineSlicePlane;
+    /** See FrameDef.scaleAdjust's own doc — applied in setSize(). 1 (the default) is a no-op. */
+    private readonly scaleAdjust: number;
 
     private arrow?: PIXI.Sprite;
     private arrowPivot?: { x: number; y: number };
+    /** See FrameDef.arrowOffset's own doc — applied on top of arrowPivot in setSize(). {0,0} (the default) is a no-op. */
+    private arrowOffset!: { x: number; y: number };
 
     public constructor(frame: FrameName, width: number, height: number) {
         super();
 
         const def = FrameRegistry[frame];
+        this.scaleAdjust = def.scaleAdjust ?? 1;
 
         // Undefined textureKey (see FrameDef's own doc) means this frame draws no visible
         // panel at all — PIXI.Texture.EMPTY is a valid 0x0 texture NineSlicePlane accepts
@@ -27,8 +32,14 @@ export default class FrameComponent extends PIXI.Container {
 
         if (def.arrowTexture) {
             this.arrow = PIXI.Sprite.from(def.arrowTexture);
-            this.arrow.anchor.set(0.5, 0.5); // arrow size never changes
+            // Top-center, not center — arrowPivot's y:1 default places this at the frame's own
+            // bottom edge, and a tail/tip asset is meant to hang DOWN from that edge (its own
+            // top row cropped flush against wherever the body texture's bottom border ends), not
+            // straddle it. A center anchor here would leave half the sprite floating back up
+            // into the body instead of pinned at the seam.
+            this.arrow.anchor.set(0.5, 0);
             this.arrowPivot = def.arrowPivot ?? { x: 0.5, y: 1 };
+            this.arrowOffset = def.arrowOffset ?? { x: 0, y: 0 };
             this.addChild(this.arrow);
         }
 
@@ -36,13 +47,26 @@ export default class FrameComponent extends PIXI.Container {
     }
 
     public setSize(width: number, height: number): void {
-        this.plane.width = width;
-        this.plane.height = height;
+        // Plane is sized (and its own border widths measured) at `scaleAdjust`x, then scaled
+        // back down by the inverse so the FINAL apparent size still matches `width`/`height` —
+        // see FrameDef.scaleAdjust's own doc for why. Only the plane is scaled, not `this` —
+        // the arrow below is positioned against the real, unadjusted width/height and must stay
+        // at its own natural size regardless of this frame's scaleAdjust.
+        this.plane.width = width * this.scaleAdjust;
+        this.plane.height = height * this.scaleAdjust;
+        this.plane.scale.set(1 / this.scaleAdjust);
 
         if (this.arrow && this.arrowPivot) {
+            // Same 1/scaleAdjust shrink as the plane above — the arrow texture is cropped from
+            // the same source art at the same native pixel density, so it needs to be "zoomed
+            // out" by the same factor to keep looking like one continuous piece of art with the
+            // (now visually thinner-bordered) body, instead of rendering oversized next to it.
+            // Position still uses the real, unadjusted width/height — only the arrow's own
+            // rendered size follows scaleAdjust, not where it's placed.
+            this.arrow.scale.set(1 / this.scaleAdjust);
             this.arrow.position.set(
-                width * this.arrowPivot.x,
-                height * this.arrowPivot.y
+                width * this.arrowPivot.x + this.arrowOffset.x,
+                height * this.arrowPivot.y + this.arrowOffset.y
             );
         }
     }
