@@ -153,7 +153,7 @@ export default class AnimalDockUI extends PIXI.Container {
         const container = new PIXI.Container();
         this.addChild(container);
 
-        const iconBg = createIconSlotBackground(iconSize);
+        const iconBg = createIconSlotBackground(iconSize, 'Animal');
         iconBg.anchor.set(0, 0.5);
         iconBg.position.set(0, this.config.rowHeight / 2);
         container.addChild(iconBg);

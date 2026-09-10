@@ -49,6 +49,7 @@ import { SEED_CONFIG, SeedId } from '../data/SeedTypes';
 import { SeedStorage } from '../data/SeedStorage';
 import { AssetLibraryKey, getAssetIcon } from './AssetLibraryRegistry';
 import { createIconSlotBackground } from '../ui/IconSlotRegistry';
+import { getIconLayout } from '../ui/LayoutRegistry';
 
 /** World-space offset ABOVE THE PLAYER's own transform.position (feet) the picker anchors to — same order of magnitude as PlayerUIAvoidanceComponent's own DEFAULT_HEAD_OFFSET (1.6), raised a bit further than a first pass so the grid's own frame (and its baked-in arrow, see PICKER_FRAME_PADDING's own doc) clears the head/shoulders with real room to spare before avoidViewer's sideways push even has to kick in. */
 const PICKER_HEAD_OFFSET = new THREE.Vector3(0, 2.5, 0);
@@ -56,9 +57,11 @@ const PICKER_HEAD_OFFSET = new THREE.Vector3(0, 2.5, 0);
 const PICKER_FRAME_PADDING = uniformFitPadding(20);
 /** Same icon-bg-square + icon + count-label grid cell shape as InventoryPopup's/BackpackListUI's own resource cells. Smaller than InventoryPopup's own RESOURCE_CELL_SIZE (80px) since this floats over the player's head in the 3D world rather than filling a dedicated popup panel. */
 const SEED_GRID_COLUMNS = 4;
-const SEED_CELL_SIZE = 56;
-const SEED_CELL_GAP = 8;
-const SEED_ICON_SIZE = 38;
+/** Sourced from LayoutRegistry's 'Grid' preset (see that file's own doc), overridden to this picker's own smaller 56px cell/9px padding and 8px gap — smaller than InventoryPopup's own 80px Grid default since this floats over the player's head in the 3D world rather than filling a dedicated popup panel. */
+const SEED_LAYOUT = getIconLayout('Grid', { slotSize: 56, iconPadding: 9, gapToNeighbor: 8 });
+const SEED_CELL_SIZE = SEED_LAYOUT.slotSize;
+const SEED_CELL_GAP = SEED_LAYOUT.gapToNeighbor;
+const SEED_ICON_SIZE = SEED_CELL_SIZE - SEED_LAYOUT.iconPadding * 2;
 
 interface Candidate {
     position: THREE.Vector3;
@@ -222,9 +225,9 @@ export default class FarmSeedPicker extends Entity {
             icon.position.set(SEED_CELL_SIZE / 2, SEED_CELL_SIZE / 2 - 4);
             cell.addChild(icon);
 
-            const label = new PIXI.Text(count.toString(), { ...TextStyleRegistry.Body, fontSize: 14 });
-            label.anchor.set(0.5, 1);
-            label.position.set(SEED_CELL_SIZE / 2, SEED_CELL_SIZE - 2);
+            const label = new PIXI.Text(count.toString(), { ...TextStyleRegistry.Body, fontSize: SEED_LAYOUT.label.fontSize });
+            label.anchor.set(SEED_LAYOUT.label.anchor[0], SEED_LAYOUT.label.anchor[1]);
+            label.position.set(SEED_CELL_SIZE / 2 + SEED_LAYOUT.label.offset[0], SEED_CELL_SIZE - SEED_LAYOUT.label.offset[1]);
             cell.addChild(label);
         });
 

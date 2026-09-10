@@ -58,6 +58,7 @@ import { getToolIcon } from '../actions/ToolRegistry';
 import { ItemStorage } from '../crafting/ItemStorage';
 import { ItemType } from '../crafting/ItemTypes';
 import { createIconSlotBackground } from '../ui/IconSlotRegistry';
+import { getIconLayout } from '../ui/LayoutRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
 import { ParticleSystem } from '../vfx/ParticleSystem';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
@@ -81,14 +82,15 @@ const CAMERA_FOCUS_HOLD_SEC = 1;
 const CAMERA_FOCUS_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2, 0);
 /** Vertical gap between the requirement slots and the title sitting above them — see refreshLabel(). */
 const TITLE_SLOTS_GAP = 4;
-/** One requirement slot per required resource, laid out in a single horizontal row — same slot visual as BackpackUI (see ResourceSlotVisual.ts). */
-const REQ_SLOT_SIZE = 56;
-const REQ_SLOT_GAP = 10;
+/** One requirement slot per required resource, laid out in a single horizontal row — same slot visual as BackpackUI (see ResourceSlotVisual.ts). Sourced from LayoutRegistry's 'Requirement' preset — see that file's own doc — rather than a local constant. */
+const REQUIREMENT_LAYOUT = getIconLayout('Requirement');
+const REQ_SLOT_SIZE = REQUIREMENT_LAYOUT.slotSize;
+const REQ_SLOT_GAP = REQUIREMENT_LAYOUT.gapToNeighbor;
 /** BuildingConfig.requiredTool's own "missing tool" slot (see refreshLabel()) — same REQ_SLOT_SIZE as a normal requirement slot so the panel doesn't visibly resize switching between the two states, same ICON_PADDING convention ResourceSlotVisual.ts uses. */
-const MISSING_TOOL_ICON_PADDING = 6;
-/** Exclamation badge overlapping the tool icon's bottom-right corner — same composition/texture/inset as PlayerNotificationComponent's own "missing requirement" badge (and Gate.ts's REQUIREMENT_BADGE_MISSING before it). */
-const MISSING_TOOL_BADGE_SIZE = 22;
-const MISSING_TOOL_BADGE_INSET = -2;
+const MISSING_TOOL_ICON_PADDING = REQUIREMENT_LAYOUT.iconPadding;
+/** Exclamation badge overlapping the tool icon's bottom-right corner — same size/inset LayoutRegistry's own badge default already carries (a checkmark by default — see that file's own doc on why — with the texture overridden to exclamation here for the "missing," not "met," case). */
+const MISSING_TOOL_BADGE_SIZE = REQUIREMENT_LAYOUT.badge.size;
+const MISSING_TOOL_BADGE_INSET = REQUIREMENT_LAYOUT.badge.inset;
 const MISSING_TOOL_BADGE_TEXTURE = 'Icon_Exclamation';
 const FLY_IN_STAGGER_SEC = 0.12;
 /** How long the reveal sweep takes on a level-up mesh swap — see playRevealEffect(). */

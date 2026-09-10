@@ -26,12 +26,12 @@
 // the crop it grows into are conceptually different things even though
 // both only live on this one tab.
 //
-// The body reserves a FIXED footprint (BODY_WIDTH x BODY_HEIGHT, spacer
-// added once and never removed) regardless of which tab is showing — Popup
-// sizes its AutoFitFrame around buildContent()'s output exactly once, at
-// construction, so a later tab switch that rendered a taller/shorter content
-// container would either get clipped or leave dead space inside a frame
-// that already committed to its first tab's size.
+// The body reserves a FIXED footprint (BODY_WIDTH x BODY_HEIGHT, a tinted
+// 'back1' background sprite added once and never removed) regardless of
+// which tab is showing — Popup sizes its AutoFitFrame around buildContent()'s
+// output exactly once, at construction, so a later tab switch that rendered
+// a taller/shorter content container would either get clipped or leave dead
+// space inside a frame that already committed to its first tab's size.
 //
 // Live-updates while open: subscribes to ItemStorage/ShopUpgradeStorage
 // (Tools tab) and BackpackStorage (Resources tab) and re-renders only the
@@ -45,6 +45,8 @@
 
 import * as PIXI from 'pixi.js';
 import Popup from './Popup';
+import FrameComponent from '../FrameComponent';
+import ScrollView from '../ScrollView';
 import { TextStyleRegistry } from '../TextStyleRegistry';
 import { getToolIcon, ToolId, TOOL_LIBRARY } from '../../actions/ToolRegistry';
 import { ItemStorage } from '../../crafting/ItemStorage';
@@ -59,7 +61,8 @@ import { getAssetIcon } from '../../world/AssetLibraryRegistry';
 import { SeedStorage } from '../../data/SeedStorage';
 import { SeedId } from '../../data/SeedTypes';
 import { LevelBadgeStyle } from '../LevelBadgeStyle';
-import { createIconSlotBackground, IconSlotName } from '../IconSlotRegistry';
+import { createIconSlotBackground, IconSlotName, IconSlotRegistry } from '../IconSlotRegistry';
+import { getIconLayout } from '../LayoutRegistry';
 
 type TabId = 'tools' | 'resources' | 'farm';
 
@@ -75,8 +78,13 @@ const TABS: TabDef[] = [
     { id: 'farm', label: 'Farm' },
 ];
 
-const BODY_WIDTH = 450;
-const BODY_HEIGHT = 500;
+/** The actual canvas every render*Tab()'s own row/grid math is tuned against — same 450x500 footprint this file always used, kept as its own named constants (rather than the two magic numbers they used to be) now that BODY_WIDTH/BODY_HEIGHT below mean something bigger. Also the ScrollView viewport size — see buildContent()'s own doc. */
+const CONTENT_WIDTH = 450;
+const CONTENT_HEIGHT = 500;
+/** Inset applied to `contentArea` within `body` on every side (see buildContent()'s own doc) — BODY_WIDTH/BODY_HEIGHT below bake in `2 * BODY_CONTENT_MARGIN` on top of CONTENT_WIDTH/CONTENT_HEIGHT, so the actual content canvas stays exactly CONTENT_WIDTH x CONTENT_HEIGHT regardless of this margin's own value. */
+const BODY_CONTENT_MARGIN = 20;
+const BODY_WIDTH = CONTENT_WIDTH + BODY_CONTENT_MARGIN * 2;
+const BODY_HEIGHT = CONTENT_HEIGHT + BODY_CONTENT_MARGIN * 2;
 const BODY_TABS_GAP = 14;
 
 /** Label_Parallelogram_*.png's own bake — stretchable only in the middle 30px-to-30px band, full height (no top/bottom slack) — see the nine-slice widths passed into PIXI.NineSlicePlane below. */
@@ -88,22 +96,60 @@ const TAB_OVERLAP = 2;
 const TAB_ACTIVE_TEXTURE = 'Label_Parallelogram_Yellow';
 const TAB_INACTIVE_TEXTURE = 'Label_Parallelogram_Gray';
 
-const TOOL_ROW_HEIGHT = 80;
+/**
+ * Sourced from LayoutRegistry's 'ToolRow' preset (see that file's own doc),
+ * overridden to this tab's own 80px row and its level BADGE presentation
+ * (a tiered ring, texture resolved per-level by LevelBadgeStyle — NOT
+ * 'ToolRow's own inline "Lv.N" text label, which ToolListUI/ToolLevelUI use
+ * instead) — anchor (0.5,0.5)/inset 0 centers the badge exactly ON the
+ * icon's own bottom-right corner, rather than the (1,1)/-2 "overlaps
+ * outward past the corner" convention every OTHER badge in the game uses;
+ * kept as this tab's own deliberate override, not folded into the shared
+ * default.
+ */
+const TOOL_LAYOUT = getIconLayout('ToolRow', {
+    slotSize: 80,
+    badge: { enabled: true, size: 32, inset: 0, anchor: [0.5, 0.5] },
+});
+const TOOL_ROW_HEIGHT = TOOL_LAYOUT.slotSize;
 const TOOL_ROW_GAP = 10;
-const TOOL_ICON_SIZE = 80;
-const TOOL_ICON_PADDING = 4;
+const TOOL_ICON_SIZE = TOOL_LAYOUT.slotSize;
+const TOOL_ICON_PADDING = TOOL_LAYOUT.iconPadding;
 const TOOL_LABEL_GAP = 12;
 /** Level badge (see LevelBadgeStyle.ts) pinned to the icon's own bottom-right corner — same "pinned to the corner" idiom QueueZone's upgrade badge/Popup's old close button used, just on a tool icon instead. */
-const TOOL_BADGE_SIZE = 32;
+const TOOL_BADGE_SIZE = TOOL_LAYOUT.badge.size;
 
+/** Sourced from LayoutRegistry's 'Grid' preset — see that file's own doc — rather than local constants. */
+const GRID_LAYOUT = getIconLayout('Grid');
 const RESOURCE_GRID_COLUMNS = 5;
-const RESOURCE_CELL_SIZE = 80;
-const RESOURCE_CELL_GAP = 10;
-const RESOURCE_ICON_SIZE = 44;
+const RESOURCE_CELL_SIZE = GRID_LAYOUT.slotSize;
+const RESOURCE_CELL_GAP = GRID_LAYOUT.gapToNeighbor;
+const RESOURCE_ICON_SIZE = RESOURCE_CELL_SIZE - GRID_LAYOUT.iconPadding * 2;
 
-/** Farm tab's own Seeds/Crops sub-headers (see renderFarmTab()) — same TextStyleRegistry.Inventory style every other label in this popup uses (tab labels, tool names, "No X yet" empty states), just so a sub-header doesn't read as a different UI language from the rest of the popup. */
+/**
+ * Farm tab's own Seeds/Crops sub-headers (see renderFarmTab()) — DELIBERATELY
+ * its own smaller, uppercase, letter-spaced style rather than
+ * TextStyleRegistry.Inventory (every other label in this popup — tab names,
+ * tool names, "No X yet" empty states), and tinted the same green
+ * IconSlotRegistry's own 'Crop' style uses. The two sit one tab away from
+ * Tools/Resources, which each show ONE flat list with no sub-grouping at
+ * all — Seeds/Crops need to read as SUB-CATEGORIES of the Farm tab, not as
+ * more body text sitting above a grid, or they blend into the rows/cells
+ * right below them.
+ */
+const FARM_SECTION_HEADER_STYLE: Partial<PIXI.TextStyle> = {
+    ...TextStyleRegistry.Inventory,
+    fontSize: 16,
+    letterSpacing: 1,
+    fill: IconSlotRegistry.Crop.tint,
+};
 const FARM_SECTION_HEADER_HEIGHT = 26;
+/** Split evenly around FARM_SECTION_DIVIDER's own line — see renderFarmTab(). */
 const FARM_SECTION_GAP = 18;
+/** Thin rule between the Seeds and Crops sub-sections — the one further, explicit separation a font/color change alone doesn't give: without it, Crops' own header can still read as "one more row of Seeds' grid" at a glance. Pale/translucent so it reads as a divider, not another piece of content. */
+const FARM_SECTION_DIVIDER_COLOR = 0xffffff;
+const FARM_SECTION_DIVIDER_ALPHA = 0.15;
+const FARM_SECTION_DIVIDER_HEIGHT = 1;
 
 /** Every tool id in TOOL_LIBRARY's own declaration order — same convention as ToolListUI.TOOL_IDS. ToolId and ItemType share the exact same string values (see ItemTypes.ts's own doc), so casting one to the other below is safe. */
 const TOOL_IDS = Object.keys(TOOL_LIBRARY) as ToolId[];
@@ -129,6 +175,10 @@ export default class InventoryPopup extends Popup {
     // afterward.
     private declare activeTab: TabId;
     private declare body: PIXI.Container;
+    /** Inset within `body` by BODY_CONTENT_MARGIN on every side — every render*Tab() method adds its content HERE, never directly into `body`, so content never sits flush against the background's own edges/rounded corners (see buildContent()'s own doc). Scrolled/clipped by `scrollView` — its own `y` is that ScrollView's to manage, not something render*Tab() methods should ever set directly. */
+    private declare contentArea: PIXI.Container;
+    /** Clips/scrolls `contentArea` to CONTENT_WIDTH x CONTENT_HEIGHT — see buildContent()'s own doc and ScrollView.ts. refresh() must be called after every renderActiveTab() rebuild (see that method), since contentArea's own height can change per tab/per re-render. */
+    private declare scrollView: ScrollView;
     private declare tabButtons: Map<TabId, PIXI.NineSlicePlane>;
 
     private readonly handleToolsChanged = (): void => {
@@ -151,7 +201,10 @@ export default class InventoryPopup extends Popup {
     };
 
     public constructor() {
-        super('Backpack', { contentWidth: BODY_WIDTH, frame: 'ItemFrame' });
+        // closeOnBackdropTap: false — this is a multi-tab menu meant to be browsed rather than
+        // glanced at, so it should only close via its own header close button, not a stray tap
+        // outside it — see Popup.ts's own doc on that option.
+        super('Backpack', { contentWidth: BODY_WIDTH, frame: 'ItemFrame', closeOnBackdropTap: false });
 
         ItemStorage.onChange.add(this.handleToolsChanged);
         ShopUpgradeStorage.onChange.add(this.handleToolsChanged);
@@ -174,11 +227,34 @@ export default class InventoryPopup extends Popup {
         this.body = new PIXI.Container();
         content.addChild(this.body);
 
-        // Locks the body's own reported bounds to a fixed footprint regardless of which tab is
-        // showing — see this file's own doc.
-        const spacer = new PIXI.Graphics();
-        spacer.beginFill(0x000000, 0).drawRect(0, 0, BODY_WIDTH, BODY_HEIGHT).endFill();
-        this.body.addChild(spacer);
+        // The tab content's own backdrop — same 'back1' texture IconSlotRegistry's presets tint,
+        // here tinted plain black at 0.5 alpha rather than one of its named content-kind colors
+        // (this panel holds ALL kinds of content depending on the active tab, not one). 9-sliced
+        // via FrameRegistry's own 'PanelBody' preset rather than a plain stretched Sprite — at
+        // this panel scale (well past 'back1's own 130x130 native size), a plain stretch would
+        // visibly smear its rounded corners; see that preset's own doc. Sized to the exact
+        // BODY_WIDTH x BODY_HEIGHT footprint, which ALSO locks the body's own reported bounds to
+        // that fixed size regardless of which tab is showing (see this file's own top doc) — a
+        // second, invisible spacer for that purpose alone would be redundant now that this frame
+        // already occupies exactly that rect. Stays the ONLY direct child of `body` — every
+        // render*Tab() adds its own content into `contentArea` below instead, never here.
+        const background = new FrameComponent('PanelBody', BODY_WIDTH, BODY_HEIGHT);
+        background.setTint(0x000000);
+        background.alpha = 0.5;
+        this.body.addChild(background);
+
+        // Inset by BODY_CONTENT_MARGIN on every side so tab content never sits flush against the
+        // background's own edges/rounded corners — see BODY_CONTENT_MARGIN's own doc for why
+        // none of the row/grid layout constants below needed to change to make room for this.
+        // Wrapped in a ScrollView rather than added to `body` directly — the Farm tab's own
+        // Seeds+Crops content can run taller than CONTENT_HEIGHT once a player's holding enough
+        // distinct seeds/crops, so this clips it to the fixed footprint and lets a drag scroll
+        // through the rest. A no-op for Tools/Resources, which both still fit — see ScrollView's
+        // own doc on why content shorter than the viewport just never moves.
+        this.contentArea = new PIXI.Container();
+        this.scrollView = new ScrollView({ target: this.contentArea, width: CONTENT_WIDTH, height: CONTENT_HEIGHT });
+        this.scrollView.position.set(BODY_CONTENT_MARGIN, BODY_CONTENT_MARGIN);
+        this.body.addChild(this.scrollView);
 
         const tabsRow = new PIXI.Container();
         tabsRow.position.set(0, BODY_HEIGHT + BODY_TABS_GAP);
@@ -239,13 +315,9 @@ export default class InventoryPopup extends Popup {
         }
     }
 
-    /** Clears whatever the body currently shows (besides the fixed-size spacer) and rebuilds it for `this.activeTab`. */
+    /** Clears whatever contentArea currently shows and rebuilds it for `this.activeTab` — `body`'s own background (see buildContent) is a sibling of contentArea, never touched here. */
     private renderActiveTab(): void {
-        // Index 0 is the spacer (see buildContent) — never torn down, everything after it is
-        // this tab's own content.
-        while (this.body.children.length > 1) {
-            this.body.children[this.body.children.length - 1].destroy({ children: true });
-        }
+        this.contentArea.removeChildren().forEach(child => child.destroy({ children: true }));
 
         if (this.activeTab === 'tools') {
             this.renderToolsTab();
@@ -254,6 +326,12 @@ export default class InventoryPopup extends Popup {
         } else {
             this.renderFarmTab();
         }
+
+        // Re-measures contentArea's freshly-rebuilt height and re-clamps/resets scroll — the
+        // Farm tab can run taller than CONTENT_HEIGHT (see ScrollView's own doc); switching to a
+        // shorter tab must also snap scroll back to the top, which refresh() already does on its
+        // own once it sees the new content fits.
+        this.scrollView.refresh();
     }
 
     private renderToolsTab(): void {
@@ -262,14 +340,14 @@ export default class InventoryPopup extends Popup {
         if (ownedToolIds.length === 0) {
             const empty = new PIXI.Text('No tools crafted yet.', TextStyleRegistry.Inventory);
             empty.position.set(0, 0);
-            this.body.addChild(empty);
+            this.contentArea.addChild(empty);
             return;
         }
 
         ownedToolIds.forEach((toolId, index) => {
             const row = new PIXI.Container();
             row.position.set(0, index * (TOOL_ROW_HEIGHT + TOOL_ROW_GAP));
-            this.body.addChild(row);
+            this.contentArea.addChild(row);
 
             const iconBg = createIconSlotBackground(TOOL_ICON_SIZE, 'Tool');
             iconBg.anchor.set(0, 0.5);
@@ -296,10 +374,10 @@ export default class InventoryPopup extends Popup {
                 const level = (shopId ? ShopUpgradeStorage.getLevel(shopId) : 0) + 1;
 
                 const badge = new PIXI.Sprite(PIXI.Texture.from(LevelBadgeStyle.badgeTextureForLevel(level)));
-                badge.anchor.set(0.5, 0.5);
+                badge.anchor.set(TOOL_LAYOUT.badge.anchor[0], TOOL_LAYOUT.badge.anchor[1]);
                 badge.width = TOOL_BADGE_SIZE;
                 badge.height = TOOL_BADGE_SIZE;
-                badge.position.set(TOOL_ICON_SIZE, TOOL_ROW_HEIGHT / 2 + TOOL_ICON_SIZE / 2);
+                badge.position.set(TOOL_ICON_SIZE - TOOL_LAYOUT.badge.inset, TOOL_ROW_HEIGHT / 2 + TOOL_ICON_SIZE / 2 - TOOL_LAYOUT.badge.inset);
                 row.addChild(badge);
 
                 const badgeLabel = new PIXI.Text(level.toString(), { ...TextStyleRegistry.Inventory, fontSize: 13 });
@@ -360,15 +438,26 @@ export default class InventoryPopup extends Popup {
 
         let y = 0;
         y += this.renderFarmSection('Seeds', seedEntries, 'No seeds yet.', y, 'Crop');
-        y += FARM_SECTION_GAP;
+        y += FARM_SECTION_GAP / 2;
+
+        // The one further, explicit separation a font/color change alone doesn't give — see
+        // FARM_SECTION_DIVIDER_*'s own doc. Full contentArea width (BODY_WIDTH already has
+        // BODY_CONTENT_MARGIN baked in on both sides — see that constant's own doc).
+        const divider = new PIXI.Graphics();
+        divider.beginFill(FARM_SECTION_DIVIDER_COLOR, FARM_SECTION_DIVIDER_ALPHA)
+            .drawRect(0, y, CONTENT_WIDTH, FARM_SECTION_DIVIDER_HEIGHT)
+            .endFill();
+        this.contentArea.addChild(divider);
+        y += FARM_SECTION_GAP / 2;
+
         this.renderFarmSection('Crops', cropEntries, 'No crops harvested yet.', y, 'Crop');
     }
 
-    /** One labeled sub-section of the Farm tab — a header (same TextStyleRegistry.Inventory style every other label in this popup uses) followed by its own icon grid, stacked starting at `startY` so renderFarmTab() can lay Seeds directly above Crops without either one needing to know the other's height ahead of time. Returns the total vertical space this section actually used (header + grid, whatever the grid's own empty-state/row-count ends up being) so the caller can stack the next section right after it. */
+    /** One labeled sub-section of the Farm tab — a header (FARM_SECTION_HEADER_STYLE — see that constant's own doc for why it's NOT TextStyleRegistry.Inventory like every other label in this popup) followed by its own icon grid, stacked starting at `startY` so renderFarmTab() can lay Seeds directly above Crops without either one needing to know the other's height ahead of time. Returns the total vertical space this section actually used (header + grid, whatever the grid's own empty-state/row-count ends up being) so the caller can stack the next section right after it. */
     private renderFarmSection(title: string, entries: { texture: PIXI.Texture; count: number }[], emptyText: string, startY: number, style: IconSlotName): number {
-        const header = new PIXI.Text(title, TextStyleRegistry.Inventory);
+        const header = new PIXI.Text(title.toUpperCase(), FARM_SECTION_HEADER_STYLE);
         header.position.set(0, startY);
-        this.body.addChild(header);
+        this.contentArea.addChild(header);
 
         const gridHeight = this.renderIconCountGrid(entries, emptyText, startY + FARM_SECTION_HEADER_HEIGHT, style);
         return FARM_SECTION_HEADER_HEIGHT + gridHeight;
@@ -379,7 +468,7 @@ export default class InventoryPopup extends Popup {
         if (entries.length === 0) {
             const empty = new PIXI.Text(emptyText, TextStyleRegistry.Inventory);
             empty.position.set(0, startY);
-            this.body.addChild(empty);
+            this.contentArea.addChild(empty);
             return empty.height;
         }
 
@@ -391,7 +480,7 @@ export default class InventoryPopup extends Popup {
                 col * (RESOURCE_CELL_SIZE + RESOURCE_CELL_GAP),
                 startY + row * (RESOURCE_CELL_SIZE + RESOURCE_CELL_GAP),
             );
-            this.body.addChild(cell);
+            this.contentArea.addChild(cell);
 
             const iconBg = createIconSlotBackground(RESOURCE_CELL_SIZE, style);
             cell.addChild(iconBg);
@@ -403,9 +492,9 @@ export default class InventoryPopup extends Popup {
             icon.position.set(RESOURCE_CELL_SIZE / 2, RESOURCE_CELL_SIZE / 2 - 4);
             cell.addChild(icon);
 
-            const label = new PIXI.Text(count.toString(), { ...TextStyleRegistry.Body, fontSize: 14 });
-            label.anchor.set(0.5, 1);
-            label.position.set(RESOURCE_CELL_SIZE / 2, RESOURCE_CELL_SIZE - 2);
+            const label = new PIXI.Text(count.toString(), { ...TextStyleRegistry.Body, fontSize: GRID_LAYOUT.label.fontSize });
+            label.anchor.set(GRID_LAYOUT.label.anchor[0], GRID_LAYOUT.label.anchor[1]);
+            label.position.set(RESOURCE_CELL_SIZE / 2 + GRID_LAYOUT.label.offset[0], RESOURCE_CELL_SIZE - GRID_LAYOUT.label.offset[1]);
             cell.addChild(label);
         });
 

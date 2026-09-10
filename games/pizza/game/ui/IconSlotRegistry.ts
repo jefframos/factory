@@ -42,7 +42,7 @@ export const IconSlotRegistry: Record<string, IconSlotStyle> = {
     /** ToolListUI/InventoryPopup's own tool row — a tool icon's slot. Bright sky blue — saturated, not the muddy steel-grey this used to be, to match the rest of this game's vibrant/hypercasual palette. */
     Tool: {
         textureKey: 'back1',
-        tint: 0x35b6ff,
+        tint: 0xff8a3d,
         alpha: 1,
     },
     /** A CropTypes.ts harvest yield OR a SeedTypes.ts seed — FarmCropHud/FarmSeedPicker's own icon, and any generic resource slot showing a 'farm'-category resource (see styleForResourceType() below). Bright grass green. */
@@ -54,13 +54,19 @@ export const IconSlotRegistry: Record<string, IconSlotStyle> = {
     /** A plain bankable resource (BackpackStorage's 'main'/'animal'-category items) — see styleForResourceType() below. Punchy orange — saturated, not the muddy earth-brown this used to be. */
     Resource: {
         textureKey: 'back1',
-        tint: 0xff8a3d,
+        tint: 0x35b6ff,
         alpha: 1,
     },
     /** Not wired to a live caller yet (every currency icon today — EconomyUI's topbar pill, QueueZone's reward line — uses its own shape, not this square-slot composition) — kept ready for whenever one needs it. Bright gold. */
     Currency: {
         textureKey: 'back1',
         tint: 0xffd23f,
+        alpha: 1,
+    },
+    /** AnimalDockUI/AnimalFollowUI's own roster slot — previously fell back to 'Default' (plain black) with no content-kind color of its own, unlike every other kind here. Vibrant pink, distinct from Tool/Crop/Resource/Currency's own hues. */
+    Animal: {
+        textureKey: 'back1',
+        tint: 0xff5fa8,
         alpha: 1,
     },
 };

@@ -201,6 +201,25 @@ export const TOOL_LIBRARY = {
             "speed": {},
             "resourcePerHit": {}
         }
+    },
+    "shovel": {
+        color: 0x6b4423,
+        radius: 8,
+        length: 100,
+        scale: 100,
+        offset: new THREE.Vector3(-20, 20, -15),
+        rotationDeg: new THREE.Vector3(180, 0, 90),
+        "label": "Shovel",
+        "icon": "field-shovel",
+        "models": [MODELS.Tools.Shovel],
+        maxLevel: 0,
+        "attributes": {
+            "damage": {},
+            "hitAngleDeg": {},
+            "hitRangeMeters": {},
+            "speed": {},
+            "resourcePerHit": {}
+        }
     }
 } satisfies Record<string, ToolVisualEntry>;
 

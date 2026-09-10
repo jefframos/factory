@@ -88,5 +88,20 @@
             "speed": {},
             "resourcePerHit": {}
         }
+    },
+    "shovel": {
+        "models": [
+            "Tools.Shovel"
+        ],
+        "maxLevel": 0,
+        "attributes": {
+            "damage": {},
+            "hitAngleDeg": {},
+            "hitRangeMeters": {},
+            "speed": {},
+            "resourcePerHit": {}
+        },
+        "label": "Shovel",
+        "icon": "field-shovel"
     }
 }

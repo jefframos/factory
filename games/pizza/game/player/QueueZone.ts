@@ -44,6 +44,7 @@ import { spawnFlyingResourceIcon, spawnFlyingIconToOverlayPoint } from '../compo
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { createResourceSlot } from '../ui/ResourceSlotVisual';
+import { getIconLayout } from '../ui/LayoutRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer } from '../ui/PopupConfig';
 import { BackpackStorage } from '../data/BackpackStorage';
@@ -68,10 +69,13 @@ const QUEUE_ZONE_CORNER_RADIUS = 0.3;
 const POPUP_HEIGHT_OFFSET = new THREE.Vector3(0, HALF_EXTENTS.y * 2 + 2.2, 0);
 /** Vertical gap between the requirements row and the reward line sitting above it — see refreshLabel(). */
 const HEADER_BODY_GAP = 6;
-/** One requirement slot per resource the active task asks for, laid out in a single horizontal row — same slot visual as BackpackUI (see ResourceSlotVisual.ts). Currently a queue task only ever asks for one resource (see QueueTypes.ts), but this is written as a row so a future multi-resource task needs no layout changes here. */
-const REQ_SLOT_SIZE = 56;
-const REQ_SLOT_GAP = 10;
+/** One requirement slot per resource the active task asks for, laid out in a single horizontal row — same slot visual as BackpackUI (see ResourceSlotVisual.ts). Currently a queue task only ever asks for one resource (see QueueTypes.ts), but this is written as a row so a future multi-resource task needs no layout changes here. Sourced from LayoutRegistry's 'Requirement' preset — see that file's own doc — rather than a local constant, so this row stays in lockstep with every other zone's own requirement row. */
+const REQUIREMENT_LAYOUT = getIconLayout('Requirement');
+const REQ_SLOT_SIZE = REQUIREMENT_LAYOUT.slotSize;
+const REQ_SLOT_GAP = REQUIREMENT_LAYOUT.gapToNeighbor;
 const REWARD_ICON_SIZE = 22;
+/** Sourced from LayoutRegistry's 'Bare' preset (see that file's own doc) — this reward line is a bare icon+text with no background square, same as ShopZone's cost row/FarmZone's price row, which used to each hand-type this same 4px gap as their own bare literal. */
+const BARE_LAYOUT = getIconLayout('Bare');
 /** Same badge NotificationRarity.Common/LevelBadgeStyle's tier-2 use — see UpgradeStyle.ts/LevelBadgeStyle.ts's own usage — for the completion callout (see checkForCompletion()/refreshLabel()). Plain sprite, not nine-sliced (no FrameRegistry entry exists for it — neither of those existing call sites frames it either). */
 const REWARD_BADGE_TEXTURE_KEY = 'Label_Badge01_Green';
 /** Real asset is 129x132 (see public/pizza/images/ui.webp.json) — height/width, applied on top of REWARD_BADGE_SIZE so the badge doesn't stretch off-square. */
@@ -497,7 +501,7 @@ export default class QueueZone extends Entity {
 
             const rewardText = new PIXI.Text(`+${task.rewardAmount}`, TextStyleRegistry.Body);
             rewardText.anchor.set(0, 0.5);
-            rewardText.position.set(REWARD_ICON_SIZE + 4, 0);
+            rewardText.position.set(REWARD_ICON_SIZE + BARE_LAYOUT.gapToNeighbor, 0);
             this.headerContainer.addChild(rewardText);
 
             this.headerContainer.pivot.set(this.headerContainer.width / 2, this.headerContainer.height);

@@ -49,6 +49,7 @@ import { EconomyStorage } from '../data/EconomyStorage';
 import { CURRENCY_CONFIG } from '../data/EconomyTypes';
 import { getAssetIcon } from './AssetLibraryRegistry';
 import { resolveEntityView } from './EntityViewRegistry';
+import { getIconLayout } from '../ui/LayoutRegistry';
 import { computeFarmGrid, FARM_GRID_CELL_SIZE } from './FarmGrid';
 import MainPlayer from '../player/MainPlayer';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
@@ -62,6 +63,8 @@ const PLACEHOLDER_EMPTY_COLOR = 0x77aa55;
 const POPUP_HEIGHT_OFFSET = 1.2;
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 const COST_ICON_SIZE = 28;
+/** Sourced from LayoutRegistry's 'Bare' preset (see that file's own doc) — this price row is a bare icon+text with no background square, same as QueueZone's reward line/ShopZone's cost row, which used to each hand-type this same 4px gap as their own bare literal. */
+const BARE_LAYOUT = getIconLayout('Bare');
 const FLY_IN_STAGGER_SEC = 0.12;
 
 export default class FarmZone extends Entity {
@@ -181,7 +184,7 @@ export default class FarmZone extends Entity {
 
         this.priceText = new PIXI.Text('', TextStyleRegistry.Body);
         this.priceText.anchor.set(0, 0.5);
-        this.priceText.position.set(COST_ICON_SIZE + 4, 0);
+        this.priceText.position.set(COST_ICON_SIZE + BARE_LAYOUT.gapToNeighbor, 0);
         row.addChild(this.priceText);
 
         this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, 'FarmFrame', row);

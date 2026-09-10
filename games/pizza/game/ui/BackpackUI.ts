@@ -34,6 +34,7 @@ import FrameComponent from './FrameComponent';
 import { FrameName } from './FrameRegistry';
 import { TextStyleRegistry } from './TextStyleRegistry';
 import { createIconSlotBackground } from './IconSlotRegistry';
+import { getIconLayout } from './LayoutRegistry';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
@@ -52,10 +53,13 @@ export interface BackpackUiConfig {
     padding: number;
 }
 
+/** Sourced from LayoutRegistry's 'BackpackSlot' preset — see that file's own doc — rather than local constants. */
+const BACKPACK_LAYOUT = getIconLayout('BackpackSlot');
+
 const DEFAULT_CONFIG: BackpackUiConfig = {
     minVisualSlots: 2,
-    slotSize: 48,
-    slotGap: 8,
+    slotSize: BACKPACK_LAYOUT.slotSize,
+    slotGap: BACKPACK_LAYOUT.gapToNeighbor,
     frame: 'Large',
     title: 'Backpack',
     padding: 14,
@@ -65,7 +69,7 @@ const DEFAULT_CONFIG: BackpackUiConfig = {
 const TITLE_HEIGHT = 22;
 
 /** Gap left between the icon's edge and the slot background's edge — see occupySlot()'s ViewUtils.elementScaler() call. */
-const ICON_PADDING = 6;
+const ICON_PADDING = BACKPACK_LAYOUT.iconPadding;
 
 /** Icon jiggle on a gain — a quick punch-out-and-settle, not a full spin. Multiplies the icon's own fitted base scale (see occupySlot()), not an absolute scale — the punch settles back to that fitted size, not to 1. */
 const JIGGLE_PUNCH_SCALE = 1.3;
@@ -267,8 +271,8 @@ export default class BackpackUI extends PIXI.Container {
         slot.iconBaseScale = baseScale;
 
         const label = new PIXI.Text('0', TextStyleRegistry.Body);
-        label.anchor.set(1, 1);
-        label.position.set(size - 4, size - 2);
+        label.anchor.set(BACKPACK_LAYOUT.label.anchor[0], BACKPACK_LAYOUT.label.anchor[1]);
+        label.position.set(size - BACKPACK_LAYOUT.label.offset[0], size - BACKPACK_LAYOUT.label.offset[1]);
         slot.container.addChild(label);
         slot.label = label;
     }

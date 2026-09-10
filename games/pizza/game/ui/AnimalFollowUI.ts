@@ -125,7 +125,7 @@ export default class AnimalFollowUI extends PIXI.Container {
         const container = new PIXI.Container();
         this.addChild(container);
 
-        const background = createIconSlotBackground(slotSize);
+        const background = createIconSlotBackground(slotSize, 'Animal');
         container.addChild(background);
 
         const slot: Slot = { container, background };

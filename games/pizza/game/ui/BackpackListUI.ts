@@ -35,22 +35,36 @@ import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { createIconSlotBackground } from './IconSlotRegistry';
+import { getIconLayout } from './LayoutRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
 
 export interface BackpackListUiConfig {
     rowHeight: number;
     rowGap: number;
     iconSize: number;
-    /** Gap between the icon's right edge and the count label. */
+    /** Gap between the icon's right edge and the count label. Not sourced from LayoutRegistry — this row's icon-on-the-right/label-on-the-left arrangement is mirrored from every other icon-slot composition in the game, which all put the label to the RIGHT (or below/inside) the icon, so it doesn't fit any of LayoutRegistry's own IconLayoutLabel.placement values. Stays a local, file-specific constant rather than forcing an inaccurate shared abstraction. */
     labelGap: number;
     /** Width reserved for the count label, right-aligned within it — keeps every row's label lined up regardless of icon width. */
     labelWidth: number;
 }
 
+/**
+ * slotSize sourced DIRECTLY from LayoutRegistry's 'BackpackSlot' preset —
+ * see that file's own doc — with no override, so tuning BackpackSlot's own
+ * slotSize actually resizes this list (the one BackpackUI/BackpackListUI
+ * pair that's actually on screen — see UIService.ts's own comment on which
+ * of the two is wired up). iconPadding/gapToNeighbor stay overridden: the
+ * deliberately-negative padding (the icon renders slightly BIGGER than its
+ * own backdrop here — the one file in the game that does) and the tighter
+ * row gap are this list's own real differences from BackpackUI's panel, not
+ * things that should silently drift if BackpackSlot's shared defaults move.
+ */
+const BACKPACK_LIST_LAYOUT = getIconLayout('BackpackSlot', { iconPadding: 1, gapToNeighbor: 6 });
+
 const DEFAULT_CONFIG: BackpackListUiConfig = {
-    rowHeight: 32,
-    rowGap: 6,
-    iconSize: 32,
+    rowHeight: BACKPACK_LIST_LAYOUT.slotSize,
+    rowGap: BACKPACK_LIST_LAYOUT.gapToNeighbor,
+    iconSize: BACKPACK_LIST_LAYOUT.slotSize,
     labelGap: 4,
     labelWidth: 32,
 };
@@ -64,8 +78,8 @@ const JIGGLE_SETTLE_SEC = 0.15;
 const GAIN_POPUP_RISE_PX = 16;
 const GAIN_POPUP_DURATION_SEC = 0.6;
 
-/** Gap left between the icon's own edge and its background square's edge — same value as BackpackUI/ResourceSlotVisual's own ICON_PADDING. */
-const ICON_PADDING = -3;
+/** Gap left between the icon's own edge and its background square's edge — see BACKPACK_LIST_LAYOUT's own doc for why this is negative. */
+const ICON_PADDING = BACKPACK_LIST_LAYOUT.iconPadding;
 
 interface Row {
     readonly container: PIXI.Container;

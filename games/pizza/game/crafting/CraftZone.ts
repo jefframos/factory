@@ -64,6 +64,7 @@ import { TOOL_LIBRARY } from '../actions/ToolRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer } from '../ui/PopupConfig';
 import { createResourceSlot } from '../ui/ResourceSlotVisual';
+import { getIconLayout } from '../ui/LayoutRegistry';
 import MainPlayer from '../player/MainPlayer';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
@@ -87,8 +88,10 @@ const TABLE_MESH_COLOR = 0x7a5a3a;
 /** The active recipe's own output icon — the panel's main image, same "icon-first" idiom ShopZone's tool icon uses. */
 const RESULT_ICON_SIZE = 48;
 const ICON_BODY_GAP = 4;
-const REQ_SLOT_SIZE = 56;
-const REQ_SLOT_GAP = 10;
+/** Sourced from LayoutRegistry's 'Requirement' preset — see that file's own doc — rather than a local constant. */
+const REQUIREMENT_LAYOUT = getIconLayout('Requirement');
+const REQ_SLOT_SIZE = REQUIREMENT_LAYOUT.slotSize;
+const REQ_SLOT_GAP = REQUIREMENT_LAYOUT.gapToNeighbor;
 /** Height above the table's own origin `particleEffectId`'s emitter drifts up from — roughly table-top height, same value regardless of whether this table ends up rendering the placeholder box or a real GLB model. */
 const PARTICLE_EMITTER_HEIGHT = 1.4;
 const PARTICLE_SPAWN_RATE_PER_SEC = 4;

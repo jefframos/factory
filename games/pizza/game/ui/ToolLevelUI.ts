@@ -34,11 +34,22 @@ import { SHOP_CONFIG_BY_ID } from '../shop/ShopTypes';
 import { getToolIcon, ToolId, TOOL_LIBRARY } from '../actions/ToolRegistry';
 import { ItemStorage } from '../crafting/ItemStorage';
 import { ItemType } from '../crafting/ItemTypes';
+import { getIconLayout } from './LayoutRegistry';
 
-const ROW_ICON_SIZE = 32;
+/**
+ * Sourced from LayoutRegistry's 'ToolRow' preset (see that file's own doc),
+ * overridden to this panel's own smaller 32px icon and 6px row gap — NOT
+ * overriding `background`, since this is the one tool-level composition
+ * that deliberately shows a bare icon with no backdrop at all (ToolListUI's
+ * own row, right next to this one on screen, DOES use ToolRow's 'Tool'
+ * background — the two simply chose differently, kept as-is rather than
+ * forced to match).
+ */
+const TOOL_LAYOUT = getIconLayout('ToolRow', { slotSize: 32, gapToNeighbor: 6 });
+const ROW_ICON_SIZE = TOOL_LAYOUT.slotSize;
 const ROW_HEIGHT = 40;
-const ROW_GAP = 6;
-const ROW_ICON_TEXT_GAP = 8;
+const ROW_GAP = TOOL_LAYOUT.gapToNeighbor;
+const ROW_ICON_TEXT_GAP = TOOL_LAYOUT.label.offset[0];
 const PANEL_PADDING = uniformFitPadding(12);
 
 /** Every tool id in TOOL_LIBRARY's own declaration order (axe, then pickaxe) — refresh() filters this down to whichever ones ItemStorage says the player actually owns. ToolId and ItemType share the exact same string values (see ItemTypes.ts's own doc), so casting one to the other below is safe. */
@@ -106,7 +117,7 @@ export default class ToolLevelUI extends AutoFitFrame {
                 const level = shopId ? ShopUpgradeStorage.getLevel(shopId) : 0;
                 // +1 — see this file's own doc on why the raw 0-indexed level never gets shown as-is.
                 const levelLabel = new PIXI.Text(`Lv.${level + 1}`, TextStyleRegistry.Body);
-                levelLabel.anchor.set(0, 0.5);
+                levelLabel.anchor.set(TOOL_LAYOUT.label.anchor[0], TOOL_LAYOUT.label.anchor[1]);
                 levelLabel.position.set(ROW_ICON_SIZE + ROW_ICON_TEXT_GAP, -ROW_HEIGHT / 2);
                 row.addChild(levelLabel);
             }

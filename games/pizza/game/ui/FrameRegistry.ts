@@ -150,6 +150,21 @@ export const FrameRegistry: Record<string, FrameDef> = {
         textureKey: 'BorderFrame_Squrare_Bg',
         padding: uniformPadding(10),
     },
+    /**
+     * 'back1' (see IconSlotRegistry.ts) at PANEL scale rather than icon-slot scale — everywhere
+     * else this texture is used, it's a small (80px or under) square backdrop stretched as a
+     * plain Sprite, never 9-sliced; that's fine there since PIXI.NineSlicePlane's own corner-
+     * shrink kicks in below this border's own 100px sum anyway, degenerating to the exact same
+     * uniform scale a plain stretch already produces at icon-slot sizes. This preset is for the
+     * first caller that renders 'back1' bigger than that (InventoryPopup's own tab body, 450x500)
+     * — a plain stretch at that size visibly smears the source PNG's own rounded corners. 50px
+     * border matches the raw asset's own generous corner-radius clearance (130x130 native,
+     * corner radius ~25-30px — 50px leaves real safety margin either side of the actual curve).
+     */
+    PanelBody: {
+        textureKey: 'back1',
+        padding: uniformPadding(50),
+    },
 };
 
 export type FrameName = keyof typeof FrameRegistry;

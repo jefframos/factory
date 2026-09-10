@@ -18,13 +18,11 @@ import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { TextStyleRegistry } from './TextStyleRegistry';
 import { createIconSlotBackground, styleForResourceType } from './IconSlotRegistry';
+import { getIconLayout } from './LayoutRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
 
-/** Gap left between the icon's edge and the slot background's edge — same value as BackpackUI's ICON_PADDING. */
-const ICON_PADDING = 6;
-/** Inset of the count label from the slot's own bottom-right corner — same idiom/values as BackpackUI's own slot count badge (see that file's own label.position.set()). */
-const LABEL_INSET_RIGHT = 4;
-const LABEL_INSET_BOTTOM = 2;
+/** This slot's own layout — see LayoutRegistry.ts's own doc. Tune 'Requirement' there (or ICON_LAYOUT_DEFAULT, for every layout at once) rather than the constants that used to live here. */
+const LAYOUT = getIconLayout('Requirement');
 
 export interface ResourceSlotVisual {
     readonly container: PIXI.Container;
@@ -44,12 +42,12 @@ export function createResourceSlot(type: ResourceType, size: number, labelText: 
     const icon = new PIXI.Sprite(getAssetIcon(resolveResourceAssetKey(type)));
     icon.anchor.set(0.5);
     icon.position.set(size / 2, size / 2);
-    icon.scale.set(ViewUtils.elementScaler(icon, size - ICON_PADDING * 2));
+    icon.scale.set(ViewUtils.elementScaler(icon, size - LAYOUT.iconPadding * 2));
     container.addChild(icon);
 
     const label = new PIXI.Text(labelText, TextStyleRegistry.Body);
-    label.anchor.set(1, 1);
-    label.position.set(size - LABEL_INSET_RIGHT, size - LABEL_INSET_BOTTOM);
+    label.anchor.set(LAYOUT.label.anchor[0], LAYOUT.label.anchor[1]);
+    label.position.set(size - LAYOUT.label.offset[0], size - LAYOUT.label.offset[1]);
     container.addChild(label);
 
     return { container, icon, label, visualHeight: size };

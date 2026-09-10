@@ -36,6 +36,16 @@ export interface PopupOptions {
     contentWidth?: number;
     /** Whether PopupManager should show a full-screen dark backdrop behind this popup. Defaults to true. */
     darkenBackground?: boolean;
+    /**
+     * Whether tapping that darkened backdrop closes this popup — defaults to true, the "tap
+     * anywhere outside to dismiss" behavior every popup had before this option existed.
+     * Meaningless when `darkenBackground` is false (no backdrop exists to tap at all). Set
+     * false for a popup meant to be read/browsed deliberately (e.g. InventoryPopup, a
+     * multi-tab menu someone can spend a while in) rather than glanced at and dismissed — see
+     * PopupManager.show()'s own doc for how the backdrop still blocks clicks to whatever's
+     * behind it either way, it just stops also acting as a close button.
+     */
+    closeOnBackdropTap?: boolean;
     /** 9-slice panel chrome — defaults to the same 'Popup' bubble frame every other pizza panel uses (see FrameRegistry.ts). */
     frame?: FrameName;
 }
@@ -43,6 +53,7 @@ export interface PopupOptions {
 export default abstract class Popup {
     public readonly root = new PIXI.Container();
     public readonly darkenBackground: boolean;
+    public readonly closeOnBackdropTap: boolean;
     protected readonly contentWidth: number;
 
     private readonly frame: AutoFitFrame;
@@ -51,6 +62,7 @@ export default abstract class Popup {
     protected constructor(title: string, options: PopupOptions = {}) {
         this.contentWidth = options.contentWidth ?? 300;
         this.darkenBackground = options.darkenBackground ?? true;
+        this.closeOnBackdropTap = options.closeOnBackdropTap ?? true;
 
         const column = new PIXI.Container();
 
@@ -137,8 +149,9 @@ export default abstract class Popup {
      * Optional lifecycle hook — override to run cleanup the moment PopupManager actually starts
      * closing THIS popup, regardless of which of the three paths triggered it: the header's own
      * close button (via requestClose()), tapping the darkened backdrop (PopupManager.show()'s
-     * own backdrop handler calls close() directly, bypassing requestClose() entirely), or this
-     * popup getting silently replaced by a new show() call (closeImmediate()). A popup that
+     * own backdrop handler calls close() directly, bypassing requestClose() entirely — skipped
+     * for a popup with closeOnBackdropTap: false, which only ever closes via the first path), or
+     * this popup getting silently replaced by a new show() call (closeImmediate()). A popup that
      * needs to undo something for as long as it was open (e.g. MartZone freezing player
      * movement while its MartPopup is up) needs exactly this — requestClose() alone misses the
      * backdrop-tap and get-replaced cases. Fires once, synchronously, right as the close

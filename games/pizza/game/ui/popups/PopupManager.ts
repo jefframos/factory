@@ -73,10 +73,18 @@ export class PopupManager {
         if (popup.darkenBackground) {
             backdrop = new PIXI.Graphics();
             backdrop.beginFill(0x000000, DARKEN_ALPHA).drawRect(-4000, -4000, 8000, 8000).endFill();
+            // interactive stays true regardless of closeOnBackdropTap — that's what makes this
+            // shape actually SWALLOW a tap instead of letting it fall through to the game world
+            // rendered behind the popup layer; only whether that tap also closes the popup (via
+            // the cursor affordance + handler below) depends on the flag.
             backdrop.interactive = true;
-            backdrop.cursor = 'pointer';
             backdrop.alpha = 0;
-            backdrop.on('pointertap', () => this.close(popup));
+            if (popup.closeOnBackdropTap) {
+                backdrop.cursor = 'pointer';
+                backdrop.on('pointertap', () => this.close(popup));
+            } else {
+                backdrop.cursor = 'default';
+            }
             layer.addChild(backdrop);
         }
 

@@ -36,6 +36,7 @@ import { getToolIcon, ToolId, TOOL_LIBRARY } from '../actions/ToolRegistry';
 import { ItemStorage } from '../crafting/ItemStorage';
 import { ItemType } from '../crafting/ItemTypes';
 import { createIconSlotBackground } from './IconSlotRegistry';
+import { getIconLayout } from './LayoutRegistry';
 
 export interface ToolListUiConfig {
     rowHeight: number;
@@ -45,15 +46,18 @@ export interface ToolListUiConfig {
     labelGap: number;
 }
 
+/** Sourced from LayoutRegistry's 'ToolRow' preset — see that file's own doc — rather than local constants. */
+const TOOL_LAYOUT = getIconLayout('ToolRow');
+
 const DEFAULT_CONFIG: ToolListUiConfig = {
-    rowHeight: 44,
-    rowGap: 8,
-    iconSize: 44,
-    labelGap: 8,
+    rowHeight: TOOL_LAYOUT.slotSize,
+    rowGap: TOOL_LAYOUT.gapToNeighbor,
+    iconSize: TOOL_LAYOUT.slotSize,
+    labelGap: TOOL_LAYOUT.label.offset[0],
 };
 
 /** Gap left between the icon's own edge and its background square's edge. */
-const ICON_PADDING = 4;
+const ICON_PADDING = TOOL_LAYOUT.iconPadding;
 
 /** Every tool id in TOOL_LIBRARY's own declaration order (axe, then pickaxe) — refresh() filters this down to whichever ones ItemStorage says the player actually owns. ToolId and ItemType share the exact same string values (see ItemTypes.ts's own doc), so casting one to the other below is safe. */
 const TOOL_IDS = Object.keys(TOOL_LIBRARY) as ToolId[];
@@ -136,7 +140,7 @@ export default class ToolListUI extends PIXI.Container {
                 // 0-indexed internally, but owning the tool at all already puts a player at its
                 // base tier, so this never reads "Lv.0" to the player.
                 const levelLabel = new PIXI.Text(`Lv.${level + 1}`, TextStyleRegistry.Body);
-                levelLabel.anchor.set(0, 0.5);
+                levelLabel.anchor.set(TOOL_LAYOUT.label.anchor[0], TOOL_LAYOUT.label.anchor[1]);
                 levelLabel.position.set(iconSize + labelGap, rowHeight / 2);
                 row.addChild(levelLabel);
             }
