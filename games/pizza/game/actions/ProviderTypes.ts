@@ -139,7 +139,7 @@ export const PROVIDER_CONFIG: Record<ProviderType, ProviderConfig> = {
             }
         ],
         "label": "CrystalDeposit",
-        "solid": 1
+        "solid": 0.9
     },
     "stoneDeposit": {
         color: 0x6b4423,

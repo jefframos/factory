@@ -111,6 +111,11 @@ export default class WorldManager {
         return this.zoneVisibility;
     }
 
+    /** The ground TileMap itself (see TileMap.ts) — PizzaScene reads this for its debug "player tile" label (worldToTileCell()/getGroundDefAt()/isWalkableAt()), same read-only accessor convention as getZoneVisibilityManager() above. */
+    public getTileMap(): TileMap {
+        return this.tileMap;
+    }
+
     /**
      * Debug/test convenience (see PizzaScene's "Open Next Zone" button, InGameButtonList.ts) —
      * reveals whichever zoneNumber comes after the last one this called revealed (starting at

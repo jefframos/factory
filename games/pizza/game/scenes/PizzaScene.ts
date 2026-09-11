@@ -910,6 +910,20 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 SeedStorage.add(seedId, 5);
             }
         });
+
+        // Live "which ground tile is the player standing on" readout — added to help track down
+        // a tile that was warping the player to an odd position. Reads straight off TileMap
+        // (WorldManager.getTileMap()) every frame: worldToTileCell() for the col/row, getGroundDefAt()
+        // for the tile's name (map/tiles.json), isWalkableAt() for whether it's currently passable
+        // (a locked zone reads as not-walkable too — see TileMap.isWalkableAt()'s own doc).
+        InGameButtonList.registerText(() => {
+            const { x, z } = this.mainPlayer.transform.position;
+            const tileMap = this.worldManager.getTileMap();
+            const { col, row } = tileMap.worldToTileCell(x, z);
+            const def = tileMap.getGroundDefAt(x, z);
+            const walkable = tileMap.isWalkableAt(x, z);
+            return `Tile (${col}, ${row}): ${def?.name ?? 'none'}${walkable ? '' : ' [BLOCKED]'} @ (${x.toFixed(2)}, ${z.toFixed(2)})`;
+        });
     }
 
     /**

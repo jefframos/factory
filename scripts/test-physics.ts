@@ -222,6 +222,51 @@ console.log('Test 6: mismatched layer masks skip interaction entirely — no pus
     assert(!fired, 'onCollisionEnter never fired for a layer/mask-excluded pair');
 }
 
+console.log('Test 7: a cluster of obstacles taller than the player (e.g. adjacent solid:1 crystal deposits) never launches them through the floor when the cluster materializes underfoot');
+{
+    // The actual reported regression: WorldManager streams resource nodes' solid colliders in
+    // the instant the player crosses resourceLoadRadius (see WorldManager.materialize()) —
+    // which can mean several ADJACENT deposit tiles' colliders all appear in the same frame,
+    // already overlapping wherever the player happens to be standing (e.g. right at the
+    // shared corner of a 2x2 deposit cluster, same as the real crystal patch on testMap1.json).
+    // Each deposit box mirrors SolidArea.buildSolidArea()'s real crystal geometry:
+    // TRIGGER_HALF_EXTENTS(1,1,1) * solid(1) = a full 2-unit-tall box (y: 0 to 2), taller than
+    // the player's own 1.8-unit collider (y: 0 to 1.8) — see makePlayer() above. With more than
+    // one such box overlapping at once, no single axis's push-out can fully separate them in
+    // one step (pushing out of one can still leave the player inside its neighbor), which is
+    // what let the old code's Y-axis pass fire against a body taller than the player at all.
+    const world = new PhysicsWorld();
+    makeGround(world);
+    const { entity } = makePlayer(world);
+
+    // Settle at the cluster's shared corner BEFORE the deposits exist (matching "already
+    // standing there when they stream in"), same as every other test's steady resting state.
+    entity.transform.position.set(-10, 0, -14);
+    for (let i = 0; i < 30; i++) {
+        world.step(1 / 60);
+    }
+
+    const tiles: Array<[number, number]> = [[-6, -8], [-5, -8], [-6, -7], [-5, -7]];
+    for (const [col, row] of tiles) {
+        const deposit = new Entity();
+        deposit.transform.position.set((col + 0.5) * 2, 0, (row + 0.5) * 2);
+        const depositBody = deposit.addComponent(new RigidBody({
+            halfExtents: new THREE.Vector3(1, 1, 1),
+            isStatic: true,
+            centerOffset: new THREE.Vector3(0, 1, 0),
+            blocksVertical: false,
+        }));
+        world.register(depositBody);
+    }
+
+    for (let i = 0; i < 10; i++) {
+        world.step(1 / 60);
+    }
+
+    assert(entity.transform.position.y > -0.5, `player wasn't shoved through the floor (y=${entity.transform.position.y.toFixed(4)})`);
+    assert(Math.abs(entity.transform.position.x) < 50, `player wasn't flung to the edge of the map (x=${entity.transform.position.x.toFixed(4)})`);
+}
+
 if (failures > 0) {
     console.error(`\n${failures} check(s) failed.`);
     process.exit(1);

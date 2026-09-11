@@ -47,6 +47,18 @@ export interface RigidBodyOptions {
     layer?: number;
     /** Which layers this body is willing to interact with (physically or via triggers) — see ALL_LAYERS/Layers in PhysicsConstants.ts. Default ALL_LAYERS. */
     mask?: number;
+    /**
+     * Whether OTHER bodies get pushed out of THIS one along the Y axis — default true (the
+     * ground plane, the only body that's ever meant to hold something up/stop a fall, relies
+     * on that default). Set false on a horizontal-only obstacle (a tree, a rock/deposit, a
+     * building wall, a gate — see SolidArea.ts/Gate.ts) so it only ever blocks X/Z movement.
+     * Without this, an obstacle whose box is TALLER than the moving body's own collider fully
+     * vertically engulfs it the moment their X/Z footprints overlap — PhysicsWorld.pushOut()'s
+     * smallest-overlap heuristic then has no "obviously correct" side to resolve to, and for a
+     * tall-enough obstacle picks "push down" over "push up onto it," shoving the moving body
+     * straight through the floor (see PhysicsWorld.ts's own doc on this).
+     */
+    blocksVertical?: boolean;
 }
 
 export default class RigidBody extends Component {
@@ -62,6 +74,7 @@ export default class RigidBody extends Component {
     public readonly isTrigger: boolean;
     public readonly layer: number;
     public readonly mask: number;
+    public readonly blocksVertical: boolean;
     /** Set by PhysicsWorld each step — true only if this body is resting on something directly below it. */
     public grounded = false;
 
@@ -83,6 +96,7 @@ export default class RigidBody extends Component {
         this.isTrigger = options.isTrigger ?? false;
         this.layer = options.layer ?? Layers.Default;
         this.mask = options.mask ?? ALL_LAYERS;
+        this.blocksVertical = options.blocksVertical ?? true;
     }
 
     public awake(): void {

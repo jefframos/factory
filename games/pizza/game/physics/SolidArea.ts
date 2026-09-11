@@ -53,5 +53,12 @@ export function buildSolidArea(
         centerOffset: triggerCenterOffset.clone().multiplyScalar(fraction),
         isStatic: true,
         layer,
+        // A horizontal-only obstacle (a tree, a rock/deposit, a building/shop/craft-table/queue
+        // wall) — never something to stand on top of or fall through if it happens to be taller
+        // than whatever walks into it. See RigidBody.blocksVertical's own doc for why this has
+        // to be explicit: without it, an obstacle taller than the player's own collider (e.g. a
+        // `solid: 1` deposit) gets treated as a vertical obstacle too and can shove the player
+        // straight through the floor.
+        blocksVertical: false,
     });
 }

@@ -163,6 +163,10 @@ export default class Gate extends Entity {
             isStatic: true,
             layer: Layers.Environment,
             centerOffset: new THREE.Vector3(0, halfExtents.y, 0),
+            // Horizontal-only obstacle, same reasoning as SolidArea.ts's own blocksVertical —
+            // a gate taller than the player must never be treated as something to stand on top
+            // of or fall through.
+            blocksVertical: false,
         }));
 
         const resolved = resolveEntityView(this.config.view);

@@ -95,7 +95,7 @@
         "amountPerGather": 1,
         "respawnSec": 180,
         "label": "CrystalDeposit",
-        "solid": 1,
+        "solid": 0.9,
         "icon": "crystal-nugget"
     },
     "stoneDeposit": {

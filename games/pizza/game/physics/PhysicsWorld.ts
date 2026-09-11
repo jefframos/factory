@@ -25,8 +25,23 @@ import { CONTACT_SKIN, GRAVITY, MAX_PHYSICS_DELTA } from './PhysicsConstants';
 
 type Axis = 'x' | 'y' | 'z';
 
+/**
+ * Diagnostic threshold for pushOut()'s own console.warn (see there) — bigger than any
+ * legitimate single-axis overlap a normal-sized dynamic body (the player) should ever have
+ * against a normal-sized static one, so a warning firing means something is actually wrong
+ * (e.g. a body overlapping a MUCH bigger box than intended, like the ground plane's own
+ * huge half-extents) rather than an ordinary contact.
+ */
+const PUSH_OUT_WARN_DISTANCE = 3;
+
 function pairKey(a: RigidBody, b: RigidBody): string {
     return a.id < b.id ? `${a.id}:${b.id}` : `${b.id}:${a.id}`;
+}
+
+/** Best-effort human-readable label for whichever entity a RigidBody belongs to — the entity's own class name, plus a `providerType` field if it has one (e.g. ResourceNode) since that's usually the more useful name (e.g. "crystalDeposit" beats "ResourceNode"). Physics doesn't otherwise know about game-specific entity types, so this stays duck-typed rather than importing them. */
+function describeEntity(body: RigidBody): string {
+    const entity = body.entity as { constructor: { name: string }; providerType?: string };
+    return entity.providerType ?? entity.constructor.name;
 }
 
 export default class PhysicsWorld {
@@ -122,6 +137,11 @@ export default class PhysicsWorld {
             if (other === body || other.isTrigger || !this.shouldInteract(body, other) || !this.overlaps(body, other)) {
                 continue;
             }
+            // A horizontal-only obstacle (see RigidBody.blocksVertical's own doc) never
+            // resolves the Y axis — only the ground plane holds anything up or stops a fall.
+            if (axis === 'y' && !other.blocksVertical) {
+                continue;
+            }
 
             this.pushOut(body, other, axis);
         }
@@ -137,6 +157,20 @@ export default class PhysicsWorld {
         const overlapNegative = this.scratchMax[axis] - this.otherMin[axis];
         const overlapPositive = this.otherMax[axis] - this.scratchMin[axis];
         const position = body.entity.transform.position;
+
+        const pushDistance = Math.min(overlapNegative, overlapPositive);
+        if (pushDistance > PUSH_OUT_WARN_DISTANCE) {
+            const before = position.clone();
+            console.warn(
+                `[PhysicsWorld] large push-out on axis "${axis}": ${pushDistance.toFixed(2)} units — `
+                + `${describeEntity(body)} at (${before.x.toFixed(2)}, ${before.y.toFixed(2)}, ${before.z.toFixed(2)}) `
+                + `pushed by ${describeEntity(other)} (halfExtents ${other.halfExtents.x},${other.halfExtents.y},${other.halfExtents.z}, `
+                + `center ${other.getCenter().toArray().map(n => n.toFixed(2))}). `
+                + `body box [${this.scratchMin.toArray().map(n => n.toFixed(2))}]-[${this.scratchMax.toArray().map(n => n.toFixed(2))}], `
+                + `other box [${this.otherMin.toArray().map(n => n.toFixed(2))}]-[${this.otherMax.toArray().map(n => n.toFixed(2))}], `
+                + `overlapNegative=${overlapNegative.toFixed(2)}, overlapPositive=${overlapPositive.toFixed(2)}`
+            );
+        }
 
         if (overlapNegative < overlapPositive) {
             // body sits on the min side of other (e.g. hitting its underside from below) — push it back.

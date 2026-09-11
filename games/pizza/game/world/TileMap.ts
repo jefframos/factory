@@ -194,8 +194,8 @@ export default class TileMap {
         setWalkabilityQuery(this.walkabilityQuery);
     }
 
-    /** Inverse of TileMapConfig.tileCellToWorldPosition() — floors the world position down to the ABSOLUTE tile-grid col/row it falls inside. */
-    private worldToTileCell(worldX: number, worldZ: number): { col: number; row: number } {
+    /** Inverse of TileMapConfig.tileCellToWorldPosition() — floors the world position down to the ABSOLUTE tile-grid col/row it falls inside. Public so debug UI (see PizzaScene.setupDebugButtons()'s player-tile label) can report exactly which cell the player is standing on. */
+    public worldToTileCell(worldX: number, worldZ: number): { col: number; row: number } {
         return {
             col: Math.floor(worldX / this.worldUnitsPerTile),
             row: Math.floor(worldZ / this.worldUnitsPerTile),
