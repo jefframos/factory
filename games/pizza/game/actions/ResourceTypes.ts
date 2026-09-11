@@ -24,6 +24,8 @@ export enum ResourceType {
     GrassFiber = 'grassFiber',
     Crystal = "crystal",
     Ir = "iron",
+    Copper = "copper",
+    Gold = "gold",
     /** A CraftingRecipeTypes.ts ingredient/output — no provider/pickup path of its own yet, only ever gained by crafting it at a table (see CraftingTableTypes.ts's own doc). */
     ClothRoll = "clothRoll",
     /** Same "crafted-only, for now" reasoning as ClothRoll above. */
@@ -92,6 +94,19 @@ export interface ResourceConfig {
      * (already unbuyable and unsellable everywhere).
      */
     sellable?: boolean;
+    /**
+     * True takes this resource out of the game entirely — no Provider ever drops it
+     * (rollProviderDrop() filters it out of every drop table it appears in), it's hidden from
+     * every always-on resource panel/inventory tab even if a save already has some left over
+     * from before it was disabled (BackpackListUI/GlobalResourcesUI/InventoryPopup), and any
+     * CraftTypes.ts recipe cost naming it is treated as if that cost entry didn't exist at all
+     * (CraftStorage.getNextRecipe() strips it) rather than leaving a table permanently
+     * unfinishable over a resource nobody can obtain anymore. Existing backpack counts are left
+     * untouched — this only stops FUTURE acquisition/display, it doesn't retroactively wipe
+     * what a player already banked. undefined/false (the default) is "resource is live," same
+     * as every resource before this field existed.
+     */
+    disabled?: boolean;
 }
 
 export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
@@ -112,7 +127,8 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         label: "Berries",
         color: 0xcc2244,
         "price": 10,
-        "sellable": true
+        "sellable": true,
+        "category": "main"
     },
     [ResourceType.Bark]: {
         amountPerGather: 1,
@@ -126,7 +142,8 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         label: "Pebble",
         color: 0x9a9a9a,
         "price": 1,
-        "sellable": true
+        "sellable": true,
+        "disabled": true
     },
     [ResourceType.GrassFiber]: {
         amountPerGather: 2,
@@ -143,6 +160,16 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
     "iron": {
         color: 0x6b4423,
         "label": "Iron",
+        "amountPerGather": 1
+    },
+    "copper": {
+        color: 0xb87333,
+        "label": "Copper",
+        "amountPerGather": 1
+    },
+    "gold": {
+        color: 0xd4af37,
+        "label": "Gold",
         "amountPerGather": 1
     },
     [ResourceType.ClothRoll]: {

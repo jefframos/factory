@@ -119,8 +119,12 @@ export default class BackpackListUI extends PIXI.Container {
     private onBackpackChanged = (type: ResourceType): void => {
         // Farm-category resources (a crop's own harvest yield — see ResourceConfig.category's
         // own doc) never show on this always-visible main-screen panel, only in InventoryPopup's
-        // Farm tab — same skip GlobalResourcesUI.onGlobalResourceChanged() applies.
-        if (RESOURCE_CONFIG[type]?.category === 'farm') {
+        // Farm tab — same skip GlobalResourcesUI.onGlobalResourceChanged() applies. A DISABLED
+        // resource (see ResourceConfig.disabled's own doc) never shows here either, even if a
+        // save already has some left over from before it was disabled — this fires both on
+        // every live change AND once up front for whatever's already banked (see this class's
+        // own constructor), so a stale row from before disabling never sticks around either.
+        if (RESOURCE_CONFIG[type]?.category === 'farm' || RESOURCE_CONFIG[type]?.disabled) {
             return;
         }
 

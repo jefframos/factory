@@ -64,6 +64,7 @@ import BoxVisualComponent from '../components/BoxVisualComponent';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import CaptureZoneVisualComponent, { CaptureZoneState } from '../components/CaptureZoneVisualComponent';
+import { BendService } from '../services/BendService';
 import BarComponent from '../ui/BarComponent';
 import { MIN_BAR_HEIGHT } from '../ui/BarRegistry';
 import { ANIMAL_CONFIG, AnimalType } from '../actions/AnimalTypes';
@@ -305,7 +306,13 @@ export default class AnimalNode extends Entity {
                 // starts (beginAmbientAnimations() itself no-ops if update() somehow already
                 // moved this animal past idle by the time a slow load resolves — see that
                 // method's own doc).
-                () => this.beginAmbientAnimations(),
+                () => {
+                    this.beginAmbientAnimations();
+                    // See ResourceNode.awake()'s own doc for why a wandering/streamed entity
+                    // needs this on top of playSpawnIn()'s scale-pop — this animal is subject to
+                    // the exact same WorldManager materialize/dematerialize radius.
+                    BendService.applyStreamingFade(this.visual.mesh);
+                },
             ));
         } else {
             this.visual = this.addComponent(new BoxVisualComponent(
@@ -315,6 +322,7 @@ export default class AnimalNode extends Entity {
             // A BoxVisualComponent's mesh exists synchronously (no async load to wait on),
             // unlike the glb branch above.
             this.beginAmbientAnimations();
+            BendService.applyStreamingFade(this.visual.mesh);
         }
     }
 

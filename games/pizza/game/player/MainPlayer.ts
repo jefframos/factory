@@ -29,7 +29,8 @@ import PlayerUIAvoidanceComponent from '../components/PlayerUIAvoidanceComponent
 import PlayerNotificationComponent from '../components/PlayerNotificationComponent';
 import { getPlayerConfig } from '../data/PlayerConfig';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
-import { ActionType } from '../actions/ActionTypes';
+import { ACTION_CONFIG, ActionConfig, ActionType } from '../actions/ActionTypes';
+import { ToolId } from '../actions/ToolRegistry';
 import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
 import { getStarterCharacterView } from '../data/CharacterViewTypes';
@@ -49,18 +50,23 @@ const modelUrl = (fullPath: string): string => `./${fullPath}`;
 /**
  * Action-layer clips gated behind actually owning the matching tool — see loadCharacter()'s
  * own doc. Idle/run/pick are the only clips every player needs from frame one (pick is
- * bare-handed gathering); chop/mine are dead weight on first load for a brand-new save,
+ * bare-handed gathering); chop/mine/slash are dead weight on first load for a brand-new save,
  * which starts with zero items (see ItemStorage.ts's own doc), so they're loaded lazily
  * instead of blocking the initial spinner.
+ *
+ * Derived from ACTION_CONFIG itself, keyed by each action's own `tool` (ToolId and ItemType
+ * share the exact same string values — see ItemTypes.ts's own doc, so the cast below is safe)
+ * — NOT a second hand-maintained map. This is what makes the web editor's Actions tab (which
+ * now manages `animationTrigger`/`animationModel` — see entityMap.mjs/schemas.js) the single
+ * place a designer sets "what a tool's action looks like": picking a new clip there is exactly
+ * what a returning save lazily loads here the next time it owns that tool, no code change
+ * needed. Actions with no `tool` (Gather) are loaded eagerly instead — see loadCharacter().
  */
-const TOOL_ACTION_ANIMATIONS: Partial<Record<ItemType, { trigger: string; modelPath: string }>> = {
-    [ItemType.Axe]: { trigger: 'chop', modelPath: MODELS.Characters.StandingMeleeAttackDownwardCHOP.fullPath },
-    [ItemType.Pickaxe]: { trigger: 'mine', modelPath: MODELS.Characters.StandingPICKAXE.fullPath },
-    // Reuses the same downward-swing clip as 'chop' (no dedicated slash animation asset exists
-    // yet) — the trigger id is still its own 'slash' (matching ActionConfig.animationTrigger for
-    // ActionType.Slash), so a real slash clip can be swapped in later with no other change.
-    [ItemType.Knife]: { trigger: 'slash', modelPath: MODELS.Characters.StandingMeleeAttackDownwardCHOP.fullPath },
-};
+const TOOL_ACTION_ANIMATIONS: Partial<Record<ItemType, { trigger: string; modelPath: string }>> = Object.fromEntries(
+    Object.values(ACTION_CONFIG)
+        .filter((config): config is ActionConfig & { tool: ToolId } => config.tool !== undefined)
+        .map(config => [config.tool, { trigger: config.animationTrigger, modelPath: MODELS.Characters[config.animationModel].fullPath }]),
+);
 
 export default class MainPlayer extends Entity {
     private readonly inputHost: MovementInputHost;
@@ -191,7 +197,11 @@ export default class MainPlayer extends Entity {
         await character.registerAnimation('idle', modelUrl(MODELS.Characters[anim.idle as keyof typeof MODELS.Characters].fullPath));
         await character.registerAnimation('walk', modelUrl(MODELS.Characters[anim.walk as keyof typeof MODELS.Characters].fullPath));
         await character.registerAnimation('run', modelUrl(MODELS.Characters[anim.run as keyof typeof MODELS.Characters].fullPath));
-        await character.registerAnimation('pick', modelUrl(MODELS.Characters.PickFruit.fullPath));
+        // Gather ('pick') has no `tool` (bare-handed — see ActionConfig.tool's own doc), so it's
+        // loaded eagerly here rather than through TOOL_ACTION_ANIMATIONS' tool-gated lazy path
+        // below — every player needs this from frame one.
+        const gatherAnim = ACTION_CONFIG[ActionType.Gather];
+        await character.registerAnimation(gatherAnim.animationTrigger, modelUrl(MODELS.Characters[gatherAnim.animationModel].fullPath));
         // await character.registerAnimation('jumpUp', modelUrl(MODELS.Characters[anim.jumpUp as keyof typeof MODELS.Characters].fullPath));
         // await character.registerAnimation('falling', modelUrl(MODELS.Characters[anim.falling as keyof typeof MODELS.Characters].fullPath));
         // await character.registerAnimation('landing', modelUrl(MODELS.Characters[anim.landing as keyof typeof MODELS.Characters].fullPath));

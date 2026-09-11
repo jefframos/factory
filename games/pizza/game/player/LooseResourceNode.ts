@@ -29,6 +29,7 @@ import { Layers } from '../physics/PhysicsConstants';
 import BoxVisualComponent from '../components/BoxVisualComponent';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
+import { BendService } from '../services/BendService';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
@@ -99,17 +100,25 @@ export default class LooseResourceNode extends Entity {
         if (!visualConfig) {
             console.warn(`[LooseResourceNode] no AssetLibraryRegistry entry for resource "${this.resourceType}" yet — falling back to a placeholder box. Open the Resources tab and save this resource once (its icon/models fields) to create one.`);
         }
-        this.visual = visualConfig && visualConfig.models.length > 0
-            ? this.addComponent(new GlbVisualComponent(
+        if (visualConfig && visualConfig.models.length > 0) {
+            // See ResourceNode.awake()'s own identical pattern/doc for why this is a
+            // self-referencing const rather than an inline expression.
+            const glb: GlbVisualComponent = this.addComponent(new GlbVisualComponent(
                 pickRandom(visualConfig.models),
                 new THREE.Vector3(),
                 resolveRange(visualConfig.scale),
                 resolveRange(visualConfig.rotationDeg) * (Math.PI / 180),
-            ))
-            : this.addComponent(new BoxVisualComponent(
+                () => BendService.applyStreamingFade(glb.mesh),
+            ));
+            this.visual = glb;
+        } else {
+            const box = this.addComponent(new BoxVisualComponent(
                 PLACEHOLDER_HALF_EXTENTS.clone().multiplyScalar(2), RESOURCE_CONFIG[this.resourceType].color,
                 new THREE.Vector3(0, PLACEHOLDER_HALF_EXTENTS.y, 0),
             ));
+            BendService.applyStreamingFade(box.mesh);
+            this.visual = box;
+        }
 
         rigidBody.onTriggerEnter.add(other => this.tryPickup(other));
 

@@ -161,7 +161,7 @@ function hasAnyFarmItem(): boolean {
         return true;
     }
     const backpackCounts = BackpackStorage.getAll();
-    return Object.values(ResourceType).some(type => (backpackCounts.get(type) ?? 0) > 0 && RESOURCE_CONFIG[type]?.category === 'farm');
+    return Object.values(ResourceType).some(type => (backpackCounts.get(type) ?? 0) > 0 && RESOURCE_CONFIG[type]?.category === 'farm' && !RESOURCE_CONFIG[type]?.disabled);
 }
 
 /** Per-tab "should this tab even be in the strip" predicate. Tools/Resources are ALWAYS shown — the popup itself can't open before the player owns a first tool (see BackpackButton.ts), and Resources reads better sitting there as a permanent base tab rather than blinking in and out as the player spends the last of a material back to 0. Farm is the one tab that's genuinely conditional: it stays out of the strip until the player's first seed/crop, since most of the game never touches farming at all. */
@@ -446,7 +446,7 @@ export default class InventoryPopup extends Popup {
         // own 'farm'-category harvest yield shows on the Farm tab instead, see this file's own
         // top doc.
         const heldTypes = Object.values(ResourceType)
-            .filter(type => counts.get(type) && RESOURCE_CONFIG[type]?.category !== 'farm');
+            .filter(type => counts.get(type) && RESOURCE_CONFIG[type]?.category !== 'farm' && !RESOURCE_CONFIG[type]?.disabled);
 
         this.renderIconCountGrid(
             heldTypes.map(type => ({ texture: getAssetIcon(resolveResourceAssetKey(type)), count: counts.get(type) ?? 0 })),
@@ -464,7 +464,7 @@ export default class InventoryPopup extends Popup {
 
         const backpackCounts = BackpackStorage.getAll();
         const farmResourceTypes = Object.values(ResourceType)
-            .filter(type => backpackCounts.get(type) && RESOURCE_CONFIG[type]?.category === 'farm');
+            .filter(type => backpackCounts.get(type) && RESOURCE_CONFIG[type]?.category === 'farm' && !RESOURCE_CONFIG[type]?.disabled);
         const cropEntries = farmResourceTypes.map(type => ({ texture: getAssetIcon(resolveResourceAssetKey(type)), count: backpackCounts.get(type) ?? 0 }));
 
         let y = 0;

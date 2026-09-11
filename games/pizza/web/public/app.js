@@ -1666,8 +1666,25 @@ function makeLeafInput(obj, field, onDirty) {
         input.step = 'any';
         input.value = obj[field.key] ?? '';
         input.oninput = () => {
-            obj[field.key] = input.value === '' ? undefined : Number(input.value);
+            // A field reaching this branch (rather than renderOptionalLeaf, see renderFields'
+            // own dispatch) is always REQUIRED — clearing the input to '' must not write
+            // `undefined` into the live record, or a stray backspace silently drops a
+            // required key from the next Save (syncToSource.mjs only half-catches this: it
+            // refuses to delete the key from the real .ts source, but still warns after the
+            // fact rather than preventing it). Leave the last valid value in place instead.
+            if (input.value === '') {
+                return;
+            }
+            obj[field.key] = Number(input.value);
             onDirty();
+        };
+        input.onblur = () => {
+            // If the user left the input empty (rather than typing a replacement number), snap
+            // it back to the still-current, still-required value instead of leaving the field
+            // looking blank while the underlying record disagrees.
+            if (input.value === '') {
+                input.value = obj[field.key] ?? '';
+            }
         };
         return input;
     }

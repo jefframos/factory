@@ -19,7 +19,7 @@
 
 import { Signal } from 'signals';
 import PlatformHandler from 'core/platforms/PlatformHandler';
-import { ResourceType } from '../actions/ResourceTypes';
+import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { CraftRecipeDef, CraftTableConfig } from './CraftTypes';
 import { ItemStorage } from './ItemStorage';
 
@@ -70,10 +70,29 @@ export class CraftStorage {
         return this.state(id);
     }
 
-    /** The first recipe in `config.recipes` not yet completed — undefined once every recipe's been crafted (see isFullyCrafted()). */
+    /**
+     * The first recipe in `config.recipes` not yet completed — undefined once every recipe's
+     * been crafted (see isFullyCrafted()). Its `cost` has any DISABLED resource entries (see
+     * ResourceConfig.disabled's own doc) stripped out before returning — every reader here
+     * (CraftZone's own display/deposit/completion, and every method below) only ever sees this
+     * filtered cost, so a disabled resource is uniformly treated as if the recipe never asked
+     * for it at all, rather than leaving a table permanently unfinishable over something the
+     * player can no longer obtain.
+     */
     static getNextRecipe(id: string, config: CraftTableConfig): CraftRecipeDef | undefined {
         const state = this.state(id);
-        return config.recipes.find(recipe => !state.completedRecipeIds.includes(recipe.id));
+        const recipe = config.recipes.find(recipe => !state.completedRecipeIds.includes(recipe.id));
+        if (!recipe) {
+            return undefined;
+        }
+
+        const activeCost: Partial<Record<ResourceType, number>> = {};
+        for (const [type, amount] of Object.entries(recipe.cost) as [ResourceType, number][]) {
+            if (!RESOURCE_CONFIG[type]?.disabled) {
+                activeCost[type] = amount;
+            }
+        }
+        return { ...recipe, cost: activeCost };
     }
 
     static getProgress(id: string, type: ResourceType): number {

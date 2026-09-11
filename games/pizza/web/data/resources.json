@@ -3,7 +3,8 @@
         "label": "Stone",
         "icon": "stone-chunk",
         "models": [
-            "Resources.StoneChunksSmall"
+            "Resources.Rock3AColor1",
+            "Resources.Rock3BColor1"
         ],
         "scale": [
             1,
@@ -20,7 +21,9 @@
     "berries": {
         "label": "Berries",
         "icon": "wild-berries",
-        "models": [],
+        "models": [
+            "Resources.BushBerries2"
+        ],
         "scale": 1,
         "rotationDeg": [
             0,
@@ -28,7 +31,8 @@
         ],
         "amountPerGather": 1,
         "price": 10,
-        "sellable": true
+        "sellable": true,
+        "category": "main"
     },
     "bark": {
         "label": "Bark",
@@ -53,7 +57,8 @@
         "label": "Pebble",
         "icon": "sharpening-stone",
         "models": [
-            "Resources.StoneChunksSmall"
+            "Resources.Rock3AColor1",
+            "Resources.Rock3BColor1"
         ],
         "scale": [
             0.5,
@@ -65,14 +70,14 @@
         ],
         "amountPerGather": 1,
         "price": 1,
-        "sellable": true
+        "sellable": true,
+        "disabled": true
     },
     "grassFiber": {
         "label": "Grass Fiber",
         "icon": "plant-fiber",
         "models": [
-            "Pirate.GrassPlant",
-            "Pirate.Grass"
+            "Resources.Grass2BColor1"
         ],
         "scale": [
             0.8,
@@ -96,11 +101,11 @@
     },
     "crystal": {
         "models": [],
-        "icon": "iron-ore",
         "label": "Crystal",
         "scale": 1,
         "rotationDeg": 0,
-        "amountPerGather": 1
+        "amountPerGather": 1,
+        "icon": "crystal-nugget"
     },
     "iron": {
         "models": [],
@@ -109,6 +114,22 @@
         "scale": 1,
         "rotationDeg": 0,
         "amountPerGather": 1
+    },
+    "copper": {
+        "models": [],
+        "icon": "copper-ore",
+        "label": "Copper",
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1
+    },
+    "gold": {
+        "models": [],
+        "label": "Gold",
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "icon": "gold-nugget"
     },
     "clothRoll": {
         "models": [],

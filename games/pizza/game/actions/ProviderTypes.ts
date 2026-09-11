@@ -20,7 +20,7 @@
 // (parallel to ResourceRegistry.ts's resolveResourceAssetKey() for items).
 
 import { ActionType } from './ActionTypes';
-import { ResourceType } from './ResourceTypes';
+import { RESOURCE_CONFIG, ResourceType } from './ResourceTypes';
 
 export enum ProviderType {
     Tree = 'tree',
@@ -28,7 +28,10 @@ export enum ProviderType {
     Palm = "palm",
     CrystalDeposit = "crystalDeposit",
     StoneDeposit = "stoneDeposit",
-    IronDeposit = "ironDeposit"
+    IronDeposit = "ironDeposit",
+    CopperDeposit = "copperDeposit",
+    GoldDeposit = "goldDeposit",
+    Cactus = "cactus"
 }
 
 /** One weighted entry in a provider's drop table — weights are relative, not required to sum to 100 (a 9/1 split reads identically to a 90/10 one). */
@@ -118,12 +121,17 @@ export const PROVIDER_CONFIG: Record<ProviderType, ProviderConfig> = {
             }
         ]
     },
+    // Rarity ladder across every "Mine"-action deposit, from most to least common — see each
+    // entry's own maxLife/respawnSec below: Stone (5/80s, baseline) < Copper (6/90s) < Iron
+    // (7/100s) < Gold (9/140s) < Crystal (12/180s, rarest — the only one with no Pebble
+    // byproduct mixed into its drop table, since a gem deposit yielding scrap pebble alongside
+    // its actual gems would undercut how rare it's meant to read).
     "crystalDeposit": {
         color: 0x6b4423,
         "action": ActionType.Mine,
-        "maxLife": 10,
+        "maxLife": 12,
         "amountPerGather": 1,
-        "respawnSec": 120,
+        "respawnSec": 180,
         "drops": [
             {
                 "resourceType": ResourceType.Crystal,
@@ -156,9 +164,9 @@ export const PROVIDER_CONFIG: Record<ProviderType, ProviderConfig> = {
         color: 0x6b4423,
         "label": "Iron Deposit",
         "action": ActionType.Mine,
-        "maxLife": 5,
+        "maxLife": 7,
         "amountPerGather": 1,
-        "respawnSec": 80,
+        "respawnSec": 100,
         "drops": [
             {
                 "resourceType": ResourceType.Ir,
@@ -170,6 +178,55 @@ export const PROVIDER_CONFIG: Record<ProviderType, ProviderConfig> = {
             }
         ],
         "solid": 0.5
+    },
+    "copperDeposit": {
+        color: 0x6b4423,
+        "label": "Copper Deposit",
+        "action": ActionType.Mine,
+        "maxLife": 6,
+        "amountPerGather": 1,
+        "respawnSec": 90,
+        "drops": [
+            {
+                "resourceType": ResourceType.Copper,
+                "weight": 85
+            },
+            {
+                "resourceType": ResourceType.Pebble,
+                "weight": 15
+            }
+        ],
+        "solid": 0.5
+    },
+    "goldDeposit": {
+        color: 0x6b4423,
+        "label": "Gold Deposit",
+        "action": ActionType.Mine,
+        "maxLife": 9,
+        "amountPerGather": 1,
+        "respawnSec": 140,
+        "drops": [
+            {
+                "resourceType": ResourceType.Gold,
+                "weight": 80
+            },
+            {
+                "resourceType": ResourceType.Pebble,
+                "weight": 20
+            }
+        ],
+        "solid": 0.5
+    },
+    "cactus": {
+        color: 0x6b4423,
+        "label": "Cactus",
+        "action": ActionType.Slash,
+        "maxLife": 5,
+        "amountPerGather": 0,
+        "respawnSec": 30,
+        "drops": [],
+        "solid": 1,
+        "destroyParticleEffectId": "treeLeafBurst"
     }
 };
 
@@ -181,7 +238,13 @@ export const PROVIDER_CONFIG: Record<ProviderType, ProviderConfig> = {
  * of committing an entire swing (or an entire node's lifetime) to one outcome.
  */
 export function rollProviderDrop(providerType: ProviderType): ResourceType {
-    const drops = PROVIDER_CONFIG[providerType].drops;
+    const allDrops = PROVIDER_CONFIG[providerType].drops;
+    // A disabled resource (see ResourceConfig.disabled's own doc) never drops from anything —
+    // fall back to the FULL table only in the (config-error) case where every one of this
+    // provider's own drops is currently disabled, rather than leaving rollProviderDrop() with
+    // nothing at all to weight-pick from.
+    const activeDrops = allDrops.filter(drop => !RESOURCE_CONFIG[drop.resourceType]?.disabled);
+    const drops = activeDrops.length > 0 ? activeDrops : allDrops;
     const totalWeight = drops.reduce((sum, drop) => sum + drop.weight, 0);
     let roll = Math.random() * totalWeight;
     for (const drop of drops) {

@@ -165,13 +165,14 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'RESOURCE_CONFIG',
         kind: 'enumRecord',
         enumName: 'ResourceType',
-        managedKeys: ['label', 'amountPerGather', 'category', 'price', 'sellable'],
+        managedKeys: ['label', 'amountPerGather', 'category', 'price', 'sellable', 'disabled'],
         // Unset means 'main' (see ResourceConfig.category's own doc) — a mirror/entry that
         // predates this field just leaves it alone rather than getting force-set to 'main'.
         // `price`/`sellable` are MartTypes.ts's own concern (see that file's own doc) — unset
         // price means this resource can never be bought/sold at any mart at all; unset sellable
-        // means true whenever a price IS set.
-        optionalKeys: ['category', 'price', 'sellable'],
+        // means true whenever a price IS set. `disabled` unset means "live," same as every
+        // resource before this field existed — see ResourceConfig.disabled's own doc.
+        optionalKeys: ['category', 'price', 'sellable', 'disabled'],
         // The Resources tab ALSO has icon/models/scale/rotationDeg fields, but ResourceConfig
         // itself carries none of those — see entityMap's own top-of-file doc on
         // `externalFields`. For a LOOSE ground-loot resource (bark/pebble/grassFiber, no
@@ -206,7 +207,11 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'ACTION_CONFIG',
         kind: 'enumRecord',
         enumName: 'ActionType',
-        managedKeys: ['hitIntervalSec', 'hitScale', 'resourcePerHit', 'cancelOnLeaveRange', 'tool'],
+        // animationTrigger/animationModel are plain strings (animationModel a MODELS.Characters
+        // key, same "resolved at runtime, not an AST model reference" convention as PlayerConfig's
+        // own animations.* fields — see MainPlayer.ts) so neither needs the models-array/
+        // externalFields machinery `models` gets elsewhere in this map.
+        managedKeys: ['hitIntervalSec', 'hitScale', 'resourcePerHit', 'cancelOnLeaveRange', 'tool', 'animationTrigger', 'animationModel'],
         optionalKeys: ['tool'],
     },
     items: {

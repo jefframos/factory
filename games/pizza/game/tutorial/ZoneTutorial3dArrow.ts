@@ -22,11 +22,11 @@ import { ArrowBuilder } from '../builders/ArrowBuilder';
 /** Small clearance above the player's own base (feet) so the arrow doesn't z-fight with the ground plane it's resting flat on. */
 const GROUND_CLEARANCE = 0.15;
 /** How far out from the player's own base the arrow sits, toward the target — see update()'s own doc. */
-const OFFSET_FROM_PLAYER = 0.5;
+const OFFSET_FROM_PLAYER = 1;
 /** Big enough to read clearly at normal play-camera distance without dwarfing the player. */
 const ARROW_SCALE = 1.2;
-/** Same green DropZone's "Drop Zone" nameplate uses (TextStyleRegistry.ZoneTitle) — "you're on the right track" reads the same whether it's a floating label or this arrow. */
-const ARROW_COLOR = 0x33cc66;
+/** Orange — reads as a clear "go here" guide marker distinct from DropZone's own green nameplate. */
+const ARROW_COLOR = 0xff8800;
 
 export default class ZoneTutorial3dArrow {
     private readonly scene: THREE.Scene;

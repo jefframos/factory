@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 
 export default class ModelLoaderManager {
   private static _instance: ModelLoaderManager;
@@ -10,7 +11,7 @@ export default class ModelLoaderManager {
 
   private _gltfLoader = new GLTFLoader();
   private _fbxLoader = new FBXLoader();
-  private _objLoader = new OBJLoader();
+  private _mtlLoader = new MTLLoader();
 
   private constructor() { }
 
@@ -54,8 +55,32 @@ export default class ModelLoaderManager {
         }
         case 'fbx':
           return await this._fbxLoader.loadAsync(path);
-        case 'obj':
-          return await this._objLoader.loadAsync(path);
+        case 'obj': {
+          // A fresh OBJLoader per load (not a shared instance field, unlike the other loaders
+          // above) — OBJLoader.setMaterials() is stateful on the instance, and this manager's
+          // loads run concurrently/are cached across completely unrelated models, so a shared
+          // instance would leak one obj's materials into the next obj-with-no-mtl load.
+          const objLoader = new OBJLoader();
+
+          // Wavefront .obj conventionally ships with a sibling .mtl of the same base name —
+          // same directory, same filename, just the extension swapped (confirmed: the asset
+          // pipeline's copyFolderSync() in tools/models/build-models.mjs already copies every
+          // file in a model's folder to the public output, .mtl included — it just was never
+          // being LOADED). Probing for it here means no registry/codegen change is needed: any
+          // existing or future .obj either has one next to it or doesn't, and this reacts to
+          // whichever is actually there instead of requiring it to be declared up front.
+          const mtlPath = path.replace(/\.obj(\?.*)?$/i, '.mtl$1');
+          try {
+            const materials = await this._mtlLoader.loadAsync(mtlPath);
+            materials.preload();
+            objLoader.setMaterials(materials);
+          } catch {
+            // No sibling .mtl (404) — falls back to OBJLoader's own default material, same
+            // flat/white result as before this fix. Not every .obj is expected to ship one.
+          }
+
+          return await objLoader.loadAsync(path);
+        }
         default:
           throw new Error(`Unknown format for path: ${path}`);
       }

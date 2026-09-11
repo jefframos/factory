@@ -840,9 +840,29 @@
         "h": 128
       }
     },
-    "fur-hood": {
+    "gold-nugget": {
       "frame": {
         "x": 112,
+        "y": 728,
+        "w": 108,
+        "h": 96
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 16,
+        "w": 108,
+        "h": 96
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
+    "fur-hood": {
+      "frame": {
+        "x": 210,
         "y": 728,
         "w": 89,
         "h": 108
@@ -862,7 +882,7 @@
     },
     "frying-pan": {
       "frame": {
-        "x": 203,
+        "x": 301,
         "y": 728,
         "w": 108,
         "h": 96
@@ -882,7 +902,7 @@
     },
     "flint-and-steel": {
       "frame": {
-        "x": 301,
+        "x": 399,
         "y": 728,
         "w": 108,
         "h": 94
@@ -902,7 +922,7 @@
     },
     "fishing-rod": {
       "frame": {
-        "x": 397,
+        "x": 495,
         "y": 728,
         "w": 106,
         "h": 108
@@ -922,12 +942,12 @@
     },
     "fishing-net": {
       "frame": {
-        "x": 505,
-        "y": 728,
+        "x": 603,
+        "y": 626,
         "w": 108,
         "h": 105
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 10,
@@ -962,12 +982,12 @@
     },
     "field-shovel": {
       "frame": {
-        "x": 612,
-        "y": 626,
+        "x": 700,
+        "y": 112,
         "w": 105,
         "h": 108
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 11,
@@ -982,12 +1002,12 @@
     },
     "field-bandage": {
       "frame": {
-        "x": 222,
-        "y": 627,
+        "x": 700,
+        "y": 516,
         "w": 108,
         "h": 92
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 10,
@@ -1002,12 +1022,12 @@
     },
     "feather-bundle": {
       "frame": {
-        "x": 612,
-        "y": 733,
+        "x": 726,
+        "y": 2,
         "w": 101,
         "h": 108
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 13,
@@ -1022,8 +1042,8 @@
     },
     "edible-mushroom": {
       "frame": {
-        "x": 332,
-        "y": 627,
+        "x": 724,
+        "y": 222,
         "w": 108,
         "h": 81
       },
@@ -1042,12 +1062,12 @@
     },
     "dust-mask": {
       "frame": {
-        "x": 700,
-        "y": 112,
+        "x": 724,
+        "y": 305,
         "w": 108,
         "h": 87
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 10,
@@ -1060,14 +1080,34 @@
         "h": 128
       }
     },
+    "crystal-nugget": {
+      "frame": {
+        "x": 603,
+        "y": 733,
+        "w": 108,
+        "h": 101
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 10,
+        "y": 13,
+        "w": 108,
+        "h": 101
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      }
+    },
     "crafting-hammer": {
       "frame": {
-        "x": 700,
-        "y": 516,
+        "x": 222,
+        "y": 627,
         "w": 98,
         "h": 108
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 15,
@@ -1102,12 +1142,12 @@
     },
     "cooking-pot": {
       "frame": {
-        "x": 726,
-        "y": 2,
+        "x": 332,
+        "y": 627,
         "w": 89,
         "h": 108
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 19,
@@ -1122,12 +1162,12 @@
     },
     "cooked-meat": {
       "frame": {
-        "x": 724,
-        "y": 222,
+        "x": 713,
+        "y": 626,
         "w": 108,
         "h": 91
       },
-      "rotated": true,
+      "rotated": false,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 10,
@@ -1142,8 +1182,8 @@
     },
     "coal-lump": {
       "frame": {
-        "x": 789,
-        "y": 112,
+        "x": 713,
+        "y": 719,
         "w": 108,
         "h": 101
       },
@@ -1162,12 +1202,12 @@
     },
     "cloth-roll": {
       "frame": {
-        "x": 800,
-        "y": 515,
+        "x": 807,
+        "y": 112,
         "w": 108,
         "h": 105
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 10,
@@ -1182,7 +1222,7 @@
     },
     "clay-lump": {
       "frame": {
-        "x": 817,
+        "x": 829,
         "y": 2,
         "w": 108,
         "h": 91
@@ -1202,8 +1242,8 @@
     },
     "canned-food": {
       "frame": {
-        "x": 724,
-        "y": 332,
+        "x": 834,
+        "y": 222,
         "w": 76,
         "h": 108
       },
@@ -1222,12 +1262,12 @@
     },
     "campfire": {
       "frame": {
-        "x": 817,
-        "y": 222,
+        "x": 834,
+        "y": 300,
         "w": 88,
         "h": 108
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 20,
@@ -1242,8 +1282,8 @@
     },
     "camp-kettle": {
       "frame": {
-        "x": 800,
-        "y": 622,
+        "x": 834,
+        "y": 390,
         "w": 96,
         "h": 108
       },
@@ -1262,8 +1302,8 @@
     },
     "camp-coffee": {
       "frame": {
-        "x": 834,
-        "y": 332,
+        "x": 794,
+        "y": 515,
         "w": 82,
         "h": 108
       },
@@ -1282,8 +1322,8 @@
     },
     "brass-spyglass": {
       "frame": {
-        "x": 722,
-        "y": 720,
+        "x": 816,
+        "y": 719,
         "w": 108,
         "h": 97
       },
@@ -1302,8 +1342,8 @@
     },
     "brass-compass": {
       "frame": {
-        "x": 821,
-        "y": 720,
+        "x": 713,
+        "y": 829,
         "w": 98,
         "h": 108
       },
@@ -1322,8 +1362,8 @@
     },
     "binoculars": {
       "frame": {
-        "x": 2,
-        "y": 839,
+        "x": 603,
+        "y": 836,
         "w": 108,
         "h": 97
       },
@@ -1342,12 +1382,12 @@
     },
     "bedroll": {
       "frame": {
-        "x": 112,
-        "y": 838,
+        "x": 813,
+        "y": 829,
         "w": 108,
         "h": 85
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 10,
@@ -1362,8 +1402,8 @@
     },
     "bear-trap": {
       "frame": {
-        "x": 722,
-        "y": 830,
+        "x": 2,
+        "y": 939,
         "w": 108,
         "h": 103
       },
@@ -1382,8 +1422,8 @@
     },
     "antidote-vial": {
       "frame": {
-        "x": 612,
-        "y": 836,
+        "x": 823,
+        "y": 625,
         "w": 79,
         "h": 108
       },
@@ -1402,8 +1442,8 @@
     },
     "animal-hide": {
       "frame": {
-        "x": 222,
-        "y": 838,
+        "x": 2,
+        "y": 839,
         "w": 108,
         "h": 91
       },
@@ -1422,12 +1462,12 @@
     },
     "animal-bone": {
       "frame": {
-        "x": 892,
-        "y": 112,
+        "x": 112,
+        "y": 935,
         "w": 106,
         "h": 108
       },
-      "rotated": false,
+      "rotated": true,
       "trimmed": true,
       "spriteSourceSize": {
         "x": 11,
@@ -1447,8 +1487,8 @@
     "image": "survive.webp",
     "format": "RGBA8888",
     "size": {
-      "w": 1000,
-      "h": 938
+      "w": 944,
+      "h": 1044
     },
     "scale": 1,
     "related_multi_packs": []

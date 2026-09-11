@@ -3,7 +3,7 @@
     "grounds": [
         {
             "name": "grass",
-            "color": "#6CCB5F",
+            "color": "#8AD547",
             "walkable": true
         },
         {
@@ -76,7 +76,8 @@
         },
         {
             "name": "gold",
-            "color": "#FFD54A"
+            "color": "#FFD54A",
+            "providerType": "goldDeposit"
         },
         {
             "name": "iron",
@@ -89,7 +90,8 @@
         },
         {
             "name": "copper",
-            "color": "#C87A3A"
+            "color": "#C87A3A",
+            "providerType": "copperDeposit"
         },
         {
             "name": "berries",
@@ -97,13 +99,18 @@
             "providerType": "berryBush"
         },
         {
-            "name": "cactus",
+            "name": "palm",
             "color": "#3E9C47",
             "providerType": "palm"
         },
         {
             "name": "mushroom",
             "color": "#C62828"
+        },
+        {
+            "name": "cactus",
+            "color": "#ffff00",
+            "providerType": "cactus"
         }
     ],
     "showTileNumbers": true

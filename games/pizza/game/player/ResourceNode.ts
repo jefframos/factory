@@ -54,7 +54,7 @@ import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { ASSET_LIBRARY, AssetLibraryEntry, getAssetIcon, pickRandom, resolveRange } from '../world/AssetLibraryRegistry';
 import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 import ViewUtils from 'core/utils/ViewUtils';
-import { OcclusionFadeConfig } from '../services/BendService';
+import { BendService, OcclusionFadeConfig } from '../services/BendService';
 import ResourceNodeRegistry from './ResourceNodeRegistry';
 
 /**
@@ -227,19 +227,30 @@ export default class ResourceNode extends Entity implements ActionTarget {
 
         // See AssetLibraryRegistry.ts — an empty models list (no glb yet for this asset)
         // falls back to the old flat-colored box placeholder instead.
-        this.visual = visualConfig && visualConfig.models.length > 0
-            ? this.addComponent(new GlbVisualComponent(
+        if (visualConfig && visualConfig.models.length > 0) {
+            // Self-referencing const (safe — the onReady callback below only ever runs once the
+            // GLB load resolves, well after this assignment completes) so applyStreamingFade()
+            // can read the loaded mesh back off this same component — see BendService's own
+            // doc for why this (not a flat scale-pop alone) is what keeps WorldManager's
+            // materialize/dematerialize radius from reading as a hard pop.
+            const glb: GlbVisualComponent = this.addComponent(new GlbVisualComponent(
                 pickRandom(visualConfig.models),
                 new THREE.Vector3(),
                 resolveRange(visualConfig.scale),
                 resolveRange(visualConfig.rotationDeg) * (Math.PI / 180),
-                undefined,
+                () => BendService.applyStreamingFade(glb.mesh),
                 RESOURCE_NODE_OCCLUSION_FADE,
-            ))
-            : this.addComponent(new BoxVisualComponent(
+            ));
+            this.visual = glb;
+        } else {
+            const box = this.addComponent(new BoxVisualComponent(
                 STONE_HALF_EXTENTS.clone().multiplyScalar(2), config.color,
                 new THREE.Vector3(0, STONE_HALF_EXTENTS.y, 0),
             ));
+            // A BoxVisualComponent's mesh exists synchronously (no async load to wait on).
+            BendService.applyStreamingFade(box.mesh);
+            this.visual = box;
+        }
 
         if (config.particleEffectId) {
             this.particleEmitter = this.addComponent(new ParticleEmitterComponent(

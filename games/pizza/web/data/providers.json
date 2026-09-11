@@ -2,12 +2,12 @@
     "tree": {
         "icon": "wood-log",
         "models": [
-            "Props.Tree",
-            "Props.TreeHigh"
+            "Resources.Tree1BColor1",
+            "Resources.Tree1AColor1"
         ],
         "scale": [
-            1.85,
-            2.15
+            1,
+            1.2
         ],
         "rotationDeg": [
             0,
@@ -29,7 +29,9 @@
     },
     "berryBush": {
         "icon": "wild-berries",
-        "models": [],
+        "models": [
+            "Resources.Bush2DColor1"
+        ],
         "scale": 1,
         "rotationDeg": [
             0,
@@ -49,8 +51,8 @@
     },
     "palm": {
         "models": [
-            "Pirate.PalmBend",
-            "Pirate.PalmStraight"
+            "Resources.Tree4AColor1",
+            "Resources.Tree4BColor1"
         ],
         "drops": [
             {
@@ -75,7 +77,7 @@
     },
     "crystalDeposit": {
         "models": [
-            "Resources.SilverNuggetLarge"
+            "Resources.GemsPileSmall"
         ],
         "drops": [
             {
@@ -83,24 +85,23 @@
                 "weight": 1
             }
         ],
-        "icon": "iron-ore",
-        "scale": 4,
+        "scale": 2,
         "rotationDeg": [
             1,
             1
         ],
         "action": "mine",
-        "maxLife": 10,
+        "maxLife": 12,
         "amountPerGather": 1,
-        "respawnSec": 120,
+        "respawnSec": 180,
         "label": "CrystalDeposit",
-        "solid": 1
+        "solid": 1,
+        "icon": "crystal-nugget"
     },
     "stoneDeposit": {
         "icon": "stone-chunk",
         "models": [
-            "Resources.StoneChunksLarge",
-            "Resources.StoneChunksSmall"
+            "Resources.Rock1DColor1"
         ],
         "scale": [
             1.5,
@@ -130,12 +131,11 @@
     "ironDeposit": {
         "icon": "iron-ore",
         "models": [
-            "Resources.SilverNuggetLarge",
-            "Resources.SilverNuggetLarge"
+            "Resources.IronNuggets"
         ],
         "scale": [
-            1.5,
-            2
+            2,
+            3
         ],
         "rotationDeg": [
             0,
@@ -143,9 +143,9 @@
         ],
         "label": "Iron Deposit",
         "action": "mine",
-        "maxLife": 5,
+        "maxLife": 7,
         "amountPerGather": 1,
-        "respawnSec": 80,
+        "respawnSec": 100,
         "drops": [
             {
                 "resourceType": "iron",
@@ -157,5 +157,88 @@
             }
         ],
         "solid": 0.5
+    },
+    "copperDeposit": {
+        "icon": "copper-ore",
+        "models": [
+            "Resources.CopperNuggets"
+        ],
+        "scale": [
+            2,
+            3
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "label": "Copper Deposit",
+        "action": "mine",
+        "maxLife": 6,
+        "amountPerGather": 1,
+        "respawnSec": 90,
+        "drops": [
+            {
+                "resourceType": "copper",
+                "weight": 85
+            },
+            {
+                "resourceType": "pebble",
+                "weight": 15
+            }
+        ],
+        "solid": 0.5
+    },
+    "goldDeposit": {
+        "models": [
+            "Resources.GoldNuggets"
+        ],
+        "scale": [
+            2,
+            3
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "label": "Gold Deposit",
+        "action": "mine",
+        "maxLife": 9,
+        "amountPerGather": 1,
+        "respawnSec": 140,
+        "drops": [
+            {
+                "resourceType": "gold",
+                "weight": 80
+            },
+            {
+                "resourceType": "pebble",
+                "weight": 20
+            }
+        ],
+        "solid": 0.5,
+        "icon": "gold-nugget"
+    },
+    "cactus": {
+        "icon": "wood-log",
+        "models": [
+            "Resources.TreeBare1AColor1",
+            "Resources.TreeBare1BColor1"
+        ],
+        "scale": [
+            1.5,
+            2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "label": "Cactus",
+        "action": "slash",
+        "maxLife": 5,
+        "amountPerGather": 0,
+        "respawnSec": 30,
+        "drops": [],
+        "solid": 1,
+        "destroyParticleEffectId": "treeLeafBurst"
     }
 }

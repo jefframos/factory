@@ -334,6 +334,7 @@ const ENTITY_SCHEMAS = {
         },
         { key: 'price', type: 'number', label: 'Mart Price (base price a Mart buys/sells this at — blank means this resource can never be bought or sold at any mart)', optional: true },
         { key: 'sellable', type: 'boolean', label: 'Sellable To Marts (blocks selling this resource back even though it has a Mart Price — still buyable; meaningless with no Mart Price set)', optional: true },
+        { key: 'disabled', type: 'boolean', label: 'Disabled (takes this resource out of the game entirely — no Provider ever drops it, it\'s hidden from every resource panel/inventory tab even with leftover banked count, and any Crafting recipe cost naming it is treated as if that line didn\'t exist)', optional: true },
     ],
     // A PROVIDER is the world dispenser the player actually chops/mines/forages — action,
     // life, respawn, and a WEIGHTED DROP TABLE of resources (see the Resources tab above).
@@ -432,6 +433,8 @@ const ENTITY_SCHEMAS = {
         { key: 'resourcePerHit', type: 'number', label: 'Resource Per Hit' },
         { key: 'cancelOnLeaveRange', type: 'boolean', label: 'Cancel On Leave Range' },
         { key: 'tool', type: 'select', label: 'Tool', source: 'tools', optional: true },
+        { key: 'animationTrigger', type: 'text', label: 'Animation Trigger (action-layer clip id, e.g. "chop" — must be unique per action)' },
+        { key: 'animationModel', type: 'select', label: 'Character Animation Clip', options: CHARACTER_ANIMATION_OPTIONS },
     ],
     items: [
         { key: 'label', type: 'text', label: 'Label' },

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { PERFORMANCE_CONFIG } from '../config/PerformanceConfig';
 
 /** Tunable knobs for BendService.applyOcclusionFade() — see that method's own doc. */
 export interface OcclusionFadeConfig {
@@ -157,7 +158,15 @@ export class BendService {
      * Fully opaque within fadeStart, fully transparent at fadeEnd.
      * Reuses uBendOrigin so no extra per-frame update is needed.
      */
+    /** Same "guard chained onBeforeCompile against duplicate injection" reasoning as bentMaterials — a caller traversing a multi-primitive GLB whose export reuses one material across several submeshes would otherwise chain this twice on the same material. */
+    private static readonly distanceFadedMaterials = new WeakSet<THREE.Material>();
+
     public static applyDistanceFade(material: THREE.Material, fadeStart: number, fadeEnd: number): void {
+        if (BendService.distanceFadedMaterials.has(material)) {
+            return;
+        }
+        BendService.distanceFadedMaterials.add(material);
+
         material.transparent = true;
         const prev = material.onBeforeCompile;
         material.onBeforeCompile = (shader, renderer) => {
@@ -182,6 +191,30 @@ export class BendService {
             );
         };
         material.needsUpdate = true;
+    }
+
+    /**
+     * Fade band tuned to PERFORMANCE_CONFIG's own resource streaming radii (resourceLoadRadius/
+     * resourceUnloadRadius) — comfortably inside both, so a streamed entity (ResourceNode/
+     * AnimalNode/LooseResourceNode — anything WorldManager/DynamicResourceSpawner materializes/
+     * dematerializes by distance) is already partway or fully faded by the time that actually
+     * happens, instead of snapping to full opacity/invisibility right at the boundary. This is
+     * what turns crossing that radius into a fade rather than a hard pop — especially combined
+     * with applyBend() already dropping a distant node toward the ground curve's own horizon at
+     * this range, which a flat scale-pop alone (see ResourceNode.playSpawnIn()) doesn't address
+     * on its own.
+     */
+    private static readonly STREAMING_FADE_START = PERFORMANCE_CONFIG.resourceLoadRadius - 20;
+    private static readonly STREAMING_FADE_END = PERFORMANCE_CONFIG.resourceUnloadRadius - 3;
+
+    /** Applies the streaming distance-fade (see STREAMING_FADE_START/END's own doc) to every material on every mesh under `object` — call once, right after building a streamed entity's visual (whichever of GlbVisualComponent/BoxVisualComponent it ends up being), alongside/instead of nothing else needed: this reuses applyDistanceFade()'s own uBendOrigin uniform, so it stays in sync with the bend/streaming origin with no extra per-frame wiring. */
+    public static applyStreamingFade(object: THREE.Object3D): void {
+        object.traverse(child => {
+            if (child instanceof THREE.Mesh) {
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                materials.forEach(material => BendService.applyDistanceFade(material, BendService.STREAMING_FADE_START, BendService.STREAMING_FADE_END));
+            }
+        });
     }
 
     /**

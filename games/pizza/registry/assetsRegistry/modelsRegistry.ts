@@ -4453,6 +4453,186 @@ const PropsWeaponBow = {
 }
 } as const;
 
+const ResourcesBush2AColor1 = {
+  id: 'Bush_2_A_Color1',
+  path: 'resources/Bush_2_A_Color1',
+  fullPath: 'pizza/models/resources/Bush_2_A_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Bush2AColor1": "Bush_2_A_Color1"
+}
+} as const;
+
+const ResourcesBush2BColor1 = {
+  id: 'Bush_2_B_Color1',
+  path: 'resources/Bush_2_B_Color1',
+  fullPath: 'pizza/models/resources/Bush_2_B_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Bush2BColor1": "Bush_2_B_Color1"
+}
+} as const;
+
+const ResourcesBush2CColor1 = {
+  id: 'Bush_2_C_Color1',
+  path: 'resources/Bush_2_C_Color1',
+  fullPath: 'pizza/models/resources/Bush_2_C_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Bush2CColor1": "Bush_2_C_Color1"
+}
+} as const;
+
+const ResourcesBush2DColor1 = {
+  id: 'Bush_2_D_Color1',
+  path: 'resources/Bush_2_D_Color1',
+  fullPath: 'pizza/models/resources/Bush_2_D_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Bush2DColor1": "Bush_2_D_Color1"
+}
+} as const;
+
+const ResourcesCopperNuggets = {
+  id: 'Copper_Nuggets',
+  path: 'resources/Copper_Nuggets',
+  fullPath: 'pizza/models/resources/Copper_Nuggets.gltf',
+  format: 'gltf',
+  nodes: {
+  "CopperNuggets": "Copper_Nuggets"
+}
+} as const;
+
+const ResourcesGemsPileSmall = {
+  id: 'Gems_Pile_Small',
+  path: 'resources/Gems_Pile_Small',
+  fullPath: 'pizza/models/resources/Gems_Pile_Small.gltf',
+  format: 'gltf',
+  nodes: {
+  "GemsPileSmall": "Gems_Pile_Small"
+}
+} as const;
+
+const ResourcesGoldNuggets = {
+  id: 'Gold_Nuggets',
+  path: 'resources/Gold_Nuggets',
+  fullPath: 'pizza/models/resources/Gold_Nuggets.gltf',
+  format: 'gltf',
+  nodes: {
+  "GoldNuggets": "Gold_Nuggets"
+}
+} as const;
+
+const ResourcesGrass1AColor1 = {
+  id: 'Grass_1_A_Color1',
+  path: 'resources/Grass_1_A_Color1',
+  fullPath: 'pizza/models/resources/Grass_1_A_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Grass1AColor1": "Grass_1_A_Color1"
+}
+} as const;
+
+const ResourcesGrass1ASinglesidedColor1 = {
+  id: 'Grass_1_A_Singlesided_Color1',
+  path: 'resources/Grass_1_A_Singlesided_Color1',
+  fullPath: 'pizza/models/resources/Grass_1_A_Singlesided_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Grass1ASinglesidedColor1": "Grass_1_A_Singlesided_Color1"
+}
+} as const;
+
+const ResourcesGrass1BColor1 = {
+  id: 'Grass_1_B_Color1',
+  path: 'resources/Grass_1_B_Color1',
+  fullPath: 'pizza/models/resources/Grass_1_B_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Grass1BColor1": "Grass_1_B_Color1"
+}
+} as const;
+
+const ResourcesGrass2AColor1 = {
+  id: 'Grass_2_A_Color1',
+  path: 'resources/Grass_2_A_Color1',
+  fullPath: 'pizza/models/resources/Grass_2_A_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Grass2AColor1": "Grass_2_A_Color1"
+}
+} as const;
+
+const ResourcesGrass2BColor1 = {
+  id: 'Grass_2_B_Color1',
+  path: 'resources/Grass_2_B_Color1',
+  fullPath: 'pizza/models/resources/Grass_2_B_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Grass2BColor1": "Grass_2_B_Color1"
+}
+} as const;
+
+const ResourcesIronNuggets = {
+  id: 'Iron_Nuggets',
+  path: 'resources/Iron_Nuggets',
+  fullPath: 'pizza/models/resources/Iron_Nuggets.gltf',
+  format: 'gltf',
+  nodes: {
+  "IronNuggets": "Iron_Nuggets"
+}
+} as const;
+
+const ResourcesRock1CColor1 = {
+  id: 'Rock_1_C_Color1',
+  path: 'resources/Rock_1_C_Color1',
+  fullPath: 'pizza/models/resources/Rock_1_C_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Rock1CColor1": "Rock_1_C_Color1"
+}
+} as const;
+
+const ResourcesRock1DColor1 = {
+  id: 'Rock_1_D_Color1',
+  path: 'resources/Rock_1_D_Color1',
+  fullPath: 'pizza/models/resources/Rock_1_D_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Rock1DColor1": "Rock_1_D_Color1"
+}
+} as const;
+
+const ResourcesRock1EColor1 = {
+  id: 'Rock_1_E_Color1',
+  path: 'resources/Rock_1_E_Color1',
+  fullPath: 'pizza/models/resources/Rock_1_E_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Rock1EColor1": "Rock_1_E_Color1"
+}
+} as const;
+
+const ResourcesRock3AColor1 = {
+  id: 'Rock_3_A_Color1',
+  path: 'resources/Rock_3_A_Color1',
+  fullPath: 'pizza/models/resources/Rock_3_A_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Rock3AColor1": "Rock_3_A_Color1"
+}
+} as const;
+
+const ResourcesRock3BColor1 = {
+  id: 'Rock_3_B_Color1',
+  path: 'resources/Rock_3_B_Color1',
+  fullPath: 'pizza/models/resources/Rock_3_B_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Rock3BColor1": "Rock_3_B_Color1"
+}
+} as const;
+
 const ResourcesSilverNuggets = {
   id: 'Silver_Nuggets',
   path: 'resources/Silver_Nuggets',
@@ -4510,6 +4690,166 @@ const ResourcesStoneChunksSmall = {
   format: 'gltf',
   nodes: {
   "StoneChunksSmall": "Stone_Chunks_Small"
+}
+} as const;
+
+const ResourcesTree1AColor1 = {
+  id: 'Tree_1_A_Color1',
+  path: 'resources/Tree_1_A_Color1',
+  fullPath: 'pizza/models/resources/Tree_1_A_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Tree1AColor1": "Tree_1_A_Color1"
+}
+} as const;
+
+const ResourcesTree1BColor1 = {
+  id: 'Tree_1_B_Color1',
+  path: 'resources/Tree_1_B_Color1',
+  fullPath: 'pizza/models/resources/Tree_1_B_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Tree1BColor1": "Tree_1_B_Color1"
+}
+} as const;
+
+const ResourcesTree1CColor1 = {
+  id: 'Tree_1_C_Color1',
+  path: 'resources/Tree_1_C_Color1',
+  fullPath: 'pizza/models/resources/Tree_1_C_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Tree1CColor1": "Tree_1_C_Color1"
+}
+} as const;
+
+const ResourcesTree2AColor1 = {
+  id: 'Tree_2_A_Color1',
+  path: 'resources/Tree_2_A_Color1',
+  fullPath: 'pizza/models/resources/Tree_2_A_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Tree2AColor1": "Tree_2_A_Color1"
+}
+} as const;
+
+const ResourcesTree2BColor1 = {
+  id: 'Tree_2_B_Color1',
+  path: 'resources/Tree_2_B_Color1',
+  fullPath: 'pizza/models/resources/Tree_2_B_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Tree2BColor1": "Tree_2_B_Color1"
+}
+} as const;
+
+const ResourcesTree2CColor1 = {
+  id: 'Tree_2_C_Color1',
+  path: 'resources/Tree_2_C_Color1',
+  fullPath: 'pizza/models/resources/Tree_2_C_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Tree2CColor1": "Tree_2_C_Color1"
+}
+} as const;
+
+const ResourcesTree2DColor1 = {
+  id: 'Tree_2_D_Color1',
+  path: 'resources/Tree_2_D_Color1',
+  fullPath: 'pizza/models/resources/Tree_2_D_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Tree2DColor1": "Tree_2_D_Color1"
+}
+} as const;
+
+const ResourcesTree2EColor1 = {
+  id: 'Tree_2_E_Color1',
+  path: 'resources/Tree_2_E_Color1',
+  fullPath: 'pizza/models/resources/Tree_2_E_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Tree2EColor1": "Tree_2_E_Color1"
+}
+} as const;
+
+const ResourcesTree3AColor1 = {
+  id: 'Tree_3_A_Color1',
+  path: 'resources/Tree_3_A_Color1',
+  fullPath: 'pizza/models/resources/Tree_3_A_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Tree3AColor1": "Tree_3_A_Color1"
+}
+} as const;
+
+const ResourcesTree3BColor1 = {
+  id: 'Tree_3_B_Color1',
+  path: 'resources/Tree_3_B_Color1',
+  fullPath: 'pizza/models/resources/Tree_3_B_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Tree3BColor1": "Tree_3_B_Color1"
+}
+} as const;
+
+const ResourcesTree3CColor1 = {
+  id: 'Tree_3_C_Color1',
+  path: 'resources/Tree_3_C_Color1',
+  fullPath: 'pizza/models/resources/Tree_3_C_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Tree3CColor1": "Tree_3_C_Color1"
+}
+} as const;
+
+const ResourcesTree4AColor1 = {
+  id: 'Tree_4_A_Color1',
+  path: 'resources/Tree_4_A_Color1',
+  fullPath: 'pizza/models/resources/Tree_4_A_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Tree4AColor1": "Tree_4_A_Color1"
+}
+} as const;
+
+const ResourcesTree4BColor1 = {
+  id: 'Tree_4_B_Color1',
+  path: 'resources/Tree_4_B_Color1',
+  fullPath: 'pizza/models/resources/Tree_4_B_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Tree4BColor1": "Tree_4_B_Color1"
+}
+} as const;
+
+const ResourcesTree4CColor1 = {
+  id: 'Tree_4_C_Color1',
+  path: 'resources/Tree_4_C_Color1',
+  fullPath: 'pizza/models/resources/Tree_4_C_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "Tree4CColor1": "Tree_4_C_Color1"
+}
+} as const;
+
+const ResourcesTreeBare1AColor1 = {
+  id: 'Tree_Bare_1_A_Color1',
+  path: 'resources/Tree_Bare_1_A_Color1',
+  fullPath: 'pizza/models/resources/Tree_Bare_1_A_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "TreeBare1AColor1": "Tree_Bare_1_A_Color1"
+}
+} as const;
+
+const ResourcesTreeBare1BColor1 = {
+  id: 'Tree_Bare_1_B_Color1',
+  path: 'resources/Tree_Bare_1_B_Color1',
+  fullPath: 'pizza/models/resources/Tree_Bare_1_B_Color1.gltf',
+  format: 'gltf',
+  nodes: {
+  "TreeBare1BColor1": "Tree_Bare_1_B_Color1"
 }
 } as const;
 
@@ -6286,12 +6626,46 @@ export const MODELS = {
     WeaponBow: PropsWeaponBow
   },
   Resources: {
+    Bush2AColor1: ResourcesBush2AColor1,
+    Bush2BColor1: ResourcesBush2BColor1,
+    Bush2CColor1: ResourcesBush2CColor1,
+    Bush2DColor1: ResourcesBush2DColor1,
+    CopperNuggets: ResourcesCopperNuggets,
+    GemsPileSmall: ResourcesGemsPileSmall,
+    GoldNuggets: ResourcesGoldNuggets,
+    Grass1AColor1: ResourcesGrass1AColor1,
+    Grass1ASinglesidedColor1: ResourcesGrass1ASinglesidedColor1,
+    Grass1BColor1: ResourcesGrass1BColor1,
+    Grass2AColor1: ResourcesGrass2AColor1,
+    Grass2BColor1: ResourcesGrass2BColor1,
+    IronNuggets: ResourcesIronNuggets,
+    Rock1CColor1: ResourcesRock1CColor1,
+    Rock1DColor1: ResourcesRock1DColor1,
+    Rock1EColor1: ResourcesRock1EColor1,
+    Rock3AColor1: ResourcesRock3AColor1,
+    Rock3BColor1: ResourcesRock3BColor1,
     SilverNuggets: ResourcesSilverNuggets,
     SilverNuggetLarge: ResourcesSilverNuggetLarge,
     SilverNuggetMedium: ResourcesSilverNuggetMedium,
     SilverNuggetSmall: ResourcesSilverNuggetSmall,
     StoneChunksLarge: ResourcesStoneChunksLarge,
     StoneChunksSmall: ResourcesStoneChunksSmall,
+    Tree1AColor1: ResourcesTree1AColor1,
+    Tree1BColor1: ResourcesTree1BColor1,
+    Tree1CColor1: ResourcesTree1CColor1,
+    Tree2AColor1: ResourcesTree2AColor1,
+    Tree2BColor1: ResourcesTree2BColor1,
+    Tree2CColor1: ResourcesTree2CColor1,
+    Tree2DColor1: ResourcesTree2DColor1,
+    Tree2EColor1: ResourcesTree2EColor1,
+    Tree3AColor1: ResourcesTree3AColor1,
+    Tree3BColor1: ResourcesTree3BColor1,
+    Tree3CColor1: ResourcesTree3CColor1,
+    Tree4AColor1: ResourcesTree4AColor1,
+    Tree4BColor1: ResourcesTree4BColor1,
+    Tree4CColor1: ResourcesTree4CColor1,
+    TreeBare1AColor1: ResourcesTreeBare1AColor1,
+    TreeBare1BColor1: ResourcesTreeBare1BColor1,
     WoodLogA: ResourcesWoodLogA,
     WoodLogB: ResourcesWoodLogB,
     WoodLogStack: ResourcesWoodLogStack

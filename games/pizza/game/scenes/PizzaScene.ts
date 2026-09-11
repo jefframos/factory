@@ -99,7 +99,7 @@ import { GlobalResourceStorage } from '../data/GlobalResourceStorage';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { BuildingStorage } from '../data/BuildingStorage';
 import { BUILDING_CONFIG, BuildingId } from '../data/BuildingTypes';
-import { ResourceType } from '../actions/ResourceTypes';
+import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { PROVIDER_CONFIG } from '../actions/ProviderTypes';
 import { ACTION_CONFIG } from '../actions/ActionTypes';
 import { getToolIcon } from '../actions/ToolRegistry';
@@ -605,9 +605,12 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             'Add 10 Of Each Resource',
             () => {
                 // Skips Pig — see setupDebugButtons()'s own doc on why an animal-caught
-                // resource isn't something a plain "add 10" credit should ever hand out.
+                // resource isn't something a plain "add 10" credit should ever hand out. Also
+                // skips anything disabled (see ResourceConfig.disabled's own doc) — a debug
+                // "give me everything" button handing out a resource nobody can otherwise
+                // obtain anymore would defeat the whole point of disabling it.
                 for (const type of Object.values(ResourceType)) {
-                    if (type === ResourceType.Pig) {
+                    if (type === ResourceType.Pig || RESOURCE_CONFIG[type]?.disabled) {
                         continue;
                     }
                     BackpackStorage.add(type, 10);
@@ -896,7 +899,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         InGameButtonList.registerButton('Add 100 Money', () => EconomyStorage.add(CurrencyType.Money, 100));
         InGameButtonList.registerButton('Add 10 Resources', () => {
             for (const type of Object.values(ResourceType)) {
-                if (type === ResourceType.Pig) {
+                if (type === ResourceType.Pig || RESOURCE_CONFIG[type]?.disabled) {
                     continue;
                 }
                 BackpackStorage.add(type, 10);

@@ -66,10 +66,10 @@ export function pickRandom<T>(items: readonly T[]): T {
 
 export const ASSET_LIBRARY = {
     tree: {
-        models: [MODELS.Props.Tree, MODELS.Props.TreeHigh],
+        models: [MODELS.Resources.Tree1BColor1, MODELS.Resources.Tree1AColor1],
         scale: [
-            1.85,
-            2.15
+            1,
+            1.2
         ],
         rotationDeg: [
             0,
@@ -79,7 +79,7 @@ export const ASSET_LIBRARY = {
     },
     stone: {
         // No stone model yet — add one here whenever real art exists; nothing else needs to change.
-        models: [MODELS.Resources.StoneChunksSmall],
+        models: [MODELS.Resources.Rock3AColor1, MODELS.Resources.Rock3BColor1],
         scale: [
             1,
             1.2
@@ -92,7 +92,7 @@ export const ASSET_LIBRARY = {
     },
     berries: {
         // No berry-bush model yet — add one here whenever real art exists; nothing else needs to change.
-        models: [],
+        models: [MODELS.Resources.BushBerries2],
         scale: 1,
         rotationDeg: [
             0,
@@ -117,7 +117,7 @@ export const ASSET_LIBRARY = {
     pebble: {
         // Reusing the small stone-chunks model as a stand-in until a dedicated pebble model
         // exists — nothing else needs to change once one does, just swap this list.
-        models: [MODELS.Resources.StoneChunksSmall],
+        models: [MODELS.Resources.Rock3AColor1, MODELS.Resources.Rock3BColor1],
         scale: [
             0.5,
             0.8
@@ -132,7 +132,7 @@ export const ASSET_LIBRARY = {
         // Two variants — one is picked at random per spawn (see pickRandom()); both bank the
         // same flat amountPerGather regardless of which got picked (see ResourceTypes.ts's own
         // doc on ResourceType.GrassFiber).
-        models: [MODELS.Pirate.GrassPlant, MODELS.Pirate.Grass],
+        models: [MODELS.Resources.Grass2BColor1],
         scale: [
             0.8,
             1.2
@@ -159,7 +159,7 @@ export const ASSET_LIBRARY = {
      */
     berryBush: {
         // No berry-bush model yet — add one here whenever real art exists.
-        models: [],
+        models: [MODELS.Resources.Bush2DColor1],
         scale: 1,
         rotationDeg: [
             0,
@@ -174,10 +174,27 @@ export const ASSET_LIBRARY = {
         "icon": "wood-log"
     },
     "crystal": {
-        "icon": "iron-ore",
+        // Was "iron-ore" — a leftover placeholder from before this had any icon of its own.
+        // Left unset (falls back to a blank icon — see getAssetIcon()'s own doc) rather than
+        // keep lying with iron's icon; no dedicated gems icon exists yet.
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "crystal-nugget"
+    },
+    "copper": {
+        "icon": "copper-ore",
         "models": [],
         "scale": 1,
         "rotationDeg": 0
+    },
+    "gold": {
+        // No dedicated gold icon yet (only copper-ore/iron-ore exist so far) — left unset,
+        // same as "crystal" above, rather than borrowing an unrelated one.
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "gold-nugget"
     },
     clothRoll: {
         // No glb yet — crafted-only resource (see ResourceTypes.ts's own doc), icon-only for now.
@@ -282,7 +299,7 @@ export const ASSET_LIBRARY = {
         "icon": "pizza-model-snapshots_Food-Watermelon"
     },
     "palm": {
-        "models": [MODELS.Pirate.PalmBend, MODELS.Pirate.PalmStraight],
+        "models": [MODELS.Resources.Tree4AColor1, MODELS.Resources.Tree4BColor1],
         "scale": [
             1,
             1
@@ -294,13 +311,17 @@ export const ASSET_LIBRARY = {
         "icon": "tree-bark"
     },
     "crystalDeposit": {
-        "models": [MODELS.Resources.SilverNuggetLarge],
-        "scale": 4,
+        // Was MODELS.Resources.SilverNuggetLarge + icon "iron-ore" — a leftover placeholder
+        // that never actually matched what a crystal deposit is supposed to look like. Now
+        // points at the real Gems_Pile_Small model; icon left unset (no dedicated gems icon
+        // exists yet — see "crystal"'s own entry above) rather than keep the wrong iron one.
+        "models": [MODELS.Resources.GemsPileSmall],
+        "scale": 2,
         "rotationDeg": [
             1,
             1
         ],
-        "icon": "iron-ore"
+        "icon": "crystal-nugget"
     },
     "berry": {
         "icon": "wild-berries",
@@ -312,7 +333,7 @@ export const ASSET_LIBRARY = {
         ]
     },
     "stoneDeposit": {
-        models: [MODELS.Resources.StoneChunksLarge, MODELS.Resources.StoneChunksSmall],
+        models: [MODELS.Resources.Rock1DColor1],
         scale: [
             1.5,
             2
@@ -331,15 +352,42 @@ export const ASSET_LIBRARY = {
     },
     "ironDeposit": {
         "icon": "iron-ore",
-        "models": [MODELS.Resources.SilverNuggetLarge, MODELS.Resources.SilverNuggetLarge],
+        // Was [SilverNuggetLarge, SilverNuggetLarge] (a duplicated placeholder) — now the real
+        // Iron_Nuggets model.
+        "models": [MODELS.Resources.IronNuggets],
         "scale": [
-            1.5,
-            2
+            2,
+            3
         ],
         "rotationDeg": [
             0,
             360
         ]
+    },
+    "copperDeposit": {
+        "icon": "copper-ore",
+        "models": [MODELS.Resources.CopperNuggets],
+        "scale": [
+            2,
+            3
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "goldDeposit": {
+        // No dedicated gold icon yet — see "gold"'s own entry above.
+        "models": [MODELS.Resources.GoldNuggets],
+        "scale": [
+            2,
+            3
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "icon": "gold-nugget"
     },
     "rope": {
         "icon": "rope-coil",
@@ -456,6 +504,18 @@ export const ASSET_LIBRARY = {
         "models": [],
         "scale": 1,
         "rotationDeg": 0
+    },
+    "cactus": {
+        "icon": "wood-log",
+        "models": [MODELS.Resources.TreeBare1AColor1, MODELS.Resources.TreeBare1BColor1],
+        "scale": [
+            1.5,
+            2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
     }
 } satisfies Record<string, AssetLibraryEntry>;
 

@@ -121,8 +121,10 @@ export default class GlobalResourcesUI extends PIXI.Container {
     private onGlobalResourceChanged = (type: ResourceType): void => {
         // Farm-category resources (a crop's own harvest yield — see ResourceConfig.category's
         // own doc) never show on this always-visible main-screen panel, only in InventoryPopup's
-        // Farm tab — same skip BackpackListUI.onBackpackChanged() applies.
-        if (RESOURCE_CONFIG[type]?.category === 'farm') {
+        // Farm tab — same skip BackpackListUI.onBackpackChanged() applies. A DISABLED resource
+        // (see ResourceConfig.disabled's own doc) never shows here either, even with leftover
+        // banked count from before it was disabled.
+        if (RESOURCE_CONFIG[type]?.category === 'farm' || RESOURCE_CONFIG[type]?.disabled) {
             return;
         }
 
