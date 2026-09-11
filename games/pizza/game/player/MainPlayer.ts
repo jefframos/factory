@@ -56,6 +56,10 @@ const modelUrl = (fullPath: string): string => `./${fullPath}`;
 const TOOL_ACTION_ANIMATIONS: Partial<Record<ItemType, { trigger: string; modelPath: string }>> = {
     [ItemType.Axe]: { trigger: 'chop', modelPath: MODELS.Characters.StandingMeleeAttackDownwardCHOP.fullPath },
     [ItemType.Pickaxe]: { trigger: 'mine', modelPath: MODELS.Characters.StandingPICKAXE.fullPath },
+    // Reuses the same downward-swing clip as 'chop' (no dedicated slash animation asset exists
+    // yet) — the trigger id is still its own 'slash' (matching ActionConfig.animationTrigger for
+    // ActionType.Slash), so a real slash clip can be swapped in later with no other change.
+    [ItemType.Knife]: { trigger: 'slash', modelPath: MODELS.Characters.StandingMeleeAttackDownwardCHOP.fullPath },
 };
 
 export default class MainPlayer extends Entity {

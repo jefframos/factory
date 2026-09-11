@@ -154,6 +154,23 @@ const FARM_SECTION_DIVIDER_HEIGHT = 1;
 /** Every tool id in TOOL_LIBRARY's own declaration order — same convention as ToolListUI.TOOL_IDS. ToolId and ItemType share the exact same string values (see ItemTypes.ts's own doc), so casting one to the other below is safe. */
 const TOOL_IDS = Object.keys(TOOL_LIBRARY) as ToolId[];
 
+/** True if the player holds any seed OR any 'farm'-category resource — same two sources renderFarmTab() itself pulls from. */
+function hasAnyFarmItem(): boolean {
+    const seedCounts = SeedStorage.getAll();
+    if (Object.values(SeedId).some(id => (seedCounts.get(id) ?? 0) > 0)) {
+        return true;
+    }
+    const backpackCounts = BackpackStorage.getAll();
+    return Object.values(ResourceType).some(type => (backpackCounts.get(type) ?? 0) > 0 && RESOURCE_CONFIG[type]?.category === 'farm');
+}
+
+/** Per-tab "should this tab even be in the strip" predicate. Tools/Resources are ALWAYS shown — the popup itself can't open before the player owns a first tool (see BackpackButton.ts), and Resources reads better sitting there as a permanent base tab rather than blinking in and out as the player spends the last of a material back to 0. Farm is the one tab that's genuinely conditional: it stays out of the strip until the player's first seed/crop, since most of the game never touches farming at all. */
+const TAB_HAS_ITEMS: Record<TabId, () => boolean> = {
+    tools: () => true,
+    resources: () => true,
+    farm: hasAnyFarmItem,
+};
+
 /** The shop id that upgrades `toolId`, if any — same lookup as ToolListUI.shopIdForTool(). */
 function shopIdForTool(toolId: ToolId): string | undefined {
     for (const [id, config] of Object.entries(SHOP_CONFIG_BY_ID)) {
@@ -180,24 +197,23 @@ export default class InventoryPopup extends Popup {
     /** Clips/scrolls `contentArea` to CONTENT_WIDTH x CONTENT_HEIGHT — see buildContent()'s own doc and ScrollView.ts. refresh() must be called after every renderActiveTab() rebuild (see that method), since contentArea's own height can change per tab/per re-render. */
     private declare scrollView: ScrollView;
     private declare tabButtons: Map<TabId, PIXI.NineSlicePlane>;
+    /** Parent of every tab container built by buildTabsRow() — a field (rather than a buildContent()-local const) so refreshTabs() can tear down and rebuild it whenever which tabs are visible changes, not just which one's active. */
+    private declare tabsRow: PIXI.Container;
+    /** The content width buildContent() itself received, stashed for buildTabsRow() to re-lay-out the strip against whenever refreshTabs() rebuilds it later (not just once at construction). Named apart from Popup's own (protected) contentWidth to avoid colliding with it. */
+    private declare tabStripWidth: number;
 
-    private readonly handleToolsChanged = (): void => {
-        if (this.activeTab === 'tools') {
-            this.renderActiveTab();
-        }
-    };
+    /** Which tabs currently have anything to show (see TAB_HAS_ITEMS) — recomputed, and the tab strip rebuilt/activeTab re-validated against it, every time ANY of the storages below fire (see constructor): a change to one tab's backing storage can reveal or hide a DIFFERENT tab (e.g. picking up a first seed while on the Tools tab should make Farm appear in the strip), not just change the currently active tab's own content. */
+    private readonly refreshTabs = (): void => {
+        const visibleTabs = this.getVisibleTabs();
+        this.buildTabsRow(visibleTabs);
 
-    private readonly handleResourcesChanged = (): void => {
-        if (this.activeTab === 'resources') {
-            this.renderActiveTab();
+        if (!visibleTabs.some(tab => tab.id === this.activeTab)) {
+            // Falls back to whatever's now first — TABS' own declaration order (tools, resources,
+            // farm) — rather than staying on a tab that just lost its last item and dropped out
+            // of the strip entirely.
+            this.activeTab = visibleTabs[0]?.id ?? TABS[0].id;
         }
-    };
-
-    /** Shared by BOTH BackpackStorage (farm-category holdings) and SeedStorage — either one changing can affect what the Farm tab shows, so both wire to this same handler rather than each needing its own. */
-    private readonly handleFarmChanged = (): void => {
-        if (this.activeTab === 'farm') {
-            this.renderActiveTab();
-        }
+        this.renderActiveTab();
     };
 
     public constructor() {
@@ -208,23 +224,68 @@ export default class InventoryPopup extends Popup {
         // the first place, so the popup reads as "the same thing" the player just tapped.
         super('Backpack', { contentWidth: BODY_WIDTH, frame: 'ItemFrame', closeOnBackdropTap: false, titleIcon: 'survival-backpack' });
 
-        ItemStorage.onChange.add(this.handleToolsChanged);
-        ShopUpgradeStorage.onChange.add(this.handleToolsChanged);
-        BackpackStorage.onChange.add(this.handleResourcesChanged);
-        BackpackStorage.onChange.add(this.handleFarmChanged);
-        SeedStorage.onChange.add(this.handleFarmChanged);
+        // One shared handler for all five signals — any of them can change which tabs are
+        // VISIBLE (not just the active one's content), see refreshTabs()'s own doc.
+        ItemStorage.onChange.add(this.refreshTabs);
+        ShopUpgradeStorage.onChange.add(this.refreshTabs);
+        BackpackStorage.onChange.add(this.refreshTabs);
+        SeedStorage.onChange.add(this.refreshTabs);
         this.root.once('destroyed', () => {
-            ItemStorage.onChange.remove(this.handleToolsChanged);
-            ShopUpgradeStorage.onChange.remove(this.handleToolsChanged);
-            BackpackStorage.onChange.remove(this.handleResourcesChanged);
-            BackpackStorage.onChange.remove(this.handleFarmChanged);
-            SeedStorage.onChange.remove(this.handleFarmChanged);
+            ItemStorage.onChange.remove(this.refreshTabs);
+            ShopUpgradeStorage.onChange.remove(this.refreshTabs);
+            BackpackStorage.onChange.remove(this.refreshTabs);
+            SeedStorage.onChange.remove(this.refreshTabs);
+        });
+    }
+
+    /** Tabs whose predicate (see TAB_HAS_ITEMS) currently says the player has something to show — TABS' own declaration order is preserved, just filtered down. */
+    private getVisibleTabs(): TabDef[] {
+        return TABS.filter(tab => TAB_HAS_ITEMS[tab.id]());
+    }
+
+    /** (Re)builds the tab strip from `visibleTabs` — torn down and called again by refreshTabs() whenever which tabs are visible changes, not just once at construction, so `tabsRow`/`tabButtons` must never be assumed to still hold whatever buildContent() first put there. */
+    private buildTabsRow(visibleTabs: TabDef[]): void {
+        this.tabsRow.removeChildren().forEach(child => child.destroy({ children: true }));
+        this.tabButtons = new Map();
+
+        // Even split BEFORE overlap — overlap only pulls each tab's own start position left,
+        // it doesn't shrink what width each individual plane stretches to (see TAB_OVERLAP's own
+        // doc). Centers the whole (now narrower, thanks to the overlap) strip within
+        // tabStripWidth rather than pinning it flush left.
+        const tabWidth = this.tabStripWidth / visibleTabs.length;
+        const totalTabsWidth = tabWidth * visibleTabs.length - TAB_OVERLAP * (visibleTabs.length - 1);
+        const startX = (this.tabStripWidth - totalTabsWidth) / 2;
+
+        visibleTabs.forEach((tab, index) => {
+            const tabContainer = new PIXI.Container();
+            tabContainer.position.set(startX + index * (tabWidth - TAB_OVERLAP), 0);
+            tabContainer.interactive = true;
+            tabContainer.cursor = 'pointer';
+            tabContainer.on('pointertap', () => this.setActiveTab(tab.id));
+            this.tabsRow.addChild(tabContainer);
+
+            const bg = new PIXI.NineSlicePlane(PIXI.Texture.from(TAB_INACTIVE_TEXTURE), TAB_PADDING_X, 0, TAB_PADDING_X, 0);
+            bg.width = tabWidth;
+            bg.height = TAB_HEIGHT;
+            tabContainer.addChild(bg);
+
+            const label = new PIXI.Text(tab.label, TextStyleRegistry.Inventory);
+            label.anchor.set(0.5, 0.5);
+            label.position.set(tabWidth / 2, TAB_HEIGHT / 2);
+            tabContainer.addChild(label);
+
+            this.tabButtons.set(tab.id, bg);
+            this.redrawTab(tab.id, bg);
         });
     }
 
     protected buildContent(content: PIXI.Container, contentWidth: number): void {
-        this.activeTab = TABS[0].id;
-        this.tabButtons = new Map();
+        this.tabStripWidth = contentWidth;
+        const visibleTabs = this.getVisibleTabs();
+        // Falls back to TABS[0] ('tools') on the off chance NOTHING has content yet — shouldn't
+        // actually happen, since BackpackButton.ts only ever lets this popup open once the player
+        // owns their first tool, which is exactly the Tools tab's own predicate.
+        this.activeTab = visibleTabs[0]?.id ?? TABS[0].id;
 
         this.body = new PIXI.Container();
         content.addChild(this.body);
@@ -255,39 +316,10 @@ export default class InventoryPopup extends Popup {
         this.scrollView.position.set(BODY_CONTENT_MARGIN, BODY_CONTENT_MARGIN);
         this.body.addChild(this.scrollView);
 
-        const tabsRow = new PIXI.Container();
-        tabsRow.position.set(0, BODY_HEIGHT + BODY_TABS_GAP);
-        content.addChild(tabsRow);
-
-        // Even split BEFORE overlap — overlap only pulls each tab's own start position left,
-        // it doesn't shrink what width each individual plane stretches to (see TAB_OVERLAP's own
-        // doc). Centers the whole (now narrower, thanks to the overlap) strip within
-        // contentWidth rather than pinning it flush left.
-        const tabWidth = contentWidth / TABS.length;
-        const totalTabsWidth = tabWidth * TABS.length - TAB_OVERLAP * (TABS.length - 1);
-        const startX = (contentWidth - totalTabsWidth) / 2;
-
-        TABS.forEach((tab, index) => {
-            const tabContainer = new PIXI.Container();
-            tabContainer.position.set(startX + index * (tabWidth - TAB_OVERLAP), 0);
-            tabContainer.interactive = true;
-            tabContainer.cursor = 'pointer';
-            tabContainer.on('pointertap', () => this.setActiveTab(tab.id));
-            tabsRow.addChild(tabContainer);
-
-            const bg = new PIXI.NineSlicePlane(PIXI.Texture.from(TAB_INACTIVE_TEXTURE), TAB_PADDING_X, 0, TAB_PADDING_X, 0);
-            bg.width = tabWidth;
-            bg.height = TAB_HEIGHT;
-            tabContainer.addChild(bg);
-
-            const label = new PIXI.Text(tab.label, TextStyleRegistry.Inventory);
-            label.anchor.set(0.5, 0.5);
-            label.position.set(tabWidth / 2, TAB_HEIGHT / 2);
-            tabContainer.addChild(label);
-
-            this.tabButtons.set(tab.id, bg);
-            this.redrawTab(tab.id, bg);
-        });
+        this.tabsRow = new PIXI.Container();
+        this.tabsRow.position.set(0, BODY_HEIGHT + BODY_TABS_GAP);
+        content.addChild(this.tabsRow);
+        this.buildTabsRow(visibleTabs);
 
         this.renderActiveTab();
     }

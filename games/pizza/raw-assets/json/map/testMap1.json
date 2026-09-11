@@ -1647,7 +1647,7 @@
                  "type":"",
                  "visible":true,
                  "width":64.5,
-                 "x":-314.3333,
+                 "x":-314.333,
                  "y":32
                 }, 
                 {
@@ -1734,7 +1734,7 @@
                  "visible":true,
                  "width":0,
                  "x":144.333,
-                 "y":126.3337
+                 "y":126.334
                 }, 
                 {
                  "ellipse":true,
@@ -1974,10 +1974,56 @@
                  "type":"",
                  "visible":true,
                  "width":32,
-                 "x":-464.25,
-                 "y":368.25
+                 "x":-496.25,
+                 "y":496.25
                 },
             
+                {
+                 "height":32,
+                 "id":78,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"craftShovel"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"craft"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":-496.25,
+                 "y":368.25
+                }, 
+                {
+                 "height":32,
+                 "id":80,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"craftKnife"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"craft"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":-656.25,
+                 "y":368.25
+                }, 
                 {
                  "height":32,
                  "id":74,
@@ -1998,8 +2044,8 @@
                  "type":"",
                  "visible":true,
                  "width":32,
-                 "x":-336.25,
-                 "y":368.25
+                 "x":-752.25,
+                 "y":496.25
                 }, 
                 {
                  "height":64.5,
@@ -2026,7 +2072,63 @@
                  "type":"",
                  "visible":true,
                  "width":64.5,
-                 "x":-480,
+                 "x":-512,
+                 "y":480
+                }, 
+                {
+                 "height":64.5,
+                 "id":77,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"dropperCraftShovel"
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"craftShovel"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":64.5,
+                 "x":-512,
+                 "y":352
+                }, 
+                {
+                 "height":64.5,
+                 "id":79,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"dropperCraftKnife"
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"craftKnife"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":64.5,
+                 "x":-672,
                  "y":352
                 }, 
                 {
@@ -2054,8 +2156,8 @@
                  "type":"",
                  "visible":true,
                  "width":64.5,
-                 "x":-352,
-                 "y":352
+                 "x":-768,
+                 "y":480
                 }, 
                 {
                  "height":0,
@@ -2119,8 +2221,8 @@
                  "type":"",
                  "visible":true,
                  "width":64,
-                 "x":-608,
-                 "y":320
+                 "x":-736,
+                 "y":192
                 }, 
                 {
                  "height":32,
@@ -2142,8 +2244,8 @@
                  "type":"",
                  "visible":true,
                  "width":32,
-                 "x":-592.25,
-                 "y":368.25
+                 "x":-624.25,
+                 "y":496.25
                 }, 
                 {
                  "height":32,
@@ -2193,8 +2295,8 @@
                  "type":"",
                  "visible":true,
                  "width":64.5,
-                 "x":-608,
-                 "y":352
+                 "x":-640,
+                 "y":480
                 }, 
                 {
                  "height":64.5,
@@ -2290,7 +2392,8 @@
                  "width":160,
                  "x":160,
                  "y":352
-                }, 
+                },
+            
                 {
                  "height":63.5,
                  "id":39,
@@ -2358,7 +2461,7 @@
                  "type":"",
                  "visible":true,
                  "width":32,
-                 "x":367.6667,
+                 "x":367.667,
                  "y":352
                 }, 
                 {
@@ -2388,8 +2491,7 @@
                  "width":64,
                  "x":352,
                  "y":369.333
-                },
-            
+                }, 
                 {
                  "gid":22,
                  "height":74,
@@ -2475,7 +2577,7 @@
                  "visible":true,
                  "width":0,
                  "x":271.667,
-                 "y":127.6667
+                 "y":127.667
                 }, 
                 {
                  "ellipse":true,
@@ -2504,7 +2606,7 @@
                  "visible":true,
                  "width":0,
                  "x":272.333,
-                 "y":-0.333299999999994
+                 "y":-0.3333
                 }, 
                 {
                  "gid":25,
@@ -2801,7 +2903,8 @@
                  "width":64.5,
                  "x":320,
                  "y":224
-                }, 
+                },
+            
                 {
                  "height":32,
                  "id":30,
@@ -3112,7 +3215,7 @@
          "y":0
         }],
  "nextlayerid":9,
- "nextobjectid":76,
+ "nextobjectid":81,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

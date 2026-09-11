@@ -18,7 +18,9 @@ export enum ItemType {
     Axe = 'axe',
     Pickaxe = 'pickaxe',
     Rope = "rope",
-    Hammer = 'hammer'
+    Hammer = 'hammer',
+    Shovel = 'shovel',
+    Knife = 'knife'
 }
 
 export interface ItemConfig {
@@ -39,7 +41,9 @@ export const ITEM_CONFIG: Record<ItemType, ItemConfig> = {
         toolId: 'rope',
         "label": "Rope"
     },
-    [ItemType.Hammer]: { label: "Hammer", toolId: 'hammer' }
+    [ItemType.Hammer]: { label: "Hammer", toolId: 'hammer' },
+    [ItemType.Shovel]: { label: "Shovel", toolId: 'shovel' },
+    [ItemType.Knife]: { label: "Knife", toolId: 'knife' }
 };
 
 /** `ITEM_CONFIG[type]`'s icon, as an actual texture — see ItemConfig.toolId's own doc. */

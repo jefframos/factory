@@ -46,6 +46,8 @@ export enum ActionType {
     Mine = 'mine',
     /** Bare-handed gathering (berries, ...) — no tool involved, plays its own 'pick' action-layer clip (see MainPlayer.ts's registerAnimation('pick', ...)). */
     Gather = 'gather',
+    /** Knife-wielding gather action (see ToolRegistry.ts's own "knife" entry) — some resources will require this action's tool instead of Chop/Mine. Reuses the same downward-swing clip as Chop (see MainPlayer.ts's TOOL_ACTION_ANIMATIONS — no dedicated slash animation asset exists yet). */
+    Slash = 'slash',
 }
 
 export interface ActionConfig {
@@ -124,6 +126,10 @@ export const ACTION_CONFIG: Record<ActionType, ActionConfig> = {
     [ActionType.Chop]: { hitIntervalSec: 1, hitScale: 1, resourcePerHit: 1, hitTime: 0.8, cancelOnLeaveRange: true, animationTrigger: 'chop', tool: "axe", hitAngleDeg: 30, hitRangeMeters: 1.5 },
     [ActionType.Mine]: { hitIntervalSec: 1.5, hitScale: 1, resourcePerHit: 1, hitTime: 0.4, cancelOnLeaveRange: true, animationTrigger: 'mine', tool: "pickaxe", hitAngleDeg: 30, hitRangeMeters: 1.5 },
     [ActionType.Gather]: { hitIntervalSec: 2, hitScale: 1, resourcePerHit: 1, hitTime: 0.6, cancelOnLeaveRange: true, animationTrigger: 'pick', hitAngleDeg: 30, hitRangeMeters: 1.2 },
+    // Same level-0 numbers as Chop — matches TOOL_LIBRARY.knife.attributes' own min values (copied
+    // from axe, see ToolRegistry.ts), same convention every other tool's ACTION_CONFIG default
+    // follows (see AttributeRange.min's own doc).
+    [ActionType.Slash]: { hitIntervalSec: 1, hitScale: 1, resourcePerHit: 1, hitTime: 0.8, cancelOnLeaveRange: true, animationTrigger: 'slash', tool: "knife", hitAngleDeg: 30, hitRangeMeters: 1.5 },
 };
 
 /**

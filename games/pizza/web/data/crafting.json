@@ -22,7 +22,7 @@
         "float": true,
         "heightOffset": 1,
         "popupMode": "simple",
-        "popupBobOffset": 1,
+        "popupBobOffset": 0,
         "solid": 0.5,
         "particleEffectId": "craftingMyst"
     },
@@ -106,7 +106,61 @@
         "particleEffectId": "craftingMyst",
         "popupBobOffset": 0,
         "popupMode": "simple",
-        "heightOffset": 0,
+        "heightOffset": 1,
+        "destroyParticleEffectId": "destroyBurst"
+    },
+    "craftShovel": {
+        "recipes": [
+            {
+                "result": {
+                    "amount": 1,
+                    "item": "shovel"
+                },
+                "cost": {
+                    "stone": 5
+                },
+                "id": "shovelRecipe"
+            }
+        ],
+        "models": [],
+        "name": "Shovel Crafting",
+        "destroyOnComplete": true,
+        "showModel": true,
+        "toolId": "shovel",
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "float": true,
+        "particleEffectId": "craftingMyst",
+        "popupBobOffset": 0,
+        "popupMode": "simple",
+        "heightOffset": 1.5,
+        "destroyParticleEffectId": "destroyBurst"
+    },
+    "craftKnife": {
+        "recipes": [
+            {
+                "result": {
+                    "amount": 1,
+                    "item": "knife"
+                },
+                "cost": {
+                    "stone": 5
+                },
+                "id": "knifeRecipe"
+            }
+        ],
+        "models": [],
+        "name": "Knife Crafting",
+        "destroyOnComplete": true,
+        "showModel": true,
+        "toolId": "knife",
+        "scale": 2,
+        "rotationDeg": 0,
+        "float": true,
+        "particleEffectId": "craftingMyst",
+        "popupBobOffset": 0,
+        "popupMode": "simple",
+        "heightOffset": 1,
         "destroyParticleEffectId": "destroyBurst"
     }
 }

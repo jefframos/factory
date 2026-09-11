@@ -75,6 +75,19 @@ export default class NpcEntity extends Entity {
         this.lookAtSensor?.update(this.transform.position, this.body.container.quaternion, this.getPlayerPosition(), delta);
     }
 
+    /**
+     * This NPC's own animated Head bone, in WORLD space — same accessor QuestGiverEntity's own
+     * `npc` variant exposes (`getNpcHeadWorldPosition()`), so a caller anchoring a popup "above
+     * this NPC's head" (e.g. BuildingZone/MartZone's own requirements panel) gets the REAL,
+     * live rig position instead of guessing a fixed height off this entity's own ground-level
+     * `transform.position`. Returns undefined until load() finishes building the rig (see that
+     * method's own doc) — callers should fall back to a static ground+offset guess until then.
+     */
+    public getHeadWorldPosition(target: THREE.Vector3 = new THREE.Vector3()): THREE.Vector3 | undefined {
+        const headBone = this.body.getBone('Head');
+        return headBone?.getWorldPosition(target);
+    }
+
     public override destroy(): void {
         this.body.destroy();
         super.destroy();

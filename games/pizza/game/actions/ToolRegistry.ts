@@ -220,6 +220,42 @@ export const TOOL_LIBRARY = {
             "speed": {},
             "resourcePerHit": {}
         }
+    },
+    "knife": {
+        label: "Knife",
+        models: [MODELS.Tools.Knife],
+        icon: "hunting-knife",
+        color: 0x6b4423,
+        radius: 8,
+        length: 100,
+        scale: 100,
+        offset: new THREE.Vector3(-20, 20, -15),
+        rotationDeg: new THREE.Vector3(180, 0, 90),
+        // Copied straight from "axe" — same ladder shape (maxLevel/attributes), see this tool's
+        // own doc for why a level-0 tool (rope/hammer/shovel above) skips this entirely instead.
+        maxLevel: 10,
+        attributes: {
+            "damage": {
+                "min": 1,
+                "max": 4
+            },
+            "hitAngleDeg": {
+                "min": 45,
+                "max": 360
+            },
+            "hitRangeMeters": {
+                "min": 3,
+                "max": 10
+            },
+            "speed": {
+                "min": 1,
+                "max": 2.5
+            },
+            "resourcePerHit": {
+                "min": 1,
+                "max": 10
+            }
+        },
     }
 } satisfies Record<string, ToolVisualEntry>;
 

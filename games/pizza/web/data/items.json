@@ -10,5 +10,11 @@
     },
     "hammer": {
         "label": "Hammer"
+    },
+    "shovel": {
+        "label": "Shovel"
+    },
+    "knife": {
+        "label": "Knife"
     }
 }

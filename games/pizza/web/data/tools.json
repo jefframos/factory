@@ -103,5 +103,35 @@
         },
         "label": "Shovel",
         "icon": "field-shovel"
+    },
+    "knife": {
+        "label": "Knife",
+        "icon": "hunting-knife",
+        "models": [
+            "Tools.Knife"
+        ],
+        "maxLevel": 10,
+        "attributes": {
+            "damage": {
+                "min": 1,
+                "max": 4
+            },
+            "hitAngleDeg": {
+                "min": 45,
+                "max": 360
+            },
+            "hitRangeMeters": {
+                "min": 3,
+                "max": 10
+            },
+            "speed": {
+                "min": 1,
+                "max": 2.5
+            },
+            "resourcePerHit": {
+                "min": 1,
+                "max": 10
+            }
+        }
     }
 }

@@ -16,6 +16,8 @@ import { ShopStorage } from './ShopStorage';
 import { HighScoreStorage } from './HighScoreStorage';
 import { CraftStorage } from '../crafting/CraftStorage';
 import { ItemStorage } from '../crafting/ItemStorage';
+import { BackpackUnlockStorage } from './BackpackUnlockStorage';
+import { CurrencyUnlockStorage } from './CurrencyUnlockStorage';
 import { DynamicResourceStorage } from '../world/DynamicResourceStorage';
 import { ShapeResourceStorage } from '../world/ShapeResourceStorage';
 import { AnimalFollowStorage } from './AnimalFollowStorage';
@@ -88,6 +90,8 @@ export function clearAllPlayerData(): void {
         HighScoreStorage.clearAll(),
         CraftStorage.clearAll(),
         ItemStorage.resetToDefaults(),
+        BackpackUnlockStorage.clearAll(),
+        CurrencyUnlockStorage.clearAll(),
         DynamicResourceStorage.clearAll(),
         ShapeResourceStorage.clearAll(),
         AnimalFollowStorage.clearAll(),

@@ -68,6 +68,16 @@ export class ItemStorage {
         return this.getCount(type) >= amount;
     }
 
+    /** True once the player owns at least one of ANY item type — removeOne() can leave a zeroed-out entry in `counts` (see that method's own doc), so this checks values rather than just Map.size. Used to gate the backpack icon's first-ever appearance (see BackpackUnlockStorage.ts). */
+    static hasAny(): boolean {
+        for (const amount of this.counts.values()) {
+            if (amount > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Snapshot of every currently-nonzero count. */
     static getAll(): Map<ItemType, number> {
         return new Map(this.counts);

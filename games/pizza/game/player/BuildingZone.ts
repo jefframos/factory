@@ -62,6 +62,7 @@ import { getIconLayout } from '../ui/LayoutRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
 import { ParticleSystem } from '../vfx/ParticleSystem';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
+import NpcEntity from '../world/NpcEntity';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
@@ -215,6 +216,8 @@ export default class BuildingZone extends Entity {
     private readonly triggerArea?: BuildingTriggerArea;
     /** See the constructor's `ownMeshes` param doc — consulted by resolveOwnMeshFallbacks(). */
     private readonly ownMeshes: readonly OwnMeshPlacement[];
+    /** See the constructor's `npc` param doc. Undefined means "no NPC assigned," same as before this existed. */
+    private readonly npc?: NpcEntity;
 
     public constructor(
         position: THREE.Vector3,
@@ -260,6 +263,21 @@ export default class BuildingZone extends Entity {
          * decoded from it — skips that fallback entirely, same as before this param existed.
          */
         ownMeshes: readonly OwnMeshPlacement[] = [],
+        /**
+         * This building's own assigned NPC (see BuildingConfig.npcId/npcOffset's own doc) —
+         * already spawned and added to the world by PizzaScene.setupBuildingZone() BEFORE this
+         * constructor runs, so it's available immediately rather than arriving after awake().
+         * Read by getFxAnchorPosition() (see that method's own doc, and getLabelBasePosition()),
+         * which takes priority over the dropper/mesh there — so the persistent requirements
+         * panel, the rising "Level Up!" callout, AND the level-up particle burst all anchor to
+         * the NPC instead, reading as the NPC presenting/celebrating rather than a disembodied
+         * panel floating over the dropper/ground. The requirements panel specifically prefers
+         * the NPC's own animated Head bone (NpcEntity.getHeadWorldPosition()) once its rig has
+         * loaded, falling back to this NPC's ground-level `transform.position` until then — see
+         * getLabelBasePosition(). Undefined (the default) means "no NPC assigned," unchanged
+         * from before this param existed.
+         */
+        npc?: NpcEntity,
     ) {
         super();
         this.screenHost = screenHost;
@@ -269,6 +287,7 @@ export default class BuildingZone extends Entity {
         this.footprint = footprint;
         this.triggerArea = triggerArea;
         this.ownMeshes = ownMeshes;
+        this.npc = npc;
         this.transform.position.copy(position);
         this.restY = position.y;
     }
@@ -277,18 +296,49 @@ export default class BuildingZone extends Entity {
      * This zone's own FX anchor, in WORLD space — the shared backing point for the persistent
      * requirements panel (`labelAnchor`, set up in awake()), the rising "Level Up!" callout
      * (see spawnLevelUpPopup()), and the level-up particle burst (see playLevelUpSequence()).
-     * Resolves to this building's own dropper/triggerArea position when
+     * Every one of those three still adds its own EXISTING height offset on top of whatever this
+     * returns (popupBobOffset, POPUP_HEIGHT_OFFSET, CAMERA_FOCUS_HEIGHT_OFFSET respectively) —
+     * still valid, unchanged — this method just picks WHERE they measure up FROM.
+     *
+     * Resolves to `npc`'s own GROUND-level position (see the constructor's own doc) FIRST, when
+     * this building has an NPC assigned — with an NPC standing in for the building, every one of
+     * those three should read as coming from the NPC, not a disembodied point over the
+     * dropper/ground. This is deliberately the ground point, not the live Head bone
+     * (getLabelBasePosition() uses that instead, specifically for the requirements panel) — the
+     * level-up popup/particle burst add their OWN much bigger height offsets
+     * (POPUP_HEIGHT_OFFSET/CAMERA_FOCUS_HEIGHT_OFFSET, sized for a building, not a human), so
+     * stacking those on top of a head position (already ~1.7m up) would float them way too high.
+     * Otherwise resolves to this building's own dropper/triggerArea position when
      * BuildingConfig.anchorAtDropper is set AND a dropper actually exists (see that field's own
-     * doc) — falls back to this zone's own visual-mesh position (`this.transform.position`)
-     * otherwise, unchanged from before that field existed. Deliberately NOT the camera-focus
-     * point playLevelUpSequence() sends the camera to — that always stays at the mesh, per
-     * anchorAtDropper's own doc.
+     * doc), falling back to this zone's own visual-mesh position (`this.transform.position`)
+     * otherwise — unchanged from before either of those two params existed.
      */
     private getFxAnchorPosition(): THREE.Vector3 {
+        if (this.npc) {
+            return this.npc.transform.position.clone();
+        }
         if (BUILDING_CONFIG[this.buildingId].anchorAtDropper && this.triggerArea) {
             return this.triggerArea.position.clone();
         }
         return this.transform.position.clone();
+    }
+
+    /**
+     * WORLD-space base point for the persistent requirements panel specifically (see
+     * `labelAnchor`, awake()) — prefers `npc`'s own live, animated Head bone
+     * (NpcEntity.getHeadWorldPosition()) once its rig has loaded, over getFxAnchorPosition()'s
+     * ground-level NPC point, so the panel actually reads as floating above the NPC's HEAD
+     * rather than sitting at its feet plus a flat guessed offset (the bug this method exists to
+     * fix — see BuildingConfig.popupBobOffset's own doc for why that value alone isn't a
+     * reliable "head height," it's tuned per-building against each building's own — much
+     * taller — mesh). Falls back to getFxAnchorPosition() (ground-level NPC point, or the usual
+     * dropper/mesh when no NPC is assigned) before the rig loads, or when there's no NPC at all.
+     * `target` is a caller-owned scratch Vector3 (see ScreenAnchorComponent's own per-frame
+     * callback convention) — reused every frame rather than allocating a new one.
+     */
+    private getLabelBasePosition(target: THREE.Vector3): THREE.Vector3 {
+        const headPosition = this.npc?.getHeadWorldPosition(target);
+        return headPosition ?? this.getFxAnchorPosition();
     }
 
     public override awake(): void {
@@ -371,12 +421,15 @@ export default class BuildingZone extends Entity {
         // parented under this.transform so it moves with the zone for free. Stored as a field
         // (not just a local) since flyInResource() targets the same spot — deposited icons fly
         // to wherever this building's own UI actually renders, not a point on its 3D mesh.
-        // getFxAnchorPosition() is a WORLD point (the mesh position, or the dropper's when
-        // anchorAtDropper opts in — see that field's own doc); converted to a LOCAL offset here
-        // since labelAnchor is parented under this.transform, then the panel's own bob height
-        // stacks on top the same way it always has.
+        // getFxAnchorPosition() is a WORLD point (the NPC's position when one's assigned, else
+        // the mesh position, or the dropper's when anchorAtDropper opts in — see that method's
+        // own doc); converted to a LOCAL offset here since labelAnchor is parented under
+        // this.transform, then the panel's own bob height (still popupBobOffset, unchanged —
+        // see getFxAnchorPosition()'s own doc for why that stays valid even when the base point
+        // is now the NPC) stacks on top the same way it always has.
+        const labelBobOffset = resolvePopupAnchorOffset(BUILDING_CONFIG[this.buildingId].popupBobOffset);
         this.labelAnchor = new THREE.Object3D();
-        this.labelAnchor.position.copy(this.getFxAnchorPosition().sub(this.transform.position).add(resolvePopupAnchorOffset(BUILDING_CONFIG[this.buildingId].popupBobOffset)));
+        this.labelAnchor.position.copy(this.getFxAnchorPosition().sub(this.transform.position).add(labelBobOffset));
         this.transform.add(this.labelAnchor);
         const labelAnchorWorldPosition = new THREE.Vector3();
 
@@ -384,10 +437,17 @@ export default class BuildingZone extends Entity {
         // that file's own doc. avoidViewer (only for 'simple' — see PopupConfig.ts's own doc)
         // slides the panel aside instead of letting it land on the player, who's typically
         // standing right on this zone's own base once they're close enough to interact.
+        //
+        // getLabelBasePosition() (NOT labelAnchor.getWorldPosition() directly, unlike before it
+        // existed) — re-evaluated every frame rather than baked once at awake() time, since an
+        // assigned NPC's Head bone (what it prefers once the rig loads — see that method's own
+        // doc) doesn't exist synchronously here (NpcEntity.load() is async) and can't be baked
+        // into labelAnchor's own fixed local offset the way the ground-level/dropper/mesh cases
+        // always could.
         this.labelScreenAnchor = this.addComponent(new ScreenAnchorComponent(
             this.screenHost,
             this.labelFrame,
-            () => this.labelAnchor.getWorldPosition(labelAnchorWorldPosition),
+            () => this.getLabelBasePosition(labelAnchorWorldPosition).add(labelBobOffset),
             { ...ZONE_LABEL_ANCHOR_OPTIONS, ...resolvePopupAvoidViewer(BUILDING_CONFIG[this.buildingId].popupMode) },
         ));
 

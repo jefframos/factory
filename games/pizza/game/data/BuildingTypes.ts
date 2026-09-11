@@ -218,11 +218,19 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
                 mesh: { size: [1.8, 1.8, 1.8], color: 0xcc8844 }
             }
         ],
-        "popupMode": "simple",
+        "popupMode": "complete",
         "icon": "campfire",
         "updateParticleEffectId": "gateMyst",
         "solid": 0.8,
-        "baseFillFraction": 0.1
+        "baseFillFraction": 0.1,
+        "npcOffset": [
+            0,
+            0,
+            4
+        ],
+        "npcId": "shopper2",
+        "anchorAtDropper": true,
+        "popupBobOffset": 3
     },
     "tower2": {
         baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
@@ -247,7 +255,13 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         "solid": 1,
         "popupMode": "simple",
         "updateParticleEffectId": "gateMyst",
-        "baseFillFraction": 0.1
+        "baseFillFraction": 0.1,
+        "npcId": "shopper2",
+        "npcOffset": [
+            0,
+            0,
+            2
+        ]
     },
     "floor1": {
         baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
@@ -265,7 +279,12 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         "updateParticleEffectId": "gateMyst",
         "baseFillFraction": -1,
         "anchorAtDropper": true,
-        "solidFromMap": true
+        "solidFromMap": true,
+        "npcOffset": [
+            0,
+            0,
+            0
+        ]
     }
 };
 

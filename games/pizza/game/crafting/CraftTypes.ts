@@ -128,7 +128,7 @@ export const CRAFT_CONFIG_BY_ID: Partial<Record<string, CraftTableConfig>> = {
         "float": true,
         "heightOffset": 1,
         "popupMode": "simple",
-        "popupBobOffset": 1,
+        "popupBobOffset": 0,
         "solid": 0.5,
         "particleEffectId": "craftingMyst"
     },
@@ -212,7 +212,61 @@ export const CRAFT_CONFIG_BY_ID: Partial<Record<string, CraftTableConfig>> = {
         "popupMode": "simple",
         "popupBobOffset": 0,
         "particleEffectId": "craftingMyst",
-        "heightOffset": 0,
+        "heightOffset": 1,
+        "destroyParticleEffectId": "destroyBurst"
+    },
+    "craftShovel": {
+        "name": "Shovel Crafting",
+        "recipes": [
+            {
+                "result": {
+                    "amount": 1,
+                    "item": ItemType.Shovel
+                },
+                "cost": {
+                    "stone": 5
+                },
+                "id": "shovelRecipe"
+            }
+        ],
+        "destroyOnComplete": true,
+        "showModel": true,
+        "toolId": "shovel",
+        "models": [],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "float": true,
+        "popupMode": "simple",
+        "popupBobOffset": 0,
+        "particleEffectId": "craftingMyst",
+        "heightOffset": 1.5,
+        "destroyParticleEffectId": "destroyBurst"
+    },
+    "craftKnife": {
+        "name": "Knife Crafting",
+        "recipes": [
+            {
+                "result": {
+                    "amount": 1,
+                    "item": ItemType.Knife
+                },
+                "cost": {
+                    "stone": 5
+                },
+                "id": "knifeRecipe"
+            }
+        ],
+        "destroyOnComplete": true,
+        "showModel": true,
+        "toolId": "knife",
+        "models": [],
+        "scale": 2,
+        "rotationDeg": 0,
+        "float": true,
+        "popupMode": "simple",
+        "popupBobOffset": 0,
+        "particleEffectId": "craftingMyst",
+        "heightOffset": 1,
         "destroyParticleEffectId": "destroyBurst"
     }
 };

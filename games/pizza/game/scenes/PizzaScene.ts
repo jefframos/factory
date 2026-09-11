@@ -1045,30 +1045,37 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
             const ownMeshes = this.worldObjects.getOwnMeshes('building', buildingId);
             this.requirementRegistry.registerSpawnGate(buildingId, BUILDING_CONFIG[buildingId].appearRequirement, () => {
-                const buildingZone = this.world.add(new BuildingZone(
-                    position, this.screenHost, buildingId, this, this,
-                    { width: placement.width, depth: placement.depth },
-                    triggerArea,
-                    ownMeshes,
-                ));
-                this.threeScene.add(buildingZone.transform);
-                this.registerZoneVisibility(buildingZone.transform, position.x, position.z, placement.width, placement.depth);
-
                 // Same optional NPC-in-front-of-the-entity system setupMarts() uses — see
                 // BuildingConfig.npcId/npcOffset's own doc for why this is always relative to
-                // the mesh position, not the dropper/trigger.
+                // the mesh position, not the dropper/trigger. Spawned BEFORE constructing
+                // BuildingZone (rather than after, like setupMarts() does) so the zone's own
+                // requirements panel can anchor to the NPC ENTITY itself (not just its position
+                // — see BuildingZone's own `npc` constructor param doc) and read its live Head
+                // bone once the rig loads, instead of guessing a fixed height off the
+                // dropper/mesh/NPC's own ground position.
                 const buildingConfig = BUILDING_CONFIG[buildingId];
+                let npc: NpcEntity | undefined;
                 if (buildingConfig.npcId) {
                     const npcConfig = getNpcConfig(buildingConfig.npcId);
                     if (npcConfig) {
                         const [offsetX, offsetY, offsetZ] = buildingConfig.npcOffset ?? [0, 0, 0];
                         const npcPosition = position.clone().add(new THREE.Vector3(offsetX, offsetY, offsetZ));
-                        const npc = this.world.add(new NpcEntity(npcPosition, npcConfig, () => this.mainPlayer.transform.position));
+                        npc = this.world.add(new NpcEntity(npcPosition, npcConfig, () => this.mainPlayer.transform.position));
                         this.threeScene.add(npc.transform);
                     } else {
                         console.warn(`[PizzaScene] building "${buildingId}" references npcId "${buildingConfig.npcId}" with no NpcConfig entry — skipping NPC spawn`);
                     }
                 }
+
+                const buildingZone = this.world.add(new BuildingZone(
+                    position, this.screenHost, buildingId, this, this,
+                    { width: placement.width, depth: placement.depth },
+                    triggerArea,
+                    ownMeshes,
+                    npc,
+                ));
+                this.threeScene.add(buildingZone.transform);
+                this.registerZoneVisibility(buildingZone.transform, position.x, position.z, placement.width, placement.depth);
             });
         }
 

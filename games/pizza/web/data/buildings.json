@@ -54,11 +54,19 @@
                 "level": 6
             }
         ],
-        "popupMode": "simple",
+        "popupMode": "complete",
         "icon": "campfire",
         "updateParticleEffectId": "gateMyst",
         "solid": 0.8,
-        "baseFillFraction": 0.1
+        "baseFillFraction": 0.1,
+        "npcOffset": [
+            0,
+            0,
+            4
+        ],
+        "npcId": "shopper2",
+        "anchorAtDropper": true,
+        "popupBobOffset": 3
     },
     "tower2": {
         "levels": [
@@ -82,7 +90,13 @@
         "solid": 1,
         "popupMode": "simple",
         "updateParticleEffectId": "gateMyst",
-        "baseFillFraction": 0.1
+        "baseFillFraction": 0.1,
+        "npcOffset": [
+            0,
+            0,
+            2
+        ],
+        "npcId": "shopper2"
     },
     "floor1": {
         "levels": [
@@ -100,6 +114,11 @@
         "updateParticleEffectId": "gateMyst",
         "baseFillFraction": -1,
         "anchorAtDropper": true,
-        "solidFromMap": true
+        "solidFromMap": true,
+        "npcOffset": [
+            0,
+            0,
+            0
+        ]
     }
 }

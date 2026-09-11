@@ -82,14 +82,31 @@ export const FrameRegistry: Record<string, FrameDef> = {
     },
     /** Gate.ts's icon-only "locked" panel (padlock + requirement icon, no text/arrow) — same bubble asset as Popup, kept as its own named preset so its look can be tuned independently. */
     GateLock: {
-        textureKey: 'ResourceBar_Single_Btn_Grey',
-        padding: DEFAULT_PADDING_BUBBLE,
+        textureKey: 'request-bubble',
+        padding: { bottom: 25, top: 25, left: 25, right: 25 },
+        arrowTexture: 'request-tip',
+        arrowPivot: { x: 0.5, y: 1 },
+        arrowOffset: { x: 0, y: -6 },
+        scaleAdjust: 2,
     },
     /** PlayerNotificationComponent's throwaway "action blocked" popup (missing-tool icon + exclamation badge) over the player's own head — same grey bubble as GateLock, kept as its own preset so its look can be tuned independently of the gate's requirement panel. */
     Blocked: {
-        textureKey: 'ResourceBar_Single_Btn_Grey',
-        padding: DEFAULT_PADDING_BUBBLE,
+        textureKey: 'request-bubble',
+        padding: { bottom: 25, top: 25, left: 25, right: 25 },
+        arrowTexture: 'request-tip',
+        arrowPivot: { x: 0.5, y: 1 },
+        arrowOffset: { x: 0, y: -6 },
+        scaleAdjust: 2,
     },
+    // GateLock: {
+    //     textureKey: 'ResourceBar_Single_Btn_Grey',
+    //     padding: DEFAULT_PADDING_BUBBLE,
+    // },
+    // /** PlayerNotificationComponent's throwaway "action blocked" popup (missing-tool icon + exclamation badge) over the player's own head — same grey bubble as GateLock, kept as its own preset so its look can be tuned independently of the gate's requirement panel. */
+    // Blocked: {
+    //     textureKey: 'ResourceBar_Single_Btn_Grey',
+    //     padding: DEFAULT_PADDING_BUBBLE,
+    // },
     /**
      * Per-entity-TYPE default popup frames (see PopupConfig.ts's own doc on resolvePopupFrameName()) —
      * BuildingZone/ShopZone/QueueZone/CraftZone each use their own preset here instead of all
@@ -100,9 +117,12 @@ export const FrameRegistry: Record<string, FrameDef> = {
      * cloned from 'Popup's own look so nothing changes visually until one gets tuned.
      */
     BuildingFrame: {
-        textureKey: 'ResourceBar_Single_Btn_Yellow1',
-        padding: DEFAULT_PADDING_BUBBLE,
+        textureKey: 'request-bubble',
+        padding: { bottom: 25, top: 25, left: 25, right: 25 },
+        arrowTexture: 'request-tip',
         arrowPivot: { x: 0.5, y: 1 },
+        arrowOffset: { x: 0, y: -6 },
+        scaleAdjust: 2,
     },
     ShopFrame: {
         textureKey: 'ResourceBar_Single_Btn_Green1',
@@ -114,17 +134,16 @@ export const FrameRegistry: Record<string, FrameDef> = {
         padding: { bottom: 25, top: 25, left: 25, right: 25 },
         arrowTexture: 'request-tip',
         arrowPivot: { x: 0.5, y: 1 },
-        arrowOffset: { x: 0, y: -6 }, // tune here if the tip doesn't sit flush against the body
-        // See FrameDef.scaleAdjust's own doc — request-bubble.png is small (132x96), so at this
-        // frame's actual (content-fit) on-screen size the fixed borders ate up most of the
-        // panel, squeezing the stretchy middle (and the tail baked into it) down hard. Bump to
-        // 3 if it still looks off.
+        arrowOffset: { x: 0, y: -6 },
         scaleAdjust: 2,
     },
     CraftingFrame: {
-        textureKey: 'ResourceBar_Single_Btn_Purple1',
-        padding: DEFAULT_PADDING_BUBBLE,
+        textureKey: 'request-bubble',
+        padding: { bottom: 25, top: 25, left: 25, right: 25 },
+        arrowTexture: 'request-tip',
         arrowPivot: { x: 0.5, y: 1 },
+        arrowOffset: { x: 0, y: -6 },
+        scaleAdjust: 2,
     },
     /** FarmZone's own price popup (see that file's own doc) — shares ShopFrame's green texture (a purchase, same as a shop upgrade) but kept as its own preset so it can be retuned independently. */
     FarmFrame: {

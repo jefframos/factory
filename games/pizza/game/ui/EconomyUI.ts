@@ -25,6 +25,9 @@ import { EconomyStorage } from '../data/EconomyStorage';
 import { CURRENCY_CONFIG, CurrencyType } from '../data/EconomyTypes';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
+import { ItemStorage } from '../crafting/ItemStorage';
+import { BackpackUnlockStorage } from '../data/BackpackUnlockStorage';
+import { CurrencyUnlockStorage } from '../data/CurrencyUnlockStorage';
 
 /** Icon jiggle on a gain — a quick punch-out-and-settle, not a full spin. Same shape as GlobalResourcesUI's own jiggle. */
 const JIGGLE_PUNCH_SCALE = 1.3;
@@ -53,6 +56,17 @@ export default class EconomyUI extends PIXI.Container {
     public panelWidth = 0;
     public panelHeight = 0;
 
+    private readonly handleItemsChanged = (): void => {
+        // markUnlocked() is a no-op once already unlocked (see BackpackUnlockStorage's own doc) —
+        // BackpackButton.ts fires the same call from its own ItemStorage.onChange listener, this
+        // is just this row's own independent copy of that same "first tool" check, since the two
+        // panels are built/torn down independently by UIService.
+        if (ItemStorage.hasAny()) {
+            BackpackUnlockStorage.markUnlocked();
+        }
+        this.visible = BackpackUnlockStorage.isUnlocked();
+    };
+
     public constructor() {
         super();
 
@@ -60,15 +74,26 @@ export default class EconomyUI extends PIXI.Container {
             this.pills.push(this.buildPill(currency));
         }
 
-        this.layout();
-
-        EconomyStorage.onChange.add(this.onEconomyChanged, this);
         // Seeds each pill's lastBalance from whatever's already saved (e.g. this row building
-        // after a reload with existing currency) so that read doesn't itself pop as a "gain".
+        // after a reload with existing currency) so that read doesn't itself pop as a "gain",
+        // and backfills CurrencyUnlockStorage for a save that already held a non-Money currency
+        // from BEFORE this feature existed — without this, that balance would never re-fire
+        // EconomyStorage.onChange, so its pill would stay hidden forever.
         for (const pill of this.pills) {
             pill.lastBalance = EconomyStorage.getBalance(pill.currency);
             pill.amountLabel.text = pill.lastBalance.toString();
+            if (pill.lastBalance > 0) {
+                CurrencyUnlockStorage.markHeld(pill.currency);
+            }
         }
+
+        this.layout();
+
+        EconomyStorage.onChange.add(this.onEconomyChanged, this);
+        ItemStorage.onChange.add(this.handleItemsChanged);
+        // Covers a save that already owns a tool from BEFORE this feature existed — same
+        // "backfill on construction" reasoning as BackpackButton.ts's own doc.
+        this.handleItemsChanged();
     }
 
     /**
@@ -126,23 +151,46 @@ export default class EconomyUI extends PIXI.Container {
         pill.lastBalance = balance;
         pill.amountLabel.text = balance.toString();
 
+        // Sticky reveal — see CurrencyUnlockStorage.ts's own doc on why Gem/Energy stay visible
+        // even if later spent back down to 0, rather than un-hiding/re-hiding with the live
+        // balance. A no-op (and no re-layout) once already marked, same as markUnlocked().
+        const wasVisible = pill.container.visible;
+        if (balance > 0) {
+            CurrencyUnlockStorage.markHeld(type);
+        }
+        if (this.isPillVisible(type) !== wasVisible) {
+            this.layout();
+        }
+
         if (gained > 0) {
             this.playGainFeedback(pill, gained);
         }
     };
 
-    /** Lays pills out left to right with `pillGap` between them — called once at construction; the row never grows/shrinks (fixed currency list), so nothing else needs to re-layout after. */
+    /** Money always shows; Gem/Energy only once the player's ever held a positive balance of that currency (see CurrencyUnlockStorage.ts's own doc) — checked live (not cached) since layout() is what re-derives the whole row's positions from this every time it's called. */
+    private isPillVisible(currency: CurrencyType): boolean {
+        return currency === CurrencyType.Money || CurrencyUnlockStorage.hasEverHeld(currency);
+    }
+
+    /** Lays out every currently-VISIBLE pill left to right with `pillGap` between them, hiding the rest — called at construction and again by onEconomyChanged() whenever a pill's own visibility just changed, so a newly-revealed (or, in practice never, re-hidden) currency slots into the row instead of leaving a gap where a hidden pill would otherwise still occupy space. */
     private layout(): void {
         const { pillContentWidth, pillHeight, pillGap, pillPadding } = TOP_BAR_STYLE;
         const pillWidth = pillContentWidth + pillPadding * 2;
 
-        this.pills.forEach((pill, i) => {
-            pill.container.position.set(i * (pillWidth + pillGap), 0);
-        });
+        let x = 0;
+        let visibleCount = 0;
+        for (const pill of this.pills) {
+            const visible = this.isPillVisible(pill.currency);
+            pill.container.visible = visible;
+            if (!visible) {
+                continue;
+            }
+            pill.container.position.set(x, 0);
+            x += pillWidth + pillGap;
+            visibleCount++;
+        }
 
-        this.panelWidth = this.pills.length > 0
-            ? this.pills.length * pillWidth + (this.pills.length - 1) * pillGap
-            : 0;
+        this.panelWidth = visibleCount > 0 ? visibleCount * pillWidth - pillGap : 0;
         this.panelHeight = pillHeight;
     }
 
@@ -176,6 +224,7 @@ export default class EconomyUI extends PIXI.Container {
 
     public override destroy(options?: Parameters<PIXI.Container['destroy']>[0]): void {
         EconomyStorage.onChange.remove(this.onEconomyChanged, this);
+        ItemStorage.onChange.remove(this.handleItemsChanged);
         super.destroy(options);
     }
 }

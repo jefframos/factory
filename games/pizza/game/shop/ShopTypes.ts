@@ -92,6 +92,7 @@ export const SHOP_CONFIG_BY_ID: Partial<Record<string, ShopConfig>> = {
         popupBobOffset: 3,
         baseView: "shop1View",
         solid: 0.5,
+        "frame": "QueueFrame"
     },
     "shop2": {
         mesh: DEFAULT_SHOP_MESH,
@@ -104,7 +105,8 @@ export const SHOP_CONFIG_BY_ID: Partial<Record<string, ShopConfig>> = {
         "cooldownSec": 300,
         "popupBobOffset": 3,
         "baseView": "shop2View",
-        "solid": 0.5
+        "solid": 0.5,
+        "frame": "QueueFrame"
     }
 };
 

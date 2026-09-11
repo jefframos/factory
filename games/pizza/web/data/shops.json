@@ -9,18 +9,20 @@
         "cooldownSec": 300,
         "popupBobOffset": 3,
         "baseView": "shop1View",
-        "solid": 0.5
+        "solid": 0.5,
+        "frame": "QueueFrame"
     },
     "shop2": {
         "name": "Pickaxe Shop",
         "tool": "pickaxe",
-        "action": "chop",
+        "action": "mine",
         "totalLevels": 10,
         "baseCost": 10,
         "costScale": 2.05,
         "cooldownSec": 300,
         "popupBobOffset": 3,
         "baseView": "shop2View",
-        "solid": 0.5
+        "solid": 0.5,
+        "frame": "QueueFrame"
     }
 }

@@ -16,6 +16,8 @@ import BaseButton from 'core/ui/BaseButton';
 import { PopupManager } from './popups/PopupManager';
 import InventoryPopup from './popups/InventoryPopup';
 import { createLibraryButton } from './ButtonLibrary';
+import { ItemStorage } from '../crafting/ItemStorage';
+import { BackpackUnlockStorage } from '../data/BackpackUnlockStorage';
 
 /** Gap between the button's bottom/right edges and the actual bottom-right corner of the screen. */
 const BOTTOM_RIGHT_MARGIN = 16;
@@ -23,8 +25,21 @@ const BOTTOM_RIGHT_MARGIN = 16;
 const BUTTON_SIZE = 76;
 const BUTTON_ICON_SIZE = 56;
 
+/** "Something new" badge pinned to the button's own top-right corner — shown once, the very first time the backpack icon itself appears (see BackpackUnlockStorage.ts's own doc), cleared for good the first time the player actually opens the popup. Uses BaseButton's OWN addAlertIcon()/removeAlertIcon() (not a hand-rolled child sprite) — that's what keeps it correctly anchored to the button's actual on-screen position every frame (a sprite added as a SIBLING of `button` instead would stay frozen at this outer container's own (0,0) origin, since update() below only ever repositions `button`, not `this`) and uniformly scaled (no stretch) via the same ViewUtils.elementScaler() every other badge in the game already goes through internally. */
+const BADGE_TEXTURE = 'Icon_Exclamation';
+const BADGE_SIZE = 28;
+
 export default class BackpackButton extends PIXI.Container {
     private readonly button: BaseButton;
+
+    private readonly handleItemsChanged = (): void => {
+        // markUnlocked() is a no-op once already unlocked (see that method's own doc), so this
+        // never re-arms the badge on every later tool craft/upgrade — only the very first one.
+        if (ItemStorage.hasAny()) {
+            BackpackUnlockStorage.markUnlocked();
+        }
+        this.refreshVisibility();
+    };
 
     public constructor() {
         super();
@@ -39,9 +54,30 @@ export default class BackpackButton extends PIXI.Container {
             iconSize: { width: BUTTON_ICON_SIZE, height: BUTTON_ICON_SIZE },
             // On CLICK, not STANDARD — same reasoning as SettingsUIService.settingsButton's own
             // doc (setState(STANDARD) also fires on construction and every mouse-out).
-            onClick: () => PopupManager.instance.show(new InventoryPopup()),
+            onClick: () => {
+                BackpackUnlockStorage.markBadgeSeen();
+                this.button.removeAlertIcon();
+                PopupManager.instance.show(new InventoryPopup());
+            },
         });
         this.addChild(this.button);
+
+        ItemStorage.onChange.add(this.handleItemsChanged);
+        // Covers a save that already owns a tool from BEFORE this feature existed — without this,
+        // that player's icon would stay hidden forever since ItemStorage.onChange never fires
+        // again for a count that was already set.
+        this.handleItemsChanged();
+    }
+
+    /** Icon itself hidden until the player's first tool ever (see BackpackUnlockStorage.ts); the "something new" badge on top of it only while that unlock hasn't been acknowledged yet by opening the popup. */
+    private refreshVisibility(): void {
+        this.visible = BackpackUnlockStorage.isUnlocked();
+
+        if (this.visible && !BackpackUnlockStorage.hasSeenBadge()) {
+            this.button.addAlertIcon(PIXI.Texture.from(BADGE_TEXTURE), BADGE_SIZE);
+        } else {
+            this.button.removeAlertIcon();
+        }
     }
 
     /** Re-anchors to the current viewport every frame — called from UIService.update(). */
@@ -58,6 +94,7 @@ export default class BackpackButton extends PIXI.Container {
     }
 
     public override destroy(options?: Parameters<PIXI.Container['destroy']>[0]): void {
+        ItemStorage.onChange.remove(this.handleItemsChanged);
         this.button.destroy();
         super.destroy(options);
     }
