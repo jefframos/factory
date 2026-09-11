@@ -67,6 +67,14 @@ export default class InGameButtonList extends PIXI.Container {
         super();
         InGameButtonList.current = this;
 
+        // Debug/testing tools (see this file's own top doc) — never shown at all unless the page
+        // was loaded with ?debug=1, same Game.debugParams convention every game's own index.ts
+        // already uses to gate DevGuiManager. registerButton()/registerText() still work
+        // normally either way (PizzaScene's own debug registrations, UIService's camera-toggle
+        // registration, ...) — this only hides the RESULT, so a caller never needs to check
+        // Game.debugParams itself before registering something here.
+        this.visible = Boolean(Game.debugParams.debug);
+
         this.addChild(this.buttonsColumn);
 
         this.expanded = DebugMenuVisibilityCookie.isExpanded();

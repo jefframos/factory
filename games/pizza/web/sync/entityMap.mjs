@@ -109,8 +109,8 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'BUILDING_CONFIG',
         kind: 'enumRecord',
         enumName: 'BuildingId',
-        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'anchorAtDropper'],
-        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'anchorAtDropper'],
+        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'anchorAtDropper', 'npcId', 'npcOffset'],
+        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'anchorAtDropper', 'npcId', 'npcOffset'],
         // BuildingLevelConfig also carries a `mesh` field (per-level placeholder art) that
         // this editor doesn't manage — a plain wholesale replacement of the `levels` array
         // (what every OTHER list field in this map gets, since none of their items have

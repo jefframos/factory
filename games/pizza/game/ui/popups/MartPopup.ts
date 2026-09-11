@@ -26,6 +26,8 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import Popup from './Popup';
+import PanelBackground, { PANEL_CONTENT_MARGIN } from '../PanelBackground';
+import ScrollView from '../ScrollView';
 import { TextStyleRegistry } from '../TextStyleRegistry';
 import { createLibraryButton } from '../ButtonLibrary';
 import { EconomyStorage } from '../../data/EconomyStorage';
@@ -52,6 +54,9 @@ const MART_TABS: MartTabDef[] = [
 const BODY_WIDTH = 420;
 const BODY_HEIGHT = 420;
 const BODY_TABS_GAP = 14;
+/** Same shared margin PanelBackground's own content sits at everywhere else it's used (InventoryPopup, CraftingTablePopup, ...) — see that file's own doc for why this is imported rather than a locally re-declared constant. Also the ScrollView viewport size — see buildContent()'s own doc. */
+const CONTENT_WIDTH = BODY_WIDTH - PANEL_CONTENT_MARGIN * 2;
+const CONTENT_HEIGHT = BODY_HEIGHT - PANEL_CONTENT_MARGIN * 2;
 
 const TAB_HEIGHT = 66;
 const TAB_PADDING_X = 30;
@@ -91,6 +96,10 @@ export default class MartPopup extends Popup {
 
     private declare activeTab: MartTabId;
     private declare body: PIXI.Container;
+    /** Every row goes here, never directly into `body` — clipped/scrolled by `scrollView` (see buildContent()'s own doc), so rows never sit flush against `background`'s own edges/rounded corners AND never render past CONTENT_HEIGHT when there are more of them than that fits. */
+    private declare contentArea: PIXI.Container;
+    /** Clips/scrolls `contentArea` to CONTENT_WIDTH x CONTENT_HEIGHT — see buildContent()'s own doc. refresh() must be called after every renderActiveTab() rebuild, since contentArea's own height can change per tab/row count. */
+    private declare scrollView: ScrollView;
     private declare tabButtons: Map<MartTabId, PIXI.NineSlicePlane>;
 
     /** True for FEEDBACK_RENDER_DELAY_SEC right after a buy/sell — see that constant's own doc for why the reactive re-render has to wait rather than firing the instant EconomyStorage/BackpackStorage's own onChange dispatches (synchronously, before the feedback animation below ever gets a frame to render on the row it's about to destroy). */
@@ -104,7 +113,11 @@ export default class MartPopup extends Popup {
     };
 
     public constructor(martId: string, config: MartConfig, onClosed?: () => void) {
-        super(config.name, { contentWidth: BODY_WIDTH, frame: 'ItemFrame' });
+        // closeOnBackdropTap: false — same reasoning as InventoryPopup's own doc: a live buy/sell
+        // menu should only close via its own header close button, not a stray tap outside it.
+        // 'ItemIcon_Shop_old-2' — the exact same icon MartZone.ts's own "Open Shop" button uses,
+        // so the popup reads as "the same thing" the player just tapped.
+        super(config.name, { contentWidth: BODY_WIDTH, frame: 'ItemFrame', closeOnBackdropTap: false, titleIcon: 'ItemIcon_Shop_old-2' });
         this.martId = martId;
         this.config = config;
         this.onClosedCallback = onClosed;
@@ -142,9 +155,26 @@ export default class MartPopup extends Popup {
         this.body = new PIXI.Container();
         content.addChild(this.body);
 
-        const spacer = new PIXI.Graphics();
-        spacer.beginFill(0x000000, 0).drawRect(0, 0, BODY_WIDTH, BODY_HEIGHT).endFill();
-        this.body.addChild(spacer);
+        // Same shared dark panel InventoryPopup/CraftingTablePopup use (see PanelBackground.ts's
+        // own doc) — this used to be a fully transparent spacer (0 alpha), the only reason
+        // `body`'s own reported bounds stayed pinned to the fixed BODY_WIDTH x BODY_HEIGHT
+        // footprint regardless of tab/row count; a real dark panel here does that exact same job
+        // while also actually being visible behind the rows, and staying visually IDENTICAL to
+        // every other list-style popup rather than each one hand-tuning its own tint/alpha.
+        const background = new PanelBackground();
+        background.setFixedSize(BODY_WIDTH, BODY_HEIGHT);
+        this.body.addChild(background);
+
+        // Wrapped in a ScrollView rather than added to `body` directly — same reasoning as
+        // InventoryPopup's own tab body: either tab's own row count can outgrow CONTENT_HEIGHT
+        // (a mart with many offers, or a player holding many sellable resources), so this clips
+        // to the fixed footprint and lets a drag scroll through the rest. A no-op for a tab
+        // short enough to already fit — see ScrollView's own doc on why content shorter than the
+        // viewport just never moves.
+        this.contentArea = new PIXI.Container();
+        this.scrollView = new ScrollView({ target: this.contentArea, width: CONTENT_WIDTH, height: CONTENT_HEIGHT });
+        this.scrollView.position.set(PANEL_CONTENT_MARGIN, PANEL_CONTENT_MARGIN);
+        this.body.addChild(this.scrollView);
 
         const tabsRow = new PIXI.Container();
         tabsRow.position.set(0, BODY_HEIGHT + BODY_TABS_GAP);
@@ -202,15 +232,17 @@ export default class MartPopup extends Popup {
     }
 
     private renderActiveTab(): void {
-        while (this.body.children.length > 1) {
-            this.body.children[this.body.children.length - 1].destroy({ children: true });
-        }
+        this.contentArea.removeChildren().forEach(child => child.destroy({ children: true }));
 
         if (this.activeTab === 'buy') {
             this.renderBuyTab();
         } else {
             this.renderSellTab();
         }
+
+        // Re-measures contentArea's freshly-rebuilt height and re-clamps/resets scroll — see
+        // ScrollView.refresh()'s own doc.
+        this.scrollView.refresh();
     }
 
     /** Every `config.offers` entry with a real base ResourceConfig.price (see MartTypes.getMartBuyPrice()'s own doc — an offer for a priceless resource is simply skipped, not shown as unbuyable). Warns per skipped offer (dev-facing only, same "misconfiguration, not a crash" convention LooseResourceNode's own AssetLibraryRegistry warning uses) since an offer silently disappearing with no price set is otherwise indistinguishable from "this mart is empty" — see the bug that prompted this: a mart with real `offers` entries read as completely unstocked because neither resource had a Mart Price set on the Resources tab yet. */
@@ -264,14 +296,14 @@ export default class MartPopup extends Popup {
     private renderEmptyMessage(text: string): void {
         const empty = new PIXI.Text(text, TextStyleRegistry.Inventory);
         empty.position.set(0, 0);
-        this.body.addChild(empty);
+        this.contentArea.addChild(empty);
     }
 
     /** One transaction row — icon, label, an "Owned: N" readout (live BackpackStorage count, shown on BOTH tabs so buying always shows what you're accumulating, not just selling), a money-icon+price readout, and an action button that fires `onAction` every tap (no quantity cap — see this file's own top doc). `enabled` dims the button and makes it non-interactive rather than hiding it, so the row's own layout never shifts as affordability/stock changes. `feedbackText`/`feedbackColor` (e.g. '+1'/green for Buy, '-1'/red for Sell) drive the jiggle+rising-popup animation on a successful tap — see playRowFeedback(). */
     private renderRow(index: number, resourceType: ResourceType, price: number, buttonLabel: string, enabled: boolean, feedbackText: string, feedbackColor: string, onAction: () => void): void {
         const row = new PIXI.Container();
         row.position.set(0, index * (ROW_HEIGHT + ROW_GAP));
-        this.body.addChild(row);
+        this.contentArea.addChild(row);
 
         const iconBg = createIconSlotBackground(ROW_ICON_SIZE, styleForResourceType(resourceType));
         iconBg.anchor.set(0, 0.5);
@@ -342,7 +374,7 @@ export default class MartPopup extends Popup {
                 this.playRowFeedback(icon, row, feedbackText, feedbackColor);
             } : () => { /* disabled — no-op */ },
         });
-        button.position.set(BODY_WIDTH - ROW_BUTTON_WIDTH, ROW_HEIGHT / 2 - ROW_BUTTON_HEIGHT / 2);
+        button.position.set(CONTENT_WIDTH - ROW_BUTTON_WIDTH, ROW_HEIGHT / 2 - ROW_BUTTON_HEIGHT / 2);
         button.alpha = enabled ? 1 : 0.5;
         row.addChild(button);
     }

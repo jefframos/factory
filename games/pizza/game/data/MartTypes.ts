@@ -81,6 +81,21 @@ export const MART_CONFIG_BY_ID: Partial<Record<string, MartConfig>> = {
             },
             {
                 "resourceType": ResourceType.Cauliflower
+            },
+            {
+                "resourceType": ResourceType.GrassFiber
+            },
+            {
+                "resourceType": ResourceType.Wheat
+            },
+            {
+                "resourceType": ResourceType.Berries
+            },
+            {
+                "resourceType": ResourceType.Mushroom
+            },
+            {
+                "resourceType": ResourceType.Corn
             }
         ],
         "solid": 0.5,

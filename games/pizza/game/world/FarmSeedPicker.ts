@@ -41,9 +41,11 @@
 import * as THREE from 'three';
 import * as PIXI from 'pixi.js';
 import Entity from '../ecs/Entity';
-import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
+import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
+import { Game } from 'core/Game';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
-import { TextStyleRegistry } from '../ui/TextStyleRegistry';
+import PanelBackground from '../ui/PanelBackground';
+import { TextStyleRegistry, fitTextWidth } from '../ui/TextStyleRegistry';
 import { CropId } from '../data/CropTypes';
 import { SEED_CONFIG, SeedId } from '../data/SeedTypes';
 import { SeedStorage } from '../data/SeedStorage';
@@ -51,10 +53,14 @@ import { AssetLibraryKey, getAssetIcon } from './AssetLibraryRegistry';
 import { createIconSlotBackground } from '../ui/IconSlotRegistry';
 import { getIconLayout } from '../ui/LayoutRegistry';
 
-/** World-space offset ABOVE THE PLAYER's own transform.position (feet) the picker anchors to — same order of magnitude as PlayerUIAvoidanceComponent's own DEFAULT_HEAD_OFFSET (1.6), raised a bit further than a first pass so the grid's own frame (and its baked-in arrow, see PICKER_FRAME_PADDING's own doc) clears the head/shoulders with real room to spare before avoidViewer's sideways push even has to kick in. */
-const PICKER_HEAD_OFFSET = new THREE.Vector3(0, 2.5, 0);
+/** Gap between the picker's own bottom edge and the actual bottom of the screen — same fixed-screen-position convention UIService's positionBackpackUi() uses for the (currently disabled) bottom-center backpack panel, rather than floating over the player's head in the 3D world (see this file's own git history for that earlier approach, and why it's gone: a HUD element pinned to a screen edge reads as "part of the interface," not as a speech bubble that has to dodge the player). */
+const PICKER_BOTTOM_MARGIN = 16;
 /** 'FarmFrame's own baked-in speech-bubble tail needs real clearance below the content to render cleanly (its 9-slice border widths are a fixed 30px, see FrameRegistry.ts's own DEFAULT_PADDING_BUBBLE) — same order of magnitude as CraftZone's/FarmZone's own LABEL_FRAME_PADDING (15), which never shows this overlap since their content (a real icon + requirement rows) is naturally tall enough on its own. See MartZone.ts's own buildOpenShopButton() doc for the fuller writeup (that button's short text-only content needed an explicit spacer on top of this same padding bump to get equivalent clearance — this picker's real icon grid doesn't need one). */
 const PICKER_FRAME_PADDING = uniformFitPadding(20);
+/** Title shown above the grid — see refresh(). Uses TextStyleRegistry.Title directly, unscaled — same style (and same "no local font-size override") Popup.ts's own header title uses for MartPopup/CraftingTablePopup/InventoryPopup; this picker has no such base (it's a world-floating panel, not a Popup), so it's spelled out directly here to match, and stays in sync with that shared style automatically. */
+const PICKER_TITLE_TEXT = 'Pick a seed to plant';
+const PICKER_TITLE_GAP = 24;
+/** Uses the SAME shared PanelBackground component (see that file's own doc) every other dark content panel in the game does — InventoryPopup/MartPopup/CraftingTablePopup's tab bodies, CraftZone's own requirement panel — added INSIDE 'FarmFrame's own bubble border rather than replacing it, so the bubble's border/tail art stays but its middle no longer shows the plain (near-transparent) green fill behind the grid. Wraps ONLY the seed grid (see `gridPanel` in awake()) — the title sits ABOVE this panel, outside the dark backdrop, same as MartPopup's/CraftingTablePopup's own title sitting above their dark body via Popup.ts's shared header row. */
 /** Same icon-bg-square + icon + count-label grid cell shape as InventoryPopup's/BackpackListUI's own resource cells. Smaller than InventoryPopup's own RESOURCE_CELL_SIZE (80px) since this floats over the player's head in the 3D world rather than filling a dedicated popup panel. */
 const SEED_GRID_COLUMNS = 4;
 /** Sourced from LayoutRegistry's 'Grid' preset (see that file's own doc), overridden to this picker's own smaller 56px cell/9px padding and 8px gap — smaller than InventoryPopup's own 80px Grid default since this floats over the player's head in the 3D world rather than filling a dedicated popup panel. */
@@ -73,6 +79,12 @@ export default class FarmSeedPicker extends Entity {
     private readonly screenHost: ScreenAnchorHost;
 
     private pickerContent!: AutoFitFrame;
+    /** Everything inside 'FarmFrame's own border — title above, gridPanel below — passed as AutoFitFrame's own `content` so the outer bubble sizes itself around both. */
+    private pickerColumn!: PIXI.Container;
+    private pickerTitle!: PIXI.Text;
+    /** Dark backdrop + pickerRow, and NOTHING else — the title stays OUTSIDE this container (a sibling within pickerColumn instead), same as MartPopup's/CraftingTablePopup's own title sitting above their dark `body` rather than inside it. */
+    private gridPanel!: PIXI.Container;
+    private pickerBackground!: PanelBackground;
     private pickerRow!: PIXI.Container;
 
     /** Every EMPTY, plantable tile the player's own trigger currently overlaps — almost always exactly one entry, occasionally two at a shared edge. resolveActive() picks the winner every frame; see this file's own top doc. */
@@ -92,41 +104,60 @@ export default class FarmSeedPicker extends Entity {
     }
 
     public override awake(): void {
-        this.pickerRow = new PIXI.Container();
-        this.pickerContent = new AutoFitFrame(PICKER_FRAME_PADDING, 'FarmFrame', this.pickerRow);
-        this.pickerContent.visible = false;
+        this.pickerColumn = new PIXI.Container();
 
-        const anchorPosition = new THREE.Vector3();
-        this.addComponent(new ScreenAnchorComponent(
-            this.screenHost,
-            this.pickerContent,
-            () => {
-                const viewerPosition = this.screenHost.getViewerPosition?.();
-                return viewerPosition
-                    ? anchorPosition.copy(viewerPosition).add(PICKER_HEAD_OFFSET)
-                    : anchorPosition.copy(PICKER_HEAD_OFFSET);
-            },
-            { avoidViewer: true, anchor: { x: 0.5, y: 1 } },
-        ));
+        this.pickerTitle = new PIXI.Text(PICKER_TITLE_TEXT, { ...TextStyleRegistry.Title, fontSize: 22 });
+        this.pickerTitle.anchor.set(0, 0);
+        this.pickerColumn.addChild(this.pickerTitle);
+
+        this.gridPanel = new PIXI.Container();
+        this.pickerColumn.addChild(this.gridPanel);
+
+        // Dark, content-agnostic backdrop — added FIRST so pickerRow (added after) draws on top
+        // of it. Actual size/position set in refresh() once the grid's own footprint is known.
+        // Only ever holds pickerRow — the title lives one level up, in pickerColumn, so the dark
+        // panel wraps just the seeds themselves, same as MartPopup's/CraftingTablePopup's own
+        // dark `body` never including their own header title either.
+        this.pickerBackground = new PanelBackground();
+        this.gridPanel.addChild(this.pickerBackground);
+
+        this.pickerRow = new PIXI.Container();
+        this.gridPanel.addChild(this.pickerRow);
+
+        this.pickerContent = new AutoFitFrame(PICKER_FRAME_PADDING, 'FarmFrame', this.pickerColumn);
+        this.pickerContent.visible = false;
+        this.screenHost.overlayContainer.addChild(this.pickerContent);
 
         SeedStorage.onChange.add(this.handleSeedStorageChange);
     }
 
     public override destroy(): void {
         SeedStorage.onChange.remove(this.handleSeedStorageChange);
+        this.pickerContent.destroy({ children: true });
         super.destroy();
     }
 
     public override update(delta: number): void {
         super.update(delta);
         this.resolveActive();
-        // Gate ON TOP of whatever ScreenAnchorComponent (one of the components super.update()
-        // just ran) decided — running AFTER it in the same frame means this always has the
-        // final say, same "runs after, has final say" idiom every other gated popup in this
-        // game uses.
-        if (!this.activeTileKey || this.pickerRow.children.length === 0) {
-            this.pickerContent.visible = false;
+        this.pickerContent.visible = Boolean(this.activeTileKey) && this.pickerRow.children.length > 0;
+        if (this.pickerContent.visible) {
+            this.positionContent();
         }
+    }
+
+    /** Bottom-center, regardless of viewport size/aspect — same fixed-screen-position convention as UIService's positionBackpackUi(). Re-run every frame the picker is visible since the grid's own size changes as the player's seed holdings do (see refresh()'s pickerContent.fit() call). */
+    private positionContent(): void {
+        const screen = Game.overlayScreenData;
+        if (!screen) {
+            return;
+        }
+
+        const bounds = this.pickerContent.getLocalBounds();
+        this.pickerContent.position.set(
+            screen.center.x - bounds.width / 2 - bounds.x,
+            screen.bottomLeft.y - bounds.height - bounds.y - PICKER_BOTTOM_MARGIN,
+        );
     }
 
     /** Whichever tileKey currently owns the picker, or undefined if none does — the ONE source of truth for "which cell is the player about to plant into." FarmPlotTile reads this every frame to decide whether ITS OWN highlight outline should show (see that file's own doc) instead of tracking trigger-enter/exit itself, which is exactly what let more than one tile's outline show at once before: two tiles' triggers can each independently believe "the player is on me" for a frame or two (overlapping AABBs, a shared edge, ...), but only ONE tileKey can ever equal this getter's return value at a time. */
@@ -230,6 +261,28 @@ export default class FarmSeedPicker extends Entity {
             label.position.set(SEED_CELL_SIZE / 2 + SEED_LAYOUT.label.offset[0], SEED_CELL_SIZE - SEED_LAYOUT.label.offset[1]);
             cell.addChild(label);
         });
+
+        // Dark backdrop wraps ONLY pickerRow (see gridPanel's own doc) — sized/positioned around
+        // pickerRow's own bounds directly, entirely independent of the title.
+        const gridBounds = this.pickerRow.getLocalBounds();
+        this.pickerBackground.fitToContent(gridBounds);
+
+        // "Pick a seed to plant" is a fixed string today, but a longer translation (or a future
+        // per-plot custom prompt) shouldn't be able to stretch the WHOLE picker wider than its
+        // own seed grid — pickerContent (the outer AutoFitFrame) sizes itself around
+        // pickerColumn's rendered bounds, title included, so an oversized title would otherwise
+        // widen the entire bubble past the grid it's meant to sit above. Bounded to the grid
+        // panel's own rendered width (background included, i.e. gridBounds already widened by
+        // PanelBackground's own margin) rather than the bare grid width, so the title can use
+        // the full width the dark panel already occupies.
+        fitTextWidth(this.pickerTitle, this.pickerBackground.width);
+
+        // Left-aligned, NOT centered — the title's own left edge (x=0) lines up with pickerRow's
+        // own left edge (also x=0, since gridPanel never shifts horizontally), same "title lines
+        // up with content's own left edge" convention Popup.ts's shared header row uses for
+        // MartPopup/CraftingTablePopup/InventoryPopup.
+        this.pickerTitle.position.set(0, 0);
+        this.gridPanel.position.set(0, this.pickerTitle.height + PICKER_TITLE_GAP);
 
         this.pickerContent.fit();
     }

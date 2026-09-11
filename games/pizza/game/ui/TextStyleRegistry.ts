@@ -13,7 +13,7 @@
 // to change in one place.
 
 import * as PIXI from 'pixi.js';
-import Assets from '../../Assets';
+import ViewUtils from 'core/utils/ViewUtils';
 
 
 const MainFont: Partial<PIXI.TextStyle> = {
@@ -51,7 +51,7 @@ export const TextStyleRegistry = {
     Body,
     Inventory: { ...Body, fontSize: 22, strokeThickness: 4 } as Partial<PIXI.TextStyle>,
     /** Bigger heading variant of Body, using MainFontTitle's family — general section/panel titles. */
-    Title: { ...Body, fontFamily: Assets.MainFontTitle.fontFamily, fontSize: 32, strokeThickness: 4 } as Partial<PIXI.TextStyle>,
+    Title: { ...Body, fontFamily: MainFont.fontFamily, fontSize: 32, strokeThickness: 4 } as Partial<PIXI.TextStyle>,
 
     /** Generic combat/hit damage number — for future use (e.g. the player taking damage). */
     Damage: { ...Body, fill: '#FF4444', fontSize: 22, strokeThickness: 4 } as Partial<PIXI.TextStyle>,
@@ -67,3 +67,24 @@ export const TextStyleRegistry = {
 } as const;
 
 export type TextStyleName = keyof typeof TextStyleRegistry;
+
+/**
+ * Shrinks `text`'s own scale down (never up past its natural size) so its rendered width never
+ * exceeds `maxWidth` — same "measure natural size, scale down only if it overflows" shape
+ * BaseButton.fitTextToButton() already uses for button labels, just for a bare PIXI.Text with no
+ * button wrapping it. Self-correcting: `ViewUtils.elementScaler()` divides out `text`'s own
+ * CURRENT scale before comparing against `maxWidth`, so calling this again after the string
+ * itself changes (a shorter title, a different locale) re-measures from scratch instead of
+ * compounding an old shrink.
+ *
+ * A title string is never a fixed, known-safe width — a longer translation, a data-driven name
+ * (MartConfig.name, CraftingTableConfig.name), or just a longer piece of copy can all overflow
+ * whatever column it's meant to sit in. Left unchecked, that overflow doesn't just clip visually:
+ * every popup here sizes its own outer frame around its title's rendered bounds (Popup.ts's own
+ * AutoFitFrame, FarmSeedPicker's pickerContent), so an oversized title actually stretches the
+ * WHOLE panel wider than its content, breaking the layout everywhere else on it — not a purely
+ * cosmetic clipping issue.
+ */
+export function fitTextWidth(text: PIXI.Text, maxWidth: number): void {
+    text.scale.set(Math.min(1, ViewUtils.elementScaler(text, maxWidth, Infinity)));
+}

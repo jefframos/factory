@@ -23,6 +23,21 @@
                 },
                 {
                     "resourceType": "cauliflower"
+                },
+                {
+                    "resourceType": "grassFiber"
+                },
+                {
+                    "resourceType": "wheat"
+                },
+                {
+                    "resourceType": "berries"
+                },
+                {
+                    "resourceType": "mushroom"
+                },
+                {
+                    "resourceType": "corn"
                 }
             ],
             "name": "Farm Shop",

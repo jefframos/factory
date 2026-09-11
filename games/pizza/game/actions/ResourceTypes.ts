@@ -111,21 +111,29 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         amountPerGather: 1,
         label: "Berries",
         color: 0xcc2244,
+        "price": 10,
+        "sellable": true
     },
     [ResourceType.Bark]: {
         amountPerGather: 1,
         label: "Bark",
         color: 0x6b4423,
+        "price": 10,
+        "sellable": true
     },
     [ResourceType.Pebble]: {
         amountPerGather: 1,
         label: "Pebble",
         color: 0x9a9a9a,
+        "price": 1,
+        "sellable": true
     },
     [ResourceType.GrassFiber]: {
         amountPerGather: 2,
         label: "Grass Fiber",
         color: 0x6ccb5f,
+        "price": 10,
+        "sellable": true
     },
     "crystal": {
         color: 0x6b4423,
@@ -158,18 +166,24 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         label: "Wheat",
         color: 0xe0c341,
         category: "farm",
+        "price": 10,
+        "sellable": true
     },
     [ResourceType.Beet]: {
         amountPerGather: 1,
         label: "Beet",
         color: 0x8f2d56,
         category: "farm",
+        "price": 10,
+        "sellable": true
     },
     [ResourceType.Broccoli]: {
         amountPerGather: 1,
         label: "Broccoli",
         color: 0x4a7c3a,
         category: "farm",
+        "price": 10,
+        "sellable": true
     },
     [ResourceType.Cabbage]: {
         amountPerGather: 1,
@@ -177,12 +191,15 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         color: 0x8fc95a,
         category: "farm",
         price: 4,
+        "sellable": true
     },
     [ResourceType.Carrot]: {
         amountPerGather: 1,
         label: "Carrot",
         color: 0xe8791a,
         category: "farm",
+        "price": 10,
+        "sellable": true
     },
     [ResourceType.Cauliflower]: {
         amountPerGather: 1,
@@ -190,53 +207,70 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         color: 0xf2f2e6,
         category: "farm",
         price: 5,
+        "sellable": true
     },
     [ResourceType.Corn]: {
         amountPerGather: 1,
         label: "Corn",
         color: 0xf2c94c,
         category: "farm",
+        "price": 7,
+        "sellable": true
     },
     [ResourceType.Leek]: {
         amountPerGather: 1,
         label: "Leek",
         color: 0x9fd357,
         category: "farm",
+        "price": 10,
+        "sellable": true
     },
     [ResourceType.Mushroom]: {
         amountPerGather: 1,
         label: "Mushroom",
         color: 0xc9a876,
         category: "farm",
+        "price": 10,
+        "sellable": true
     },
     [ResourceType.PumpkinBasic]: {
         amountPerGather: 1,
         label: "Pumpkin (Basic)",
         color: 0xe07a2c,
         category: "farm",
+        "price": 10,
+        "sellable": true
     },
     [ResourceType.Pumpkin]: {
         amountPerGather: 1,
         label: "Pumpkin",
         color: 0xd9631e,
         category: "farm",
+        "price": 10,
+        "sellable": true
     },
     [ResourceType.Strawberry]: {
         amountPerGather: 1,
         label: "Strawberry",
         color: 0xe0304f,
         category: "farm",
+        "price": 10,
+        "sellable": true
     },
     [ResourceType.Tomato]: {
         amountPerGather: 1,
         label: "Tomato",
         color: 0xd94430,
         category: "farm",
+        "price": 10,
+        "sellable": true
     },
     [ResourceType.Watermelon]: {
         amountPerGather: 1,
         label: "Watermelon",
         color: 0x3fae5c,
         category: "farm",
+        "price": 10,
+        "sellable": true
     },
 };

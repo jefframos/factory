@@ -51,6 +51,7 @@ import { applyFloatAnimation } from '../components/FloatAnimation';
 import { spawnFlyingResourceIcon } from '../components/FlyingResourceIcon';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
+import PanelBackground from '../ui/PanelBackground';
 import ViewUtils from 'core/utils/ViewUtils';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { CraftStorage } from './CraftStorage';
@@ -133,6 +134,10 @@ export default class CraftZone extends Entity {
     private resultIcon!: PIXI.Sprite;
     /** Holds either the active recipe's cost row (see ResourceSlotVisual.ts) or an "All Crafted!" text — rebuilt wholesale by refreshLabel(). */
     private bodyContainer!: PIXI.Container;
+    /** resultIcon + bodyContainer, the two REAL pieces of content — kept as its own container (rather than measuring resultIcon/bodyContainer separately) purely so layoutLabelBackground() has one bounds call to size `labelBackground` around, regardless of which of refreshLabel()'s branches actually populated it. */
+    private labelColumn!: PIXI.Container;
+    /** Dark, content-agnostic backdrop sized/positioned around `labelColumn` by layoutLabelBackground() — sits INSIDE the resolved bubble frame's own border, a sibling of labelColumn within `labelFrame`'s own content. */
+    private labelBackground!: PanelBackground;
     private labelFrame!: AutoFitFrame;
 
     private readonly handleCraftChanged = (id: string): void => {
@@ -227,9 +232,16 @@ export default class CraftZone extends Entity {
 
         this.bodyContainer = new PIXI.Container();
 
-        const column = new PIXI.Container();
-        column.addChild(this.resultIcon, this.bodyContainer);
-        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(this.config.popupMode, 'CraftingFrame', this.config.frame), column);
+        this.labelColumn = new PIXI.Container();
+        this.labelColumn.addChild(this.resultIcon, this.bodyContainer);
+
+        // Added FIRST so labelColumn (added after) draws on top of it — see this field's own doc.
+        this.labelBackground = new PanelBackground();
+
+        const outerColumn = new PIXI.Container();
+        outerColumn.addChild(this.labelBackground, this.labelColumn);
+
+        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, resolvePopupFrameName(this.config.popupMode, 'CraftingFrame', this.config.frame), outerColumn);
         this.refreshLabel();
 
         this.labelAnchor = new THREE.Object3D();
@@ -343,7 +355,7 @@ export default class CraftZone extends Entity {
             const doneText = new PIXI.Text('All Crafted!', TextStyleRegistry.Body);
             doneText.anchor.set(0.5, 1);
             this.bodyContainer.addChild(doneText);
-            this.labelFrame.fit();
+            this.layoutLabelBackground();
             return;
         }
 
@@ -373,6 +385,12 @@ export default class CraftZone extends Entity {
         });
 
         this.resultIcon.position.set(0, -(bodyHeight + ICON_BODY_GAP));
+        this.layoutLabelBackground();
+    }
+
+    /** Sizes/positions `labelBackground` to exactly cover `labelColumn`'s own current bounds (see PanelBackground.fitToContent()), then re-fits `labelFrame` around the result — called instead of a bare `this.labelFrame.fit()` by every refreshLabel() branch that actually populated resultIcon/bodyContainer with real content (the popupMode:'none' and destroyOnComplete-hidden branches skip this entirely since labelFrame itself stays invisible either way). */
+    private layoutLabelBackground(): void {
+        this.labelBackground.fitToContent(this.labelColumn.getLocalBounds());
         this.labelFrame.fit();
     }
 

@@ -17,19 +17,23 @@
 
 import * as PIXI from 'pixi.js';
 import Assets from '../../../Assets';
-import { TextStyleRegistry } from '../TextStyleRegistry';
+import { TextStyleRegistry, fitTextWidth } from '../TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../AutoFitFrame';
 import { FrameName } from '../FrameRegistry';
 import { createLibraryButton } from '../ButtonLibrary';
+import { PANEL_CONTENT_MARGIN } from '../PanelBackground';
+import { createTitleIcon } from '../TitleIcon';
 
 const CLOSE_BUTTON_SIZE = 48;
 const CLOSE_BUTTON_ICON_SIZE = 30;
-/** Gap between the title's own reserved width and the close button — see this constructor's own titleAreaWidth math. */
+/** Gap between the title's own reserved max width and the close button — see this constructor's own maxTitleWidth math. */
 const TITLE_CLOSE_GAP = 10;
 const TITLE_CONTENT_GAP = 20;
-const PANEL_PADDING = 28;
-/** Smaller than TextStyleRegistry.Title's own 32px — a popup header shares its row with the close button now (see this constructor's own doc), and the full-size Title style ran wide enough to overlap it on a narrow popup (e.g. SettingsPopup's 220px content column). */
-const TITLE_FONT_SIZE = 22;
+const PANEL_PADDING = 25;
+/** Sized against the title's own line, not CLOSE_BUTTON_SIZE — see `titleIcon` option's own doc. */
+const TITLE_ICON_SIZE = 48;
+/** Gap between `titleIcon` and the title text that follows it. */
+const TITLE_ICON_GAP = 10;
 
 export interface PopupOptions {
     /** Column width every child (title, buildContent's own content) lays out against — see this file's own doc. */
@@ -48,6 +52,15 @@ export interface PopupOptions {
     closeOnBackdropTap?: boolean;
     /** 9-slice panel chrome — defaults to the same 'Popup' bubble frame every other pizza panel uses (see FrameRegistry.ts). */
     frame?: FrameName;
+    /**
+     * Texture key shown to the LEFT of the title text — the same icon that already identifies
+     * this popup elsewhere in the UI (e.g. InventoryPopup passes BackpackButton's own
+     * 'survival-backpack', MartPopup passes MartZone's own 'ItemIcon_Shop_old-2', CraftingTablePopup
+     * passes CraftingTableZone's own 'craftingIcon'), so the popup that opens is instantly
+     * recognizable as "the same thing" the player just tapped. Undefined (the default) omits it
+     * entirely — SettingsPopup and any other icon-less popup are unaffected.
+     */
+    titleIcon?: string;
 }
 
 export default abstract class Popup {
@@ -67,17 +80,43 @@ export default abstract class Popup {
         const column = new PIXI.Container();
 
         // Header row — title and close button share one row rather than the close button
-        // floating above the title as a corner badge. The title is centered within its OWN
-        // reserved width (contentWidth minus the close button's own column + gap), NOT the full
-        // contentWidth — centering across the full width would let a long title run underneath
-        // the button instead of stopping short of it. Both are vertically centered against
-        // whichever of them is taller (see headerHeight below).
-        const titleAreaWidth = this.contentWidth - CLOSE_BUTTON_SIZE - TITLE_CLOSE_GAP;
-        const titleText = new PIXI.Text(title, { ...TextStyleRegistry.Title, fontSize: TITLE_FONT_SIZE });
-        const headerHeight = Math.max(titleText.height, CLOSE_BUTTON_SIZE);
-        titleText.anchor.set(0.5, 0.5);
-        titleText.position.set(titleAreaWidth / 2, headerHeight / 2);
+        // floating above the title as a corner badge. Left-aligned at PANEL_CONTENT_MARGIN —
+        // the SAME left inset every dark content panel's own row/grid content sits at (see
+        // PanelBackground.ts's own doc) — so the title's own left edge always lines up with
+        // whatever buildContent() adds below it, instead of floating centered above it. Both
+        // title and close button are vertically centered against whichever of them is taller
+        // (see headerHeight below). Uses TextStyleRegistry.Title directly, unscaled — no local
+        // font-size override here, so retuning that one shared style is all it takes to resize
+        // every popup's title at once.
+        //
+        // `titleIcon` (see that option's own doc) reserves its own square to the left of the
+        // text, pushing the text's own start (and shrinking its own available width) over by
+        // exactly that much — 0 for every popup that doesn't pass one, a no-op.
+        const titleIconOffset = options.titleIcon ? TITLE_ICON_SIZE + TITLE_ICON_GAP : 0;
+
+        // `title` is never a guaranteed-safe-width string — MartConfig.name/CraftingTableConfig.name
+        // are level-designer-entered data, and even a hardcoded string like "Backpack" can run
+        // long once localized into another language — so fitTextWidth() shrinks it down to
+        // whatever room is actually left between PANEL_CONTENT_MARGIN (plus titleIconOffset) and
+        // the close button (rather than letting it overflow and stretch the WHOLE panel wider,
+        // since this frame sizes itself around `column`'s own rendered bounds).
+        const titleText = new PIXI.Text(title, TextStyleRegistry.Title);
+        const maxTitleWidth = this.contentWidth - PANEL_CONTENT_MARGIN - titleIconOffset - CLOSE_BUTTON_SIZE - TITLE_CLOSE_GAP;
+        fitTextWidth(titleText, maxTitleWidth);
+        const headerHeight = Math.max(titleText.height, TITLE_ICON_SIZE, CLOSE_BUTTON_SIZE);
+        titleText.anchor.set(0, 0.5);
+        titleText.position.set(PANEL_CONTENT_MARGIN + titleIconOffset, headerHeight / 2);
         column.addChild(titleText);
+
+        if (options.titleIcon) {
+            // createTitleIcon() (see TitleIcon.ts's own doc) is a top-left-anchored square —
+            // background + centered icon, both sized to TITLE_ICON_SIZE — so it's positioned
+            // (not anchored) like any other plain container, vertically centered against
+            // headerHeight the same way titleText's own anchor(0, 0.5) achieves that.
+            const titleIcon = createTitleIcon(options.titleIcon, TITLE_ICON_SIZE);
+            titleIcon.position.set(PANEL_CONTENT_MARGIN / 2, headerHeight / 2 - TITLE_ICON_SIZE / 2);
+            column.addChild(titleIcon);
+        }
 
         const content = new PIXI.Container();
         content.position.set(0, headerHeight + TITLE_CONTENT_GAP);

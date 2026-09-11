@@ -4,31 +4,35 @@
 // container (`target`) inside a fixed `width` x `height` viewport, masks
 // away anything outside it, and lets a drag anywhere within that viewport
 // scroll `target` between its natural top (y=0) and the point its own
-// bottom edge reaches the viewport's bottom edge. A transparent gripArea
-// sprite spans the FULL viewport specifically so the drag "grip" works
-// everywhere inside it — a sparse grid with gaps between cells, empty space
-// below a short list, an otherwise-empty tab — not just wherever `target`'s
-// own content happens to have visible pixels; without it a drag started
-// over a gap would simply do nothing.
+// bottom edge reaches the viewport's bottom edge.
 //
-// Drag tracking is NATIVE window pointer events (pointermove/pointerup),
-// not PIXI's own hit-tested pointermove — same "don't lose the gesture the
-// instant the pointer leaves the small interactive shape that started it"
-// reasoning core/io/SwipeInputManager.ts and core/io/PointerFollowInput.ts
-// already use elsewhere in this engine. gripArea's own viewport is typically
-// much smaller than the whole screen (a popup's own content area, not a
-// fullscreen input host like those two), so a real drag routinely moves the
-// pointer outside it well before the gesture ends — PIXI's own pointermove
-// only fires while the pointer stays over the object that received
-// pointerdown, which would silently drop the drag the moment that happens.
-// window pointer events (the modern Pointer Events API) unify mouse, touch,
-// and pen under one model, so this one code path covers both without a
-// separate touch/mouse split. Native client coordinates are converted back
-// into PIXI's own coordinate space via the renderer's own
-// events.mapPositionToPoint() — the exact conversion PIXI uses internally
-// to populate a federated event's own `.global` — so this stays correct
-// under any canvas CSS scaling/resolution, not just a naive 1:1 pixel
-// assumption.
+// Gesture detection is done at the NATIVE window level (pointerdown/move/up),
+// not through Pixi's own hit-tested events — see onNativePointerDown()'s own
+// doc for why: Pixi only ever delivers a pointerdown to the SINGLE topmost
+// interactive object at that pixel, so a plain "transparent grip sprite
+// behind the content" (this file's own earlier shape) silently never sees a
+// drag that happens to START on top of a real button (a Buy/Sell/Craft row
+// action, ...) — exactly the rows this kind of list most often has. Tracking
+// natively instead means a drag can start ANYWHERE in the viewport,
+// regardless of what's visually underneath the pointer.
+//
+// That same "started on top of a button" case creates a second problem once
+// scrolling actually works: if the gesture ends with the pointer resting
+// back over a button (very likely — the content just moved under a
+// stationary finger), that button would otherwise receive a spurious tap on
+// release, even though the player was scrolling, not tapping. The instant a
+// drag is CONFIRMED (DRAG_MOVE_THRESHOLD crossed, or held past
+// DRAG_HOLD_THRESHOLD_SEC without releasing), `target.interactiveChildren`
+// is set false for the rest of that gesture — this disables hit-testing for
+// EVERY interactive descendant of `target` in one shot, so no button inside
+// it can receive pointerup/pointertap at all while it's off, regardless of
+// where the pointer ends up. Restored the instant the gesture ends
+// (stopDragging()). Deliberately NOT the "add a transparent layer on top
+// and let Pixi's own down/up target-matching mismatch" trick this file used
+// to use — that relies on EventBoundary's own ancestor-walking algorithm
+// doing what its source implies, which turned out not to reliably suppress
+// the tap in practice; toggling interactiveChildren is a single documented
+// Pixi flag with no such assumption baked in.
 //
 // A visible scrollbar (thin track + thumb, right edge of the viewport)
 // shows/hides itself based on whether there's anything to scroll at all —
@@ -59,15 +63,20 @@ export interface ScrollViewOptions {
 
 /** How far a single mouse-wheel notch moves the content — desktop convenience alongside touch/click-drag (see this file's own top doc: "should work touch and mouse"). */
 const WHEEL_STEP = 60;
-const SCROLLBAR_WIDTH = 5;
+const SCROLLBAR_WIDTH = 7;
 /** Gap between the scrollbar and the viewport's own right edge. */
-const SCROLLBAR_MARGIN = 3;
+const SCROLLBAR_MARGIN = -8;
 const SCROLLBAR_TRACK_COLOR = 0xffffff;
 const SCROLLBAR_TRACK_ALPHA = 0.12;
 const SCROLLBAR_THUMB_COLOR = 0xffffff;
 const SCROLLBAR_THUMB_ALPHA = 0.5;
 /** A thumb never renders shorter than this, however small the viewport-to-content ratio gets — a sliver a few px tall stops reading as a thumb at all. */
 const SCROLLBAR_MIN_THUMB_HEIGHT = 28;
+
+/** How far (px, in ScrollView-local space) the pointer has to move from its own down position before a gesture counts as a genuine drag rather than a tap — see this file's own top doc. */
+const DRAG_MOVE_THRESHOLD = 6;
+/** How long (sec) the pointer can stay down without crossing DRAG_MOVE_THRESHOLD before the gesture STILL counts as a drag — catches a slow, barely-moving press that has clearly stopped being a quick tap. Either condition (moved far enough, or held long enough) is enough — see onNativePointerMove(). */
+const DRAG_HOLD_THRESHOLD_SEC = 0.2;
 
 function clamp(value: number, min: number, max: number): number {
     return Math.min(max, Math.max(min, value));
@@ -77,17 +86,23 @@ export default class ScrollView extends PIXI.Container {
     private readonly target: PIXI.Container;
     private readonly viewportWidth: number;
     private readonly viewportHeight: number;
-    private readonly gripArea: PIXI.Graphics;
+    /** Transparent, spans the full viewport, BELOW `target` — purely a cursor affordance ('grab'/'grabbing' over empty space); the actual gesture is detected at the native window level (see onNativePointerDown()'s own doc), independent of whatever Pixi object visually received the pointerdown. */
+    private readonly background: PIXI.Graphics;
     private readonly maskGraphics: PIXI.Graphics;
     private readonly scrollbarTrack: PIXI.Graphics;
     private readonly scrollbarThumb: PIXI.Graphics;
 
     /** How far `target` is currently allowed to travel — 0 means "content fits, scrolling is disabled entirely" (see refresh()). */
     private maxScroll = 0;
-    private dragging = false;
-    private dragStartLocalY = 0;
-    private dragStartTargetY = 0;
-    /** Reused across every native pointermove to avoid allocating a new Point every frame of a drag. */
+    /** True from the moment a pointerdown lands inside this viewport until pointerup/cancel — NOT the same as "is this a confirmed drag yet," see `dragConfirmed`. */
+    private pointerDown = false;
+    /** True once the CURRENT gesture has crossed DRAG_MOVE_THRESHOLD or DRAG_HOLD_THRESHOLD_SEC — see this file's own top doc for what flipping this actually does. */
+    private dragConfirmed = false;
+    private downGlobalX = 0;
+    private downGlobalY = 0;
+    private downTargetY = 0;
+    private downTimeMs = 0;
+    /** Reused across every native pointer event to avoid allocating a new Point every frame of a drag. */
     private readonly tempGlobalPoint = new PIXI.Point();
 
     public constructor(options: ScrollViewOptions) {
@@ -96,16 +111,11 @@ export default class ScrollView extends PIXI.Container {
         this.viewportWidth = options.width;
         this.viewportHeight = options.height;
 
-        // Fully transparent but still hit-testable — this is what guarantees the drag "grip"
-        // across the WHOLE viewport rather than only wherever target's own content happens to
-        // have visible pixels. Added as the FIRST child (drawn/hit-tested UNDER target) so a
-        // target that itself contains interactive content (a button, a tappable row) still gets
-        // first claim on a tap — this only ever answers a gesture nothing inside target handled.
-        this.gripArea = new PIXI.Graphics();
-        this.gripArea.beginFill(0x000000, 0).drawRect(0, 0, this.viewportWidth, this.viewportHeight).endFill();
-        this.gripArea.interactive = true;
-        this.gripArea.cursor = 'grab';
-        this.addChild(this.gripArea);
+        this.background = new PIXI.Graphics();
+        this.background.beginFill(0x000000, 0).drawRect(0, 0, this.viewportWidth, this.viewportHeight).endFill();
+        this.background.eventMode = 'static';
+        this.background.cursor = 'grab';
+        this.addChild(this.background);
 
         // renderable = false — this shape exists ONLY to be assigned as target.mask below, not to
         // be drawn as a normal child. Pixi's mask system renders a mask's geometry through its
@@ -121,22 +131,17 @@ export default class ScrollView extends PIXI.Container {
         this.addChild(this.target);
         this.target.mask = this.maskGraphics;
 
-        // Scrollbar — added LAST so it draws on top of target's own content. Visibility/geometry
-        // both fully owned by refresh()/updateScrollbarThumb(); starts hidden, same "nothing to
-        // scroll yet" resting state maxScroll itself starts at.
+        // Scrollbar — drawn on top of target's own content. Visibility/geometry both fully owned
+        // by refresh()/updateScrollbarThumb(); starts hidden, same "nothing to scroll yet"
+        // resting state maxScroll itself starts at.
         this.scrollbarTrack = new PIXI.Graphics();
         this.scrollbarThumb = new PIXI.Graphics();
         this.scrollbarTrack.visible = false;
         this.scrollbarThumb.visible = false;
         this.addChild(this.scrollbarTrack, this.scrollbarThumb);
 
-        // pointerdown stays a normal, hit-tested Pixi event — reliable exactly because it only
-        // ever needs to fire once, at the moment the pointer is genuinely over gripArea. Actual
-        // drag CONTINUATION switches to native window listeners — see this file's own top doc.
-        this.gripArea.on('pointerdown', this.onDragStart);
-        this.gripArea.on('pointerup', this.onDragEnd);
-        this.gripArea.on('pointerupoutside', this.onDragEnd);
-        this.gripArea.on('wheel', this.onWheel);
+        this.background.on('wheel', this.onWheel);
+        window.addEventListener('pointerdown', this.onNativePointerDown);
 
         this.refresh();
     }
@@ -194,56 +199,91 @@ export default class ScrollView extends PIXI.Container {
         this.scrollbarThumb.y = scrollFraction * (this.viewportHeight - thumbHeight);
     }
 
-    private readonly onDragStart = (event: PIXI.FederatedPointerEvent): void => {
-        // maxScroll <= 0 means the content already fits entirely — see this file's own top doc
-        // on why a drag here is simply ignored rather than clamped to a 0-length range.
+    /**
+     * Native (not Pixi-hit-tested) window listener, live for as long as this ScrollView exists —
+     * see this file's own top doc for why: a Pixi pointerdown only ever reaches the single
+     * topmost interactive object at that pixel, so a drag STARTING on top of a real button (a
+     * row's own Buy/Sell/Craft action) would otherwise never be seen at all. Converts the native
+     * event into ScrollView-local space and simply checks whether it landed inside this
+     * viewport's own rect — completely independent of which Pixi object (if any) the SAME event
+     * also got dispatched to through Pixi's own hit-testing.
+     */
+    private readonly onNativePointerDown = (e: PointerEvent): void => {
         if (this.maxScroll <= 0) {
-            return;
-        }
-        this.dragging = true;
-        this.dragStartLocalY = this.toLocal(event.global).y;
-        this.dragStartTargetY = this.target.y;
-        this.gripArea.cursor = 'grabbing';
-        window.addEventListener('pointermove', this.onWindowPointerMove);
-        window.addEventListener('pointerup', this.onWindowPointerUp);
-        window.addEventListener('pointercancel', this.onWindowPointerUp);
-    };
-
-    /** The actual scroll-continuation path — see this file's own top doc on why this is a native window listener rather than Pixi's own pointermove. */
-    private readonly onWindowPointerMove = (e: PointerEvent): void => {
-        if (!this.dragging) {
             return;
         }
         const events = Game.renderer?.events;
         if (!events) {
             return;
         }
-        // Same clientX/clientY -> Pixi-space conversion Pixi's own EventSystem uses internally to
-        // populate a federated event's `.global` — keeps this consistent with dragStartLocalY,
-        // which came from a REAL federated event's `.global` at drag-start.
+
         events.mapPositionToPoint(this.tempGlobalPoint, e.clientX, e.clientY);
-        const localY = this.toLocal(this.tempGlobalPoint).y;
-        this.target.y = clamp(this.dragStartTargetY + (localY - this.dragStartLocalY), -this.maxScroll, 0);
+        const local = this.toLocal(this.tempGlobalPoint);
+        if (local.x < 0 || local.x > this.viewportWidth || local.y < 0 || local.y > this.viewportHeight) {
+            return;
+        }
+
+        this.pointerDown = true;
+        this.dragConfirmed = false;
+        this.downGlobalX = this.tempGlobalPoint.x;
+        this.downGlobalY = this.tempGlobalPoint.y;
+        this.downTargetY = this.target.y;
+        this.downTimeMs = performance.now();
+
+        window.addEventListener('pointermove', this.onNativePointerMove);
+        window.addEventListener('pointerup', this.onNativePointerUp);
+        window.addEventListener('pointercancel', this.onNativePointerUp);
+    };
+
+    /**
+     * The actual scroll-continuation path. Doesn't move `target` at all until the gesture is
+     * CONFIRMED a drag (`dragConfirmed`) — a plain tap that never moves/holds long enough leaves
+     * `target` untouched and `target.interactiveChildren` on, so it behaves exactly like a tap
+     * always did.
+     */
+    private readonly onNativePointerMove = (e: PointerEvent): void => {
+        if (!this.pointerDown) {
+            return;
+        }
+        const events = Game.renderer?.events;
+        if (!events) {
+            return;
+        }
+
+        events.mapPositionToPoint(this.tempGlobalPoint, e.clientX, e.clientY);
+        const dx = this.tempGlobalPoint.x - this.downGlobalX;
+        const dy = this.tempGlobalPoint.y - this.downGlobalY;
+
+        if (!this.dragConfirmed) {
+            const heldSec = (performance.now() - this.downTimeMs) / 1000;
+            if (Math.hypot(dx, dy) < DRAG_MOVE_THRESHOLD && heldSec < DRAG_HOLD_THRESHOLD_SEC) {
+                return;
+            }
+            this.dragConfirmed = true;
+            // See this file's own top doc — the actual "block the eventual tap" switch.
+            this.target.interactiveChildren = false;
+            this.background.cursor = 'grabbing';
+        }
+
+        this.target.y = clamp(this.downTargetY + dy, -this.maxScroll, 0);
         this.positionScrollbarThumb();
     };
 
-    private readonly onWindowPointerUp = (): void => {
-        this.stopDragging();
-    };
-
-    private readonly onDragEnd = (): void => {
+    private readonly onNativePointerUp = (): void => {
         this.stopDragging();
     };
 
     private stopDragging(): void {
-        this.dragging = false;
-        this.gripArea.cursor = 'grab';
-        window.removeEventListener('pointermove', this.onWindowPointerMove);
-        window.removeEventListener('pointerup', this.onWindowPointerUp);
-        window.removeEventListener('pointercancel', this.onWindowPointerUp);
+        this.pointerDown = false;
+        this.dragConfirmed = false;
+        this.target.interactiveChildren = true;
+        this.background.cursor = 'grab';
+        window.removeEventListener('pointermove', this.onNativePointerMove);
+        window.removeEventListener('pointerup', this.onNativePointerUp);
+        window.removeEventListener('pointercancel', this.onNativePointerUp);
     }
 
-    /** Mouse-wheel convenience alongside touch/click-drag — a wheel event is always hit-tested at wherever the cursor currently is, so unlike drag continuation it needs no window-level fallback. */
+    /** Mouse-wheel convenience alongside touch/click-drag — hit-tested normally (via `background`), so unlike drag continuation it needs no native window fallback. */
     private readonly onWheel = (event: PIXI.FederatedWheelEvent): void => {
         if (this.maxScroll <= 0) {
             return;
@@ -254,10 +294,8 @@ export default class ScrollView extends PIXI.Container {
 
     public override destroy(options?: boolean | PIXI.IDestroyOptions): void {
         this.stopDragging();
-        this.gripArea.off('pointerdown', this.onDragStart);
-        this.gripArea.off('pointerup', this.onDragEnd);
-        this.gripArea.off('pointerupoutside', this.onDragEnd);
-        this.gripArea.off('wheel', this.onWheel);
+        window.removeEventListener('pointerdown', this.onNativePointerDown);
+        this.background.off('wheel', this.onWheel);
         super.destroy(options);
     }
 }

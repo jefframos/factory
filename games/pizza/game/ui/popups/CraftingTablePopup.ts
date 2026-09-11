@@ -23,6 +23,8 @@
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import Popup from './Popup';
+import PanelBackground, { PANEL_CONTENT_MARGIN } from '../PanelBackground';
+import ScrollView from '../ScrollView';
 import { TextStyleRegistry } from '../TextStyleRegistry';
 import { createLibraryButton } from '../ButtonLibrary';
 import { createResourceSlot } from '../ResourceSlotVisual';
@@ -31,12 +33,17 @@ import { ResourceType } from '../../actions/ResourceTypes';
 import { CraftingTableConfig } from '../../data/CraftingTableTypes';
 import { CraftingRecipeConfig, getCraftingRecipe } from '../../data/CraftingRecipeTypes';
 
-const BODY_WIDTH = 460;
+/** Same fixed footprint MartPopup's own BODY_WIDTH/BODY_HEIGHT use — this popup and MartPopup are visually the same "transaction row list" family (icon slots + a per-row action button on a dark panel), so they share their outer footprint too, not just their dark backdrop. A table with more recipes than fits scrolls (see buildContent()'s own doc) rather than growing the panel — same reasoning InventoryPopup/MartPopup already scroll instead of growing. */
+const BODY_WIDTH = 420;
+const BODY_HEIGHT = 420;
+const CONTENT_WIDTH = BODY_WIDTH - PANEL_CONTENT_MARGIN * 2;
+const CONTENT_HEIGHT = BODY_HEIGHT - PANEL_CONTENT_MARGIN * 2;
 
 const SLOT_SIZE = 56;
 const SLOT_GAP = 10;
 const ARROW_GAP = 16;
-const ROW_GAP = 20;
+/** Same 8px rhythm MartPopup's own ROW_GAP uses between its Buy/Sell rows — see this file's own top doc for why these two lists should read as one visual family. */
+const ROW_GAP = 8;
 const ROW_BUTTON_WIDTH = 96;
 const ROW_BUTTON_HEIGHT = 40;
 
@@ -55,6 +62,10 @@ export default class CraftingTablePopup extends Popup {
     private readonly onClosedCallback?: () => void;
 
     private declare body: PIXI.Container;
+    /** Every row goes here, never directly into `body` — clipped/scrolled by `scrollView` (see buildContent()'s own doc), so content never sits flush against `background`'s own edges/rounded corners AND never renders past CONTENT_HEIGHT when this table lists more recipes than that fits. */
+    private declare contentArea: PIXI.Container;
+    /** Clips/scrolls `contentArea` to CONTENT_WIDTH x CONTENT_HEIGHT — see buildContent()'s own doc. refresh() must be called after every render() rebuild, since contentArea's own height can change per recipe count. */
+    private declare scrollView: ScrollView;
 
     /** True for FEEDBACK_RENDER_DELAY_SEC right after a craft — see MartPopup.suppressRender's own doc for why the reactive re-render has to wait rather than firing on BackpackStorage's synchronous onChange dispatch. */
     private suppressRender = false;
@@ -68,7 +79,11 @@ export default class CraftingTablePopup extends Popup {
     };
 
     public constructor(tableId: string, config: CraftingTableConfig, onClosed?: () => void) {
-        super(config.name, { contentWidth: BODY_WIDTH, frame: 'ItemFrame' });
+        // closeOnBackdropTap: false — same reasoning as InventoryPopup's own doc: a live crafting
+        // menu should only close via its own header close button, not a stray tap outside it.
+        // 'craftingIcon' — the exact same icon CraftingTableZone.ts's own "Craft" button uses,
+        // so the popup reads as "the same thing" the player just tapped.
+        super(config.name, { contentWidth: BODY_WIDTH, frame: 'ItemFrame', closeOnBackdropTap: false, titleIcon: 'craftingIcon' });
         this.tableId = tableId;
         this.config = config;
         this.onClosedCallback = onClosed;
@@ -93,12 +108,28 @@ export default class CraftingTablePopup extends Popup {
         this.body = new PIXI.Container();
         content.addChild(this.body);
 
+        // Same shared dark panel InventoryPopup/MartPopup use (see PanelBackground.ts's own
+        // doc), fixed to the exact BODY_WIDTH x BODY_HEIGHT footprint (matching MartPopup) rather
+        // than growing with recipe count — see this file's own top doc.
+        const background = new PanelBackground();
+        background.setFixedSize(BODY_WIDTH, BODY_HEIGHT);
+        this.body.addChild(background);
+
+        // Wrapped in a ScrollView rather than added to `body` directly — same reasoning as
+        // InventoryPopup's/MartPopup's own tab body: a table can list more recipes than fits
+        // CONTENT_HEIGHT, so this clips to the fixed footprint and lets a drag scroll through
+        // the rest. A no-op for a table short enough to already fit.
+        this.contentArea = new PIXI.Container();
+        this.scrollView = new ScrollView({ target: this.contentArea, width: CONTENT_WIDTH, height: CONTENT_HEIGHT });
+        this.scrollView.position.set(PANEL_CONTENT_MARGIN, PANEL_CONTENT_MARGIN);
+        this.body.addChild(this.scrollView);
+
         // Deliberately NOT calling render() here — see the constructor's own doc for why: this
         // runs during super(), before tableId/config are assigned yet.
     }
 
     private render(): void {
-        this.body.removeChildren().forEach(child => child.destroy({ children: true }));
+        this.contentArea.removeChildren().forEach(child => child.destroy({ children: true }));
 
         const rows = this.config.recipes
             .map(entry => ({ entry, recipe: getCraftingRecipe(entry.recipeId) }))
@@ -112,30 +143,25 @@ export default class CraftingTablePopup extends Popup {
 
         if (rows.length === 0) {
             const empty = new PIXI.Text('Nothing craftable here yet.', TextStyleRegistry.Inventory);
-            this.body.addChild(empty);
-            this.refitFrame();
-            return;
+            this.contentArea.addChild(empty);
+        } else {
+            let cursorY = 0;
+            rows.forEach(({ recipe }) => {
+                const rowHeight = this.renderRow(recipe, cursorY);
+                cursorY += rowHeight + ROW_GAP;
+            });
         }
 
-        let cursorY = 0;
-        rows.forEach(({ recipe }) => {
-            const rowHeight = this.renderRow(recipe, cursorY);
-            cursorY += rowHeight + ROW_GAP;
-        });
-
-        // this.body's own bounds just changed (rows added/removed) — the panel frame was only
-        // ever fit once, in Popup's own constructor, around whatever buildContent() left behind
-        // (an empty this.body, since render() is deliberately not called from there — see this
-        // file's own constructor doc) — see refitFrame()'s own doc for why every later render()
-        // has to re-trigger that fit itself.
-        this.refitFrame();
+        // Re-measures contentArea's freshly-rebuilt height and re-clamps/resets scroll — see
+        // ScrollView.refresh()'s own doc.
+        this.scrollView.refresh();
     }
 
     /** One recipe row, top-left at local (0, `y`) — ingredient slots, an arrow, the result slot, and a Craft button, all vertically centered against SLOT_SIZE. Returns the row's own rendered height (always SLOT_SIZE, kept as a return value so render()'s own stacking math doesn't hardcode it twice). `enabled` only when BackpackStorage already holds enough of every ingredient. */
     private renderRow(recipe: CraftingRecipeConfig, y: number): number {
         const row = new PIXI.Container();
         row.position.set(0, y);
-        this.body.addChild(row);
+        this.contentArea.addChild(row);
 
         const ingredients = Object.entries(recipe.ingredients) as [ResourceType, number][];
         const canAfford = ingredients.every(([type, need]) => BackpackStorage.getCount(type) >= need);
@@ -177,7 +203,7 @@ export default class CraftingTablePopup extends Popup {
                 this.playRowFeedback(resultSlot.icon, resultSlot.container);
             } : () => { /* disabled — no-op */ },
         });
-        button.position.set(BODY_WIDTH - ROW_BUTTON_WIDTH, SLOT_SIZE / 2 - ROW_BUTTON_HEIGHT / 2);
+        button.position.set(CONTENT_WIDTH - ROW_BUTTON_WIDTH, SLOT_SIZE / 2 - ROW_BUTTON_HEIGHT / 2);
         button.alpha = canAfford ? 1 : 0.5;
         row.addChild(button);
 

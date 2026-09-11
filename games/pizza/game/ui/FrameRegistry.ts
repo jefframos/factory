@@ -128,8 +128,8 @@ export const FrameRegistry: Record<string, FrameDef> = {
     },
     /** FarmZone's own price popup (see that file's own doc) — shares ShopFrame's green texture (a purchase, same as a shop upgrade) but kept as its own preset so it can be retuned independently. */
     FarmFrame: {
-        textureKey: 'ResourceBar_Single_Btn_Green1',
-        padding: DEFAULT_PADDING_BUBBLE,
+        textureKey: 'ItemFrame03_Single_Navy',
+        padding: { bottom: 50, top: 50, left: 50, right: 50 },
         arrowPivot: { x: 0.5, y: 1 },
     },
     /** InventoryPopup's own panel shape (see popups/InventoryPopup.ts) — a bordered item-frame plate rather than the speech-bubble 'Popup' style, no arrow. 64px border on every side, per the source asset's own bake. */

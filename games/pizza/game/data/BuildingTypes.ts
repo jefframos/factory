@@ -148,6 +148,10 @@ export interface BuildingConfig {
      * these at the mesh position, unchanged from before this field existed.
      */
     anchorAtDropper?: boolean;
+    /** NpcTypes.ts id — optional; when set, an animated NPC (see NpcEntity.ts) spawns alongside this building, wearing that NpcConfig's CharacterView. Same convention as MartConfig.npcId. undefined (the default) means no NPC spawns here at all. */
+    npcId?: string;
+    /** World-unit [x, y, z] nudge off the building's own mesh position (see PizzaScene.setupBuildingZone()) — undefined/[0,0,0] (the default) puts the NPC right at the building's own center. Only read when `npcId` is set. Always relative to the mesh position, regardless of `anchorAtDropper` — that flag only affects the requirements panel/particles, not where a level designer wants an NPC standing relative to the building's own visible model. */
+    npcOffset?: [number, number, number];
 }
 
 export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {

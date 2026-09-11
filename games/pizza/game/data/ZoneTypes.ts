@@ -27,7 +27,7 @@ export interface ZoneConfigEntry {
 /** zoneNumber -> its own config — see this file's own doc. Sparse: only zones a level designer has actually set a requirement for need an entry at all. */
 export const ZONE_CONFIG: Partial<Record<number, ZoneConfigEntry>> = {
     "0": {
-        "cameraTemplateId": "close1"
+        "cameraTemplateId": "far2"
     },
     "1": {
         "requirement": {

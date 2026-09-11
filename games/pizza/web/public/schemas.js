@@ -243,6 +243,8 @@ const ENTITY_SCHEMAS = {
         { key: 'updateParticleEffectId', type: 'select', label: 'Update Particle Effect (fires every time this building levels up)', source: 'particleEffects', optional: true },
         { key: 'updateParticleCount', type: 'number', label: 'Update Particle Count', optional: true },
         { key: 'anchorAtDropper', type: 'boolean', label: 'Anchor Popup/Particles At Dropper (requirements panel, Level Up! callout, and update particle burst all spawn at this building\'s own dropper instead of its mesh — falls back to the mesh if it has no dropper)', optional: true },
+        { key: 'npcId', type: 'select', label: 'NPC (optional — spawns an animated NPC at this building)', source: 'npcs', optional: true },
+        { key: 'npcOffset', type: 'vector3', label: 'NPC Offset (x, y, z — nudges off the building\'s own mesh position; only used when NPC is set)', optional: true },
         ...POPUP_FIELDS,
     ],
     shops: [

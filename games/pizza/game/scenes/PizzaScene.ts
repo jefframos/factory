@@ -1053,6 +1053,22 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 ));
                 this.threeScene.add(buildingZone.transform);
                 this.registerZoneVisibility(buildingZone.transform, position.x, position.z, placement.width, placement.depth);
+
+                // Same optional NPC-in-front-of-the-entity system setupMarts() uses — see
+                // BuildingConfig.npcId/npcOffset's own doc for why this is always relative to
+                // the mesh position, not the dropper/trigger.
+                const buildingConfig = BUILDING_CONFIG[buildingId];
+                if (buildingConfig.npcId) {
+                    const npcConfig = getNpcConfig(buildingConfig.npcId);
+                    if (npcConfig) {
+                        const [offsetX, offsetY, offsetZ] = buildingConfig.npcOffset ?? [0, 0, 0];
+                        const npcPosition = position.clone().add(new THREE.Vector3(offsetX, offsetY, offsetZ));
+                        const npc = this.world.add(new NpcEntity(npcPosition, npcConfig, () => this.mainPlayer.transform.position));
+                        this.threeScene.add(npc.transform);
+                    } else {
+                        console.warn(`[PizzaScene] building "${buildingId}" references npcId "${buildingConfig.npcId}" with no NpcConfig entry — skipping NPC spawn`);
+                    }
+                }
             });
         }
 

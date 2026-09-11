@@ -45,7 +45,7 @@
 
 import * as PIXI from 'pixi.js';
 import Popup from './Popup';
-import FrameComponent from '../FrameComponent';
+import PanelBackground, { PANEL_CONTENT_MARGIN } from '../PanelBackground';
 import ScrollView from '../ScrollView';
 import { TextStyleRegistry } from '../TextStyleRegistry';
 import { getToolIcon, ToolId, TOOL_LIBRARY } from '../../actions/ToolRegistry';
@@ -82,7 +82,7 @@ const TABS: TabDef[] = [
 const CONTENT_WIDTH = 450;
 const CONTENT_HEIGHT = 500;
 /** Inset applied to `contentArea` within `body` on every side (see buildContent()'s own doc) — BODY_WIDTH/BODY_HEIGHT below bake in `2 * BODY_CONTENT_MARGIN` on top of CONTENT_WIDTH/CONTENT_HEIGHT, so the actual content canvas stays exactly CONTENT_WIDTH x CONTENT_HEIGHT regardless of this margin's own value. */
-const BODY_CONTENT_MARGIN = 20;
+const BODY_CONTENT_MARGIN = PANEL_CONTENT_MARGIN;
 const BODY_WIDTH = CONTENT_WIDTH + BODY_CONTENT_MARGIN * 2;
 const BODY_HEIGHT = CONTENT_HEIGHT + BODY_CONTENT_MARGIN * 2;
 const BODY_TABS_GAP = 14;
@@ -204,7 +204,9 @@ export default class InventoryPopup extends Popup {
         // closeOnBackdropTap: false — this is a multi-tab menu meant to be browsed rather than
         // glanced at, so it should only close via its own header close button, not a stray tap
         // outside it — see Popup.ts's own doc on that option.
-        super('Backpack', { contentWidth: BODY_WIDTH, frame: 'ItemFrame', closeOnBackdropTap: false });
+        // 'survival-backpack' — the exact same icon BackpackButton.ts uses to open this popup in
+        // the first place, so the popup reads as "the same thing" the player just tapped.
+        super('Backpack', { contentWidth: BODY_WIDTH, frame: 'ItemFrame', closeOnBackdropTap: false, titleIcon: 'survival-backpack' });
 
         ItemStorage.onChange.add(this.handleToolsChanged);
         ShopUpgradeStorage.onChange.add(this.handleToolsChanged);
@@ -227,20 +229,17 @@ export default class InventoryPopup extends Popup {
         this.body = new PIXI.Container();
         content.addChild(this.body);
 
-        // The tab content's own backdrop — same 'back1' texture IconSlotRegistry's presets tint,
-        // here tinted plain black at 0.5 alpha rather than one of its named content-kind colors
-        // (this panel holds ALL kinds of content depending on the active tab, not one). 9-sliced
-        // via FrameRegistry's own 'PanelBody' preset rather than a plain stretched Sprite — at
-        // this panel scale (well past 'back1's own 130x130 native size), a plain stretch would
-        // visibly smear its rounded corners; see that preset's own doc. Sized to the exact
-        // BODY_WIDTH x BODY_HEIGHT footprint, which ALSO locks the body's own reported bounds to
-        // that fixed size regardless of which tab is showing (see this file's own top doc) — a
-        // second, invisible spacer for that purpose alone would be redundant now that this frame
-        // already occupies exactly that rect. Stays the ONLY direct child of `body` — every
-        // render*Tab() adds its own content into `contentArea` below instead, never here.
-        const background = new FrameComponent('PanelBody', BODY_WIDTH, BODY_HEIGHT);
-        background.setTint(0x000000);
-        background.alpha = 0.5;
+        // The tab content's own backdrop — see PanelBackground.ts's own doc: the SAME shared
+        // dark panel component InventoryPopup/MartPopup/CraftingTablePopup all use, so every
+        // list/grid-style popup in the game renders the exact same tint/alpha/corner style.
+        // Sized to the exact BODY_WIDTH x BODY_HEIGHT footprint, which ALSO locks the body's own
+        // reported bounds to that fixed size regardless of which tab is showing (see this file's
+        // own top doc) — a second, invisible spacer for that purpose alone would be redundant
+        // now that this frame already occupies exactly that rect. Stays the ONLY direct child of
+        // `body` — every render*Tab() adds its own content into `contentArea` below instead,
+        // never here.
+        const background = new PanelBackground();
+        background.setFixedSize(BODY_WIDTH, BODY_HEIGHT);
         this.body.addChild(background);
 
         // Inset by BODY_CONTENT_MARGIN on every side so tab content never sits flush against the
