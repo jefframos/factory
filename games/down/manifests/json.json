@@ -1,0 +1,73 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "islands.json"
+          ],
+          "src": [
+            "islands.json"
+          ]
+        },
+        {
+          "alias": [
+            "levels-config.json"
+          ],
+          "src": [
+            "levels-config.json"
+          ]
+        },
+        {
+          "alias": [
+            "pieces-config-old.json"
+          ],
+          "src": [
+            "pieces-config-old.json"
+          ]
+        },
+        {
+          "alias": [
+            "pieces-config.json"
+          ],
+          "src": [
+            "pieces-config.json"
+          ]
+        },
+        {
+          "alias": [
+            "powerups-config.json"
+          ],
+          "src": [
+            "powerups-config.json"
+          ]
+        },
+        {
+          "alias": [
+            "shopItems.json"
+          ],
+          "src": [
+            "shopItems.json"
+          ]
+        },
+        {
+          "alias": [
+            "static-pieces-config.json"
+          ],
+          "src": [
+            "static-pieces-config.json"
+          ]
+        },
+        {
+          "alias": [
+            "universe.json"
+          ],
+          "src": [
+            "universe.json"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,272 @@
+import type { PlayerEntity } from '../entities/PlayerEntity';
+import type { BotController } from '../ai/BotController';
+import type { BotParams } from '../ai/Blackboard';
+import { NPC_DIFFICULTY_CONFIG, NPC_PERSONALITY_CONFIG, NPC_POPULATION_CONFIG, NPC_RUBBERBAND_CONFIG, NPC_SAFE_START_CONFIG, NPC_SPAWN_CONFIG } from './NpcConfig';
+import { NpcRoster } from './NpcRoster';
+import { scoreOf, type NpcRecord } from './NpcRecord';
+import type { NpcHostScene } from './NpcHostScene';
+
+/**
+ * Orchestrates the persistent 24-NPC population against a live scene: keeps
+ * an "active window" of ~activeMin-activeMax records materialized as real
+ * bots near the player, dematerializes ones that wander too far, and folds a
+ * real on-screen death back into the roster via onEntitiesRemoved.
+ *
+ * Everything idle (growth, offscreen kill/steal) is delegated to `roster` —
+ * this class only ever touches the subset of records currently `active`.
+ */
+export class NpcDirector {
+    readonly roster = new NpcRoster();
+
+    private readonly active = new Map<NpcRecord, BotController>();
+    private checkTimer = 0;
+    /** Wall-clock seconds since the player last (re)spawned — drives NPC_SAFE_START_CONFIG's grace window, independent of how fast the player's own value climbs. Reset by respawnPlayer() so every respawn gets a fresh grace window, not just the very first join. */
+    private currentSessionTime = 0;
+
+    update(delta: number, host: NpcHostScene): void {
+        this.roster.update(delta);
+        this.currentSessionTime += delta;
+
+        this.checkTimer += delta;
+        if (this.checkTimer < NPC_SPAWN_CONFIG.checkInterval) return;
+        this.checkTimer = 0;
+
+        this.pruneFarNpcs(host);
+        this.topUp(host);
+    }
+
+    /**
+     * Called by the scene right after resolveEntityEating() removes real
+     * bots — recycles whichever active record(s) that maps to immediately.
+     * Distinct from pruneFarNpcs: the entity here is already destroyed (its
+     * own onEaten() tore down visuals and SimWorld.unregister already ran),
+     * so this only fixes up bookkeeping — it must NOT call
+     * host.dematerializeNpc, which would try to read/destroy an
+     * already-dead entity.
+     */
+    /**
+     * Flat dump of the whole population for UI (e.g. LeaderboardPanel) —
+     * active entries reflect live entity state, idle entries reflect the
+     * record directly. Keyed by the record's own stable `id` throughout,
+     * unlike naively mixing in BotController.id (which is a separate global
+     * counter also shared with ad-hoc debug-spawned bots) — a UI reading
+     * that would see a given NPC's identity/rank change every time it
+     * materializes or dematerializes, and would leak debug bots into a
+     * player-facing list.
+     */
+    listAll(): { id: number; name: string; value: number; score: number }[] {
+        return this.roster.records.map(record => {
+            const controller = this.active.get(record);
+            return controller
+                ? { id: record.id, name: record.name, value: controller.entity.value, score: controller.entity.score }
+                : { id: record.id, name: record.name, value: record.value, score: scoreOf(record) };
+        });
+    }
+
+    /**
+     * Call right after the player respawns — restarts the grace window (see
+     * currentSessionTime) AND clears out every currently-active NPC back to
+     * idle, same as pruneFarNpcs. Without the prune, whatever was already
+     * materialized near the old death spot (which could be anything, grace
+     * window or not) stays active and can be standing right next to the new
+     * spawn point, so a fresh grace window alone doesn't stop the player from
+     * getting instantly attacked — topUp() then repopulates from scratch
+     * under the just-restarted grace window, so the replacements are all
+     * weak/docile per materializeOne's inGrace bias.
+     */
+    respawnPlayer(host: NpcHostScene): void {
+        this.currentSessionTime = 0;
+
+        for (const [record, controller] of this.active) {
+            const snapshot = host.dematerializeNpc(controller);
+            record.value = snapshot.value;
+            record.tailValues = snapshot.tailValues;
+            record.state = 'idle';
+            record.idleSince = 0;
+        }
+        this.active.clear();
+    }
+    onEntitiesRemoved(removed: PlayerEntity[]): void {
+        if (removed.length === 0) return;
+
+        for (const [record, controller] of this.active) {
+            if (!removed.includes(controller.entity)) continue;
+
+            record.value = NPC_POPULATION_CONFIG.respawnValue;
+            record.tailValues = [];
+            record.state = 'idle';
+            record.idleSince = 0;
+            this.active.delete(record);
+        }
+    }
+
+    private pruneFarNpcs(host: NpcHostScene): void {
+        const { x: px, z: pz } = host.playerPosition;
+        const despawnDist2 = NPC_SPAWN_CONFIG.despawnDistance * NPC_SPAWN_CONFIG.despawnDistance;
+
+        for (const [record, controller] of this.active) {
+            const dx = controller.entity.position.x - px;
+            const dz = controller.entity.position.z - pz;
+            if (dx * dx + dz * dz <= despawnDist2) continue;
+
+            const snapshot = host.dematerializeNpc(controller);
+            record.value = snapshot.value;
+            record.tailValues = snapshot.tailValues;
+            record.state = 'idle';
+            record.idleSince = 0;
+            this.active.delete(record);
+        }
+    }
+
+    /**
+     * Below activeMin, catches up immediately (spawns the whole deficit in
+     * one pass) since the player is short on things to interact with right
+     * now. Between activeMin and activeMax, trickles in one at a time per
+     * check tick instead — there's no urgency, and spawning several at once
+     * right on top of each other reads as a pop-in swarm rather than a
+     * gradually repopulating world.
+     */
+    private topUp(host: NpcHostScene): void {
+        if (this.active.size >= NPC_POPULATION_CONFIG.activeMax) return;
+
+        const deficit = NPC_POPULATION_CONFIG.activeMin - this.active.size;
+        const spawnCount = deficit > 0 ? deficit : 1;
+
+        for (let i = 0; i < spawnCount && this.active.size < NPC_POPULATION_CONFIG.activeMax; i++) {
+            this.materializeOne(host);
+        }
+    }
+
+    private materializeOne(host: NpcHostScene): void {
+        const idle = this.roster.records.filter(r => r.state === 'idle');
+        if (idle.length === 0) return; // roster fully materialized already — shouldn't happen while rosterSize > activeMax
+
+        const playerValue = host.playerValue;
+        // Wall-clock backstop on top of the value-based check below — guarantees
+        // a minimum grace window even for a player who grows past
+        // lowLevelPlayerThreshold in the first few seconds via a lucky food run.
+        const inGrace = this.currentSessionTime < NPC_SAFE_START_CONFIG.graceSeconds;
+        // Rubber-banding never applies during the new-player grace window —
+        // "leading" this early is just a lucky food run, not dominance worth
+        // punishing. See NPC_RUBBERBAND_CONFIG.
+        const leading = !inGrace && this.isPlayerLeading(host);
+        const forceHunter = leading && Math.random() < NPC_RUBBERBAND_CONFIG.hunterSpawnChance;
+        const record = this.pickRecordFor(idle, playerValue, inGrace, forceHunter);
+
+
+        // console.log('[NPC SPAWN CHECK]', {
+        //     botValue: record.value,
+        //     time: this.currentSessionTime.toFixed(1),
+        //     playerValue,
+        //     inGrace,
+        //     leading,
+        //     forceHunter,
+        //     idleCount: idle.length,
+        // });
+
+        const { x: px, z: pz } = host.playerPosition;
+        const spot = host.findSpawnRing(px, pz, NPC_SPAWN_CONFIG.spawnMinDistance, NPC_SPAWN_CONFIG.spawnMaxDistance);
+        if (!spot) return; // no walkable cell out there yet (chunks not streamed that far) — retried next check tick
+
+        const controller = host.materializeNpc(spot, record.value, record.tailValues, record.name, this.rollParams(playerValue, inGrace, forceHunter));
+        record.state = 'active';
+        this.active.set(record, controller);
+    }
+
+    /**
+     * True once the real player's score beats the best score anywhere in the
+     * roster (active bots included, via their live entity score) by
+     * NPC_RUBBERBAND_CONFIG.leadMarginMult — i.e. genuinely dominant, not
+     * just barely tied for 1st. Feeds materializeOne's hunter-spawn bias.
+     */
+    private isPlayerLeading(host: NpcHostScene): boolean {
+        if (this.roster.records.length === 0) return false;
+        let best = 0;
+        for (const record of this.roster.records) {
+            const controller = this.active.get(record);
+            const score = controller ? controller.entity.score : scoreOf(record);
+            if (score > best) best = score;
+        }
+        return host.playerScore >= best * NPC_RUBBERBAND_CONFIG.leadMarginMult;
+    }
+
+    /**
+     * See NPC_DIFFICULTY_CONFIG — while the player is low-level (or still
+     * inside the wall-clock grace window — see NPC_SAFE_START_CONFIG),
+     * prefer weak idle records over a uniform random pick so their first
+     * encounters aren't a coin flip against something huge. `forceHunter`
+     * (rubber-banding — see NPC_RUBBERBAND_CONFIG) overrides that entirely
+     * and instead deliberately picks the single biggest idle record
+     * available, since the point is putting a real threat near a dominant
+     * player, not a random one.
+     */
+    private pickRecordFor(idle: NpcRecord[], playerValue: number, inGrace: boolean, forceHunter: boolean): NpcRecord {
+        if (forceHunter) {
+            return idle.reduce((best, r) => scoreOf(r) > scoreOf(best) ? r : best);
+        }
+
+        if (!inGrace && playerValue > NPC_DIFFICULTY_CONFIG.lowLevelPlayerThreshold) {
+            const min = playerValue * 0.5;
+            const max = playerValue * 2;
+
+            const suitable = idle.filter(r => {
+                const value = scoreOf(r);
+                return value >= min && value <= max;
+            });
+
+            if (suitable.length > 0) {
+                return suitable[Math.floor(Math.random() * suitable.length)];
+            }
+
+            return idle[Math.floor(Math.random() * idle.length)];
+        }
+
+        const ceiling = playerValue * NPC_DIFFICULTY_CONFIG.lowLevelValueMultiplier;
+
+        const weak = idle.filter(
+            r => scoreOf(r) <= ceiling
+        );
+
+        if (weak.length > 0) {
+            return weak[Math.floor(Math.random() * weak.length)];
+        }
+
+        // No weak bots available.
+        // Always choose the weakest bot, never a random huge one.
+        return idle.reduce((weakest, current) =>
+            scoreOf(current) < scoreOf(weakest)
+                ? current
+                : weakest
+        );
+    }
+
+    /**
+     * Base BotParams from config, jittered per-NPC so the population isn't
+     * identical clones — see NPC_PERSONALITY_CONFIG. Aggressiveness is
+     * additionally capped while the player is low-level or still inside the
+     * grace window (NPC_DIFFICULTY_CONFIG / NPC_SAFE_START_CONFIG), or
+     * forced to max plus huntsBiggerPrey when `forceHunter` (rubber-banding
+     * — see NPC_RUBBERBAND_CONFIG) is set; the two overrides can't both
+     * apply since forceHunter is only ever true outside the grace window.
+     */
+    private rollParams(playerValue: number, inGrace: boolean, forceHunter: boolean): Partial<BotParams> {
+        const cfg = NPC_PERSONALITY_CONFIG;
+        const jitter = (base: number, variance: number, min: number, max: number) =>
+            Math.max(min, Math.min(max, base + (Math.random() * 2 - 1) * variance));
+
+        let aggressiveness = jitter(cfg.aggressiveness, cfg.aggressivenessVariance, 0, 1);
+        if (inGrace || playerValue <= NPC_DIFFICULTY_CONFIG.lowLevelPlayerThreshold) {
+            aggressiveness = Math.min(aggressiveness, NPC_DIFFICULTY_CONFIG.lowLevelAggressivenessCap);
+        }
+        if (forceHunter) aggressiveness = NPC_RUBBERBAND_CONFIG.hunterAggressiveness;
+
+        return {
+            aggressiveness,
+            awarenessRadius: jitter(cfg.awarenessRadius, cfg.awarenessRadiusVariance, 1, 500),
+            fleeThreshold: cfg.fleeThreshold,
+            wanderSpeed: cfg.wanderSpeed,
+            leashRadius: cfg.leashRadius,
+            huntsBiggerPrey: forceHunter,
+        };
+    }
+}

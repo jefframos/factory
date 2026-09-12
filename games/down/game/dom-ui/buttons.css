@@ -1,0 +1,473 @@
+/*
+ * Button system for production DOM UI (menus, death/end-game screens).
+ * Every button is a 9-sliced PNG via border-image — the bevel/shadow is
+ * baked into the art, not drawn in CSS.
+ *
+ * To swap the SHAPE (point at a different button art set, e.g. the
+ * Label_Parallelogram_* images instead of ResourceBar_Single_Btn_*):
+ * change the --btn-*-image urls AND retune --btn-slice / --btn-border-width
+ * to match that art's corner/bevel size. Every .btn picks it up at once.
+ *
+ * To change which SKIN a semantic role uses (e.g. make Shop pink instead
+ * of grey): edit the matching --btn-*-image variable below, not the
+ * button call sites.
+ */
+
+:root {
+    /* Shape: corner/bevel geometry of the current art (ResourceBar_Single_Btn_*,
+       ~60x62px source) as a fraction of the source pixels. Stays constant
+       across sizes — it's --btn-border-width (set per size class below)
+       that scales the rendered frame up or down. A different art set with
+       a bigger or smaller bevel only needs this number re-tuned. */
+    --btn-slice: 20;
+
+    /* Skins: one image per semantic role. */
+    --btn-primary-image: url('./images/ResourceBar_Single_Btn_Green1.png');
+    --btn-secondary-image: url('./images/ResourceBar_Single_Btn_Grey.png');
+    --btn-accent-image: url('./images/ResourceBar_Single_Btn_Yellow1.png');
+    --btn-danger-image: url('./images/ResourceBar_Single_Btn_Red1.png');
+    --btn-shop-image: url('./images/ResourceBar_Single_Btn_Purple1.png');
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-sizing: border-box;
+    cursor: pointer;
+    pointer-events: auto;
+    font: inherit;
+    font-weight: bold;
+    color: #fff;
+    /* A single soft drop-shadow reads fine on dark/saturated skins but
+       disappears on light ones (e.g. primary green) — stacking it in every
+       direction gives the text a dark outline so it stays legible on any
+       skin color, not just the ones with a dark base. */
+    text-shadow:
+        -1px -1px 1px rgba(0, 0, 0, 0.65),
+        1px -1px 1px rgba(0, 0, 0, 0.65),
+        -1px 1px 1px rgba(0, 0, 0, 0.65),
+        1px 1px 1px rgba(0, 0, 0, 0.65),
+        0 2px 3px rgba(0, 0, 0, 0.45);
+    background: transparent;
+    border-style: solid;
+    border-width: var(--btn-border-width, 16px);
+    border-image-repeat: stretch;
+    /* "fill" is required or the browser drops the center tile, leaving the
+       button hollow — border-image-slice without it only paints the frame. */
+    border-image-slice: var(--btn-slice) fill;
+    border-image-width: var(--btn-border-width, 16px);
+    transition: transform 0.08s ease, filter 0.08s ease;
+}
+
+.btn:hover {
+    filter: brightness(1.06);
+}
+
+.btn:active {
+    transform: scale(0.96);
+    filter: brightness(0.92);
+}
+
+.btn:disabled,
+.btn[disabled] {
+    filter: grayscale(0.6) brightness(0.85);
+    cursor: default;
+    pointer-events: none;
+}
+
+/* ── Roles (hierarchy) ────────────────────────────────────────────────
+   Primary   — the one action you want taken (Start, Continue).
+   Secondary — supporting/neutral actions (Next/skip, Back).
+   Accent    — rewarded/incentivized actions (Revive via ad, Boost).
+   Shop      — monetization/store entry point, given its own identity
+               color so it doesn't read as either "the" action (primary)
+               or a plain utility action (secondary).
+   Danger    — destructive/negative actions (available, unused today).
+*/
+
+.btn-primary {
+    border-image-source: var(--btn-primary-image);
+}
+
+.btn-secondary {
+    border-image-source: var(--btn-secondary-image);
+}
+
+.btn-accent {
+    border-image-source: var(--btn-accent-image);
+}
+
+.btn-shop {
+    border-image-source: var(--btn-shop-image);
+}
+
+.btn-danger {
+    border-image-source: var(--btn-danger-image);
+}
+
+/* ── Sizes ──────────────────────────────────────────────────────────────
+   Each size sets its own --btn-border-width alongside padding/font so the
+   frame's bevel stays proportionate to the button instead of the same
+   fixed thickness looking chunky on sm and thin on lg. */
+
+.btn-sm {
+    --btn-border-width: 12px;
+    padding: 6px 14px;
+    font-size: 13px;
+}
+
+.btn-md {
+    --btn-border-width: 16px;
+    padding: 9px 20px;
+    font-size: 15px;
+}
+
+.btn-lg {
+    --btn-border-width: 20px;
+    /* Side padding kept tight (vs. e.g. 28px) so longer translated labels
+       (see Localization) have room to stay on one line instead of wrapping
+       and breaking the pill's fixed height — vertical padding is untouched. */
+    padding: 15px 14px;
+    font-size: 20px;
+}
+
+/* ── Layout helpers ───────────────────────────────────────────────────
+   .btn is inline-flex by default (auto-width pills); add .btn-block for
+   the full-width stacked buttons used in menus/death/end-game columns. */
+
+.btn-block {
+    display: flex;
+    width: 100%;
+}
+
+/* Icon-leading pills (e.g. Shop) hug the icon tighter on the left than the
+   size class's normal padding, without opting out of that size's border/font. */
+.btn-hug-start {
+    padding-left: 8px;
+}
+
+/* ── Icons ────────────────────────────────────────────────────────────
+   Sized to match the button size class they sit in — pick the variant
+   matching the button's own .btn-sm/md/lg, not the icon's own image size. */
+
+.btn-icon {
+    flex-shrink: 0;
+    object-fit: contain;
+}
+
+.btn-icon-sm {
+    width: 22px;
+    height: 22px;
+}
+
+.btn-icon-md {
+    width: 30px;
+    height: 30px;
+}
+
+.btn-icon-lg {
+    width: 34px;
+    height: 34px;
+}
+
+/* ── Motion ───────────────────────────────────────────────────────────
+   Float is meant for a standalone badge (e.g. Boost) that isn't already
+   being positioned via its own inline `transform` — an ancestor wrapper
+   should own centering/placement so this animation's translateY doesn't
+   fight over the same CSS property (see cornerButton in PlayerFlowController). */
+
+.btn-float {
+    animation: btn-float 2.2s ease-in-out infinite;
+}
+
+@keyframes btn-float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+/* Generic attention-getter for any panel (not just buttons) that isn't
+   already animating/positioning its own `transform` — same caveat as
+   .btn-float above. */
+.pulse-scale {
+    animation: pulse-scale 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse-scale {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.06);
+    }
+}
+
+/* Extra-prominent variant for the End Game "New High Score" callout (see
+   PlayerFlowController.newHighScoreCallout) — a bigger scale pulse plus a
+   brightening golden glow, since this moment should read as more of a big
+   deal than the generic .pulse-scale attention-getter above. */
+.high-score-pulse {
+    animation: high-score-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes high-score-pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4), 0 0 0 rgba(255, 215, 115, 0);
+    }
+
+    50% {
+        transform: scale(1.08);
+        box-shadow: 0 3px 18px rgba(0, 0, 0, 0.45), 0 0 20px rgba(255, 215, 115, 0.8);
+    }
+}
+
+
+/* ── Short landscape screens ──────────────────────────────────────────
+   The desktop layout remains unchanged. Only landscape displays with
+   limited vertical space use the compact sizes.
+
+   This deliberately changes the actual button/font/icon dimensions rather
+   than scaling the entire DOM root, so absolute/flex/grid positioning keeps
+   working as authored.
+*/
+
+/* Tablet landscape / moderately short browser windows. */
+@media (orientation: landscape) and (max-height: 760px) {
+    .btn-sm {
+        --btn-border-width: 9px;
+        padding: 4px 10px;
+        font-size: 11px;
+        gap: 5px;
+    }
+
+    .btn-md {
+        --btn-border-width: 12px;
+        padding: 6px 14px;
+        font-size: 13px;
+        gap: 6px;
+    }
+
+    .btn-lg {
+        --btn-border-width: 15px;
+        padding: 10px 12px;
+        font-size: 17px;
+        gap: 6px;
+    }
+
+    .btn-hug-start {
+        padding-left: 6px;
+    }
+
+    .btn-icon-sm {
+        width: 18px;
+        height: 18px;
+    }
+
+    .btn-icon-md {
+        width: 24px;
+        height: 24px;
+    }
+
+    .btn-icon-lg {
+        width: 28px;
+        height: 28px;
+    }
+
+    /* Main game/menu logo. */
+    .menu-logo {
+        max-width: min(340px, 42vw);
+        max-height: 90px;
+        object-fit: contain;
+    }
+
+    /* High-score pill displayed below the logo. */
+    .high-score-badge {
+        min-height: 36px;
+        padding: 4px 14px;
+        gap: 6px;
+        font-size: 13px;
+        border-radius: 18px;
+        box-sizing: border-box;
+    }
+
+    .high-score-badge img,
+    .high-score-badge .high-score-icon {
+        width: 21px;
+        height: 21px;
+        object-fit: contain;
+    }
+
+    /* Username/name input. */
+    .player-name-input {
+        min-height: 44px;
+        padding: 7px 42px 7px 16px;
+        font-size: 15px;
+        box-sizing: border-box;
+    }
+
+    /* Smaller movement so floating elements consume less vertical room. */
+    @keyframes btn-float {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-4px);
+        }
+    }
+}
+
+/* Phone landscape / very short embedded playable-ad viewports. */
+@media (orientation: landscape) and (max-height: 560px) {
+    .btn-sm {
+        --btn-border-width: 7px;
+        padding: 3px 8px;
+        font-size: 9px;
+        gap: 4px;
+    }
+
+    .btn-md {
+        --btn-border-width: 9px;
+        padding: 4px 10px;
+        font-size: 11px;
+        gap: 4px;
+    }
+
+    .btn-lg {
+        --btn-border-width: 12px;
+        padding: 7px 10px;
+        font-size: 14px;
+        gap: 5px;
+    }
+
+    .btn-hug-start {
+        padding-left: 5px;
+    }
+
+    .btn-icon-sm {
+        width: 15px;
+        height: 15px;
+    }
+
+    .btn-icon-md {
+        width: 19px;
+        height: 19px;
+    }
+
+    .btn-icon-lg {
+        width: 23px;
+        height: 23px;
+    }
+
+    .menu-logo {
+        max-width: min(270px, 36vw);
+        max-height: 65px;
+    }
+
+    .high-score-badge {
+        min-height: 29px;
+        padding: 3px 11px;
+        gap: 5px;
+        font-size: 10px;
+        border-radius: 15px;
+    }
+
+    .high-score-badge img,
+    .high-score-badge .high-score-icon {
+        width: 17px;
+        height: 17px;
+    }
+
+    .player-name-input {
+        min-height: 34px;
+        padding: 5px 34px 5px 12px;
+        font-size: 12px;
+    }
+
+    .menu-header {
+        top: 18px !important;
+    }
+
+    .menu-logo-content {
+        display: none !important;
+    }
+
+    .menu-high-score {
+        padding: 4px 14px !important;
+        gap: 6px !important;
+    }
+
+    .menu-high-score img {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .menu-high-score span {
+        line-height: 1;
+    }
+}
+
+/* Extremely short playable-ad or iframe viewport. */
+@media (orientation: landscape) and (max-height: 450px) {
+    .btn-md {
+        --btn-border-width: 7px;
+        padding: 3px 8px;
+        font-size: 9px;
+    }
+
+
+    .btn-lg {
+        --btn-border-width: 9px;
+        padding: 5px 8px;
+        font-size: 11px;
+    }
+
+    .btn-icon-md {
+        width: 16px;
+        height: 16px;
+    }
+
+    .btn-icon-lg {
+        width: 19px;
+        height: 19px;
+    }
+
+    .menu-logo {
+        max-width: min(150px, 32vw);
+        max-height: 40px;
+    }
+
+    .high-score-badge {
+        min-height: 24px;
+        padding: 2px 9px;
+        font-size: 8px;
+    }
+
+    .high-score-badge img,
+    .high-score-badge .high-score-icon {
+        width: 14px;
+        height: 14px;
+    }
+
+    .player-name-input {
+        min-height: 28px;
+        padding: 3px 28px 3px 10px;
+        font-size: 10px;
+    }
+}

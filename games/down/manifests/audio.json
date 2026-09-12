@@ -1,0 +1,313 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "Applause-Cheering.mp3"
+          ],
+          "src": [
+            "Applause-Cheering.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Bubbles.wav"
+          ],
+          "src": [
+            "Bubbles.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Explosion_01.mp3"
+          ],
+          "src": [
+            "Explosion_01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Explosion_02.mp3"
+          ],
+          "src": [
+            "Explosion_02.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Explosion_03.mp3"
+          ],
+          "src": [
+            "Explosion_03.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "From-Here-on-In-Everet-Almond.mp3"
+          ],
+          "src": [
+            "From-Here-on-In-Everet-Almond.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Tap.wav"
+          ],
+          "src": [
+            "Tap.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Whoosh.wav"
+          ],
+          "src": [
+            "Whoosh.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "diamond-sparkle.mp3"
+          ],
+          "src": [
+            "diamond-sparkle.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "drop.wav"
+          ],
+          "src": [
+            "drop.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "footstep_wood_000.ogg"
+          ],
+          "src": [
+            "footstep_wood_000.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "footstep_wood_001.ogg"
+          ],
+          "src": [
+            "footstep_wood_001.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "footstep_wood_002.ogg"
+          ],
+          "src": [
+            "footstep_wood_002.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "footstep_wood_003.ogg"
+          ],
+          "src": [
+            "footstep_wood_003.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "footstep_wood_004.ogg"
+          ],
+          "src": [
+            "footstep_wood_004.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay1.wav"
+          ],
+          "src": [
+            "hpp-yay1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay2.wav"
+          ],
+          "src": [
+            "hpp-yay2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay3.wav"
+          ],
+          "src": [
+            "hpp-yay3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "hpp-yay4.wav"
+          ],
+          "src": [
+            "hpp-yay4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "impactMetal_heavy_001.ogg"
+          ],
+          "src": [
+            "impactMetal_heavy_001.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "impactMetal_heavy_002.ogg"
+          ],
+          "src": [
+            "impactMetal_heavy_002.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "impactMetal_heavy_003.ogg"
+          ],
+          "src": [
+            "impactMetal_heavy_003.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "impactSoft_medium_000.ogg"
+          ],
+          "src": [
+            "impactSoft_medium_000.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "impactSoft_medium_001.ogg"
+          ],
+          "src": [
+            "impactSoft_medium_001.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "impactSoft_medium_002.ogg"
+          ],
+          "src": [
+            "impactSoft_medium_002.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "impactSoft_medium_003.ogg"
+          ],
+          "src": [
+            "impactSoft_medium_003.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "impactSoft_medium_004.ogg"
+          ],
+          "src": [
+            "impactSoft_medium_004.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "lowDown.ogg"
+          ],
+          "src": [
+            "lowDown.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "music.mp3"
+          ],
+          "src": [
+            "music.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ocean-ambient.mp3"
+          ],
+          "src": [
+            "ocean-ambient.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "pepSound3.ogg"
+          ],
+          "src": [
+            "pepSound3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "pepSound4.ogg"
+          ],
+          "src": [
+            "pepSound4.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "pepSound5.ogg"
+          ],
+          "src": [
+            "pepSound5.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "phaseJump1.ogg"
+          ],
+          "src": [
+            "phaseJump1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "phaserDown2.ogg"
+          ],
+          "src": [
+            "phaserDown2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "phaserDown3.ogg"
+          ],
+          "src": [
+            "phaserDown3.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "phaserUp2.ogg"
+          ],
+          "src": [
+            "phaserUp2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "tapped.wav"
+          ],
+          "src": [
+            "tapped.mp3"
+          ]
+        }
+      ]
+    }
+  ]
+}

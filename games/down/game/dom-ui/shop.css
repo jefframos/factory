@@ -1,0 +1,175 @@
+/*
+ * Shop screen layout — fixed 700px-wide card grid that degrades via media
+ * queries on narrower viewports instead of ever horizontal-scrolling.
+ * 5 columns at full size, 4 once the box drops below its fixed width —
+ * never fewer than 4; only card/icon sizes shrink further from there.
+ *
+ * Each card is itself a button now (see ShopScreen.shopItemCard), colored
+ * per role by reusing buttons.css's own --btn-*-image vars/slice — accent
+ * (yellow) = needs an ad, primary (green) = free achievement equip,
+ * secondary (grey) = locked or already-equipped.
+ */
+
+.shop-box {
+    width: 700px;
+    /* Rendered into PlayerFlowController's ModalOverlay box (see
+       ShopScreen.renderShopScreen) — % here resolves against the viewport
+       itself, so this alone keeps it from ever overflowing on narrow screens
+       without needing a breakpoint. */
+    max-width: 92vw;
+    box-sizing: border-box;
+}
+
+.shop-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 6px 4px 10px;
+    margin: 14px 0;
+}
+
+.shop-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0px;
+    padding: 0px 4px;
+    box-sizing: border-box;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    border-style: solid;
+    border-width: 12px;
+    border-image-repeat: stretch;
+    border-image-slice: var(--btn-slice, 20) fill;
+    border-image-width: 16px;
+    min-width: 0;
+    /* let grid columns shrink the card instead of overflowing */
+}
+
+.shop-card-accent {
+    border-image-source: var(--btn-accent-image);
+}
+
+.shop-card-primary {
+    border-image-source: var(--btn-primary-image);
+}
+
+.shop-card-secondary {
+    border-image-source: var(--btn-secondary-image);
+}
+
+/* Currently-equipped item — reuses the Shop role's purple skin (ResourceBar_Single_Btn_Purple1) instead of the grey used for locked items, so "equipped" reads distinctly from "locked" (see ShopScreen.shopItemCard). */
+.shop-card-equipped {
+    border-image-source: var(--btn-shop-image);
+}
+
+/* Whole-card click target (see ShopScreen.shopItemCard) — the card itself is
+   a <button> now when actionable, so it needs its own pointer/hover/disabled
+   treatment instead of relying on a nested .btn. */
+.shop-card-clickable {
+    cursor: pointer;
+    transition: transform 0.08s ease, filter 0.08s ease;
+}
+
+.shop-card-clickable:hover {
+    filter: brightness(1.08);
+}
+
+.shop-card-clickable:active {
+    transform: scale(0.97);
+}
+
+.shop-card-clickable:disabled {
+    filter: grayscale(0.5) brightness(0.85);
+    cursor: default;
+}
+
+.shop-card-icon {
+    width: 82px;
+    height: 82px;
+    object-fit: contain;
+}
+
+/* Plain icon+text row — no chrome of its own now that the whole card carries
+   the role color (see ShopScreen.actionLabel). */
+.shop-label {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 15px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow:
+        -1px -1px 1px rgba(0, 0, 0, 0.65),
+        1px -1px 1px rgba(0, 0, 0, 0.65),
+        -1px 1px 1px rgba(0, 0, 0, 0.65),
+        1px 1px 1px rgba(0, 0, 0, 0.65);
+    pointer-events: none;
+}
+
+.shop-label-icon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+/* Below ~760px, 92vw is already narrower than the 700px fixed width would
+   have been — drop to 4 columns here (the floor — never fewer) and shrink
+   the cards to match. */
+@media (max-width: 760px) {
+    .shop-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+    }
+
+    .shop-card {
+        border-width: 12px;
+        padding: 8px 3px 6px;
+    }
+
+    .shop-card-icon {
+        width: 64px;
+        height: 64px;
+    }
+
+    .shop-label {
+        font-size: 9px;
+        gap: 3px;
+    }
+
+    .shop-label-icon {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .shop-grid {
+        gap: 5px;
+    }
+
+    .shop-card {
+        border-width: 8px;
+        padding: 5px 2px 4px;
+    }
+
+    .shop-card-icon {
+        width: 52px;
+        height: 52px;
+    }
+
+    .shop-label {
+        font-size: 7px;
+        gap: 2px;
+    }
+
+    .shop-label-icon {
+        width: 14px;
+        height: 14px;
+    }
+}

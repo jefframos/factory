@@ -1,0 +1,1069 @@
+// FaceTowerGameController.ts
+
+import type { BasePhysicsEntity } from 'core/phyisics/entities/BaseEntity';
+import * as PIXI from 'pixi.js';
+import { FaceTowerBlockController } from './FaceTowerBlockController';
+import {
+    FaceTowerInputController,
+} from './FaceTowerInputController';
+import {
+    FaceTowerState,
+    type FaceTowerBlock,
+    type FaceTowerConfig,
+    type PowerupEffectConfig,
+} from './FaceTowerTypes';
+import { PieceManager } from './PieceManager';
+import { type PieceDefinition } from './PieceStorage';
+import { getPowerup } from './PowerupStorage';
+import { PowerupSystem, type PowerupContactPoint } from './PowerupSystem';
+import { TowerCameraController } from './TowerCameraController';
+import { TowerDeadZoneController } from './TowerDeadZoneController';
+import { resolveIslandForZone } from './TowerIslandProgression';
+import { TowerLevelController, type ZoneAdvanceResult } from './TowerLevelController';
+import { TowerMergeController } from './TowerMergeController';
+import { TowerMergeProximityController } from './TowerMergeProximityController';
+import { TowerTrapdoorController } from './TowerTrapdoorController';
+import { TowerZoneController } from './TowerZoneController';
+
+export interface FaceTowerGameEvents {
+    onScoreChanged?(score: number): void;
+    /** Fired the instant a weight milestone is reached and the trapdoor sequence begins (renamed from the old height-based onMilestoneReached — there's no line being "reached" any more, just a weight threshold that opens the floor). */
+    onTrapdoorOpened?(zoneIndex: number): void;
+    /** Fired once every zone of the current level is complete and play has rolled over into the next level — see TowerLevelController. Never fires again once the last authored level is reached; its zones just keep repeating. */
+    onLevelProgressed?(levelIndex: number): void;
+    /** `topWorldY` is the run's final climbed height (world Y, see getCurrentTopWorldY()) — same value TowerHeightGauge/TowerHeightMarkers3D convert to meters/km for their own display, for the game-over popup to show alongside the score. */
+    onGameOver?(score: number, topWorldY: number): void;
+    /** Fired the instant a piece is released and physics takes over — the "shoot" moment. See dropBlock(). */
+    onBlockDropped?(block: FaceTowerBlock): void;
+    /**
+     * Fired once per block, on its first physical contact with anything —
+     * the "jiggle" moment. `contactPoint` is a best-effort 2D physics
+     * position; `hitBlock` is whichever other block was struck (undefined
+     * for a base/wall). See FaceTowerBlockController.registerCollisionListener
+     * and TowerVfxUtils.onFirstTouchVfx, the intended consumer for VFX tuning.
+     */
+    onBlockFirstHit?(block: FaceTowerBlock, contactPoint: PowerupContactPoint, hitBlock: FaceTowerBlock | undefined): void;
+    /**
+     * Fired the instant a powerup piece touches ANY block (before its
+     * destroy queue gets around to actually removing it, which can lag
+     * behind on a busy touch) — `contactPoint` is the touched block's own
+     * 2D physics position. Meant purely for reactive VFX: a particle burst
+     * + camera shake for the bomb/super-bomb — see PowerupSystem's own
+     * `onTouch` constructor param, which this just forwards. `actionBlock`
+     * is the falling powerup piece itself.
+     */
+    onPowerupTouch?(block: FaceTowerBlock, contactPoint: PowerupContactPoint, powerup: PowerupEffectConfig, actionBlock: FaceTowerBlock): void;
+    /** Fired whenever the upcoming piece changes — see spawnNextBlock()/getNextPiece(). Powerups swapped in via spawnPowerup() don't count as "next" and never fire this. */
+    onNextPieceChanged?(piece: PieceDefinition): void;
+    /**
+     * Fired the instant a merge resolves — score is already applied (see
+     * handleMerge()) by the time this fires, so this is purely for
+     * VFX/popup wiring (see TowerVfxUtils.onScorePopVfx /
+     * TowerScorePopupUtils.popAt in IslandViewScene). `resultPiece` is
+     * undefined for a top-tier + top-tier despawn (both pieces vanish for a
+     * bonus, nothing spawned). (x, y) are 2D physics world coords — the
+     * merged pair's midpoint.
+     */
+    onMerge?(resultPiece: PieceDefinition | undefined, x: number, y: number, points: number): void;
+}
+
+export class FaceTowerGameController {
+    private readonly camera: TowerCameraController;
+    private readonly blocks: FaceTowerBlockController;
+    private readonly zones: TowerZoneController;
+    private readonly levels: TowerLevelController;
+    private readonly deadZones: TowerDeadZoneController;
+    private readonly pieces: PieceManager;
+    private readonly powerups: PowerupSystem;
+    private readonly merges: TowerMergeController;
+    private readonly mergeProximity: TowerMergeProximityController;
+    private readonly trapdoor: TowerTrapdoorController;
+    private readonly input: FaceTowerInputController;
+
+    private state = FaceTowerState.Initialising;
+    private score = 0;
+
+    /** Set true by beginTrapdoor() whenever that milestone also leveled up — read (and cleared) once the trapdoor sequence finishes, to detour into WaitingForNotification instead of spawning the next piece immediately. See finishTrapdoor(). */
+    private pendingLevelUpHold = false;
+    /** The level just reached, set alongside pendingLevelUpHold — read (and cleared) by finishTrapdoor(), which is what actually fires onLevelProgressed now (see its own doc for why that moved off beginTrapdoor()). */
+    private pendingLevelUpIndex?: number;
+    /** A piece that was hovering over the drop area when a trapdoor opened out from under it — remembered so it reappears unchanged once play resumes instead of being swapped for a freshly rolled one. See beginTrapdoor()/finishTrapdoor(). */
+    private pendingHeldPiece?: PieceDefinition;
+
+    /** Counts down FaceTowerConfig.trapdoorSettleDelay once TrapdoorSettling begins — see update()/finishTrapdoor(). */
+    private postTrapdoorSettleTimer = 0;
+
+    /**
+     * True from the instant a trapdoor begins until the player's first
+     * REAL drop (see dropBlock()) once play resumes — suppresses the
+     * top-line game-over check for that whole span (trapdoor open/fall/
+     * settle, any level-up popup, and the following piece just hovering),
+     * so a still-bouncing just-landed pile — or the board simply sitting
+     * there while a popup is up — can never end the run before the player
+     * has even had a chance to act on the new zone. See beginTrapdoor()/
+     * dropBlock()/update().
+     */
+    private suppressGameOverUntilDrop = false;
+
+    /**
+     * Pieces dropped in the CURRENT zone — see checkWeightMilestone()'s
+     * minDropsPerZone gate. Reset every time a new zone begins
+     * (beginTrapdoor()), incremented on every real drop (dropBlock()).
+     */
+    private dropsThisZone = 0;
+
+    /**
+     * Wall/pole height (px) for the current floor — always enough to reach
+     * containmentTopBuffer past the fixed game-over line (see
+     * computeContainmentWallHeight()), NOT a fraction of trapdoorDropHeight/
+     * zone size. A shorter, zone-derived height used to leave a gap above
+     * the walls that a tall pile (or a trapdoor's uncontained mid-fall
+     * drift) could tip/roll sideways through into the instant-death dead
+     * zones — this game's invariant is that entities never leave the play
+     * column at all, so the walls must always physically span the whole
+     * reachable column, not just a cosmetic "pole" near the base.
+     */
+    private currentWallHeight: number;
+
+    /**
+     * Highest tier ever produced by a merge this run — drives rollPiece()'s
+     * spawn pool (see its own doc) so the range of freshly-droppable pieces
+     * widens as the player actually progresses, instead of being tied to
+     * how many trapdoors have fired. Starts at 0 (only the lowest tier
+     * exists at the run's very start); a top-tier + top-tier despawn (see
+     * TowerMergeController, resultPiece undefined) doesn't need to bump
+     * this further — reaching that already required the tier below it.
+     */
+    private maxTierReached = 0;
+
+    /** The piece just released, still waited on before the next one spawns — see updateDropWait(). Cleared once its own hasJiggled flips true or the fallback timeout elapses. */
+    private droppedBlock?: FaceTowerBlock;
+    private dropWaitTimer = 0;
+
+    /** Seconds the pile's top has continuously sat at/above the game-over line — see updateGameOverLine(). */
+    private gameOverLineTimer = 0;
+
+    private targetX: number;
+    /** Rolled one spawn ahead — see spawnNextBlock()/rollPiece(). Lets getNextPiece() answer "what's coming after this one" before it actually spawns. */
+    private nextPiece?: PieceDefinition;
+
+    public constructor(
+        worldRoot: PIXI.Container,
+        overlayRoot: PIXI.Container,
+        coordinateRoot: PIXI.Container,
+        private readonly config: FaceTowerConfig,
+        private readonly events: FaceTowerGameEvents = {},
+    ) {
+        this.targetX =
+            (config.minBlockX + config.maxBlockX) * 0.5;
+
+        this.camera = new TowerCameraController(
+            worldRoot,
+            config.cameraPanSpeed,
+        );
+
+        this.blocks = new FaceTowerBlockController(
+            worldRoot,
+            config,
+            this.camera,
+            (block, contactPoint, hitBlock) => this.events.onBlockFirstHit?.(block, contactPoint, hitBlock),
+            (block, otherBlock) => this.merges.notifyTouch(block, otherBlock),
+            (blockId) => this.merges.cancelBlock(blockId),
+        );
+
+        this.powerups = new PowerupSystem(
+            this.blocks,
+            (block, contactPoint, powerup, actionBlock) => this.events.onPowerupTouch?.(block, contactPoint, powerup, actionBlock),
+        );
+
+        this.levels = new TowerLevelController();
+
+        const initialZoneConfig = this.levels.getCurrentZoneConfig();
+        this.currentWallHeight = this.computeContainmentWallHeight();
+
+        this.zones = new TowerZoneController(initialZoneConfig.weight);
+
+        this.pieces = new PieceManager();
+        this.pieces.build();
+
+        this.merges = new TowerMergeController(
+            this.blocks,
+            this.pieces,
+            (resultPiece, x, y, points) => this.handleMerge(resultPiece, x, y, points),
+        );
+
+        this.mergeProximity = new TowerMergeProximityController(
+            this.blocks,
+            this.merges,
+            config,
+        );
+
+        this.deadZones = new TowerDeadZoneController(
+            worldRoot,
+            config,
+        );
+
+        this.deadZones.setOnHit(() => this.gameOver());
+
+        this.trapdoor = new TowerTrapdoorController(
+            this.blocks,
+            this.deadZones,
+            this.camera,
+            config,
+            () => resolveIslandForZone(this.levels.getLevelIndex(), this.levels.getZoneIndexInLevel()).island.basePieceId,
+        );
+
+        this.input = new FaceTowerInputController(
+            overlayRoot,
+            coordinateRoot,
+            {
+                onMove: x => this.moveBlock(x),
+                onRelease: () => this.dropBlock(),
+            },
+            config.tapMovesPieceOnDrop,
+        );
+    }
+
+    public start(): void {
+        this.blocks.initialise(resolveIslandForZone(this.levels.getLevelIndex(), this.levels.getZoneIndexInLevel()).island.basePieceId);
+        this.deadZones.rebuild(this.config.floorY, this.currentWallHeight);
+
+        this.score = 0;
+        this.events.onScoreChanged?.(this.score);
+
+        this.spawnNextBlock();
+    }
+
+    /** Tears the run down and starts a brand-new tower from scratch. */
+    public reset(): void {
+        this.blocks.destroy();
+        this.deadZones.clear();
+        this.powerups.clear();
+        this.merges.clear();
+        this.camera.reset();
+
+        this.levels.reset();
+        const zoneConfig = this.levels.getCurrentZoneConfig();
+        this.currentWallHeight = this.computeContainmentWallHeight();
+
+        this.zones.reset(zoneConfig.weight);
+        this.nextPiece = undefined;
+        this.pendingLevelUpHold = false;
+        this.pendingLevelUpIndex = undefined;
+        this.pendingHeldPiece = undefined;
+        this.droppedBlock = undefined;
+        this.dropWaitTimer = 0;
+        this.gameOverLineTimer = 0;
+        this.maxTierReached = 0;
+        this.postTrapdoorSettleTimer = 0;
+        this.suppressGameOverUntilDrop = false;
+        this.dropsThisZone = 0;
+
+        this.state = FaceTowerState.Initialising;
+
+        this.start();
+    }
+
+    public update(delta: number): void {
+        this.camera.update(delta);
+        this.blocks.update(delta);
+        // Runs unconditionally, same as merges.update() itself — merges
+        // (real-collision AND proximity-forgiven alike) keep firing through
+        // every state, trapdoor fall included.
+        this.mergeProximity.update();
+        this.merges.update();
+
+        /*
+         * Change this conversion if your engine already supplies milliseconds.
+         *
+         * Pixi commonly supplies a frame-based delta where approximately
+         * 1 means one 60 Hz frame.
+         */
+
+        const deathWorldY = this.camera.toWorldY(
+            this.config.deathScreenY,
+        );
+
+        // Watches for an active powerup piece falling past the bottom of
+        // the column — cheap no-op unless one's currently dropped. Run
+        // unconditionally (not just during PowerupEffect) since it's the
+        // thing that eventually MAKES isBusy() go false below.
+        this.powerups.update(deathWorldY);
+
+        if (this.state === FaceTowerState.GameOver) {
+            return;
+        }
+
+        if (this.state === FaceTowerState.PowerupEffect) {
+            if (!this.powerups.isBusy()) {
+                this.spawnNextBlock();
+            }
+
+            return;
+        }
+
+        if (this.trapdoor.isActive()) {
+            this.state = this.trapdoor.getPhase() === 'opening'
+                ? FaceTowerState.TrapdoorOpening
+                : FaceTowerState.TrapdoorFalling;
+
+            if (this.trapdoor.update(delta)) {
+                // The floor's placed and the camera's done panning, but
+                // don't call finishTrapdoor() yet — give the pile an
+                // explicit beat (see FaceTowerConfig.trapdoorSettleDelay)
+                // to actually finish crashing down/settling first, so
+                // neither the next piece nor a level-up popup appears
+                // while things are still visibly falling.
+                this.state = FaceTowerState.TrapdoorSettling;
+                this.postTrapdoorSettleTimer = this.config.trapdoorSettleDelay;
+            }
+
+            // Game-over-line/weight checks are paused for the whole
+            // trapdoor sequence — see TowerTrapdoorController's own doc.
+            return;
+        }
+
+        if (this.state === FaceTowerState.TrapdoorSettling) {
+            this.postTrapdoorSettleTimer -= delta;
+
+            if (this.postTrapdoorSettleTimer <= 0) {
+                this.finishTrapdoor();
+            }
+
+            return;
+        }
+
+        // WaitingForNotification falls through here too — deliberately
+        // does nothing until resumeAfterLevelUpNotification() is called.
+        if (this.state === FaceTowerState.WaitingForNotification) {
+            return;
+        }
+
+        if (this.state === FaceTowerState.DroppingBlock) {
+            this.updateDropWait(delta);
+        }
+
+        // See suppressGameOverUntilDrop's own doc — stays true clear
+        // through TrapdoorSettling/WaitingForNotification/the following
+        // piece just hovering, only clearing on the player's next REAL
+        // drop (dropBlock()), so nothing here can end the run before
+        // they've had a chance to act on the new zone.
+        if (!this.suppressGameOverUntilDrop && this.updateGameOverLine(delta)) {
+            return;
+        }
+
+        this.checkWeightMilestone();
+    }
+
+    public resizeInput(
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+    ): void {
+        this.input.resize(x, y, width, height);
+    }
+
+    /** See FaceTowerInputController.setEnabled's own doc — stops the drag/drop input layer from responding at all, independent of whether anything is currently rendering. */
+    public setInputEnabled(enabled: boolean): void {
+        this.input.setEnabled(enabled);
+    }
+
+    public getState(): FaceTowerState {
+        return this.state;
+    }
+
+    /** How far (design-space px) the 2D camera has scrolled — for pairing a 3D camera to it. */
+    public getCameraOffsetY(): number {
+        return this.camera.getOffsetY();
+    }
+
+    /** Live physics blocks — for mirroring each one as a 3D cube. */
+    public getBlocks(): readonly FaceTowerBlock[] {
+        return this.blocks.getBlocks();
+    }
+
+    /** The piece currently hovering over the drop area (undefined once dropped) — see TowerBlockSync3D's landing-preview strip. */
+    public getHeldBlock(): FaceTowerBlock | undefined {
+        return this.blocks.getHeldBlock();
+    }
+
+    /** The piece that will spawn once the current one is dropped (and, mid-trapdoor, settles) — see spawnNextBlock(). Undefined only before the very first spawn. */
+    public getNextPiece(): PieceDefinition | undefined {
+        return this.nextPiece;
+    }
+
+    /** Every flap base currently placed — practically always exactly two, the current floor's left/right flaps (a trapdoor removes both of the old floor's flaps before the new floor's pair is placed) — see FaceTowerBlockController.addBase(). */
+    public getBases() {
+        return this.blocks.getBases();
+    }
+
+    /** Whichever STATIC_PIECES id `base` actually resolved to — see FaceTowerBlockController.getBasePieceId(), TowerBaseSync3D's sole consumer. */
+    public getBasePieceId(base: BasePhysicsEntity): string | undefined {
+        return this.blocks.getBasePieceId(base);
+    }
+
+    /**
+     * World Y of the tower's current top — the highest live (non-powerup)
+     * block, or the current base's own Y when nothing's stacked on it yet
+     * — see TowerHeightGauge, which converts this to a screen Y and a
+     * meters display value.
+     */
+    public getCurrentTopWorldY(): number {
+        const topWorldY = this.blocks.getHighestTopWorldY();
+
+        if (Number.isFinite(topWorldY)) {
+            return topWorldY;
+        }
+
+        return this.blocks.getCurrentFloorY();
+    }
+
+    /** World Y of the fixed top game-over line — same screen position always (see FaceTowerConfig.gameOverLineScreenY), converted through the camera's current pan so 3D/world-space consumers can track it. */
+    public getGameOverLineWorldY(): number {
+        return this.camera.toWorldY(this.config.gameOverLineScreenY);
+    }
+
+    /** Current total board weight — see FaceTowerBlockController.getTotalWeight(). */
+    public getTotalWeight(): number {
+        return this.blocks.getTotalWeight();
+    }
+
+    /** The weight the current zone's trapdoor milestone needs — see TowerZoneController.getTargetWeight(). */
+    public getTargetWeight(): number {
+        return this.zones.getTargetWeight();
+    }
+
+    /** 0..1 fraction of progress toward the current zone's weight milestone — see TowerNextLevelPanel. */
+    public getWeightProgress(): number {
+        const target = this.zones.getTargetWeight();
+
+        if (target <= 0) {
+            return 0;
+        }
+
+        return Math.max(0, Math.min(1, this.blocks.getTotalWeight() / target));
+    }
+
+    /** The side containment poles for the current floor — see TowerDeadZoneController. */
+    public getWalls() {
+        return this.deadZones.getWalls();
+    }
+
+    /** Current wall/pole height (px) — see computeContainmentWallHeight(). See TowerWallSync3D.sync(). */
+    public getWallHeight(): number {
+        return this.currentWallHeight;
+    }
+
+    /**
+     * Always `floorScreenY - gameOverLineScreenY + containmentTopBuffer` —
+     * a fixed screen-space span, so the containment walls always reach at
+     * least `containmentTopBuffer` past the game-over line regardless of
+     * which floor/zone/level is current (the camera keeps floorScreenY
+     * pinned to whichever floor is active, so this world-px height is
+     * correct relative to ANY settled floor, not just the starting one).
+     * Deliberately NOT derived from trapdoorDropHeight/zoneConfig.polePercent
+     * any more — that let the walls fall short of the line entirely,
+     * leaving a gap a tall pile (or a trapdoor's mid-fall drift) could tip
+     * sideways through into the instant-death dead zones.
+     */
+    private computeContainmentWallHeight(): number {
+        return this.config.floorScreenY - this.config.gameOverLineScreenY + this.config.containmentTopBuffer;
+    }
+
+    /** 0-based progression tier (see TowerLevelController) — drives the trapdoor/weight-milestone pacing and island/sky theming. No longer what gates the piece spawn pool — see rollPiece()'s own doc, which now scales off maxTierReached instead. */
+    public getLevelIndex(): number {
+        return this.levels.getLevelIndex();
+    }
+
+    /** 0-based zone index within the CURRENT level — resets to 0 every level-up. See TowerIslandProgression.resolveIslandForZone(). */
+    public getZoneIndexInLevel(): number {
+        return this.levels.getZoneIndexInLevel();
+    }
+
+    /** Total zones completed this ENTIRE run — never resets per level (only on a full reset()). See TowerZoneController.getZoneIndex()/TowerIslandProgression.getSkyCycleColor(). */
+    public getZoneIndex(): number {
+        return this.zones.getZoneIndex();
+    }
+
+    /** True once the last authored level (see levels-config.json) has been reached — its zones repeat forever from here on. */
+    public isFinalLevel(): boolean {
+        return this.levels.isFinalLevel();
+    }
+
+    /** How far (km) the CURRENT level's own destination is — levels-config.json's distanceFromPreviousKm, 0 if that level doesn't define one. See getLevelProgressFraction() for scaling this into an in-progress "how far traveled" readout. */
+    public getLevelDistanceKm(): number {
+        return this.levels.getCurrentLevelConfig()?.distanceFromPreviousKm ?? 0;
+    }
+
+    /**
+     * 0..1 continuous progress through the CURRENT level's zones —
+     * (zoneIndexInLevel + fractional progress toward the current zone's own
+     * weight milestone) / zoneCount. Multiply by getLevelDistanceKm() for a
+     * live "how far traveled toward this level's destination" value.
+     */
+    public getLevelProgressFraction(): number {
+        const zoneCount = Math.max(1, this.levels.getZoneCount());
+        const fraction = (this.levels.getZoneIndexInLevel() + this.getWeightProgress()) / zoneCount;
+
+        return Math.max(0, Math.min(1, fraction));
+    }
+
+    public getScore(): number {
+        return this.score;
+    }
+
+    /** Call after changing block size/bevel/stroke config at runtime — see FaceTowerBlockController.invalidateBodyTexture(). */
+    public invalidateBlockTexture(): void {
+        this.blocks.invalidateBodyTexture();
+    }
+
+    /**
+     * Dev-only: swaps whatever's currently hovering over the drop area for
+     * `piece` — a no-op unless a block is actually being held (i.e. the
+     * player hasn't already dropped it), since there's nothing to replace
+     * otherwise. See IslandViewScene.setupPieceDevGui.
+     */
+    public replaceHeldBlockWithPiece(piece: PieceDefinition): void {
+        if (this.state !== FaceTowerState.MovingBlock) {
+            return;
+        }
+
+        this.blocks.discardHeldBlock();
+        this.blocks.spawnHeldBlock(this.targetX, piece);
+    }
+
+    /**
+     * Dev-only: swaps whatever's currently hovering over the drop area for
+     * `powerupId`'s own embedded shape (see PowerupDefinition.piece) — same
+     * guard and mechanics as replaceHeldBlockWithPiece, plus tagging the
+     * held block as a powerup so releaseHeldBlock/PowerupSystem treat it
+     * specially once dropped. `id`/`level` are synthesized since the
+     * embedded shape doesn't carry them (see PowerupDefinition.piece's
+     * doc). Unknown ids no-op. See PowerupDevGui.
+     */
+    public spawnPowerup(powerupId: string): void {
+        if (this.state !== FaceTowerState.MovingBlock) {
+            return;
+        }
+
+        const powerup = getPowerup(powerupId);
+
+        if (!powerup) {
+            return;
+        }
+
+        const piece: PieceDefinition = {
+            id: `powerup-${powerup.id}`,
+            level: 0,
+            ...powerup.piece,
+        };
+
+        this.blocks.discardHeldBlock();
+        this.blocks.spawnHeldBlock(this.targetX, piece);
+
+        this.blocks.markHeldBlockAsPowerup({
+            stepDelay: powerup.destroyStepDelay,
+            maxTargets: powerup.maxTargets,
+            dropForceY: powerup.dropForceY,
+        });
+    }
+
+    /** True only while a piece is actively hovering/falling toward the drop area — the same guard spawnPowerup()/skipHeldPiece()/replaceHeldBlockWithPiece() already enforce internally, exposed so a HUD button can grey itself out instead of silently no-opping on click. */
+    public canUsePowerup(): boolean {
+        return this.state === FaceTowerState.MovingBlock;
+    }
+
+    /**
+     * Swaps the currently-held piece for the one already queued as "next"
+     * (skipping straight to it instead of waiting to drop the current one),
+     * then rolls a fresh "next" — see the in-game skip-piece HUD button.
+     * Reuses replaceHeldBlockWithPiece()'s own MovingBlock guard, so this is
+     * a no-op at any other time.
+     */
+    public skipHeldPiece(): void {
+        if (this.state !== FaceTowerState.MovingBlock) {
+            return;
+        }
+
+        const piece = this.nextPiece ?? this.rollPiece();
+        this.replaceHeldBlockWithPiece(piece);
+
+        this.nextPiece = this.rollPiece();
+        this.events.onNextPieceChanged?.(this.nextPiece);
+    }
+
+    /**
+     * Call once the level-up popup has actually been dismissed (see
+     * IslandViewScene's LevelUpNotification.onCollect) — resumes play by
+     * spawning the next piece. No-op unless the game is genuinely sitting
+     * in WaitingForNotification (e.g. a stray second call), so this is safe
+     * to call defensively.
+     */
+    public resumeAfterLevelUpNotification(): void {
+        if (this.state !== FaceTowerState.WaitingForNotification) {
+            return;
+        }
+
+        this.spawnNextBlock();
+    }
+
+    public destroy(): void {
+        this.input.destroy();
+        this.blocks.destroy();
+        this.deadZones.clear();
+        this.powerups.destroy();
+        this.merges.clear();
+
+        this.state = FaceTowerState.GameOver;
+    }
+
+    /**
+     * Resumes play after a collapse WITHOUT resetting the tower — clears
+     * out whatever actually fell past the death line (the cause of the
+     * collapse) and spawns the next piece as normal, leaving score and
+     * everything still standing untouched. A no-op unless currently
+     * GameOver.
+     *
+     * TODO: this is meant to be gated behind a rewarded ad — IslandViewScene's
+     * "Continue" button currently calls this directly with no ad in front
+     * of it yet.
+     */
+    public continueRun(): FaceTowerBlock[] {
+        if (this.state !== FaceTowerState.GameOver) {
+            return [];
+        }
+
+        const deathWorldY = this.camera.toWorldY(this.config.deathScreenY);
+
+        for (const block of [...this.blocks.getBlocks()]) {
+            if (!block.powerup && block.entity.body.position.y > deathWorldY) {
+                this.blocks.removeBlock(block);
+            }
+        }
+
+        /*
+         * The collapse can be caused by an OLDER, already-placed piece
+         * toppling into a dead zone well after it settled — completely
+         * unrelated to whatever's currently held (state stays MovingBlock
+         * the whole time, since only the dropped/settled path ever reaches
+         * GameOver via the dead-zone sensors). gameOver() doesn't discard
+         * that held block, so without this, spawnNextBlock() below would
+         * throw straight into spawnHeldBlock()'s "already holding one"
+         * guard. Safe to call unconditionally — a no-op if nothing's
+         * actually held.
+         */
+        this.blocks.discardHeldBlock();
+        this.gameOverLineTimer = 0;
+
+        // spawnNextBlock() itself bails whenever state === GameOver, so
+        // clear that first — it overwrites state again immediately anyway.
+        this.state = FaceTowerState.MovingBlock;
+        this.spawnNextBlock();
+
+        return this.blocks.getBlocks() as FaceTowerBlock[];
+    }
+
+    private moveBlock(x: number): void {
+        if (this.state !== FaceTowerState.MovingBlock) {
+            return;
+        }
+
+        this.targetX = x;
+        this.blocks.moveHeldBlock(x);
+    }
+
+    private dropBlock(): void {
+        if (this.state !== FaceTowerState.MovingBlock) {
+            return;
+        }
+
+        const releasedBlock = this.blocks.releaseHeldBlock();
+
+        if (!releasedBlock) {
+            return;
+        }
+
+        // A real drop — re-arms the game-over check (see
+        // suppressGameOverUntilDrop's own doc) and counts toward this
+        // zone's minDropsPerZone gate (see checkWeightMilestone()),
+        // whether this piece is a normal drop or a powerup.
+        this.suppressGameOverUntilDrop = false;
+        this.dropsThisZone++;
+
+        this.events.onBlockDropped?.(releasedBlock);
+
+        if (releasedBlock.powerup) {
+            /*
+             * A powerup piece never settles into the tower — it just keeps
+             * falling (as a sensor — see releaseHeldBlock) until
+             * PowerupSystem removes it past the bottom of the column, so it
+             * skips DroppingBlock entirely. Parking in PowerupEffect
+             * immediately gates the next spawn on powerups.isBusy() (see
+             * update()) the same way it would if this state were reached
+             * from spawnNextBlock() instead.
+             */
+            this.state = FaceTowerState.PowerupEffect;
+            this.powerups.trackDroppedPiece(releasedBlock);
+            return;
+        }
+
+        this.state = FaceTowerState.DroppingBlock;
+        this.droppedBlock = releasedBlock;
+        this.dropWaitTimer = 0;
+    }
+
+    /**
+     * Replaces the old "wait until the whole pile is fully still"
+     * TowerStabilityController gate — a merge game wants the next piece to
+     * drop while things are still gently settling, not once every last
+     * piece has stopped moving. All that's actually needed is: wait until
+     * the just-released piece's own first real contact (hasJiggled), or a
+     * fixed fallback timeout for a piece that somehow never touches
+     * anything before reaching the floor.
+     */
+    private updateDropWait(delta: number): void {
+        this.dropWaitTimer += delta;
+
+        if (!this.droppedBlock || this.droppedBlock.hasJiggled || this.dropWaitTimer >= this.config.dropWaitFallbackTimeout) {
+            this.droppedBlock = undefined;
+            this.spawnNextBlock();
+        }
+    }
+
+    /**
+     * Continuous top-line game-over check — runs every frame during
+     * MovingBlock/DroppingBlock (paused during the trapdoor sequence/
+     * WaitingForNotification/GameOver, see update()). getHighestTopWorldY()
+     * already excludes anything that hasn't had its own first physical
+     * contact yet, so a piece merely falling past the line mid-drop never
+     * counts — only a piece that's actually landed and STAYED there does.
+     * Returns true the instant this actually ends the run.
+     */
+    private updateGameOverLine(delta: number): boolean {
+        const topWorldY = this.blocks.getHighestTopWorldY();
+        const lineWorldY = this.getGameOverLineWorldY();
+
+        if (Number.isFinite(topWorldY) && topWorldY <= lineWorldY) {
+            this.gameOverLineTimer += delta;
+
+            if (this.gameOverLineTimer >= this.config.gameOverGraceDuration) {
+                this.gameOver();
+                return true;
+            }
+        } else {
+            this.gameOverLineTimer = 0;
+        }
+
+        return false;
+    }
+
+    private checkWeightMilestone(): void {
+        if (this.trapdoor.isActive()) {
+            return;
+        }
+
+        // Merging conserves/compounds weight (a merge result's weight is
+        // exactly its two source pieces' combined weight — see
+        // PieceStorage.getPieceWeight) — never reduces it. Without this
+        // gate, one big lucky cascade could clear the ENTIRE zone's
+        // milestone in a single merge, which feels great in the moment but
+        // skips playing the zone at all. See FaceTowerConfig.minDropsPerZone.
+        if (this.dropsThisZone < this.config.minDropsPerZone) {
+            return;
+        }
+
+        if (!this.zones.hasReachedWeight(this.blocks.getTotalWeight())) {
+            return;
+        }
+
+        this.beginTrapdoor();
+    }
+
+    /**
+     * Kicks off the trapdoor sequence the instant the current zone's weight
+     * milestone is cleared — advances the zone/level bookkeeping right
+     * away (same "advance first, animate after" order the old zone-advance
+     * used) so the next zone's own (higher) target weight and the active
+     * island/sky are already correct by the time the floor actually opens.
+     */
+    private beginTrapdoor(): void {
+        const heldPiece = this.blocks.getHeldBlock()?.piece;
+
+        if (heldPiece) {
+            this.blocks.discardHeldBlock();
+        }
+
+        this.pendingHeldPiece = heldPiece;
+        this.droppedBlock = undefined;
+
+        // Suppress the game-over check for the whole span until the
+        // player's next real drop (see its own doc), and start the NEW
+        // zone's minDropsPerZone tally at 0.
+        this.suppressGameOverUntilDrop = true;
+        this.dropsThisZone = 0;
+
+        // updateGameOverLine() is the ONLY place that increments or resets
+        // this timer — and it's never even called while suppressed (see
+        // update()) — so without this reset, whatever it had already
+        // accumulated to right before this milestone fired (e.g. the pile
+        // was already sitting at/above the line for a moment right as a
+        // big cascade cleared the weight threshold) stays frozen through
+        // the ENTIRE trapdoor sequence, then resumes the instant the
+        // player's next drop clears suppressGameOverUntilDrop — completing
+        // in just a couple more frames instead of a fresh
+        // gameOverGraceDuration, reading as an unfair near-instant loss
+        // right as the new zone starts. Resetting here guarantees a full,
+        // fresh grace window every time, regardless of how close the pile
+        // already was to the line the instant the trapdoor triggered.
+        this.gameOverLineTimer = 0;
+
+        const advance = this.levels.advanceZone();
+        const zoneConfig = this.levels.getCurrentZoneConfig();
+
+        this.currentWallHeight = this.computeContainmentWallHeight();
+
+        const result = this.zones.completeZone(zoneConfig.weight);
+
+        // The milestone is consumed — start the NEXT zone's progress fresh
+        // at 0 rather than leaving the same pieces' weight to instantly
+        // (or near-instantly) clear the next, only slightly higher,
+        // threshold too. See FaceTowerBlockController.resetWeight()'s own
+        // doc for why this doesn't contradict "weight = what's on the
+        // board" even though the pieces themselves aren't going anywhere.
+        this.blocks.resetWeight();
+
+        this.trapdoor.begin(this.currentWallHeight);
+        // Set immediately (not left to next frame's update() to notice via
+        // trapdoor.isActive()) so a moveBlock()/dropBlock() call landing in
+        // the same frame this fired reads the right state right away —
+        // harmless either way since discardHeldBlock() above already left
+        // nothing for those to act on, but this keeps getState() honest.
+        this.state = FaceTowerState.TrapdoorOpening;
+        this.events.onTrapdoorOpened?.(result.zoneIndex);
+
+        // NOTE: onLevelProgressed is NOT fired here any more — see
+        // finishTrapdoor(). Firing it this early meant the level-up popup
+        // (and its powerup grant) appeared instantly, before the flap
+        // swing/fall/settle had even played — "let the pieces fall and
+        // wait a bit before the popup" wasn't possible with the event this
+        // early. Just remember which level was reached; finishTrapdoor()
+        // fires the real event once the pile has actually settled.
+        if (advance.leveledUp) {
+            this.pendingLevelUpHold = true;
+            this.pendingLevelUpIndex = advance.levelIndex;
+        }
+
+        /*
+         * The zone bump means rollPiece()'s level (and thus its pool) just
+         * changed — re-roll right away so the "next piece" preview reflects
+         * what will ACTUALLY spawn once the trapdoor finishes, instead of
+         * staying stale on whatever was rolled under the old zone's level.
+         * Unless a piece was just discarded off the drop area above — that
+         * one takes priority over a fresh roll, for continuity.
+         */
+        this.nextPiece = this.pendingHeldPiece ?? this.rollPiece();
+        this.events.onNextPieceChanged?.(this.nextPiece);
+    }
+
+    /**
+     * Called once TrapdoorSettling's postTrapdoorSettleTimer elapses — the
+     * pile has now had a real beat to finish landing, not just "the floor
+     * is technically placed and the camera stopped." Only NOW does a
+     * level-up actually fire onLevelProgressed (showing its popup) — see
+     * beginTrapdoor()'s own doc for why that moved off the milestone
+     * instant. suppressGameOverUntilDrop stays true right through
+     * whichever branch runs below (WaitingForNotification's whole
+     * duration, or the freshly spawned piece just hovering) — only the
+     * player's own next drop clears it.
+     */
+    private finishTrapdoor(): void {
+        this.pendingHeldPiece = undefined;
+
+        if (this.pendingLevelUpHold) {
+            this.pendingLevelUpHold = false;
+
+            const levelIndex = this.pendingLevelUpIndex ?? this.levels.getLevelIndex();
+            this.pendingLevelUpIndex = undefined;
+
+            this.state = FaceTowerState.WaitingForNotification;
+            this.events.onLevelProgressed?.(levelIndex);
+        } else {
+            this.spawnNextBlock();
+        }
+    }
+
+    /**
+     * Fires the instant a merge resolves — score is bumped immediately
+     * (not deferred/awaited by any state transition, unlike the old
+     * zone-popup flow: merges can cascade several times in a single frame,
+     * and gameplay never pauses for any of it), then forwarded to
+     * FaceTowerGameEvents.onMerge purely for VFX/popup wiring.
+     */
+    private handleMerge(resultPiece: PieceDefinition | undefined, x: number, y: number, points: number): void {
+        this.score += points;
+        this.events.onScoreChanged?.(this.score);
+
+        if (resultPiece?.tier !== undefined) {
+            this.maxTierReached = Math.max(this.maxTierReached, resultPiece.tier);
+        }
+
+        this.events.onMerge?.(resultPiece, x, y, points);
+    }
+
+    /**
+     * Dev-only: instantly advances the current zone (and, if it rolls over,
+     * the level) exactly as if its weight milestone had just been reached
+     * — teleports the floor straight to its new position instead of
+     * running the real TowerTrapdoorController opening/falling beats, so
+     * repeated calls (see devSkipLevel()) can't stack up waiting on
+     * multiple real-time camera pans in a row. See
+     * IslandViewScene.setupLevelDevGui().
+     */
+    private instantAdvanceZone(): ZoneAdvanceResult {
+        const advance = this.levels.advanceZone();
+        const zoneConfig = this.levels.getCurrentZoneConfig();
+
+        this.currentWallHeight = this.computeContainmentWallHeight();
+
+        const result = this.zones.completeZone(zoneConfig.weight);
+        this.blocks.resetWeight();
+        this.dropsThisZone = 0;
+
+        const newFloorY = this.blocks.getCurrentFloorY() + this.config.trapdoorDropHeight;
+
+        // Snapshot before removing — removeBase() mutates the SAME array
+        // getBases() returns (both of the current floor's two flaps), so
+        // iterating it directly while removing would skip an entry.
+        for (const base of [...this.blocks.getBases()]) {
+            this.blocks.removeBase(base);
+        }
+
+        const basePieceId = resolveIslandForZone(this.levels.getLevelIndex(), this.levels.getZoneIndexInLevel()).island.basePieceId;
+        this.blocks.addBase(newFloorY, basePieceId);
+        this.deadZones.rebuild(newFloorY, this.currentWallHeight);
+        this.camera.panTo(this.config.floorScreenY - newFloorY);
+
+        this.events.onTrapdoorOpened?.(result.zoneIndex);
+
+        return advance;
+    }
+
+    /**
+     * Dev-only: force-completes the current zone right away, exactly as if
+     * its weight milestone had just been reached — see
+     * IslandViewScene.setupLevelDevGui(). A no-op once the run has ended or
+     * a real trapdoor is already mid-sequence.
+     */
+    public devSkipZone(): void {
+        if (this.state === FaceTowerState.GameOver || this.trapdoor.isActive()) {
+            return;
+        }
+
+        const advance = this.instantAdvanceZone();
+
+        if (advance.leveledUp) {
+            this.events.onLevelProgressed?.(advance.levelIndex);
+        }
+
+        this.nextPiece = this.rollPiece();
+        this.events.onNextPieceChanged?.(this.nextPiece);
+    }
+
+    /**
+     * Dev-only: repeatedly force-completes zones until the level tier
+     * itself advances — i.e. as many instant zone-completions as the
+     * current level's remaining zoneCount needs. On the final level
+     * there's no next level to reach, so this just force-completes the one
+     * (repeating) zone instead. A no-op once the run has ended or a real
+     * trapdoor is mid-sequence.
+     */
+    public devSkipLevel(): void {
+        if (this.state === FaceTowerState.GameOver || this.trapdoor.isActive()) {
+            return;
+        }
+
+        if (this.levels.isFinalLevel()) {
+            this.devSkipZone();
+            return;
+        }
+
+        const startingLevel = this.levels.getLevelIndex();
+
+        // Guarded against a misconfigured levels-config.json (e.g.
+        // zoneCount <= 0) looping forever — no legitimate level needs
+        // anywhere near this many zones to roll over.
+        for (let i = 0; i < 1000 && this.levels.getLevelIndex() === startingLevel; i++) {
+            const advance = this.instantAdvanceZone();
+
+            if (advance.leveledUp) {
+                this.events.onLevelProgressed?.(advance.levelIndex);
+            }
+        }
+
+        this.nextPiece = this.rollPiece();
+        this.events.onNextPieceChanged?.(this.nextPiece);
+    }
+
+    private spawnNextBlock(): void {
+        if (this.state === FaceTowerState.GameOver) {
+            return;
+        }
+
+        /*
+         * The powerup effect must finish (every queued piece destroyed)
+         * before the next piece appears — mirrors the trapdoor's own
+         * deferred-spawn pattern: park in PowerupEffect and let update()'s
+         * branch above call back in once isBusy() clears.
+         */
+        if (this.powerups.isBusy()) {
+            this.state = FaceTowerState.PowerupEffect;
+            return;
+        }
+
+        const piece = this.nextPiece ?? this.rollPiece();
+
+        this.blocks.spawnHeldBlock(this.targetX, piece);
+        this.state = FaceTowerState.MovingBlock;
+
+        // Roll the FOLLOWING piece right away (rather than waiting until
+        // this one drops) so getNextPiece()/onNextPieceChanged can answer
+        // "what's coming after this" for the whole time this piece is being
+        // positioned, not just for an instant right before it spawns.
+        this.nextPiece = this.rollPiece();
+        this.events.onNextPieceChanged?.(this.nextPiece);
+    }
+    /**
+     * Piece pool tier fed to PieceManager.getPieceForLevel() — driven by
+     * `maxTierReached` (how far the player has actually progressed by
+     * merging), NOT the trapdoor/level counter. `pieces-config.json`'s
+     * `level` field is cumulative (level N's pool = every piece unlocked at
+     * or before N), so this reuses it as-is, just choosing a different
+     * input: base pool is always the two lowest tiers (level 2 → tier0 +
+     * tier1, "piece one or piece 2"), widening by one more tier every time
+     * `maxTierReached` climbs another step past 3 — e.g. once the player
+     * has ever merged up to tier4 (piece value 16, i.e. "above 8"),
+     * `maxTierReached - 1 == 3` unlocks level 3 (tier0-2, "even piece 3").
+     * Keeps the early game from staying stuck dropping only the tiniest
+     * pieces once the player has clearly moved past them, without tying
+     * difficulty to the unrelated trapdoor/zone-completion pacing.
+     */
+    private rollPiece(): PieceDefinition {
+        const level = Math.max(2, this.maxTierReached - 1);
+        return this.pieces.getPieceForLevel(level);
+    }
+
+    private gameOver(): void {
+        if (this.state === FaceTowerState.GameOver) {
+            return;
+        }
+
+        this.state = FaceTowerState.GameOver;
+        this.events.onGameOver?.(this.score, this.getCurrentTopWorldY());
+    }
+
+    /** Dev-only: force-ends the run right away, exactly as if the top line had actually been held long enough — see IslandViewScene.setupLevelDevGui(). A no-op once already GameOver. */
+    public devTriggerGameOver(): void {
+        this.gameOver();
+    }
+}
