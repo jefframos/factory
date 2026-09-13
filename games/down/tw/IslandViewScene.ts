@@ -28,6 +28,7 @@ import { TowerBaseSync3D } from './TowerBaseSync3D';
 import { TowerBlockSync3D } from './TowerBlockSync3D';
 import { DEFAULT_TOWER_3D_CONFIG, formatHeightRounded } from './Tower3DConfig';
 import { loadTowerDevMeta, saveTowerDevMeta } from './TowerDevMeta';
+import { TowerGameOverSiren3D } from './TowerGameOverSiren3D';
 import { TowerHeightMarkers3D } from './TowerHeightMarkers3D';
 import { getSkyCycleColor, resolveIslandForZone } from './TowerIslandProgression';
 import { TowerSkyController } from './TowerSkyController';
@@ -89,6 +90,7 @@ export default class IslandViewScene extends ThreeScene {
     private baseSync3D!: TowerBaseSync3D;
     private wallSync3D!: TowerWallSync3D;
     private heightMarkers3D!: TowerHeightMarkers3D;
+    private gameOverSiren3D!: TowerGameOverSiren3D;
     private pieceDevGui!: PieceDevGui;
     private powerupDevGui!: PowerupDevGui;
     private gameHud!: GameHud;
@@ -321,16 +323,35 @@ export default class IslandViewScene extends ThreeScene {
                     unit: 'm' as const,
                 }));
 
+            const gameOverWarningSecondsRemaining = this.faceTower.getGameOverWarningSecondsRemaining();
+
             // The game-over line's own screen Y is fixed (see
             // FaceTowerConfig.gameOverLineScreenY) — no conversion needed,
             // it never depends on camera offset the way a world-Y mark does.
-            this.gameHud?.updateHeightGauge(currentMark, DEFAULT_FACE_TOWER_CONFIG.gameOverLineScreenY, milestoneMarks, delta);
+            this.gameHud?.updateHeightGauge(
+                currentMark,
+                DEFAULT_FACE_TOWER_CONFIG.gameOverLineScreenY,
+                milestoneMarks,
+                delta,
+                gameOverWarningSecondsRemaining,
+            );
+
+            this.gameOverSiren3D?.update(
+                gameOverWarningSecondsRemaining !== undefined,
+                gameOverLineWorldY,
+                delta,
+            );
 
             this.gameHud?.updateLevelGoal(
                 this.faceTower.getLevelIndex(),
                 this.faceTower.getTotalWeight(),
                 this.faceTower.getTargetWeight(),
                 this.faceTower.getWeightProgress(),
+            );
+
+            this.gameHud?.updatePieceProgression(
+                this.faceTower.getPieceProgression(),
+                this.faceTower.getMaxTierEverUnlocked(),
             );
 
             // 3D markers take raw world-Y (not screen-space) since they
@@ -420,6 +441,7 @@ export default class IslandViewScene extends ThreeScene {
         this.baseSync3D?.destroy();
         this.wallSync3D?.destroy();
         this.heightMarkers3D?.destroy();
+        this.gameOverSiren3D?.destroy();
         this.gameHud?.destroy();
 
         super.destroy();
@@ -521,7 +543,7 @@ export default class IslandViewScene extends ThreeScene {
             DEFAULT_FACE_TOWER_CONFIG,
             {
                 onScoreChanged: (score) => {
-                    this.gameHud.showScore(score);
+                    this.gameHud.showScore(score, TowerHighScoreStorage.getPoints());
                 },
 
                 onTrapdoorOpened: (zoneIndex) => {
@@ -707,6 +729,13 @@ export default class IslandViewScene extends ThreeScene {
             DEFAULT_FACE_TOWER_CONFIG,
             DEFAULT_TOWER_3D_CONFIG.pixelsPerUnit,
             DEFAULT_TOWER_3D_CONFIG,
+            DEFAULT_TOWER_3D_CONFIG.towerBaseOffset,
+        );
+
+        this.gameOverSiren3D = new TowerGameOverSiren3D(
+            this,
+            DEFAULT_FACE_TOWER_CONFIG,
+            DEFAULT_TOWER_3D_CONFIG.pixelsPerUnit,
             DEFAULT_TOWER_3D_CONFIG.towerBaseOffset,
         );
 

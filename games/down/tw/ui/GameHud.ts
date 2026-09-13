@@ -7,6 +7,7 @@ import { PieceDefinition } from '../PieceStorage';
 import { TowerHeightGauge, HeightMark } from '../TowerHeightGauge';
 import { TowerProgressBar2D } from '../TowerProgressBar2D';
 import { DEFAULT_FACE_TOWER_CONFIG } from '../FaceTowerConfig';
+import { PieceProgressionBar } from './PieceProgressionBar';
 import { PowerupBelt } from './PowerupBelt';
 import { ShapeModeToggleButton } from './ShapeModeToggleButton';
 import { TowerHeader } from './TowerHeader';
@@ -44,6 +45,9 @@ export class GameHud extends PIXI.Container {
     /** The row of powerup buttons — owns its own building/layout; GameHud just positions it and mirrors counts/active-state into it. See onUsePowerup below for how a tap reaches the game. */
     private readonly powerupBelt = new PowerupBelt();
 
+    /** Bottom-center "which pieces have I unlocked so far" strip — see updatePieceProgression(). */
+    private readonly pieceProgressionBar = new PieceProgressionBar();
+
     /** Fired when a powerup button is tapped with count > 0 — see IslandViewScene, which listens, checks FaceTowerGameController.canUsePowerup(), spends one from PowerupInventoryStorage, and triggers the actual effect (spawnPowerup()/skipHeldPiece()). Just PowerupBelt's own signal, exposed here so GameHud's own consumers don't need to reach through to a sub-component. */
     public readonly onUsePowerup: Signal = this.powerupBelt.onUsePowerup;
 
@@ -73,6 +77,7 @@ export class GameHud extends PIXI.Container {
         this.gameplayLayer.addChild(this.powerupBelt);
         this.gameplayLayer.addChild(this.zoneNotification);
         this.gameplayLayer.addChild(this.shapeModeToggle);
+        this.gameplayLayer.addChild(this.pieceProgressionBar);
 
         this.gameOverPopup = new GameOverPopup(
             Game.DESIGN_WIDTH, Game.DESIGN_HEIGHT
@@ -100,9 +105,11 @@ export class GameHud extends PIXI.Container {
         this.levelUpNotification.onCollect.add(() => this.levelUpNotification.hide());
         this.addChild(this.levelUpNotification);
 
-        if (DEFAULT_FACE_TOWER_CONFIG.render2D) {
-            this.heightGauge = new TowerHeightGauge(this);
-        }
+        // The climbed-height/km meter gauge is retired — the game no longer
+        // needs it (the siren band + countdown label are the only game-over
+        // warning now). Left unbuilt rather than deleted wholesale: every
+        // call site already reaches it through `?.` (updateHeightGauge()/
+        // destroy()), so leaving heightGauge undefined is a clean no-op.
         // this.progressBar2D = new TowerProgressBar2D(this);
 
         //this.showGameOver(10)
@@ -112,8 +119,9 @@ export class GameHud extends PIXI.Container {
     // Public API — called by IslandViewScene
     // =========================================================================
 
-    public showScore(score: number): void {
-        this.scorePanel.update(score);
+    /** `bestScore` — see TowerScorePanel.update()'s own doc. */
+    public showScore(score: number, bestScore: number): void {
+        this.scorePanel.update(score, bestScore);
     }
 
     /** This container's own local coordinates (same design-space frame the score-popup flying numbers already fly in — see TowerScorePopupUtils/IslandViewScene) — where the score panel currently sits, for the popup's numbers to fly toward. */
@@ -199,12 +207,18 @@ export class GameHud extends PIXI.Container {
         gameOverLineScreenY: number,
         milestoneMarks: HeightMark[],
         delta: number,
+        gameOverWarningSecondsRemaining?: number,
     ): void {
-        this.heightGauge?.update(currentMark, gameOverLineScreenY, milestoneMarks, delta);
+        this.heightGauge?.update(currentMark, gameOverLineScreenY, milestoneMarks, delta, gameOverWarningSecondsRemaining);
     }
 
     public updateProgressBar(progress: number): void {
         this.progressBar2D?.update(progress);
+    }
+
+    /** Call every frame — see PieceProgressionBar.update(), which no-ops unless something actually changed. */
+    public updatePieceProgression(pieces: readonly PieceDefinition[], maxTierReached: number): void {
+        this.pieceProgressionBar.update(pieces, maxTierReached);
     }
 
     /** Call every frame (or whenever it might have changed) — see PowerupBelt.updateCounts(). */
@@ -250,6 +264,15 @@ export class GameHud extends PIXI.Container {
             topLeft.y + padding,
         );
 
+        // Its own local origin is already its own center (every slot is
+        // built symmetric around (0, 0) — see PieceProgressionBar's own
+        // constructor), so just centering horizontally and flushing its
+        // bottom edge against the screen's bottom edge is enough.
+        this.pieceProgressionBar.position.set(
+            Game.DESIGN_WIDTH * 0.5,
+            bottomRight.y - this.pieceProgressionBar.height / 2 - padding,
+        );
+
         // Popups handle their own internal layout
         this.gameOverPopup.layout();
         this.levelUpNotification.layout();
@@ -265,6 +288,7 @@ export class GameHud extends PIXI.Container {
         this.powerupBelt.destroy();
         this.shapeModeToggle.destroy();
         this.nextLevelPanel.destroy();
+        this.pieceProgressionBar.destroy();
 
         super.destroy(options ?? { children: true });
     }

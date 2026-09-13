@@ -9,14 +9,14 @@ import type { FaceTowerConfig } from './FaceTowerTypes';
 export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     // --- Playfield anchors (screen-space, fixed regardless of camera scroll) ---
     spawnScreenY: 200,   // where the held block hovers before it's dropped
-    floorScreenY: 940,   // where the "current" base always sits on screen
+    floorScreenY: 900,   // where the "current" base always sits on screen
     deathScreenY: 1030,  // cross this and it's game over
 
     // Near the top — the settled pile crossing this and staying (see
     // gameOverGraceDuration) ends the run. Fixed forever; trapdoors only
     // ever buy more room BELOW it.
     gameOverLineScreenY: 280,
-    gameOverGraceDuration: 1.2,
+    gameOverGraceDuration: 6,
 
     // A tap immediately snaps the held piece under the pointer before
     // dropping it — see FaceTowerConfig.tapMovesPieceOnDrop's own doc.
@@ -72,8 +72,8 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     dropForceY: 10,
 
     // --- Containment ---
-    wallWidth: 32,
-    wallOffsetY: 100,
+    wallWidth: 1320,
+    wallOffsetY: 120,
     deadZoneWidth: 1400,
     containmentTopBuffer: 150,
 

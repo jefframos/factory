@@ -62,7 +62,7 @@ export function resolveIslandForZone(levelIndex: number, zoneIndexInLevel: numbe
  * fires.
  */
 const SKY_CYCLE_COLORS: readonly string[] = [
-    '#7EC8F2', // soft sky blue — starting color
+    //'#7EC8F2', // soft sky blue — starting color
     '#4693D6', // mid blue
     '#2C5FA8', // deeper blue
     '#173A66', // dark navy — loops back to soft sky blue after this

@@ -22,6 +22,7 @@ import { resolveIslandForZone } from './TowerIslandProgression';
 import { TowerLevelController, type ZoneAdvanceResult } from './TowerLevelController';
 import { TowerMergeController } from './TowerMergeController';
 import { TowerMergeProximityController } from './TowerMergeProximityController';
+import { TowerPieceUnlockStorage } from './TowerPieceUnlockStorage';
 import { TowerTrapdoorController } from './TowerTrapdoorController';
 import { TowerZoneController } from './TowerZoneController';
 
@@ -181,7 +182,7 @@ export class FaceTowerGameController {
         const initialZoneConfig = this.levels.getCurrentZoneConfig();
         this.currentWallHeight = this.computeContainmentWallHeight();
 
-        this.zones = new TowerZoneController(initialZoneConfig.weight);
+        this.zones = new TowerZoneController(this.scaleZoneTargetWeight(initialZoneConfig.weight));
 
         this.pieces = new PieceManager();
         this.pieces.build();
@@ -203,7 +204,12 @@ export class FaceTowerGameController {
             config,
         );
 
-        this.deadZones.setOnHit(() => this.gameOver());
+        // Deliberately NOT wired to gameOver() any more — the only way the
+        // run ends now is the top-line check (see updateGameOverLine()).
+        // The containment walls this still builds/rebuilds stay in place
+        // (still needed to physically keep pieces in the column); only the
+        // instant-death sensor zones' effect is disabled — a piece touching
+        // one is now a no-op.
 
         this.trapdoor = new TowerTrapdoorController(
             this.blocks,
@@ -243,10 +249,15 @@ export class FaceTowerGameController {
         this.camera.reset();
 
         this.levels.reset();
+        // Reset before scaleZoneTargetWeight() reads it below — a fresh
+        // run's first zone must use the unscaled, as-authored target, same
+        // as the constructor's own initial zone.
+        this.maxTierReached = 0;
+
         const zoneConfig = this.levels.getCurrentZoneConfig();
         this.currentWallHeight = this.computeContainmentWallHeight();
 
-        this.zones.reset(zoneConfig.weight);
+        this.zones.reset(this.scaleZoneTargetWeight(zoneConfig.weight));
         this.nextPiece = undefined;
         this.pendingLevelUpHold = false;
         this.pendingLevelUpIndex = undefined;
@@ -254,7 +265,6 @@ export class FaceTowerGameController {
         this.droppedBlock = undefined;
         this.dropWaitTimer = 0;
         this.gameOverLineTimer = 0;
-        this.maxTierReached = 0;
         this.postTrapdoorSettleTimer = 0;
         this.suppressGameOverUntilDrop = false;
         this.dropsThisZone = 0;
@@ -424,6 +434,23 @@ export class FaceTowerGameController {
         return this.camera.toWorldY(this.config.gameOverLineScreenY);
     }
 
+    /**
+     * Seconds left before a settled piece sitting at/above the game-over
+     * line actually ends the run — undefined whenever nothing's currently
+     * sitting up there (gameOverLineTimer only ever accumulates from
+     * updateGameOverLine(), and is reset to 0 the instant nothing qualifies,
+     * including for the whole suppressed trapdoor span). Drives the on-
+     * screen countdown/flash warning (see TowerHeightGauge) — purely a
+     * display concern, doesn't itself affect whether/when the run ends.
+     */
+    public getGameOverWarningSecondsRemaining(): number | undefined {
+        if (this.gameOverLineTimer <= 0) {
+            return undefined;
+        }
+
+        return Math.max(0, this.config.gameOverGraceDuration - this.gameOverLineTimer);
+    }
+
     /** Current total board weight — see FaceTowerBlockController.getTotalWeight(). */
     public getTotalWeight(): number {
         return this.blocks.getTotalWeight();
@@ -471,9 +498,51 @@ export class FaceTowerGameController {
         return this.config.floorScreenY - this.config.gameOverLineScreenY + this.config.containmentTopBuffer;
     }
 
+    /**
+     * levels-config.json's per-zone weight targets were authored against
+     * pieces around BASELINE_TIER (piece weight doubles every tier — see
+     * pieces-config.json's `weight` field, 1/2/4/8/16/...) and never scale
+     * any further past the last authored level (see
+     * TowerLevelController.resolveZoneConfig() repeating the last zone
+     * forever) even though maxTierReached keeps climbing indefinitely as
+     * merges chain higher. Left as pure config, a zone that took dozens of
+     * drops early on becomes clearable by a single drop/merge once the
+     * player's pieces have grown past whatever the JSON number assumed —
+     * the milestone stops reflecting any real, sustained progress. Scaling
+     * the configured value by 2^(tiers past baseline) keeps the target
+     * moving in lockstep with how heavy the player's OWN pieces have
+     * actually gotten, so clearing a zone keeps costing roughly the same
+     * number of real drops no matter how far the run has progressed.
+     */
+    private static readonly BASELINE_TIER_FOR_ZONE_WEIGHT = 1;
+
+    private scaleZoneTargetWeight(configWeight: number): number {
+        const tiersPastBaseline = Math.max(
+            0,
+            this.maxTierReached - FaceTowerGameController.BASELINE_TIER_FOR_ZONE_WEIGHT,
+        );
+
+        return configWeight * Math.pow(2, tiersPastBaseline);
+    }
+
     /** 0-based progression tier (see TowerLevelController) — drives the trapdoor/weight-milestone pacing and island/sky theming. No longer what gates the piece spawn pool — see rollPiece()'s own doc, which now scales off maxTierReached instead. */
     public getLevelIndex(): number {
         return this.levels.getLevelIndex();
+    }
+
+    /** Highest tier ever produced by a merge THIS run — see maxTierReached's own doc (drives piece-drop-pool/zone-weight scaling, which is meant to reset each run). Not what PieceProgressionBar shows as unlocked — see getMaxTierEverUnlocked() for that. */
+    public getMaxTierReached(): number {
+        return this.maxTierReached;
+    }
+
+    /** Highest tier ever produced across EVERY run, persisted — see TowerPieceUnlockStorage. What PieceProgressionBar actually reads to decide which pieces stay shown as unlocked, so progress there survives a reset. */
+    public getMaxTierEverUnlocked(): number {
+        return Math.max(this.maxTierReached, TowerPieceUnlockStorage.getMaxTier());
+    }
+
+    /** Every real catalog piece, ascending by tier — see PieceManager.getAllPiecesOrderedByTier()/PieceProgressionBar. */
+    public getPieceProgression(): readonly PieceDefinition[] {
+        return this.pieces.getAllPiecesOrderedByTier();
     }
 
     /** 0-based zone index within the CURRENT level — resets to 0 every level-up. See TowerIslandProgression.resolveIslandForZone(). */
@@ -741,7 +810,12 @@ export class FaceTowerGameController {
      * Returns true the instant this actually ends the run.
      */
     private updateGameOverLine(delta: number): boolean {
-        const topWorldY = this.blocks.getHighestTopWorldY();
+        // Deliberately the SETTLED variant, not getHighestTopWorldY() — a
+        // piece that's still actively tumbling/falling (even after its own
+        // first contact) must never accumulate grace time just because it
+        // happens to be passing through the line, only a piece that's
+        // actually landed and stopped there. See its own doc.
+        const topWorldY = this.blocks.getHighestSettledTopWorldY();
         const lineWorldY = this.getGameOverLineWorldY();
 
         if (Number.isFinite(topWorldY) && topWorldY <= lineWorldY) {
@@ -823,7 +897,7 @@ export class FaceTowerGameController {
 
         this.currentWallHeight = this.computeContainmentWallHeight();
 
-        const result = this.zones.completeZone(zoneConfig.weight);
+        const result = this.zones.completeZone(this.scaleZoneTargetWeight(zoneConfig.weight));
 
         // The milestone is consumed — start the NEXT zone's progress fresh
         // at 0 rather than leaving the same pieces' weight to instantly
@@ -906,6 +980,7 @@ export class FaceTowerGameController {
 
         if (resultPiece?.tier !== undefined) {
             this.maxTierReached = Math.max(this.maxTierReached, resultPiece.tier);
+            TowerPieceUnlockStorage.recordTier(resultPiece.tier);
         }
 
         this.events.onMerge?.(resultPiece, x, y, points);
@@ -926,7 +1001,7 @@ export class FaceTowerGameController {
 
         this.currentWallHeight = this.computeContainmentWallHeight();
 
-        const result = this.zones.completeZone(zoneConfig.weight);
+        const result = this.zones.completeZone(this.scaleZoneTargetWeight(zoneConfig.weight));
         this.blocks.resetWeight();
         this.dropsThisZone = 0;
 

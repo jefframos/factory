@@ -81,6 +81,10 @@ export class TowerHeightGauge {
     /** Fixed top game-over line — see updateGameOverLine(). */
     private readonly gameOverLine: PIXI.Graphics;
     private readonly gameOverLabel: PIXI.Text;
+    /** Radians/sec the warning flash cycles at while a piece sits on the line — see updateGameOverLine(). */
+    private static readonly FLASH_SPEED = 10;
+    /** Only advances while the warning is actually active — see updateGameOverLine(). */
+    private flashPhase = 0;
 
     /** One dashed tick + label per completed milestone, reused by index across frames instead of recreated (see updateMilestones()). */
     private readonly milestonesContainer: PIXI.Container;
@@ -133,7 +137,13 @@ export class TowerHeightGauge {
      * space and a meters value by the caller — see IslandViewScene.update().
      * `delta` (seconds) drives the live tick's easing, frame-rate independent.
      */
-    public update(current: HeightMark, gameOverLineScreenY: number, milestones: readonly HeightMark[], delta: number): void {
+    public update(
+        current: HeightMark,
+        gameOverLineScreenY: number,
+        milestones: readonly HeightMark[],
+        delta: number,
+        gameOverWarningSecondsRemaining?: number,
+    ): void {
         const topLeft = Game.gameScreenData.topLeft;
         const topRight = Game.gameScreenData.topRight;
         const labelRightEdge = topRight.x - TowerHeightGauge.RIGHT_MARGIN;
@@ -154,22 +164,63 @@ export class TowerHeightGauge {
 
         TowerHeightGauge.drawDashedLine(this.line, lineStartX, lineEndX, clampedY, 3, 0xffe066, 0.9);
 
-        this.updateGameOverLine(gameOverLineScreenY, labelRightEdge);
+        this.updateGameOverLine(gameOverLineScreenY, labelRightEdge, gameOverWarningSecondsRemaining, delta);
         this.updateMilestones(milestones, labelRightEdge);
     }
 
-    /** Fixed forever (never eased/clamped) — the top game-over line always sits at the same screen Y, so there's nothing to ease toward. */
-    private updateGameOverLine(screenY: number, labelRightEdge: number): void {
+    /**
+     * Fixed forever (never eased/clamped) — the top game-over line always
+     * sits at the same screen Y, so there's nothing to ease toward.
+     *
+     * `secondsRemaining` (from FaceTowerGameController.
+     * getGameOverWarningSecondsRemaining()) is undefined whenever nothing's
+     * currently sitting at/above the line — shows the plain "MAX" label
+     * then. Once defined, a piece is actually up there and the run ends
+     * once it hits 0: the label switches to a live countdown and both the
+     * label and line pulse red/white so it reads as an active warning, not
+     * just cosmetic decoration.
+     */
+    private updateGameOverLine(
+        screenY: number,
+        labelRightEdge: number,
+        secondsRemaining: number | undefined,
+        delta: number,
+    ): void {
         this.gameOverLine.visible = true;
         this.gameOverLabel.visible = true;
 
-        this.gameOverLabel.text = 'MAX';
+        const warning = secondsRemaining !== undefined;
+
+        this.gameOverLabel.text = warning
+            ? `${secondsRemaining.toFixed(1)}s!`
+            : 'MAX';
         this.gameOverLabel.position.set(labelRightEdge, screenY);
+
+        let lineWidth = 2;
+        let alpha = 0.9;
+
+        if (warning) {
+            this.flashPhase += delta * TowerHeightGauge.FLASH_SPEED;
+
+            // Pulses between fully solid and half-faded — reads as an
+            // urgent flash regardless of the label's own fixed red fill,
+            // rather than relying on a tint multiply (which barely shows
+            // up against a fill that's already red).
+            const pulse = 0.5 + 0.5 * Math.sin(this.flashPhase);
+            alpha = 0.5 + pulse * 0.5;
+            lineWidth = 4;
+            this.gameOverLabel.scale.set(1 + pulse * 0.25);
+        } else {
+            this.flashPhase = 0;
+            this.gameOverLabel.scale.set(1);
+        }
+
+        this.gameOverLabel.alpha = alpha;
 
         const lineEndX = labelRightEdge - this.gameOverLabel.width - TowerHeightGauge.LABEL_GAP;
         const lineStartX = lineEndX - TowerHeightGauge.LINE_WIDTH;
 
-        TowerHeightGauge.drawDashedLine(this.gameOverLine, lineStartX, lineEndX, screenY, 2, 0xff4444, 0.9);
+        TowerHeightGauge.drawDashedLine(this.gameOverLine, lineStartX, lineEndX, screenY, lineWidth, 0xff4444, alpha);
     }
 
     /**

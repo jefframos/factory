@@ -68,6 +68,13 @@ export class PieceManager {
         return this.maxTier;
     }
 
+    /** Every real catalog piece (tier defined, not disabled), ascending by tier — see PieceProgressionBar, the sole consumer. */
+    public getAllPiecesOrderedByTier(): readonly PieceDefinition[] {
+        return [...this.pieceByTier.entries()]
+            .sort(([tierA], [tierB]) => tierA - tierB)
+            .map(([, piece]) => piece);
+    }
+
     /** Every piece unlocked at or before `level` — empty if build() hasn't run or no piece qualifies. */
     public getPoolForLevel(level: number): readonly PieceDefinition[] {
         let pool: readonly PieceDefinition[] = [];

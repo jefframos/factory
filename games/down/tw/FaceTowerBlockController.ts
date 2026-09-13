@@ -721,6 +721,47 @@ export class FaceTowerBlockController {
         return top;
     }
 
+    /** Below this (Matter's own per-step `body.speed`/`body.angularSpeed`), a block counts as actually at rest rather than still tumbling — see getHighestSettledTopWorldY(). */
+    private static readonly RESTING_SPEED_THRESHOLD = 0.4;
+    private static readonly RESTING_ANGULAR_SPEED_THRESHOLD = 0.05;
+
+    /**
+     * Same as getHighestTopWorldY(), but ALSO excludes any block that's
+     * still actually moving (speed/angularSpeed above the resting
+     * thresholds) even though it already had its first contact. Without
+     * this, a piece that grazes something early (setting hasJiggled) but
+     * keeps tumbling/falling afterward — very possible right after a big
+     * merge cascade shoves it around — would count as "the top" while
+     * still airborne, letting the game-over-line timer accumulate against
+     * a piece that hasn't actually landed anywhere. See
+     * FaceTowerGameController.updateGameOverLine(), the sole consumer —
+     * getHighestTopWorldY() itself stays as-is for purely cosmetic height
+     * displays (TowerHeightGauge), which should track the pile's real
+     * current extent even mid-fall.
+     */
+    public getHighestSettledTopWorldY(): number {
+        let top = Infinity;
+
+        for (const block of this.blocks) {
+            if (block.powerup || block === this.heldBlock || !block.hasJiggled) {
+                continue;
+            }
+
+            const body = block.entity.body;
+
+            if (
+                body.speed > FaceTowerBlockController.RESTING_SPEED_THRESHOLD ||
+                body.angularSpeed > FaceTowerBlockController.RESTING_ANGULAR_SPEED_THRESHOLD
+            ) {
+                continue;
+            }
+
+            top = Math.min(top, body.bounds.min.y);
+        }
+
+        return top;
+    }
+
     /** Sum of getPieceWeight() across every live, non-powerup block — see FaceTowerConfig/TowerZoneController's weight milestone. */
     public getTotalWeight(): number {
         return this.totalWeight;
