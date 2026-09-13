@@ -21,6 +21,10 @@ function hexStringToNumber(hex: string): number {
  *
  * `piece` is optional so callers can fall back to a plain `fallbackColor`
  * rect when a role has no static piece configured (see StaticPieceStorage).
+ * `shapeOverride` (see FlapShape.getFlapPolygon()) takes priority over
+ * `piece.polygon` when given — a flap needs its own fixed pinball-flipper
+ * outline regardless of whatever (or whether any) piece is configured for
+ * its role, rather than whatever polygon that piece itself might define.
  */
 export function buildStaticPieceView(
     piece: StaticPieceDefinition | undefined,
@@ -30,6 +34,7 @@ export function buildStaticPieceView(
     strokeColor: number,
     strokeWidth: number,
     bevelRadius: number,
+    shapeOverride?: { x: number; y: number }[],
 ): PIXI.Container {
     const view = new PIXI.Container();
 
@@ -40,13 +45,16 @@ export function buildStaticPieceView(
     // TowerDeadZoneController.createWall). The view's local origin is what
     // the entity positions every frame, so it has to line up with that
     // fixed rect's own center, not drift toward wherever a concave outline
-    // (e.g. an arch notch) happens to shift its centroid.
+    // (e.g. an arch notch, a flap's own tapered shape) happens to shift its
+    // centroid.
     const body = new PIXI.Graphics();
     body.lineStyle(strokeWidth, strokeColor, 1);
     body.beginFill(0xffffff, 1);
 
-    if (piece?.polygon) {
-        body.drawPolygon(piece.polygon.flatMap(p => [p.x * width, p.y * height]));
+    const polygon = shapeOverride ?? piece?.polygon;
+
+    if (polygon) {
+        body.drawPolygon(polygon.flatMap(p => [p.x * width, p.y * height]));
     } else if (bevelRadius > 0) {
         body.drawRoundedRect(0, 0, width, height, bevelRadius);
     } else {

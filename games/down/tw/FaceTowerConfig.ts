@@ -6,11 +6,22 @@
 
 import type { FaceTowerConfig } from './FaceTowerTypes';
 
+// Where the "current" base (and its trapdoor) always sits on screen — also
+// reused below as floorY's own value (see its own doc for why those two
+// must always match), so this is the one place to change either.
+const FLOOR_SCREEN_Y = 900;
+
 export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     // --- Playfield anchors (screen-space, fixed regardless of camera scroll) ---
-    spawnScreenY: 200,   // where the held block hovers before it's dropped
-    floorScreenY: 900,   // where the "current" base always sits on screen
+    spawnScreenY: 240,   // where the held block hovers before it's dropped
+    floorScreenY: FLOOR_SCREEN_Y,
     deathScreenY: 1030,  // cross this and it's game over
+
+    // Top-edge Y for the 4-slot top powerup row (2 left, 2 right) — see
+    // TopPowerupSlots/GameHud.layout(). Tune this to clear whatever else
+    // sits at the top of the screen (sound button, next-piece preview,
+    // shape-mode toggle).
+    powerupSlotsScreenY: 70,
 
     // Near the top — the settled pile crossing this and staying (see
     // gameOverGraceDuration) ends the run. Fixed forever; trapdoors only
@@ -33,7 +44,15 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     floorWidth: 460,
     floorHeight: 100,
     floorX: 360,
-    floorY: 940,
+    // Must match floorScreenY — this is the first floor's own WORLD-Y (the
+    // camera hasn't panned at all yet at run start, so world Y and screen Y
+    // coincide), and also the fixed baseline every 2D-world-Y → 3D
+    // conversion measures height from (see TowerBlockSync3D/TowerBaseSync3D/
+    // TowerWallSync3D/TowerHeightMarkers3D/TowerGameOverSiren3D/TowerVfxUtils
+    // — all read config.floorY directly for that). Letting this drift from
+    // floorScreenY silently misplaces the starting floor on screen, so it's
+    // derived from the same constant rather than a separately-tuned number.
+    floorY: FLOOR_SCREEN_Y,
 
     // --- Post-drop pacing (when can the next piece spawn) ---
     dropWaitFallbackTimeout: 1.0,
@@ -75,7 +94,16 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     wallWidth: 1320,
     wallOffsetY: 120,
     deadZoneWidth: 1400,
-    containmentTopBuffer: 150,
+    // The wall's actual top must clear the TRUE visible top edge of the
+    // screen (Y=0, or negative on an aspect ratio with extra vertical
+    // letterbox space above it), not just gameOverLineScreenY — a piece
+    // flying above the game-over line but still below the screen's own top
+    // edge used to have zero containment (the wall stopped short there),
+    // letting it drift sideways out of the column. floorScreenY -
+    // gameOverLineScreenY + this value is the wall's own height, so the
+    // wall's top ends up at (gameOverLineScreenY - this value) in screen
+    // space — 700 puts that comfortably above Y=0 with margin to spare.
+    containmentTopBuffer: 700,
 
     // --- 2D block visuals ---
     blockFillAlpha: 1,

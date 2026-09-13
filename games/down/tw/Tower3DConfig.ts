@@ -227,7 +227,7 @@ export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
     cameraDistance: 8,
     cameraDistanceMax: 15,
 
-    cameraMasterOffsetY: 4.9,
+    cameraMasterOffsetY: 4.5, // lower = the floor/trapdoor sits higher on screen — nudged down a bit from 4.9
 
     // Extra height (THREE units) added ONLY to the camera's own position,
     // not its look-at target — unlike cameraMasterOffsetY (which shifts
@@ -260,7 +260,11 @@ export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
     goalMarkerLayout: 'centered',
     progressMarkerLayout: 'side',
     showGoalMarker: true,
-    showProgressMarker: true,
+    // The climbed-height meter ("0.0m" etc, TowerHeightMarkers3D's
+    // currentLabel) is retired from the HUD — piece-tier progression is
+    // the focus now, not the climbed-meters/km readout — see GameHud's own
+    // "points + best, centered" replacement up top.
+    showProgressMarker: false,
     heightMarkerSideMargin: 0,
     heightMarkerSideWidth: 1,
 

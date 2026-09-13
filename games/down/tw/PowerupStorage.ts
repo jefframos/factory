@@ -4,12 +4,30 @@ import * as PIXI from 'pixi.js';
 import type { PieceDefinition } from './PieceStorage';
 
 /**
- * Powerups are trimmed to just "destroy" (bomb/super bomb) — freeze/shrink
- * were removed entirely, so there's no discriminated union any more, just
- * one flat shape.
+ * How a powerup actually activates once tapped in the HUD — see
+ * IslandViewScene.useHudPowerup(), which branches on this:
+ *  - 'drop' (the default, matching every powerup authored before this
+ *    field existed): swaps the held piece for this powerup's own piece
+ *    (see `piece` below) — the existing bomb/super-bomb behavior, tracked
+ *    by PowerupSystem once dropped.
+ *  - 'instant': applies its effect immediately on tap, no held piece and
+ *    no targeting involved (see 'wind'/'clear-low-tier').
+ *  - 'target': enters targeting mode (hides the HUD, shows a tappable
+ *    marker over every live block plus a cancel button — see
+ *    PieceTargetingOverlay) and applies its effect to whichever block the
+ *    player taps (see 'destroy-piece'/'upgrade-piece').
+ */
+export type PowerupActivationType = 'drop' | 'instant' | 'target';
+
+/**
+ * Powerups are trimmed to just "destroy" (bomb/super bomb) plus 4 newer
+ * ones (see PowerupActivationType) — no discriminated union, just one flat
+ * shape with `type` picking out which fields actually matter.
  */
 export interface PowerupDefinition {
     id: string;
+    /** Defaults to 'drop' when omitted — every powerup authored before this field existed. */
+    type?: PowerupActivationType;
     /**
      * This powerup's own shape/scale/color/face texture — same fields as a
      * PieceStorage.PieceDefinition (polygon, scale, color, texture,
@@ -31,8 +49,8 @@ export interface PowerupDefinition {
      * back to when this is omitted (see PowerupBelt.buildPowerupIconFor()).
      */
     icon?: string;
-    /** Seconds between destroying each additional queued piece, so a pile of simultaneous touches cascades instead of vanishing all at once. */
-    destroyStepDelay: number;
+    /** Seconds between destroying each additional queued piece, so a pile of simultaneous touches cascades instead of vanishing all at once. Only meaningful for `type: 'drop'` — omit for 'instant'/'target'. */
+    destroyStepDelay?: number;
     /** Max pieces this can destroy before it also removes itself right away instead of continuing to fall — 1 for the bomb, omit for the super bomb's unlimited "destroy everything" fall. */
     maxTargets?: number;
 }
@@ -58,14 +76,30 @@ export function getPowerup(id: string): PowerupDefinition | undefined {
 /** Pseudo-id for the skip-piece HUD button — swaps the held piece for the next one instead of dropping a powerup, so it isn't (and never will be) a real PowerupDefinition/POWERUPS entry, but shares the same "spend one from PowerupInventoryStorage to use it" shape as 'bomb' below — see GameHud/IslandViewScene. */
 export const SKIP_PIECE_POWERUP_ID = 'skip-piece';
 
+/** The two environment-wide ids (type: 'instant') — see TopPowerupSlots' left pair, IslandViewScene.applyInstantPowerup(). */
+export const WIND_POWERUP_ID = 'wind';
+export const CLEAR_LOW_TIER_POWERUP_ID = 'clear-low-tier';
+/** The two single-piece-targeted ids (type: 'target') — see TopPowerupSlots' right pair, PieceTargetingOverlay. */
+export const DESTROY_PIECE_POWERUP_ID = 'destroy-piece';
+export const UPGRADE_PIECE_POWERUP_ID = 'upgrade-piece';
+
 /**
  * Which ids get a HUD button (see GameHud.buildPowerupBar()) and which one
  * gets granted (randomly) each time the player reaches a new level (see
- * IslandViewScene's onLevelProgressed handler) — 'bomb' out of
- * powerups-config.json's 2 entries (deliberately excluding 'super-bomb',
- * which has no dedicated button) plus the skip-piece pseudo-id.
+ * IslandViewScene's onLevelProgressed handler) — the 4 new powerups (2
+ * instant, 2 targeted — see TopPowerupSlots) plus the skip-piece pseudo-id.
+ * 'bomb'/'super-bomb' stay in powerups-config.json (still real, spawnable
+ * PowerupDefinitions — see FaceTowerGameController.spawnPowerup()) but no
+ * longer get a HUD button of their own now that these 4 have taken their
+ * slots.
  */
-export const HUD_POWERUP_IDS: readonly string[] = ['bomb', SKIP_PIECE_POWERUP_ID];
+export const HUD_POWERUP_IDS: readonly string[] = [
+    WIND_POWERUP_ID,
+    CLEAR_LOW_TIER_POWERUP_ID,
+    DESTROY_PIECE_POWERUP_ID,
+    UPGRADE_PIECE_POWERUP_ID,
+    SKIP_PIECE_POWERUP_ID,
+];
 
 /** "shrink-ray" → "Shrink Ray" — for the level-up notification's "+1 Shrink Ray" reward text (see LevelUpNotification). No dedicated display-name field on PowerupDefinition, so this just humanizes the id. */
 export function formatPowerupName(id: string): string {

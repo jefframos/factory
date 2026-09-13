@@ -413,6 +413,11 @@ export class FaceTowerGameController {
         return this.blocks.getBasePieceId(base);
     }
 
+    /** Which flap (left/right) `base` is — see FaceTowerBlockController.getFlapSide(), TowerBaseSync3D's sole consumer. */
+    public getFlapSide(base: BasePhysicsEntity): 'left' | 'right' | undefined {
+        return this.blocks.getFlapSide(base);
+    }
+
     /**
      * World Y of the tower's current top — the highest live (non-powerup)
      * block, or the current base's own Y when nothing's stacked on it yet
@@ -632,10 +637,81 @@ export class FaceTowerGameController {
         this.blocks.spawnHeldBlock(this.targetX, piece);
 
         this.blocks.markHeldBlockAsPowerup({
-            stepDelay: powerup.destroyStepDelay,
+            // Only 'drop'-type powerups ever reach spawnPowerup() (see
+            // IslandViewScene.useHudPowerup()'s branch on powerup.type), so
+            // destroyStepDelay is always actually set in practice — the
+            // fallback is purely to satisfy PowerupEffectConfig.stepDelay's
+            // non-optional type.
+            stepDelay: powerup.destroyStepDelay ?? 0.1,
             maxTargets: powerup.maxTargets,
             dropForceY: powerup.dropForceY,
         });
+    }
+
+    /** 'wind' (type: 'instant') — see FaceTowerBlockController.applyWindEffect(). Safe to call any time; a no-op if nothing's on the board yet. */
+    public triggerWindPowerup(): void {
+        this.blocks.applyWindEffect();
+    }
+
+    /** 'clear-low-tier' (type: 'instant') — removes every live tier-0/tier-1 block. See FaceTowerBlockController.removeBlocksByTiers(). */
+    public triggerClearLowTierPowerup(): void {
+        this.blocks.removeBlocksByTiers([0, 1]);
+    }
+
+    /**
+     * 'destroy-piece' (type: 'target') — removes whichever live block
+     * `blockId` refers to outright. A no-op if that id no longer exists
+     * (e.g. it merged/got removed between the player tapping it in
+     * PieceTargetingOverlay and this actually running), resolves to a
+     * powerup piece, or is the currently-HELD block (PieceTargetingOverlay
+     * already excludes it from ever being tapped — see its own doc — this
+     * is just defense in depth, since removing it here without clearing
+     * FaceTowerBlockController's own heldBlock reference would leave that
+     * dangling and break the next spawn).
+     */
+    public destroyBlock(blockId: number): void {
+        const block = this.blocks.getBlocks().find(candidate => candidate.id === blockId);
+
+        if (!block || block.powerup || block === this.blocks.getHeldBlock()) {
+            return;
+        }
+
+        this.blocks.removeBlock(block);
+    }
+
+    /**
+     * 'upgrade-piece' (type: 'target') — replaces `blockId`'s block with
+     * the next tier up, in place, exactly like a real self-merge (see
+     * TowerMergeController.resolvePair, the same remove-then-spawnMergedBlock
+     * pair) — including bumping maxTierReached/TowerPieceUnlockStorage the
+     * same way a real merge does, so PieceProgressionBar stays consistent.
+     * Deliberately does NOT go through handleMerge()/award score or fire
+     * onMerge — this is a utility action, not something the player
+     * "earned" by playing. A no-op if the block no longer exists, is a
+     * powerup, or is already the top tier (nextPiece undefined).
+     */
+    public upgradeBlock(blockId: number): void {
+        const block = this.blocks.getBlocks().find(candidate => candidate.id === blockId);
+
+        if (!block || block.powerup || block === this.blocks.getHeldBlock()) {
+            return;
+        }
+
+        const nextPiece = this.pieces.getNextTierPiece(block.piece);
+
+        if (!nextPiece) {
+            return;
+        }
+
+        const { x, y } = block.entity.body.position;
+
+        this.blocks.removeBlock(block);
+        this.blocks.spawnMergedBlock(nextPiece, x, y);
+
+        if (nextPiece.tier !== undefined) {
+            this.maxTierReached = Math.max(this.maxTierReached, nextPiece.tier);
+            TowerPieceUnlockStorage.recordTier(nextPiece.tier);
+        }
     }
 
     /** True only while a piece is actively hovering/falling toward the drop area — the same guard spawnPowerup()/skipHeldPiece()/replaceHeldBlockWithPiece() already enforce internally, exposed so a HUD button can grey itself out instead of silently no-opping on click. */

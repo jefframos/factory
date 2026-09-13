@@ -8,8 +8,8 @@ import { TowerHeightGauge, HeightMark } from '../TowerHeightGauge';
 import { TowerProgressBar2D } from '../TowerProgressBar2D';
 import { DEFAULT_FACE_TOWER_CONFIG } from '../FaceTowerConfig';
 import { PieceProgressionBar } from './PieceProgressionBar';
-import { PowerupBelt } from './PowerupBelt';
 import { ShapeModeToggleButton } from './ShapeModeToggleButton';
+import { TopPowerupSlots } from './TopPowerupSlots';
 import { TowerHeader } from './TowerHeader';
 import { TowerNextLevelPanel } from './TowerNextLevelPanel';
 import { TowerScorePanel } from './TowerScorePanel';
@@ -42,14 +42,14 @@ export class GameHud extends PIXI.Container {
     /** The bigger "you leveled up, here's your powerup (+ double via video)" popup — see showLevelUp(). */
     private readonly levelUpNotification: LevelUpNotification;
 
-    /** The row of powerup buttons — owns its own building/layout; GameHud just positions it and mirrors counts/active-state into it. See onUsePowerup below for how a tap reaches the game. */
-    private readonly powerupBelt = new PowerupBelt();
+    /** The 4-slot top powerup row (2 left, 2 right) — owns its own building/layout; GameHud just positions it and mirrors counts/active-state into it. See onUsePowerup below for how a tap reaches the game. Replaces the old bottom-right PowerupBelt (removed — see this file's git history if it's ever needed again; PowerupBelt.ts itself is untouched). */
+    private readonly topPowerupSlots = new TopPowerupSlots();
 
     /** Bottom-center "which pieces have I unlocked so far" strip — see updatePieceProgression(). */
     private readonly pieceProgressionBar = new PieceProgressionBar();
 
-    /** Fired when a powerup button is tapped with count > 0 — see IslandViewScene, which listens, checks FaceTowerGameController.canUsePowerup(), spends one from PowerupInventoryStorage, and triggers the actual effect (spawnPowerup()/skipHeldPiece()). Just PowerupBelt's own signal, exposed here so GameHud's own consumers don't need to reach through to a sub-component. */
-    public readonly onUsePowerup: Signal = this.powerupBelt.onUsePowerup;
+    /** Fired when a powerup button is tapped with count > 0 — see IslandViewScene, which listens, checks FaceTowerGameController.canUsePowerup(), spends one from PowerupInventoryStorage, and triggers the actual effect (spawnPowerup()/skipHeldPiece()). Just topPowerupSlots' own signal, exposed here so GameHud's own consumers don't need to reach through to a sub-component. */
+    public readonly onUsePowerup: Signal = this.topPowerupSlots.onUsePowerup;
 
     /** Top-left "Circles / Cubes" experimental toggle — see PieceShapeMode. */
     private readonly shapeModeToggle = new ShapeModeToggleButton();
@@ -74,10 +74,18 @@ export class GameHud extends PIXI.Container {
 
         this.buildStaticLabels();
         this.buildSoundAndPreview();
-        this.gameplayLayer.addChild(this.powerupBelt);
+        this.gameplayLayer.addChild(this.topPowerupSlots);
         this.gameplayLayer.addChild(this.zoneNotification);
         this.gameplayLayer.addChild(this.shapeModeToggle);
         this.gameplayLayer.addChild(this.pieceProgressionBar);
+
+        // The level number itself is retired from the HUD — see
+        // showScore()'s own "points + best, centered" replacement. Left
+        // constructed (rather than removed outright) purely so
+        // nextLevelPanel's own layout() math, which anchors off
+        // towerHeader.width, keeps working unchanged — a Container's width
+        // getter isn't affected by `visible`.
+        this.towerHeader.visible = false;
 
         this.gameOverPopup = new GameOverPopup(
             Game.DESIGN_WIDTH, Game.DESIGN_HEIGHT
@@ -139,9 +147,9 @@ export class GameHud extends PIXI.Container {
         return this.levelUpNotification.getIconGlobalPosition();
     }
 
-    /** Global (stage-space) position of `id`'s belt button — null if it's currently disabled/not built. See TowerRewardFlyUtils. */
+    /** Global (stage-space) position of `id`'s top-slot button — null if it's not one of the assigned slots. See TowerRewardFlyUtils. */
     public getPowerupBeltButtonPosition(id: string): { x: number; y: number } | null {
-        return this.powerupBelt.getButtonGlobalPosition(id);
+        return this.topPowerupSlots.getButtonGlobalPosition(id);
     }
 
     /**
@@ -202,6 +210,18 @@ export class GameHud extends PIXI.Container {
         this.nextPiecePreview.show(piece);
     }
 
+    /**
+     * Hides/shows every always-visible gameplay widget at once (score,
+     * next-piece, powerup slots, piece-progression strip, etc.) — see
+     * IslandViewScene's target-powerup targeting mode (PieceTargetingOverlay),
+     * which hides the whole HUD while the player picks a piece to
+     * destroy/upgrade. Doesn't touch gameOverPopup/levelUpNotification —
+     * those are separate modal layers, not part of gameplayLayer.
+     */
+    public setHudVisible(visible: boolean): void {
+        this.gameplayLayer.visible = visible;
+    }
+
     public updateHeightGauge(
         currentMark: HeightMark,
         gameOverLineScreenY: number,
@@ -221,14 +241,14 @@ export class GameHud extends PIXI.Container {
         this.pieceProgressionBar.update(pieces, maxTierReached);
     }
 
-    /** Call every frame (or whenever it might have changed) — see PowerupBelt.updateCounts(). */
+    /** Call every frame (or whenever it might have changed) — see TopPowerupSlots.updateCounts(). */
     public updatePowerupCounts(counts: Readonly<Record<string, number>>): void {
-        this.powerupBelt.updateCounts(counts);
+        this.topPowerupSlots.updateCounts(counts);
     }
 
     /** Highlights whichever button matches `activeId` (null clears every highlight) — see IslandViewScene's activePowerupId toggle/cancel/switch logic. */
     public setActivePowerup(activeId: string | null): void {
-        this.powerupBelt.setActive(activeId);
+        this.topPowerupSlots.setActive(activeId);
     }
 
     public layout(): void {
@@ -240,19 +260,30 @@ export class GameHud extends PIXI.Container {
             topLeft.y + this.soundBtn.height / 2 + padding,
         );
 
+        // Horizontal now (label beside the icon, not above it — see
+        // NextPiecePreview's own redesign), sitting just to the mute
+        // button's left at the same vertical center, instead of below it.
         this.nextPiecePreview.position.set(
-            topRight.x - this.nextPiecePreview.width - padding,
-            this.soundBtn.y + this.soundBtn.height / 2 + padding,
+            this.soundBtn.x - this.soundBtn.width / 2 - padding - this.nextPiecePreview.width,
+            this.soundBtn.y - this.nextPiecePreview.height / 2,
         );
 
         this.zoneNotification.position.set(Game.DESIGN_WIDTH * 0.5, Game.DESIGN_HEIGHT / 2 - 50);
         this.towerHeader.position.set(Game.DESIGN_WIDTH * 0.5, topLeft.y + 40);
-        this.nextLevelPanel.position.set(Game.DESIGN_WIDTH * 0.5 + this.towerHeader.width + 10, topLeft.y + 40);
-        this.scorePanel.position.set(Game.DESIGN_WIDTH * 0.5 - this.towerHeader.width - 10, topLeft.y + 40);
+        // Centered now that towerHeader (the level number) is hidden —
+        // used to sit to its left instead.
+        this.scorePanel.position.set(Game.DESIGN_WIDTH * 0.5, topLeft.y + 40);
 
-        this.powerupBelt.position.set(
-            bottomRight.x - this.powerupBelt.width - padding,
-            bottomRight.y - this.powerupBelt.height - padding,
+        // + topLeft.y — same pattern soundBtn/scorePanel/shapeModeToggle
+        // all already use for their own Y — so this tracks the ACTUAL
+        // visible top edge exactly like everything else does. Passing the
+        // raw config value alone (the previous bug) meant this stayed put
+        // on any resize that shifted the safe area vertically while every
+        // other top element moved together, drifting the two apart.
+        this.topPowerupSlots.layout(
+            topLeft.x + padding,
+            topRight.x - padding,
+            topLeft.y + DEFAULT_FACE_TOWER_CONFIG.powerupSlotsScreenY,
         );
 
         // Its own local origin is already its top-left corner (see
@@ -264,13 +295,21 @@ export class GameHud extends PIXI.Container {
             topLeft.y + padding,
         );
 
-        // Its own local origin is already its own center (every slot is
-        // built symmetric around (0, 0) — see PieceProgressionBar's own
-        // constructor), so just centering horizontally and flushing its
-        // bottom edge against the screen's bottom edge is enough.
+        // Bottom-center stack: the next-level (section) progress bar sits
+        // at the very bottom, the piece-progression strip directly above
+        // it — both center-anchored horizontally, every slot in the strip
+        // already built symmetric around its own (0, 0) (see
+        // PieceProgressionBar's own constructor).
+        const bottomStackGap = 8;
+
+        this.nextLevelPanel.position.set(
+            Game.DESIGN_WIDTH * 0.5,
+            bottomRight.y - padding - this.nextLevelPanel.height / 2,
+        );
+
         this.pieceProgressionBar.position.set(
             Game.DESIGN_WIDTH * 0.5,
-            bottomRight.y - this.pieceProgressionBar.height / 2 - padding,
+            this.nextLevelPanel.y - this.nextLevelPanel.height / 2 - bottomStackGap - this.pieceProgressionBar.height / 2,
         );
 
         // Popups handle their own internal layout
@@ -285,7 +324,7 @@ export class GameHud extends PIXI.Container {
         this.progressBar2D?.destroy();
         this.zoneNotification.destroy();
         this.levelUpNotification.destroy();
-        this.powerupBelt.destroy();
+        this.topPowerupSlots.destroy();
         this.shapeModeToggle.destroy();
         this.nextLevelPanel.destroy();
         this.pieceProgressionBar.destroy();

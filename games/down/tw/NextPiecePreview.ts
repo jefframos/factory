@@ -27,17 +27,18 @@ function resolvePieceSnapshotPath(pieceId: string): string {
  * the actual source of truth for what spawns next; call show() whenever
  * FaceTowerGameEvents.onNextPieceChanged fires.
  *
- * Pinned to the ACTUAL visible top-left corner via pinTopLeft(), not a
- * fixed (x, y) — this scene's own container lives under Game.stageContainer
- * (see IslandViewScene → gameContainer → stageContainer in index.ts), so
- * Game.gameScreenData.topLeft (recomputed on every resize/orientation
- * change — see Game.onResize()) is the corner that actually matches this
- * container's local space, not the nominal (0, 0) of the fixed
- * DESIGN_WIDTH/DESIGN_HEIGHT box, which the letterbox-fit scale can leave
- * short of the real screen edge on an aspect ratio other than 720:1080.
+ * Laid out HORIZONTALLY — the "NEXT" label to the left, the swatch box to
+ * its right — so the whole widget reads as a compact wide strip rather
+ * than a tall stack, meant to sit right beside the mute button (see
+ * GameHud.layout()) instead of below it.
+ *
+ * pinTopLeft() is unused (GameHud.layout() explicitly positions this every
+ * frame instead) — kept only because it's part of this class's existing
+ * public surface, not because anything still calls it.
  */
 export class NextPiecePreview extends PIXI.Container {
-    private static readonly BOX_SIZE = 80;
+    private static readonly BOX_SIZE = 56;
+    private static readonly LABEL_GAP = 6;
     private static readonly MARGIN = 20;
 
     private readonly container: PIXI.Container;
@@ -51,21 +52,20 @@ export class NextPiecePreview extends PIXI.Container {
             ...Assets.TextStyles.NextLabel
         });
 
-        label.anchor.set(0.5, 0);
-        label.position.set(NextPiecePreview.BOX_SIZE * 0.5, 0);
+        label.anchor.set(0, 0.5);
+        label.position.set(0, NextPiecePreview.BOX_SIZE * 0.5);
         this.container.addChild(label);
 
+        const swatchX = label.width + NextPiecePreview.LABEL_GAP;
+
         const background = new PIXI.NineSlicePlane(PIXI.Texture.from('Button01_s_White_Light1'), 30, 30, 30, 30);
-        // background.beginFill(0x000000, 0.35);
-        // background.drawRoundedRect(0, label.height + 4, NextPiecePreview.BOX_SIZE, NextPiecePreview.BOX_SIZE, 8);
-        // background.endFill();
         background.width = NextPiecePreview.BOX_SIZE
         background.height = NextPiecePreview.BOX_SIZE
-        background.y = label.height + 4
+        background.x = swatchX
         this.container.addChild(background);
 
         this.swatch = new PIXI.Container();
-        this.swatch.position.set(0, label.height + 4);
+        this.swatch.position.set(swatchX, 0);
         this.container.addChild(this.swatch);
 
         this.addChild(this.container);

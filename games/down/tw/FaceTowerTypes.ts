@@ -81,6 +81,13 @@ export interface FaceTowerConfig {
     deathScreenY: number;
 
     /**
+     * Top-edge Y (design-space px) the 4-slot top powerup row sits at —
+     * see TopPowerupSlots/GameHud.layout(). Shared by both the left and
+     * right pair; there's no per-slot Y, only this one knob.
+     */
+    powerupSlotsScreenY: number;
+
+    /**
      * Opposite orientation from deathScreenY, near the TOP of the screen —
      * the settled pile crossing this line and staying there (see
      * gameOverGraceDuration) ends the run. Fixed on screen forever —

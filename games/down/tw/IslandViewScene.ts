@@ -20,7 +20,15 @@ import { DEFAULT_FACE_TOWER_CONFIG } from './FaceTowerConfig';
 import { FaceTowerGameController } from './FaceTowerGameController';
 import { PIECES, type PieceDefinition } from './PieceStorage';
 import { setPieceShapeMode } from './PieceShapeMode';
-import { POWERUPS, SKIP_PIECE_POWERUP_ID, getPowerup } from './PowerupStorage';
+import {
+    CLEAR_LOW_TIER_POWERUP_ID,
+    DESTROY_PIECE_POWERUP_ID,
+    POWERUPS,
+    SKIP_PIECE_POWERUP_ID,
+    UPGRADE_PIECE_POWERUP_ID,
+    WIND_POWERUP_ID,
+    getPowerup,
+} from './PowerupStorage';
 import { getEnabledPowerupIds } from './PowerupConfig';
 import { TowerVfxUtils } from './TowerVfxUtils';
 import type { PowerupContactPoint } from './PowerupSystem';
@@ -35,6 +43,7 @@ import { TowerSkyController } from './TowerSkyController';
 import { TowerStarfieldController } from './TowerStarfieldController';
 import { TowerWallSync3D } from './TowerWallSync3D';
 import { GameHud } from './ui/GameHud';
+import { PieceTargetingOverlay } from './ui/PieceTargetingOverlay';
 import { TowerScorePopupUtils } from './ui/TowerScorePopupUtils';
 import { TowerRewardFlyUtils } from './ui/TowerRewardFlyUtils';
 import { PowerupButton } from './ui/PowerupButton';
@@ -77,6 +86,15 @@ export default class IslandViewScene extends ThreeScene {
     /** Snapshot of whatever piece was held right before activePowerupId's piece swapped in — restored on cancel so cancelling reads as "never happened" rather than losing/re-rolling the piece that was actually there. */
     private preActivationPiece: PieceDefinition | null = null;
 
+    /**
+     * Which type: 'target' powerup (destroy-piece/upgrade-piece) is
+     * currently waiting for the player to tap a piece — see
+     * beginTargeting()/endTargeting(). Null whenever targetingOverlay isn't
+     * up. Independent of activePowerupId, which is only ever for type:
+     * 'drop' powerups (a held piece to swap in/out).
+     */
+    private targetingPowerupId: string | null = null;
+
     /** Which powerup the currently-shown LevelUpNotification popup already granted — see handleLevelUpWatchVideo(), which grants a second one of THIS SAME id on a successful video. Null whenever no level-up popup is up. */
     private pendingLevelUpPowerupId: string | null = null;
     /** How many copies to fly to the belt on collect — 1 normally, bumped by handleLevelUpWatchVideo() on a successful double. Purely a visual count for TowerRewardFlyUtils, not tied to the actual granted amount (which already happened silently at grant time). */
@@ -94,6 +112,8 @@ export default class IslandViewScene extends ThreeScene {
     private pieceDevGui!: PieceDevGui;
     private powerupDevGui!: PowerupDevGui;
     private gameHud!: GameHud;
+    /** "Pick a piece to destroy/upgrade" overlay — see beginTargeting()/endTargeting(). */
+    private readonly targetingOverlay = new PieceTargetingOverlay();
 
 
     /**
@@ -250,6 +270,17 @@ export default class IslandViewScene extends ThreeScene {
         const towerOffsetY = this.faceTower?.getCameraOffsetY() ?? 0;
 
         this.gameHud?.layout();
+
+        if (this.targetingPowerupId !== null && this.faceTower) {
+            this.targetingOverlay.layout();
+            this.targetingOverlay.update(
+                this.faceTower.getBlocks(),
+                towerOffsetY,
+                DEFAULT_FACE_TOWER_CONFIG.blockWidth,
+                DEFAULT_FACE_TOWER_CONFIG.blockHeight,
+                this.faceTower.getHeldBlock()?.id,
+            );
+        }
 
         /*
          * Same conversion TowerBlockSync3D/TowerBaseSync3D use to place the
@@ -442,6 +473,7 @@ export default class IslandViewScene extends ThreeScene {
         this.wallSync3D?.destroy();
         this.heightMarkers3D?.destroy();
         this.gameOverSiren3D?.destroy();
+        this.targetingOverlay.destroy();
         this.gameHud?.destroy();
 
         super.destroy();
@@ -483,6 +515,11 @@ export default class IslandViewScene extends ThreeScene {
                     this.gameHud.setActivePowerup(null);
                 }
 
+                // Same refund for a 'target' powerup mid-targeting — a
+                // fresh run wipes the board there was going to be a target
+                // on, so there's nothing left to resolve it against.
+                this.endTargeting(true);
+
                 // Player restarted outright (as opposed to watching a video
                 // to respawn in place) — the natural "between sessions" spot
                 // for a commercial break.
@@ -494,6 +531,10 @@ export default class IslandViewScene extends ThreeScene {
         TowerScorePopupUtils.onPop = () => SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Grab);
         TowerRewardFlyUtils.build(this.hudContainer);
         TowerRewardFlyUtils.onArrive = () => SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Invincible);
+
+        this.hudContainer.addChild(this.targetingOverlay);
+        this.targetingOverlay.onTargetChosen.add((blockId: number) => this.resolveTargetingChoice(blockId), this);
+        this.targetingOverlay.onCancel.add(() => this.endTargeting(true), this);
 
         this.gameHud.onUsePowerup.add((powerupId: string) => this.useHudPowerup(powerupId), this);
         this.gameHud.onShapeModeToggle.add((mode: 'circle' | 'cube') => this.handleShapeModeToggle(mode), this);
@@ -712,6 +753,7 @@ export default class IslandViewScene extends ThreeScene {
             DEFAULT_TOWER_3D_CONFIG,
             DEFAULT_TOWER_3D_CONFIG.towerBaseOffset,
             base => this.faceTower.getBasePieceId(base),
+            base => this.faceTower.getFlapSide(base),
         );
 
         this.wallSync3D = new TowerWallSync3D(
@@ -834,26 +876,28 @@ export default class IslandViewScene extends ThreeScene {
     }
 
     /**
-     * GameHud's onUsePowerup callback.
-     *
-     * skip-piece is an instant one-shot (no "held" state to speak of — the
-     * swap is already done the moment it fires) so it just spends one and
-     * triggers it directly. The three REAL powerups instead track a single
-     * global "active" one:
-     *  - nothing active + tap → spend one, swap it in as the held piece,
-     *    remember what was held before (see preActivationPiece) so
-     *    cancelling can restore it exactly.
-     *  - tap the SAME active one again → cancel: refund it and restore the
-     *    pre-activation piece.
-     *  - tap a DIFFERENT one while one is active → also just cancels the
-     *    current one (never activates the tapped one in the same tap) — the
-     *    player has to tap the new one again afterward to actually activate
-     *    it. See cancelActivePowerup().
+     * GameHud's onUsePowerup callback — branches on the tapped powerup's
+     * own PowerupActivationType (see PowerupStorage):
+     *  - skip-piece: instant one-shot, no "held" state — spend one, swap
+     *    the held piece for the next, done. Not a real PowerupDefinition,
+     *    so it's checked before even looking one up.
+     *  - 'instant' (wind/clear-low-tier): spend one, apply the effect to
+     *    the live board right away — see applyInstantPowerup().
+     *  - 'target' (destroy-piece/upgrade-piece): spend one, enter
+     *    targeting mode (see beginTargeting()) — tapping the SAME one
+     *    again while already targeting cancels it instead (refunds, exits
+     *    targeting) rather than doing nothing.
+     *  - 'drop' (bomb/super-bomb — the original mechanic): tracks a single
+     *    global "active" held-piece swap, same as before — see
+     *    cancelActivePowerup()'s own doc for the full tap-again/tap-a-
+     *    different-one behavior.
      *
      * Every path is also gated on FaceTowerGameController.canUsePowerup() (a
      * piece must currently be hovering over the drop area) so a tap that
      * can't take effect right now never spends the player's inventory for
-     * nothing.
+     * nothing — 'instant'/'target' don't touch the held piece at all, but
+     * still only make sense mid-run, not e.g. while a level-up popup has
+     * play frozen.
      */
     private useHudPowerup(powerupId: string): void {
         if (powerupId === SKIP_PIECE_POWERUP_ID) {
@@ -862,6 +906,41 @@ export default class IslandViewScene extends ThreeScene {
             }
 
             this.faceTower.skipHeldPiece();
+            return;
+        }
+
+        const powerup = getPowerup(powerupId);
+
+        if (powerup?.type === 'instant' || powerup?.type === 'target') {
+            // A 'drop'-type powerup (bomb) already mid-swap — cancel that
+            // first, same as tapping a DIFFERENT drop-type one would, so
+            // its held-piece swap never lingers underneath an instant
+            // effect or a hidden-HUD targeting session.
+            if (this.activePowerupId !== null) {
+                this.cancelActivePowerup();
+            }
+        }
+
+        if (powerup?.type === 'instant') {
+            if (!this.faceTower.canUsePowerup() || !PowerupInventoryStorage.consume(powerupId)) {
+                return;
+            }
+
+            this.applyInstantPowerup(powerupId);
+            return;
+        }
+
+        if (powerup?.type === 'target') {
+            if (this.targetingPowerupId === powerupId) {
+                this.endTargeting(true);
+                return;
+            }
+
+            if (this.targetingPowerupId !== null || !this.faceTower.canUsePowerup() || !PowerupInventoryStorage.consume(powerupId)) {
+                return;
+            }
+
+            this.beginTargeting(powerupId);
             return;
         }
 
@@ -879,6 +958,58 @@ export default class IslandViewScene extends ThreeScene {
         this.gameHud.setActivePowerup(powerupId);
 
         this.faceTower.spawnPowerup(powerupId);
+    }
+
+    /** 'instant'-type powerups apply immediately, no held piece or targeting involved — see PowerupStorage.PowerupActivationType. */
+    private applyInstantPowerup(powerupId: string): void {
+        if (powerupId === WIND_POWERUP_ID) {
+            this.faceTower.triggerWindPowerup();
+        } else if (powerupId === CLEAR_LOW_TIER_POWERUP_ID) {
+            this.faceTower.triggerClearLowTierPowerup();
+        }
+    }
+
+    /**
+     * Enters "pick a piece" mode for a 'target'-type powerup — hides the
+     * whole HUD and disables normal drag/drop input (see
+     * PieceTargetingOverlay's own doc for why hiding the HUD matters: the
+     * player needs an unobstructed view of the board to tap the right
+     * piece), and shows the targeting overlay/close button instead.
+     */
+    private beginTargeting(powerupId: string): void {
+        this.targetingPowerupId = powerupId;
+        this.gameHud.setHudVisible(false);
+        this.faceTower.setInputEnabled(false);
+        this.targetingOverlay.activate();
+    }
+
+    /** PieceTargetingOverlay.onTargetChosen — applies whichever effect targetingPowerupId actually is to the tapped block, then exits targeting mode (the powerup was already spent when targeting began — see beginTargeting()/useHudPowerup(), so no further inventory change here). */
+    private resolveTargetingChoice(blockId: number): void {
+        const powerupId = this.targetingPowerupId;
+
+        this.endTargeting(false);
+
+        if (powerupId === DESTROY_PIECE_POWERUP_ID) {
+            this.faceTower.destroyBlock(blockId);
+        } else if (powerupId === UPGRADE_PIECE_POWERUP_ID) {
+            this.faceTower.upgradeBlock(blockId);
+        }
+    }
+
+    /** Exits targeting mode, restoring the HUD/input — `refund` is true only for an explicit cancel (the close button, or tapping the same powerup again), never for an actual chosen-target resolution, which already spent it for real. */
+    private endTargeting(refund: boolean): void {
+        if (this.targetingPowerupId === null) {
+            return;
+        }
+
+        if (refund) {
+            PowerupInventoryStorage.grant(this.targetingPowerupId);
+        }
+
+        this.targetingPowerupId = null;
+        this.targetingOverlay.deactivate();
+        this.gameHud.setHudVisible(true);
+        this.faceTower.setInputEnabled(true);
     }
 
     /** Refunds the active powerup and restores whatever piece was held right before it activated — see useHudPowerup(). No-op if nothing's active, or if the piece can no longer be swapped out from under the player (already dropped — canUsePowerup() false), which shouldn't normally happen since onBlockDropped clears activePowerupId the instant that piece is actually dropped. */
@@ -919,6 +1050,8 @@ export default class IslandViewScene extends ThreeScene {
             this.preActivationPiece = null;
             this.gameHud.setActivePowerup(null);
         }
+
+        this.endTargeting(true);
     }
 
     /**

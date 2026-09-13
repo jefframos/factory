@@ -1,17 +1,26 @@
 // PowerupConfig.ts
 
-import { HUD_POWERUP_IDS, SKIP_PIECE_POWERUP_ID } from './PowerupStorage';
+import {
+    CLEAR_LOW_TIER_POWERUP_ID,
+    DESTROY_PIECE_POWERUP_ID,
+    HUD_POWERUP_IDS,
+    SKIP_PIECE_POWERUP_ID,
+    UPGRADE_PIECE_POWERUP_ID,
+    WIND_POWERUP_ID,
+} from './PowerupStorage';
 
 /**
- * Easy on/off switch per HUD powerup (the one real powerup + the
- * skip-piece pseudo-id) — flip an entry to `false` to pull it out of
- * PowerupBelt entirely (not just hide/grey its button) and stop it from
- * ever being granted on level-up (see getEnabledPowerupIds(), the single
- * source both of those read from). Keyed by the same ids as
+ * Easy on/off switch per HUD powerup id — flip an entry to `false` to pull
+ * it out of the HUD entirely (not just hide/grey its button) and stop it
+ * from ever being granted on level-up (see getEnabledPowerupIds(), the
+ * single source both of those read from). Keyed by the same ids as
  * PowerupStorage.HUD_POWERUP_IDS.
  */
 export const POWERUP_ENABLED: Record<string, boolean> = {
-    'bomb': true,
+    [WIND_POWERUP_ID]: true,
+    [CLEAR_LOW_TIER_POWERUP_ID]: true,
+    [DESTROY_PIECE_POWERUP_ID]: true,
+    [UPGRADE_PIECE_POWERUP_ID]: true,
     [SKIP_PIECE_POWERUP_ID]: false,
 };
 

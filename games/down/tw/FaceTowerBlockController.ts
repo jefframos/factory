@@ -11,6 +11,7 @@ import {
 } from 'matter-js';
 import * as PIXI from 'pixi.js';
 import { BlockBodyTextureCache } from './BlockBodyTextureCache';
+import { getFlapPolygon } from './FlapShape';
 import type {
     FaceTowerBlock,
     FaceTowerConfig,
@@ -593,6 +594,41 @@ export class FaceTowerBlockController {
         this.onBlockRemoved?.(block.id);
     }
 
+    /** Removes every live, non-powerup block whose `piece.tier` is in `tiers` — see FaceTowerGameController.triggerClearLowTierPowerup(). Snapshots `this.blocks` first since removeBlock() mutates that same array. */
+    public removeBlocksByTiers(tiers: readonly number[]): void {
+        for (const block of [...this.blocks]) {
+            if (!block.powerup && block.piece.tier !== undefined && tiers.includes(block.piece.tier)) {
+                this.removeBlock(block);
+            }
+        }
+    }
+
+    /**
+     * "Wind" powerup effect — nudges every live, non-powerup block with a
+     * random impulse plus a random spin, same physics primitives
+     * spawnMergedBlock()'s own small "pop" impulse already uses (just a lot
+     * stronger, since this is meant to visibly rattle the whole pile rather
+     * than read as a subtle settle). Purely cosmetic chaos — never removes
+     * or replaces anything.
+     */
+    public applyWindEffect(strength = 0.012): void {
+        for (const block of this.blocks) {
+            if (block.powerup) {
+                continue;
+            }
+
+            const body = block.entity.body;
+            const angle = Math.random() * Math.PI * 2;
+
+            Body.applyForce(body, body.position, {
+                x: Math.cos(angle) * strength,
+                y: Math.sin(angle) * strength - strength * 0.5,
+            });
+
+            Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.4);
+        }
+    }
+
     /**
      * Spawns `piece` directly as a live, already-falling block at world
      * position (x, y) — the result of two same-tier pieces merging (see
@@ -885,6 +921,7 @@ export class FaceTowerBlockController {
                 this.config.blockStrokeColor,
                 this.config.blockStrokeWidth,
                 this.config.blockBevelRadius,
+                getFlapPolygon(side),
             ),
             0,
         );
@@ -965,6 +1002,11 @@ export class FaceTowerBlockController {
     /** Whichever STATIC_PIECES id addBase() actually resolved for `base` (role-based default or an island's own basePieceId override) — see TowerBaseSync3D.createPanel(), the sole consumer. */
     public getBasePieceId(base: BasePhysicsEntity): string | undefined {
         return this.basePieceIds.get(base);
+    }
+
+    /** Which flap (left/right) `base` is — see FlapInfo/createFlap(). TowerBaseSync3D's sole consumer, to mirror the same FlapShape.getFlapPolygon() choice onto the 3D panel mesh. */
+    public getFlapSide(base: BasePhysicsEntity): 'left' | 'right' | undefined {
+        return this.flapInfo.get(base)?.side;
     }
 
     public destroy(): void {

@@ -32,7 +32,8 @@ export type PowerupButtonColor = 'Blue' | 'Green' | 'Yellow' | 'Purpple';
  * count it's told and fires onUse() on tap when it has at least one.
  */
 export class PowerupButton extends PIXI.Container {
-    private static readonly SIZE = 80;
+    /** Fixed footprint (px) every button occupies — public so layout code (see TopPowerupSlots) can compute positions from this known constant instead of querying live PIXI bounds. */
+    public static readonly SIZE = 80;
 
     private readonly bgEmpty: PIXI.Sprite;
     private readonly bgAvailable: PIXI.Sprite;

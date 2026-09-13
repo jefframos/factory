@@ -4,6 +4,7 @@ import type { BasePhysicsEntity } from 'core/phyisics/entities/BaseEntity';
 import * as THREE from 'three';
 import { PieceBoxBuilder } from '../game/builders/PieceBoxBuilder';
 import { TextureBuilder } from '../game/builders/TextureBuilder';
+import { getFlapPolygon } from './FlapShape';
 import type { FaceTowerConfig } from './FaceTowerTypes';
 import { resolvePieceImagePath } from './PieceStorage';
 import { getStaticPiece, getStaticPieceById } from './StaticPieceStorage';
@@ -45,6 +46,8 @@ export class TowerBaseSync3D {
         private readonly baseOffset: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 },
         /** Mirrors FaceTowerBlockController.getBasePieceId() — an island's basePieceId override, when it resolved to a real STATIC_PIECES entry for this specific base. See createPanel(). */
         private readonly resolvePieceId?: (base: BasePhysicsEntity) => string | undefined,
+        /** Mirrors FaceTowerBlockController.getFlapSide() — which flap (left/right) `base` is, so the 3D mesh picks the same FlapShape.getFlapPolygon() variant the 2D view already draws. See createPanel(). */
+        private readonly resolveFlapSide?: (base: BasePhysicsEntity) => 'left' | 'right' | undefined,
     ) { }
 
     public sync(bases: readonly BasePhysicsEntity[]): void {
@@ -88,7 +91,10 @@ export class TowerBaseSync3D {
         // panel — the polygon-split note there applies here too, so this
         // never draws `piece.polygon` for a flap's mesh, same as the 2D
         // view (StaticPieceView2D via buildStaticPieceView, called from
-        // FaceTowerBlockController.createFlap()).
+        // FaceTowerBlockController.createFlap()) — a fixed pinball-flipper
+        // outline (see FlapShape.getFlapPolygon()) is drawn instead, same as
+        // that 2D view.
+        const flapSide = this.resolveFlapSide?.(base);
         const width = (this.config.floorWidth / 2) / this.pixelsPerUnit;
         // Purely cosmetic — independent from config.floorHeight (the real
         // physics slab thickness, still what wall/dead-zone placement is
@@ -106,9 +112,11 @@ export class TowerBaseSync3D {
             piece ? hexStringToNumber(piece.color) : this.visualConfig.baseColor,
             width, height,
             {
-                // No `polygon` — a flap's mesh is always a plain rect (same
-                // simplification as FaceTowerBlockController.addBase()'s 2D
-                // collision/view), even when the resolved piece defines one.
+                // Ignores `piece.polygon` entirely, same as the 2D view —
+                // every flap always draws the fixed flipper outline instead
+                // (undefined `flapSide` — shouldn't happen in practice —
+                // falls back to PieceBoxBuilder's own plain-rect default).
+                polygon: flapSide ? getFlapPolygon(flapSide) : undefined,
                 depth,
                 faceOffset,
                 faceScale: piece?.faceScale,

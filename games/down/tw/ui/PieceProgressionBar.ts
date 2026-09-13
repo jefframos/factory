@@ -1,6 +1,7 @@
 // PieceProgressionBar.ts
 
 import * as PIXI from 'pixi.js';
+import { DEFAULT_FACE_TOWER_CONFIG } from '../FaceTowerConfig';
 import { getPieceShapeMode } from '../PieceShapeMode';
 import { resolvePieceImagePath, type PieceDefinition } from '../PieceStorage';
 
@@ -114,7 +115,7 @@ export class PieceProgressionBar extends PIXI.Container {
             }
 
             const unlocked = (piece.tier ?? 0) <= maxTierReached;
-            PieceProgressionBar.drawIcon(icon, piece, unlocked);
+            PieceProgressionBar.drawIcon(icon, piece, unlocked, shapeMode);
         }
     }
 
@@ -140,8 +141,65 @@ export class PieceProgressionBar extends PIXI.Container {
         return Math.max(0, Math.min(idealStart, pieceCount - PieceProgressionBar.SLOT_COUNT));
     }
 
+    /** Matches PieceSnapshotTool's default `size` setting — see NextPiecePreview's own identical constant. */
+    private static readonly SNAPSHOT_SIZE = 128;
+
+    /**
+     * An unlocked piece, in 'circle' mode, with the 3D layer active shows
+     * its real pre-rendered PieceSnapshotTool image (same asset
+     * NextPiecePreview's "next piece" swatch uses) instead of a flat drawn
+     * shape — reads as the actual polished piece rather than an
+     * approximation. Falls back to the flat draw otherwise: a locked piece
+     * (no spoiling the real look early), 'cube' mode (the snapshot is
+     * baked for the circle outline specifically — see PieceShapeMode — so
+     * it would show the wrong shape while cubes are active), 2D-only mode
+     * (no 3D render to have snapshotted), or if the image simply fails to
+     * load.
+     */
+    private static drawIcon(
+        icon: PIXI.Container,
+        piece: PieceDefinition,
+        unlocked: boolean,
+        shapeMode: 'circle' | 'cube',
+    ): void {
+        if (unlocked && shapeMode === 'circle' && DEFAULT_FACE_TOWER_CONFIG.render3D) {
+            PieceProgressionBar.drawSnapshotIcon(icon, piece);
+            return;
+        }
+
+        PieceProgressionBar.drawFlatIcon(icon, piece, unlocked);
+    }
+
+    private static resolvePieceSnapshotPath(pieceId: string): string {
+        return resolvePieceImagePath(`pieces/tower-piece-snapshots_${pieceId}_${PieceProgressionBar.SNAPSHOT_SIZE}x${PieceProgressionBar.SNAPSHOT_SIZE}.webp`);
+    }
+
+    private static drawSnapshotIcon(icon: PIXI.Container, piece: PieceDefinition): void {
+        const size = PieceProgressionBar.SLOT_SIZE * 0.85;
+        const texture = PIXI.Texture.from(PieceProgressionBar.resolvePieceSnapshotPath(piece.id));
+        const sprite = new PIXI.Sprite(texture);
+
+        sprite.anchor.set(0.5);
+        sprite.width = size;
+        sprite.height = size;
+        icon.addChild(sprite);
+
+        if (!texture.baseTexture.valid) {
+            texture.baseTexture.once('error', () => {
+                // Still showing (i.e. this slot hasn't already been redrawn
+                // for something else since) — this piece just has no
+                // pre-rendered snapshot, fall back to the flat draw instead
+                // of a broken image.
+                if (icon.children.includes(sprite)) {
+                    sprite.destroy();
+                    PieceProgressionBar.drawFlatIcon(icon, piece, true);
+                }
+            });
+        }
+    }
+
     /** Same shape+face draw NextPiecePreview.showDrawn() uses, just with a locked/dark variant swapped in instead of the piece's real color/texture. */
-    private static drawIcon(icon: PIXI.Container, piece: PieceDefinition, unlocked: boolean): void {
+    private static drawFlatIcon(icon: PIXI.Container, piece: PieceDefinition, unlocked: boolean): void {
         const size = PieceProgressionBar.SLOT_SIZE * 0.7;
         const longestAxis = Math.max(piece.scale.x, piece.scale.y);
         const pixelsPerUnit = size / longestAxis;

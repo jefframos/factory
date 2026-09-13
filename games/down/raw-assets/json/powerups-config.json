@@ -1,7 +1,7 @@
 [
     {
         "id": "bomb",
-        "type": "destroy-drop",
+        "type": "drop",
         "icon": "bomb-icon",
         "piece": {
             "scale": {
@@ -127,7 +127,7 @@
     },
     {
         "id": "super-bomb",
-        "type": "destroy-drop",
+        "type": "drop",
         "icon": "bomb-icon",
         "piece": {
             "scale": {
@@ -201,5 +201,41 @@
         },
         "destroyStepDelay": 0.15,
         "dropForceY": 25
+    },
+    {
+        "id": "wind",
+        "type": "instant",
+        "piece": {
+            "scale": { "x": 1, "y": 1 },
+            "color": "#4FC3F7",
+            "texture": "skins/face-1.webp"
+        }
+    },
+    {
+        "id": "clear-low-tier",
+        "type": "instant",
+        "piece": {
+            "scale": { "x": 1, "y": 1 },
+            "color": "#B0BEC5",
+            "texture": "skins/face-1.webp"
+        }
+    },
+    {
+        "id": "destroy-piece",
+        "type": "target",
+        "piece": {
+            "scale": { "x": 1, "y": 1 },
+            "color": "#E53935",
+            "texture": "skins/face-1.webp"
+        }
+    },
+    {
+        "id": "upgrade-piece",
+        "type": "target",
+        "piece": {
+            "scale": { "x": 1, "y": 1 },
+            "color": "#FFC107",
+            "texture": "skins/face-1.webp"
+        }
     }
 ]
