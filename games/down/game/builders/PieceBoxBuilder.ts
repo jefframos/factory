@@ -97,14 +97,19 @@ export class PieceBoxBuilder {
 
         const mat = new THREE.MeshPhysicalMaterial({
             color, metalness: 0,
-            roughness: 0.3,
+            // Softer body roughness than a hard plastic — spreads the key/rim
+            // highlights into a gentler gradient across the bevel instead of a
+            // tight hotspot, which is what reads as "soft shading".
+            roughness: 0.6,
 
-            clearcoat: 1,
-            clearcoatRoughness: 0.12,
+            // Low clearcoat + high clearcoatRoughness so the highlight stays a
+            // dim, wide sheen instead of a small hot (near-white) glint.
+            clearcoat: 0.25,
+            clearcoatRoughness: 0.45,
 
             ior: 1.46,
 
-            envMapIntensity: 1.1,
+            envMapIntensity: 0.6,
         });
         BendService.applyBend(mat);
 

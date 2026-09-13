@@ -13,6 +13,7 @@ export class TextureBuilder {
     private static islandTex: THREE.CanvasTexture | null = null;
     private static realIslandTex: THREE.Texture | null = null;
     private static faceTex: THREE.CanvasTexture | null = null;
+    private static woodGrainTex: THREE.CanvasTexture | null = null;
     private static pathCache = new Map<string, THREE.Texture | Promise<THREE.Texture>>();
     private static loader = new THREE.TextureLoader();
 
@@ -173,6 +174,85 @@ export class TextureBuilder {
 
         const tex = new THREE.CanvasTexture(canvas);
         TextureBuilder.faceTex = tex;
+        return tex;
+    }
+
+    /**
+     * Faint, tileable grayscale grain texture (near-white with soft, wavy
+     * streaks) — meant as a `map` on a piece that's otherwise a flat solid
+     * color, since three.js multiplies map × material.color. That's what
+     * lets the SAME texture read as a subtle wood-like grain on any tint
+     * (wall poles, base/trapdoor panels — see TowerWallSync3D/
+     * TowerBaseSync3D) instead of baking in a specific wood color.
+     *
+     * `repeat` is set here (not left for callers) to a FIXED value rather
+     * than one scaled by each mesh's own width/height: ExtrudeGeometry's
+     * default UV generator (WorldUVGenerator) already emits UVs as raw
+     * LOCAL-SPACE coordinates, not normalized 0..1 — so a mesh's own UV
+     * range already grows with its size, and multiplying `repeat` by that
+     * same width/height on top double-applies the scaling, over-tiling the
+     * grain by orders of magnitude (it collapses to a flat averaged tint
+     * under mipmapping — no visible texture at all). Leaving repeat at a
+     * small fixed constant here means bigger meshes naturally show more
+     * tile repeats (consistent grain size in world units) without a second,
+     * redundant per-caller multiply. Shared/cached like face()/island() —
+     * do not clone or mutate `.repeat` per instance.
+     */
+    static woodGrain(): THREE.CanvasTexture {
+        if (TextureBuilder.woodGrainTex) return TextureBuilder.woodGrainTex;
+
+        const size = 256;
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = size;
+        const ctx = canvas.getContext('2d')!;
+
+        ctx.fillStyle = '#ececec';
+        ctx.fillRect(0, 0, size, size);
+
+        // Deterministic PRNG — same texture every load, no Date.now()/Math.random().
+        let seed = 0x9e3779b9;
+        const rand = (): number => {
+            seed ^= seed << 13;
+            seed ^= seed >> 17;
+            seed ^= seed << 5;
+            return (seed >>> 0) / 0xffffffff;
+        };
+
+        // Long, gently wavy streaks at low alpha — deliberately faint so this
+        // reads as subtle surface variation (a hint of grain), not a printed
+        // wood pattern.
+        for (let i = 0; i < 130; i++) {
+            const y = rand() * size;
+            const streakLen = size * (0.5 + rand() * 0.6);
+            const x = rand() * size - streakLen / 2;
+            const lighter = rand() > 0.5;
+
+            ctx.strokeStyle = lighter ? '#fafafa' : '#c2c2c2';
+            ctx.globalAlpha = 0.1 + rand() * 0.16;
+            ctx.lineWidth = 1 + rand() * 1.5;
+
+            ctx.beginPath();
+            ctx.moveTo(x, y + (rand() - 0.5) * 3);
+            ctx.bezierCurveTo(
+                x + streakLen * 0.33, y + (rand() - 0.5) * 6,
+                x + streakLen * 0.66, y + (rand() - 0.5) * 6,
+                x + streakLen, y + (rand() - 0.5) * 3,
+            );
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        // One tile per ~1.4 world units — see this method's own doc for why
+        // this is a small fixed constant instead of something callers scale
+        // by their mesh's own width/height.
+        tex.repeat.set(0.7, 0.7);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.minFilter = THREE.LinearMipmapLinearFilter;
+        tex.generateMipmaps = true;
+        TextureBuilder.woodGrainTex = tex;
         return tex;
     }
 

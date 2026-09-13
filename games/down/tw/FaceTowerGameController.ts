@@ -18,6 +18,7 @@ import { getPowerup } from './PowerupStorage';
 import { PowerupSystem, type PowerupContactPoint } from './PowerupSystem';
 import { TowerCameraController } from './TowerCameraController';
 import { TowerDeadZoneController } from './TowerDeadZoneController';
+import { TowerGateController, type GateRequirement } from './TowerGateController';
 import { resolveIslandForZone } from './TowerIslandProgression';
 import { TowerLevelController, type ZoneAdvanceResult } from './TowerLevelController';
 import { TowerMergeController } from './TowerMergeController';
@@ -28,10 +29,26 @@ import { TowerZoneController } from './TowerZoneController';
 
 export interface FaceTowerGameEvents {
     onScoreChanged?(score: number): void;
-    /** Fired the instant a weight milestone is reached and the trapdoor sequence begins (renamed from the old height-based onMilestoneReached — there's no line being "reached" any more, just a weight threshold that opens the floor). */
-    onTrapdoorOpened?(zoneIndex: number): void;
+    /**
+     * Fired the instant a gate requirement is met and the trapdoor sequence
+     * begins (renamed from the old weight-milestone-based version — the
+     * trigger is TowerGateController now, see checkGateMilestone(), not a
+     * weight threshold; `satisfiedGate` is the requirement that was JUST
+     * met, for the "pop away + show an opening lock" celebration beat —
+     * see onGateProgressRevealed for the NEXT requirement, revealed later).
+     */
+    onTrapdoorOpened?(zoneIndex: number, satisfiedGate: GateRequirement): void;
     /** Fired once every zone of the current level is complete and play has rolled over into the next level — see TowerLevelController. Never fires again once the last authored level is reached; its zones just keep repeating. */
     onLevelProgressed?(levelIndex: number): void;
+    /**
+     * Fired once the CURRENT gate requirement should actually be shown —
+     * at run start (see start()), and again `trapdoorSettleDelay` after
+     * every onTrapdoorOpened (see finishTrapdoor()), the same beat the
+     * level-up popup already waits for. NOT fired at the same instant as
+     * onTrapdoorOpened — that event's `satisfiedGate` is the OLD
+     * (just-met) requirement; this one is the NEW one to display next.
+     */
+    onGateProgressRevealed?(requirement: GateRequirement): void;
     /** `topWorldY` is the run's final climbed height (world Y, see getCurrentTopWorldY()) — same value TowerHeightGauge/TowerHeightMarkers3D convert to meters/km for their own display, for the game-over popup to show alongside the score. */
     onGameOver?(score: number, topWorldY: number): void;
     /** Fired the instant a piece is released and physics takes over — the "shoot" moment. See dropBlock(). */
@@ -69,12 +86,16 @@ export interface FaceTowerGameEvents {
 }
 
 export class FaceTowerGameController {
+    /** The first gate's requirement — tier4, the 5th piece (1-indexed: tier0 is "piece 1"). See TowerGateController. */
+    private static readonly FIRST_GATE_TIER = 4;
+
     private readonly camera: TowerCameraController;
     private readonly blocks: FaceTowerBlockController;
     private readonly zones: TowerZoneController;
     private readonly levels: TowerLevelController;
     private readonly deadZones: TowerDeadZoneController;
     private readonly pieces: PieceManager;
+    private readonly gates: TowerGateController;
     private readonly powerups: PowerupSystem;
     private readonly merges: TowerMergeController;
     private readonly mergeProximity: TowerMergeProximityController;
@@ -107,13 +128,6 @@ export class FaceTowerGameController {
     private suppressGameOverUntilDrop = false;
 
     /**
-     * Pieces dropped in the CURRENT zone — see checkWeightMilestone()'s
-     * minDropsPerZone gate. Reset every time a new zone begins
-     * (beginTrapdoor()), incremented on every real drop (dropBlock()).
-     */
-    private dropsThisZone = 0;
-
-    /**
      * Wall/pole height (px) for the current floor — always enough to reach
      * containmentTopBuffer past the fixed game-over line (see
      * computeContainmentWallHeight()), NOT a fraction of trapdoorDropHeight/
@@ -136,6 +150,17 @@ export class FaceTowerGameController {
      * this further — reaching that already required the tier below it.
      */
     private maxTierReached = 0;
+
+    /**
+     * One-shot per-frame flag: set true in handleMerge() whenever a
+     * top-tier + top-tier merge just despawned two pieces (see
+     * TowerMergeController's own top-tier-despawn case), consumed (read
+     * and reset) once a frame by checkGateMilestone() — only meaningful
+     * once TowerGateController is in its "top tier repeat" mode, but set
+     * unconditionally since handleMerge() has no reason to know which mode
+     * gates is in.
+     */
+    private topTierMergeHappened = false;
 
     /** The piece just released, still waited on before the next one spawns — see updateDropWait(). Cleared once its own hasJiggled flips true or the fallback timeout elapses. */
     private droppedBlock?: FaceTowerBlock;
@@ -187,6 +212,11 @@ export class FaceTowerGameController {
         this.pieces = new PieceManager();
         this.pieces.build();
 
+        this.gates = new TowerGateController(
+            FaceTowerGameController.FIRST_GATE_TIER,
+            this.pieces.getMaxTier(),
+        );
+
         this.merges = new TowerMergeController(
             this.blocks,
             this.pieces,
@@ -237,6 +267,11 @@ export class FaceTowerGameController {
         this.score = 0;
         this.events.onScoreChanged?.(this.score);
 
+        // The very first gate requirement — nothing has opened yet, so
+        // there's no beginTrapdoor()/finishTrapdoor() beat to fire this
+        // from otherwise.
+        this.events.onGateProgressRevealed?.(this.gates.getCurrentRequirement());
+
         this.spawnNextBlock();
     }
 
@@ -253,6 +288,8 @@ export class FaceTowerGameController {
         // run's first zone must use the unscaled, as-authored target, same
         // as the constructor's own initial zone.
         this.maxTierReached = 0;
+        this.gates.reset();
+        this.topTierMergeHappened = false;
 
         const zoneConfig = this.levels.getCurrentZoneConfig();
         this.currentWallHeight = this.computeContainmentWallHeight();
@@ -267,7 +304,6 @@ export class FaceTowerGameController {
         this.gameOverLineTimer = 0;
         this.postTrapdoorSettleTimer = 0;
         this.suppressGameOverUntilDrop = false;
-        this.dropsThisZone = 0;
 
         this.state = FaceTowerState.Initialising;
 
@@ -362,7 +398,7 @@ export class FaceTowerGameController {
             return;
         }
 
-        this.checkWeightMilestone();
+        this.checkGateMilestone();
     }
 
     public resizeInput(
@@ -648,9 +684,26 @@ export class FaceTowerGameController {
         });
     }
 
-    /** 'wind' (type: 'instant') — see FaceTowerBlockController.applyWindEffect(). Safe to call any time; a no-op if nothing's on the board yet. */
+    /**
+     * 'wind' (type: 'instant') — no longer a cosmetic physics rattle (see
+     * git history for the old FaceTowerBlockController.applyWindEffect()):
+     * forces the CURRENT gate open immediately, exactly as if its real
+     * requirement (the next tier unlock, or another top-tier merge — see
+     * TowerGateController) had just been met. Routed through the same
+     * beginTrapdoor() the real requirement check uses (not a separate
+     * ad-hoc "open the floor" path), so the gate widget still gets its
+     * usual onTrapdoorOpened/onGateProgressRevealed events and stays in
+     * sync — it doesn't skip advancing TowerGateController/zones/levels,
+     * it just skips WAITING for the requirement. A no-op while a trapdoor
+     * is already mid-sequence or the run has ended, same guard
+     * devSkipZone()/devSkipLevel() use.
+     */
     public triggerWindPowerup(): void {
-        this.blocks.applyWindEffect();
+        if (this.state === FaceTowerState.GameOver || this.trapdoor.isActive()) {
+            return;
+        }
+
+        this.beginTrapdoor();
     }
 
     /** 'clear-low-tier' (type: 'instant') — removes every live tier-0/tier-1 block. See FaceTowerBlockController.removeBlocksByTiers(). */
@@ -830,11 +883,9 @@ export class FaceTowerGameController {
         }
 
         // A real drop — re-arms the game-over check (see
-        // suppressGameOverUntilDrop's own doc) and counts toward this
-        // zone's minDropsPerZone gate (see checkWeightMilestone()),
-        // whether this piece is a normal drop or a powerup.
+        // suppressGameOverUntilDrop's own doc), whether this piece is a
+        // normal drop or a powerup.
         this.suppressGameOverUntilDrop = false;
-        this.dropsThisZone++;
 
         this.events.onBlockDropped?.(releasedBlock);
 
@@ -908,22 +959,18 @@ export class FaceTowerGameController {
         return false;
     }
 
-    private checkWeightMilestone(): void {
+    private checkGateMilestone(): void {
         if (this.trapdoor.isActive()) {
             return;
         }
 
-        // Merging conserves/compounds weight (a merge result's weight is
-        // exactly its two source pieces' combined weight — see
-        // PieceStorage.getPieceWeight) — never reduces it. Without this
-        // gate, one big lucky cascade could clear the ENTIRE zone's
-        // milestone in a single merge, which feels great in the moment but
-        // skips playing the zone at all. See FaceTowerConfig.minDropsPerZone.
-        if (this.dropsThisZone < this.config.minDropsPerZone) {
-            return;
-        }
+        const met = this.gates.isRequirementMet(this.maxTierReached, this.topTierMergeHappened);
+        // Consumed every frame regardless of the result above — a one-shot
+        // signal for "did a top-tier merge happen since the last check",
+        // not a sticky state.
+        this.topTierMergeHappened = false;
 
-        if (!this.zones.hasReachedWeight(this.blocks.getTotalWeight())) {
+        if (!met) {
             return;
         }
 
@@ -931,13 +978,19 @@ export class FaceTowerGameController {
     }
 
     /**
-     * Kicks off the trapdoor sequence the instant the current zone's weight
-     * milestone is cleared — advances the zone/level bookkeeping right
-     * away (same "advance first, animate after" order the old zone-advance
-     * used) so the next zone's own (higher) target weight and the active
-     * island/sky are already correct by the time the floor actually opens.
+     * Kicks off the trapdoor sequence the instant the current gate
+     * requirement is met — advances the zone/level bookkeeping right away
+     * (same "advance first, animate after" order the old zone-advance
+     * used) so the active island/sky are already correct by the time the
+     * floor actually opens. zones/levels' own target-weight bookkeeping
+     * keeps running unchanged here even though weight no longer GATES
+     * anything — only what's consulted to decide "should a gate open" moved
+     * to TowerGateController.
      */
     private beginTrapdoor(): void {
+        const satisfiedGate = this.gates.getCurrentRequirement();
+        this.gates.advance();
+
         const heldPiece = this.blocks.getHeldBlock()?.piece;
 
         if (heldPiece) {
@@ -948,10 +1001,8 @@ export class FaceTowerGameController {
         this.droppedBlock = undefined;
 
         // Suppress the game-over check for the whole span until the
-        // player's next real drop (see its own doc), and start the NEW
-        // zone's minDropsPerZone tally at 0.
+        // player's next real drop (see its own doc).
         this.suppressGameOverUntilDrop = true;
-        this.dropsThisZone = 0;
 
         // updateGameOverLine() is the ONLY place that increments or resets
         // this timer — and it's never even called while suppressed (see
@@ -990,7 +1041,7 @@ export class FaceTowerGameController {
         // harmless either way since discardHeldBlock() above already left
         // nothing for those to act on, but this keeps getState() honest.
         this.state = FaceTowerState.TrapdoorOpening;
-        this.events.onTrapdoorOpened?.(result.zoneIndex);
+        this.events.onTrapdoorOpened?.(result.zoneIndex, satisfiedGate);
 
         // NOTE: onLevelProgressed is NOT fired here any more — see
         // finishTrapdoor(). Firing it this early meant the level-up popup
@@ -1041,6 +1092,12 @@ export class FaceTowerGameController {
         } else {
             this.spawnNextBlock();
         }
+
+        // Fired unconditionally (both branches above) — this is what shows
+        // the NEXT gate requirement, always this same beat after a gate
+        // opens, whether or not that gate also happened to level the
+        // player up.
+        this.events.onGateProgressRevealed?.(this.gates.getCurrentRequirement());
     }
 
     /**
@@ -1057,6 +1114,11 @@ export class FaceTowerGameController {
         if (resultPiece?.tier !== undefined) {
             this.maxTierReached = Math.max(this.maxTierReached, resultPiece.tier);
             TowerPieceUnlockStorage.recordTier(resultPiece.tier);
+        } else {
+            // resultPiece undefined == a top-tier + top-tier merge just
+            // despawned both pieces (see TowerMergeController) — see
+            // TowerGateController's own doc for how this is used.
+            this.topTierMergeHappened = true;
         }
 
         this.events.onMerge?.(resultPiece, x, y, points);
@@ -1064,14 +1126,20 @@ export class FaceTowerGameController {
 
     /**
      * Dev-only: instantly advances the current zone (and, if it rolls over,
-     * the level) exactly as if its weight milestone had just been reached
-     * — teleports the floor straight to its new position instead of
+     * the level) exactly as if its current gate requirement had just been
+     * met — teleports the floor straight to its new position instead of
      * running the real TowerTrapdoorController opening/falling beats, so
      * repeated calls (see devSkipLevel()) can't stack up waiting on
-     * multiple real-time camera pans in a row. See
+     * multiple real-time camera pans in a row. Also advances/reveals the
+     * gate requirement (same as a real beginTrapdoor()/finishTrapdoor()
+     * pair, just without the animated wait between them) so the gate
+     * widget stays in sync during dev testing. See
      * IslandViewScene.setupLevelDevGui().
      */
     private instantAdvanceZone(): ZoneAdvanceResult {
+        const satisfiedGate = this.gates.getCurrentRequirement();
+        this.gates.advance();
+
         const advance = this.levels.advanceZone();
         const zoneConfig = this.levels.getCurrentZoneConfig();
 
@@ -1079,7 +1147,6 @@ export class FaceTowerGameController {
 
         const result = this.zones.completeZone(this.scaleZoneTargetWeight(zoneConfig.weight));
         this.blocks.resetWeight();
-        this.dropsThisZone = 0;
 
         const newFloorY = this.blocks.getCurrentFloorY() + this.config.trapdoorDropHeight;
 
@@ -1095,7 +1162,8 @@ export class FaceTowerGameController {
         this.deadZones.rebuild(newFloorY, this.currentWallHeight);
         this.camera.panTo(this.config.floorScreenY - newFloorY);
 
-        this.events.onTrapdoorOpened?.(result.zoneIndex);
+        this.events.onTrapdoorOpened?.(result.zoneIndex, satisfiedGate);
+        this.events.onGateProgressRevealed?.(this.gates.getCurrentRequirement());
 
         return advance;
     }

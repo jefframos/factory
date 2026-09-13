@@ -124,9 +124,19 @@ export class TowerBaseSync3D {
             },
         );
 
-        const material = panel.material as THREE.MeshStandardMaterial;
-        material.roughness = 0.35;
-        material.metalness = 0.1;
+        // Duller, less reflective than a piece — no metal, and a much
+        // wider/dimmer clearcoat sheen than a piece gets — but not fully
+        // matte, or it reads as flat under the key/rim lights.
+        const material = panel.material as THREE.MeshPhysicalMaterial;
+        material.roughness = 0.6;
+        material.metalness = 0;
+        material.clearcoat = 0.2;
+        material.clearcoatRoughness = 0.6;
+        // Shared texture — its `repeat` is a fixed constant (see
+        // TextureBuilder.woodGrain()'s own doc), not per-panel, so no clone
+        // is needed here.
+        material.map = TextureBuilder.woodGrain();
+        material.needsUpdate = true;
 
         this.scene.add(panel);
         this.panels.set(base, panel);
@@ -181,6 +191,9 @@ export class TowerBaseSync3D {
     private removePanel(base: BasePhysicsEntity, panel: THREE.Mesh): void {
         this.scene.remove(panel);
         PieceBoxBuilder.disposeMesh(panel);
+        // material.map is TextureBuilder's shared grain texture (see
+        // createPanel()) — do NOT dispose it here, other panels/poles still
+        // reference the same instance.
         (panel.material as THREE.Material).dispose();
         this.panels.delete(base);
     }

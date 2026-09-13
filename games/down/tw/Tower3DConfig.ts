@@ -223,11 +223,11 @@ export interface Tower3DConfig {
 
 export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
     cameraYawDeg: 0,
-    cameraPitchDeg: -5,
+    cameraPitchDeg: -7,
     cameraDistance: 8,
     cameraDistanceMax: 15,
 
-    cameraMasterOffsetY: 4.5, // lower = the floor/trapdoor sits higher on screen — nudged down a bit from 4.9
+    cameraMasterOffsetY: 4.1, // lower = the floor/trapdoor sits higher on screen — nudged down a bit from 4.9
 
     // Extra height (THREE units) added ONLY to the camera's own position,
     // not its look-at target — unlike cameraMasterOffsetY (which shifts
@@ -235,7 +235,10 @@ export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
     // just the follow-scroll tracking height), this actually tilts the view
     // down a touch, pushing tower content higher in the frame so it clears
     // bottom-of-screen UI. See positionCamera().
-    cameraExtraLiftY: 0.8,
+    // Bumped up from 0.8 — the bottom HUD stack (PieceProgressionBar +
+    // GateProgressPanel, stacked) grew taller, so a bit more tilt is needed
+    // to keep clearing it.
+    cameraExtraLiftY: 1,
 
     clusterDiameter: 0, // 16 world units at pixelsPerUnit: 80 — matches the old fixed radius
     clusterCellSize: 0,

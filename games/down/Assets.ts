@@ -315,6 +315,10 @@ export default class Assets {
             Back: "Icon_Back",
             Check: "Icon_Check03_s",
             Lock: "Icon_Lock01_s",
+            /** Closed padlock — TowerGateController's "requirement" box shows this beside the piece that needs unlocking. */
+            LockClosed: "Icon_Lock03",
+            /** Lock mid-opening — popped briefly when a gate requirement is met, see GateProgressPanel.celebrateUnlock(). */
+            LockOpen: "Icon_Lock02",
             Close: "Icon_Close02",
             Reset: "Icon_Close02",
             Hint: "eye",

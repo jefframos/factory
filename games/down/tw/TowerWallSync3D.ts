@@ -112,9 +112,19 @@ export class TowerWallSync3D {
                 },
             );
 
-            const material = pole.material as THREE.MeshStandardMaterial;
-            material.roughness = 0.3;
-            material.metalness = 0.2;
+            // Duller, less reflective than a piece — no metal, and a much
+            // wider/dimmer clearcoat sheen than a piece gets — but not fully
+            // matte, or it reads as flat under the key/rim lights.
+            const material = pole.material as THREE.MeshPhysicalMaterial;
+            material.roughness = 0.6;
+            material.metalness = 0;
+            material.clearcoat = 0.2;
+            material.clearcoatRoughness = 0.6;
+            // Shared texture — its `repeat` is a fixed constant (see
+            // TextureBuilder.woodGrain()'s own doc), not per-pole, so no
+            // clone is needed here.
+            material.map = TextureBuilder.woodGrain();
+            material.needsUpdate = true;
 
             this.scene.add(pole);
             this.poles.push(pole);
@@ -152,6 +162,9 @@ export class TowerWallSync3D {
         for (const pole of this.poles) {
             this.scene.remove(pole);
             PieceBoxBuilder.disposeMesh(pole);
+            // material.map is TextureBuilder's shared grain texture (see
+            // rebuild()) — do NOT dispose it here, other poles/panels still
+            // reference the same instance.
             (pole.material as THREE.Material).dispose();
         }
 

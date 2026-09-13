@@ -4,14 +4,15 @@ import * as PIXI from 'pixi.js';
 import type { Signal } from 'signals';
 import { NextPiecePreview } from '../NextPiecePreview';
 import { PieceDefinition } from '../PieceStorage';
+import type { GateRequirement } from '../TowerGateController';
 import { TowerHeightGauge, HeightMark } from '../TowerHeightGauge';
 import { TowerProgressBar2D } from '../TowerProgressBar2D';
 import { DEFAULT_FACE_TOWER_CONFIG } from '../FaceTowerConfig';
+import { GateProgressPanel } from './GateProgressPanel';
 import { PieceProgressionBar } from './PieceProgressionBar';
 import { ShapeModeToggleButton } from './ShapeModeToggleButton';
 import { TopPowerupSlots } from './TopPowerupSlots';
 import { TowerHeader } from './TowerHeader';
-import { TowerNextLevelPanel } from './TowerNextLevelPanel';
 import { TowerScorePanel } from './TowerScorePanel';
 import { ZoneNotification } from './notifications/ZoneNotification';
 import { LevelUpNotification } from './notifications/LevelUpNotification';
@@ -29,8 +30,6 @@ export class GameHud extends PIXI.Container {
 
     /** Always-visible "Level N" bubble — see updateLevelGoal(). */
     private readonly towerHeader = new TowerHeader();
-    /** Separate "current/target next-level height" progress bar — own container so it can be positioned independently of towerHeader. See updateLevelGoal(). */
-    private readonly nextLevelPanel = new TowerNextLevelPanel();
 
     private heightGauge!: TowerHeightGauge;
     private progressBar2D!: TowerProgressBar2D;
@@ -45,8 +44,10 @@ export class GameHud extends PIXI.Container {
     /** The 4-slot top powerup row (2 left, 2 right) — owns its own building/layout; GameHud just positions it and mirrors counts/active-state into it. See onUsePowerup below for how a tap reaches the game. Replaces the old bottom-right PowerupBelt (removed — see this file's git history if it's ever needed again; PowerupBelt.ts itself is untouched). */
     private readonly topPowerupSlots = new TopPowerupSlots();
 
-    /** Bottom-center "which pieces have I unlocked so far" strip — see updatePieceProgression(). */
+    /** Bottom-center "which pieces have I unlocked so far" strip — see updatePieceProgression(). Sits at the very bottom; gateProgressPanel stacks directly above it. */
     private readonly pieceProgressionBar = new PieceProgressionBar();
+    /** "Current gate requirement" box — stacked above pieceProgressionBar. Replaces the old TowerNextLevelPanel (hidden, not deleted — see this file's own PowerupBelt precedent). See showGateRequirement()/playGateUnlockCelebration(). */
+    private readonly gateProgressPanel = new GateProgressPanel();
 
     /** Fired when a powerup button is tapped with count > 0 — see IslandViewScene, which listens, checks FaceTowerGameController.canUsePowerup(), spends one from PowerupInventoryStorage, and triggers the actual effect (spawnPowerup()/skipHeldPiece()). Just topPowerupSlots' own signal, exposed here so GameHud's own consumers don't need to reach through to a sub-component. */
     public readonly onUsePowerup: Signal = this.topPowerupSlots.onUsePowerup;
@@ -78,13 +79,12 @@ export class GameHud extends PIXI.Container {
         this.gameplayLayer.addChild(this.zoneNotification);
         this.gameplayLayer.addChild(this.shapeModeToggle);
         this.gameplayLayer.addChild(this.pieceProgressionBar);
+        this.gameplayLayer.addChild(this.gateProgressPanel);
 
         // The level number itself is retired from the HUD — see
         // showScore()'s own "points + best, centered" replacement. Left
-        // constructed (rather than removed outright) purely so
-        // nextLevelPanel's own layout() math, which anchors off
-        // towerHeader.width, keeps working unchanged — a Container's width
-        // getter isn't affected by `visible`.
+        // constructed (rather than removed outright) since updateLevelGoal()
+        // still calls .update() on it.
         this.towerHeader.visible = false;
 
         this.gameOverPopup = new GameOverPopup(
@@ -178,19 +178,16 @@ export class GameHud extends PIXI.Container {
     }
 
     /**
-     * Always-visible hint of the level currently being built, plus the
-     * current-vs-target BOARD WEIGHT progress toward the next trapdoor
-     * milestone (see FaceTowerGameController.getTotalWeight/getTargetWeight/
-     * getWeightProgress) — see IslandViewScene.update().
+     * Feeds the (invisible, but still tracked — see the constructor)
+     * towerHeader with the level currently being built. Used to also feed
+     * TowerNextLevelPanel's board-weight progress bar — that panel is
+     * hidden now (see gateProgressPanel), since weight no longer gates
+     * anything; board weight itself is still tracked elsewhere (
+     * FaceTowerGameController.getWeightProgress(), consumed by
+     * updateProgressBar()/the starfield) and is unaffected by this.
      */
-    public updateLevelGoal(
-        levelIndex: number,
-        currentWeight: number,
-        targetWeight: number,
-        weightFraction: number,
-    ): void {
+    public updateLevelGoal(levelIndex: number): void {
         this.towerHeader.update(levelIndex);
-        this.nextLevelPanel.update(currentWeight, targetWeight, weightFraction);
     }
 
     public showGameOver(data: GameOverData): void {
@@ -239,6 +236,16 @@ export class GameHud extends PIXI.Container {
     /** Call every frame — see PieceProgressionBar.update(), which no-ops unless something actually changed. */
     public updatePieceProgression(pieces: readonly PieceDefinition[], maxTierReached: number): void {
         this.pieceProgressionBar.update(pieces, maxTierReached);
+    }
+
+    /** Shows `requirement`'s piece + closed lock — see FaceTowerGameEvents.onGateProgressRevealed, which fires at run start and again every time a gate opens (after its settle delay). */
+    public showGateRequirement(requirement: GateRequirement, piece: PieceDefinition): void {
+        this.gateProgressPanel.showRequirement(requirement, piece);
+    }
+
+    /** Plays the "gate just opened" pop-away/lock-opening beat — see FaceTowerGameEvents.onTrapdoorOpened. */
+    public playGateUnlockCelebration(): void {
+        this.gateProgressPanel.celebrateUnlock();
     }
 
     /** Call every frame (or whenever it might have changed) — see TopPowerupSlots.updateCounts(). */
@@ -295,21 +302,36 @@ export class GameHud extends PIXI.Container {
             topLeft.y + padding,
         );
 
-        // Bottom-center stack: the next-level (section) progress bar sits
-        // at the very bottom, the piece-progression strip directly above
-        // it — both center-anchored horizontally, every slot in the strip
-        // already built symmetric around its own (0, 0) (see
-        // PieceProgressionBar's own constructor).
+        // Bottom-center stack: pieceProgressionBar sits at the very bottom
+        // (same anchor TowerNextLevelPanel used to occupy), gateProgressPanel
+        // directly above it — both center-anchored horizontally.
         const bottomStackGap = 8;
-
-        this.nextLevelPanel.position.set(
-            Game.DESIGN_WIDTH * 0.5,
-            bottomRight.y - padding - this.nextLevelPanel.height / 2,
-        );
 
         this.pieceProgressionBar.position.set(
             Game.DESIGN_WIDTH * 0.5,
-            this.nextLevelPanel.y - this.nextLevelPanel.height / 2 - bottomStackGap - this.pieceProgressionBar.height / 2,
+            bottomRight.y - padding - this.pieceProgressionBar.height / 2,
+        );
+
+        // Last-resort safety net: PieceProgressionBar's own constants are
+        // sized to already fit every catalog slot within Game.DESIGN_WIDTH
+        // (see its own doc), but a narrower-than-usual safe area (an
+        // unusually tall/narrow aspect ratio) could still leave it wider
+        // than what's actually visible — uniformly scaling it down (never
+        // up, so it never drifts LARGER than its own designed size) keeps
+        // it from ever running off the sides. Measured against the bar's
+        // own unscaled width (getNaturalWidth()), not `.width` (which would
+        // already reflect any scale a previous layout() call applied,
+        // compounding the shrink further every frame instead of settling).
+        const barMaxWidth = (topRight.x - topLeft.x) - padding * 2;
+        const barScale = Math.min(1, barMaxWidth / this.pieceProgressionBar.getNaturalWidth());
+        this.pieceProgressionBar.scale.set(barScale);
+
+        // Small/fixed-size content (one piece icon + a lock, occasionally a
+        // "+"), so unlike PieceProgressionBar this doesn't need its own
+        // scale-to-fit safety net.
+        this.gateProgressPanel.position.set(
+            Game.DESIGN_WIDTH * 0.5,
+            this.pieceProgressionBar.y - this.pieceProgressionBar.height / 2 - bottomStackGap - this.gateProgressPanel.height / 2,
         );
 
         // Popups handle their own internal layout
@@ -326,8 +348,8 @@ export class GameHud extends PIXI.Container {
         this.levelUpNotification.destroy();
         this.topPowerupSlots.destroy();
         this.shapeModeToggle.destroy();
-        this.nextLevelPanel.destroy();
         this.pieceProgressionBar.destroy();
+        this.gateProgressPanel.destroy();
 
         super.destroy(options ?? { children: true });
     }
@@ -352,6 +374,5 @@ export class GameHud extends PIXI.Container {
     private buildStaticLabels(): void {
         this.gameplayLayer.addChild(this.scorePanel);
         this.gameplayLayer.addChild(this.towerHeader);
-        this.gameplayLayer.addChild(this.nextLevelPanel);
     }
 }

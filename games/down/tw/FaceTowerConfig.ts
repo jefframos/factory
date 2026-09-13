@@ -77,7 +77,6 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     trapdoorDropHeight: 600, // px the pile free-falls before a new floor is placed
     trapdoorOpenDuration: 0.6, // seconds — cosmetic lead-in AND the two-flap swing-open duration, before the floor is destroyed
     trapdoorSettleDelay: 0.6, // seconds to let the pile visibly finish landing before play resumes/the level-up popup shows
-    minDropsPerZone: 5, // pieces that must be dropped in a zone before its weight milestone can trigger the trapdoor, however fast the weight itself clears
     floorFlapRestAngle: 10 * (Math.PI / 180), // ~10deg idle tilt (each flap's inner edge sags toward the center seam)
     floorFlapOpenAngle: 60 * (Math.PI / 180), // ~60deg full swing-open tilt when the trapdoor triggers
 
@@ -109,7 +108,7 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     blockFillAlpha: 1,
     blockStrokeColor: 0x555555,
     blockStrokeWidth: 2,
-    blockBevelRadius: 12,
+    blockBevelRadius: 22,
     render2D: false,
     render3D: true,
     render2DFaces: true,
@@ -120,7 +119,10 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     previewGlobalOffset3D: { x: 0, y: 0.1 },
 
     // --- 3D piece visuals ---
-    pieceDepthRatio: 0.15,
-    pieceBevelRadiusRatio: 0.15,
-    pieceBevelThicknessRatio: 0.25,
+    pieceDepthRatio: 0.1,
+    // Bumped up from 0.15/0.25 — a bigger, thicker bevel gives each piece a
+    // rounder, more pillowed edge (instead of a near-flat top with a thin
+    // chamfer), which is also what catches the rim light's highlight.
+    pieceBevelRadiusRatio: 0.3,
+    pieceBevelThicknessRatio: 0.855,
 };

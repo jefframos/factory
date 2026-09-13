@@ -11,12 +11,17 @@ import { TextureBuilder } from './TextureBuilder';
  * TowerBlockSync3D as the held piece changes, moves, or gets dropped —
  * mirrors FaceTowerBlockController's 2D `previewStrip` field.
  */
+/** Overall dimming of the strip on top of its gradient texture's own alpha — see SpriteMaterial.opacity below. */
+const STRIP_OPACITY = 0.55;
+/** Narrows the strip slightly relative to the piece's own visual width — see show(). */
+const STRIP_WIDTH_SCALE = 0.8;
+
 export class PreviewStripSprite {
     private readonly sprite: THREE.Sprite;
     private readonly material: THREE.SpriteMaterial;
 
     public constructor(scene: THREE.Scene) {
-        this.material = new THREE.SpriteMaterial({ transparent: true, depthWrite: false });
+        this.material = new THREE.SpriteMaterial({ transparent: true, depthWrite: false, opacity: STRIP_OPACITY });
         this.sprite = new THREE.Sprite(this.material);
 
         // Anchored at the sprite's own TOP edge (not center) so `show()`'s
@@ -37,7 +42,7 @@ export class PreviewStripSprite {
 
     public show(x: number, baseY: number, z: number, width: number, stripHeight: number, color: THREE.ColorRepresentation): void {
         this.material.color.set(color);
-        this.sprite.scale.set(width, stripHeight, 1);
+        this.sprite.scale.set(width * STRIP_WIDTH_SCALE, stripHeight, 1);
         this.sprite.position.set(x, baseY, z);
         this.sprite.visible = true;
     }

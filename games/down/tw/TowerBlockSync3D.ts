@@ -127,10 +127,12 @@ export class TowerBlockSync3D {
     }
 
     /**
-     * Positions the shared preview strip at the held block's own base —
-     * same unit-square centroid math PieceBoxBuilder uses to center a
-     * piece's mesh, converted through this same pixelsPerUnit/baseOffset
-     * mapping updateCube() uses for the cube itself.
+     * Positions the shared preview strip at the held block's own CENTER
+     * (cube.position is already the piece's centroid — see PieceBoxBuilder,
+     * which centers the mesh there — so no extra vertical offset is needed
+     * to reach it), same unit-square centroid math PieceBoxBuilder uses to
+     * center a piece's mesh, converted through this same
+     * pixelsPerUnit/baseOffset mapping updateCube() uses for the cube itself.
      *
      * Sized/centered off the polygon's own LEFT/RIGHT extremes (see
      * getPolygonHorizontalBounds), not the area centroid — `cube.position`
@@ -178,7 +180,9 @@ export class TowerBlockSync3D {
         const visualWidth = Math.max(0, (bounds.right - bounds.left) * width - totalMargin3D);
         const centerShiftX = (bounds.center - centroid.x) * width;
 
-        const baseLocalY = (centroid.y - 1) * height;
+        // Starts at the piece's own center (cube.position.y) rather than its
+        // base — see this method's own doc — so no bottom-edge offset here.
+        const baseLocalY = 0;
 
         // preview3DOffset (already world units) wins outright when a piece
         // sets it — otherwise fall back to converting the shared px

@@ -594,38 +594,25 @@ export class FaceTowerBlockController {
         this.onBlockRemoved?.(block.id);
     }
 
-    /** Removes every live, non-powerup block whose `piece.tier` is in `tiers` — see FaceTowerGameController.triggerClearLowTierPowerup(). Snapshots `this.blocks` first since removeBlock() mutates that same array. */
+    /**
+     * Removes every live, non-powerup block whose `piece.tier` is in
+     * `tiers` — see FaceTowerGameController.triggerClearLowTierPowerup().
+     * Snapshots `this.blocks` first since removeBlock() mutates that same
+     * array. Excludes `this.heldBlock` (the piece currently hovering,
+     * waiting to be dropped, not yet part of the board) — same guard
+     * getHighestTopWorldY()/getHighestSettledTopWorldY() already use;
+     * without it, this could destroy the piece out of the player's hand
+     * mid-hold, breaking the drop/spawn flow.
+     */
     public removeBlocksByTiers(tiers: readonly number[]): void {
         for (const block of [...this.blocks]) {
-            if (!block.powerup && block.piece.tier !== undefined && tiers.includes(block.piece.tier)) {
-                this.removeBlock(block);
-            }
-        }
-    }
-
-    /**
-     * "Wind" powerup effect — nudges every live, non-powerup block with a
-     * random impulse plus a random spin, same physics primitives
-     * spawnMergedBlock()'s own small "pop" impulse already uses (just a lot
-     * stronger, since this is meant to visibly rattle the whole pile rather
-     * than read as a subtle settle). Purely cosmetic chaos — never removes
-     * or replaces anything.
-     */
-    public applyWindEffect(strength = 0.012): void {
-        for (const block of this.blocks) {
-            if (block.powerup) {
+            if (block.powerup || block === this.heldBlock) {
                 continue;
             }
 
-            const body = block.entity.body;
-            const angle = Math.random() * Math.PI * 2;
-
-            Body.applyForce(body, body.position, {
-                x: Math.cos(angle) * strength,
-                y: Math.sin(angle) * strength - strength * 0.5,
-            });
-
-            Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.4);
+            if (block.piece.tier !== undefined && tiers.includes(block.piece.tier)) {
+                this.removeBlock(block);
+            }
         }
     }
 

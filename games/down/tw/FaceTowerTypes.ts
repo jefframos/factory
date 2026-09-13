@@ -226,19 +226,6 @@ export interface FaceTowerConfig {
     trapdoorSettleDelay: number;
 
     /**
-     * Minimum pieces that must be dropped in a zone before its weight
-     * milestone is allowed to trigger the trapdoor, even if
-     * TowerZoneController.hasReachedWeight() is already satisfied — see
-     * FaceTowerGameController.checkWeightMilestone()/dropsThisZone.
-     * Without this, a single big cascade (merging conserves/compounds
-     * weight, never reduces it) could clear an entire zone's milestone in
-     * one lucky merge, which feels great in the moment but skips playing
-     * the zone at all — this keeps that big merge rewarding without
-     * letting it alone instantly end the zone.
-     */
-    minDropsPerZone: number;
-
-    /**
      * Idle-rest tilt (radians, magnitude only) for each floor flap — see
      * FaceTowerBlockController.addBase()/setFlapAngle(). Each flap is
      * hinged at its own OUTER edge (against the wall), which stays fixed

@@ -15,6 +15,7 @@ import { PowerupInventoryStorage } from '../game/data/PowerupInventoryStorage';
 import {
     getDefaultIsland,
     parseHexColor,
+    shadeColor,
 } from '../game/world/IslandStorage';
 import { DEFAULT_FACE_TOWER_CONFIG } from './FaceTowerConfig';
 import { FaceTowerGameController } from './FaceTowerGameController';
@@ -200,19 +201,35 @@ export default class IslandViewScene extends ThreeScene {
         }
 
         this.threeScene.add(this.threeCamera);
-        this.threeScene.add(new THREE.AmbientLight(parseHexColor(island.ambientColor), 1));
+
+        // Soft sky/ground gradient instead of a flat AmbientLight — gives every
+        // piece's shadowed side a gentle cool-toned falloff (the "ground" color)
+        // rather than going flat black, which is what was reading as depthless.
+        const ambient = parseHexColor(island.ambientColor);
+        this.threeScene.add(new THREE.HemisphereLight(0xbfd9ff, shadeColor(ambient, -0.35), 0.9));
 
         SetupThree.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         SetupThree.renderer.toneMappingExposure = 1.1;
         SetupThree.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-        const key = new THREE.DirectionalLight(0xfff4dd, 1.6);
+        // Dialed down from 1.6 — combined with the material's clearcoat this
+        // was blowing the highlight out to flat white under ACES tonemapping.
+        const key = new THREE.DirectionalLight(0xfff4dd, 1.1);
         key.position.set(5, 10, 7.5);
         this.threeScene.add(key);
 
-        const fill = new THREE.DirectionalLight(0x99ccff, 0.5);
+        const fill = new THREE.DirectionalLight(0x99ccff, 0.4);
         fill.position.set(-8, 3, -5);
         this.threeScene.add(fill);
+
+        // Rim/back light — sits behind the pieces relative to the camera (which
+        // looks toward -Z from a +Z position, see positionCamera()), catching
+        // the bevel's edge highlight so each piece separates from the ones
+        // behind it instead of reading as a flat silhouette. Dialed down from
+        // 1.1 for the same blown-out-highlight reason as the key light.
+        const rim = new THREE.DirectionalLight(0xd8ecff, 0.6);
+        rim.position.set(-2, 6, -9);
+        this.threeScene.add(rim);
 
         this.positionCamera();
         this.buildFaceTowerLayer();
@@ -373,12 +390,7 @@ export default class IslandViewScene extends ThreeScene {
                 delta,
             );
 
-            this.gameHud?.updateLevelGoal(
-                this.faceTower.getLevelIndex(),
-                this.faceTower.getTotalWeight(),
-                this.faceTower.getTargetWeight(),
-                this.faceTower.getWeightProgress(),
-            );
+            this.gameHud?.updateLevelGoal(this.faceTower.getLevelIndex());
 
             this.gameHud?.updatePieceProgression(
                 this.faceTower.getPieceProgression(),
@@ -589,6 +601,10 @@ export default class IslandViewScene extends ThreeScene {
 
                 onTrapdoorOpened: (zoneIndex) => {
                     this.gameHud.showZoneComplete(zoneIndex);
+                    // The requirement that was just satisfied doesn't need
+                    // naming here — the celebration pop is the same regardless
+                    // of which piece/top-tier-repeat it was.
+                    this.gameHud.playGateUnlockCelebration();
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.GateOpen);
 
                     /*
@@ -601,6 +617,14 @@ export default class IslandViewScene extends ThreeScene {
                      * landed on, level-up included.
                      */
                     this.applyZoneIsland();
+                },
+
+                onGateProgressRevealed: (requirement) => {
+                    const piece = this.faceTower?.getPieceProgression()[requirement.tier];
+
+                    if (piece) {
+                        this.gameHud.showGateRequirement(requirement, piece);
+                    }
                 },
 
                 onLevelProgressed: (levelIndex) => {
