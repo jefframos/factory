@@ -725,7 +725,7 @@ export class FaceTowerGameController {
     public destroyBlock(blockId: number): void {
         const block = this.blocks.getBlocks().find(candidate => candidate.id === blockId);
 
-        if (!block || block.powerup || block === this.blocks.getHeldBlock()) {
+        if (!block || block.powerup || block.state === 'held') {
             return;
         }
 
@@ -746,7 +746,7 @@ export class FaceTowerGameController {
     public upgradeBlock(blockId: number): void {
         const block = this.blocks.getBlocks().find(candidate => candidate.id === blockId);
 
-        if (!block || block.powerup || block === this.blocks.getHeldBlock()) {
+        if (!block || block.powerup || block.state === 'held') {
             return;
         }
 
@@ -937,12 +937,14 @@ export class FaceTowerGameController {
      * Returns true the instant this actually ends the run.
      */
     private updateGameOverLine(delta: number): boolean {
-        // Deliberately the SETTLED variant, not getHighestTopWorldY() — a
-        // piece that's still actively tumbling/falling (even after its own
-        // first contact) must never accumulate grace time just because it
-        // happens to be passing through the line, only a piece that's
-        // actually landed and stopped there. See its own doc.
-        const topWorldY = this.blocks.getHighestSettledTopWorldY();
+        // getHighestTopWorldY() already excludes the held piece and
+        // anything that hasn't had its first real contact yet (still
+        // falling through on its initial drop) — see its own doc for why
+        // it does NOT also require the block to currently be at rest: a
+        // piece already at the line must keep counting even while a new
+        // arrival jostles it, only actually leaving the line (or the
+        // board) should reset this timer.
+        const topWorldY = this.blocks.getHighestTopWorldY();
         const lineWorldY = this.getGameOverLineWorldY();
 
         if (Number.isFinite(topWorldY) && topWorldY <= lineWorldY) {

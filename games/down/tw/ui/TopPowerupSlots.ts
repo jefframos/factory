@@ -10,9 +10,8 @@ import {
     WIND_POWERUP_ID,
     getPowerup,
 } from '../PowerupStorage';
-import { PowerupButton, type PowerupButtonColor } from './PowerupButton';
+import { PowerupButton } from './PowerupButton';
 
-const SLOT_COLOR: PowerupButtonColor = 'Blue';
 const BUTTON_GAP = 16;
 const ICON_SIZE = 55;
 const SLOTS_PER_SIDE = 2;
@@ -99,7 +98,7 @@ export class TopPowerupSlots extends PIXI.Container {
             ? TopPowerupSlots.buildIconFor(powerupId)
             : new PIXI.Container();
 
-        const button = new PowerupButton(SLOT_COLOR, icon, () => {
+        const button = new PowerupButton(icon, () => {
             if (powerupId) {
                 this.onUsePowerup.dispatch(powerupId);
             }

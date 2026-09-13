@@ -390,6 +390,8 @@ export default class IslandViewScene extends ThreeScene {
                 delta,
             );
 
+            this.gameHud?.updateGameOverCountdown(gameOverWarningSecondsRemaining);
+
             this.gameHud?.updateLevelGoal(this.faceTower.getLevelIndex());
 
             this.gameHud?.updatePieceProgression(

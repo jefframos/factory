@@ -152,6 +152,16 @@ export class FaceTowerBlockController {
             throw new Error('Cannot spawn another block while a block is held.');
         }
 
+        // Defense-in-depth: `this.heldBlock` is the single source of truth
+        // above, but if any OTHER block were still tagged 'held' — heldBlock
+        // cleared without that block's own state following — that's exactly
+        // the "two pieces in the drop zone" bug this field exists to catch.
+        // Fail loudly here instead of silently spawning a second held piece.
+        const staleHeld = this.blocks.find(existing => existing.state === 'held');
+        if (staleHeld) {
+            throw new Error(`FaceTowerBlockController: found a stale 'held' block (id ${staleHeld.id}) not tracked by heldBlock — this must never happen.`);
+        }
+
         const w = this.config.blockWidth * piece.scale.x;
         const h = this.config.blockHeight * piece.scale.y;
 
@@ -188,6 +198,7 @@ export class FaceTowerBlockController {
             id: this.nextBlockId++,
             entity,
             piece,
+            state: 'held',
             shootRemaining: 0,
             jiggleRemaining: 0,
             hasJiggled: false,
@@ -397,6 +408,7 @@ export class FaceTowerBlockController {
         }
 
         this.previewStrip.visible = false;
+        block.state = 'dropped';
         block.shootRemaining = PieceAnimations.SHOOT_DURATION;
 
         const body = block.entity.body;
@@ -522,6 +534,7 @@ export class FaceTowerBlockController {
             this.blocks.splice(index, 1);
         }
 
+        block.state = 'dropped';
         block.entity.destroy();
         this.heldBlock = undefined;
     }
@@ -598,15 +611,15 @@ export class FaceTowerBlockController {
      * Removes every live, non-powerup block whose `piece.tier` is in
      * `tiers` — see FaceTowerGameController.triggerClearLowTierPowerup().
      * Snapshots `this.blocks` first since removeBlock() mutates that same
-     * array. Excludes `this.heldBlock` (the piece currently hovering,
-     * waiting to be dropped, not yet part of the board) — same guard
-     * getHighestTopWorldY()/getHighestSettledTopWorldY() already use;
-     * without it, this could destroy the piece out of the player's hand
-     * mid-hold, breaking the drop/spawn flow.
+     * array. Excludes a 'held' block (the piece currently hovering, waiting
+     * to be dropped, not yet part of the board) — same guard
+     * getHighestTopWorldY()/getHighestSettledTopWorldY() use; without it,
+     * this could destroy the piece out of the player's hand mid-hold,
+     * breaking the drop/spawn flow.
      */
     public removeBlocksByTiers(tiers: readonly number[]): void {
         for (const block of [...this.blocks]) {
-            if (block.powerup || block === this.heldBlock) {
+            if (block.powerup || block.state === 'held') {
                 continue;
             }
 
@@ -660,6 +673,7 @@ export class FaceTowerBlockController {
             id: this.nextBlockId++,
             entity,
             piece,
+            state: 'dropped',
             shootRemaining: PieceAnimations.SHOOT_DURATION,
             jiggleRemaining: PieceAnimations.JIGGLE_DURATION,
             hasJiggled: true,
@@ -729,57 +743,30 @@ export class FaceTowerBlockController {
      * however tall the spawn point happens to be instead of what's really
      * stacked — it only starts counting once released (see
      * releaseHeldBlock(), which clears heldBlock).
+     *
+     * Deliberately does NOT also require the block to currently be at rest
+     * (no speed/angularSpeed check) — this used to be split into this
+     * cosmetic variant plus a separate getHighestSettledTopWorldY() for
+     * FaceTowerGameController.updateGameOverLine(), but that speed gate
+     * caused the game-over timer to spuriously RESET: a piece already
+     * sitting at the line would momentarily exceed the resting-speed
+     * threshold every time a NEW piece landed/jostled nearby, dropping out
+     * of the "settled" tally for a frame and reading as "nothing's up
+     * there any more" even though it never actually left. `hasJiggled`
+     * alone (has this block ever made real contact with anything) is
+     * enough to mean "this is genuinely part of the pile, not still
+     * falling through on its very first drop" — one shared definition for
+     * both the cosmetic gauge and the game-over check.
      */
     public getHighestTopWorldY(): number {
         let top = Infinity;
 
         for (const block of this.blocks) {
-            if (block.powerup || block === this.heldBlock || !block.hasJiggled) {
+            if (block.powerup || block.state === 'held' || !block.hasJiggled) {
                 continue;
             }
 
             top = Math.min(top, block.entity.body.bounds.min.y);
-        }
-
-        return top;
-    }
-
-    /** Below this (Matter's own per-step `body.speed`/`body.angularSpeed`), a block counts as actually at rest rather than still tumbling — see getHighestSettledTopWorldY(). */
-    private static readonly RESTING_SPEED_THRESHOLD = 0.4;
-    private static readonly RESTING_ANGULAR_SPEED_THRESHOLD = 0.05;
-
-    /**
-     * Same as getHighestTopWorldY(), but ALSO excludes any block that's
-     * still actually moving (speed/angularSpeed above the resting
-     * thresholds) even though it already had its first contact. Without
-     * this, a piece that grazes something early (setting hasJiggled) but
-     * keeps tumbling/falling afterward — very possible right after a big
-     * merge cascade shoves it around — would count as "the top" while
-     * still airborne, letting the game-over-line timer accumulate against
-     * a piece that hasn't actually landed anywhere. See
-     * FaceTowerGameController.updateGameOverLine(), the sole consumer —
-     * getHighestTopWorldY() itself stays as-is for purely cosmetic height
-     * displays (TowerHeightGauge), which should track the pile's real
-     * current extent even mid-fall.
-     */
-    public getHighestSettledTopWorldY(): number {
-        let top = Infinity;
-
-        for (const block of this.blocks) {
-            if (block.powerup || block === this.heldBlock || !block.hasJiggled) {
-                continue;
-            }
-
-            const body = block.entity.body;
-
-            if (
-                body.speed > FaceTowerBlockController.RESTING_SPEED_THRESHOLD ||
-                body.angularSpeed > FaceTowerBlockController.RESTING_ANGULAR_SPEED_THRESHOLD
-            ) {
-                continue;
-            }
-
-            top = Math.min(top, body.bounds.min.y);
         }
 
         return top;

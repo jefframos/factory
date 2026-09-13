@@ -457,6 +457,8 @@ export default class Assets {
             HeaderCurrentLevel: { ...DefaultLabel, fontSize: 26 } as Partial<PIXI.TextStyle>,
             /** TowerHeader's destination/next-height side label — smaller and warm yellow so it reads as secondary to the level number. */
             HeaderNextLevel: { ...DefaultLabel, fill: 0xffe066, fontSize: 18 } as Partial<PIXI.TextStyle>,
+            /** GameOverCountdown's "N seconds left" number — red/big so it reads as urgent. */
+            DangerLabel: { ...DefaultLabel, fill: 0xff4444, fontSize: 56, strokeThickness: 5 } as Partial<PIXI.TextStyle>,
         };
     })();
 }

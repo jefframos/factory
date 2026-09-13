@@ -36,12 +36,29 @@ export interface PowerupEffectConfig {
     dropForceY?: number;
 }
 
+/**
+ * A block's own lifecycle state — 'held' from the instant it's spawned in
+ * the drop zone (FaceTowerBlockController.spawnHeldBlock()) until it's
+ * released or discarded; 'dropped' for the rest of its life (a normal
+ * release, a merge result — spawnMergedBlock() always starts a block
+ * here, it's never held — or a powerup piece). Exactly one block may be
+ * 'held' at a time; see spawnHeldBlock()'s own assertion. Checking THIS
+ * field (not `block === controller.getHeldBlock()`) is what everything
+ * that must never fire for a still-held piece (the game-over-line height
+ * check, targeted-powerup effects, etc.) should test — a held piece can
+ * never trigger game over, and there can never be two blocks 'held' at
+ * once, by construction.
+ */
+export type FaceTowerBlockLifecycle = 'held' | 'dropped';
+
 export interface FaceTowerBlock {
     id: number;
     /** BoxEntity for a plain rect piece, PolygonEntity when the piece has a `polygon` override — see FaceTowerBlockController.spawnHeldBlock/spawnMergedBlock. */
     entity: BasePhysicsEntity;
     /** Which piece (color/texture/scale/tier/weight) this block was spawned from — see PieceManager. */
     piece: PieceDefinition;
+    /** See FaceTowerBlockLifecycle's own doc. */
+    state: FaceTowerBlockLifecycle;
     /** Seconds left in the one-shot "shoot" bounce (see PieceAnimations.sampleShoot) — set on release/merge-spawn. */
     shootRemaining: number;
     /** Seconds left in the one-shot "jiggle" wiggle (see PieceAnimations.sampleJiggle) — set on first physical contact, once ever. */

@@ -9,6 +9,10 @@ const BG_SLICE = 30;
 const DEFAULT_WIDTH = 140;
 const DEFAULT_HEIGHT = 66;
 
+/** Decorative trophy badge straddling the panel's top edge — see the constructor. */
+const TROPHY_FRAME = 'ItemIcon_Trophy_Gold-2';
+const TROPHY_SIZE = 44;
+
 /**
  * Always-visible score bubble — same "shared background texture, own
  * container" convention as TowerHeader/TowerNextLevelPanel — positioned to
@@ -54,6 +58,17 @@ export class TowerScorePanel extends PIXI.Container {
         this.bestLabel.anchor.set(0.5, 0.5);
         this.bestLabel.position.set(0, 16);
         this.addChild(this.bestLabel);
+
+        // Decorative badge straddling the panel's top edge (mostly above it,
+        // a little overlapping down into the bg) — breaks up the plain
+        // rounded-rect silhouette a bit, same "badge peeking over the top"
+        // treatment other panels in this game already lean on.
+        const trophy = PIXI.Sprite.from(TROPHY_FRAME);
+        trophy.anchor.set(0.5, 0.7);
+        const trophyScale = TROPHY_SIZE / Math.max(trophy.texture.width, trophy.texture.height);
+        trophy.scale.set(trophyScale);
+        trophy.position.set(0, -height / 2);
+        this.addChild(trophy);
     }
 
     /** `bestScore` is TowerHighScoreStorage.getPoints() — the persisted all-time record, from before this run. */

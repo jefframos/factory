@@ -2,17 +2,10 @@
 
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
-import { getPowerup, HUD_POWERUP_IDS, SKIP_PIECE_POWERUP_ID } from '../PowerupStorage';
+import { getPowerup, SKIP_PIECE_POWERUP_ID } from '../PowerupStorage';
 import { getEnabledPowerupIds } from '../PowerupConfig';
-import { PowerupButton, type PowerupButtonColor } from './PowerupButton';
+import { PowerupButton } from './PowerupButton';
 import ViewUtils from 'core/utils/ViewUtils';
-
-/**
- * One color per HUD_POWERUP_IDS entry, same order (bomb/skip-piece) —
- * Purple is reserved for PowerupButton's own "active" frame (see
- * ACTIVE_FRAME there), so it's deliberately not used here.
- */
-const POWERUP_BUTTON_COLORS: readonly PowerupButtonColor[] = ['Yellow', 'Blue'];
 
 /**
  * The row of powerup buttons (the 3 real powerups + skip-piece) — owns
@@ -49,12 +42,7 @@ export class PowerupBelt extends PIXI.Container {
                 ? PowerupButton.buildSkipIcon(PowerupBelt.ICON_SIZE)
                 : PowerupBelt.buildPowerupIconFor(id, PowerupBelt.ICON_SIZE);
 
-            // Colors stay keyed off HUD_POWERUP_IDS' own (fixed) order, not
-            // the enabled-only list's index — so a given powerup's color
-            // never shifts depending on which OTHER ones happen to be
-            // enabled.
-            const color = POWERUP_BUTTON_COLORS[HUD_POWERUP_IDS.indexOf(id)] ?? POWERUP_BUTTON_COLORS[0];
-            const button = new PowerupButton(color, icon, () => this.onUsePowerup.dispatch(id));
+            const button = new PowerupButton(icon, () => this.onUsePowerup.dispatch(id));
 
             this.addChild(button);
             this.buttons.set(id, button);

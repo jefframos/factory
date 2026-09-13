@@ -13,7 +13,7 @@ const FLOOR_SCREEN_Y = 900;
 
 export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     // --- Playfield anchors (screen-space, fixed regardless of camera scroll) ---
-    spawnScreenY: 240,   // where the held block hovers before it's dropped
+    spawnScreenY: 240,   // where the held block hovers before it's dropped — overlapped the top powerup buttons when raised, so left as-is; see gameOverLineScreenY's own doc for the clearance fix instead
     floorScreenY: FLOOR_SCREEN_Y,
     deathScreenY: 1030,  // cross this and it's game over
 
@@ -24,10 +24,12 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     powerupSlotsScreenY: 70,
 
     // Near the top — the settled pile crossing this and staying (see
-    // gameOverGraceDuration) ends the run. Fixed forever; trapdoors only
-    // ever buy more room BELOW it.
-    gameOverLineScreenY: 280,
-    gameOverGraceDuration: 6,
+    // gameOverGraceDuration) ends the run. Nudged down a little from 280 —
+    // spawnScreenY sits only just above it, and a big held piece's own
+    // height could otherwise visibly overlap the line while just hovering,
+    // not actually in danger. Trapdoors only ever buy more room BELOW it.
+    gameOverLineScreenY: 300,
+    gameOverGraceDuration: 10,
 
     // A tap immediately snaps the held piece under the pointer before
     // dropping it — see FaceTowerConfig.tapMovesPieceOnDrop's own doc.

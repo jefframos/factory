@@ -7,59 +7,49 @@ function hexStringToNumber(hex: string): number {
     return parseInt(hex.replace('#', ''), 16);
 }
 
-/** Frame name for the "empty" (no count) hexagon background — same for every button regardless of its available-state color. */
-const EMPTY_FRAME = 'BubbleFrame01_Hexagon_Bg_Grey';
+/** The button's own shape/background. */
+const BUTTON_FRAME = 'Label_Badge02';
 
-/** Frame name for the "this is the globally-active powerup" state — same for every button regardless of its own available-state color, and takes priority over empty/available whenever active — see setActive(). */
+/** Frame name for the "this is the globally-active powerup" state — takes priority over the normal background whenever active — see setActive(). */
 const ACTIVE_FRAME = 'BubbleFrame01_Hexagon_Bg_Purpple';
 
-/** 9-slice frame behind the count label — only shown while count > 0 (see setCount()). */
+/** 9-slice frame behind the count label — always shown (even at 0, see setCount()), not just once the player owns one. */
 const LABEL_FRAME = 'BorderFrame_Round24';
 const LABEL_SLICE = 30;
 const LABEL_WIDTH = 30;
 const LABEL_HEIGHT = 26;
 
-/** Which colored hexagon frame each HUD_POWERUP_IDS entry's "available" state uses — see GameHud.buildPowerupBar(), which passes these in id order (lightning/bomb/shrink-ray/skip-piece → Blue/Green/Yellow/Purple). */
-export type PowerupButtonColor = 'Blue' | 'Green' | 'Yellow' | 'Purpple';
+/** Empty margin (px) kept clear around the icon on every side — see the constructor's fit-to-button scaling. */
+const ICON_PADDING = 10;
 
 /**
  * One square HUD button for a powerup (or the skip-piece action, which
  * isn't a real PowerupDefinition but shares the same "spend one to use it"
- * shape) — swaps between two hexagon-frame background states (available vs
- * empty) and shows how many the player currently owns. Purely a dumb view:
- * GameHud owns the actual inventory count and click→use wiring (see
- * IslandViewScene's onUsePowerup callback), this just renders whatever
- * count it's told and fires onUse() on tap when it has at least one.
+ * shape) — a single fixed background (no separate empty/available look —
+ * the count label just reads "0") plus the badge/label showing how many
+ * the player currently owns. Purely a dumb view: GameHud owns the actual
+ * inventory count and click→use wiring (see IslandViewScene's onUsePowerup
+ * callback), this just renders whatever count it's told and fires onUse()
+ * on tap when it has at least one.
  */
 export class PowerupButton extends PIXI.Container {
     /** Fixed footprint (px) every button occupies — public so layout code (see TopPowerupSlots) can compute positions from this known constant instead of querying live PIXI bounds. */
-    public static readonly SIZE = 80;
+    public static readonly SIZE = 66;
 
-    private readonly bgEmpty: PIXI.Sprite;
     private readonly bgAvailable: PIXI.Sprite;
     private readonly bgActive: PIXI.Sprite;
     private readonly icon: PIXI.Container;
-    /** The count label + its 9-slice frame, shown/hidden together — see setCount(). */
-    private readonly labelContainer: PIXI.Container;
     private readonly countLabel: PIXI.Text;
 
-    /** -1 (not a real count) so the constructor's setCount(0) below can't short-circuit via the "unchanged" check and skip applying the initial empty-state visuals. */
-    private count = -1;
+    private count = 0;
     private active = false;
 
-    public constructor(color: PowerupButtonColor, icon: PIXI.Container, onUse: () => void) {
+    public constructor(icon: PIXI.Container, onUse: () => void) {
         super();
 
         const size = PowerupButton.SIZE;
 
-        this.bgEmpty = PIXI.Sprite.from(EMPTY_FRAME);
-        this.bgEmpty.anchor.set(0.5);
-        this.bgEmpty.position.set(size * 0.5, size * 0.5);
-        this.bgEmpty.width = size;
-        this.bgEmpty.height = size;
-        this.addChild(this.bgEmpty);
-
-        this.bgAvailable = PIXI.Sprite.from(`BubbleFrame01_Hexagon_Bg_${color}`);
+        this.bgAvailable = PIXI.Sprite.from(BUTTON_FRAME);
         this.bgAvailable.anchor.set(0.5);
         this.bgAvailable.position.set(size * 0.5, size * 0.5);
         this.bgAvailable.width = size;
@@ -75,13 +65,24 @@ export class PowerupButton extends PIXI.Container {
         this.addChild(this.bgActive);
 
         this.icon = icon;
+        this.icon.position.set(size * 0.5, size * 0.5);
 
+        // Scale to fit within the button with ICON_PADDING of breathing
+        // room on every side, whatever the icon's own natural size happens
+        // to be (a real powerup sprite, a drawn piece swatch, the skip
+        // chevrons — callers build these at their own convenient sizes,
+        // not necessarily aware of PowerupButton.SIZE) — uniform (same
+        // factor both axes) so it never distorts, using the icon's CURRENT
+        // width/height (already reflecting any scale the caller applied).
+        const fitTarget = size - ICON_PADDING * 2;
+        const naturalSize = Math.max(this.icon.width, this.icon.height);
+
+        if (naturalSize > 0) {
+            const fitScale = fitTarget / naturalSize;
+            this.icon.scale.set(this.icon.scale.x * fitScale, this.icon.scale.y * fitScale);
+        }
 
         this.addChild(this.icon);
-
-        this.labelContainer = new PIXI.Container();
-        this.labelContainer.position.set(size - LABEL_WIDTH * 0.55, size - LABEL_HEIGHT * 0.55);
-        this.addChild(this.labelContainer);
 
         const labelBg = new PIXI.NineSlicePlane(
             PIXI.Texture.from(LABEL_FRAME),
@@ -90,22 +91,23 @@ export class PowerupButton extends PIXI.Container {
         labelBg.width = LABEL_WIDTH;
         labelBg.height = LABEL_HEIGHT;
         labelBg.pivot.set(LABEL_WIDTH * 0.5, LABEL_HEIGHT * 0.5);
-        this.labelContainer.addChild(labelBg);
+        labelBg.position.set(size - LABEL_WIDTH * 0.55, size - LABEL_HEIGHT * 0.55);
+        this.addChild(labelBg);
 
         this.countLabel = new PIXI.Text('0', {
             ...Assets.TextStyles.PowerupCounter,
         });
         this.countLabel.anchor.set(0.5);
-        this.labelContainer.addChild(this.countLabel);
+        this.countLabel.position.copyFrom(labelBg.position);
+        this.addChild(this.countLabel);
 
         this.interactive = true;
+        this.cursor = 'pointer';
         this.on('pointertap', () => {
             if (this.count > 0) {
                 onUse();
             }
         });
-
-        this.setCount(0);
     }
 
     /** Reflects `count` immediately — call whenever PowerupInventoryStorage's value for this button changes (IslandViewScene just calls this every frame; cheap no-op if the count hasn't actually changed). */
@@ -117,38 +119,18 @@ export class PowerupButton extends PIXI.Container {
         }
 
         this.count = clamped;
-        this.refreshVisuals();
+        this.countLabel.text = String(this.count);
     }
 
-    /** Highlights this button while it's the globally-active powerup — see IslandViewScene's activePowerupId toggle/cancel/switch logic. Swaps to ACTIVE_FRAME (takes priority over empty/available) rather than tinting/scaling, so it reads as an actual different state, not just a hover effect. Purely visual; has no bearing on whether a tap does anything (that's still gated on count > 0). */
+    /** Highlights this button while it's the globally-active powerup — see IslandViewScene's activePowerupId toggle/cancel/switch logic. Swaps to ACTIVE_FRAME (takes priority over the normal color background) rather than tinting/scaling, so it reads as an actual different state, not just a hover effect. Purely visual; has no bearing on whether a tap does anything (that's still gated on count > 0). */
     public setActive(active: boolean): void {
         if (active === this.active) {
             return;
         }
 
         this.active = active;
-        this.refreshVisuals();
-    }
-
-    private refreshVisuals(): void {
-        const hasAny = this.count > 0;
-
-        this.bgActive.visible = this.active;
-        this.bgAvailable.visible = !this.active && hasAny;
-        this.bgEmpty.visible = !this.active && !hasAny;
-
-        this.icon.alpha = hasAny ? 1 : 0.4;
-        this.cursor = hasAny ? 'pointer' : 'default';
-
-        this.icon.x = PowerupButton.SIZE / 2
-        this.icon.y = PowerupButton.SIZE / 2
-
-
-        this.labelContainer.visible = hasAny;
-
-        if (hasAny) {
-            this.countLabel.text = String(this.count);
-        }
+        this.bgActive.visible = active;
+        this.bgAvailable.visible = !active;
     }
 
     /** Plain rect-or-polygon swatch tinted to a piece's own color — same look PieceDevGui/NextPiecePreview already use for a piece preview, reused here so a real powerup's button icon matches its actual in-game piece instead of needing separate icon art. */

@@ -8,6 +8,7 @@ import type { GateRequirement } from '../TowerGateController';
 import { TowerHeightGauge, HeightMark } from '../TowerHeightGauge';
 import { TowerProgressBar2D } from '../TowerProgressBar2D';
 import { DEFAULT_FACE_TOWER_CONFIG } from '../FaceTowerConfig';
+import { GameOverCountdown } from './GameOverCountdown';
 import { GateProgressPanel } from './GateProgressPanel';
 import { PieceProgressionBar } from './PieceProgressionBar';
 import { ShapeModeToggleButton } from './ShapeModeToggleButton';
@@ -49,6 +50,9 @@ export class GameHud extends PIXI.Container {
     /** "Current gate requirement" box — stacked above pieceProgressionBar. Replaces the old TowerNextLevelPanel (hidden, not deleted — see this file's own PowerupBelt precedent). See showGateRequirement()/playGateUnlockCelebration(). */
     private readonly gateProgressPanel = new GateProgressPanel();
 
+    /** Big centered "N seconds left" warning — see updateGameOverCountdown(). */
+    private readonly gameOverCountdown = new GameOverCountdown();
+
     /** Fired when a powerup button is tapped with count > 0 — see IslandViewScene, which listens, checks FaceTowerGameController.canUsePowerup(), spends one from PowerupInventoryStorage, and triggers the actual effect (spawnPowerup()/skipHeldPiece()). Just topPowerupSlots' own signal, exposed here so GameHud's own consumers don't need to reach through to a sub-component. */
     public readonly onUsePowerup: Signal = this.topPowerupSlots.onUsePowerup;
 
@@ -80,6 +84,7 @@ export class GameHud extends PIXI.Container {
         this.gameplayLayer.addChild(this.shapeModeToggle);
         this.gameplayLayer.addChild(this.pieceProgressionBar);
         this.gameplayLayer.addChild(this.gateProgressPanel);
+        this.gameplayLayer.addChild(this.gameOverCountdown);
 
         // The level number itself is retired from the HUD — see
         // showScore()'s own "points + best, centered" replacement. Left
@@ -229,6 +234,11 @@ export class GameHud extends PIXI.Container {
         this.heightGauge?.update(currentMark, gameOverLineScreenY, milestoneMarks, delta, gameOverWarningSecondsRemaining);
     }
 
+    /** `secondsRemaining` — see FaceTowerGameController.getGameOverWarningSecondsRemaining(); undefined hides the countdown entirely. */
+    public updateGameOverCountdown(secondsRemaining: number | undefined): void {
+        this.gameOverCountdown.update(secondsRemaining);
+    }
+
     public updateProgressBar(progress: number): void {
         this.progressBar2D?.update(progress);
     }
@@ -276,10 +286,19 @@ export class GameHud extends PIXI.Container {
         );
 
         this.zoneNotification.position.set(Game.DESIGN_WIDTH * 0.5, Game.DESIGN_HEIGHT / 2 - 50);
+        // Just below the fixed game-over line — see FaceTowerConfig.
+        // gameOverLineScreenY — so the countdown reads as tied to that line
+        // rather than floating arbitrarily.
+        this.gameOverCountdown.position.set(
+            Game.DESIGN_WIDTH * 0.5,
+            topLeft.y + DEFAULT_FACE_TOWER_CONFIG.gameOverLineScreenY + 70,
+        );
         this.towerHeader.position.set(Game.DESIGN_WIDTH * 0.5, topLeft.y + 40);
         // Centered now that towerHeader (the level number) is hidden —
-        // used to sit to its left instead.
-        this.scorePanel.position.set(Game.DESIGN_WIDTH * 0.5, topLeft.y + 40);
+        // used to sit to its left instead. Nudged down a bit from 40 — also
+        // gives the trophy badge straddling its top edge (see
+        // TowerScorePanel) a little more room before the actual screen edge.
+        this.scorePanel.position.set(Game.DESIGN_WIDTH * 0.5, topLeft.y + 60);
 
         // + topLeft.y — same pattern soundBtn/scorePanel/shapeModeToggle
         // all already use for their own Y — so this tracks the ACTUAL
@@ -350,6 +369,7 @@ export class GameHud extends PIXI.Container {
         this.shapeModeToggle.destroy();
         this.pieceProgressionBar.destroy();
         this.gateProgressPanel.destroy();
+        this.gameOverCountdown.destroy();
 
         super.destroy(options ?? { children: true });
     }
