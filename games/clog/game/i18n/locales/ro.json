@@ -22,7 +22,7 @@
     "settings": "Setări",
     "clearData": "Ştergere date",
     "clearDataConfirm": "Ștergeți toate datele salvate? Acest lucru resetează scorul mare, deblocările magazinului și numele. Acest lucru nu poate fi anulat.",
-    "cancel": "Cancel",
+    "cancel": "Anulare",
     "tapToStartHint": "Atingeți pentru a începe",
     "clickToStartHint": "CLIC PENTRU A ÎNCEPE!",
     "moveHintTouch": "Utilizați degetul pentru a vă deplasa",
@@ -30,7 +30,7 @@
     "leaderboardRow": "{rank}. {name}",
     "mute": "Mut",
     "unmute": "Activare sunet",
-    "you": "Dumneavoastră",
+    "you": "Tu",
     "boostButtonLabel": "Impuls",
     "quitRun": "Încheiere rulare",
     "quitRunConfirm": "Încheiați cursa acum și mergeți direct la ecranul cu scorul final?"

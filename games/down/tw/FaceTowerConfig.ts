@@ -36,8 +36,8 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     tapMovesPieceOnDrop: true,
 
     // --- Horizontal play area ---
-    minBlockX: 150,
-    maxBlockX: 570,
+    minBlockX: 135,
+    maxBlockX: 585,
 
     // --- Block / base sizes ---
     blockWidth: 70,
@@ -125,6 +125,6 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     // Bumped up from 0.15/0.25 — a bigger, thicker bevel gives each piece a
     // rounder, more pillowed edge (instead of a near-flat top with a thin
     // chamfer), which is also what catches the rim light's highlight.
-    pieceBevelRadiusRatio: 0.3,
-    pieceBevelThicknessRatio: 0.855,
+    pieceBevelRadiusRatio: 0.1,
+    pieceBevelThicknessRatio: 0.9,
 };

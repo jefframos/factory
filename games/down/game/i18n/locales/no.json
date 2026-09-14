@@ -33,5 +33,23 @@
     "you": "Du",
     "boostButtonLabel": "BOOST",
     "quitRun": "\"Avslutt Løp\": \"\",",
-    "quitRunConfirm": "Avslutt løpet nå og gå rett til sluttresultatskjermen?"
+    "quitRunConfirm": "Avslutt løpet nå og gå rett til sluttresultatskjermen?",
+
+    "powerupUseButton": "USE",
+    "powerupCancelButton": "CANCEL",
+    "powerupWatchVideoButton": "WATCH VIDEO",
+    "powerupUnavailable": "Can't use this powerup right now",
+
+    "powerupNameBomb": "Bomb",
+    "powerupNameSuperBomb": "Super Bomb",
+    "powerupNameTrapdoor": "Trapdoor",
+    "powerupNameClearLowTier": "Clear Low Tier",
+    "powerupNameDestroyPiece": "Destroy Piece",
+    "powerupNameUpgradePiece": "Upgrade Piece",
+    "powerupNameSkipPiece": "Skip Piece",
+
+    "gameOverTitle": "GAME OVER",
+    "gameOverRestartButton": "RESTART",
+    "gameOverRespawnButton": "RESPAWN",
+    "gameOverBestScore": "Best: {score}"
 }

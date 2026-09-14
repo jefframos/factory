@@ -2,7 +2,7 @@ import { DevGuiManager } from 'core/utils/DevGuiManager';
 import type { FaceTowerGameController } from '../../tw/FaceTowerGameController';
 import {
     CLEAR_LOW_TIER_POWERUP_ID,
-    WIND_POWERUP_ID,
+    TRAPDOOR_POWERUP_ID,
     type PowerupDefinition,
 } from '../../tw/PowerupStorage';
 
@@ -12,7 +12,7 @@ import {
  * as IslandViewScene.useHudPowerup() does for the real HUD:
  *  - 'drop' (bomb/super-bomb): FaceTowerGameController.spawnPowerup(), same
  *    on-demand-testing role as PieceDevGui's per-piece buttons.
- *  - 'instant' (wind/clear-low-tier): the matching trigger*Powerup() call,
+ *  - 'instant' (trapdoor/clear-low-tier): the matching trigger*Powerup() call,
  *    applied immediately.
  *  - 'target' (destroy-piece/upgrade-piece): no dev shortcut yet — picking
  *    a target requires the real targeting-overlay flow this class has no
@@ -37,8 +37,8 @@ export class PowerupDevGui {
         for (const powerup of this.powerups) {
             gui.addButton(`Spawn ${powerup.id}`, () => {
                 if (powerup.type === 'instant') {
-                    if (powerup.id === WIND_POWERUP_ID) {
-                        this.faceTower.triggerWindPowerup();
+                    if (powerup.id === TRAPDOOR_POWERUP_ID) {
+                        this.faceTower.triggerTrapdoorPowerup();
                     } else if (powerup.id === CLEAR_LOW_TIER_POWERUP_ID) {
                         this.faceTower.triggerClearLowTierPowerup();
                     }

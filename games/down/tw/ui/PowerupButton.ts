@@ -19,6 +19,16 @@ const LABEL_SLICE = 30;
 const LABEL_WIDTH = 30;
 const LABEL_HEIGHT = 26;
 
+/** Label background tint at 0 (see setCount()) — makes the "get one" prompt pop against the button's normal look. */
+const ZERO_COUNT_LABEL_COLOR = 0x3ddc61;
+/** Text fill at 0 — white against ZERO_COUNT_LABEL_COLOR's green, vs. Assets.TextStyles.PowerupCounter's normal black count digits. */
+const ZERO_COUNT_TEXT_COLOR = 0xffffff;
+/** "+" outline at 0 — dark green so the white fill still pops against ZERO_COUNT_LABEL_COLOR's lighter green background instead of blending into it. */
+const ZERO_COUNT_TEXT_STROKE_COLOR = 0x1b5e20;
+const ZERO_COUNT_TEXT_STROKE_THICKNESS = 3;
+/** Normal (non-zero) count text fill — matches Assets.TextStyles.PowerupCounter.fill, kept as its own typed constant since TextStyle.fill's own type (TextStyleFill) doesn't narrow to a plain assignable number. */
+const NORMAL_COUNT_TEXT_COLOR = 0x000000;
+
 /** Empty margin (px) kept clear around the icon on every side — see the constructor's fit-to-button scaling. */
 const ICON_PADDING = 10;
 
@@ -30,7 +40,9 @@ const ICON_PADDING = 10;
  * the player currently owns. Purely a dumb view: GameHud owns the actual
  * inventory count and click→use wiring (see IslandViewScene's onUsePowerup
  * callback), this just renders whatever count it's told and fires onUse()
- * on tap when it has at least one.
+ * on every tap regardless of count — a zero-count tap still opens the
+ * confirm popup (see IslandViewScene.beginPowerupConfirm()), just offering
+ * WATCH VIDEO instead of USE.
  */
 export class PowerupButton extends PIXI.Container {
     /** Fixed footprint (px) every button occupies — public so layout code (see TopPowerupSlots) can compute positions from this known constant instead of querying live PIXI bounds. */
@@ -39,9 +51,11 @@ export class PowerupButton extends PIXI.Container {
     private readonly bgAvailable: PIXI.Sprite;
     private readonly bgActive: PIXI.Sprite;
     private readonly icon: PIXI.Container;
+    private readonly labelBg: PIXI.NineSlicePlane;
     private readonly countLabel: PIXI.Text;
 
-    private count = 0;
+    /** -1 (not 0) so setCount(0) on the very first call still applies the zero-state styling instead of short-circuiting on "already 0". */
+    private count = -1;
     private active = false;
 
     public constructor(icon: PIXI.Container, onUse: () => void) {
@@ -84,33 +98,50 @@ export class PowerupButton extends PIXI.Container {
 
         this.addChild(this.icon);
 
-        const labelBg = new PIXI.NineSlicePlane(
+        this.labelBg = new PIXI.NineSlicePlane(
             PIXI.Texture.from(LABEL_FRAME),
             LABEL_SLICE, LABEL_SLICE, LABEL_SLICE, LABEL_SLICE,
         );
-        labelBg.width = LABEL_WIDTH;
-        labelBg.height = LABEL_HEIGHT;
-        labelBg.pivot.set(LABEL_WIDTH * 0.5, LABEL_HEIGHT * 0.5);
-        labelBg.position.set(size - LABEL_WIDTH * 0.55, size - LABEL_HEIGHT * 0.55);
-        this.addChild(labelBg);
+        this.labelBg.width = LABEL_WIDTH;
+        this.labelBg.height = LABEL_HEIGHT;
+        this.labelBg.pivot.set(LABEL_WIDTH * 0.5, LABEL_HEIGHT * 0.5);
+        this.labelBg.position.set(size - LABEL_WIDTH * 0.55, size - LABEL_HEIGHT * 0.55);
+        this.addChild(this.labelBg);
 
-        this.countLabel = new PIXI.Text('0', {
+        this.countLabel = new PIXI.Text('', {
             ...Assets.TextStyles.PowerupCounter,
         });
         this.countLabel.anchor.set(0.5);
-        this.countLabel.position.copyFrom(labelBg.position);
+        this.countLabel.position.copyFrom(this.labelBg.position);
         this.addChild(this.countLabel);
+
+        // Starts styled for 0 (see setCount()'s own doc for why `count`
+        // itself starts at -1) so there's no one-frame flash of the wrong
+        // look before the first real setCount() call lands.
+        this.setCount(0);
 
         this.interactive = true;
         this.cursor = 'pointer';
+        // Fires regardless of count now — a tap at 0 still opens the
+        // confirm popup (see IslandViewScene.beginPowerupConfirm()), just
+        // with a WATCH VIDEO option instead of USE. onUse itself decides
+        // what a zero-count tap does; this button no longer silently
+        // swallows it.
         this.on('pointertap', () => {
-            if (this.count > 0) {
-                onUse();
-            }
+            onUse();
         });
     }
 
-    /** Reflects `count` immediately — call whenever PowerupInventoryStorage's value for this button changes (IslandViewScene just calls this every frame; cheap no-op if the count hasn't actually changed). */
+    /**
+     * Reflects `count` immediately — call whenever PowerupInventoryStorage's
+     * value for this button changes (IslandViewScene just calls this every
+     * frame; cheap no-op if the count hasn't actually changed). At 0, shows
+     * a "+" instead of "0" (white text on a green label background,
+     * ZERO_COUNT_LABEL_COLOR/ZERO_COUNT_TEXT_COLOR) — reads as "get one" and
+     * pops rather than just quietly reporting nothing owned, since a
+     * zero-count tap now still opens the video-grant popup instead of doing
+     * nothing.
+     */
     public setCount(count: number): void {
         const clamped = Math.max(0, count);
 
@@ -119,7 +150,19 @@ export class PowerupButton extends PIXI.Container {
         }
 
         this.count = clamped;
-        this.countLabel.text = String(this.count);
+
+        if (clamped === 0) {
+            this.countLabel.text = '+';
+            this.countLabel.style.fill = ZERO_COUNT_TEXT_COLOR;
+            this.countLabel.style.stroke = ZERO_COUNT_TEXT_STROKE_COLOR;
+            this.countLabel.style.strokeThickness = ZERO_COUNT_TEXT_STROKE_THICKNESS;
+            this.labelBg.tint = ZERO_COUNT_LABEL_COLOR;
+        } else {
+            this.countLabel.text = String(clamped);
+            this.countLabel.style.fill = NORMAL_COUNT_TEXT_COLOR;
+            this.countLabel.style.strokeThickness = 0;
+            this.labelBg.tint = 0xffffff;
+        }
     }
 
     /** Highlights this button while it's the globally-active powerup — see IslandViewScene's activePowerupId toggle/cancel/switch logic. Swaps to ACTIVE_FRAME (takes priority over the normal color background) rather than tinting/scaling, so it reads as an actual different state, not just a hover effect. Purely visual; has no bearing on whether a tap does anything (that's still gated on count > 0). */

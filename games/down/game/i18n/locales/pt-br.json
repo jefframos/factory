@@ -33,5 +33,23 @@
     "you": "Você",
     "boostButtonLabel": "Impulso",
     "quitRun": "End Run",
-    "quitRunConfirm": "Terminar sua corrida agora e ir direto para a tela de pontuação final?"
+    "quitRunConfirm": "Terminar sua corrida agora e ir direto para a tela de pontuação final?",
+
+    "powerupUseButton": "USE",
+    "powerupCancelButton": "CANCEL",
+    "powerupWatchVideoButton": "WATCH VIDEO",
+    "powerupUnavailable": "Can't use this powerup right now",
+
+    "powerupNameBomb": "Bomb",
+    "powerupNameSuperBomb": "Super Bomb",
+    "powerupNameTrapdoor": "Trapdoor",
+    "powerupNameClearLowTier": "Clear Low Tier",
+    "powerupNameDestroyPiece": "Destroy Piece",
+    "powerupNameUpgradePiece": "Upgrade Piece",
+    "powerupNameSkipPiece": "Skip Piece",
+
+    "gameOverTitle": "GAME OVER",
+    "gameOverRestartButton": "RESTART",
+    "gameOverRespawnButton": "RESPAWN",
+    "gameOverBestScore": "Best: {score}"
 }

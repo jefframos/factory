@@ -11,7 +11,7 @@ import type { PieceDefinition } from './PieceStorage';
  *    (see `piece` below) — the existing bomb/super-bomb behavior, tracked
  *    by PowerupSystem once dropped.
  *  - 'instant': applies its effect immediately on tap, no held piece and
- *    no targeting involved (see 'wind'/'clear-low-tier').
+ *    no targeting involved (see 'trapdoor'/'clear-low-tier').
  *  - 'target': enters targeting mode (hides the HUD, shows a tappable
  *    marker over every live block plus a cancel button — see
  *    PieceTargetingOverlay) and applies its effect to whichever block the
@@ -42,11 +42,12 @@ export interface PowerupDefinition {
     /** Overrides FaceTowerConfig.dropForceY for this powerup's release — e.g. a bigger downward kick so it falls noticeably faster than a normal piece. Omit to fall at the normal drop speed. */
     dropForceY?: number;
     /**
-     * Relative path under images/non-preload/ (e.g. "icons/bomb-icon.webp")
-     * for this powerup's HUD button icon — resolved via
-     * resolvePieceImagePath(), same convention as PieceDefinition.texture.
-     * Takes priority over the drawn piece-shape icon PowerupButton falls
-     * back to when this is omitted (see PowerupBelt.buildPowerupIconFor()).
+     * Bare frame name (e.g. "bomb-icon", NOT a path/extension) inside the
+     * preloaded 'ui' atlas (see games/down/manifests/images.json →
+     * ui.webp.json) for this powerup's HUD button icon — handed straight to
+     * PIXI.Sprite.from() in PowerupBelt.buildPowerupIconFor(), same as every
+     * other atlas-frame sprite in the game. Takes priority over the drawn
+     * piece-shape icon PowerupButton falls back to when this is omitted.
      */
     icon?: string;
     /** Seconds between destroying each additional queued piece, so a pile of simultaneous touches cascades instead of vanishing all at once. Only meaningful for `type: 'drop'` — omit for 'instant'/'target'. */
@@ -77,7 +78,7 @@ export function getPowerup(id: string): PowerupDefinition | undefined {
 export const SKIP_PIECE_POWERUP_ID = 'skip-piece';
 
 /** The two environment-wide ids (type: 'instant') — see TopPowerupSlots' left pair, IslandViewScene.applyInstantPowerup(). */
-export const WIND_POWERUP_ID = 'wind';
+export const TRAPDOOR_POWERUP_ID = 'trapdoor';
 export const CLEAR_LOW_TIER_POWERUP_ID = 'clear-low-tier';
 /** The two single-piece-targeted ids (type: 'target') — see TopPowerupSlots' right pair, PieceTargetingOverlay. */
 export const DESTROY_PIECE_POWERUP_ID = 'destroy-piece';
@@ -94,7 +95,7 @@ export const UPGRADE_PIECE_POWERUP_ID = 'upgrade-piece';
  * slots.
  */
 export const HUD_POWERUP_IDS: readonly string[] = [
-    WIND_POWERUP_ID,
+    TRAPDOOR_POWERUP_ID,
     CLEAR_LOW_TIER_POWERUP_ID,
     DESTROY_PIECE_POWERUP_ID,
     UPGRADE_PIECE_POWERUP_ID,

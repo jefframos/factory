@@ -5,8 +5,8 @@ import {
     DESTROY_PIECE_POWERUP_ID,
     HUD_POWERUP_IDS,
     SKIP_PIECE_POWERUP_ID,
+    TRAPDOOR_POWERUP_ID,
     UPGRADE_PIECE_POWERUP_ID,
-    WIND_POWERUP_ID,
 } from './PowerupStorage';
 
 /**
@@ -17,7 +17,7 @@ import {
  * PowerupStorage.HUD_POWERUP_IDS.
  */
 export const POWERUP_ENABLED: Record<string, boolean> = {
-    [WIND_POWERUP_ID]: true,
+    [TRAPDOOR_POWERUP_ID]: true,
     [CLEAR_LOW_TIER_POWERUP_ID]: true,
     [DESTROY_PIECE_POWERUP_ID]: true,
     [UPGRADE_PIECE_POWERUP_ID]: true,

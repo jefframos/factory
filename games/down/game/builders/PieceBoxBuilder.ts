@@ -111,7 +111,7 @@ export class PieceBoxBuilder {
 
             envMapIntensity: 0.6,
         });
-        BendService.applyBend(mat);
+        //BendService.applyBend(mat);
 
         const cloned = mat.clone();
 
@@ -230,7 +230,7 @@ export class PieceBoxBuilder {
         const geo = new THREE.ExtrudeGeometry(shape, {
             depth,
             steps: 1,
-            curveSegments: 16,
+            curveSegments: 24,
             bevelEnabled: bevel > 0,
             bevelThickness: bevel,
             bevelSize: bevel,

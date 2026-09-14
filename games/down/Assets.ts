@@ -459,6 +459,8 @@ export default class Assets {
             HeaderNextLevel: { ...DefaultLabel, fill: 0xffe066, fontSize: 18 } as Partial<PIXI.TextStyle>,
             /** GameOverCountdown's "N seconds left" number — red/big so it reads as urgent. */
             DangerLabel: { ...DefaultLabel, fill: 0xff4444, fontSize: 56, strokeThickness: 5 } as Partial<PIXI.TextStyle>,
+            /** PowerupUnavailableToast's "Can't use this powerup right now" message — same red as DangerLabel but sentence-sized, not digit-sized. */
+            WarningToast: { ...DefaultLabel, fill: 0xff4444, fontSize: 26, strokeThickness: 3 } as Partial<PIXI.TextStyle>,
         };
     })();
 }

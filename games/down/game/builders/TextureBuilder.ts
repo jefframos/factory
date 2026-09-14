@@ -2,6 +2,15 @@ import * as THREE from 'three';
 import { ISLAND_TEXTURE_CONFIG } from '../world/MeshConfig';
 
 /**
+ * How many wood-grain tiles fit per world unit — see woodGrain()'s own doc
+ * for why this is a fixed constant rather than something scaled per-mesh.
+ * Same idea as a Pixi TilingSprite's tileScale, just inverted: LOWER values
+ * spread the same 256x256 canvas over MORE world-space, so each tile reads
+ * as a bigger, coarser chunk of grain; higher values tile it more densely.
+ */
+const WOOD_GRAIN_REPEAT = 0.5;
+
+/**
  * Central place to obtain any texture the game uses, whichever of three
  * sources it comes from:
  *   - island() / face()  — real art once loaded (island() via loadRealIsland(),
@@ -218,12 +227,16 @@ export class TextureBuilder {
             return (seed >>> 0) / 0xffffffff;
         };
 
-        // Long, gently wavy streaks at low alpha — deliberately faint so this
-        // reads as subtle surface variation (a hint of grain), not a printed
-        // wood pattern.
-        for (let i = 0; i < 130; i++) {
+        // Short, gently wavy streaks at low alpha — deliberately faint so
+        // this reads as subtle surface variation (a hint of grain), not a
+        // printed wood pattern. Kept well under the canvas size (unlike the
+        // old 0.5-1.1x-size streaks, which were often WIDER than the whole
+        // canvas and drew as near-full-width, nearly-flat lines — stack 130
+        // of those and it reads as uniform horizontal ridges/banding rather
+        // than grain, especially once WOOD_GRAIN_REPEAT scales tiles up).
+        for (let i = 0; i < 190; i++) {
             const y = rand() * size;
-            const streakLen = size * (0.5 + rand() * 0.6);
+            const streakLen = size * (0.12 + rand() * 0.22);
             const x = rand() * size - streakLen / 2;
             const lighter = rand() > 0.5;
 
@@ -231,24 +244,50 @@ export class TextureBuilder {
             ctx.globalAlpha = 0.1 + rand() * 0.16;
             ctx.lineWidth = 1 + rand() * 1.5;
 
-            ctx.beginPath();
-            ctx.moveTo(x, y + (rand() - 0.5) * 3);
-            ctx.bezierCurveTo(
-                x + streakLen * 0.33, y + (rand() - 0.5) * 6,
-                x + streakLen * 0.66, y + (rand() - 0.5) * 6,
-                x + streakLen, y + (rand() - 0.5) * 3,
-            );
-            ctx.stroke();
+            // Wave shape rolled ONCE, then the same streak is stamped at
+            // three horizontal offsets (-size, 0, +size) with THAT identical
+            // shape. Without this, a streak that runs past x=0 or x=size
+            // just gets clipped by the canvas edge, and RepeatWrapping's
+            // tiling has nothing on the opposite side to line up with —
+            // that mismatch is the visible "seam". Stamping the same curve
+            // one tile-width to either side guarantees whatever spills off
+            // one edge is exactly what appears on the other.
+            //
+            // `drift` tilts the streak diagonally end-to-end (on top of the
+            // usual mid-curve wobble) — without it, short streaks with only
+            // a few px of wobble still all read as basically horizontal,
+            // which is the same banding problem at a smaller scale.
+            const drift = (rand() - 0.5) * streakLen * 0.5;
+            const waveStart = (rand() - 0.5) * 3;
+            const wave1 = drift * 0.33 + (rand() - 0.5) * 6;
+            const wave2 = drift * 0.66 + (rand() - 0.5) * 6;
+            const waveEnd = drift + (rand() - 0.5) * 3;
+
+            // Wrapped in both axes now that `drift` can carry a streak's y
+            // far enough to spill past the top/bottom edge too, not just
+            // left/right.
+            for (const dx of [-size, 0, size]) {
+                for (const dy of [-size, 0, size]) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + dx, y + dy + waveStart);
+                    ctx.bezierCurveTo(
+                        x + dx + streakLen * 0.33, y + dy + wave1,
+                        x + dx + streakLen * 0.66, y + dy + wave2,
+                        x + dx + streakLen, y + dy + waveEnd,
+                    );
+                    ctx.stroke();
+                }
+            }
         }
         ctx.globalAlpha = 1;
 
         const tex = new THREE.CanvasTexture(canvas);
         tex.wrapS = THREE.RepeatWrapping;
         tex.wrapT = THREE.RepeatWrapping;
-        // One tile per ~1.4 world units — see this method's own doc for why
-        // this is a small fixed constant instead of something callers scale
-        // by their mesh's own width/height.
-        tex.repeat.set(0.7, 0.7);
+        // See WOOD_GRAIN_REPEAT's own doc for why this is a small fixed
+        // constant instead of something callers scale by their mesh's own
+        // width/height.
+        tex.repeat.set(WOOD_GRAIN_REPEAT, WOOD_GRAIN_REPEAT);
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.minFilter = THREE.LinearMipmapLinearFilter;
         tex.generateMipmaps = true;

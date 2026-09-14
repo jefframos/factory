@@ -203,8 +203,9 @@
         "dropForceY": 25
     },
     {
-        "id": "wind",
+        "id": "trapdoor",
         "type": "instant",
+        "icon": "trapdoor-icon",
         "piece": {
             "scale": { "x": 1, "y": 1 },
             "color": "#4FC3F7",
@@ -214,6 +215,7 @@
     {
         "id": "clear-low-tier",
         "type": "instant",
+        "icon": "discard-low-icon",
         "piece": {
             "scale": { "x": 1, "y": 1 },
             "color": "#B0BEC5",
@@ -223,6 +225,7 @@
     {
         "id": "destroy-piece",
         "type": "target",
+        "icon": "hammer-icon",
         "piece": {
             "scale": { "x": 1, "y": 1 },
             "color": "#E53935",
@@ -232,6 +235,7 @@
     {
         "id": "upgrade-piece",
         "type": "target",
+        "icon": "powerup-icon",
         "piece": {
             "scale": { "x": 1, "y": 1 },
             "color": "#FFC107",

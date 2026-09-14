@@ -211,7 +211,20 @@ const SCORE_POOL = new BurstPool({
     color: new THREE.Vector3(1.0, 0.85, 0.2), // gold — matches a "points" pop
 });
 
-const ALL_POOLS = [BOMB_POOL, FIRST_TOUCH_POOL, SCORE_POOL];
+const DISCARD_POOL = new BurstPool({
+    ignoreDepth: true,
+    maxParticles: 200,
+    particlesPerBurst: 16,
+    lifetime: 0.4,
+    speedMin: 1.2,
+    speedMax: 3.4,
+    gravity: 2.2,
+    pointSize: 1.6,
+    sizeAtten: 220,
+    color: new THREE.Vector3(0.65, 0.75, 0.85), // cool gray-blue puff — reads as "swept away", distinct from the bomb's fiery orange
+});
+
+const ALL_POOLS = [BOMB_POOL, FIRST_TOUCH_POOL, SCORE_POOL, DISCARD_POOL];
 
 /**
  * Static VFX hook surface for the tower's gameplay "juice" — one radial
@@ -299,5 +312,22 @@ export class TowerVfxUtils {
         const worldY = (cfg.floorY - y) / cfg3d.pixelsPerUnit + cfg3d.towerBaseOffset.y;
 
         SCORE_POOL.spawn(worldX, worldY, cfg3d.towerBaseOffset.z);
+    }
+
+    /**
+     * The 'clear-low-tier' powerup discarding one low-tier block — call once
+     * per removed block (see FaceTowerBlockController.removeBlocksByTiers()'s
+     * returned positions). Same raw 2D physics coords convention as
+     * onScorePopVfx() — a discarded block has already been destroyed by the
+     * time this fires, so there's no live FaceTowerBlock left to convert.
+     */
+    public static onDiscardLowTierVfx(x: number, y: number): void {
+        const cfg = DEFAULT_FACE_TOWER_CONFIG;
+        const cfg3d = DEFAULT_TOWER_3D_CONFIG;
+
+        const worldX = (x - cfg.floorX) / cfg3d.pixelsPerUnit + cfg3d.towerBaseOffset.x;
+        const worldY = (cfg.floorY - y) / cfg3d.pixelsPerUnit + cfg3d.towerBaseOffset.y;
+
+        DISCARD_POOL.spawn(worldX, worldY, cfg3d.towerBaseOffset.z);
     }
 }

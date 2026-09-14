@@ -43,33 +43,21 @@ export function resolveIslandForZone(levelIndex: number, zoneIndexInLevel: numbe
 }
 
 /**
- * Background sky color cycle, independent of level/island progression —
- * this is a standalone palette, not any named island's own `skyColor`
- * anymore. Cycles forever using the GLOBAL zone index (see
- * FaceTowerGameController.getZoneIndex() / TowerZoneController.getZoneIndex()
- * — increments once per trapdoor for the whole run, never resets per level,
- * unlike zoneIndexInLevel), so it keeps looping smoothly through level
- * boundaries instead of snapping back to the start of the list every time
- * the level changes.
+ * Fixed four-color sky palette, independent of level/island progression —
+ * this is a standalone palette, not any named island's own `skyColor`. Fed
+ * straight to TowerSkyController's four-way rotating gradient (one color per
+ * corner) — the background's color mix is set once and never changes, the
+ * "cycling" the player sees is the shader's own corner rotation.
  *
  * All blue-family, no purple — deliberately kept LOWER in saturation/
  * brightness than the (highly saturated red/orange/yellow/green/teal/blue/
- * magenta) pieces themselves, light-to-dark across the cycle, same
- * "muted sky behind vivid foreground objects" contrast most hypercasual
- * games lean on so the pieces are always what pops, never the backdrop.
- *
- * Order matters: index 0 is what shows before the very first trapdoor
- * fires.
+ * magenta) pieces themselves, same "muted sky behind vivid foreground
+ * objects" contrast most hypercasual games lean on so the pieces are always
+ * what pops, never the backdrop.
  */
-const SKY_CYCLE_COLORS: readonly string[] = [
-    //'#7EC8F2', // soft sky blue — starting color
-    '#4693D6', // mid blue
+export const SKY_CYCLE_COLORS: readonly string[] = [
+    '#043C9E', // soft sky blue
+    '#105CBE', // mid blue
     '#2C5FA8', // deeper blue
-    '#173A66', // dark navy — loops back to soft sky blue after this
+    '#0E46A3', // dark navy
 ];
-
-/** `zoneIndex` is the GLOBAL, never-per-level-reset zone counter — see this function's own doc above for why. */
-export function getSkyCycleColor(zoneIndex: number): string {
-    const index = ((zoneIndex % SKY_CYCLE_COLORS.length) + SKY_CYCLE_COLORS.length) % SKY_CYCLE_COLORS.length;
-    return SKY_CYCLE_COLORS[index];
-}

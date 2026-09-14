@@ -28,9 +28,9 @@
     "moveHintTouch": "Usa il dito per muoverti",
     "moveHintMouse": "Usa il mouse per muoverti",
     "leaderboardRow": "{rank}. {name}",
-    "mute": "Muto",
+    "mute": "Disattiva audio",
     "unmute": "Riattiva audio",
-    "you": "Tu",
+    "you": "Lei",
     "boostButtonLabel": "POTENZIAMENTO",
     "quitRun": "Termina esecuzione",
     "quitRunConfirm": "Termina subito la corsa e vai direttamente alla schermata del punteggio finale?"

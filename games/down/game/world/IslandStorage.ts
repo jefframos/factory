@@ -15,17 +15,6 @@ export interface IslandConfig {
      * FourCornersGradient) — see TowerSkyController.
      */
     skyGradient?: string[];
-    /**
-     * 0..1 starfield visibility bounds for this island — see
-     * TowerStarfieldController. Interpolated continuously (not per-zone
-     * steps, unlike skyGradient) across however far the player has climbed
-     * through the CURRENT level's zones, resetting to `starfieldWeightMin`
-     * every time the level changes — 0 at the level's first zone,
-     * `starfieldWeightMax` once its last zone is reached. Omit either (or
-     * both) to skip building a starfield for this island entirely.
-     */
-    starfieldWeightMin?: number;
-    starfieldWeightMax?: number;
     ambientColor: string;
     waterColor: string;
     /** Exactly one island in islands.json should set this — see getDefaultIsland(). */

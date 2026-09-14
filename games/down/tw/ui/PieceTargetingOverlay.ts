@@ -5,7 +5,7 @@ import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
 import type { FaceTowerBlock } from '../FaceTowerTypes';
 
-const MARKER_ALPHA = 0.45;
+const MARKER_ALPHA = 0.85;
 const CLOSE_BUTTON_SIZE = 56;
 const CLOSE_ICON_SIZE = 24;
 
@@ -21,10 +21,14 @@ const CLOSE_ICON_SIZE = 24;
  * Positioned in the SAME screen/overlay space as the rest of the HUD (see
  * GameHud.layout()'s own doc on why that matters) — added to
  * IslandViewScene's hudContainer, not the 3D scene, even though it tracks
- * 3D-rendered pieces: this game's 2D physics coordinates already line up
- * 1:1 with screen space once the camera's own vertical pan offset is added
- * (same convention TowerScorePopupUtils/TowerVfxUtils popups already rely
- * on), so no 3D raycasting is needed to know where a piece is on screen.
+ * 3D-rendered pieces. Each marker's screen position is handed in already
+ * resolved (see update()'s `resolveScreenPosition` param) rather than
+ * derived here from raw 2D physics coordinates + the camera's pan offset —
+ * that flat approximation (still fine for short-lived score popups) drifted
+ * further from the actual 3D-rendered piece the closer a piece sat to the
+ * edge of the play column, since it doesn't account for the 3D camera's own
+ * perspective projection. See IslandViewScene.update()'s targetingOverlay
+ * call site for the real ThreeScene.worldToScreen()-based projection.
  */
 export class PieceTargetingOverlay extends PIXI.Container {
     /** Dispatches the tapped block's id. */
@@ -63,9 +67,7 @@ export class PieceTargetingOverlay extends PIXI.Container {
 
     /**
      * Call every frame while active() — `blocks` is
-     * FaceTowerGameController.getBlocks(), `cameraOffsetY` is
-     * getCameraOffsetY() (same pair TowerVfxUtils/score-popup positioning
-     * already uses). `blockWidth`/`blockHeight` are
+     * FaceTowerGameController.getBlocks(). `blockWidth`/`blockHeight` are
      * FaceTowerConfig.blockWidth/blockHeight, scaled per-piece the same way
      * the real 2D block view does. `heldBlockId` (FaceTowerGameController.
      * getHeldBlock()?.id) excludes the piece still hovering over the drop
@@ -73,18 +75,31 @@ export class PieceTargetingOverlay extends PIXI.Container {
      * destroying/upgrading it out from under FaceTowerBlockController's own
      * heldBlock bookkeeping would leave that reference dangling (pointing
      * at an already-destroyed entity), breaking the next spawn.
+     *
+     * `resolveScreenPosition` is the actual 2D-overlay-local screen position
+     * for a given block's real 3D-rendered spot — computed by the caller
+     * (see IslandViewScene.update()), since projecting through the 3D
+     * camera needs THREE/ThreeScene access this purely-2D class doesn't
+     * have. Returns null for a block that's genuinely off-screen/behind the
+     * camera (skipped — no marker shown for it).
      */
     public update(
         blocks: readonly FaceTowerBlock[],
-        cameraOffsetY: number,
         blockWidth: number,
         blockHeight: number,
         heldBlockId: number | undefined,
+        resolveScreenPosition: (block: FaceTowerBlock) => { x: number; y: number } | null,
     ): void {
         let i = 0;
 
         for (const block of blocks) {
             if (block.powerup || block.id === heldBlockId) {
+                continue;
+            }
+
+            const screenPos = resolveScreenPosition(block);
+
+            if (!screenPos) {
                 continue;
             }
 
@@ -98,10 +113,7 @@ export class PieceTargetingOverlay extends PIXI.Container {
             marker.visible = true;
             marker.width = w;
             marker.height = h;
-            marker.position.set(
-                block.entity.body.position.x,
-                block.entity.body.position.y + cameraOffsetY,
-            );
+            marker.position.set(screenPos.x, screenPos.y);
 
             marker.removeAllListeners();
             marker.on('pointertap', () => this.onTargetChosen.dispatch(block.id));
@@ -140,7 +152,7 @@ export class PieceTargetingOverlay extends PIXI.Container {
             return pooled;
         }
 
-        const marker = new PIXI.Sprite(PIXI.Texture.WHITE);
+        const marker = PIXI.Sprite.from('PictoIcon_Aiming_1-2');
         marker.anchor.set(0.5);
         marker.alpha = MARKER_ALPHA;
         marker.interactive = true;

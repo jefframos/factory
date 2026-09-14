@@ -21,6 +21,8 @@ import {
     GameOverPopup,
     type GameOverData,
 } from './GameOverPopup';
+import { PowerupConfirmPopup } from './PowerupConfirmPopup';
+import { PowerupUnavailableToast } from './PowerupUnavailableToast';
 
 export class GameHud extends PIXI.Container {
     private soundBtn!: SoundToggleButton;
@@ -37,8 +39,22 @@ export class GameHud extends PIXI.Container {
 
     private gameOverPopup!: GameOverPopup;
 
+    /**
+     * "Use this powerup?" confirmation — see showPowerupConfirm()/
+     * onConfirmPowerup/onCancelPowerup. Unlike gameOverPopup (constructed in
+     * the constructor body since it needs continueCallback/replayCallback),
+     * this needs no constructor args of its own, so it's a plain field
+     * initializer — same convention as topPowerupSlots below — which also
+     * means it already exists by the time onConfirmPowerup/onCancelPowerup's
+     * own field initializers run (class fields initialize in declaration
+     * order, top to bottom, before the constructor body).
+     */
+    private readonly powerupConfirmPopup = new PowerupConfirmPopup(Game.DESIGN_WIDTH, Game.DESIGN_HEIGHT);
+
     /** "Zone X complete!" toast — see showZoneComplete(). */
     private readonly zoneNotification = new ZoneNotification();
+    /** "Can't use this powerup right now" toast — see showPowerupUnavailable(). */
+    private readonly powerupUnavailableToast = new PowerupUnavailableToast();
     /** The bigger "you leveled up, here's your powerup (+ double via video)" popup — see showLevelUp(). */
     private readonly levelUpNotification: LevelUpNotification;
 
@@ -53,8 +69,14 @@ export class GameHud extends PIXI.Container {
     /** Big centered "N seconds left" warning — see updateGameOverCountdown(). */
     private readonly gameOverCountdown = new GameOverCountdown();
 
-    /** Fired when a powerup button is tapped with count > 0 — see IslandViewScene, which listens, checks FaceTowerGameController.canUsePowerup(), spends one from PowerupInventoryStorage, and triggers the actual effect (spawnPowerup()/skipHeldPiece()). Just topPowerupSlots' own signal, exposed here so GameHud's own consumers don't need to reach through to a sub-component. */
+    /** Fired when a powerup button is tapped with count > 0 — see IslandViewScene, which listens and opens the USE/CANCEL confirm popup (see onConfirmPowerup/onCancelPowerup below) rather than applying the effect straight away. Just topPowerupSlots' own signal, exposed here so GameHud's own consumers don't need to reach through to a sub-component. */
     public readonly onUsePowerup: Signal = this.topPowerupSlots.onUsePowerup;
+    /** Fired when the powerup confirm popup's USE is tapped — see IslandViewScene.confirmPendingPowerup(), which is where FaceTowerGameController.canUsePowerup()/PowerupInventoryStorage.consume()/the actual effect all still happen (re-checked at confirm-time, not tap-time). Just powerupConfirmPopup's own signal. */
+    public readonly onConfirmPowerup: Signal = this.powerupConfirmPopup.onConfirm;
+    /** Fired when the powerup confirm popup's CANCEL is tapped (or dismissed without spending anything). */
+    public readonly onCancelPowerup: Signal = this.powerupConfirmPopup.onCancel;
+    /** Fired when the powerup confirm popup's WATCH VIDEO is tapped (shown instead of USE when the player owns zero of that powerup) — see IslandViewScene.handlePowerupWatchVideo(). */
+    public readonly onWatchVideoForPowerup: Signal = this.powerupConfirmPopup.onWatchVideo;
 
     /** Top-left "Circles / Cubes" experimental toggle — see PieceShapeMode. */
     private readonly shapeModeToggle = new ShapeModeToggleButton();
@@ -81,6 +103,9 @@ export class GameHud extends PIXI.Container {
         this.buildSoundAndPreview();
         this.gameplayLayer.addChild(this.topPowerupSlots);
         this.gameplayLayer.addChild(this.zoneNotification);
+        this.gameplayLayer.addChild(this.powerupUnavailableToast);
+        // Dev-only — see ShapeModeToggleButton's own doc ("experimental").
+        this.shapeModeToggle.visible = Game.debugParams.dev;
         this.gameplayLayer.addChild(this.shapeModeToggle);
         this.gameplayLayer.addChild(this.pieceProgressionBar);
         this.gameplayLayer.addChild(this.gateProgressPanel);
@@ -106,6 +131,10 @@ export class GameHud extends PIXI.Container {
         })
         // Popup sits on top of everything else in the HUD
         this.addChild(this.gameOverPopup);
+        // Sits above gameOverPopup too — a powerup can never be used once
+        // the game is actually over, but this keeps the stacking order
+        // unambiguous either way.
+        this.addChild(this.powerupConfirmPopup);
 
         this.levelUpNotification = new LevelUpNotification(Game.DESIGN_WIDTH, Game.DESIGN_HEIGHT);
         this.onWatchVideoForLevelUp = this.levelUpNotification.onWatchVideo;
@@ -145,6 +174,11 @@ export class GameHud extends PIXI.Container {
     /** Every zone (not just full level-ups) — see FaceTowerGameEvents.onTrapdoorOpened. */
     public showZoneComplete(zoneIndex: number): void {
         this.zoneNotification.show(zoneIndex);
+    }
+
+    /** See IslandViewScene.canUsePowerupRightNow() — shown instead of opening the confirm popup when a powerup would have nothing to actually act on. */
+    public showPowerupUnavailable(message: string): void {
+        this.powerupUnavailableToast.show(message);
     }
 
     /** Global (stage-space) position of the level-up popup's currently-shown powerup icon — see TowerRewardFlyUtils/IslandViewScene's onLevelUpCollected handler. */
@@ -206,6 +240,21 @@ export class GameHud extends PIXI.Container {
     /** Call while awaiting the platform's rewarded-video promise for the game-over RESPAWN button. */
     public setGameOverContinueBusy(busy: boolean): void {
         this.gameOverPopup.setContinueBusy(busy);
+    }
+
+    /** Shows the "Use this powerup?" confirm popup for `powerupId` — see IslandViewScene.beginPowerupConfirm(). `hasCount` picks USE vs WATCH VIDEO — see PowerupConfirmPopup's own doc. */
+    public showPowerupConfirm(powerupId: string, hasCount: boolean): void {
+        this.powerupConfirmPopup.showPopup(powerupId, hasCount);
+    }
+
+    /** Hides the powerup confirm popup — call on USE, CANCEL, or after a watch-video grant, see IslandViewScene.confirmPendingPowerup()/cancelPendingPowerup()/handlePowerupWatchVideo(). */
+    public hidePowerupConfirm(): void {
+        this.powerupConfirmPopup.hidePopup();
+    }
+
+    /** Call while awaiting the platform's rewarded-video promise for the powerup confirm popup's WATCH VIDEO button. */
+    public setPowerupConfirmVideoBusy(busy: boolean): void {
+        this.powerupConfirmPopup.setVideoBusy(busy);
     }
 
     public showNextPiece(piece: PieceDefinition): void {
@@ -286,6 +335,9 @@ export class GameHud extends PIXI.Container {
         );
 
         this.zoneNotification.position.set(Game.DESIGN_WIDTH * 0.5, Game.DESIGN_HEIGHT / 2 - 50);
+        // Same anchor as zoneNotification — the two never show at once (one's a
+        // trapdoor-opened celebration, the other a powerup-tap rejection).
+        this.powerupUnavailableToast.position.set(Game.DESIGN_WIDTH * 0.5, Game.DESIGN_HEIGHT / 2 - 50);
         // Just below the fixed game-over line — see FaceTowerConfig.
         // gameOverLineScreenY — so the countdown reads as tied to that line
         // rather than floating arbitrarily.
@@ -356,6 +408,7 @@ export class GameHud extends PIXI.Container {
         // Popups handle their own internal layout
         this.gameOverPopup.layout();
         this.levelUpNotification.layout();
+        this.powerupConfirmPopup.layout();
     }
 
     public override destroy(
@@ -364,12 +417,14 @@ export class GameHud extends PIXI.Container {
         this.heightGauge?.destroy();
         this.progressBar2D?.destroy();
         this.zoneNotification.destroy();
+        this.powerupUnavailableToast.destroy();
         this.levelUpNotification.destroy();
         this.topPowerupSlots.destroy();
         this.shapeModeToggle.destroy();
         this.pieceProgressionBar.destroy();
         this.gateProgressPanel.destroy();
         this.gameOverCountdown.destroy();
+        this.powerupConfirmPopup.destroy();
 
         super.destroy(options ?? { children: true });
     }

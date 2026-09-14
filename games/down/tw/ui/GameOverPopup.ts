@@ -30,7 +30,7 @@ const ATLAS = {
 // Layout constants
 // ─────────────────────────────────────────────────────────────────────────────
 const PANEL_WIDTH = 520;
-const PANEL_HEIGHT = 650;
+const PANEL_HEIGHT = 560;
 const PANEL_NINE_SLICE_PADDING = 60;
 
 const BUTTON_WIDTH = 420;
@@ -77,12 +77,6 @@ const SCORE_STYLE: Partial<PIXI.ITextStyle> = {
 
 };
 
-const HEIGHT_STYLE: Partial<PIXI.ITextStyle> = {
-    ...REPLAY_FONT_STYLE,
-    fontSize: 30,
-    fill: 0xffffff,
-};
-
 /** "Best: N" — shown under a stat when this run DIDN'T beat the existing record. */
 const BEST_STYLE: Partial<PIXI.ITextStyle> = {
     ...REPLAY_FONT_STYLE,
@@ -107,18 +101,10 @@ const TITLE_STYLE: Partial<PIXI.ITextStyle> = {
     fill: 0xffffff,
 };
 
-/**
- * Points and height are two INDEPENDENT stats/high-scores — see
- * HighScoreStorage — each gets its own "Best: X" (or "NEW HIGH SCORE!" when
- * THIS run beat it) line under its own number.
- */
 export interface GameOverData {
     score: number;
-    heightText: string;
     bestScoreText: string;
     isNewScoreHigh: boolean;
-    bestHeightText: string;
-    isNewHeightHigh: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -136,9 +122,7 @@ export class GameOverPopup extends PIXI.Container {
     private readonly _titleText: PIXI.Text;
     private readonly _scoreShine: PIXI.Sprite;
     private readonly _scoreText: PIXI.Text;
-    private readonly _heightText: PIXI.Text;
     private readonly _scoreBestText: PIXI.Text;
-    private readonly _heightBestText: PIXI.Text;
     private readonly _replayBtn: BaseButton;
     private readonly _continueBtn: BaseButton;
 
@@ -208,26 +192,15 @@ export class GameOverPopup extends PIXI.Container {
         this._scoreBestText.anchor.set(0.5, 0);
         this._card.addChild(this._scoreBestText);
 
-        // ── Height reached ────────────────────────────────────────────────────────
-        this._heightText = new PIXI.Text('', new PIXI.TextStyle(HEIGHT_STYLE));
-        this._heightText.anchor.set(0.5, 0);
-        this._card.addChild(this._heightText);
-
-        // ── Height best/new-high ──────────────────────────────────────────────────
-        this._heightBestText = new PIXI.Text('', new PIXI.TextStyle(BEST_STYLE));
-        this._heightBestText.anchor.set(0.5, 0);
-        this._card.addChild(this._heightBestText);
-
-
         // ── Replay button ────────────────────────────────────────────────────────
         this._replayBtn = new BaseButton({
             standard: {
                 width: BUTTON_WIDTH,
                 height: BUTTON_HEIGHT,
-                allPadding: BUTTON_PADDING,
-                texture: PIXI.Texture.from(ATLAS.REPLAY_STANDARD),
+                texturePadding: { bottom: 0, top: 0, right: 35, left: 35 },
+                texture: PIXI.Texture.EMPTY,
                 label: 'REPLAY',
-                fontStyle: new PIXI.TextStyle(REPLAY_FONT_STYLE),
+                fontStyle: new PIXI.TextStyle({ ...REPLAY_FONT_STYLE, fontSize: 26 }),
             },
             over: {
                 tint: 0xddddff,
@@ -255,7 +228,7 @@ export class GameOverPopup extends PIXI.Container {
             standard: {
                 width: BUTTON_WIDTH,
                 height: BUTTON_HEIGHT,
-                allPadding: BUTTON_PADDING,
+                texturePadding: { bottom: 0, top: 0, right: 35, left: 35 },
                 texture: PIXI.Texture.from(ATLAS.CONTINUE_STANDARD),
                 label: 'RESPAWN',
                 fontStyle: new PIXI.TextStyle(CONTINUE_FONT_STYLE),
@@ -296,21 +269,14 @@ export class GameOverPopup extends PIXI.Container {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Show the popup — `heightText`/`bestScoreText`/`bestHeightText` are
-     * already formatted strings (see IslandViewScene's onGameOver, which
-     * uses formatHeightRounded()/HighScoreStorage). `isNewScoreHigh`/
-     * `isNewHeightHigh` are checked independently — points and height are
-     * two separate records, so one can be a new high without the other.
+     * Show the popup — `bestScoreText` is already a formatted string (see
+     * IslandViewScene's onGameOver, which uses HighScoreStorage).
      */
     public showPopup(data: GameOverData): void {
         this._scoreText.text = String(data.score);
-        this._heightText.text = `Height: ${data.heightText}`;
 
         this._scoreBestText.text = data.isNewScoreHigh ? 'NEW HIGH SCORE!' : `Best: ${data.bestScoreText}`;
         this._scoreBestText.style = new PIXI.TextStyle(data.isNewScoreHigh ? NEW_HIGH_STYLE : BEST_STYLE);
-
-        this._heightBestText.text = data.isNewHeightHigh ? 'NEW HIGH SCORE!' : `Best: ${data.bestHeightText}`;
-        this._heightBestText.style = new PIXI.TextStyle(data.isNewHeightHigh ? NEW_HIGH_STYLE : BEST_STYLE);
 
         // Make visible before animation starts so updateTransform drives the fade
         this.visible = true;
@@ -367,23 +333,17 @@ export class GameOverPopup extends PIXI.Container {
         this._scoreBestText.x = cx;
         this._scoreBestText.y = scoreCentreY + 45;
 
-        // Height reached: below that
-        this._heightText.x = cx;
-        this._heightText.y = scoreCentreY + 90;
-
-        // Height's own best/new-high line
-        this._heightBestText.x = cx;
-        this._heightBestText.y = scoreCentreY + 125;
-
         // Replay button (upper of the two buttons)
         const replayY = PANEL_HEIGHT - BUTTON_HEIGHT * 2 - 48 - 16;
         this._replayBtn.x = Math.round((PANEL_WIDTH - BUTTON_WIDTH) / 2);
-        this._replayBtn.y = replayY;
 
-        // Continue button (lower)
         const continueY = replayY + BUTTON_HEIGHT + 16;
+        // Continue button (lower)
         this._continueBtn.x = Math.round((PANEL_WIDTH - BUTTON_WIDTH) / 2);
-        this._continueBtn.y = continueY;
+
+
+        this._replayBtn.y = continueY;
+        this._continueBtn.y = replayY;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

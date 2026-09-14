@@ -26,8 +26,8 @@ import {
     DESTROY_PIECE_POWERUP_ID,
     POWERUPS,
     SKIP_PIECE_POWERUP_ID,
+    TRAPDOOR_POWERUP_ID,
     UPGRADE_PIECE_POWERUP_ID,
-    WIND_POWERUP_ID,
     getPowerup,
 } from './PowerupStorage';
 import { getEnabledPowerupIds } from './PowerupConfig';
@@ -35,13 +35,12 @@ import { TowerVfxUtils } from './TowerVfxUtils';
 import type { PowerupContactPoint } from './PowerupSystem';
 import { TowerBaseSync3D } from './TowerBaseSync3D';
 import { TowerBlockSync3D } from './TowerBlockSync3D';
-import { DEFAULT_TOWER_3D_CONFIG, formatHeightRounded } from './Tower3DConfig';
+import { DEFAULT_TOWER_3D_CONFIG } from './Tower3DConfig';
 import { loadTowerDevMeta, saveTowerDevMeta } from './TowerDevMeta';
 import { TowerGameOverSiren3D } from './TowerGameOverSiren3D';
 import { TowerHeightMarkers3D } from './TowerHeightMarkers3D';
-import { getSkyCycleColor, resolveIslandForZone } from './TowerIslandProgression';
 import { TowerSkyController } from './TowerSkyController';
-import { TowerStarfieldController } from './TowerStarfieldController';
+import { TowerCloudBackdropController } from './TowerCloudBackdropController';
 import { TowerWallSync3D } from './TowerWallSync3D';
 import { GameHud } from './ui/GameHud';
 import { PieceTargetingOverlay } from './ui/PieceTargetingOverlay';
@@ -61,10 +60,10 @@ export default class IslandViewScene extends ThreeScene {
     // -------------------------------------------------------------------------
     // World / 3D
     // -------------------------------------------------------------------------
-    /** Degenerate four-corners gradient sky, built lazily the first time a zone's island defines skyGradient — see applyZoneIsland(). Until then the plain flat scene.background set in build() is what's showing. */
+    /** Four-corners gradient sky, rotating continuously through SKY_CYCLE_COLORS — built once in build(), never changes color per zone/level. */
     private readonly skyController = new TowerSkyController();
-    /** Camera-attached star layer, built lazily the first time a zone's island defines BOTH starfieldWeightMin/Max — see applyZoneIsland(). Its visibility is driven continuously every frame from climb progress — see update(). */
-    private readonly starfieldController = new TowerStarfieldController();
+    /** Camera-attached vertical stack of low-alpha cloud sprites, built once in build() alongside the sky. */
+    private readonly cloudBackdropController = new TowerCloudBackdropController();
 
     // -------------------------------------------------------------------------
     // 2D / game layer
@@ -133,6 +132,24 @@ export default class IslandViewScene extends ThreeScene {
     /** Full-screen invisible-ish blocker sitting in the overlay (above the HUD) that only becomes interactive while paused — same shape/purpose as MergeScene's own gameBlocker: swallow pointer input so a drop/tap that lands while the platform thinks the game is paused can't reach the tower gameplay underneath. */
     private readonly gameBlocker: PIXI.Sprite = PIXI.Sprite.from(PIXI.Texture.WHITE);
 
+    /**
+     * True while the "Use this powerup?" confirm popup is up — see
+     * beginPowerupConfirm()/confirmPendingPowerup()/cancelPendingPowerup().
+     * Deliberately a SEPARATE flag from `paused`, not a reuse of it: `paused`
+     * is specifically "the platform SDK told us to pause" and carries its
+     * own side effects (gameBlocker, DomUiRoot.setInputBlocked) plus its own
+     * onResume path (_onPlatformResume), which could blindly flip it back to
+     * false out from under an open confirm popup if the platform paused/
+     * resumed while one was showing. This flag only ever gates
+     * fixedUpdate()'s physics/game-logic step (see gameTimeFrozen there) —
+     * input is blocked separately, by the popup's own dimmer/interactive
+     * card plus faceTower.setInputEnabled(false), same lightweight approach
+     * beginTargeting() already uses for its own in-scene modal moment.
+     */
+    private powerupConfirmOpen = false;
+    /** The powerup id awaiting the player's USE/CANCEL choice — see beginPowerupConfirm(). Null whenever powerupConfirmOpen is false. */
+    private pendingConfirmPowerupId: string | null = null;
+
     // =========================================================================
     // Lifecycle
     // =========================================================================
@@ -183,22 +200,12 @@ export default class IslandViewScene extends ThreeScene {
 
         const island = getDefaultIsland();
 
-        /*
-         * The background sky is its OWN independent color cycle now (see
-         * TowerIslandProgression.getSkyCycleColor()), not the current
-         * level's island — built as a gradient sky from frame one (index 0
-         * of that cycle) so applyZoneIsland()'s later transitionTo() calls
-         * always have something already built to ease FROM instead of
-         * hard-cutting on the very first zone.
-         */
-        const initialZone = resolveIslandForZone(0, 0);
-
-        this.skyController.build(this.threeCamera, getSkyCycleColor(0));
-
-        if (initialZone.island.starfieldWeightMin !== undefined && initialZone.island.starfieldWeightMax !== undefined) {
-            this.starfieldController.build(this.threeCamera);
-            this.starfieldController.setWeightBounds(initialZone.island.starfieldWeightMin, initialZone.island.starfieldWeightMax);
-        }
+        // The background sky is a fixed four-color rotating gradient now
+        // (see TowerSkyController/TowerIslandProgression.SKY_CYCLE_COLORS),
+        // not driven by level/zone progression — built once, here.
+        this.threeScene.background = null;
+        this.skyController.build(this.threeCamera);
+        await this.cloudBackdropController.build(this.threeCamera);
 
         this.threeScene.add(this.threeCamera);
 
@@ -206,19 +213,19 @@ export default class IslandViewScene extends ThreeScene {
         // piece's shadowed side a gentle cool-toned falloff (the "ground" color)
         // rather than going flat black, which is what was reading as depthless.
         const ambient = parseHexColor(island.ambientColor);
-        this.threeScene.add(new THREE.HemisphereLight(0xbfd9ff, shadeColor(ambient, -0.35), 0.9));
+        this.threeScene.add(new THREE.HemisphereLight(0xbfd9ff, shadeColor(ambient, -0.35), 1.15));
 
         SetupThree.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        SetupThree.renderer.toneMappingExposure = 1.1;
+        SetupThree.renderer.toneMappingExposure = 1.35;
         SetupThree.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
         // Dialed down from 1.6 — combined with the material's clearcoat this
         // was blowing the highlight out to flat white under ACES tonemapping.
-        const key = new THREE.DirectionalLight(0xfff4dd, 1.1);
+        const key = new THREE.DirectionalLight(0xfff4dd, 1.3);
         key.position.set(5, 10, 7.5);
         this.threeScene.add(key);
 
-        const fill = new THREE.DirectionalLight(0x99ccff, 0.4);
+        const fill = new THREE.DirectionalLight(0x99ccff, 0.55);
         fill.position.set(-8, 3, -5);
         this.threeScene.add(fill);
 
@@ -244,20 +251,30 @@ export default class IslandViewScene extends ThreeScene {
     public resize(): void {
         this.resizeFaceTowerInput();
         this.skyController.resize();
-        this.starfieldController.resize(this.threeCamera);
     }
 
     public fixedUpdate(delta: number): void {
         delta *= this.speedMultiplier;
 
-        // Skips the actual simulation/game-logic step while paused — see `paused`'s own doc —
-        // but still calls super.fixedUpdate() unconditionally, same "cosmetic stuff keeps
-        // running, only the mediator/game-logic step freezes" split MergeScene.update() makes.
-        if (!this.paused) {
+        // Skips the actual simulation/game-logic step while paused, while
+        // the powerup confirm popup is open, OR while the player is picking
+        // a target for a 'target'-type powerup (destroy-piece/upgrade-piece
+        // — see beginTargeting()/endTargeting()) — otherwise the game-over
+        // grace timer (driven inside faceTower.update()) keeps counting down
+        // the whole time the HUD/input are hidden/disabled for targeting,
+        // which could end the run while the player is still just choosing
+        // which piece to destroy/upgrade, with no way to react. See
+        // `paused`'s own doc and `powerupConfirmOpen`'s own doc for why
+        // those stay separate flags — but still calls super.fixedUpdate()
+        // unconditionally, same "cosmetic stuff keeps running, only the
+        // mediator/game-logic step freezes" split MergeScene.update() makes.
+        const gameTimeFrozen = this.paused || this.powerupConfirmOpen || this.targetingPowerupId !== null;
+
+        if (!gameTimeFrozen) {
             Physics.fixedUpdate(delta);
         }
         super.fixedUpdate(delta);
-        if (!this.paused) {
+        if (!gameTimeFrozen) {
             this.faceTower?.update(delta);
         }
     }
@@ -271,18 +288,6 @@ export default class IslandViewScene extends ThreeScene {
         delta *= this.speedMultiplier;
 
         this.skyController.update(delta);
-        this.starfieldController.update(delta);
-
-        if (this.faceTower && this.starfieldController.isBuilt()) {
-            /*
-             * Continuous, not stepped — driven straight from actual climb
-             * progress through the current level rather than snapping once
-             * per zone the way the sky color does, so the fade reads as
-             * smooth motion tied directly to the player's own climb instead
-             * of a series of little jumps.
-             */
-            this.starfieldController.updateProgress(this.faceTower.getLevelProgressFraction());
-        }
 
         const towerOffsetY = this.faceTower?.getCameraOffsetY() ?? 0;
 
@@ -290,13 +295,6 @@ export default class IslandViewScene extends ThreeScene {
 
         if (this.targetingPowerupId !== null && this.faceTower) {
             this.targetingOverlay.layout();
-            this.targetingOverlay.update(
-                this.faceTower.getBlocks(),
-                towerOffsetY,
-                DEFAULT_FACE_TOWER_CONFIG.blockWidth,
-                DEFAULT_FACE_TOWER_CONFIG.blockHeight,
-                this.faceTower.getHeldBlock()?.id,
-            );
         }
 
         /*
@@ -310,6 +308,41 @@ export default class IslandViewScene extends ThreeScene {
         );
         this.applyCameraShake(delta);
         TowerVfxUtils.update(delta);
+
+        if (this.targetingPowerupId !== null && this.faceTower) {
+            // Real 3D projection now that the camera's fully settled for
+            // this frame (positionCamera()/applyCameraShake() already ran
+            // above) — see PieceTargetingOverlay's own doc for why the old
+            // flat "physics x,y + pan offset" shortcut isn't accurate enough
+            // for this (it drifted further from the actual rendered piece
+            // the closer a piece sat to the edge of the play column).
+            this.targetingOverlay.update(
+                this.faceTower.getBlocks(),
+                DEFAULT_FACE_TOWER_CONFIG.blockWidth,
+                DEFAULT_FACE_TOWER_CONFIG.blockHeight,
+                this.faceTower.getHeldBlock()?.id,
+                (block) => {
+                    const worldPos = TowerVfxUtils.blockToWorld(block);
+                    const screen = this.worldToScreen(worldPos);
+
+                    if (!screen) {
+                        return null;
+                    }
+
+                    // Raw CSS-pixel -> the overlay's own local space — same
+                    // conversion EntityIndicatorManager.toOverlayLocal() uses
+                    // for its name tags/boost bars, just resolved directly
+                    // against targetingOverlay (nested a couple containers
+                    // deeper than game.overlayContainer) instead of that.
+                    const local = this.targetingOverlay.toLocal(
+                        new PIXI.Point(screen.x, screen.y),
+                        this.game.app.stage,
+                    );
+
+                    return { x: local.x, y: local.y };
+                },
+            );
+        }
 
         if (this.faceTower) {
             this.blockSync3D.sync(this.faceTower.getBlocks(), this.faceTower.getHeldBlock(), delta);
@@ -463,7 +496,14 @@ export default class IslandViewScene extends ThreeScene {
 
         this.gameBlocker.interactive = false;
         this.gameBlocker.visible = false;
-        this.faceTower?.setInputEnabled(true);
+        // Don't blindly re-enable input if the powerup confirm popup is
+        // still up — it disabled input deliberately (see
+        // beginPowerupConfirm()) and owns re-enabling it on its own
+        // USE/CANCEL choice (see closePowerupConfirm()); a platform
+        // pause/resume firing in between shouldn't short-circuit that.
+        if (!this.powerupConfirmOpen) {
+            this.faceTower?.setInputEnabled(true);
+        }
         DomUiRoot.instance.setInputBlocked(false);
     };
 
@@ -477,7 +517,7 @@ export default class IslandViewScene extends ThreeScene {
         DomUiRoot.instance.setInputBlocked(false);
 
         this.skyController.destroy();
-        this.starfieldController.destroy();
+        this.cloudBackdropController.destroy();
         TowerVfxUtils.destroy();
         TowerScorePopupUtils.destroy();
         TowerRewardFlyUtils.destroy();
@@ -550,7 +590,10 @@ export default class IslandViewScene extends ThreeScene {
         this.targetingOverlay.onTargetChosen.add((blockId: number) => this.resolveTargetingChoice(blockId), this);
         this.targetingOverlay.onCancel.add(() => this.endTargeting(true), this);
 
-        this.gameHud.onUsePowerup.add((powerupId: string) => this.useHudPowerup(powerupId), this);
+        this.gameHud.onUsePowerup.add((powerupId: string) => this.beginPowerupConfirm(powerupId), this);
+        this.gameHud.onConfirmPowerup.add(() => this.confirmPendingPowerup(), this);
+        this.gameHud.onCancelPowerup.add(() => this.cancelPendingPowerup(), this);
+        this.gameHud.onWatchVideoForPowerup.add(() => void this.handlePowerupWatchVideo(), this);
         this.gameHud.onShapeModeToggle.add((mode: 'circle' | 'cube') => this.handleShapeModeToggle(mode), this);
         this.gameHud.onWatchVideoForLevelUp.add(() => void this.handleLevelUpWatchVideo(), this);
         this.gameHud.onLevelUpCollected.add(() => {
@@ -608,17 +651,6 @@ export default class IslandViewScene extends ThreeScene {
                     // of which piece/top-tier-repeat it was.
                     this.gameHud.playGateUnlockCelebration();
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.GateOpen);
-
-                    /*
-                     * Fires on EVERY trapdoor, not just full level-ups — the
-                     * sky needs to step forward one zone at a time (see
-                     * applyZoneIsland()), not sit static until a whole
-                     * level's worth of zones finishes. By this point
-                     * FaceTowerGameController has already advanced
-                     * levels/getZoneIndexInLevel() to whatever this zone
-                     * landed on, level-up included.
-                     */
-                    this.applyZoneIsland();
                 },
 
                 onGateProgressRevealed: (requirement) => {
@@ -670,25 +702,25 @@ export default class IslandViewScene extends ThreeScene {
                 },
 
                 onGameOver: (score, topWorldY) => {
+                    // Height itself is no longer shown on the game-over
+                    // screen (see GameOverPopup — score/best-score only
+                    // now), but the record is still tracked here in case
+                    // something else (a future leaderboard column, etc.)
+                    // ever wants it.
                     const heightMeters = (DEFAULT_FACE_TOWER_CONFIG.floorY - topWorldY) / DEFAULT_TOWER_3D_CONFIG.pixelsPerUnit;
-
-                    // Checked BEFORE recording — recordX() below immediately
-                    // bumps the cache to match, so isNewXHigh() (which
-                    // compares against the run-START baseline) would always
-                    // read false afterward.
-                    const isNewScoreHigh = TowerHighScoreStorage.isNewPointsHigh(score);
-                    const isNewHeightHigh = TowerHighScoreStorage.isNewHeightHigh(heightMeters);
-
-                    TowerHighScoreStorage.recordPoints(score);
                     TowerHighScoreStorage.recordHeight(heightMeters);
+
+                    // Checked BEFORE recording — recordPoints() below
+                    // immediately bumps the cache to match, so
+                    // isNewPointsHigh() (which compares against the
+                    // run-START baseline) would always read false afterward.
+                    const isNewScoreHigh = TowerHighScoreStorage.isNewPointsHigh(score);
+                    TowerHighScoreStorage.recordPoints(score);
 
                     this.gameHud.showGameOver({
                         score,
-                        heightText: formatHeightRounded(heightMeters),
                         bestScoreText: String(TowerHighScoreStorage.getPoints()),
                         isNewScoreHigh,
-                        bestHeightText: formatHeightRounded(TowerHighScoreStorage.getHeight()),
-                        isNewHeightHigh,
                     });
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.GameOver);
 
@@ -902,12 +934,167 @@ export default class IslandViewScene extends ThreeScene {
     }
 
     /**
+     * GameHud's onUsePowerup callback (tapping a powerup button) — opens the
+     * "Use this powerup?" confirm popup instead of applying the effect right
+     * away; see confirmPendingPowerup()/cancelPendingPowerup()/
+     * handlePowerupWatchVideo() for what happens on the player's actual
+     * choice, and useHudPowerup()'s own doc for what each choice actually
+     * DOES once it runs. Freezes game time for as long as the popup is up —
+     * see powerupConfirmOpen's own doc / fixedUpdate().
+     *
+     * Tapping the SAME powerup that's already active/mid-targeting is a
+     * CANCEL gesture, not a new use (this is exactly what useHudPowerup()
+     * itself already detects and handles via cancelActivePowerup()/
+     * endTargeting()) — that must stay instant, with no confirmation, so
+     * it's special-cased here before ever opening the popup.
+     *
+     * Fires on every tap now regardless of current inventory count (see
+     * PowerupButton's own updated doc) — `hasCount` picks which popup mode
+     * shows: USE when the player owns at least one, WATCH VIDEO when they
+     * own zero (see PowerupConfirmPopup's own doc).
+     */
+    private beginPowerupConfirm(powerupId: string): void {
+        if (this.powerupConfirmOpen) {
+            return;
+        }
+
+        if (powerupId === this.activePowerupId || powerupId === this.targetingPowerupId) {
+            this.useHudPowerup(powerupId);
+            return;
+        }
+
+        // Same guard useHudPowerup() itself enforces on every path — skip
+        // opening a popup that would just silently no-op on confirm anyway
+        // (matches today's "nothing happens" outcome for a stale tap).
+        if (!this.faceTower.canUsePowerup()) {
+            return;
+        }
+
+        // Board-state precondition — separate from canUsePowerup() above
+        // (which only checks WHEN a powerup can be spent, not whether this
+        // ONE would actually do anything) — see canUsePowerupRightNow()'s
+        // own doc. Shown even for a zero-count tap: watching a video to
+        // grant one would be pointless too if there's nothing for it to act
+        // on.
+        if (!this.canUsePowerupRightNow(powerupId)) {
+            this.gameHud.showPowerupUnavailable("Can't use this powerup right now");
+            return;
+        }
+
+        this.pendingConfirmPowerupId = powerupId;
+        this.powerupConfirmOpen = true;
+        this.faceTower.setInputEnabled(false);
+
+        const hasCount = PowerupInventoryStorage.getCount(powerupId) > 0;
+        this.gameHud.showPowerupConfirm(powerupId, hasCount);
+    }
+
+    /**
+     * True unless `powerupId` would have nothing to actually act on right
+     * now — checked BEFORE opening the confirm popup (see
+     * beginPowerupConfirm()), so the player gets a clear "can't use this"
+     * toast instead of a popup that would just silently no-op (or, worse,
+     * spend a WATCH VIDEO grant on a powerup with no effect) once confirmed:
+     *  - trapdoor: needs at least one piece actually on the board — see
+     *    FaceTowerGameController.hasAnyBlocks(). Dropping the floor under
+     *    nothing does nothing.
+     *  - clear-low-tier: needs at least one tier-0/1/2 piece to clear — see
+     *    hasLowTierBlocks().
+     *  - destroy-piece/upgrade-piece: needs at least one targetable piece —
+     *    same hasAnyBlocks() check as trapdoor, since targeting mode would
+     *    otherwise open with nothing to tap.
+     *  - anything else (skip-piece): no board-state precondition.
+     */
+    private canUsePowerupRightNow(powerupId: string): boolean {
+        if (powerupId === TRAPDOOR_POWERUP_ID) {
+            return this.faceTower.hasAnyBlocks();
+        }
+
+        if (powerupId === CLEAR_LOW_TIER_POWERUP_ID) {
+            return this.faceTower.hasLowTierBlocks();
+        }
+
+        if (powerupId === DESTROY_PIECE_POWERUP_ID || powerupId === UPGRADE_PIECE_POWERUP_ID) {
+            return this.faceTower.hasAnyBlocks();
+        }
+
+        return true;
+    }
+
+    /** Popup's USE button — closes the popup FIRST (so useHudPowerup()'s own input-enabling, e.g. beginTargeting()'s setInputEnabled(false), is what actually sticks), then runs the real effect through the unchanged useHudPowerup() path — canUsePowerup()/inventory are re-checked there at confirm-time, not tap-time, in case anything changed while the popup was open. */
+    private confirmPendingPowerup(): void {
+        const powerupId = this.pendingConfirmPowerupId;
+        this.closePowerupConfirm();
+
+        if (powerupId === null) {
+            return;
+        }
+
+        this.useHudPowerup(powerupId);
+
+        // See suppressGameOverBriefly()'s own doc — a bomb/trapdoor/discard
+        // just used may have disturbed the pile; give it a moment to settle
+        // before the game-over grace timer can start counting again.
+        this.faceTower.suppressGameOverBriefly(1);
+    }
+
+    /** Popup's CANCEL button — nothing was ever spent (useHudPowerup() never ran), so this just closes the popup. */
+    private cancelPendingPowerup(): void {
+        this.pendingConfirmPowerupId = null;
+        this.closePowerupConfirm();
+    }
+
+    /**
+     * Popup's WATCH VIDEO button (only shown when the player owns zero of
+     * this powerup — see beginPowerupConfirm()) — awaits the platform's
+     * rewarded-video call, grants one copy on completion (same "always
+     * reward" convention handleGameOverRespawnVideo()/
+     * handleLevelUpWatchVideo() currently use — ad-gating temporarily
+     * bypassed, see their own comments), then closes the popup and runs the
+     * SAME useHudPowerup() path USE would have, so the freshly-granted copy
+     * is immediately spent and applied rather than just sitting in
+     * inventory. Bails out if the popup was cancelled (or reopened for a
+     * different powerup) while the video request was in flight — nothing to
+     * grant/use in that case.
+     */
+    private async handlePowerupWatchVideo(): Promise<void> {
+        const powerupId = this.pendingConfirmPowerupId;
+
+        if (powerupId === null) {
+            return;
+        }
+
+        this.gameHud.setPowerupConfirmVideoBusy(true);
+
+        let rewarded = false;
+
+        if (PlatformHandler.ENABLE_VIDEO_ADS) {
+            try {
+                rewarded = await PlatformHandler.instance.platform.showRewardedVideo('powerup-grant');
+            } catch (e) {
+                console.error('IslandViewScene: rewarded video failed', e);
+            }
+        }
+
+        this.gameHud.setPowerupConfirmVideoBusy(false);
+
+        if (this.pendingConfirmPowerupId !== powerupId) {
+            return;
+        }
+
+        PowerupInventoryStorage.grant(powerupId);
+        this.closePowerupConfirm();
+        this.useHudPowerup(powerupId);
+        this.faceTower.suppressGameOverBriefly(1);
+    }
+
+    /**
      * GameHud's onUsePowerup callback — branches on the tapped powerup's
      * own PowerupActivationType (see PowerupStorage):
      *  - skip-piece: instant one-shot, no "held" state — spend one, swap
      *    the held piece for the next, done. Not a real PowerupDefinition,
      *    so it's checked before even looking one up.
-     *  - 'instant' (wind/clear-low-tier): spend one, apply the effect to
+     *  - 'instant' (trapdoor/clear-low-tier): spend one, apply the effect to
      *    the live board right away — see applyInstantPowerup().
      *  - 'target' (destroy-piece/upgrade-piece): spend one, enter
      *    targeting mode (see beginTargeting()) — tapping the SAME one
@@ -923,8 +1110,18 @@ export default class IslandViewScene extends ThreeScene {
      * can't take effect right now never spends the player's inventory for
      * nothing — 'instant'/'target' don't touch the held piece at all, but
      * still only make sense mid-run, not e.g. while a level-up popup has
-     * play frozen.
+     * play frozen. Called from beginPowerupConfirm() (a cancel-gesture tap)
+     * or from confirmPendingPowerup()/handlePowerupWatchVideo() (the
+     * player's actual USE/WATCH VIDEO choice) — never directly from GameHud
+     * any more.
      */
+
+    private closePowerupConfirm(): void {
+        this.powerupConfirmOpen = false;
+        this.faceTower.setInputEnabled(true);
+        this.gameHud.hidePowerupConfirm();
+    }
+
     private useHudPowerup(powerupId: string): void {
         if (powerupId === SKIP_PIECE_POWERUP_ID) {
             if (!this.faceTower.canUsePowerup() || !PowerupInventoryStorage.consume(powerupId)) {
@@ -988,10 +1185,13 @@ export default class IslandViewScene extends ThreeScene {
 
     /** 'instant'-type powerups apply immediately, no held piece or targeting involved — see PowerupStorage.PowerupActivationType. */
     private applyInstantPowerup(powerupId: string): void {
-        if (powerupId === WIND_POWERUP_ID) {
-            this.faceTower.triggerWindPowerup();
+        if (powerupId === TRAPDOOR_POWERUP_ID) {
+            this.faceTower.triggerTrapdoorPowerup();
         } else if (powerupId === CLEAR_LOW_TIER_POWERUP_ID) {
-            this.faceTower.triggerClearLowTierPowerup();
+            const removedPositions = this.faceTower.triggerClearLowTierPowerup();
+            for (const { x, y } of removedPositions) {
+                TowerVfxUtils.onDiscardLowTierVfx(x, y);
+            }
         }
     }
 
@@ -1019,7 +1219,15 @@ export default class IslandViewScene extends ThreeScene {
             this.faceTower.destroyBlock(blockId);
         } else if (powerupId === UPGRADE_PIECE_POWERUP_ID) {
             this.faceTower.upgradeBlock(blockId);
+        } else {
+            return;
         }
+
+        // Same reasoning as confirmPendingPowerup()'s own call — the pile
+        // may still be resettling right as game time resumes (see
+        // fixedUpdate()'s gameTimeFrozen), so give it a moment before the
+        // game-over grace timer can start counting against the player again.
+        this.faceTower.suppressGameOverBriefly(1);
     }
 
     /** Exits targeting mode, restoring the HUD/input — `refund` is true only for an explicit cancel (the close button, or tapping the same powerup again), never for an actual chosen-target resolution, which already spent it for real. */
@@ -1189,50 +1397,6 @@ export default class IslandViewScene extends ThreeScene {
         }
 
         return PowerupButton.buildPieceIcon(powerup.piece.color, powerup.piece.polygon, size);
-    }
-
-    /**
-     * Called every time FaceTowerGameController fires onTrapdoorOpened —
-     * i.e. every zone, not just full level-ups — kicks off the sky's
-     * smooth color transition to whichever step of the independent
-     * background cycle the run's GLOBAL zone count now lands on (see
-     * TowerIslandProgression.getSkyCycleColor()), and separately resolves
-     * the CURRENT level's own island (see resolveIslandForZone()) purely
-     * for starfield density bounds, which still progress per level as
-     * before. There's no ground/water mesh to swap any more (the tower has
-     * no island backdrop).
-     */
-    private applyZoneIsland(): void {
-        const { island } = resolveIslandForZone(
-            this.faceTower.getLevelIndex(),
-            this.faceTower.getZoneIndexInLevel(),
-        );
-
-        const skyColorHex = getSkyCycleColor(this.faceTower.getZoneIndex());
-
-        if (!this.skyController.isBuilt()) {
-            this.threeScene.background = null;
-            this.skyController.build(this.threeCamera, skyColorHex);
-        } else {
-            this.skyController.transitionTo(skyColorHex);
-        }
-
-        /*
-         * Bounds only — the actual visibility value is driven continuously
-         * every frame from climb progress (see update()), not stepped here
-         * per zone the way the sky color is. An island that doesn't define
-         * both bounds gets (0, 0), which reads as "no stars" without ever
-         * needing to build the starfield for it at all.
-         */
-        if (island.starfieldWeightMin !== undefined && island.starfieldWeightMax !== undefined) {
-            if (!this.starfieldController.isBuilt()) {
-                this.starfieldController.build(this.threeCamera);
-            }
-
-            this.starfieldController.setWeightBounds(island.starfieldWeightMin, island.starfieldWeightMax);
-        } else {
-            this.starfieldController.setWeightBounds(0, 0);
-        }
     }
 
     private setupCameraDevGui(): void {

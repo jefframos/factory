@@ -33,5 +33,23 @@
     "you": "Vy",
     "boostButtonLabel": "Propagovat",
     "quitRun": "Ukončit běh",
-    "quitRunConfirm": "Ukončit běh a přejít rovnou na obrazovku konečného skóre?"
+    "quitRunConfirm": "Ukončit běh a přejít rovnou na obrazovku konečného skóre?",
+
+    "powerupUseButton": "USE",
+    "powerupCancelButton": "CANCEL",
+    "powerupWatchVideoButton": "WATCH VIDEO",
+    "powerupUnavailable": "Can't use this powerup right now",
+
+    "powerupNameBomb": "Bomb",
+    "powerupNameSuperBomb": "Super Bomb",
+    "powerupNameTrapdoor": "Trapdoor",
+    "powerupNameClearLowTier": "Clear Low Tier",
+    "powerupNameDestroyPiece": "Destroy Piece",
+    "powerupNameUpgradePiece": "Upgrade Piece",
+    "powerupNameSkipPiece": "Skip Piece",
+
+    "gameOverTitle": "GAME OVER",
+    "gameOverRestartButton": "RESTART",
+    "gameOverRespawnButton": "RESPAWN",
+    "gameOverBestScore": "Best: {score}"
 }

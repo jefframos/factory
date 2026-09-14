@@ -616,17 +616,29 @@ export class FaceTowerBlockController {
      * getHighestTopWorldY()/getHighestSettledTopWorldY() use; without it,
      * this could destroy the piece out of the player's hand mid-hold,
      * breaking the drop/spawn flow.
+     *
+     * Returns each removed block's 2D world position, captured BEFORE
+     * removeBlock() destroys its physics body — the caller uses these to
+     * spawn a VFX burst per piece (see TowerVfxUtils.onDiscardLowTierVfx()),
+     * same raw-(x,y)-not-a-block convention TowerVfxUtils.onScorePopVfx()
+     * already uses, so this stays free of any 3D/THREE dependency.
      */
-    public removeBlocksByTiers(tiers: readonly number[]): void {
+    public removeBlocksByTiers(tiers: readonly number[]): readonly { x: number; y: number }[] {
+        const removedPositions: { x: number; y: number }[] = [];
+
         for (const block of [...this.blocks]) {
             if (block.powerup || block.state === 'held') {
                 continue;
             }
 
             if (block.piece.tier !== undefined && tiers.includes(block.piece.tier)) {
+                const { x, y } = block.entity.body.position;
+                removedPositions.push({ x, y });
                 this.removeBlock(block);
             }
         }
+
+        return removedPositions;
     }
 
     /**

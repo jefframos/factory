@@ -168,6 +168,8 @@ export class FaceTowerGameController {
 
     /** Seconds the pile's top has continuously sat at/above the game-over line — see updateGameOverLine(). */
     private gameOverLineTimer = 0;
+    /** Seconds left in a post-powerup grace window — see suppressGameOverBriefly(). While > 0, updateGameOverLine() doesn't run at all (gameOverLineTimer stays reset to 0), so a pile a bomb/trapdoor/discard just disturbed gets a moment to settle before the game-over check resumes. */
+    private powerupGameOverGraceTimer = 0;
 
     private targetX: number;
     /** Rolled one spawn ahead — see spawnNextBlock()/rollPiece(). Lets getNextPiece() answer "what's coming after this one" before it actually spawns. */
@@ -394,7 +396,9 @@ export class FaceTowerGameController {
         // piece just hovering, only clearing on the player's next REAL
         // drop (dropBlock()), so nothing here can end the run before
         // they've had a chance to act on the new zone.
-        if (!this.suppressGameOverUntilDrop && this.updateGameOverLine(delta)) {
+        if (this.powerupGameOverGraceTimer > 0) {
+            this.powerupGameOverGraceTimer = Math.max(0, this.powerupGameOverGraceTimer - delta);
+        } else if (!this.suppressGameOverUntilDrop && this.updateGameOverLine(delta)) {
             return;
         }
 
@@ -591,7 +595,7 @@ export class FaceTowerGameController {
         return this.levels.getZoneIndexInLevel();
     }
 
-    /** Total zones completed this ENTIRE run — never resets per level (only on a full reset()). See TowerZoneController.getZoneIndex()/TowerIslandProgression.getSkyCycleColor(). */
+    /** Total zones completed this ENTIRE run — never resets per level (only on a full reset()). See TowerZoneController.getZoneIndex(). */
     public getZoneIndex(): number {
         return this.zones.getZoneIndex();
     }
@@ -685,30 +689,55 @@ export class FaceTowerGameController {
     }
 
     /**
-     * 'wind' (type: 'instant') — no longer a cosmetic physics rattle (see
-     * git history for the old FaceTowerBlockController.applyWindEffect()):
-     * forces the CURRENT gate open immediately, exactly as if its real
-     * requirement (the next tier unlock, or another top-tier merge — see
-     * TowerGateController) had just been met. Routed through the same
-     * beginTrapdoor() the real requirement check uses (not a separate
-     * ad-hoc "open the floor" path), so the gate widget still gets its
-     * usual onTrapdoorOpened/onGateProgressRevealed events and stays in
-     * sync — it doesn't skip advancing TowerGateController/zones/levels,
-     * it just skips WAITING for the requirement. A no-op while a trapdoor
-     * is already mid-sequence or the run has ended, same guard
-     * devSkipZone()/devSkipLevel() use.
+     * 'trapdoor' (type: 'instant') — no longer a cosmetic physics rattle
+     * (see git history for the old FaceTowerBlockController.applyWindEffect(),
+     * back when this powerup was still called 'wind'): drops the CURRENT
+     * floor immediately, exactly like a real gate requirement being met,
+     * EXCEPT it does NOT actually satisfy/advance that requirement — the
+     * same gate/zone/level/target-weight threshold stays active afterward,
+     * so the player is still working toward the exact same goal, just from
+     * a freshly-dropped floor. Routed through beginTrapdoor(false) — see
+     * its own doc for exactly what that skips (gates.advance(),
+     * levels.advanceZone(), zones.completeZone(), onTrapdoorOpened's "zone
+     * complete" celebration) versus what still runs either way (the actual
+     * floor-drop animation, held-piece discard, next-piece reroll). A no-op
+     * while a trapdoor is already mid-sequence or the run has ended, same
+     * guard devSkipZone()/devSkipLevel() use.
      */
-    public triggerWindPowerup(): void {
+    public triggerTrapdoorPowerup(): void {
         if (this.state === FaceTowerState.GameOver || this.trapdoor.isActive()) {
             return;
         }
 
-        this.beginTrapdoor();
+        this.beginTrapdoor(false);
     }
 
-    /** 'clear-low-tier' (type: 'instant') — removes every live tier-0/tier-1 block. See FaceTowerBlockController.removeBlocksByTiers(). */
-    public triggerClearLowTierPowerup(): void {
-        this.blocks.removeBlocksByTiers([0, 1]);
+    /**
+     * 'clear-low-tier' (type: 'instant') — removes every live tier-0/1/2
+     * block (see FaceTowerBlockController.removeBlocksByTiers()). Returns
+     * each removed block's own 2D world position (captured before it's
+     * destroyed) so the caller can spawn a VFX burst per piece — see
+     * IslandViewScene.applyInstantPowerup()/TowerVfxUtils.onDiscardLowTierVfx().
+     */
+    public triggerClearLowTierPowerup(): readonly { x: number; y: number }[] {
+        return this.blocks.removeBlocksByTiers([0, 1, 2]);
+    }
+
+    /**
+     * Call right after ANY powerup is actually used (see
+     * IslandViewScene.confirmPendingPowerup()) — resets the game-over grace
+     * timer to 0 and holds updateGameOverLine()'s per-frame check off for
+     * `seconds` more real-time seconds, so a pile a bomb/trapdoor/discard
+     * just disturbed gets a moment to settle before the game-over line can
+     * start counting against the player again. Purely a delay: whether the
+     * timer actually starts climbing once the window ends still depends
+     * entirely on updateGameOverLine()'s own live check against the current
+     * pile — this doesn't force a game over OR force a reprieve, only
+     * defers WHEN that check resumes.
+     */
+    public suppressGameOverBriefly(seconds: number): void {
+        this.gameOverLineTimer = 0;
+        this.powerupGameOverGraceTimer = Math.max(this.powerupGameOverGraceTimer, seconds);
     }
 
     /**
@@ -773,6 +802,28 @@ export class FaceTowerGameController {
     }
 
     /**
+     * True while at least one live, non-powerup, non-held block is actually
+     * on the board — see IslandViewScene.canUsePowerupRightNow(), which
+     * gates the trapdoor powerup (dropping the floor with nothing standing
+     * on it does nothing worth doing) and the two target-type powerups
+     * (destroy-piece/upgrade-piece — nothing to enter targeting mode FOR
+     * otherwise) on this. Same 'held' exclusion removeBlocksByTiers() uses:
+     * the piece still hovering, waiting to be dropped, isn't really "on the
+     * board" yet.
+     */
+    public hasAnyBlocks(): boolean {
+        return this.blocks.getBlocks().some(block => !block.powerup && block.state !== 'held');
+    }
+
+    /** True while at least one live, non-powerup, non-held block sits in tier 0/1/2 — see IslandViewScene.canUsePowerupRightNow(), which gates the clear-low-tier powerup on this (nothing for it to actually clear otherwise). Mirrors removeBlocksByTiers([0, 1, 2])'s own filter exactly. */
+    public hasLowTierBlocks(): boolean {
+        return this.blocks.getBlocks().some(
+            block => !block.powerup && block.state !== 'held' &&
+                block.piece.tier !== undefined && [0, 1, 2].includes(block.piece.tier),
+        );
+    }
+
+    /**
      * Swaps the currently-held piece for the one already queued as "next"
      * (skipping straight to it instead of waiting to drop the current one),
      * then rolls a fresh "next" — see the in-game skip-piece HUD button.
@@ -817,11 +868,19 @@ export class FaceTowerGameController {
     }
 
     /**
-     * Resumes play after a collapse WITHOUT resetting the tower — clears
-     * out whatever actually fell past the death line (the cause of the
-     * collapse) and spawns the next piece as normal, leaving score and
-     * everything still standing untouched. A no-op unless currently
-     * GameOver.
+     * Resumes play after a collapse WITHOUT resetting the tower — clears out
+     * the entire BOTTOM HALF of the play column (not just whatever actually
+     * fell past the death line) and spawns the next piece as normal, leaving
+     * score and everything still standing untouched. A no-op unless
+     * currently GameOver.
+     *
+     * Clearing only what's already past the death line (the old behavior)
+     * left the pile sitting almost exactly where it was the instant it
+     * died — right at/above the game-over line — so a respawn would very
+     * often collapse again within a piece or two. Clearing the bottom half
+     * of the whole column (from the fixed top game-over line down to the
+     * current floor) gives the player genuine breathing room to actually
+     * keep playing instead of just delaying the same loss by one drop.
      *
      * TODO: this is meant to be gated behind a rewarded ad — IslandViewScene's
      * "Continue" button currently calls this directly with no ad in front
@@ -832,10 +891,12 @@ export class FaceTowerGameController {
             return [];
         }
 
-        const deathWorldY = this.camera.toWorldY(this.config.deathScreenY);
+        const gameOverLineWorldY = this.getGameOverLineWorldY();
+        const floorWorldY = this.camera.toWorldY(this.config.floorScreenY);
+        const bottomHalfWorldY = (gameOverLineWorldY + floorWorldY) / 2;
 
         for (const block of [...this.blocks.getBlocks()]) {
-            if (!block.powerup && block.entity.body.position.y > deathWorldY) {
+            if (!block.powerup && block.entity.body.position.y > bottomHalfWorldY) {
                 this.blocks.removeBlock(block);
             }
         }
@@ -980,18 +1041,37 @@ export class FaceTowerGameController {
     }
 
     /**
-     * Kicks off the trapdoor sequence the instant the current gate
-     * requirement is met — advances the zone/level bookkeeping right away
-     * (same "advance first, animate after" order the old zone-advance
-     * used) so the active island/sky are already correct by the time the
-     * floor actually opens. zones/levels' own target-weight bookkeeping
-     * keeps running unchanged here even though weight no longer GATES
-     * anything — only what's consulted to decide "should a gate open" moved
-     * to TowerGateController.
+     * Kicks off the trapdoor sequence — the floor drops, the pile falls,
+     * a new floor is placed, exactly the same physical animation either
+     * way. `advanceProgression` (default true) picks which of two very
+     * different things that ALSO means:
+     *
+     *  - true (the real "a gate requirement was just met" path — see
+     *    checkGateMilestone()): advances the zone/level bookkeeping right
+     *    away (same "advance first, animate after" order the old
+     *    zone-advance used) so the active island/sky are already correct
+     *    by the time the floor actually opens, and fires onTrapdoorOpened
+     *    (drives the "zone complete" HUD/celebration).
+     *  - false (triggerTrapdoorPowerup()): none of that runs — the SAME
+     *    gate requirement/zone/level/target-weight stay exactly as they
+     *    were, `currentWallHeight` is left untouched rather than
+     *    recomputed (there's nothing new to compute it FROM), and
+     *    onTrapdoorOpened does NOT fire, since no zone was actually
+     *    completed — showing that "zone complete" celebration for a
+     *    powerup that only reset the floor back to the same threshold
+     *    would be actively misleading.
+     *
+     * zones/levels' own target-weight bookkeeping keeps running unchanged
+     * in the true-path branch even though weight no longer GATES anything
+     * — only what's consulted to decide "should a gate open" moved to
+     * TowerGateController.
      */
-    private beginTrapdoor(): void {
-        const satisfiedGate = this.gates.getCurrentRequirement();
-        this.gates.advance();
+    private beginTrapdoor(advanceProgression: boolean = true): void {
+        const satisfiedGate = advanceProgression ? this.gates.getCurrentRequirement() : undefined;
+
+        if (advanceProgression) {
+            this.gates.advance();
+        }
 
         const heldPiece = this.blocks.getHeldBlock()?.piece;
 
@@ -1021,20 +1101,31 @@ export class FaceTowerGameController {
         // already was to the line the instant the trapdoor triggered.
         this.gameOverLineTimer = 0;
 
-        const advance = this.levels.advanceZone();
-        const zoneConfig = this.levels.getCurrentZoneConfig();
+        let leveledUp = false;
+        let levelUpIndex = 0;
+        let openedZoneIndex = 0;
 
-        this.currentWallHeight = this.computeContainmentWallHeight();
+        if (advanceProgression) {
+            const advance = this.levels.advanceZone();
+            const zoneConfig = this.levels.getCurrentZoneConfig();
 
-        const result = this.zones.completeZone(this.scaleZoneTargetWeight(zoneConfig.weight));
+            this.currentWallHeight = this.computeContainmentWallHeight();
 
-        // The milestone is consumed — start the NEXT zone's progress fresh
-        // at 0 rather than leaving the same pieces' weight to instantly
-        // (or near-instantly) clear the next, only slightly higher,
-        // threshold too. See FaceTowerBlockController.resetWeight()'s own
-        // doc for why this doesn't contradict "weight = what's on the
-        // board" even though the pieces themselves aren't going anywhere.
-        this.blocks.resetWeight();
+            const result = this.zones.completeZone(this.scaleZoneTargetWeight(zoneConfig.weight));
+            openedZoneIndex = result.zoneIndex;
+
+            // The milestone is consumed — start the NEXT zone's progress
+            // fresh at 0 rather than leaving the same pieces' weight to
+            // instantly (or near-instantly) clear the next, only slightly
+            // higher, threshold too. See
+            // FaceTowerBlockController.resetWeight()'s own doc for why this
+            // doesn't contradict "weight = what's on the board" even though
+            // the pieces themselves aren't going anywhere.
+            this.blocks.resetWeight();
+
+            leveledUp = advance.leveledUp;
+            levelUpIndex = advance.levelIndex;
+        }
 
         this.trapdoor.begin(this.currentWallHeight);
         // Set immediately (not left to next frame's update() to notice via
@@ -1043,7 +1134,10 @@ export class FaceTowerGameController {
         // harmless either way since discardHeldBlock() above already left
         // nothing for those to act on, but this keeps getState() honest.
         this.state = FaceTowerState.TrapdoorOpening;
-        this.events.onTrapdoorOpened?.(result.zoneIndex, satisfiedGate);
+
+        if (advanceProgression) {
+            this.events.onTrapdoorOpened?.(openedZoneIndex, satisfiedGate!);
+        }
 
         // NOTE: onLevelProgressed is NOT fired here any more — see
         // finishTrapdoor(). Firing it this early meant the level-up popup
@@ -1052,9 +1146,9 @@ export class FaceTowerGameController {
         // wait a bit before the popup" wasn't possible with the event this
         // early. Just remember which level was reached; finishTrapdoor()
         // fires the real event once the pile has actually settled.
-        if (advance.leveledUp) {
+        if (leveledUp) {
             this.pendingLevelUpHold = true;
-            this.pendingLevelUpIndex = advance.levelIndex;
+            this.pendingLevelUpIndex = levelUpIndex;
         }
 
         /*
@@ -1063,7 +1157,10 @@ export class FaceTowerGameController {
          * what will ACTUALLY spawn once the trapdoor finishes, instead of
          * staying stale on whatever was rolled under the old zone's level.
          * Unless a piece was just discarded off the drop area above — that
-         * one takes priority over a fresh roll, for continuity.
+         * one takes priority over a fresh roll, for continuity. Rerolled
+         * the same way in the non-advancing (powerup) path too — the held
+         * piece was still discarded above, so a next piece still needs
+         * picking, even though the pool itself didn't change.
          */
         this.nextPiece = this.pendingHeldPiece ?? this.rollPiece();
         this.events.onNextPieceChanged?.(this.nextPiece);

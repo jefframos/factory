@@ -6,8 +6,8 @@ import { Signal } from 'signals';
 import {
     CLEAR_LOW_TIER_POWERUP_ID,
     DESTROY_PIECE_POWERUP_ID,
+    TRAPDOOR_POWERUP_ID,
     UPGRADE_PIECE_POWERUP_ID,
-    WIND_POWERUP_ID,
     getPowerup,
 } from '../PowerupStorage';
 import { PowerupButton } from './PowerupButton';
@@ -20,8 +20,8 @@ const GROUP_WIDTH = SLOTS_PER_SIDE * PowerupButton.SIZE + (SLOTS_PER_SIDE - 1) *
 
 /**
  * Fixed 4-slot powerup row anchored to the top of the screen: the LEFT pair
- * are the two environment-wide ones (wind, clear-low-tier — see
- * PowerupStorage.WIND_POWERUP_ID/CLEAR_LOW_TIER_POWERUP_ID), the RIGHT pair
+ * are the two environment-wide ones (trapdoor, clear-low-tier — see
+ * PowerupStorage.TRAPDOOR_POWERUP_ID/CLEAR_LOW_TIER_POWERUP_ID), the RIGHT pair
  * are the two single-piece-targeted ones (destroy-piece, upgrade-piece —
  * see PieceTargetingOverlay, which is what actually handles picking the
  * target once one of these is tapped). Y for both pairs comes from
@@ -43,7 +43,7 @@ export class TopPowerupSlots extends PIXI.Container {
 
         this.addChild(this.leftGroup, this.rightGroup);
 
-        this.buildSlot(this.leftGroup, 0, WIND_POWERUP_ID);
+        this.buildSlot(this.leftGroup, 0, TRAPDOOR_POWERUP_ID);
         this.buildSlot(this.leftGroup, 1, CLEAR_LOW_TIER_POWERUP_ID);
         this.buildSlot(this.rightGroup, 0, DESTROY_PIECE_POWERUP_ID);
         this.buildSlot(this.rightGroup, 1, UPGRADE_PIECE_POWERUP_ID);

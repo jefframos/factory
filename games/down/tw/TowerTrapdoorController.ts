@@ -101,7 +101,10 @@ export class TowerTrapdoorController {
         }
 
         if (this.phase === 'falling' && !this.camera.isPanning()) {
-            this.blocks.addBase(this.pendingNewFloorY, this.getBasePieceId());
+            // The real floor was already placed back in openFloor() (see its
+            // own doc for why) — this just restores the steady-state
+            // (base-flush) wall span and re-arms the catch-sensors now that
+            // the pile has actually landed on it.
             this.deadZones.rebuild(this.pendingNewFloorY, this.pendingWallHeight);
             this.phase = 'idle';
             return true;
@@ -113,21 +116,34 @@ export class TowerTrapdoorController {
     /**
      * Destroys the current floor's two flaps (the swing animation has
      * already finished by the time this runs — see update()'s 'opening'
-     * branch) and starts the camera panning down to where the new one will
-     * land — camera.isPanning() finishing (checked in update()) is what
-     * marks the fall as "done", so the fall's real-time duration is exactly
-     * however long that pan takes at cameraPanSpeed.
+     * branch), immediately places the NEW floor at its final resting Y, and
+     * starts the camera panning down to follow — camera.isPanning()
+     * finishing (checked in update()) is what marks the fall as "done", so
+     * the fall's real-time duration is exactly however long that pan takes
+     * at cameraPanSpeed; the physical landing itself already happened by
+     * then.
      *
-     * Deliberately does NOT clear the side walls (catch-sensors were
-     * already cleared back in begin() — see its own doc). The walls are
-     * instead RE-SPANNED to stay solid across the ENTIRE fall (from the
-     * same top they already had — this.pendingWallHeight/config.wallOffsetY
-     * produce the identical top edge rebuild() would have used — down to
-     * comfortably past where the new floor will land), so the pile can
-     * never drift sideways out of the column while there's no floor
-     * beneath it. Once the fall finishes, update()'s 'falling' branch calls
-     * the normal rebuild(), which restores the steady-state (base-flush)
-     * wall span and the catch-sensors together.
+     * The new floor is placed HERE, synchronously, rather than waited on
+     * until the pan finishes — physics keeps simulating gravity on the
+     * whole pile for that entire pan duration regardless of what the camera
+     * is doing, so leaving a genuine gap with no floor collider at all for
+     * that whole span let a piece with enough downward velocity fall clean
+     * through where the new floor was ABOUT to go, past the (necessarily
+     * finite) side-wall span below it, and out of the play area entirely —
+     * visually reading as pieces vanishing off-screen. Placing it
+     * immediately closes that gap: nothing below the camera's current view
+     * yet (the pan hasn't caught up), so this is invisible either way, but
+     * now there's always something solid to land on. update()'s 'falling'
+     * branch only re-arms the steady-state wall span + catch-sensors once
+     * the pan actually finishes — the floor itself is already there.
+     *
+     * Also does NOT clear the side walls (catch-sensors were already
+     * cleared back in begin() — see its own doc). The walls are instead
+     * RE-SPANNED to stay solid across the ENTIRE fall (from the same top
+     * they already had — this.pendingWallHeight/config.wallOffsetY produce
+     * the identical top edge rebuild() would have used — down to
+     * comfortably past where the new floor lands), so the pile can never
+     * drift sideways out of the column either.
      */
     private openFloor(): void {
         const reachedY = this.blocks.getCurrentFloorY();
@@ -144,6 +160,11 @@ export class TowerTrapdoorController {
         }
 
         this.pendingNewFloorY = reachedY + this.config.trapdoorDropHeight;
+
+        // Placed right away — see this method's own doc for why waiting
+        // until the pan finished left a physics gap pieces could fall
+        // through.
+        this.blocks.addBase(this.pendingNewFloorY, this.getBasePieceId());
 
         this.deadZones.rebuildWallsSpan(
             topWorldY,
