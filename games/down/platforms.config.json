@@ -1,10 +1,17 @@
 {
+    "poki": {
+        "className": "PokiPlatform",
+        "importPath": "core/platforms/PokiPlatform",
+        "gameId": "poki-game-123",
+        "enableAds": true,
+        "folderPath": "down"
+    },
     "youtube": {
         "className": "YouTubePlayablePlatform",
         "importPath": "core/platforms/YouTubePlayablePlatform",
         "gameId": "f7cdc30e8fd14e50a3170c485f207936",
         "enableAds": true,
-        "folderPath": "merge1",
+        "folderPath": "down",
         "apiScript": "https://www.youtube.com/game_api/v1"
     }
 }
