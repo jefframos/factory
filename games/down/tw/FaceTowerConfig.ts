@@ -21,7 +21,7 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     // TopPowerupSlots/GameHud.layout(). Tune this to clear whatever else
     // sits at the top of the screen (sound button, next-piece preview,
     // shape-mode toggle).
-    powerupSlotsScreenY: 70,
+    powerupSlotsScreenY: 80,
 
     // Near the top — the settled pile crossing this and staying (see
     // gameOverGraceDuration) ends the run. Nudged down a little from 280 —

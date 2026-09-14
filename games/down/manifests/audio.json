@@ -13,6 +13,38 @@
         },
         {
           "alias": [
+            "ball_drop1.wav"
+          ],
+          "src": [
+            "ball_drop1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ball_drop2.wav"
+          ],
+          "src": [
+            "ball_drop2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ball_split1.wav"
+          ],
+          "src": [
+            "ball_split1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "ball_split2.wav"
+          ],
+          "src": [
+            "ball_split2.mp3"
+          ]
+        },
+        {
+          "alias": [
             "Bubbles.wav"
           ],
           "src": [
@@ -297,6 +329,14 @@
           ],
           "src": [
             "tapped.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "trapdoor.wav"
+          ],
+          "src": [
+            "trapdoor.mp3"
           ]
         },
         {

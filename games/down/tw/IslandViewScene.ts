@@ -41,6 +41,7 @@ import { TowerGameOverSiren3D } from './TowerGameOverSiren3D';
 import { TowerHeightMarkers3D } from './TowerHeightMarkers3D';
 import { TowerSkyController } from './TowerSkyController';
 import { TowerCloudBackdropController } from './TowerCloudBackdropController';
+import { TowerStarSparkleController } from './TowerStarSparkleController';
 import { TowerWallSync3D } from './TowerWallSync3D';
 import { GameHud } from './ui/GameHud';
 import { PieceTargetingOverlay } from './ui/PieceTargetingOverlay';
@@ -64,6 +65,8 @@ export default class IslandViewScene extends ThreeScene {
     private readonly skyController = new TowerSkyController();
     /** Camera-attached vertical stack of low-alpha cloud sprites, built once in build() alongside the sky. */
     private readonly cloudBackdropController = new TowerCloudBackdropController();
+    /** Sparse field of upward-drifting star sprites sitting just in front of the cloud backdrop — built once in build(), driven every frame in update(). */
+    private readonly starSparkleController = new TowerStarSparkleController();
 
     // -------------------------------------------------------------------------
     // 2D / game layer
@@ -206,6 +209,7 @@ export default class IslandViewScene extends ThreeScene {
         this.threeScene.background = null;
         this.skyController.build(this.threeCamera);
         await this.cloudBackdropController.build(this.threeCamera);
+        await this.starSparkleController.build(this.threeCamera);
 
         this.threeScene.add(this.threeCamera);
 
@@ -288,6 +292,7 @@ export default class IslandViewScene extends ThreeScene {
         delta *= this.speedMultiplier;
 
         this.skyController.update(delta);
+        this.starSparkleController.update(delta);
 
         const towerOffsetY = this.faceTower?.getCameraOffsetY() ?? 0;
 
@@ -518,6 +523,7 @@ export default class IslandViewScene extends ThreeScene {
 
         this.skyController.destroy();
         this.cloudBackdropController.destroy();
+        this.starSparkleController.destroy();
         TowerVfxUtils.destroy();
         TowerScorePopupUtils.destroy();
         TowerRewardFlyUtils.destroy();
@@ -651,6 +657,12 @@ export default class IslandViewScene extends ThreeScene {
                     // of which piece/top-tier-repeat it was.
                     this.gameHud.playGateUnlockCelebration();
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.GateOpen);
+                    // Same physical floor-drop sound the trapdoor POWERUP
+                    // plays (see applyInstantPowerup()) — a real gate
+                    // opening for a new level is the exact same floor
+                    // mechanic, so it gets the same sound, layered under
+                    // GateOpen's own celebratory sting rather than replacing it.
+                    SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.PowerupTrapdoor);
                 },
 
                 onGateProgressRevealed: (requirement) => {
@@ -793,6 +805,15 @@ export default class IslandViewScene extends ThreeScene {
                     };
 
                     void TowerScorePopupUtils.popAt(screenPos, points);
+                },
+
+                // One beat per piece the 'clear-low-tier' powerup actually
+                // removes — see FaceTowerGameController.triggerClearLowTierPowerup()'s
+                // own doc for the staggered (not all-at-once) timing this
+                // fires on.
+                onLowTierPieceRemoved: (x, y) => {
+                    TowerVfxUtils.onDiscardLowTierVfx(x, y);
+                    SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.PowerupDiscard);
                 },
             },
         );
@@ -1183,15 +1204,21 @@ export default class IslandViewScene extends ThreeScene {
         this.faceTower.spawnPowerup(powerupId);
     }
 
-    /** 'instant'-type powerups apply immediately, no held piece or targeting involved — see PowerupStorage.PowerupActivationType. */
+    /**
+     * 'instant'-type powerups apply immediately, no held piece or targeting
+     * involved — see PowerupStorage.PowerupActivationType. clear-low-tier's
+     * own VFX/SFX (TowerVfxUtils.onDiscardLowTierVfx()/PowerupDiscard) don't
+     * fire here — triggerClearLowTierPowerup() only QUEUES the removals now
+     * (staggered over time, see its own doc), so those play per-removal off
+     * the onLowTierPieceRemoved event instead (see buildFaceTowerLayer()'s
+     * event wiring).
+     */
     private applyInstantPowerup(powerupId: string): void {
         if (powerupId === TRAPDOOR_POWERUP_ID) {
             this.faceTower.triggerTrapdoorPowerup();
+            SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.PowerupTrapdoor);
         } else if (powerupId === CLEAR_LOW_TIER_POWERUP_ID) {
-            const removedPositions = this.faceTower.triggerClearLowTierPowerup();
-            for (const { x, y } of removedPositions) {
-                TowerVfxUtils.onDiscardLowTierVfx(x, y);
-            }
+            this.faceTower.triggerClearLowTierPowerup();
         }
     }
 
@@ -1217,8 +1244,10 @@ export default class IslandViewScene extends ThreeScene {
 
         if (powerupId === DESTROY_PIECE_POWERUP_ID) {
             this.faceTower.destroyBlock(blockId);
+            SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.PowerupDestroy);
         } else if (powerupId === UPGRADE_PIECE_POWERUP_ID) {
             this.faceTower.upgradeBlock(blockId);
+            SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.PowerupUpgrade);
         } else {
             return;
         }

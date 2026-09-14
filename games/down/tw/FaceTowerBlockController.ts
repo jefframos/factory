@@ -608,37 +608,22 @@ export class FaceTowerBlockController {
     }
 
     /**
-     * Removes every live, non-powerup block whose `piece.tier` is in
-     * `tiers` — see FaceTowerGameController.triggerClearLowTierPowerup().
-     * Snapshots `this.blocks` first since removeBlock() mutates that same
-     * array. Excludes a 'held' block (the piece currently hovering, waiting
-     * to be dropped, not yet part of the board) — same guard
-     * getHighestTopWorldY()/getHighestSettledTopWorldY() use; without it,
-     * this could destroy the piece out of the player's hand mid-hold,
-     * breaking the drop/spawn flow.
-     *
-     * Returns each removed block's 2D world position, captured BEFORE
-     * removeBlock() destroys its physics body — the caller uses these to
-     * spawn a VFX burst per piece (see TowerVfxUtils.onDiscardLowTierVfx()),
-     * same raw-(x,y)-not-a-block convention TowerVfxUtils.onScorePopVfx()
-     * already uses, so this stays free of any 3D/THREE dependency.
+     * Every live, non-powerup block whose `piece.tier` is in `tiers` — a
+     * QUERY only, doesn't remove anything itself. See
+     * FaceTowerGameController.triggerClearLowTierPowerup(), which queues
+     * the result for staggered removal (one every LOW_TIER_REMOVAL_INTERVAL,
+     * not all at once) rather than removing them here synchronously.
+     * Excludes a 'held' block (the piece currently hovering, waiting to be
+     * dropped, not yet part of the board) — same guard
+     * getHighestTopWorldY()/getHighestSettledTopWorldY() use; without it, a
+     * held piece could end up queued for removal out from under the
+     * player's hand mid-hold, breaking the drop/spawn flow.
      */
-    public removeBlocksByTiers(tiers: readonly number[]): readonly { x: number; y: number }[] {
-        const removedPositions: { x: number; y: number }[] = [];
-
-        for (const block of [...this.blocks]) {
-            if (block.powerup || block.state === 'held') {
-                continue;
-            }
-
-            if (block.piece.tier !== undefined && tiers.includes(block.piece.tier)) {
-                const { x, y } = block.entity.body.position;
-                removedPositions.push({ x, y });
-                this.removeBlock(block);
-            }
-        }
-
-        return removedPositions;
+    public getBlocksByTiers(tiers: readonly number[]): FaceTowerBlock[] {
+        return this.blocks.filter(
+            block => !block.powerup && block.state !== 'held' &&
+                block.piece.tier !== undefined && tiers.includes(block.piece.tier),
+        );
     }
 
     /**

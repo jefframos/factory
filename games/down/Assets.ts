@@ -121,7 +121,7 @@ export default class Assets {
             },
             /** Picking up loose food, or nibbling a cube off another entity's tail — see PlayerEntity.collect(). */
             Grab: {
-                soundId: ['pepSound3', 'pepSound5'],
+                soundId: ['ball_split1', 'ball_split2'],
                 volumeMinMax: [0.08, 0.12],
                 pitchMinMax: [1.05, 1.25],
             },
@@ -142,7 +142,7 @@ export default class Assets {
             },
             /** The real player's head eats another entity's head — see PlayerEntity.notifyKill() / EntityEating.ts. */
             Kill: {
-                soundId: ['pepSound3', 'pepSound4', 'pepSound5'],
+                soundId: ['ball_split1', 'ball_split2'],
                 volumeMinMax: [0.2, 0.28],
                 pitchMinMax: [0.7, 0.85],
             },
@@ -190,6 +190,31 @@ export default class Assets {
                 soundId: 'phaserUp2',
                 volumeMinMax: 0.18,
                 pitchMinMax: [0.95, 1],
+            },
+
+            /** The 'trapdoor' powerup dropping the floor — see FaceTowerGameController.triggerTrapdoorPowerup(). Distinct from GateOpen, which is only for a REAL gate requirement being met. */
+            PowerupTrapdoor: {
+                soundId: 'trapdoor',
+                volumeMinMax: 0.18,
+                pitchMinMax: [0.95, 1.05],
+            },
+            /** One low-tier piece actually cleared by the 'clear-low-tier' powerup — played once PER removed piece (see IslandViewScene.applyInstantPowerup()), same clip family as Grab/Kill above. */
+            PowerupDiscard: {
+                soundId: 'ball_split2',
+                volumeMinMax: [0.08, 0.12],
+                pitchMinMax: [1.05, 1.25],
+            },
+            /** The 'upgrade-piece' powerup landing on its chosen target — see IslandViewScene.resolveTargetingChoice(). */
+            PowerupUpgrade: {
+                soundId: 'hpp-yay1',
+                volumeMinMax: 0.1,
+                pitchMinMax: [0.9, 1.05],
+            },
+            /** The 'destroy-piece' powerup (hammer) landing on its chosen target — see IslandViewScene.resolveTargetingChoice(). Single fixed clip (not Bomb's 3-clip pool above) so the hammer reads as its own distinct hit. */
+            PowerupDestroy: {
+                soundId: 'Explosion_02',
+                volumeMinMax: 0.2,
+                pitchMinMax: [0.95, 1.05],
             },
         },
         UI: {

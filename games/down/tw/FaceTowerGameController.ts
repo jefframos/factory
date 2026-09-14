@@ -83,11 +83,26 @@ export interface FaceTowerGameEvents {
      * merged pair's midpoint.
      */
     onMerge?(resultPiece: PieceDefinition | undefined, x: number, y: number, points: number): void;
+    /**
+     * Fired once per piece the 'clear-low-tier' powerup actually removes —
+     * see triggerClearLowTierPowerup()/updateLowTierRemovalQueue(). Staggered
+     * over time (a start delay, then one every LOW_TIER_REMOVAL_INTERVAL),
+     * not all at once, so each firing is its own VFX/SFX beat rather than a
+     * single instantaneous burst — see IslandViewScene, which spawns a
+     * discard VFX burst + sound per call. (x, y) are the removed block's own
+     * 2D physics world position, captured the instant it's actually removed.
+     */
+    onLowTierPieceRemoved?(x: number, y: number): void;
 }
 
 export class FaceTowerGameController {
     /** The first gate's requirement — tier4, the 5th piece (1-indexed: tier0 is "piece 1"). See TowerGateController. */
     private static readonly FIRST_GATE_TIER = 4;
+
+    /** Seconds between the 'clear-low-tier' powerup being used and its first piece actually being removed — see triggerClearLowTierPowerup(). */
+    private static readonly LOW_TIER_REMOVAL_START_DELAY = 1;
+    /** Seconds between each subsequent removal once the first one fires — see updateLowTierRemovalQueue(). */
+    private static readonly LOW_TIER_REMOVAL_INTERVAL = 0.25;
 
     private readonly camera: TowerCameraController;
     private readonly blocks: FaceTowerBlockController;
@@ -170,6 +185,18 @@ export class FaceTowerGameController {
     private gameOverLineTimer = 0;
     /** Seconds left in a post-powerup grace window — see suppressGameOverBriefly(). While > 0, updateGameOverLine() doesn't run at all (gameOverLineTimer stays reset to 0), so a pile a bomb/trapdoor/discard just disturbed gets a moment to settle before the game-over check resumes. */
     private powerupGameOverGraceTimer = 0;
+
+    /**
+     * Blocks still waiting to be removed by the 'clear-low-tier' powerup —
+     * see triggerClearLowTierPowerup()/updateLowTierRemovalQueue(). Empty
+     * whenever nothing's pending. A block can vanish from the board some
+     * other way (merged away, hit by a bomb) while still queued here —
+     * updateLowTierRemovalQueue() checks it's still actually live before
+     * removing it.
+     */
+    private pendingLowTierRemovals: FaceTowerBlock[] = [];
+    /** Counts down to the next queued removal — see updateLowTierRemovalQueue(). Seeded to LOW_TIER_REMOVAL_START_DELAY when the queue is first filled, then LOW_TIER_REMOVAL_INTERVAL between every removal after that. */
+    private lowTierRemovalTimer = 0;
 
     private targetX: number;
     /** Rolled one spawn ahead — see spawnNextBlock()/rollPiece(). Lets getNextPiece() answer "what's coming after this one" before it actually spawns. */
@@ -320,6 +347,11 @@ export class FaceTowerGameController {
         // every state, trapdoor fall included.
         this.mergeProximity.update();
         this.merges.update();
+        // Also unconditional — a clear-low-tier removal already in
+        // progress must keep draining regardless of what other state the
+        // run moves through in the meantime (e.g. a real gate opening
+        // mid-drain), same reasoning as merges above.
+        this.updateLowTierRemovalQueue(delta);
 
         /*
          * Change this conversion if your engine already supplies milliseconds.
@@ -395,8 +427,15 @@ export class FaceTowerGameController {
         // through TrapdoorSettling/WaitingForNotification/the following
         // piece just hovering, only clearing on the player's next REAL
         // drop (dropBlock()), so nothing here can end the run before
-        // they've had a chance to act on the new zone.
-        if (this.powerupGameOverGraceTimer > 0) {
+        // they've had a chance to act on the new zone. Also held off for
+        // as long as a clear-low-tier batch is still draining
+        // (pendingLowTierRemovals) — the whole point of that powerup is to
+        // bring the pile back down; letting the game-over line fire while
+        // it's only PARTWAY through removing the queued pieces would be
+        // exactly the unfair "used a powerup and still lost anyway" case
+        // suppressGameOverBriefly() exists to prevent, just stretched out
+        // over the longer staggered duration instead of a single instant.
+        if (this.powerupGameOverGraceTimer > 0 || this.pendingLowTierRemovals.length > 0) {
             this.powerupGameOverGraceTimer = Math.max(0, this.powerupGameOverGraceTimer - delta);
         } else if (!this.suppressGameOverUntilDrop && this.updateGameOverLine(delta)) {
             return;
@@ -713,14 +752,72 @@ export class FaceTowerGameController {
     }
 
     /**
-     * 'clear-low-tier' (type: 'instant') — removes every live tier-0/1/2
-     * block (see FaceTowerBlockController.removeBlocksByTiers()). Returns
-     * each removed block's own 2D world position (captured before it's
-     * destroyed) so the caller can spawn a VFX burst per piece — see
-     * IslandViewScene.applyInstantPowerup()/TowerVfxUtils.onDiscardLowTierVfx().
+     * 'clear-low-tier' (type: 'instant') — queues every live tier-0/1/2
+     * block for removal (see FaceTowerBlockController.getBlocksByTiers())
+     * rather than removing them all in the same instant: the first one
+     * actually goes LOW_TIER_REMOVAL_START_DELAY seconds from now, then one
+     * more every LOW_TIER_REMOVAL_INTERVAL seconds after that — see
+     * updateLowTierRemovalQueue(), which drains this queue from update().
+     * Each individual removal fires onLowTierPieceRemoved (see
+     * IslandViewScene, which spawns a VFX burst + sound per call) instead of
+     * one synchronous batch, so the clear reads as a staggered sweep rather
+     * than every low-tier piece popping at once.
+     *
+     * A second tap while a batch is still draining just appends any NEWLY
+     * qualifying blocks to the same queue/timer rather than starting a
+     * second independent one — canUsePowerupRightNow()'s hasLowTierBlocks()
+     * check already keeps this from happening in practice (nothing left to
+     * queue once everything qualifying is already queued), but staying
+     * append-only here means it can't ever double-queue the same block
+     * either way.
      */
-    public triggerClearLowTierPowerup(): readonly { x: number; y: number }[] {
-        return this.blocks.removeBlocksByTiers([0, 1, 2]);
+    public triggerClearLowTierPowerup(): void {
+        const queued = this.blocks.getBlocksByTiers([0, 1, 2]).filter(
+            block => !this.pendingLowTierRemovals.includes(block),
+        );
+
+        if (queued.length === 0) {
+            return;
+        }
+
+        const wasEmpty = this.pendingLowTierRemovals.length === 0;
+        this.pendingLowTierRemovals.push(...queued);
+
+        if (wasEmpty) {
+            this.lowTierRemovalTimer = FaceTowerGameController.LOW_TIER_REMOVAL_START_DELAY;
+        }
+    }
+
+    /**
+     * Drains pendingLowTierRemovals one block at a time — see
+     * triggerClearLowTierPowerup()'s own doc for the start-delay/interval
+     * shape. Skips (without consuming a timer tick) a queued block that's
+     * already gone some OTHER way (merged away, hit by a bomb) in the
+     * meantime, rather than firing a VFX/SFX beat for a piece that isn't
+     * there any more.
+     */
+    private updateLowTierRemovalQueue(delta: number): void {
+        if (this.pendingLowTierRemovals.length === 0) {
+            return;
+        }
+
+        this.lowTierRemovalTimer -= delta;
+
+        if (this.lowTierRemovalTimer > 0) {
+            return;
+        }
+
+        this.lowTierRemovalTimer = FaceTowerGameController.LOW_TIER_REMOVAL_INTERVAL;
+
+        const block = this.pendingLowTierRemovals.shift();
+
+        if (!block || !this.blocks.getBlocks().includes(block)) {
+            return;
+        }
+
+        const { x, y } = block.entity.body.position;
+        this.blocks.removeBlock(block);
+        this.events.onLowTierPieceRemoved?.(x, y);
     }
 
     /**
@@ -807,7 +904,7 @@ export class FaceTowerGameController {
      * gates the trapdoor powerup (dropping the floor with nothing standing
      * on it does nothing worth doing) and the two target-type powerups
      * (destroy-piece/upgrade-piece — nothing to enter targeting mode FOR
-     * otherwise) on this. Same 'held' exclusion removeBlocksByTiers() uses:
+     * otherwise) on this. Same 'held' exclusion getBlocksByTiers() uses:
      * the piece still hovering, waiting to be dropped, isn't really "on the
      * board" yet.
      */
@@ -815,7 +912,7 @@ export class FaceTowerGameController {
         return this.blocks.getBlocks().some(block => !block.powerup && block.state !== 'held');
     }
 
-    /** True while at least one live, non-powerup, non-held block sits in tier 0/1/2 — see IslandViewScene.canUsePowerupRightNow(), which gates the clear-low-tier powerup on this (nothing for it to actually clear otherwise). Mirrors removeBlocksByTiers([0, 1, 2])'s own filter exactly. */
+    /** True while at least one live, non-powerup, non-held block sits in tier 0/1/2 — see IslandViewScene.canUsePowerupRightNow(), which gates the clear-low-tier powerup on this (nothing for it to actually clear otherwise). Mirrors getBlocksByTiers([0, 1, 2])'s own filter exactly. */
     public hasLowTierBlocks(): boolean {
         return this.blocks.getBlocks().some(
             block => !block.powerup && block.state !== 'held' &&
