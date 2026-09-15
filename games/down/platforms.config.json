@@ -13,5 +13,12 @@
         "enableAds": true,
         "folderPath": "down",
         "apiScript": "https://www.youtube.com/game_api/v1"
+    },
+    "crazygames-no-ads": {
+        "className": "CrazyGamesPlatform",
+        "importPath": "@core/platforms/CrazyGamesPlatform",
+        "gameId": "cg-456",
+        "enableAds": false,
+        "folderPath": "game4-cg"
     }
 }
