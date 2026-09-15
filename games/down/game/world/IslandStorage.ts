@@ -47,6 +47,11 @@ export function parseHexColor(hex: string): number {
     return parseInt(hex.replace('#', ''), 16);
 }
 
+/** Inverse of parseHexColor() — e.g. 0xff8fb3 -> "#ff8fb3". */
+export function formatHexColor(color: number): string {
+    return `#${color.toString(16).padStart(6, '0')}`;
+}
+
 /** Adjusts saturation of a hex color.
  * t > 0 increases saturation (towards 100%)
  * t < 0 decreases saturation (towards grayscale)

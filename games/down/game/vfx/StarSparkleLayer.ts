@@ -39,6 +39,8 @@ export type StarSparkleBuildConfig = {
     camera: THREE.Camera;
     /** One texture per star "kind" (e.g. star_06/star_07) — each star instance picks one at random on build, purely for visual variety. */
     textures: readonly THREE.Texture[];
+    /** Tint multiplied over every star texture's own color — defaults to STAR_TINT. */
+    tint?: number;
 };
 
 interface StarInstance {
@@ -81,6 +83,8 @@ export default class StarSparkleLayer {
             return;
         }
 
+        const tint = config.tint ?? STAR_TINT;
+
         // One shared material per texture (not per star) — cached by
         // texture so STAR_COUNT stars sharing a handful of textures still
         // only cost a few draw calls, same sharing convention
@@ -92,17 +96,12 @@ export default class StarSparkleLayer {
             if (!material) {
                 material = new THREE.SpriteMaterial({
                     map: texture,
-                    color: STAR_TINT,
+                    color: tint,
                     transparent: true,
-                    opacity: STAR_ALPHA,
+                    opacity: 0.5,
                     depthWrite: false,
-                    // See CloudBackdropLayer's own doc for why this is true
-                    // (not the sky gradient's depthTest:false trick) — a
-                    // transparent material always draws after the whole
-                    // opaque pass, so without depth testing every star would
-                    // paint over already-drawn opaque geometry regardless of
-                    // which is actually nearer the camera.
                     depthTest: true,
+                    blending: THREE.NormalBlending,
                 });
                 materialsByTexture.set(texture, material);
             }

@@ -176,8 +176,33 @@ export class PowerupButton extends PIXI.Container {
         this.bgAvailable.visible = !active;
     }
 
-    /** Plain rect-or-polygon swatch tinted to a piece's own color — same look PieceDevGui/NextPiecePreview already use for a piece preview, reused here so a real powerup's button icon matches its actual in-game piece instead of needing separate icon art. */
-    public static buildPieceIcon(color: string, polygon: { x: number; y: number }[] | undefined, size: number): PIXI.Container {
+    /**
+     * Plain rect-or-polygon swatch tinted to a piece's own color — same look
+     * PieceDevGui/NextPiecePreview already use for a piece preview, reused
+     * here so a real powerup's button icon matches its actual in-game piece
+     * instead of needing separate icon art. `icon` (a bare frame name, same
+     * PIXI.Sprite.from() convention as PowerupDefinition.icon) takes
+     * priority over drawing the shape at all when set — no colored shape
+     * behind it, since the icon image is already the complete piece art —
+     * with `iconScale` multiplying its default size.
+     */
+    public static buildPieceIcon(
+        color: string,
+        polygon: { x: number; y: number }[] | undefined,
+        size: number,
+        icon?: string,
+        iconScale?: { x: number; y: number },
+    ): PIXI.Container {
+        if (icon) {
+            const scale = iconScale ?? { x: 1, y: 1 };
+            const sprite = PIXI.Sprite.from(icon);
+
+            sprite.anchor.set(0.5);
+            sprite.width = size * scale.x;
+            sprite.height = size * scale.y;
+            return sprite;
+        }
+
         const shape = new PIXI.Graphics();
 
         shape.lineStyle(1.5, 0x000000, 1);

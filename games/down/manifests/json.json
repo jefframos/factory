@@ -66,6 +66,14 @@
           "src": [
             "universe.json"
           ]
+        },
+        {
+          "alias": [
+            "pieces-config-cats.json"
+          ],
+          "src": [
+            "pieces-config-cats.json"
+          ]
         }
       ]
     }

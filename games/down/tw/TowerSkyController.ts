@@ -3,7 +3,16 @@
 import * as THREE from 'three';
 import FourCornersGradientBuilder from '../game/vfx/FourCornersGradientBuilder';
 import { parseHexColor } from '../game/world/IslandStorage';
+import type { GameThemeSkyColors } from './GameThemeStorage';
 import { SKY_CYCLE_COLORS } from './TowerIslandProgression';
+
+/** Matches SKY_CYCLE_COLORS's own [top, left, bottom, right] order — the 'circle'/'cube' themes' default (see GameThemeStorage). */
+const DEFAULT_SKY_COLORS: GameThemeSkyColors = {
+    top: SKY_CYCLE_COLORS[0],
+    left: SKY_CYCLE_COLORS[1],
+    bottom: SKY_CYCLE_COLORS[2],
+    right: SKY_CYCLE_COLORS[3],
+};
 
 /**
  * How fast the four corner colors orbit each other — see
@@ -37,18 +46,16 @@ export class TowerSkyController {
         return this.built;
     }
 
-    public build(camera: THREE.PerspectiveCamera): void {
-        const [top, left, bottom, right] = SKY_CYCLE_COLORS.map(parseHexColor);
-
+    public build(camera: THREE.PerspectiveCamera, colors: GameThemeSkyColors = DEFAULT_SKY_COLORS): void {
         this.gradient.build({
             camera,
             mode: 'four-way',
             distance: 30,
             fourWay: {
-                topColor: top,
-                leftColor: left,
-                bottomColor: bottom,
-                rightColor: right,
+                topColor: parseHexColor(colors.top),
+                leftColor: parseHexColor(colors.left),
+                bottomColor: parseHexColor(colors.bottom),
+                rightColor: parseHexColor(colors.right),
                 speed: ROTATION_SPEED,
                 radius: ROTATION_RADIUS,
             },

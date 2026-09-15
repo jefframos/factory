@@ -5,15 +5,18 @@ import StarSparkleLayer from '../game/vfx/StarSparkleLayer';
 import { TextureBuilder } from '../game/builders/TextureBuilder';
 import { resolveIslandImagePath } from '../game/world/IslandStorage';
 
-/** Non-preload star sprite textures — see resolveIslandImagePath(). Both used interchangeably per-star (see StarSparkleLayer.build()) purely for visual variety. */
-const STAR_IMAGE_PATHS = ['vfx/star_06.webp', 'vfx/star_07.webp'];
+/** Non-preload star sprite textures — see resolveIslandImagePath(). Both used interchangeably per-star (see StarSparkleLayer.build()) purely for visual variety. Default for the 'circle'/'cube' themes — see GameThemeStorage. */
+const DEFAULT_STAR_IMAGE_PATHS = ['vfx/star_06.webp', 'vfx/star_07.webp'];
 
 /**
- * Thin wrapper around StarSparkleLayer — resolves/loads the shared star
- * textures and builds the sprite field against the camera, then drives its
- * per-frame drift. Unlike TowerCloudBackdropController (fully static once
- * built), this one genuinely animates every frame, so it needs the same
- * update(delta) forwarding TowerSkyController uses.
+ * Thin wrapper around StarSparkleLayer — resolves/loads the star texture(s)
+ * and builds the sprite field against the camera, then drives its per-frame
+ * drift. Unlike TowerCloudBackdropController (fully static once built), this
+ * one genuinely animates every frame, so it needs the same update(delta)
+ * forwarding TowerSkyController uses. Safe to call build() again with a
+ * different `imagePaths`/`tint` to swap the particle look at runtime (see
+ * IslandViewScene's theme toggle) — StarSparkleLayer.build() always tears
+ * down its previous sprites/materials first.
  */
 export class TowerStarSparkleController {
     private readonly stars = new StarSparkleLayer();
@@ -23,12 +26,12 @@ export class TowerStarSparkleController {
         return this.built;
     }
 
-    public async build(camera: THREE.PerspectiveCamera): Promise<void> {
+    public async build(camera: THREE.PerspectiveCamera, imagePaths: readonly string[] = DEFAULT_STAR_IMAGE_PATHS, tint?: number): Promise<void> {
         const textures = await Promise.all(
-            STAR_IMAGE_PATHS.map(path => TextureBuilder.load(resolveIslandImagePath(path))),
+            imagePaths.map(path => TextureBuilder.load(resolveIslandImagePath(path))),
         );
 
-        this.stars.build({ camera, textures });
+        this.stars.build({ camera, textures, tint });
         this.built = true;
     }
 

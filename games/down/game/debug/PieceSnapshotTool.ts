@@ -127,6 +127,7 @@ export class PieceSnapshotTool {
             faceTexture: texture,
             faceOffset: { x: faceOffsetPx.x / pixelsPerUnit, y: faceOffsetPx.y / pixelsPerUnit },
             faceScale: piece.faceScale,
+            hideMesh: piece.hideMesh,
         });
         scene.add(mesh);
 

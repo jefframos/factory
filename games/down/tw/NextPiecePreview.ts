@@ -93,11 +93,33 @@ export class NextPiecePreview extends PIXI.Container {
             child.destroy();
         }
 
-        if (DEFAULT_FACE_TOWER_CONFIG.render3D) {
+        if (piece.icon) {
+            this.showIcon(piece);
+        } else if (DEFAULT_FACE_TOWER_CONFIG.render3D) {
             this.showSnapshot(piece);
         } else {
             this.showDrawn(piece);
         }
+    }
+
+    /**
+     * `piece.icon` (a bare frame name, same PIXI.Sprite.from() convention as
+     * PowerupDefinition.icon) takes priority over everything else this class
+     * can show — no colored shape drawn behind it, unlike
+     * showSnapshot/showDrawn, since the icon image is already the complete
+     * piece art. `piece.iconScale` multiplies its default size on top of
+     * that, same convention as `faceScale`.
+     */
+    private showIcon(piece: PieceDefinition): void {
+        const size = NextPiecePreview.BOX_SIZE;
+        const scale = piece.iconScale ?? { x: 1, y: 1 };
+        const sprite = PIXI.Sprite.from(piece.icon!);
+
+        sprite.anchor.set(0.5);
+        sprite.width = size * 0.9 * scale.x;
+        sprite.height = size * 0.9 * scale.y;
+        sprite.position.set(size * 0.5, size * 0.5);
+        this.swatch.addChild(sprite);
     }
 
     private showSnapshot(piece: PieceDefinition): void {
@@ -145,6 +167,7 @@ export class NextPiecePreview extends PIXI.Container {
         shape.endFill();
         shape.pivot.set(w * 0.5, h * 0.5);
         shape.position.set(size * 0.5, size * 0.5);
+        shape.visible = !piece.hideMesh;
         this.swatch.addChild(shape);
 
         if (piece.texture) {

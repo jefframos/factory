@@ -416,7 +416,7 @@ export class LevelUpNotification extends PIXI.Container {
             return sprite;
         }
 
-        return PowerupButton.buildPieceIcon(powerup.piece.color, powerup.piece.polygon, size);
+        return PowerupButton.buildPieceIcon(powerup.piece.color, powerup.piece.polygon, size, powerup.piece.icon, powerup.piece.iconScale);
     }
 
     private static easeOut(t: number): number {

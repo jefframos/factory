@@ -13,14 +13,14 @@ import { PowerupDevGui } from '../game/debug/PowerupDevGui';
 import { TowerHighScoreStorage } from './TowerHighScoreStorage';
 import { PowerupInventoryStorage } from '../game/data/PowerupInventoryStorage';
 import {
-    getDefaultIsland,
-    parseHexColor,
-    shadeColor,
+    formatHexColor,
+    getDefaultIsland
 } from '../game/world/IslandStorage';
 import { DEFAULT_FACE_TOWER_CONFIG } from './FaceTowerConfig';
 import { FaceTowerGameController } from './FaceTowerGameController';
-import { PIECES, type PieceDefinition } from './PieceStorage';
+import { loadPieces, PIECES, type PieceDefinition } from './PieceStorage';
 import { setPieceShapeMode } from './PieceShapeMode';
+import { setStaticPieceColor } from './StaticPieceStorage';
 import {
     CLEAR_LOW_TIER_POWERUP_ID,
     DESTROY_PIECE_POWERUP_ID,
@@ -38,6 +38,7 @@ import { TowerBlockSync3D } from './TowerBlockSync3D';
 import { DEFAULT_TOWER_3D_CONFIG } from './Tower3DConfig';
 import { loadTowerDevMeta, saveTowerDevMeta } from './TowerDevMeta';
 import { TowerGameOverSiren3D } from './TowerGameOverSiren3D';
+import { TowerGameOverHeartbeat } from './TowerGameOverHeartbeat';
 import { TowerHeightMarkers3D } from './TowerHeightMarkers3D';
 import { TowerSkyController } from './TowerSkyController';
 import { TowerCloudBackdropController } from './TowerCloudBackdropController';
@@ -51,6 +52,7 @@ import { PowerupButton } from './ui/PowerupButton';
 import ViewUtils from 'core/utils/ViewUtils';
 import SoundManager from 'core/audio/SoundManager';
 import Assets from '../Assets';
+import { getGameTheme, isGameThemeId, type GameThemeId, type GameThemeSounds } from './GameThemeStorage';
 
 const FOCUS_POINT = new THREE.Vector3(0, 0, 0);
 
@@ -67,6 +69,16 @@ export default class IslandViewScene extends ThreeScene {
     private readonly cloudBackdropController = new TowerCloudBackdropController();
     /** Sparse field of upward-drifting star sprites sitting just in front of the cloud backdrop — built once in build(), driven every frame in update(). */
     private readonly starSparkleController = new TowerStarSparkleController();
+    /**
+     * Which of GAME_THEMES is currently active — see handleThemeToggle().
+     * Starts as 'circle' here (matches every controller's own hardcoded
+     * default, so the very first build() call above is a visual no-op
+     * against picking that theme explicitly) — build() then immediately
+     * switches to the REAL default, 'cats', for every player (or whatever
+     * dev mode last saved) before the scene is ever shown. See build()'s own
+     * initialThemeId resolution at its end.
+     */
+    private currentThemeId: GameThemeId = 'circle';
 
     // -------------------------------------------------------------------------
     // 2D / game layer
@@ -112,6 +124,8 @@ export default class IslandViewScene extends ThreeScene {
     private wallSync3D!: TowerWallSync3D;
     private heightMarkers3D!: TowerHeightMarkers3D;
     private gameOverSiren3D!: TowerGameOverSiren3D;
+    /** Audio counterpart to gameOverSiren3D — see its own doc. */
+    private readonly gameOverHeartbeat = new TowerGameOverHeartbeat();
     private pieceDevGui!: PieceDevGui;
     private powerupDevGui!: PowerupDevGui;
     private gameHud!: GameHud;
@@ -216,18 +230,38 @@ export default class IslandViewScene extends ThreeScene {
         // Soft sky/ground gradient instead of a flat AmbientLight — gives every
         // piece's shadowed side a gentle cool-toned falloff (the "ground" color)
         // rather than going flat black, which is what was reading as depthless.
-        const ambient = parseHexColor(island.ambientColor);
-        this.threeScene.add(new THREE.HemisphereLight(0xbfd9ff, shadeColor(ambient, -0.35), 1.15));
+        //const ambient = parseHexColor(island.ambientColor);
+        //this.threeScene.add(new THREE.HemisphereLight(0xbfd9ff, shadeColor(ambient, -0.35), 1.15));
 
-        SetupThree.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        SetupThree.renderer.toneMappingExposure = 1.35;
+
+
+        const ambientLight = new THREE.HemisphereLight(
+            0xffffff,
+            0xffffff,
+            2.0
+        );
+        this.threeScene.add(ambientLight)
+        SetupThree.renderer.toneMapping = THREE.NoToneMapping;
+        //SetupThree.renderer.toneMappingExposure = 1;
         SetupThree.renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+
 
         // Dialed down from 1.6 — combined with the material's clearcoat this
         // was blowing the highlight out to flat white under ACES tonemapping.
-        const key = new THREE.DirectionalLight(0xfff4dd, 1.3);
-        key.position.set(5, 10, 7.5);
-        this.threeScene.add(key);
+        // const key = new THREE.DirectionalLight(0xfff4dd, 1.3);
+        // key.position.set(5, 10, 7.5);
+        // this.threeScene.add(key);
+
+
+        const keyLight = new THREE.DirectionalLight(
+            0xffffff,
+            2.0
+        );
+
+        keyLight.position.set(3, 6, 5);
+
+        this.threeScene.add(keyLight);
 
         const fill = new THREE.DirectionalLight(0x99ccff, 0.55);
         fill.position.set(-8, 3, -5);
@@ -238,7 +272,7 @@ export default class IslandViewScene extends ThreeScene {
         // the bevel's edge highlight so each piece separates from the ones
         // behind it instead of reading as a flat silhouette. Dialed down from
         // 1.1 for the same blown-out-highlight reason as the key light.
-        const rim = new THREE.DirectionalLight(0xd8ecff, 0.6);
+        const rim = new THREE.DirectionalLight(0xcc00aa, 0.6);
         rim.position.set(-2, 6, -9);
         this.threeScene.add(rim);
 
@@ -346,6 +380,7 @@ export default class IslandViewScene extends ThreeScene {
 
                     return { x: local.x, y: local.y };
                 },
+                (block) => this.targetingPowerupId !== UPGRADE_PIECE_POWERUP_ID || this.faceTower.canUpgradeBlock(block),
             );
         }
 
@@ -425,6 +460,12 @@ export default class IslandViewScene extends ThreeScene {
             this.gameOverSiren3D?.update(
                 gameOverWarningSecondsRemaining !== undefined,
                 gameOverLineWorldY,
+                delta,
+            );
+
+            this.gameOverHeartbeat.update(
+                gameOverWarningSecondsRemaining,
+                DEFAULT_FACE_TOWER_CONFIG.gameOverGraceDuration,
                 delta,
             );
 
@@ -600,7 +641,7 @@ export default class IslandViewScene extends ThreeScene {
         this.gameHud.onConfirmPowerup.add(() => this.confirmPendingPowerup(), this);
         this.gameHud.onCancelPowerup.add(() => this.cancelPendingPowerup(), this);
         this.gameHud.onWatchVideoForPowerup.add(() => void this.handlePowerupWatchVideo(), this);
-        this.gameHud.onShapeModeToggle.add((mode: 'circle' | 'cube') => this.handleShapeModeToggle(mode), this);
+        this.gameHud.onShapeModeToggle.add((themeId: GameThemeId) => this.handleThemeToggle(themeId), this);
         this.gameHud.onWatchVideoForLevelUp.add(() => void this.handleLevelUpWatchVideo(), this);
         this.gameHud.onLevelUpCollected.add(() => {
             const powerupId = this.pendingLevelUpPowerupId;
@@ -773,6 +814,7 @@ export default class IslandViewScene extends ThreeScene {
 
                 onBlockFirstHit: (block, contactPoint, hitBlock) => {
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.Impact);
+                    this.playThemeSound('hit');
                     this.blockSync3D.notifyFirstHit(block.id);
                     TowerVfxUtils.onFirstTouchVfx(this.contactPointToWorld(contactPoint), block, hitBlock);
                 },
@@ -792,6 +834,8 @@ export default class IslandViewScene extends ThreeScene {
                 },
 
                 onMerge: (resultPiece, x, y, points) => {
+                    this.playThemeSound('merge');
+
                     // Score is already applied by FaceTowerGameController —
                     // this is purely the visual/audio pop: a 3D particle
                     // burst at the merge's own world position, plus a
@@ -873,6 +917,25 @@ export default class IslandViewScene extends ThreeScene {
 
         this.powerupDevGui = new PowerupDevGui(POWERUPS, this.faceTower);
         this.powerupDevGui.setup();
+
+        // Everything handleThemeToggle() needs (gameHud/faceTower/
+        // baseSync3D) is finally up by this point. 'cats' is the real
+        // default for every player — the theme toggle itself only shows in
+        // dev (see GameHud's shapeModeToggle.visible), so a non-dev player
+        // has no way to reach 'circle'/'cube' at all and should just open
+        // straight into 'cats'. Dev mode is the one exception: whichever
+        // theme was last picked there (see handleThemeToggle's own
+        // saveTowerDevMeta call) persists across reloads for testing,
+        // taking priority over the 'cats' default.
+        const savedThemeId = Game.debugParams.dev ? loadTowerDevMeta()?.themeId : undefined;
+        const initialThemeId: GameThemeId = isGameThemeId(savedThemeId) ? savedThemeId : 'cats';
+
+        // 'circle' needs no restoring — it's already what the whole build()
+        // above set up by default.
+        if (initialThemeId !== 'circle') {
+            this.gameHud.setThemeId(initialThemeId);
+            this.handleThemeToggle(initialThemeId);
+        }
     }
 
     private setupLevelDevGui(): void {
@@ -1293,16 +1356,68 @@ export default class IslandViewScene extends ThreeScene {
     }
 
     /**
-     * Swaps every catalog piece's shape (see PieceShapeMode) and starts a
-     * fresh run under it — same "clear the 3D base meshes, reset the game
-     * controller" sequence GameOverPopup's Replay button already uses, so
-     * the board never ends up with old- and new-shaped pieces mixed
-     * together. Refunds an in-flight powerup the same defensive way a
-     * plain Replay does, in case one happened to be active the instant the
-     * mode was switched.
+     * Swaps to a different GAME_THEMES entry — reloads PIECES from its own
+     * catalog (see PieceStorage.loadPieces()), applies PieceShapeMode's
+     * existing polygon-clear toggle for the square look (only 'cube' sets
+     * that; 'cats' keeps its own authored circle polygons, same as
+     * 'circle'), rebuilds the sky/cloud/particle backdrop from the theme's
+     * own colors/images, and swaps the wall/trapdoor fallback colors — then
+     * starts a fresh run under all of it, same "clear the 3D base meshes,
+     * reset the game controller" sequence GameOverPopup's Replay button
+     * already uses, so the board never ends up with pieces/backdrop from two
+     * different themes mixed together. Refunds an in-flight powerup the same
+     * defensive way a plain Replay does, in case one happened to be active
+     * the instant the theme was switched.
      */
-    private handleShapeModeToggle(mode: 'circle' | 'cube'): void {
-        setPieceShapeMode(mode);
+    private handleThemeToggle(themeId: GameThemeId): void {
+        const theme = getGameTheme(themeId);
+        this.currentThemeId = themeId;
+
+        if (Game.debugParams.dev) {
+            saveTowerDevMeta({ themeId });
+        }
+
+        loadPieces(theme.piecesBundle);
+        setPieceShapeMode(theme.forceSquare ? 'cube' : 'circle');
+
+        // BlockBodyTextureCache rasterizes a block's 2D body shape once per
+        // piece.id and reuses it forever after (see its own doc) — every
+        // GAME_THEMES catalog reuses the SAME ids for its tier ladder (e.g.
+        // "circle-tier0"), so without this, switching catalogs would keep
+        // showing whatever shape got cached for that id under the PREVIOUS
+        // theme instead of the new catalog's own polygon.
+        this.faceTower.invalidateBlockTexture();
+
+        DEFAULT_TOWER_3D_CONFIG.poleColor = theme.wallColor;
+        DEFAULT_TOWER_3D_CONFIG.baseColor = theme.trapdoorColor;
+
+        // Tower3DConfig.poleColor/baseColor above are only a FALLBACK for an
+        // unconfigured static-piece role (see that config's own doc) — every
+        // role in static-pieces-config.json currently IS configured, so
+        // without this, TowerWallSync3D/TowerBaseSync3D would always keep
+        // using that static piece's own hardcoded `color` and the theme's
+        // wall/trapdoor color would never actually show.
+        setStaticPieceColor('column', formatHexColor(theme.wallColor));
+        setStaticPieceColor('base', formatHexColor(theme.trapdoorColor));
+        setStaticPieceColor('milestone', formatHexColor(theme.trapdoorColor));
+
+        this.skyController.build(this.threeCamera, theme.skyColors);
+
+        // NOT awaited — cloud/particle textures load over the network and
+        // can take a moment (or fail, e.g. a 404 hitting a theme's art
+        // before the asset pipeline had actually produced its .webp yet).
+        // Gating the board reset below behind that load was the actual bug
+        // reported here: the sky/wall/trapdoor colors above (all synchronous)
+        // would already read as the new theme while the piece catalog swap
+        // that PieceProgressionBar/GateProgressPanel need — only delivered by
+        // reset() below — sat waiting on a slow image fetch, so the UI kept
+        // showing the PREVIOUS theme's icons in the meantime. The backdrop
+        // now just updates itself whenever its own load finishes, decoupled
+        // from everything else here.
+        this.cloudBackdropController.build(this.threeCamera, theme.cloudImages, theme.cloudsAlpha, theme.cloudsLayout)
+            .catch((err) => console.error('IslandViewScene: theme cloud backdrop failed to build', err));
+        this.starSparkleController.build(this.threeCamera, theme.particles.images, theme.particles.tint)
+            .catch((err) => console.error('IslandViewScene: theme particles failed to build', err));
 
         this.baseSync3D.clear();
         this.faceTower.reset();
@@ -1315,6 +1430,21 @@ export default class IslandViewScene extends ThreeScene {
         }
 
         this.endTargeting(true);
+    }
+
+    /**
+     * Plays the CURRENT theme's extra `sounds.merge`/`sounds.hit` (see
+     * GameThemeStorage.GameThemeSounds) if one is configured — layered ON
+     * TOP of whatever normally plays for that moment (onMerge/
+     * onBlockFirstHit below), never replacing it. No-op (as it does for
+     * every theme today) when the theme doesn't set one.
+     */
+    private playThemeSound(kind: keyof GameThemeSounds): void {
+        const sound = getGameTheme(this.currentThemeId).sounds?.[kind];
+
+        if (sound) {
+            SoundManager.instance.tryToPlaySound(sound);
+        }
     }
 
     /**
@@ -1425,7 +1555,7 @@ export default class IslandViewScene extends ThreeScene {
             return sprite;
         }
 
-        return PowerupButton.buildPieceIcon(powerup.piece.color, powerup.piece.polygon, size);
+        return PowerupButton.buildPieceIcon(powerup.piece.color, powerup.piece.polygon, size, powerup.piece.icon, powerup.piece.iconScale);
     }
 
     private setupCameraDevGui(): void {

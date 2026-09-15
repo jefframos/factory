@@ -49,6 +49,12 @@ export class PieceIconRenderer {
         shapeMode: 'circle' | 'cube',
         onDrawn?: () => void,
     ): void {
+        if (piece.icon) {
+            PieceIconRenderer.drawIcon(icon, piece, size);
+            onDrawn?.();
+            return;
+        }
+
         if (shapeMode === 'circle' && DEFAULT_FACE_TOWER_CONFIG.render3D) {
             PieceIconRenderer.drawSnapshot(icon, piece, size, onDrawn);
             return;
@@ -56,6 +62,25 @@ export class PieceIconRenderer {
 
         PieceIconRenderer.drawFlat(icon, piece, size);
         onDrawn?.();
+    }
+
+    /**
+     * `piece.icon` (a bare frame name, same PIXI.Sprite.from() convention as
+     * PowerupDefinition.icon) takes priority over both the pre-rendered 3D
+     * snapshot and the flat shape+face draw — no colored shape drawn behind
+     * it, since the icon image is already the complete piece art.
+     * `piece.iconScale` multiplies its default size, same convention as
+     * `faceScale`.
+     */
+    private static drawIcon(icon: PIXI.Container, piece: PieceDefinition, size: number): void {
+        const spriteSize = size * 0.85;
+        const scale = piece.iconScale ?? { x: 1, y: 1 };
+        const sprite = PIXI.Sprite.from(piece.icon!);
+
+        sprite.anchor.set(0.5);
+        sprite.width = spriteSize * scale.x;
+        sprite.height = spriteSize * scale.y;
+        icon.addChild(sprite);
     }
 
     private static resolveSnapshotPath(pieceId: string): string {
@@ -109,6 +134,7 @@ export class PieceIconRenderer {
 
         shape.endFill();
         shape.pivot.set(w * 0.5, h * 0.5);
+        shape.visible = !piece.hideMesh;
         icon.addChild(shape);
 
         if (piece.texture) {

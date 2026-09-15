@@ -49,3 +49,25 @@ export function getStaticPiece(role: StaticPieceRole): StaticPieceDefinition | u
 export function getStaticPieceById(id: string): StaticPieceDefinition | undefined {
     return STATIC_PIECES.find(piece => piece.id === id);
 }
+
+/**
+ * Overrides every currently-loaded static piece's `color` for `role` — used
+ * by IslandViewScene's theme toggle (see GameThemeStorage) to recolor the
+ * base/trapdoor panels and side walls per theme. Needed because
+ * TowerBaseSync3D/TowerWallSync3D always prefer a configured piece's own
+ * `color` over Tower3DConfig's baseColor/poleColor (which are only a
+ * fallback for an unconfigured role — see that config's own doc), so just
+ * changing baseColor/poleColor is otherwise a no-op whenever a role IS
+ * configured, as every role in static-pieces-config.json currently is.
+ * Mutates every matching entry, not just the one getStaticPiece() would
+ * resolve to, so an island's basePieceId override (see IslandConfig)
+ * picking a different 'milestone' variant (e.g. "base-2") still gets the
+ * current theme's color too.
+ */
+export function setStaticPieceColor(role: StaticPieceRole, colorHex: string): void {
+    for (const piece of STATIC_PIECES) {
+        if (piece.role === role) {
+            piece.color = colorHex;
+        }
+    }
+}

@@ -228,6 +228,7 @@ export class TowerBlockSync3D {
             bevelThicknessRatio: this.config.pieceBevelThicknessRatio,
             faceOffset,
             faceScale: block.piece.faceScale,
+            hideMesh: block.piece.hideMesh,
         });
 
         this.scene.add(cube);

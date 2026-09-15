@@ -312,6 +312,17 @@ export class FaceTowerGameController {
         this.merges.clear();
         this.camera.reset();
 
+        // Rebuilds every tier/level pool from the CURRENT PieceStorage.PIECES
+        // — a plain Replay leaves PIECES unchanged so this is a no-op rebuild
+        // of the same data, but IslandViewScene's theme toggle calls
+        // loadPieces() with a different catalog (see GameThemeStorage)
+        // BEFORE this reset(), and without this, `this.pieces` (built once,
+        // in the constructor) would keep spawning/showing whatever piece
+        // objects were live back then — stale shape/art forever, since
+        // loadPieces() replaces PIECES' contents wholesale rather than
+        // mutating the same piece objects in place.
+        this.pieces.build();
+
         this.levels.reset();
         // Reset before scaleZoneTargetWeight() reads it below — a fresh
         // run's first zone must use the unscaled, as-authored target, same
@@ -869,6 +880,11 @@ export class FaceTowerGameController {
      * "earned" by playing. A no-op if the block no longer exists, is a
      * powerup, or is already the top tier (nextPiece undefined).
      */
+    /** True if `block` has a next tier to upgrade into — false for the top-tier piece, which upgradeBlock() already safely no-ops for. Used by PieceTargetingOverlay to skip showing an upgrade marker on a block tapping it would do nothing to. */
+    public canUpgradeBlock(block: FaceTowerBlock): boolean {
+        return this.pieces.getNextTierPiece(block.piece) !== undefined;
+    }
+
     public upgradeBlock(blockId: number): void {
         const block = this.blocks.getBlocks().find(candidate => candidate.id === blockId);
 

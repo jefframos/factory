@@ -3,7 +3,7 @@
 import * as PIXI from 'pixi.js';
 import Assets from '../../Assets';
 import { getPieceShapeMode } from '../PieceShapeMode';
-import type { PieceDefinition } from '../PieceStorage';
+import { getPieceCatalogGeneration, type PieceDefinition } from '../PieceStorage';
 import { PieceIconRenderer } from './PieceIconRenderer';
 
 /**
@@ -69,6 +69,8 @@ export class PieceProgressionBar extends PIXI.Container {
     private lastMaxTierReached = -1;
     /** Also part of the rebuild-skip check — toggling circle/cube (see PieceShapeMode) changes what every icon should draw WITHOUT necessarily changing maxTierReached, so it needs its own explicit check. */
     private lastShapeMode: string | undefined;
+    /** Also part of the rebuild-skip check — a theme switch (see GameThemeStorage) that reloads an entirely different piece catalog can still resolve to the SAME PieceShapeMode (e.g. 'cats' back to 'circle' are both 'circle'), which would otherwise leave stale icons/art from the previous catalog showing. */
+    private lastCatalogGeneration = -1;
 
     public constructor() {
         super();
@@ -163,16 +165,19 @@ export class PieceProgressionBar extends PIXI.Container {
         }
 
         const shapeMode = getPieceShapeMode();
+        const catalogGeneration = getPieceCatalogGeneration();
 
         if (
             maxTierReached === this.lastMaxTierReached &&
-            shapeMode === this.lastShapeMode
+            shapeMode === this.lastShapeMode &&
+            catalogGeneration === this.lastCatalogGeneration
         ) {
             return;
         }
 
         this.lastMaxTierReached = maxTierReached;
         this.lastShapeMode = shapeMode;
+        this.lastCatalogGeneration = catalogGeneration;
 
         for (let i = 0; i < pieces.length; i++) {
             const piece = pieces[i];

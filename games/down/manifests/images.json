@@ -5,6 +5,14 @@
       "assets": [
         {
           "alias": [
+            "cats"
+          ],
+          "src": [
+            "cats.webp.json"
+          ]
+        },
+        {
+          "alias": [
             "ui"
           ],
           "src": [

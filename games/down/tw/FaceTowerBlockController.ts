@@ -298,6 +298,7 @@ export class FaceTowerBlockController {
         body.anchor.set(anchor.x, anchor.y);
         body.tint = hexStringToNumber(piece.color);
         body.alpha = this.config.blockFillAlpha;
+        body.visible = !piece.hideMesh;
 
         entity.view.addChildAt(body, 0);
 
@@ -725,6 +726,24 @@ export class FaceTowerBlockController {
     /** Every block that isn't a powerup piece — i.e. everything actually part of the live board. */
     public getDynamicBlocks(): FaceTowerBlock[] {
         return this.blocks.filter(block => !block.powerup);
+    }
+
+    /**
+     * Clears `hasJiggled` on every live block — called when a trapdoor opens
+     * (see TowerTrapdoorController.openFloor()). Without this, a piece that
+     * already had its one-time first-hit reaction (the jiggle wobble,
+     * onBlockFirstHit's Impact/theme SFX — see registerCollisionListener())
+     * back when it first landed stays permanently past that gate, so the
+     * whole pile's free-fall onto the NEW floor would land in total silence
+     * for anything already resting before the trapdoor triggered — only a
+     * genuinely new piece dropped afterward would ever make a sound again.
+     * Resetting this here means every block gets a fresh "first hit" the
+     * next time it actually touches something, exactly like a normal drop.
+     */
+    public resetHasJiggled(): void {
+        for (const block of this.blocks) {
+            block.hasJiggled = false;
+        }
     }
 
     /**

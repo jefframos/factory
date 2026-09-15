@@ -53,6 +53,38 @@
         },
         {
           "alias": [
+            "Cat-Meow-01.mp4"
+          ],
+          "src": [
+            "Cat-Meow-01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Cat-Meow-02.mp4"
+          ],
+          "src": [
+            "Cat-Meow-02.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Cat-Meow-Angry-01.mp4"
+          ],
+          "src": [
+            "Cat-Meow-Angry-01.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "Cat-Meow-Angry-02.mp4"
+          ],
+          "src": [
+            "Cat-Meow-Angry-02.mp3"
+          ]
+        },
+        {
+          "alias": [
             "diamond-sparkle.mp3"
           ],
           "src": [
@@ -137,6 +169,14 @@
           ],
           "src": [
             "From-Here-on-In-Everet-Almond.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "heartbeat.wav"
+          ],
+          "src": [
+            "heartbeat.mp3"
           ]
         },
         {
@@ -313,6 +353,14 @@
           ],
           "src": [
             "phaserUp2.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "pulsar.mp3"
+          ],
+          "src": [
+            "pulsar.mp3"
           ]
         },
         {

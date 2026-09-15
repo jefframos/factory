@@ -298,7 +298,12 @@ export class TextureBuilder {
     /**
      * Loads a texture from a path once and caches it — a second call with the
      * same path returns the same texture (or joins the same in-flight load)
-     * instead of loading it again.
+     * instead of loading it again. A FAILED load is evicted from the cache
+     * rather than left cached as a permanently-rejected promise — otherwise
+     * one transient failure (e.g. hitting this path before the asset
+     * pipeline had actually produced it yet) would silently poison every
+     * later call for that same path for the rest of the page session, even
+     * once the file genuinely exists.
      */
     static load(path: string): Promise<THREE.Texture> {
         const cached = TextureBuilder.pathCache.get(path);
@@ -306,7 +311,13 @@ export class TextureBuilder {
 
         const promise = TextureBuilder.loader.loadAsync(path).then((tex) => {
             TextureBuilder.pathCache.set(path, tex);
+            //tex.colorSpace = THREE.SRGBColorSpace;
             return tex;
+        }).catch((err) => {
+            if (TextureBuilder.pathCache.get(path) === promise) {
+                TextureBuilder.pathCache.delete(path);
+            }
+            throw err;
         });
         TextureBuilder.pathCache.set(path, promise);
         return promise;

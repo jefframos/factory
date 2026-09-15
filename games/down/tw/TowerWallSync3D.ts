@@ -126,6 +126,7 @@ export class TowerWallSync3D {
             material.map = TextureBuilder.woodGrain();
             material.needsUpdate = true;
 
+
             this.scene.add(pole);
             this.poles.push(pole);
 

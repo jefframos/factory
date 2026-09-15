@@ -12,6 +12,7 @@ import { GameOverCountdown } from './GameOverCountdown';
 import { GateProgressPanel } from './GateProgressPanel';
 import { PieceProgressionBar } from './PieceProgressionBar';
 import { ShapeModeToggleButton } from './ShapeModeToggleButton';
+import type { GameThemeId } from '../GameThemeStorage';
 import { TopPowerupSlots } from './TopPowerupSlots';
 import { TowerHeader } from './TowerHeader';
 import { TowerScorePanel } from './TowerScorePanel';
@@ -78,10 +79,15 @@ export class GameHud extends PIXI.Container {
     /** Fired when the powerup confirm popup's WATCH VIDEO is tapped (shown instead of USE when the player owns zero of that powerup) — see IslandViewScene.handlePowerupWatchVideo(). */
     public readonly onWatchVideoForPowerup: Signal = this.powerupConfirmPopup.onWatchVideo;
 
-    /** Top-left "Circles / Cubes" experimental toggle — see PieceShapeMode. */
+    /** Top-left "Circles / Cubes / Cats" experimental theme toggle — see GameThemeStorage. */
     private readonly shapeModeToggle = new ShapeModeToggleButton();
-    /** Fired with the newly-selected mode ('circle' | 'cube') — see IslandViewScene, which calls setPieceShapeMode() and resets the run for a clean switch. Just ShapeModeToggleButton's own signal, exposed the same way onUsePowerup is. */
+    /** Fired with the newly-selected GameThemeId — see IslandViewScene.handleThemeToggle(), which applies the theme's catalog/shape/backdrop/colors and resets the run for a clean switch. Just ShapeModeToggleButton's own signal, exposed the same way onUsePowerup is. */
     public readonly onShapeModeToggle: Signal = this.shapeModeToggle.onToggle;
+
+    /** Syncs the toggle button's label to `themeId` without dispatching onShapeModeToggle — see IslandViewScene restoring a saved TowerDevMeta.themeId at boot. */
+    public setThemeId(themeId: GameThemeId): void {
+        this.shapeModeToggle.setThemeId(themeId);
+    }
 
     /** Fired when the level-up popup's "WATCH AD: x2" is tapped — see IslandViewScene, which awaits the platform's rewarded-video call and reports back via notifyLevelUpDoubled()/notifyLevelUpVideoFailed(). Just LevelUpNotification's own signal, exposed the same way onUsePowerup is. */
     public readonly onWatchVideoForLevelUp: Signal;

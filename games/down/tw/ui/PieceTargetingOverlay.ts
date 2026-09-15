@@ -82,6 +82,13 @@ export class PieceTargetingOverlay extends PIXI.Container {
      * camera needs THREE/ThreeScene access this purely-2D class doesn't
      * have. Returns null for a block that's genuinely off-screen/behind the
      * camera (skipped — no marker shown for it).
+     *
+     * `isValidTarget`, if given, additionally skips a block it returns false
+     * for - e.g. IslandViewScene passes one that excludes the top-tier piece
+     * while the 'upgrade-piece' powerup is active (see
+     * FaceTowerGameController.canUpgradeBlock()), since tapping it would
+     * just no-op. Omit for a powerup that can target anything live
+     * (destroy-piece).
      */
     public update(
         blocks: readonly FaceTowerBlock[],
@@ -89,11 +96,12 @@ export class PieceTargetingOverlay extends PIXI.Container {
         blockHeight: number,
         heldBlockId: number | undefined,
         resolveScreenPosition: (block: FaceTowerBlock) => { x: number; y: number } | null,
+        isValidTarget?: (block: FaceTowerBlock) => boolean,
     ): void {
         let i = 0;
 
         for (const block of blocks) {
-            if (block.powerup || block.id === heldBlockId) {
+            if (block.powerup || block.id === heldBlockId || (isValidTarget && !isValidTarget(block))) {
                 continue;
             }
 

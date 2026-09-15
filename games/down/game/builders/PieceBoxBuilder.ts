@@ -38,6 +38,8 @@ export interface PieceBoxOptions {
      * geometric middle instead.
      */
     centerOverride?: UnitPoint;
+    /** Same convention as PieceDefinition.hideMesh — hides the body mesh (material) while leaving the face decal, a separate child mesh, visible. Defaults to false. */
+    hideMesh?: boolean;
 }
 
 /** Default outline for a plain rect piece — the box path is just this polygon run through the same extrude/fillet code as a custom `polygon`. */
@@ -118,6 +120,11 @@ export class PieceBoxBuilder {
 
         const mesh = new THREE.Mesh(geometry, mat);
         mesh.material = cloned;
+
+        // Hides the body's own material (not `mesh.visible`, which would
+        // also hide the face decal — it's a child of `mesh` and Three.js
+        // skips traversing an invisible object's children entirely).
+        cloned.visible = !options.hideMesh;
         //
         // MeshGlintService.applyGlints(cloned, {
         //     intensity: 0.05,
@@ -299,7 +306,11 @@ export class PieceBoxBuilder {
     }
 
     private static makeFaceDecalMaterial(texture: THREE.Texture): THREE.MeshStandardMaterial {
-        const mat = new THREE.MeshStandardMaterial({ map: texture, transparent: false, alphaTest: 0.5 });
+        texture.colorSpace = THREE.SRGBColorSpace;
+        const mat = new THREE.MeshBasicMaterial({
+            map: texture, transparent: true, alphaTest: 0, depthTest: false,
+            depthWrite: false
+        });
         BendService.applyBend(mat);
         return mat;
     }
@@ -327,6 +338,7 @@ export class PieceBoxBuilder {
             ? PieceBoxBuilder.makeFaceDecalMaterial(faceTexture)
             : PieceBoxBuilder.getFaceDecalMaterial();
 
+
         const mesh = new THREE.Mesh(geo, mat);
         mesh.name = PieceBoxBuilder.FACE_DECAL_NAME;
         mesh.position.set(
@@ -334,6 +346,7 @@ export class PieceBoxBuilder {
             -faceOffset.y * height,
             frontZ + Math.min(width, height) * 0.01 + zOrderEpsilon,
         );
+
 
         return mesh;
     }

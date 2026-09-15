@@ -36,14 +36,14 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     tapMovesPieceOnDrop: true,
 
     // --- Horizontal play area ---
-    minBlockX: 135,
-    maxBlockX: 585,
+    minBlockX: 95,
+    maxBlockX: 625,
 
     // --- Block / base sizes ---
     blockWidth: 70,
     blockHeight: 70,
 
-    floorWidth: 460,
+    floorWidth: 540,
     floorHeight: 100,
     floorX: 360,
     // Must match floorScreenY — this is the first floor's own WORLD-Y (the
@@ -79,7 +79,7 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     trapdoorDropHeight: 600, // px the pile free-falls before a new floor is placed
     trapdoorOpenDuration: 0.6, // seconds — cosmetic lead-in AND the two-flap swing-open duration, before the floor is destroyed
     trapdoorSettleDelay: 0.6, // seconds to let the pile visibly finish landing before play resumes/the level-up popup shows
-    floorFlapRestAngle: 10 * (Math.PI / 180), // ~10deg idle tilt (each flap's inner edge sags toward the center seam)
+    floorFlapRestAngle: 5 * (Math.PI / 180), // ~10deg idle tilt (each flap's inner edge sags toward the center seam)
     floorFlapOpenAngle: 60 * (Math.PI / 180), // ~60deg full swing-open tilt when the trapdoor triggers
 
     // --- Physics feel ---

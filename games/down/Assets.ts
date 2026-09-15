@@ -70,9 +70,9 @@ export default class Assets {
      */
     static readonly AmbientSound = {
         Music: {
-            soundId: 'From-Here-on-In-Everet-Almond',
+            soundId: 'pulsar',
             layer: 'music',
-            masterVolume: 0.035,
+            masterVolume: 0.025,
             duckedVolume: 0.015,
         },
         Gameplay: {
@@ -190,6 +190,30 @@ export default class Assets {
                 soundId: 'phaserUp2',
                 volumeMinMax: 0.18,
                 pitchMinMax: [0.95, 1],
+            },
+
+            /**
+             * Ticks once per second while the game-over warning countdown is
+             * up (see TowerGameOverHeartbeat, driven alongside
+             * TowerGameOverSiren3D) — calls the player's attention back to
+             * the screen as the pile sits over the line. UNLIKE every other
+             * entry here, volumeMinMax/pitchMinMax are NOT a random jitter
+             * range — TowerGameOverHeartbeat reads them as [start, end] of a
+             * ramp and linearly interpolates between them as
+             * secondsRemaining counts down: quiet/normal-pitch right as the
+             * warning starts, louder/higher-pitched right as it's about to
+             * end. Tune the ramp by editing these two numbers directly.
+             */
+            Heartbeat: {
+                soundId: 'heartbeat',
+                volumeMinMax: [0.05, 0.1],
+                pitchMinMax: [1, 1.2],
+            },
+            /** Plays alongside GameOverCountdown's own "10, 9, 8…" label every time the displayed number ticks down — a plain one-shot click, ordinary jitter (unlike Heartbeat above). */
+            Tapped: {
+                soundId: 'tapped',
+                volumeMinMax: [0.12, 0.16],
+                pitchMinMax: [0.95, 1.05],
             },
 
             /** The 'trapdoor' powerup dropping the floor — see FaceTowerGameController.triggerTrapdoorPowerup(). Distinct from GateOpen, which is only for a REAL gate requirement being met. */

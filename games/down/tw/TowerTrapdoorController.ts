@@ -159,6 +159,14 @@ export class TowerTrapdoorController {
             this.blocks.removeBase(base);
         }
 
+        // The whole pile is about to free-fall onto the new floor below —
+        // without this, every piece already resting (whose one-time
+        // first-hit gate already fired back when it first landed) would land
+        // again in total silence, since onBlockFirstHit only ever fires
+        // once per block. This re-arms that gate so the impact/theme hit SFX
+        // (and jiggle wobble) plays again for the whole pile once it lands.
+        this.blocks.resetHasJiggled();
+
         this.pendingNewFloorY = reachedY + this.config.trapdoorDropHeight;
 
         // Placed right away — see this method's own doc for why waiting

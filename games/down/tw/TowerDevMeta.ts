@@ -1,16 +1,21 @@
 // TowerDevMeta.ts
 
+import type { GameThemeId } from './GameThemeStorage';
+
 /**
  * Dev-only persisted settings (see IslandViewScene.setupVisualDevGui()) —
- * saved to localStorage so render2D/render3D/speedup survive a page
- * reload instead of resetting to FaceTowerConfig's defaults every time,
- * which made iterating on visual/physics testing tedious.
+ * saved to localStorage so render2D/render3D/speedup/themeId survive a page
+ * reload instead of resetting to FaceTowerConfig's/GameThemeStorage's
+ * defaults every time, which made iterating on visual/physics testing
+ * tedious.
  */
 export interface TowerDevMeta {
     render2D: boolean;
     render3D: boolean;
     /** Whether the 2x speedup is on — see IslandViewScene's speedMultiplier. */
     speedup: boolean;
+    /** Last GameThemeId picked via the "Circles / Cubes / Cats" toggle — see IslandViewScene.handleThemeToggle(). */
+    themeId: GameThemeId;
 }
 
 const STORAGE_KEY = 'tower.devMeta';

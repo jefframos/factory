@@ -9,12 +9,20 @@ let currentMode: PieceShapeMode = 'circle';
 /**
  * Each piece's ORIGINAL (circle) polygon, stashed the first time
  * setPieceShapeMode() runs. loadPieces() (see PieceStorage) populates
- * PIECES fresh from pieces-config.json, already carrying its authored
- * circle `polygon` — this just captures that once, before 'cube' mode
- * clears it, so switching back to 'circle' restores it exactly instead of
- * needing a second copy of the circle geometry anywhere.
+ * PIECES fresh from its catalog, already carrying its authored circle
+ * `polygon` — this just captures that once, before 'cube' mode clears it, so
+ * switching back to 'circle' restores it exactly instead of needing a
+ * second copy of the circle geometry anywhere.
+ *
+ * Keyed by the piece OBJECT itself (WeakMap), not `piece.id` — GameThemeStorage's
+ * catalogs (pieces-config.json vs pieces-config-cats.json) reuse the same
+ * ids for their tier ladder but are genuinely different piece objects (each
+ * loadPieces() call swaps PIECES to a different catalog's own objects). A
+ * plain Map keyed by id would have one catalog's cached original bleed into
+ * the other's same-named piece — harmless while every catalog happens to
+ * share the same circle radius, but wrong the moment one doesn't.
  */
-const originalPolygons = new Map<string, PieceDefinition['polygon']>();
+const originalPolygons = new WeakMap<PieceDefinition, PieceDefinition['polygon']>();
 
 export function getPieceShapeMode(): PieceShapeMode {
     return currentMode;
@@ -38,10 +46,10 @@ export function setPieceShapeMode(mode: PieceShapeMode): void {
     currentMode = mode;
 
     for (const piece of PIECES) {
-        if (!originalPolygons.has(piece.id)) {
-            originalPolygons.set(piece.id, piece.polygon);
+        if (!originalPolygons.has(piece)) {
+            originalPolygons.set(piece, piece.polygon);
         }
 
-        piece.polygon = mode === 'cube' ? undefined : originalPolygons.get(piece.id);
+        piece.polygon = mode === 'cube' ? undefined : originalPolygons.get(piece);
     }
 }

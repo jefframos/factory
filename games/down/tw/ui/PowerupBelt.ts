@@ -122,7 +122,7 @@ export class PowerupBelt extends PIXI.Container {
             return sprite;
         }
 
-        return PowerupButton.buildPieceIcon(powerup.piece.color, powerup.piece.polygon, size);
+        return PowerupButton.buildPieceIcon(powerup.piece.color, powerup.piece.polygon, size, powerup.piece.icon, powerup.piece.iconScale);
     }
 
     public override destroy(options?: boolean | PIXI.IDestroyOptions): void {

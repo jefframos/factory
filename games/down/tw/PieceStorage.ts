@@ -39,6 +39,43 @@ export interface PieceDefinition {
      * rectangular bounding box.
      */
     polygon?: { x: number; y: number }[];
+    /**
+     * When true, `polygon` is generated at load time (see loadPieces()) as a
+     * regular CIRCLE_SEGMENTS-gon inscribed in a circle of `radius` centered
+     * on the unit square (0.5, 0.5) — instead of authoring/hand-tweaking the
+     * point list directly. `radius` defaults to 0.5 (touching all four edges
+     * of the unit square) when omitted. Sizing a circle piece should still go
+     * through `scale`, same as every other piece — `radius` only changes the
+     * shape's own roundness/footprint within the unit square, e.g. a smaller
+     * radius for a circle that doesn't fill its bounding box.
+     */
+    isCircle?: boolean;
+    /** Circle radius in unit-square units (0.5 = touches the square's edges) — only used when `isCircle` is true. Defaults to 0.5. */
+    radius?: number;
+    /**
+     * When true, the piece's colored body shape is never drawn — on the 2D
+     * board (see FaceTowerBlockController.styleBlockView), the 3D mesh (see
+     * TowerBlockSync3D/PieceBoxBuilder), and its flat-drawn icons/previews
+     * (NextPiecePreview, PieceIconRenderer) — leaving only the face texture
+     * visible. Collision/physics shape and layout (scale, polygon) are
+     * unaffected; this only hides the visual body. Defaults to false (always
+     * render the mesh).
+     */
+    hideMesh?: boolean;
+    /**
+     * Bare icon name (e.g. "cat-0", NOT a path/extension) — same convention
+     * as PowerupDefinition.icon — handed straight to PIXI.Sprite.from()
+     * wherever this piece's icon appears (PieceIconRenderer, NextPiecePreview,
+     * PowerupButton.buildPieceIcon for a powerup's embedded piece). When set,
+     * that sprite is drawn AS-IS with no colored shape behind it, entirely
+     * bypassing the normal shape+face composite (and, for PieceIconRenderer/
+     * NextPiecePreview, the pre-rendered 3D snapshot too) — takes priority
+     * over that existing system, same as PowerupDefinition.icon does over its
+     * own drawn piece-shape fallback. Omit to just keep using that system.
+     */
+    icon?: string;
+    /** Multiplies `icon`'s default rendered size independently per axis — {x: 1, y: 1} is the default. Applied on top of whatever base size the UI slot already sizes the icon to. Only meaningful when `icon` is set. */
+    iconScale?: { x: number; y: number };
     /** Hex color applied to the block's body. */
     color: string;
     /** Relative path under images/non-preload/ — e.g. "skins/dog.webp". Resolve with resolvePieceImagePath(). */
@@ -197,16 +234,74 @@ export function resolvePieceImagePath(relativePath: string): string {
     return `${NON_PRELOAD_IMAGE_BASE}${relativePath}`;
 }
 
+/** Point count for a generated circle polygon — see PieceDefinition.isCircle. Matches the hand-authored circle outlines this replaces. */
+const CIRCLE_SEGMENTS = 16;
+
 /**
- * Populated in place from the 'json' PIXI bundle (raw-assets/json/pieces-config.json)
- * once it finishes loading — see MyGame.loadAssets() in index.ts. Kept as a
- * mutated const array (rather than reassigned) so existing imports of
- * PIECES stay valid references.
+ * Regular CIRCLE_SEGMENTS-gon of the given radius, centered on the unit
+ * square (0.5, 0.5) — same unit-square-space convention as
+ * PieceDefinition.polygon. Starts at angle 0 (due "right", i.e. (0.5 +
+ * radius, 0.5)) and winds clockwise in this y-down space, matching the
+ * point order every hand-authored circle `polygon` in pieces-config.json
+ * already used.
+ */
+export function generateCirclePolygon(radius: number, segments: number = CIRCLE_SEGMENTS): { x: number; y: number }[] {
+    const points: { x: number; y: number }[] = [];
+
+    for (let i = 0; i < segments; i++) {
+        const theta = (i / segments) * Math.PI * 2;
+        points.push({
+            x: Math.round((0.5 + radius * Math.cos(theta)) * 1000) / 1000,
+            y: Math.round((0.5 + radius * Math.sin(theta)) * 1000) / 1000,
+        });
+    }
+
+    return points;
+}
+
+/** Default catalog — see loadPieces()'s `bundleKey` param. */
+export const DEFAULT_PIECES_BUNDLE = 'pieces-config.json';
+
+/**
+ * Populated in place from a 'json' PIXI bundle (raw-assets/json/pieces-config.json
+ * by default) once it finishes loading — see MyGame.loadAssets() in index.ts.
+ * Kept as a mutated const array (rather than reassigned) so existing imports
+ * of PIECES stay valid references.
  */
 export const PIECES: PieceDefinition[] = [];
 
-/** Call once the 'json' PIXI.Assets bundle has loaded — see index.ts loadAssets(). */
-export function loadPieces(): void {
-    const pieces = PIXI.Assets.get('pieces-config.json') as PieceDefinition[];
+/**
+ * Bumped every time loadPieces() (re)populates PIECES — see
+ * getPieceCatalogGeneration(). Lets a cache keyed on cheap signals like
+ * PieceShapeMode (only 'circle'/'cube', not "which catalog") notice a
+ * catalog swap even when those signals happen not to have changed (e.g.
+ * IslandViewScene's theme toggle going from 'cats' back to 'circle' — both
+ * resolve to PieceShapeMode 'circle').
+ */
+let pieceCatalogGeneration = 0;
+
+/** See pieceCatalogGeneration's own doc. */
+export function getPieceCatalogGeneration(): number {
+    return pieceCatalogGeneration;
+}
+
+/**
+ * Call once the 'json' PIXI.Assets bundle has loaded — see index.ts
+ * loadAssets(). `bundleKey` picks which catalog to (re)populate PIECES from
+ * — defaults to DEFAULT_PIECES_BUNDLE, but IslandViewScene's theme toggle
+ * (see GameThemeStorage) also calls this again with a different catalog
+ * (e.g. 'pieces-config-cats.json') to swap the whole piece set at runtime,
+ * same "mutate PIECES in place" contract as the initial load.
+ */
+export function loadPieces(bundleKey: string = DEFAULT_PIECES_BUNDLE): void {
+    const pieces = PIXI.Assets.get(bundleKey) as PieceDefinition[];
+
+    for (const piece of pieces) {
+        if (piece.isCircle) {
+            piece.polygon = generateCirclePolygon(piece.radius ?? 0.5);
+        }
+    }
+
     PIECES.splice(0, PIECES.length, ...pieces);
+    pieceCatalogGeneration++;
 }

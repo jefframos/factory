@@ -3,7 +3,7 @@
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
 import Assets from '../../Assets';
-import type { PieceShapeMode } from '../PieceShapeMode';
+import { getGameTheme, getNextThemeId, type GameThemeId } from '../GameThemeStorage';
 
 const BG_TEXTURE = 'Button01_s_White_Light1';
 const BG_SLICE = 30;
@@ -11,23 +11,24 @@ const PADDING_X = 24;
 const PADDING_Y = 10;
 
 /**
- * Top-left "Circles / Cubes" toggle — an experimental switch to try the
- * whole merge chain rendered as plain cubes instead of the default circle
- * pieces (see PieceShapeMode). Same NineSlicePlane-bubble-with-centered-text
- * look TowerHeader already uses, so it reads as part of the same HUD family
- * rather than a one-off control.
+ * Top-left theme toggle — an experimental switch to cycle the whole game
+ * through GAME_THEMES (see GameThemeStorage): 'circle' (default) → 'cube'
+ * (same catalog, square pieces) → 'cats' (a different piece catalog plus its
+ * own backdrop/particles/colors) → back to 'circle'. Same
+ * NineSlicePlane-bubble-with-centered-text look TowerHeader already uses, so
+ * it reads as part of the same HUD family rather than a one-off control.
  *
- * Purely a dumb button — dispatches onToggle with whichever mode it now
- * shows; IslandViewScene is what actually calls setPieceShapeMode() and
- * resets the run, same as GameOverPopup's Replay button already does for a
- * fresh start.
+ * Purely a dumb button — dispatches onToggle with whichever theme id it now
+ * shows; IslandViewScene is what actually applies it (piece catalog, shape,
+ * backdrop, colors) and resets the run, same as GameOverPopup's Replay
+ * button already does for a fresh start.
  */
 export class ShapeModeToggleButton extends PIXI.Container {
     public readonly onToggle: Signal = new Signal();
 
     private readonly bg: PIXI.NineSlicePlane;
     private readonly label: PIXI.Text;
-    private mode: PieceShapeMode = 'circle';
+    private themeId: GameThemeId = 'circle';
 
     public constructor() {
         super();
@@ -50,13 +51,19 @@ export class ShapeModeToggleButton extends PIXI.Container {
     }
 
     private handleTap(): void {
-        this.mode = this.mode === 'circle' ? 'cube' : 'circle';
+        this.themeId = getNextThemeId(this.themeId);
         this.refresh();
-        this.onToggle.dispatch(this.mode);
+        this.onToggle.dispatch(this.themeId);
+    }
+
+    /** Syncs the displayed label to `themeId` WITHOUT dispatching onToggle — see IslandViewScene restoring a saved TowerDevMeta.themeId at boot, which already applies the theme itself and just needs this button to agree with it. */
+    public setThemeId(themeId: GameThemeId): void {
+        this.themeId = themeId;
+        this.refresh();
     }
 
     private refresh(): void {
-        this.label.text = this.mode === 'circle' ? '● Circles' : '■ Cubes';
+        this.label.text = getGameTheme(this.themeId).label;
 
         this.bg.width = this.label.width + PADDING_X * 2;
         this.bg.height = this.label.height + PADDING_Y * 2;

@@ -104,7 +104,7 @@ export class TowerHeightMarkers3D {
             ? this.visualConfig.heightMarkerSideWidth
             : (this.config.maxBlockX - this.config.minBlockX) / this.pixelsPerUnit;
 
-        const dashLength = 0.4;
+        const dashLength = 0.43;
         const gap = 0.21;
 
         const dashWidth = dashLength + gap;
