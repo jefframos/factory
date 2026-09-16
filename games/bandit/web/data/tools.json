@@ -1,0 +1,137 @@
+{
+    "axe": {
+        "label": "Axe",
+        "icon": "woodcutters-axe",
+        "models": [
+            "Tools.Axe"
+        ],
+        "maxLevel": 10,
+        "attributes": {
+            "damage": {
+                "min": 1,
+                "max": 4
+            },
+            "hitAngleDeg": {
+                "min": 45,
+                "max": 360
+            },
+            "hitRangeMeters": {
+                "min": 3,
+                "max": 10
+            },
+            "speed": {
+                "min": 1,
+                "max": 2.5
+            },
+            "resourcePerHit": {
+                "min": 1,
+                "max": 10
+            }
+        }
+    },
+    "pickaxe": {
+        "label": "Pickaxe",
+        "icon": "mining-pickaxe",
+        "models": [
+            "Tools.Pickaxe"
+        ],
+        "maxLevel": 10,
+        "attributes": {
+            "damage": {
+                "min": 1,
+                "max": 4
+            },
+            "hitAngleDeg": {
+                "min": 45,
+                "max": 180
+            },
+            "hitRangeMeters": {
+                "min": 1,
+                "max": 4
+            },
+            "speed": {
+                "min": 1,
+                "max": 2.5
+            },
+            "resourcePerHit": {
+                "min": 1,
+                "max": 10
+            }
+        }
+    },
+    "rope": {
+        "models": [
+            "Tools.RopeBundleA"
+        ],
+        "label": "Rope",
+        "icon": "rope-coil",
+        "maxLevel": 0,
+        "attributes": {
+            "damage": {},
+            "hitAngleDeg": {},
+            "hitRangeMeters": {},
+            "speed": {},
+            "resourcePerHit": {}
+        }
+    },
+    "hammer": {
+        "models": [
+            "Tools.Hammer"
+        ],
+        "label": "Hammer",
+        "icon": "crafting-hammer",
+        "maxLevel": 0,
+        "attributes": {
+            "damage": {},
+            "hitAngleDeg": {},
+            "hitRangeMeters": {},
+            "speed": {},
+            "resourcePerHit": {}
+        }
+    },
+    "shovel": {
+        "models": [
+            "Tools.Shovel"
+        ],
+        "maxLevel": 0,
+        "attributes": {
+            "damage": {},
+            "hitAngleDeg": {},
+            "hitRangeMeters": {},
+            "speed": {},
+            "resourcePerHit": {}
+        },
+        "label": "Shovel",
+        "icon": "field-shovel"
+    },
+    "knife": {
+        "label": "Knife",
+        "icon": "hunting-knife",
+        "models": [
+            "Tools.Knife"
+        ],
+        "maxLevel": 10,
+        "attributes": {
+            "damage": {
+                "min": 1,
+                "max": 4
+            },
+            "hitAngleDeg": {
+                "min": 45,
+                "max": 360
+            },
+            "hitRangeMeters": {
+                "min": 3,
+                "max": 10
+            },
+            "speed": {
+                "min": 1,
+                "max": 2.5
+            },
+            "resourcePerHit": {
+                "min": 1,
+                "max": 10
+            }
+        }
+    }
+}

@@ -1,0 +1,77 @@
+{
+    "0": {
+        "steps": [
+            {
+                "kind": "trigger",
+                "triggerId": "walkTutorialTrigger",
+                "offset": [
+                    0,
+                    -2,
+                    0
+                ]
+            }
+        ],
+        "arrowTextureId": "tutorialHand2",
+        "use3dArrow": true
+    },
+    "1": {
+        "steps": [
+            {
+                "kind": "craft",
+                "craftId": "craftAxe",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ],
+                "iconTextureId": "tutorialHand2"
+            },
+            {
+                "kind": "gate",
+                "gateId": "gateAxe",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ],
+                "iconTextureId": "woodcutters-axe"
+            },
+            {
+                "kind": "gate",
+                "gateId": "gateWood",
+                "offset": [
+                    0,
+                    0,
+                    0
+                ],
+                "iconTextureId": "woodcutters-axe"
+            }
+        ],
+        "arrowTextureId": "woodcutters-axe",
+        "use3dArrow": true
+    },
+    "2": {
+        "steps": [
+            {
+                "offset": [
+                    0,
+                    0,
+                    0
+                ],
+                "craftId": "craftPickaxe",
+                "iconTextureId": "tutorialHand2",
+                "kind": "craft"
+            }
+        ],
+        "use3dArrow": true
+    },
+    "3": {
+        "steps": []
+    },
+    "4": {
+        "steps": []
+    },
+    "10": {
+        "steps": []
+    }
+}

@@ -1,0 +1,54 @@
+{
+    "default": {
+        "name": "General Store",
+        "offers": [
+            {
+                "resourceType": "cabbage"
+            },
+            {
+                "resourceType": "crystal"
+            }
+        ],
+        "npcOffset": [
+            0,
+            0,
+            0
+        ]
+    },
+    "byId": {
+        "farmShop": {
+            "offers": [
+                {
+                    "resourceType": "cabbage"
+                },
+                {
+                    "resourceType": "cauliflower"
+                },
+                {
+                    "resourceType": "grassFiber"
+                },
+                {
+                    "resourceType": "wheat"
+                },
+                {
+                    "resourceType": "berries"
+                },
+                {
+                    "resourceType": "mushroom"
+                },
+                {
+                    "resourceType": "corn"
+                }
+            ],
+            "name": "Farm Shop",
+            "solid": 0.5,
+            "view": "tent",
+            "npcOffset": [
+                0,
+                0,
+                2
+            ],
+            "npcId": "shopper2"
+        }
+    }
+}

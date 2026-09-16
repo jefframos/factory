@@ -1,0 +1,98 @@
+// ThirdPersonCharacter.ts
+//
+// Player-driven controller wrapping CharacterBody (the mesh/animation half —
+// see that file). This class owns only what's specific to being
+// PLAYER-controlled: move-speed config. Driven externally — call update()
+// once per frame with whatever position/move-input the host scene's own
+// player physics already computed (see CharacterVisualComponent), rather
+// than owning any physics itself.
+
+import * as THREE from 'three';
+import CharacterBody from './CharacterBody';
+
+/** Tunable movement speeds for this character — the host scene reads these via getMoveSpeed(). */
+export interface CharacterConfig {
+    /** Base ground speed, world units/second, used while not sprinting. */
+    walkSpeed: number;
+    /** Multiplied onto walkSpeed while sprinting (see getMoveSpeed(true)). */
+    runSpeedMultiplier: number;
+}
+
+const DEFAULT_CHARACTER_CONFIG: CharacterConfig = {
+    walkSpeed: 5,
+    runSpeedMultiplier: 1.8,
+};
+
+export default class ThirdPersonCharacter {
+    public readonly body: CharacterBody = new CharacterBody();
+    public readonly config: CharacterConfig;
+
+    public constructor(config?: Partial<CharacterConfig>) {
+        this.config = { ...DEFAULT_CHARACTER_CONFIG, ...config };
+    }
+
+    public get container(): THREE.Group {
+        return this.body.container;
+    }
+
+    public get animator() {
+        return this.body.animator;
+    }
+
+    /** Effective ground speed, world units/second. */
+    public getMoveSpeed(sprinting: boolean = false): number {
+        return sprinting ? this.config.walkSpeed * this.config.runSpeedMultiplier : this.config.walkSpeed;
+    }
+
+    public async loadMesh(url: string): Promise<void> {
+        return this.body.loadMesh(url);
+    }
+
+    public async registerAnimation(id: string, url: string): Promise<void> {
+        return this.body.registerAnimation(id, url);
+    }
+
+    /** Registers the idle/walk/run/jump/roll state graph — call once after loadMesh()/registerAnimation() for every clip have resolved. */
+    public setUp(idleToWalkSpeed?: number, walkToRunSpeed?: number): void {
+        this.body.setUp(idleToWalkSpeed, walkToRunSpeed);
+    }
+
+    /** Colors the body + attaches a matching smooth (rounded-corner) head with `faceTexture` decaled onto it. */
+    public applyCharacterView(color: THREE.ColorRepresentation, faceTexture: THREE.Texture): void {
+        this.body.applyCharacterView(color, faceTexture);
+    }
+
+    public setHeadOffset(x: number, y: number, z: number): void {
+        this.body.setHeadOffset(x, y, z);
+    }
+
+    /**
+     * Call once per frame from the host scene. `moveInputX`/`moveInputZ` are
+     * the normalized (-1..1) move input, used here purely to drive the
+     * idle/walk/run animation state and facing rotation, not to move
+     * anything — the host owns actual position via `worldPosition`.
+     */
+    public update(delta: number, worldPosition: THREE.Vector3, moveInputX: number, moveInputZ: number, extraVars: Record<string, number | boolean> = {}): void {
+        this.body.container.position.copy(worldPosition);
+        this.body.update(delta, moveInputX, moveInputZ, extraVars);
+    }
+
+    /** Fires the jump animator trigger — the actual vertical impulse is applied by whoever owns the RigidBody (see PlayerMovementController). */
+    public jump(): void {
+        this.body.animator.animatorBoard?.setTrigger('jump');
+    }
+
+    /** Fires the roll/dodge animator trigger. */
+    public dodge(): void {
+        this.body.animator.animatorBoard?.setTrigger('roll');
+    }
+
+    /** Fires the slide animator trigger — see SwipeRunnerController's swipe-down. */
+    public slide(): void {
+        this.body.animator.animatorBoard?.setTrigger('slide');
+    }
+
+    public destroy(): void {
+        this.body.destroy();
+    }
+}

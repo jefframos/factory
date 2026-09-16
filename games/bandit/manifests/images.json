@@ -1,0 +1,41 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "farm"
+          ],
+          "src": [
+            "farm.webp.json"
+          ]
+        },
+        {
+          "alias": [
+            "pets"
+          ],
+          "src": [
+            "pets.webp.json"
+          ]
+        },
+        {
+          "alias": [
+            "survive"
+          ],
+          "src": [
+            "survive.webp.json"
+          ]
+        },
+        {
+          "alias": [
+            "ui"
+          ],
+          "src": [
+            "ui.webp.json"
+          ]
+        }
+      ]
+    }
+  ]
+}

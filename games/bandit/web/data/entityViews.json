@@ -1,0 +1,305 @@
+{
+    "shop1View": {
+        "models": [
+            "Tools.Grindstone"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 1.25,
+        "rotationDeg": 0
+    },
+    "tower2view": {
+        "models": [
+            "Pirate.TowerCompleteSmall"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "tower1View": {
+        "models": [
+            "Pirate.TowerRoof"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "gateAxeView": {
+        "models": [
+            "Props.Fence"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 4,
+        "rotationDeg": [
+            1,
+            1
+        ]
+    },
+    "ship1View": {
+        "models": [
+            "Pirate.ShipMedium"
+        ],
+        "offset": [
+            0,
+            -1,
+            0
+        ],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "tower3view": {
+        "models": [
+            "Pirate.TowerCompleteLarge"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "farmEmptyView": {
+        "models": [
+            "Props.PatchGrass"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 2,
+        "rotationDeg": 0
+    },
+    "farmPreparedView": {
+        "models": [
+            "Props.PatchDirt"
+        ],
+        "offset": [
+            0,
+            -0.1,
+            0
+        ],
+        "scale": 2,
+        "rotationDeg": 0
+    },
+    "bananaView": {
+        "models": [
+            "Food.Banana"
+        ],
+        "offset": [
+            0,
+            -0.1,
+            0
+        ],
+        "scale": 2,
+        "rotationDeg": 0
+    },
+    "cropBeetView": {
+        "models": [
+            "Food.Beet"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropBroccoliView": {
+        "models": [
+            "Food.Broccoli"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropCabbageView": {
+        "models": [
+            "Food.Cabbage"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropCarrotView": {
+        "models": [
+            "Food.Carrot"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropCauliflowerView": {
+        "models": [
+            "Food.Cauliflower"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropCornView": {
+        "models": [
+            "Food.Corn"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropLeekView": {
+        "models": [
+            "Food.Leek"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropMushroomView": {
+        "models": [
+            "Food.Mushroom"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropPumpkinBasicView": {
+        "models": [
+            "Food.PumpkinBasic"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropPumpkinView": {
+        "models": [
+            "Food.Pumpkin"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropStrawberryView": {
+        "models": [
+            "Food.Strawberry"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropTomatoView": {
+        "models": [
+            "Food.Tomato"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "cropWatermelonView": {
+        "models": [
+            "Food.Watermelon"
+        ],
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            -0.1,
+            0
+        ]
+    },
+    "shop2View": {
+        "models": [
+            "Tools.Anvil"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 1.25,
+        "rotationDeg": 0
+    },
+    "workbench": {
+        "models": [
+            "Survival.Workbench"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 6,
+        "rotationDeg": 0
+    },
+    "tent": {
+        "models": [
+            "Survival.TentCanvas"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 7,
+        "rotationDeg": 0
+    }
+}

@@ -1,0 +1,244 @@
+{
+    "tree": {
+        "icon": "wood-log",
+        "models": [
+            "Resources.Tree1BColor1",
+            "Resources.Tree1AColor1"
+        ],
+        "scale": [
+            1,
+            1.2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "label": "Tree",
+        "action": "chop",
+        "maxLife": 5,
+        "amountPerGather": 1,
+        "respawnSec": 30,
+        "drops": [
+            {
+                "resourceType": "wood",
+                "weight": 1
+            }
+        ],
+        "solid": 0.5,
+        "destroyParticleEffectId": "treeLeafBurst"
+    },
+    "berryBush": {
+        "icon": "wild-berries",
+        "models": [
+            "Resources.Bush2DColor1"
+        ],
+        "scale": 1,
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "label": "Berry Bush",
+        "action": "gather",
+        "maxLife": 2,
+        "amountPerGather": 1,
+        "respawnSec": 50,
+        "drops": [
+            {
+                "resourceType": "berries",
+                "weight": 1
+            }
+        ]
+    },
+    "palm": {
+        "models": [
+            "Resources.Tree4AColor1",
+            "Resources.Tree4BColor1"
+        ],
+        "drops": [
+            {
+                "resourceType": "wood",
+                "weight": 1
+            }
+        ],
+        "label": "PamlTree",
+        "scale": [
+            1,
+            1
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "action": "chop",
+        "respawnSec": 60,
+        "amountPerGather": 2,
+        "maxLife": 3,
+        "icon": "tree-bark"
+    },
+    "crystalDeposit": {
+        "models": [
+            "Resources.GemsPileSmall"
+        ],
+        "drops": [
+            {
+                "resourceType": "crystal",
+                "weight": 1
+            }
+        ],
+        "scale": 2,
+        "rotationDeg": [
+            1,
+            1
+        ],
+        "action": "mine",
+        "maxLife": 12,
+        "amountPerGather": 1,
+        "respawnSec": 180,
+        "label": "CrystalDeposit",
+        "solid": 0.9,
+        "icon": "crystal-nugget"
+    },
+    "stoneDeposit": {
+        "icon": "stone-chunk",
+        "models": [
+            "Resources.Rock1DColor1"
+        ],
+        "scale": [
+            1.5,
+            2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "label": "Stone Deposit",
+        "action": "mine",
+        "maxLife": 5,
+        "amountPerGather": 1,
+        "respawnSec": 80,
+        "drops": [
+            {
+                "resourceType": "stone",
+                "weight": 90
+            },
+            {
+                "resourceType": "pebble",
+                "weight": 10
+            }
+        ],
+        "solid": 0.5
+    },
+    "ironDeposit": {
+        "icon": "iron-ore",
+        "models": [
+            "Resources.IronNuggets"
+        ],
+        "scale": [
+            2,
+            3
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "label": "Iron Deposit",
+        "action": "mine",
+        "maxLife": 7,
+        "amountPerGather": 1,
+        "respawnSec": 100,
+        "drops": [
+            {
+                "resourceType": "iron",
+                "weight": 90
+            },
+            {
+                "resourceType": "pebble",
+                "weight": 10
+            }
+        ],
+        "solid": 0.5
+    },
+    "copperDeposit": {
+        "icon": "copper-ore",
+        "models": [
+            "Resources.CopperNuggets"
+        ],
+        "scale": [
+            2,
+            3
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "label": "Copper Deposit",
+        "action": "mine",
+        "maxLife": 6,
+        "amountPerGather": 1,
+        "respawnSec": 90,
+        "drops": [
+            {
+                "resourceType": "copper",
+                "weight": 85
+            },
+            {
+                "resourceType": "pebble",
+                "weight": 15
+            }
+        ],
+        "solid": 0.5
+    },
+    "goldDeposit": {
+        "models": [
+            "Resources.GoldNuggets"
+        ],
+        "scale": [
+            2,
+            3
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "label": "Gold Deposit",
+        "action": "mine",
+        "maxLife": 9,
+        "amountPerGather": 1,
+        "respawnSec": 140,
+        "drops": [
+            {
+                "resourceType": "gold",
+                "weight": 80
+            },
+            {
+                "resourceType": "pebble",
+                "weight": 20
+            }
+        ],
+        "solid": 0.5,
+        "icon": "gold-nugget"
+    },
+    "cactus": {
+        "icon": "wood-log",
+        "models": [
+            "Resources.TreeBare1AColor1",
+            "Resources.TreeBare1BColor1"
+        ],
+        "scale": [
+            1.5,
+            2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "label": "Cactus",
+        "action": "slash",
+        "maxLife": 5,
+        "amountPerGather": 0,
+        "respawnSec": 30,
+        "drops": [],
+        "solid": 1,
+        "destroyParticleEffectId": "treeLeafBurst"
+    }
+}

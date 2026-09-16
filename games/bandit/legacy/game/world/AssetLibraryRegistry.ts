@@ -1,0 +1,522 @@
+// AssetLibraryRegistry.ts
+//
+// Central catalog of spawnable visual assets — trees, rocks, and anything
+// else that gets scattered around the world — keyed by a plain string id
+// rather than tied to any one gameplay concept. ResourceRegistry.ts maps a
+// gameplay ResourceType to an entry here (see resolveResourceAssetKey()); a future
+// purely-decorative prop scatterer (bushes, debris — nothing gatherable)
+// could just as well pick straight from ASSET_LIBRARY without ever touching
+// ResourceType.
+//
+// Each entry is a `models` list (one is picked at random per spawn — lets a
+// single "tree" logical asset vary between e.g. MODELS.Props.Tree/MODELS.Props.TreeHigh)
+// plus scale/rotation ranges rolled once per spawn. An empty `models` list
+// means "no glb yet for this entry" — callers are expected to fall back to
+// a primitive placeholder (see ResourceNode.ts) rather than error.
+
+import * as PIXI from 'pixi.js';
+import { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
+import MODELS from '../../registry/assetsRegistry/modelsRegistry';
+
+/** A constant value, or a [min, max] tuple to roll randomly within — see resolveRange(). */
+export type NumberRange = number | [number, number];
+
+export interface AssetLibraryEntry {
+    /** Candidate models for this asset — one is picked at random per spawn (see pickRandom()). Empty = no glb yet; caller falls back to a primitive placeholder. */
+    models: ModelDefinition[];
+    /** Uniform scale applied to the picked model. */
+    scale: NumberRange;
+    /** Yaw rotation in degrees applied to the picked model, so identical models spawning near each other don't all face the same way. */
+    rotationDeg: NumberRange;
+    /** Texture alias (packed 'images' bundle) shown for this asset in inventory-style UI (see BackpackUI.ts) — omit until real icon art exists; getAssetIcon() falls back to PIXI.Texture.WHITE. */
+    icon?: string;
+}
+
+/**
+ * Reads an entry's icon texture, falling back to a flat white square (tintable) if none is set
+ * yet — see AssetLibraryEntry.icon's own doc. Also falls back (with a warning, not a throw) for
+ * a `key` that doesn't resolve to any entry at all — e.g. a stale ResourceType string surviving
+ * in an old save from before an AssetLibraryRegistry key got renamed. BackpackStorage.load()
+ * already filters these out at the source, but this is what keeps a caller reading a bad key
+ * from ANY other path (a future renamed AssetLibraryKey, a caller passing a raw string) from
+ * crashing the whole scene build over one missing icon.
+ */
+export function getAssetIcon(key: AssetLibraryKey): PIXI.Texture {
+    const entry: AssetLibraryEntry | undefined = ASSET_LIBRARY[key];
+    if (!entry) {
+        console.warn(`[AssetLibraryRegistry] no entry for key "${key}" — falling back to a blank icon`);
+        return PIXI.Texture.WHITE;
+    }
+    return entry.icon ? PIXI.Texture.from(entry.icon) : PIXI.Texture.WHITE;
+}
+
+/** Resolves a NumberRange to an actual value — a plain number passes through unchanged (constant), a [min, max] tuple rolls uniformly within it. */
+export function resolveRange(range: NumberRange): number {
+    if (typeof range === 'number') {
+        return range;
+    }
+    const [min, max] = range;
+    return min + Math.random() * (max - min);
+}
+
+/** Picks one entry at random — used for AssetLibraryEntry.models. */
+export function pickRandom<T>(items: readonly T[]): T {
+    return items[Math.floor(Math.random() * items.length)];
+}
+
+export const ASSET_LIBRARY = {
+    tree: {
+        models: [MODELS.Resources.Tree1BColor1, MODELS.Resources.Tree1AColor1],
+        scale: [
+            1,
+            1.2
+        ],
+        rotationDeg: [
+            0,
+            360
+        ],
+        "icon": "wood-log"
+    },
+    stone: {
+        // No stone model yet — add one here whenever real art exists; nothing else needs to change.
+        models: [MODELS.Resources.Rock3AColor1, MODELS.Resources.Rock3BColor1],
+        scale: [
+            1,
+            1.2
+        ],
+        rotationDeg: [
+            0,
+            360
+        ],
+        icon: "stone-chunk"
+    },
+    berries: {
+        // No berry-bush model yet — add one here whenever real art exists; nothing else needs to change.
+        models: [MODELS.Resources.BushBerries2],
+        scale: 1,
+        rotationDeg: [
+            0,
+            360
+        ],
+        icon: "wild-berries"
+    },
+    bark: {
+        // Two variants — one is picked at random per spawn (see pickRandom()) so identical logs
+        // scattered near each other don't all look the same.
+        models: [MODELS.Resources.WoodLogA, MODELS.Resources.WoodLogB],
+        scale: [
+            0.8,
+            1.1
+        ],
+        rotationDeg: [
+            0,
+            360
+        ],
+        icon: "tree-bark",
+    },
+    pebble: {
+        // Reusing the small stone-chunks model as a stand-in until a dedicated pebble model
+        // exists — nothing else needs to change once one does, just swap this list.
+        models: [MODELS.Resources.Rock3AColor1, MODELS.Resources.Rock3BColor1],
+        scale: [
+            0.5,
+            0.8
+        ],
+        rotationDeg: [
+            0,
+            360
+        ],
+        icon: "sharpening-stone",
+    },
+    grassFiber: {
+        // Two variants — one is picked at random per spawn (see pickRandom()); both bank the
+        // same flat amountPerGather regardless of which got picked (see ResourceTypes.ts's own
+        // doc on ResourceType.GrassFiber).
+        models: [MODELS.Resources.Grass2BColor1],
+        scale: [
+            0.8,
+            1.2
+        ],
+        rotationDeg: [
+            0,
+            360
+        ],
+        icon: "plant-fiber",
+    },
+    money: {
+        // No 3D presence at all — money is a currency, never a gatherable world prop.
+        models: [],
+        scale: 1,
+        rotationDeg: 0,
+        icon: "ItemIcon_Money_Bill-2",
+    },
+    /**
+     * The berry bush PROVIDER's own world appearance (see ProviderTypes.ts/
+     * ProviderRegistry.ts's resolveProviderAssetKey()) — deliberately a SEPARATE entry from
+     * `berries` above, which is the berries ITEM's own icon (see ResourceRegistry.ts's
+     * resolveResourceAssetKey()). The bush and the thing it drops are different concepts now;
+     * before ProviderTypes.ts existed they shared one conflated entry.
+     */
+    berryBush: {
+        // No berry-bush model yet — add one here whenever real art exists.
+        models: [MODELS.Resources.Bush2DColor1],
+        scale: 1,
+        rotationDeg: [
+            0,
+            360
+        ],
+        "icon": "wild-berries"
+    },
+    "wood": {
+        models: [],
+        scale: 1,
+        rotationDeg: 0,
+        "icon": "wood-log"
+    },
+    "crystal": {
+        // Was "iron-ore" — a leftover placeholder from before this had any icon of its own.
+        // Left unset (falls back to a blank icon — see getAssetIcon()'s own doc) rather than
+        // keep lying with iron's icon; no dedicated gems icon exists yet.
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "crystal-nugget"
+    },
+    "copper": {
+        "icon": "copper-ore",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "gold": {
+        // No dedicated gold icon yet (only copper-ore/iron-ore exist so far) — left unset,
+        // same as "crystal" above, rather than borrowing an unrelated one.
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "gold-nugget"
+    },
+    clothRoll: {
+        // No glb yet — crafted-only resource (see ResourceTypes.ts's own doc), icon-only for now.
+        models: [],
+        scale: 1,
+        rotationDeg: 0,
+        icon: "cloth-roll",
+    },
+    hardwoodPlanks: {
+        models: [],
+        scale: 1,
+        rotationDeg: 0,
+        icon: "hardwood-planks",
+    },
+    "wheat": {
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "bedroll"
+    },
+    // The rest of CropTypes.ts's own farm crops' RESOURCE icon (see ResourceTypes.ts's own
+    // matching entries) — one per pizza-model-snapshots_Food-<Key>.png under
+    // raw-assets/images/farm{tps}/, reusing the same real MODELS.Food.<Key> model these crops
+    // already grow in the world (see EntityViewRegistry.ts's own crop*View entries) as this
+    // resource's own icon/world-prop appearance.
+    "beet": {
+        "models": [MODELS.Food.Beet],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Beet"
+    },
+    "broccoli": {
+        "models": [MODELS.Food.Broccoli],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Broccoli"
+    },
+    "cabbage": {
+        "models": [MODELS.Food.Cabbage],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Cabbage"
+    },
+    "carrot": {
+        "models": [MODELS.Food.Carrot],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Carrot"
+    },
+    "cauliflower": {
+        "models": [MODELS.Food.Cauliflower],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Cauliflower"
+    },
+    "corn": {
+        "models": [MODELS.Food.Corn],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Corn"
+    },
+    "leek": {
+        "models": [MODELS.Food.Leek],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Leek"
+    },
+    "mushroom": {
+        "models": [MODELS.Food.Mushroom],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Mushroom"
+    },
+    "pumpkinBasic": {
+        "models": [MODELS.Food.PumpkinBasic],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-PumpkinBasic"
+    },
+    "pumpkin": {
+        "models": [MODELS.Food.Pumpkin],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Pumpkin"
+    },
+    "strawberry": {
+        "models": [MODELS.Food.Strawberry],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Strawberry"
+    },
+    "tomato": {
+        "models": [MODELS.Food.Tomato],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Tomato"
+    },
+    "watermelon": {
+        "models": [MODELS.Food.Watermelon],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "pizza-model-snapshots_Food-Watermelon"
+    },
+    "palm": {
+        "models": [MODELS.Resources.Tree4AColor1, MODELS.Resources.Tree4BColor1],
+        "scale": [
+            1,
+            1
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "icon": "tree-bark"
+    },
+    "crystalDeposit": {
+        // Was MODELS.Resources.SilverNuggetLarge + icon "iron-ore" — a leftover placeholder
+        // that never actually matched what a crystal deposit is supposed to look like. Now
+        // points at the real Gems_Pile_Small model; icon left unset (no dedicated gems icon
+        // exists yet — see "crystal"'s own entry above) rather than keep the wrong iron one.
+        "models": [MODELS.Resources.GemsPileSmall],
+        "scale": 2,
+        "rotationDeg": [
+            1,
+            1
+        ],
+        "icon": "crystal-nugget"
+    },
+    "berry": {
+        "icon": "wild-berries",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "stoneDeposit": {
+        models: [MODELS.Resources.Rock1DColor1],
+        scale: [
+            1.5,
+            2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "icon": "stone-chunk"
+    },
+    "iron": {
+        "icon": "iron-ore",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "ironDeposit": {
+        "icon": "iron-ore",
+        // Was [SilverNuggetLarge, SilverNuggetLarge] (a duplicated placeholder) — now the real
+        // Iron_Nuggets model.
+        "models": [MODELS.Resources.IronNuggets],
+        "scale": [
+            2,
+            3
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "copperDeposit": {
+        "icon": "copper-ore",
+        "models": [MODELS.Resources.CopperNuggets],
+        "scale": [
+            2,
+            3
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    },
+    "goldDeposit": {
+        // No dedicated gold icon yet — see "gold"'s own entry above.
+        "models": [MODELS.Resources.GoldNuggets],
+        "scale": [
+            2,
+            3
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "icon": "gold-nugget"
+    },
+    "rope": {
+        "icon": "rope-coil",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    /**
+     * Doubles as BOTH the caught-Pig resource's backpack/UI icon (via ResourceRegistry.ts's
+     * identity mapping — ResourceType.Pig === 'pig') AND AnimalNode's own live world model
+     * while a Pig is still wandering uncaught (see AnimalNode.ts, which resolves its visual the
+     * same way LooseResourceNode does — through resolveResourceAssetKey(ANIMAL_CONFIG[type].resourceType)).
+     * `icon` isn't a real asset yet — see this file's own doc, ModelSnapshotTool.ts (the
+     * top-down-render tool this key's name was chosen to match) can generate one; drop it at
+     * raw-assets/images/survive{tps}/animal-pig.png and run `npm run image` to make this real.
+     */
+    "pig": {
+        "icon": "pizza-model-snapshots_Pets-AnimalPig",
+        "models": [MODELS.Pets.AnimalPig],
+        "scale": 0.5,
+        "rotationDeg": 0
+    },
+    "gem": {
+        "icon": "ResourceBar_Single_Icon_Gem",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "energy": {
+        "icon": "ResourceBar_Single_Icon_Energy",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    // The rest of CropTypes.ts's own farm crops' SEED icon (see SeedTypes.ts's own matching
+    // SeedId entries) — reuses the same pizza-model-snapshots_Food-<Key>.png the grown
+    // resource's own icon uses (see the resource entries just above), same "seed packet shows
+    // the vegetable itself" convention as most farming games. `models` stays empty, same as
+    // wheatSeed above — a seed is a small icon-only inventory item, never a 3D world pickup.
+    "beetSeed": {
+        "icon": "pizza-model-snapshots_Food-Beet",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "broccoliSeed": {
+        "icon": "pizza-model-snapshots_Food-Broccoli",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "cabbageSeed": {
+        "icon": "pizza-model-snapshots_Food-Cabbage",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "carrotSeed": {
+        "icon": "pizza-model-snapshots_Food-Carrot",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "cauliflowerSeed": {
+        "icon": "pizza-model-snapshots_Food-Cauliflower",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "cornSeed": {
+        "icon": "pizza-model-snapshots_Food-Corn",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "leekSeed": {
+        "icon": "pizza-model-snapshots_Food-Leek",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "mushroomSeed": {
+        "icon": "pizza-model-snapshots_Food-Mushroom",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "pumpkinBasicSeed": {
+        "icon": "pizza-model-snapshots_Food-PumpkinBasic",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "pumpkinSeed": {
+        "icon": "pizza-model-snapshots_Food-Pumpkin",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "strawberrySeed": {
+        "icon": "pizza-model-snapshots_Food-Strawberry",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "tomatoSeed": {
+        "icon": "pizza-model-snapshots_Food-Tomato",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "watermelonSeed": {
+        "icon": "pizza-model-snapshots_Food-Watermelon",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0
+    },
+    "cactus": {
+        "icon": "wood-log",
+        "models": [MODELS.Resources.TreeBare1AColor1, MODELS.Resources.TreeBare1BColor1],
+        "scale": [
+            1.5,
+            2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ]
+    }
+} satisfies Record<string, AssetLibraryEntry>;
+
+export type AssetLibraryKey = keyof typeof ASSET_LIBRARY;

@@ -1,0 +1,79 @@
+// GameSettings.ts
+//
+// Named camera setting presets ("modes") for ControllerScene's follow
+// camera — same shape as bandit's CameraTemplateTypes.ts, trimmed to just
+// what this controller demo needs. STANDARD_CAMERA_SETTINGS is the default
+// mode; ControllerScene starts on a live COPY of it (see that file's own
+// CAMERA_SETTINGS) so dev-GUI edits never mutate the shared preset object
+// itself.
+
+export interface CameraSettings {
+    /** Degrees the camera is rotated around the player, around Y (0 = behind, looking toward -Z; positive turns it clockwise viewed from above). */
+    yawDeg: number;
+    /** Degrees the camera looks down from level with the player (0 = level, 90 = straight overhead). */
+    pitchDeg: number;
+    /** How far back the camera sits from its follow target. */
+    distance: number;
+    /** Exponential follow-ease rate the camera's target chases the player's actual position at — higher = snappier, lower = laggier/smoother. */
+    followSpeed: number;
+    /** World-space offset added to the player's position before the camera orbits/looks at it — e.g. raising the look-at point to chest/head height instead of the feet-level transform origin. */
+    offset: { x: number; y: number; z: number };
+}
+
+export const STANDARD_CAMERA_SETTINGS: CameraSettings = {
+    yawDeg: 0,
+    pitchDeg: 25,
+    distance: 10,
+    followSpeed: 6,
+    offset: { x: 0, y: 1.2, z: 0 },
+};
+
+/** Tighter, more head-on shot — a second preset mostly so VirtualCameraSystem has something to blend TO/FROM out of the box (see ControllerScene). */
+export const CLOSEUP_CAMERA_SETTINGS: CameraSettings = {
+    yawDeg: 0,
+    pitchDeg: 12,
+    distance: 3.5,
+    followSpeed: 8,
+    offset: { x: 0, y: 1.4, z: 0 },
+};
+
+/** Straight overhead — pitchDeg near 90 so the orbit math (cameraOrbitOffset() in ControllerScene) stays well-defined; see that function's own doc for why exactly 90 is avoided. */
+export const TOPDOWN_CAMERA_SETTINGS: CameraSettings = {
+    yawDeg: 0,
+    pitchDeg: 85,
+    distance: 16,
+    followSpeed: 5,
+    offset: { x: 0, y: 0, z: 0 },
+};
+
+/**
+ * Subway-Surfers-style runner shot — tighter and a bit higher/steeper than
+ * STANDARD so more of the lane ahead is visible, snappier followSpeed since
+ * runner-mode movement (see PlayerMovementController.enterRunnerMode()) is
+ * faster and constant. yawDeg matches STANDARD's (0 = behind, looking
+ * toward -Z) since ControllerScene's runner lane also runs along -Z — the
+ * camera and the lane's own forward need to agree, or the camera would sit
+ * behind the player looking the WRONG way down the lane.
+ */
+export const RUNNER_CAMERA_SETTINGS: CameraSettings = {
+    yawDeg: 0,
+    pitchDeg: 25,
+    distance: 12,
+    followSpeed: 12,
+    offset: { x: 0, y: 1.0, z: 0 },
+};
+
+/** CameraSettings by mode id — register these with a VirtualCameraSystem (see game/camera/VirtualCameraSystem.ts) and blendTo()/cutTo() between them by id. */
+export const CAMERA_SETTINGS_BY_MODE: Record<string, CameraSettings> = {
+    standard: STANDARD_CAMERA_SETTINGS,
+    closeup: CLOSEUP_CAMERA_SETTINGS,
+    topdown: TOPDOWN_CAMERA_SETTINGS,
+    runner: RUNNER_CAMERA_SETTINGS,
+};
+
+export const DEFAULT_CAMERA_MODE = 'standard';
+
+/** Resolves `mode` to its own settings, falling back to DEFAULT_CAMERA_MODE if `mode` is unset OR doesn't match any real entry. */
+export function getCameraSettings(mode: string = DEFAULT_CAMERA_MODE): CameraSettings {
+    return CAMERA_SETTINGS_BY_MODE[mode] ?? STANDARD_CAMERA_SETTINGS;
+}

@@ -1,0 +1,81 @@
+{
+  "bundles": [
+    {
+      "name": "default",
+      "assets": [
+        {
+          "alias": [
+            "Baloo2-ExtraBold.ttf",
+            "Baloo2-ExtraBold"
+          ],
+          "src": [
+            "Baloo2-ExtraBold.woff2"
+          ]
+        },
+        {
+          "alias": [
+            "Baloo2-Regular.ttf",
+            "Baloo2-Regular"
+          ],
+          "src": [
+            "Baloo2-Regular.woff2"
+          ]
+        },
+        {
+          "alias": [
+            "LEMONMILK-Bold.otf",
+            "LEMONMILK-Bold"
+          ],
+          "src": [
+            "LEMONMILK-Bold.woff2"
+          ]
+        },
+        {
+          "alias": [
+            "LEMONMILK-Regular.otf",
+            "LEMONMILK-Regular"
+          ],
+          "src": [
+            "LEMONMILK-Regular.woff2"
+          ]
+        },
+        {
+          "alias": [
+            "Nunito-Bold.ttf",
+            "Nunito-Bold"
+          ],
+          "src": [
+            "Nunito-Bold.woff2"
+          ]
+        },
+        {
+          "alias": [
+            "Nunito-Regular.ttf",
+            "Nunito-Regular"
+          ],
+          "src": [
+            "Nunito-Regular.woff2"
+          ]
+        },
+        {
+          "alias": [
+            "Poppins-Bold.ttf",
+            "Poppins-Bold"
+          ],
+          "src": [
+            "Poppins-Bold.woff2"
+          ]
+        },
+        {
+          "alias": [
+            "Poppins-Regular.ttf",
+            "Poppins-Regular"
+          ],
+          "src": [
+            "Poppins-Regular.woff2"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+    "tower": {
+        "name": "Tower",
+        "levels": [
+            {
+                "level": 1,
+                "requirements": {
+                    "wood": 5
+                },
+                "effect": {
+                    "type": "backpackCapacity",
+                    "value": 5,
+                    "description": "+5 backpack capacity"
+                }
+            },
+            {
+                "level": 2,
+                "requirements": {
+                    "wood": 8,
+                    "stone": 5
+                },
+                "effect": {
+                    "type": "backpackCapacity",
+                    "value": 10,
+                    "description": "+10 backpack capacity"
+                }
+            },
+            {
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                "level": 3
+            },
+            {
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                "level": 4
+            },
+            {
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                "level": 5
+            },
+            {
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                "level": 6
+            }
+        ],
+        "popupMode": "complete",
+        "icon": "campfire",
+        "updateParticleEffectId": "gateMyst",
+        "solid": 0.8,
+        "baseFillFraction": 0.1,
+        "npcOffset": [
+            0,
+            0,
+            4
+        ],
+        "npcId": "shopper2",
+        "anchorAtDropper": true,
+        "popupBobOffset": 3
+    },
+    "tower2": {
+        "levels": [
+            {
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                "level": 1
+            },
+            {
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                "level": 2
+            }
+        ],
+        "name": "Tower2",
+        "icon": "animal-hide",
+        "solid": 1,
+        "popupMode": "simple",
+        "updateParticleEffectId": "gateMyst",
+        "baseFillFraction": 0.1,
+        "npcOffset": [
+            0,
+            0,
+            2
+        ],
+        "npcId": "shopper2"
+    },
+    "floor1": {
+        "levels": [
+            {
+                "requirements": {
+                    "stone": 1
+                },
+                "effect": {},
+                "level": 1
+            }
+        ],
+        "name": "Tower2 Copy",
+        "icon": "animal-hide",
+        "popupMode": "simple",
+        "updateParticleEffectId": "gateMyst",
+        "baseFillFraction": -1,
+        "anchorAtDropper": true,
+        "solidFromMap": true,
+        "npcOffset": [
+            0,
+            0,
+            0
+        ]
+    }
+}

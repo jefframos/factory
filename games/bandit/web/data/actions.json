@@ -1,0 +1,37 @@
+{
+    "chop": {
+        "hitIntervalSec": 1,
+        "hitScale": 1,
+        "resourcePerHit": 1,
+        "cancelOnLeaveRange": true,
+        "tool": "axe",
+        "animationTrigger": "chop",
+        "animationModel": "StandingMeleeAttackDownwardCHOP"
+    },
+    "mine": {
+        "hitIntervalSec": 1.5,
+        "hitScale": 1,
+        "resourcePerHit": 1,
+        "cancelOnLeaveRange": true,
+        "tool": "pickaxe",
+        "animationTrigger": "mine",
+        "animationModel": "StandingPICKAXE"
+    },
+    "gather": {
+        "hitIntervalSec": 2,
+        "hitScale": 1,
+        "resourcePerHit": 1,
+        "cancelOnLeaveRange": true,
+        "animationTrigger": "pick",
+        "animationModel": "PickFruit"
+    },
+    "slash": {
+        "hitIntervalSec": 1,
+        "hitScale": 1,
+        "resourcePerHit": 1,
+        "cancelOnLeaveRange": true,
+        "tool": "knife",
+        "animationTrigger": "slash",
+        "animationModel": "StandingMeleeAttackDownwardCHOP"
+    }
+}

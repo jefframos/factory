@@ -1,0 +1,538 @@
+:root {
+    color-scheme: light dark;
+    --bg: #1c1d21;
+    --panel: #26272c;
+    --border: #3a3b41;
+    --text: #e8e8ea;
+    --muted: #9a9ba3;
+    --accent: #ff7a45;
+    --danger: #e5484d;
+    --ok: #3fb950;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+.header-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.header-actions { display: flex; gap: 8px; }
+
+header h1 { margin: 0 0 4px; font-size: 18px; }
+
+#restart-btn.busy { opacity: 0.6; cursor: wait; }
+
+.tab-badge {
+    display: inline-block;
+    margin-left: 4px;
+    font-size: 10px;
+    line-height: 1;
+}
+
+.map-check-banner {
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.map-check-banner.error { background: rgba(229, 72, 77, 0.12); border: 1px solid var(--danger); color: var(--text); }
+.map-check-banner.warning { background: rgba(255, 122, 69, 0.12); border: 1px solid var(--accent); color: var(--text); }
+.map-check-banner.info { background: rgba(154, 155, 163, 0.12); border: 1px solid var(--border); color: var(--text); }
+.map-check-banner.ok { background: rgba(63, 185, 80, 0.12); border: 1px solid var(--ok); color: var(--text); }
+.map-check-banner ul { margin: 0; padding-left: 18px; }
+.map-check-banner .title { font-weight: 600; }
+
+.entry-map-flag {
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+}
+.entry-map-flag.missing-on-map { background: rgba(255, 122, 69, 0.18); color: var(--accent); }
+
+.hint { margin: 0; color: var(--muted); font-size: 12px; font-family: monospace; }
+
+nav#tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 12px 24px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+nav#tabs button {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--muted);
+    padding: 8px 14px;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+nav#tabs button.active {
+    color: var(--text);
+    background: var(--panel);
+    border-color: var(--border);
+    border-bottom-color: var(--panel);
+}
+
+/* Purely visual grouping (manifest.json's own `group` field, set per tab) — there are 20+ tabs
+   now, a flat undifferentiated row of buttons makes it hard to tell at a glance which ones are
+   related (e.g. Crops/Seeds/Farms all being "farming"). Each group gets a colored top border
+   always, plus a faint tint of that same color once active — the inactive/muted text color
+   above is untouched so this reads as a category hint, not a second "active" signal. */
+nav#tabs button.tab-group-world { border-top: 2px solid #5b8def; }
+nav#tabs button.tab-group-farming { border-top: 2px solid #3fb950; }
+nav#tabs button.tab-group-progression { border-top: 2px solid #d29922; }
+nav#tabs button.tab-group-economy { border-top: 2px solid #ff7a45; }
+nav#tabs button.tab-group-system { border-top: 2px solid #9a6cd0; }
+
+nav#tabs button.tab-group-world.active { background: rgba(91, 141, 239, 0.14); }
+nav#tabs button.tab-group-farming.active { background: rgba(63, 185, 80, 0.14); }
+nav#tabs button.tab-group-progression.active { background: rgba(210, 153, 34, 0.14); }
+nav#tabs button.tab-group-economy.active { background: rgba(255, 122, 69, 0.14); }
+nav#tabs button.tab-group-system.active { background: rgba(154, 108, 208, 0.14); }
+
+main#content { padding: 20px 24px 60px; max-width: 900px; }
+
+/* The Graph tab (see public/graph/graph.js) wants the full viewport width, not the 900px cap
+   every form tab is comfortable at — app.js's renderActiveTab() toggles this class in sync
+   with which tab is active. */
+main#content.graph-tab-active { max-width: none; }
+
+.entry {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.entry > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    gap: 10px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.entry > summary::-webkit-details-marker { display: none; }
+
+.entry[open] > summary { border-bottom: 1px solid var(--border); }
+
+.entry > summary input {
+    font-weight: 600;
+    font-size: 14px;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    flex: 1;
+}
+
+.entry-fixed-label { font-weight: 600; font-size: 14px; flex: 1; }
+
+.entry-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+
+.section-label { margin: 0 0 10px; }
+
+/* generic field rows */
+.field-row {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 10px;
+    align-items: start;
+}
+
+.field-row label { font-size: 12px; color: var(--muted); padding-top: 6px; }
+
+.field-control { display: flex; flex-direction: column; gap: 6px; }
+
+.field-control input[type="text"],
+.field-control input[type="number"],
+.field-control select {
+    background: #14151a;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 5px;
+    padding: 6px 8px;
+    font-size: 13px;
+    font-family: inherit;
+    max-width: 320px;
+}
+
+.field-control input[type="checkbox"] { width: 16px; height: 16px; }
+
+.optional-toggle { margin-right: 6px; }
+
+.toggle-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+
+/* requirement widget */
+.requirement-field { display: flex; flex-direction: column; gap: 8px; }
+.requirement-subfields { display: flex; flex-direction: column; gap: 8px; margin-left: 4px; padding-left: 10px; border-left: 2px solid var(--border); }
+
+/* cost map widget */
+.cost-map { display: flex; flex-direction: column; gap: 6px; }
+.cost-row { display: flex; align-items: center; gap: 8px; }
+.cost-row span { min-width: 90px; font-size: 13px; }
+.cost-row input[type="number"] { width: 90px; }
+.cost-row.add-row select { max-width: 160px; }
+
+/* model picker widget */
+.model-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.model-row select:first-of-type { min-width: 130px; }
+.model-row select:nth-of-type(2) { min-width: 160px; }
+
+/* number-range widget */
+.number-range-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.number-range-row input[type="number"] { width: 80px; }
+
+/* nested list widget (levels / recipes / tasks) */
+.list-item {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #1f2025;
+}
+.list-item > summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 13px;
+    list-style: none;
+}
+.list-item > summary::-webkit-details-marker { display: none; }
+.list-item[open] > summary { border-bottom: 1px solid var(--border); }
+.list-item-body { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+
+button.small { font-size: 11px; padding: 4px 8px; }
+
+/* icon picker */
+.icon-field { display: flex; flex-direction: column; gap: 8px; }
+.icon-preview-row { display: flex; align-items: center; gap: 8px; }
+.icon-preview {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    background: repeating-conic-gradient(#33343b 0% 25%, #26272c 0% 50%) 50% / 10px 10px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+}
+.icon-preview.missing { outline: 2px solid var(--danger); }
+.icon-preview-slot { display: inline-flex; }
+
+.entry-icon-thumb {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    background: repeating-conic-gradient(#33343b 0% 25%, #26272c 0% 50%) 50% / 8px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.entry-icon-thumb.missing { outline: 2px solid var(--danger); }
+.icon-gallery {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    background: #1f2025;
+    max-width: 480px;
+}
+.icon-gallery-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.icon-gallery-controls select {
+    background: #14151a;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 5px;
+    padding: 6px 8px;
+    font-size: 12px;
+}
+.icon-gallery-search {
+    flex: 1;
+    background: #14151a;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 5px;
+    padding: 6px 8px;
+    font-size: 12px;
+}
+.icon-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 6px;
+    max-height: 260px;
+    overflow-y: auto;
+}
+.icon-gallery-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    background: #14151a;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 6px 4px;
+    cursor: pointer;
+}
+.icon-gallery-item:hover { border-color: var(--accent); }
+.icon-gallery-item img { width: 32px; height: 32px; object-fit: contain; }
+.icon-gallery-item span {
+    font-size: 9px;
+    color: var(--muted);
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+button {
+    font-family: inherit;
+    font-size: 12px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: #33343b;
+    color: var(--text);
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+button:hover { border-color: var(--accent); }
+
+button.primary { background: var(--accent); border-color: var(--accent); color: #1c1d21; font-weight: 600; }
+button.danger { color: var(--danger); }
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.status {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.status.error { color: var(--danger); }
+.status.ok { color: var(--ok); }
+
+.error-text {
+    color: var(--danger);
+    font-size: 12px;
+    padding: 0 14px 10px;
+}
+
+.tile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.tile-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.tile-row-fields {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.tile-row-fields .field-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+}
+
+.tile-swatch {
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    image-rendering: pixelated;
+    background-color: #000;
+}
+
+.tile-swatch-id {
+    position: absolute;
+    right: 1px;
+    bottom: 1px;
+    padding: 0 3px;
+    font-size: 10px;
+    line-height: 1.4;
+    font-family: monospace;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.65);
+    border-radius: 2px;
+    pointer-events: none;
+}
+
+/* Consistency report overlay — see app.js's runCheckConsistency() */
+.report-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.report-overlay.hidden { display: none; }
+
+.report-panel {
+    width: min(900px, 90vw);
+    height: min(700px, 85vh);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 12px;
+}
+
+.report-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.report-panel-header h2 { margin: 0; font-size: 16px; }
+
+#consistency-report-text {
+    flex: 1;
+    width: 100%;
+    resize: none;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre;
+}
+
+.report-panel-footer { display: flex; justify-content: flex-end; }
+
+/* Graph tab — see public/graph/graph.js */
+.graph-subtabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.graph-subtabs button.active { background: var(--accent); border-color: var(--accent); color: #1c1d21; font-weight: 600; }
+
+.graph-split-row {
+    display: flex;
+    align-items: stretch;
+    /* Actual height is set precisely in JS (see sizeGraphSplitRowToViewport() in graph.js) —
+       this is just the fallback for the one frame before that first runs. */
+    height: 70vh;
+    min-height: 300px;
+}
+
+.graph-canvas {
+    /* flex-grow 3 (vs the panel's 1) so the graph dominates by default — dragging the handle
+       sets an explicit pixel flex-basis inline (see setupGraphResizeHandle()), which overrides
+       this ratio from then on. */
+    flex: 3 1 0;
+    min-width: 240px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.graph-resize-handle {
+    flex: 0 0 6px;
+    margin: 0 4px;
+    border-radius: 3px;
+    background: var(--border);
+    cursor: col-resize;
+}
+
+.graph-resize-handle:hover { background: var(--accent); }
+
+.graph-detail-panel {
+    flex: 1 1 0;
+    min-width: 200px;
+    max-width: 60%;
+    overflow-y: auto;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+}
+
+.graph-detail-header { margin-bottom: 10px; }
+
+.graph-detail-kind {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+}
+
+.graph-detail-header h3 { margin: 4px 0; font-size: 16px; }
+
+.graph-detail-id { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+
+.graph-detail-json {
+    margin-top: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.graph-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 8px 0 12px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.graph-legend-item { display: flex; align-items: center; gap: 6px; }
+
+.graph-legend-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    display: inline-block;
+}

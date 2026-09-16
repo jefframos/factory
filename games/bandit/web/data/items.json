@@ -1,0 +1,20 @@
+{
+    "axe": {
+        "label": "Axe"
+    },
+    "pickaxe": {
+        "label": "Pickaxe"
+    },
+    "rope": {
+        "label": "Rope"
+    },
+    "hammer": {
+        "label": "Hammer"
+    },
+    "shovel": {
+        "label": "Shovel"
+    },
+    "knife": {
+        "label": "Knife"
+    }
+}

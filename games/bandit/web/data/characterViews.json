@@ -1,0 +1,59 @@
+{
+    "default": {
+        "color": "#76e31c",
+        "headShape": "cube",
+        "face": "skins/face-brave-1.webp",
+        "isStarter": false
+    },
+    "red": {
+        "color": "#ff5252",
+        "headShape": "cube",
+        "face": "skins/devil.webp"
+    },
+    "yellow": {
+        "color": "#ffca28",
+        "headShape": "cube",
+        "face": "skins/clown.webp"
+    },
+    "blue": {
+        "color": "#42a5f5",
+        "headShape": "cube",
+        "face": "skins/cool.webp",
+        "isStarter": true
+    },
+    "coral": {
+        "color": "#ff8a65",
+        "headShape": "cube",
+        "face": "skins/pirate.webp"
+    },
+    "purple": {
+        "color": "#ab47bc",
+        "headShape": "cube",
+        "face": "skins/ninja.webp"
+    },
+    "cyan": {
+        "color": "#26c6da",
+        "headShape": "cube",
+        "face": "skins/cat.webp"
+    },
+    "pink": {
+        "color": "#ec407a",
+        "headShape": "cube",
+        "face": "skins/face-hearts-1.webp"
+    },
+    "violet": {
+        "color": "#7e57c2",
+        "headShape": "cube",
+        "face": "skins/panda.webp"
+    },
+    "green": {
+        "color": "#66bb6a",
+        "headShape": "cube",
+        "face": "skins/dog.webp"
+    },
+    "orange": {
+        "color": "#ffa726",
+        "headShape": "cube",
+        "face": "skins/face-sunglasses-2.webp"
+    }
+}

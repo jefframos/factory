@@ -1,0 +1,29 @@
+{
+    "stone": {
+        "ingredients": {
+            "pebble": 5
+        },
+        "result": {
+            "resourceType": "stone",
+            "amount": 1
+        }
+    },
+    "clothRoll": {
+        "ingredients": {
+            "grassFiber": 4
+        },
+        "result": {
+            "resourceType": "clothRoll",
+            "amount": 1
+        }
+    },
+    "hardwoodPlanks": {
+        "ingredients": {
+            "wood": 3
+        },
+        "result": {
+            "resourceType": "hardwoodPlanks",
+            "amount": 1
+        }
+    }
+}

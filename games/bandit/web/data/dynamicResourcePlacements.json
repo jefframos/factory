@@ -1,0 +1,23 @@
+[
+    {
+        "resourceType": "bark",
+        "spawnerTileType": "sand",
+        "density": 0.2,
+        "minDistance": 1,
+        "checkIntervalSec": 5
+    },
+    {
+        "resourceType": "stone",
+        "spawnerTileType": "grass",
+        "density": 0.02,
+        "minDistance": 5,
+        "checkIntervalSec": 5
+    },
+    {
+        "resourceType": "grassFiber",
+        "spawnerTileType": "grass",
+        "density": 0.02,
+        "minDistance": 4,
+        "checkIntervalSec": 5
+    }
+]

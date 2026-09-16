@@ -1,4 +1,6 @@
 [
+    "bandit",
+    "bandit-controller",
     "clog",
     "down",
     "farm",

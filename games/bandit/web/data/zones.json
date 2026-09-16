@@ -1,0 +1,33 @@
+{
+    "0": {
+        "cameraTemplateId": "far2"
+    },
+    "1": {
+        "requirement": {
+            "type": "trigger",
+            "triggerId": "walkTutorialTrigger"
+        }
+    },
+    "2": {
+        "requirement": {
+            "type": "gate",
+            "gateId": "gateWood"
+        },
+        "cameraTemplateId": "far1"
+    },
+    "3": {
+        "requirement": {
+            "type": "item",
+            "item": "pickaxe"
+        },
+        "cameraTemplateId": "far2"
+    },
+    "4": {
+        "requirement": {
+            "type": "gate",
+            "gateId": "gate1"
+        },
+        "cameraTemplateId": "far2"
+    },
+    "10": {}
+}

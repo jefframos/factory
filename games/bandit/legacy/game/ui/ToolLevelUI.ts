@@ -1,0 +1,136 @@
+// ToolLevelUI.ts
+//
+// Bottom-right HUD panel listing every tool the player actually OWNS (see
+// ItemStorage.ts) alongside its current shop-upgrade level — a quick "what
+// am I holding, how upgraded is it" readout independent of standing at any
+// particular ShopZone. A tool's level is read off whichever
+// SHOP_CONFIG_BY_ID entry upgrades it (ShopConfig.tool) — a tool with no
+// shop targeting it at all (or one that's simply never been upgraded yet)
+// reads Lv.1, never Lv.0: ShopUpgradeStorage.getLevel() is 0-INDEXED
+// internally (0 = "no upgrades purchased yet," a plain array index into
+// ShopConfig.levels — see that file's own doc), which is the right
+// representation for code but reads as "not even level 1 yet" to a player,
+// when really owning the tool at all already puts them at its base/default
+// tier. Every level number shown here is that raw index + 1.
+//
+// Rows are rebuilt wholesale (not diffed) whenever ItemStorage's owned set
+// actually changes — see refresh()'s own doc for why a full rebuild is fine
+// here despite BuildingZone/QueueZone's own "mutate in place" convention
+// elsewhere. Laid out BOTTOM-UP: whichever owned tool comes first in
+// TOOL_LIBRARY's own order sits at the very bottom (y=0, closest to the
+// screen edge once UIService anchors this panel), each next one stacking
+// upward above it — so the panel's own bottom edge stays pinned to the
+// screen regardless of how many tools are currently owned.
+//
+// Subscribes to ItemStorage.onChange (crafting a new tool) AND
+// ShopUpgradeStorage.onChange (upgrading an already-owned one) — either can
+// change what this panel should show.
+
+import * as PIXI from 'pixi.js';
+import { TextStyleRegistry } from './TextStyleRegistry';
+import AutoFitFrame, { uniformFitPadding } from './AutoFitFrame';
+import { ShopUpgradeStorage } from '../shop/ShopUpgradeStorage';
+import { SHOP_CONFIG_BY_ID } from '../shop/ShopTypes';
+import { getToolIcon, ToolId, TOOL_LIBRARY } from '../actions/ToolRegistry';
+import { ItemStorage } from '../crafting/ItemStorage';
+import { ItemType } from '../crafting/ItemTypes';
+import { getIconLayout } from './LayoutRegistry';
+
+/**
+ * Sourced from LayoutRegistry's 'ToolRow' preset (see that file's own doc),
+ * overridden to this panel's own smaller 32px icon and 6px row gap — NOT
+ * overriding `background`, since this is the one tool-level composition
+ * that deliberately shows a bare icon with no backdrop at all (ToolListUI's
+ * own row, right next to this one on screen, DOES use ToolRow's 'Tool'
+ * background — the two simply chose differently, kept as-is rather than
+ * forced to match).
+ */
+const TOOL_LAYOUT = getIconLayout('ToolRow', { slotSize: 32, gapToNeighbor: 6 });
+const ROW_ICON_SIZE = TOOL_LAYOUT.slotSize;
+const ROW_HEIGHT = 40;
+const ROW_GAP = TOOL_LAYOUT.gapToNeighbor;
+const ROW_ICON_TEXT_GAP = TOOL_LAYOUT.label.offset[0];
+const PANEL_PADDING = uniformFitPadding(12);
+
+/** Every tool id in TOOL_LIBRARY's own declaration order (axe, then pickaxe) — refresh() filters this down to whichever ones ItemStorage says the player actually owns. ToolId and ItemType share the exact same string values (see ItemTypes.ts's own doc), so casting one to the other below is safe. */
+const TOOL_IDS = Object.keys(TOOL_LIBRARY) as ToolId[];
+
+/** The shop id that upgrades `toolId`, if any — a tool can only ever be upgraded by exactly one shop in practice (see ShopConfig.tool), so the first match is the only one that matters. */
+function shopIdForTool(toolId: ToolId): string | undefined {
+    for (const [id, config] of Object.entries(SHOP_CONFIG_BY_ID)) {
+        if (config?.tool === toolId) {
+            return id;
+        }
+    }
+    return undefined;
+}
+
+export default class ToolLevelUI extends AutoFitFrame {
+    private readonly column: PIXI.Container;
+
+    private readonly handleChanged = (): void => {
+        this.refresh();
+    };
+
+    public constructor() {
+        const column = new PIXI.Container();
+        super(PANEL_PADDING, 'Main', column);
+        this.column = column;
+
+        this.refresh();
+
+        ItemStorage.onChange.add(this.handleChanged);
+        ShopUpgradeStorage.onChange.add(this.handleChanged);
+    }
+
+    /**
+     * Rebuilds every row from scratch, bottom-up (see this file's own doc), from whichever
+     * TOOL_IDS entries ItemStorage.hasCount() confirms the player actually owns right now.
+     * Rebuilding wholesale (rather than adding/removing individual rows in place) is fine
+     * here — this panel only ever has a couple of rows, and a full rebuild is simplest given
+     * BOTH the owned SET (not just one row's text) and each row's level number can change.
+     */
+    private refresh(): void {
+        this.column.removeChildren().forEach(child => child.destroy({ children: true }));
+
+        const ownedToolIds = TOOL_IDS.filter(toolId => ItemStorage.hasCount(toolId as ItemType, 1));
+
+        // Nothing owned yet — hide the panel entirely rather than showing an empty frame.
+        this.visible = ownedToolIds.length > 0;
+
+        ownedToolIds.forEach((toolId, index) => {
+            const row = new PIXI.Container();
+            row.position.set(0, -index * (ROW_HEIGHT + ROW_GAP));
+
+            const icon = new PIXI.Sprite(getToolIcon(toolId));
+            icon.anchor.set(0, 0.5);
+            icon.width = ROW_ICON_SIZE;
+            icon.height = ROW_ICON_SIZE;
+            icon.position.set(0, -ROW_HEIGHT / 2);
+            row.addChild(icon);
+
+            // maxLevel 0 (rope/hammer — see ToolVisualEntry.maxLevel's own doc) means this tool
+            // never upgrades, so a permanent "Lv.1" would just be noise — skip the label
+            // entirely rather than show a level that can never change.
+            if (TOOL_LIBRARY[toolId].maxLevel > 0) {
+                const shopId = shopIdForTool(toolId);
+                const level = shopId ? ShopUpgradeStorage.getLevel(shopId) : 0;
+                // +1 — see this file's own doc on why the raw 0-indexed level never gets shown as-is.
+                const levelLabel = new PIXI.Text(`Lv.${level + 1}`, TextStyleRegistry.Body);
+                levelLabel.anchor.set(TOOL_LAYOUT.label.anchor[0], TOOL_LAYOUT.label.anchor[1]);
+                levelLabel.position.set(ROW_ICON_SIZE + ROW_ICON_TEXT_GAP, -ROW_HEIGHT / 2);
+                row.addChild(levelLabel);
+            }
+
+            this.column.addChild(row);
+        });
+
+        this.fit();
+    }
+
+    public override destroy(options?: Parameters<PIXI.Container['destroy']>[0]): void {
+        ItemStorage.onChange.remove(this.handleChanged);
+        ShopUpgradeStorage.onChange.remove(this.handleChanged);
+        super.destroy(options);
+    }
+}

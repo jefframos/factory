@@ -1,0 +1,166 @@
+{
+    "craftAxe": {
+        "name": "Axe Crafting Table",
+        "recipes": [
+            {
+                "id": "axe",
+                "result": {
+                    "item": "axe",
+                    "amount": 1
+                },
+                "cost": {
+                    "bark": 2
+                }
+            }
+        ],
+        "destroyOnComplete": true,
+        "models": [],
+        "showModel": true,
+        "toolId": "axe",
+        "scale": 2,
+        "rotationDeg": 0,
+        "float": true,
+        "heightOffset": 1,
+        "popupMode": "simple",
+        "popupBobOffset": 0,
+        "solid": 0.5,
+        "particleEffectId": "craftingMyst"
+    },
+    "craftPickaxe": {
+        "name": "Crafting Table",
+        "recipes": [
+            {
+                "id": "pickaxe",
+                "result": {
+                    "item": "pickaxe",
+                    "amount": 1
+                },
+                "cost": {
+                    "stone": 3
+                }
+            }
+        ],
+        "destroyOnComplete": true,
+        "models": [],
+        "toolId": "pickaxe",
+        "scale": 2,
+        "rotationDeg": 0,
+        "float": true,
+        "showModel": true,
+        "appearRequirement": {
+            "type": "item",
+            "item": "axe"
+        },
+        "heightOffset": 0,
+        "popupMode": "simple",
+        "popupBobOffset": 0,
+        "particleEffectId": "craftingMyst",
+        "destroyParticleEffectId": "destroyBurst"
+    },
+    "craftRope": {
+        "recipes": [
+            {
+                "result": {
+                    "amount": 1,
+                    "item": "rope"
+                },
+                "cost": {
+                    "grassFiber": 10
+                },
+                "id": "ropeRecipe"
+            }
+        ],
+        "models": [],
+        "name": "Rope Crafting",
+        "destroyOnComplete": true,
+        "showModel": true,
+        "toolId": "rope",
+        "scale": 1,
+        "rotationDeg": 0,
+        "float": true,
+        "particleEffectId": "craftingMyst",
+        "popupBobOffset": 0,
+        "popupMode": "simple"
+    },
+    "craftHammer": {
+        "recipes": [
+            {
+                "result": {
+                    "amount": 1,
+                    "item": "hammer"
+                },
+                "cost": {
+                    "grassFiber": 10
+                },
+                "id": "hammerRecipe"
+            }
+        ],
+        "models": [],
+        "name": "Rope Crafting Copy",
+        "destroyOnComplete": true,
+        "showModel": true,
+        "toolId": "hammer",
+        "scale": 2,
+        "rotationDeg": 0,
+        "float": true,
+        "particleEffectId": "craftingMyst",
+        "popupBobOffset": 0,
+        "popupMode": "simple",
+        "heightOffset": 1,
+        "destroyParticleEffectId": "destroyBurst"
+    },
+    "craftShovel": {
+        "recipes": [
+            {
+                "result": {
+                    "amount": 1,
+                    "item": "shovel"
+                },
+                "cost": {
+                    "stone": 5
+                },
+                "id": "shovelRecipe"
+            }
+        ],
+        "models": [],
+        "name": "Shovel Crafting",
+        "destroyOnComplete": true,
+        "showModel": true,
+        "toolId": "shovel",
+        "scale": 1.5,
+        "rotationDeg": 0,
+        "float": true,
+        "particleEffectId": "craftingMyst",
+        "popupBobOffset": 0,
+        "popupMode": "simple",
+        "heightOffset": 1.5,
+        "destroyParticleEffectId": "destroyBurst"
+    },
+    "craftKnife": {
+        "recipes": [
+            {
+                "result": {
+                    "amount": 1,
+                    "item": "knife"
+                },
+                "cost": {
+                    "stone": 5
+                },
+                "id": "knifeRecipe"
+            }
+        ],
+        "models": [],
+        "name": "Knife Crafting",
+        "destroyOnComplete": true,
+        "showModel": true,
+        "toolId": "knife",
+        "scale": 2,
+        "rotationDeg": 0,
+        "float": true,
+        "particleEffectId": "craftingMyst",
+        "popupBobOffset": 0,
+        "popupMode": "simple",
+        "heightOffset": 1,
+        "destroyParticleEffectId": "destroyBurst"
+    }
+}

@@ -1,0 +1,340 @@
+{
+    "stone": {
+        "label": "Stone",
+        "icon": "stone-chunk",
+        "models": [
+            "Resources.Rock3AColor1",
+            "Resources.Rock3BColor1"
+        ],
+        "scale": [
+            1,
+            1.2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "amountPerGather": 1,
+        "price": 2,
+        "sellable": true
+    },
+    "berries": {
+        "label": "Berries",
+        "icon": "wild-berries",
+        "models": [
+            "Resources.BushBerries2"
+        ],
+        "scale": 1,
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "amountPerGather": 1,
+        "price": 10,
+        "sellable": true,
+        "category": "main"
+    },
+    "bark": {
+        "label": "Bark",
+        "icon": "tree-bark",
+        "models": [
+            "Resources.WoodLogA",
+            "Resources.WoodLogB"
+        ],
+        "scale": [
+            0.8,
+            1.1
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "amountPerGather": 1,
+        "price": 10,
+        "sellable": true
+    },
+    "pebble": {
+        "label": "Pebble",
+        "icon": "sharpening-stone",
+        "models": [
+            "Resources.Rock3AColor1",
+            "Resources.Rock3BColor1"
+        ],
+        "scale": [
+            0.5,
+            0.8
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "amountPerGather": 1,
+        "price": 1,
+        "sellable": true,
+        "disabled": true
+    },
+    "grassFiber": {
+        "label": "Grass Fiber",
+        "icon": "plant-fiber",
+        "models": [
+            "Resources.Grass2BColor1"
+        ],
+        "scale": [
+            0.8,
+            1.2
+        ],
+        "rotationDeg": [
+            0,
+            360
+        ],
+        "amountPerGather": 2,
+        "price": 10,
+        "sellable": true
+    },
+    "wood": {
+        "label": "Wood",
+        "icon": "wood-log",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1
+    },
+    "crystal": {
+        "models": [],
+        "label": "Crystal",
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "icon": "crystal-nugget"
+    },
+    "iron": {
+        "models": [],
+        "icon": "iron-ore",
+        "label": "Iron",
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1
+    },
+    "copper": {
+        "models": [],
+        "icon": "copper-ore",
+        "label": "Copper",
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1
+    },
+    "gold": {
+        "models": [],
+        "label": "Gold",
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "icon": "gold-nugget"
+    },
+    "clothRoll": {
+        "models": [],
+        "icon": "cloth-roll",
+        "label": "Cloth Roll",
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1
+    },
+    "hardwoodPlanks": {
+        "models": [],
+        "icon": "hardwood-planks",
+        "label": "Hardwood Planks",
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1
+    },
+    "pig": {
+        "models": [
+            "Pets.AnimalPig"
+        ],
+        "label": "Pig",
+        "icon": "pizza-model-snapshots_Pets-AnimalPig",
+        "scale": 0.5,
+        "rotationDeg": 0,
+        "category": "animal"
+    },
+    "wheat": {
+        "label": "Wheat",
+        "models": [],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "icon": "bedroll",
+        "price": 10,
+        "sellable": true
+    },
+    "beet": {
+        "label": "Beet",
+        "icon": "pizza-model-snapshots_Food-Beet",
+        "models": [
+            "Food.Beet"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 10,
+        "sellable": true
+    },
+    "broccoli": {
+        "label": "Broccoli",
+        "icon": "pizza-model-snapshots_Food-Broccoli",
+        "models": [
+            "Food.Broccoli"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 10,
+        "sellable": true
+    },
+    "cabbage": {
+        "label": "Cabbage",
+        "icon": "pizza-model-snapshots_Food-Cabbage",
+        "models": [
+            "Food.Cabbage"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 4,
+        "sellable": true
+    },
+    "carrot": {
+        "label": "Carrot",
+        "icon": "pizza-model-snapshots_Food-Carrot",
+        "models": [
+            "Food.Carrot"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 10,
+        "sellable": true
+    },
+    "cauliflower": {
+        "label": "Cauliflower",
+        "icon": "pizza-model-snapshots_Food-Cauliflower",
+        "models": [
+            "Food.Cauliflower"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 5,
+        "sellable": true
+    },
+    "corn": {
+        "label": "Corn",
+        "icon": "pizza-model-snapshots_Food-Corn",
+        "models": [
+            "Food.Corn"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 7,
+        "sellable": true
+    },
+    "leek": {
+        "label": "Leek",
+        "icon": "pizza-model-snapshots_Food-Leek",
+        "models": [
+            "Food.Leek"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 10,
+        "sellable": true
+    },
+    "mushroom": {
+        "label": "Mushroom",
+        "icon": "pizza-model-snapshots_Food-Mushroom",
+        "models": [
+            "Food.Mushroom"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 10,
+        "sellable": true
+    },
+    "pumpkinBasic": {
+        "label": "Pumpkin (Basic)",
+        "icon": "pizza-model-snapshots_Food-PumpkinBasic",
+        "models": [
+            "Food.PumpkinBasic"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 10,
+        "sellable": true
+    },
+    "pumpkin": {
+        "label": "Pumpkin",
+        "icon": "pizza-model-snapshots_Food-Pumpkin",
+        "models": [
+            "Food.Pumpkin"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 10,
+        "sellable": true
+    },
+    "strawberry": {
+        "label": "Strawberry",
+        "icon": "pizza-model-snapshots_Food-Strawberry",
+        "models": [
+            "Food.Strawberry"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 10,
+        "sellable": true
+    },
+    "tomato": {
+        "label": "Tomato",
+        "icon": "pizza-model-snapshots_Food-Tomato",
+        "models": [
+            "Food.Tomato"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 10,
+        "sellable": true
+    },
+    "watermelon": {
+        "label": "Watermelon",
+        "icon": "pizza-model-snapshots_Food-Watermelon",
+        "models": [
+            "Food.Watermelon"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "price": 10,
+        "sellable": true
+    }
+}

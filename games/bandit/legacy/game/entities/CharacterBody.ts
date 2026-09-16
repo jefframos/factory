@@ -1,0 +1,784 @@
+// CharacterBody.ts
+//
+// The purely visual/animated half of a third-person character — mesh
+// loading, the flat-color material fix (see FALLBACK_COLOR's own doc),
+// head-cube attachment, and the idle/run/jump animation state graph. Owns
+// no movement, no move-speed config, no jump timer, no player input — those
+// live in ThirdPersonCharacter, the player-driven controller that wraps one
+// of these (see that file). Kept separate so NPCs can reuse the exact same
+// rig/animation setup directly, without dragging along anything
+// player-specific (see PizzaScene's idle test NPCs).
+
+import * as THREE from 'three';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import { CubeBuilder, colorForValue } from '../builders/CubeBuilder';
+import { TextureBuilder } from '../builders/TextureBuilder';
+import { ShopStorage, SHOP_ITEMS, DEFAULT_SKIN_ID, resolveShopImagePath } from '../data/ShopStorage';
+import { CharacterViewConfig } from '../data/CharacterViewTypes';
+import { BendService } from '../services/BendService';
+import AnimatorController from './animation/AnimatorController';
+import { loadCompressedFile, releaseObjectURL } from '../utils/GzipLoader';
+import { TOOL_LIBRARY, ToolId, ToolVisualEntry } from '../actions/ToolRegistry';
+import ModelLoaderManager from 'core/three/ModelLoaderManager';
+
+/** Same `./` + repo-relative convention every other model load in pizza uses (see GlbVisualComponent.ts/PizzaScene.ts/MainPlayer.ts's own modelUrl()) — resolves e.g. "pizza/models/tools/Axe.gltf" against public/pizza/models/. */
+const modelUrl = (fullPath: string): string => `./${fullPath}`;
+
+const ROTATION_SLERP = 0.15;
+/**
+ * Cube-head size in REAL world units (same units as the floor/camera —
+ * see mountHeadCube(), which divides out the head bone's own inherited
+ * scale so this is a true absolute size, not a guess relative to the rig's
+ * raw/bone-local scale).
+ */
+const HEAD_CUBE_SIZE = 120;
+/** Head-cube pivot/offset, in the SAME real world units as HEAD_CUBE_SIZE — (0,0,0) sits exactly at the head bone's own origin. Tune here, or live via setHeadOffset(). */
+const HEAD_CUBE_OFFSET = new THREE.Vector3(0, 50, 0);
+
+/** Backpack cube size, same real-world-unit convention as HEAD_CUBE_SIZE (see mountBackpackCube()). Placeholder until real backpack art exists — see AssetLibraryRegistry.ts for where a glb would slot in for resource nodes; the backpack has no such registry entry yet. */
+const BACKPACK_CUBE_SIZE = 90;
+/**
+ * Backpack cube pivot/offset off the Chest bone's own origin, in the SAME real world units
+ * as BACKPACK_CUBE_SIZE — (0,0,0) sits exactly at the bone's origin. This is bone-LOCAL
+ * space, so it turns with the character automatically; the sign/axis that actually reads as
+ * "a bit toward the back" depends on this rig's own bind-pose orientation, which isn't
+ * obvious from code alone — tune this live via setBackpackOffset() while watching the
+ * character in-game, same as HEAD_CUBE_OFFSET above.
+ */
+const BACKPACK_CUBE_OFFSET = new THREE.Vector3(0, 0, -30);
+const BACKPACK_CUBE_COLOR = 0x8b5a2b;
+
+/**
+ * This rig's FBX exports have no texture at all — no map, no embedded
+ * media, nothing (confirmed: zero texture-filename strings anywhere in the
+ * binary) — so the ORIGINAL materials are unusable as-is (whatever's left
+ * multiplying the shading — a black base color, possibly baked-in black
+ * vertex colors — reads as a flat silhouette no matter what map/color gets
+ * bolted onto them). Simplest fix: replace them outright with a plain
+ * flat-color MeshStandardMaterial — the exact same recipe
+ * CubeBuilder.getSolidMaterial() uses for the cube player (`new
+ * THREE.MeshStandardMaterial({ color })`, no map at all) — rather than
+ * trying to patch the existing material's map/color/vertexColors.
+ */
+const FALLBACK_COLOR = 0xffffff;
+
+export default class CharacterBody {
+    public readonly container: THREE.Group = new THREE.Group();
+    public readonly animator: AnimatorController = new AnimatorController();
+
+    private mixer?: THREE.AnimationMixer;
+    private targetRotation = new THREE.Quaternion();
+    private readonly up = new THREE.Vector3(0, 1, 0);
+    private headCube?: THREE.Mesh;
+    /** Wraps headCube — cancels the head bone's own inherited scale so HEAD_CUBE_SIZE/HEAD_CUBE_OFFSET are true world units, and gives setHeadOffset() something to reposition without touching the cube's own scale. */
+    private headCubeHolder?: THREE.Group;
+    private headBone?: THREE.Object3D;
+    private backpackCube?: THREE.Mesh;
+    /** Same role as headCubeHolder, for the backpack cube (see mountBackpackCube()). */
+    private backpackCubeHolder?: THREE.Group;
+    private backpackBone?: THREE.Object3D;
+    /** RightHand bone the tool holder is parented to — see showTool(). */
+    private toolBone?: THREE.Object3D;
+    /** Cancels the RightHand bone's own inherited scale, same pattern as headCubeHolder/backpackCubeHolder. Every tool mesh lives under this one holder, built lazily the first time any tool is shown. */
+    private toolHolder?: THREE.Group;
+    /**
+     * Built lazily per tool id and kept around (just toggled invisible) rather than rebuilt
+     * on every swap — see showTool(). Each is a small wrapper Group carrying
+     * ToolVisualEntry.offset/rotationDeg/scale (see buildToolVisual()), so the same
+     * transform logic applies whether the tool ends up a placeholder cylinder (built
+     * synchronously) or a real model (attached once its async load resolves, possibly a
+     * frame or two later — the empty group is still positioned/visible right away).
+     */
+    private readonly toolVisuals = new Map<ToolId, THREE.Group>();
+    private currentToolId?: ToolId;
+    /** See debugShowHandMarker(). */
+    private handDebugMarker?: THREE.Mesh;
+
+    public async loadMesh(url: string): Promise<void> {
+        const resolvedUrl = await loadCompressedFile(url);
+        try {
+            const loader = new FBXLoader();
+            const object = await loader.loadAsync(resolvedUrl);
+            this.applyFallbackMaterial(object);
+            this.container.add(object);
+
+            this.mixer = new THREE.AnimationMixer(object);
+            this.animator.setMixer(this.mixer);
+        } finally {
+            // Clean up the blob URL if it was created for a .gz file
+            releaseObjectURL(resolvedUrl);
+        }
+    }
+
+    /** See FALLBACK_COLOR's own doc — swaps every mesh straight onto a brand-new flat-color material, same recipe the cube player uses, instead of patching whatever the FBX itself shipped with. */
+    private applyFallbackMaterial(object: THREE.Object3D): void {
+        object.traverse((child) => {
+            if (!(child instanceof THREE.Mesh)) {
+                return;
+            }
+
+            const materialCount = Array.isArray(child.material) ? child.material.length : 1;
+            const flatMaterial = new THREE.MeshStandardMaterial({ color: FALLBACK_COLOR });
+            // Hooked to the shared BendService uniform (same one the floor/head cube use)
+            // so the whole scene bends/un-bends together from one place — see
+            // BendService.setEnabled().
+            BendService.applyBend(flatMaterial);
+
+            child.material = materialCount > 1
+                ? new Array(materialCount).fill(flatMaterial)
+                : flatMaterial;
+        });
+    }
+
+    public async registerAnimation(id: string, url: string): Promise<void> {
+        return this.animator.registerAnimation(id, url);
+    }
+
+    /**
+     * Registers the idle/walk/run/jump state graph — call once after loadMesh()/registerAnimation()
+     * for every clip below have resolved. NPCs that only ever register 'idle' can still call this
+     * safely: transitions referencing unregistered clips simply never fire (speed stays 0,
+     * grounded/verticalSpeed are never set to anything by an idling body — see update()).
+     *
+     * `idleToWalkSpeed`/`walkToRunSpeed` split vars.speed into three bands (idle / walk / run).
+     * vars.speed is the RAW analog stick magnitude (0-1, see update()), not a world-units/sec
+     * speed — since input is analog, walkToRunSpeed is a 0-1 fraction of full stick deflection
+     * (default 0.75: run once pushed past 75% of the way to the edge), not an absolute speed. See
+     * PlayerConfig.ts's own PlayerConfigEntry doc, the single source both the player and any NPC
+     * reusing this class should read these from, rather than hand-tuning per caller.
+     */
+    public setUp(idleToWalkSpeed = 0.01, walkToRunSpeed = 0.75): void {
+        this.animator.registerAnimatorBoard('idle');
+        const board = this.animator.animatorBoard!;
+
+        board.registerTransition('idle', 'walk', 0.25, (vars) => (vars.speed as number) > idleToWalkSpeed && (vars.speed as number) < walkToRunSpeed && vars.grounded === true);
+        // Keyboard input (unlike an analog stick) jumps straight from 0 to a normalized 1.0
+        // magnitude with no intermediate frame in the walk band — without this direct
+        // transition, that speed value never satisfies idle->walk's upper bound and the
+        // character never leaves 'idle' at all when moved by keyboard.
+        board.registerTransition('idle', 'run', 0.25, (vars) => (vars.speed as number) >= walkToRunSpeed && vars.grounded === true);
+        board.registerTransition('walk', 'idle', 0.25, (vars) => (vars.speed as number) <= idleToWalkSpeed && vars.grounded === true);
+        board.registerTransition('walk', 'run', 0.25, (vars) => (vars.speed as number) >= walkToRunSpeed && vars.grounded === true);
+        board.registerTransition('run', 'walk', 0.25, (vars) => (vars.speed as number) < walkToRunSpeed && (vars.speed as number) > idleToWalkSpeed && vars.grounded === true);
+        board.registerTransition('run', 'idle', 0.5, (vars) => (vars.speed as number) <= idleToWalkSpeed && vars.grounded === true);
+
+        board.registerTransition('falling', 'run', 0.15, (vars) => (vars.speed as number) >= walkToRunSpeed && vars.grounded === true);
+        board.registerTransition('falling', 'walk', 0.15, (vars) => (vars.speed as number) > idleToWalkSpeed && (vars.speed as number) < walkToRunSpeed && vars.grounded === true);
+        board.registerTransition('landing', 'idle', 0.15, (vars) => (vars.speed as number) <= idleToWalkSpeed && vars.grounded === true);
+
+        board.registerTransition('any', 'jumpUp', 0.1, undefined, 'jump');
+        board.registerTransition('jumpUp', 'falling', 0.5, (vars) => (vars.verticalSpeed as number) > 0.01);
+        board.registerTransition('falling', 'landing', 0.25, (vars) => vars.grounded === true);
+
+        // PlayerActionController's timed actions (chop/mine/pick — see ActionTypes.ts's
+        // animationTrigger field) do NOT go through this board at all: they run on
+        // AnimatorController's separate, concurrent action layer (see playActionLayer()/
+        // stopActionLayer() below and that class's own doc) so the player keeps walking
+        // normally (this board stays on idle/walk/run) while the upper body swings.
+        //
+        // 'talk'/'happy' (quest giver offer/completion poses — see PlayerConfig.ts's
+        // PlayerAnimationConfig) are deliberately NOT wired into this board at all: they're
+        // one-shot poses a quest-giver NPC plays directly via AnimatorController.play()/mix()
+        // while stationary, not states this movement graph should ever transition into on
+        // its own (see QuestGiverTypes.ts).
+    }
+
+    /** Public bone lookup — e.g. so a caller can build an EntityBoneLookAt.ts against one of this body's own bones (a "Neck" bone, plus a child like "Head" as its aim reference) without CharacterBody needing to know anything about look-at logic itself. Same case-insensitive traversal findBoneByName() (used internally for Head/Chest/RightHand) uses. */
+    public getBone(name: string): THREE.Object3D | undefined {
+        return this.findBoneByName(name);
+    }
+
+    /** Starts the action layer's upper-body-only clip for `trigger` (chop/mine/pick — see AnimatorController's own doc) — runs on top of whatever this board is currently doing (idle/run/jump), not instead of it. */
+    public playActionLayer(trigger: string): void {
+        this.animator.playActionLayer(trigger);
+    }
+
+    /** Fades the action layer back out — the base board (idle/run/jump) is left as the sole driver of every bone again. */
+    public stopActionLayer(): void {
+        this.animator.stopActionLayer();
+    }
+
+    /** Recolors every body mesh (excluding the head cube) to an explicit hex color — shared by both the value-palette player path and the flat-tint NPC path below. */
+    public setBodyColor(color: THREE.ColorRepresentation): void {
+        this.container.traverse((child) => {
+            if (!(child instanceof THREE.Mesh) || child === this.headCube) {
+                return;
+            }
+
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+
+            for (const material of materials) {
+                if (material instanceof THREE.MeshStandardMaterial) {
+                    material.color.set(color);
+                }
+            }
+        });
+    }
+
+    /**
+     * Player path: colors the body + attaches a CubeBuilder cube (same
+     * look/FACE as the real player cube — see CubeBuilder.buildPlayer) matching
+     * `value`'s palette color (see colorForValue), with its face decal kept in
+     * sync with the currently-equipped shop skin. `showNumber: false` — unlike
+     * the merge game this was copied from, pizza has no on-head "value" to
+     * actually display, so the top face stays plain instead of showing a bare
+     * digit that meant nothing here.
+     */
+    public applyValueColor(value: number): void {
+        this.setBodyColor(colorForValue(value));
+        this.mountHeadCube(CubeBuilder.buildPlayer(value, HEAD_CUBE_SIZE, undefined, false), true);
+    }
+
+    /**
+     * Player path (Character Views — see CharacterViewTypes.ts's own doc): colors the body +
+     * attaches a CubeBuilder cube built from `config`'s own LITERAL color (not a merge-value
+     * palette lookup, unlike applyValueColor()), with its face decal defaulted to `config.face`
+     * and then kept in sync with whatever the player actually has equipped, same as
+     * applyValueColor()'s own mountHeadCube(..., true) call.
+     */
+    public applyCharacterView(config: CharacterViewConfig): void {
+        this.setBodyColor(config.color);
+        this.mountHeadCube(CubeBuilder.buildCharacterHead(config.color, HEAD_CUBE_SIZE), true);
+        void this.applyDefaultFace(config.face);
+    }
+
+    /**
+     * Loads `facePath` (a CharacterViewConfig.face — see that field's own doc) onto the head
+     * cube, but ONLY if the player hasn't actually equipped a REAL shop skin by the time this
+     * resolves — ShopStorage.getEquippedSkinId() defaults to DEFAULT_SKIN_ID (see that
+     * constant's own doc: "the always-unlocked, no-ad-required starting skin"), which is a
+     * sentinel meaning "nothing meaningfully chosen," not a real equip that should win over
+     * the character's own defined look. applyEquippedFace() (kicked off concurrently by
+     * mountHeadCube() below) draws the exact same distinction — see its own doc — so the two
+     * never fight regardless of which one's async load happens to resolve first.
+     */
+    private async applyDefaultFace(facePath: string): Promise<void> {
+        if (!this.headCube) {
+            return;
+        }
+
+        try {
+            const texture = await TextureBuilder.load(resolveShopImagePath(facePath));
+            if (this.headCube && ShopStorage.getEquippedSkinId() === DEFAULT_SKIN_ID) {
+                CubeBuilder.setFaceTexture(this.headCube, texture);
+            }
+        } catch (e) {
+            console.error('CharacterBody: failed to load Character View default face texture', e);
+        }
+    }
+
+    /**
+     * NPC path (see NpcEntity.ts) for showing a real CharacterView look — same body color +
+     * head-cube-with-face as applyCharacterView(), but deliberately WITHOUT that method's
+     * `mountHeadCube(..., true)` equipped-skin sync: ShopStorage.getEquippedSkinId() is the
+     * PLAYER's own global shop equip, not per-character, so wiring an NPC's head cube into it
+     * (as applyCharacterView() does) meant every NPC's face silently got overwritten by
+     * whatever skin the player happened to have equipped, the moment they equipped one — see
+     * applyEquippedFace()'s own doc. This always shows exactly `config.face`, full stop.
+     */
+    public applyNpcView(config: CharacterViewConfig): void {
+        this.setBodyColor(config.color);
+        this.mountHeadCube(CubeBuilder.buildCharacterHead(config.color, HEAD_CUBE_SIZE), false);
+        void this.applyFaceTexture(config.face);
+    }
+
+    /** Unconditionally loads `facePath` onto the head cube — see applyNpcView()'s own doc for why this doesn't share applyDefaultFace()'s DEFAULT_SKIN_ID gate. */
+    private async applyFaceTexture(facePath: string): Promise<void> {
+        if (!this.headCube) {
+            return;
+        }
+
+        try {
+            const texture = await TextureBuilder.load(resolveShopImagePath(facePath));
+            if (this.headCube) {
+                CubeBuilder.setFaceTexture(this.headCube, texture);
+            }
+        } catch (e) {
+            console.error('CharacterBody: failed to load NPC face texture', e);
+        }
+    }
+
+    /**
+     * NPC path: colors the body + attaches a plain flat-color cube head —
+     * no face decal, no equipped-skin syncing (NPCs don't have a shop
+     * skin). See PizzaScene's enemy test NPCs for the intended use — a
+     * flat red tone to visually mark them as hostile.
+     */
+    public applyFlatColor(color: number): void {
+        this.setBodyColor(color);
+
+        const geometry = new THREE.BoxGeometry(HEAD_CUBE_SIZE, HEAD_CUBE_SIZE, HEAD_CUBE_SIZE);
+        const material = new THREE.MeshStandardMaterial({ color });
+        BendService.applyBend(material);
+        this.mountHeadCube(new THREE.Mesh(geometry, material), false);
+    }
+
+    /**
+     * Parents `cube` onto whichever bone is actually named "Head", wrapped
+     * in a holder that cancels the bone's own inherited scale — replaces
+     * any previously-attached one. No-op (leaves the FBX's own head
+     * showing) if no such bone is found. `syncEquippedFace` opts into the
+     * live equipped-shop-skin face decal (player only — see
+     * applyValueColor/applyFlatColor).
+     */
+    private mountHeadCube(cube: THREE.Mesh, syncEquippedFace: boolean): void {
+        this.removeHeadCube();
+
+        const headBone = this.findBoneByName('Head');
+
+        if (!headBone) {
+            console.warn('CharacterBody: no "Head" bone found — skipping cube head.');
+            return;
+        }
+
+        this.headBone = headBone;
+
+        const holder = new THREE.Group();
+        headBone.add(holder);
+        holder.add(cube);
+
+        this.headCubeHolder = holder;
+        this.headCube = cube;
+
+        this.applyHeadTransform();
+
+        if (syncEquippedFace) {
+            // Same equipped-skin texture PlayerEntity.applyEquippedSkin() puts
+            // on the real player cube's face — kept in sync live via
+            // ShopStorage.onEquipChanged, so the head cube never shows a
+            // different face than the actual player.
+            void this.applyEquippedFace();
+            ShopStorage.onEquipChanged.add(this.applyEquippedFace, this);
+        }
+    }
+
+    /**
+     * Loads whichever skin is CURRENTLY equipped (ignores `itemId` — always re-reads
+     * ShopStorage.getEquippedSkinId(), so this doubles as both the initial load and the
+     * onEquipChanged live-update handler) and swaps it onto the head cube's face decal. A
+     * no-op while DEFAULT_SKIN_ID is still equipped (see that constant's own doc) — that's the
+     * "nothing meaningfully chosen yet" sentinel, so whatever's already showing (a Character
+     * View's own default face, or the procedural bot decal) is left alone rather than getting
+     * clobbered by the shop's own starting skin art.
+     */
+    private applyEquippedFace = async (): Promise<void> => {
+        if (!this.headCube) {
+            return;
+        }
+
+        const equippedId = ShopStorage.getEquippedSkinId();
+        if (equippedId === DEFAULT_SKIN_ID) {
+            return;
+        }
+
+        const item = SHOP_ITEMS.find(i => i.id === equippedId);
+
+        if (!item) {
+            return;
+        }
+
+        try {
+            const texture = await TextureBuilder.load(resolveShopImagePath(item.texture));
+            CubeBuilder.setFaceTexture(this.headCube, texture);
+        } catch (e) {
+            console.error('CharacterBody: failed to load equipped skin texture', e);
+        }
+    };
+
+    /**
+     * Repositions the head cube live — same real-world units as
+     * HEAD_CUBE_SIZE/HEAD_CUBE_OFFSET, (0,0,0) at the head bone's own
+     * origin. No-op if applyValueColor()/applyFlatColor() hasn't run yet.
+     */
+    public setHeadOffset(x: number, y: number, z: number): void {
+        HEAD_CUBE_OFFSET.set(x, y, z);
+        this.applyHeadTransform();
+    }
+
+    /**
+     * Bones in this rig carry their own (often large) inherited scale, so a
+     * fixed geometry size/offset renders unpredictably depending on which
+     * bone it's parented to. getWorldScale() gives the bone's TRUE
+     * cumulative scale (all ancestors, all the way up) — dividing it out on
+     * the HOLDER (not the cube itself) means HEAD_CUBE_SIZE stays exactly
+     * what the cube was actually built with (so the face decal/number glyph
+     * aren't stretched), while HEAD_CUBE_OFFSET is still a true world-unit
+     * position — not a guess that has to be re-tuned every time the rig or
+     * its parent scale changes.
+     */
+    private applyHeadTransform(): void {
+        if (!this.headCubeHolder || !this.headBone) {
+            return;
+        }
+
+        // getWorldScale() reads matrixWorld, which is normally only refreshed once a frame by
+        // the renderer's own updateMatrixWorld() pass — NOT recomputed on demand. Calling this
+        // synchronously, straight off an async load chain, races that: if every asset in the
+        // chain resolves from the browser's own HTTP cache (e.g. an NPC loading the exact same
+        // clip URLs the player already warmed up moments earlier — see NpcEntity.ts), the whole
+        // await chain can finish inside one microtask flush with ZERO render frames in between,
+        // leaving this bone's matrixWorld stale (identity) and producing a wildly wrong
+        // boneWorldScale — a gigantic, misplaced head cube. Forcing it fresh here removes the
+        // frame-timing dependency entirely instead of "usually" working because real network/
+        // decompression latency happened to let a frame slip in.
+        this.headBone.updateWorldMatrix(true, false);
+        const boneWorldScale = new THREE.Vector3();
+        this.headBone.getWorldScale(boneWorldScale);
+
+        this.headCubeHolder.scale.set(1 / boneWorldScale.x, 1 / boneWorldScale.y, 1 / boneWorldScale.z);
+        this.headCubeHolder.position.set(
+            HEAD_CUBE_OFFSET.x / boneWorldScale.x,
+            HEAD_CUBE_OFFSET.y / boneWorldScale.y,
+            HEAD_CUBE_OFFSET.z / boneWorldScale.z,
+        );
+    }
+
+    private removeHeadCube(): void {
+        ShopStorage.onEquipChanged.remove(this.applyEquippedFace, this);
+
+        if (!this.headCubeHolder) {
+            return;
+        }
+
+        this.headCubeHolder.parent?.remove(this.headCubeHolder);
+        this.headCube?.geometry.dispose();
+        this.headCubeHolder = undefined;
+        this.headCube = undefined;
+    }
+
+    /** Case-insensitive bone lookup by name — shared by mountHeadCube() ("Head") and mountBackpackCube() ("Chest"). */
+    private findBoneByName(name: string): THREE.Object3D | undefined {
+        let found: THREE.Object3D | undefined;
+        const lowerName = name.toLowerCase();
+
+        this.container.traverse((child) => {
+            if (found) {
+                return;
+            }
+
+            if (child.name.toLowerCase() === lowerName) {
+                found = child;
+            }
+        });
+
+        return found;
+    }
+
+    /**
+     * Parents a plain flat-color cube onto whichever bone is actually named "Chest" — same
+     * holder-cancels-inherited-scale pattern as mountHeadCube(). No-op (nothing attached) if
+     * no such bone is found. Placeholder for real backpack art — see BACKPACK_CUBE_* above.
+     */
+    public mountBackpackCube(): void {
+        this.removeBackpackCube();
+
+        const chestBone = this.findBoneByName('Chest');
+
+        if (!chestBone) {
+            console.warn('CharacterBody: no "Chest" bone found — skipping backpack cube.');
+            return;
+        }
+
+        this.backpackBone = chestBone;
+
+        const geometry = new THREE.BoxGeometry(BACKPACK_CUBE_SIZE, BACKPACK_CUBE_SIZE, BACKPACK_CUBE_SIZE * 0.5);
+        const material = new THREE.MeshStandardMaterial({ color: BACKPACK_CUBE_COLOR });
+        BendService.applyBend(material);
+        const cube = new THREE.Mesh(geometry, material);
+
+        const holder = new THREE.Group();
+        chestBone.add(holder);
+        holder.add(cube);
+
+        this.backpackCubeHolder = holder;
+        this.backpackCube = cube;
+
+        this.applyBackpackTransform();
+    }
+
+    /** Repositions the backpack cube live — same real-world units as BACKPACK_CUBE_SIZE/BACKPACK_CUBE_OFFSET, (0,0,0) at the Chest bone's own origin. No-op if mountBackpackCube() hasn't run yet (or found no Chest bone). */
+    public setBackpackOffset(x: number, y: number, z: number): void {
+        BACKPACK_CUBE_OFFSET.set(x, y, z);
+        this.applyBackpackTransform();
+    }
+
+    /** Same reasoning as applyHeadTransform() — cancels the Chest bone's own inherited scale on the HOLDER so BACKPACK_CUBE_SIZE/OFFSET stay true world units. */
+    private applyBackpackTransform(): void {
+        if (!this.backpackCubeHolder || !this.backpackBone) {
+            return;
+        }
+
+        // See applyHeadTransform()'s own doc for why this can't just trust matrixWorld already
+        // being fresh.
+        this.backpackBone.updateWorldMatrix(true, false);
+        const boneWorldScale = new THREE.Vector3();
+        this.backpackBone.getWorldScale(boneWorldScale);
+
+        this.backpackCubeHolder.scale.set(1 / boneWorldScale.x, 1 / boneWorldScale.y, 1 / boneWorldScale.z);
+        this.backpackCubeHolder.position.set(
+            BACKPACK_CUBE_OFFSET.x / boneWorldScale.x,
+            BACKPACK_CUBE_OFFSET.y / boneWorldScale.y,
+            BACKPACK_CUBE_OFFSET.z / boneWorldScale.z,
+        );
+    }
+
+    private removeBackpackCube(): void {
+        if (!this.backpackCubeHolder) {
+            return;
+        }
+
+        this.backpackCubeHolder.parent?.remove(this.backpackCubeHolder);
+        this.backpackCube?.geometry.dispose();
+        this.backpackCubeHolder = undefined;
+        this.backpackCube = undefined;
+    }
+
+    /** World-space position of the backpack cube (or the bare Chest bone, if mountBackpackCube() hasn't run) — used by AutoGatherController to fly gathered resource chips toward it. undefined if neither exists (e.g. the rig has no Chest bone, or the FBX hasn't loaded yet). */
+    public getBackpackWorldPosition(target: THREE.Vector3 = new THREE.Vector3()): THREE.Vector3 | undefined {
+        const anchor = this.backpackCubeHolder ?? this.backpackBone;
+        return anchor?.getWorldPosition(target);
+    }
+
+    /**
+     * Shows `toolId` (axe/pickaxe — see ToolRegistry.ts) on the RightHand bone, hiding
+     * whatever tool was showing before — see PlayerActionController, which calls this
+     * alongside playAction()/stopAction() so the right tool appears for the action's
+     * duration and disappears once it ends. `undefined` hides every tool (bare hands,
+     * e.g. Gather). No-op (leaves whatever's already showing) if `toolId` matches the
+     * tool already showing. Each tool's visual is built once and reused — swapping just
+     * toggles visibility, same as MainPlayer's face-decal caching does for skins.
+     */
+    public showTool(toolId: ToolId | undefined): void {
+        if (this.currentToolId === toolId) {
+            return;
+        }
+
+        if (this.currentToolId) {
+            const previousVisual = this.toolVisuals.get(this.currentToolId);
+            if (previousVisual) {
+                previousVisual.visible = false;
+            }
+        }
+
+        this.currentToolId = toolId;
+
+        if (!toolId) {
+            return;
+        }
+
+        const holder = this.ensureToolHolder();
+        if (!holder) {
+            return;
+        }
+
+        let visual = this.toolVisuals.get(toolId);
+        if (!visual) {
+            visual = this.buildToolVisual(toolId);
+            holder.add(visual);
+            this.toolVisuals.set(toolId, visual);
+        }
+        visual.visible = true;
+    }
+
+    /**
+     * Repositions `toolId`'s wrapper group live, in the SAME bone-local units as
+     * ToolVisualEntry.offset — (0,0,0) sits exactly at the RightHand bone's own origin. Same
+     * "tune live in-game, the bind-pose axes aren't obvious from code alone" workflow as
+     * setHeadOffset()/setBackpackOffset(), and genuinely a SEPARATE tuning pass from either
+     * of those: every bone has its own local orientation/scale, so numbers that looked right
+     * on Head or Chest have no reason to also look right on RightHand. No-op if `toolId`'s
+     * visual hasn't been built yet (showTool() hasn't shown it at least once).
+     */
+    public setToolOffset(toolId: ToolId, x: number, y: number, z: number): void {
+        TOOL_LIBRARY[toolId].offset.set(x, y, z);
+        this.toolVisuals.get(toolId)?.position.set(x, y, z);
+    }
+
+    /** Same live-tuning workflow as setToolOffset(), for the wrapper group's own rotation (degrees, XYZ euler). */
+    public setToolRotation(toolId: ToolId, xDeg: number, yDeg: number, zDeg: number): void {
+        TOOL_LIBRARY[toolId].rotationDeg.set(xDeg, yDeg, zDeg);
+        this.toolVisuals.get(toolId)?.rotation.set(xDeg * (Math.PI / 180), yDeg * (Math.PI / 180), zDeg * (Math.PI / 180));
+    }
+
+    /** Same live-tuning workflow, for the wrapper group's uniform scale — see ToolVisualEntry.scale's own doc. */
+    public setToolScale(toolId: ToolId, scale: number): void {
+        TOOL_LIBRARY[toolId].scale = scale;
+        this.toolVisuals.get(toolId)?.scale.setScalar(scale);
+    }
+
+    /** Same live-tuning workflow, for the placeholder cylinder's own radius/length — only meaningful while ToolVisualEntry.models is empty; no-op (nothing to rebuild) once a real model is showing. */
+    public setToolSize(toolId: ToolId, radius: number, length: number): void {
+        const entry = TOOL_LIBRARY[toolId];
+        entry.radius = radius;
+        entry.length = length;
+
+        const placeholder = this.toolVisuals.get(toolId)?.children.find((child): child is THREE.Mesh => child instanceof THREE.Mesh);
+        if (placeholder) {
+            placeholder.geometry.dispose();
+            placeholder.geometry = new THREE.CylinderGeometry(radius, radius, length, 8);
+        }
+    }
+
+    /**
+     * DEBUG ONLY — drops a small bright sphere exactly at the RightHand bone's own origin
+     * (no offset, unlike the tool visuals) and leaves it there permanently, independent of
+     * showTool()/currentToolId. Answers "is the bone/holder tracking right at all" as a
+     * separate question from "are my offset numbers right" — if this sphere itself reads
+     * as being in the wrong place (or not moving with the hand), the bug is in the rig/bone
+     * lookup, not in ToolVisualEntry's offset/rotation/scale tuning. Safe to call multiple
+     * times (no-ops after the first — same marker instance, not one per call).
+     */
+    public debugShowHandMarker(): void {
+        if (this.handDebugMarker) {
+            return;
+        }
+
+        const holder = this.ensureToolHolder();
+        if (!holder) {
+            return;
+        }
+
+        //const geometry = new THREE.SphereGeometry(15, 12, 12);
+        const geometry = new THREE.SphereGeometry(1, 1, 1);
+        const material = new THREE.MeshBasicMaterial({ color: 0xff00ff });
+        this.handDebugMarker = new THREE.Mesh(geometry, material);
+        holder.add(this.handDebugMarker);
+    }
+
+    /**
+     * Builds `toolId`'s wrapper group, positioned/rotated/scaled from ToolVisualEntry right
+     * away (so it's correctly placed even before an async model load below resolves), then
+     * either:
+     *   - attaches the real model (ToolVisualEntry.models[0]) once ModelLoaderManager
+     *     resolves it — same BendService treatment every other prop/model gets; or
+     *   - if `models` is empty, builds the fallback placeholder cylinder synchronously.
+     *     Unlit (MeshBasicMaterial) — a lit MeshStandardMaterial can render almost black on
+     *     a thin cylinder caught edge-on to a light, which reads exactly like "not
+     *     spawning" even though it's there and correctly parented; unlit removes that
+     *     whole failure mode for what's only ever a temporary stand-in anyway.
+     */
+    private buildToolVisual(toolId: ToolId): THREE.Group {
+        const entry = TOOL_LIBRARY[toolId];
+
+        const group = new THREE.Group();
+        this.applyToolVisualTransform(group, entry);
+
+        if (entry.models.length > 0) {
+            const modelDef = entry.models[0];
+            ModelLoaderManager.instance.loadModel(modelUrl(modelDef.fullPath), modelDef.id)
+                .then(object => {
+                    object.traverse(child => {
+                        if (child instanceof THREE.Mesh) {
+                            const materials = Array.isArray(child.material) ? child.material : [child.material];
+                            materials.forEach(material => BendService.applyBend(material));
+                        }
+                    });
+                    group.add(object);
+                })
+                .catch(error => console.warn(`CharacterBody: failed to load tool model for "${toolId}"`, error));
+        } else {
+            const geometry = new THREE.CylinderGeometry(entry.radius, entry.radius, entry.length, 8);
+            const material = new THREE.MeshBasicMaterial({ color: entry.color });
+            BendService.applyBend(material);
+            group.add(new THREE.Mesh(geometry, material));
+        }
+
+        return group;
+    }
+
+    private applyToolVisualTransform(group: THREE.Group, entry: ToolVisualEntry): void {
+        group.position.copy(entry.offset);
+        group.rotation.set(
+            entry.rotationDeg.x * (Math.PI / 180),
+            entry.rotationDeg.y * (Math.PI / 180),
+            entry.rotationDeg.z * (Math.PI / 180),
+        );
+        group.scale.setScalar(entry.scale);
+    }
+
+    /** Lazily finds the RightHand bone and builds a holder on it (cancelling its own inherited scale, same pattern as mountHeadCube()/mountBackpackCube()) the first time any tool is shown. undefined (and a console warning) if the rig has no such bone. */
+    private ensureToolHolder(): THREE.Group | undefined {
+        if (this.toolHolder) {
+            return this.toolHolder;
+        }
+
+        const handBone = this.findBoneByName('RightHand');
+        if (!handBone) {
+            console.warn('CharacterBody: no "RightHand" bone found — skipping tool visual.');
+            return undefined;
+        }
+
+        this.toolBone = handBone;
+
+        const holder = new THREE.Group();
+        handBone.add(holder);
+        this.toolHolder = holder;
+
+        // See applyHeadTransform()'s own doc for why this can't just trust matrixWorld already
+        // being fresh.
+        handBone.updateWorldMatrix(true, false);
+        const boneWorldScale = new THREE.Vector3();
+        handBone.getWorldScale(boneWorldScale);
+        holder.scale.set(1 / boneWorldScale.x, 1 / boneWorldScale.y, 1 / boneWorldScale.z);
+
+        return holder;
+    }
+
+    /**
+     * Overrides targetRotation directly from a world-space direction (X/Z only), instead
+     * of deriving it from move input like update() normally does — see FacingComponent,
+     * which uses this to turn the character toward a resource it's gathering from while
+     * move input is zero (the player is frozen for the action's duration). The actual
+     * turn still happens gradually: update()'s own `container.quaternion.slerp(targetRotation,
+     * ROTATION_SLERP)` runs every frame regardless of how targetRotation got set, so this is
+     * "face this direction, smoothly, over the next several frames," not an instant snap.
+     * A near-zero direction (already facing it, or coincident position) is ignored rather
+     * than fed into atan2, which would return a meaningless angle for a zero vector.
+     */
+    public faceDirection(dirX: number, dirZ: number): void {
+        if (Math.hypot(dirX, dirZ) < 1e-4) {
+            return;
+        }
+        this.targetRotation.setFromAxisAngle(this.up, Math.atan2(dirX, dirZ));
+    }
+
+    /**
+     * Call once per frame. `moveInputX`/`moveInputZ` drive facing rotation
+     * and the 'speed' animator variable (both default to 0 — an idle NPC
+     * can just call `body.update(delta)` every frame and never rotate or
+     * leave its initial 'idle' state). `extraVars` lets a controller inject
+     * additional animator variables (e.g. verticalSpeed/grounded for jump)
+     * before the state machine evaluates this frame's transitions.
+     */
+    public update(delta: number, moveInputX: number = 0, moveInputZ: number = 0, extraVars: Record<string, number | boolean> = {}): void {
+        if (moveInputX !== 0 || moveInputZ !== 0) {
+            this.targetRotation.setFromAxisAngle(this.up, Math.atan2(moveInputX, moveInputZ));
+        }
+        this.container.quaternion.slerp(this.targetRotation, ROTATION_SLERP);
+
+        const speed = Math.hypot(moveInputX, moveInputZ);
+        this.animator.animatorBoard?.setVariable('speed', speed);
+
+        for (const [name, value] of Object.entries(extraVars)) {
+            this.animator.animatorBoard?.setVariable(name, value);
+        }
+
+        this.animator.update(delta);
+    }
+
+    public destroy(): void {
+        this.removeHeadCube();
+        this.removeBackpackCube();
+        for (const visual of this.toolVisuals.values()) {
+            visual.traverse(child => {
+                if (child instanceof THREE.Mesh) {
+                    child.geometry.dispose();
+                }
+            });
+        }
+        this.toolVisuals.clear();
+        this.handDebugMarker?.geometry.dispose();
+        this.container.parent?.remove(this.container);
+        this.mixer?.stopAllAction();
+    }
+}
