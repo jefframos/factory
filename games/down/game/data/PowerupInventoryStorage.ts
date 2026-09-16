@@ -56,4 +56,10 @@ export class PowerupInventoryStorage {
     private static save(): void {
         void PlatformHandler.instance.platform.setItem(KEY, JSON.stringify(this.cached));
     }
+
+    /** Wipes every persisted count back to a fresh install. */
+    static async clearAll(): Promise<void> {
+        this.cached = {};
+        await PlatformHandler.instance.platform.removeItem(KEY);
+    }
 }

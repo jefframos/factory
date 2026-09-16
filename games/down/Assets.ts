@@ -492,9 +492,9 @@ export default class Assets {
 
         return {
             /** Base every variant below builds on. */
-            PowerupCounter: { fontFamily: "Baloo2-ExtraBold", fill: 0x000000, fontSize: 18 } as Partial<PIXI.TextStyle>,
-
             DefaultLabel,
+            PowerupCounter: { fontFamily: "Baloo2-ExtraBold", fill: 0x000000, fontSize: 18 } as Partial<PIXI.TextStyle>,
+            DefaultLabelQuestion: { fontFamily: "Baloo2-ExtraBold", fill: 0xffffff, fontSize: 18, strokeThickness: 2 } as Partial<PIXI.TextStyle>,
             /** TowerHeightGauge's current-height readout ("71m", "225M km") — warm yellow so it reads as the "live" number. */
             MeterCounter: { ...DefaultLabel, fill: 0xffe066, fontSize: 20 } as Partial<PIXI.TextStyle>,
             /** GameHud's "Level N — next: Xm" line. */

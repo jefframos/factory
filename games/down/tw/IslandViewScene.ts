@@ -11,7 +11,12 @@ import { PieceDevGui } from '../game/debug/PieceDevGui';
 import { PieceSnapshotTool } from '../game/debug/PieceSnapshotTool';
 import { PowerupDevGui } from '../game/debug/PowerupDevGui';
 import { TowerHighScoreStorage } from './TowerHighScoreStorage';
+import { TowerPieceUnlockStorage } from './TowerPieceUnlockStorage';
+import { TowerThemeStorage } from './TowerThemeStorage';
+import { GemStorage } from './GemStorage';
+import { HighScoreStorage } from '../game/data/HighScoreStorage';
 import { PowerupInventoryStorage } from '../game/data/PowerupInventoryStorage';
+import { ShopStorage } from '../game/data/ShopStorage';
 import {
     formatHexColor,
     getDefaultIsland
@@ -29,8 +34,8 @@ import {
     TRAPDOOR_POWERUP_ID,
     UPGRADE_PIECE_POWERUP_ID,
     getPowerup,
+    getPowerupGemCost,
 } from './PowerupStorage';
-import { getEnabledPowerupIds } from './PowerupConfig';
 import { TowerVfxUtils } from './TowerVfxUtils';
 import type { PowerupContactPoint } from './PowerupSystem';
 import { TowerBaseSync3D } from './TowerBaseSync3D';
@@ -48,16 +53,17 @@ import { GameHud } from './ui/GameHud';
 import { PieceTargetingOverlay } from './ui/PieceTargetingOverlay';
 import { TowerScorePopupUtils } from './ui/TowerScorePopupUtils';
 import { TowerRewardFlyUtils } from './ui/TowerRewardFlyUtils';
-import { PowerupButton } from './ui/PowerupButton';
-import ViewUtils from 'core/utils/ViewUtils';
 import SoundManager from 'core/audio/SoundManager';
 import Assets from '../Assets';
 import { getGameTheme, isGameThemeId, type GameThemeId, type GameThemeSounds } from './GameThemeStorage';
 
 const FOCUS_POINT = new THREE.Vector3(0, 0, 0);
 
-/** How many copies of the level-up powerup a successful rewarded video grants — see handleLevelUpWatchVideo(). Change this one constant to retune the reward. */
-const REWARD_VIDEO_BONUS_AMOUNT = 3;
+/** Gems awarded per 100 points of a run's final score — see onGameOver. */
+const GEMS_PER_100_SCORE = 10;
+
+/** Gems awarded per level reached, scaled by the level number — level 1 gives GEMS_PER_LEVEL, level 2 gives 2x that, and so on — see onLevelProgressed. */
+const GEMS_PER_LEVEL = 10;
 
 export default class IslandViewScene extends ThreeScene {
     // -------------------------------------------------------------------------
@@ -70,15 +76,13 @@ export default class IslandViewScene extends ThreeScene {
     /** Sparse field of upward-drifting star sprites sitting just in front of the cloud backdrop — built once in build(), driven every frame in update(). */
     private readonly starSparkleController = new TowerStarSparkleController();
     /**
-     * Which of GAME_THEMES is currently active — see handleThemeToggle().
-     * Starts as 'circle' here (matches every controller's own hardcoded
-     * default, so the very first build() call above is a visual no-op
-     * against picking that theme explicitly) — build() then immediately
-     * switches to the REAL default, 'cats', for every player (or whatever
-     * dev mode last saved) before the scene is ever shown. See build()'s own
-     * initialThemeId resolution at its end.
+     * Which of GAME_THEMES ('cats'/'dogs' — see HomePopup's level list) is
+     * currently active — see handleThemeToggle(). Starts as 'cats' here,
+     * the real default for every player; build()'s own initialThemeId
+     * resolution at its end applies whatever dev mode last saved instead,
+     * when there is one.
      */
-    private currentThemeId: GameThemeId = 'circle';
+    private currentThemeId: GameThemeId = 'cats';
 
     // -------------------------------------------------------------------------
     // 2D / game layer
@@ -110,14 +114,13 @@ export default class IslandViewScene extends ThreeScene {
      */
     private targetingPowerupId: string | null = null;
 
-    /** Which powerup the currently-shown LevelUpNotification popup already granted — see handleLevelUpWatchVideo(), which grants a second one of THIS SAME id on a successful video. Null whenever no level-up popup is up. */
-    private pendingLevelUpPowerupId: string | null = null;
-    /** How many copies to fly to the belt on collect — 1 normally, bumped by handleLevelUpWatchVideo() on a successful double. Purely a visual count for TowerRewardFlyUtils, not tied to the actual granted amount (which already happened silently at grant time). */
-    private pendingLevelUpFlyCount = 1;
+    /** True if `activePowerupId`'s activation used a rewarded video instead of spending gems — see useHudPowerup()'s skipCost param. Checked by cancelActivePowerup()/the reset/theme-toggle refund paths so cancelling a video-granted use never hands back gems that were never spent. */
+    private activePowerupSkippedCost = false;
+    /** Same as activePowerupSkippedCost, for `targetingPowerupId` — see endTargeting(). */
+    private targetingPowerupSkippedCost = false;
+
     /** True while the platform's own gameplayStart()/gameplayStop() thinks a run is "in play" — see onBlockDropped (starts it lazily on the next actual drop) and the onGameOver/onLevelProgressed handlers (stop it the instant either popup shows). Deliberately NOT restarted the instant a popup is dismissed — only the next real drop (i.e. the player actually touching the screen again) flips it back on. */
     private isGameplayActive = false;
-    /** True once handleLevelUpWatchVideo() has already dispatched onLevelUpCollected for the CURRENT popup — the onLevelUpCollected listener uses this to skip the commercial break it otherwise shows for a plain (no-video) collect, since a rewarded video already played. Reset false every time a fresh level-up shows. */
-    private levelUpVideoWatched = false;
 
     private blockSync3D!: TowerBlockSync3D;
     private baseSync3D!: TowerBaseSync3D;
@@ -166,6 +169,12 @@ export default class IslandViewScene extends ThreeScene {
     private powerupConfirmOpen = false;
     /** The powerup id awaiting the player's USE/CANCEL choice — see beginPowerupConfirm(). Null whenever powerupConfirmOpen is false. */
     private pendingConfirmPowerupId: string | null = null;
+
+    /** True while HomePopup is up — see openHomePopup()/closeHomePopup(). Same "own flag OR'd into gameTimeFrozen, input blocked via faceTower.setInputEnabled(false)" shape powerupConfirmOpen already uses, for the same reason (can open mid-run, not just at game-over, so it needs its own freeze independent of `paused`). */
+    private homePopupOpen = false;
+
+    /** True once the current run has actually ended (see FaceTowerGameEvents.onGameOver) — cleared back to false the moment a fresh run actually starts (restartRun()/handleThemeToggle()). Tells openHomePopup() whether to offer HomePopup's RESTART button — restarting a run that's already over reads as redundant/confusing next to picking a level, which already starts a fresh one. */
+    private isGameOver = false;
 
     // =========================================================================
     // Lifecycle
@@ -274,7 +283,7 @@ export default class IslandViewScene extends ThreeScene {
         // 1.1 for the same blown-out-highlight reason as the key light.
         const rim = new THREE.DirectionalLight(0xcc00aa, 0.6);
         rim.position.set(-2, 6, -9);
-        this.threeScene.add(rim);
+        //this.threeScene.add(rim);
 
         this.positionCamera();
         this.buildFaceTowerLayer();
@@ -295,18 +304,19 @@ export default class IslandViewScene extends ThreeScene {
         delta *= this.speedMultiplier;
 
         // Skips the actual simulation/game-logic step while paused, while
-        // the powerup confirm popup is open, OR while the player is picking
-        // a target for a 'target'-type powerup (destroy-piece/upgrade-piece
-        // — see beginTargeting()/endTargeting()) — otherwise the game-over
-        // grace timer (driven inside faceTower.update()) keeps counting down
-        // the whole time the HUD/input are hidden/disabled for targeting,
-        // which could end the run while the player is still just choosing
-        // which piece to destroy/upgrade, with no way to react. See
-        // `paused`'s own doc and `powerupConfirmOpen`'s own doc for why
-        // those stay separate flags — but still calls super.fixedUpdate()
-        // unconditionally, same "cosmetic stuff keeps running, only the
-        // mediator/game-logic step freezes" split MergeScene.update() makes.
-        const gameTimeFrozen = this.paused || this.powerupConfirmOpen || this.targetingPowerupId !== null;
+        // the powerup confirm popup OR the home popup is open, OR while the
+        // player is picking a target for a 'target'-type powerup
+        // (destroy-piece/upgrade-piece — see beginTargeting()/endTargeting())
+        // — otherwise the game-over grace timer (driven inside
+        // faceTower.update()) keeps counting down the whole time the
+        // HUD/input are hidden/disabled, which could end the run while the
+        // player is just looking at a menu, with no way to react. See
+        // `paused`'s/`powerupConfirmOpen`'s/`homePopupOpen`'s own docs for
+        // why those stay separate flags — but still calls
+        // super.fixedUpdate() unconditionally, same "cosmetic stuff keeps
+        // running, only the mediator/game-logic step freezes" split
+        // MergeScene.update() makes.
+        const gameTimeFrozen = this.paused || this.powerupConfirmOpen || this.targetingPowerupId !== null || this.homePopupOpen;
 
         if (!gameTimeFrozen) {
             Physics.fixedUpdate(delta);
@@ -495,7 +505,12 @@ export default class IslandViewScene extends ThreeScene {
             this.gameHud?.updateProgressBar(this.faceTower.getWeightProgress());
         }
 
-        this.gameHud?.updatePowerupCounts(PowerupInventoryStorage.getAll());
+        // Each slot shows its own gem cost against the current balance now
+        // (see PowerupStorage.getPowerupGemCost()/PowerupButton.updateCost())
+        // rather than an owned inventory count.
+        const gemBalance = GemStorage.get();
+        this.gameHud?.updatePowerupCosts(gemBalance);
+        this.gameHud?.updateGems(gemBalance);
 
         /*
          * super.update() calls SetupThree.renderer.render() — skip entirely
@@ -598,33 +613,13 @@ export default class IslandViewScene extends ThreeScene {
 
             () => void this.handleGameOverRespawnVideo(),
             () => {
+                // GameOverPopup's own button (on-screen label "Continue" —
+                // see its own doc for why it's still internally named
+                // onReplay) no longer restarts directly — it opens the home
+                // menu instead, same place a mid-run tap on HomeButton
+                // lands, so RESTART/a level pick both go through one place.
                 this.gameHud.hideGameOver();
-                this.baseSync3D.clear();
-                this.faceTower.reset();
-                TowerHighScoreStorage.markRunStart();
-
-                /*
-                 * A fresh run wipes the board a pending active powerup's
-                 * piece was sitting on — refund it (it was already spent
-                 * from inventory in useHudPowerup()) rather than silently
-                 * losing it, since there's no piece left to cancel back to.
-                 */
-                if (this.activePowerupId !== null) {
-                    PowerupInventoryStorage.grant(this.activePowerupId);
-                    this.activePowerupId = null;
-                    this.preActivationPiece = null;
-                    this.gameHud.setActivePowerup(null);
-                }
-
-                // Same refund for a 'target' powerup mid-targeting — a
-                // fresh run wipes the board there was going to be a target
-                // on, so there's nothing left to resolve it against.
-                this.endTargeting(true);
-
-                // Player restarted outright (as opposed to watching a video
-                // to respawn in place) — the natural "between sessions" spot
-                // for a commercial break.
-                void PlatformHandler.instance.platform.showCommercialBreak();
+                this.openHomePopup();
             },
         );
 
@@ -642,42 +637,22 @@ export default class IslandViewScene extends ThreeScene {
         this.gameHud.onCancelPowerup.add(() => this.cancelPendingPowerup(), this);
         this.gameHud.onWatchVideoForPowerup.add(() => void this.handlePowerupWatchVideo(), this);
         this.gameHud.onShapeModeToggle.add((themeId: GameThemeId) => this.handleThemeToggle(themeId), this);
-        this.gameHud.onWatchVideoForLevelUp.add(() => void this.handleLevelUpWatchVideo(), this);
         this.gameHud.onLevelUpCollected.add(() => {
-            const powerupId = this.pendingLevelUpPowerupId;
-            const flyCount = this.pendingLevelUpFlyCount;
-
-            this.pendingLevelUpPowerupId = null;
-            this.pendingLevelUpFlyCount = 1;
-
-            /*
-             * Fires after LevelUpNotification has already been told to hide
-             * (see GameHud's own onCollect listener, registered before this
-             * one during its own construction — same signal, so it runs
-             * first) — tracks the icon's on-screen position and the belt
-             * slot's position, THEN flies flyCount copies between them.
-             * Purely cosmetic: the actual grant already happened silently
-             * back when the level-up itself fired.
-             */
-            if (powerupId) {
-                const from = this.gameHud.getLevelUpIconGlobalPosition();
-                const to = this.gameHud.getPowerupBeltButtonPosition(powerupId);
-
-                if (to) {
-                    TowerRewardFlyUtils.fly(() => this.buildRewardFlyIcon(powerupId), from, to, flyCount);
-                }
-            }
-
-            // Only when THIS collect wasn't preceded by watching the bonus
-            // video — handleLevelUpWatchVideo() already showed a rewarded
-            // video before dispatching this same signal, so stacking a
-            // commercial break right after that would be a second ad in a
-            // row for the exact same moment.
-            if (!this.levelUpVideoWatched) {
-                void PlatformHandler.instance.platform.showCommercialBreak();
-            }
-
+            void PlatformHandler.instance.platform.showCommercialBreak();
             this.faceTower.resumeAfterLevelUpNotification();
+        }, this);
+
+        this.gameHud.onHomeTapped.add(() => this.openHomePopup(), this);
+        this.gameHud.onHomeClose.add(() => this.closeHomePopup(), this);
+        this.gameHud.onHomeRestart.add(() => {
+            this.closeHomePopup();
+            this.restartRun();
+        }, this);
+        this.gameHud.onHomeSelectLevel.add((themeId: GameThemeId) => {
+            this.closeHomePopup();
+            this.gameHud.setThemeId(themeId);
+            this.handleThemeToggle(themeId);
+            void PlatformHandler.instance.platform.showCommercialBreak();
         }, this);
 
 
@@ -717,35 +692,13 @@ export default class IslandViewScene extends ThreeScene {
                 onLevelProgressed: (levelIndex) => {
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.GateOpen);
 
-                    /*
-                     * One random powerup (or the skip-piece pseudo-id) per
-                     * level reached — a simple, even reward rather than
-                     * granting all four at once, so the HUD counts climb
-                     * gradually across a run instead of all jumping
-                     * together every level. Granted BEFORE showing the
-                     * popup — the popup just displays what already
-                     * happened; watching the video (see
-                     * handleLevelUpWatchVideo()) grants a second one on
-                     * top rather than the popup itself deciding the base
-                     * amount.
-                     *
-                     * Only picks from PowerupConfig's currently-enabled
-                     * ids — a disabled powerup has no button to spend it
-                     * on, so granting one would just be dead inventory.
-                     */
-                    const enabledIds = getEnabledPowerupIds();
-
-                    if (enabledIds.length === 0) {
-                        return;
-                    }
-
-                    const grantedId = enabledIds[Math.floor(Math.random() * enabledIds.length)];
-                    PowerupInventoryStorage.grant(grantedId);
-
-                    this.pendingLevelUpPowerupId = grantedId;
-                    this.pendingLevelUpFlyCount = 1;
-                    this.levelUpVideoWatched = false;
-                    this.gameHud.showLevelUp(levelIndex, grantedId, REWARD_VIDEO_BONUS_AMOUNT);
+                    // Plain milestone celebration now — no powerup grant
+                    // (powerups are gem-purchased, see useHudPowerup()).
+                    // Gems scale with the level reached: level 1 → 10,
+                    // level 2 → 20, and so on (levelIndex is 0-based).
+                    const gemsEarned = (levelIndex + 1) * GEMS_PER_LEVEL;
+                    GemStorage.add(gemsEarned);
+                    this.gameHud.showLevelUp(levelIndex, gemsEarned);
 
                     // The popup is now up — gameplay is paused until the
                     // player collects and drops the next piece (see
@@ -755,6 +708,8 @@ export default class IslandViewScene extends ThreeScene {
                 },
 
                 onGameOver: (score, topWorldY) => {
+                    this.isGameOver = true;
+
                     // Height itself is no longer shown on the game-over
                     // screen (see GameOverPopup — score/best-score only
                     // now), but the record is still tracked here in case
@@ -770,10 +725,19 @@ export default class IslandViewScene extends ThreeScene {
                     const isNewScoreHigh = TowerHighScoreStorage.isNewPointsHigh(score);
                     TowerHighScoreStorage.recordPoints(score);
 
+                    // Gems fully replace the old "end game grants a
+                    // powerup" reward — a flat rate off the run's final
+                    // score instead of a random inventory grant.
+                    const gemsEarned = Math.floor(score / 100) * GEMS_PER_100_SCORE;
+                    if (gemsEarned > 0) {
+                        GemStorage.add(gemsEarned);
+                    }
+
                     this.gameHud.showGameOver({
                         score,
                         bestScoreText: String(TowerHighScoreStorage.getPoints()),
                         isNewScoreHigh,
+                        gemsEarned,
                     });
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.GameOver);
 
@@ -801,13 +765,14 @@ export default class IslandViewScene extends ThreeScene {
 
                     /*
                      * The active powerup's piece just got dropped for
-                     * real — it's spent (already deducted from inventory
+                     * real — its cost is spent for good (already deducted
                      * back in useHudPowerup()), so there's nothing left to
                      * cancel back to. Clear the tracking WITHOUT refunding.
                      */
                     if (block.powerup && this.activePowerupId !== null) {
                         this.activePowerupId = null;
                         this.preActivationPiece = null;
+                        this.activePowerupSkippedCost = false;
                         this.gameHud.setActivePowerup(null);
                     }
                 },
@@ -911,6 +876,7 @@ export default class IslandViewScene extends ThreeScene {
         this.setupVisualDevGui();
         this.setupLevelDevGui();
         this.setupPieceSnapshotDevGui();
+        this.setupDataDevGui();
 
         this.pieceDevGui = new PieceDevGui(PIECES, this.faceTower, this);
         this.pieceDevGui.setup();
@@ -919,23 +885,20 @@ export default class IslandViewScene extends ThreeScene {
         this.powerupDevGui.setup();
 
         // Everything handleThemeToggle() needs (gameHud/faceTower/
-        // baseSync3D) is finally up by this point. 'cats' is the real
-        // default for every player — the theme toggle itself only shows in
-        // dev (see GameHud's shapeModeToggle.visible), so a non-dev player
-        // has no way to reach 'circle'/'cube' at all and should just open
-        // straight into 'cats'. Dev mode is the one exception: whichever
-        // theme was last picked there (see handleThemeToggle's own
-        // saveTowerDevMeta call) persists across reloads for testing,
-        // taking priority over the 'cats' default.
-        const savedThemeId = Game.debugParams.dev ? loadTowerDevMeta()?.themeId : undefined;
-        const initialThemeId: GameThemeId = isGameThemeId(savedThemeId) ? savedThemeId : 'cats';
+        // baseSync3D) is finally up by this point. Priority: (1) dev mode's
+        // own last-picked theme (see handleThemeToggle's saveTowerDevMeta
+        // call) — a dev testing a specific level shouldn't get bounced back
+        // to whatever a real player last saved; (2) TowerThemeStorage — the
+        // real player's own last-played level, persisted across sessions
+        // (see handleThemeToggle's TowerThemeStorage.save call); (3) 'cats',
+        // the fresh-install default.
+        const devSavedThemeId = Game.debugParams.dev ? loadTowerDevMeta()?.themeId : undefined;
+        const initialThemeId: GameThemeId = isGameThemeId(devSavedThemeId)
+            ? devSavedThemeId
+            : TowerThemeStorage.get() ?? 'cats';
 
-        // 'circle' needs no restoring — it's already what the whole build()
-        // above set up by default.
-        if (initialThemeId !== 'circle') {
-            this.gameHud.setThemeId(initialThemeId);
-            this.handleThemeToggle(initialThemeId);
-        }
+        this.gameHud.setThemeId(initialThemeId);
+        this.handleThemeToggle(initialThemeId);
     }
 
     private setupLevelDevGui(): void {
@@ -949,6 +912,33 @@ export default class IslandViewScene extends ThreeScene {
         gui.addToggle('Use raw height values', DEFAULT_TOWER_3D_CONFIG.useRawHeightValues, (value) => {
             DEFAULT_TOWER_3D_CONFIG.useRawHeightValues = value;
         }, folder);
+    }
+
+    private setupDataDevGui(): void {
+        const gui = DevGuiManager.instance;
+
+        gui.addButton('Clear Data', () => void this.clearAllData(), 'Data');
+    }
+
+    /**
+     * Wipes every persisted storage (both down's base mode and tower's own)
+     * back to a fresh install and reloads — dev-only, see
+     * setupDataDevGui(). GemStorage.load() re-grants its fresh-install gem
+     * bonus once TOWER_GEMS comes back empty on the reload, same as a
+     * genuinely first-ever boot.
+     */
+    private async clearAllData(): Promise<void> {
+        await Promise.all([
+            ShopStorage.clearAll(),
+            HighScoreStorage.clearAll(),
+            TowerHighScoreStorage.clearAll(),
+            TowerPieceUnlockStorage.clearAll(),
+            PowerupInventoryStorage.clearAll(),
+            GemStorage.clearAll(),
+            TowerThemeStorage.clearAll(),
+        ]);
+
+        window.location.reload();
     }
 
     /**
@@ -1032,10 +1022,10 @@ export default class IslandViewScene extends ThreeScene {
      * endTargeting()) — that must stay instant, with no confirmation, so
      * it's special-cased here before ever opening the popup.
      *
-     * Fires on every tap now regardless of current inventory count (see
-     * PowerupButton's own updated doc) — `hasCount` picks which popup mode
-     * shows: USE when the player owns at least one, WATCH VIDEO when they
-     * own zero (see PowerupConfirmPopup's own doc).
+     * Fires on every tap regardless of any past inventory — `canAfford`
+     * picks which popup mode shows: USE when the player can afford this
+     * powerup's own gem cost (see PowerupStorage.getPowerupGemCost()),
+     * WATCH VIDEO otherwise (see PowerupConfirmPopup's own doc).
      */
     private beginPowerupConfirm(powerupId: string): void {
         if (this.powerupConfirmOpen) {
@@ -1069,8 +1059,8 @@ export default class IslandViewScene extends ThreeScene {
         this.powerupConfirmOpen = true;
         this.faceTower.setInputEnabled(false);
 
-        const hasCount = PowerupInventoryStorage.getCount(powerupId) > 0;
-        this.gameHud.showPowerupConfirm(powerupId, hasCount);
+        const cost = getPowerupGemCost(powerupId);
+        this.gameHud.showPowerupConfirm(powerupId, GemStorage.get() >= cost, cost);
     }
 
     /**
@@ -1129,17 +1119,14 @@ export default class IslandViewScene extends ThreeScene {
     }
 
     /**
-     * Popup's WATCH VIDEO button (only shown when the player owns zero of
-     * this powerup — see beginPowerupConfirm()) — awaits the platform's
-     * rewarded-video call, grants one copy on completion (same "always
-     * reward" convention handleGameOverRespawnVideo()/
-     * handleLevelUpWatchVideo() currently use — ad-gating temporarily
-     * bypassed, see their own comments), then closes the popup and runs the
-     * SAME useHudPowerup() path USE would have, so the freshly-granted copy
-     * is immediately spent and applied rather than just sitting in
-     * inventory. Bails out if the popup was cancelled (or reopened for a
-     * different powerup) while the video request was in flight — nothing to
-     * grant/use in that case.
+     * Popup's WATCH VIDEO button (shown instead of USE when the player
+     * can't afford this powerup's gem cost — see beginPowerupConfirm()) — awaits
+     * the platform's rewarded-video call, then closes the popup and runs
+     * the SAME useHudPowerup() path USE would have, but with `skipCost`
+     * true so the watched video stands in for the gem payment instead of
+     * spending it too. Bails out if the popup was cancelled (or reopened
+     * for a different powerup) while the video request was in flight —
+     * nothing to use in that case.
      */
     private async handlePowerupWatchVideo(): Promise<void> {
         const powerupId = this.pendingConfirmPowerupId;
@@ -1166,21 +1153,20 @@ export default class IslandViewScene extends ThreeScene {
             return;
         }
 
-        PowerupInventoryStorage.grant(powerupId);
         this.closePowerupConfirm();
-        this.useHudPowerup(powerupId);
+        this.useHudPowerup(powerupId, true);
         this.faceTower.suppressGameOverBriefly(1);
     }
 
     /**
      * GameHud's onUsePowerup callback — branches on the tapped powerup's
      * own PowerupActivationType (see PowerupStorage):
-     *  - skip-piece: instant one-shot, no "held" state — spend one, swap
+     *  - skip-piece: instant one-shot, no "held" state — pay the cost, swap
      *    the held piece for the next, done. Not a real PowerupDefinition,
      *    so it's checked before even looking one up.
-     *  - 'instant' (trapdoor/clear-low-tier): spend one, apply the effect to
-     *    the live board right away — see applyInstantPowerup().
-     *  - 'target' (destroy-piece/upgrade-piece): spend one, enter
+     *  - 'instant' (trapdoor/clear-low-tier): pay the cost, apply the
+     *    effect to the live board right away — see applyInstantPowerup().
+     *  - 'target' (destroy-piece/upgrade-piece): pay the cost, enter
      *    targeting mode (see beginTargeting()) — tapping the SAME one
      *    again while already targeting cancels it instead (refunds, exits
      *    targeting) rather than doing nothing.
@@ -1191,7 +1177,7 @@ export default class IslandViewScene extends ThreeScene {
      *
      * Every path is also gated on FaceTowerGameController.canUsePowerup() (a
      * piece must currently be hovering over the drop area) so a tap that
-     * can't take effect right now never spends the player's inventory for
+     * can't take effect right now never spends the player's gems for
      * nothing — 'instant'/'target' don't touch the held piece at all, but
      * still only make sense mid-run, not e.g. while a level-up popup has
      * play frozen. Called from beginPowerupConfirm() (a cancel-gesture tap)
@@ -1206,9 +1192,12 @@ export default class IslandViewScene extends ThreeScene {
         this.gameHud.hidePowerupConfirm();
     }
 
-    private useHudPowerup(powerupId: string): void {
+    /** `skipCost` is true only from handlePowerupWatchVideo() — a watched video stands in for `powerupId`'s own gem cost (see PowerupStorage.getPowerupGemCost()) instead of spending gems too. */
+    private useHudPowerup(powerupId: string, skipCost: boolean = false): void {
+        const cost = getPowerupGemCost(powerupId);
+
         if (powerupId === SKIP_PIECE_POWERUP_ID) {
-            if (!this.faceTower.canUsePowerup() || !PowerupInventoryStorage.consume(powerupId)) {
+            if (!this.faceTower.canUsePowerup() || (!skipCost && !GemStorage.spend(cost))) {
                 return;
             }
 
@@ -1229,7 +1218,7 @@ export default class IslandViewScene extends ThreeScene {
         }
 
         if (powerup?.type === 'instant') {
-            if (!this.faceTower.canUsePowerup() || !PowerupInventoryStorage.consume(powerupId)) {
+            if (!this.faceTower.canUsePowerup() || (!skipCost && !GemStorage.spend(cost))) {
                 return;
             }
 
@@ -1243,10 +1232,15 @@ export default class IslandViewScene extends ThreeScene {
                 return;
             }
 
-            if (this.targetingPowerupId !== null || !this.faceTower.canUsePowerup() || !PowerupInventoryStorage.consume(powerupId)) {
+            if (this.targetingPowerupId !== null || !this.faceTower.canUsePowerup()) {
                 return;
             }
 
+            if (!skipCost && !GemStorage.spend(cost)) {
+                return;
+            }
+
+            this.targetingPowerupSkippedCost = skipCost;
             this.beginTargeting(powerupId);
             return;
         }
@@ -1256,10 +1250,15 @@ export default class IslandViewScene extends ThreeScene {
             return;
         }
 
-        if (!this.faceTower.canUsePowerup() || !PowerupInventoryStorage.consume(powerupId)) {
+        if (!this.faceTower.canUsePowerup()) {
             return;
         }
 
+        if (!skipCost && !GemStorage.spend(cost)) {
+            return;
+        }
+
+        this.activePowerupSkippedCost = skipCost;
         this.preActivationPiece = this.faceTower.getHeldBlock()?.piece ?? null;
         this.activePowerupId = powerupId;
         this.gameHud.setActivePowerup(powerupId);
@@ -1329,7 +1328,7 @@ export default class IslandViewScene extends ThreeScene {
         }
 
         if (refund) {
-            PowerupInventoryStorage.grant(this.targetingPowerupId);
+            this.refundTargetingPowerupGems();
         }
 
         this.targetingPowerupId = null;
@@ -1344,7 +1343,7 @@ export default class IslandViewScene extends ThreeScene {
             return;
         }
 
-        PowerupInventoryStorage.grant(this.activePowerupId);
+        this.refundActivePowerupGems();
 
         if (this.preActivationPiece) {
             this.faceTower.replaceHeldBlockWithPiece(this.preActivationPiece);
@@ -1355,6 +1354,24 @@ export default class IslandViewScene extends ThreeScene {
         this.gameHud.setActivePowerup(null);
     }
 
+    /** Refunds activePowerupId's own gem cost unless it was activated for free via a rewarded video (see useHudPowerup()'s skipCost/activePowerupSkippedCost) — a cancelled video-granted use must never hand back gems that were never spent. Always clears the flag. Call only while activePowerupId is still set (every call site checks this first). */
+    private refundActivePowerupGems(): void {
+        if (!this.activePowerupSkippedCost && this.activePowerupId !== null) {
+            GemStorage.add(getPowerupGemCost(this.activePowerupId));
+        }
+
+        this.activePowerupSkippedCost = false;
+    }
+
+    /** Same as refundActivePowerupGems(), for the currently-targeting powerup — see targetingPowerupSkippedCost. */
+    private refundTargetingPowerupGems(): void {
+        if (!this.targetingPowerupSkippedCost && this.targetingPowerupId !== null) {
+            GemStorage.add(getPowerupGemCost(this.targetingPowerupId));
+        }
+
+        this.targetingPowerupSkippedCost = false;
+    }
+
     /**
      * Swaps to a different GAME_THEMES entry — reloads PIECES from its own
      * catalog (see PieceStorage.loadPieces()), applies PieceShapeMode's
@@ -1363,15 +1380,20 @@ export default class IslandViewScene extends ThreeScene {
      * 'circle'), rebuilds the sky/cloud/particle backdrop from the theme's
      * own colors/images, and swaps the wall/trapdoor fallback colors — then
      * starts a fresh run under all of it, same "clear the 3D base meshes,
-     * reset the game controller" sequence GameOverPopup's Replay button
-     * already uses, so the board never ends up with pieces/backdrop from two
-     * different themes mixed together. Refunds an in-flight powerup the same
-     * defensive way a plain Replay does, in case one happened to be active
-     * the instant the theme was switched.
+     * reset the game controller" sequence restartRun() uses, so the board
+     * never ends up with pieces/backdrop from two different themes mixed
+     * together. Refunds an in-flight powerup the same defensive way
+     * restartRun() does, in case one happened to be active the instant the
+     * theme was switched. Called both by HomePopup's level rows (a real
+     * player picking a level) and the dev-only ShapeModeToggleButton.
      */
     private handleThemeToggle(themeId: GameThemeId): void {
         const theme = getGameTheme(themeId);
         this.currentThemeId = themeId;
+        TowerThemeStorage.save(themeId);
+        this.isGameOver = false;
+
+        this.gameHud.hideGameOver();
 
         if (Game.debugParams.dev) {
             saveTowerDevMeta({ themeId });
@@ -1421,15 +1443,71 @@ export default class IslandViewScene extends ThreeScene {
 
         this.baseSync3D.clear();
         this.faceTower.reset();
+        TowerHighScoreStorage.markRunStart();
 
         if (this.activePowerupId !== null) {
-            PowerupInventoryStorage.grant(this.activePowerupId);
+            this.refundActivePowerupGems();
             this.activePowerupId = null;
             this.preActivationPiece = null;
             this.gameHud.setActivePowerup(null);
         }
 
         this.endTargeting(true);
+    }
+
+    /**
+     * HomePopup's RESTART button — resets the CURRENT run in place (same
+     * theme as `currentThemeId`), same board-clear/refund/commercial-break
+     * sequence the old direct-replay flow used before RESTART moved into
+     * HomePopup (see GameOverPopup's own doc). Unlike handleThemeToggle(),
+     * this never touches the piece catalog/backdrop — nothing about the
+     * theme changed, so there's nothing to reload.
+     */
+    private restartRun(): void {
+        this.gameHud.hideGameOver();
+        this.isGameOver = false;
+        this.baseSync3D.clear();
+        this.faceTower.reset();
+        TowerHighScoreStorage.markRunStart();
+
+        if (this.activePowerupId !== null) {
+            this.refundActivePowerupGems();
+            this.activePowerupId = null;
+            this.preActivationPiece = null;
+            this.gameHud.setActivePowerup(null);
+        }
+
+        this.endTargeting(true);
+
+        void PlatformHandler.instance.platform.showCommercialBreak();
+    }
+
+    /**
+     * Opens HomePopup — from HomeButton (mid-run) or GameOverPopup's
+     * CONTINUE button (see the replayCallback passed into GameHud's
+     * constructor). No-op while another modal (the powerup confirm popup,
+     * targeting mode, or the home popup itself) is already up, same guard
+     * beginPowerupConfirm() applies to itself. RESTART only makes sense
+     * while a run is actually still going — see `isGameOver`'s own doc.
+     */
+    private openHomePopup(): void {
+        if (this.homePopupOpen || this.powerupConfirmOpen || this.targetingPowerupId !== null) {
+            return;
+        }
+
+        this.homePopupOpen = true;
+        this.faceTower.setInputEnabled(false);
+        this.gameHud.showHomePopup(!this.isGameOver);
+    }
+
+    /** Closes HomePopup — see HomePopup's onRestart/onSelectLevel/onClose listeners, all of which call this first. */
+    private closeHomePopup(): void {
+        this.homePopupOpen = false;
+        this.gameHud.hideHomePopup();
+
+        if (!this.powerupConfirmOpen) {
+            this.faceTower.setInputEnabled(true);
+        }
     }
 
     /**
@@ -1479,84 +1557,6 @@ export default class IslandViewScene extends ThreeScene {
         this.faceTower.continueRun();
     }
 
-    /**
-     * GameHud's onWatchVideoForLevelUp callback — awaits the platform's
-     * rewarded-video call and, on success, grants REWARD_VIDEO_BONUS_AMOUNT
-     * copies of whichever powerup the level-up already granted (see
-     * pendingLevelUpPowerupId), then completes the popup exactly like
-     * tapping COLLECT would — hides it and flies that many icons to the
-     * belt — instead of leaving it up waiting for a separate collect tap
-     * (same "watch video → immediately continue" pattern the game-over
-     * popup's own continue button uses). Re-enables the watch button on
-     * failure/cancel so the player isn't stuck. No-op if there's no pending
-     * level-up (shouldn't happen — the button only exists while the popup
-     * is up).
-     */
-    private async handleLevelUpWatchVideo(): Promise<void> {
-        const powerupId = this.pendingLevelUpPowerupId;
-
-        if (!powerupId) {
-            return;
-        }
-
-        this.gameHud.setLevelUpWatchBusy(true);
-
-        let rewarded = false;
-
-        if (PlatformHandler.ENABLE_VIDEO_ADS) {
-            try {
-                rewarded = await PlatformHandler.instance.platform.showRewardedVideo('level-powerup-double');
-            } catch (e) {
-                console.error('IslandViewScene: rewarded video failed', e);
-            }
-        }
-
-
-        this.gameHud.setLevelUpWatchBusy(false);
-
-        //if (rewarded) {
-        PowerupInventoryStorage.grant(powerupId, REWARD_VIDEO_BONUS_AMOUNT);
-        this.pendingLevelUpFlyCount = REWARD_VIDEO_BONUS_AMOUNT;
-        this.levelUpVideoWatched = true;
-
-        // Same signal COLLECT dispatches — reuses its existing
-        // hide+fly+resume handling below verbatim rather than
-        // duplicating it here.
-        this.gameHud.onLevelUpCollected.dispatch();
-        // } else {
-        //     this.gameHud.notifyLevelUpVideoFailed();
-        // }
-    }
-
-    /**
-     * Builds a single reward-fly icon for `powerupId` — same building
-     * blocks LevelUpNotification/PowerupBelt each already use for their own
-     * icons, deliberately duplicated rather than shared: TowerRewardFlyUtils
-     * is meant to stay a drop-in flourish, so each call site (there's only
-     * this one today) just hands over whatever icon it wants flown.
-     */
-    private buildRewardFlyIcon(powerupId: string): PIXI.Container {
-        const size = 70;
-
-        if (powerupId === SKIP_PIECE_POWERUP_ID) {
-            return PowerupButton.buildSkipIcon(size);
-        }
-
-        const powerup = getPowerup(powerupId);
-
-        if (!powerup) {
-            return PowerupButton.buildPieceIcon('#ffffff', undefined, size);
-        }
-
-        if (powerup.icon) {
-            const sprite = PIXI.Sprite.from(powerup.icon);
-            sprite.anchor.set(0.5);
-            sprite.scale.set(ViewUtils.elementScaler(sprite, size));
-            return sprite;
-        }
-
-        return PowerupButton.buildPieceIcon(powerup.piece.color, powerup.piece.polygon, size, powerup.piece.icon, powerup.piece.iconScale);
-    }
 
     private setupCameraDevGui(): void {
         const gui = DevGuiManager.instance;

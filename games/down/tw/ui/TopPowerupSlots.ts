@@ -9,6 +9,7 @@ import {
     TRAPDOOR_POWERUP_ID,
     UPGRADE_PIECE_POWERUP_ID,
     getPowerup,
+    getPowerupGemCost,
 } from '../PowerupStorage';
 import { PowerupButton } from './PowerupButton';
 
@@ -66,10 +67,11 @@ export class TopPowerupSlots extends PIXI.Container {
         this.rightGroup.position.set(rightX - GROUP_WIDTH, y);
     }
 
-    /** Call every frame (or whenever it might have changed) — mirrors PowerupBelt.updateCounts(). Ids with no assigned button (the 3 empty slots) simply have no entry in `buttons`, so this is a no-op for them. */
-    public updateCounts(counts: Readonly<Record<string, number>>): void {
+    /** Call every frame (or whenever the gem balance might have changed) — each button shows its own gem cost (see PowerupStorage.getPowerupGemCost()), affordable against `gemBalance`. */
+    public updateCosts(gemBalance: number): void {
         for (const [id, button] of this.buttons) {
-            button.setCount(counts[id] ?? 0);
+            const cost = getPowerupGemCost(id);
+            button.updateCost(cost, gemBalance >= cost);
         }
     }
 

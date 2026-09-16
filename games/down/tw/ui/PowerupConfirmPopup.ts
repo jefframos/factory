@@ -13,7 +13,7 @@ import InteractiveEventUtils from 'core/utils/InteractiveEventUtils';
 // consistent with that popup's look rather than introducing new art.
 // ─────────────────────────────────────────────────────────────────────────────
 const ATLAS = {
-    PANEL: 'ItemFrame03_Single_Purple',
+    PANEL: 'ItemFrame01_Single_Hologram1',
     USE_STANDARD: 'Label_Parallelogram_Yellow',
     USE_DOWN: 'Label_Parallelogram_Hologram',
     CANCEL_STANDARD: 'Label_Parallelogram_Gray',
@@ -26,7 +26,7 @@ const ATLAS = {
 
 const PANEL_WIDTH = 460;
 const PANEL_HEIGHT = 480;
-const PANEL_NINE_SLICE_PADDING = 60;
+const PANEL_NINE_SLICE_PADDING = 30;
 const ICON_SIZE = 110;
 
 const BUTTON_WIDTH = 380;
@@ -60,12 +60,11 @@ const BUTTON_FONT_STYLE: Partial<PIXI.ITextStyle> = {
  * dimmer+card+fade shape as GameOverPopup, just with the powerup's own icon
  * and name instead of score stats.
  *
- * Two modes, chosen by `showPopup()`'s `hasCount` argument: with at least
- * one in inventory, USE/CANCEL (spends it immediately); with zero, WATCH
- * VIDEO/CANCEL instead — same "grant then immediately apply" shape as
- * LevelUpNotification's own watch-video button, just for a single powerup
- * instead of doubling a level-up reward. Only one of USE/WATCH VIDEO is
- * ever visible at a time, occupying the same slot.
+ * Two modes, chosen by `showPopup()`'s `canAfford` argument: with enough
+ * gems, USE/CANCEL (spends `cost` gems immediately, see IslandViewScene's
+ * POWERUP_GEM_COST); short on gems, WATCH VIDEO/CANCEL instead (uses the
+ * powerup for free, no gem deduction). Only one of USE/WATCH VIDEO is ever
+ * visible at a time, occupying the same slot.
  */
 export class PowerupConfirmPopup extends PIXI.Container {
     public readonly onConfirm = new Signal();
@@ -218,14 +217,16 @@ export class PowerupConfirmPopup extends PIXI.Container {
     /**
      * Show the popup for `powerupId` — swaps in its icon/name every call,
      * same as GameOverPopup.showPopup() re-populating its text each time.
-     * `hasCount` picks the mode (see this class's own doc): true shows
-     * USE, false shows WATCH VIDEO instead, in that same button slot.
+     * `canAfford` picks the mode (see this class's own doc): true shows
+     * USE (labeled with `cost`), false shows WATCH VIDEO instead, in that
+     * same button slot.
      */
-    public showPopup(powerupId: string, hasCount: boolean): void {
+    public showPopup(powerupId: string, canAfford: boolean, cost: number): void {
         this._titleText.text = formatPowerupName(powerupId).toUpperCase();
 
-        this._useBtn.visible = hasCount;
-        this._videoBtn.visible = !hasCount;
+        this._useBtn.visible = canAfford;
+        this._useBtn.setLabel(`USE (${cost})`);
+        this._videoBtn.visible = !canAfford;
         this._videoBtn.enable();
 
         this._icon?.destroy();

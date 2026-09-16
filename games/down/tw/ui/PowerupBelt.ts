@@ -2,7 +2,7 @@
 
 import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
-import { getPowerup, SKIP_PIECE_POWERUP_ID } from '../PowerupStorage';
+import { getPowerup, getPowerupGemCost, SKIP_PIECE_POWERUP_ID } from '../PowerupStorage';
 import { getEnabledPowerupIds } from '../PowerupConfig';
 import { PowerupButton } from './PowerupButton';
 import ViewUtils from 'core/utils/ViewUtils';
@@ -73,10 +73,11 @@ export class PowerupBelt extends PIXI.Container {
         }
     }
 
-    /** Call every frame (or whenever it might have changed) — cheap no-op per button when its count hasn't actually moved, see PowerupButton.setCount(). */
-    public updateCounts(counts: Readonly<Record<string, number>>): void {
+    /** Call every frame (or whenever the gem balance might have changed) — cheap no-op per button when nothing's actually changed, see PowerupButton.updateCost(). */
+    public updateCosts(gemBalance: number): void {
         for (const [id, button] of this.buttons) {
-            button.setCount(counts[id] ?? 0);
+            const cost = getPowerupGemCost(id);
+            button.updateCost(cost, gemBalance >= cost);
         }
     }
 

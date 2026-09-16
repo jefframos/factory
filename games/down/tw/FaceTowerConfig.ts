@@ -92,7 +92,7 @@ export const DEFAULT_FACE_TOWER_CONFIG: FaceTowerConfig = {
     dropForceY: 10,
 
     // --- Containment ---
-    wallWidth: 1320,
+    wallWidth: 320,
     wallOffsetY: 120,
     deadZoneWidth: 1400,
     // The wall's actual top must clear the TRUE visible top edge of the

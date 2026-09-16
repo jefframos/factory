@@ -12,8 +12,9 @@ import {
     type FaceTowerConfig,
     type PowerupEffectConfig,
 } from './FaceTowerTypes';
+import { GemStorage } from './GemStorage';
 import { PieceManager } from './PieceManager';
-import { type PieceDefinition } from './PieceStorage';
+import { getMergeGemReward, type PieceDefinition } from './PieceStorage';
 import { getPowerup } from './PowerupStorage';
 import { PowerupSystem, type PowerupContactPoint } from './PowerupSystem';
 import { TowerCameraController } from './TowerCameraController';
@@ -1326,6 +1327,11 @@ export class FaceTowerGameController {
         if (resultPiece?.tier !== undefined) {
             this.maxTierReached = Math.max(this.maxTierReached, resultPiece.tier);
             TowerPieceUnlockStorage.recordTier(resultPiece.tier);
+
+            const gemReward = getMergeGemReward(resultPiece.tier);
+            if (gemReward > 0) {
+                GemStorage.add(gemReward);
+            }
         } else {
             // resultPiece undefined == a top-tier + top-tier merge just
             // despawned both pieces (see TowerMergeController) — see

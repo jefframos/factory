@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { getPolygonCentroid } from '../../tw/PieceStorage';
 import { BendService } from '../services/BendService';
 import { TextureBuilder } from './TextureBuilder';
+import { MaterialFactory } from './MaterialFactory';
 
 /** Unit-square-space point (0..1, top-left origin) — see PieceDefinition.polygon. */
 export interface UnitPoint {
@@ -97,23 +98,9 @@ export class PieceBoxBuilder {
             options.centerOverride,
         );
 
-        const mat = new THREE.MeshPhysicalMaterial({
-            color, metalness: 0,
-            // Softer body roughness than a hard plastic — spreads the key/rim
-            // highlights into a gentler gradient across the bevel instead of a
-            // tight hotspot, which is what reads as "soft shading".
-            roughness: 0.6,
-
-            // Low clearcoat + high clearcoatRoughness so the highlight stays a
-            // dim, wide sheen instead of a small hot (near-white) glint.
-            clearcoat: 0.25,
-            clearcoatRoughness: 0.45,
-
-            ior: 1.46,
-
-            envMapIntensity: 0.6,
-        });
+        const mat = MaterialFactory.getToonMaterial(color);
         //BendService.applyBend(mat);
+
 
         const cloned = mat.clone();
 
@@ -154,7 +141,10 @@ export class PieceBoxBuilder {
                 faceScale,
             ));
         }
+        //MaterialFactory.applyOutline(mesh);
 
+        const outline = MaterialFactory.applyOutline(mesh);
+        outline.visible = !options.hideMesh;
         return mesh;
     }
 

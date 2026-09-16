@@ -1,0 +1,321 @@
+[
+    {
+        "id": "circle-tier0",
+        "level": 1,
+        "tier": 0,
+        "weight": 1,
+        "points": 1,
+        "scale": {
+            "x": 0.55,
+            "y": 0.55
+        },
+        "color": "#FF5C5C",
+        "texture": "skins/dogs/dog1.webp",
+        "icon": "dog1",
+        "iconScale": {
+            "x": 0.6,
+            "y": 0.6
+        },
+        "faceScale": {
+            "x": 1.2,
+            "y": 1.2
+        },
+        "faceOffset": {
+            "x": 0,
+            "y": -5
+        },
+        "isCircle": true,
+        "radius": 0.5,
+        "hideMesh": true
+    },
+    {
+        "id": "circle-tier1",
+        "level": 2,
+        "tier": 1,
+        "weight": 2,
+        "points": 2,
+        "scale": {
+            "x": 0.687,
+            "y": 0.687
+        },
+        "color": "#FF9142",
+        "texture": "skins/dogs/dog2.webp",
+        "icon": "dog2",
+        "iconScale": {
+            "x": 0.6,
+            "y": 0.6
+        },
+        "faceScale": {
+            "x": 1.2,
+            "y": 1.2
+        },
+        "faceOffset": {
+            "x": 0,
+            "y": -5
+        },
+        "isCircle": true,
+        "radius": 0.5,
+        "hideMesh": true
+    },
+    {
+        "id": "circle-tier2",
+        "level": 3,
+        "tier": 2,
+        "weight": 4,
+        "points": 4,
+        "scale": {
+            "x": 0.912,
+            "y": 0.912
+        },
+        "color": "#FFCB3D",
+        "texture": "skins/dogs/dog3.webp",
+        "icon": "dog3",
+        "iconScale": {
+            "x": 0.6,
+            "y": 0.6
+        },
+        "faceScale": {
+            "x": 1.2,
+            "y": 1.2
+        },
+        "faceOffset": {
+            "x": 0,
+            "y": -5
+        },
+        "isCircle": true,
+        "radius": 0.5,
+        "hideMesh": true
+    },
+    {
+        "id": "circle-tier3",
+        "level": 4,
+        "tier": 3,
+        "weight": 8,
+        "points": 8,
+        "scale": {
+            "x": 1.189,
+            "y": 1.189
+        },
+        "color": "#B8E23A",
+        "texture": "skins/dogs/dog4.webp",
+        "icon": "dog4",
+        "iconScale": {
+            "x": 0.6,
+            "y": 0.6
+        },
+        "faceScale": {
+            "x": 1.2,
+            "y": 1.2
+        },
+        "faceOffset": {
+            "x": 0,
+            "y": -5
+        },
+        "isCircle": true,
+        "radius": 0.5,
+        "hideMesh": true
+    },
+    {
+        "id": "circle-tier4",
+        "level": 5,
+        "tier": 4,
+        "weight": 16,
+        "points": 16,
+        "scale": {
+            "x": 1.507,
+            "y": 1.507
+        },
+        "color": "#4CD97B",
+        "texture": "skins/dogs/dog5.webp",
+        "icon": "dog5",
+        "iconScale": {
+            "x": 0.6,
+            "y": 0.6
+        },
+        "faceScale": {
+            "x": 1.2,
+            "y": 1.2
+        },
+        "faceOffset": {
+            "x": 0,
+            "y": -5
+        },
+        "isCircle": true,
+        "radius": 0.5,
+        "hideMesh": true
+    },
+    {
+        "id": "circle-tier5",
+        "level": 50,
+        "tier": 5,
+        "weight": 32,
+        "points": 32,
+        "scale": {
+            "x": 1.857,
+            "y": 1.857
+        },
+        "color": "#33C2A8",
+        "texture": "skins/dogs/dog6.webp",
+        "icon": "dog6",
+        "iconScale": {
+            "x": 0.6,
+            "y": 0.6
+        },
+        "faceScale": {
+            "x": 1.2,
+            "y": 1.2
+        },
+        "faceOffset": {
+            "x": 0,
+            "y": -5
+        },
+        "isCircle": true,
+        "radius": 0.5,
+        "hideMesh": true
+    },
+    {
+        "id": "circle-tier6",
+        "level": 50,
+        "tier": 6,
+        "weight": 64,
+        "points": 64,
+        "scale": {
+            "x": 2.237,
+            "y": 2.237
+        },
+        "color": "#3E9EFF",
+        "texture": "skins/dogs/dog7.webp",
+        "icon": "dog7",
+        "iconScale": {
+            "x": 0.6,
+            "y": 0.6
+        },
+        "faceScale": {
+            "x": 1.2,
+            "y": 1.2
+        },
+        "faceOffset": {
+            "x": 0,
+            "y": -5
+        },
+        "isCircle": true,
+        "radius": 0.5,
+        "hideMesh": true
+    },
+    {
+        "id": "circle-tier7",
+        "level": 50,
+        "tier": 7,
+        "weight": 128,
+        "points": 128,
+        "scale": {
+            "x": 2.644,
+            "y": 2.644
+        },
+        "color": "#7B61FF",
+        "texture": "skins/dogs/dog8.webp",
+        "icon": "dog8",
+        "iconScale": {
+            "x": 0.6,
+            "y": 0.6
+        },
+        "faceScale": {
+            "x": 1.2,
+            "y": 1.2
+        },
+        "faceOffset": {
+            "x": 0,
+            "y": -5
+        },
+        "isCircle": true,
+        "radius": 0.5,
+        "hideMesh": true
+    },
+    {
+        "id": "circle-tier8",
+        "level": 50,
+        "tier": 8,
+        "weight": 256,
+        "points": 256,
+        "scale": {
+            "x": 3.074,
+            "y": 3.074
+        },
+        "color": "#E63B8C",
+        "texture": "skins/dogs/dog9.webp",
+        "icon": "dog9",
+        "iconScale": {
+            "x": 0.6,
+            "y": 0.6
+        },
+        "faceScale": {
+            "x": 1.2,
+            "y": 1.2
+        },
+        "faceOffset": {
+            "x": 0,
+            "y": -5
+        },
+        "isCircle": true,
+        "radius": 0.5,
+        "hideMesh": true
+    },
+    {
+        "id": "circle-tier9",
+        "level": 50,
+        "tier": 9,
+        "weight": 512,
+        "points": 512,
+        "scale": {
+            "x": 3.527,
+            "y": 3.527
+        },
+        "color": "#8E44AD",
+        "texture": "skins/dogs/dog10.webp",
+        "icon": "dog10",
+        "iconScale": {
+            "x": 0.6,
+            "y": 0.6
+        },
+        "faceScale": {
+            "x": 1.2,
+            "y": 1.2
+        },
+        "faceOffset": {
+            "x": 0,
+            "y": -5
+        },
+        "isCircle": true,
+        "radius": 0.5,
+        "hideMesh": true
+    },
+    {
+        "id": "circle-tier10",
+        "level": 50,
+        "tier": 10,
+        "weight": 1024,
+        "points": 1024,
+        "scale": {
+            "x": 4,
+            "y": 4
+        },
+        "color": "#F1C40F",
+        "texture": "skins/dogs/dog11.webp",
+        "icon": "dog11",
+        "iconScale": {
+            "x": 0.6,
+            "y": 0.6
+        },
+        "faceScale": {
+            "x": 1.2,
+            "y": 1.2
+        },
+        "faceOffset": {
+            "x": 0,
+            "y": -5
+        },
+        "isCircle": true,
+        "radius": 0.5,
+        "hideMesh": true
+    }
+]

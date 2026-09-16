@@ -250,13 +250,13 @@ export const DEFAULT_TOWER_3D_CONFIG: Tower3DConfig = {
     towerBaseOffset: { x: 0, y: 0.3, z: 0 },
 
     baseColor: 0x33cc66,
-    platformDepth: 0.3,
+    platformDepth: 0.7,
     // Matches the visual height/depth the flap already had before these
     // became independently tunable (floorHeight(100) / pixelsPerUnit(85),
     // and platformDepth's own 0.3) — change freely, this default is just
     // "no visual change yet".
     trapdoorMeshHeight: 0.5,
-    trapdoorMeshDepth: 0.2,
+    trapdoorMeshDepth: 0.6,
 
     poleColor: 0x3388ff,
 

@@ -156,6 +156,22 @@ export function getPieceWeight(piece: PieceDefinition): number {
     return piece.weight ?? DEFAULT_PIECE_WEIGHT;
 }
 
+/** Gems awarded when a merge produces a piece of this tier — see FaceTowerGameController.handleMerge/GemStorage.add(). Tiers not listed award none ("big merges" only). */
+export const MERGE_GEM_REWARDS: Record<number, number> = {
+    6: 2,
+    7: 4,
+    8: 8,
+    9: 16,
+    10: 32,
+    11: 64,
+};
+
+/** Gems `tier` awards on merge (0 for an untiered result, e.g. a top-tier + top-tier despawn, or any tier not in MERGE_GEM_REWARDS). */
+export function getMergeGemReward(tier: number | undefined): number {
+    if (tier === undefined) return 0;
+    return MERGE_GEM_REWARDS[tier] ?? 0;
+}
+
 /**
  * Area-weighted centroid of `polygon`, in the same unit-square space (0..1,
  * top-left origin) — or the trivial (0.5, 0.5) center for a plain rect. This

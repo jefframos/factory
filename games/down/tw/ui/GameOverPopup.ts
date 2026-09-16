@@ -7,10 +7,13 @@ import { Signal } from 'signals';
 // ─────────────────────────────────────────────────────────────────────────────
 const ATLAS = {
     // Panel
-    PANEL: 'ItemFrame03_Single_Navy',
+    PANEL: 'ItemFrame01_Single_Hologram1',
 
     // Score shine (rotated sprite behind the score)
     SCORE_SHINE: 'Image_Effect_Rotate',
+
+    // Gems-earned icon
+    GEM_ICON: 'ResourceBar_Single_Icon_Gem',
 
     // Replay button
     REPLAY_STANDARD: 'Label_Parallelogram_Gray',
@@ -31,7 +34,7 @@ const ATLAS = {
 // ─────────────────────────────────────────────────────────────────────────────
 const PANEL_WIDTH = 520;
 const PANEL_HEIGHT = 560;
-const PANEL_NINE_SLICE_PADDING = 60;
+const PANEL_NINE_SLICE_PADDING = 30;
 
 const BUTTON_WIDTH = 420;
 const BUTTON_HEIGHT = 66;
@@ -93,6 +96,16 @@ const NEW_HIGH_STYLE: Partial<PIXI.ITextStyle> = {
     dropShadowDistance: 2,
 };
 
+/** "+N" gems-earned line — see GameOverData.gemsEarned. */
+const GEMS_EARNED_STYLE: Partial<PIXI.ITextStyle> = {
+    ...REPLAY_FONT_STYLE,
+    fontSize: 26,
+    fill: 0x7fe3ff,
+    dropShadowDistance: 2,
+};
+
+const GEM_ICON_SIZE = 30;
+
 
 const TITLE_STYLE: Partial<PIXI.ITextStyle> = {
     ...REPLAY_FONT_STYLE,
@@ -105,6 +118,8 @@ export interface GameOverData {
     score: number;
     bestScoreText: string;
     isNewScoreHigh: boolean;
+    /** Gems awarded for this run's score (see IslandViewScene's onGameOver) — 0 hides the gems-earned line entirely. */
+    gemsEarned: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -112,6 +127,7 @@ export interface GameOverData {
 // ─────────────────────────────────────────────────────────────────────────────
 export class GameOverPopup extends PIXI.Container {
     // Public signals – consumers connect to these
+    /** The "Continue" button (on-screen label — see the constructor) — see IslandViewScene's replayCallback, which now opens HomePopup instead of restarting directly. Kept named onReplay/`_replayBtn` internally for historical reasons. */
     public readonly onReplay = new Signal();
     public readonly onContinue = new Signal();
 
@@ -123,6 +139,8 @@ export class GameOverPopup extends PIXI.Container {
     private readonly _scoreShine: PIXI.Sprite;
     private readonly _scoreText: PIXI.Text;
     private readonly _scoreBestText: PIXI.Text;
+    private readonly _gemIcon: PIXI.Sprite;
+    private readonly _gemsEarnedText: PIXI.Text;
     private readonly _replayBtn: BaseButton;
     private readonly _continueBtn: BaseButton;
 
@@ -192,7 +210,22 @@ export class GameOverPopup extends PIXI.Container {
         this._scoreBestText.anchor.set(0.5, 0);
         this._card.addChild(this._scoreBestText);
 
-        // ── Replay button ────────────────────────────────────────────────────────
+        // ── Gems earned (see GameOverData.gemsEarned) ─────────────────────────────
+        this._gemIcon = PIXI.Sprite.from(ATLAS.GEM_ICON);
+        this._gemIcon.anchor.set(1, 0.5);
+        this._gemIcon.scale.set(GEM_ICON_SIZE / Math.max(this._gemIcon.texture.width, this._gemIcon.texture.height));
+        this._card.addChild(this._gemIcon);
+
+        this._gemsEarnedText = new PIXI.Text('', new PIXI.TextStyle(GEMS_EARNED_STYLE));
+        this._gemsEarnedText.anchor.set(0, 0.5);
+        this._card.addChild(this._gemsEarnedText);
+
+        // ── Continue (opens the home menu) button ─────────────────────────────────
+        // Named/signaled as "replay" internally (onReplay) for historical
+        // reasons — restarting in place moved to HomePopup's own RESTART
+        // button; this one now just opens that menu, so its own on-screen
+        // label reads "Continue" instead. See IslandViewScene's
+        // replayCallback (passed into GameHud's constructor).
         this._replayBtn = new BaseButton({
             standard: {
                 width: BUTTON_WIDTH,
@@ -220,8 +253,7 @@ export class GameOverPopup extends PIXI.Container {
             },
         });
         this._card.addChild(this._replayBtn);
-        console.log(this._replayBtn)
-        this._replayBtn.setLabel('Restart')
+        this._replayBtn.setLabel('Continue')
 
         // ── Continue (watch ad) button ───────────────────────────────────────────
         this._continueBtn = new BaseButton({
@@ -278,6 +310,11 @@ export class GameOverPopup extends PIXI.Container {
         this._scoreBestText.text = data.isNewScoreHigh ? 'NEW HIGH SCORE!' : `Best: ${data.bestScoreText}`;
         this._scoreBestText.style = new PIXI.TextStyle(data.isNewScoreHigh ? NEW_HIGH_STYLE : BEST_STYLE);
 
+        this._gemIcon.visible = data.gemsEarned > 0;
+        this._gemsEarnedText.visible = data.gemsEarned > 0;
+        this._gemsEarnedText.text = `+${data.gemsEarned}`;
+        this.layout();
+
         // Make visible before animation starts so updateTransform drives the fade
         this.visible = true;
         this.interactiveChildren = false; // block interaction until fully visible
@@ -332,6 +369,16 @@ export class GameOverPopup extends PIXI.Container {
         // Score's best/new-high line, just below the score number
         this._scoreBestText.x = cx;
         this._scoreBestText.y = scoreCentreY + 45;
+
+        // Gems-earned line, just below that (icon left of the "+N" text,
+        // centered on the panel as a pair) — hidden entirely via visible
+        // when this run earned none, see showPopup().
+        const gemsY = scoreCentreY + 45 + this._scoreBestText.height + 30;
+        const gemsPairWidth = this._gemIcon.width + 8 + this._gemsEarnedText.width;
+        this._gemIcon.x = cx - gemsPairWidth / 2 + this._gemIcon.width;
+        this._gemIcon.y = gemsY;
+        this._gemsEarnedText.x = this._gemIcon.x + 8;
+        this._gemsEarnedText.y = gemsY;
 
         // Replay button (upper of the two buttons)
         const replayY = PANEL_HEIGHT - BUTTON_HEIGHT * 2 - 48 - 16;

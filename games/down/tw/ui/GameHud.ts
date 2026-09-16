@@ -24,6 +24,9 @@ import {
 } from './GameOverPopup';
 import { PowerupConfirmPopup } from './PowerupConfirmPopup';
 import { PowerupUnavailableToast } from './PowerupUnavailableToast';
+import { GemCounter } from './GemCounter';
+import { HomeButton } from './HomeButton';
+import { HomePopup } from './HomePopup';
 
 export class GameHud extends PIXI.Container {
     private soundBtn!: SoundToggleButton;
@@ -56,7 +59,7 @@ export class GameHud extends PIXI.Container {
     private readonly zoneNotification = new ZoneNotification();
     /** "Can't use this powerup right now" toast — see showPowerupUnavailable(). */
     private readonly powerupUnavailableToast = new PowerupUnavailableToast();
-    /** The bigger "you leveled up, here's your powerup (+ double via video)" popup — see showLevelUp(). */
+    /** The bigger "Level Up!" milestone celebration — see showLevelUp(). No reward attached any more — powerups are gem-purchased (see IslandViewScene.useHudPowerup). */
     private readonly levelUpNotification: LevelUpNotification;
 
     /** The 4-slot top powerup row (2 left, 2 right) — owns its own building/layout; GameHud just positions it and mirrors counts/active-state into it. See onUsePowerup below for how a tap reaches the game. Replaces the old bottom-right PowerupBelt (removed — see this file's git history if it's ever needed again; PowerupBelt.ts itself is untouched). */
@@ -67,16 +70,32 @@ export class GameHud extends PIXI.Container {
     /** "Current gate requirement" box — stacked above pieceProgressionBar. Replaces the old TowerNextLevelPanel (hidden, not deleted — see this file's own PowerupBelt precedent). See showGateRequirement()/playGateUnlockCelebration(). */
     private readonly gateProgressPanel = new GateProgressPanel();
 
+    /** Top-left "how many gems do I have" pill — see updateGems(). Gems are earned from big merges and a run's final score, spent on powerups (see IslandViewScene). Sits just right of homeButton — see layout(). */
+    private readonly gemCounter = new GemCounter();
+
+    /** Top-left "open the home menu" button — see onHomeTapped/showHomePopup(). */
+    private readonly homeButton = new HomeButton();
+    /** "Restart" / "choose your level" modal — see showHomePopup()/hideHomePopup(). Added as a direct child of `this` (not gameplayLayer), same as gameOverPopup/powerupConfirmPopup, so it stays visible/interactive regardless of gameplayLayer's own visibility. */
+    private readonly homePopup = new HomePopup(Game.DESIGN_WIDTH, Game.DESIGN_HEIGHT);
+    /** Fired when homeButton is tapped — see IslandViewScene.openHomePopup(). Just homeButton's own signal, exposed the same way onUsePowerup is. */
+    public readonly onHomeTapped: Signal = this.homeButton.onTap;
+    /** Fired when HomePopup's RESTART is tapped — see IslandViewScene, which resets the current run in place (same theme). */
+    public readonly onHomeRestart: Signal = this.homePopup.onRestart;
+    /** Fired with the tapped level's GameThemeId — see IslandViewScene.handleThemeToggle(), which applies the new theme/catalog and resets the run for a fresh start. */
+    public readonly onHomeSelectLevel: Signal = this.homePopup.onSelectLevel;
+    /** Fired when HomePopup is dismissed without picking anything (dimmer tap or the close mark). */
+    public readonly onHomeClose: Signal = this.homePopup.onClose;
+
     /** Big centered "N seconds left" warning — see updateGameOverCountdown(). */
     private readonly gameOverCountdown = new GameOverCountdown();
 
     /** Fired when a powerup button is tapped with count > 0 — see IslandViewScene, which listens and opens the USE/CANCEL confirm popup (see onConfirmPowerup/onCancelPowerup below) rather than applying the effect straight away. Just topPowerupSlots' own signal, exposed here so GameHud's own consumers don't need to reach through to a sub-component. */
     public readonly onUsePowerup: Signal = this.topPowerupSlots.onUsePowerup;
-    /** Fired when the powerup confirm popup's USE is tapped — see IslandViewScene.confirmPendingPowerup(), which is where FaceTowerGameController.canUsePowerup()/PowerupInventoryStorage.consume()/the actual effect all still happen (re-checked at confirm-time, not tap-time). Just powerupConfirmPopup's own signal. */
+    /** Fired when the powerup confirm popup's USE is tapped — see IslandViewScene.confirmPendingPowerup(), which is where FaceTowerGameController.canUsePowerup()/GemStorage.spend()/the actual effect all still happen (re-checked at confirm-time, not tap-time). Just powerupConfirmPopup's own signal. */
     public readonly onConfirmPowerup: Signal = this.powerupConfirmPopup.onConfirm;
     /** Fired when the powerup confirm popup's CANCEL is tapped (or dismissed without spending anything). */
     public readonly onCancelPowerup: Signal = this.powerupConfirmPopup.onCancel;
-    /** Fired when the powerup confirm popup's WATCH VIDEO is tapped (shown instead of USE when the player owns zero of that powerup) — see IslandViewScene.handlePowerupWatchVideo(). */
+    /** Fired when the powerup confirm popup's WATCH VIDEO is tapped (shown instead of USE when the player can't afford the gem cost) — see IslandViewScene.handlePowerupWatchVideo(). */
     public readonly onWatchVideoForPowerup: Signal = this.powerupConfirmPopup.onWatchVideo;
 
     /** Top-left "Circles / Cubes / Cats" experimental theme toggle — see GameThemeStorage. */
@@ -89,9 +108,7 @@ export class GameHud extends PIXI.Container {
         this.shapeModeToggle.setThemeId(themeId);
     }
 
-    /** Fired when the level-up popup's "WATCH AD: x2" is tapped — see IslandViewScene, which awaits the platform's rewarded-video call and reports back via notifyLevelUpDoubled()/notifyLevelUpVideoFailed(). Just LevelUpNotification's own signal, exposed the same way onUsePowerup is. */
-    public readonly onWatchVideoForLevelUp: Signal;
-    /** Fired when the level-up popup's "COLLECT" is tapped — see IslandViewScene, which resumes the game (FaceTowerGameController.resumeAfterLevelUpNotification()) since the board deliberately sits frozen until this fires. */
+    /** Fired when the level-up popup's "CLAIM" is tapped — see IslandViewScene, which resumes the game (FaceTowerGameController.resumeAfterLevelUpNotification()) since the board deliberately sits frozen until this fires. */
     public readonly onLevelUpCollected: Signal;
 
     /** Always-visible gameplay widgets. */
@@ -108,6 +125,8 @@ export class GameHud extends PIXI.Container {
         this.buildStaticLabels();
         this.buildSoundAndPreview();
         this.gameplayLayer.addChild(this.topPowerupSlots);
+        this.gameplayLayer.addChild(this.homeButton);
+        this.gameplayLayer.addChild(this.gemCounter);
         this.gameplayLayer.addChild(this.zoneNotification);
         this.gameplayLayer.addChild(this.powerupUnavailableToast);
         // Dev-only — see ShapeModeToggleButton's own doc ("experimental").
@@ -143,7 +162,6 @@ export class GameHud extends PIXI.Container {
         this.addChild(this.powerupConfirmPopup);
 
         this.levelUpNotification = new LevelUpNotification(Game.DESIGN_WIDTH, Game.DESIGN_HEIGHT);
-        this.onWatchVideoForLevelUp = this.levelUpNotification.onWatchVideo;
         this.onLevelUpCollected = this.levelUpNotification.onCollect;
         // Dismissing is purely visual on this side — the powerup was
         // already granted the instant the level-up happened, and resuming
@@ -152,6 +170,12 @@ export class GameHud extends PIXI.Container {
         // resumeAfterLevelUpNotification()) — this listener only hides it.
         this.levelUpNotification.onCollect.add(() => this.levelUpNotification.hide());
         this.addChild(this.levelUpNotification);
+
+        // Added LAST — must draw on top of everything else, including
+        // gameOverPopup, since GameOverPopup's CONTINUE button opens this
+        // right on top of itself (fading one out while this fades in, see
+        // IslandViewScene's replayCallback).
+        this.addChild(this.homePopup);
 
         // The climbed-height/km meter gauge is retired — the game no longer
         // needs it (the siren band + countdown label are the only game-over
@@ -187,39 +211,14 @@ export class GameHud extends PIXI.Container {
         this.powerupUnavailableToast.show(message);
     }
 
-    /** Global (stage-space) position of the level-up popup's currently-shown powerup icon — see TowerRewardFlyUtils/IslandViewScene's onLevelUpCollected handler. */
-    public getLevelUpIconGlobalPosition(): { x: number; y: number } {
-        return this.levelUpNotification.getIconGlobalPosition();
+    /** "Level Up!" milestone celebration with the gems just earned (see IslandViewScene's onLevelProgressed) — no powerup reward, see LevelUpNotification's own doc. Confetti fires as part of LevelUpNotification.show(). */
+    public showLevelUp(levelIndex: number, gemsEarned: number): void {
+        this.levelUpNotification.show(levelIndex, gemsEarned);
     }
 
-    /** Global (stage-space) position of `id`'s top-slot button — null if it's not one of the assigned slots. See TowerRewardFlyUtils. */
-    public getPowerupBeltButtonPosition(id: string): { x: number; y: number } | null {
-        return this.topPowerupSlots.getButtonGlobalPosition(id);
-    }
-
-    /**
-     * Full level-up — shows the bigger popup with the powerup already
-     * granted (see IslandViewScene's onLevelProgressed handler, which
-     * grants BEFORE calling this) and offers doubling it via a rewarded
-     * video. Confetti fires as part of LevelUpNotification.show().
-     */
-    public showLevelUp(levelIndex: number, powerupId: string, videoBonusAmount: number): void {
-        this.levelUpNotification.show(levelIndex, powerupId, videoBonusAmount);
-    }
-
-    /** Call while awaiting the platform's rewarded-video promise — disables the watch button so a slow ad load can't be double-tapped. */
-    public setLevelUpWatchBusy(busy: boolean): void {
-        this.levelUpNotification.setWatchBusy(busy);
-    }
-
-    /** Call once the rewarded video actually completed — bumps the popup to the x2 reward state. */
-    public notifyLevelUpDoubled(): void {
-        this.levelUpNotification.showDoubled();
-    }
-
-    /** Call if the video was cancelled/failed to load — re-enables the watch button so the player can try again. */
-    public notifyLevelUpVideoFailed(): void {
-        this.levelUpNotification.reenableWatch();
+    /** Call every frame (or whenever it might have changed) — see GemCounter.update(). */
+    public updateGems(amount: number): void {
+        this.gemCounter.update(amount);
     }
 
     /**
@@ -248,9 +247,9 @@ export class GameHud extends PIXI.Container {
         this.gameOverPopup.setContinueBusy(busy);
     }
 
-    /** Shows the "Use this powerup?" confirm popup for `powerupId` — see IslandViewScene.beginPowerupConfirm(). `hasCount` picks USE vs WATCH VIDEO — see PowerupConfirmPopup's own doc. */
-    public showPowerupConfirm(powerupId: string, hasCount: boolean): void {
-        this.powerupConfirmPopup.showPopup(powerupId, hasCount);
+    /** Shows the "Use this powerup?" confirm popup for `powerupId` — see IslandViewScene.beginPowerupConfirm(). `canAfford` picks USE vs WATCH VIDEO, `cost` labels the USE button — see PowerupConfirmPopup's own doc. */
+    public showPowerupConfirm(powerupId: string, canAfford: boolean, cost: number): void {
+        this.powerupConfirmPopup.showPopup(powerupId, canAfford, cost);
     }
 
     /** Hides the powerup confirm popup — call on USE, CANCEL, or after a watch-video grant, see IslandViewScene.confirmPendingPowerup()/cancelPendingPowerup()/handlePowerupWatchVideo(). */
@@ -261,6 +260,16 @@ export class GameHud extends PIXI.Container {
     /** Call while awaiting the platform's rewarded-video promise for the powerup confirm popup's WATCH VIDEO button. */
     public setPowerupConfirmVideoBusy(busy: boolean): void {
         this.powerupConfirmPopup.setVideoBusy(busy);
+    }
+
+    /** Shows the home menu — `canRestart` hides RESTART when the run has already ended, see IslandViewScene.openHomePopup(). */
+    public showHomePopup(canRestart: boolean): void {
+        this.homePopup.showPopup(canRestart);
+    }
+
+    /** Hides the home menu — call on RESTART, a level pick, or an explicit close, see IslandViewScene.closeHomePopup(). */
+    public hideHomePopup(): void {
+        this.homePopup.hidePopup();
     }
 
     public showNextPiece(piece: PieceDefinition): void {
@@ -313,9 +322,9 @@ export class GameHud extends PIXI.Container {
         this.gateProgressPanel.celebrateUnlock();
     }
 
-    /** Call every frame (or whenever it might have changed) — see TopPowerupSlots.updateCounts(). */
-    public updatePowerupCounts(counts: Readonly<Record<string, number>>): void {
-        this.topPowerupSlots.updateCounts(counts);
+    /** Call every frame (or whenever the gem balance might have changed) — see TopPowerupSlots.updateCosts(). */
+    public updatePowerupCosts(gemBalance: number): void {
+        this.topPowerupSlots.updateCosts(gemBalance);
     }
 
     /** Highlights whichever button matches `activeId` (null clears every highlight) — see IslandViewScene's activePowerupId toggle/cancel/switch logic. */
@@ -371,12 +380,27 @@ export class GameHud extends PIXI.Container {
         );
 
         // Its own local origin is already its top-left corner (see
-        // ShapeModeToggleButton's own layout) — no width/height offset
-        // needed to flush it into the corner, unlike the center-anchored
-        // widgets above.
-        this.shapeModeToggle.position.set(
+        // HomeButton's own layout) — no width/height offset needed to
+        // flush it into the corner, unlike the center-anchored widgets
+        // above.
+        this.homeButton.position.set(
             topLeft.x + padding,
             topLeft.y + padding,
+        );
+
+        // Shifted right of homeButton (same gap convention as
+        // topPowerupSlots' own BUTTON_GAP) rather than sharing its corner.
+        this.gemCounter.position.set(
+            this.homeButton.x + HomeButton.SIZE + padding * 0.75,
+            topLeft.y + padding,
+        );
+
+        // Same top-left corner as homeButton — only visibly stacks with it
+        // in dev mode (shapeModeToggle is hidden in production, see the
+        // constructor), so this nudges below rather than overlapping.
+        this.shapeModeToggle.position.set(
+            topLeft.x + padding,
+            topLeft.y + padding + (this.shapeModeToggle.visible ? Math.max(HomeButton.SIZE, this.gemCounter.height) + 8 : 0),
         );
 
         // Bottom-center stack: pieceProgressionBar sits at the very bottom
@@ -415,6 +439,7 @@ export class GameHud extends PIXI.Container {
         this.gameOverPopup.layout();
         this.levelUpNotification.layout();
         this.powerupConfirmPopup.layout();
+        this.homePopup.layout();
     }
 
     public override destroy(
@@ -431,6 +456,8 @@ export class GameHud extends PIXI.Container {
         this.gateProgressPanel.destroy();
         this.gameOverCountdown.destroy();
         this.powerupConfirmPopup.destroy();
+        this.homeButton.destroy();
+        this.homePopup.destroy();
 
         super.destroy(options ?? { children: true });
     }

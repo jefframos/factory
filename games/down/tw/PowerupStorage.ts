@@ -102,6 +102,22 @@ export const HUD_POWERUP_IDS: readonly string[] = [
     SKIP_PIECE_POWERUP_ID,
 ];
 
+/** Gem cost for any HUD powerup not listed in POWERUP_GEM_COSTS — currently just skip-piece, which has no button of its own (see SKIP_PIECE_POWERUP_ID's own doc). */
+const DEFAULT_POWERUP_GEM_COST = 20;
+
+/** Per-powerup gem cost to use it — see IslandViewScene.useHudPowerup()/beginPowerupConfirm() and PowerupButton's cost badge. */
+export const POWERUP_GEM_COSTS: Readonly<Record<string, number>> = {
+    [TRAPDOOR_POWERUP_ID]: 100,
+    [CLEAR_LOW_TIER_POWERUP_ID]: 80,
+    [DESTROY_PIECE_POWERUP_ID]: 50,
+    [UPGRADE_PIECE_POWERUP_ID]: 50,
+};
+
+/** `id`'s gem cost — see POWERUP_GEM_COSTS; falls back to DEFAULT_POWERUP_GEM_COST for anything not listed. */
+export function getPowerupGemCost(id: string): number {
+    return POWERUP_GEM_COSTS[id] ?? DEFAULT_POWERUP_GEM_COST;
+}
+
 /** "shrink-ray" → "Shrink Ray" — for the level-up notification's "+1 Shrink Ray" reward text (see LevelUpNotification). No dedicated display-name field on PowerupDefinition, so this just humanizes the id. */
 export function formatPowerupName(id: string): string {
     return id

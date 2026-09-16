@@ -13,6 +13,22 @@
         },
         {
           "alias": [
+            "dogs"
+          ],
+          "src": [
+            "dogs.webp.json"
+          ]
+        },
+        {
+          "alias": [
+            "pens"
+          ],
+          "src": [
+            "pens.webp.json"
+          ]
+        },
+        {
+          "alias": [
             "ui"
           ],
           "src": [

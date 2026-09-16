@@ -21,9 +21,11 @@ import { Localization } from './game/i18n/Localization';
 import BaseDemoScene from './game/scenes/BaseDemoScene';
 import { loadIslands } from './game/world/IslandStorage';
 import loaderConfig from './loader.config';
+import { GemStorage } from './tw/GemStorage';
 import IslandViewScene from './tw/IslandViewScene';
 import { loadLevels } from './tw/LevelStorage';
 import { TowerHighScoreStorage } from './tw/TowerHighScoreStorage';
+import { TowerThemeStorage } from './tw/TowerThemeStorage';
 import { TowerPieceUnlockStorage } from './tw/TowerPieceUnlockStorage';
 import { loadPieces } from './tw/PieceStorage';
 import { loadPowerups } from './tw/PowerupStorage';
@@ -75,6 +77,8 @@ export default class MyGame extends Game {
             await TowerHighScoreStorage.load();
             await TowerPieceUnlockStorage.load();
             await PowerupInventoryStorage.load();
+            await GemStorage.load();
+            await TowerThemeStorage.load();
             await Localization.load();
 
             // 5. Setup Game Flow

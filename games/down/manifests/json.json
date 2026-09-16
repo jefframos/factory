@@ -21,6 +21,14 @@
         },
         {
           "alias": [
+            "pieces-config-cats.json"
+          ],
+          "src": [
+            "pieces-config-cats.json"
+          ]
+        },
+        {
+          "alias": [
             "pieces-config-old.json"
           ],
           "src": [
@@ -69,10 +77,18 @@
         },
         {
           "alias": [
-            "pieces-config-cats.json"
+            "pieces-config-dogs.json"
           ],
           "src": [
-            "pieces-config-cats.json"
+            "pieces-config-dogs.json"
+          ]
+        },
+        {
+          "alias": [
+            "pieces-config-penguin.json"
+          ],
+          "src": [
+            "pieces-config-penguin.json"
           ]
         }
       ]

@@ -1,0 +1,236 @@
+{
+  "frames": {
+    "dog9": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 96,
+        "h": 85
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 9,
+        "w": 96,
+        "h": 85
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 103
+      }
+    },
+    "dog8": {
+      "frame": {
+        "x": 2,
+        "y": 89,
+        "w": 96,
+        "h": 99
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 99
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 99
+      }
+    },
+    "dog7": {
+      "frame": {
+        "x": 100,
+        "y": 2,
+        "w": 96,
+        "h": 93
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 6,
+        "w": 96,
+        "h": 93
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 105
+      }
+    },
+    "dog6": {
+      "frame": {
+        "x": 2,
+        "y": 190,
+        "w": 96,
+        "h": 83
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 9,
+        "w": 96,
+        "h": 83
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 101
+      }
+    },
+    "dog5": {
+      "frame": {
+        "x": 100,
+        "y": 100,
+        "w": 96,
+        "h": 80
+      },
+      "rotated": true,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 9,
+        "w": 96,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 98
+      }
+    },
+    "dog4": {
+      "frame": {
+        "x": 195,
+        "y": 2,
+        "w": 96,
+        "h": 89
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 89
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 89
+      }
+    },
+    "dog3": {
+      "frame": {
+        "x": 182,
+        "y": 100,
+        "w": 96,
+        "h": 78
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 8,
+        "w": 96,
+        "h": 78
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 94
+      }
+    },
+    "dog2": {
+      "frame": {
+        "x": 2,
+        "y": 275,
+        "w": 96,
+        "h": 103
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 103
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 103
+      }
+    },
+    "dog11": {
+      "frame": {
+        "x": 182,
+        "y": 180,
+        "w": 96,
+        "h": 100
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 100
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 100
+      }
+    },
+    "dog10": {
+      "frame": {
+        "x": 107,
+        "y": 278,
+        "w": 96,
+        "h": 78
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 8,
+        "w": 96,
+        "h": 78
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 94
+      }
+    },
+    "dog1": {
+      "frame": {
+        "x": 286,
+        "y": 2,
+        "w": 96,
+        "h": 103
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 103
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 103
+      }
+    }
+  },
+  "meta": {
+    "app": "http://github.com/pixijs/assetpack",
+    "version": "1.0",
+    "image": "dogs.webp",
+    "format": "RGBA8888",
+    "size": {
+      "w": 384,
+      "h": 373
+    },
+    "scale": 1,
+    "related_multi_packs": []
+  }
+}

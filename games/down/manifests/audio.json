@@ -45,6 +45,22 @@
         },
         {
           "alias": [
+            "bark1.mp3"
+          ],
+          "src": [
+            "bark1.mp3"
+          ]
+        },
+        {
+          "alias": [
+            "bark2.mp3"
+          ],
+          "src": [
+            "bark2.mp3"
+          ]
+        },
+        {
+          "alias": [
             "Bubbles.wav"
           ],
           "src": [

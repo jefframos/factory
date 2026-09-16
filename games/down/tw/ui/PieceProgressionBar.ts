@@ -3,7 +3,7 @@
 import * as PIXI from 'pixi.js';
 import Assets from '../../Assets';
 import { getPieceShapeMode } from '../PieceShapeMode';
-import { getPieceCatalogGeneration, type PieceDefinition } from '../PieceStorage';
+import { getMergeGemReward, getPieceCatalogGeneration, type PieceDefinition } from '../PieceStorage';
 import { PieceIconRenderer } from './PieceIconRenderer';
 
 /**
@@ -212,10 +212,57 @@ export class PieceProgressionBar extends PIXI.Container {
         slotSize: number,
     ): void {
         PieceIconRenderer.draw(icon, piece, slotSize, shapeMode, () => {
+            // Added before the lock check so a locked slot's darken-everything
+            // loop (applyLockedLook, below) also dims this along with the
+            // piece's own art, rather than it standing out at full brightness.
+            PieceProgressionBar.addGemBadge(icon, piece.tier, slotSize);
+
             if (!unlocked) {
                 PieceProgressionBar.applyLockedLook(icon, slotSize);
             }
         });
+    }
+
+    /** Name tag on the gem-reward badge addGemBadge() adds — lets it find and remove a stale one first, same "onDrawn can fire twice" reasoning as LOCK_MARK_NAME. */
+    private static readonly GEM_BADGE_NAME = 'gemBadge';
+    /** Same atlas frame the top-left gem counter/game-over popup already use for gems. */
+    private static readonly GEM_BADGE_FRAME = 'ResourceBar_Single_Icon_Gem';
+    /** Badge size as a fraction of the slot's own size — see addGemBadge(). */
+    private static readonly GEM_BADGE_SIZE_RATIO = 0.25;
+
+    /**
+     * Small gem icon pinned to the icon's bottom-left corner when merging
+     * INTO this piece's tier awards gems (see
+     * PieceStorage.getMergeGemReward()) — a quick "this one pays out" cue
+     * alongside the piece's own art. Clears any stale badge and no-ops for
+     * a tier that doesn't reward gems. Idempotent — safe to call again on
+     * the same `icon` (see drawIcon()'s own onDrawn-fires-twice doc).
+     */
+    private static addGemBadge(icon: PIXI.Container, tier: number | undefined, slotSize: number): void {
+        const stale = icon.getChildByName(PieceProgressionBar.GEM_BADGE_NAME);
+        if (stale) {
+            icon.removeChild(stale);
+            stale.destroy();
+        }
+
+        if (getMergeGemReward(tier) <= 0) {
+            return;
+        }
+
+        const badge = PIXI.Sprite.from(PieceProgressionBar.GEM_BADGE_FRAME);
+        badge.name = PieceProgressionBar.GEM_BADGE_NAME;
+        badge.anchor.set(0.5, 0.5);
+
+        const badgeSize = slotSize * PieceProgressionBar.GEM_BADGE_SIZE_RATIO;
+        badge.scale.set(badgeSize / Math.max(badge.texture.width, badge.texture.height));
+
+        // Icon content is centered on (0, 0) — see PieceIconRenderer's own
+        // doc — so the bottom-left corner sits at roughly (-half, +half);
+        // nudged in slightly (0.85) so the badge doesn't hang fully off
+        // the piece's own silhouette.
+        const half = slotSize * 0.5 * 0.5;
+        badge.position.set(half - 8, half);
+        icon.addChild(badge);
     }
 
     /** Name tag on the "?" mark applyLockedLook() adds — lets it find and remove a stale one first, so re-running it (see drawIcon's own doc) never stacks a second mark on top. */
@@ -239,19 +286,23 @@ export class PieceProgressionBar extends PIXI.Container {
         }
 
         for (const child of icon.children) {
-            if (child instanceof PIXI.Sprite || child instanceof PIXI.Graphics) {
-                child.tint = 0x000000;
+            if (child.name != 'gemBadge') {
+
+                if (child instanceof PIXI.Sprite || child instanceof PIXI.Graphics) {
+                    child.tint = 0x000000;
+                }
+                child.alpha = PieceProgressionBar.LOCKED_ALPHA;
             }
-            child.alpha = PieceProgressionBar.LOCKED_ALPHA;
+
         }
 
         // Assets.TextStyles.DefaultLabel — same Baloo2-ExtraBold family/stroke/
         // drop-shadow every other HUD label here uses, not a generic system
         // font, so the "?" reads as part of the same UI instead of a mismatch.
         const mark = new PIXI.Text('?', {
-            ...Assets.TextStyles.DefaultLabel,
+            ...Assets.TextStyles.DefaultLabelQuestion,
             fontSize: Math.round(slotSize * 0.45),
-            strokeThickness: Math.max(2, slotSize * 0.08),
+            strokeThickness: Math.max(1, slotSize * 0.05),
         });
         mark.name = PieceProgressionBar.LOCK_MARK_NAME;
         mark.anchor.set(0.5);

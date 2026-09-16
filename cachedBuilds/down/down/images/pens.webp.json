@@ -1,0 +1,236 @@
+{
+  "frames": {
+    "pen9": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 96,
+        "h": 102
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 102
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 102
+      }
+    },
+    "pen8": {
+      "frame": {
+        "x": 100,
+        "y": 2,
+        "w": 96,
+        "h": 97
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 97
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 97
+      }
+    },
+    "pen7": {
+      "frame": {
+        "x": 100,
+        "y": 101,
+        "w": 96,
+        "h": 100
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 100
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 100
+      }
+    },
+    "pen6": {
+      "frame": {
+        "x": 198,
+        "y": 2,
+        "w": 96,
+        "h": 100
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 100
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 100
+      }
+    },
+    "pen5": {
+      "frame": {
+        "x": 2,
+        "y": 106,
+        "w": 96,
+        "h": 93
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 93
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 93
+      }
+    },
+    "pen4": {
+      "frame": {
+        "x": 198,
+        "y": 104,
+        "w": 96,
+        "h": 98
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 98
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 98
+      }
+    },
+    "pen3": {
+      "frame": {
+        "x": 2,
+        "y": 204,
+        "w": 96,
+        "h": 103
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 103
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 103
+      }
+    },
+    "pen2": {
+      "frame": {
+        "x": 107,
+        "y": 204,
+        "w": 96,
+        "h": 94
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 94
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 94
+      }
+    },
+    "pen11": {
+      "frame": {
+        "x": 203,
+        "y": 204,
+        "w": 96,
+        "h": 100
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 100
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 100
+      }
+    },
+    "pen10": {
+      "frame": {
+        "x": 296,
+        "y": 2,
+        "w": 96,
+        "h": 101
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 101
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 101
+      }
+    },
+    "pen1": {
+      "frame": {
+        "x": 2,
+        "y": 302,
+        "w": 96,
+        "h": 103
+      },
+      "rotated": true,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 103
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 103
+      }
+    }
+  },
+  "meta": {
+    "app": "http://github.com/pixijs/assetpack",
+    "version": "1.0",
+    "image": "pens.webp",
+    "format": "RGBA8888",
+    "size": {
+      "w": 394,
+      "h": 400
+    },
+    "scale": 1,
+    "related_multi_packs": []
+  }
+}
