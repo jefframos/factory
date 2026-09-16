@@ -120,6 +120,8 @@ export interface GameOverData {
     isNewScoreHigh: boolean;
     /** Gems awarded for this run's score (see IslandViewScene's onGameOver) — 0 hides the gems-earned line entirely. */
     gemsEarned: number;
+    /** Rewarded-video respawns left THIS run (see IslandViewScene's MAX_RESPAWNS_PER_RUN/respawnsUsedThisRun) — 0 hides the RESPAWN button entirely, leaving just CONTINUE; otherwise shown on RESPAWN's own label so the limit reads as a countdown, not a surprise. */
+    respawnsRemaining: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -313,6 +315,15 @@ export class GameOverPopup extends PIXI.Container {
         this._gemIcon.visible = data.gemsEarned > 0;
         this._gemsEarnedText.visible = data.gemsEarned > 0;
         this._gemsEarnedText.text = `+${data.gemsEarned}`;
+
+        // Past the limit, RESPAWN disappears entirely — see GameOverData's
+        // own doc — rather than staying visible-but-disabled, so CONTINUE
+        // reads as the only real option instead of a greyed-out dead end.
+        this._continueBtn.visible = data.respawnsRemaining > 0;
+        if (this._continueBtn.visible) {
+            this._continueBtn.setLabel(`RESPAWN (${data.respawnsRemaining} LEFT)`);
+        }
+
         this.layout();
 
         // Make visible before animation starts so updateTransform drives the fade
@@ -389,8 +400,11 @@ export class GameOverPopup extends PIXI.Container {
         this._continueBtn.x = Math.round((PANEL_WIDTH - BUTTON_WIDTH) / 2);
 
 
-        this._replayBtn.y = continueY;
         this._continueBtn.y = replayY;
+        // Single button when RESPAWN is hidden (respawns exhausted) — sits
+        // centered across the two-slot span instead of one of the two
+        // original slots, so CONTINUE doesn't read as awkwardly offset.
+        this._replayBtn.y = this._continueBtn.visible ? continueY : Math.round((replayY + continueY) / 2);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

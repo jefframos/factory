@@ -120,11 +120,11 @@ export const GAME_THEMES: readonly GameThemeConfig[] = [
         forceSquare: false,
         cloudImages: ['vfx/cloud-cats.webp'],
         cloudsAlpha: 0.5,
-        sounds: {
-            //merge: { soundId: ['Cat-Meow-01', 'Cat-Meow-02'], volumeMinMax: 0.2, pitchMinMax: [0.95, 1.05] },
-            merge: { soundId: ['bark1'], volumeMinMax: 0.07, pitchMinMax: [1.5, 1.7] },
-            hit: { soundId: ['bark2'], volumeMinMax: 0.07, pitchMinMax: [1.7, 1.9] },
-        },
+        // sounds: {
+        //     //merge: { soundId: ['Cat-Meow-01', 'Cat-Meow-02'], volumeMinMax: 0.2, pitchMinMax: [0.95, 1.05] },
+        //     merge: { soundId: ['bark1'], volumeMinMax: 0.07, pitchMinMax: [1.5, 1.7] },
+        //     hit: { soundId: ['bark2'], volumeMinMax: 0.07, pitchMinMax: [1.7, 1.9] },
+        // },
 
         cloudsLayout: 'bottom-heavy',
         particles: { images: ['vfx/star_06.webp', 'vfx/star_07.webp'], tint: 0xFFF3B0 },

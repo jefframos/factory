@@ -65,6 +65,9 @@ const GEMS_PER_100_SCORE = 10;
 /** Gems awarded per level reached, scaled by the level number — level 1 gives GEMS_PER_LEVEL, level 2 gives 2x that, and so on — see onLevelProgressed. */
 const GEMS_PER_LEVEL = 10;
 
+/** Max rewarded-video respawns (see handleGameOverRespawnVideo()) allowed per run — see `respawnsUsedThisRun`. Past this, GameOverPopup drops RESPAWN entirely, leaving just CONTINUE. */
+const MAX_RESPAWNS_PER_RUN = 2;
+
 export default class IslandViewScene extends ThreeScene {
     // -------------------------------------------------------------------------
     // World / 3D
@@ -175,6 +178,9 @@ export default class IslandViewScene extends ThreeScene {
 
     /** True once the current run has actually ended (see FaceTowerGameEvents.onGameOver) — cleared back to false the moment a fresh run actually starts (restartRun()/handleThemeToggle()). Tells openHomePopup() whether to offer HomePopup's RESTART button — restarting a run that's already over reads as redundant/confusing next to picking a level, which already starts a fresh one. */
     private isGameOver = false;
+
+    /** How many rewarded-video respawns (see handleGameOverRespawnVideo()) the player has already used THIS run — reset back to 0 only when a fresh run actually starts (restartRun()/handleThemeToggle()), never by respawning itself (that continues the same run). Capped at MAX_RESPAWNS_PER_RUN; onGameOver reads this to tell GameOverPopup how many (if any) are left. */
+    private respawnsUsedThisRun = 0;
 
     // =========================================================================
     // Lifecycle
@@ -738,6 +744,7 @@ export default class IslandViewScene extends ThreeScene {
                         bestScoreText: String(TowerHighScoreStorage.getPoints()),
                         isNewScoreHigh,
                         gemsEarned,
+                        respawnsRemaining: Math.max(0, MAX_RESPAWNS_PER_RUN - this.respawnsUsedThisRun),
                     });
                     SoundManager.instance.tryToPlaySound(Assets.Sounds.Game.GameOver);
 
@@ -1392,6 +1399,7 @@ export default class IslandViewScene extends ThreeScene {
         this.currentThemeId = themeId;
         TowerThemeStorage.save(themeId);
         this.isGameOver = false;
+        this.respawnsUsedThisRun = 0;
 
         this.gameHud.hideGameOver();
 
@@ -1466,6 +1474,7 @@ export default class IslandViewScene extends ThreeScene {
     private restartRun(): void {
         this.gameHud.hideGameOver();
         this.isGameOver = false;
+        this.respawnsUsedThisRun = 0;
         this.baseSync3D.clear();
         this.faceTower.reset();
         TowerHighScoreStorage.markRunStart();
@@ -1530,9 +1539,15 @@ export default class IslandViewScene extends ThreeScene {
      * rewarded-video call and only actually respawns (hide the popup,
      * continue the run in place) if it was watched successfully; re-enables
      * the button on failure/cancel so the player isn't stuck watching
-     * nothing happen.
+     * nothing happen. Capped at MAX_RESPAWNS_PER_RUN — GameOverPopup already
+     * hides RESPAWN once exhausted (see onGameOver's respawnsRemaining), so
+     * this is just a defensive no-op if it somehow still fires.
      */
     private async handleGameOverRespawnVideo(): Promise<void> {
+        if (this.respawnsUsedThisRun >= MAX_RESPAWNS_PER_RUN) {
+            return;
+        }
+
         this.gameHud.setGameOverContinueBusy(true);
 
         let rewarded = false;
@@ -1553,6 +1568,7 @@ export default class IslandViewScene extends ThreeScene {
         //     return;
         // }
 
+        this.respawnsUsedThisRun++;
         this.gameHud.hideGameOver();
         this.faceTower.continueRun();
     }
