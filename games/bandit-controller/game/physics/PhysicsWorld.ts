@@ -14,7 +14,8 @@
 
 import * as THREE from 'three';
 import RigidBody from './RigidBody';
-import { CONTACT_SKIN, GRAVITY, MAX_PHYSICS_DELTA } from './PhysicsConstants';
+import { CONTACT_SKIN } from './PhysicsConstants';
+import { WORLD_SETTINGS } from '../data/WorldSettings';
 
 type Axis = 'x' | 'y' | 'z';
 
@@ -53,7 +54,7 @@ export default class PhysicsWorld {
     }
 
     public step(rawDelta: number): void {
-        const delta = Math.min(rawDelta, MAX_PHYSICS_DELTA);
+        const delta = Math.min(rawDelta, WORLD_SETTINGS.maxPhysicsDelta);
 
         for (const body of this.bodies) {
             if (body.isStatic) {
@@ -61,7 +62,7 @@ export default class PhysicsWorld {
             }
 
             if (body.useGravity) {
-                body.velocity.y += GRAVITY * delta;
+                body.velocity.y += WORLD_SETTINGS.gravity * delta;
             }
 
             this.moveAxis(body, 'x', delta);

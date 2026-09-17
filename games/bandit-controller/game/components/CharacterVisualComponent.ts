@@ -12,11 +12,7 @@ import * as THREE from 'three';
 import Component from '../ecs/Component';
 import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
 import RigidBody from '../physics/RigidBody';
-
-/** How long the roll/dodge animation's "rolling" state lasts before the board is free to transition back to idle/walk/run. */
-const ROLL_DURATION = 0.6;
-/** How long the slide animation's "sliding" state lasts — see slide(). */
-const SLIDE_DURATION = 0.6;
+import { PLAYER_SETTINGS } from '../data/PlayerSettings';
 
 export default class CharacterVisualComponent extends Component {
     public readonly character: ThirdPersonCharacter;
@@ -38,7 +34,7 @@ export default class CharacterVisualComponent extends Component {
         if (this.rollingRemaining > 0) {
             return;
         }
-        this.rollingRemaining = ROLL_DURATION;
+        this.rollingRemaining = PLAYER_SETTINGS.rollDuration;
         this.character.dodge();
     }
 
@@ -47,7 +43,7 @@ export default class CharacterVisualComponent extends Component {
         if (this.slidingRemaining > 0) {
             return;
         }
-        this.slidingRemaining = SLIDE_DURATION;
+        this.slidingRemaining = PLAYER_SETTINGS.slideDuration;
         this.character.slide();
     }
 

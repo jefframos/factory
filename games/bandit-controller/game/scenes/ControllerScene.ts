@@ -5,11 +5,13 @@
 // (physics + entities) and a VirtualCameraSystem-driven follow camera.
 
 import * as THREE from 'three';
+import * as PIXI from 'pixi.js';
 import { Game } from 'core/Game';
 import { ThreeScene } from 'core/scene/ThreeScene';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
 import World from '../ecs/World';
 import MainPlayer from '../player/MainPlayer';
+import Collectible from '../entities/Collectible';
 import { FloorBuilder } from '../builders/FloorBuilder';
 import { BendService } from '../services/BendService';
 import RigidBody from '../physics/RigidBody';
@@ -17,6 +19,11 @@ import { Layers } from '../physics/PhysicsConstants';
 import { CAMERA_SETTINGS_BY_MODE, CameraSettings, DEFAULT_CAMERA_MODE, STANDARD_CAMERA_SETTINGS } from '../data/GameSettings';
 import VirtualCameraSystem from '../camera/VirtualCameraSystem';
 import { laneOffset } from '../data/LaneMath';
+import { LANE_SETTINGS } from '../data/LaneSettings';
+import { PLAYER_SETTINGS } from '../data/PlayerSettings';
+import { WORLD_SETTINGS } from '../data/WorldSettings';
+import { MONEY_PILE_SMALL, generateCollectibleSpawnPositions, resolveCollectibleIconPath } from '../data/CollectibleSettings';
+import { spawnFlyingIconToOverlayPoint } from '../ui/FlyingResourceIcon';
 import GameUI from '../ui/GameUI';
 
 const FLOOR_SIZE = 300;
@@ -52,10 +59,8 @@ const GATE_HEIGHT = 2;
  */
 const SWIPE_LANE_GAP = 2;
 const SWIPE_LANE_CENTER_X = GATE_HALF_EXTENTS.x + SWIPE_LANE_GAP + GATE_HALF_EXTENTS.x;
-const SWIPE_LANE_COUNT = 3;
-const SWIPE_LANE_WIDTH = 2.5;
-/** Width of each lane's visible stripe (see buildSwipeLaneMarkers()) — thin, just enough to read as a line. */
-const LANE_MARKER_WIDTH = 0.15;
+/** The corridor's own fixed middle-lane position — passed to SwipeRunnerController.activate() so it measures the player's actual entry offset against the SAME point the visible lane rectangles (see buildSwipeLaneMarkers()) are drawn from. */
+const SWIPE_LANE_ORIGIN = new THREE.Vector3(SWIPE_LANE_CENTER_X, 0, RUNNER_ENTER_GATE_Z);
 /** Where the player starts, and where the "Reset" button (see GameUI) puts them back. */
 const PLAYER_SPAWN_POSITION = new THREE.Vector3(0, 0, 0);
 
@@ -82,6 +87,11 @@ export default class ControllerScene extends ThreeScene {
     private readonly offsetVector = new THREE.Vector3();
     private cameraHotkeyIds: string[] = [];
     private gameUI!: GameUI;
+    /** Live pickups still waiting to be collected — pruned in update() once Collectible flags itself `collected` (see that file's own doc on why it can't despawn itself mid-tick). */
+    private readonly collectibles: Collectible[] = [];
+    private collectedMoney = 0;
+    /** Loaded once in build() (see preloadMoneyIconTexture()) — shared by every flyRewardToWallet-style flying icon, same "one icon, loaded once" convention bandit/legacy's AssetLibraryRegistry uses. Falls back to PIXI.Texture.WHITE (matching bandit's own getAssetIcon() fallback) on the vanishingly unlikely chance a pickup is collected before this local webp finishes loading. */
+    private moneyIconTexture?: PIXI.Texture;
 
     public constructor(game: Game) {
         super(game);
@@ -111,6 +121,8 @@ export default class ControllerScene extends ThreeScene {
         this.cameraSystem.cutTo(DEFAULT_CAMERA_MODE);
         this.awakeCameraHotkeys();
         this.buildRunnerLane();
+        this.buildCollectibles();
+        void this.preloadMoneyIconTexture();
 
         this.smoothedTarget.copy(this.mainPlayer.transform.position);
         this.updateCamera(0);
@@ -123,10 +135,22 @@ export default class ControllerScene extends ThreeScene {
         DevGuiManager.instance.addProperties(current, ['distance'], [2, 20], 'Camera', 'Camera');
         DevGuiManager.instance.addProperties(current, ['followSpeed'], [0.5, 20], 'Camera', 'Camera');
         DevGuiManager.instance.addProperties(current.offset, ['x', 'y', 'z'], [-3, 3], 'Camera Offset', 'Camera');
+
+        // Player + World tuning — edits PlayerSettings.ts/WorldSettings.ts directly, which
+        // every reader (ThirdPersonCharacter, PlayerMovementController, SwipeRunnerController,
+        // CharacterVisualComponent, PhysicsWorld) reads LIVE, so these take effect immediately.
+        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['walkSpeed'], [1, 15], 'Player', 'Player');
+        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['runSpeedMultiplier'], [1, 4], 'Player', 'Player');
+        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['jumpSpeed'], [2, 25], 'Player', 'Player');
+        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['rollDuration'], [0.1, 2], 'Player', 'Player');
+        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['slideDuration'], [0.1, 2], 'Player', 'Player');
+        DevGuiManager.instance.addProperties(WORLD_SETTINGS, ['gravity'], [-60, -2], 'World', 'World');
+        DevGuiManager.instance.addProperties(WORLD_SETTINGS, ['maxPhysicsDelta'], [0.01, 0.1], 'World', 'World');
     }
 
     public update(delta: number): void {
         this.world.update(delta);
+        this.pruneCollectedPickups();
         super.update(delta);
     }
 
@@ -191,7 +215,7 @@ export default class ControllerScene extends ThreeScene {
 
         this.buildTriggerGate(RUNNER_ENTER_GATE_Z, SWIPE_LANE_CENTER_X, () => {
             this.mainPlayer.movementController.enabled = false;
-            this.mainPlayer.swipeRunnerController.activate(RUNNER_LANE_DIRECTION, SWIPE_LANE_COUNT, SWIPE_LANE_WIDTH);
+            this.mainPlayer.swipeRunnerController.activate(RUNNER_LANE_DIRECTION, LANE_SETTINGS.count, LANE_SETTINGS.width, SWIPE_LANE_ORIGIN);
             this.cameraSystem.blendTo('runner', CAMERA_BLEND_SEC);
         });
 
@@ -205,33 +229,93 @@ export default class ControllerScene extends ThreeScene {
     }
 
     /**
-     * One visible stripe per swipe-lane, running the length of the corridor
-     * between the two swipe-lane gates — drawn from the EXACT SAME
-     * laneOffset()/SWIPE_LANE_COUNT/SWIPE_LANE_WIDTH math SwipeRunnerController
-     * itself snaps to (see activate()), so the visible lanes and the ones the
-     * player actually lands on can never drift apart.
+     * One full-width, differently-colored rectangle per swipe-lane, running
+     * the length of the corridor between the two swipe-lane gates — drawn
+     * from LANE_SETTINGS (count/width/colors) with the EXACT SAME
+     * laneOffset() math SwipeRunnerController itself snaps to (see
+     * activate()), so the visible lanes and the ones the player actually
+     * lands on can never drift apart. Each rectangle is exactly
+     * LANE_SETTINGS.width wide, matching the spacing between lane centers,
+     * so adjacent lanes tile edge-to-edge with no gaps or overlaps.
      */
     private buildSwipeLaneMarkers(): void {
         const length = Math.abs(RUNNER_EXIT_GATE_Z - RUNNER_ENTER_GATE_Z);
         const centerZ = (RUNNER_ENTER_GATE_Z + RUNNER_EXIT_GATE_Z) / 2;
 
-        for (let i = 0; i < SWIPE_LANE_COUNT; i++) {
-            const x = SWIPE_LANE_CENTER_X + laneOffset(i, SWIPE_LANE_COUNT, SWIPE_LANE_WIDTH);
-            this.buildLaneStripe(x, centerZ, length);
+        for (let i = 0; i < LANE_SETTINGS.count; i++) {
+            const x = SWIPE_LANE_CENTER_X + laneOffset(i, LANE_SETTINGS.count, LANE_SETTINGS.width);
+            const color = LANE_SETTINGS.colors[i % LANE_SETTINGS.colors.length];
+            this.buildLaneRect(x, centerZ, length, color);
         }
     }
 
-    /** A thin, bright strip lying flat on the floor at `x`, centered on `centerZ` and running `length` world units along Z — purely visual. */
-    private buildLaneStripe(x: number, centerZ: number, length: number): void {
-        const geometry = new THREE.PlaneGeometry(LANE_MARKER_WIDTH, length);
-        const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 });
+    /**
+     * A full-lane-width colored rectangle lying flat on the floor at `x`,
+     * centered on `centerZ` and running `length` world units along Z —
+     * purely visual. Subdivided along its length (see FloorBuilder's own
+     * doc on this exact issue) — BendService's bend is a per-VERTEX
+     * displacement, so a plain 1x1 plane only bends at its 4 corners and
+     * warps badly/sinks out of view over an 80-unit strip instead of
+     * following the same smooth curve the floor's own 32x32-segment mesh
+     * does at that point.
+     */
+    private buildLaneRect(x: number, centerZ: number, length: number, color: number): void {
+        const lengthSegments = Math.max(8, Math.ceil(length / 5));
+        const geometry = new THREE.PlaneGeometry(LANE_SETTINGS.width, length, 1, lengthSegments);
+        const material = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.45 });
         BendService.applyBend(material);
-        const stripe = new THREE.Mesh(geometry, material);
-        stripe.rotation.x = -Math.PI / 2;
+        const rect = new THREE.Mesh(geometry, material);
+        rect.rotation.x = -Math.PI / 2;
         // Tiny lift above the floor (y=0) to avoid z-fighting — bent by the exact same
         // amount as the floor at any given XZ, so the gap never visibly changes along the lane.
-        stripe.position.set(x, 0.02, centerZ);
-        this.threeScene.add(stripe);
+        rect.position.set(x, 0.02, centerZ);
+        this.threeScene.add(rect);
+    }
+
+    /** Spreads a ring of Money_Pile_Small pickups around the player's own spawn point (see CollectibleSettings.generateCollectibleSpawnPositions) — walking near one snaps it to the player and pays out via onCollectResource(). */
+    private buildCollectibles(): void {
+        for (const position of generateCollectibleSpawnPositions(PLAYER_SPAWN_POSITION)) {
+            const collectible = this.world.add(new Collectible(
+                MONEY_PILE_SMALL,
+                this.threeScene,
+                () => this.mainPlayer.getCollectTargetPosition(),
+            ));
+            collectible.transform.position.copy(position);
+            collectible.onCollected.add((amount) => this.onCollectResource(amount, collectible.transform.position.clone()));
+            void collectible.load();
+            this.collectibles.push(collectible);
+        }
+    }
+
+    private async preloadMoneyIconTexture(): Promise<void> {
+        this.moneyIconTexture = await PIXI.Assets.load<PIXI.Texture>(resolveCollectibleIconPath(MONEY_PILE_SMALL.icon));
+    }
+
+    /** Flies the collected icon from where the pickup was consumed to GameUI's money icon (see FlyingResourceIcon.ts) — the money counter itself only increments once the icon actually lands (`onArrive`), same "mutate on landing, not on departure" convention bandit/legacy's QueueZone.flyRewardToWallet() follows. */
+    private onCollectResource(amount: number, worldPosition: THREE.Vector3): void {
+        spawnFlyingIconToOverlayPoint(
+            this,
+            this.game,
+            worldPosition,
+            () => this.gameUI.getMoneyIconOverlayPosition(),
+            this.moneyIconTexture ?? PIXI.Texture.WHITE,
+            () => {
+                this.collectedMoney += amount;
+                this.gameUI.setResourceCount(this.collectedMoney);
+            },
+        );
+    }
+
+    /** Collectible can't despawn itself mid-tick (see that file's own doc) — this runs once per frame, safely outside World's own entity iteration, to actually remove anything that flagged itself collected this tick. */
+    private pruneCollectedPickups(): void {
+        for (let i = this.collectibles.length - 1; i >= 0; i--) {
+            const collectible = this.collectibles[i];
+            if (!collectible.collected) {
+                continue;
+            }
+            this.collectibles.splice(i, 1);
+            this.world.remove(collectible);
+        }
     }
 
     /** A static trigger volume spanning the lane's width at (`x`, `z`) — fires `onEnter` once when the PLAYER's RigidBody crosses into it (ignores everything else, e.g. the ground). */

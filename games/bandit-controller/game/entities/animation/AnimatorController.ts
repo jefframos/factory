@@ -74,13 +74,26 @@ export default class AnimatorController {
         if (!clip || !this.mixer) return;
 
         const newAction = this.mixer.clipAction(clip);
+
+        // Two different state ids can resolve to the SAME underlying clip (e.g. a
+        // placeholder clip registered under both 'falling' and 'landing' until real art
+        // exists for each) — three.js's AnimationMixer caches one AnimationAction per clip,
+        // so newAction here would already be the exact action currently playing. Resetting
+        // and crossfading it from itself would just snap it back to frame 0 — a visible
+        // restart glitch for something that should keep playing uninterrupted through the
+        // "transition." Just update the bookkeeping id and leave it alone.
+        if (newAction === this.currentAction) {
+            this.currentAnimationId = id;
+            return;
+        }
+
         newAction.reset();
         newAction.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, loop ? Infinity : 0);
         newAction.clampWhenFinished = !loop;
         newAction.setEffectiveWeight(weight);
         newAction.play();
 
-        if (this.currentAction && this.currentAction !== newAction) {
+        if (this.currentAction) {
             newAction.crossFadeFrom(this.currentAction, duration, false);
         }
 

@@ -32,7 +32,7 @@ import RigidBody from '../physics/RigidBody';
 import CharacterVisualComponent from './CharacterVisualComponent';
 import AnalogInput from 'core/io/AnalogInput';
 import KeyboardInputMovement from 'core/io/KeyboardInputMovement';
-import { JUMP_SPEED } from '../data/PlayerConstants';
+import { PLAYER_SETTINGS } from '../data/PlayerSettings';
 
 /**
  * Keyboard input is always magnitude 0 or 1 (see KeyboardInputMovement), so
@@ -42,6 +42,8 @@ import { JUMP_SPEED } from '../data/PlayerConstants';
  * idleToWalkSpeed and walkToRunSpeed so it reads as "walk."
  */
 const WALK_ANIM_MAGNITUDE = 0.4;
+/** Mobile analog stick: pushed past this fraction of its own radius counts as "running," same as holding Shift on keyboard — see analogMagnitude's own doc for why this only reads the joystick, never keyboard's own (always-0-or-1) magnitude. */
+const ANALOG_RUN_THRESHOLD = 0.5;
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 /** Runner-mode lane half-width, world units — pointer at the left/right edge of the screen maps to -/+ this far from wherever the player was standing when enterRunnerMode() was called. */
 const LANE_HALF_WIDTH = 3.5;
@@ -61,6 +63,8 @@ export default class PlayerMovementController extends Component {
     private keyboardInput?: KeyboardInputMovement;
     private analogInput?: AnalogInput;
     private sprintHeld = false;
+    /** The analog stick's own normalized magnitude (0-1, see AnalogInput's onMove) — tracked separately from moveInput.length() because keyboard input is always exactly 0 or 1 (see WALK_ANIM_MAGNITUDE's own doc) and would otherwise always read as "past the run threshold." Reset to 0 when the stick is released or this controller is disabled. */
+    private analogMagnitude = 0;
 
     /** Latest raw pointer/touch screen X (CSS pixels) — updated continuously by a plain window listener (see awake()), read only while in runner mode (see updateRunnerMovement()). Null until the pointer/finger has moved at least once. */
     private pointerScreenX: number | null = null;
@@ -90,6 +94,7 @@ export default class PlayerMovementController extends Component {
 
         this.analogInput = new AnalogInput(this.inputHost);
         this.analogInput.onMove.add(({ direction, magnitude }: { direction: PIXI.Point; magnitude: number }) => {
+            this.analogMagnitude = magnitude;
             this.moveInput.set(magnitude > 0 ? direction.x * magnitude : 0, magnitude > 0 ? direction.y * magnitude : 0);
         });
 
@@ -160,7 +165,7 @@ export default class PlayerMovementController extends Component {
         if (!rigidBody?.grounded) {
             return;
         }
-        rigidBody.velocity.y = JUMP_SPEED;
+        rigidBody.velocity.y = PLAYER_SETTINGS.jumpSpeed;
         this.entity.getComponent(CharacterVisualComponent)?.character.jump();
     }
 
@@ -173,8 +178,10 @@ export default class PlayerMovementController extends Component {
             return;
         }
 
+        const sprinting = this.sprintHeld || this.analogMagnitude > ANALOG_RUN_THRESHOLD;
+
         if (rigidBody) {
-            const speed = this.getMoveSpeed(this.sprintHeld);
+            const speed = this.getMoveSpeed(sprinting);
             rigidBody.velocity.x = this.moveInput.x * speed;
             rigidBody.velocity.z = this.moveInput.y * speed;
         }
@@ -184,7 +191,7 @@ export default class PlayerMovementController extends Component {
             if (magnitude < 1e-4) {
                 visual.moveInput.set(0, 0);
             } else {
-                const animMagnitude = this.sprintHeld ? 1 : Math.min(magnitude, WALK_ANIM_MAGNITUDE);
+                const animMagnitude = sprinting ? 1 : Math.min(magnitude, WALK_ANIM_MAGNITUDE);
                 visual.moveInput.set(
                     (this.moveInput.x / magnitude) * animMagnitude,
                     (this.moveInput.y / magnitude) * animMagnitude,
@@ -250,6 +257,7 @@ export default class PlayerMovementController extends Component {
         }
         this.entity.getComponent(CharacterVisualComponent)?.moveInput.set(0, 0);
         this.sprintHeld = false;
+        this.analogMagnitude = 0;
         this.analogInput?.setEnabled(false);
     }
 

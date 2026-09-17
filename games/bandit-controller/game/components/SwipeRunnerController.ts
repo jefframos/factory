@@ -19,7 +19,7 @@ import * as THREE from 'three';
 import Component from '../ecs/Component';
 import RigidBody from '../physics/RigidBody';
 import CharacterVisualComponent from './CharacterVisualComponent';
-import { JUMP_SPEED } from '../data/PlayerConstants';
+import { PLAYER_SETTINGS } from '../data/PlayerSettings';
 import { laneOffset } from '../data/LaneMath';
 
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
@@ -111,19 +111,41 @@ export default class SwipeRunnerController extends Component {
      * Starts lane-runner movement along `worldDirection` (flattened/
      * normalized, same convention as PlayerMovementController.
      * enterRunnerMode()), with `laneCount` discrete lanes `laneWidth` world
-     * units apart. Starts centered on the middle lane, with wherever the
-     * player is standing right now as that lane's own position — an odd
-     * `laneCount` means the middle lane's offset is exactly 0, so there's no
-     * snap on activation.
+     * units apart, centered on `laneOrigin` (the corridor's own fixed
+     * middle-lane position in world space — e.g. ControllerScene's
+     * SWIPE_LANE_CENTER_X — the SAME point the visible lane rectangles are
+     * drawn from). Snaps to whichever lane the player's CURRENT position is
+     * actually closest to, not always the middle one — the trigger gate is
+     * several units wide, so a player crossing it off-center would
+     * otherwise start running along the edge of a lane instead of down its
+     * middle (this component assumed dead-center entry before).
      */
-    public activate(worldDirection: THREE.Vector3, laneCount: number, laneWidth: number): void {
+    public activate(worldDirection: THREE.Vector3, laneCount: number, laneWidth: number, laneOrigin: THREE.Vector3): void {
         this.runnerForward.set(worldDirection.x, 0, worldDirection.z).normalize();
         this.runnerRight.crossVectors(this.runnerForward, WORLD_UP).normalize();
         this.laneCount = Math.max(1, laneCount);
         this.laneWidth = laneWidth;
-        this.currentLaneIndex = Math.floor(this.laneCount / 2);
-        this.lateralOffset = 0;
+
+        const position = this.entity.transform.position;
+        const currentLateral = (position.x - laneOrigin.x) * this.runnerRight.x + (position.z - laneOrigin.z) * this.runnerRight.z;
+        this.currentLaneIndex = this.nearestLaneIndex(currentLateral);
+        this.lateralOffset = currentLateral;
+
         this.enabled = true;
+    }
+
+    /** Index of whichever lane's own offset (see LaneMath.laneOffset()) is closest to `lateral`. */
+    private nearestLaneIndex(lateral: number): number {
+        let bestIndex = 0;
+        let bestDistance = Infinity;
+        for (let i = 0; i < this.laneCount; i++) {
+            const distance = Math.abs(laneOffset(i, this.laneCount, this.laneWidth) - lateral);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestIndex = i;
+            }
+        }
+        return bestIndex;
     }
 
     /** Reverts control to whoever re-enables PlayerMovementController next — see ControllerScene's exit trigger. */
@@ -157,7 +179,7 @@ export default class SwipeRunnerController extends Component {
         if (!rigidBody?.grounded) {
             return;
         }
-        rigidBody.velocity.y = JUMP_SPEED;
+        rigidBody.velocity.y = PLAYER_SETTINGS.jumpSpeed;
         this.entity.getComponent(CharacterVisualComponent)?.character.jump();
     }
 

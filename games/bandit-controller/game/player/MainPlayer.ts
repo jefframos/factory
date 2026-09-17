@@ -19,13 +19,12 @@ import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
 import { TextureBuilder } from '../builders/TextureBuilder';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
 import { DEFAULT_CHARACTER_VIEW, resolveSkinImagePath } from '../data/CharacterViews';
+import { PLAYER_SETTINGS } from '../data/PlayerSettings';
 
 /** Player collider half-extents, roughly a standing human's box. */
 const HALF_EXTENTS = new THREE.Vector3(0.4, 0.9, 0.4);
 /** FBX export scale for this character rig. */
 const CHARACTER_SCALE = 0.0075;
-const WALK_SPEED = 5;
-const RUN_SPEED_MULTIPLIER = 1.8;
 
 /** Model-registry entries carry a repo-relative fullPath (e.g. "bandit-controller/models/..."), served at runtime from ./bandit-controller/... (see public/bandit-controller/models, built via `npm run models`). */
 const modelUrl = (fullPath: string): string => `./${fullPath}`;
@@ -63,6 +62,17 @@ export default class MainPlayer extends Entity {
         return this.getComponent(RigidBody)!;
     }
 
+    private readonly collectTargetPosition = new THREE.Vector3();
+
+    /** Where world pickups (Collectible) aim for — transform.position (feet level) raised by PlayerSettings.collectTargetHeight, so items fly to roughly body-center instead of the ground. Returns a reused scratch vector — copy it if the value needs to outlive the current call (see ControllerScene.buildCollectibles()). */
+    public getCollectTargetPosition(): THREE.Vector3 {
+        return this.collectTargetPosition.set(
+            this.transform.position.x,
+            this.transform.position.y + PLAYER_SETTINGS.collectTargetHeight,
+            this.transform.position.z,
+        );
+    }
+
     public override awake(): void {
         this.addComponent(new RigidBody({
             halfExtents: HALF_EXTENTS,
@@ -82,18 +92,15 @@ export default class MainPlayer extends Entity {
 
     /** Loads the FBX character + the idle/walk/run/jump/roll/slide clips and wires up the animation state graph, then attaches CharacterVisualComponent so it starts tracking the RigidBody that's already been moving this whole time. */
     public async loadCharacter(): Promise<void> {
-        const character = new ThirdPersonCharacter({
-            walkSpeed: WALK_SPEED,
-            runSpeedMultiplier: RUN_SPEED_MULTIPLIER,
-        });
+        const character = new ThirdPersonCharacter();
 
         await character.loadMesh(modelUrl(MODELS.Characters.CharacterMedium.fullPath));
         await character.registerAnimation('idle', modelUrl(MODELS.Characters.Idle.fullPath));
         await character.registerAnimation('walk', modelUrl(MODELS.Characters.Walking.fullPath));
         await character.registerAnimation('run', modelUrl(MODELS.Characters.Running.fullPath));
-        await character.registerAnimation('jumpUp', modelUrl(MODELS.Characters.JumpingUp.fullPath));
-        await character.registerAnimation('falling', modelUrl(MODELS.Characters.FallingIdle.fullPath));
-        await character.registerAnimation('landing', modelUrl(MODELS.Characters.Landing.fullPath));
+        await character.registerAnimation('jumpUp', modelUrl(MODELS.Characters.JumpUpNew.fullPath));
+        await character.registerAnimation('falling', modelUrl(MODELS.Characters.LandingNew.fullPath));
+        await character.registerAnimation('landing', modelUrl(MODELS.Characters.LandingNew.fullPath));
         await character.registerAnimation('roll', modelUrl(MODELS.Characters.Roll.fullPath));
         await character.registerAnimation('slide', modelUrl(MODELS.Characters.Slide.fullPath));
         character.setUp();

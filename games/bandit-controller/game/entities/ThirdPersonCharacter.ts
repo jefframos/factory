@@ -1,35 +1,17 @@
 // ThirdPersonCharacter.ts
 //
 // Player-driven controller wrapping CharacterBody (the mesh/animation half —
-// see that file). This class owns only what's specific to being
-// PLAYER-controlled: move-speed config. Driven externally — call update()
-// once per frame with whatever position/move-input the host scene's own
-// player physics already computed (see CharacterVisualComponent), rather
-// than owning any physics itself.
+// see that file). Driven externally — call update() once per frame with
+// whatever position/move-input the host scene's own player physics already
+// computed (see CharacterVisualComponent), rather than owning any physics
+// itself.
 
 import * as THREE from 'three';
 import CharacterBody from './CharacterBody';
-
-/** Tunable movement speeds for this character — the host scene reads these via getMoveSpeed(). */
-export interface CharacterConfig {
-    /** Base ground speed, world units/second, used while not sprinting. */
-    walkSpeed: number;
-    /** Multiplied onto walkSpeed while sprinting (see getMoveSpeed(true)). */
-    runSpeedMultiplier: number;
-}
-
-const DEFAULT_CHARACTER_CONFIG: CharacterConfig = {
-    walkSpeed: 5,
-    runSpeedMultiplier: 1.8,
-};
+import { PLAYER_SETTINGS } from '../data/PlayerSettings';
 
 export default class ThirdPersonCharacter {
     public readonly body: CharacterBody = new CharacterBody();
-    public readonly config: CharacterConfig;
-
-    public constructor(config?: Partial<CharacterConfig>) {
-        this.config = { ...DEFAULT_CHARACTER_CONFIG, ...config };
-    }
 
     public get container(): THREE.Group {
         return this.body.container;
@@ -39,9 +21,9 @@ export default class ThirdPersonCharacter {
         return this.body.animator;
     }
 
-    /** Effective ground speed, world units/second. */
+    /** Effective ground speed, world units/second — reads PlayerSettings.ts live, so tuning it (by hand or via the dev-GUI) takes effect immediately. */
     public getMoveSpeed(sprinting: boolean = false): number {
-        return sprinting ? this.config.walkSpeed * this.config.runSpeedMultiplier : this.config.walkSpeed;
+        return sprinting ? PLAYER_SETTINGS.walkSpeed * PLAYER_SETTINGS.runSpeedMultiplier : PLAYER_SETTINGS.walkSpeed;
     }
 
     public async loadMesh(url: string): Promise<void> {

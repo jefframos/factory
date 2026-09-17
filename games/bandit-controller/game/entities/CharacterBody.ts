@@ -100,12 +100,12 @@ export default class CharacterBody {
         board.registerTransition('falling', 'walk', 0.15, (vars) => (vars.speed as number) > idleToWalkSpeed && (vars.speed as number) < walkToRunSpeed && vars.grounded === true);
         board.registerTransition('landing', 'idle', 0.15, (vars) => (vars.speed as number) <= idleToWalkSpeed && vars.grounded === true);
 
-        // jumpUp/landing/roll/slide are one-shot poses (loop=false, the trailing argument
-        // below) — they play through once and hold their last frame instead of restarting
-        // from frame 0 every time the clip reaches its own end. Without this, jumpUp in
-        // particular (which can now span most of a real jump's ascent, see the transition
-        // below) would keep LOOPING for as long as the ascent outlasts the clip's own short
-        // duration — a visible restart-stutter every loop, not a smooth arc.
+        // jumpUp/falling/landing/roll/slide are all one-shot poses (loop=false, the trailing
+        // argument below) — they play through once and hold their last frame instead of
+        // restarting from frame 0 every time the clip reaches its own end. Without this,
+        // whichever of these outlasts its own clip's short duration (jumpUp across a real
+        // jump's ascent, falling across however long the actual drop takes) would keep
+        // LOOPING for the rest of that state — a visible restart-stutter, not a smooth arc.
         board.registerTransition('any', 'jumpUp', 0.1, undefined, 'jump', false);
         // Real physics gives verticalSpeed a big positive value the instant the jump starts,
         // so a "> 0" check here would fire on the very next tick — cutting jumpUp's own 0.1s
@@ -113,7 +113,7 @@ export default class CharacterBody {
         // top of it (three actions fighting for weight at once), which is what read as a
         // glitch. <= 0 instead waits for the actual apex/descent, giving jumpUp the whole
         // ascent to play and falling a clean, uncontested crossfade of its own.
-        board.registerTransition('jumpUp', 'falling', 0.5, (vars) => (vars.verticalSpeed as number) <= 0);
+        board.registerTransition('jumpUp', 'falling', 0.5, (vars) => (vars.verticalSpeed as number) <= 0, undefined, false);
         board.registerTransition('falling', 'landing', 0.25, (vars) => vars.grounded === true, undefined, false);
 
         board.registerTransition('any', 'roll', 0.1, undefined, 'roll', false);

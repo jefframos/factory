@@ -4,17 +4,12 @@
 // RigidBody.ts). This is a simple collide-and-slide system for top-down/
 // platformer-lite games, not a real simulation — no mass, no impulses, no
 // rotation, just AABB overlap + push-out per axis.
-
-/** World-units/second^2 downward acceleration applied to every RigidBody with useGravity=true. */
-export const GRAVITY = -20;
-
-/**
- * Hard cap (seconds) on the delta PhysicsWorld.step() will ever integrate in one call.
- * Since gravity/position integration is delta multiplied twice (velocity += GRAVITY*delta,
- * then position += velocity*delta), an unclamped multi-second delta (e.g. a tab losing
- * focus mid FBX load) would launch bodies clear across the map in a single step.
- */
-export const MAX_PHYSICS_DELTA = 1 / 20;
+//
+// Gravity/max-physics-delta live in ../data/WorldSettings.ts instead of
+// here — PhysicsWorld.step() reads that data LIVE (not a copy taken at
+// import time), so it's the one to edit (by hand, or via the dev-GUI) for
+// world-tuning; this file keeps the structural stuff (layers, debug colors)
+// that isn't meant to be a live "setting."
 
 /** Color used for the debug wireframe boxes, when PHYSICS_DEBUG is on. */
 export const DEBUG_COLLIDER_COLOR = 0xff0066;
