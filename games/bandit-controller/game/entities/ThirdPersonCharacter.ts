@@ -8,10 +8,19 @@
 
 import * as THREE from 'three';
 import CharacterBody from './CharacterBody';
-import { PLAYER_SETTINGS } from '../data/PlayerSettings';
+import { WorldBendService } from '../services/BendService';
+import { getPlayerMoveSpeed } from '../data/PlayerSettings';
 
 export default class ThirdPersonCharacter {
-    public readonly body: CharacterBody = new CharacterBody();
+    public readonly body: CharacterBody;
+
+    public isSliding: boolean = false;
+    public isRolling: boolean = false;
+
+    /** `bendService` defaults to CharacterBody's own default (BendService, the hub's plain radial dip) — RunnerMinigameScene/SwipeMinigameScene pass RunnerBendService instead so the player's own materials bend the same interactive way as the track under them. */
+    public constructor(bendService?: WorldBendService) {
+        this.body = new CharacterBody(bendService);
+    }
 
     public get container(): THREE.Group {
         return this.body.container;
@@ -21,9 +30,9 @@ export default class ThirdPersonCharacter {
         return this.body.animator;
     }
 
-    /** Effective ground speed, world units/second — reads PlayerSettings.ts live, so tuning it (by hand or via the dev-GUI) takes effect immediately. */
+    /** Effective ground speed, world units/second — reads PlayerSettings.ts live, so tuning it (by hand or via the dev-GUI) takes effect immediately. Delegates to the standalone getPlayerMoveSpeed() (see its own doc) rather than duplicating the formula — MainPlayer calls that same function directly for PlayerMovementController/SwipeRunnerController, since both need a real speed value before this character even finishes loading. */
     public getMoveSpeed(sprinting: boolean = false): number {
-        return sprinting ? PLAYER_SETTINGS.walkSpeed * PLAYER_SETTINGS.runSpeedMultiplier : PLAYER_SETTINGS.walkSpeed;
+        return getPlayerMoveSpeed(sprinting);
     }
 
     public async loadMesh(url: string): Promise<void> {
@@ -66,12 +75,23 @@ export default class ThirdPersonCharacter {
 
     /** Fires the roll/dodge animator trigger. */
     public dodge(): void {
+        if (this.isSliding || this.isRolling) {
+            return;
+        }
         this.body.animator.animatorBoard?.setTrigger('roll');
     }
 
     /** Fires the slide animator trigger — see SwipeRunnerController's swipe-down. */
     public slide(): void {
+        if (this.isSliding || this.isRolling) {
+            return;
+        }
         this.body.animator.animatorBoard?.setTrigger('slide');
+    }
+
+    /** Fires the "hit an obstacle" animator trigger — see ObstacleBuilder.ts/RunnerMinigameScene/SwipeMinigameScene. No mutual-exclusion guard (unlike dodge()/slide()): getting hit always takes over, and the whole scene freezes right after, so there's nothing left to protect against re-triggering. */
+    public hit(): void {
+        this.body.animator.animatorBoard?.setTrigger('hit');
     }
 
     public destroy(): void {

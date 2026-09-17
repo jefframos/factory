@@ -16,7 +16,7 @@ export interface CollectibleDefinition {
     readonly resourceAmount: number;
     /** Uniform scale applied to the loaded mesh — unlike the player's FBX rig (CHARACTER_SCALE = 0.0075 in MainPlayer.ts), this resource pack's GLTF props are already authored in world units, so 1 is the natural size (see pizza's own AssetLibraryRegistry.ts, which uses scale: 1-2 for these same Resources.* models). */
     readonly modelScale: number;
-    /** Path under images/non-preload — e.g. "icons/money.webp". Resolve with resolveCollectibleIconPath(). Same 2D icon used by both the flying-collect effect and the HUD counter (see GameUI.ts, ControllerScene.onCollectResource()) — one source of truth per resource, matching bandit/legacy's AssetLibraryRegistry convention (one icon shared by the world drop and the currency HUD). */
+    /** Path under images/non-preload — e.g. "icons/money.webp". Resolve with resolveCollectibleIconPath(). Same 2D icon used by both the flying-collect effect and the HUD counter (see GameUI.ts, HubScene.onCollectResource()) — one source of truth per resource, matching bandit/legacy's AssetLibraryRegistry convention (one icon shared by the world drop and the currency HUD). */
     readonly icon: string;
 }
 
@@ -51,10 +51,10 @@ export const COLLECTIBLE_TUNING: CollectibleTuning = {
 
 /**
  * Hand-placed spawn spots for the demo's starter pickups — an evenly spaced
- * ring around PLAYER_SPAWN_POSITION (see ControllerScene), the "central
- * area" the player starts in. Kept inside the ring the runner-lane gates sit
- * outside of (RUNNER_ENTER_GATE_Z = -10, ControllerScene.ts) so nothing
- * overlaps a gate trigger.
+ * ring around PLAYER_SPAWN_POSITION (see HubScene), the "central area" the
+ * player starts in. Kept well clear of HubScene's own minigame entry gates
+ * (RUNNER_GATE_POSITION/SWIPE_GATE_POSITION) so nothing overlaps a gate
+ * trigger.
  */
 const SPAWN_RING_RADIUS = 6;
 const SPAWN_RING_COUNT = 8;

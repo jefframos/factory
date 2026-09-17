@@ -16,9 +16,9 @@
 // across the lane eases toward wherever the pointer/finger currently is on
 // screen (tracked continuously via a plain window pointermove listener, no
 // click/tap needed first), left edge to right edge mapping onto the full
-// lane width. A scene triggers runner mode externally (see ControllerScene's
-// pair of runner-lane triggers); this component doesn't know anything about
-// triggers itself.
+// lane width. A scene triggers runner mode externally (see
+// RunnerMinigameScene.build(), the only caller); this component doesn't
+// know anything about scenes/triggers itself.
 //
 // Runs its movement logic in fixedUpdate() — it feeds RigidBody.velocity,
 // and World.fixedUpdate() runs every entity's fixedUpdate() before stepping
@@ -244,10 +244,10 @@ export default class PlayerMovementController extends Component {
 
     /**
      * Player shouldn't keep coasting on whatever velocity it had the instant
-     * this got disabled — also hides the on-screen joystick, since disabling
-     * this whole component (rather than just switching its internal
-     * runnerMode) is how ControllerScene hands movement off to a DIFFERENT
-     * controller entirely (see SwipeRunnerController).
+     * this got disabled — also hides the on-screen joystick. SwipeMinigameScene
+     * disables this whole component (rather than just switching its internal
+     * runnerMode) so SwipeRunnerController can own movement instead, without
+     * both fighting over the same RigidBody.velocity in the same tick.
      */
     public onDisable(): void {
         const rigidBody = this.entity.getComponent(RigidBody);

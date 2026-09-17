@@ -16,6 +16,14 @@ const CharactersCharacterMedium = {
   nodes: {}
 } as const;
 
+const CharactersFallback = {
+  id: 'fallback',
+  path: 'characters/default/fallback',
+  fullPath: 'bandit-controller/models/characters/default/fallback.fbx',
+  format: 'fbx',
+  nodes: {}
+} as const;
+
 const CharactersFallingIdle = {
   id: 'FallingIdle',
   path: 'characters/default/FallingIdle',
@@ -1849,6 +1857,7 @@ const WorldLowDetailBuildingWideB = {
 export const MODELS = {
   Characters: {
     CharacterMedium: CharactersCharacterMedium,
+    Fallback: CharactersFallback,
     FallingIdle: CharactersFallingIdle,
     Idle: CharactersIdle,
     JumpDownRun: CharactersJumpDownRun,

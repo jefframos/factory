@@ -4,7 +4,7 @@
 // spawnFlyingIconToOverlayPoint() (identical in games/pizza) — trimmed to
 // just the one direction bandit-controller needs: a 3D world point flying
 // to a live 2D point in the UI (Collectible -> GameUI's money icon, see
-// ControllerScene.onCollectResource()).
+// HubScene.onCollectResource()).
 //
 // Re-projects `fromWorld` through the camera every frame (not once at
 // spawn) so the arc stays correct if the camera moves mid-flight, and

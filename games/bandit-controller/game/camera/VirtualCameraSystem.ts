@@ -6,8 +6,9 @@
 // cutTo()/blendTo() switch which is active, and update(delta) — call once
 // per frame — advances any blend in progress. `current` always holds the
 // live, fully-resolved settings the scene's actual camera should read from
-// every frame (see ControllerScene.updateCamera()); nothing else needs to
-// know a blend is even happening.
+// every frame (see WorldEnvironment.updateCamera() in
+// game/scenes/shared/WorldEnvironment.ts); nothing else needs to know a
+// blend is even happening.
 
 import { CameraSettings } from '../data/GameSettings';
 
@@ -46,7 +47,7 @@ function lerpCameraSettingsInto(out: CameraSettings, from: CameraSettings, to: C
 }
 
 export default class VirtualCameraSystem {
-    /** Live, continuously-updated settings — read this every frame from the scene's actual camera (see ControllerScene.updateCamera()). A private clone, never one of the registered CameraSettings objects themselves, so blending never mutates a preset's own data. */
+    /** Live, continuously-updated settings — read this every frame from the scene's actual camera (see WorldEnvironment.updateCamera()). A private clone, never one of the registered CameraSettings objects themselves, so blending never mutates a preset's own data. */
     public readonly current: CameraSettings;
 
     private readonly cameras = new Map<string, CameraSettings>();

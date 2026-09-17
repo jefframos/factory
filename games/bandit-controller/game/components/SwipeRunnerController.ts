@@ -3,15 +3,16 @@
 // A DIFFERENT runner controller from PlayerMovementController's own
 // continuous pointer-follow runner mode — this one snaps the player to one
 // of N discrete lanes: swipe left/right moves one lane over, swipe up
-// jumps, swipe down plays the slide animation. Used by the second
-// (swipe-lane) pair of runner triggers in ControllerScene, parallel to the
-// original (pointer-follow) pair.
+// jumps, swipe down plays the slide animation. Used by
+// SwipeMinigameScene — a separate dedicated scene from
+// RunnerMinigameScene, which uses PlayerMovementController's own
+// pointer-follow runner mode instead (see index.ts/HubScene.ts for how the
+// player gets routed to one or the other).
 //
-// Mutually exclusive with PlayerMovementController — ControllerScene
-// disables that component and activate()s this one when the player enters
-// the swipe-lane trigger, and reverses it on the exit trigger. Both would
-// otherwise fight over the same RigidBody.velocity in the same
-// fixedUpdate() tick.
+// Mutually exclusive with PlayerMovementController — SwipeMinigameScene
+// disables that component and activate()s this one instead, in its own
+// build(). Both would otherwise fight over the same RigidBody.velocity in
+// the same fixedUpdate() tick.
 //
 // Starts disabled (see awake()) — activate() is what turns it on.
 
@@ -42,6 +43,8 @@ export default class SwipeRunnerController extends Component {
 
     private swipeStartX = 0;
     private swipeStartY = 0;
+    /** True only once THIS instance has actually seen a pointerdown — guards against a stray pointerup left over from a drag/touch that started in a PREVIOUS scene (e.g. holding the analog stick while walking into this minigame's entry gate): without it, swipeStartX/Y would still be their (0,0) default, so that release would read as a huge, spurious swipe the instant this scene starts (see this file's own doc history — this was reported as "the minigame starts wrong"). */
+    private pointerDownSeen = false;
 
     private readonly runnerForward = new THREE.Vector3(0, 0, -1);
     private readonly runnerRight = new THREE.Vector3(1, 0, 0);
@@ -70,11 +73,16 @@ export default class SwipeRunnerController extends Component {
     }
 
     private onPointerDown = (e: PointerEvent): void => {
+        this.pointerDownSeen = true;
         this.swipeStartX = e.clientX;
         this.swipeStartY = e.clientY;
     };
 
     private onPointerUp = (e: PointerEvent): void => {
+        if (!this.pointerDownSeen) {
+            return;
+        }
+        this.pointerDownSeen = false;
         this.detectSwipe(e.clientX, e.clientY);
     };
 
@@ -112,8 +120,8 @@ export default class SwipeRunnerController extends Component {
      * normalized, same convention as PlayerMovementController.
      * enterRunnerMode()), with `laneCount` discrete lanes `laneWidth` world
      * units apart, centered on `laneOrigin` (the corridor's own fixed
-     * middle-lane position in world space — e.g. ControllerScene's
-     * SWIPE_LANE_CENTER_X — the SAME point the visible lane rectangles are
+     * middle-lane position in world space — e.g. SwipeMinigameScene's own
+     * START_POSITION — the SAME point the visible lane rectangles are
      * drawn from). Snaps to whichever lane the player's CURRENT position is
      * actually closest to, not always the middle one — the trigger gate is
      * several units wide, so a player crossing it off-center would
@@ -148,7 +156,7 @@ export default class SwipeRunnerController extends Component {
         return bestIndex;
     }
 
-    /** Reverts control to whoever re-enables PlayerMovementController next — see ControllerScene's exit trigger. */
+    /** Reverts control to whoever re-enables PlayerMovementController next — not actually called today (SwipeMinigameScene's own lifecycle just ends the whole scene instead), kept for symmetry with activate() and any future in-scene exit trigger. */
     public deactivate(): void {
         this.enabled = false;
     }

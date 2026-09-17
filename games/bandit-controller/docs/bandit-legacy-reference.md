@@ -84,7 +84,7 @@ additions over `bandit-controller`'s copy:
 - `game/physics/SolidArea.ts` — a shared `buildSolidArea()` helper every
   zone entity (`ShopZone`, `CraftZone`, `QueueZone`, ...) uses to build its
   static solid `RigidBody` box. `bandit-controller`'s
-  `ControllerScene.buildGroundCollider()`/`buildTriggerGate()` do this
+  `GateBuilder.buildTriggerGate()`/`WorldEnvironment.buildGroundCollider()` do this
   inline instead — worth factoring out if bandit-controller grows more zone
   types.
 
@@ -469,7 +469,7 @@ access to via `PlatformFactory.getPlatformInstance()`.
   imperceptible. Would need adding if this effect is ever reused for a
   much-longer-range flight.
 - **`game/ui/GameUI.ts`** — money "pill" (icon + amount), fed by
-  `ControllerScene.onCollectResource()`. Ported `EconomyUI`'s
+  `HubScene.onCollectResource()`. Ported `EconomyUI`'s
   `playGainFeedback()` (icon punch-scale + rising `"+N"`) verbatim,
   including its constants. Digits snap instantly on change, same as legacy.
 - **Icon asset** — `games/bandit/legacy/game/world/AssetLibraryRegistry.ts`'s

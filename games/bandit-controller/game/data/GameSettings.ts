@@ -1,11 +1,11 @@
 // GameSettings.ts
 //
-// Named camera setting presets ("modes") for ControllerScene's follow
-// camera — same shape as bandit's CameraTemplateTypes.ts, trimmed to just
-// what this controller demo needs. STANDARD_CAMERA_SETTINGS is the default
-// mode; ControllerScene starts on a live COPY of it (see that file's own
-// CAMERA_SETTINGS) so dev-GUI edits never mutate the shared preset object
-// itself.
+// Named camera setting presets ("modes") for every scene's follow camera
+// (see game/scenes/shared/WorldEnvironment.ts, which every scene composes)
+// — same shape as bandit's CameraTemplateTypes.ts, trimmed to just what this
+// controller demo needs. STANDARD_CAMERA_SETTINGS is the default mode;
+// VirtualCameraSystem starts on a live COPY of it (see its own `current`
+// field) so dev-GUI edits never mutate the shared preset object itself.
 
 export interface CameraSettings {
     /** Degrees the camera is rotated around the player, around Y (0 = behind, looking toward -Z; positive turns it clockwise viewed from above). */
@@ -28,7 +28,7 @@ export const STANDARD_CAMERA_SETTINGS: CameraSettings = {
     offset: { x: 0, y: 1.2, z: 0 },
 };
 
-/** Tighter, more head-on shot — a second preset mostly so VirtualCameraSystem has something to blend TO/FROM out of the box (see ControllerScene). */
+/** Tighter, more head-on shot — a second preset mostly so VirtualCameraSystem has something to blend TO/FROM out of the box (see HubScene's camera hotkeys). */
 export const CLOSEUP_CAMERA_SETTINGS: CameraSettings = {
     yawDeg: 0,
     pitchDeg: 12,
@@ -37,7 +37,7 @@ export const CLOSEUP_CAMERA_SETTINGS: CameraSettings = {
     offset: { x: 0, y: 1.4, z: 0 },
 };
 
-/** Straight overhead — pitchDeg near 90 so the orbit math (cameraOrbitOffset() in ControllerScene) stays well-defined; see that function's own doc for why exactly 90 is avoided. */
+/** Straight overhead — pitchDeg near 90 so the orbit math (cameraOrbitOffset() in game/scenes/shared/WorldEnvironment.ts) stays well-defined; see that function's own doc for why exactly 90 is avoided. */
 export const TOPDOWN_CAMERA_SETTINGS: CameraSettings = {
     yawDeg: 0,
     pitchDeg: 85,
@@ -51,9 +51,10 @@ export const TOPDOWN_CAMERA_SETTINGS: CameraSettings = {
  * STANDARD so more of the lane ahead is visible, snappier followSpeed since
  * runner-mode movement (see PlayerMovementController.enterRunnerMode()) is
  * faster and constant. yawDeg matches STANDARD's (0 = behind, looking
- * toward -Z) since ControllerScene's runner lane also runs along -Z — the
- * camera and the lane's own forward need to agree, or the camera would sit
- * behind the player looking the WRONG way down the lane.
+ * toward -Z) since both minigame scenes' runner lanes also run along -Z (see
+ * MinigameSettings.RUNNER_LANE_DIRECTION) — the camera and the lane's own
+ * forward need to agree, or the camera would sit behind the player looking
+ * the WRONG way down the lane.
  */
 export const RUNNER_CAMERA_SETTINGS: CameraSettings = {
     yawDeg: 0,

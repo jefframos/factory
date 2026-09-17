@@ -19,7 +19,8 @@ import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
 import { TextureBuilder } from '../builders/TextureBuilder';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
 import { DEFAULT_CHARACTER_VIEW, resolveSkinImagePath } from '../data/CharacterViews';
-import { PLAYER_SETTINGS } from '../data/PlayerSettings';
+import { PLAYER_SETTINGS, getPlayerMoveSpeed } from '../data/PlayerSettings';
+import { WorldBendService } from '../services/BendService';
 
 /** Player collider half-extents, roughly a standing human's box. */
 const HALF_EXTENTS = new THREE.Vector3(0.4, 0.9, 0.4);
@@ -33,38 +34,41 @@ export default class MainPlayer extends Entity {
     private readonly inputHost: MovementInputHost;
     /** Only needed for loadCharacter() to parent the loaded rig's container directly into the 3D scene — CharacterVisualComponent itself deliberately doesn't do this (ThirdPersonCharacter.update() sets the container's position in WORLD space). */
     private readonly threeScene: THREE.Scene;
+    /** Which bend flavor this player's own character materials use once loaded — see loadCharacter(). Undefined defers to ThirdPersonCharacter/CharacterBody's own default (BendService, the hub's plain radial dip). */
+    private readonly bendService?: WorldBendService;
     private thirdPersonCharacter?: ThirdPersonCharacter;
     /** Guards loadCharacter()'s continuation against attaching a component to an entity that got destroyed while the FBX load was still in flight. */
     private destroyed = false;
 
-    public constructor(inputHost: MovementInputHost, threeScene: THREE.Scene) {
+    public constructor(inputHost: MovementInputHost, threeScene: THREE.Scene, bendService?: WorldBendService) {
         super();
         this.inputHost = inputHost;
         this.threeScene = threeScene;
+        this.bendService = bendService;
     }
 
     public get character(): ThirdPersonCharacter | undefined {
         return this.thirdPersonCharacter;
     }
 
-    /** Handle for switching in/out of the free/pointer-follow runner mode from outside — see ControllerScene's (first) pair of runner-lane triggers. */
+    /** Handle for switching in/out of the free/pointer-follow runner mode from outside — see RunnerMinigameScene.build(). */
     public get movementController(): PlayerMovementController {
         return this.getComponent(PlayerMovementController)!;
     }
 
-    /** Handle for the DIFFERENT, discrete-lane swipe controller — see ControllerScene's second pair of runner-lane triggers. Disabled by default; activate()/deactivate() switch it on/off. */
+    /** Handle for the DIFFERENT, discrete-lane swipe controller — see SwipeMinigameScene.build(). Disabled by default; activate()/deactivate() switch it on/off. */
     public get swipeRunnerController(): SwipeRunnerController {
         return this.getComponent(SwipeRunnerController)!;
     }
 
-    /** The player's own physics collider — e.g. for ControllerScene's reset button, which needs to zero velocity directly. */
+    /** The player's own physics collider — e.g. for HubScene's reset button, which needs to zero velocity directly. */
     public get rigidBody(): RigidBody {
         return this.getComponent(RigidBody)!;
     }
 
     private readonly collectTargetPosition = new THREE.Vector3();
 
-    /** Where world pickups (Collectible) aim for — transform.position (feet level) raised by PlayerSettings.collectTargetHeight, so items fly to roughly body-center instead of the ground. Returns a reused scratch vector — copy it if the value needs to outlive the current call (see ControllerScene.buildCollectibles()). */
+    /** Where world pickups (Collectible) aim for — transform.position (feet level) raised by PlayerSettings.collectTargetHeight, so items fly to roughly body-center instead of the ground. Returns a reused scratch vector — copy it if the value needs to outlive the current call (see HubScene.buildCollectibles()). */
     public getCollectTargetPosition(): THREE.Vector3 {
         return this.collectTargetPosition.set(
             this.transform.position.x,
@@ -80,19 +84,20 @@ export default class MainPlayer extends Entity {
             layer: Layers.Player,
         }));
 
-        this.addComponent(new PlayerMovementController(
-            (sprinting) => this.thirdPersonCharacter?.getMoveSpeed(sprinting) ?? 0,
-            this.inputHost,
-        ));
-
-        this.addComponent(new SwipeRunnerController(
-            (sprinting) => this.thirdPersonCharacter?.getMoveSpeed(sprinting) ?? 0,
-        ));
+        // getPlayerMoveSpeed is a pure function of PLAYER_SETTINGS (see its own doc) — wired
+        // directly rather than through `this.thirdPersonCharacter?.getMoveSpeed(...)` because
+        // both runner modes force sprinting:true for their whole constant automatic forward
+        // pace, and need that real speed from their very first fixedUpdate() tick, well before
+        // loadCharacter()'s FBX/animation load resolves — the old optional-chaining fallback
+        // (`?? 0`) meant a runner scene's player sat frozen at the start line until the
+        // character finished loading.
+        this.addComponent(new PlayerMovementController(getPlayerMoveSpeed, this.inputHost));
+        this.addComponent(new SwipeRunnerController(getPlayerMoveSpeed));
     }
 
-    /** Loads the FBX character + the idle/walk/run/jump/roll/slide clips and wires up the animation state graph, then attaches CharacterVisualComponent so it starts tracking the RigidBody that's already been moving this whole time. */
+    /** Loads the FBX character + the idle/walk/run/jump/roll/slide/hit clips and wires up the animation state graph, then attaches CharacterVisualComponent so it starts tracking the RigidBody that's already been moving this whole time. */
     public async loadCharacter(): Promise<void> {
-        const character = new ThirdPersonCharacter();
+        const character = new ThirdPersonCharacter(this.bendService);
 
         await character.loadMesh(modelUrl(MODELS.Characters.CharacterMedium.fullPath));
         await character.registerAnimation('idle', modelUrl(MODELS.Characters.Idle.fullPath));
@@ -103,6 +108,10 @@ export default class MainPlayer extends Entity {
         await character.registerAnimation('landing', modelUrl(MODELS.Characters.LandingNew.fullPath));
         await character.registerAnimation('roll', modelUrl(MODELS.Characters.Roll.fullPath));
         await character.registerAnimation('slide', modelUrl(MODELS.Characters.Slide.fullPath));
+        // FallingIdle was already in the model registry but never actually used anywhere —
+        // reused here for the "hit an obstacle" pose (see ThirdPersonCharacter.hit()) rather
+        // than adding a new raw asset.
+        await character.registerAnimation('hit', modelUrl(MODELS.Characters.FallingIdle.fullPath));
         character.setUp();
 
         const faceTexture = await TextureBuilder.load(resolveSkinImagePath(DEFAULT_CHARACTER_VIEW.face));

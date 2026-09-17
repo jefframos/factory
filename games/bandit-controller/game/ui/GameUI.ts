@@ -1,9 +1,11 @@
 // GameUI.ts
 //
-// The whole 2D UI this controller demo needs: one button, top-right,
-// resetting the player back to spawn, plus a top-left money "pill" (icon +
-// amount) fed by the world's Collectible pickups (see
-// ControllerScene.buildCollectibles()/onCollectResource()). Positioned
+// The whole 2D UI HubScene needs: a top-right button stack (Reset, then a
+// quick-launch button per minigame stacked directly under it — dev/testing
+// shortcuts for the same walk-through-the-gate transition, see HubScene's
+// own onEnterMinigame wiring), plus a top-left money "pill" (icon + amount)
+// fed by the world's Collectible pickups (see
+// HubScene.buildCollectibles()/onCollectResource()). Positioned
 // against Game.overlayScreenData.topRight/topLeft — the same "screen corner
 // minus a fixed margin" convention bandit's own top-bar HUD uses for its
 // currency container (see EconomyUI.ts/UIService.ts:
@@ -26,6 +28,8 @@ import { MONEY_PILE_SMALL, resolveCollectibleIconPath } from '../data/Collectibl
 const MARGIN = 16;
 const BUTTON_WIDTH = 140;
 const BUTTON_HEIGHT = 44;
+/** Vertical gap between stacked top-right buttons (Reset, then the minigame quick-launch buttons). */
+const BUTTON_STACK_GAP = 10;
 
 const ICON_SIZE = 28;
 const ICON_LABEL_GAP = 8;
@@ -39,13 +43,15 @@ const GAIN_POPUP_DURATION_SEC = 0.6;
 
 export default class GameUI extends PIXI.Container {
     private readonly resetButton: BaseButton;
+    private readonly playRunnerButton: BaseButton;
+    private readonly playSwipeButton: BaseButton;
     private readonly moneyPill: PIXI.Container;
     private readonly moneyIcon: PIXI.Sprite;
     private readonly amountLabel: PIXI.Text;
     /** The `.scale` that renders the REAL loaded icon at ICON_SIZE — set once loadMoneyIcon() resolves. Until then the sprite has no texture to size against, so playGainFeedback()'s reset/tween targets use this instead of a hardcoded 1 (see this file's own history: hardcoding 1 there matched the sprite's scale only by accident, and broke as soon as width/height were computed against a real, non-square-pixel-for-pixel texture). */
     private moneyIconBaseScale = 1;
 
-    public constructor(onReset: () => void) {
+    public constructor(onReset: () => void, onPlayRunner: () => void, onPlaySwipe: () => void, initialAmount: number = 0) {
         super();
 
         this.resetButton = new BaseButton({
@@ -64,12 +70,15 @@ export default class GameUI extends PIXI.Container {
         }, new PIXI.Point(0, 0));
         this.resetButton.setLabel('Reset');
 
+        this.playRunnerButton = this.buildMinigameButton('Runner', 0x2f6b3a, 0x3d8a4b, onPlayRunner);
+        this.playSwipeButton = this.buildMinigameButton('Swipe', 0x8a5a1f, 0xb0782c, onPlaySwipe);
+
         this.moneyIcon = new PIXI.Sprite(PIXI.Texture.EMPTY);
         this.moneyIcon.anchor.set(0, 0.5);
         this.moneyIcon.position.set(0, ICON_SIZE / 2);
         void this.loadMoneyIcon();
 
-        this.amountLabel = new PIXI.Text('0', new PIXI.TextStyle({
+        this.amountLabel = new PIXI.Text(initialAmount.toString(), new PIXI.TextStyle({
             fontSize: 24,
             fontWeight: 'bold',
             fill: 0xffe066,
@@ -81,8 +90,28 @@ export default class GameUI extends PIXI.Container {
         this.moneyPill = new PIXI.Container();
         this.moneyPill.addChild(this.moneyIcon, this.amountLabel);
 
-        this.addChild(this.resetButton, this.moneyPill);
+        this.addChild(this.resetButton, this.playRunnerButton, this.playSwipeButton, this.moneyPill);
         this.reposition();
+    }
+
+    /** Same placeholder-tint BaseButton shape as resetButton (see this file's own doc on why — no nine-slice art in this project's own asset set), just its own color per minigame so the two quick-launch buttons read as distinct from Reset and from each other. */
+    private buildMinigameButton(label: string, tint: number, overTint: number, onClick: () => void): BaseButton {
+        const button = new BaseButton({
+            standard: {
+                texture: PIXI.Texture.WHITE,
+                tint,
+                width: BUTTON_WIDTH,
+                height: BUTTON_HEIGHT,
+                fontStyle: new PIXI.TextStyle({ fontSize: 18, fontWeight: 'bold', fill: 0xffffff }),
+                fontColor: 0xffffff,
+                fitText: 0.8,
+            },
+            over: { tint: overTint },
+            down: { tint },
+            click: { tint, callback: onClick },
+        }, new PIXI.Point(0, 0));
+        button.setLabel(label);
+        return button;
     }
 
     private async loadMoneyIcon(): Promise<void> {
@@ -95,7 +124,7 @@ export default class GameUI extends PIXI.Container {
         this.moneyIconBaseScale = this.moneyIcon.scale.x;
     }
 
-    /** Called by ControllerScene once a flying pickup icon actually lands — see FlyingResourceIcon.ts's onArrive contract. Snaps the digits instantly (no count-up tween) and plays the same icon-punch + rising "+N" bandit/legacy's EconomyUI uses. */
+    /** Called by HubScene once a flying pickup icon actually lands — see FlyingResourceIcon.ts's onArrive contract. Snaps the digits instantly (no count-up tween) and plays the same icon-punch + rising "+N" bandit/legacy's EconomyUI uses. */
     public setResourceCount(amount: number): void {
         const gained = amount - Number(this.amountLabel.text);
         this.amountLabel.text = amount.toString();
@@ -105,7 +134,7 @@ export default class GameUI extends PIXI.Container {
         }
     }
 
-    /** In `game.uiLayer`'s own local space — GameUI itself is never transformed (see reposition(), which sets each child's absolute position directly), so a child's own `.position` already IS that space. Used as the flying icon's landing point (see ControllerScene.onCollectResource()). */
+    /** In `game.uiLayer`'s own local space — GameUI itself is never transformed (see reposition(), which sets each child's absolute position directly), so a child's own `.position` already IS that space. Used as the flying icon's landing point (see HubScene.onCollectResource()). */
     public getMoneyIconOverlayPosition(): PIXI.Point {
         return new PIXI.Point(this.moneyPill.x + this.moneyIcon.x, this.moneyPill.y + this.moneyIcon.y);
     }
@@ -143,13 +172,16 @@ export default class GameUI extends PIXI.Container {
         });
     }
 
-    /** Call whenever the viewport resizes (see ControllerScene.resize()) — keeps the button/pill pinned to their corners. */
+    /** Call whenever the viewport resizes (see HubScene.resize()) — keeps the button stack/pill pinned to their corners. */
     public reposition(): void {
         const screen = Game.overlayScreenData;
         if (!screen) {
             return;
         }
-        this.resetButton.position.set(screen.topRight.x - BUTTON_WIDTH - MARGIN, screen.topRight.y + MARGIN);
+        const buttonX = screen.topRight.x - BUTTON_WIDTH - MARGIN;
+        this.resetButton.position.set(buttonX, screen.topRight.y + MARGIN);
+        this.playRunnerButton.position.set(buttonX, this.resetButton.position.y + BUTTON_HEIGHT + BUTTON_STACK_GAP);
+        this.playSwipeButton.position.set(buttonX, this.playRunnerButton.position.y + BUTTON_HEIGHT + BUTTON_STACK_GAP);
         this.moneyPill.position.set(screen.topLeft.x + MARGIN, screen.topLeft.y + MARGIN);
     }
 }

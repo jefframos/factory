@@ -12,7 +12,7 @@
 // given each call), so the curve continuously re-bends toward wherever the
 // player actually is, but always finishes at exactly the same moment.
 // Removal from the World is the caller's job (see
-// ControllerScene.buildCollectibles()) — this entity only flags itself
+// HubScene.buildCollectibles()) — this entity only flags itself
 // `collected`, since despawning itself mid-tick would mutate World's own
 // entities array while World is still iterating it.
 

@@ -2,7 +2,7 @@
 //
 // Single source of truth for mapping a lane INDEX to a world-space lateral
 // offset — shared by SwipeRunnerController (which drives the player toward
-// it) and ControllerScene (which draws the lane markers at the same
+// it) and SwipeMinigameScene (which draws the lane markers at the same
 // offsets), so the visible lanes and the ones the controller actually
 // snaps to can never silently drift out of alignment.
 

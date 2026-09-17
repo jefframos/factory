@@ -1,6 +1,20 @@
 import * as THREE from 'three';
 
 /**
+ * Structural shape every world-bend flavor shares — `BendService` itself
+ * (the hub's plain radial dip) and `RunnerBendService` (the minigames' more
+ * interactive one, see that file). Lets shared geometry builders
+ * (FloorBuilder, GateBuilder, CharacterBody, ...) take "whichever bend
+ * service this scene is using" as a plain parameter instead of hardcoding
+ * an import, so WorldEnvironment can hand each scene the bend it actually
+ * wants applied to its own materials.
+ */
+export interface WorldBendService {
+    applyBend(material: THREE.Material): void;
+    updateOrigin(position: THREE.Vector3): void;
+}
+
+/**
  * Radial world-bend: the ground (and everything else bent) curves away from
  * the player in all directions.
  *

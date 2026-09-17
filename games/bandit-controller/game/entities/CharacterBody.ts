@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { BendService } from '../services/BendService';
+import { BendService, WorldBendService } from '../services/BendService';
 import AnimatorController from './animation/AnimatorController';
 import { loadCompressedFile, releaseObjectURL } from '../utils/GzipLoader';
 
@@ -40,6 +40,12 @@ export default class CharacterBody {
     /** Wraps headCube — cancels the head bone's own inherited scale so HEAD_CUBE_SIZE/HEAD_CUBE_OFFSET are true world units. */
     private headCubeHolder?: THREE.Group;
     private headBone?: THREE.Object3D;
+    /** Which bend flavor this body's own materials use — defaults to the hub's plain BendService; RunnerMinigameScene/SwipeMinigameScene pass RunnerBendService instead (see ThirdPersonCharacter's own constructor). */
+    private readonly bendService: WorldBendService;
+
+    public constructor(bendService: WorldBendService = BendService) {
+        this.bendService = bendService;
+    }
 
     public async loadMesh(url: string): Promise<void> {
         const resolvedUrl = await loadCompressedFile(url);
@@ -65,7 +71,7 @@ export default class CharacterBody {
 
             const materialCount = Array.isArray(child.material) ? child.material.length : 1;
             const flatMaterial = new THREE.MeshStandardMaterial({ color: FALLBACK_COLOR });
-            BendService.applyBend(flatMaterial);
+            this.bendService.applyBend(flatMaterial);
 
             child.material = materialCount > 1
                 ? new Array(materialCount).fill(flatMaterial)
@@ -127,6 +133,13 @@ export default class CharacterBody {
         board.registerTransition('slide', 'idle', 0.2, (vars) => vars.sliding === false && (vars.speed as number) <= idleToWalkSpeed);
         board.registerTransition('slide', 'walk', 0.2, (vars) => vars.sliding === false && (vars.speed as number) > idleToWalkSpeed && (vars.speed as number) < walkToRunSpeed);
         board.registerTransition('slide', 'run', 0.2, (vars) => vars.sliding === false && (vars.speed as number) >= walkToRunSpeed);
+
+        // Obstacle hit (see RunnerMinigameScene/SwipeMinigameScene's own ObstacleBuilder
+        // callers) — one-shot, and deliberately with no exit transition at all: the whole
+        // minigame scene freezes the instant this fires (movement disabled, velocity
+        // zeroed), so there's nothing to transition back to until the player leaves for the
+        // hub, which destroys this entity anyway.
+        board.registerTransition('any', 'hit', 0.1, undefined, 'hit', false);
     }
 
     /** Recolors every body mesh (excluding the head cube) to an explicit hex color. */
@@ -156,7 +169,7 @@ export default class CharacterBody {
     private buildHeadMesh(color: THREE.ColorRepresentation, faceTexture: THREE.Texture): THREE.Mesh {
         const geometry = new RoundedBoxGeometry(HEAD_CUBE_SIZE, HEAD_CUBE_SIZE, HEAD_CUBE_SIZE, 4, HEAD_CUBE_SIZE * 0.25);
         const material = new THREE.MeshStandardMaterial({ color });
-        BendService.applyBend(material);
+        this.bendService.applyBend(material);
         const mesh = new THREE.Mesh(geometry, material);
         mesh.add(this.buildFaceDecal(HEAD_CUBE_SIZE, faceTexture));
         return mesh;
@@ -167,7 +180,7 @@ export default class CharacterBody {
         const decalSize = size * FACE_DECAL_SCALE;
         const geometry = new THREE.PlaneGeometry(decalSize, decalSize);
         const material = new THREE.MeshStandardMaterial({ map: faceTexture, transparent: false, alphaTest: 0.5 });
-        BendService.applyBend(material);
+        this.bendService.applyBend(material);
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.z = size / 2 + size * 0.01;
         return mesh;
