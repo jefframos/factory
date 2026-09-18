@@ -24,14 +24,12 @@ export interface CitySettings {
     /** World units of clear space before the first building, past the start line. */
     startOffset: number;
     /**
-     * World units each building's own base sinks below y=0 — buildings use
-     * the plain BendService (see CityBuilder.buildCityRow()'s own doc on
-     * why), which only translates them rigidly, while the ground right in
-     * front of them uses RunnerBendService's own sink/hill effect and can
-     * dip away underneath. Sinking the building down by this much masks
-     * that gap instead of leaving a visible sliver of empty air under it.
+     * World units each building's own base sits ABOVE y=0 — buildings sit
+     * on the raised sidewalk box (see RunnerFloorSettings.sidewalkHeight
+     * in MinigameSettings.ts), not bare ground, so their own base needs
+     * to be raised to roughly match instead of poking through it.
      */
-    verticalOffset: number;
+    baseHeight: number;
 }
 
 export const CITY_SETTINGS: CitySettings = {
@@ -39,5 +37,5 @@ export const CITY_SETTINGS: CitySettings = {
     padding: 3,
     gap: 5,
     startOffset: 5,
-    verticalOffset: 5,
+    baseHeight: 0.1,
 };

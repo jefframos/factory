@@ -96,8 +96,8 @@ export default class SwipeMinigameScene extends ThreeScene {
                 size: RUNNER_FLOOR_SETTINGS.patchSize,
                 segments: RUNNER_FLOOR_SETTINGS.patchSegments,
                 sidewalks: [
-                    { centerX: -sidewalkCenterX, width: RUNNER_FLOOR_SETTINGS.sidewalkWidth },
-                    { centerX: sidewalkCenterX, width: RUNNER_FLOOR_SETTINGS.sidewalkWidth },
+                    { centerX: -sidewalkCenterX, width: RUNNER_FLOOR_SETTINGS.sidewalkWidth, height: RUNNER_FLOOR_SETTINGS.sidewalkHeight },
+                    { centerX: sidewalkCenterX, width: RUNNER_FLOOR_SETTINGS.sidewalkWidth, height: RUNNER_FLOOR_SETTINGS.sidewalkHeight },
                 ],
             },
         );
@@ -203,7 +203,7 @@ export default class SwipeMinigameScene extends ThreeScene {
         const laneLength = this.maxLaneDistance();
 
         await Promise.all([
-            buildCityRow(this.threeScene, laneLength, laneHalfWidth, RUNNER_LANE_DIRECTION.z, BendService),
+            buildCityRow(this.threeScene, laneLength, laneHalfWidth, RUNNER_LANE_DIRECTION.z, RunnerBendService),
             buildRoadDetails(this.threeScene, laneLength, laneHalfWidth, RUNNER_LANE_DIRECTION.z, RunnerBendService),
         ]);
     }

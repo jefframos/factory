@@ -97,7 +97,7 @@ async function buildSide(threeScene: THREE.Scene, side: number, laneLength: numb
         const x = side * (laneHalfWidth + CITY_SETTINGS.padding + halfWidth);
         const z = laneDirectionZ * centerDistance;
 
-        object.position.set(x, baseOffset - CITY_SETTINGS.verticalOffset, z);
+        object.position.set(x, baseOffset + CITY_SETTINGS.baseHeight, z);
         object.rotation.y = rotationY;
 
         object.traverse((child) => {

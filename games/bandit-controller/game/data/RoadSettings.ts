@@ -5,7 +5,7 @@
 // "data/ is the single source of truth" convention as
 // MinigameSettings.ts/CitySettings.ts.
 //
-// The sidewalk itself is NOT here anymore — it's a plain recentering rect
+// The sidewalk itself is NOT here anymore — it's a raised box
 // (WorldEnvironment's own VisualFloorPatch.sidewalks, configured via
 // MinigameSettings.RUNNER_FLOOR_SETTINGS), same "infinite" trick as the
 // lane's own floor patch, instead of a road-tile model.
@@ -17,10 +17,13 @@ export interface RoadSettings {
     detailOffset: number;
     /** Uniform scale multiplier applied to every detail prop, on top of its own native size. */
     detailScale: number;
+    /** World units each detail prop's own base sits ABOVE y=0 — same reasoning as CitySettings.baseHeight: props sit on the raised sidewalk box, not bare ground. */
+    detailBaseHeight: number;
 }
 
 export const ROAD_SETTINGS: RoadSettings = {
     detailSpacing: 20,
     detailOffset: 1.5,
     detailScale: 10,
+    detailBaseHeight: 0.1,
 };

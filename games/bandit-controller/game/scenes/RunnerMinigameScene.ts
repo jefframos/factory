@@ -89,8 +89,8 @@ export default class RunnerMinigameScene extends ThreeScene {
                 size: RUNNER_FLOOR_SETTINGS.patchSize,
                 segments: RUNNER_FLOOR_SETTINGS.patchSegments,
                 sidewalks: [
-                    { centerX: -sidewalkCenterX, width: RUNNER_FLOOR_SETTINGS.sidewalkWidth },
-                    { centerX: sidewalkCenterX, width: RUNNER_FLOOR_SETTINGS.sidewalkWidth },
+                    { centerX: -sidewalkCenterX, width: RUNNER_FLOOR_SETTINGS.sidewalkWidth, height: RUNNER_FLOOR_SETTINGS.sidewalkHeight },
+                    { centerX: sidewalkCenterX, width: RUNNER_FLOOR_SETTINGS.sidewalkWidth, height: RUNNER_FLOOR_SETTINGS.sidewalkHeight },
                 ],
             },
         );
@@ -156,7 +156,7 @@ export default class RunnerMinigameScene extends ThreeScene {
      */
     private async buildRoadDecor(laneHalfWidth: number): Promise<void> {
         await Promise.all([
-            buildCityRow(this.threeScene, RUNNER_MINIGAME_SETTINGS.laneLength, laneHalfWidth, RUNNER_LANE_DIRECTION.z, BendService),
+            buildCityRow(this.threeScene, RUNNER_MINIGAME_SETTINGS.laneLength, laneHalfWidth, RUNNER_LANE_DIRECTION.z, RunnerBendService),
             buildRoadDetails(this.threeScene, RUNNER_MINIGAME_SETTINGS.laneLength, laneHalfWidth, RUNNER_LANE_DIRECTION.z, RunnerBendService),
         ]);
     }

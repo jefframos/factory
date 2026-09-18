@@ -21,7 +21,7 @@ async function placeDetail(threeScene: THREE.Scene, fullPath: string, x: number,
     object.scale.setScalar(ROAD_SETTINGS.detailScale);
 
     const box = new THREE.Box3().setFromObject(object);
-    object.position.set(x, -box.min.y, z);
+    object.position.set(x, -box.min.y + ROAD_SETTINGS.detailBaseHeight, z);
     object.rotation.y = rotationY;
 
     object.traverse((child) => {

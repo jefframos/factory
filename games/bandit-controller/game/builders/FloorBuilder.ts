@@ -31,22 +31,29 @@ export class FloorBuilder {
     }
 
     /**
-     * A plain (uniform, no centerBias) rectangular strip — width along X,
-     * depth along Z — meant for a sidewalk running alongside a lane rather
-     * than the lane's own (square) floor. Same world-position-based UVs as
-     * build()'s own square geometry (see that method's own doc), so a
-     * caller can assign their own tiled texture and it'll line up cleanly
-     * either way.
+     * A genuine raised box (width × height × depth) — meant for a sidewalk
+     * running alongside a lane, sitting visibly above street level rather
+     * than flush with it (a flat plane at the SAME height as the lane read
+     * as indistinguishable from it — a box with real vertical sides doesn't).
+     * `cy` is the box's own CENTER height, so pass `height / 2` to sit its
+     * base at y=0 and its top at y=height. Uses a flat color rather than a
+     * texture, so it's clearly visible as its own shape even before anyone
+     * assigns a real material — solid (`opacity` 1) by default; pass a
+     * lower `opacity` for a translucent placeholder instead. Subdivided
+     * along depth (`depthSegments`) for the same reason build()'s own
+     * floor needs segments: RunnerBendService's bend is a per-vertex
+     * displacement, so a coarse box would only warp at its 8 corners over
+     * a long strip. Same box+bend pattern already used for obstacles —
+     * see ObstacleBuilder.ts.
      */
-    static buildRect(scene: THREE.Scene, width: number, depth: number, cx = 0, cz = 0, bendService: WorldBendService = BendService, segmentsX = 8, segmentsZ = 32): THREE.Mesh {
-        const geo = FloorBuilder.buildRectGeometry(width, depth, segmentsX, segmentsZ);
-        const mat = new THREE.MeshBasicMaterial({ map: FloorBuilder.makeGridTexture(width, depth), side: THREE.DoubleSide });
+    static buildBox(scene: THREE.Scene, width: number, height: number, depth: number, cx: number, cy: number, cz: number, bendService: WorldBendService = BendService, depthSegments = 32, color = 0x88ccff, opacity = 1): THREE.Mesh {
+        const geo = new THREE.BoxGeometry(width, height, depth, 2, 2, depthSegments);
+        const mat = new THREE.MeshBasicMaterial({ color, transparent: opacity < 1, opacity, side: THREE.DoubleSide });
         bendService.applyBend(mat);
-        const strip = new THREE.Mesh(geo, mat);
-        strip.rotation.x = -Math.PI / 2;
-        strip.position.set(cx, 0, cz);
-        scene.add(strip);
-        return strip;
+        const box = new THREE.Mesh(geo, mat);
+        box.position.set(cx, cy, cz);
+        scene.add(box);
+        return box;
     }
 
     /** Maps a uniformly-spaced parameter t in [-1, 1] to a center-biased coordinate in the same range — centerBias=1 is the identity (uniform); > 1 compresses samples toward 0 and spreads them out near +/-1. */
@@ -98,54 +105,12 @@ export class FloorBuilder {
         return geo;
     }
 
-    /** Same idea as buildGeometry(), but width (X) and depth (Z) independently — no centerBias, since a sidewalk strip doesn't need extra density anywhere in particular. */
-    private static buildRectGeometry(width: number, depth: number, segmentsX: number, segmentsZ: number): THREE.BufferGeometry {
-        const vertsX = segmentsX + 1;
-        const vertsZ = segmentsZ + 1;
-        const positions = new Float32Array(vertsX * vertsZ * 3);
-        const uvs = new Float32Array(vertsX * vertsZ * 2);
-
-        for (let iz = 0; iz <= segmentsZ; iz++) {
-            const localY = (iz / segmentsZ - 0.5) * depth;
-            for (let ix = 0; ix <= segmentsX; ix++) {
-                const localX = (ix / segmentsX - 0.5) * width;
-
-                const i = iz * vertsX + ix;
-                positions[i * 3 + 0] = localX;
-                positions[i * 3 + 1] = localY;
-                positions[i * 3 + 2] = 0;
-
-                uvs[i * 2 + 0] = localX / width + 0.5;
-                uvs[i * 2 + 1] = localY / depth + 0.5;
-            }
-        }
-
-        const indices: number[] = [];
-        for (let iz = 0; iz < segmentsZ; iz++) {
-            for (let ix = 0; ix < segmentsX; ix++) {
-                const a = ix + vertsX * iz;
-                const b = ix + vertsX * (iz + 1);
-                const c = (ix + 1) + vertsX * (iz + 1);
-                const d = (ix + 1) + vertsX * iz;
-                indices.push(a, b, d, b, c, d);
-            }
-        }
-
-        const geo = new THREE.BufferGeometry();
-        geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-        geo.setIndex(indices);
-        return geo;
-    }
-
     /**
      * Generates a seamless 1-unit grid tile as a canvas texture.
      * Lines are drawn at the exact tile boundary (x=0, y=0) so they line up
      * perfectly across all repeats without gaps or doubled edges.
-     * `repeatY` defaults to `repeatX` for the common square case (build()'s
-     * own usage) — buildRect() passes both independently.
      */
-    static makeGridTexture(repeatX: number, repeatY: number = repeatX): THREE.CanvasTexture {
+    static makeGridTexture(worldSize: number): THREE.CanvasTexture {
         const px = 256;
         const canvas = document.createElement("canvas");
         canvas.width = canvas.height = px;
@@ -164,7 +129,7 @@ export class FloorBuilder {
         const tex = new THREE.CanvasTexture(canvas);
         tex.wrapS = THREE.RepeatWrapping;
         tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(repeatX, repeatY); // one grid cell per world unit
+        tex.repeat.set(worldSize, worldSize); // one grid cell per world unit
         tex.anisotropy = 8;
         return tex;
     }

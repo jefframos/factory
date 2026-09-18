@@ -60,10 +60,12 @@ export interface RunnerFloorSettings {
     patchSize: number;
     /** Vertices per side of that patch — much higher than a full-level floor mesh could ever afford. patchSize/patchSegments is also the world-unit size of the patch's own grid cell, i.e. the increment it snaps by each time it recenters — keeping that equal to FloorBuilder's 1-world-unit grid-texture repeat (patchSize === patchSegments) is what keeps the snap itself invisible. */
     patchSegments: number;
-    /** World units wide, each of the two flat sidewalk strips running alongside the patch (see WorldEnvironment.VisualFloorPatch.sidewalks' own doc) — recenters in lockstep with the main patch, Z-only. */
+    /** World units wide, each of the two raised sidewalk boxes running alongside the patch (see WorldEnvironment.VisualFloorPatch.sidewalks' own doc) — recenters in lockstep with the main patch, Z-only. */
     sidewalkWidth: number;
-    /** World units of clearance from the lane's own edge out to the near edge of each sidewalk strip. */
+    /** World units of clearance from the lane's own edge out to the near edge of each sidewalk box. */
     sidewalkOffset: number;
+    /** World units each sidewalk box sits ABOVE street level (its own base is at y=0, top at y=sidewalkHeight) — see FloorBuilder.buildBox()'s own doc on why it needs real height to read as a distinct shape. */
+    sidewalkHeight: number;
 }
 
 /** Shared by both minigame scenes (see WorldEnvironment's own floorSize/visualFloorPatch constructor params) — the hub keeps WorldEnvironment's plain default (a single static, FLOOR_SIZE-wide floor, no recentering, no sidewalks). */
@@ -72,7 +74,8 @@ export const RUNNER_FLOOR_SETTINGS: RunnerFloorSettings = {
     patchSize: 120,
     patchSegments: 120,
     sidewalkWidth: 50,
-    sidewalkOffset: -3,
+    sidewalkOffset: 1,
+    sidewalkHeight: 0.25,
 };
 
 export interface ObstacleSettings {

@@ -52,18 +52,20 @@ export interface VisualFloorPatch {
     /** Vertices per side — this can be MUCH higher than a full-level floor could ever afford, since the patch only ever needs to cover the area immediately around the player. */
     segments: number;
     /**
-     * Optional flat rectangular strips running alongside the patch (e.g. a
-     * sidewalk on either side of a runner lane) — same "infinite" recenter
-     * trick as the patch itself, but Z-only: each strip's own X stays
-     * fixed at `centerX` (it represents a fixed distance from the lane,
-     * not "wherever the player currently is"), while its Z snaps in
-     * lockstep with the patch's own (same floorTileSize, so they never
-     * drift out of alignment with each other). Plain rectangles, not
-     * FloorBuilder's own grid texture necessarily — assign your own tiled
-     * material to the returned meshes (see sidewalkMeshes) if the default
-     * placeholder grid isn't what you want.
+     * Optional raised boxes running alongside the patch (e.g. a sidewalk on
+     * either side of a runner lane) — same "infinite" recenter trick as the
+     * patch itself, but Z-only: each box's own X stays fixed at `centerX`
+     * (it represents a fixed distance from the lane, not "wherever the
+     * player currently is"), while its Z snaps in lockstep with the
+     * patch's own (same floorTileSize, so they never drift out of
+     * alignment with each other). `height` sits the box's base at y=0 and
+     * its top at y=height (see FloorBuilder.buildBox()'s own doc on why a
+     * box with real sides, above street level, instead of a flat plane
+     * flush with the ground). Assign your own material to the returned
+     * meshes (see sidewalkMeshes) if the default placeholder color isn't
+     * what you want.
      */
-    sidewalks?: { centerX: number; width: number }[];
+    sidewalks?: { centerX: number; width: number; height: number }[];
 }
 
 export interface CameraFollowOptions {
@@ -140,10 +142,19 @@ export class WorldEnvironment {
 
             for (const sidewalk of visualFloorPatch.sidewalks ?? []) {
                 // Same Z-length/segment count as the main patch — sharing floorTileSize is what
-                // keeps this strip's own snap in lockstep with the patch's, so the seam between
-                // them never drifts. Segments across the (much narrower) width can stay coarse —
-                // nothing in either bend service varies across a vertex's own X.
-                const mesh = FloorBuilder.buildRect(this.threeScene, sidewalk.width, visualFloorPatch.size, sidewalk.centerX, 0, this.bendService, 4, visualFloorPatch.segments);
+                // keeps this box's own snap in lockstep with the patch's, so the seam between
+                // them never drifts.
+                const mesh = FloorBuilder.buildBox(
+                    this.threeScene,
+                    sidewalk.width,
+                    sidewalk.height,
+                    visualFloorPatch.size,
+                    sidewalk.centerX,
+                    sidewalk.height / 2,
+                    0,
+                    this.bendService,
+                    visualFloorPatch.segments,
+                );
                 this.sidewalkMeshes.push(mesh);
             }
         } else {
