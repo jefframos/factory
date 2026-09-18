@@ -1851,6 +1851,958 @@ const WorldLowDetailBuildingWideB = {
 }
 } as const;
 
+const WorldBridgePillarWide = {
+  id: 'bridge-pillar-wide',
+  path: 'world/roads/bridge-pillar-wide',
+  fullPath: 'bandit-controller/models/world/roads/bridge-pillar-wide.glb',
+  format: 'glb',
+  nodes: {
+  "BridgePillarWide": "bridge-pillar-wide"
+}
+} as const;
+
+const WorldBridgePillar = {
+  id: 'bridge-pillar',
+  path: 'world/roads/bridge-pillar',
+  fullPath: 'bandit-controller/models/world/roads/bridge-pillar.glb',
+  format: 'glb',
+  nodes: {
+  "BridgePillar": "bridge-pillar"
+}
+} as const;
+
+const WorldConstructionBarrier = {
+  id: 'construction-barrier',
+  path: 'world/roads/construction-barrier',
+  fullPath: 'bandit-controller/models/world/roads/construction-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "ConstructionBarrier": "construction-barrier"
+}
+} as const;
+
+const WorldConstructionCone = {
+  id: 'construction-cone',
+  path: 'world/roads/construction-cone',
+  fullPath: 'bandit-controller/models/world/roads/construction-cone.glb',
+  format: 'glb',
+  nodes: {
+  "ConstructionCone": "construction-cone"
+}
+} as const;
+
+const WorldConstructionFence = {
+  id: 'construction-fence',
+  path: 'world/roads/construction-fence',
+  fullPath: 'bandit-controller/models/world/roads/construction-fence.glb',
+  format: 'glb',
+  nodes: {
+  "ConstructionFence": "construction-fence"
+}
+} as const;
+
+const WorldConstructionLight = {
+  id: 'construction-light',
+  path: 'world/roads/construction-light',
+  fullPath: 'bandit-controller/models/world/roads/construction-light.glb',
+  format: 'glb',
+  nodes: {
+  "ConstructionLight": "construction-light"
+}
+} as const;
+
+const WorldDumpster = {
+  id: 'dumpster',
+  path: 'world/roads/dumpster',
+  fullPath: 'bandit-controller/models/world/roads/dumpster.glb',
+  format: 'glb',
+  nodes: {
+  "Dumpster": "dumpster",
+  "LidLeft": "lid-left",
+  "LidRight": "lid-right"
+}
+} as const;
+
+const WorldElectricityPoleSingle = {
+  id: 'electricity-pole-single',
+  path: 'world/roads/electricity-pole-single',
+  fullPath: 'bandit-controller/models/world/roads/electricity-pole-single.glb',
+  format: 'glb',
+  nodes: {
+  "ElectricityPoleSingle": "electricity-pole-single"
+}
+} as const;
+
+const WorldElectricityPoleWide = {
+  id: 'electricity-pole-wide',
+  path: 'world/roads/electricity-pole-wide',
+  fullPath: 'bandit-controller/models/world/roads/electricity-pole-wide.glb',
+  format: 'glb',
+  nodes: {
+  "ElectricityPoleWide": "electricity-pole-wide"
+}
+} as const;
+
+const WorldElectricityPole = {
+  id: 'electricity-pole',
+  path: 'world/roads/electricity-pole',
+  fullPath: 'bandit-controller/models/world/roads/electricity-pole.glb',
+  format: 'glb',
+  nodes: {
+  "ElectricityPole": "electricity-pole"
+}
+} as const;
+
+const WorldElectricitySideSingle = {
+  id: 'electricity-side-single',
+  path: 'world/roads/electricity-side-single',
+  fullPath: 'bandit-controller/models/world/roads/electricity-side-single.glb',
+  format: 'glb',
+  nodes: {
+  "ElectricitySideSingle": "electricity-side-single"
+}
+} as const;
+
+const WorldElectricitySideWide = {
+  id: 'electricity-side-wide',
+  path: 'world/roads/electricity-side-wide',
+  fullPath: 'bandit-controller/models/world/roads/electricity-side-wide.glb',
+  format: 'glb',
+  nodes: {
+  "ElectricitySideWide": "electricity-side-wide"
+}
+} as const;
+
+const WorldElectricitySide = {
+  id: 'electricity-side',
+  path: 'world/roads/electricity-side',
+  fullPath: 'bandit-controller/models/world/roads/electricity-side.glb',
+  format: 'glb',
+  nodes: {
+  "ElectricitySide": "electricity-side"
+}
+} as const;
+
+const WorldElectricityWiresWide = {
+  id: 'electricity-wires-wide',
+  path: 'world/roads/electricity-wires-wide',
+  fullPath: 'bandit-controller/models/world/roads/electricity-wires-wide.glb',
+  format: 'glb',
+  nodes: {
+  "ElectricityWiresWide": "electricity-wires-wide"
+}
+} as const;
+
+const WorldElectricityWires = {
+  id: 'electricity-wires',
+  path: 'world/roads/electricity-wires',
+  fullPath: 'bandit-controller/models/world/roads/electricity-wires.glb',
+  format: 'glb',
+  nodes: {
+  "ElectricityWires": "electricity-wires"
+}
+} as const;
+
+const WorldLightCurvedCross = {
+  id: 'light-curved-cross',
+  path: 'world/roads/light-curved-cross',
+  fullPath: 'bandit-controller/models/world/roads/light-curved-cross.glb',
+  format: 'glb',
+  nodes: {
+  "LightCurvedCross": "light-curved-cross"
+}
+} as const;
+
+const WorldLightCurvedDouble = {
+  id: 'light-curved-double',
+  path: 'world/roads/light-curved-double',
+  fullPath: 'bandit-controller/models/world/roads/light-curved-double.glb',
+  format: 'glb',
+  nodes: {
+  "LightCurvedDouble": "light-curved-double"
+}
+} as const;
+
+const WorldLightCurved = {
+  id: 'light-curved',
+  path: 'world/roads/light-curved',
+  fullPath: 'bandit-controller/models/world/roads/light-curved.glb',
+  format: 'glb',
+  nodes: {
+  "LightCurved": "light-curved"
+}
+} as const;
+
+const WorldLightSquareCross = {
+  id: 'light-square-cross',
+  path: 'world/roads/light-square-cross',
+  fullPath: 'bandit-controller/models/world/roads/light-square-cross.glb',
+  format: 'glb',
+  nodes: {
+  "LightSquareCross": "light-square-cross"
+}
+} as const;
+
+const WorldLightSquareDouble = {
+  id: 'light-square-double',
+  path: 'world/roads/light-square-double',
+  fullPath: 'bandit-controller/models/world/roads/light-square-double.glb',
+  format: 'glb',
+  nodes: {
+  "LightSquareDouble": "light-square-double"
+}
+} as const;
+
+const WorldLightSquare = {
+  id: 'light-square',
+  path: 'world/roads/light-square',
+  fullPath: 'bandit-controller/models/world/roads/light-square.glb',
+  format: 'glb',
+  nodes: {
+  "LightSquare": "light-square"
+}
+} as const;
+
+const WorldRoadBendBarrier = {
+  id: 'road-bend-barrier',
+  path: 'world/roads/road-bend-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-bend-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadBendBarrier": "road-bend-barrier"
+}
+} as const;
+
+const WorldRoadBendSidewalk = {
+  id: 'road-bend-sidewalk',
+  path: 'world/roads/road-bend-sidewalk',
+  fullPath: 'bandit-controller/models/world/roads/road-bend-sidewalk.glb',
+  format: 'glb',
+  nodes: {
+  "RoadBendSidewalk": "road-bend-sidewalk"
+}
+} as const;
+
+const WorldRoadBendSquareBarrier = {
+  id: 'road-bend-square-barrier',
+  path: 'world/roads/road-bend-square-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-bend-square-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadBendSquareBarrier": "road-bend-square-barrier"
+}
+} as const;
+
+const WorldRoadBendSquare = {
+  id: 'road-bend-square',
+  path: 'world/roads/road-bend-square',
+  fullPath: 'bandit-controller/models/world/roads/road-bend-square.glb',
+  format: 'glb',
+  nodes: {
+  "RoadBendSquare": "road-bend-square"
+}
+} as const;
+
+const WorldRoadBend = {
+  id: 'road-bend',
+  path: 'world/roads/road-bend',
+  fullPath: 'bandit-controller/models/world/roads/road-bend.glb',
+  format: 'glb',
+  nodes: {
+  "RoadBend": "road-bend"
+}
+} as const;
+
+const WorldRoadBridge = {
+  id: 'road-bridge',
+  path: 'world/roads/road-bridge',
+  fullPath: 'bandit-controller/models/world/roads/road-bridge.glb',
+  format: 'glb',
+  nodes: {
+  "RoadBridge": "road-bridge"
+}
+} as const;
+
+const WorldRoadCrossing = {
+  id: 'road-crossing',
+  path: 'world/roads/road-crossing',
+  fullPath: 'bandit-controller/models/world/roads/road-crossing.glb',
+  format: 'glb',
+  nodes: {
+  "RoadCrossing": "road-crossing"
+}
+} as const;
+
+const WorldRoadCrossroadBarrier = {
+  id: 'road-crossroad-barrier',
+  path: 'world/roads/road-crossroad-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-crossroad-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadCrossroadBarrier": "road-crossroad-barrier"
+}
+} as const;
+
+const WorldRoadCrossroadLine = {
+  id: 'road-crossroad-line',
+  path: 'world/roads/road-crossroad-line',
+  fullPath: 'bandit-controller/models/world/roads/road-crossroad-line.glb',
+  format: 'glb',
+  nodes: {
+  "RoadCrossroadLine": "road-crossroad-line"
+}
+} as const;
+
+const WorldRoadCrossroadPath = {
+  id: 'road-crossroad-path',
+  path: 'world/roads/road-crossroad-path',
+  fullPath: 'bandit-controller/models/world/roads/road-crossroad-path.glb',
+  format: 'glb',
+  nodes: {
+  "RoadCrossroadPath": "road-crossroad-path"
+}
+} as const;
+
+const WorldRoadCrossroad = {
+  id: 'road-crossroad',
+  path: 'world/roads/road-crossroad',
+  fullPath: 'bandit-controller/models/world/roads/road-crossroad.glb',
+  format: 'glb',
+  nodes: {
+  "RoadCrossroad": "road-crossroad"
+}
+} as const;
+
+const WorldRoadCurveBarrier = {
+  id: 'road-curve-barrier',
+  path: 'world/roads/road-curve-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-curve-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadCurveBarrier": "road-curve-barrier"
+}
+} as const;
+
+const WorldRoadCurveIntersectionBarrier = {
+  id: 'road-curve-intersection-barrier',
+  path: 'world/roads/road-curve-intersection-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-curve-intersection-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadCurveIntersectionBarrier": "road-curve-intersection-barrier"
+}
+} as const;
+
+const WorldRoadCurveIntersection = {
+  id: 'road-curve-intersection',
+  path: 'world/roads/road-curve-intersection',
+  fullPath: 'bandit-controller/models/world/roads/road-curve-intersection.glb',
+  format: 'glb',
+  nodes: {
+  "RoadCurveIntersection": "road-curve-intersection"
+}
+} as const;
+
+const WorldRoadCurvePavement = {
+  id: 'road-curve-pavement',
+  path: 'world/roads/road-curve-pavement',
+  fullPath: 'bandit-controller/models/world/roads/road-curve-pavement.glb',
+  format: 'glb',
+  nodes: {
+  "RoadCurvePavement": "road-curve-pavement"
+}
+} as const;
+
+const WorldRoadCurve = {
+  id: 'road-curve',
+  path: 'world/roads/road-curve',
+  fullPath: 'bandit-controller/models/world/roads/road-curve.glb',
+  format: 'glb',
+  nodes: {
+  "RoadCurve": "road-curve"
+}
+} as const;
+
+const WorldRoadDrivewayDoubleBarrier = {
+  id: 'road-driveway-double-barrier',
+  path: 'world/roads/road-driveway-double-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-driveway-double-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadDrivewayDoubleBarrier": "road-driveway-double-barrier"
+}
+} as const;
+
+const WorldRoadDrivewayDouble = {
+  id: 'road-driveway-double',
+  path: 'world/roads/road-driveway-double',
+  fullPath: 'bandit-controller/models/world/roads/road-driveway-double.glb',
+  format: 'glb',
+  nodes: {
+  "RoadDrivewayDouble": "road-driveway-double"
+}
+} as const;
+
+const WorldRoadDrivewaySingleBarrier = {
+  id: 'road-driveway-single-barrier',
+  path: 'world/roads/road-driveway-single-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-driveway-single-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadDrivewaySingleBarrier": "road-driveway-single-barrier"
+}
+} as const;
+
+const WorldRoadDrivewaySingle = {
+  id: 'road-driveway-single',
+  path: 'world/roads/road-driveway-single',
+  fullPath: 'bandit-controller/models/world/roads/road-driveway-single.glb',
+  format: 'glb',
+  nodes: {
+  "RoadDrivewaySingle": "road-driveway-single"
+}
+} as const;
+
+const WorldRoadEndBarrier = {
+  id: 'road-end-barrier',
+  path: 'world/roads/road-end-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-end-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadEndBarrier": "road-end-barrier"
+}
+} as const;
+
+const WorldRoadEndRoundBarrier = {
+  id: 'road-end-round-barrier',
+  path: 'world/roads/road-end-round-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-end-round-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadEndRoundBarrier": "road-end-round-barrier"
+}
+} as const;
+
+const WorldRoadEndRound = {
+  id: 'road-end-round',
+  path: 'world/roads/road-end-round',
+  fullPath: 'bandit-controller/models/world/roads/road-end-round.glb',
+  format: 'glb',
+  nodes: {
+  "RoadEndRound": "road-end-round"
+}
+} as const;
+
+const WorldRoadEnd = {
+  id: 'road-end',
+  path: 'world/roads/road-end',
+  fullPath: 'bandit-controller/models/world/roads/road-end.glb',
+  format: 'glb',
+  nodes: {
+  "RoadEnd": "road-end"
+}
+} as const;
+
+const WorldRoadIntersectionBarrier = {
+  id: 'road-intersection-barrier',
+  path: 'world/roads/road-intersection-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-intersection-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadIntersectionBarrier": "road-intersection-barrier"
+}
+} as const;
+
+const WorldRoadIntersectionLine = {
+  id: 'road-intersection-line',
+  path: 'world/roads/road-intersection-line',
+  fullPath: 'bandit-controller/models/world/roads/road-intersection-line.glb',
+  format: 'glb',
+  nodes: {
+  "RoadIntersectionLine": "road-intersection-line"
+}
+} as const;
+
+const WorldRoadIntersectionPath = {
+  id: 'road-intersection-path',
+  path: 'world/roads/road-intersection-path',
+  fullPath: 'bandit-controller/models/world/roads/road-intersection-path.glb',
+  format: 'glb',
+  nodes: {
+  "RoadIntersectionPath": "road-intersection-path"
+}
+} as const;
+
+const WorldRoadIntersection = {
+  id: 'road-intersection',
+  path: 'world/roads/road-intersection',
+  fullPath: 'bandit-controller/models/world/roads/road-intersection.glb',
+  format: 'glb',
+  nodes: {
+  "RoadIntersection": "road-intersection"
+}
+} as const;
+
+const WorldRoadRoundaboutBarrier = {
+  id: 'road-roundabout-barrier',
+  path: 'world/roads/road-roundabout-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-roundabout-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadRoundaboutBarrier": "road-roundabout-barrier"
+}
+} as const;
+
+const WorldRoadRoundabout = {
+  id: 'road-roundabout',
+  path: 'world/roads/road-roundabout',
+  fullPath: 'bandit-controller/models/world/roads/road-roundabout.glb',
+  format: 'glb',
+  nodes: {
+  "RoadRoundabout": "road-roundabout"
+}
+} as const;
+
+const WorldRoadSideBarrier = {
+  id: 'road-side-barrier',
+  path: 'world/roads/road-side-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-side-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSideBarrier": "road-side-barrier"
+}
+} as const;
+
+const WorldRoadSideEntryBarrier = {
+  id: 'road-side-entry-barrier',
+  path: 'world/roads/road-side-entry-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-side-entry-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSideEntryBarrier": "road-side-entry-barrier"
+}
+} as const;
+
+const WorldRoadSideEntry = {
+  id: 'road-side-entry',
+  path: 'world/roads/road-side-entry',
+  fullPath: 'bandit-controller/models/world/roads/road-side-entry.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSideEntry": "road-side-entry"
+}
+} as const;
+
+const WorldRoadSideExitBarrier = {
+  id: 'road-side-exit-barrier',
+  path: 'world/roads/road-side-exit-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-side-exit-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSideExitBarrier": "road-side-exit-barrier"
+}
+} as const;
+
+const WorldRoadSideExit = {
+  id: 'road-side-exit',
+  path: 'world/roads/road-side-exit',
+  fullPath: 'bandit-controller/models/world/roads/road-side-exit.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSideExit": "road-side-exit"
+}
+} as const;
+
+const WorldRoadSide = {
+  id: 'road-side',
+  path: 'world/roads/road-side',
+  fullPath: 'bandit-controller/models/world/roads/road-side.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSide": "road-side"
+}
+} as const;
+
+const WorldRoadSignEmptyHanging = {
+  id: 'road-sign-empty-hanging',
+  path: 'world/roads/road-sign-empty-hanging',
+  fullPath: 'bandit-controller/models/world/roads/road-sign-empty-hanging.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSignEmptyHanging": "road-sign-empty-hanging"
+}
+} as const;
+
+const WorldRoadSignEmpty = {
+  id: 'road-sign-empty',
+  path: 'world/roads/road-sign-empty',
+  fullPath: 'bandit-controller/models/world/roads/road-sign-empty.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSignEmpty": "road-sign-empty"
+}
+} as const;
+
+const WorldRoadSignObjectStop = {
+  id: 'road-sign-object-stop',
+  path: 'world/roads/road-sign-object-stop',
+  fullPath: 'bandit-controller/models/world/roads/road-sign-object-stop.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSignObjectStop": "road-sign-object-stop"
+}
+} as const;
+
+const WorldRoadSignObjectStreet = {
+  id: 'road-sign-object-street',
+  path: 'world/roads/road-sign-object-street',
+  fullPath: 'bandit-controller/models/world/roads/road-sign-object-street.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSignObjectStreet": "road-sign-object-street"
+}
+} as const;
+
+const WorldRoadSignObjectWarning = {
+  id: 'road-sign-object-warning',
+  path: 'world/roads/road-sign-object-warning',
+  fullPath: 'bandit-controller/models/world/roads/road-sign-object-warning.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSignObjectWarning": "road-sign-object-warning"
+}
+} as const;
+
+const WorldRoadSignStop = {
+  id: 'road-sign-stop',
+  path: 'world/roads/road-sign-stop',
+  fullPath: 'bandit-controller/models/world/roads/road-sign-stop.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSignStop": "road-sign-stop"
+}
+} as const;
+
+const WorldRoadSignStreet = {
+  id: 'road-sign-street',
+  path: 'world/roads/road-sign-street',
+  fullPath: 'bandit-controller/models/world/roads/road-sign-street.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSignStreet": "road-sign-street"
+}
+} as const;
+
+const WorldRoadSignWarning = {
+  id: 'road-sign-warning',
+  path: 'world/roads/road-sign-warning',
+  fullPath: 'bandit-controller/models/world/roads/road-sign-warning.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSignWarning": "road-sign-warning"
+}
+} as const;
+
+const WorldRoadSlantBarrier = {
+  id: 'road-slant-barrier',
+  path: 'world/roads/road-slant-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-slant-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSlantBarrier": "road-slant-barrier"
+}
+} as const;
+
+const WorldRoadSlantCurveBarrier = {
+  id: 'road-slant-curve-barrier',
+  path: 'world/roads/road-slant-curve-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-slant-curve-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSlantCurveBarrier": "road-slant-curve-barrier"
+}
+} as const;
+
+const WorldRoadSlantCurve = {
+  id: 'road-slant-curve',
+  path: 'world/roads/road-slant-curve',
+  fullPath: 'bandit-controller/models/world/roads/road-slant-curve.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSlantCurve": "road-slant-curve"
+}
+} as const;
+
+const WorldRoadSlantFlatCurve = {
+  id: 'road-slant-flat-curve',
+  path: 'world/roads/road-slant-flat-curve',
+  fullPath: 'bandit-controller/models/world/roads/road-slant-flat-curve.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSlantFlatCurve": "road-slant-flat-curve"
+}
+} as const;
+
+const WorldRoadSlantFlatHigh = {
+  id: 'road-slant-flat-high',
+  path: 'world/roads/road-slant-flat-high',
+  fullPath: 'bandit-controller/models/world/roads/road-slant-flat-high.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSlantFlatHigh": "road-slant-flat-high"
+}
+} as const;
+
+const WorldRoadSlantFlat = {
+  id: 'road-slant-flat',
+  path: 'world/roads/road-slant-flat',
+  fullPath: 'bandit-controller/models/world/roads/road-slant-flat.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSlantFlat": "road-slant-flat"
+}
+} as const;
+
+const WorldRoadSlantHighBarrier = {
+  id: 'road-slant-high-barrier',
+  path: 'world/roads/road-slant-high-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-slant-high-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSlantHighBarrier": "road-slant-high-barrier"
+}
+} as const;
+
+const WorldRoadSlantHigh = {
+  id: 'road-slant-high',
+  path: 'world/roads/road-slant-high',
+  fullPath: 'bandit-controller/models/world/roads/road-slant-high.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSlantHigh": "road-slant-high"
+}
+} as const;
+
+const WorldRoadSlant = {
+  id: 'road-slant',
+  path: 'world/roads/road-slant',
+  fullPath: 'bandit-controller/models/world/roads/road-slant.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSlant": "road-slant"
+}
+} as const;
+
+const WorldRoadSplitBarrier = {
+  id: 'road-split-barrier',
+  path: 'world/roads/road-split-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-split-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSplitBarrier": "road-split-barrier"
+}
+} as const;
+
+const WorldRoadSplit = {
+  id: 'road-split',
+  path: 'world/roads/road-split',
+  fullPath: 'bandit-controller/models/world/roads/road-split.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSplit": "road-split"
+}
+} as const;
+
+const WorldRoadSquareBarrier = {
+  id: 'road-square-barrier',
+  path: 'world/roads/road-square-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-square-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSquareBarrier": "road-square-barrier"
+}
+} as const;
+
+const WorldRoadSquare = {
+  id: 'road-square',
+  path: 'world/roads/road-square',
+  fullPath: 'bandit-controller/models/world/roads/road-square.glb',
+  format: 'glb',
+  nodes: {
+  "RoadSquare": "road-square"
+}
+} as const;
+
+const WorldRoadStraightBarrierEnd = {
+  id: 'road-straight-barrier-end',
+  path: 'world/roads/road-straight-barrier-end',
+  fullPath: 'bandit-controller/models/world/roads/road-straight-barrier-end.glb',
+  format: 'glb',
+  nodes: {
+  "RoadStraightBarrierEnd": "road-straight-barrier-end"
+}
+} as const;
+
+const WorldRoadStraightBarrierHalf = {
+  id: 'road-straight-barrier-half',
+  path: 'world/roads/road-straight-barrier-half',
+  fullPath: 'bandit-controller/models/world/roads/road-straight-barrier-half.glb',
+  format: 'glb',
+  nodes: {
+  "RoadStraightBarrierHalf": "road-straight-barrier-half"
+}
+} as const;
+
+const WorldRoadStraightBarrier = {
+  id: 'road-straight-barrier',
+  path: 'world/roads/road-straight-barrier',
+  fullPath: 'bandit-controller/models/world/roads/road-straight-barrier.glb',
+  format: 'glb',
+  nodes: {
+  "RoadStraightBarrier": "road-straight-barrier"
+}
+} as const;
+
+const WorldRoadStraightHalf = {
+  id: 'road-straight-half',
+  path: 'world/roads/road-straight-half',
+  fullPath: 'bandit-controller/models/world/roads/road-straight-half.glb',
+  format: 'glb',
+  nodes: {
+  "RoadStraightHalf": "road-straight-half"
+}
+} as const;
+
+const WorldRoadStraight = {
+  id: 'road-straight',
+  path: 'world/roads/road-straight',
+  fullPath: 'bandit-controller/models/world/roads/road-straight.glb',
+  format: 'glb',
+  nodes: {
+  "RoadStraight": "road-straight"
+}
+} as const;
+
+const WorldSignHighwayDetailed = {
+  id: 'sign-highway-detailed',
+  path: 'world/roads/sign-highway-detailed',
+  fullPath: 'bandit-controller/models/world/roads/sign-highway-detailed.glb',
+  format: 'glb',
+  nodes: {
+  "SignHighwayDetailed": "sign-highway-detailed"
+}
+} as const;
+
+const WorldSignHighwayWide = {
+  id: 'sign-highway-wide',
+  path: 'world/roads/sign-highway-wide',
+  fullPath: 'bandit-controller/models/world/roads/sign-highway-wide.glb',
+  format: 'glb',
+  nodes: {
+  "SignHighwayWide": "sign-highway-wide"
+}
+} as const;
+
+const WorldSignHighway = {
+  id: 'sign-highway',
+  path: 'world/roads/sign-highway',
+  fullPath: 'bandit-controller/models/world/roads/sign-highway.glb',
+  format: 'glb',
+  nodes: {
+  "SignHighway": "sign-highway"
+}
+} as const;
+
+const WorldTileHigh = {
+  id: 'tile-high',
+  path: 'world/roads/tile-high',
+  fullPath: 'bandit-controller/models/world/roads/tile-high.glb',
+  format: 'glb',
+  nodes: {
+  "TileHigh": "tile-high"
+}
+} as const;
+
+const WorldTileLow = {
+  id: 'tile-low',
+  path: 'world/roads/tile-low',
+  fullPath: 'bandit-controller/models/world/roads/tile-low.glb',
+  format: 'glb',
+  nodes: {
+  "TileLow": "tile-low"
+}
+} as const;
+
+const WorldTileSlant = {
+  id: 'tile-slant',
+  path: 'world/roads/tile-slant',
+  fullPath: 'bandit-controller/models/world/roads/tile-slant.glb',
+  format: 'glb',
+  nodes: {
+  "TileSlant": "tile-slant"
+}
+} as const;
+
+const WorldTileSlantHigh = {
+  id: 'tile-slantHigh',
+  path: 'world/roads/tile-slantHigh',
+  fullPath: 'bandit-controller/models/world/roads/tile-slantHigh.glb',
+  format: 'glb',
+  nodes: {
+  "TileSlantHigh": "tile-slantHigh"
+}
+} as const;
+
+const WorldTrafficLightHanging = {
+  id: 'traffic-light-hanging',
+  path: 'world/roads/traffic-light-hanging',
+  fullPath: 'bandit-controller/models/world/roads/traffic-light-hanging.glb',
+  format: 'glb',
+  nodes: {
+  "TrafficLightHanging": "traffic-light-hanging"
+}
+} as const;
+
+const WorldTrafficLightObjectHanging = {
+  id: 'traffic-light-object-hanging',
+  path: 'world/roads/traffic-light-object-hanging',
+  fullPath: 'bandit-controller/models/world/roads/traffic-light-object-hanging.glb',
+  format: 'glb',
+  nodes: {
+  "TrafficLightObjectHanging": "traffic-light-object-hanging"
+}
+} as const;
+
+const WorldTrafficLightObjectHorizontal = {
+  id: 'traffic-light-object-horizontal',
+  path: 'world/roads/traffic-light-object-horizontal',
+  fullPath: 'bandit-controller/models/world/roads/traffic-light-object-horizontal.glb',
+  format: 'glb',
+  nodes: {
+  "TrafficLightObjectHorizontal": "traffic-light-object-horizontal"
+}
+} as const;
+
+const WorldTrafficLightObjectVertical = {
+  id: 'traffic-light-object-vertical',
+  path: 'world/roads/traffic-light-object-vertical',
+  fullPath: 'bandit-controller/models/world/roads/traffic-light-object-vertical.glb',
+  format: 'glb',
+  nodes: {
+  "TrafficLightObjectVertical": "traffic-light-object-vertical"
+}
+} as const;
+
+const WorldTrafficLight = {
+  id: 'traffic-light',
+  path: 'world/roads/traffic-light',
+  fullPath: 'bandit-controller/models/world/roads/traffic-light.glb',
+  format: 'glb',
+  nodes: {
+  "TrafficLight": "traffic-light"
+}
+} as const;
+
 // Grouped by top-level raw-assets/models folder (the '{...}' tag stripped) — e.g.
 // raw-assets/models/characters{m}/... becomes MODELS.Characters.<name>. Files with no
 // containing folder land in MODELS.Root.
@@ -2046,7 +2998,102 @@ export const MODELS = {
     LowDetailBuildingM: WorldLowDetailBuildingM,
     LowDetailBuildingN: WorldLowDetailBuildingN,
     LowDetailBuildingWideA: WorldLowDetailBuildingWideA,
-    LowDetailBuildingWideB: WorldLowDetailBuildingWideB
+    LowDetailBuildingWideB: WorldLowDetailBuildingWideB,
+    BridgePillarWide: WorldBridgePillarWide,
+    BridgePillar: WorldBridgePillar,
+    ConstructionBarrier: WorldConstructionBarrier,
+    ConstructionCone: WorldConstructionCone,
+    ConstructionFence: WorldConstructionFence,
+    ConstructionLight: WorldConstructionLight,
+    Dumpster: WorldDumpster,
+    ElectricityPoleSingle: WorldElectricityPoleSingle,
+    ElectricityPoleWide: WorldElectricityPoleWide,
+    ElectricityPole: WorldElectricityPole,
+    ElectricitySideSingle: WorldElectricitySideSingle,
+    ElectricitySideWide: WorldElectricitySideWide,
+    ElectricitySide: WorldElectricitySide,
+    ElectricityWiresWide: WorldElectricityWiresWide,
+    ElectricityWires: WorldElectricityWires,
+    LightCurvedCross: WorldLightCurvedCross,
+    LightCurvedDouble: WorldLightCurvedDouble,
+    LightCurved: WorldLightCurved,
+    LightSquareCross: WorldLightSquareCross,
+    LightSquareDouble: WorldLightSquareDouble,
+    LightSquare: WorldLightSquare,
+    RoadBendBarrier: WorldRoadBendBarrier,
+    RoadBendSidewalk: WorldRoadBendSidewalk,
+    RoadBendSquareBarrier: WorldRoadBendSquareBarrier,
+    RoadBendSquare: WorldRoadBendSquare,
+    RoadBend: WorldRoadBend,
+    RoadBridge: WorldRoadBridge,
+    RoadCrossing: WorldRoadCrossing,
+    RoadCrossroadBarrier: WorldRoadCrossroadBarrier,
+    RoadCrossroadLine: WorldRoadCrossroadLine,
+    RoadCrossroadPath: WorldRoadCrossroadPath,
+    RoadCrossroad: WorldRoadCrossroad,
+    RoadCurveBarrier: WorldRoadCurveBarrier,
+    RoadCurveIntersectionBarrier: WorldRoadCurveIntersectionBarrier,
+    RoadCurveIntersection: WorldRoadCurveIntersection,
+    RoadCurvePavement: WorldRoadCurvePavement,
+    RoadCurve: WorldRoadCurve,
+    RoadDrivewayDoubleBarrier: WorldRoadDrivewayDoubleBarrier,
+    RoadDrivewayDouble: WorldRoadDrivewayDouble,
+    RoadDrivewaySingleBarrier: WorldRoadDrivewaySingleBarrier,
+    RoadDrivewaySingle: WorldRoadDrivewaySingle,
+    RoadEndBarrier: WorldRoadEndBarrier,
+    RoadEndRoundBarrier: WorldRoadEndRoundBarrier,
+    RoadEndRound: WorldRoadEndRound,
+    RoadEnd: WorldRoadEnd,
+    RoadIntersectionBarrier: WorldRoadIntersectionBarrier,
+    RoadIntersectionLine: WorldRoadIntersectionLine,
+    RoadIntersectionPath: WorldRoadIntersectionPath,
+    RoadIntersection: WorldRoadIntersection,
+    RoadRoundaboutBarrier: WorldRoadRoundaboutBarrier,
+    RoadRoundabout: WorldRoadRoundabout,
+    RoadSideBarrier: WorldRoadSideBarrier,
+    RoadSideEntryBarrier: WorldRoadSideEntryBarrier,
+    RoadSideEntry: WorldRoadSideEntry,
+    RoadSideExitBarrier: WorldRoadSideExitBarrier,
+    RoadSideExit: WorldRoadSideExit,
+    RoadSide: WorldRoadSide,
+    RoadSignEmptyHanging: WorldRoadSignEmptyHanging,
+    RoadSignEmpty: WorldRoadSignEmpty,
+    RoadSignObjectStop: WorldRoadSignObjectStop,
+    RoadSignObjectStreet: WorldRoadSignObjectStreet,
+    RoadSignObjectWarning: WorldRoadSignObjectWarning,
+    RoadSignStop: WorldRoadSignStop,
+    RoadSignStreet: WorldRoadSignStreet,
+    RoadSignWarning: WorldRoadSignWarning,
+    RoadSlantBarrier: WorldRoadSlantBarrier,
+    RoadSlantCurveBarrier: WorldRoadSlantCurveBarrier,
+    RoadSlantCurve: WorldRoadSlantCurve,
+    RoadSlantFlatCurve: WorldRoadSlantFlatCurve,
+    RoadSlantFlatHigh: WorldRoadSlantFlatHigh,
+    RoadSlantFlat: WorldRoadSlantFlat,
+    RoadSlantHighBarrier: WorldRoadSlantHighBarrier,
+    RoadSlantHigh: WorldRoadSlantHigh,
+    RoadSlant: WorldRoadSlant,
+    RoadSplitBarrier: WorldRoadSplitBarrier,
+    RoadSplit: WorldRoadSplit,
+    RoadSquareBarrier: WorldRoadSquareBarrier,
+    RoadSquare: WorldRoadSquare,
+    RoadStraightBarrierEnd: WorldRoadStraightBarrierEnd,
+    RoadStraightBarrierHalf: WorldRoadStraightBarrierHalf,
+    RoadStraightBarrier: WorldRoadStraightBarrier,
+    RoadStraightHalf: WorldRoadStraightHalf,
+    RoadStraight: WorldRoadStraight,
+    SignHighwayDetailed: WorldSignHighwayDetailed,
+    SignHighwayWide: WorldSignHighwayWide,
+    SignHighway: WorldSignHighway,
+    TileHigh: WorldTileHigh,
+    TileLow: WorldTileLow,
+    TileSlant: WorldTileSlant,
+    TileSlantHigh: WorldTileSlantHigh,
+    TrafficLightHanging: WorldTrafficLightHanging,
+    TrafficLightObjectHanging: WorldTrafficLightObjectHanging,
+    TrafficLightObjectHorizontal: WorldTrafficLightObjectHorizontal,
+    TrafficLightObjectVertical: WorldTrafficLightObjectVertical,
+    TrafficLight: WorldTrafficLight
   }
 } as const;
 

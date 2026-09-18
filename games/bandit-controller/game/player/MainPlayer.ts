@@ -36,15 +36,18 @@ export default class MainPlayer extends Entity {
     private readonly threeScene: THREE.Scene;
     /** Which bend flavor this player's own character materials use once loaded — see loadCharacter(). Undefined defers to ThirdPersonCharacter/CharacterBody's own default (BendService, the hub's plain radial dip). */
     private readonly bendService?: WorldBendService;
+    /** Same idea as bendService — defaults to PlayerSettings' own hub speed function, but a minigame scene can override it with its own constant forward pace (see MinigameSettings.ts's forwardSpeed fields). */
+    private readonly getMoveSpeed: (sprinting: boolean) => number;
     private thirdPersonCharacter?: ThirdPersonCharacter;
     /** Guards loadCharacter()'s continuation against attaching a component to an entity that got destroyed while the FBX load was still in flight. */
     private destroyed = false;
 
-    public constructor(inputHost: MovementInputHost, threeScene: THREE.Scene, bendService?: WorldBendService) {
+    public constructor(inputHost: MovementInputHost, threeScene: THREE.Scene, bendService?: WorldBendService, getMoveSpeed: (sprinting: boolean) => number = getPlayerMoveSpeed) {
         super();
         this.inputHost = inputHost;
         this.threeScene = threeScene;
         this.bendService = bendService;
+        this.getMoveSpeed = getMoveSpeed;
     }
 
     public get character(): ThirdPersonCharacter | undefined {
@@ -91,8 +94,8 @@ export default class MainPlayer extends Entity {
         // loadCharacter()'s FBX/animation load resolves — the old optional-chaining fallback
         // (`?? 0`) meant a runner scene's player sat frozen at the start line until the
         // character finished loading.
-        this.addComponent(new PlayerMovementController(getPlayerMoveSpeed, this.inputHost));
-        this.addComponent(new SwipeRunnerController(getPlayerMoveSpeed));
+        this.addComponent(new PlayerMovementController(this.getMoveSpeed, this.inputHost));
+        this.addComponent(new SwipeRunnerController(this.getMoveSpeed));
     }
 
     /** Loads the FBX character + the idle/walk/run/jump/roll/slide/hit clips and wires up the animation state graph, then attaches CharacterVisualComponent so it starts tracking the RigidBody that's already been moving this whole time. */

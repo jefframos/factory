@@ -17,10 +17,20 @@ export const RUNNER_LANE_DIRECTION = new THREE.Vector3(0, 0, -1);
 export interface RunnerMinigameSettings {
     /** World units from the start gate to the finish gate — reaching it ends the minigame (see RunnerMinigameScene). */
     laneLength: number;
+    /**
+     * World-units/second constant forward pace for THIS minigame specifically —
+     * deliberately separate from PlayerSettings.walkSpeed/runSpeedMultiplier
+     * (which still govern the hub's own free-roam walk/run). Passed into
+     * MainPlayer as a `getMoveSpeed` override (see WorldEnvironment.spawnPlayer()'s
+     * own doc) rather than sharing the hub's speed function, so tuning one
+     * never accidentally changes the other.
+     */
+    forwardSpeed: number;
 }
 
 export const RUNNER_MINIGAME_SETTINGS: RunnerMinigameSettings = {
     laneLength: 400,
+    forwardSpeed: 13,
 };
 
 export interface SwipeMinigameSettings {
@@ -31,6 +41,8 @@ export interface SwipeMinigameSettings {
     laneWidth: number;
     /** One color per lane, by index — cycles (via modulo) if there are more lanes than colors. */
     laneColors: number[];
+    /** Same idea as RunnerMinigameSettings.forwardSpeed — this minigame's own constant forward pace, independent of both the hub AND RunnerMinigameScene's own speed. */
+    forwardSpeed: number;
 }
 
 export const SWIPE_MINIGAME_SETTINGS: SwipeMinigameSettings = {
@@ -38,22 +50,29 @@ export const SWIPE_MINIGAME_SETTINGS: SwipeMinigameSettings = {
     laneCount: 3,
     laneWidth: 2.5,
     laneColors: [0xff5252, 0x4caf50, 0x448aff],
+    forwardSpeed: 15,
 };
 
 export interface RunnerFloorSettings {
-    /** World units — must comfortably exceed whichever minigame's own lane length/duration*speed runs the farthest, or the player runs off the edge of the ground collider before reaching the finish gate / the timer running out. */
+    /** World units — the LOGICAL/physics-collider floor size (WorldEnvironment's own floorSize param), must comfortably exceed whichever minigame's own lane length/duration*speed runs the farthest, or the player runs off the edge of the ground collider before reaching the finish gate / the timer running out. This is NOT how big the VISIBLE floor mesh is — see patchSize/patchSegments. */
     size: number;
-    /** Vertices per side (see FloorBuilder.build()'s own doc) — higher than the hub's plain 32 so RunnerBendService's wave bend has enough nearby detail to look smooth. */
-    segments: number;
-    /** > 1 clusters more of those vertices near the center (where the player actually is) and fewer toward the rarely-seen far edges — see FloorBuilder.build()'s own doc on centerBias. */
-    centerBias: number;
+    /** World units per side of the small, densely-tessellated visual floor patch that stays snapped/centered under the player as they move (see WorldEnvironment.recenterFloorPatch()'s own doc) — independent of `size` above, and can be far smaller since it only ever needs to cover the ground actually visible around the player. */
+    patchSize: number;
+    /** Vertices per side of that patch — much higher than a full-level floor mesh could ever afford. patchSize/patchSegments is also the world-unit size of the patch's own grid cell, i.e. the increment it snaps by each time it recenters — keeping that equal to FloorBuilder's 1-world-unit grid-texture repeat (patchSize === patchSegments) is what keeps the snap itself invisible. */
+    patchSegments: number;
+    /** World units wide, each of the two flat sidewalk strips running alongside the patch (see WorldEnvironment.VisualFloorPatch.sidewalks' own doc) — recenters in lockstep with the main patch, Z-only. */
+    sidewalkWidth: number;
+    /** World units of clearance from the lane's own edge out to the near edge of each sidewalk strip. */
+    sidewalkOffset: number;
 }
 
-/** Shared by both minigame scenes (see WorldEnvironment's own floorSize/floorSegments/floorCenterBias constructor params) — the hub keeps WorldEnvironment's plain defaults (FLOOR_SIZE, 32 segments, no bias). */
+/** Shared by both minigame scenes (see WorldEnvironment's own floorSize/visualFloorPatch constructor params) — the hub keeps WorldEnvironment's plain default (a single static, FLOOR_SIZE-wide floor, no recentering, no sidewalks). */
 export const RUNNER_FLOOR_SETTINGS: RunnerFloorSettings = {
     size: 900,
-    segments: 96,
-    centerBias: 1.8,
+    patchSize: 120,
+    patchSegments: 120,
+    sidewalkWidth: 50,
+    sidewalkOffset: -3,
 };
 
 export interface ObstacleSettings {
@@ -70,6 +89,6 @@ export interface ObstacleSettings {
 export const OBSTACLE_SETTINGS: ObstacleSettings = {
     startOffset: 30,
     spacing: 40,
-    halfExtents: new THREE.Vector3(1, 1, 1),
+    halfExtents: new THREE.Vector3(1, 1, 5),
     runnerLateralOffset: 2,
 };

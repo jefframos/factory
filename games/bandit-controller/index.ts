@@ -13,11 +13,18 @@ import RunnerMinigameScene from './game/scenes/RunnerMinigameScene';
 import SwipeMinigameScene from './game/scenes/SwipeMinigameScene';
 import RadialTransition from './game/ui/RadialTransition';
 import { RunnerBendService } from './game/services/RunnerBendService';
+import { RUNNER_MINIGAME_SETTINGS, SWIPE_MINIGAME_SETTINGS } from './game/data/MinigameSettings';
 
 /** What every scene exposes for the transition below to wait on — see HubScene.ready's own doc. */
 interface AsyncReadyScene {
     readonly ready: Promise<void>;
 }
+
+/** ?minigame=runner / ?minigame=swipe (see Game.extractDebugParams()) — shorthand for the two registered scene keys below, so a tester can jump straight into a minigame without walking through the hub. Any other/missing value falls back to the hub. */
+const MINIGAME_QUERY_SHORTHAND: Record<string, string> = {
+    runner: 'runner-minigame',
+    swipe: 'swipe-minigame',
+};
 
 type PlatformConfigEntry = { className?: string; folder?: string; gameId?: string; enableAds?: boolean };
 
@@ -114,11 +121,22 @@ export default class MyGame extends Game {
         DevGuiManager.instance.addProperties(RunnerBendService.uniforms.uBendXAmplitude, ['value'], [0, 15], 'Runner Bend: left/right intensity', 'Runner Bend');
         DevGuiManager.instance.addProperties(RunnerBendService.uniforms.uBendYFrequency, ['value'], [0, 0.3], 'Runner Bend: up/down frequency', 'Runner Bend');
         DevGuiManager.instance.addProperties(RunnerBendService.uniforms.uBendXFrequency, ['value'], [0, 0.3], 'Runner Bend: left/right frequency', 'Runner Bend');
+        DevGuiManager.instance.addProperties(RunnerBendService.uniforms.uBendYDescendFraction, ['value'], [0.01, 1], 'Runner Bend: descend portion of each step', 'Runner Bend');
+        DevGuiManager.instance.addProperties(RunnerBendService.uniforms.uBendStartDistance, ['value'], [0, 100], 'Runner Bend: distance before bend starts', 'Runner Bend');
+
+        // Each minigame's own constant forward pace (MinigameSettings.ts) — deliberately
+        // separate sliders from the hub's PlayerSettings, same "editable by hand or dev-GUI"
+        // convention as the bend uniforms just above.
+        DevGuiManager.instance.addProperties(RUNNER_MINIGAME_SETTINGS, ['forwardSpeed'], [1, 25], 'Runner minigame: forward speed', 'Minigame Speed');
+        DevGuiManager.instance.addProperties(SWIPE_MINIGAME_SETTINGS, ['forwardSpeed'], [1, 25], 'Swipe minigame: forward speed', 'Minigame Speed');
 
         // The very first scene load already has its own cover (HtmlLoader, hidden just above)
         // — the radial transition is only for LATER hub<->minigame changes, so this goes
         // straight through sceneManager rather than requestSceneChange()/playSceneTransition().
-        this.sceneManager.changeScene('hub');
+        // ?minigame=runner/swipe (see MINIGAME_QUERY_SHORTHAND's own doc) skips the hub
+        // entirely and drops straight into that minigame instead, for quick testing.
+        const initialSceneKey = MINIGAME_QUERY_SHORTHAND[Game.debugParams.minigame] ?? 'hub';
+        this.sceneManager.changeScene(initialSceneKey);
         this.sceneManager.resize();
     }
 

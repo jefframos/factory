@@ -64,12 +64,30 @@ export const RUNNER_CAMERA_SETTINGS: CameraSettings = {
     offset: { x: 0, y: 1.0, z: 0 },
 };
 
+/**
+ * Same shot as RUNNER, but the look-at point sits well above the player's
+ * own chest height (offset.y) instead of near it — the camera/look-at pair
+ * always frame that point dead-center, so raising it relative to the
+ * player's feet pushes the player's own body further toward the bottom of
+ * the frame, leaving more screen space above to see incoming lane
+ * obstacles/swipe cues. Used only by SwipeMinigameScene — RunnerMinigameScene
+ * keeps the plain "runner" mode's more centered framing.
+ */
+export const SWIPE_CAMERA_SETTINGS: CameraSettings = {
+    yawDeg: 0,
+    pitchDeg: 15,
+    distance: 9,
+    followSpeed: 12,
+    offset: { x: 0, y: 5, z: 0 },
+};
+
 /** CameraSettings by mode id — register these with a VirtualCameraSystem (see game/camera/VirtualCameraSystem.ts) and blendTo()/cutTo() between them by id. */
 export const CAMERA_SETTINGS_BY_MODE: Record<string, CameraSettings> = {
     standard: STANDARD_CAMERA_SETTINGS,
     closeup: CLOSEUP_CAMERA_SETTINGS,
     topdown: TOPDOWN_CAMERA_SETTINGS,
     runner: RUNNER_CAMERA_SETTINGS,
+    swipe: SWIPE_CAMERA_SETTINGS,
 };
 
 export const DEFAULT_CAMERA_MODE = 'standard';

@@ -35,12 +35,14 @@ import { Signal } from 'signals';
 import { Game } from 'core/Game';
 import { ThreeScene } from 'core/scene/ThreeScene';
 import { RunnerBendService } from '../services/RunnerBendService';
+import { BendService } from '../services/BendService';
 import { WorldEnvironment, CameraFollowOptions } from './shared/WorldEnvironment';
 import { laneOffset } from '../data/LaneMath';
 import { buildObstacle } from '../builders/ObstacleBuilder';
+import { buildCityRow } from '../builders/CityBuilder';
+import { buildRoadDetails } from '../builders/RoadDetailsBuilder';
 import { waitForFirstInput } from '../utils/waitForFirstInput';
 import ReturnToHubButton from '../ui/ReturnToHubButton';
-import { PLAYER_SETTINGS } from '../data/PlayerSettings';
 import { RUNNER_LANE_DIRECTION, SWIPE_MINIGAME_SETTINGS, RUNNER_FLOOR_SETTINGS, OBSTACLE_SETTINGS } from '../data/MinigameSettings';
 
 const START_POSITION = new THREE.Vector3(0, 0, 0);
@@ -78,15 +80,29 @@ export default class SwipeMinigameScene extends ThreeScene {
     }
 
     public build(): void {
+        // this.env doesn't exist yet — RUNNER_FLOOR_SETTINGS.size is exactly what
+        // this.env.floorSize will read back as (see WorldEnvironment's own constructor),
+        // so this mirrors maxLaneDistance()'s own formula without needing env first.
+        const laneHalfWidth = (SWIPE_MINIGAME_SETTINGS.laneCount * SWIPE_MINIGAME_SETTINGS.laneWidth) / 2;
+        const sidewalkCenterX = laneHalfWidth + RUNNER_FLOOR_SETTINGS.sidewalkOffset + RUNNER_FLOOR_SETTINGS.sidewalkWidth / 2;
+
         this.env = new WorldEnvironment(
             this.threeScene,
             RunnerBendService,
             RUNNER_FLOOR_SETTINGS.size,
-            RUNNER_FLOOR_SETTINGS.segments,
-            RUNNER_FLOOR_SETTINGS.centerBias,
+            undefined,
+            undefined,
+            {
+                size: RUNNER_FLOOR_SETTINGS.patchSize,
+                segments: RUNNER_FLOOR_SETTINGS.patchSegments,
+                sidewalks: [
+                    { centerX: -sidewalkCenterX, width: RUNNER_FLOOR_SETTINGS.sidewalkWidth },
+                    { centerX: sidewalkCenterX, width: RUNNER_FLOOR_SETTINGS.sidewalkWidth },
+                ],
+            },
         );
-        const player = this.env.spawnPlayer(this, START_POSITION);
-        this.env.cameraSystem.cutTo('runner');
+        const player = this.env.spawnPlayer(this, START_POSITION, () => SWIPE_MINIGAME_SETTINGS.forwardSpeed);
+        this.env.cameraSystem.cutTo('swipe');
         this.env.updateCamera(this.threeCamera, 0, CAMERA_FOLLOW_OPTIONS);
 
         // Mutually exclusive with PlayerMovementController — both would otherwise fight over
@@ -96,6 +112,7 @@ export default class SwipeMinigameScene extends ThreeScene {
 
         this.buildLaneMarkers();
         this.buildObstacles();
+        void this.buildRoadDecor(laneHalfWidth);
 
         this.remainingSec = SWIPE_MINIGAME_SETTINGS.durationSec;
         this.started = false;
@@ -151,8 +168,7 @@ export default class SwipeMinigameScene extends ThreeScene {
 
     /** How far (world units) the player could possibly get in the full timer duration at running pace, clamped so it never runs past this environment's own floor edge — the length the lane visuals/obstacles both need to cover. */
     private maxLaneDistance(): number {
-        const forwardSpeed = PLAYER_SETTINGS.walkSpeed * PLAYER_SETTINGS.runSpeedMultiplier;
-        const desiredLength = forwardSpeed * SWIPE_MINIGAME_SETTINGS.durationSec * 1.2;
+        const desiredLength = SWIPE_MINIGAME_SETTINGS.forwardSpeed * SWIPE_MINIGAME_SETTINGS.durationSec * 1.2;
         return Math.min(desiredLength, this.env.floorSize / 2 - FLOOR_EDGE_MARGIN);
     }
 
@@ -173,6 +189,23 @@ export default class SwipeMinigameScene extends ThreeScene {
                 buildObstacle(this.env.world, this.threeScene, x, z, OBSTACLE_SETTINGS.halfExtents, RunnerBendService, () => this.onHitObstacle());
             }
         }
+    }
+
+    /**
+     * Same "buildings + street props only, sidewalk is WorldEnvironment's
+     * own recentering rects" shape as RunnerMinigameScene's own
+     * buildRoadDecor() — see that file's own doc, including on why
+     * buildings specifically use the plain BendService rather than
+     * RunnerBendService (its origin is kept in sync in fixedUpdate()
+     * below, same reasoning).
+     */
+    private async buildRoadDecor(laneHalfWidth: number): Promise<void> {
+        const laneLength = this.maxLaneDistance();
+
+        await Promise.all([
+            buildCityRow(this.threeScene, laneLength, laneHalfWidth, RUNNER_LANE_DIRECTION.z, BendService),
+            buildRoadDetails(this.threeScene, laneLength, laneHalfWidth, RUNNER_LANE_DIRECTION.z, RunnerBendService),
+        ]);
     }
 
     private onHitObstacle(): void {
@@ -221,6 +254,10 @@ export default class SwipeMinigameScene extends ThreeScene {
 
     public fixedUpdate(delta: number): void {
         this.env.fixedUpdate(delta);
+        // WorldEnvironment.fixedUpdate() only advances its OWN configured bendService
+        // (RunnerBendService here) — buildings use the plain BendService instead (see
+        // buildRoadDecor()'s own doc), so it needs its own origin kept in sync too.
+        BendService.updateOrigin(this.env.mainPlayer.transform.position);
         this.env.updateCamera(this.threeCamera, delta, CAMERA_FOLLOW_OPTIONS);
     }
 

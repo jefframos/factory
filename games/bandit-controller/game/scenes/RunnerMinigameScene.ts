@@ -40,8 +40,11 @@ import { Game } from 'core/Game';
 import { ThreeScene } from 'core/scene/ThreeScene';
 import { WorldEnvironment, CameraFollowOptions } from './shared/WorldEnvironment';
 import { RunnerBendService } from '../services/RunnerBendService';
+import { BendService } from '../services/BendService';
 import { buildGateMarker, buildTriggerGate } from '../builders/GateBuilder';
 import { buildObstacle } from '../builders/ObstacleBuilder';
+import { buildCityRow } from '../builders/CityBuilder';
+import { buildRoadDetails } from '../builders/RoadDetailsBuilder';
 import { waitForFirstInput } from '../utils/waitForFirstInput';
 import ReturnToHubButton from '../ui/ReturnToHubButton';
 import { RUNNER_LANE_DIRECTION, RUNNER_MINIGAME_SETTINGS, RUNNER_FLOOR_SETTINGS, OBSTACLE_SETTINGS } from '../data/MinigameSettings';
@@ -73,14 +76,25 @@ export default class RunnerMinigameScene extends ThreeScene {
     }
 
     public build(): void {
+        const laneHalfWidth = OBSTACLE_SETTINGS.runnerLateralOffset + OBSTACLE_SETTINGS.halfExtents.x;
+        const sidewalkCenterX = laneHalfWidth + RUNNER_FLOOR_SETTINGS.sidewalkOffset + RUNNER_FLOOR_SETTINGS.sidewalkWidth / 2;
+
         this.env = new WorldEnvironment(
             this.threeScene,
             RunnerBendService,
             RUNNER_FLOOR_SETTINGS.size,
-            RUNNER_FLOOR_SETTINGS.segments,
-            RUNNER_FLOOR_SETTINGS.centerBias,
+            undefined,
+            undefined,
+            {
+                size: RUNNER_FLOOR_SETTINGS.patchSize,
+                segments: RUNNER_FLOOR_SETTINGS.patchSegments,
+                sidewalks: [
+                    { centerX: -sidewalkCenterX, width: RUNNER_FLOOR_SETTINGS.sidewalkWidth },
+                    { centerX: sidewalkCenterX, width: RUNNER_FLOOR_SETTINGS.sidewalkWidth },
+                ],
+            },
         );
-        const player = this.env.spawnPlayer(this, START_POSITION);
+        const player = this.env.spawnPlayer(this, START_POSITION, () => RUNNER_MINIGAME_SETTINGS.forwardSpeed);
         this.env.cameraSystem.cutTo('runner');
         this.env.updateCamera(this.threeCamera, 0, CAMERA_FOLLOW_OPTIONS);
 
@@ -95,6 +109,7 @@ export default class RunnerMinigameScene extends ThreeScene {
         });
 
         this.buildObstacles();
+        void this.buildRoadDecor(laneHalfWidth);
 
         const finishZ = START_POSITION.z + RUNNER_LANE_DIRECTION.z * RUNNER_MINIGAME_SETTINGS.laneLength;
         buildGateMarker(this.threeScene, START_POSITION.x, finishZ, 0xff8844, RunnerBendService);
@@ -121,6 +136,31 @@ export default class RunnerMinigameScene extends ThreeScene {
         }
     }
 
+    /**
+     * Fires the buildings and street-prop rows at once — the sidewalk
+     * itself is no longer a builder call, it's the flat recentering rects
+     * WorldEnvironment already built in build() (see VisualFloorPatch.
+     * sidewalks' own doc). Fire-and-forget from build(): none of this
+     * blocks the scene's own `ready`.
+     *
+     * Buildings use the plain BendService, NOT RunnerBendService, unlike
+     * everything else here — RunnerBendService's X curve is keyed to each
+     * vertex's own absolute world Z (see that file's own doc), so a tall
+     * building whose front and back walls sit at noticeably different Z
+     * values gets each wall shifted sideways by a different amount,
+     * reading as the whole building shearing/waving. BendService only
+     * drops world-Y by a gentle radial falloff — no lateral shift at all —
+     * so buildings just translate rigidly instead of visibly deforming
+     * (see fixedUpdate(), which keeps its own origin in sync since
+     * WorldEnvironment only updates ITS OWN configured bendService).
+     */
+    private async buildRoadDecor(laneHalfWidth: number): Promise<void> {
+        await Promise.all([
+            buildCityRow(this.threeScene, RUNNER_MINIGAME_SETTINGS.laneLength, laneHalfWidth, RUNNER_LANE_DIRECTION.z, BendService),
+            buildRoadDetails(this.threeScene, RUNNER_MINIGAME_SETTINGS.laneLength, laneHalfWidth, RUNNER_LANE_DIRECTION.z, RunnerBendService),
+        ]);
+    }
+
     private onHitObstacle(): void {
         if (this.stopped) {
             return;
@@ -140,6 +180,10 @@ export default class RunnerMinigameScene extends ThreeScene {
 
     public fixedUpdate(delta: number): void {
         this.env.fixedUpdate(delta);
+        // WorldEnvironment.fixedUpdate() only advances its OWN configured bendService
+        // (RunnerBendService here) — buildings use the plain BendService instead (see
+        // buildRoadDecor()'s own doc), so it needs its own origin kept in sync too.
+        BendService.updateOrigin(this.env.mainPlayer.transform.position);
         this.env.updateCamera(this.threeCamera, delta, CAMERA_FOLLOW_OPTIONS);
     }
 
