@@ -4,6 +4,7 @@ import PlatformHandler from 'core/platforms/PlatformHandler';
 import { getPlatformInstance } from 'core/platforms/PlatformFactory';
 import { SceneManager } from 'core/scene/SceneManager';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
+import { setPhysicsDebugFlags } from 'core/physics/PhysicsConstants';
 import * as PIXI from 'pixi.js';
 
 import loaderConfig from './loader.config';
@@ -12,7 +13,8 @@ import HubScene from './game/scenes/HubScene';
 import RunnerMinigameScene from './game/scenes/RunnerMinigameScene';
 import SwipeMinigameScene from './game/scenes/SwipeMinigameScene';
 import RadialTransition from './game/ui/RadialTransition';
-import { RunnerBendService } from './game/services/RunnerBendService';
+import { applyDebugPhysicsCookie, saveDebugPhysicsCookie } from './game/utils/DebugPhysicsCookie';
+import { RunnerBendService } from 'core/services/RunnerBendService';
 import { RUNNER_MINIGAME_SETTINGS, SWIPE_MINIGAME_SETTINGS } from './game/data/MinigameSettings';
 
 /** What every scene exposes for the transition below to wait on — see HubScene.ready's own doc. */
@@ -48,7 +50,7 @@ export default class MyGame extends Game {
      * this tick's sceneManager.fixedUpdate()/update() call has FULLY
      * returned (see applyPendingSceneChange()) — never nested inside it.
      */
-    private pendingSceneChange: string | null = null;
+    private pendingSceneChange: { key: string; force: boolean } | null = null;
     /** Guards against a SECOND scene-change request (e.g. the outgoing scene's own physics still ticking during the radial cover, briefly overlapping another gate) starting a new transition while one is already mid-flight. */
     private transitionInProgress = false;
     private transition!: RadialTransition;
@@ -94,6 +96,39 @@ export default class MyGame extends Game {
         // Must run before the scene builds so HubScene's camera sliders have a GUI to attach to.
         DevGuiManager.instance.initialize(Game.debugParams.dev);
 
+        // Physics debug wireframes (player + obstacle colliders/triggers) — three sources,
+        // most to least specific: ?colliders=1 in the URL, then whatever was last saved via
+        // the ?dev=1 panel's own checkboxes below (DebugPhysicsCookie.ts), then off. Must run
+        // before any scene builds its entities (see setPhysicsDebugFlags's own doc —
+        // RigidBody.awake() only reads these once, at construction time). The cookie itself
+        // is dev-only — applyDebugPhysicsCookie() is never called outside ?dev=1, so a
+        // production build never even reads it.
+        const isDev = !!Game.debugParams.dev;
+        const savedPhysicsDebug = isDev ? applyDebugPhysicsCookie() : {};
+        const urlColliders = Game.debugParams.colliders !== undefined ? !!Game.debugParams.colliders : undefined;
+        const showColliders = urlColliders ?? !!savedPhysicsDebug.collider;
+        const showTriggers = urlColliders ?? !!savedPhysicsDebug.trigger;
+        setPhysicsDebugFlags({ collider: showColliders, trigger: showTriggers });
+
+        // Same toggle, live, from the ?dev=1 dat.GUI panel — addToggle()/removeFolder()
+        // themselves no-op outside dev mode. Flipping one only takes effect for entities that
+        // awake() AFTER the flip (i.e. the next scene change, since RigidBody's debug
+        // wireframe is built once in awake() and never rebuilt) — check the box, then
+        // enter/re-enter a scene (hub <-> minigame) to see it take hold. Each onChange also
+        // saves to the cookie, so the checked state survives a reload. removeFolder() first
+        // guards against stacking duplicate rows if this ever runs more than once per page
+        // load (see DevGuiManager.removeFolder's own doc) — startGame() currently only runs
+        // once, but this keeps that an implementation detail rather than a hard requirement.
+        DevGuiManager.instance.removeFolder('Physics Debug');
+        DevGuiManager.instance.addToggle('Show Colliders', showColliders, (value) => {
+            setPhysicsDebugFlags({ collider: value });
+            saveDebugPhysicsCookie({ collider: value });
+        }, 'Physics Debug');
+        DevGuiManager.instance.addToggle('Show Triggers', showTriggers, (value) => {
+            setPhysicsDebugFlags({ trigger: value });
+            saveDebugPhysicsCookie({ trigger: value });
+        }, 'Physics Debug');
+
         // Every multi-scene game in this repo follows the same shape: a scene exposes a plain
         // `Signal` for whatever navigation event it needs (never touches SceneManager itself),
         // and index.ts's startGame() is the only thing that actually calls changeScene() — see
@@ -103,9 +138,14 @@ export default class MyGame extends Game {
 
         const runnerMinigame = this.sceneManager.register<RunnerMinigameScene>('runner-minigame', RunnerMinigameScene, this);
         runnerMinigame.onComplete.add(() => this.requestSceneChange('hub'));
+        // RestartButton (see RunnerMinigameScene.onHitObstacle()) — same key, forced, so
+        // SceneManager.changeScene() rebuilds this scene from scratch instead of no-opping
+        // on "already the current scene."
+        runnerMinigame.onRestart.add(() => this.requestSceneChange('runner-minigame', true));
 
         const swipeMinigame = this.sceneManager.register<SwipeMinigameScene>('swipe-minigame', SwipeMinigameScene, this);
         swipeMinigame.onComplete.add(() => this.requestSceneChange('hub'));
+        swipeMinigame.onRestart.add(() => this.requestSceneChange('swipe-minigame', true));
 
         this.scenesByKey = { 'hub': hub, 'runner-minigame': runnerMinigame, 'swipe-minigame': swipeMinigame };
         this.transition = new RadialTransition(this);
@@ -140,26 +180,32 @@ export default class MyGame extends Game {
         this.sceneManager.resize();
     }
 
-    /** Records a scene-change request — see pendingSceneChange's own doc on why this can't just call sceneManager.changeScene() directly. */
-    private requestSceneChange(sceneKey: string): void {
-        this.pendingSceneChange = sceneKey;
+    /**
+     * Records a scene-change request — see pendingSceneChange's own doc on why this can't
+     * just call sceneManager.changeScene() directly. `force` rebuilds even a
+     * currently-active scene (see SceneManager.changeScene()'s own doc) — used by
+     * RestartButton to replay the SAME minigame from scratch rather than round-tripping
+     * through the hub.
+     */
+    private requestSceneChange(sceneKey: string, force: boolean = false): void {
+        this.pendingSceneChange = { key: sceneKey, force };
     }
 
     private applyPendingSceneChange(): void {
         if (!this.pendingSceneChange || this.transitionInProgress) {
             return;
         }
-        const sceneKey = this.pendingSceneChange;
+        const { key, force } = this.pendingSceneChange;
         this.pendingSceneChange = null;
-        void this.playSceneTransition(sceneKey);
+        void this.playSceneTransition(key, force);
     }
 
     /** Cover -> swap (invisible behind the fully-covered screen) -> wait for the new scene's own async load (its character's FBX + animation clips) -> reveal. See RadialTransition.ts's own doc for why the cover/reveal are shaped as they are. */
-    private async playSceneTransition(sceneKey: string): Promise<void> {
+    private async playSceneTransition(sceneKey: string, force: boolean = false): Promise<void> {
         this.transitionInProgress = true;
         try {
             await this.transition.cover();
-            this.sceneManager.changeScene(sceneKey);
+            this.sceneManager.changeScene(sceneKey, force);
             await this.scenesByKey[sceneKey]?.ready;
             await this.transition.reveal();
         } finally {

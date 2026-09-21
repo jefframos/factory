@@ -8,8 +8,8 @@
 // `entity.getComponent(SomeComponentClass)`.
 //
 // awake() is the entity-level counterpart to Component.awake() — override
-// it in a dedicated Entity subclass (see MainPlayer.ts) to self-configure:
-// call this.addComponent(...) for everything that type needs, right there.
+// it in a dedicated Entity subclass to self-configure: call
+// this.addComponent(...) for everything that type needs, right there.
 
 import * as THREE from 'three';
 import Component from './Component';
@@ -30,7 +30,7 @@ export default class Entity {
 
     /** Override in a subclass to self-configure — see this file's own doc. */
     public awake(): void {
-        // Overridden by subclasses that need to self-configure — see MainPlayer.ts.
+        // Overridden by subclasses that need to self-configure.
     }
 
     public addComponent<T extends Component>(component: T): T {

@@ -27,8 +27,8 @@
 
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
-import Component from '../ecs/Component';
-import RigidBody from '../physics/RigidBody';
+import Component from 'core/ecs/Component';
+import RigidBody from 'core/physics/RigidBody';
 import CharacterVisualComponent from './CharacterVisualComponent';
 import AnalogInput from 'core/io/AnalogInput';
 import KeyboardInputMovement from 'core/io/KeyboardInputMovement';

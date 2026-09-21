@@ -9,21 +9,20 @@
 // have a visible/animated body yet.
 
 import * as THREE from 'three';
-import Entity from '../ecs/Entity';
-import RigidBody from '../physics/RigidBody';
-import { Layers } from '../physics/PhysicsConstants';
+import Entity from 'core/ecs/Entity';
+import RigidBody from 'core/physics/RigidBody';
+import { Layers } from 'core/physics/PhysicsConstants';
 import PlayerMovementController, { MovementInputHost } from '../components/PlayerMovementController';
 import SwipeRunnerController from '../components/SwipeRunnerController';
+import HitKickbackController from '../components/HitKickbackController';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
 import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
 import { TextureBuilder } from '../builders/TextureBuilder';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
 import { DEFAULT_CHARACTER_VIEW, resolveSkinImagePath } from '../data/CharacterViews';
-import { PLAYER_SETTINGS, getPlayerMoveSpeed } from '../data/PlayerSettings';
-import { WorldBendService } from '../services/BendService';
+import { PLAYER_SETTINGS, getPlayerMoveSpeed, getPlayerColliderHalfExtents, getPlayerColliderCenterOffset } from '../data/PlayerSettings';
+import { BendService, WorldBendService } from 'core/services/BendService';
 
-/** Player collider half-extents, roughly a standing human's box. */
-const HALF_EXTENTS = new THREE.Vector3(0.4, 0.9, 0.4);
 /** FBX export scale for this character rig. */
 const CHARACTER_SCALE = 0.0075;
 
@@ -34,8 +33,8 @@ export default class MainPlayer extends Entity {
     private readonly inputHost: MovementInputHost;
     /** Only needed for loadCharacter() to parent the loaded rig's container directly into the 3D scene — CharacterVisualComponent itself deliberately doesn't do this (ThirdPersonCharacter.update() sets the container's position in WORLD space). */
     private readonly threeScene: THREE.Scene;
-    /** Which bend flavor this player's own character materials use once loaded — see loadCharacter(). Undefined defers to ThirdPersonCharacter/CharacterBody's own default (BendService, the hub's plain radial dip). */
-    private readonly bendService?: WorldBendService;
+    /** Which bend flavor this player's own character materials (via loadCharacter()) AND its own debug collider wireframe (see awake()) use — resolved to BendService, the hub's plain radial dip, when the caller doesn't pass one (same default ThirdPersonCharacter/CharacterBody's own constructor uses), so this is never left undefined for either use. */
+    private readonly bendService: WorldBendService;
     /** Same idea as bendService — defaults to PlayerSettings' own hub speed function, but a minigame scene can override it with its own constant forward pace (see MinigameSettings.ts's forwardSpeed fields). */
     private readonly getMoveSpeed: (sprinting: boolean) => number;
     private thirdPersonCharacter?: ThirdPersonCharacter;
@@ -46,7 +45,7 @@ export default class MainPlayer extends Entity {
         super();
         this.inputHost = inputHost;
         this.threeScene = threeScene;
-        this.bendService = bendService;
+        this.bendService = bendService ?? BendService;
         this.getMoveSpeed = getMoveSpeed;
     }
 
@@ -62,6 +61,11 @@ export default class MainPlayer extends Entity {
     /** Handle for the DIFFERENT, discrete-lane swipe controller — see SwipeMinigameScene.build(). Disabled by default; activate()/deactivate() switch it on/off. */
     public get swipeRunnerController(): SwipeRunnerController {
         return this.getComponent(SwipeRunnerController)!;
+    }
+
+    /** Handle for the obstacle-hit reaction — see RunnerMinigameScene/SwipeMinigameScene's own onHitObstacle(), which call `.trigger(...)` on this instead of zeroing RigidBody.velocity directly. */
+    public get hitKickbackController(): HitKickbackController {
+        return this.getComponent(HitKickbackController)!;
     }
 
     /** The player's own physics collider — e.g. for HubScene's reset button, which needs to zero velocity directly. */
@@ -82,9 +86,10 @@ export default class MainPlayer extends Entity {
 
     public override awake(): void {
         this.addComponent(new RigidBody({
-            halfExtents: HALF_EXTENTS,
-            centerOffset: new THREE.Vector3(0, HALF_EXTENTS.y, 0),
+            halfExtents: getPlayerColliderHalfExtents(false),
+            centerOffset: getPlayerColliderCenterOffset(false),
             layer: Layers.Player,
+            bendService: this.bendService,
         }));
 
         // getPlayerMoveSpeed is a pure function of PLAYER_SETTINGS (see its own doc) — wired
@@ -96,6 +101,7 @@ export default class MainPlayer extends Entity {
         // character finished loading.
         this.addComponent(new PlayerMovementController(this.getMoveSpeed, this.inputHost));
         this.addComponent(new SwipeRunnerController(this.getMoveSpeed));
+        this.addComponent(new HitKickbackController());
     }
 
     /** Loads the FBX character + the idle/walk/run/jump/roll/slide/hit clips and wires up the animation state graph, then attaches CharacterVisualComponent so it starts tracking the RigidBody that's already been moving this whole time. */
@@ -111,10 +117,11 @@ export default class MainPlayer extends Entity {
         await character.registerAnimation('landing', modelUrl(MODELS.Characters.LandingNew.fullPath));
         await character.registerAnimation('roll', modelUrl(MODELS.Characters.Roll.fullPath));
         await character.registerAnimation('slide', modelUrl(MODELS.Characters.Slide.fullPath));
-        // FallingIdle was already in the model registry but never actually used anywhere —
-        // reused here for the "hit an obstacle" pose (see ThirdPersonCharacter.hit()) rather
-        // than adding a new raw asset.
-        await character.registerAnimation('hit', modelUrl(MODELS.Characters.FallingIdle.fullPath));
+        // The correct "hit an obstacle" pose (see ThirdPersonCharacter.hit()) — a real,
+        // dedicated knocked-back reaction clip, not FallingIdle (which reads as an in-air
+        // pose, wrong for a hit that should keep the player grounded — see
+        // HitKickbackController's own doc on the kickback itself staying purely horizontal).
+        await character.registerAnimation('hit', modelUrl(MODELS.Characters.Fallback.fullPath));
         character.setUp();
 
         const faceTexture = await TextureBuilder.load(resolveSkinImagePath(DEFAULT_CHARACTER_VIEW.face));

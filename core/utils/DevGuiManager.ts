@@ -98,6 +98,24 @@ export class DevGuiManager {
     }
 
     /**
+     * Removes a previously-created folder and everything inside it — call this before
+     * re-wiring a folder's controls from scratch (e.g. rebinding them to a new scene
+     * instance's objects), since getOrCreateFolder() otherwise just keeps reusing whatever
+     * folder already exists by that name, and there's no way to update an existing
+     * control's binding in place — re-adding without removing first stacks duplicate rows
+     * forever. No-op outside dev mode or if the folder was never created.
+     */
+    public removeFolder(name: string): void {
+        if (!this.isDev || !this.gui) return;
+
+        const folder = this.folders.get(name);
+        if (!folder) return;
+
+        this.gui.removeFolder(folder);
+        this.folders.delete(name);
+    }
+
+    /**
      * Retrieves an existing folder or creates one if it doesn't exist.
      * param name - Folder name
      * returns dat.GUI instance for the folder

@@ -7,18 +7,8 @@
 // VirtualCameraSystem starts on a live COPY of it (see its own `current`
 // field) so dev-GUI edits never mutate the shared preset object itself.
 
-export interface CameraSettings {
-    /** Degrees the camera is rotated around the player, around Y (0 = behind, looking toward -Z; positive turns it clockwise viewed from above). */
-    yawDeg: number;
-    /** Degrees the camera looks down from level with the player (0 = level, 90 = straight overhead). */
-    pitchDeg: number;
-    /** How far back the camera sits from its follow target. */
-    distance: number;
-    /** Exponential follow-ease rate the camera's target chases the player's actual position at — higher = snappier, lower = laggier/smoother. */
-    followSpeed: number;
-    /** World-space offset added to the player's position before the camera orbits/looks at it — e.g. raising the look-at point to chest/head height instead of the feet-level transform origin. */
-    offset: { x: number; y: number; z: number };
-}
+export type { CameraSettings } from 'core/camera/CameraSettings';
+import type { CameraSettings } from 'core/camera/CameraSettings';
 
 export const STANDARD_CAMERA_SETTINGS: CameraSettings = {
     yawDeg: 0,

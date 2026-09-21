@@ -22,9 +22,9 @@ export class SceneManager {
         return scene as T
     }
 
-    /** Switch to a registered scene */
-    public changeScene(key: string, ...buildParams: any | undefined[]): void {
-        if (key === this.currentKey) return;
+    /** Switch to a registered scene. `force: true` rebuilds even if `key` is already the current scene — a full destroy()+build() cycle on the same registered instance, e.g. to restart a minigame from scratch (see requestSceneChange() callers) — otherwise a same-key call is a no-op. */
+    public changeScene(key: string, force: boolean = false, ...buildParams: any | undefined[]): void {
+        if (key === this.currentKey && !force) return;
 
         // tear down current
         if (this.currentKey) {

@@ -2,12 +2,11 @@ import * as THREE from 'three';
 
 /**
  * Structural shape every world-bend flavor shares — `BendService` itself
- * (the hub's plain radial dip) and `RunnerBendService` (the minigames' more
- * interactive one, see that file). Lets shared geometry builders
- * (FloorBuilder, GateBuilder, CharacterBody, ...) take "whichever bend
- * service this scene is using" as a plain parameter instead of hardcoding
- * an import, so WorldEnvironment can hand each scene the bend it actually
- * wants applied to its own materials.
+ * (a plain radial dip) and `RunnerBendService` (a more interactive one, see
+ * that file). Lets shared geometry builders take "whichever bend service
+ * this scene is using" as a plain parameter instead of hardcoding an
+ * import, so a scene's environment setup can hand each part the bend it
+ * actually wants applied to its own materials.
  */
 export interface WorldBendService {
     applyBend(material: THREE.Material): void;
@@ -19,7 +18,7 @@ export interface WorldBendService {
  * the player in all directions.
  *
  * Injects into #include <project_vertex> (not <begin_vertex>) so it works in
- * world-Y regardless of the object's own rotation (the floor is rotated
+ * world-Y regardless of the object's own rotation (e.g. a floor rotated
  * -PI/2 on X, which would otherwise make a begin_vertex injection bend along
  * the wrong axis).
  *

@@ -8,7 +8,7 @@
 
 import * as THREE from 'three';
 import CharacterBody from './CharacterBody';
-import { WorldBendService } from '../services/BendService';
+import { WorldBendService } from 'core/services/BendService';
 import { getPlayerMoveSpeed } from '../data/PlayerSettings';
 
 export default class ThirdPersonCharacter {

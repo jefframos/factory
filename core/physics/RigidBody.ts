@@ -19,8 +19,9 @@
 
 import * as THREE from 'three';
 import { Signal } from 'signals';
-import Component from '../ecs/Component';
-import { ALL_LAYERS, DEBUG_COLLIDER_COLOR, DEBUG_TRIGGER_COLOR, Layers, PHYSICS_DEBUG, PHYSICS_TRIGGER_DEBUG } from './PhysicsConstants';
+import Component from 'core/ecs/Component';
+import type { WorldBendService } from 'core/services/BendService';
+import { ALL_LAYERS, DEBUG_COLLIDER_COLOR, DEBUG_COLLIDER_OPACITY, DEBUG_TRIGGER_COLOR, Layers, PHYSICS_DEBUG, PHYSICS_TRIGGER_DEBUG } from './PhysicsConstants';
 
 export interface RigidBodyOptions {
     /** Half-width/height/depth of the box collider, world units. */
@@ -39,6 +40,18 @@ export interface RigidBodyOptions {
     mask?: number;
     /** Whether OTHER bodies get pushed out of THIS one along the Y axis — default true. */
     blocksVertical?: boolean;
+    /**
+     * Whichever world-bend flavor the CALLER's own visual mesh for this body already uses
+     * (BendService's plain radial dip, RunnerBendService's depth-only curve, ...) — applied to
+     * the debug wireframe material (see awake()) so it curves along with the geometry it's
+     * meant to outline instead of floating in flat, unbent space wherever the bend is actually
+     * visible (i.e. anywhere far enough from the bend origin to matter). Omitted entirely
+     * (rather than defaulted here) since RigidBody itself has no idea which bend flavor, if
+     * any, a given scene is using — every caller already threads its own bendService through
+     * to its OWN geometry the same explicit way (see ObstacleBuilder.ts/GateBuilder.ts/
+     * WorldEnvironment.ts), so this just needs to be handed the same one.
+     */
+    bendService?: WorldBendService;
 }
 
 export default class RigidBody extends Component {
@@ -66,6 +79,7 @@ export default class RigidBody extends Component {
     public readonly onTriggerExit: Signal<RigidBody> = new Signal();
 
     private debugMesh?: THREE.LineSegments;
+    private readonly bendService?: WorldBendService;
 
     public constructor(options: RigidBodyOptions) {
         super();
@@ -77,11 +91,16 @@ export default class RigidBody extends Component {
         this.layer = options.layer ?? Layers.Default;
         this.mask = options.mask ?? ALL_LAYERS;
         this.blocksVertical = options.blocksVertical ?? true;
+        this.bendService = options.bendService;
     }
 
     public awake(): void {
         this.entity.world?.physics.register(this);
+        this.buildDebugMesh();
+    }
 
+    /** (Re)builds the debug wireframe from the CURRENT halfExtents/centerOffset — a no-op unless this body's own PHYSICS_DEBUG/PHYSICS_TRIGGER_DEBUG flag is on. Called from awake(), and again from setSize() so a resized body's wireframe stays the right shape instead of showing its OLD size. */
+    private buildDebugMesh(): void {
         if (!this.isTrigger && !PHYSICS_DEBUG) {
             return;
         }
@@ -95,12 +114,58 @@ export default class RigidBody extends Component {
             this.halfExtents.y * 2,
             this.halfExtents.z * 2,
         );
-        this.debugMesh = new THREE.LineSegments(
-            new THREE.EdgesGeometry(geometry),
-            new THREE.LineBasicMaterial({ color: this.isTrigger ? DEBUG_TRIGGER_COLOR : DEBUG_COLLIDER_COLOR }),
-        );
+        const debugMaterial = new THREE.LineBasicMaterial({
+            color: this.isTrigger ? DEBUG_TRIGGER_COLOR : DEBUG_COLLIDER_COLOR,
+            transparent: true,
+            opacity: DEBUG_COLLIDER_OPACITY,
+            // A collider box is often sized/positioned exactly the same as its own
+            // opaque visual mesh (e.g. ObstacleBuilder's full-height hit-zone trigger) —
+            // depth-testing against that mesh would just z-fight and mostly disappear
+            // behind it, so this deliberately draws on top of everything, X-ray style,
+            // same as any other physics debug overlay.
+            depthTest: false,
+        });
+        // Bends the wireframe the same way the caller's own visual geometry bends (see
+        // RigidBodyOptions.bendService's own doc) — LineBasicMaterial resolves to the SAME
+        // "basic" built-in shader MeshBasicMaterial does (three.js has no separate line
+        // shader), so it has the `#include <project_vertex>` chunk BendService/
+        // RunnerBendService both target, same as any other bent material in this codebase.
+        this.bendService?.applyBend(debugMaterial);
+        this.debugMesh = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), debugMaterial);
+        // Depth-tested geometry still renders in submission order among itself, but a
+        // depthTest:false material needs an explicit renderOrder to reliably land after
+        // (visually on top of) the opaque meshes it's meant to outline, rather than the
+        // outcome depending on scene-graph traversal order.
+        this.debugMesh.renderOrder = 999;
         this.debugMesh.position.copy(this.centerOffset);
         this.entity.transform.add(this.debugMesh);
+    }
+
+    /**
+     * Resizes this body live — e.g. MainPlayer shrinking its own collider while sliding, to
+     * fit under a raised bar obstacle with no collider below a certain height (see
+     * ObstacleBuilder.buildObstacle's `baseY` param). PhysicsWorld reads halfExtents/
+     * centerOffset fresh every step (see getMin()/getMax()), so this takes effect
+     * immediately for both collision resolution and trigger overlap — no re-registration
+     * needed. `centerOffset` defaults to keeping whatever it already was (e.g. a caller that
+     * only ever changes height still has to pass a new Y offset itself if it wants the box's
+     * bottom to stay anchored at the same place — see PlayerSettings.ts's own stand/slide
+     * helpers, which always compute both together).
+     */
+    public setSize(halfExtents: THREE.Vector3, centerOffset?: THREE.Vector3): void {
+        this.halfExtents.copy(halfExtents);
+        if (centerOffset) {
+            this.centerOffset.copy(centerOffset);
+        }
+
+        if (!this.debugMesh) {
+            return;
+        }
+        this.debugMesh.geometry.dispose();
+        (this.debugMesh.material as THREE.Material).dispose();
+        this.debugMesh.removeFromParent();
+        this.debugMesh = undefined;
+        this.buildDebugMesh();
     }
 
     /** World-space box center — entity position plus this body's local offset. */

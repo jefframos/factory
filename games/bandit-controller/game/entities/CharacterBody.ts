@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { BendService, WorldBendService } from '../services/BendService';
+import { BendService, WorldBendService } from 'core/services/BendService';
 import AnimatorController from './animation/AnimatorController';
 import { loadCompressedFile, releaseObjectURL } from '../utils/GzipLoader';
 
@@ -95,6 +95,33 @@ export default class CharacterBody {
         this.animator.registerAnimatorBoard('idle');
         const board = this.animator.animatorBoard!;
 
+        // --- Trigger-based one-shots, registered FIRST -------------------------------------
+        // AnimatorBoard.update() walks its transitions in REGISTRATION order and fires the
+        // FIRST one whose trigger fired OR condition matched, then clears every trigger
+        // regardless — there's no inherent "a fired trigger outranks a merely-true condition"
+        // rule, just array order. All four of these are triggered explicitly (jump/roll/
+        // slide/hit), each from ANY state, so they need to be checked before any
+        // condition-based transition below gets a chance to win the race and silently
+        // swallow the trigger instead. This bit twice already: HIT is fired from the same
+        // onHitObstacle() call that also disables the movement controller, which zeroes
+        // moveInput synchronously (see PlayerMovementController/SwipeRunnerController's own
+        // onDisable()) — so on that exact tick, vars.speed has ALREADY dropped to ~0 with
+        // grounded still true, which used to satisfy the (then earlier-registered) run->idle/
+        // walk->idle condition first, playing idle instead of the hit pose. jumpUp/falling/
+        // landing/roll/slide/hit are all one-shot poses (loop=false, the trailing argument
+        // below) — they play through once and hold their last frame instead of restarting
+        // from frame 0 every time the clip reaches its own end.
+        //
+        // HIT is listed first of the four: getting hit should always win even if it happens
+        // mid-jump/roll/slide, never the other way around.
+        board.registerTransition('any', 'hit', 0.1, undefined, 'hit', false);
+        board.registerTransition('any', 'jumpUp', 0.1, undefined, 'jump', false);
+        board.registerTransition('any', 'roll', 0.1, undefined, 'roll', false);
+        // Swipe-down slide (see SwipeRunnerController) — its own state, not just reusing
+        // 'roll', with its own dedicated clip (see MainPlayer.loadCharacter()).
+        board.registerTransition('any', 'slide', 0.1, undefined, 'slide', false);
+
+        // --- Condition-based transitions ----------------------------------------------------
         board.registerTransition('idle', 'walk', 0.25, (vars) => (vars.speed as number) > idleToWalkSpeed && (vars.speed as number) < walkToRunSpeed && vars.grounded === true);
         board.registerTransition('idle', 'run', 0.25, (vars) => (vars.speed as number) >= walkToRunSpeed && vars.grounded === true);
         board.registerTransition('walk', 'idle', 0.25, (vars) => (vars.speed as number) <= idleToWalkSpeed && vars.grounded === true);
@@ -106,13 +133,6 @@ export default class CharacterBody {
         board.registerTransition('falling', 'walk', 0.15, (vars) => (vars.speed as number) > idleToWalkSpeed && (vars.speed as number) < walkToRunSpeed && vars.grounded === true);
         board.registerTransition('landing', 'idle', 0.15, (vars) => (vars.speed as number) <= idleToWalkSpeed && vars.grounded === true);
 
-        // jumpUp/falling/landing/roll/slide are all one-shot poses (loop=false, the trailing
-        // argument below) — they play through once and hold their last frame instead of
-        // restarting from frame 0 every time the clip reaches its own end. Without this,
-        // whichever of these outlasts its own clip's short duration (jumpUp across a real
-        // jump's ascent, falling across however long the actual drop takes) would keep
-        // LOOPING for the rest of that state — a visible restart-stutter, not a smooth arc.
-        board.registerTransition('any', 'jumpUp', 0.1, undefined, 'jump', false);
         // Real physics gives verticalSpeed a big positive value the instant the jump starts,
         // so a "> 0" check here would fire on the very next tick — cutting jumpUp's own 0.1s
         // crossfade-in off after ~one frame and immediately re-crossfading into falling on
@@ -122,24 +142,37 @@ export default class CharacterBody {
         board.registerTransition('jumpUp', 'falling', 0.5, (vars) => (vars.verticalSpeed as number) <= 0, undefined, false);
         board.registerTransition('falling', 'landing', 0.25, (vars) => vars.grounded === true, undefined, false);
 
-        board.registerTransition('any', 'roll', 0.1, undefined, 'roll', false);
+        // A player who becomes airborne WITHOUT jumping — running (or getting knocked) off
+        // the edge of an elevated platform, e.g. a TRAIN/TUNNEL roof (see MinigameSettings.
+        // OBSTACLE_KINDS) — has no jumpUp pose to arrive from, so without this they'd just
+        // keep playing idle/walk/run while genuinely falling through the air. Scoped to
+        // idle/walk/run specifically (never 'any') so it can NEVER fire while already in
+        // jumpUp/falling/landing: 'any' would also match during a real jump's own ASCENT
+        // (grounded is false for the whole arc, not just the descent — see jumpUp->falling's
+        // own comment above on why THAT transition waits for verticalSpeed <= 0), which would
+        // skip straight past the jumpUp pose instead of playing it through the ascent. Safe
+        // to register anywhere relative to 'any'->'jumpUp' now that jumpUp's own trigger is
+        // up in the trigger-priority block above — it always wins ties with THIS condition
+        // regardless of array position, since triggers are checked as their own transitions,
+        // not folded into these.
+        board.registerTransition('idle', 'falling', 0.25, (vars) => vars.grounded === false, undefined, false);
+        board.registerTransition('walk', 'falling', 0.25, (vars) => vars.grounded === false, undefined, false);
+        board.registerTransition('run', 'falling', 0.25, (vars) => vars.grounded === false, undefined, false);
+
         board.registerTransition('roll', 'idle', 0.2, (vars) => vars.rolling === false && (vars.speed as number) <= idleToWalkSpeed);
         board.registerTransition('roll', 'walk', 0.2, (vars) => vars.rolling === false && (vars.speed as number) > idleToWalkSpeed && (vars.speed as number) < walkToRunSpeed);
         board.registerTransition('roll', 'run', 0.2, (vars) => vars.rolling === false && (vars.speed as number) >= walkToRunSpeed);
 
-        // Swipe-down slide (see SwipeRunnerController) — its own state, not just reusing
-        // 'roll', with its own dedicated clip (see MainPlayer.loadCharacter()).
-        board.registerTransition('any', 'slide', 0.1, undefined, 'slide', false);
         board.registerTransition('slide', 'idle', 0.2, (vars) => vars.sliding === false && (vars.speed as number) <= idleToWalkSpeed);
         board.registerTransition('slide', 'walk', 0.2, (vars) => vars.sliding === false && (vars.speed as number) > idleToWalkSpeed && (vars.speed as number) < walkToRunSpeed);
         board.registerTransition('slide', 'run', 0.2, (vars) => vars.sliding === false && (vars.speed as number) >= walkToRunSpeed);
 
         // Obstacle hit (see RunnerMinigameScene/SwipeMinigameScene's own ObstacleBuilder
-        // callers) — one-shot, and deliberately with no exit transition at all: the whole
-        // minigame scene freezes the instant this fires (movement disabled, velocity
-        // zeroed), so there's nothing to transition back to until the player leaves for the
-        // hub, which destroys this entity anyway.
-        board.registerTransition('any', 'hit', 0.1, undefined, 'hit', false);
+        // callers) — deliberately with no exit transition at all: the whole minigame scene
+        // freezes the instant this fires (movement disabled, kickback then a dead stop — see
+        // HitKickbackController), so there's nothing to transition back to until the player
+        // leaves for the hub, which destroys this entity anyway. The trigger itself is
+        // registered up in the priority block above, not here.
     }
 
     /** Recolors every body mesh (excluding the head cube) to an explicit hex color. */

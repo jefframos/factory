@@ -17,8 +17,8 @@
 // Starts disabled (see awake()) — activate() is what turns it on.
 
 import * as THREE from 'three';
-import Component from '../ecs/Component';
-import RigidBody from '../physics/RigidBody';
+import Component from 'core/ecs/Component';
+import RigidBody from 'core/physics/RigidBody';
 import CharacterVisualComponent from './CharacterVisualComponent';
 import { PLAYER_SETTINGS } from '../data/PlayerSettings';
 import { laneOffset } from '../data/LaneMath';

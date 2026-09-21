@@ -7,19 +7,25 @@
 //   scene.update(delta)      -> world.update(delta)
 //   scene.fixedUpdate(delta) -> world.fixedUpdate(delta)
 //
-// world.fixedUpdate() runs every entity's fixedUpdate() (so e.g.
-// PlayerMovementController can turn input into RigidBody.velocity) and
-// THEN steps physics — so velocity set this tick is what actually gets
+// world.fixedUpdate() runs every entity's fixedUpdate() (so e.g. a
+// movement controller can turn input into RigidBody.velocity) and THEN
+// steps physics — so velocity set this tick is what actually gets
 // integrated this tick.
 
 import Pool from 'core/Pool';
 import Entity from './Entity';
-import PhysicsWorld from '../physics/PhysicsWorld';
+import PhysicsWorld from 'core/physics/PhysicsWorld';
+import type { WorldSettings } from 'core/physics/WorldSettings';
 
 export default class World {
-    public readonly physics = new PhysicsWorld();
+    public readonly physics: PhysicsWorld;
 
     private readonly entities: Entity[] = [];
+
+    /** `physicsSettings` is forwarded to the owned PhysicsWorld — pass a game's own live-tunable settings object here to keep dev-GUI edits in sync with what physics actually reads. Defaults to PhysicsWorld's own defaults otherwise. */
+    public constructor(physicsSettings?: WorldSettings) {
+        this.physics = new PhysicsWorld(physicsSettings);
+    }
 
     public spawn(): Entity {
         const entity = Pool.instance.getElement(Entity);

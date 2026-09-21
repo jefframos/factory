@@ -1,16 +1,14 @@
 // VirtualCameraSystem.ts
 //
 // A small Cinemachine-style camera system: named "virtual cameras" (plain
-// CameraSettings data — see GameSettings.ts) that the scene's real camera
+// CameraSettings data — see CameraSettings.ts) that the scene's real camera
 // blends between instead of snapping. register() defines each one,
 // cutTo()/blendTo() switch which is active, and update(delta) — call once
 // per frame — advances any blend in progress. `current` always holds the
 // live, fully-resolved settings the scene's actual camera should read from
-// every frame (see WorldEnvironment.updateCamera() in
-// game/scenes/shared/WorldEnvironment.ts); nothing else needs to know a
-// blend is even happening.
+// every frame; nothing else needs to know a blend is even happening.
 
-import { CameraSettings } from '../data/GameSettings';
+import { CameraSettings } from './CameraSettings';
 
 function lerp(a: number, b: number, t: number): number {
     return a + (b - a) * t;
@@ -47,7 +45,7 @@ function lerpCameraSettingsInto(out: CameraSettings, from: CameraSettings, to: C
 }
 
 export default class VirtualCameraSystem {
-    /** Live, continuously-updated settings — read this every frame from the scene's actual camera (see WorldEnvironment.updateCamera()). A private clone, never one of the registered CameraSettings objects themselves, so blending never mutates a preset's own data. */
+    /** Live, continuously-updated settings — read this every frame from the scene's actual camera. A private clone, never one of the registered CameraSettings objects themselves, so blending never mutates a preset's own data. */
     public readonly current: CameraSettings;
 
     private readonly cameras = new Map<string, CameraSettings>();
@@ -59,7 +57,7 @@ export default class VirtualCameraSystem {
     private blendDuration = 0;
     private blendElapsed = 0;
 
-    /** `initial` becomes `current`'s starting value — typically the "standard" mode (see GameSettings.ts) — before any register()/cutTo() call. */
+    /** `initial` becomes `current`'s starting value — typically a game's own "standard" mode — before any register()/cutTo() call. */
     public constructor(initial: CameraSettings) {
         this.current = cloneCameraSettings(initial);
     }

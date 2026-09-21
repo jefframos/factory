@@ -120,12 +120,12 @@ export default class HubScene extends ThreeScene {
     /** Two static trigger gates — crossing either dispatches onEnterMinigame with that minigame's own scene key; index.ts is what actually switches scenes. */
     private buildMinigameGates(): void {
         buildGateMarker(this.threeScene, RUNNER_GATE_POSITION.x, RUNNER_GATE_POSITION.z, 0x44ccff);
-        buildTriggerGate(this.env.world, RUNNER_GATE_POSITION.x, RUNNER_GATE_POSITION.z, () => {
+        buildTriggerGate(this.env.world, this.threeScene, RUNNER_GATE_POSITION.x, RUNNER_GATE_POSITION.z, () => {
             this.onEnterMinigame.dispatch('runner-minigame');
         });
 
         buildGateMarker(this.threeScene, SWIPE_GATE_POSITION.x, SWIPE_GATE_POSITION.z, 0xffb347);
-        buildTriggerGate(this.env.world, SWIPE_GATE_POSITION.x, SWIPE_GATE_POSITION.z, () => {
+        buildTriggerGate(this.env.world, this.threeScene, SWIPE_GATE_POSITION.x, SWIPE_GATE_POSITION.z, () => {
             this.onEnterMinigame.dispatch('swipe-minigame');
         });
     }
@@ -214,6 +214,15 @@ export default class HubScene extends ThreeScene {
         DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['jumpSpeed'], [2, 25], 'Player', 'Player');
         DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['rollDuration'], [0.1, 2], 'Player', 'Player');
         DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['slideDuration'], [0.1, 2], 'Player', 'Player');
+        // Collider height profiles (see PlayerSettings.getPlayerColliderHalfExtents()) — only
+        // takes effect for the player's CURRENT stand/slide state going forward (MainPlayer.
+        // awake() reads standHalfHeight once at spawn, CharacterVisualComponent re-reads both
+        // on the next slide transition), same "live but not retroactive" caveat every other
+        // *Settings.ts slider already has.
+        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['standHalfHeight'], [0.3, 1.5], 'Player', 'Player');
+        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['slideHalfHeight'], [0.1, 1], 'Player', 'Player');
+        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['hitKickbackSpeed'], [0, 20], 'Player', 'Player');
+        DevGuiManager.instance.addProperties(PLAYER_SETTINGS, ['hitKickbackDuration'], [0.05, 1.5], 'Player', 'Player');
         DevGuiManager.instance.addProperties(WORLD_SETTINGS, ['gravity'], [-60, -2], 'World', 'World');
         DevGuiManager.instance.addProperties(WORLD_SETTINGS, ['maxPhysicsDelta'], [0.01, 0.1], 'World', 'World');
     }

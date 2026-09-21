@@ -29,10 +29,26 @@
         },
         {
           "alias": [
+            "pieces-config-dogs.json"
+          ],
+          "src": [
+            "pieces-config-dogs.json"
+          ]
+        },
+        {
+          "alias": [
             "pieces-config-old.json"
           ],
           "src": [
             "pieces-config-old.json"
+          ]
+        },
+        {
+          "alias": [
+            "pieces-config-penguin.json"
+          ],
+          "src": [
+            "pieces-config-penguin.json"
           ]
         },
         {
@@ -73,22 +89,6 @@
           ],
           "src": [
             "universe.json"
-          ]
-        },
-        {
-          "alias": [
-            "pieces-config-dogs.json"
-          ],
-          "src": [
-            "pieces-config-dogs.json"
-          ]
-        },
-        {
-          "alias": [
-            "pieces-config-penguin.json"
-          ],
-          "src": [
-            "pieces-config-penguin.json"
           ]
         }
       ]

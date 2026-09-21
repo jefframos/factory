@@ -18,10 +18,10 @@
 
 import * as THREE from 'three';
 import { Signal } from 'signals';
-import Entity from '../ecs/Entity';
-import RigidBody from '../physics/RigidBody';
-import { Layers } from '../physics/PhysicsConstants';
-import { BendService } from '../services/BendService';
+import Entity from 'core/ecs/Entity';
+import RigidBody from 'core/physics/RigidBody';
+import { Layers } from 'core/physics/PhysicsConstants';
+import { BendService } from 'core/services/BendService';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import ArcSpline from '../utils/ArcSpline';
 import { CollectibleDefinition, COLLECTIBLE_TUNING } from '../data/CollectibleSettings';
@@ -62,6 +62,10 @@ export default class Collectible extends Entity {
             isTrigger: true,
             layer: Layers.Default,
             mask: Layers.Player,
+            // Collectible only ever lives in the hub (see this file's own doc), which always
+            // uses the plain radial BendService for everything — same one load() applies to
+            // this pickup's own mesh below.
+            bendService: BendService,
         }));
 
         rigidBody.onTriggerEnter.add((other) => {

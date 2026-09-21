@@ -34,16 +34,17 @@ import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
 import { Game } from 'core/Game';
 import { ThreeScene } from 'core/scene/ThreeScene';
-import { RunnerBendService } from '../services/RunnerBendService';
-import { BendService } from '../services/BendService';
+import { RunnerBendService } from 'core/services/RunnerBendService';
+import { BendService } from 'core/services/BendService';
 import { WorldEnvironment, CameraFollowOptions } from './shared/WorldEnvironment';
 import { laneOffset } from '../data/LaneMath';
-import { buildObstacle } from '../builders/ObstacleBuilder';
+import { buildObstacleKind } from '../builders/ObstacleBuilder';
 import { buildCityRow } from '../builders/CityBuilder';
 import { buildRoadDetails } from '../builders/RoadDetailsBuilder';
 import { waitForFirstInput } from '../utils/waitForFirstInput';
 import ReturnToHubButton from '../ui/ReturnToHubButton';
-import { RUNNER_LANE_DIRECTION, SWIPE_MINIGAME_SETTINGS, RUNNER_FLOOR_SETTINGS, OBSTACLE_SETTINGS } from '../data/MinigameSettings';
+import RestartButton from '../ui/RestartButton';
+import { RUNNER_LANE_DIRECTION, SWIPE_MINIGAME_SETTINGS, RUNNER_FLOOR_SETTINGS, OBSTACLE_SETTINGS, OBSTACLE_KINDS, ObstacleKind, TRAIN_TUNNEL_OVERLAP } from '../data/MinigameSettings';
 
 const START_POSITION = new THREE.Vector3(0, 0, 0);
 /** Fixed to the lane's own centerline rather than swaying with lane-to-lane hops, and frozen in height across a jump — same "center of the gameplay, not the player" reasoning as RunnerMinigameScene's own camera. */
@@ -58,6 +59,8 @@ const FLOOR_EDGE_MARGIN = 20;
 export default class SwipeMinigameScene extends ThreeScene {
     /** Fired once, the instant the countdown timer reaches 0. */
     public readonly onComplete: Signal = new Signal();
+    /** Fired once, from RestartButton (see onHitObstacle()) — index.ts wires this to a FORCED same-key scene change (see SceneManager.changeScene()'s own doc) so replaying the run rebuilds this scene from scratch rather than going back to the hub first. */
+    public readonly onRestart: Signal = new Signal();
 
     private env!: WorldEnvironment;
     private remainingSec = SWIPE_MINIGAME_SETTINGS.durationSec;
@@ -67,7 +70,9 @@ export default class SwipeMinigameScene extends ThreeScene {
     /** Cancels the "waiting for a fresh input" listeners — see waitForFirstInput.ts's own doc on why this needs cancelling if the scene is torn down before that input ever arrives. */
     private cancelWaitForStart?: () => void;
     private returnToHubButton!: ReturnToHubButton;
-    /** True once the player has hit an obstacle — frozen for good until they leave via ReturnToHubButton (see this file's own doc). Also stops the countdown, so standing still doesn't quietly run the clock out from under them. */
+    /** Only constructed once the player's actually been hit (see onHitObstacle()) — see RestartButton's own doc on why it isn't built up front like returnToHubButton. */
+    private restartButton?: RestartButton;
+    /** True once the player has hit an obstacle — frozen for good until they leave via ReturnToHubButton or restart (see this file's own doc). Also stops the countdown, so standing still doesn't quietly run the clock out from under them. */
     private stopped = false;
 
     public constructor(game: Game) {
@@ -172,22 +177,49 @@ export default class SwipeMinigameScene extends ThreeScene {
         return Math.min(desiredLength, this.env.floorSize / 2 - FLOOR_EDGE_MARGIN);
     }
 
-    /** Blocks every lane but one at each interval down the lane — which lane stays open rotates every interval, so the player has to actually keep swiping rather than settle into one lane. */
+    /**
+     * Blocks every lane but one at each interval down the lane — which lane stays open
+     * rotates every interval, so the player has to actually keep swiping rather than settle
+     * into one lane. Each ROW cycles through EVERY registered OBSTACLE_KINDS entry in order
+     * (Box, Train, Tunnel, Slide Bar, Stacked, ...) — every blocked lane in a given row
+     * shares the same kind, so a row reads as one coherent obstacle type. A spansAllLanes
+     * kind (TUNNEL) instead gets ONE copy spanning every lane at once, open lane included —
+     * see MinigameSettings.ts to add, remove, or reorder kinds.
+     *
+     * A TUNNEL directly following a TRAIN row is pulled in flush against the train's own far
+     * end (see TRAIN_TUNNEL_OVERLAP's own doc) instead of sitting on the normal spacing grid
+     * — same reasoning as RunnerMinigameScene's own buildObstacles(): a player riding the
+     * train across needs the tunnel's roof to actually be there when they run out of train.
+     */
     private buildObstacles(): void {
         const count = Math.floor((this.maxLaneDistance() - OBSTACLE_SETTINGS.startOffset) / OBSTACLE_SETTINGS.spacing);
+        let previousKind: ObstacleKind | undefined;
+        let previousDistance = 0;
 
         for (let i = 0; i < count; i++) {
-            const distance = OBSTACLE_SETTINGS.startOffset + i * OBSTACLE_SETTINGS.spacing;
-            const z = START_POSITION.z + RUNNER_LANE_DIRECTION.z * distance;
-            const openLane = i % SWIPE_MINIGAME_SETTINGS.laneCount;
+            const kind = OBSTACLE_KINDS[i % OBSTACLE_KINDS.length];
 
-            for (let lane = 0; lane < SWIPE_MINIGAME_SETTINGS.laneCount; lane++) {
-                if (lane === openLane) {
-                    continue;
+            const distance = kind.id === 'tunnel' && previousKind?.id === 'train'
+                ? previousDistance + previousKind.pieces[0].halfExtents.z + kind.pieces[0].halfExtents.z - TRAIN_TUNNEL_OVERLAP
+                : OBSTACLE_SETTINGS.startOffset + i * OBSTACLE_SETTINGS.spacing;
+
+            const z = START_POSITION.z + RUNNER_LANE_DIRECTION.z * distance;
+
+            if (kind.spansAllLanes) {
+                buildObstacleKind(this.env.world, this.threeScene, START_POSITION.x, z, kind, RunnerBendService, () => this.onHitObstacle());
+            } else {
+                const openLane = i % SWIPE_MINIGAME_SETTINGS.laneCount;
+                for (let lane = 0; lane < SWIPE_MINIGAME_SETTINGS.laneCount; lane++) {
+                    if (lane === openLane) {
+                        continue;
+                    }
+                    const x = START_POSITION.x + laneOffset(lane, SWIPE_MINIGAME_SETTINGS.laneCount, SWIPE_MINIGAME_SETTINGS.laneWidth);
+                    buildObstacleKind(this.env.world, this.threeScene, x, z, kind, RunnerBendService, () => this.onHitObstacle());
                 }
-                const x = START_POSITION.x + laneOffset(lane, SWIPE_MINIGAME_SETTINGS.laneCount, SWIPE_MINIGAME_SETTINGS.laneWidth);
-                buildObstacle(this.env.world, this.threeScene, x, z, OBSTACLE_SETTINGS.halfExtents, RunnerBendService, () => this.onHitObstacle());
             }
+
+            previousKind = kind;
+            previousDistance = distance;
         }
     }
 
@@ -216,8 +248,12 @@ export default class SwipeMinigameScene extends ThreeScene {
 
         const player = this.env.mainPlayer;
         player.swipeRunnerController.deactivate();
-        player.rigidBody.velocity.set(0, 0, 0);
+        // Backward impulse (see HitKickbackController's own doc) instead of just zeroing
+        // velocity — the direction is whichever way the player was actually running, negated.
+        player.hitKickbackController.trigger(RUNNER_LANE_DIRECTION.clone().negate());
         player.character?.hit();
+
+        this.restartButton = new RestartButton(this.game, () => this.onRestart.dispatch());
     }
 
     private updateTimerLabel(): void {
@@ -235,6 +271,7 @@ export default class SwipeMinigameScene extends ThreeScene {
     public resize(): void {
         this.repositionTimer();
         this.returnToHubButton?.reposition();
+        this.restartButton?.reposition();
     }
 
     public update(delta: number): void {
@@ -265,6 +302,11 @@ export default class SwipeMinigameScene extends ThreeScene {
         this.cancelWaitForStart?.();
         this.timerLabel?.destroy();
         this.returnToHubButton?.destroy();
+        // Only ever constructed on hit (see onHitObstacle()) — see RunnerMinigameScene.
+        // destroy()'s own doc for why this cleanup (not build()) is where a stale reference
+        // across a restart cycle gets cleared.
+        this.restartButton?.destroy();
+        this.restartButton = undefined;
         this.env.destroy();
         super.destroy();
     }

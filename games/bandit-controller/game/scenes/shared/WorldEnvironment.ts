@@ -10,15 +10,16 @@
 // forwards its own update()/fixedUpdate() into it.
 
 import * as THREE from 'three';
-import World from '../../ecs/World';
+import World from 'core/ecs/World';
 import MainPlayer from '../../player/MainPlayer';
 import { MovementInputHost } from '../../components/PlayerMovementController';
 import { FloorBuilder } from '../../builders/FloorBuilder';
 import { buildBlueSkyTexture } from '../../builders/SkyBuilder';
-import { BendService, WorldBendService } from '../../services/BendService';
-import RigidBody from '../../physics/RigidBody';
-import { Layers } from '../../physics/PhysicsConstants';
-import VirtualCameraSystem from '../../camera/VirtualCameraSystem';
+import { BendService, WorldBendService } from 'core/services/BendService';
+import RigidBody from 'core/physics/RigidBody';
+import { Layers } from 'core/physics/PhysicsConstants';
+import VirtualCameraSystem from 'core/camera/VirtualCameraSystem';
+import { WORLD_SETTINGS } from '../../data/WorldSettings';
 import { CAMERA_SETTINGS_BY_MODE, CameraSettings, STANDARD_CAMERA_SETTINGS } from '../../data/GameSettings';
 
 /** Also useful to scenes that need to reason about world bounds (e.g. SwipeMinigameScene sizing its lane visuals to comfortably fit within it). */
@@ -82,7 +83,7 @@ export interface CameraFollowOptions {
 }
 
 export class WorldEnvironment {
-    public readonly world = new World();
+    public readonly world = new World(WORLD_SETTINGS);
     /** Named virtual cameras (see GameSettings.ts) — cutTo()/blendTo() between them. */
     public readonly cameraSystem = new VirtualCameraSystem(STANDARD_CAMERA_SETTINGS);
     public mainPlayer!: MainPlayer;
@@ -170,11 +171,17 @@ export class WorldEnvironment {
     /** FloorBuilder only builds the visual mesh — this gives the player's RigidBody something static to land on, sized to match it and positioned so its top face sits exactly at y=0. */
     private buildGroundCollider(): void {
         const ground = this.world.spawn();
+        // Entity.transform only renders once something parents it into the scene (see
+        // Entity.ts's own doc) — the ground has no visual of its own (FloorBuilder.build()
+        // above is a separate free-standing mesh), so without this its debug collider
+        // wireframe (PHYSICS_DEBUG — see RigidBody.awake()) is built but never actually shown.
+        this.threeScene.add(ground.transform);
         ground.addComponent(new RigidBody({
             halfExtents: new THREE.Vector3(this.floorSize / 2, FLOOR_HALF_THICKNESS, this.floorSize / 2),
             centerOffset: new THREE.Vector3(0, -FLOOR_HALF_THICKNESS, 0),
             isStatic: true,
             layer: Layers.Environment,
+            bendService: this.bendService,
         }));
     }
 

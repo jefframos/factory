@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { BendService, WorldBendService } from "../services/BendService";
+import { BendService, WorldBendService } from "core/services/BendService";
 
 export class FloorBuilder {
     /**

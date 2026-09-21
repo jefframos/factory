@@ -31,7 +31,7 @@
 import * as THREE from 'three';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
-import { WorldBendService } from '../services/BendService';
+import { WorldBendService } from 'core/services/BendService';
 import { CITY_SETTINGS } from '../data/CitySettings';
 
 const modelUrl = (fullPath: string): string => `./${fullPath}`;

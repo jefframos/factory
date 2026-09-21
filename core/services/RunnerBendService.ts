@@ -80,14 +80,14 @@ export class RunnerBendService {
          * Maximum vertical displacement.
          */
         uBendYAmplitude: {
-            value: 8,
+            value: 30,
         },
 
         /**
          * Main hill frequency.
          */
         uBendYFrequency: {
-            value: 0.07,
+            value: 0.012,
         },
 
         /**

@@ -9,10 +9,10 @@
 // animation + facing keep working.
 
 import * as THREE from 'three';
-import Component from '../ecs/Component';
+import Component from 'core/ecs/Component';
 import ThirdPersonCharacter from '../entities/ThirdPersonCharacter';
-import RigidBody from '../physics/RigidBody';
-import { PLAYER_SETTINGS } from '../data/PlayerSettings';
+import RigidBody from 'core/physics/RigidBody';
+import { PLAYER_SETTINGS, getPlayerColliderHalfExtents, getPlayerColliderCenterOffset } from '../data/PlayerSettings';
 
 export default class CharacterVisualComponent extends Component {
     public readonly character: ThirdPersonCharacter;
@@ -23,6 +23,8 @@ export default class CharacterVisualComponent extends Component {
     private readonly worldPosition = new THREE.Vector3();
     private rollingRemaining = 0;
     private slidingRemaining = 0;
+    /** Whether the RigidBody is CURRENTLY sized for sliding (see update()) — tracked separately from `slidingRemaining > 0` so the resize only fires once per transition (on the edge), not every frame the slide state holds. */
+    private colliderIsSlideSized = false;
 
     public constructor(character: ThirdPersonCharacter) {
         super();
@@ -48,7 +50,23 @@ export default class CharacterVisualComponent extends Component {
     }
 
     public update(delta: number): void {
+        this.rollingRemaining = Math.max(0, this.rollingRemaining - delta);
+        this.slidingRemaining = Math.max(0, this.slidingRemaining - delta);
+
         const rigidBody = this.entity.getComponent(RigidBody);
+        // Shrinks/restores the player's own collider the instant sliding starts/ends — see
+        // PlayerSettings.slideHalfHeight's own doc: this is what actually lets the player
+        // pass under a raised bar obstacle (ObstacleBuilder's `baseY` param), not just the
+        // slide ANIMATION, which has no bearing on collision by itself. Edge-triggered (only
+        // resizes on the true/false transition) rather than every frame, since RigidBody.
+        // setSize() also rebuilds the debug wireframe mesh when PHYSICS_DEBUG is on — no
+        // reason to churn that every tick while already mid-slide.
+        const isSliding = this.slidingRemaining > 0;
+        if (rigidBody && isSliding !== this.colliderIsSlideSized) {
+            this.colliderIsSlideSized = isSliding;
+            rigidBody.setSize(getPlayerColliderHalfExtents(isSliding), getPlayerColliderCenterOffset(isSliding));
+        }
+
         if (rigidBody) {
             rigidBody.getCenter(this.worldPosition);
             // Character rig's own origin is at its feet, not the collider center — drop back down by half its height.
@@ -56,9 +74,6 @@ export default class CharacterVisualComponent extends Component {
         } else {
             this.worldPosition.copy(this.entity.transform.position);
         }
-
-        this.rollingRemaining = Math.max(0, this.rollingRemaining - delta);
-        this.slidingRemaining = Math.max(0, this.slidingRemaining - delta);
 
         this.character.update(delta, this.worldPosition, this.moveInput.x, this.moveInput.y, {
             grounded: rigidBody?.grounded ?? true,
