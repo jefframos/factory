@@ -41,7 +41,7 @@ import { createIconSlotBackground } from '../ui/IconSlotRegistry';
 /** World-space offset above the crop TILE's own ground-level position — see this file's own top doc for why this tracks the tile, not the player. Raised further than a single-line-of-text HUD would need since BarComponent's own MIN_BAR_HEIGHT (56) makes the whole readout noticeably taller. */
 const HUD_OFFSET = new THREE.Vector3(0, 2.3, 0);
 
-const BAR_WIDTH = 100;
+const BAR_WIDTH = 70;
 
 /** The resource icon shown ABOVE the bar/button — see this file's own top doc. Same "square tinted backdrop behind a smaller icon" composition InventoryPopup's/FarmSeedPicker's own grid cells use. */
 const ICON_SIZE = 40;
@@ -71,6 +71,8 @@ export default class FarmCropHud extends Entity {
     private checkBadge!: PIXI.Sprite;
     private bar!: BarComponent;
     private collectButton!: PIXI.Container;
+    /** Owns `content.visible` exclusively via setForceHidden() below — see update()'s own doc for why this HUD must never toggle `content.visible` directly itself. */
+    private screenAnchor!: ScreenAnchorComponent;
 
     /** Every growing/ready tile the player's own trigger currently overlaps — resolveActive() picks the winner every frame, same proximity-to-player-position tie-break FarmSeedPicker.ts uses (see that file's own doc for why registration order alone isn't reliable). */
     private readonly candidates = new Map<string, Candidate>();
@@ -135,7 +137,7 @@ export default class FarmCropHud extends Entity {
         this.content.visible = false;
 
         const anchorPosition = new THREE.Vector3();
-        this.addComponent(new ScreenAnchorComponent(
+        this.screenAnchor = this.addComponent(new ScreenAnchorComponent(
             this.screenHost,
             this.content,
             () => {
@@ -145,13 +147,27 @@ export default class FarmCropHud extends Entity {
         ));
     }
 
+    /**
+     * setForceHidden(), never `this.content.visible =` directly — ScreenAnchorComponent's own
+     * update() (run just above via super.update(), BEFORE resolveActive() below has picked
+     * THIS frame's candidate) also writes `content.visible` and, crucially, only resets its
+     * internal position-smoothing state (smoothedX/Y) through ITS OWN hideContent() path.
+     * Fighting it by setting `content.visible` here directly used to leave that smoothing state
+     * un-reset while genuinely hidden (its own getTargetPosition() fallback still projects to
+     * SOME on-screen point every frame, so ScreenAnchorComponent's own logic never considered
+     * itself "hidden" and never called hideContent()) — so the very first time a real candidate
+     * appeared, it eased in from that stale fallback screen position instead of snapping
+     * straight to the tile, reading as "the icon+bar flies in from the corner of the screen."
+     * setForceHidden(true) routes through hideContent() every frame there's no candidate,
+     * keeping the smoothing state properly reset so the next real appearance always snaps.
+     */
     public override update(delta: number): void {
         super.update(delta);
         this.resolveActive();
 
         const candidate = this.activeTileKey ? this.candidates.get(this.activeTileKey) : undefined;
+        this.screenAnchor.setForceHidden(!candidate);
         if (!candidate) {
-            this.content.visible = false;
             return;
         }
 
@@ -176,8 +192,6 @@ export default class FarmCropHud extends Entity {
             const fraction = totalGrowSec > 0 ? elapsedSec / totalGrowSec : 1;
             this.bar.setProgress(fraction);
         }
-
-        this.content.visible = true;
     }
 
     /** Adds/updates `tileKey` as a live candidate — see this file's own top doc and FarmSeedPicker.register()'s own doc (same shape/reasoning) for why registering doesn't unconditionally make it THE active one. `position` is the tile's own world position (its center). */

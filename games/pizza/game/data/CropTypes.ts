@@ -365,7 +365,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
         name: "Carrot",
         stages: [
             {
-                "durationSec": 20,
+                "durationSec": 15,
                 "mesh": "cropCarrotView",
                 "start": {
                     "offset": [
@@ -381,7 +381,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
                         0,
                         0
                     ],
-                    "scale": 0.6
+                    "scale": 2
                 }
             },
             {
@@ -392,15 +392,15 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
                         0,
                         0
                     ],
-                    "scale": 0.6
+                    "scale": 2
                 },
                 "end": {
                     "offset": [
                         0,
-                        0,
+                        -1,
                         0
                     ],
-                    "scale": 1
+                    "scale": 4
                 }
             },
             {
@@ -416,7 +416,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
                 "end": {
                     "offset": [
                         0,
-                        -1.5,
+                        -1,
                         0
                     ],
                     "scale": 4

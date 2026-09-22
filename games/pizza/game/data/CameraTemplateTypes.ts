@@ -29,8 +29,8 @@ export const DEFAULT_CAMERA_TEMPLATE_ID = 'default';
 export const CAMERA_TEMPLATE_CONFIG: Partial<Record<string, CameraTemplateConfig>> = {
     default: {
         yawDeg: 0,
-        pitchDeg: 45,
-        distance: 12,
+        pitchDeg: 55,
+        distance: 18,
         followSpeed: 10,
     },
     "far1": {
@@ -47,8 +47,8 @@ export const CAMERA_TEMPLATE_CONFIG: Partial<Record<string, CameraTemplateConfig
     },
     "far2": {
         "yawDeg": 0,
-        "pitchDeg": 55,
-        "distance": 18,
+        "pitchDeg": 50,
+        "distance": 16,
         "followSpeed": 10
     }
 };

@@ -14,5 +14,21 @@
         "density": 0.2,
         "minDistance": 3,
         "checkIntervalSec": 120
+    },
+    {
+        "spawnType": "resource",
+        "shapeId": "basicSpawner",
+        "resourceType": "bark",
+        "checkIntervalSec": 30,
+        "minDistance": 3,
+        "count": 5,
+        "density": 0.2
+    },
+    {
+        "shapeId": "stoneSpawner",
+        "resourceType": "stone",
+        "density": 0.2,
+        "checkIntervalSec": 30,
+        "minDistance": 3
     }
 ]

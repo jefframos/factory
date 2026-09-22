@@ -46,7 +46,7 @@ const DEFAULT_FILL_PADDING = uniformBarPadding(8);
  * "asset-driven minimum" reasoning MartZone.ts's own BUTTON_FRAME_PADDING bump (and its doc)
  * ran into with FarmFrame's baked-in arrow.
  */
-export const MIN_BAR_HEIGHT = 24;
+export const MIN_BAR_HEIGHT = 18;
 
 export interface BarStyleDef {
     /** Tint applied to the (white-source) fill 9-slice — see this file's own top doc for why this is the ONE thing most styles need to set. */

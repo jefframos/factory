@@ -43,12 +43,17 @@ import { RunnerBendService } from 'core/services/RunnerBendService';
 import { BendService } from 'core/services/BendService';
 import { buildGateMarker, buildTriggerGate } from '../builders/GateBuilder';
 import { buildObstacleKind } from '../builders/ObstacleBuilder';
+import { buildRamp } from '../builders/RampBuilder';
+import { spawnCollectible, pruneCollected } from '../builders/CollectibleBuilder';
 import { buildCityRow } from '../builders/CityBuilder';
 import { buildRoadDetails } from '../builders/RoadDetailsBuilder';
 import { waitForFirstInput } from '../utils/waitForFirstInput';
 import ReturnToHubButton from '../ui/ReturnToHubButton';
 import RestartButton from '../ui/RestartButton';
-import { RUNNER_LANE_DIRECTION, RUNNER_MINIGAME_SETTINGS, RUNNER_FLOOR_SETTINGS, OBSTACLE_SETTINGS, OBSTACLE_KINDS, ObstacleKind, maxObstacleHalfWidth, TRAIN_TUNNEL_OVERLAP } from '../data/MinigameSettings';
+import MoneyHud from '../ui/MoneyHud';
+import Collectible from '../entities/Collectible';
+import { COIN } from '../data/CollectibleSettings';
+import { RUNNER_LANE_DIRECTION, RUNNER_MINIGAME_SETTINGS, RUNNER_FLOOR_SETTINGS, OBSTACLE_SETTINGS, OBSTACLE_KINDS, ObstacleKind, maxObstacleHalfWidth, TRAIN_TUNNEL_OVERLAP, COIN_SETTINGS, RAMP_LENGTH, RAMP_COLOR } from '../data/MinigameSettings';
 
 const START_POSITION = new THREE.Vector3(0, 0, 0);
 const CAMERA_FOLLOW_OPTIONS: CameraFollowOptions = {
@@ -70,9 +75,13 @@ export default class RunnerMinigameScene extends ThreeScene {
     private restartButton?: RestartButton;
     /** True once the player has hit an obstacle — frozen for good until they leave via ReturnToHubButton or restart (see this file's own doc). Guards the finish gate too, so a stray physics nudge on the same tick as a hit can't still complete the run. */
     private stopped = false;
+    /** The one shared top-left money counter — see MoneyHud.ts's own doc and index.ts, the only place this ever gets constructed. */
+    private readonly moneyHud: MoneyHud;
+    private readonly coins: Collectible[] = [];
 
-    public constructor(game: Game) {
+    public constructor(game: Game, moneyHud: MoneyHud) {
         super(game);
+        this.moneyHud = moneyHud;
     }
 
     /** Resolves once this build's player character has finished loading — see index.ts's radial-transition orchestration (RadialTransition.reveal() waits on this before playing). */
@@ -114,6 +123,7 @@ export default class RunnerMinigameScene extends ThreeScene {
         });
 
         this.buildObstacles();
+        this.buildCoins();
         void this.buildRoadDecor(laneHalfWidth);
 
         const finishZ = START_POSITION.z + RUNNER_LANE_DIRECTION.z * RUNNER_MINIGAME_SETTINGS.laneLength;
@@ -141,6 +151,11 @@ export default class RunnerMinigameScene extends ThreeScene {
      * (see TRAIN_TUNNEL_OVERLAP's own doc) instead of sitting on the normal spacing grid —
      * otherwise there'd be open ground between them the player would just fall back down
      * through before ever reaching the tunnel's own (otherwise unreachable) roof.
+     *
+     * Every TRAIN also gets a RAMP (RampBuilder.buildRamp()) flush against its own near face
+     * — RAMP_LENGTH's own doc — so its roof is reachable by just running up to it instead of
+     * needing a precisely timed jump; jumping onto it directly still works exactly the same,
+     * the ramp is purely an easier alternative sitting right in front of it.
      */
     private buildObstacles(): void {
         const count = Math.floor((RUNNER_MINIGAME_SETTINGS.laneLength - OBSTACLE_SETTINGS.startOffset) / OBSTACLE_SETTINGS.spacing);
@@ -159,10 +174,58 @@ export default class RunnerMinigameScene extends ThreeScene {
                 ? START_POSITION.x
                 : START_POSITION.x + (i % 2 === 0 ? -1 : 1) * OBSTACLE_SETTINGS.runnerLateralOffset;
 
+            if (kind.id === 'train') {
+                const trainPiece = kind.pieces[0];
+                const rampExitDistance = distance - trainPiece.halfExtents.z;
+                const rampEntryDistance = rampExitDistance - RAMP_LENGTH;
+                const rampExitZ = START_POSITION.z + RUNNER_LANE_DIRECTION.z * rampExitDistance;
+                const rampEntryZ = START_POSITION.z + RUNNER_LANE_DIRECTION.z * rampEntryDistance;
+                buildRamp(
+                    this.env.world, this.threeScene, x, rampEntryZ, rampExitZ,
+                    0, trainPiece.baseY + trainPiece.halfExtents.y * 2, trainPiece.halfExtents.x,
+                    RunnerBendService, RAMP_COLOR,
+                );
+            }
+
             buildObstacleKind(this.env.world, this.threeScene, x, z, kind, RunnerBendService, () => this.onHitObstacle());
 
             previousKind = kind;
             previousDistance = distance;
+        }
+    }
+
+    /**
+     * Floating coins down the lane centerline (COIN_SETTINGS.spacing, much tighter than
+     * OBSTACLE_SETTINGS' own) — x=0 is deliberate: every HAZARD obstacle piece sits offset
+     * at least OBSTACLE_SETTINGS.runnerLateralOffset (2) from center with a halfExtents.x of
+     * at most 1 (see MinigameSettings.OBSTACLE_KINDS), so its own footprint never reaches all
+     * the way to the centerline — a coin placed there can never end up embedded inside a
+     * hazard's own box, whichever kind happens to be nearby. (A spansAllLanes piece, i.e.
+     * TUNNEL, DOES cross the centerline, but it's `hazard: false` — see ObstacleOptions.hazard's
+     * own doc — so a coin visually overlapping it is harmless, not unreachable.)
+     */
+    private buildCoins(): void {
+        const count = Math.floor((RUNNER_MINIGAME_SETTINGS.laneLength - COIN_SETTINGS.startOffset) / COIN_SETTINGS.spacing);
+
+        for (let i = 0; i < count; i++) {
+            const distance = COIN_SETTINGS.startOffset + i * COIN_SETTINGS.spacing;
+            const position = new THREE.Vector3(
+                START_POSITION.x,
+                COIN_SETTINGS.height,
+                START_POSITION.z + RUNNER_LANE_DIRECTION.z * distance,
+            );
+            const coin = spawnCollectible(
+                this.env.world,
+                this.threeScene,
+                this,
+                this.game,
+                this.moneyHud,
+                COIN,
+                position,
+                () => this.env.mainPlayer.getCollectTargetPosition(),
+                RunnerBendService,
+            );
+            this.coins.push(coin);
         }
     }
 
@@ -209,6 +272,7 @@ export default class RunnerMinigameScene extends ThreeScene {
 
     public update(delta: number): void {
         this.env.update(delta);
+        pruneCollected(this.env.world, this.coins);
         super.update(delta);
     }
 
@@ -236,6 +300,10 @@ export default class RunnerMinigameScene extends ThreeScene {
         // rather than build(): destroy() runs before EVERY rebuild, restart included.
         this.restartButton?.destroy();
         this.restartButton = undefined;
+        for (const coin of this.coins) {
+            this.env.world.remove(coin);
+        }
+        this.coins.length = 0;
         this.env.destroy();
         super.destroy();
     }

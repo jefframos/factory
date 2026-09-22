@@ -90,7 +90,8 @@
                     "item": "hammer"
                 },
                 "cost": {
-                    "grassFiber": 10
+                    "stone": 5,
+                    "wood": 5
                 },
                 "id": "hammerRecipe"
             }

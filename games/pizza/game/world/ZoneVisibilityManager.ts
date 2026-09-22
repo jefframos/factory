@@ -48,6 +48,8 @@ interface Registrant {
     visible: boolean;
     /** Flat extra delay stacked on top of the wave-travel delay — see ZONE_REVEAL_CONFIG.categoryDelaySec's own doc for why terrain/props/creatures need to rise in that order rather than all at once. */
     categoryDelaySec: number;
+    /** gsap ease name for THIS registrant's own rise tween — see ZONE_REVEAL_CONFIG.riseEase's own doc (the one place every reveal-animation number/ease actually lives). IslandMeshBuilder overrides this to `riseEase.terrain` (a non-overshooting ease) for ground meshes specifically: the default `riseEase.default` 'back.out' ease overshoots PAST its resting Y before settling back down, which for a big ground blob means it visibly rises ABOVE its final height for a moment — tall enough, height-wise, to poke up through/over a resource or building that's sitting right where the ground is rising, even though that prop's own footprint was never actually touched. A prop/creature rising through empty air has nothing to visually clip into, so the overshoot stays purely cosmetic (a nice little "pop") for those. */
+    riseEase: string;
 }
 
 /** One past revealZone() call's own (origin, when) — see findEchoOrigin()'s own doc for why a LATE registration (a resource/animal materializing after the fact) needs to look this up instead of always popping in instantly. */
@@ -89,10 +91,13 @@ export default class ZoneVisibilityManager {
      * initial visibility immediately from the zones' CURRENT reveal state — see
      * ZONE_REVEAL_CONFIG.categoryDelaySec's own doc for what `categoryDelaySec` is for (default
      * 0 — pass ZONE_REVEAL_CONFIG.categoryDelaySec.props/creatures for anything that should
-     * rise after plain terrain).
+     * rise after plain terrain). `riseEase` — see Registrant.riseEase's own doc; default is
+     * ZONE_REVEAL_CONFIG.riseEase.default (a bouncy overshoot), fine for everything except a
+     * large ground mesh (see IslandMeshBuilder's own registerWithZones() call for why THAT one
+     * overrides it to ZONE_REVEAL_CONFIG.riseEase.terrain instead).
      */
-    public register(object: THREE.Object3D, worldX: number, worldZ: number, width = this.worldUnitsPerTile, depth = this.worldUnitsPerTile, categoryDelaySec = 0): void {
-        this.addRegistrant(object, this.zonesForFootprint(worldX, worldZ, width, depth), worldX, worldZ, categoryDelaySec);
+    public register(object: THREE.Object3D, worldX: number, worldZ: number, width = this.worldUnitsPerTile, depth = this.worldUnitsPerTile, categoryDelaySec = 0, riseEase = ZONE_REVEAL_CONFIG.riseEase.default): void {
+        this.addRegistrant(object, this.zonesForFootprint(worldX, worldZ, width, depth), worldX, worldZ, categoryDelaySec, riseEase);
     }
 
     /**
@@ -102,11 +107,11 @@ export default class ZoneVisibilityManager {
      * array for "belongs to no zone" (permanently hidden — see this file's own doc).
      * `worldX`/`worldZ` (a representative point — e.g. that mesh's own cells' centroid) only
      * feed the rise-animation's wave delay (see this file's own doc); default (0, 0) if
-     * omitted, which just means "no wave delay" for that registrant. `categoryDelaySec` — see
-     * register()'s own doc.
+     * omitted, which just means "no wave delay" for that registrant. `categoryDelaySec`/
+     * `riseEase` — see register()'s own doc.
      */
-    public registerWithZones(object: THREE.Object3D, zones: number[], worldX = 0, worldZ = 0, categoryDelaySec = 0): void {
-        this.addRegistrant(object, zones, worldX, worldZ, categoryDelaySec);
+    public registerWithZones(object: THREE.Object3D, zones: number[], worldX = 0, worldZ = 0, categoryDelaySec = 0, riseEase = ZONE_REVEAL_CONFIG.riseEase.default): void {
+        this.addRegistrant(object, zones, worldX, worldZ, categoryDelaySec, riseEase);
     }
 
     /** Stops driving `object`'s visibility — call when a registered entity is torn down (e.g. WorldManager.dematerialize()) so its Registrant doesn't linger forever. Leaves `object.visible` as it last was. Also cancels any in-flight rise tween (see playRiseAnimation()) — a registrant torn down mid-rise (dematerialized right as its zone unlocks) shouldn't keep animating a position nobody's driving anymore. */
@@ -195,8 +200,8 @@ export default class ZoneVisibilityManager {
         return this.resolveVisible(this.zonesForFootprint(worldX, worldZ, width, depth));
     }
 
-    private addRegistrant(object: THREE.Object3D, zones: number[], worldX: number, worldZ: number, categoryDelaySec: number): void {
-        const registrant: Registrant = { object, zones, worldX, worldZ, baseY: object.position.y, visible: false, categoryDelaySec };
+    private addRegistrant(object: THREE.Object3D, zones: number[], worldX: number, worldZ: number, categoryDelaySec: number, riseEase: string): void {
+        const registrant: Registrant = { object, zones, worldX, worldZ, baseY: object.position.y, visible: false, categoryDelaySec, riseEase };
         this.registrants.push(registrant);
         for (const zoneNumber of zones) {
             let list = this.registrantsByZone.get(zoneNumber);
@@ -307,7 +312,7 @@ export default class ZoneVisibilityManager {
             y: registrant.baseY,
             duration: ZONE_REVEAL_CONFIG.riseDurationSec,
             delay: waveDelay + registrant.categoryDelaySec,
-            ease: 'back.out(1.4)',
+            ease: registrant.riseEase,
             onStart: () => { object.visible = true; },
         });
     }

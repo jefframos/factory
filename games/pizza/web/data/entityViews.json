@@ -301,5 +301,17 @@
         ],
         "scale": 7,
         "rotationDeg": 0
+    },
+    "baseBuildingSite": {
+        "models": [
+            "Survival.ResourcePlanks"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 8,
+        "rotationDeg": 1
     }
 }

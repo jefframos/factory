@@ -27,6 +27,14 @@ export const MONEY_PILE_SMALL: CollectibleDefinition = {
     icon: 'icons/money.webp',
 };
 
+/** Floating coin pickup — RunnerMinigameScene/SwipeMinigameScene scatter these along the lane (see CollectibleBuilder.ts), same icon/counter as MONEY_PILE_SMALL (one shared currency, see MoneyHud.ts) but worth less per pickup since a run places several. */
+export const COIN: CollectibleDefinition = {
+    model: MODELS.Resources.MoneyCoinsStackSingle,
+    resourceAmount: 5,
+    modelScale: 1,
+    icon: 'icons/money.webp',
+};
+
 /** Non-preload art (icons/skins) is served straight from the image pipeline's output — see public/bandit-controller/images/non-preload, same convention as CharacterViews.ts's resolveSkinImagePath(). */
 const NON_PRELOAD_IMAGE_BASE = 'bandit-controller/images/non-preload/';
 
@@ -41,12 +49,21 @@ export interface CollectibleTuning {
     snapDurationSec: number;
     /** How far above the straight-line midpoint (see ArcSpline.ts) the homing arc's apex rises — world units, +Y is up here since this runs in 3D world space (contrast FlyingResourceIcon.ts's screen-space negative value). */
     arcHeight: number;
+    /** World units the idle bob (see Collectible.updateIdleFloat()) rises/sinks from its resting height — small on purpose, this is a gentle "floating" wobble, not a bounce. */
+    floatAmplitude: number;
+    /** Radians/second the idle bob's own sine phase advances — higher reads as a quicker bob. */
+    floatSpeed: number;
+    /** Radians/second the mesh spins around its own Y axis while idle. */
+    spinSpeed: number;
 };
 
 export const COLLECTIBLE_TUNING: CollectibleTuning = {
     attractRadius: 3,
     snapDurationSec: 0.35,
     arcHeight: 1.2,
+    floatAmplitude: 0.15,
+    floatSpeed: 2,
+    spinSpeed: 1.5,
 };
 
 /**

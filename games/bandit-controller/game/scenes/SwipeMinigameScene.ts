@@ -39,12 +39,17 @@ import { BendService } from 'core/services/BendService';
 import { WorldEnvironment, CameraFollowOptions } from './shared/WorldEnvironment';
 import { laneOffset } from '../data/LaneMath';
 import { buildObstacleKind } from '../builders/ObstacleBuilder';
+import { buildRamp } from '../builders/RampBuilder';
+import { spawnCollectible, pruneCollected } from '../builders/CollectibleBuilder';
 import { buildCityRow } from '../builders/CityBuilder';
 import { buildRoadDetails } from '../builders/RoadDetailsBuilder';
 import { waitForFirstInput } from '../utils/waitForFirstInput';
 import ReturnToHubButton from '../ui/ReturnToHubButton';
 import RestartButton from '../ui/RestartButton';
-import { RUNNER_LANE_DIRECTION, SWIPE_MINIGAME_SETTINGS, RUNNER_FLOOR_SETTINGS, OBSTACLE_SETTINGS, OBSTACLE_KINDS, ObstacleKind, TRAIN_TUNNEL_OVERLAP } from '../data/MinigameSettings';
+import MoneyHud from '../ui/MoneyHud';
+import Collectible from '../entities/Collectible';
+import { COIN } from '../data/CollectibleSettings';
+import { RUNNER_LANE_DIRECTION, SWIPE_MINIGAME_SETTINGS, RUNNER_FLOOR_SETTINGS, OBSTACLE_SETTINGS, OBSTACLE_KINDS, ObstacleKind, TRAIN_TUNNEL_OVERLAP, COIN_SETTINGS, RAMP_LENGTH, RAMP_COLOR } from '../data/MinigameSettings';
 
 const START_POSITION = new THREE.Vector3(0, 0, 0);
 /** Fixed to the lane's own centerline rather than swaying with lane-to-lane hops, and frozen in height across a jump — same "center of the gameplay, not the player" reasoning as RunnerMinigameScene's own camera. */
@@ -74,9 +79,13 @@ export default class SwipeMinigameScene extends ThreeScene {
     private restartButton?: RestartButton;
     /** True once the player has hit an obstacle — frozen for good until they leave via ReturnToHubButton or restart (see this file's own doc). Also stops the countdown, so standing still doesn't quietly run the clock out from under them. */
     private stopped = false;
+    /** The one shared top-left money counter — see MoneyHud.ts's own doc and index.ts, the only place this ever gets constructed. */
+    private readonly moneyHud: MoneyHud;
+    private readonly coins: Collectible[] = [];
 
-    public constructor(game: Game) {
+    public constructor(game: Game, moneyHud: MoneyHud) {
         super(game);
+        this.moneyHud = moneyHud;
     }
 
     /** Resolves once this build's player character has finished loading — see index.ts's radial-transition orchestration (RadialTransition.reveal() waits on this before playing). */
@@ -117,6 +126,7 @@ export default class SwipeMinigameScene extends ThreeScene {
 
         this.buildLaneMarkers();
         this.buildObstacles();
+        this.buildCoins();
         void this.buildRoadDecor(laneHalfWidth);
 
         this.remainingSec = SWIPE_MINIGAME_SETTINGS.durationSec;
@@ -190,6 +200,11 @@ export default class SwipeMinigameScene extends ThreeScene {
      * end (see TRAIN_TUNNEL_OVERLAP's own doc) instead of sitting on the normal spacing grid
      * — same reasoning as RunnerMinigameScene's own buildObstacles(): a player riding the
      * train across needs the tunnel's roof to actually be there when they run out of train.
+     *
+     * Every TRAIN row also gets a RAMP (RampBuilder.buildRamp()) in front of each of its
+     * blocked lanes — same RAMP_LENGTH's own doc as RunnerMinigameScene — so swiping into one
+     * of those lanes and just running carries the player up onto that train's roof instead of
+     * needing a precisely timed jump too.
      */
     private buildObstacles(): void {
         const count = Math.floor((this.maxLaneDistance() - OBSTACLE_SETTINGS.startOffset) / OBSTACLE_SETTINGS.spacing);
@@ -214,12 +229,57 @@ export default class SwipeMinigameScene extends ThreeScene {
                         continue;
                     }
                     const x = START_POSITION.x + laneOffset(lane, SWIPE_MINIGAME_SETTINGS.laneCount, SWIPE_MINIGAME_SETTINGS.laneWidth);
+
+                    if (kind.id === 'train') {
+                        const trainPiece = kind.pieces[0];
+                        const rampExitDistance = distance - trainPiece.halfExtents.z;
+                        const rampEntryDistance = rampExitDistance - RAMP_LENGTH;
+                        const rampExitZ = START_POSITION.z + RUNNER_LANE_DIRECTION.z * rampExitDistance;
+                        const rampEntryZ = START_POSITION.z + RUNNER_LANE_DIRECTION.z * rampEntryDistance;
+                        buildRamp(
+                            this.env.world, this.threeScene, x, rampEntryZ, rampExitZ,
+                            0, trainPiece.baseY + trainPiece.halfExtents.y * 2, trainPiece.halfExtents.x,
+                            RunnerBendService, RAMP_COLOR,
+                        );
+                    }
+
                     buildObstacleKind(this.env.world, this.threeScene, x, z, kind, RunnerBendService, () => this.onHitObstacle());
                 }
             }
 
             previousKind = kind;
             previousDistance = distance;
+        }
+    }
+
+    /**
+     * One coin per obstacle row (reusing buildObstacles()' own count/distance/openLane
+     * formula, independently — see this file's own doc for why the numbers have to match:
+     * placing it in the SAME lane that's left open that row guarantees it's never inside a
+     * hazard's own footprint, since nothing else is ever placed in the open lane at all).
+     * Rewards actually finding the open lane rather than just surviving it.
+     */
+    private buildCoins(): void {
+        const count = Math.floor((this.maxLaneDistance() - OBSTACLE_SETTINGS.startOffset) / OBSTACLE_SETTINGS.spacing);
+
+        for (let i = 0; i < count; i++) {
+            const distance = OBSTACLE_SETTINGS.startOffset + i * OBSTACLE_SETTINGS.spacing;
+            const z = START_POSITION.z + RUNNER_LANE_DIRECTION.z * distance;
+            const openLane = i % SWIPE_MINIGAME_SETTINGS.laneCount;
+            const x = START_POSITION.x + laneOffset(openLane, SWIPE_MINIGAME_SETTINGS.laneCount, SWIPE_MINIGAME_SETTINGS.laneWidth);
+
+            const coin = spawnCollectible(
+                this.env.world,
+                this.threeScene,
+                this,
+                this.game,
+                this.moneyHud,
+                COIN,
+                new THREE.Vector3(x, COIN_SETTINGS.height, z),
+                () => this.env.mainPlayer.getCollectTargetPosition(),
+                RunnerBendService,
+            );
+            this.coins.push(coin);
         }
     }
 
@@ -276,6 +336,7 @@ export default class SwipeMinigameScene extends ThreeScene {
 
     public update(delta: number): void {
         this.env.update(delta);
+        pruneCollected(this.env.world, this.coins);
 
         if (this.started && !this.finished && !this.stopped) {
             this.remainingSec = Math.max(0, this.remainingSec - delta);
@@ -307,6 +368,10 @@ export default class SwipeMinigameScene extends ThreeScene {
         // across a restart cycle gets cleared.
         this.restartButton?.destroy();
         this.restartButton = undefined;
+        for (const coin of this.coins) {
+            this.env.world.remove(coin);
+        }
+        this.coins.length = 0;
         this.env.destroy();
         super.destroy();
     }

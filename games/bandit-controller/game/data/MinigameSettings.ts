@@ -98,6 +98,27 @@ export const OBSTACLE_SETTINGS: ObstacleLayoutSettings = {
 };
 
 /**
+ * Layout for the floating coins both minigame scenes scatter down the lane (see
+ * CollectibleBuilder.spawnCollectible(), CollectibleSettings.COIN) — deliberately a much
+ * tighter grid than OBSTACLE_SETTINGS' own, so there's several to grab per obstacle rather
+ * than one every 40 units.
+ */
+export interface CoinLayoutSettings {
+    /** World units from the start line to the first coin. */
+    startOffset: number;
+    /** World units between one coin and the next along the lane. */
+    spacing: number;
+    /** World units off the ground each coin floats at — comfortably within the attract radius (COLLECTIBLE_TUNING.attractRadius) of a player standing, running, or sliding underneath. */
+    height: number;
+}
+
+export const COIN_SETTINGS: CoinLayoutSettings = {
+    startOffset: 10,
+    spacing: 20,
+    height: 1.2,
+};
+
+/**
  * One box within an ObstacleKind (see below) — ObstacleBuilder.buildObstacle() gets called
  * once per piece, all at the same (x, z), so a kind with more than one piece is several
  * independent boxes stacked/offset in Y, each with its own color and its own top-landing
@@ -247,3 +268,16 @@ export function maxObstacleHalfWidth(): number {
  * pairing still uses the plain per-slot OBSTACLE_SETTINGS.spacing grid.
  */
 export const TRAIN_TUNNEL_OVERLAP = 2;
+
+/**
+ * World units a RAMP (RampBuilder.buildRamp()) climbs across before reaching a TRAIN's own
+ * front face — see both scenes' own buildObstacles(), which place one flush against the near
+ * side of every 'train' entry so the player can walk straight up onto its roof (height 4) at
+ * a run instead of needing to time a jump. 8 units over a rise of 4 is a ~27deg incline —
+ * walkable-reading, not a wall. Only wired up for TRAIN specifically (the one kind tall enough
+ * that reaching its own top by jumping alone is the point, not a given — see OBSTACLE_KINDS'
+ * own margin-math doc above); nothing stops pairing a ramp with another kind by hand later.
+ */
+export const RAMP_LENGTH = 8;
+/** Visual color for every ramp — same "distinct per kind" reasoning as OBSTACLE_KINDS' own colors, deliberately different from TRAIN's blue so the two read as separate pieces even though they're placed flush against each other. */
+export const RAMP_COLOR = 0x9aa5b1;

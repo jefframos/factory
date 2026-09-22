@@ -16,28 +16,54 @@
 // state off, which is the entire reason the grid exists instead of a single
 // plot-wide "prepared" flag.
 //
-// Player walks onto an EMPTY cell -> this cell registers itself as a
-// candidate with FarmSeedPicker.ts (ONE shared instance across every farm
-// plot on the map — see that file's own doc for why this used to be a
-// per-tile popup and no longer is, and why registering doesn't unconditionally
-// make this cell the active one). Once resolved active, the picker shows
-// whatever seeds the player holds, filtered to FarmPlotConfig.allowedCrops
-// when this plot restricts which crops it'll grow. Tapping a seed there
-// spends one (SeedStorage.removeOne()) to FarmCropStorage.plant() the
-// CROP_CONFIG entry that seed's own SeedConfig.cropId points at.
-// CropVisualComponent then grows a real mesh on top of the prepared ground
-// purely off that stored state — this entity never manually swaps/removes it.
+// Player walks onto an EMPTY cell -> what happens next depends on
+// FarmPlotConfig.assignedCropId (FarmTypes.ts):
+//   - undefined (a "free" plot, every plot before this field existed): this
+//     cell registers itself as a candidate with FarmSeedPicker.ts (ONE shared
+//     instance across every farm plot on the map — see that file's own doc
+//     for why this used to be a per-tile popup and no longer is, and why
+//     registering doesn't unconditionally make this cell the active one).
+//     Once resolved active, the picker shows whatever seeds the player
+//     holds, filtered to FarmPlotConfig.allowedCrops when this plot
+//     restricts which crops it'll grow. Tapping a seed there spends one
+//     (SeedStorage.removeOne()) to FarmCropStorage.plant() the CROP_CONFIG
+//     entry that seed's own SeedConfig.cropId points at.
+//   - set (a single-crop plot): FarmSeedPicker/SeedStorage are never touched
+//     at all. Standing on the cell starts a plain AUTO_PLANT_DELAY_SEC
+//     countdown (startAutoPlantTimer()); stepping off before it elapses
+//     cancels it with no partial progress kept, same "leaving resets to
+//     zero" rule AnimalCatchController.ts's own capture timer uses. Letting
+//     it run out (autoPlant()) plants `assignedCropId` directly, no seed
+//     spent. allowedCrops is meaningless for this plot kind — there's no
+//     picker to filter.
+// Either way, CropVisualComponent then grows a real mesh on top of the
+// prepared ground purely off FarmCropStorage's stored state — this entity
+// never manually swaps/removes it.
 //
-// Player walks onto a PLANTED cell (growing or ready) -> this cell instead
-// registers with FarmCropHud.ts (same single-shared-instance shape as
-// FarmSeedPicker, see that file's own doc) — a small progress bar while
-// still growing, a checkmark + "Collect" button once CropTypes.isCropReady().
-// Harvesting is now ALWAYS that deliberate tap (FarmCropHud calls back into
-// this cell's own harvest()) — never automatic on collision anymore; an
-// auto-collect OPTION is planned as a future unlockable, not implemented
-// here. harvest() banks CropConfig.yield into BackpackStorage and clears
+// Player walks onto a PLANTED cell (growing or ready) -> depends on the same
+// assignedCropId split as above:
+//   - A "free" plot's cell registers with FarmCropHud.ts (same single-
+//     shared-instance shape as FarmSeedPicker) — a small progress bar while
+//     still growing, a checkmark + "Collect" button once
+//     CropTypes.isCropReady(). Harvesting stays that deliberate tap
+//     (FarmCropHud calls back into this cell's own harvest()) — never
+//     automatic on collision for this plot kind.
+//   - An assignedCropId plot's cell ALSO registers with FarmCropHud while
+//     still growing (same progress bar, so there's still visible feedback),
+//     but the moment it's ready it stops showing anything at all — there's
+//     nothing to tap. Instead, update()'s own per-frame check
+//     (`playerInside && assignedCropId && isCropReady`) harvests it
+//     automatically the instant the player is standing on it, whether they
+//     walked onto an already-ready crop or were already there when it
+//     finished growing — same "proximity alone is enough" philosophy
+//     AutoGatherController already uses for chopping/mining. The tile is
+//     left showing nothing but the grown crop's own mesh sitting there
+//     (its ordinary "planted" look, see CropVisualComponent below) — no
+//     floating ready-state panel ever appears for this plot kind.
+// harvest() banks CropConfig.yield into BackpackStorage and clears
 // FarmCropStorage back to empty, letting CropVisualComponent's own next
-// update() notice and hide the grown mesh again.
+// update() notice and hide the grown mesh again, then immediately re-arms
+// this cell for the next planting (see harvest()'s own doc).
 //
 // Pops in with a small scale-up tween (see appearDelaySec) instead of a hard
 // cut — PizzaScene.spawnFarmGrid() staggers each cell's own delay by its
@@ -50,11 +76,14 @@
 //
 // The PREPARED ground mesh itself is tinted per FARM_TILE_CONFIG.
 // availableTint/occupiedTint (see applyGroundTint()) — white/no-tint while
-// empty, a darker shade once something's planted, so an occupied cell reads
-// at a glance without needing a separate overlay mesh. Only applies to the
-// GlbVisualComponent path (a real resolved view) — the BoxVisualComponent
-// placeholder fallback below keeps its own fixed PLACEHOLDER_COLOR
-// regardless, since that path only exists for dev/no-art-yet plots anyway.
+// empty OR while a planted crop is already CropTypes.isCropReady(), a
+// darker shade only while ACTIVELY GROWING, so a cell worth walking past
+// (nothing to plant, or nothing left to wait on) always reads as
+// "available" at a glance, even with something already sitting on it. Only
+// applies to the GlbVisualComponent path (a real resolved view) — the
+// BoxVisualComponent placeholder fallback below keeps its own fixed
+// PLACEHOLDER_COLOR regardless, since that path only exists for
+// dev/no-art-yet plots anyway.
 //
 // Harvesting plays the same rising "+N icon" gain popup LooseResourceNode.
 // showGainPopup() plays for a ground pickup (Bark/Pebble/...) — see
@@ -74,7 +103,7 @@ import CropVisualComponent from '../components/CropVisualComponent';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import { FARM_TILE_CONFIG, FarmPlotConfig } from '../data/FarmTypes';
-import { CROP_CONFIG, CropId } from '../data/CropTypes';
+import { CROP_CONFIG, CropId, isCropReady } from '../data/CropTypes';
 import { FarmCropStorage, PlantedCrop } from '../data/FarmCropStorage';
 import { SEED_CONFIG, SeedId } from '../data/SeedTypes';
 import { SeedStorage } from '../data/SeedStorage';
@@ -89,11 +118,14 @@ import MainPlayer from '../player/MainPlayer';
 import ViewUtils from 'core/utils/ViewUtils';
 import FarmSeedPicker from './FarmSeedPicker';
 import FarmCropHud from './FarmCropHud';
+import FarmAutoPlantHud from './FarmAutoPlantHud';
 
 const FARM_TILE_CORNER_RADIUS = 0.2;
 const PLACEHOLDER_HEIGHT = 0.1;
 const PLACEHOLDER_COLOR = 0x7a5a3a;
 const APPEAR_DURATION_SEC = 0.35;
+/** How long the player has to stand on an empty cell of a FarmPlotConfig.assignedCropId plot before it auto-plants — see startAutoPlantTimer()'s own doc. Game-wide, not per-plot, same "one shared tuning knob" convention APPEAR_DURATION_SEC above already uses. */
+const AUTO_PLANT_DELAY_SEC = 2;
 
 /** FARM_TILE_CONFIG.availableTint/occupiedTint fall back to these when unset — see applyGroundTint(). White = no visible tint at all (the mesh's own real colors show through untouched); the occupied default is a plain medium gray, dark enough to read as "taken" against white without this file needing to know anything about a specific crop's own art. */
 const DEFAULT_AVAILABLE_TINT = '#ffffff';
@@ -119,8 +151,16 @@ export default class FarmPlotTile extends Entity {
     private readonly seedPicker: FarmSeedPicker;
     /** The ONE shared FarmCropHud instance every farm plot on the map hands its own register()/unregister() calls to for a PLANTED cell — see that file's own doc. */
     private readonly cropHud: FarmCropHud;
+    /** The ONE shared FarmAutoPlantHud instance every farm plot on the map hands its own register()/unregister() calls to while an `assignedCropId` cell's no-seed countdown runs — see that file's own doc. A "free" plot (no `assignedCropId`) never registers with this. */
+    private readonly autoPlantHud: FarmAutoPlantHud;
     /** FarmCropStorage's own per-cell identity — computed once, this cell's farmId/col/row never change over its lifetime. */
     private readonly tileKey: string;
+
+    /** Seconds remaining before this cell auto-plants `plotConfig.assignedCropId` — see startAutoPlantTimer()'s own doc. undefined means no countdown in progress. Only ever touched when `plotConfig.assignedCropId` is set; a "free" plot (no assigned crop) never sets this at all and keeps going through FarmSeedPicker exactly as it always has. */
+    private autoPlantRemainingSec?: number;
+
+    /** True while MainPlayer's own trigger overlaps this cell — see handleTriggerEnter()/handleTriggerExit(). The one thing update()'s own auto-harvest check (see its own doc) needs that FarmCropStorage.getPlanted() alone can't tell it: not just "is something ready here" but "is the player actually standing on it right now." */
+    private playerInside = false;
 
     /** Traces this cell's own footprint — visibility is driven every frame in update() purely off whether FarmSeedPicker.getActiveTileKey() equals this cell's own tileKey, NOT this cell's own trigger-enter/exit state directly (that let more than one tile highlight at once — two overlapping/adjacent triggers can each independently believe "the player is on me" for a frame or two, but only ONE tileKey can ever own the shared picker at a time). Makes it obvious at a glance which exact cell the seed picker is about to plant into. */
     private outline!: DottedZoneVisualComponent;
@@ -139,6 +179,7 @@ export default class FarmPlotTile extends Entity {
         plotConfig: FarmPlotConfig,
         seedPicker: FarmSeedPicker,
         cropHud: FarmCropHud,
+        autoPlantHud: FarmAutoPlantHud,
         appearDelaySec = 0,
     ) {
         super();
@@ -149,6 +190,7 @@ export default class FarmPlotTile extends Entity {
         this.plotConfig = plotConfig;
         this.seedPicker = seedPicker;
         this.cropHud = cropHud;
+        this.autoPlantHud = autoPlantHud;
         this.appearDelaySec = appearDelaySec;
         this.tileKey = FarmCropStorage.tileKey(farmId, col, row);
         this.transform.position.copy(position);
@@ -158,10 +200,40 @@ export default class FarmPlotTile extends Entity {
         super.update(delta);
         this.applyGroundTint();
         // The picker's own activeTileKey is the ONE source of truth for "which cell is about
-        // to be planted into" — see outline's/FarmSeedPicker.getActiveTileKey()'s own doc for
-        // why this can't be driven by this tile's own trigger-enter/exit instead (that let more
-        // than one tile highlight at once).
-        this.outline.setVisible(this.seedPicker.getActiveTileKey() === this.tileKey);
+        // to be planted into" for a seed-picker plot — see outline's/
+        // FarmSeedPicker.getActiveTileKey()'s own doc for why this can't be driven by this
+        // tile's own trigger-enter/exit instead (that let more than one tile highlight at
+        // once). An assignedCropId plot never registers with the picker at all (see
+        // handleTriggerEnter()), so it gets the same "you're about to plant here" cue from its
+        // own auto-plant countdown instead.
+        this.outline.setVisible(this.seedPicker.getActiveTileKey() === this.tileKey || this.autoPlantRemainingSec !== undefined);
+
+        if (this.autoPlantRemainingSec !== undefined) {
+            this.autoPlantRemainingSec -= delta;
+            if (this.autoPlantRemainingSec <= 0) {
+                this.autoPlantRemainingSec = undefined;
+                this.autoPlantHud.unregister(this.tileKey);
+                this.autoPlant();
+            }
+        }
+
+        // Auto-harvest — an assignedCropId plot's other half of "no manual step needed": just
+        // like planting never needed a seed tap, collecting never needs a "Collect" tap either.
+        // Checked every frame (not just on trigger-enter) so BOTH "walks onto an already-ready
+        // crop" and "was already standing here, growing, when it finished" auto-collect the
+        // instant they're true — the AutoGatherController-style "proximity alone is enough"
+        // philosophy the rest of this game already uses (see this file's own top doc, and the
+        // README's own "only one input: movement" framing). FarmCropStorage.harvest() clears the
+        // planted state the moment it succeeds, so getPlanted() naturally returns undefined next
+        // frame — no separate "already harvested this one" flag needed to avoid double-firing.
+        // A "free" plot (no assignedCropId) never reaches this at all — collecting stays that
+        // deliberate FarmCropHud "Collect" tap for it, unchanged.
+        if (this.playerInside && this.plotConfig.assignedCropId !== undefined) {
+            const planted = FarmCropStorage.getPlanted(this.tileKey);
+            if (planted && isCropReady(CROP_CONFIG[planted.cropId], planted.plantedAtSec)) {
+                this.harvest(planted);
+            }
+        }
     }
 
     public override awake(): void {
@@ -233,7 +305,7 @@ export default class FarmPlotTile extends Entity {
         this.cropHud.register(this.tileKey, this.transform.position, planted.cropId, planted.plantedAtSec, () => this.harvest(planted));
     }
 
-    /** Consumes one `seedId` and starts its own SeedConfig.cropId growing — no-ops (silently, same "just don't complete the action" convention as SeedStorage.removeOne()'s own callers) if this cell already has something planted or the player is out of that seed. Unregisters from the seed picker and registers with the crop hud instead — nothing left to plant here until this cell empties out again, but there's now something to show growth progress for. */
+    /** Consumes one `seedId` and starts its own SeedConfig.cropId growing — no-ops (silently, same "just don't complete the action" convention as SeedStorage.removeOne()'s own callers) if this cell already has something planted or the player is out of that seed. Unregisters from the seed picker and registers with the crop hud instead — nothing left to plant here until this cell empties out again, but there's now something to show growth progress for. Only ever called for a "free" plot (no `plotConfig.assignedCropId`) — see startAutoPlantTimer()/autoPlant() for that plot kind's own no-seed twin of this method. */
     private tryPlant(seedId: SeedId): void {
         if (FarmCropStorage.getPlanted(this.tileKey)) {
             return;
@@ -249,15 +321,48 @@ export default class FarmPlotTile extends Entity {
         this.registerAsCropHudCandidate({ cropId: SEED_CONFIG[seedId].cropId, plantedAtSec });
     }
 
-    /** MainPlayer walking into this cell's own trigger — makes this cell the shared seed-picker's or crop-hud's new candidate (whichever applies — see this file's own top doc), depending on whether anything's planted here. Harvesting is now always a deliberate "Collect" tap in FarmCropHud, never automatic on collision. */
+    /** Starts (or restarts, on re-entry) the AUTO_PLANT_DELAY_SEC countdown for an EMPTY cell of a plot with `plotConfig.assignedCropId` set — the no-seed twin of registerAsSeedPickerCandidate(): this cell never touches FarmSeedPicker/SeedStorage at all for this plot kind. Also registers with FarmAutoPlantHud so the icon+bar readout shows (see that file's own doc) — its progress getter reads `autoPlantRemainingSec` fresh every frame rather than tracking its own copy. update() ticks the countdown down and calls autoPlant() once it elapses; handleTriggerExit() cancels it outright (no partial-progress carry-over) if the player steps off before it finishes, same "leaving resets to zero" convention AnimalCatchController.ts's own capture timer uses. */
+    private startAutoPlantTimer(): void {
+        this.autoPlantRemainingSec = AUTO_PLANT_DELAY_SEC;
+        this.autoPlantHud.register(
+            this.tileKey, this.transform.position, this.plotConfig.assignedCropId!,
+            () => 1 - (this.autoPlantRemainingSec ?? 0) / AUTO_PLANT_DELAY_SEC,
+        );
+    }
+
+    /** The no-seed twin of tryPlant() — plants `plotConfig.assignedCropId` directly once startAutoPlantTimer()'s countdown elapses, no SeedStorage/seed picker involved at all. Still guards against something already planted here (e.g. by the time the countdown finished), same defensive no-op tryPlant() itself has. */
+    private autoPlant(): void {
+        const cropId = this.plotConfig.assignedCropId;
+        if (cropId === undefined || FarmCropStorage.getPlanted(this.tileKey)) {
+            return;
+        }
+
+        const plantedAtSec = Date.now() / 1000;
+        FarmCropStorage.plant(this.tileKey, cropId, plantedAtSec);
+        this.registerAsCropHudCandidate({ cropId, plantedAtSec });
+    }
+
+    /** MainPlayer walking into this cell's own trigger — makes this cell the shared seed-picker's or crop-hud's new candidate, or starts the no-seed auto-plant countdown, depending on whether anything's planted here and whether this plot has an assigned crop (see this file's own top doc). Harvesting is now always a deliberate "Collect" tap in FarmCropHud, never automatic on collision. */
     private handleTriggerEnter(other: RigidBody): void {
         if (!(other.entity instanceof MainPlayer)) {
             return;
         }
+        this.playerInside = true;
 
         const planted = FarmCropStorage.getPlanted(this.tileKey);
         if (planted) {
-            this.registerAsCropHudCandidate(planted);
+            // An assignedCropId plot's crop that's ALREADY ready on entry never gets registered
+            // with FarmCropHud at all — there's nothing to tap (update()'s own auto-harvest
+            // check, see its own doc, collects it automatically this same frame, before anything
+            // ever renders), so showing a "Collect" button for it even for one frame would be
+            // both pointless and wrong. A free plot's ready crop, or a still-growing crop of
+            // either plot kind, registers exactly as before.
+            const autoHarvests = this.plotConfig.assignedCropId !== undefined && isCropReady(CROP_CONFIG[planted.cropId], planted.plantedAtSec);
+            if (!autoHarvests) {
+                this.registerAsCropHudCandidate(planted);
+            }
+        } else if (this.plotConfig.assignedCropId !== undefined) {
+            this.startAutoPlantTimer();
         } else {
             this.registerAsSeedPickerCandidate();
         }
@@ -265,12 +370,15 @@ export default class FarmPlotTile extends Entity {
 
     private handleTriggerExit(other: RigidBody): void {
         if (other.entity instanceof MainPlayer) {
+            this.playerInside = false;
             this.seedPicker.unregister(this.tileKey);
             this.cropHud.unregister(this.tileKey);
+            this.autoPlantHud.unregister(this.tileKey);
+            this.autoPlantRemainingSec = undefined;
         }
     }
 
-    /** Banks CropConfig.yield into BackpackStorage and clears this cell back to empty — CropVisualComponent notices FarmCropStorage.getPlanted() going undefined on its own next update() and removes the grown mesh itself, so this never has to touch that component directly. Called ONLY from FarmCropHud's own "Collect" button tap now (see this file's own top doc) — unregisters from the crop hud and re-registers as a seed-picker candidate right after, so the player can immediately replant the cell they just cleared without having to step off and back on. */
+    /** Banks CropConfig.yield into BackpackStorage and clears this cell back to empty — CropVisualComponent notices FarmCropStorage.getPlanted() going undefined on its own next update() and removes the grown mesh itself, so this never has to touch that component directly. Two callers, one per plot kind: a free plot's FarmCropHud "Collect" tap, or an assignedCropId plot's own update() auto-harvest check (see that method's own doc) — either way `this.cropHud.unregister()` right after is a safe no-op if this tile was never registered with it in the first place (an already-ready assignedCropId crop never is — see handleTriggerEnter()). Re-registers for the NEXT planting right after, so the player never has to step off and back on: a free plot re-shows the seed picker, an assignedCropId plot restarts its own auto-plant countdown instead (same branch handleTriggerEnter() itself uses for an empty cell). */
     private harvest(planted: PlantedCrop): void {
         if (!FarmCropStorage.harvest(this.tileKey)) {
             return;
@@ -280,18 +388,28 @@ export default class FarmPlotTile extends Entity {
         BackpackStorage.add(cropYield.resourceType, cropYield.amount);
         this.showHarvestGainPopup(cropYield.resourceType, cropYield.amount);
         this.cropHud.unregister(this.tileKey);
-        this.registerAsSeedPickerCandidate();
+        if (this.plotConfig.assignedCropId !== undefined) {
+            this.startAutoPlantTimer();
+        } else {
+            this.registerAsSeedPickerCandidate();
+        }
     }
 
-    /** Re-tints groundVisual's materials to match this cell's current empty/occupied state — see this file's own top doc. No-ops until the model has actually loaded (GlbVisualComponent.mesh throws before then — see that file's own isReady doc) and again once the SAME tint is already applied (appliedGroundTint), so a cell sitting in one state for a while isn't re-walking/re-setting its materials every single frame for nothing. */
+    /** Re-tints groundVisual's materials to match this cell's current empty/growing/ready state — see this file's own top doc. No-ops until the model has actually loaded (GlbVisualComponent.mesh throws before then — see that file's own isReady doc) and again once the SAME tint is already applied (appliedGroundTint), so a cell sitting in one state for a while isn't re-walking/re-setting its materials every single frame for nothing. */
     private applyGroundTint(): void {
         if (!this.groundVisual?.isReady) {
             return;
         }
 
-        const isPlanted = FarmCropStorage.getPlanted(this.tileKey) !== undefined;
-        const tint = (isPlanted ? FARM_TILE_CONFIG.occupiedTint : FARM_TILE_CONFIG.availableTint)
-            ?? (isPlanted ? DEFAULT_OCCUPIED_TINT : DEFAULT_AVAILABLE_TINT);
+        // occupiedTint reads as "actively growing," not just "something's planted here" — a
+        // READY crop (whether waiting on a manual Collect tap or about to auto-harvest, see this
+        // file's own top doc) reverts to the plain availableTint, same as a genuinely empty cell,
+        // since there's nothing left to wait on: the tinted/untinted distinction is meant to flag
+        // "don't bother planting here," not "something already happened here."
+        const planted = FarmCropStorage.getPlanted(this.tileKey);
+        const isGrowing = planted !== undefined && !isCropReady(CROP_CONFIG[planted.cropId], planted.plantedAtSec);
+        const tint = (isGrowing ? FARM_TILE_CONFIG.occupiedTint : FARM_TILE_CONFIG.availableTint)
+            ?? (isGrowing ? DEFAULT_OCCUPIED_TINT : DEFAULT_AVAILABLE_TINT);
         if (tint === this.appliedGroundTint) {
             return;
         }

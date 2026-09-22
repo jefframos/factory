@@ -16,6 +16,8 @@ import RadialTransition from './game/ui/RadialTransition';
 import { applyDebugPhysicsCookie, saveDebugPhysicsCookie } from './game/utils/DebugPhysicsCookie';
 import { RunnerBendService } from 'core/services/RunnerBendService';
 import { RUNNER_MINIGAME_SETTINGS, SWIPE_MINIGAME_SETTINGS } from './game/data/MinigameSettings';
+import MoneyHud from './game/ui/MoneyHud';
+import { GameState } from './game/data/GameState';
 
 /** What every scene exposes for the transition below to wait on — see HubScene.ready's own doc. */
 interface AsyncReadyScene {
@@ -55,6 +57,8 @@ export default class MyGame extends Game {
     private transitionInProgress = false;
     private transition!: RadialTransition;
     private scenesByKey: Record<string, AsyncReadyScene> = {};
+    /** The one top-left money counter every scene shares — see MoneyHud.ts's own doc for why this lives here (outliving every scene rebuild) instead of inside any one of them. */
+    private moneyHud!: MoneyHud;
 
     public constructor() {
         super({ resolution: Math.min(2, devicePixelRatio), backgroundAlpha: 0 }, false);
@@ -129,21 +133,28 @@ export default class MyGame extends Game {
             saveDebugPhysicsCookie({ trigger: value });
         }, 'Physics Debug');
 
+        // The one shared top-left money counter — see MoneyHud.ts's own doc. Constructed here
+        // (once, ever) and added straight to uiLayer rather than any scene's own display
+        // list, so it's never destroyed/rebuilt on a scene change; GameState.getMoney() seeds
+        // its starting digits so a hub<->minigame round trip never visibly resets the count.
+        this.moneyHud = new MoneyHud(GameState.getMoney());
+        this.uiLayer.addChild(this.moneyHud);
+
         // Every multi-scene game in this repo follows the same shape: a scene exposes a plain
         // `Signal` for whatever navigation event it needs (never touches SceneManager itself),
         // and index.ts's startGame() is the only thing that actually calls changeScene() — see
         // HubScene.ts's own doc.
-        const hub = this.sceneManager.register<HubScene>('hub', HubScene, this);
+        const hub = this.sceneManager.register<HubScene>('hub', HubScene, this, this.moneyHud);
         hub.onEnterMinigame.add((sceneKey: string) => this.requestSceneChange(sceneKey));
 
-        const runnerMinigame = this.sceneManager.register<RunnerMinigameScene>('runner-minigame', RunnerMinigameScene, this);
+        const runnerMinigame = this.sceneManager.register<RunnerMinigameScene>('runner-minigame', RunnerMinigameScene, this, this.moneyHud);
         runnerMinigame.onComplete.add(() => this.requestSceneChange('hub'));
         // RestartButton (see RunnerMinigameScene.onHitObstacle()) — same key, forced, so
         // SceneManager.changeScene() rebuilds this scene from scratch instead of no-opping
         // on "already the current scene."
         runnerMinigame.onRestart.add(() => this.requestSceneChange('runner-minigame', true));
 
-        const swipeMinigame = this.sceneManager.register<SwipeMinigameScene>('swipe-minigame', SwipeMinigameScene, this);
+        const swipeMinigame = this.sceneManager.register<SwipeMinigameScene>('swipe-minigame', SwipeMinigameScene, this, this.moneyHud);
         swipeMinigame.onComplete.add(() => this.requestSceneChange('hub'));
         swipeMinigame.onRestart.add(() => this.requestSceneChange('swipe-minigame', true));
 
@@ -226,6 +237,7 @@ export default class MyGame extends Game {
     protected override onResize(): void {
         super.onResize();
         this.sceneManager?.resize();
+        this.moneyHud?.reposition();
     }
 }
 

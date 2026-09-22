@@ -54,6 +54,7 @@ import World from '../ecs/World';
 import LooseResourceNode from '../player/LooseResourceNode';
 import ResourceNode from '../player/ResourceNode';
 import { PROVIDER_CONFIG } from '../actions/ProviderTypes';
+import { RESOURCE_CONFIG } from '../actions/ResourceTypes';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { tileCellToWorldPosition, WORLD_UNITS_PER_TILE } from './TileMapConfig';
 import WorldSpawner from './WorldSpawner';
@@ -67,6 +68,33 @@ import { collectFarmFootprints, FarmFootprint, isInsideAnyFarmFootprint } from '
 
 /** Upper bound on how many candidate cells tryFillDensity() will roll through in a single check — a cheap backstop against an unlucky run of minDistance misses, not a normal-case limit (a healthy area fills well within this). */
 const MAX_ATTEMPTS_PER_CHECK = 40;
+
+/**
+ * True only if `placement.spawnType` (defaulting to 'resource') resolves to a real, configured
+ * identity — the one field materialize()/streamRecords() will actually read. Both identity
+ * fields (resourceType/providerType) stay editable in the web editor's Dynamic Resources tab
+ * regardless of which `spawnType` is selected (see DynamicResourceTypes.ts's own doc), so
+ * switching `spawnType` without also updating the matching field leaves a placement pointing at
+ * `undefined` — which would otherwise only surface as an uncaught crash the first time this
+ * placement tries to spawn, with a stack trace nowhere near the actual bad data. Warns once (at
+ * construction) and lets the caller drop the placement entirely — see
+ * ShapeResourceSpawner.ts's own isIdentityValid() for the sibling version of this same check.
+ */
+function isIdentityValid(placement: DynamicResourcePlacement): boolean {
+    const spawnType = placement.spawnType ?? 'resource';
+    if (spawnType === 'provider') {
+        if (placement.providerType && placement.providerType in PROVIDER_CONFIG) {
+            return true;
+        }
+        console.warn(`[DynamicResourceSpawner] spawnerTileType "${placement.spawnerTileType}" has spawnType "provider" but providerType is ${JSON.stringify(placement.providerType)}, which isn't in PROVIDER_CONFIG — skipping this placement. Fix it in DynamicResourceTypes.ts or the web editor's Dynamic Resources tab.`);
+        return false;
+    }
+    if (placement.resourceType && placement.resourceType in RESOURCE_CONFIG) {
+        return true;
+    }
+    console.warn(`[DynamicResourceSpawner] spawnerTileType "${placement.spawnerTileType}" has spawnType "resource" but resourceType is ${JSON.stringify(placement.resourceType)}, which isn't in RESOURCE_CONFIG — skipping this placement. Fix it in DynamicResourceTypes.ts or the web editor's Dynamic Resources tab.`);
+    return false;
+}
 
 interface RuntimeRecord {
     col: number;
@@ -114,10 +142,16 @@ export default class DynamicResourceSpawner {
         this.farmFootprints = collectFarmFootprints(worldObjects);
         // Starts every placement's countdown at 0 rather than checkIntervalSec — see this
         // file's own doc on why that's what seeds an area up to its target density the instant
-        // the player first gets near it, with no separate "starting density" concept needed.
-        this.states = placements.map(placement => {
+        // the player first gets near it, with no separate "starting density" concept needed. A
+        // placement whose spawnType/identity-field pair doesn't line up (see isIdentityValid())
+        // is dropped here rather than left to crash the first time it tries to spawn.
+        this.states = placements.flatMap(placement => {
+            if (!isIdentityValid(placement)) {
+                return [];
+            }
+
             const key = placementKey(placement);
-            return {
+            return [{
                 placement,
                 key,
                 records: DynamicResourceStorage.getRecords(key).map(record => ({
@@ -126,7 +160,7 @@ export default class DynamicResourceSpawner {
                     position: cellToWorldVector(record.col, record.row),
                 })),
                 checkTimerSec: 0,
-            };
+            }];
         });
     }
 

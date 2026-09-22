@@ -47,6 +47,7 @@ import {
 } from './MeshConfig';
 import { deriveWaterTones, parseHexColor } from './IslandStorage';
 import ZoneVisibilityManager from './ZoneVisibilityManager';
+import { ZONE_REVEAL_CONFIG } from './FogOfWarConfig';
 
 /** Margin (world units) added around the painted cells' bounding box when sizing the water plane, so the shoreline never runs right up against the plane's own edge. */
 const WATER_MARGIN = 20;
@@ -140,6 +141,7 @@ export default class IslandMeshBuilder {
                         zoneVisibility.registerWithZones(
                             mesh, zoneNumber === NO_ZONE ? [] : [zoneNumber],
                             sumX / zoneCells.length, sumZ / zoneCells.length,
+                            0, ZONE_REVEAL_CONFIG.riseEase.terrain,
                         );
                     }
                 }

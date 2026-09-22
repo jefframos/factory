@@ -41,6 +41,7 @@
 
 import { CurrencyType } from './EconomyTypes';
 import { MilestoneRequirement } from './MilestoneRequirement';
+import { CropId } from './CropTypes';
 
 export interface FarmPlotPrice {
     currency: CurrencyType;
@@ -81,8 +82,18 @@ export interface FarmPlotConfig {
     price: FarmPlotPrice;
     /** Optional — when set, this plot isn't spawned at all until MilestoneRequirement.ts's isMilestoneRequirementMet() says this is satisfied, same shared shape/reasoning as BuildingConfig.appearRequirement/QueueConfig.appearRequirement. undefined (the default) means "always appears" (subject to its own zone still being revealed — see this file's own doc), unchanged from before this field existed. */
     appearRequirement?: MilestoneRequirement;
-    /** CropTypes.ts CropIds this plot accepts — undefined means any crop can be planted here, the same "unrestricted unless a designer opts a plot out" default every optional allow-list in this codebase uses. */
+    /** CropTypes.ts CropIds this plot accepts — undefined means any crop can be planted here, the same "unrestricted unless a designer opts a plot out" default every optional allow-list in this codebase uses. Meaningless (never read) once `assignedCropId` is set — see that field's own doc. */
     allowedCrops?: string[];
+    /**
+     * Optional — when set, this plot grows exactly ONE crop and doesn't need a seed at all: an
+     * empty cell skips FarmSeedPicker entirely, and standing on it for FarmPlotTile.ts's own
+     * AUTO_PLANT_DELAY_SEC instead auto-plants this crop directly (no SeedStorage involved,
+     * nothing consumed). undefined (the default) is the "free" plot every plot had before this
+     * field existed — unchanged: still shows the seed picker, still requires and spends a real
+     * seed, exactly as before. Growth/harvest afterward are identical either way — this only
+     * changes HOW a cell gets planted, not what happens once it is.
+     */
+    assignedCropId?: CropId;
     /** 0-1 fraction of this plot's own footprint that becomes a SOLID collider blocking the player while still unacquired — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default) means no solid collider — a for-sale plot is walkable, same as an unbought queue/shop today. */
     solid?: number;
 }
@@ -101,7 +112,8 @@ export const FARM_PLOT_CONFIG_BY_ID: Partial<Record<string, FarmPlotConfig>> = {
         "price": {
             "currency": CurrencyType.Money,
             "amount": 10
-        }
+        },
+        "assignedCropId": CropId.Carrot
     }
 };
 

@@ -289,6 +289,16 @@ export const ENTITY_VIEW_CONFIG: Record<string, EntityViewConfig> = {
             0,
             0
         ]
+    },
+    "baseBuildingSite": {
+        "models": [MODELS.Survival.ResourcePlanks],
+        "scale": 8,
+        "rotationDeg": 1,
+        "offset": [
+            0,
+            0,
+            0
+        ]
     }
 };
 

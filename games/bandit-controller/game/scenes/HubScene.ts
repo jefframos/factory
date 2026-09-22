@@ -10,27 +10,28 @@
 // scenes expose a Signal and let index.ts's startGame() be the only thing
 // that calls sceneManager.changeScene()).
 //
-// GameState.getMoney()/addMoney() (not a plain scene-local field) is what
-// makes the money HUD survive this scene being destroyed and rebuilt from
-// scratch every time the player leaves and returns from a minigame — see
-// GameState.ts's own doc.
+// The money counter itself lives outside this scene entirely — GameState.getMoney()/
+// addMoney() for the running total, MoneyHud (constructed once in index.ts, shared with
+// RunnerMinigameScene/SwipeMinigameScene) for the actual top-left UI — so neither the total
+// nor the counter widget resets or flickers every time this scene is destroyed and rebuilt
+// from scratch crossing into/out of a minigame. See MoneyHud.ts's own doc.
 
 import * as THREE from 'three';
-import * as PIXI from 'pixi.js';
 import { Signal } from 'signals';
 import { Game } from 'core/Game';
 import { ThreeScene } from 'core/scene/ThreeScene';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
+import { BendService } from 'core/services/BendService';
 import { WorldEnvironment, CameraFollowOptions } from './shared/WorldEnvironment';
 import Collectible from '../entities/Collectible';
 import { buildGateMarker, buildTriggerGate } from '../builders/GateBuilder';
+import { spawnCollectible, pruneCollected } from '../builders/CollectibleBuilder';
 import { CAMERA_SETTINGS_BY_MODE, DEFAULT_CAMERA_MODE } from '../data/GameSettings';
 import { PLAYER_SETTINGS } from '../data/PlayerSettings';
 import { WORLD_SETTINGS } from '../data/WorldSettings';
-import { MONEY_PILE_SMALL, generateCollectibleSpawnPositions, resolveCollectibleIconPath } from '../data/CollectibleSettings';
-import { spawnFlyingIconToOverlayPoint } from '../ui/FlyingResourceIcon';
-import { GameState } from '../data/GameState';
+import { MONEY_PILE_SMALL, generateCollectibleSpawnPositions } from '../data/CollectibleSettings';
 import GameUI from '../ui/GameUI';
+import MoneyHud from '../ui/MoneyHud';
 
 /** Where the player starts, and where the "Reset" button puts them back. */
 const PLAYER_SPAWN_POSITION = new THREE.Vector3(0, 0, 0);
@@ -68,12 +69,13 @@ export default class HubScene extends ThreeScene {
 
     private env!: WorldEnvironment;
     private readonly collectibles: Collectible[] = [];
-    private moneyIconTexture?: PIXI.Texture;
+    private readonly moneyHud: MoneyHud;
     private gameUI!: GameUI;
     private cameraHotkeyIds: string[] = [];
 
-    public constructor(game: Game) {
+    public constructor(game: Game, moneyHud: MoneyHud) {
         super(game);
+        this.moneyHud = moneyHud;
     }
 
     /** Resolves once this build's player character has finished loading — see index.ts's radial-transition orchestration (RadialTransition.reveal() waits on this before playing). */
@@ -91,13 +93,11 @@ export default class HubScene extends ThreeScene {
             () => this.resetPlayer(),
             () => this.onEnterMinigame.dispatch('runner-minigame'),
             () => this.onEnterMinigame.dispatch('swipe-minigame'),
-            GameState.getMoney(),
         );
         this.game.uiLayer.addChild(this.gameUI);
 
         this.buildCollectibles();
         this.buildMinigameGates();
-        void this.preloadMoneyIconTexture();
         this.awakeCameraHotkeys();
 
         if (!devGuiWired) {
@@ -108,7 +108,7 @@ export default class HubScene extends ThreeScene {
 
     public update(delta: number): void {
         this.env.update(delta);
-        this.pruneCollectedPickups();
+        pruneCollected(this.env.world, this.collectibles);
         super.update(delta);
     }
 
@@ -130,49 +130,21 @@ export default class HubScene extends ThreeScene {
         });
     }
 
-    /** Spreads a ring of Money_Pile_Small pickups around the player's own spawn point — walking near one snaps it to the player and pays out via onCollectResource(). */
+    /** Spreads a ring of Money_Pile_Small pickups around the player's own spawn point — walking near one snaps it to the player and pays out via the shared moneyHud (see CollectibleBuilder.spawnCollectible()). */
     private buildCollectibles(): void {
         for (const position of generateCollectibleSpawnPositions(PLAYER_SPAWN_POSITION)) {
-            const collectible = this.env.world.add(new Collectible(
-                MONEY_PILE_SMALL,
+            const collectible = spawnCollectible(
+                this.env.world,
                 this.threeScene,
+                this,
+                this.game,
+                this.moneyHud,
+                MONEY_PILE_SMALL,
+                position,
                 () => this.env.mainPlayer.getCollectTargetPosition(),
-            ));
-            collectible.transform.position.copy(position);
-            collectible.onCollected.add((amount) => this.onCollectResource(amount, collectible.transform.position.clone()));
-            void collectible.load();
+                BendService,
+            );
             this.collectibles.push(collectible);
-        }
-    }
-
-    private async preloadMoneyIconTexture(): Promise<void> {
-        this.moneyIconTexture = await PIXI.Assets.load<PIXI.Texture>(resolveCollectibleIconPath(MONEY_PILE_SMALL.icon));
-    }
-
-    /** Flies the collected icon from where the pickup was consumed to GameUI's money icon (see FlyingResourceIcon.ts) — the money total itself only updates once the icon actually lands (onArrive), same "mutate on landing, not on departure" convention bandit/legacy's QueueZone.flyRewardToWallet() follows. */
-    private onCollectResource(amount: number, worldPosition: THREE.Vector3): void {
-        spawnFlyingIconToOverlayPoint(
-            this,
-            this.game,
-            worldPosition,
-            () => this.gameUI.getMoneyIconOverlayPosition(),
-            this.moneyIconTexture ?? PIXI.Texture.WHITE,
-            () => {
-                GameState.addMoney(amount);
-                this.gameUI.setResourceCount(GameState.getMoney());
-            },
-        );
-    }
-
-    /** Collectible can't despawn itself mid-tick — this runs once per frame, safely outside World's own entity iteration, to actually remove anything that flagged itself collected this tick. */
-    private pruneCollectedPickups(): void {
-        for (let i = this.collectibles.length - 1; i >= 0; i--) {
-            const collectible = this.collectibles[i];
-            if (!collectible.collected) {
-                continue;
-            }
-            this.collectibles.splice(i, 1);
-            this.env.world.remove(collectible);
         }
     }
 

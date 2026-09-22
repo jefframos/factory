@@ -34,7 +34,12 @@
             "cooldownSec": 30,
             "possibleTasks": [],
             "popupBobOffset": 3,
-            "view": "ship1View"
+            "view": "ship1View",
+            "appearRequirement": {
+                "type": "building",
+                "buildingId": "stall1",
+                "level": 1
+            }
         }
     }
 }

@@ -238,6 +238,7 @@ const ENTITY_SCHEMAS = {
                 },
                 { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
                 { key: 'fillFull', type: 'boolean', label: 'Fill Full (this level renders 100% built, regardless of run position)', optional: true },
+                { key: 'forceOwnMesh', type: 'boolean', label: 'Force Own Mesh (use this building\'s Tiled "useOwnMesh" pieces at THIS level even though Base View/View above would otherwise resolve to a real model — for a building whose unbuilt site should show a placeholder View but whose built level should show whatever\'s actually drawn on the map)', optional: true },
             ],
         },
         { key: 'updateParticleEffectId', type: 'select', label: 'Update Particle Effect (fires every time this building levels up)', source: 'particleEffects', optional: true },
@@ -530,6 +531,10 @@ const ENTITY_SCHEMAS = {
         // own field-shape doc) — allowedCrops is left off this schema for now, so a plot always
         // shows as "any crop"; edit FarmTypes.ts by hand for a plot that needs the real
         // restriction until that field type exists.
+        {
+            key: 'assignedCropId', type: 'select', label: 'Assigned Crop (single-crop plot — skips the seed picker entirely: standing on an empty cell auto-plants this crop after a short delay, no seed spent. Leave unset for a normal "pick any held seed" plot. Ignores Allowed Crops above when set.)',
+            source: 'crops', optional: true,
+        },
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
     ],
     // Mart entries — both the shared "default" and each entry in "byId" — see MartTypes.ts's

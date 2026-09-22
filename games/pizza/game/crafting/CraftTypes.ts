@@ -197,7 +197,8 @@ export const CRAFT_CONFIG_BY_ID: Partial<Record<string, CraftTableConfig>> = {
                     "item": ItemType.Hammer
                 },
                 "cost": {
-                    "grassFiber": 10
+                    "stone": 5,
+                    "wood": 5
                 },
                 "id": "hammerRecipe"
             }

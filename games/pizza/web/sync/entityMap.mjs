@@ -124,7 +124,7 @@ export const ENTITY_SOURCE_MAP = {
         // level item, refusing to ever delete one a designer clears in the editor (warning
         // "left UNCHANGED in source" instead) even though BuildingLevelConfig itself marks both
         // `view?`/`fillFull?` as optional.
-        listMerge: { levels: { keys: ['level', 'requirements', 'effect', 'view', 'fillFull'], optionalKeys: ['view', 'fillFull'] } },
+        listMerge: { levels: { keys: ['level', 'requirements', 'effect', 'view', 'fillFull', 'forceOwnMesh'], optionalKeys: ['view', 'fillFull', 'forceOwnMesh'] } },
     },
     shops: {
         file: path.join(GAME_DIR, 'shop', 'ShopTypes.ts'),
@@ -280,8 +280,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_FARM_PLOT_CONFIG',
         byIdExportName: 'FARM_PLOT_CONFIG_BY_ID',
-        managedKeys: ['price', 'appearRequirement', 'allowedCrops', 'solid'],
-        optionalKeys: ['appearRequirement', 'allowedCrops', 'solid'],
+        managedKeys: ['price', 'appearRequirement', 'allowedCrops', 'assignedCropId', 'solid'],
+        optionalKeys: ['appearRequirement', 'allowedCrops', 'assignedCropId', 'solid'],
         tileExportName: 'FARM_TILE_CONFIG',
         tileManagedKeys: ['empty', 'prepared', 'icon', 'availableTint', 'occupiedTint'],
     },

@@ -62,14 +62,23 @@ export const ZONE_REVEAL_CONFIG = {
      * ZoneVisibilityManager's own doc on `categoryDelaySec`. Every register()/registerWithZones()
      * caller picks one of these; IslandMeshBuilder (ground) doesn't pass one at all, which is
      * exactly `terrain`'s own value (0) by default.
+     *
+     * Each later category's own value MUST be at least `riseDurationSec` more than the one
+     * before it (props >= riseDurationSec, creatures >= props + riseDurationSec) — anything
+     * smaller and the two rise-tweens visibly OVERLAP in time (a prop starts lifting while the
+     * ground under it hasn't even finished settling yet), which reads as "everything popping up
+     * together," not the "ground settles, THEN props rise, THEN creatures" sequence this is
+     * supposed to produce. The values below leave a small ~0.1s pause on top of that minimum so
+     * one category is visibly at full rest before the next starts, rather than the two rises
+     * merely not overlapping by zero seconds.
      */
     categoryDelaySec: {
         /** Ground/island meshes — IslandMeshBuilder's own registerWithZones() calls (implicitly, via the default). */
         terrain: 0,
-        /** Everything placed ON the terrain but not alive — resources, buildings, gates, shops, queues, craft tables, mesh-layer props. */
-        props: 0.35,
-        /** Animals/NPCs — the last thing to rise, so it visually reads as "the world settles, THEN life shows up in it." */
-        creatures: 0.7,
+        /** Everything placed ON the terrain but not alive — resources, buildings, gates, shops, queues, craft tables, mesh-layer props. Starts only once terrain's own rise (0 to riseDurationSec) has fully finished. */
+        props: 0.8,
+        /** Animals/NPCs — the last thing to rise, so it visually reads as "the world settles, THEN life shows up in it." Starts only once props' own rise has fully finished. */
+        creatures: 1.2,
     },
     /**
      * How long (ms) after a zone's reveal a LATE registration (a resource/animal that only
@@ -81,4 +90,21 @@ export const ZONE_REVEAL_CONFIG = {
      * zone can outrun this window and pop in without its rise animation.
      */
     revealEchoWindowMs: 20000,
+    /**
+     * gsap ease name(s) for the rise-into-place tween itself — see
+     * ZoneVisibilityManager.Registrant.riseEase's own doc for why this can't just be one value
+     * for everything. `default` (a bouncy overshoot — rises PAST its resting Y before settling
+     * back) is what every register()/registerWithZones() caller gets unless it explicitly
+     * overrides the `riseEase` param; `terrain` (a plain decelerating ease, no overshoot) is
+     * what IslandMeshBuilder passes for ground meshes specifically, since an overshooting ground
+     * blob visibly rises above its final height for a moment — tall enough to poke up through a
+     * resource/building sitting right where it's rising even though their footprints never
+     * actually overlap. A prop/creature rising through empty air has nothing to clip into, so
+     * the overshoot stays purely a nice cosmetic "pop" for those.
+     */
+    riseEase: {
+        default: 'back.out(1.4)',
+        /** Swap to 'none' here for a perfectly straight linear rise instead, if the cubic deceleration still reads as too "alive" for a terrain reveal. */
+        terrain: 'power3.out',
+    },
 };

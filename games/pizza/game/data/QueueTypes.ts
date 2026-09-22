@@ -18,6 +18,7 @@ import { MilestoneRequirement } from './MilestoneRequirement';
 import { PopupMode } from '../ui/PopupConfig';
 import { FrameName } from '../ui/FrameRegistry';
 import { GateId } from "./GateTypes";
+import { BuildingId } from "./BuildingId";
 
 export interface QueueTaskDef {
     resourceType: ResourceType;
@@ -99,7 +100,12 @@ export const QUEUE_CONFIG_BY_ID: Partial<Record<string, QueueConfig>> = {
         "cooldownSec": 30,
         "possibleTasks": [],
         "popupBobOffset": 3,
-        "view": "ship1View"
+        "view": "ship1View",
+        "appearRequirement": {
+            "type": "building",
+            "buildingId": BuildingId.Stall1,
+            "level": 1
+        }
     }
 };
 

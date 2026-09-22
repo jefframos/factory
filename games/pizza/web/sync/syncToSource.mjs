@@ -72,13 +72,20 @@ const ENUM_VALUE_FIELDS = {
     currency: 'CurrencyType',
     // SeedTypes.ts's SeedConfig.cropId — which CropTypes.ts CROP_CONFIG entry a seed plants.
     cropId: 'CropId',
+    // FarmTypes.ts's FarmPlotConfig.assignedCropId — same CropId enum as SeedConfig.cropId
+    // above, just under a different property name (a single-crop plot's own no-seed crop,
+    // rather than what a seed item grows into).
+    assignedCropId: 'CropId',
 };
 
 /** Where each enum in ENUM_VALUE_FIELDS is actually declared — used to auto-add a named import to a target file that references the enum but doesn't yet import it (e.g. ShopTypes.ts has no reason to import ResourceType until an appearRequirement of type 'resource' needs one). */
 const ENUM_SOURCE_FILES = {
     ItemType: p => path.join(p, 'crafting', 'ItemTypes.ts'),
     ResourceType: p => path.join(p, 'actions', 'ResourceTypes.ts'),
-    BuildingId: p => path.join(p, 'data', 'BuildingTypes.ts'),
+    // BuildingId itself moved to its own leaf file (BuildingId.ts) — see that file's own doc —
+    // to break a circular VALUE dependency with GateTypes.ts. BuildingTypes.ts still just
+    // re-exports it, so this must point at the real declaration, not the re-export.
+    BuildingId: p => path.join(p, 'data', 'BuildingId.ts'),
     ActionType: p => path.join(p, 'actions', 'ActionTypes.ts'),
     AnimalType: p => path.join(p, 'actions', 'AnimalTypes.ts'),
     ProviderType: p => path.join(p, 'actions', 'ProviderTypes.ts'),
@@ -378,6 +385,23 @@ function findProperty(objLiteral, id, sourceFile, enumName) {
  * the same "pick the next free slot" convention the editor's own id-collision checks
  * (duplicateEntry(), renameEntity's own newId check) already use.
  */
+/**
+ * Resolves whichever sourceFile `enumName` is actually DECLARED in — ENUM_SOURCE_FILES when
+ * listed there (an enum split out into its own leaf file, away from its record's own config file
+ * — e.g. BuildingId.ts, split out from BuildingTypes.ts to break a circular value dependency with
+ * GateTypes.ts, see that file's own doc), else `recordSourceFile` itself (the common case: the
+ * enum and its record live in the SAME file, e.g. CropId in CropTypes.ts). Every top-level-record
+ * enum-computed-key lookup (getPropertyKeyId()/findProperty()/ensureEnumMember(), all of which
+ * call `someSourceFile.getEnum(enumName)`) needs THIS file, not necessarily the record's own —
+ * passing the record's file for an enum that's since moved elsewhere silently degrades
+ * (getPropertyKeyId() falls back to a naive, often-wrong id guess) or throws outright
+ * (ensureEnumMember()) instead of finding the real declaration.
+ */
+function resolveEnumDeclSourceFile(recordSourceFile, enumName, refreshedThisSync) {
+    const declFile = ENUM_SOURCE_FILES[enumName]?.(GAME_DIR);
+    return declFile ? getSourceFile(declFile, refreshedThisSync) : recordSourceFile;
+}
+
 function ensureEnumMember(sourceFile, enumName, id) {
     const enumDecl = sourceFile.getEnum(enumName);
     if (!enumDecl) {
@@ -536,8 +560,8 @@ function upsertObjectFields(sourceFile, objLiteral, managedKeys, optionalKeys, d
 }
 
 /** Upserts just the managed fields of one entry (`id`) inside a record object literal — every unmanaged property already on that entry's own object literal (mesh, color, position, ...) is left as-is; only `mapping.managedKeys` are added/replaced/removed, and any key listed in `mapping.listMerge` gets a by-index array merge instead of a wholesale replacement (see upsertArrayByIndex's own doc). */
-function upsertEntryFields(sourceFile, recordLiteral, id, mapping, data, warnings, refreshedThisSync) {
-    let entryProp = findProperty(recordLiteral, id, sourceFile, mapping.enumName);
+function upsertEntryFields(sourceFile, recordLiteral, id, mapping, data, warnings, refreshedThisSync, enumSourceFile = sourceFile) {
+    let entryProp = findProperty(recordLiteral, id, enumSourceFile, mapping.enumName);
     const isNewEntry = !entryProp;
     if (isNewEntry) {
         // Template to clone UNMANAGED fields from — same reasoning as upsertArrayByIndex's
@@ -551,7 +575,7 @@ function upsertEntryFields(sourceFile, recordLiteral, id, mapping, data, warning
             .find(Boolean);
 
         recordLiteral.addPropertyAssignment({ name: JSON.stringify(id), initializer: '{}' });
-        entryProp = findProperty(recordLiteral, id, sourceFile, mapping.enumName);
+        entryProp = findProperty(recordLiteral, id, enumSourceFile, mapping.enumName);
         const newEntryLiteral = entryProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializerIfKindOrThrow(SyntaxKind.ObjectLiteralExpression);
 
         if (template) {
@@ -635,15 +659,19 @@ function upsertEntryFields(sourceFile, recordLiteral, id, mapping, data, warning
 
 /** Upserts every id in `postedRecord` into the exported record at `mapping.exportName`, then (for open-id types only — see this file's own doc) removes any entry present in the source but absent from `postedRecord`. */
 function syncRecord(sourceFile, mapping, postedRecord, warnings, refreshedThisSync) {
+    // Resolved ONCE — see resolveEnumDeclSourceFile()'s own doc. Every enum-computed-key lookup
+    // below uses THIS, not `sourceFile` directly, since the enum itself might live in a
+    // different file than the record does (e.g. BuildingId.ts vs. BuildingTypes.ts).
+    const enumSourceFile = mapping.enumName ? resolveEnumDeclSourceFile(sourceFile, mapping.enumName, refreshedThisSync) : sourceFile;
     const recordLiteral = getExportObjectLiteral(sourceFile, mapping.exportName);
-    const existingIds = recordLiteral.getProperties().map(p => getPropertyKeyId(p, sourceFile, mapping.enumName)).filter(Boolean);
+    const existingIds = recordLiteral.getProperties().map(p => getPropertyKeyId(p, enumSourceFile, mapping.enumName)).filter(Boolean);
     const postedIds = Object.keys(postedRecord);
 
     for (const id of postedIds) {
         if (mapping.kind === 'enumRecord') {
-            ensureEnumMember(sourceFile, mapping.enumName, id);
+            ensureEnumMember(enumSourceFile, mapping.enumName, id);
         }
-        upsertEntryFields(sourceFile, recordLiteral, id, mapping, postedRecord[id], warnings, refreshedThisSync);
+        upsertEntryFields(sourceFile, recordLiteral, id, mapping, postedRecord[id], warnings, refreshedThisSync, enumSourceFile);
     }
 
     // partialRecord types default to "the whole entity is disposable" (a shop/craft table/
@@ -656,7 +684,7 @@ function syncRecord(sourceFile, mapping, postedRecord, warnings, refreshedThisSy
     if (mapping.kind === 'partialRecord' && !mapping.protectEntries) {
         for (const id of existingIds) {
             if (!postedIds.includes(id)) {
-                findProperty(recordLiteral, id, sourceFile, mapping.enumName)?.remove();
+                findProperty(recordLiteral, id, enumSourceFile, mapping.enumName)?.remove();
             }
         }
     } else {
@@ -789,6 +817,16 @@ export async function syncToSource(entityId, postedData) {
     }
 
     const touchedFiles = new Map([[sourceFile.getFilePath(), sourceFile]]);
+    // enumRecord types can add a brand-new member via ensureEnumMember() inside syncRecord()
+    // above — usually a no-op (same file as `sourceFile`, already tracked), but NOT when the
+    // enum itself lives elsewhere (see resolveEnumDeclSourceFile()'s own doc, e.g. BuildingId.ts
+    // vs. BuildingTypes.ts). Registering it here regardless of whether anything actually changed
+    // is cheap and correct either way — an unmodified ts-morph SourceFile just re-saves its own
+    // unchanged text.
+    if (mapping.kind === 'enumRecord') {
+        const enumSourceFile = resolveEnumDeclSourceFile(sourceFile, mapping.enumName, refreshedThisSync);
+        touchedFiles.set(enumSourceFile.getFilePath(), enumSourceFile);
+    }
     for (const [fieldKey, targetMappingId] of Object.entries(mapping.externalFields ?? {})) {
         const targetMapping = ENTITY_SOURCE_MAP[targetMappingId];
         if (!targetMapping) {

@@ -112,5 +112,21 @@ export const SHAPE_RESOURCE_PLACEMENTS: ShapeResourcePlacement[] = [
         "density": 0.2,
         "minDistance": 3,
         "checkIntervalSec": 120
+    },
+    {
+        "spawnType": "resource",
+        "resourceType": ResourceType.Bark,
+        "shapeId": "basicSpawner",
+        "count": 5,
+        "density": 0.2,
+        "minDistance": 3,
+        "checkIntervalSec": 30
+    },
+    {
+        "resourceType": ResourceType.Stone,
+        "shapeId": "stoneSpawner",
+        "density": 0.2,
+        "minDistance": 3,
+        "checkIntervalSec": 30
     }
 ];

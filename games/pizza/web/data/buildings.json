@@ -120,5 +120,34 @@
             0,
             0
         ]
+    },
+    "stall1": {
+        "levels": [
+            {
+                "requirements": {
+                    "wood": 20
+                },
+                "effect": {},
+                "level": 1,
+                "forceOwnMesh": true
+            }
+        ],
+        "npcOffset": [
+            0,
+            0,
+            0
+        ],
+        "name": "FoodStall1",
+        "icon": "pizza-model-snapshots_Food-Pumpkin",
+        "baseFillFraction": 0.1,
+        "appearRequirement": {
+            "type": "gate",
+            "gateId": "gateAxe"
+        },
+        "baseView": "baseBuildingSite",
+        "updateParticleEffectId": "craftingMyst",
+        "popupMode": "simple",
+        "solidFromMap": true,
+        "baseFillFull": true
     }
 }

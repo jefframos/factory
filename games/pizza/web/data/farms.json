@@ -10,7 +10,8 @@
             "price": {
                 "currency": "money",
                 "amount": 10
-            }
+            },
+            "assignedCropId": "carrot"
         }
     },
     "tiles": {

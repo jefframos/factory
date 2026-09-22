@@ -207,7 +207,7 @@
         "name": "Carrot",
         "stages": [
             {
-                "durationSec": 20,
+                "durationSec": 15,
                 "mesh": "cropCarrotView",
                 "start": {
                     "offset": [
@@ -223,7 +223,7 @@
                         0,
                         0
                     ],
-                    "scale": 0.6
+                    "scale": 2
                 }
             },
             {
@@ -234,15 +234,15 @@
                         0,
                         0
                     ],
-                    "scale": 0.6
+                    "scale": 2
                 },
                 "end": {
                     "offset": [
                         0,
-                        0,
+                        -1,
                         0
                     ],
-                    "scale": 1
+                    "scale": 4
                 }
             },
             {
@@ -258,7 +258,7 @@
                 "end": {
                     "offset": [
                         0,
-                        -1.5,
+                        -1,
                         0
                     ],
                     "scale": 4

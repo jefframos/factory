@@ -54,8 +54,9 @@ import World from '../ecs/World';
 import LooseResourceNode from '../player/LooseResourceNode';
 import AnimalNode from '../player/AnimalNode';
 import ResourceNode from '../player/ResourceNode';
-import { AnimalType } from '../actions/AnimalTypes';
+import { AnimalType, ANIMAL_CONFIG } from '../actions/AnimalTypes';
 import { PROVIDER_CONFIG } from '../actions/ProviderTypes';
+import { RESOURCE_CONFIG } from '../actions/ResourceTypes';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import WorldObjectRegistry, { SpawnerShape, sampleRandomPointInShape, shapeArea } from './WorldObjectRegistry';
 import { SHAPE_RESOURCE_PLACEMENTS, ShapeResourcePlacement, shapePlacementKey } from './ShapeResourceTypes';
@@ -68,6 +69,41 @@ import { collectFarmFootprints, FarmFootprint, isInsideAnyFarmFootprint } from '
 
 /** Upper bound on how many candidate points tryFillDensity() will roll through in a single check — same "cheap backstop against an unlucky run of minDistance misses" reasoning as DynamicResourceSpawner's own MAX_ATTEMPTS_PER_CHECK, plus here it also has to absorb rejection-sampling misses for a polygon's bounding box. */
 const MAX_ATTEMPTS_PER_CHECK = 60;
+
+/**
+ * True only if `placement.spawnType` (defaulting to 'resource') resolves to a real, configured
+ * identity — the one field materialize()/streamRecords() will actually read. Guards against the
+ * exact mismatch the web editor's Shape Resources tab makes easy to create by accident: it keeps
+ * all three identity fields (resourceType/animalType/providerType) editable regardless of which
+ * `spawnType` is selected (see ShapeResourceTypes.ts's own doc on why), so switching `spawnType`
+ * without also updating the matching field leaves a placement pointing at `undefined` — which
+ * would otherwise only surface as an uncaught crash the first time this placement tries to spawn,
+ * with a stack trace nowhere near the actual bad data. Warns once (at construction) and lets the
+ * caller drop the placement entirely, same "skip, don't crash" treatment as a shapeId that
+ * doesn't resolve to any drawn shape, just above.
+ */
+function isIdentityValid(placement: ShapeResourcePlacement): boolean {
+    const spawnType = placement.spawnType ?? 'resource';
+    if (spawnType === 'provider') {
+        if (placement.providerType && placement.providerType in PROVIDER_CONFIG) {
+            return true;
+        }
+        console.warn(`[ShapeResourceSpawner] shapeId "${placement.shapeId}" has spawnType "provider" but providerType is ${JSON.stringify(placement.providerType)}, which isn't in PROVIDER_CONFIG — skipping this placement. Fix it in ShapeResourceTypes.ts or the web editor's Shape Resources tab.`);
+        return false;
+    }
+    if (spawnType === 'animal') {
+        if (placement.animalType && placement.animalType in ANIMAL_CONFIG) {
+            return true;
+        }
+        console.warn(`[ShapeResourceSpawner] shapeId "${placement.shapeId}" has spawnType "animal" but animalType is ${JSON.stringify(placement.animalType)}, which isn't in ANIMAL_CONFIG — skipping this placement. Fix it in ShapeResourceTypes.ts or the web editor's Shape Resources tab.`);
+        return false;
+    }
+    if (placement.resourceType && placement.resourceType in RESOURCE_CONFIG) {
+        return true;
+    }
+    console.warn(`[ShapeResourceSpawner] shapeId "${placement.shapeId}" has spawnType "resource" but resourceType is ${JSON.stringify(placement.resourceType)}, which isn't in RESOURCE_CONFIG — skipping this placement. Fix it in ShapeResourceTypes.ts or the web editor's Shape Resources tab.`);
+    return false;
+}
 
 interface RuntimeRecord {
     position: THREE.Vector3;
@@ -110,8 +146,18 @@ export default class ShapeResourceSpawner {
         // file's own doc) becomes N independent states here, one per object; a placement
         // matching zero (a typo'd id, or one not drawn yet) contributes nothing at all —
         // warned once here rather than every tryFillDensity() tick the old single-shape
-        // lookup used to warn on.
+        // lookup used to warn on. A placement whose `spawnType` doesn't line up with a valid
+        // identity field (e.g. `spawnType: 'provider'` but `providerType` unset/misspelled —
+        // the field the web editor's Shape Resources tab lets you fill in for the WRONG spawn
+        // type, since all three identity fields stay visible regardless of the selected type —
+        // see ShapeResourceTypes.ts's own doc) is rejected the same way: a bad identity would
+        // otherwise only surface as a `PROVIDER_CONFIG[undefined].maxLife` crash deep inside
+        // materialize(), the first time this placement tries to actually spawn something.
         this.states = placements.flatMap(placement => {
+            if (!isIdentityValid(placement)) {
+                return [];
+            }
+
             const shapes = this.worldObjects.getShapes(placement.shapeId);
             if (shapes.length === 0) {
                 console.warn(`[ShapeResourceSpawner] no spawner shape found for id "${placement.shapeId}" — check the mapSettings layer`);

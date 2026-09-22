@@ -18,12 +18,13 @@ import { MilestoneRequirement } from './MilestoneRequirement';
 import { PopupMode } from '../ui/PopupConfig';
 import { FrameName } from '../ui/FrameRegistry';
 import { ToolId } from '../actions/ToolRegistry';
-
-export enum BuildingId {
-    Camp = "tower",
-    Tower2 = "tower2",
-    Floor1 = "floor1"
-}
+import { GateId } from "./GateTypes";
+// BuildingId itself lives in its own leaf file, not here — see BuildingId.ts's own doc for the
+// circular-value-dependency crash this avoids (GateTypes.ts needs BuildingId, this file needs
+// GateId). Re-exported so every existing `import { BuildingId } from '.../BuildingTypes'`
+// elsewhere in the codebase keeps working unchanged.
+export { BuildingId } from './BuildingId';
+import { BuildingId } from './BuildingId';
 
 export interface BuildingEffect {
     /** Machine-readable effect kind — the hook point for whatever system eventually applies this (e.g. 'backpackCapacity', 'gatherSpeed'). Nothing reads this yet. */
@@ -59,6 +60,23 @@ export interface BuildingLevelConfig {
     view?: string;
     /** Forces this level's reveal sweep (see BuildingZone.playRevealEffect()) to its full 100% fill regardless of where this level sits within a run of consecutive levels sharing the same `view`/mesh — see getFillFractionForLevel()'s own doc. undefined/false uses the computed run-position fraction instead, unchanged from before this field existed. */
     fillFull?: boolean;
+    /**
+     * Forces THIS level to use the Tiled "useOwnMesh" fallback (see WorldObjectRegistry.ts's own
+     * doc / BuildingZone.resolveOwnMeshFallbacks()) even though `view`/`baseView` resolves to a
+     * real EntityViewRegistry model — normally that real view always wins (see getViewIdForLevel()
+     * — own-mesh is ONLY ever consulted when no view resolves at all), which is exactly wrong for
+     * a building whose UNBUILT site legitimately wants a real placeholder view (baseView, e.g. a
+     * generic construction-site model) but whose BUILT levels should show whatever real structure
+     * a level designer actually drew/dragged onto the map — the same view id would otherwise keep
+     * winning at every level forever. Checked ONLY for this specific level, not any later one that
+     * doesn't set it — a building can freely mix "use the configured view" and "use my own drawn
+     * mesh" level by level. Silently falls through to the box placeholder (same as an unset
+     * `useOwnMesh` object) if this level's own building has no "useOwnMesh" pieces drawn on the
+     * map at all, or none decode to a real model — see resolveOwnMeshFallbacks()'s own doc.
+     * undefined/false (the default) keeps the normal view-first priority, unchanged from before
+     * this field existed.
+     */
+    forceOwnMesh?: boolean;
 }
 
 export interface BuildingConfig {
@@ -285,6 +303,35 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
             0,
             0
         ]
+    },
+    "stall1": {
+        requiredTool: 'hammer',
+        baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
+        "name": "FoodStall1",
+        "icon": "pizza-model-snapshots_Food-Pumpkin",
+        "appearRequirement": {
+            "type": "gate",
+            "gateId": GateId.GateAxe
+        },
+        "levels": [{
+            "level": 1,
+            "requirements": {
+                "wood": 20
+            },
+            "effect": {},
+            "forceOwnMesh": true
+        }],
+        "popupMode": "simple",
+        "baseFillFraction": 0.1,
+        "updateParticleEffectId": "craftingMyst",
+        "npcOffset": [
+            0,
+            0,
+            0
+        ],
+        "solidFromMap": true,
+        "baseView": "baseBuildingSite",
+        "baseFillFull": true
     }
 };
 
@@ -316,6 +363,11 @@ export function getViewIdForLevel(id: BuildingId, level: number): string | undef
         }
     }
     return config.baseView;
+}
+
+/** BuildingLevelConfig.forceOwnMesh's own doc — level 0 (before any level clears) can never force this, since it has no BuildingLevelConfig of its own to set the flag on (baseView, if any, always applies there unchanged). */
+export function isOwnMeshForcedForLevel(id: BuildingId, level: number): boolean {
+    return level > 0 && (BUILDING_CONFIG[id].levels[level - 1]?.forceOwnMesh ?? false);
 }
 
 /**

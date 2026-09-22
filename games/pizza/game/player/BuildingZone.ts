@@ -40,7 +40,7 @@ import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { BuildingStorage } from '../data/BuildingStorage';
-import { BUILDING_CONFIG, BuildingId, getFillFractionForLevel, getMeshConfigForLevel, getViewIdForLevel } from '../data/BuildingTypes';
+import { BUILDING_CONFIG, BuildingId, getFillFractionForLevel, getMeshConfigForLevel, getViewIdForLevel, isOwnMeshForcedForLevel } from '../data/BuildingTypes';
 import { resolveEntityView } from '../world/EntityViewRegistry';
 import { OwnMeshPlacement } from '../world/WorldObjectRegistry';
 import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
@@ -173,6 +173,8 @@ export default class BuildingZone extends Entity {
     private buildingVisuals: GlbVisualComponent[] = [];
     /** The view id `buildingMesh`/`buildingVisual` was last built from — lets replaceBuildingMesh() tell "the new level shares this SAME mesh with the one just cleared" (grow the existing reveal fill in place, no dispose/recreate) apart from "the new level actually swaps in a different mesh" (see getFillFractionForLevel()'s own doc on why a run of levels can share one view id). Undefined only before the very first createBuildingMesh() call. */
     private currentViewId?: string;
+    /** Whether `currentViewId`'s mesh was actually sourced via isOwnMeshForcedForLevel()'s fallback rather than resolveEntityView() — tracked SEPARATELY because the raw view id string alone can't tell the two apart: a level with no `view` of its own reports the SAME `baseView` id as level 0 (getViewIdForLevel() doesn't know about forceOwnMesh at all), so comparing viewId alone would wrongly conclude "same mesh" and skip the swap entirely on a level whose forceOwnMesh flag just flipped — see replaceBuildingMesh()'s own doc. */
+    private currentForceOwnMesh = false;
     /** BuildingConfig.solidFromMap's per-piece colliders — see addSolidAreasFromMap()'s own doc. Built/torn down in lockstep with `buildingVisuals` (createBuildingMesh()/disposeBuildingMesh()), NOT once in awake(), so a piece never collides while its own mesh isn't actually visible. Always empty for a building that doesn't set `solidFromMap`. */
     private solidColliders: RigidBody[] = [];
 
@@ -547,6 +549,7 @@ export default class BuildingZone extends Entity {
     private createBuildingMesh(level: number, dropIn: boolean): void {
         const viewId = getViewIdForLevel(this.buildingId, level);
         this.currentViewId = viewId;
+        this.currentForceOwnMesh = isOwnMeshForcedForLevel(this.buildingId, level);
         const targetFraction = getFillFractionForLevel(this.buildingId, level);
         if (targetFraction <= 0) {
             return;
@@ -556,7 +559,13 @@ export default class BuildingZone extends Entity {
             this.addSolidAreasFromMap();
         }
 
-        const entityView = resolveEntityView(viewId);
+        // BuildingLevelConfig.forceOwnMesh (see its own doc) skips straight past a real
+        // configured view for THIS level specifically — normally resolveEntityView() winning
+        // here is exactly right (a real view always beats the map-drawn fallback), but a
+        // building whose unbuilt site legitimately wants baseView's own placeholder while its
+        // BUILT level should show whatever a level designer actually drew on the map needs an
+        // explicit way to say "not this time" — see isOwnMeshForcedForLevel()'s own doc.
+        const entityView = this.currentForceOwnMesh ? undefined : resolveEntityView(viewId);
         if (entityView) {
             this.createBuildingView(entityView, dropIn, targetFraction);
             return;
@@ -577,9 +586,12 @@ export default class BuildingZone extends Entity {
      * Falls back to `this.ownMeshes` — every one of this building's own mapSettings objects'
      * decoded "useOwnMesh" models (see WorldObjectRegistry.getOwnMeshes()'s own doc), passed in
      * through the constructor — for a building with no `view`/`baseView` configured in
-     * BuildingTypes.ts at all. Only ever consulted when resolveEntityView() already came back
-     * empty (see createBuildingMesh()), so a building WITH a real configured view never touches
-     * this. Each entry's own `x`/`z` is converted here to a LOCAL offset relative to this
+     * BuildingTypes.ts at all, OR whose CURRENT level has BuildingLevelConfig.forceOwnMesh set
+     * (see that field's own doc — the "even though a real view WOULD resolve, skip it for THIS
+     * level" override). Only ever consulted when createBuildingMesh() decided NOT to use
+     * resolveEntityView()'s own result (either because it came back empty, or because
+     * forceOwnMesh overrode it), so a building with a real configured view and no forceOwnMesh
+     * never touches this. Each entry's own `x`/`z` is converted here to a LOCAL offset relative to this
      * zone's own transform.position — the zone sits at whichever ONE placement PizzaScene
      * resolved as this building's canonical position (see setupBuildingZone()), but each
      * own-mesh object can be drawn anywhere on the map, so this is what lets several of them
@@ -798,16 +810,22 @@ export default class BuildingZone extends Entity {
      *
      * Two cases, per getFillFractionForLevel()'s own doc on runs of levels sharing one `view`:
      *   - This level's view id is the SAME as the one just cleared (still mid-run, e.g. camp's
-     *     level 1 -> level 2 both "tower2view") — the mesh already standing is still the
-     *     correct one, so it's left completely alone; only the shared revealProgress uniform
-     *     grows from its current value up to this level's (higher) target fraction.
-     *   - The view id actually changed (a genuinely new mesh, or the run just ended) — tears
-     *     down the just-superseded mesh and builds/sweeps in the new one from scratch, exactly
-     *     as before.
+     *     level 1 -> level 2 both "tower2view") AND forceOwnMesh's own state hasn't flipped
+     *     either (see currentForceOwnMesh's own doc — the raw view id string alone can't tell
+     *     "still the same real view" apart from "same nominal baseView id, but THIS level
+     *     forces the map-drawn mesh instead," e.g. stall1 going from level 0's baseView straight
+     *     to level 1's forceOwnMesh) — the mesh already standing is still the correct one, so
+     *     it's left completely alone; only the shared revealProgress uniform grows from its
+     *     current value up to this level's (higher) target fraction.
+     *   - Either one changed (a genuinely new mesh, the run just ended, or forceOwnMesh flipped
+     *     on/off) — tears down the just-superseded mesh and builds/sweeps in the new one from
+     *     scratch, exactly as before.
      */
     private replaceBuildingMesh(level: number): void {
         const viewId = getViewIdForLevel(this.buildingId, level);
-        const sameView = viewId === this.currentViewId && (this.buildingMesh || this.buildingVisuals.length > 0);
+        const forcesOwnMesh = isOwnMeshForcedForLevel(this.buildingId, level);
+        const sameView = viewId === this.currentViewId && forcesOwnMesh === this.currentForceOwnMesh
+            && (this.buildingMesh || this.buildingVisuals.length > 0);
         if (sameView) {
             const targetFraction = getFillFractionForLevel(this.buildingId, level);
             gsap.to(this.revealProgress, { value: targetFraction, duration: MESH_DROP_DURATION_SEC, ease: 'power2.out' });

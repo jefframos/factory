@@ -15,7 +15,11 @@
 // GateTypes.ts one — nothing about an EXISTING gate's config needs to
 // change either way.
 
-import { BuildingId } from './BuildingTypes';
+// Imported from the leaf BuildingId.ts, NOT from './BuildingTypes' — that file itself imports
+// GateId from here, and importing BuildingId back from BuildingTypes.ts would recreate the exact
+// circular VALUE dependency BuildingId.ts's own doc explains (and this file's own crash history
+// demonstrated: "Cannot read properties of undefined (reading 'Camp')").
+import { BuildingId } from './BuildingId';
 // GATE_CONFIG references ItemType.Axe as a VALUE, not just a type — same "data file
 // importing a typed id from elsewhere" precedent ShopTypes.ts already sets by importing
 // ToolRegistry's ToolId.

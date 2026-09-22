@@ -75,7 +75,10 @@ export const OBJECTS_LAYER_NAME = 'mapSettings';
  * object right here on mapSettings — opts that building into resolving its default look
  * straight off whatever real model a level designer dragged onto THIS SAME object (same
  * snapshot-image mechanism the "meshes" layer uses — see MeshLayerSpawner.decodeObjectModel()),
- * for a building with no `view`/`baseView` configured in BuildingTypes.ts at all. Deliberately
+ * for a building with no `view`/`baseView` configured in BuildingTypes.ts at all — OR whose
+ * CURRENT level forces it via BuildingLevelConfig.forceOwnMesh, even when a real view IS
+ * configured (see that field's own doc for why: a building can legitimately want a real
+ * placeholder `baseView` before it's built and its own map-drawn mesh once it is). Deliberately
  * everything-in-one-place: a level designer configures a building's mesh sourcing right where
  * its position/footprint/dropper already live, rather than needing a SEPARATE object on a
  * different layer cross-referenced by id. Multiple objects can share the same "id" (e.g. two

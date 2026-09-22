@@ -55,6 +55,7 @@ import { getNpcConfig } from '../data/NpcTypes';
 import CraftingTableZone, { CraftingTableTriggerArea } from '../shop/CraftingTableZone';
 import FarmSeedPicker from '../world/FarmSeedPicker';
 import FarmCropHud from '../world/FarmCropHud';
+import FarmAutoPlantHud from '../world/FarmAutoPlantHud';
 import { getMartConfig } from '../data/MartTypes';
 import { getCraftingTableConfig } from '../data/CraftingTableTypes';
 import { getShopConfig, getUpgradeCost, SHOP_CONFIG_BY_ID } from '../shop/ShopTypes';
@@ -270,6 +271,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private readonly farmSeedPicker = this.world.add(new FarmSeedPicker(this.screenHost));
     /** The ONE shared growth-status HUD every FarmPlotTile hands its own show()/hide()-equivalent register()/unregister() calls to — see FarmCropHud.ts's own doc for why this is a single instance rather than one built per tile, same reasoning as farmSeedPicker above. */
     private readonly farmCropHud = this.world.add(new FarmCropHud(this.screenHost));
+    /** The ONE shared no-seed "about to plant" HUD every FarmPlotTile hands its own register()/unregister() calls to for a FarmPlotConfig.assignedCropId cell's countdown — see FarmAutoPlantHud.ts's own doc, same single-shared-instance reasoning as farmSeedPicker/farmCropHud above. */
+    private readonly farmAutoPlantHud = this.world.add(new FarmAutoPlantHud(this.screenHost));
 
     /** Hand-placed building/gate/etc. spawn points read from the Tiled map's "mapSettings" objectgroup layer — see WorldObjectRegistry.ts. Built once here (same loadTiledMap()/loadTileDefs() reads WorldManager's TileMap already does — no extra cost) and read by setupBuildingZone()/setupGates() below. */
     private readonly worldObjects = new WorldObjectRegistry();
@@ -1467,7 +1470,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             // snapping in on the same frame.
             const tile = this.world.add(new FarmPlotTile(
                 position, id, cell.col, cell.row,
-                this.screenHost, config, this.farmSeedPicker, this.farmCropHud,
+                this.screenHost, config, this.farmSeedPicker, this.farmCropHud, this.farmAutoPlantHud,
                 index * FARM_GRID_APPEAR_STAGGER_SEC,
             ));
             this.threeScene.add(tile.transform);
