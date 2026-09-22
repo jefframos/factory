@@ -90,7 +90,7 @@ export const PROVIDER_CONFIG: Record<ProviderType, ProviderConfig> = {
                 "weight": 1
             }
         ],
-        "solid": 0.5,
+        "solid": 0.6,
         "destroyParticleEffectId": "treeLeafBurst"
     },
     [ProviderType.BerryBush]: {
@@ -119,7 +119,8 @@ export const PROVIDER_CONFIG: Record<ProviderType, ProviderConfig> = {
                 "resourceType": ResourceType.Wood,
                 "weight": 1
             }
-        ]
+        ],
+        "solid": 0.5
     },
     // Rarity ladder across every "Mine"-action deposit, from most to least common — see each
     // entry's own maxLife/respawnSec below: Stone (5/80s, baseline) < Copper (6/90s) < Iron

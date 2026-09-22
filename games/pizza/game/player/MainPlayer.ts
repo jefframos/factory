@@ -16,6 +16,7 @@
 // visible/animated body yet.
 
 import * as THREE from 'three';
+import gsap from 'gsap';
 import Entity from '../ecs/Entity';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
@@ -43,6 +44,9 @@ const HALF_EXTENTS = new THREE.Vector3(0.4, 0.9, 0.4);
 export const CHARACTER_SCALE = 0.0075;
 /** Fallback look if CHARACTER_VIEW_CONFIG has no entry flagged isStarter at all (a misconfigured registry) — see getStarterCharacterView()'s own doc. Matches CharacterViewTypes.ts's own "default" entry, kept separately so this file never has to import that entry directly. */
 const FALLBACK_CHARACTER_VIEW = { color: '#4aba8a', headShape: 'cube' as const, face: 'skins/face-star-1.webp' };
+
+/** Duration of the "landed" scale-in tween — see playLandingPop()'s own doc for when it actually fires. */
+const PLAYER_LAND_DURATION_SEC = 0.5;
 
 /** Model-registry entries only carry a repo-relative fullPath (e.g. "pizza/models/..."); served at runtime from ./pizza/... (see public/pizza/models). Works on localhost and GitHub Pages. */
 const modelUrl = (fullPath: string): string => `./${fullPath}`;
@@ -220,7 +224,13 @@ export default class MainPlayer extends Entity {
         // Placeholder backpack cube — see CharacterBody.mountBackpackCube()'s own doc for
         // tuning its position live via character.setBackpackOffset(x, y, z).
         character.mountBackpackCube();
-        character.container.scale.setScalar(CHARACTER_SCALE);
+        // Starts at scale 0 (hidden) instead of snapping straight to CHARACTER_SCALE — stays
+        // this way until playLandingPop() is called, deliberately NOT from in here. See that
+        // method's own doc for why: this class has no idea when the ground/zone the player is
+        // standing on has actually finished appearing, only PizzaScene does (it owns
+        // WorldManager/ZoneVisibilityManager), so the reveal itself is that caller's call to
+        // make, not something this method should guess a flat timer for.
+        character.container.scale.setScalar(0);
 
         if (this.destroyed) {
             character.destroy();
@@ -250,6 +260,37 @@ export default class MainPlayer extends Entity {
             }
         };
         ItemStorage.onChange.add(this.itemStorageListener);
+    }
+
+    /**
+     * "Landed on the island" pop-in — scales the (until now hidden, scale 0) character up to
+     * CHARACTER_SCALE with a bouncy overshoot (back.out), same ease family every other pop-in
+     * effect in this game uses (ZoneVisibilityManager's own default rise ease, FarmPlotTile's
+     * own appear tween), so this reads as consistent with the rest of the game's visual language
+     * rather than a one-off. No-ops if loadCharacter() hasn't resolved yet (nothing to reveal).
+     *
+     * Deliberately a separate call, not fired automatically at the end of loadCharacter() —
+     * PizzaScene.loadPlayerCharacter() calls this once BOTH the character mesh is ready AND the
+     * zone the player spawned in has actually finished revealing (see
+     * ZoneVisibilityManager.getZoneForPosition()/isZoneRevealed() and WorldManager.
+     * onZoneRevealed), rather than after some guessed flat delay. That used to be exactly wrong:
+     * a flat delay either fires too early (still no ground, briefly reads as standing on water)
+     * or, once tuned generously enough to always be safe, wastes time on every load where the
+     * zone was ALREADY revealed (the common case — zone 0 reveals synchronously before this
+     * method's own async mesh load even starts) by padding a wait nothing was actually blocking
+     * on. Waiting on the real state instead of a guess means the player is never shown before
+     * their own zone's ground genuinely has, and never held back a moment longer than that
+     * either.
+     */
+    public playLandingPop(): void {
+        if (!this.thirdPersonCharacter) {
+            return;
+        }
+        gsap.to(this.thirdPersonCharacter.container.scale, {
+            x: CHARACTER_SCALE, y: CHARACTER_SCALE, z: CHARACTER_SCALE,
+            duration: PLAYER_LAND_DURATION_SEC,
+            ease: 'back.out(1.7)',
+        });
     }
 
     /** Registers one tool's action-layer clip on the loaded character, if it isn't already registered/in-flight — see TOOL_ACTION_ANIMATIONS's own doc. */

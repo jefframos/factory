@@ -24,7 +24,7 @@
                 "weight": 1
             }
         ],
-        "solid": 0.5,
+        "solid": 0.6,
         "destroyParticleEffectId": "treeLeafBurst"
     },
     "berryBush": {
@@ -73,7 +73,8 @@
         "respawnSec": 60,
         "amountPerGather": 2,
         "maxLife": 3,
-        "icon": "tree-bark"
+        "icon": "tree-bark",
+        "solid": 0.5
     },
     "crystalDeposit": {
         "models": [

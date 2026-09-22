@@ -1432,10 +1432,22 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * unlocks the instant this fires rather than waiting for some unrelated event to trigger a
      * recheck. A zone's own 'trigger' requirement needs no such nudge — WorldManager already
      * polls ZONE_CONFIG every frame regardless.
+     *
+     * A destroyOnTrigger trigger already TriggerStorage.isActivated() (fired and self-destroyed
+     * in some earlier session) is never spawned at all — same "don't rebuild something already
+     * spent" reasoning setupCraftTables() uses for a destroyOnComplete table. Without this, every
+     * fresh scene load would spawn a brand-new Trigger entity for it regardless of past
+     * activation (TriggerStorage only ever gets CONSULTED here, never before this fix) — the
+     * entity itself carries no memory of its own past, only the storage does, so this check is
+     * the one place that actually has to ask. A non-destroying trigger is deliberately exempt —
+     * it's MEANT to re-arm and fire again on every entry, forever, so it always respawns.
      */
     private setupTriggers(): void {
         for (const [id, placement] of this.worldObjects.getAllOfType('trigger')) {
             const destroyOnTrigger = getTriggerConfig(id)?.destroyOnTrigger ?? false;
+            if (destroyOnTrigger && TriggerStorage.isActivated(id)) {
+                continue;
+            }
 
             const position = new THREE.Vector3(placement.x, 0, placement.z);
             const trigger = this.world.add(new Trigger(
@@ -1790,12 +1802,49 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * Shows a spinner while MainPlayer.loadCharacter() does its thing (FBX mesh +
      * animation clips) — purely cosmetic UI orchestration; the player itself never
      * waits on this (see this file's own doc, and MainPlayer.loadCharacter()'s).
+     *
+     * Also determines which zone the player's own spawn point sits in and waits for THAT zone
+     * to actually finish revealing (see waitForZoneReveal()) IN PARALLEL with the character
+     * load, then calls MainPlayer.playLandingPop() once both are done — see that method's own
+     * doc for why this is the caller that has to make this call (it's the one holding
+     * worldManager/ZoneVisibilityManager, not MainPlayer).
      */
     private async loadPlayerCharacter(): Promise<void> {
         const spinner = this.loadingSpinner = new LoadingSpinner();
-        await this.mainPlayer.loadCharacter();
+        const playerPosition = this.mainPlayer.transform.position;
+        const zoneNumber = this.worldManager.getZoneVisibilityManager().getZoneForPosition(playerPosition.x, playerPosition.z);
+        await Promise.all([
+            this.mainPlayer.loadCharacter(),
+            this.waitForZoneReveal(zoneNumber),
+        ]);
+        this.mainPlayer.playLandingPop();
         spinner.destroy();
         this.loadingSpinner = undefined;
+    }
+
+    /**
+     * Resolves immediately if `zoneNumber` is undefined (no zone under the player's own spawn
+     * point at all — nothing sensible to wait for) or already revealed — the common case: zone 0
+     * reveals synchronously inside worldManager.buildGround(), well before this scene's own
+     * loadPlayerCharacter() even starts loading the character mesh, so there's usually nothing
+     * left to actually wait on here. Otherwise waits for worldManager.onZoneRevealed to dispatch
+     * that EXACT zoneNumber (not just any reveal) before resolving.
+     */
+    private waitForZoneReveal(zoneNumber: number | undefined): Promise<void> {
+        const zoneVisibility = this.worldManager.getZoneVisibilityManager();
+        if (zoneNumber === undefined || zoneVisibility.isZoneRevealed(zoneNumber)) {
+            return Promise.resolve();
+        }
+
+        return new Promise(resolve => {
+            const handleRevealed = (revealedZone: number): void => {
+                if (revealedZone === zoneNumber) {
+                    this.worldManager.onZoneRevealed.remove(handleRevealed);
+                    resolve();
+                }
+            };
+            this.worldManager.onZoneRevealed.add(handleRevealed);
+        });
     }
 
     private positionCamera(): void {
