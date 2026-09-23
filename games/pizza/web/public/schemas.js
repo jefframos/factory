@@ -546,6 +546,7 @@ const ENTITY_SCHEMAS = {
                 { value: 'all', label: 'Everything' },
             ],
         },
+        { key: 'resourceType', type: 'select', label: 'Only This Resource (e.g. one specific crop — overrides Accepts; blank = anything Accepts allows)', source: 'resources', optional: true },
         { key: 'models', type: 'modelList', label: 'Model (first entry used — e.g. Restaurant.Crate)' },
         { key: 'scale', type: 'number', label: 'Scale (Restaurant.Crate is 2 x 0.8 x 2 at 1)' },
         { key: 'rotationDeg', type: 'number', label: 'Rotation (degrees)' },
@@ -566,6 +567,8 @@ const ENTITY_SCHEMAS = {
             ],
         },
         { key: 'itemScale', type: 'number', label: 'Item Scale (blank = same as the player stack\'s)', optional: true },
+        { key: 'popupBobOffset', type: 'number', label: 'Popup Height Offset (gap above the top of the pile for the "Only This Resource" popup — blank = 1)', optional: true },
+        { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full storage footprint, 0.5 = half size centered — 0 by default)', optional: true },
         { key: 'disabled', type: 'boolean', label: 'Disabled (takes this storage out of the game entirely)', optional: true },
     ],
     farms: [

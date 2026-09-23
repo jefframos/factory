@@ -175,6 +175,20 @@ export default class ItemPile {
         return this.toWorld(out);
     }
 
+    /**
+     * The world-size multiplier an item landing in slot `index` will be drawn at — itemScale times
+     * its fit-to-cell shrink (see `fitToCells`), same assumption as getSlotWorldPosition() — so a
+     * flight can end at exactly the size it lands at.
+     */
+    public getSlotScale(index: number, incomingType: ResourceType): number {
+        const types = this.slots.map(slot => slot.type);
+        while (types.length <= index) {
+            types.push(incomingType);
+        }
+        const fits = this.computeFits(types);
+        return this.layout.itemScale * (fits[Math.min(Math.max(index, 0), fits.length - 1)] ?? 1);
+    }
+
     /** The TOPMOST unit whose type passes `accepts`, with its world position written into `out` — undefined if none. See this file's own doc. */
     public peekTop(accepts: (type: ResourceType) => boolean, out: THREE.Vector3): ResourceType | undefined {
         for (let i = this.slots.length - 1; i >= 0; i--) {

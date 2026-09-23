@@ -13,5 +13,23 @@
             "layers": 3
         }
     },
-    "byId": {}
+    "byId": {
+        "storage2": {
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "dropOffset": {},
+            "pile": {
+                "columns": 2,
+                "rows": 2,
+                "layers": 3
+            },
+            "accepts": "farm",
+            "resourceType": "carrot",
+            "scale": 1,
+            "rotationDeg": 0,
+            "solid": 1,
+            "popupBobOffset": 3
+        }
+    }
 }

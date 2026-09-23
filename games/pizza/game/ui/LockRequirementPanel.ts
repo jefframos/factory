@@ -45,6 +45,8 @@ export interface LockRequirementPanelOptions {
     cornerText?: string;
     /** FrameRegistry preset behind everything — defaults to the gate's own 'GateLock'. */
     frame?: FrameName;
+    /** The "missing" exclamation badge on the requirement icon — default true. Turn off where the icon means "this goes here", not "you don't have this yet" (e.g. StorageZone's accepted-resource panel). */
+    showBadge?: boolean;
 }
 
 export interface LockRequirementPanel {
@@ -77,6 +79,7 @@ export function buildLockRequirementPanel(requirementIcon: PIXI.Texture, options
     badge.anchor.set(1, 1);
     badge.scale.set(ViewUtils.elementScaler(badge, REQUIREMENT_BADGE_SIZE));
     badge.position.set(requirementIconX + REQUIREMENT_ICON_SIZE / 2 - REQUIREMENT_BADGE_INSET, -REQUIREMENT_BADGE_INSET);
+    badge.visible = options.showBadge ?? true;
     row.addChild(badge);
 
     let cornerLabel: PIXI.Text | undefined;

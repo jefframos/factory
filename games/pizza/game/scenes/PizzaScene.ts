@@ -229,6 +229,8 @@ const DROP_ZONE_OFFSET = new THREE.Vector3(6, 0, -2);
 
 /** Where the test Camp building zone sits — see setupBuildingZone(). Separate spot from the drop zone so the two nameplates never overlap. */
 const BUILDING_ZONE_OFFSET = new THREE.Vector3(-6, 0, -2);
+/** How far (world units, each side) a SOLID storage with no dropper grows its drop-off trigger past its own footprint — see setupStorages(). */
+const STORAGE_SOLID_TRIGGER_PADDING = 0.6;
 
 /** Default timing for a camera-focus event (see PizzaScene.focusCameraOn()) when a caller doesn't override — a beat quick enough not to drag out an upgrade, slow enough to actually read as travel rather than a cut. */
 const DEFAULT_FOCUS_TRAVEL_SEC = 0.8;
@@ -1572,13 +1574,19 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             if (config.disabled) {
                 continue;
             }
-            const trigger = this.worldObjects.getDropperFor(id) ?? placement;
+            const dropper = this.worldObjects.getDropperFor(id);
+            const trigger = dropper ?? placement;
+            // No dropper + solid: the trigger IS the storage's footprint, which the solid collider
+            // would keep the player out of — pad it so standing against the storage still counts.
+            const padding = !dropper && (config.solid ?? 0) > 0 ? STORAGE_SOLID_TRIGGER_PADDING : 0;
             const storageZone = this.world.add(new StorageZone(
                 id,
                 config,
                 new THREE.Vector3(placement.x, 0, placement.z),
                 new THREE.Vector3(trigger.x, 0, trigger.z),
-                { width: trigger.width, depth: trigger.depth },
+                { width: trigger.width + padding * 2, depth: trigger.depth + padding * 2 },
+                { width: placement.width, depth: placement.depth },
+                this.screenHost,
             ));
             this.threeScene.add(storageZone.transform);
             // Registered over the storage's OWN footprint (where its mesh is), not the dropper's.

@@ -22,6 +22,14 @@
 // onTriggerStay keeps restarting the loop, so items landing on the player's
 // stack while they're standing here get transferred too.
 //
+// A storage limited to ONE resource (StorageConfig.resourceType) also shows a
+// floating panel with that resource's icon, so the player can tell what goes
+// there before walking up — the same lock/requirement panel a for-sale farm or
+// a gate shows (LockRequirementPanel.ts), minus the "missing" badge. Its bottom
+// sits StorageConfig.popupBobOffset (default DEFAULT_ACCEPTS_PANEL_CLEARANCE)
+// above the TOP of the pile, so it rises with it instead of ending up buried in
+// the stacked items.
+//
 // The entity's transform sits at the TRIGGER's center (so the RigidBody and the
 // dotted outline need no offset); the mesh and pile are offset to the storage's
 // own position.
@@ -37,6 +45,11 @@ import CharacterVisualComponent from '../components/CharacterVisualComponent';
 import BackpackStackVisual, { stackItemScale } from '../components/BackpackStackVisual';
 import ItemPile, { ItemPileLayout } from '../components/ItemPile';
 import { flyResourceModel } from '../components/FlyToStack';
+import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
+import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
+import { buildLockRequirementPanel } from '../ui/LockRequirementPanel';
+import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
+import { getAssetIcon } from './AssetLibraryRegistry';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { StorageInventory } from '../data/StorageInventory';
 import { StorageConfig } from '../data/StorageTypes';
@@ -59,11 +72,18 @@ const LAND_BOUNCE_SEC = 0.12;
 const FALLBACK_BACKPACK_HEIGHT = 1.2;
 /** Per-axis fallback for a missing StorageConfig.dropOffset value — half-way up Restaurant.Crate. */
 const DEFAULT_DROP_OFFSET = { x: 0, y: 0.4, z: 0 };
+/** Half-height of StorageConfig.solid's collider — a little over Restaurant.Crate's 0.8. */
+const SOLID_HALF_HEIGHT = 0.5;
+/** Default gap (world units) between the top of the pile and the bottom of the "only this resource" panel, when StorageConfig.popupBobOffset is unset — see this file's own doc. */
+const DEFAULT_ACCEPTS_PANEL_CLEARANCE = 1.0;
 
 export default class StorageZone extends Entity {
     private readonly storageId: string;
     private readonly config: StorageConfig;
     private readonly triggerSize: { width: number; depth: number };
+    /** The storage object's OWN footprint — what StorageConfig.solid's collider covers. */
+    private readonly storageSize: { width: number; depth: number };
+    private readonly screenHost: ScreenAnchorHost;
     /** Storage position relative to this entity (the trigger's center) — see this file's own doc. */
     private readonly meshOffset: THREE.Vector3;
 
@@ -93,11 +113,15 @@ export default class StorageZone extends Entity {
         storagePosition: THREE.Vector3,
         triggerCenter: THREE.Vector3,
         triggerSize: { width: number; depth: number },
+        storageSize: { width: number; depth: number },
+        screenHost: ScreenAnchorHost,
     ) {
         super();
+        this.screenHost = screenHost;
         this.storageId = storageId;
         this.config = config;
         this.triggerSize = triggerSize;
+        this.storageSize = storageSize;
         this.meshOffset = storagePosition.clone().sub(triggerCenter);
         this.transform.position.copy(triggerCenter);
     }
@@ -117,10 +141,25 @@ export default class StorageZone extends Entity {
 
         this.addComponent(new DottedZoneVisualComponent(width, depth, CORNER_RADIUS, { color: getZoneColor(ZoneColorKind.DropZone) }));
 
+        // StorageConfig.solid — built here rather than via SolidArea.buildSolidArea(), which scales
+        // its centerOffset along with its size (it assumes a collider centered on the entity's
+        // origin); this one sits at the storage's own position, offset from the trigger.
+        const solid = Math.min(this.config.solid ?? 0, 1);
+        if (solid > 0) {
+            this.addComponent(new RigidBody({
+                halfExtents: new THREE.Vector3(this.storageSize.width / 2 * solid, SOLID_HALF_HEIGHT, this.storageSize.depth / 2 * solid),
+                centerOffset: this.meshOffset.clone().setY(this.meshOffset.y + SOLID_HALF_HEIGHT),
+                isStatic: true,
+                layer: Layers.Environment,
+                // Horizontal-only obstacle — same reasoning as SolidArea.ts's own blocksVertical.
+                blocksVertical: false,
+            }));
+        }
+
         const modelRef = this.config.models[0];
-        const modelDef = modelRef ? ModelSnapshotTool.resolveModelDef(modelRef) : undefined;
+        const modelDef = ModelSnapshotTool.resolveModelRef(modelRef);
         if (modelRef && !modelDef) {
-            console.warn(`[StorageZone] "${this.storageId}": model "${modelRef}" is not a known MODELS ref — no mesh`);
+            console.warn(`[StorageZone] "${this.storageId}": model "${String(modelRef)}" is not a known MODELS ref — no mesh`);
         }
         if (modelDef) {
             const visual: GlbVisualComponent = new GlbVisualComponent(
@@ -153,6 +192,10 @@ export default class StorageZone extends Entity {
         this.pile = new ItemPile(this.pileRoot, this.buildLayout());
         this.pile.sync(StorageInventory.getAll(this.storageId));
         StorageInventory.onChange.add(this.handleInventoryChanged);
+
+        if (this.config.resourceType !== undefined) {
+            this.buildAcceptsPanel(this.config.resourceType);
+        }
     }
 
     public override destroy(): void {
@@ -160,6 +203,24 @@ export default class StorageZone extends Entity {
         StorageInventory.onChange.remove(this.handleInventoryChanged);
         this.pile.dispose();
         super.destroy();
+    }
+
+    /** The "only this resource" panel — see this file's own doc. */
+    private buildAcceptsPanel(type: ResourceType): void {
+        const panel = buildLockRequirementPanel(getAssetIcon(resolveResourceAssetKey(type)), { showBadge: false });
+
+        const clearance = this.config.popupBobOffset ?? DEFAULT_ACCEPTS_PANEL_CLEARANCE;
+        const anchor = new THREE.Vector3();
+        this.addComponent(new ScreenAnchorComponent(
+            this.screenHost,
+            panel.frame,
+            () => {
+                // Just above wherever the NEXT item would sit — i.e. the top of the pile right now.
+                this.pile.getSlotWorldPosition(this.pile.count, type, anchor);
+                return anchor.setY(anchor.y + clearance);
+            },
+            ZONE_LABEL_ANCHOR_OPTIONS,
+        ));
     }
 
     private itemScale(): number {
@@ -185,6 +246,10 @@ export default class StorageZone extends Entity {
     }
 
     private accepts(type: ResourceType): boolean {
+        // A specific resource overrides the category — see StorageConfig.resourceType's own doc.
+        if (this.config.resourceType !== undefined) {
+            return type === this.config.resourceType;
+        }
         if (this.config.accepts === 'all') {
             return true;
         }
@@ -232,12 +297,14 @@ export default class StorageZone extends Entity {
 
             const incomingId = this.nextIncomingId++;
             this.incoming.push(incomingId);
+            // Ends at the size it will actually be drawn at in its slot (fit-to-cell included), so it doesn't pop on landing.
+            const landingScale = this.pile.getSlotScale(this.pile.count + this.incoming.length - 1, type);
             flyResourceModel({
                 parent: scene,
                 type,
                 from,
                 startScale: stackItemScale(),
-                endScale: this.itemScale(),
+                endScale: landingScale,
                 resolveTarget: target => {
                     // The Nth item in flight aims N slots above the current top of this pile.
                     const index = this.pile.count + Math.max(this.incoming.indexOf(incomingId), 0);

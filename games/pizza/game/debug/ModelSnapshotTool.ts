@@ -143,6 +143,20 @@ export class ModelSnapshotTool {
         return groupEntries ? Object.keys(groupEntries).map(key => `${group}.${key}`) : [];
     }
 
+    /**
+     * A config model entry in EITHER form -> the actual ModelDefinition. The web editor's sync
+     * writes the same field both ways depending on the path: a {default, byId} entity's
+     * `default` gets plain "Group.Key" strings, while each `byId` entry gets real MODELS.*
+     * expressions (see syncToSource.mjs's syncQueues() vs serializeField()). Anything reading a
+     * config's `models` should go through this rather than assume one form.
+     */
+    public static resolveModelRef(ref: string | ModelDefinition | undefined): ModelDefinition | undefined {
+        if (!ref) {
+            return undefined;
+        }
+        return typeof ref === 'string' ? this.resolveModelDef(ref) : ref;
+    }
+
     /** "Group.Key" -> the actual ModelDefinition, or undefined if either half doesn't exist on MODELS. */
     public static resolveModelDef(modelRef: string): ModelDefinition | undefined {
         const [group, key] = modelRef.split('.');

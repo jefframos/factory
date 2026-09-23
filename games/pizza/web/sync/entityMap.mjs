@@ -295,8 +295,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORAGE_CONFIG',
         byIdExportName: 'STORAGE_CONFIG_BY_ID',
-        managedKeys: ['name', 'accepts', 'models', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'disabled'],
-        optionalKeys: ['name', 'itemScale', 'disabled'],
+        managedKeys: ['name', 'accepts', 'resourceType', 'models', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'popupBobOffset', 'solid', 'disabled'],
+        optionalKeys: ['name', 'resourceType', 'itemScale', 'popupBobOffset', 'solid', 'disabled'],
     },
     // A MART — a "mart"-typed object drawn on the Tiled map's "mapSettings" layer, open-ended
     // by id like shops/crafting/farms, not enum-backed. Same {default, byId} two-export shape
