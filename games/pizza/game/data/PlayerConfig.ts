@@ -33,6 +33,54 @@ export interface PlayerAnimationConfig {
     happy: string;
 }
 
+/**
+ * The player's backpack — the prop mounted on the rig's Chest bone (see
+ * CharacterBody.mountBackpack()). Units match the old placeholder cube's: character-RIG units,
+ * i.e. before MainPlayer's CHARACTER_SCALE (0.0075) shrinks the whole character — so 100 here is
+ * ~0.75 world units. The holder cancels the Chest bone's own inherited scale, so these are true
+ * rig units regardless of how the FBX's bones happen to be scaled.
+ */
+/**
+ * How BackpackStackVisual lays carried items out in the backpack:
+ *   - 'grid':  a 3x3 grid per layer inside the crate, a few layers deep, peeking over the rim.
+ *   - 'tower': one item per level, stacked straight up out of the crate — bigger and much more
+ *              visible from a distance (the classic hyper-casual "carry stack").
+ * Switchable live from the dev GUI's Backpack folder for play-testing both.
+ */
+export type BackpackStackMode = 'grid' | 'tower';
+
+export interface PlayerBackpackConfig {
+    /**
+     * MODELS "Group.Key" dot-paths (e.g. "Restaurant.Crate" — same form the web editor's model
+     * picker stores), resolved at runtime via ModelSnapshotTool.resolveModelDef(), same
+     * "string ref, not an AST MODELS.* expression" convention `animations` below uses. Only the
+     * first entry is used. Empty (or an unknown ref) falls back to the old brown placeholder cube.
+     */
+    models: string[];
+    /** Offset from the Chest bone's origin, rig units — see this interface's own doc. -z reads as "behind the character" on this rig. */
+    offset: { x: number; y: number; z: number };
+    /** Local rotation, degrees (XYZ euler), applied to the model only (not the offset). */
+    rotationDeg: { x: number; y: number; z: number };
+    /** Uniform scale on the model's own native size (Restaurant.Crate is 2 x 0.8 x 2 units, pivot at its bottom-center, so 40 -> an 80 x 32 x 80 rig-unit crate). Ignored by the placeholder cube. */
+    scale: number;
+    /** How carried items pile up in it — see BackpackStackMode's own doc. */
+    stackMode: BackpackStackMode;
+    /**
+     * Multiplier on each carried item's real world size (see ResourceDisplayModel.ts), applied on
+     * the stack AND during its flight onto it, so nothing pops size on landing. 1 = exactly the
+     * resource's own world size; bump it if the pile reads too small on the character. Live-tunable
+     * from the dev GUI's Backpack folder. Optional — missing means 1.
+     */
+    itemScale?: number;
+    /**
+     * How many farm items the stack holds — `base` at upgrade level 0, +`perLevel` per level, up
+     * to `maxLevel` levels. The level itself is persisted by BackpackCapacityStorage (only the
+     * level — so retuning these numbers applies to existing saves). A harvest that doesn't fit
+     * stays on its cell and shows the "stack is full" balloon (see CarryStack.notifyFull()).
+     */
+    capacity: { base: number; perLevel: number; maxLevel: number };
+}
+
 export interface PlayerConfigEntry {
     /** Base ground speed, world units/second, while not sprinting — read into ThirdPersonCharacter's own CharacterConfig (see MainPlayer.loadCharacter()). */
     walkSpeed: number;
@@ -69,6 +117,16 @@ export interface PlayerConfigEntry {
     walkToRunSpeed: number;
     /** The idle/run/jump board's clip bindings — see PlayerAnimationConfig's own doc. */
     animations: PlayerAnimationConfig;
+    /** What's mounted on the player's back — see PlayerBackpackConfig's own doc. */
+    backpack: PlayerBackpackConfig;
+    /**
+     * When true, harvesting a farm cell flies its yield straight onto the top of the player's
+     * carry stack (see FlyToStack.ts / BackpackStackVisual.ts), limited by `backpack.capacity` —
+     * instead of being banked into BackpackStorage instantly with a "+N" popup. Either way the
+     * items end up in BackpackStorage (so anything that consumes crops keeps working); this only
+     * changes HOW they get there, and whether the stack limit applies.
+     */
+    harvestIntoStack: boolean;
 }
 
 const DEFAULT_PLAYER_CONFIG: PlayerConfigEntry = {
@@ -88,10 +146,62 @@ const DEFAULT_PLAYER_CONFIG: PlayerConfigEntry = {
         talk: 'Talking',
         happy: 'Excited',
     },
+    backpack: {
+        models: ['Restaurant.Crate'],
+        offset: { x: 0, y: -20, z: -50 },
+        rotationDeg: { x: 0, y: 0, z: 0 },
+        scale: 40,
+        stackMode: 'grid',
+        itemScale: 1.5,
+        capacity: { base: 3, perLevel: 1, maxLevel: 12 },
+    },
+    harvestIntoStack: true,
 };
 
 export const PLAYER_CONFIG_BY_ID: Partial<Record<string, PlayerConfigEntry>> = {
-    default: { ...DEFAULT_PLAYER_CONFIG },
+    default: {
+        ...DEFAULT_PLAYER_CONFIG,
+        "walkSpeed": 5,
+        "runSpeedMultiplier": 1.8,
+        "resourceDetectionRadius": 2,
+        "resourceDetectionAngleDeg": 120,
+        "idleToWalkSpeed": 0.01,
+        "walkToRunSpeed": 0.75,
+        "animations": {
+            "idle": "Idle",
+            "walk": "Walking",
+            "run": "Running",
+            "jumpUp": "JumpingUp",
+            "falling": "FallingIdle",
+            "landing": "Landing",
+            "talk": "Talking",
+            "happy": "Excited"
+        },
+        "backpack": {
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "offset": {
+                "x": 0,
+                "y": -20,
+                "z": -50
+            },
+            "rotationDeg": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "scale": 40,
+            "stackMode": "tower",
+            "itemScale": 1.5,
+            "capacity": {
+                "base": 3,
+                "perLevel": 1,
+                "maxLevel": 12
+            }
+        },
+        "harvestIntoStack": true
+    },
 };
 
 /** The live player-balance config — always PLAYER_CONFIG_BY_ID.default, falling back to the hand-authored default if a designer ever deletes that entry via the web editor instead of just editing it in place. */

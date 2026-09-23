@@ -39,9 +39,12 @@ import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
 import { BendService } from '../services/BendService';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
-import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
+import AutoFitFrame from '../ui/AutoFitFrame';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
-import { TextStyleRegistry } from '../ui/TextStyleRegistry';
+import {
+    buildLockRequirementPanel, LockRequirementPanel,
+    LOCK_ICON_SIZE, LOCK_ICON_UNLOCKED, REQUIREMENT_BADGE_MET, REQUIREMENT_BADGE_SIZE,
+} from '../ui/LockRequirementPanel';
 import { getBuildingIcon } from '../data/BuildingTypes';
 import { GateConfig, GateId, GateRequirement } from '../data/GateTypes';
 import { GateStorage } from '../data/GateStorage';
@@ -57,26 +60,8 @@ import ViewUtils from 'core/utils/ViewUtils';
 import { ParticleSystem } from '../vfx/ParticleSystem';
 import ParticleEmitterComponent from '../components/ParticleEmitterComponent';
 
-const LABEL_FRAME_PADDING = uniformFitPadding(18);
 /** Extra clearance above the mesh's own top before the icon panel sits — keeps it from touching the gate's roofline. */
 const LABEL_CLEARANCE_ABOVE_MESH = 1.2;
-
-const LOCK_ICON_SIZE = 40;
-const REQUIREMENT_ICON_SIZE = 40;
-/** Gap between the lock icon and the requirement icon sitting beside it. */
-const ICON_GAP = 10;
-/** Size of the exclamation/check badge overlapping the requirement icon's bottom-right corner. */
-const REQUIREMENT_BADGE_SIZE = 18;
-const REQUIREMENT_BADGE_INSET = -2;
-
-/** Locked padlock — see buildLabel(). */
-const LOCK_ICON_LOCKED = 'Icon_Lock03';
-/** Swapped in once the gate actually unlocks — see playUnlockIconSequence(). */
-const LOCK_ICON_UNLOCKED = 'Icon_Lock02';
-/** Badge shown on the requirement icon while the player doesn't have it yet. */
-const REQUIREMENT_BADGE_MISSING = 'Icon_Exclamation';
-/** Swapped in once the gate actually unlocks — see playUnlockIconSequence(). */
-const REQUIREMENT_BADGE_MET = 'Icon_Check03_s';
 
 const COLLAPSE_DURATION_SEC = 0.7;
 /** Fallback for GateConfig.destroyParticleCount when a gate sets destroyParticleEffectId but not its own count. */
@@ -117,13 +102,11 @@ export default class Gate extends Entity {
     /** The gate's own visible structure — a plain box, OR (see awake()) whatever real glb this.config.view resolves to; either way gsap-scaled to zero by collapseMesh() on unlock, so this stays typed as the common THREE.Object3D rather than THREE.Mesh specifically. */
     private mesh?: THREE.Object3D;
 
-    /** The icon panel's own root — faded out wholesale at the end of playUnlockIconSequence(). */
-    private labelFrame!: AutoFitFrame;
-    private lockIcon!: PIXI.Sprite;
-    /** Overlaps the requirement icon's corner — Icon_Exclamation while missing, swapped to Icon_Check03_s on unlock (see playUnlockIconSequence()). */
-    private requirementBadge!: PIXI.Sprite;
-    /** "have/need" readout for a 'resource' requirement only — see refreshDepositProgressLabel(). undefined for every other requirement type. */
-    private depositProgressLabel?: PIXI.Text;
+    /** The shared lock/requirement panel (see LockRequirementPanel.ts) — its frame is faded out wholesale at the end of playUnlockIconSequence(), and its lockIcon/badge swapped to their unlocked textures just before. */
+    private panel!: LockRequirementPanel;
+    private get labelFrame(): AutoFitFrame { return this.panel.frame; }
+    private get lockIcon(): PIXI.Sprite { return this.panel.lockIcon; }
+    private get requirementBadge(): PIXI.Sprite { return this.panel.badge; }
 
     private readonly handleDepositChanged = (id: GateId): void => {
         if (id === this.gateId) {
@@ -225,13 +208,12 @@ export default class Gate extends Entity {
 
     /** Keeps depositProgressLabel current as GateDropZone drains the backpack — see that field's own doc. No-ops for anything but a 'resource' requirement (the label doesn't exist at all otherwise). */
     private refreshDepositProgressLabel(): void {
-        if (this.config.requirement.type !== 'resource' || !this.depositProgressLabel) {
+        if (this.config.requirement.type !== 'resource') {
             return;
         }
 
         const have = Math.min(GateStorage.getDepositProgress(this.gateId), this.config.requirement.amount);
-        this.depositProgressLabel.text = `${have}/${this.config.requirement.amount}`;
-        this.labelFrame.fit();
+        this.panel.setCornerText(`${have}/${this.config.requirement.amount}`);
     }
 
     /**
@@ -244,49 +226,24 @@ export default class Gate extends Entity {
      * gate actually unlocks.
      */
     private buildLabel(): AutoFitFrame {
-        const row = new PIXI.Container();
-
-        this.lockIcon = new PIXI.Sprite(PIXI.Texture.from(LOCK_ICON_LOCKED));
-        this.lockIcon.anchor.set(0.5, 1);
-        this.lockIcon.scale.set(ViewUtils.elementScaler(this.lockIcon, LOCK_ICON_SIZE));
-        this.lockIcon.position.set(-(REQUIREMENT_ICON_SIZE / 2 + ICON_GAP / 2), 0);
-        row.addChild(this.lockIcon);
-
-        const requirementIconX = LOCK_ICON_SIZE / 2 + ICON_GAP / 2;
-        const requirementIcon = new PIXI.Sprite(resolveRequirementIcon(this.config.requirement));
-        requirementIcon.anchor.set(0.5, 1);
-        requirementIcon.scale.set(ViewUtils.elementScaler(requirementIcon, REQUIREMENT_ICON_SIZE));
-        requirementIcon.position.set(requirementIconX, 0);
-        row.addChild(requirementIcon);
-
-        this.requirementBadge = new PIXI.Sprite(PIXI.Texture.from(REQUIREMENT_BADGE_MISSING));
-        this.requirementBadge.anchor.set(1, 1);
-        this.requirementBadge.scale.set(ViewUtils.elementScaler(this.requirementBadge, REQUIREMENT_BADGE_SIZE));
-        this.requirementBadge.position.set(requirementIconX + REQUIREMENT_ICON_SIZE / 2 - REQUIREMENT_BADGE_INSET, -REQUIREMENT_BADGE_INSET);
-        row.addChild(this.requirementBadge);
-
-        if (this.config.requirement.type === 'building') {
-            const levelLabel = new PIXI.Text(`Lv${this.config.requirement.level}`, TextStyleRegistry.Body);
-            levelLabel.anchor.set(0, 1);
-            levelLabel.position.set(requirementIconX - REQUIREMENT_ICON_SIZE / 2 + REQUIREMENT_BADGE_INSET, -REQUIREMENT_BADGE_INSET);
-            row.addChild(levelLabel);
-        }
-
-        // The other exception to "no text" — a bare resource icon can't say HOW MUCH is still
-        // needed, and unlike the building level (fixed for as long as the gate stands), this
-        // one changes live as a GateDropZone (see that file's own doc) drains the backpack, so
-        // it's built once here but kept current via GateStorage.onDepositChanged (see awake()).
-        if (this.config.requirement.type === 'resource') {
-            const requirement = this.config.requirement;
+        // The one exception to "no text" — a bare building icon can't say WHICH level is
+        // required, and a bare resource icon can't say HOW MUCH is still needed (that one
+        // changes live as a GateDropZone drains the backpack — kept current via
+        // GateStorage.onDepositChanged, see awake()/refreshDepositProgressLabel()).
+        const requirement = this.config.requirement;
+        let cornerText: string | undefined;
+        if (requirement.type === 'building') {
+            cornerText = `Lv${requirement.level}`;
+        } else if (requirement.type === 'resource') {
             const have = Math.min(GateStorage.getDepositProgress(this.gateId), requirement.amount);
-            this.depositProgressLabel = new PIXI.Text(`${have}/${requirement.amount}`, TextStyleRegistry.Body);
-            this.depositProgressLabel.anchor.set(0, 1);
-            this.depositProgressLabel.position.set(requirementIconX - REQUIREMENT_ICON_SIZE / 2 + REQUIREMENT_BADGE_INSET, -REQUIREMENT_BADGE_INSET);
-            row.addChild(this.depositProgressLabel);
+            cornerText = `${have}/${requirement.amount}`;
         }
 
-        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, this.config.frame ?? 'GateLock', row);
-        return this.labelFrame;
+        this.panel = buildLockRequirementPanel(resolveRequirementIcon(requirement), {
+            cornerText,
+            frame: this.config.frame ?? 'GateLock',
+        });
+        return this.panel.frame;
     }
 
     /**

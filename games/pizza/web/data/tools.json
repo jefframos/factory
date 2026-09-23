@@ -27,7 +27,8 @@
                 "min": 1,
                 "max": 10
             }
-        }
+        },
+        "actionTime": {}
     },
     "pickaxe": {
         "label": "Pickaxe",
@@ -57,7 +58,8 @@
                 "min": 1,
                 "max": 10
             }
-        }
+        },
+        "actionTime": {}
     },
     "rope": {
         "models": [
@@ -72,7 +74,8 @@
             "hitRangeMeters": {},
             "speed": {},
             "resourcePerHit": {}
-        }
+        },
+        "actionTime": {}
     },
     "hammer": {
         "models": [
@@ -87,7 +90,9 @@
             "hitRangeMeters": {},
             "speed": {},
             "resourcePerHit": {}
-        }
+        },
+        "startWith": true,
+        "actionTime": {}
     },
     "shovel": {
         "models": [
@@ -102,7 +107,12 @@
             "resourcePerHit": {}
         },
         "label": "Shovel",
-        "icon": "field-shovel"
+        "icon": "field-shovel",
+        "startWith": true,
+        "actionTime": {
+            "min": 1,
+            "max": 0.5
+        }
     },
     "knife": {
         "label": "Knife",
@@ -132,6 +142,7 @@
                 "min": 1,
                 "max": 10
             }
-        }
+        },
+        "actionTime": {}
     }
 }

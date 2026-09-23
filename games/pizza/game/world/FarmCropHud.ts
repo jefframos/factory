@@ -10,8 +10,8 @@
 // is shown the ENTIRE time a candidate is active — both while growing and
 // once ready — so it's always obvious what this plant is going to yield,
 // not just once it's collectible. Below that: while still growing, a
-// BarComponent.ts progress bar (the ONE shared bar shape AnimalNode's own
-// capture bar also uses now — see BarComponent.ts's own doc); once
+// RadialBarComponent.ts circular progress readout (see RadialBarRegistry.ts
+// for its radius/padding/colors); once
 // CropTypes.isCropReady(), the bar is replaced by a "Collect" button, and a
 // checkmark badge (Icon_Check03_s, same "raw texture key" convention
 // Gate.ts's own REQUIREMENT_BADGE_MET uses) overlaps the resource icon's
@@ -30,18 +30,18 @@ import * as PIXI from 'pixi.js';
 import Entity from '../ecs/Entity';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { createLibraryButton } from '../ui/ButtonLibrary';
-import BarComponent from '../ui/BarComponent';
-import { MIN_BAR_HEIGHT } from '../ui/BarRegistry';
+import RadialBarComponent from '../ui/RadialBarComponent';
 import { CROP_CONFIG, CropId, getCropTotalGrowSec, isCropReady } from '../data/CropTypes';
 import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from './AssetLibraryRegistry';
 import { createIconSlotBackground } from '../ui/IconSlotRegistry';
 
-/** World-space offset above the crop TILE's own ground-level position — see this file's own top doc for why this tracks the tile, not the player. Raised further than a single-line-of-text HUD would need since BarComponent's own MIN_BAR_HEIGHT (56) makes the whole readout noticeably taller. */
+/** World-space offset above the crop TILE's own ground-level position — see this file's own top doc for why this tracks the tile, not the player. Raised further than a single-line-of-text HUD would need since the icon stacked on top of the progress/button row makes the whole readout noticeably taller. */
 const HUD_OFFSET = new THREE.Vector3(0, 2.3, 0);
 
-const BAR_WIDTH = 70;
+/** Which RadialBarRegistry preset the growth readout uses — see that file for the radius/padding/colors it resolves to. */
+const PROGRESS_STYLE = 'Green';
 
 /** The resource icon shown ABOVE the bar/button — see this file's own top doc. Same "square tinted backdrop behind a smaller icon" composition InventoryPopup's/FarmSeedPicker's own grid cells use. */
 const ICON_SIZE = 40;
@@ -69,7 +69,7 @@ export default class FarmCropHud extends Entity {
     private content!: PIXI.Container;
     private resourceIcon!: PIXI.Sprite;
     private checkBadge!: PIXI.Sprite;
-    private bar!: BarComponent;
+    private bar!: RadialBarComponent;
     private collectButton!: PIXI.Container;
     /** Owns `content.visible` exclusively via setForceHidden() below — see update()'s own doc for why this HUD must never toggle `content.visible` directly itself. */
     private screenAnchor!: ScreenAnchorComponent;
@@ -87,14 +87,16 @@ export default class FarmCropHud extends Entity {
     }
 
     public override awake(): void {
-        // Local y=0 is the BOTTOM of the bar/button row — both BarComponent (a NineSlicePlane
-        // pair, top-left anchored, no PIXI `anchor` concept of its own) and collectButton sit
-        // with their own bottom edge there, so swapping one for the other on ready never shifts
-        // anything else. The icon sits ABOVE that whole row, offset by ICON_GAP from its own
-        // top edge (MIN_BAR_HEIGHT, the taller of the two — see BarRegistry.MIN_BAR_HEIGHT's own
-        // doc) — see this file's own top doc for why the icon shows regardless of ready state.
-        const rowTopY = -MIN_BAR_HEIGHT;
-        const iconCenterY = rowTopY - ICON_GAP - ICON_BG_SIZE / 2 - 10;
+        // Local y=0 is the BOTTOM of the progress/button row — both the radial readout and
+        // collectButton sit with their own bottom edge there, so swapping one for the other on
+        // ready never shifts anything else. The icon sits right ABOVE whichever of the two is
+        // taller, so a bigger RadialBarRegistry radius pushes the icon up instead of overlapping
+        // it — see this file's own top doc for why the icon shows regardless of ready state.
+        this.bar = new RadialBarComponent(PROGRESS_STYLE);
+        this.bar.position.set(0, -this.bar.radius);
+
+        const rowHeight = Math.max(COLLECT_BUTTON_HEIGHT, this.bar.radius * 2 + ICON_GAP / 2);
+        const iconCenterY = -rowHeight - ICON_BG_SIZE / 2;
 
         const iconBg = createIconSlotBackground(ICON_BG_SIZE, 'Crop');
         iconBg.anchor.set(0.5, 0.5);
@@ -114,9 +116,6 @@ export default class FarmCropHud extends Entity {
             ICON_BG_SIZE / 2 - CHECK_BADGE_INSET,
             iconCenterY + ICON_BG_SIZE / 2 - CHECK_BADGE_INSET,
         );
-
-        this.bar = new BarComponent('Green', BAR_WIDTH, MIN_BAR_HEIGHT);
-        this.bar.position.set(-BAR_WIDTH / 2, rowTopY);
 
         this.collectButton = createLibraryButton({
             color: 'green',

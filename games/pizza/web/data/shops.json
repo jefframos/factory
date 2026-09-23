@@ -10,7 +10,11 @@
         "popupBobOffset": 3,
         "baseView": "shop1View",
         "solid": 0.5,
-        "frame": "QueueFrame"
+        "frame": "QueueFrame",
+        "appearRequirement": {
+            "type": "item",
+            "item": "axe"
+        }
     },
     "shop2": {
         "name": "Pickaxe Shop",
@@ -23,6 +27,10 @@
         "popupBobOffset": 3,
         "baseView": "shop2View",
         "solid": 0.5,
-        "frame": "QueueFrame"
+        "frame": "QueueFrame",
+        "appearRequirement": {
+            "type": "item",
+            "item": "pickaxe"
+        }
     }
 }

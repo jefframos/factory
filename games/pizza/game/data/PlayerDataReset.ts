@@ -7,6 +7,8 @@
 
 import { GlobalResourceStorage } from './GlobalResourceStorage';
 import { BackpackStorage } from './BackpackStorage';
+import { BackpackCapacityStorage } from './BackpackCapacityStorage';
+import { StorageInventory } from './StorageInventory';
 import { BuildingStorage } from './BuildingStorage';
 import { GateStorage } from './GateStorage';
 import { QueueStorage } from './QueueStorage';
@@ -81,6 +83,8 @@ export function clearAllPlayerData(): void {
     void Promise.all([
         GlobalResourceStorage.clearAll(),
         BackpackStorage.clearAll(),
+        BackpackCapacityStorage.clearAll(),
+        StorageInventory.clearAll(),
         BuildingStorage.clearAll(),
         GateStorage.clearAll(),
         QueueStorage.clearAll(),

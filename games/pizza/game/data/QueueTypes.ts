@@ -57,6 +57,15 @@ export interface QueueConfig {
     frame?: FrameName;
     /** 0-1 fraction of this queue's own trigger footprint that becomes a SOLID collider blocking the player — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default for every queue until a designer opts one in) means no solid collider at all — unchanged walk-through behavior from before this field existed. */
     solid?: number;
+    /**
+     * When true, this queue is treated as if it doesn't exist at all — PizzaScene.
+     * registerQueueSpawnGates() skips it entirely, never spawning its QueueZone/QuestGiver. No
+     * MilestoneRequirement variant references a queue id directly, so there's nothing else to
+     * bypass — skipping the spawn is the entire effect. Set/cleared from the web editor's
+     * toggle next to Duplicate/Delete. undefined/false (the default, and every queue before
+     * this field existed) keeps normal behavior.
+     */
+    disabled?: boolean;
 }
 
 /** Applied to every discovered queue unless QUEUE_CONFIG_BY_ID has an override for its id — see this file's own doc. */

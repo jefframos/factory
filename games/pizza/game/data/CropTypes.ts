@@ -909,7 +909,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
         name: "Tomato",
         stages: [
             {
-                "durationSec": 20,
+                "durationSec": 3,
                 "mesh": "cropTomatoView",
                 "start": {
                     "offset": [
@@ -929,7 +929,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
                 }
             },
             {
-                "durationSec": 20,
+                "durationSec": 3,
                 "start": {
                     "offset": [
                         0,
@@ -948,7 +948,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
                 }
             },
             {
-                "durationSec": 0,
+                "durationSec": 2,
                 "start": {
                     "offset": [
                         0,

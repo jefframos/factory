@@ -128,10 +128,30 @@ export class BendService {
     }
 
     /**
+     * three.js keys its compiled-program cache on material.customProgramCacheKey(), which by
+     * default is just `onBeforeCompile.toString()` — the SOURCE TEXT of the outermost closure
+     * only. Every apply*() below chains a new arrow on top of the previous one, so e.g. a tree
+     * (bend -> occlusion -> distanceFade) and a loose pickup (bend -> distanceFade) end up with
+     * byte-identical outermost closures and therefore the SAME cache key, even though their
+     * injected shaders differ. Whichever compiles first wins and the other silently reuses its
+     * program: a tree on the pickup's program has no occlusion at all, and a pickup on the
+     * tree's program reads a uOccAlpha it never bound (defaults to 0), so the dither discard
+     * throws away almost every fragment and the mesh vanishes. Which one wins depends on GLB
+     * load-resolve order — hence the race-looking behavior on area unlock. Appending a tag per
+     * injection (plus any config that changes the emitted GLSL, like `dither`) makes the key
+     * describe the whole chain.
+     */
+    private static tagProgramCacheKey(material: THREE.Material, tag: string): void {
+        const prevKey = material.customProgramCacheKey.bind(material);
+        material.customProgramCacheKey = () => `${prevKey()}|${tag}`;
+    }
+
+    /**
      * Fades diffuseColor.a between two world-Y heights.
      * Fully opaque at/above fadeFrom, fully transparent at/below fadeTo.
      */
     public static applyBottomFade(material: THREE.Material, fadeFrom: number, fadeTo: number): void {
+        BendService.tagProgramCacheKey(material, 'bottomFade');
         material.transparent = true;
         const prev = material.onBeforeCompile;
         material.onBeforeCompile = (shader, renderer) => {
@@ -166,6 +186,7 @@ export class BendService {
             return;
         }
         BendService.distanceFadedMaterials.add(material);
+        BendService.tagProgramCacheKey(material, 'distanceFade');
 
         material.transparent = true;
         const prev = material.onBeforeCompile;
@@ -284,6 +305,7 @@ export class BendService {
                 return;
             }
             BendService.occludedMaterials.add(material);
+            BendService.tagProgramCacheKey(material, `occlusion:${dither ? 'dither' : 'blend'}`);
 
             // Dithered discard needs no blending at all — leave the material opaque. The smooth
             // path still needs alpha blending, same as every other *Fade method in this file.
@@ -411,6 +433,7 @@ export class BendService {
             return;
         }
         BendService.revealedMaterials.add(material);
+        BendService.tagProgramCacheKey(material, 'reveal');
 
         material.transparent = true;
         const prev = material.onBeforeCompile;
@@ -467,6 +490,7 @@ export class BendService {
             return;
         }
         BendService.bentMaterials.add(material);
+        BendService.tagProgramCacheKey(material, 'bend');
 
         const prev = material.onBeforeCompile;
         material.onBeforeCompile = (shader, renderer) => {

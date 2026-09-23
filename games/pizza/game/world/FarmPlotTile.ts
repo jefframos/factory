@@ -29,8 +29,8 @@
 //     (SeedStorage.removeOne()) to FarmCropStorage.plant() the CROP_CONFIG
 //     entry that seed's own SeedConfig.cropId points at.
 //   - set (a single-crop plot): FarmSeedPicker/SeedStorage are never touched
-//     at all. Standing on the cell starts a plain AUTO_PLANT_DELAY_SEC
-//     countdown (startAutoPlantTimer()); stepping off before it elapses
+//     at all. Standing on the cell starts a countdown as long as the
+//     plot's requiredTool's own actionTime (AUTO_PLANT_DELAY_SEC if unset) (startAutoPlantTimer()); stepping off before it elapses
 //     cancels it with no partial progress kept, same "leaving resets to
 //     zero" rule AnimalCatchController.ts's own capture timer uses. Letting
 //     it run out (autoPlant()) plants `assignedCropId` directly, no seed
@@ -108,6 +108,8 @@ import { FarmCropStorage, PlantedCrop } from '../data/FarmCropStorage';
 import { SEED_CONFIG, SeedId } from '../data/SeedTypes';
 import { SeedStorage } from '../data/SeedStorage';
 import { BackpackStorage } from '../data/BackpackStorage';
+import { ItemStorage } from '../crafting/ItemStorage';
+import { getToolActionTimeSec } from '../actions/ToolRegistry';
 import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { resolveEntityView } from './EntityViewRegistry';
@@ -119,12 +121,15 @@ import ViewUtils from 'core/utils/ViewUtils';
 import FarmSeedPicker from './FarmSeedPicker';
 import FarmCropHud from './FarmCropHud';
 import FarmAutoPlantHud from './FarmAutoPlantHud';
+import { getPlayerConfig } from '../data/PlayerConfig';
+import { CarryStack } from '../player/CarryStack';
+import { flyResourceToStack } from '../components/FlyToStack';
 
 const FARM_TILE_CORNER_RADIUS = 0.2;
 const PLACEHOLDER_HEIGHT = 0.1;
 const PLACEHOLDER_COLOR = 0x7a5a3a;
 const APPEAR_DURATION_SEC = 0.35;
-/** How long the player has to stand on an empty cell of a FarmPlotConfig.assignedCropId plot before it auto-plants — see startAutoPlantTimer()'s own doc. Game-wide, not per-plot, same "one shared tuning knob" convention APPEAR_DURATION_SEC above already uses. */
+/** FALLBACK for how long the player has to stand on an empty cell of a FarmPlotConfig.assignedCropId plot before it auto-plants — only used when the plot has no requiredTool, or that tool has no actionTime set (see startAutoPlantTimer()'s own doc). */
 const AUTO_PLANT_DELAY_SEC = 2;
 
 /** FARM_TILE_CONFIG.availableTint/occupiedTint fall back to these when unset — see applyGroundTint(). White = no visible tint at all (the mesh's own real colors show through untouched); the occupied default is a plain medium gray, dark enough to read as "taken" against white without this file needing to know anything about a specific crop's own art. */
@@ -133,6 +138,8 @@ const DEFAULT_OCCUPIED_TINT = '#6b6b6b';
 
 /** Same rising "+N" popup LooseResourceNode.showGainPopup() plays for a ground pickup (Bark/Pebble/...) — see showHarvestGainPopup()'s own doc for why this is a near-verbatim copy rather than a shared import. */
 const HARVEST_POPUP_BASE_OFFSET = new THREE.Vector3(0, 1, 0);
+/** Where a harvested crop launches from toward the player's stack, relative to the cell's ground-level center — roughly where the grown crop's own mesh sits. See flyHarvestToStack(). */
+const HARVEST_LAUNCH_OFFSET = new THREE.Vector3(0, 0.4, 0);
 const HARVEST_POPUP_RISE = 1.2;
 const HARVEST_POPUP_TTL_SEC = 0.9;
 const HARVEST_POPUP_ICON_SIZE = 28;
@@ -158,9 +165,13 @@ export default class FarmPlotTile extends Entity {
 
     /** Seconds remaining before this cell auto-plants `plotConfig.assignedCropId` — see startAutoPlantTimer()'s own doc. undefined means no countdown in progress. Only ever touched when `plotConfig.assignedCropId` is set; a "free" plot (no assigned crop) never sets this at all and keeps going through FarmSeedPicker exactly as it always has. */
     private autoPlantRemainingSec?: number;
+    /** Full length of the countdown currently in autoPlantRemainingSec — what the HUD's 0-1 progress divides by. See startAutoPlantTimer(). */
+    private autoPlantDurationSec = AUTO_PLANT_DELAY_SEC;
 
     /** True while MainPlayer's own trigger overlaps this cell — see handleTriggerEnter()/handleTriggerExit(). The one thing update()'s own auto-harvest check (see its own doc) needs that FarmCropStorage.getPlanted() alone can't tell it: not just "is something ready here" but "is the player actually standing on it right now." */
     private playerInside = false;
+    /** The player currently standing on this cell (set/cleared with playerInside) — whose stack a harvest flies to, and who gets the "stack is full" balloon. */
+    private player?: MainPlayer;
 
     /** Traces this cell's own footprint — visibility is driven every frame in update() purely off whether FarmSeedPicker.getActiveTileKey() equals this cell's own tileKey, NOT this cell's own trigger-enter/exit state directly (that let more than one tile highlight at once — two overlapping/adjacent triggers can each independently believe "the player is on me" for a frame or two, but only ONE tileKey can ever own the shared picker at a time). Makes it obvious at a glance which exact cell the seed picker is about to plant into. */
     private outline!: DottedZoneVisualComponent;
@@ -296,6 +307,9 @@ export default class FarmPlotTile extends Entity {
 
     /** Registers this cell as a live seed-picker candidate — see FarmSeedPicker.ts's own doc for why this cell never builds its own popup, and why registering doesn't unconditionally make it THE active one. */
     private registerAsSeedPickerCandidate(): void {
+        if (!this.hasRequiredTool()) {
+            return;
+        }
         const allowedCropIds = this.plotConfig.allowedCrops as CropId[] | undefined;
         this.seedPicker.register(this.tileKey, this.transform.position, allowedCropIds, seedId => this.tryPlant(seedId));
     }
@@ -323,11 +337,27 @@ export default class FarmPlotTile extends Entity {
 
     /** Starts (or restarts, on re-entry) the AUTO_PLANT_DELAY_SEC countdown for an EMPTY cell of a plot with `plotConfig.assignedCropId` set — the no-seed twin of registerAsSeedPickerCandidate(): this cell never touches FarmSeedPicker/SeedStorage at all for this plot kind. Also registers with FarmAutoPlantHud so the icon+bar readout shows (see that file's own doc) — its progress getter reads `autoPlantRemainingSec` fresh every frame rather than tracking its own copy. update() ticks the countdown down and calls autoPlant() once it elapses; handleTriggerExit() cancels it outright (no partial-progress carry-over) if the player steps off before it finishes, same "leaving resets to zero" convention AnimalCatchController.ts's own capture timer uses. */
     private startAutoPlantTimer(): void {
-        this.autoPlantRemainingSec = AUTO_PLANT_DELAY_SEC;
+        if (!this.hasRequiredTool()) {
+            return;
+        }
+        // Planting takes the required tool's own actionTime (e.g. shovel: 1s — see
+        // ToolVisualEntry.actionTime), falling back to AUTO_PLANT_DELAY_SEC when the plot needs
+        // no tool or the tool has no actionTime. Clamped above 0 so the progress getter below
+        // never divides by zero.
+        const toolId = this.plotConfig.requiredTool;
+        const toolTimeSec = toolId !== undefined ? getToolActionTimeSec(toolId) : undefined;
+        this.autoPlantDurationSec = Math.max(0.01, toolTimeSec ?? AUTO_PLANT_DELAY_SEC);
+        this.autoPlantRemainingSec = this.autoPlantDurationSec;
         this.autoPlantHud.register(
             this.tileKey, this.transform.position, this.plotConfig.assignedCropId!,
-            () => 1 - (this.autoPlantRemainingSec ?? 0) / AUTO_PLANT_DELAY_SEC,
+            () => 1 - (this.autoPlantRemainingSec ?? 0) / this.autoPlantDurationSec,
         );
+    }
+
+    /** FarmPlotConfig.requiredTool gate — true if the plot needs no tool, or the player owns it (ItemStorage.hasTool()). Checked every time an empty cell would offer planting (seed picker or auto-plant countdown), so picking the tool up later just works on the next step onto a cell. */
+    private hasRequiredTool(): boolean {
+        const toolId = this.plotConfig.requiredTool;
+        return toolId === undefined || ItemStorage.hasTool(toolId);
     }
 
     /** The no-seed twin of tryPlant() — plants `plotConfig.assignedCropId` directly once startAutoPlantTimer()'s countdown elapses, no SeedStorage/seed picker involved at all. Still guards against something already planted here (e.g. by the time the countdown finished), same defensive no-op tryPlant() itself has. */
@@ -348,6 +378,7 @@ export default class FarmPlotTile extends Entity {
             return;
         }
         this.playerInside = true;
+        this.player = other.entity;
 
         const planted = FarmCropStorage.getPlanted(this.tileKey);
         if (planted) {
@@ -371,6 +402,7 @@ export default class FarmPlotTile extends Entity {
     private handleTriggerExit(other: RigidBody): void {
         if (other.entity instanceof MainPlayer) {
             this.playerInside = false;
+            this.player = undefined;
             this.seedPicker.unregister(this.tileKey);
             this.cropHud.unregister(this.tileKey);
             this.autoPlantHud.unregister(this.tileKey);
@@ -380,18 +412,48 @@ export default class FarmPlotTile extends Entity {
 
     /** Banks CropConfig.yield into BackpackStorage and clears this cell back to empty — CropVisualComponent notices FarmCropStorage.getPlanted() going undefined on its own next update() and removes the grown mesh itself, so this never has to touch that component directly. Two callers, one per plot kind: a free plot's FarmCropHud "Collect" tap, or an assignedCropId plot's own update() auto-harvest check (see that method's own doc) — either way `this.cropHud.unregister()` right after is a safe no-op if this tile was never registered with it in the first place (an already-ready assignedCropId crop never is — see handleTriggerEnter()). Re-registers for the NEXT planting right after, so the player never has to step off and back on: a free plot re-shows the seed picker, an assignedCropId plot restarts its own auto-plant countdown instead (same branch handleTriggerEnter() itself uses for an empty cell). */
     private harvest(planted: PlantedCrop): void {
+        const { yield: cropYield } = CROP_CONFIG[planted.cropId];
+        const intoStack = getPlayerConfig().harvestIntoStack && this.player !== undefined;
+
+        // Stack-full gate — checked BEFORE harvesting, so a crop that doesn't fit simply stays
+        // ready on the cell (auto-harvesting the moment there's room again) instead of being lost.
+        // update()'s auto-harvest re-checks this every frame; CarryStack.notifyFull() rate-limits
+        // the balloon so standing here doesn't re-pop it constantly.
+        if (intoStack && !CarryStack.hasRoomFor(cropYield.amount)) {
+            CarryStack.notifyFull(this.player!);
+            return;
+        }
+
         if (!FarmCropStorage.harvest(this.tileKey)) {
             return;
         }
 
-        const { yield: cropYield } = CROP_CONFIG[planted.cropId];
-        BackpackStorage.add(cropYield.resourceType, cropYield.amount);
-        this.showHarvestGainPopup(cropYield.resourceType, cropYield.amount);
+        if (intoStack) {
+            // Banked one unit at a time as each lands on the stack — see FlyToStack.ts. The stack
+            // growing is the feedback, so no "+N" popup here.
+            this.flyHarvestToStack(this.player!, cropYield.resourceType, cropYield.amount);
+        } else {
+            BackpackStorage.add(cropYield.resourceType, cropYield.amount);
+            this.showHarvestGainPopup(cropYield.resourceType, cropYield.amount);
+        }
         this.cropHud.unregister(this.tileKey);
         if (this.plotConfig.assignedCropId !== undefined) {
             this.startAutoPlantTimer();
         } else {
             this.registerAsSeedPickerCandidate();
+        }
+    }
+
+    /** One flight per yielded unit, straight from the cell onto the top of the player's stack (see FlyToStack.ts) — no drop on the floor first. Hung off this tile's own parent (the THREE.Scene — PizzaScene adds every tile's transform straight to it). */
+    private flyHarvestToStack(player: MainPlayer, resourceType: ResourceType, amount: number): void {
+        const scene = this.transform.parent;
+        if (!scene) {
+            BackpackStorage.add(resourceType, amount);
+            return;
+        }
+        const from = this.transform.position.clone().add(HARVEST_LAUNCH_OFFSET);
+        for (let i = 0; i < amount; i++) {
+            flyResourceToStack(scene, player, resourceType, from);
         }
     }
 

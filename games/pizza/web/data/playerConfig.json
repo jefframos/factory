@@ -15,6 +15,30 @@
             "landing": "Landing",
             "talk": "Talking",
             "happy": "Excited"
-        }
+        },
+        "backpack": {
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "offset": {
+                "x": 0,
+                "y": -20,
+                "z": -50
+            },
+            "rotationDeg": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "scale": 40,
+            "stackMode": "tower",
+            "itemScale": 1.5,
+            "capacity": {
+                "base": 3,
+                "perLevel": 1,
+                "maxLevel": 12
+            }
+        },
+        "harvestIntoStack": true
     }
 }

@@ -28,6 +28,7 @@ import AutoGatherController from '../components/AutoGatherController';
 import AnimalCatchController from '../components/AnimalCatchController';
 import PlayerUIAvoidanceComponent from '../components/PlayerUIAvoidanceComponent';
 import PlayerNotificationComponent from '../components/PlayerNotificationComponent';
+import BackpackStackVisual from '../components/BackpackStackVisual';
 import { getPlayerConfig } from '../data/PlayerConfig';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { ACTION_CONFIG, ActionConfig, ActionType } from '../actions/ActionTypes';
@@ -151,6 +152,9 @@ export default class MainPlayer extends Entity {
         this.addComponent(new PlayerActionController());
         this.addComponent(new AutoGatherController());
         this.addComponent(new AnimalCatchController());
+        // Piles carried farm items inside the backpack — waits on its own for the character and
+        // backpack model to load (see BackpackStackVisual.update()).
+        this.addComponent(new BackpackStackVisual());
         if (this.screenHost) {
             this.addComponent(new PlayerUIAvoidanceComponent(this.screenHost));
             this.addComponent(new PlayerNotificationComponent(this.screenHost));
@@ -221,9 +225,9 @@ export default class MainPlayer extends Entity {
         // look if the registry has none flagged, rather than crashing on a brand-new/
         // misconfigured save.
         character.applyCharacterView(getStarterCharacterView() ?? FALLBACK_CHARACTER_VIEW);
-        // Placeholder backpack cube — see CharacterBody.mountBackpackCube()'s own doc for
-        // tuning its position live via character.setBackpackOffset(x, y, z).
-        character.mountBackpackCube();
+        // PlayerConfig.backpack (default: Restaurant.Crate) — see CharacterBody.mountBackpack().
+        // Live-tunable via the dev GUI's Backpack folder (see PizzaScene.setupDebugGui()).
+        character.mountBackpack(playerConfig.backpack);
         // Starts at scale 0 (hidden) instead of snapping straight to CHARACTER_SCALE — stays
         // this way until playLandingPop() is called, deliberately NOT from in here. See that
         // method's own doc for why: this class has no idea when the ground/zone the player is

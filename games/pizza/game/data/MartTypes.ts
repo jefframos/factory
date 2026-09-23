@@ -51,6 +51,15 @@ export interface MartConfig {
     npcId?: string;
     /** World-unit [x, y, z] nudge off the mart's own position (see PizzaScene.setupMarts()) — undefined/[0,0,0] (the default) puts the NPC right at the mart's own center. Only read when `npcId` is set. */
     npcOffset?: [number, number, number];
+    /**
+     * When true, this mart is treated as if it doesn't exist at all — PizzaScene.setupMarts()
+     * skips it entirely, never spawning its MartZone/NPC. No MilestoneRequirement variant
+     * references a mart id directly, so there's nothing else to bypass — skipping the spawn is
+     * the entire effect. Set/cleared from the web editor's toggle next to Duplicate/Delete.
+     * undefined/false (the default, and every mart before this field existed) keeps normal
+     * behavior.
+     */
+    disabled?: boolean;
 }
 
 /** Applied to every discovered "mart" object unless MART_CONFIG_BY_ID has an override for its id — see this file's own doc. Empty offers by default; a level designer stocks it from the pizza web editor's Marts tab. */

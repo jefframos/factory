@@ -1,0 +1,17 @@
+{
+    "default": {
+        "accepts": "farm",
+        "models": [
+            "Restaurant.Crate"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "dropOffset": {},
+        "pile": {
+            "columns": 2,
+            "rows": 2,
+            "layers": 3
+        }
+    },
+    "byId": {}
+}

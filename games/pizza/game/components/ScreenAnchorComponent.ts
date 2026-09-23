@@ -226,6 +226,16 @@ export default class ScreenAnchorComponent extends Component {
         }
     }
 
+    /** True unless `object` or any of its ancestors has `visible === false` — same rule three.js itself uses to decide whether to render it. A throwaway popup entity whose transform was never parented into the scene just resolves true. */
+    private static isHierarchyVisible(object: THREE.Object3D): boolean {
+        for (let current: THREE.Object3D | null = object; current; current = current.parent) {
+            if (!current.visible) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /** See forceHidden's own doc. Idempotent — safe to call every refreshLabel()-style repaint regardless of whether the state actually changed. */
     public setForceHidden(hidden: boolean): void {
         this.forceHidden = hidden;
@@ -233,6 +243,18 @@ export default class ScreenAnchorComponent extends Component {
 
     public update(delta: number): void {
         if (this.forceHidden) {
+            this.hideContent();
+            return;
+        }
+
+        // ZoneVisibilityManager hides a still-locked zone's entities by flipping their
+        // transform's (or an ancestor's) `visible` flag — but that only affects the THREE
+        // side; this Pixi overlay lives in a separate renderer and would otherwise keep
+        // drawing a nameplate/requirement panel for a building/shop/gate that isn't even
+        // rendered, as soon as it happens to project on-screen. Mirroring the owning
+        // entity's own hierarchy visibility keeps the two in sync — including during the
+        // reveal rise, which keeps the object hidden until its tween actually starts.
+        if (!ScreenAnchorComponent.isHierarchyVisible(this.entity.transform)) {
             this.hideContent();
             return;
         }

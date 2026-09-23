@@ -31,6 +31,7 @@ import { AttributeRange, TOOL_LIBRARY, ToolId, ToolVisualEntry } from '../action
 import { MilestoneRequirement } from '../data/MilestoneRequirement';
 import { PopupMode } from '../ui/PopupConfig';
 import { FrameName } from '../ui/FrameRegistry';
+import { ItemType } from "../crafting/ItemTypes";
 
 /** Texture alias (packed 'ui' image bundle, shared Kenney-style UI kit) shown wherever a shop wants to flag "there's an upgrade ready to buy" — see ShopZone's badge sprite. One shared constant (not per-ShopConfig) since every shop uses the same indicator art; a future shop wanting a different one can still override it locally without this needing to change. */
 export const SHOP_UPGRADE_AVAILABLE_ICON = 'Slider_Level02_Icon_Up_Green';
@@ -66,6 +67,16 @@ export interface ShopConfig {
     frame?: FrameName;
     /** 0-1 fraction of this shop's own trigger footprint that becomes a SOLID collider blocking the player — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default for every shop until a designer opts one in) means no solid collider at all — unchanged walk-through behavior from before this field existed. */
     solid?: number;
+    /**
+     * When true, this shop is treated as if it doesn't exist at all — PizzaScene.
+     * registerShopSpawnGates() skips it entirely, never spawning its ShopZone. No
+     * MilestoneRequirement variant references a shop id directly (only 'item'/'resource'
+     * reference what a shop upgrades/sells), so there's nothing else to bypass — skipping the
+     * spawn is the entire effect. Set/cleared from the web editor's toggle next to Duplicate/
+     * Delete. undefined/false (the default, and every shop before this field existed) keeps
+     * normal behavior.
+     */
+    disabled?: boolean;
 }
 
 const DEFAULT_SHOP_MESH: ShopMeshConfig = { size: [2, 2, 2], color: 0x8855cc };
@@ -92,7 +103,11 @@ export const SHOP_CONFIG_BY_ID: Partial<Record<string, ShopConfig>> = {
         popupBobOffset: 3,
         baseView: "shop1View",
         solid: 0.5,
-        "frame": "QueueFrame"
+        "frame": "QueueFrame",
+        "appearRequirement": {
+            "type": "item",
+            "item": ItemType.Axe
+        }
     },
     "shop2": {
         mesh: DEFAULT_SHOP_MESH,
@@ -106,7 +121,11 @@ export const SHOP_CONFIG_BY_ID: Partial<Record<string, ShopConfig>> = {
         "popupBobOffset": 3,
         "baseView": "shop2View",
         "solid": 0.5,
-        "frame": "QueueFrame"
+        "frame": "QueueFrame",
+        "appearRequirement": {
+            "type": "item",
+            "item": ItemType.Pickaxe
+        }
     }
 };
 

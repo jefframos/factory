@@ -8,7 +8,8 @@
         "view": "gateAxeView",
         "particleEffectId": "gateMyst",
         "destroyParticleEffectId": "destroyBurst",
-        "cameraFocusHeightOffset": 5
+        "cameraFocusHeightOffset": 5,
+        "disabled": true
     },
     "gate1": {
         "name": "North Gate",

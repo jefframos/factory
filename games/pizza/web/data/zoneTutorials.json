@@ -28,16 +28,6 @@
             },
             {
                 "kind": "gate",
-                "gateId": "gateAxe",
-                "offset": [
-                    0,
-                    0,
-                    0
-                ],
-                "iconTextureId": "woodcutters-axe"
-            },
-            {
-                "kind": "gate",
                 "gateId": "gateWood",
                 "offset": [
                     0,
@@ -51,6 +41,10 @@
         "use3dArrow": true
     },
     "2": {
+        "steps": [],
+        "use3dArrow": false
+    },
+    "3": {
         "steps": [
             {
                 "offset": [
@@ -58,15 +52,12 @@
                     0,
                     0
                 ],
+                "kind": "craft",
                 "craftId": "craftPickaxe",
-                "iconTextureId": "tutorialHand2",
-                "kind": "craft"
+                "iconTextureId": "tutorialHand2"
             }
         ],
         "use3dArrow": true
-    },
-    "3": {
-        "steps": []
     },
     "4": {
         "steps": []

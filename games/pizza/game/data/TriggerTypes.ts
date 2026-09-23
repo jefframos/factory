@@ -23,6 +23,16 @@ export interface TriggerConfig {
      * TriggerStorage.activate() is already idempotent) on every subsequent entry.
      */
     destroyOnTrigger: boolean;
+    /**
+     * When true, this trigger is treated as if it doesn't exist at all — PizzaScene.
+     * setupTriggers() skips it entirely (never built, never a collider), AND
+     * isMilestoneRequirementMet()'s own `'trigger'` case resolves as automatically MET for it,
+     * so nothing waiting on `{type:'trigger', triggerId}` elsewhere ever blocks on a trigger
+     * that's been disabled. Set/cleared from the web editor's toggle next to Duplicate/Delete.
+     * undefined/false (the default, and every trigger before this field existed) keeps normal
+     * behavior.
+     */
+    disabled?: boolean;
 }
 
 export const TRIGGER_CONFIG_BY_ID: Partial<Record<string, TriggerConfig>> = {

@@ -96,6 +96,17 @@ export interface CraftTableConfig {
     destroyParticleEffectId?: string;
     /** How many particles the burst above launches — ignored if destroyParticleEffectId isn't set. undefined falls back to a small default (see CraftZone.awake()). */
     destroyParticleCount?: number;
+    /**
+     * When true, this table is treated as if it doesn't exist at all — PizzaScene.
+     * setupCraftTables() skips it entirely (checked inline alongside its existing
+     * destroyOnComplete/appearRequirement guards, for the same reason those are inline rather
+     * than a RequirementRegistry spawn gate — see this file's own doc). No MilestoneRequirement
+     * variant references a craft-table id directly, so there's nothing else to bypass —
+     * skipping the spawn is the entire effect. Set/cleared from the web editor's toggle next to
+     * Duplicate/Delete. undefined/false (the default, and every table before this field
+     * existed) keeps normal behavior.
+     */
+    disabled?: boolean;
 }
 
 /** Per-craft-table-id config — see this file's own doc for why (unlike QueueTypes' DEFAULT_QUEUE_CONFIG) there's no fallback for an id not listed here. */
@@ -115,7 +126,7 @@ export const CRAFT_CONFIG_BY_ID: Partial<Record<string, CraftTableConfig>> = {
                     "amount": 1
                 },
                 "cost": {
-                    "bark": 2
+                    "wood": 3
                 }
             }
         ],

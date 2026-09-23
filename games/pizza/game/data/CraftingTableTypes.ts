@@ -40,6 +40,15 @@ export interface CraftingTableConfig {
     solid?: number;
     /** EntityViewRegistry.ts id for this table's own real-mesh look — same "string key resolved via resolveEntityView()" join every other view field in this codebase uses. Undefined/an id with no models yet falls back to a placeholder box. */
     view?: string;
+    /**
+     * When true, this table is treated as if it doesn't exist at all — PizzaScene.
+     * setupCraftingTables() skips it entirely, never spawning its CraftingTableZone. No
+     * MilestoneRequirement variant references a crafting-table id directly, so there's nothing
+     * else to bypass — skipping the spawn is the entire effect. Set/cleared from the web
+     * editor's toggle next to Duplicate/Delete. undefined/false (the default, and every table
+     * before this field existed) keeps normal behavior.
+     */
+    disabled?: boolean;
 }
 
 /** Applied to every discovered "craftTable" object unless CRAFTING_TABLE_CONFIG_BY_ID has an override for its id — see this file's own doc. Empty recipes by default; a level designer stocks it from the pizza web editor's Crafting Tables tab. */

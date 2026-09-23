@@ -135,7 +135,8 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         label: "Bark",
         color: 0x6b4423,
         "price": 10,
-        "sellable": true
+        "sellable": true,
+        "disabled": true
     },
     [ResourceType.Pebble]: {
         amountPerGather: 1,

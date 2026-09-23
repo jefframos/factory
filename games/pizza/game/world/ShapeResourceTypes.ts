@@ -115,7 +115,7 @@ export const SHAPE_RESOURCE_PLACEMENTS: ShapeResourcePlacement[] = [
     },
     {
         "spawnType": "resource",
-        "resourceType": ResourceType.Bark,
+        "resourceType": ResourceType.Wood,
         "shapeId": "basicSpawner",
         "count": 5,
         "density": 0.2,

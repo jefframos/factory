@@ -93,6 +93,31 @@ export interface ToolVisualEntry {
      * the storefront (cost/cooldown/appearance), the tool owns what it upgrades between.
      */
     attributes?: ToolAttributeRanges;
+    /**
+     * When true, a brand-new save starts owning one of whichever ItemType shares this tool's own
+     * id (see ItemConfig.toolId's own doc — ItemTypes.ts's ITEM_CONFIG is the join) — see
+     * ItemStorage.ts's own doc for exactly how this gets turned into a starting-inventory grant.
+     * This lives on the TOOL, not the item, because "what does the player start holding" is a
+     * presentation/balance decision made right alongside everything else about how a tool looks
+     * and plays, the same place a designer is already looking when deciding this — ItemTypes.ts
+     * stays pure id/label/icon-join data with no starting-state opinion of its own. A tool with
+     * no matching ItemType at all (nothing in ITEM_CONFIG points a toolId at it) simply has
+     * nothing this can grant — harmless, not an error. undefined/false (the default, and every
+     * tool before this field existed) means "player crafts/earns it normally," unchanged.
+     */
+    startWith?: boolean;
+    /**
+     * How long this tool's own timed action takes, in seconds — one value, not per-attribute
+     * like `attributes`, and only meaningful for the tools whose action is a "stand here for a
+     * while" timer rather than a swing loop. `min` is the level-0 time (what's actually used
+     * today — see getToolActionTimeSec()), `max` the fully-upgraded time for whenever a shop
+     * ladder targets it. Undefined for any tool that doesn't use it.
+     *
+     * Current readers:
+     *   - shovel: the time to plant an empty cell of a no-seed farm plot
+     *     (FarmPlotConfig.assignedCropId — see FarmPlotTile.startAutoPlantTimer()).
+     */
+    actionTime?: AttributeRange;
 }
 
 export const TOOL_LIBRARY = {
@@ -200,7 +225,8 @@ export const TOOL_LIBRARY = {
             "hitRangeMeters": {},
             "speed": {},
             "resourcePerHit": {}
-        }
+        },
+        "startWith": true
     },
     "shovel": {
         color: 0x6b4423,
@@ -219,6 +245,11 @@ export const TOOL_LIBRARY = {
             "hitRangeMeters": {},
             "speed": {},
             "resourcePerHit": {}
+        },
+        "startWith": true,
+        "actionTime": {
+            "min": 1,
+            "max": 1
         }
     },
     "knife": {
@@ -264,4 +295,30 @@ export type ToolId = keyof typeof TOOL_LIBRARY;
 /** `TOOL_LIBRARY[id].icon`, as an actual texture — see ToolVisualEntry.icon's own doc. */
 export function getToolIcon(id: ToolId): PIXI.Texture {
     return PIXI.Texture.from(TOOL_LIBRARY[id].icon);
+}
+
+/**
+ * `TOOL_LIBRARY[id].startWith`, defaulted to false — see that field's own doc. A plain
+ * `TOOL_LIBRARY[id].startWith` read from a CALLER (e.g. ItemStorage.ts) doesn't type-check:
+ * TOOL_LIBRARY is declared via `satisfies Record<string, ToolVisualEntry>`, which keeps each
+ * entry's own narrower literal type (exactly what lets `models`'s per-tool array literal type
+ * stay specific) rather than widening every entry to the shared ToolVisualEntry interface — and
+ * since `startWith` is fully optional and, today, omitted from every single entry's own literal,
+ * indexing by a general ToolId returns a union type none of whose members even mention the
+ * property. This helper is the one place that owns the cast back to the shared interface, so
+ * every OTHER file just calls a plain boolean-returning function instead of re-deriving that
+ * same cast for itself.
+ */
+export function toolStartsWithPlayer(id: ToolId): boolean {
+    return (TOOL_LIBRARY[id] as ToolVisualEntry).startWith ?? false;
+}
+
+/**
+ * `TOOL_LIBRARY[id].actionTime`, resolved to the seconds actually in effect right now — the
+ * level-0 `min` (no shop upgrades actionTime yet; lerp toward `max` here once one does).
+ * undefined for a tool with no actionTime at all, so a caller can fall back to its own default.
+ * Same widening cast toolStartsWithPlayer() explains.
+ */
+export function getToolActionTimeSec(id: ToolId): number | undefined {
+    return (TOOL_LIBRARY[id] as ToolVisualEntry).actionTime?.min;
 }

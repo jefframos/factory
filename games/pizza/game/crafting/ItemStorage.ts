@@ -10,12 +10,16 @@
 // shape is identical.
 //
 // Seeds DEFAULT_STARTING_ITEMS the very first time this ever loads (raw ===
-// null, i.e. no save key has EVER been written) — see load(). Currently
-// empty: a brand new player starts with NO tools at all — see
+// null, i.e. no save key has EVER been written) — see load(). Computed from
+// ToolRegistry.ts's own per-tool `startWith` flag (see that field's own
+// doc) rather than hand-typed here — checking "Start With" on a tool in the
+// web editor's Tools tab is the entire way to grant it from a fresh save,
+// no ItemStorage.ts edit needed. Empty by default (every tool before that
+// flag existed): a brand new player starts with NO tools at all — see
 // CraftTypes.ts's "craftAxe" table (bark -> axe) and GateTypes.ts's
 // GateId.GateAxe, which together are the very first thing the player has
-// to do to progress at all. Add an entry here if a future design wants a
-// starting tool back — nothing else needs to change.
+// to do to progress at all, UNLESS a tool's own startWith flag short-
+// circuits that for whichever ItemType shares its id.
 //
 // load() must be awaited once at boot (see index.ts) before anything reads
 // getCount()/getAll(). Every mutation fires an async persist() (fire-and-
@@ -24,12 +28,24 @@
 
 import { Signal } from 'signals';
 import PlatformHandler from 'core/platforms/PlatformHandler';
-import { ItemType } from './ItemTypes';
+import { ItemType, ITEM_CONFIG } from './ItemTypes';
+import { toolStartsWithPlayer, ToolId } from '../actions/ToolRegistry';
 
 const STORAGE_KEY = 'PIZZA_ITEMS';
 
-/** What a brand new save starts with — see load()'s own doc. Empty: the player crafts their first tool (see CraftTypes.ts's "craftAxe" table) rather than starting with one. */
-const DEFAULT_STARTING_ITEMS: Partial<Record<ItemType, number>> = {};
+/** One of whichever ItemType's own ItemConfig.toolId points at a TOOL_LIBRARY entry with `startWith` checked — see this file's own top doc and ToolVisualEntry.startWith's own doc. Computed once, at module load (TOOL_LIBRARY is compile-time data, never changes at runtime), not re-derived per call. */
+function computeDefaultStartingItems(): Partial<Record<ItemType, number>> {
+    const defaults: Partial<Record<ItemType, number>> = {};
+    for (const type of Object.values(ItemType)) {
+        if (toolStartsWithPlayer(ITEM_CONFIG[type].toolId)) {
+            defaults[type] = 1;
+        }
+    }
+    return defaults;
+}
+
+/** What a brand new save starts with — see load()'s own doc and computeDefaultStartingItems() for how this is actually derived. */
+const DEFAULT_STARTING_ITEMS: Partial<Record<ItemType, number>> = computeDefaultStartingItems();
 
 export class ItemStorage {
     private static readonly counts = new Map<ItemType, number>();
@@ -66,6 +82,16 @@ export class ItemStorage {
 
     static hasCount(type: ItemType, amount: number): boolean {
         return this.getCount(type) >= amount;
+    }
+
+    /** True if the player owns at least one item whose ItemConfig.toolId is `toolId` — the "does the player have a shovel" check (e.g. FarmPlotConfig.requiredTool), going through ITEM_CONFIG's item->tool join rather than assuming item and tool ids match. */
+    static hasTool(toolId: ToolId): boolean {
+        for (const type of Object.values(ItemType)) {
+            if (ITEM_CONFIG[type].toolId === toolId && this.getCount(type) > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** True once the player owns at least one of ANY item type — removeOne() can leave a zeroed-out entry in `counts` (see that method's own doc), so this checks values rather than just Map.size. Used to gate the backpack icon's first-ever appearance (see BackpackUnlockStorage.ts). */

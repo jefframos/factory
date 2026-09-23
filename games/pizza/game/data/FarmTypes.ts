@@ -42,6 +42,7 @@
 import { CurrencyType } from './EconomyTypes';
 import { MilestoneRequirement } from './MilestoneRequirement';
 import { CropId } from './CropTypes';
+import type { ToolId } from '../actions/ToolRegistry';
 
 export interface FarmPlotPrice {
     currency: CurrencyType;
@@ -94,8 +95,26 @@ export interface FarmPlotConfig {
      * changes HOW a cell gets planted, not what happens once it is.
      */
     assignedCropId?: CropId;
+    /**
+     * Optional — the tool the player must OWN (ItemStorage.hasTool()) before any empty cell of
+     * this plot can be planted at all: without it, stepping onto an empty cell neither shows the
+     * seed picker nor starts the auto-plant countdown. For an `assignedCropId` plot, that same
+     * tool's ToolVisualEntry.actionTime is also how long the countdown takes (see
+     * FarmPlotTile.startAutoPlantTimer()). Growing/harvesting an already-planted cell never checks
+     * this. undefined means no tool needed.
+     */
+    requiredTool?: ToolId;
     /** 0-1 fraction of this plot's own footprint that becomes a SOLID collider blocking the player while still unacquired — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default) means no solid collider — a for-sale plot is walkable, same as an unbought queue/shop today. */
     solid?: number;
+    /**
+     * When true, this plot is treated as if it doesn't exist at all — PizzaScene.setupFarms()
+     * skips it entirely, never spawning its FarmZone or (if already owned) its FarmPlotTile
+     * grid. No MilestoneRequirement variant references a farm plot id directly, so there's
+     * nothing else to bypass — skipping the spawn is the entire effect. Set/cleared from the
+     * web editor's toggle next to Duplicate/Delete. undefined/false (the default, and every
+     * plot before this field existed) keeps normal behavior.
+     */
+    disabled?: boolean;
 }
 
 /** Applied to every discovered "farm" object unless FARM_PLOT_CONFIG_BY_ID has an override for its id — see this file's own doc. */
@@ -103,7 +122,8 @@ export const DEFAULT_FARM_PLOT_CONFIG: FarmPlotConfig = {
     "price": {
         "currency": CurrencyType.Money,
         "amount": 50
-    }
+    },
+    "requiredTool": "shovel"
 };
 
 /** Per-plot-id overrides — e.g. FARM_PLOT_CONFIG_BY_ID['farm1'] = { price: {...} } for a plot that should cost/unlock/behave differently from every other one. Sparse: only plots a level designer has actually customized need an entry. */
@@ -113,7 +133,24 @@ export const FARM_PLOT_CONFIG_BY_ID: Partial<Record<string, FarmPlotConfig>> = {
             "currency": CurrencyType.Money,
             "amount": 10
         },
-        "assignedCropId": CropId.Carrot
+        "assignedCropId": CropId.Carrot,
+        "requiredTool": "shovel"
+    },
+    "farm2": {
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 50
+        },
+        "assignedCropId": CropId.Tomato,
+        "requiredTool": "shovel"
+    },
+    "farm3": {
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 50
+        },
+        "assignedCropId": CropId.Broccoli,
+        "requiredTool": "shovel"
     }
 };
 

@@ -170,6 +170,16 @@ export interface BuildingConfig {
     npcId?: string;
     /** World-unit [x, y, z] nudge off the building's own mesh position (see PizzaScene.setupBuildingZone()) — undefined/[0,0,0] (the default) puts the NPC right at the building's own center. Only read when `npcId` is set. Always relative to the mesh position, regardless of `anchorAtDropper` — that flag only affects the requirements panel/particles, not where a level designer wants an NPC standing relative to the building's own visible model. */
     npcOffset?: [number, number, number];
+    /**
+     * When true, this building is treated as if it doesn't exist at all — PizzaScene.
+     * setupBuildingZone() skips it entirely (never built, never spawns its BuildingZone/NPC),
+     * AND isMilestoneRequirementMet()'s own `'building'` case resolves as automatically MET for
+     * it, so nothing waiting on `{type:'building', buildingId, level}` elsewhere ever blocks on
+     * a building that's been disabled. Set/cleared from the web editor's toggle next to
+     * Duplicate/Delete. undefined/false (the default, and every building before this field
+     * existed) keeps normal behavior.
+     */
+    disabled?: boolean;
 }
 
 export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {

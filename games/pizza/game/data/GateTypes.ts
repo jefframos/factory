@@ -68,6 +68,16 @@ export interface GateConfig {
     destroyParticleCount?: number;
     /** Added on top of the gate's own height (mesh size[1]/2) when picking the camera's look-at point during playUnlockSequence() — see Gate.ts's own doc. Raising this moves the look-at point higher in world space, which pushes the gate LOWER on screen (useful for keeping it clear of top-anchored UI). undefined/0 = no change, unchanged from before this field existed. */
     cameraFocusHeightOffset?: number;
+    /**
+     * When true, this gate is treated as if it doesn't exist at all — PizzaScene.setupGates()
+     * skips it entirely (never built, never a collider), AND isMilestoneRequirementMet()'s own
+     * `'gate'` case resolves as automatically MET for it, so nothing waiting on `{type:'gate',
+     * gateId}` elsewhere ever blocks on a gate that's been disabled — a designer toggling this
+     * off doesn't leave some OTHER entity's appearRequirement permanently unsatisfiable. Set/
+     * cleared from the web editor's toggle next to Duplicate/Delete. undefined/false (the
+     * default, and every gate before this field existed) keeps normal behavior.
+     */
+    disabled?: boolean;
 }
 
 export const GATE_CONFIG: Record<GateId, GateConfig> = {
@@ -98,7 +108,8 @@ export const GATE_CONFIG: Record<GateId, GateConfig> = {
         "view": "gateAxeView",
         "particleEffectId": "gateMyst",
         "destroyParticleEffectId": "destroyBurst",
-        "cameraFocusHeightOffset": 5
+        "cameraFocusHeightOffset": 5,
+        "disabled": true
     },
     "gateWood": {
         position: [0, 0, -16],

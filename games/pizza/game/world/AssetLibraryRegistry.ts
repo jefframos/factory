@@ -168,7 +168,7 @@ export const ASSET_LIBRARY = {
         "icon": "wild-berries"
     },
     "wood": {
-        models: [],
+        models: [MODELS.Resources.WoodLogA, MODELS.Resources.WoodLogB],
         scale: 1,
         rotationDeg: 0,
         "icon": "wood-log"
@@ -288,7 +288,7 @@ export const ASSET_LIBRARY = {
     },
     "tomato": {
         "models": [MODELS.Food.Tomato],
-        "scale": 1,
+        "scale": 4,
         "rotationDeg": 0,
         "icon": "pizza-model-snapshots_Food-Tomato"
     },

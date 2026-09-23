@@ -22,18 +22,23 @@
 // unchanged.
 
 import { BuildingStorage } from './BuildingStorage';
-import { BuildingId } from './BuildingTypes';
+import { BuildingId, BUILDING_CONFIG } from './BuildingTypes';
 import { ItemStorage } from '../crafting/ItemStorage';
 import { ItemType } from '../crafting/ItemTypes';
 import { BackpackStorage } from './BackpackStorage';
 import { ResourceType } from '../actions/ResourceTypes';
 import { GateStorage } from './GateStorage';
 import { TriggerStorage } from './TriggerStorage';
-// Type-only — GateTypes.ts's own GateConfig.requirement field is typed as MilestoneRequirement,
-// so a plain runtime import here would be circular. GateId is only ever used as a TYPE
-// annotation below (the 'gate' arm's own `gateId` field), never a runtime value, so `import
-// type` erases entirely at compile time and never actually completes that cycle.
-import type { GateId } from './GateTypes';
+import { getTriggerConfig } from './TriggerTypes';
+// GateId stays type-only (`type GateId`) since GateTypes.ts's own GateConfig.requirement field
+// is typed as MilestoneRequirement — a plain runtime import of GateId here would be circular.
+// GATE_CONFIG, unlike GateId, IS read as a real value below (isMilestoneRequirementMet()'s own
+// 'gate' case, see its own doc) — safe despite the same circularity risk because it's only ever
+// touched INSIDE that function body, never at this module's own top level: by the time the
+// function actually runs, both modules have long since finished loading, regardless of which
+// one started the load cycle. BUILDING_CONFIG above follows the identical reasoning for the
+// 'building' case.
+import { GATE_CONFIG, type GateId } from './GateTypes';
 
 /** A building must be AT LEAST `level` — the original (and still default) milestone kind. */
 export interface BuildingMilestoneRequirement {
@@ -69,18 +74,36 @@ export interface TriggerMilestoneRequirement {
 
 export type MilestoneRequirement = BuildingMilestoneRequirement | ItemMilestoneRequirement | ResourceMilestoneRequirement | GateMilestoneRequirement | TriggerMilestoneRequirement;
 
-/** True once whichever storage backs `requirement`'s own kind says it's already satisfied — the one place that actually reads BuildingStorage/ItemStorage/BackpackStorage/GateStorage/TriggerStorage for this; callers (Gate.isRequirementMet(), RequirementRegistry, WorldManager's zone-unlock check) never touch any of those directly. */
+/**
+ * True once whichever storage backs `requirement`'s own kind says it's already satisfied — the
+ * one place that actually reads BuildingStorage/ItemStorage/BackpackStorage/GateStorage/
+ * TriggerStorage for this; callers (Gate.isRequirementMet(), RequirementRegistry, WorldManager's
+ * zone-unlock check) never touch any of those directly.
+ *
+ * 'building'/'gate'/'trigger' — the three kinds that reference a PLACED entity's own id, as
+ * opposed to 'item'/'resource' which reference catalog data with no on/off toggle of their own —
+ * short-circuit to MET the instant that entity's own config.disabled is set (see each config
+ * type's own doc), regardless of its real storage state. This is what makes disabling an entity
+ * from the web editor mean "doesn't exist" in the fullest sense: not just "never spawns" (each
+ * entity's own PizzaScene setup method already skips it for that), but also "never permanently
+ * blocks anything ELSE that was waiting on it" — a building/gate/trigger a designer switched off
+ * can obviously never reach a real level/unlock/activation on its own, so treating a reference to
+ * it as an unmet requirement forever would silently strand whatever depends on it.
+ */
 export function isMilestoneRequirementMet(requirement: MilestoneRequirement): boolean {
     switch (requirement.type) {
         case 'building':
-            return BuildingStorage.getLevel(requirement.buildingId) >= requirement.level;
+            return BUILDING_CONFIG[requirement.buildingId].disabled
+                || BuildingStorage.getLevel(requirement.buildingId) >= requirement.level;
         case 'item':
             return ItemStorage.hasCount(requirement.item, 1);
         case 'resource':
             return BackpackStorage.getCount(requirement.resourceType) >= requirement.amount;
         case 'gate':
-            return GateStorage.isUnlocked(requirement.gateId);
+            return GATE_CONFIG[requirement.gateId].disabled
+                || GateStorage.isUnlocked(requirement.gateId);
         case 'trigger':
-            return TriggerStorage.isActivated(requirement.triggerId);
+            return getTriggerConfig(requirement.triggerId)?.disabled
+                || TriggerStorage.isActivated(requirement.triggerId);
     }
 }

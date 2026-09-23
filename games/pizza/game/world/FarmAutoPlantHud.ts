@@ -14,8 +14,8 @@
 //
 // A crop icon (CropConfig.yield.resourceType's own icon — the SAME icon
 // this game already uses to represent a crop everywhere else, e.g.
-// FarmCropHud's own growth readout) sits above a BarComponent.ts progress
-// bar that fills as the countdown elapses. This HUD never advances the
+// FarmCropHud's own growth readout) sits above a RadialBarComponent.ts
+// readout that fills as the countdown elapses. This HUD never advances the
 // countdown itself — FarmPlotTile.ts owns that timer and just hands this
 // HUD a live 0-1 progress getter to read every frame, the same "read
 // somebody else's stored state, don't own it" split CropVisualComponent
@@ -35,8 +35,7 @@ import * as THREE from 'three';
 import * as PIXI from 'pixi.js';
 import Entity from '../ecs/Entity';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
-import BarComponent from '../ui/BarComponent';
-import { MIN_BAR_HEIGHT } from '../ui/BarRegistry';
+import RadialBarComponent from '../ui/RadialBarComponent';
 import { CROP_CONFIG, CropId } from '../data/CropTypes';
 import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
@@ -46,7 +45,6 @@ import { createIconSlotBackground } from '../ui/IconSlotRegistry';
 /** World-space offset above the tile's own ground-level position — matches FarmCropHud.HUD_OFFSET exactly, see this file's own top doc for why. */
 const HUD_OFFSET = new THREE.Vector3(0, 2.3, 0);
 
-const BAR_WIDTH = 70;
 /** The crop icon shown ABOVE the bar — same "square tinted backdrop behind a smaller icon" composition FarmCropHud's own resource icon uses. */
 const ICON_SIZE = 40;
 const ICON_BG_SIZE = 48;
@@ -64,7 +62,7 @@ export default class FarmAutoPlantHud extends Entity {
 
     private content!: PIXI.Container;
     private cropIcon!: PIXI.Sprite;
-    private bar!: BarComponent;
+    private bar!: RadialBarComponent;
     /** Owns `content.visible` exclusively via setForceHidden() below — see update()'s own doc for why this HUD must never toggle `content.visible` directly itself. */
     private screenAnchor!: ScreenAnchorComponent;
 
@@ -80,11 +78,17 @@ export default class FarmAutoPlantHud extends Entity {
     }
 
     public override awake(): void {
-        // Same row layout FarmCropHud.ts uses (icon above, bar/button row below, local y=0 at
-        // the row's own bottom edge) — kept in sync deliberately so the two readouts occupy the
+        // Same row layout FarmCropHud.ts uses (icon above, radial row below, local y=0 at the
+        // row's own bottom edge) — kept in sync deliberately so the two readouts occupy the
         // exact same screen position when swapped for each other (see this file's own top doc).
-        const rowTopY = -MIN_BAR_HEIGHT;
-        const iconCenterY = rowTopY - ICON_GAP - ICON_BG_SIZE / 2;
+        //
+        // Yellow, not FarmCropHud's own Green — a plain, deliberately different color so
+        // "counting down to plant" never reads as "already growing" at a glance.
+        this.bar = new RadialBarComponent('Yellow');
+        this.bar.position.set(0, -this.bar.radius);
+
+        const rowHeight = this.bar.radius * 2 + ICON_GAP / 2;
+        const iconCenterY = -rowHeight - ICON_BG_SIZE / 2;
 
         const iconBg = createIconSlotBackground(ICON_BG_SIZE, 'Crop');
         iconBg.anchor.set(0.5, 0.5);
@@ -95,11 +99,6 @@ export default class FarmAutoPlantHud extends Entity {
         this.cropIcon.width = ICON_SIZE;
         this.cropIcon.height = ICON_SIZE;
         this.cropIcon.position.set(0, iconCenterY);
-
-        // Yellow, not FarmCropHud's own Green — a plain, deliberately different color so
-        // "counting down to plant" never reads as "already growing" at a glance.
-        this.bar = new BarComponent('Yellow', BAR_WIDTH, MIN_BAR_HEIGHT);
-        this.bar.position.set(-BAR_WIDTH / 2, rowTopY);
 
         this.content = new PIXI.Container();
         this.content.addChild(iconBg, this.cropIcon, this.bar);

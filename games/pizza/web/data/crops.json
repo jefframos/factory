@@ -751,7 +751,7 @@
         "name": "Tomato",
         "stages": [
             {
-                "durationSec": 20,
+                "durationSec": 3,
                 "mesh": "cropTomatoView",
                 "start": {
                     "offset": [
@@ -771,7 +771,7 @@
                 }
             },
             {
-                "durationSec": 20,
+                "durationSec": 3,
                 "start": {
                     "offset": [
                         0,
@@ -790,7 +790,7 @@
                 }
             },
             {
-                "durationSec": 0,
+                "durationSec": 2,
                 "start": {
                     "offset": [
                         0,

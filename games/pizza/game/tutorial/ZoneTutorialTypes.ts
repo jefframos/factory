@@ -135,16 +135,6 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
             },
             {
                 "kind": "gate",
-                "gateId": GateId.GateAxe,
-                "offset": [
-                    0,
-                    0,
-                    0
-                ],
-                "iconTextureId": "woodcutters-axe"
-            },
-            {
-                "kind": "gate",
                 "gateId": GateId.GateWood,
                 "offset": [
                     0,
@@ -158,6 +148,13 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
         "use3dArrow": true
     },
     "2": {
+        "steps": [],
+        "use3dArrow": false
+    },
+    "4": {
+        "steps": []
+    },
+    "3": {
         "steps": [
             {
                 "offset": [
@@ -165,18 +162,12 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
                     0,
                     0
                 ],
+                "kind": "craft",
                 "craftId": "craftPickaxe",
-                "iconTextureId": "tutorialHand2",
-                "kind": "craft"
+                "iconTextureId": "tutorialHand2"
             }
         ],
         "use3dArrow": true
-    },
-    "4": {
-        "steps": []
-    },
-    "3": {
-        "steps": []
     },
     "10": {
         "steps": []

@@ -70,7 +70,7 @@ export async function loadNpcBody(body: CharacterBody, config: NpcConfig): Promi
     }
 
     // MUST run AFTER applyNpcView()'s mountHeadCube() — see MainPlayer.loadCharacter()'s own
-    // ordering (applyCharacterView() → mountBackpackCube() → THEN container.scale.setScalar()).
+    // ordering (applyCharacterView() → mountBackpack() → THEN container.scale.setScalar()).
     body.container.scale.setScalar(config.scale ?? CHARACTER_SCALE);
 
     // See this function's own doc — forces idle's own first frame onto the skeleton before

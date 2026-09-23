@@ -107,6 +107,11 @@ import { getToolIcon } from '../actions/ToolRegistry';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
+import { BackpackStackMode, getPlayerConfig } from '../data/PlayerConfig';
+import { getStorageConfig } from '../data/StorageTypes';
+import StorageZone from '../world/StorageZone';
+import { BackpackCapacityStorage } from '../data/BackpackCapacityStorage';
+import { CarryStack } from '../player/CarryStack';
 import PlayerUIAvoidanceComponent from '../components/PlayerUIAvoidanceComponent';
 import SetupThree from 'core/scene/SetupThree';
 import DebugFlyCameraController from '../debug/DebugFlyCameraController';
@@ -429,6 +434,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupMarts();
         this.setupCraftingTables();
         this.setupFarms();
+        this.setupStorages();
         this.setupTriggers();
         this.setupCraftTables();
         this.setupDebugGui();
@@ -470,6 +476,138 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         },
     };
 
+    /**
+     * TEMP DEBUG (background-tab missing meshes) — downloads one row per top-level scene
+     * object: world position, visibility, mesh count, how many meshes sit >30 units from their
+     * parent or have a degenerate world scale, and the first few mesh/node names so a row can
+     * be matched to its model. Load once normally and once in a background tab, dump both,
+     * diff. Remove once diagnosed.
+     */
+    private dumpSceneMeshes(): void {
+        this.threeScene.updateMatrixWorld(true);
+        const boxCenter = new THREE.Vector3();
+        const rows: Record<string, unknown>[] = [];
+        let total = 0;
+        this.threeScene.children.forEach((top, index) => {
+            const te = top.matrixWorld.elements;
+            let meshes = 0;
+            let hidden = 0;
+            /** Largest XZ distance between a mesh's WORLD geometry-bounds center and this top-level object — ~0 for a correctly placed mesh regardless of where its own pivot/origin sits. */
+            let maxBoxDistance = 0;
+            let maxScale = 0;
+            const names: string[] = [];
+            top.traverse(child => {
+                if (!child.visible) {
+                    hidden++;
+                }
+                if (!(child instanceof THREE.Mesh)) {
+                    return;
+                }
+                meshes++;
+                if (child.name && names.length < 2 && !names.includes(child.name)) {
+                    names.push(child.name);
+                }
+                if (!child.geometry.boundingBox) {
+                    child.geometry.computeBoundingBox();
+                }
+                child.geometry.boundingBox!.getCenter(boxCenter).applyMatrix4(child.matrixWorld);
+                maxBoxDistance = Math.max(maxBoxDistance, Math.hypot(boxCenter.x - te[12], boxCenter.z - te[14]));
+                const e = child.matrixWorld.elements;
+                maxScale = Math.max(maxScale, Math.hypot(e[0], e[1], e[2]), Math.hypot(e[4], e[5], e[6]), Math.hypot(e[8], e[9], e[10]));
+            });
+            if (meshes === 0) {
+                return;
+            }
+            total++;
+            // Only rows worth looking at — see this method's own doc.
+            if (maxBoxDistance > 3 || hidden > 0 || maxScale > 50 || maxScale < 0.01) {
+                rows.push({
+                    index,
+                    x: +te[12].toFixed(2), z: +te[14].toFixed(2),
+                    visible: top.visible, meshes, hidden,
+                    boxDist: +maxBoxDistance.toFixed(2), scale: +maxScale.toFixed(3),
+                    names: names.join(','),
+                });
+            }
+        });
+        console.table(rows);
+
+        const blob = new Blob([JSON.stringify({ hiddenAtDump: document.hidden, objectsWithMeshes: total, rows }, null, 1)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `scene-meshes-${Date.now()}.json`;
+        link.click();
+        // Deferred — revoking synchronously right after click() can cancel the download in some browsers.
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    }
+
+    /**
+     * Live-tunes PlayerConfig.backpack (offset/rotation/scale) on the player's loaded character —
+     * see CharacterBody.setBackpackTransform(). Session-only: copy the numbers you like into the
+     * web editor's Player tab (or PlayerConfig.ts) to keep them. Each slider applies straight
+     * away; before the character has loaded there's nothing to move, so changes just wait for the
+     * next slider tick after it has.
+     */
+    private setupBackpackDevGui(): void {
+        const initial = getPlayerConfig().backpack;
+        const values: Record<string, number> = {
+            offsetX: initial.offset.x, offsetY: initial.offset.y, offsetZ: initial.offset.z,
+            rotX: initial.rotationDeg.x, rotY: initial.rotationDeg.y, rotZ: initial.rotationDeg.z,
+            scale: initial.scale,
+        };
+        const apply = (): void => {
+            this.mainPlayer.character?.setBackpackTransform({
+                models: initial.models,
+                offset: { x: values.offsetX, y: values.offsetY, z: values.offsetZ },
+                rotationDeg: { x: values.rotX, y: values.rotY, z: values.rotZ },
+                scale: values.scale,
+                stackMode: initial.stackMode,
+                capacity: initial.capacity,
+            });
+        };
+        DevGuiManager.instance.addObjectTrigger(values, apply, ['offsetX', 'offsetY', 'offsetZ'], [-200, 200], 'Backpack', 'Backpack');
+        DevGuiManager.instance.addObjectTrigger(values, apply, ['rotX', 'rotY', 'rotZ'], [-180, 180], 'Backpack', 'Backpack');
+        DevGuiManager.instance.addObjectTrigger(values, apply, ['scale'], [0, 150], 'Backpack', 'Backpack');
+        // Written straight into the LIVE config — BackpackStackVisual/FlyToStack read it every
+        // frame (see stackItemScale()), so the pile re-fits immediately.
+        const itemScaleValues = { itemScale: initial.itemScale ?? 1 };
+        DevGuiManager.instance.addObjectTrigger(itemScaleValues, updated => {
+            initial.itemScale = updated.itemScale;
+        }, ['itemScale'], [0.25, 4], 'Stacked Item', 'Backpack');
+        // Bound straight to the LIVE config object — BackpackStackVisual re-reads stackMode every
+        // frame and rebuilds the pile when it changes, so nothing else needs to happen here.
+        DevGuiManager.instance.addDropdown<BackpackStackMode>(
+            initial as unknown as Record<string, unknown>, 'stackMode', ['grid', 'tower'], () => undefined, 'Stack Mode', 'Backpack',
+        );
+        // Stack capacity upgrade (see BackpackCapacityStorage.ts) — no shop sells it yet, so this
+        // is how to play-test higher limits. Persisted like any other upgrade.
+        const capacityReadout = { capacity: BackpackCapacityStorage.getCapacity(), level: BackpackCapacityStorage.getLevel(), carried: 0 };
+        DevGuiManager.instance.addReadout(capacityReadout, ['capacity', 'level', 'carried'], 'Stack', 'Backpack');
+        const refreshCapacityReadout = (): void => {
+            capacityReadout.capacity = BackpackCapacityStorage.getCapacity();
+            capacityReadout.level = BackpackCapacityStorage.getLevel();
+            capacityReadout.carried = CarryStack.carriedCount();
+        };
+        BackpackCapacityStorage.onChange.add(refreshCapacityReadout);
+        BackpackStorage.onChange.add(refreshCapacityReadout);
+        refreshCapacityReadout();
+        DevGuiManager.instance.addButton('Upgrade Stack Capacity (+1 level)', () => {
+            if (!BackpackCapacityStorage.upgrade()) {
+                console.log('[Backpack] stack capacity already maxed');
+            }
+        }, 'Backpack');
+        DevGuiManager.instance.addButton('Reset Stack Capacity', () => void BackpackCapacityStorage.clearAll(), 'Backpack');
+        DevGuiManager.instance.addButton('Log Backpack Config', () => console.log('PlayerConfig.backpack =', JSON.stringify({
+            models: initial.models,
+            offset: { x: values.offsetX, y: values.offsetY, z: values.offsetZ },
+            rotationDeg: { x: values.rotX, y: values.rotY, z: values.rotZ },
+            scale: values.scale,
+            stackMode: initial.stackMode,
+            itemScale: initial.itemScale,
+            capacity: initial.capacity,
+        })), 'Backpack');
+    }
+
     /** Dev-only tools — no-ops entirely unless launched with ?dev (see Game.debugParams/DevGuiManager.initialize(), called once in index.ts's startGame()). */
     private setupDebugGui(): void {
         DevGuiManager.instance.addReadout(this.renderStats, ['triangles', 'drawCalls', 'meshCount'], 'Render', 'Render');
@@ -502,6 +640,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
         this.setupModelSnapshotDevGui();
         this.setupMapLayoutSuggestionDevGui();
+        this.setupBackpackDevGui();
+
+        // TEMP DEBUG (background-tab missing meshes) — see dumpSceneMeshes(). Remove once diagnosed.
+        DevGuiManager.instance.addButton('Dump Scene Meshes', () => this.dumpSceneMeshes(), 'Debug');
 
         // Camera far needs updateProjectionMatrix() on every change to actually take
         // effect — addObjectTrigger's callback (unlike addProperties' plain owner[key]=v)
@@ -895,6 +1037,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // clearAllPlayerData() does. Notifies every live QueueZone via onTaskChanged (see
         // QueueStorage.clearAll()'s own doc), so panels update immediately in place.
         InGameButtonList.registerButton('Clear Queue States', () => void QueueStorage.clearAll());
+        // Empties the backpack only (carried resources + the farm stack on the player's back) —
+        // no reload, nothing else touched. The stack visual follows on its own via
+        // BackpackStorage.onChange (see BackpackStackVisual.ts).
+        InGameButtonList.registerButton('Clear Backpack', () => void BackpackStorage.clearAll());
         InGameButtonList.registerButton('Open Next Zone', () => this.worldManager.revealNextZone());
         InGameButtonList.registerButton('Teleport: Next', () => this.teleportToNextTeleporter());
         InGameButtonList.registerButton('Unlock All Tools', () => this.unlockAllTools());
@@ -1046,6 +1192,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         const buildingsWithoutDropper: BuildingId[] = [];
 
         for (const buildingId of Object.values(BuildingId)) {
+            // Treated as if it doesn't exist at all — see BuildingConfig.disabled's own doc.
+            if (BUILDING_CONFIG[buildingId].disabled) {
+                continue;
+            }
+
             // Fallback width/depth match BuildingTypes.ts's own baseMesh footprint (1x1) —
             // only used if this building isn't found on the Tiled map's "mapSettings" layer
             // at all (see WorldObjectRegistry.require()'s warning).
@@ -1121,6 +1272,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             }
 
             const config = GATE_CONFIG[id];
+            // Treated as if it doesn't exist at all — see GateConfig.disabled's own doc.
+            if (config.disabled) {
+                continue;
+            }
+
             // Fallback width/depth = this gate's own configured mesh size — only used if `id`
             // isn't found on the Tiled map's "mapSettings" layer at all (see
             // WorldObjectRegistry.require()'s warning).
@@ -1258,6 +1414,14 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 .applyAxisAngle(UP_AXIS, placement.rotationY);
             const visual: GlbVisualComponent = new GlbVisualComponent(modelDef, meshOffset, 1, 0, () => {
                 const mesh = visual.mesh;
+                // Refresh the WHOLE chain (parents included) before measuring — Box3.setFromObject()
+                // only updates the object itself against its parent's CURRENT matrixWorld, which is
+                // stale (identity) if no frame has rendered since this entity was positioned (e.g.
+                // the game loaded in a background tab: every GLB resolves before the first frame).
+                // worldToLocal() below DOES refresh the parent itself, so without this the box is
+                // measured in local space but converted back as if it were world space — shifting
+                // the mesh by ~entityPosition * scale.
+                mesh.updateWorldMatrix(true, true);
                 const box = new THREE.Box3().setFromObject(mesh);
                 const nativeSize = box.getSize(new THREE.Vector3());
                 const scaleX = nativeSize.x > 1e-4 ? placement.worldWidth / nativeSize.x : 1;
@@ -1333,6 +1497,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private registerQueueSpawnGates(): void {
         for (const [id, placement] of this.worldObjects.getAllOfType('queue')) {
             const config = getQueueConfig(id);
+            // Treated as if it doesn't exist at all — see QueueConfig.disabled's own doc.
+            if (config.disabled) {
+                continue;
+            }
 
             this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
                 const position = new THREE.Vector3(placement.x, 0, placement.z);
@@ -1393,9 +1561,40 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * FarmZone (whole-area trigger + price popup — see that file's own doc), which itself calls
      * spawnFarmGrid() the instant it's bought.
      */
+    /**
+     * One StorageZone per "storage" mapSettings object (see StorageTypes.ts) — its trigger is the
+     * dropper rect targeting it (getDropperFor()), or the storage's own footprint if it has none,
+     * same fallback buildings use. The mesh always sits at the storage object's own position.
+     */
+    private setupStorages(): void {
+        for (const [id, placement] of this.worldObjects.getAllOfType('storage')) {
+            const config = getStorageConfig(id);
+            if (config.disabled) {
+                continue;
+            }
+            const trigger = this.worldObjects.getDropperFor(id) ?? placement;
+            const storageZone = this.world.add(new StorageZone(
+                id,
+                config,
+                new THREE.Vector3(placement.x, 0, placement.z),
+                new THREE.Vector3(trigger.x, 0, trigger.z),
+                { width: trigger.width, depth: trigger.depth },
+            ));
+            this.threeScene.add(storageZone.transform);
+            // Registered over the storage's OWN footprint (where its mesh is), not the dropper's.
+            this.registerZoneVisibility(storageZone.transform, placement.x, placement.z, placement.width, placement.depth);
+        }
+    }
+
     private setupFarms(): void {
         for (const [id, placement] of this.worldObjects.getAllOfType('farm')) {
             const config = getFarmPlotConfig(id);
+            // Treated as if it doesn't exist at all — see FarmPlotConfig.disabled's own doc.
+            // Suppresses both the for-sale FarmZone AND an already-owned plot's live grid, since
+            // both paths live inside the same spawn-gate callback below.
+            if (config.disabled) {
+                continue;
+            }
 
             this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
                 if (FarmPlotStorage.isOwned(id)) {
@@ -1444,7 +1643,13 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      */
     private setupTriggers(): void {
         for (const [id, placement] of this.worldObjects.getAllOfType('trigger')) {
-            const destroyOnTrigger = getTriggerConfig(id)?.destroyOnTrigger ?? false;
+            const config = getTriggerConfig(id);
+            // Treated as if it doesn't exist at all — see TriggerConfig.disabled's own doc.
+            if (config?.disabled) {
+                continue;
+            }
+
+            const destroyOnTrigger = config?.destroyOnTrigger ?? false;
             if (destroyOnTrigger && TriggerStorage.isActivated(id)) {
                 continue;
             }
@@ -1512,6 +1717,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 console.warn(`[PizzaScene] shop "${id}" found on the Tiled map but has no ShopConfig entry — skipping`);
                 continue;
             }
+            // Treated as if it doesn't exist at all — see ShopConfig.disabled's own doc.
+            if (config.disabled) {
+                continue;
+            }
 
             this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
                 const position = new THREE.Vector3(placement.x, 0, placement.z);
@@ -1552,6 +1761,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private setupMarts(): void {
         for (const [id, placement] of this.worldObjects.getAllOfType('mart')) {
             const config = getMartConfig(id);
+            // Treated as if it doesn't exist at all — see MartConfig.disabled's own doc.
+            if (config.disabled) {
+                continue;
+            }
 
             this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
                 const position = new THREE.Vector3(placement.x, 0, placement.z);
@@ -1602,6 +1815,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     private setupCraftingTables(): void {
         for (const [id, placement] of this.worldObjects.getAllOfType('craftTable')) {
             const config = getCraftingTableConfig(id);
+            // Treated as if it doesn't exist at all — see CraftingTableConfig.disabled's own doc.
+            if (config.disabled) {
+                continue;
+            }
 
             this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
                 const position = new THREE.Vector3(placement.x, 0, placement.z);
@@ -1665,6 +1882,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             const config = getCraftConfig(id);
             if (!config) {
                 console.warn(`[PizzaScene] craft table "${id}" found on the Tiled map but has no CraftTableConfig entry — skipping`);
+                continue;
+            }
+            // Treated as if it doesn't exist at all — see CraftTableConfig.disabled's own doc.
+            if (config.disabled) {
                 continue;
             }
             if (config.destroyOnComplete && CraftStorage.isFullyCrafted(id, config)) {

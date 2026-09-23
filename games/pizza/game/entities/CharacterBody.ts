@@ -20,6 +20,8 @@ import AnimatorController from './animation/AnimatorController';
 import { loadCompressedFile, releaseObjectURL } from '../utils/GzipLoader';
 import { TOOL_LIBRARY, ToolId, ToolVisualEntry } from '../actions/ToolRegistry';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
+import type { PlayerBackpackConfig } from '../data/PlayerConfig';
+import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
 
 /** Same `./` + repo-relative convention every other model load in pizza uses (see GlbVisualComponent.ts/PizzaScene.ts/MainPlayer.ts's own modelUrl()) — resolves e.g. "pizza/models/tools/Axe.gltf" against public/pizza/models/. */
 const modelUrl = (fullPath: string): string => `./${fullPath}`;
@@ -35,18 +37,18 @@ const HEAD_CUBE_SIZE = 120;
 /** Head-cube pivot/offset, in the SAME real world units as HEAD_CUBE_SIZE — (0,0,0) sits exactly at the head bone's own origin. Tune here, or live via setHeadOffset(). */
 const HEAD_CUBE_OFFSET = new THREE.Vector3(0, 50, 0);
 
-/** Backpack cube size, same real-world-unit convention as HEAD_CUBE_SIZE (see mountBackpackCube()). Placeholder until real backpack art exists — see AssetLibraryRegistry.ts for where a glb would slot in for resource nodes; the backpack has no such registry entry yet. */
+/** Fallback backpack cube size (rig units, same convention as HEAD_CUBE_SIZE) — only built when PlayerBackpackConfig.models is empty/unresolvable (see mountBackpack()). */
 const BACKPACK_CUBE_SIZE = 90;
-/**
- * Backpack cube pivot/offset off the Chest bone's own origin, in the SAME real world units
- * as BACKPACK_CUBE_SIZE — (0,0,0) sits exactly at the bone's origin. This is bone-LOCAL
- * space, so it turns with the character automatically; the sign/axis that actually reads as
- * "a bit toward the back" depends on this rig's own bind-pose orientation, which isn't
- * obvious from code alone — tune this live via setBackpackOffset() while watching the
- * character in-game, same as HEAD_CUBE_OFFSET above.
- */
-const BACKPACK_CUBE_OFFSET = new THREE.Vector3(0, 0, -30);
 const BACKPACK_CUBE_COLOR = 0x8b5a2b;
+/** Used when mountBackpack() is called with no config at all — the old placeholder cube's own offset (bone-local, -z reads as "behind" on this rig). */
+const DEFAULT_BACKPACK_CONFIG: PlayerBackpackConfig = {
+    models: [],
+    offset: { x: 0, y: 0, z: -30 },
+    rotationDeg: { x: 0, y: 0, z: 0 },
+    scale: 1,
+    stackMode: 'grid',
+    capacity: { base: 3, perLevel: 1, maxLevel: 12 },
+};
 
 /**
  * This rig's FBX exports have no texture at all — no map, no embedded
@@ -73,10 +75,17 @@ export default class CharacterBody {
     /** Wraps headCube — cancels the head bone's own inherited scale so HEAD_CUBE_SIZE/HEAD_CUBE_OFFSET are true world units, and gives setHeadOffset() something to reposition without touching the cube's own scale. */
     private headCubeHolder?: THREE.Group;
     private headBone?: THREE.Object3D;
-    private backpackCube?: THREE.Mesh;
-    /** Same role as headCubeHolder, for the backpack cube (see mountBackpackCube()). */
+    /** Same role as headCubeHolder, for the backpack (see mountBackpack()) — cancels the Chest bone's inherited scale and carries PlayerBackpackConfig.offset. */
     private backpackCubeHolder?: THREE.Group;
+    /** Child of backpackCubeHolder carrying PlayerBackpackConfig.rotationDeg/scale — the loaded model (or fallback cube) lives under this, so re-applying the transform never touches the model itself. */
+    private backpackVisual?: THREE.Group;
     private backpackBone?: THREE.Object3D;
+    /** Whatever mountBackpack() was last given — setBackpackOffset()/setBackpackTransform() replace this and re-apply. */
+    private backpackConfig: PlayerBackpackConfig = DEFAULT_BACKPACK_CONFIG;
+    /** Bumped on every mountBackpack()/removeBackpack() so a model load resolving AFTER a remount/teardown doesn't attach itself to a stale holder. */
+    private backpackLoadToken = 0;
+    /** The mounted backpack's own bounds in backpackVisual-LOCAL space (i.e. the model's native units) — set once the model (or placeholder cube) is in place; undefined while still loading. See getBackpackContents(). */
+    private backpackBounds?: THREE.Box3;
     /** RightHand bone the tool holder is parented to — see showTool(). */
     private toolBone?: THREE.Object3D;
     /** Cancels the RightHand bone's own inherited scale, same pattern as headCubeHolder/backpackCubeHolder. Every tool mesh lives under this one holder, built lazily the first time any tool is shown. */
@@ -446,7 +455,7 @@ export default class CharacterBody {
         this.headCube = undefined;
     }
 
-    /** Case-insensitive bone lookup by name — shared by mountHeadCube() ("Head") and mountBackpackCube() ("Chest"). */
+    /** Case-insensitive bone lookup by name — shared by mountHeadCube() ("Head") and mountBackpack() ("Chest"). */
     private findBoneByName(name: string): THREE.Object3D | undefined {
         let found: THREE.Object3D | undefined;
         const lowerName = name.toLowerCase();
@@ -465,46 +474,101 @@ export default class CharacterBody {
     }
 
     /**
-     * Parents a plain flat-color cube onto whichever bone is actually named "Chest" — same
-     * holder-cancels-inherited-scale pattern as mountHeadCube(). No-op (nothing attached) if
-     * no such bone is found. Placeholder for real backpack art — see BACKPACK_CUBE_* above.
+     * Mounts the backpack on whichever bone is actually named "Chest" — same holder-cancels-
+     * inherited-scale pattern as mountHeadCube(), so PlayerBackpackConfig's offset is in true rig
+     * units. Loads `config.models[0]` (a MODELS "Group.Key" ref — see PlayerBackpackConfig's own
+     * doc) asynchronously; an empty list or an unknown ref builds the old flat-color placeholder
+     * cube instead, synchronously. No-op (nothing attached) if no Chest bone is found. Omit
+     * `config` for the plain placeholder cube.
      */
-    public mountBackpackCube(): void {
-        this.removeBackpackCube();
+    public mountBackpack(config: PlayerBackpackConfig = DEFAULT_BACKPACK_CONFIG): void {
+        this.removeBackpack();
+        this.backpackConfig = config;
 
         const chestBone = this.findBoneByName('Chest');
-
         if (!chestBone) {
-            console.warn('CharacterBody: no "Chest" bone found — skipping backpack cube.');
+            console.warn('CharacterBody: no "Chest" bone found — skipping backpack.');
             return;
         }
-
         this.backpackBone = chestBone;
 
-        const geometry = new THREE.BoxGeometry(BACKPACK_CUBE_SIZE, BACKPACK_CUBE_SIZE, BACKPACK_CUBE_SIZE * 0.5);
-        const material = new THREE.MeshStandardMaterial({ color: BACKPACK_CUBE_COLOR });
-        BendService.applyBend(material);
-        const cube = new THREE.Mesh(geometry, material);
-
         const holder = new THREE.Group();
+        const visual = new THREE.Group();
+        holder.add(visual);
         chestBone.add(holder);
-        holder.add(cube);
-
         this.backpackCubeHolder = holder;
-        this.backpackCube = cube;
+        this.backpackVisual = visual;
+
+        const modelRef = config.models[0];
+        const modelDef = modelRef ? ModelSnapshotTool.resolveModelDef(modelRef) : undefined;
+        if (modelRef && !modelDef) {
+            console.warn(`CharacterBody: backpack model "${modelRef}" is not a known MODELS ref — using the placeholder cube.`);
+        }
+
+        if (modelDef) {
+            const token = ++this.backpackLoadToken;
+            ModelLoaderManager.instance.loadModel(modelUrl(modelDef.fullPath), modelDef.id)
+                .then(object => {
+                    if (token !== this.backpackLoadToken) {
+                        return; // remounted/removed while this was loading
+                    }
+                    object.traverse(child => {
+                        if (child instanceof THREE.Mesh) {
+                            const materials = Array.isArray(child.material) ? child.material : [child.material];
+                            materials.forEach(material => BendService.applyBend(material));
+                        }
+                    });
+                    // Measured BEFORE parenting — with no parent, Box3 reads the model in its own
+                    // parent frame, which is exactly backpackVisual-local once it's added below.
+                    object.updateWorldMatrix(false, true);
+                    this.backpackBounds = new THREE.Box3().setFromObject(object);
+                    visual.add(object);
+                })
+                .catch(error => console.warn(`CharacterBody: failed to load backpack model "${modelRef}"`, error));
+        } else {
+            const geometry = new THREE.BoxGeometry(BACKPACK_CUBE_SIZE, BACKPACK_CUBE_SIZE, BACKPACK_CUBE_SIZE * 0.5);
+            const material = new THREE.MeshStandardMaterial({ color: BACKPACK_CUBE_COLOR });
+            BendService.applyBend(material);
+            visual.add(new THREE.Mesh(geometry, material));
+            geometry.computeBoundingBox();
+            this.backpackBounds = geometry.boundingBox!.clone();
+        }
 
         this.applyBackpackTransform();
     }
 
-    /** Repositions the backpack cube live — same real-world units as BACKPACK_CUBE_SIZE/BACKPACK_CUBE_OFFSET, (0,0,0) at the Chest bone's own origin. No-op if mountBackpackCube() hasn't run yet (or found no Chest bone). */
+    /**
+     * Where carried items should be parented to sit INSIDE the backpack — see
+     * BackpackStackVisual. `root` is the backpack's own visual group (so anything added follows
+     * the backpack's offset/rotation/scale automatically) and `bounds` is the backpack model's
+     * extent in that same local space. undefined until the backpack model has loaded (or if the rig
+     * has no Chest bone).
+     */
+    public getBackpackContents(): { root: THREE.Object3D; bounds: THREE.Box3 } | undefined {
+        return this.backpackVisual && this.backpackBounds
+            ? { root: this.backpackVisual, bounds: this.backpackBounds }
+            : undefined;
+    }
+
+    /** Live-tunes only the offset (rig units, Chest-bone-local) — e.g. from the console. No-op until mountBackpack() has found a Chest bone. */
     public setBackpackOffset(x: number, y: number, z: number): void {
-        BACKPACK_CUBE_OFFSET.set(x, y, z);
+        this.setBackpackTransform({ ...this.backpackConfig, offset: { x, y, z } });
+    }
+
+    /** Live-tunes offset/rotation/scale without reloading the model — see PizzaScene's dev-GUI Backpack folder. `models` in `config` is ignored; call mountBackpack() to swap the model itself. */
+    public setBackpackTransform(config: PlayerBackpackConfig): void {
+        this.backpackConfig = { ...config, models: this.backpackConfig.models };
         this.applyBackpackTransform();
     }
 
-    /** Same reasoning as applyHeadTransform() — cancels the Chest bone's own inherited scale on the HOLDER so BACKPACK_CUBE_SIZE/OFFSET stay true world units. */
+    /**
+     * Same reasoning as applyHeadTransform() — cancels the Chest bone's own inherited scale on
+     * the HOLDER so the offset stays in true rig units. Rotation/scale go on backpackVisual (the
+     * holder's child) so they apply to the model around its own pivot, not to the offset. The
+     * placeholder cube is already built at its final size, so it ignores `scale`.
+     */
     private applyBackpackTransform(): void {
-        if (!this.backpackCubeHolder || !this.backpackBone) {
+        if (!this.backpackCubeHolder || !this.backpackVisual || !this.backpackBone) {
             return;
         }
 
@@ -514,26 +578,41 @@ export default class CharacterBody {
         const boneWorldScale = new THREE.Vector3();
         this.backpackBone.getWorldScale(boneWorldScale);
 
+        const { offset, rotationDeg, scale, models } = this.backpackConfig;
         this.backpackCubeHolder.scale.set(1 / boneWorldScale.x, 1 / boneWorldScale.y, 1 / boneWorldScale.z);
         this.backpackCubeHolder.position.set(
-            BACKPACK_CUBE_OFFSET.x / boneWorldScale.x,
-            BACKPACK_CUBE_OFFSET.y / boneWorldScale.y,
-            BACKPACK_CUBE_OFFSET.z / boneWorldScale.z,
+            offset.x / boneWorldScale.x,
+            offset.y / boneWorldScale.y,
+            offset.z / boneWorldScale.z,
         );
+
+        const toRad = Math.PI / 180;
+        this.backpackVisual.rotation.set(rotationDeg.x * toRad, rotationDeg.y * toRad, rotationDeg.z * toRad);
+        const usesModel = models.length > 0 && ModelSnapshotTool.resolveModelDef(models[0]) !== undefined;
+        this.backpackVisual.scale.setScalar(usesModel ? scale : 1);
     }
 
-    private removeBackpackCube(): void {
+    private removeBackpack(): void {
+        this.backpackLoadToken++;
         if (!this.backpackCubeHolder) {
             return;
         }
 
         this.backpackCubeHolder.parent?.remove(this.backpackCubeHolder);
-        this.backpackCube?.geometry.dispose();
+        // Only the placeholder cube owns its geometry — a loaded model's geometry is shared with
+        // ModelLoaderManager's cache (see GlbVisualComponent.destroy()'s own doc), so it must NOT
+        // be disposed here.
+        this.backpackVisual?.traverse(child => {
+            if (child instanceof THREE.Mesh && child.geometry instanceof THREE.BoxGeometry) {
+                child.geometry.dispose();
+            }
+        });
         this.backpackCubeHolder = undefined;
-        this.backpackCube = undefined;
+        this.backpackVisual = undefined;
+        this.backpackBounds = undefined;
     }
 
-    /** World-space position of the backpack cube (or the bare Chest bone, if mountBackpackCube() hasn't run) — used by AutoGatherController to fly gathered resource chips toward it. undefined if neither exists (e.g. the rig has no Chest bone, or the FBX hasn't loaded yet). */
+    /** World-space position of the backpack holder (or the bare Chest bone, if mountBackpack() hasn't run) — used by AutoGatherController to fly gathered resource chips toward it. undefined if neither exists (e.g. the rig has no Chest bone, or the FBX hasn't loaded yet). */
     public getBackpackWorldPosition(target: THREE.Vector3 = new THREE.Vector3()): THREE.Vector3 | undefined {
         const anchor = this.backpackCubeHolder ?? this.backpackBone;
         return anchor?.getWorldPosition(target);
@@ -696,7 +775,7 @@ export default class CharacterBody {
         group.scale.setScalar(entry.scale);
     }
 
-    /** Lazily finds the RightHand bone and builds a holder on it (cancelling its own inherited scale, same pattern as mountHeadCube()/mountBackpackCube()) the first time any tool is shown. undefined (and a console warning) if the rig has no such bone. */
+    /** Lazily finds the RightHand bone and builds a holder on it (cancelling its own inherited scale, same pattern as mountHeadCube()/mountBackpack()) the first time any tool is shown. undefined (and a console warning) if the rig has no such bone. */
     private ensureToolHolder(): THREE.Group | undefined {
         if (this.toolHolder) {
             return this.toolHolder;
@@ -768,7 +847,7 @@ export default class CharacterBody {
 
     public destroy(): void {
         this.removeHeadCube();
-        this.removeBackpackCube();
+        this.removeBackpack();
         for (const visual of this.toolVisuals.values()) {
             visual.traverse(child => {
                 if (child instanceof THREE.Mesh) {

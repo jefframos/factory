@@ -10,8 +10,8 @@
 //
 // This is ONE big trigger over the plot's WHOLE footprint (not a grid yet —
 // see FarmGrid.ts's own doc for why the grid only exists once owned) plus a
-// persistent price/progress popup (ScreenAnchorComponent + AutoFitFrame,
-// same shape CraftZone/ShopZone's own panels use), a red dotted outline
+// persistent price/progress popup (ScreenAnchorComponent + the same
+// lock/requirement panel Gate.ts shows — see LockRequirementPanel.ts), a red dotted outline
 // (not bought — see FarmPlotTile.ts's own green for the owned equivalent),
 // and a preview grid of FARM_TILE_CONFIG.empty visuals (built off the SAME
 // FarmGrid.computeFarmGrid() cells the owned grid will use, so the for-sale
@@ -40,16 +40,14 @@ import BoxVisualComponent from '../components/BoxVisualComponent';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { spawnFlyingIconFromOverlayPoint } from '../components/FlyingResourceIcon';
-import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
-import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
+import { buildLockRequirementPanel, LockRequirementPanel } from '../ui/LockRequirementPanel';
 import { FarmPlotConfig, FARM_TILE_CONFIG } from '../data/FarmTypes';
 import { FarmPlotStorage } from '../data/FarmPlotStorage';
 import { EconomyStorage } from '../data/EconomyStorage';
 import { CURRENCY_CONFIG } from '../data/EconomyTypes';
 import { getAssetIcon } from './AssetLibraryRegistry';
 import { resolveEntityView } from './EntityViewRegistry';
-import { getIconLayout } from '../ui/LayoutRegistry';
 import { computeFarmGrid, FARM_GRID_CELL_SIZE } from './FarmGrid';
 import MainPlayer from '../player/MainPlayer';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
@@ -61,10 +59,6 @@ const PLACEHOLDER_HEIGHT = 0.1;
 const PLACEHOLDER_EMPTY_COLOR = 0x77aa55;
 /** How far above the plot's own ground-level origin the price popup floats — same fixed-constant convention every zone used before PopupConfig.ts's popupBobOffset existed; FarmPlotConfig has no such override field yet. */
 const POPUP_HEIGHT_OFFSET = 1.2;
-const LABEL_FRAME_PADDING = uniformFitPadding(15);
-const COST_ICON_SIZE = 28;
-/** Sourced from LayoutRegistry's 'Bare' preset (see that file's own doc) — this price row is a bare icon+text with no background square, same as QueueZone's reward line/ShopZone's cost row, which used to each hand-type this same 4px gap as their own bare literal. */
-const BARE_LAYOUT = getIconLayout('Bare');
 const FLY_IN_STAGGER_SEC = 0.12;
 
 export default class FarmZone extends Entity {
@@ -85,8 +79,7 @@ export default class FarmZone extends Entity {
     private destroying = false;
 
     private labelAnchor!: THREE.Object3D;
-    private priceText!: PIXI.Text;
-    private labelFrame!: AutoFitFrame;
+    private pricePanel!: LockRequirementPanel;
 
     private readonly handleProgressChanged = (id: string): void => {
         if (id === this.farmId) {
@@ -172,22 +165,12 @@ export default class FarmZone extends Entity {
         }
     }
 
-    /** Persistent "<progress>/<price>" panel — same ScreenAnchorComponent + AutoFitFrame shape as CraftZone/ShopZone's own popups, just a single currency-icon-plus-amount row instead of a resource cost map (a plot's price is one flat number, not a Partial<Record<ResourceType, number>>). refreshLabel() (see below) keeps `priceText` current as coins land. */
+    /** Persistent padlock + currency icon + "<progress>/<price>" panel — the exact same lock/requirement panel a Gate shows (see LockRequirementPanel.ts), with the plot's currency as the requirement icon. refreshLabel() (see below) keeps the count current as coins land. */
     private buildPricePopup(): void {
-        const row = new PIXI.Container();
-
-        const icon = new PIXI.Sprite(getAssetIcon(CURRENCY_CONFIG[this.config.price.currency].assetKey));
-        icon.anchor.set(0, 0.5);
-        icon.width = COST_ICON_SIZE;
-        icon.height = COST_ICON_SIZE;
-        row.addChild(icon);
-
-        this.priceText = new PIXI.Text('', TextStyleRegistry.Body);
-        this.priceText.anchor.set(0, 0.5);
-        this.priceText.position.set(COST_ICON_SIZE + BARE_LAYOUT.gapToNeighbor, 0);
-        row.addChild(this.priceText);
-
-        this.labelFrame = new AutoFitFrame(LABEL_FRAME_PADDING, 'FarmFrame', row);
+        this.pricePanel = buildLockRequirementPanel(
+            getAssetIcon(CURRENCY_CONFIG[this.config.price.currency].assetKey),
+            { cornerText: '' },
+        );
         this.refreshLabel();
 
         this.labelAnchor = new THREE.Object3D();
@@ -197,17 +180,16 @@ export default class FarmZone extends Entity {
 
         this.addComponent(new ScreenAnchorComponent(
             this.screenHost,
-            this.labelFrame,
+            this.pricePanel.frame,
             () => this.labelAnchor.getWorldPosition(labelAnchorWorldPosition),
             ZONE_LABEL_ANCHOR_OPTIONS,
         ));
     }
 
-    /** Rewrites `priceText` from FarmPlotStorage's current progress and re-fits the frame around the new bounds — called once at build time and again every time FarmPlotStorage.onProgressChanged fires for this plot. */
+    /** Rewrites the panel's "<progress>/<price>" count from FarmPlotStorage's current progress (setCornerText() re-fits the frame) — called once at build time and again every time FarmPlotStorage.onProgressChanged fires for this plot. */
     private refreshLabel(): void {
         const progress = FarmPlotStorage.getProgress(this.farmId);
-        this.priceText.text = `${progress}/${this.config.price.amount}`;
-        this.labelFrame.fit();
+        this.pricePanel.setCornerText(`${progress}/${this.config.price.amount}`);
     }
 
     private tryDeposit(other: RigidBody): void {

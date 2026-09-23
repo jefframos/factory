@@ -212,6 +212,7 @@ const ENTITY_SCHEMAS = {
         { key: 'destroyParticleEffectId', type: 'select', label: 'Destroy Particle Effect (fires when the gate finishes collapsing)', source: 'particleEffects', optional: true },
         { key: 'destroyParticleCount', type: 'number', label: 'Destroy Particle Count', optional: true },
         { key: 'cameraFocusHeightOffset', type: 'number', label: 'Camera Focus Height Offset (raises the camera\'s look-at point during the unlock sequence, which pushes the gate lower on screen — blank = centered on the gate)', optional: true },
+        { key: 'disabled', type: 'boolean', label: 'Disabled (takes this gate out of the game entirely — never built, and any OTHER entity waiting on {type:\'gate\'} referencing it treats it as already met instead of blocking forever)', optional: true },
     ],
     buildings: [
         { key: 'name', type: 'text', label: 'Name' },
@@ -247,6 +248,7 @@ const ENTITY_SCHEMAS = {
         { key: 'npcId', type: 'select', label: 'NPC (optional — spawns an animated NPC at this building)', source: 'npcs', optional: true },
         { key: 'npcOffset', type: 'vector3', label: 'NPC Offset (x, y, z — nudges off the building\'s own mesh position; only used when NPC is set)', optional: true },
         ...POPUP_FIELDS,
+        { key: 'disabled', type: 'boolean', label: 'Disabled (takes this building out of the game entirely — never built, and any OTHER entity waiting on {type:\'building\'} referencing it treats it as already met instead of blocking forever)', optional: true },
     ],
     shops: [
         { key: 'name', type: 'text', label: 'Name' },
@@ -260,6 +262,7 @@ const ENTITY_SCHEMAS = {
         { key: 'costScale', type: 'number', label: 'Cost Scale (each subsequent upgrade costs this many times the previous one — cost = baseCost * costScale ^ levelsAlreadyBought)' },
         { key: 'cooldownSec', type: 'number', label: 'Cooldown (sec, after buying any level, before the next purchase can start)' },
         ...POPUP_FIELDS,
+        { key: 'disabled', type: 'boolean', label: 'Disabled (takes this shop out of the game entirely — never built)', optional: true },
     ],
     crafting: [
         { key: 'name', type: 'text', label: 'Name' },
@@ -298,6 +301,7 @@ const ENTITY_SCHEMAS = {
         { key: 'destroyParticleEffectId', type: 'select', label: 'Destroy Particle Effect (fires when a destroyOnComplete table is removed)', source: 'particleEffects', optional: true },
         { key: 'destroyParticleCount', type: 'number', label: 'Destroy Particle Count', optional: true },
         ...POPUP_FIELDS,
+        { key: 'disabled', type: 'boolean', label: 'Disabled (takes this crafting table out of the game entirely — never built)', optional: true },
     ],
     // A TRIGGER — a placed volume (drawn as a "trigger"-typed object on the map's mapSettings
     // layer, matched here by the SAME id) that marks itself activated the instant the player
@@ -307,6 +311,7 @@ const ENTITY_SCHEMAS = {
     // something actually happen when it fires.
     triggers: [
         { key: 'destroyOnTrigger', type: 'boolean', label: 'Destroy On Trigger (one-shot switch — leave off to let it re-activate every time the player re-enters)' },
+        { key: 'disabled', type: 'boolean', label: 'Disabled (takes this trigger out of the game entirely — never built, and any OTHER entity waiting on {type:\'trigger\'} referencing it treats it as already met instead of blocking forever)', optional: true },
     ],
     // A RESOURCE is the bankable item (Wood/Stone/Berries/Bark/Pebble/GrassFiber) — what
     // actually PRODUCES one (a tree, a stone deposit, a berry bush) is a separate concern,
@@ -445,6 +450,14 @@ const ENTITY_SCHEMAS = {
         { key: 'icon', type: 'icon', label: 'Icon' },
         { key: 'models', type: 'modelList', label: 'Models' },
         { key: 'maxLevel', type: 'number', label: 'Max Level (0 = never upgraded, e.g. rope/hammer — hides the level UI wherever this tool appears)' },
+        { key: 'startWith', type: 'boolean', label: 'Start With (a brand-new save begins owning one of whichever item shares this tool\'s id, instead of having to craft/earn it)', optional: true },
+        {
+            key: 'actionTime', type: 'group', label: 'Action Time (seconds — Min = level 0, Max = fully upgraded; only for tools with a timed action, e.g. Shovel = time to plant a no-seed farm cell)', optional: true,
+            fields: [
+                { key: 'min', type: 'number', label: 'Min' },
+                { key: 'max', type: 'number', label: 'Max' },
+            ],
+        },
         {
             key: 'attributes', type: 'group', label: 'Upgrade Attribute Ranges (Min = level 0/never upgraded, Max = fully maxed) — optional, only needed if a shop upgrades this tool', optional: true,
             fields: [
@@ -512,12 +525,49 @@ const ENTITY_SCHEMAS = {
         { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
         ...POPUP_FIELDS,
+        { key: 'disabled', type: 'boolean', label: 'Disabled (takes this queue out of the game entirely — never built)', optional: true },
     ],
     // Farm plot entries — both the shared "default" and each entry in "byId" — see FarmTypes.
     // ts's own doc. Ids come from the map's own "farm"-typed mapSettings objects, same
     // auto-discovery-by-id convention as queues. Deliberately does NOT include `tiles` —
     // FARM_TILE_CONFIG is a single game-wide export, not per-plot (see FARM_TILE_FIELDS below,
     // rendered once at the top of the Farms tab instead of on every entry card).
+    // Storage entries — both the shared "default" and each entry in "byId" — see StorageTypes.ts's
+    // own doc. Ids come from the map's own "storage"-typed mapSettings objects; a dropper whose
+    // `target` is that id becomes its drop-off area.
+    storages: [
+        { key: 'name', type: 'text', label: 'Name', optional: true },
+        {
+            key: 'accepts', type: 'select', label: 'Accepts (what flies off the player into this storage)',
+            options: [
+                { value: 'farm', label: 'Crops (farm harvests — default)' },
+                { value: 'main', label: 'Resources (wood, stone, ...)' },
+                { value: 'animal', label: 'Animals' },
+                { value: 'all', label: 'Everything' },
+            ],
+        },
+        { key: 'models', type: 'modelList', label: 'Model (first entry used — e.g. Restaurant.Crate)' },
+        { key: 'scale', type: 'number', label: 'Scale (Restaurant.Crate is 2 x 0.8 x 2 at 1)' },
+        { key: 'rotationDeg', type: 'number', label: 'Rotation (degrees)' },
+        {
+            key: 'dropOffset', type: 'group', label: 'Drop Offset (where the pile starts / items land, relative to the storage — world units)',
+            fields: [
+                { key: 'x', type: 'number', label: 'X' },
+                { key: 'y', type: 'number', label: 'Y' },
+                { key: 'z', type: 'number', label: 'Z' },
+            ],
+        },
+        {
+            key: 'pile', type: 'group', label: 'Pile (stored items shown as a grid of real models — fewer per row if items are too big)',
+            fields: [
+                { key: 'columns', type: 'number', label: 'Columns (e.g. 3 for 3x3, 2 for 2x2)' },
+                { key: 'rows', type: 'number', label: 'Rows' },
+                { key: 'layers', type: 'number', label: 'Max Layers (more is still stored, just not drawn)' },
+            ],
+        },
+        { key: 'itemScale', type: 'number', label: 'Item Scale (blank = same as the player stack\'s)', optional: true },
+        { key: 'disabled', type: 'boolean', label: 'Disabled (takes this storage out of the game entirely)', optional: true },
+    ],
     farms: [
         {
             key: 'price', type: 'group', label: 'Price',
@@ -535,7 +585,9 @@ const ENTITY_SCHEMAS = {
             key: 'assignedCropId', type: 'select', label: 'Assigned Crop (single-crop plot — skips the seed picker entirely: standing on an empty cell auto-plants this crop after a short delay, no seed spent. Leave unset for a normal "pick any held seed" plot. Ignores Allowed Crops above when set.)',
             source: 'crops', optional: true,
         },
+        { key: 'requiredTool', type: 'select', label: 'Required Tool (the player must own this tool to plant here at all — for an Assigned Crop plot, the tool\'s own Action Time is also how long planting takes)', source: 'tools', optional: true },
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
+        { key: 'disabled', type: 'boolean', label: 'Disabled (takes this farm plot out of the game entirely — never built, whether for-sale or already owned)', optional: true },
     ],
     // Mart entries — both the shared "default" and each entry in "byId" — see MartTypes.ts's
     // own doc. Ids come from the map's own "mart"-typed mapSettings objects, same
@@ -559,6 +611,7 @@ const ENTITY_SCHEMAS = {
         { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
         { key: 'npcId', type: 'select', label: 'NPC (optional — spawns an animated NPC at this mart)', source: 'npcs', optional: true },
         { key: 'npcOffset', type: 'vector3', label: 'NPC Offset (x, y, z — nudges off the mart\'s own center; only used when NPC is set)', optional: true },
+        { key: 'disabled', type: 'boolean', label: 'Disabled (takes this mart out of the game entirely — never built)', optional: true },
     ],
     // A CRAFTING RECIPE — the shared pool every Crafting Table picks from (see
     // CraftingRecipeTypes.ts's own doc): ingredients -> one result, registered once by its own
@@ -591,6 +644,7 @@ const ENTITY_SCHEMAS = {
         { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement', optional: true },
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
         { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
+        { key: 'disabled', type: 'boolean', label: 'Disabled (takes this crafting table out of the game entirely — never built)', optional: true },
     ],
     // FARM_TILE_CONFIG's own two fields — the empty/prepared tile pair EVERY farm plot shares
     // (see FarmTypes.ts's own doc for why this is a single game-wide export, not per-plot).
@@ -760,6 +814,49 @@ const ENTITY_SCHEMAS = {
             key: 'animations', type: 'group', label: 'Animations (clip id must match a MODELS.Characters key)',
             fields: ANIMATION_CLIP_FIELDS,
         },
+        {
+            // Nested `models` is stored as plain "Group.Key" strings (only a TOP-LEVEL `models`
+            // key gets MODELS.* serialization — see syncToSource.mjs's isModelRefArray()), which
+            // is exactly what PlayerBackpackConfig.models is typed as.
+            key: 'backpack', type: 'group', label: 'Backpack (mounted on the Chest bone — units are character-rig units, ~100 = 0.75 world units)',
+            fields: [
+                { key: 'models', type: 'modelList', label: 'Model (first entry used — empty = placeholder cube)' },
+                {
+                    key: 'offset', type: 'group', label: 'Offset from Chest bone (-Z = behind the character)',
+                    fields: [
+                        { key: 'x', type: 'number', label: 'X' },
+                        { key: 'y', type: 'number', label: 'Y' },
+                        { key: 'z', type: 'number', label: 'Z' },
+                    ],
+                },
+                {
+                    key: 'rotationDeg', type: 'group', label: 'Rotation (degrees)',
+                    fields: [
+                        { key: 'x', type: 'number', label: 'X' },
+                        { key: 'y', type: 'number', label: 'Y' },
+                        { key: 'z', type: 'number', label: 'Z' },
+                    ],
+                },
+                { key: 'scale', type: 'number', label: 'Scale (multiplies the model\'s native size — Restaurant.Crate is 2 x 0.8 x 2)' },
+                { key: 'itemScale', type: 'number', label: 'Stacked Item Scale (multiplies each carried item\'s real world size — also applied while it flies onto the stack; 1 = true size)', optional: true },
+                {
+                    key: 'stackMode', type: 'select', label: 'Stack Mode (how carried items pile up in it)',
+                    options: [
+                        { value: 'grid', label: 'Grid (3x3 layers inside the crate)' },
+                        { value: 'tower', label: 'Tower (one per level, stacked up high — very visible)' },
+                    ],
+                },
+                {
+                    key: 'capacity', type: 'group', label: 'Stack Capacity (farm items carried at once — upgrade level is saved per player)',
+                    fields: [
+                        { key: 'base', type: 'number', label: 'Base (capacity at upgrade level 0)' },
+                        { key: 'perLevel', type: 'number', label: 'Per Level (added per upgrade)' },
+                        { key: 'maxLevel', type: 'number', label: 'Max Level' },
+                    ],
+                },
+            ],
+        },
+        { key: 'harvestIntoStack', type: 'boolean', label: 'Harvest Into Stack (farm harvests fly straight onto the carry stack, limited by Stack Capacity — off = banked instantly, no limit)' },
     ],
 };
 

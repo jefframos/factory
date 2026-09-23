@@ -481,9 +481,10 @@ function renderActiveTab() {
             contentEl.appendChild(sectionLabel('Tile Settings — shared by every farm plot, not per-plot'));
             contentEl.appendChild(renderEntryCard(null, 'tiles', data.tiles, ENTITY_SCHEMAS.farmTiles ?? [], false, false, missingOnMap, 'Tile Settings'));
         }
-        contentEl.appendChild(sectionLabel(`Default — used by any ${activeId === 'farms' ? 'plot' : 'queue'} placed on the map with no id-specific override below`));
+        const noun = { farms: 'plot', storages: 'storage' }[activeId] ?? 'queue';
+        contentEl.appendChild(sectionLabel(`Default — used by any ${noun} placed on the map with no id-specific override below`));
         contentEl.appendChild(renderEntryCard(null, 'default', data.default, schema, false, false, missingOnMap));
-        contentEl.appendChild(sectionLabel(`By ${activeId === 'farms' ? 'plot' : 'queue'} id — only takes effect for a${activeId === 'farms' ? ' plot' : ' queue'} object on the Tiled map with a matching id`));
+        contentEl.appendChild(sectionLabel(`By ${noun} id — only takes effect for a ${noun} object on the Tiled map with a matching id`));
         for (const [id, value] of Object.entries(data.byId ?? {})) {
             contentEl.appendChild(renderEntryCard(data.byId, id, value, schema, true, true, missingOnMap));
         }
@@ -1524,6 +1525,36 @@ function renderEntryCard(container, key, value, schema, removable, renamable, mi
         flag.textContent = 'not on map';
         flag.title = MISSING_ON_MAP_LABEL[activeId] ?? 'not found on the Tiled map';
         summary.appendChild(flag);
+    }
+
+    // A compact "Disabled" toggle right in the collapsed row (not buried in the form body below
+    // — see renderFields()) so switching an entity on/off, and seeing at a glance which ones
+    // currently are, never requires expanding the card. Only rendered for entity types whose
+    // schema actually declares a `disabled` field (gates/buildings/shops/queues/crafting
+    // tables/crafting/marts/farms/triggers today — see each config's own `disabled` doc for what
+    // it does in-game) — every other tab is unaffected.
+    const disabledField = schema.find(f => f.key === 'disabled' && f.type === 'boolean');
+    if (disabledField) {
+        details.classList.toggle('is-disabled', !!value?.[disabledField.key]);
+
+        const toggleLabel = document.createElement('label');
+        toggleLabel.className = 'entry-disabled-toggle';
+        toggleLabel.title = disabledField.label;
+        toggleLabel.onclick = e => e.stopPropagation();
+
+        const toggleInput = document.createElement('input');
+        toggleInput.type = 'checkbox';
+        toggleInput.checked = !!value?.[disabledField.key];
+        toggleInput.onchange = () => {
+            if (value) {
+                value[disabledField.key] = toggleInput.checked;
+            }
+            details.classList.toggle('is-disabled', toggleInput.checked);
+            markDirty();
+        };
+        toggleLabel.appendChild(toggleInput);
+        toggleLabel.append('Disabled');
+        summary.appendChild(toggleLabel);
     }
 
     if (removable) {

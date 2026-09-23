@@ -4883,6 +4883,2268 @@ const ResourcesWoodLogStack = {
 }
 } as const;
 
+const RestaurantBowl = {
+  id: 'bowl',
+  path: 'restaurant/bowl',
+  fullPath: 'pizza/models/restaurant/bowl.gltf',
+  format: 'gltf',
+  nodes: {
+  "Bowl": "bowl"
+}
+} as const;
+
+const RestaurantBowlDirty = {
+  id: 'bowl_dirty',
+  path: 'restaurant/bowl_dirty',
+  fullPath: 'pizza/models/restaurant/bowl_dirty.gltf',
+  format: 'gltf',
+  nodes: {
+  "BowlDirty": "bowl_dirty"
+}
+} as const;
+
+const RestaurantBowlSmall = {
+  id: 'bowl_small',
+  path: 'restaurant/bowl_small',
+  fullPath: 'pizza/models/restaurant/bowl_small.gltf',
+  format: 'gltf',
+  nodes: {
+  "BowlSmall": "bowl_small"
+}
+} as const;
+
+const RestaurantChairA = {
+  id: 'chair_A',
+  path: 'restaurant/chair_A',
+  fullPath: 'pizza/models/restaurant/chair_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "ChairA": "chair_A"
+}
+} as const;
+
+const RestaurantChairB = {
+  id: 'chair_B',
+  path: 'restaurant/chair_B',
+  fullPath: 'pizza/models/restaurant/chair_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "ChairB": "chair_B"
+}
+} as const;
+
+const RestaurantChairStool = {
+  id: 'chair_stool',
+  path: 'restaurant/chair_stool',
+  fullPath: 'pizza/models/restaurant/chair_stool.gltf',
+  format: 'gltf',
+  nodes: {
+  "ChairStool": "chair_stool"
+}
+} as const;
+
+const RestaurantCrate = {
+  id: 'crate',
+  path: 'restaurant/crate',
+  fullPath: 'pizza/models/restaurant/crate.gltf',
+  format: 'gltf',
+  nodes: {
+  "Crate": "crate"
+}
+} as const;
+
+const RestaurantCrateBuns = {
+  id: 'crate_buns',
+  path: 'restaurant/crate_buns',
+  fullPath: 'pizza/models/restaurant/crate_buns.gltf',
+  format: 'gltf',
+  nodes: {
+  "CrateBuns": "crate_buns"
+}
+} as const;
+
+const RestaurantCrateCarrots = {
+  id: 'crate_carrots',
+  path: 'restaurant/crate_carrots',
+  fullPath: 'pizza/models/restaurant/crate_carrots.gltf',
+  format: 'gltf',
+  nodes: {
+  "CrateCarrots": "crate_carrots"
+}
+} as const;
+
+const RestaurantCrateCheese = {
+  id: 'crate_cheese',
+  path: 'restaurant/crate_cheese',
+  fullPath: 'pizza/models/restaurant/crate_cheese.gltf',
+  format: 'gltf',
+  nodes: {
+  "CrateCheese": "crate_cheese"
+}
+} as const;
+
+const RestaurantCrateDough = {
+  id: 'crate_dough',
+  path: 'restaurant/crate_dough',
+  fullPath: 'pizza/models/restaurant/crate_dough.gltf',
+  format: 'gltf',
+  nodes: {
+  "CrateDough": "crate_dough"
+}
+} as const;
+
+const RestaurantCrateHam = {
+  id: 'crate_ham',
+  path: 'restaurant/crate_ham',
+  fullPath: 'pizza/models/restaurant/crate_ham.gltf',
+  format: 'gltf',
+  nodes: {
+  "CrateHam": "crate_ham"
+}
+} as const;
+
+const RestaurantCrateLettuce = {
+  id: 'crate_lettuce',
+  path: 'restaurant/crate_lettuce',
+  fullPath: 'pizza/models/restaurant/crate_lettuce.gltf',
+  format: 'gltf',
+  nodes: {
+  "CrateLettuce": "crate_lettuce"
+}
+} as const;
+
+const RestaurantCrateLid = {
+  id: 'crate_lid',
+  path: 'restaurant/crate_lid',
+  fullPath: 'pizza/models/restaurant/crate_lid.gltf',
+  format: 'gltf',
+  nodes: {
+  "CrateLid": "crate_lid"
+}
+} as const;
+
+const RestaurantCrateMushrooms = {
+  id: 'crate_mushrooms',
+  path: 'restaurant/crate_mushrooms',
+  fullPath: 'pizza/models/restaurant/crate_mushrooms.gltf',
+  format: 'gltf',
+  nodes: {
+  "CrateMushrooms": "crate_mushrooms"
+}
+} as const;
+
+const RestaurantCrateOnions = {
+  id: 'crate_onions',
+  path: 'restaurant/crate_onions',
+  fullPath: 'pizza/models/restaurant/crate_onions.gltf',
+  format: 'gltf',
+  nodes: {
+  "CrateOnions": "crate_onions"
+}
+} as const;
+
+const RestaurantCratePepperoni = {
+  id: 'crate_pepperoni',
+  path: 'restaurant/crate_pepperoni',
+  fullPath: 'pizza/models/restaurant/crate_pepperoni.gltf',
+  format: 'gltf',
+  nodes: {
+  "CratePepperoni": "crate_pepperoni"
+}
+} as const;
+
+const RestaurantCratePotatoes = {
+  id: 'crate_potatoes',
+  path: 'restaurant/crate_potatoes',
+  fullPath: 'pizza/models/restaurant/crate_potatoes.gltf',
+  format: 'gltf',
+  nodes: {
+  "CratePotatoes": "crate_potatoes"
+}
+} as const;
+
+const RestaurantCrateSteak = {
+  id: 'crate_steak',
+  path: 'restaurant/crate_steak',
+  fullPath: 'pizza/models/restaurant/crate_steak.gltf',
+  format: 'gltf',
+  nodes: {
+  "CrateSteak": "crate_steak"
+}
+} as const;
+
+const RestaurantCrateTomatoes = {
+  id: 'crate_tomatoes',
+  path: 'restaurant/crate_tomatoes',
+  fullPath: 'pizza/models/restaurant/crate_tomatoes.gltf',
+  format: 'gltf',
+  nodes: {
+  "CrateTomatoes": "crate_tomatoes"
+}
+} as const;
+
+const RestaurantCuttingboard = {
+  id: 'cuttingboard',
+  path: 'restaurant/cuttingboard',
+  fullPath: 'pizza/models/restaurant/cuttingboard.gltf',
+  format: 'gltf',
+  nodes: {
+  "Cuttingboard": "cuttingboard"
+}
+} as const;
+
+const RestaurantDishrack = {
+  id: 'dishrack',
+  path: 'restaurant/dishrack',
+  fullPath: 'pizza/models/restaurant/dishrack.gltf',
+  format: 'gltf',
+  nodes: {
+  "Dishrack": "dishrack"
+}
+} as const;
+
+const RestaurantDishrackPlates = {
+  id: 'dishrack_plates',
+  path: 'restaurant/dishrack_plates',
+  fullPath: 'pizza/models/restaurant/dishrack_plates.gltf',
+  format: 'gltf',
+  nodes: {
+  "DishrackPlates": "dishrack_plates"
+}
+} as const;
+
+const RestaurantDoorA = {
+  id: 'door_A',
+  path: 'restaurant/door_A',
+  fullPath: 'pizza/models/restaurant/door_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "DoorA": "door_A"
+}
+} as const;
+
+const RestaurantDoorB = {
+  id: 'door_B',
+  path: 'restaurant/door_B',
+  fullPath: 'pizza/models/restaurant/door_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "DoorB": "door_B"
+}
+} as const;
+
+const RestaurantExtractorhood = {
+  id: 'extractorhood',
+  path: 'restaurant/extractorhood',
+  fullPath: 'pizza/models/restaurant/extractorhood.gltf',
+  format: 'gltf',
+  nodes: {
+  "Extractorhood": "extractorhood"
+}
+} as const;
+
+const RestaurantFloorKitchen = {
+  id: 'floor_kitchen',
+  path: 'restaurant/floor_kitchen',
+  fullPath: 'pizza/models/restaurant/floor_kitchen.gltf',
+  format: 'gltf',
+  nodes: {
+  "FloorKitchen": "floor_kitchen"
+}
+} as const;
+
+const RestaurantFloorKitchenSmall = {
+  id: 'floor_kitchen_small',
+  path: 'restaurant/floor_kitchen_small',
+  fullPath: 'pizza/models/restaurant/floor_kitchen_small.gltf',
+  format: 'gltf',
+  nodes: {
+  "FloorKitchenSmall": "floor_kitchen_small"
+}
+} as const;
+
+const RestaurantFloorKitchenSmallStyleB = {
+  id: 'floor_kitchen_small_styleB',
+  path: 'restaurant/floor_kitchen_small_styleB',
+  fullPath: 'pizza/models/restaurant/floor_kitchen_small_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "FloorKitchenSmallStyleB": "floor_kitchen_small_styleB"
+}
+} as const;
+
+const RestaurantFloorKitchenStyleB = {
+  id: 'floor_kitchen_styleB',
+  path: 'restaurant/floor_kitchen_styleB',
+  fullPath: 'pizza/models/restaurant/floor_kitchen_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "FloorKitchenStyleB": "floor_kitchen_styleB"
+}
+} as const;
+
+const RestaurantFoodBurger = {
+  id: 'food_burger',
+  path: 'restaurant/food_burger',
+  fullPath: 'pizza/models/restaurant/food_burger.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodBurger": "food_burger"
+}
+} as const;
+
+const RestaurantFoodDinner = {
+  id: 'food_dinner',
+  path: 'restaurant/food_dinner',
+  fullPath: 'pizza/models/restaurant/food_dinner.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodDinner": "food_dinner"
+}
+} as const;
+
+const RestaurantFoodIcecreamConeChocolate = {
+  id: 'food_icecream_cone_chocolate',
+  path: 'restaurant/food_icecream_cone_chocolate',
+  fullPath: 'pizza/models/restaurant/food_icecream_cone_chocolate.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIcecreamConeChocolate": "food_icecream_cone_chocolate"
+}
+} as const;
+
+const RestaurantFoodIcecreamConeStrawberry = {
+  id: 'food_icecream_cone_strawberry',
+  path: 'restaurant/food_icecream_cone_strawberry',
+  fullPath: 'pizza/models/restaurant/food_icecream_cone_strawberry.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIcecreamConeStrawberry": "food_icecream_cone_strawberry"
+}
+} as const;
+
+const RestaurantFoodIcecreamConeVanilla = {
+  id: 'food_icecream_cone_vanilla',
+  path: 'restaurant/food_icecream_cone_vanilla',
+  fullPath: 'pizza/models/restaurant/food_icecream_cone_vanilla.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIcecreamConeVanilla": "food_icecream_cone_vanilla"
+}
+} as const;
+
+const RestaurantFoodIngredientBun = {
+  id: 'food_ingredient_bun',
+  path: 'restaurant/food_ingredient_bun',
+  fullPath: 'pizza/models/restaurant/food_ingredient_bun.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientBun": "food_ingredient_bun"
+}
+} as const;
+
+const RestaurantFoodIngredientBunBottom = {
+  id: 'food_ingredient_bun_bottom',
+  path: 'restaurant/food_ingredient_bun_bottom',
+  fullPath: 'pizza/models/restaurant/food_ingredient_bun_bottom.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientBunBottom": "food_ingredient_bun_bottom"
+}
+} as const;
+
+const RestaurantFoodIngredientBunTop = {
+  id: 'food_ingredient_bun_top',
+  path: 'restaurant/food_ingredient_bun_top',
+  fullPath: 'pizza/models/restaurant/food_ingredient_bun_top.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientBunTop": "food_ingredient_bun_top"
+}
+} as const;
+
+const RestaurantFoodIngredientBurgerCooked = {
+  id: 'food_ingredient_burger_cooked',
+  path: 'restaurant/food_ingredient_burger_cooked',
+  fullPath: 'pizza/models/restaurant/food_ingredient_burger_cooked.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientBurgerCooked": "food_ingredient_burger_cooked"
+}
+} as const;
+
+const RestaurantFoodIngredientBurgerTrash = {
+  id: 'food_ingredient_burger_trash',
+  path: 'restaurant/food_ingredient_burger_trash',
+  fullPath: 'pizza/models/restaurant/food_ingredient_burger_trash.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientBurgerTrash": "food_ingredient_burger_trash"
+}
+} as const;
+
+const RestaurantFoodIngredientBurgerUncooked = {
+  id: 'food_ingredient_burger_uncooked',
+  path: 'restaurant/food_ingredient_burger_uncooked',
+  fullPath: 'pizza/models/restaurant/food_ingredient_burger_uncooked.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientBurgerUncooked": "food_ingredient_burger_uncooked"
+}
+} as const;
+
+const RestaurantFoodIngredientCarrot = {
+  id: 'food_ingredient_carrot',
+  path: 'restaurant/food_ingredient_carrot',
+  fullPath: 'pizza/models/restaurant/food_ingredient_carrot.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientCarrot": "food_ingredient_carrot"
+}
+} as const;
+
+const RestaurantFoodIngredientCarrotChopped = {
+  id: 'food_ingredient_carrot_chopped',
+  path: 'restaurant/food_ingredient_carrot_chopped',
+  fullPath: 'pizza/models/restaurant/food_ingredient_carrot_chopped.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientCarrotChopped": "food_ingredient_carrot_chopped"
+}
+} as const;
+
+const RestaurantFoodIngredientCarrotPieces = {
+  id: 'food_ingredient_carrot_pieces',
+  path: 'restaurant/food_ingredient_carrot_pieces',
+  fullPath: 'pizza/models/restaurant/food_ingredient_carrot_pieces.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientCarrotPieces": "food_ingredient_carrot_pieces"
+}
+} as const;
+
+const RestaurantFoodIngredientCheese = {
+  id: 'food_ingredient_cheese',
+  path: 'restaurant/food_ingredient_cheese',
+  fullPath: 'pizza/models/restaurant/food_ingredient_cheese.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientCheese": "food_ingredient_cheese"
+}
+} as const;
+
+const RestaurantFoodIngredientCheeseChopped = {
+  id: 'food_ingredient_cheese_chopped',
+  path: 'restaurant/food_ingredient_cheese_chopped',
+  fullPath: 'pizza/models/restaurant/food_ingredient_cheese_chopped.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientCheeseChopped": "food_ingredient_cheese_chopped"
+}
+} as const;
+
+const RestaurantFoodIngredientCheeseGrated = {
+  id: 'food_ingredient_cheese_grated',
+  path: 'restaurant/food_ingredient_cheese_grated',
+  fullPath: 'pizza/models/restaurant/food_ingredient_cheese_grated.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientCheeseGrated": "food_ingredient_cheese_grated"
+}
+} as const;
+
+const RestaurantFoodIngredientCheeseSlice = {
+  id: 'food_ingredient_cheese_slice',
+  path: 'restaurant/food_ingredient_cheese_slice',
+  fullPath: 'pizza/models/restaurant/food_ingredient_cheese_slice.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientCheeseSlice": "food_ingredient_cheese_slice"
+}
+} as const;
+
+const RestaurantFoodIngredientDough = {
+  id: 'food_ingredient_dough',
+  path: 'restaurant/food_ingredient_dough',
+  fullPath: 'pizza/models/restaurant/food_ingredient_dough.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientDough": "food_ingredient_dough"
+}
+} as const;
+
+const RestaurantFoodIngredientDoughBase = {
+  id: 'food_ingredient_dough_base',
+  path: 'restaurant/food_ingredient_dough_base',
+  fullPath: 'pizza/models/restaurant/food_ingredient_dough_base.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientDoughBase": "food_ingredient_dough_base"
+}
+} as const;
+
+const RestaurantFoodIngredientHam = {
+  id: 'food_ingredient_ham',
+  path: 'restaurant/food_ingredient_ham',
+  fullPath: 'pizza/models/restaurant/food_ingredient_ham.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientHam": "food_ingredient_ham"
+}
+} as const;
+
+const RestaurantFoodIngredientHamCooked = {
+  id: 'food_ingredient_ham_cooked',
+  path: 'restaurant/food_ingredient_ham_cooked',
+  fullPath: 'pizza/models/restaurant/food_ingredient_ham_cooked.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientHamCooked": "food_ingredient_ham_cooked"
+}
+} as const;
+
+const RestaurantFoodIngredientHamTrash = {
+  id: 'food_ingredient_ham_trash',
+  path: 'restaurant/food_ingredient_ham_trash',
+  fullPath: 'pizza/models/restaurant/food_ingredient_ham_trash.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientHamTrash": "food_ingredient_ham_trash"
+}
+} as const;
+
+const RestaurantFoodIngredientLettuce = {
+  id: 'food_ingredient_lettuce',
+  path: 'restaurant/food_ingredient_lettuce',
+  fullPath: 'pizza/models/restaurant/food_ingredient_lettuce.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientLettuce": "food_ingredient_lettuce"
+}
+} as const;
+
+const RestaurantFoodIngredientLettuceChopped = {
+  id: 'food_ingredient_lettuce_chopped',
+  path: 'restaurant/food_ingredient_lettuce_chopped',
+  fullPath: 'pizza/models/restaurant/food_ingredient_lettuce_chopped.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientLettuceChopped": "food_ingredient_lettuce_chopped"
+}
+} as const;
+
+const RestaurantFoodIngredientLettuceSlice = {
+  id: 'food_ingredient_lettuce_slice',
+  path: 'restaurant/food_ingredient_lettuce_slice',
+  fullPath: 'pizza/models/restaurant/food_ingredient_lettuce_slice.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientLettuceSlice": "food_ingredient_lettuce_slice"
+}
+} as const;
+
+const RestaurantFoodIngredientMushroom = {
+  id: 'food_ingredient_mushroom',
+  path: 'restaurant/food_ingredient_mushroom',
+  fullPath: 'pizza/models/restaurant/food_ingredient_mushroom.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientMushroom": "food_ingredient_mushroom"
+}
+} as const;
+
+const RestaurantFoodIngredientMushroomChopped = {
+  id: 'food_ingredient_mushroom_chopped',
+  path: 'restaurant/food_ingredient_mushroom_chopped',
+  fullPath: 'pizza/models/restaurant/food_ingredient_mushroom_chopped.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientMushroomChopped": "food_ingredient_mushroom_chopped"
+}
+} as const;
+
+const RestaurantFoodIngredientMushroomPieces = {
+  id: 'food_ingredient_mushroom_pieces',
+  path: 'restaurant/food_ingredient_mushroom_pieces',
+  fullPath: 'pizza/models/restaurant/food_ingredient_mushroom_pieces.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientMushroomPieces": "food_ingredient_mushroom_pieces"
+}
+} as const;
+
+const RestaurantFoodIngredientOnion = {
+  id: 'food_ingredient_onion',
+  path: 'restaurant/food_ingredient_onion',
+  fullPath: 'pizza/models/restaurant/food_ingredient_onion.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientOnion": "food_ingredient_onion"
+}
+} as const;
+
+const RestaurantFoodIngredientOnionChopped = {
+  id: 'food_ingredient_onion_chopped',
+  path: 'restaurant/food_ingredient_onion_chopped',
+  fullPath: 'pizza/models/restaurant/food_ingredient_onion_chopped.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientOnionChopped": "food_ingredient_onion_chopped"
+}
+} as const;
+
+const RestaurantFoodIngredientOnionRings = {
+  id: 'food_ingredient_onion_rings',
+  path: 'restaurant/food_ingredient_onion_rings',
+  fullPath: 'pizza/models/restaurant/food_ingredient_onion_rings.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientOnionRings": "food_ingredient_onion_rings"
+}
+} as const;
+
+const RestaurantFoodIngredientPepperoni = {
+  id: 'food_ingredient_pepperoni',
+  path: 'restaurant/food_ingredient_pepperoni',
+  fullPath: 'pizza/models/restaurant/food_ingredient_pepperoni.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientPepperoni": "food_ingredient_pepperoni"
+}
+} as const;
+
+const RestaurantFoodIngredientPepperoniChopped = {
+  id: 'food_ingredient_pepperoni_chopped',
+  path: 'restaurant/food_ingredient_pepperoni_chopped',
+  fullPath: 'pizza/models/restaurant/food_ingredient_pepperoni_chopped.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientPepperoniChopped": "food_ingredient_pepperoni_chopped"
+}
+} as const;
+
+const RestaurantFoodIngredientPepperoniSlices = {
+  id: 'food_ingredient_pepperoni_slices',
+  path: 'restaurant/food_ingredient_pepperoni_slices',
+  fullPath: 'pizza/models/restaurant/food_ingredient_pepperoni_slices.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientPepperoniSlices": "food_ingredient_pepperoni_slices"
+}
+} as const;
+
+const RestaurantFoodIngredientPotato = {
+  id: 'food_ingredient_potato',
+  path: 'restaurant/food_ingredient_potato',
+  fullPath: 'pizza/models/restaurant/food_ingredient_potato.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientPotato": "food_ingredient_potato"
+}
+} as const;
+
+const RestaurantFoodIngredientPotatoChopped = {
+  id: 'food_ingredient_potato_chopped',
+  path: 'restaurant/food_ingredient_potato_chopped',
+  fullPath: 'pizza/models/restaurant/food_ingredient_potato_chopped.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientPotatoChopped": "food_ingredient_potato_chopped"
+}
+} as const;
+
+const RestaurantFoodIngredientPotatoMashed = {
+  id: 'food_ingredient_potato_mashed',
+  path: 'restaurant/food_ingredient_potato_mashed',
+  fullPath: 'pizza/models/restaurant/food_ingredient_potato_mashed.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientPotatoMashed": "food_ingredient_potato_mashed"
+}
+} as const;
+
+const RestaurantFoodIngredientSteak = {
+  id: 'food_ingredient_steak',
+  path: 'restaurant/food_ingredient_steak',
+  fullPath: 'pizza/models/restaurant/food_ingredient_steak.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientSteak": "food_ingredient_steak"
+}
+} as const;
+
+const RestaurantFoodIngredientSteakPieces = {
+  id: 'food_ingredient_steak_pieces',
+  path: 'restaurant/food_ingredient_steak_pieces',
+  fullPath: 'pizza/models/restaurant/food_ingredient_steak_pieces.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientSteakPieces": "food_ingredient_steak_pieces"
+}
+} as const;
+
+const RestaurantFoodIngredientTomato = {
+  id: 'food_ingredient_tomato',
+  path: 'restaurant/food_ingredient_tomato',
+  fullPath: 'pizza/models/restaurant/food_ingredient_tomato.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientTomato": "food_ingredient_tomato"
+}
+} as const;
+
+const RestaurantFoodIngredientTomatoSauce = {
+  id: 'food_ingredient_tomato_sauce',
+  path: 'restaurant/food_ingredient_tomato_sauce',
+  fullPath: 'pizza/models/restaurant/food_ingredient_tomato_sauce.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientTomatoSauce": "food_ingredient_tomato_sauce"
+}
+} as const;
+
+const RestaurantFoodIngredientTomatoSlice = {
+  id: 'food_ingredient_tomato_slice',
+  path: 'restaurant/food_ingredient_tomato_slice',
+  fullPath: 'pizza/models/restaurant/food_ingredient_tomato_slice.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientTomatoSlice": "food_ingredient_tomato_slice"
+}
+} as const;
+
+const RestaurantFoodIngredientTomatoSlices = {
+  id: 'food_ingredient_tomato_slices',
+  path: 'restaurant/food_ingredient_tomato_slices',
+  fullPath: 'pizza/models/restaurant/food_ingredient_tomato_slices.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientTomatoSlices": "food_ingredient_tomato_slices"
+}
+} as const;
+
+const RestaurantFoodIngredientVegetableburgerCooked = {
+  id: 'food_ingredient_vegetableburger_cooked',
+  path: 'restaurant/food_ingredient_vegetableburger_cooked',
+  fullPath: 'pizza/models/restaurant/food_ingredient_vegetableburger_cooked.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientVegetableburgerCooked": "food_ingredient_vegetableburger_cooked"
+}
+} as const;
+
+const RestaurantFoodIngredientVegetableburgerUncooked = {
+  id: 'food_ingredient_vegetableburger_uncooked',
+  path: 'restaurant/food_ingredient_vegetableburger_uncooked',
+  fullPath: 'pizza/models/restaurant/food_ingredient_vegetableburger_uncooked.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodIngredientVegetableburgerUncooked": "food_ingredient_vegetableburger_uncooked"
+}
+} as const;
+
+const RestaurantFoodPizzaCheesePlated = {
+  id: 'food_pizza_cheese_plated',
+  path: 'restaurant/food_pizza_cheese_plated',
+  fullPath: 'pizza/models/restaurant/food_pizza_cheese_plated.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodPizzaCheesePlated": "food_pizza_cheese_plated"
+}
+} as const;
+
+const RestaurantFoodPizzaCheeseSlice = {
+  id: 'food_pizza_cheese_slice',
+  path: 'restaurant/food_pizza_cheese_slice',
+  fullPath: 'pizza/models/restaurant/food_pizza_cheese_slice.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodPizzaCheeseSlice": "food_pizza_cheese_slice"
+}
+} as const;
+
+const RestaurantFoodPizzaMushroomPlated = {
+  id: 'food_pizza_mushroom_plated',
+  path: 'restaurant/food_pizza_mushroom_plated',
+  fullPath: 'pizza/models/restaurant/food_pizza_mushroom_plated.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodPizzaMushroomPlated": "food_pizza_mushroom_plated"
+}
+} as const;
+
+const RestaurantFoodPizzaMushroomSlice = {
+  id: 'food_pizza_mushroom_slice',
+  path: 'restaurant/food_pizza_mushroom_slice',
+  fullPath: 'pizza/models/restaurant/food_pizza_mushroom_slice.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodPizzaMushroomSlice": "food_pizza_mushroom_slice"
+}
+} as const;
+
+const RestaurantFoodPizzaPepperoniPlated = {
+  id: 'food_pizza_pepperoni_plated',
+  path: 'restaurant/food_pizza_pepperoni_plated',
+  fullPath: 'pizza/models/restaurant/food_pizza_pepperoni_plated.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodPizzaPepperoniPlated": "food_pizza_pepperoni_plated"
+}
+} as const;
+
+const RestaurantFoodPizzaPepperoniSlice = {
+  id: 'food_pizza_pepperoni_slice',
+  path: 'restaurant/food_pizza_pepperoni_slice',
+  fullPath: 'pizza/models/restaurant/food_pizza_pepperoni_slice.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodPizzaPepperoniSlice": "food_pizza_pepperoni_slice"
+}
+} as const;
+
+const RestaurantFoodStew = {
+  id: 'food_stew',
+  path: 'restaurant/food_stew',
+  fullPath: 'pizza/models/restaurant/food_stew.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodStew": "food_stew"
+}
+} as const;
+
+const RestaurantFoodVegetableburger = {
+  id: 'food_vegetableburger',
+  path: 'restaurant/food_vegetableburger',
+  fullPath: 'pizza/models/restaurant/food_vegetableburger.gltf',
+  format: 'gltf',
+  nodes: {
+  "FoodVegetableburger": "food_vegetableburger"
+}
+} as const;
+
+const RestaurantFridgeA = {
+  id: 'fridge_A',
+  path: 'restaurant/fridge_A',
+  fullPath: 'pizza/models/restaurant/fridge_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "FridgeA": "fridge_A",
+  "FridgeADoorBottom": "fridge_A_door_bottom",
+  "FridgeADoorTop": "fridge_A_door_top"
+}
+} as const;
+
+const RestaurantFridgeADecorated = {
+  id: 'fridge_A_decorated',
+  path: 'restaurant/fridge_A_decorated',
+  fullPath: 'pizza/models/restaurant/fridge_A_decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "FridgeADecorated": "fridge_A_decorated",
+  "FridgeADecoratedDoorBottom": "fridge_A_decorated_door_bottom",
+  "FridgeADecoratedDoorTop": "fridge_A_decorated_door_top"
+}
+} as const;
+
+const RestaurantFridgeB = {
+  id: 'fridge_B',
+  path: 'restaurant/fridge_B',
+  fullPath: 'pizza/models/restaurant/fridge_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "FridgeB": "fridge_B",
+  "FridgeBDoor": "fridge_B_door"
+}
+} as const;
+
+const RestaurantIcecreamBowl = {
+  id: 'icecream_bowl',
+  path: 'restaurant/icecream_bowl',
+  fullPath: 'pizza/models/restaurant/icecream_bowl.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowl": "icecream_bowl"
+}
+} as const;
+
+const RestaurantIcecreamBowlCherries = {
+  id: 'icecream_bowl_cherries',
+  path: 'restaurant/icecream_bowl_cherries',
+  fullPath: 'pizza/models/restaurant/icecream_bowl_cherries.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowlCherries": "icecream_bowl_cherries"
+}
+} as const;
+
+const RestaurantIcecreamBowlCookiesticks = {
+  id: 'icecream_bowl_cookiesticks',
+  path: 'restaurant/icecream_bowl_cookiesticks',
+  fullPath: 'pizza/models/restaurant/icecream_bowl_cookiesticks.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowlCookiesticks": "icecream_bowl_cookiesticks"
+}
+} as const;
+
+const RestaurantIcecreamBowlDecoratedA = {
+  id: 'icecream_bowl_decorated_A',
+  path: 'restaurant/icecream_bowl_decorated_A',
+  fullPath: 'pizza/models/restaurant/icecream_bowl_decorated_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowlDecoratedA": "icecream_bowl_decorated_A"
+}
+} as const;
+
+const RestaurantIcecreamBowlDecoratedB = {
+  id: 'icecream_bowl_decorated_B',
+  path: 'restaurant/icecream_bowl_decorated_B',
+  fullPath: 'pizza/models/restaurant/icecream_bowl_decorated_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowlDecoratedB": "icecream_bowl_decorated_B"
+}
+} as const;
+
+const RestaurantIcecreamBowlIcecreamChocolate = {
+  id: 'icecream_bowl_icecream_chocolate',
+  path: 'restaurant/icecream_bowl_icecream_chocolate',
+  fullPath: 'pizza/models/restaurant/icecream_bowl_icecream_chocolate.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowlIcecreamChocolate": "icecream_bowl_icecream_chocolate"
+}
+} as const;
+
+const RestaurantIcecreamBowlIcecreamStrawberry = {
+  id: 'icecream_bowl_icecream_strawberry',
+  path: 'restaurant/icecream_bowl_icecream_strawberry',
+  fullPath: 'pizza/models/restaurant/icecream_bowl_icecream_strawberry.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowlIcecreamStrawberry": "icecream_bowl_icecream_strawberry"
+}
+} as const;
+
+const RestaurantIcecreamBowlIcecreamVanilla = {
+  id: 'icecream_bowl_icecream_vanilla',
+  path: 'restaurant/icecream_bowl_icecream_vanilla',
+  fullPath: 'pizza/models/restaurant/icecream_bowl_icecream_vanilla.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowlIcecreamVanilla": "icecream_bowl_icecream_vanilla"
+}
+} as const;
+
+const RestaurantIcecreamBowlWaffles = {
+  id: 'icecream_bowl_waffles',
+  path: 'restaurant/icecream_bowl_waffles',
+  fullPath: 'pizza/models/restaurant/icecream_bowl_waffles.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamBowlWaffles": "icecream_bowl_waffles"
+}
+} as const;
+
+const RestaurantIcecreamCherry = {
+  id: 'icecream_cherry',
+  path: 'restaurant/icecream_cherry',
+  fullPath: 'pizza/models/restaurant/icecream_cherry.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamCherry": "icecream_cherry"
+}
+} as const;
+
+const RestaurantIcecreamCone = {
+  id: 'icecream_cone',
+  path: 'restaurant/icecream_cone',
+  fullPath: 'pizza/models/restaurant/icecream_cone.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamCone": "icecream_cone"
+}
+} as const;
+
+const RestaurantIcecreamConeStacked = {
+  id: 'icecream_cone_stacked',
+  path: 'restaurant/icecream_cone_stacked',
+  fullPath: 'pizza/models/restaurant/icecream_cone_stacked.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamConeStacked": "icecream_cone_stacked"
+}
+} as const;
+
+const RestaurantIcecreamContainer = {
+  id: 'icecream_container',
+  path: 'restaurant/icecream_container',
+  fullPath: 'pizza/models/restaurant/icecream_container.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamContainer": "icecream_container"
+}
+} as const;
+
+const RestaurantIcecreamContainerIcecreamChocolate = {
+  id: 'icecream_container_icecream_chocolate',
+  path: 'restaurant/icecream_container_icecream_chocolate',
+  fullPath: 'pizza/models/restaurant/icecream_container_icecream_chocolate.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamContainerIcecreamChocolate": "icecream_container_icecream_chocolate"
+}
+} as const;
+
+const RestaurantIcecreamContainerIcecreamStrawberry = {
+  id: 'icecream_container_icecream_strawberry',
+  path: 'restaurant/icecream_container_icecream_strawberry',
+  fullPath: 'pizza/models/restaurant/icecream_container_icecream_strawberry.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamContainerIcecreamStrawberry": "icecream_container_icecream_strawberry"
+}
+} as const;
+
+const RestaurantIcecreamContainerIcecreamVanilla = {
+  id: 'icecream_container_icecream_vanilla',
+  path: 'restaurant/icecream_container_icecream_vanilla',
+  fullPath: 'pizza/models/restaurant/icecream_container_icecream_vanilla.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamContainerIcecreamVanilla": "icecream_container_icecream_vanilla"
+}
+} as const;
+
+const RestaurantIcecreamContainerTop = {
+  id: 'icecream_container_top',
+  path: 'restaurant/icecream_container_top',
+  fullPath: 'pizza/models/restaurant/icecream_container_top.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamContainerTop": "icecream_container_top",
+  "IcecreamContainerTopLid": "icecream_container_top_lid"
+}
+} as const;
+
+const RestaurantIcecreamCookiestick = {
+  id: 'icecream_cookiestick',
+  path: 'restaurant/icecream_cookiestick',
+  fullPath: 'pizza/models/restaurant/icecream_cookiestick.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamCookiestick": "icecream_cookiestick"
+}
+} as const;
+
+const RestaurantIcecreamMachine = {
+  id: 'icecream_machine',
+  path: 'restaurant/icecream_machine',
+  fullPath: 'pizza/models/restaurant/icecream_machine.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamMachine": "icecream_machine",
+  "IcecreamMachineHandleChocolate": "icecream_machine_handle_chocolate",
+  "IcecreamMachineHandleStrawberry": "icecream_machine_handle_strawberry",
+  "IcecreamMachineHandleVanilla": "icecream_machine_handle_vanilla"
+}
+} as const;
+
+const RestaurantIcecreamScoop = {
+  id: 'icecream_scoop',
+  path: 'restaurant/icecream_scoop',
+  fullPath: 'pizza/models/restaurant/icecream_scoop.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamScoop": "icecream_scoop"
+}
+} as const;
+
+const RestaurantIcecreamSoftserveIcecreamChocolate = {
+  id: 'icecream_softserve_icecream_chocolate',
+  path: 'restaurant/icecream_softserve_icecream_chocolate',
+  fullPath: 'pizza/models/restaurant/icecream_softserve_icecream_chocolate.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamSoftserveIcecreamChocolate": "icecream_softserve_icecream_chocolate"
+}
+} as const;
+
+const RestaurantIcecreamSoftserveIcecreamStrawberry = {
+  id: 'icecream_softserve_icecream_strawberry',
+  path: 'restaurant/icecream_softserve_icecream_strawberry',
+  fullPath: 'pizza/models/restaurant/icecream_softserve_icecream_strawberry.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamSoftserveIcecreamStrawberry": "icecream_softserve_icecream_strawberry"
+}
+} as const;
+
+const RestaurantIcecreamSoftserveIcecreamVanilla = {
+  id: 'icecream_softserve_icecream_vanilla',
+  path: 'restaurant/icecream_softserve_icecream_vanilla',
+  fullPath: 'pizza/models/restaurant/icecream_softserve_icecream_vanilla.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamSoftserveIcecreamVanilla": "icecream_softserve_icecream_vanilla"
+}
+} as const;
+
+const RestaurantIcecreamWaffle = {
+  id: 'icecream_waffle',
+  path: 'restaurant/icecream_waffle',
+  fullPath: 'pizza/models/restaurant/icecream_waffle.gltf',
+  format: 'gltf',
+  nodes: {
+  "IcecreamWaffle": "icecream_waffle"
+}
+} as const;
+
+const RestaurantJarALarge = {
+  id: 'jar_A_large',
+  path: 'restaurant/jar_A_large',
+  fullPath: 'pizza/models/restaurant/jar_A_large.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarALarge": "jar_A_large"
+}
+} as const;
+
+const RestaurantJarAMedium = {
+  id: 'jar_A_medium',
+  path: 'restaurant/jar_A_medium',
+  fullPath: 'pizza/models/restaurant/jar_A_medium.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarAMedium": "jar_A_medium"
+}
+} as const;
+
+const RestaurantJarASmall = {
+  id: 'jar_A_small',
+  path: 'restaurant/jar_A_small',
+  fullPath: 'pizza/models/restaurant/jar_A_small.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarASmall": "jar_A_small"
+}
+} as const;
+
+const RestaurantJarBLarge = {
+  id: 'jar_B_large',
+  path: 'restaurant/jar_B_large',
+  fullPath: 'pizza/models/restaurant/jar_B_large.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarBLarge": "jar_B_large"
+}
+} as const;
+
+const RestaurantJarBMedium = {
+  id: 'jar_B_medium',
+  path: 'restaurant/jar_B_medium',
+  fullPath: 'pizza/models/restaurant/jar_B_medium.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarBMedium": "jar_B_medium"
+}
+} as const;
+
+const RestaurantJarBSmall = {
+  id: 'jar_B_small',
+  path: 'restaurant/jar_B_small',
+  fullPath: 'pizza/models/restaurant/jar_B_small.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarBSmall": "jar_B_small"
+}
+} as const;
+
+const RestaurantJarCLarge = {
+  id: 'jar_C_large',
+  path: 'restaurant/jar_C_large',
+  fullPath: 'pizza/models/restaurant/jar_C_large.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarCLarge": "jar_C_large"
+}
+} as const;
+
+const RestaurantJarCMedium = {
+  id: 'jar_C_medium',
+  path: 'restaurant/jar_C_medium',
+  fullPath: 'pizza/models/restaurant/jar_C_medium.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarCMedium": "jar_C_medium"
+}
+} as const;
+
+const RestaurantJarCSmall = {
+  id: 'jar_C_small',
+  path: 'restaurant/jar_C_small',
+  fullPath: 'pizza/models/restaurant/jar_C_small.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarCSmall": "jar_C_small"
+}
+} as const;
+
+const RestaurantJarDLarge = {
+  id: 'jar_D_large',
+  path: 'restaurant/jar_D_large',
+  fullPath: 'pizza/models/restaurant/jar_D_large.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarDLarge": "jar_D_large"
+}
+} as const;
+
+const RestaurantJarDMedium = {
+  id: 'jar_D_medium',
+  path: 'restaurant/jar_D_medium',
+  fullPath: 'pizza/models/restaurant/jar_D_medium.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarDMedium": "jar_D_medium"
+}
+} as const;
+
+const RestaurantJarDSmall = {
+  id: 'jar_D_small',
+  path: 'restaurant/jar_D_small',
+  fullPath: 'pizza/models/restaurant/jar_D_small.gltf',
+  format: 'gltf',
+  nodes: {
+  "JarDSmall": "jar_D_small"
+}
+} as const;
+
+const RestaurantKetchup = {
+  id: 'ketchup',
+  path: 'restaurant/ketchup',
+  fullPath: 'pizza/models/restaurant/ketchup.gltf',
+  format: 'gltf',
+  nodes: {
+  "Ketchup": "ketchup"
+}
+} as const;
+
+const RestaurantKitchencabinet = {
+  id: 'kitchencabinet',
+  path: 'restaurant/kitchencabinet',
+  fullPath: 'pizza/models/restaurant/kitchencabinet.gltf',
+  format: 'gltf',
+  nodes: {
+  "Kitchencabinet": "kitchencabinet"
+}
+} as const;
+
+const RestaurantKitchencabinetCorner = {
+  id: 'kitchencabinet_corner',
+  path: 'restaurant/kitchencabinet_corner',
+  fullPath: 'pizza/models/restaurant/kitchencabinet_corner.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencabinetCorner": "kitchencabinet_corner"
+}
+} as const;
+
+const RestaurantKitchencabinetCornerHalf = {
+  id: 'kitchencabinet_corner_half',
+  path: 'restaurant/kitchencabinet_corner_half',
+  fullPath: 'pizza/models/restaurant/kitchencabinet_corner_half.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencabinetCornerHalf": "kitchencabinet_corner_half"
+}
+} as const;
+
+const RestaurantKitchencabinetCornerHalfStyleB = {
+  id: 'kitchencabinet_corner_half_styleB',
+  path: 'restaurant/kitchencabinet_corner_half_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencabinet_corner_half_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencabinetCornerHalfStyleB": "kitchencabinet_corner_half_styleB"
+}
+} as const;
+
+const RestaurantKitchencabinetCornerStyleB = {
+  id: 'kitchencabinet_corner_styleB',
+  path: 'restaurant/kitchencabinet_corner_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencabinet_corner_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencabinetCornerStyleB": "kitchencabinet_corner_styleB"
+}
+} as const;
+
+const RestaurantKitchencabinetHalf = {
+  id: 'kitchencabinet_half',
+  path: 'restaurant/kitchencabinet_half',
+  fullPath: 'pizza/models/restaurant/kitchencabinet_half.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencabinetHalf": "kitchencabinet_half"
+}
+} as const;
+
+const RestaurantKitchencabinetHalfStyleB = {
+  id: 'kitchencabinet_half_styleB',
+  path: 'restaurant/kitchencabinet_half_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencabinet_half_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencabinetHalfStyleB": "kitchencabinet_half_styleB"
+}
+} as const;
+
+const RestaurantKitchencabinetStyleB = {
+  id: 'kitchencabinet_styleB',
+  path: 'restaurant/kitchencabinet_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencabinet_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencabinetStyleB": "kitchencabinet_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterInnercorner = {
+  id: 'kitchencounter_innercorner',
+  path: 'restaurant/kitchencounter_innercorner',
+  fullPath: 'pizza/models/restaurant/kitchencounter_innercorner.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterInnercorner": "kitchencounter_innercorner"
+}
+} as const;
+
+const RestaurantKitchencounterInnercornerBacksplash = {
+  id: 'kitchencounter_innercorner_backsplash',
+  path: 'restaurant/kitchencounter_innercorner_backsplash',
+  fullPath: 'pizza/models/restaurant/kitchencounter_innercorner_backsplash.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterInnercornerBacksplash": "kitchencounter_innercorner_backsplash"
+}
+} as const;
+
+const RestaurantKitchencounterInnercornerBacksplashStyleB = {
+  id: 'kitchencounter_innercorner_backsplash_styleB',
+  path: 'restaurant/kitchencounter_innercorner_backsplash_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_innercorner_backsplash_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterInnercornerBacksplashStyleB": "kitchencounter_innercorner_backsplash_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterInnercornerStyleB = {
+  id: 'kitchencounter_innercorner_styleB',
+  path: 'restaurant/kitchencounter_innercorner_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_innercorner_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterInnercornerStyleB": "kitchencounter_innercorner_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterOutercorner = {
+  id: 'kitchencounter_outercorner',
+  path: 'restaurant/kitchencounter_outercorner',
+  fullPath: 'pizza/models/restaurant/kitchencounter_outercorner.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterOutercorner": "kitchencounter_outercorner"
+}
+} as const;
+
+const RestaurantKitchencounterOutercornerBacksplash = {
+  id: 'kitchencounter_outercorner_backsplash',
+  path: 'restaurant/kitchencounter_outercorner_backsplash',
+  fullPath: 'pizza/models/restaurant/kitchencounter_outercorner_backsplash.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterOutercornerBacksplash": "kitchencounter_outercorner_backsplash"
+}
+} as const;
+
+const RestaurantKitchencounterOutercornerBacksplashStyleB = {
+  id: 'kitchencounter_outercorner_backsplash_styleB',
+  path: 'restaurant/kitchencounter_outercorner_backsplash_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_outercorner_backsplash_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterOutercornerBacksplashStyleB": "kitchencounter_outercorner_backsplash_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterOutercornerStyleB = {
+  id: 'kitchencounter_outercorner_styleB',
+  path: 'restaurant/kitchencounter_outercorner_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_outercorner_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterOutercornerStyleB": "kitchencounter_outercorner_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterSink = {
+  id: 'kitchencounter_sink',
+  path: 'restaurant/kitchencounter_sink',
+  fullPath: 'pizza/models/restaurant/kitchencounter_sink.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterSink": "kitchencounter_sink"
+}
+} as const;
+
+const RestaurantKitchencounterSinkBacksplash = {
+  id: 'kitchencounter_sink_backsplash',
+  path: 'restaurant/kitchencounter_sink_backsplash',
+  fullPath: 'pizza/models/restaurant/kitchencounter_sink_backsplash.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterSinkBacksplash": "kitchencounter_sink_backsplash"
+}
+} as const;
+
+const RestaurantKitchencounterSinkBacksplashStyleB = {
+  id: 'kitchencounter_sink_backsplash_styleB',
+  path: 'restaurant/kitchencounter_sink_backsplash_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_sink_backsplash_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterSinkBacksplashStyleB": "kitchencounter_sink_backsplash_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterSinkStyleB = {
+  id: 'kitchencounter_sink_styleB',
+  path: 'restaurant/kitchencounter_sink_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_sink_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterSinkStyleB": "kitchencounter_sink_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterStraightA = {
+  id: 'kitchencounter_straight_A',
+  path: 'restaurant/kitchencounter_straight_A',
+  fullPath: 'pizza/models/restaurant/kitchencounter_straight_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterStraightA": "kitchencounter_straight_A"
+}
+} as const;
+
+const RestaurantKitchencounterStraightABacksplash = {
+  id: 'kitchencounter_straight_A_backsplash',
+  path: 'restaurant/kitchencounter_straight_A_backsplash',
+  fullPath: 'pizza/models/restaurant/kitchencounter_straight_A_backsplash.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterStraightABacksplash": "kitchencounter_straight_A_backsplash"
+}
+} as const;
+
+const RestaurantKitchencounterStraightABacksplashStyleB = {
+  id: 'kitchencounter_straight_A_backsplash_styleB',
+  path: 'restaurant/kitchencounter_straight_A_backsplash_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_straight_A_backsplash_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterStraightABacksplashStyleB": "kitchencounter_straight_A_backsplash_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterStraightADecorated = {
+  id: 'kitchencounter_straight_A_decorated',
+  path: 'restaurant/kitchencounter_straight_A_decorated',
+  fullPath: 'pizza/models/restaurant/kitchencounter_straight_A_decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterStraightADecorated": "kitchencounter_straight_A_decorated"
+}
+} as const;
+
+const RestaurantKitchencounterStraightADecoratedStyleB = {
+  id: 'kitchencounter_straight_A_decorated_styleB',
+  path: 'restaurant/kitchencounter_straight_A_decorated_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_straight_A_decorated_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterStraightADecoratedStyleB": "kitchencounter_straight_A_decorated_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterStraightAStyleB = {
+  id: 'kitchencounter_straight_A_styleB',
+  path: 'restaurant/kitchencounter_straight_A_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_straight_A_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterStraightAStyleB": "kitchencounter_straight_A_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterStraightB = {
+  id: 'kitchencounter_straight_B',
+  path: 'restaurant/kitchencounter_straight_B',
+  fullPath: 'pizza/models/restaurant/kitchencounter_straight_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterStraightB": "kitchencounter_straight_B"
+}
+} as const;
+
+const RestaurantKitchencounterStraightBBacksplash = {
+  id: 'kitchencounter_straight_B_backsplash',
+  path: 'restaurant/kitchencounter_straight_B_backsplash',
+  fullPath: 'pizza/models/restaurant/kitchencounter_straight_B_backsplash.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterStraightBBacksplash": "kitchencounter_straight_B_backsplash"
+}
+} as const;
+
+const RestaurantKitchencounterStraightBBacksplashStyleB = {
+  id: 'kitchencounter_straight_B_backsplash_styleB',
+  path: 'restaurant/kitchencounter_straight_B_backsplash_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_straight_B_backsplash_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterStraightBBacksplashStyleB": "kitchencounter_straight_B_backsplash_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterStraightBStyleB = {
+  id: 'kitchencounter_straight_B_styleB',
+  path: 'restaurant/kitchencounter_straight_B_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_straight_B_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterStraightBStyleB": "kitchencounter_straight_B_styleB"
+}
+} as const;
+
+const RestaurantKitchencounterStraightDecorated = {
+  id: 'kitchencounter_straight_decorated',
+  path: 'restaurant/kitchencounter_straight_decorated',
+  fullPath: 'pizza/models/restaurant/kitchencounter_straight_decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterStraightDecorated": "kitchencounter_straight_decorated"
+}
+} as const;
+
+const RestaurantKitchencounterStraightDecoratedStyleB = {
+  id: 'kitchencounter_straight_decorated_styleB',
+  path: 'restaurant/kitchencounter_straight_decorated_styleB',
+  fullPath: 'pizza/models/restaurant/kitchencounter_straight_decorated_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchencounterStraightDecoratedStyleB": "kitchencounter_straight_decorated_styleB"
+}
+} as const;
+
+const RestaurantKitchentableA = {
+  id: 'kitchentable_A',
+  path: 'restaurant/kitchentable_A',
+  fullPath: 'pizza/models/restaurant/kitchentable_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchentableA": "kitchentable_A"
+}
+} as const;
+
+const RestaurantKitchentableALarge = {
+  id: 'kitchentable_A_large',
+  path: 'restaurant/kitchentable_A_large',
+  fullPath: 'pizza/models/restaurant/kitchentable_A_large.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchentableALarge": "kitchentable_A_large"
+}
+} as const;
+
+const RestaurantKitchentableALargeDecoratedA = {
+  id: 'kitchentable_A_large_decorated_A',
+  path: 'restaurant/kitchentable_A_large_decorated_A',
+  fullPath: 'pizza/models/restaurant/kitchentable_A_large_decorated_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchentableALargeDecoratedA": "kitchentable_A_large_decorated_A"
+}
+} as const;
+
+const RestaurantKitchentableALargeDecoratedB = {
+  id: 'kitchentable_A_large_decorated_B',
+  path: 'restaurant/kitchentable_A_large_decorated_B',
+  fullPath: 'pizza/models/restaurant/kitchentable_A_large_decorated_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchentableALargeDecoratedB": "kitchentable_A_large_decorated_B"
+}
+} as const;
+
+const RestaurantKitchentableALargeDecoratedC = {
+  id: 'kitchentable_A_large_decorated_C',
+  path: 'restaurant/kitchentable_A_large_decorated_C',
+  fullPath: 'pizza/models/restaurant/kitchentable_A_large_decorated_C.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchentableALargeDecoratedC": "kitchentable_A_large_decorated_C"
+}
+} as const;
+
+const RestaurantKitchentableB = {
+  id: 'kitchentable_B',
+  path: 'restaurant/kitchentable_B',
+  fullPath: 'pizza/models/restaurant/kitchentable_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchentableB": "kitchentable_B"
+}
+} as const;
+
+const RestaurantKitchentableBDecorated = {
+  id: 'kitchentable_B_decorated',
+  path: 'restaurant/kitchentable_B_decorated',
+  fullPath: 'pizza/models/restaurant/kitchentable_B_decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchentableBDecorated": "kitchentable_B_decorated"
+}
+} as const;
+
+const RestaurantKitchentableBLarge = {
+  id: 'kitchentable_B_large',
+  path: 'restaurant/kitchentable_B_large',
+  fullPath: 'pizza/models/restaurant/kitchentable_B_large.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchentableBLarge": "kitchentable_B_large"
+}
+} as const;
+
+const RestaurantKitchentableSink = {
+  id: 'kitchentable_sink',
+  path: 'restaurant/kitchentable_sink',
+  fullPath: 'pizza/models/restaurant/kitchentable_sink.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchentableSink": "kitchentable_sink"
+}
+} as const;
+
+const RestaurantKitchentableSinkLarge = {
+  id: 'kitchentable_sink_large',
+  path: 'restaurant/kitchentable_sink_large',
+  fullPath: 'pizza/models/restaurant/kitchentable_sink_large.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchentableSinkLarge": "kitchentable_sink_large"
+}
+} as const;
+
+const RestaurantKitchentableSinkLargeDecorated = {
+  id: 'kitchentable_sink_large_decorated',
+  path: 'restaurant/kitchentable_sink_large_decorated',
+  fullPath: 'pizza/models/restaurant/kitchentable_sink_large_decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "KitchentableSinkLargeDecorated": "kitchentable_sink_large_decorated"
+}
+} as const;
+
+const RestaurantKnife = {
+  id: 'knife',
+  path: 'restaurant/knife',
+  fullPath: 'pizza/models/restaurant/knife.gltf',
+  format: 'gltf',
+  nodes: {
+  "Knife": "knife"
+}
+} as const;
+
+const RestaurantLidA = {
+  id: 'lid_A',
+  path: 'restaurant/lid_A',
+  fullPath: 'pizza/models/restaurant/lid_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "LidA": "lid_A"
+}
+} as const;
+
+const RestaurantLidB = {
+  id: 'lid_B',
+  path: 'restaurant/lid_B',
+  fullPath: 'pizza/models/restaurant/lid_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "LidB": "lid_B"
+}
+} as const;
+
+const RestaurantLidLarge = {
+  id: 'lid_large',
+  path: 'restaurant/lid_large',
+  fullPath: 'pizza/models/restaurant/lid_large.gltf',
+  format: 'gltf',
+  nodes: {
+  "LidLarge": "lid_large"
+}
+} as const;
+
+const RestaurantMenu = {
+  id: 'menu',
+  path: 'restaurant/menu',
+  fullPath: 'pizza/models/restaurant/menu.gltf',
+  format: 'gltf',
+  nodes: {
+  "Menu": "menu"
+}
+} as const;
+
+const RestaurantMustard = {
+  id: 'mustard',
+  path: 'restaurant/mustard',
+  fullPath: 'pizza/models/restaurant/mustard.gltf',
+  format: 'gltf',
+  nodes: {
+  "Mustard": "mustard"
+}
+} as const;
+
+const RestaurantOven = {
+  id: 'oven',
+  path: 'restaurant/oven',
+  fullPath: 'pizza/models/restaurant/oven.gltf',
+  format: 'gltf',
+  nodes: {
+  "Oven": "oven",
+  "OvenDoor": "oven_door"
+}
+} as const;
+
+const RestaurantPan006 = {
+  id: 'pan_006',
+  path: 'restaurant/pan_006',
+  fullPath: 'pizza/models/restaurant/pan_006.gltf',
+  format: 'gltf',
+  nodes: {
+  "Pan006": "pan.006"
+}
+} as const;
+
+const RestaurantPanA = {
+  id: 'pan_A',
+  path: 'restaurant/pan_A',
+  fullPath: 'pizza/models/restaurant/pan_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "PanA": "pan_A"
+}
+} as const;
+
+const RestaurantPanB = {
+  id: 'pan_B',
+  path: 'restaurant/pan_B',
+  fullPath: 'pizza/models/restaurant/pan_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "PanB": "pan_B"
+}
+} as const;
+
+const RestaurantPapertowel = {
+  id: 'papertowel',
+  path: 'restaurant/papertowel',
+  fullPath: 'pizza/models/restaurant/papertowel.gltf',
+  format: 'gltf',
+  nodes: {
+  "Papertowel": "papertowel"
+}
+} as const;
+
+const RestaurantPillarA = {
+  id: 'pillar_A',
+  path: 'restaurant/pillar_A',
+  fullPath: 'pizza/models/restaurant/pillar_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "PillarA": "pillar_A"
+}
+} as const;
+
+const RestaurantPillarB = {
+  id: 'pillar_B',
+  path: 'restaurant/pillar_B',
+  fullPath: 'pizza/models/restaurant/pillar_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "PillarB": "pillar_B"
+}
+} as const;
+
+const RestaurantPizzaboxClosed = {
+  id: 'pizzabox_closed',
+  path: 'restaurant/pizzabox_closed',
+  fullPath: 'pizza/models/restaurant/pizzabox_closed.gltf',
+  format: 'gltf',
+  nodes: {
+  "PizzaboxClosed": "pizzabox_closed"
+}
+} as const;
+
+const RestaurantPizzaboxOpen = {
+  id: 'pizzabox_open',
+  path: 'restaurant/pizzabox_open',
+  fullPath: 'pizza/models/restaurant/pizzabox_open.gltf',
+  format: 'gltf',
+  nodes: {
+  "PizzaboxOpen": "pizzabox_open",
+  "PizzaboxLid": "pizzabox_lid"
+}
+} as const;
+
+const RestaurantPizzaboxStacked = {
+  id: 'pizzabox_stacked',
+  path: 'restaurant/pizzabox_stacked',
+  fullPath: 'pizza/models/restaurant/pizzabox_stacked.gltf',
+  format: 'gltf',
+  nodes: {
+  "PizzaboxStacked": "pizzabox_stacked"
+}
+} as const;
+
+const RestaurantPizzaOven = {
+  id: 'pizza_oven',
+  path: 'restaurant/pizza_oven',
+  fullPath: 'pizza/models/restaurant/pizza_oven.gltf',
+  format: 'gltf',
+  nodes: {
+  "PizzaOven": "pizza_oven",
+  "PizzaOvenDoor": "pizza_oven_door"
+}
+} as const;
+
+const RestaurantPlate = {
+  id: 'plate',
+  path: 'restaurant/plate',
+  fullPath: 'pizza/models/restaurant/plate.gltf',
+  format: 'gltf',
+  nodes: {
+  "Plate": "plate"
+}
+} as const;
+
+const RestaurantPlateDirty = {
+  id: 'plate_dirty',
+  path: 'restaurant/plate_dirty',
+  fullPath: 'pizza/models/restaurant/plate_dirty.gltf',
+  format: 'gltf',
+  nodes: {
+  "PlateDirty": "plate_dirty"
+}
+} as const;
+
+const RestaurantPlateSmall = {
+  id: 'plate_small',
+  path: 'restaurant/plate_small',
+  fullPath: 'pizza/models/restaurant/plate_small.gltf',
+  format: 'gltf',
+  nodes: {
+  "PlateSmall": "plate_small"
+}
+} as const;
+
+const RestaurantPotA = {
+  id: 'pot_A',
+  path: 'restaurant/pot_A',
+  fullPath: 'pizza/models/restaurant/pot_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "PotA": "pot_A"
+}
+} as const;
+
+const RestaurantPotAStew = {
+  id: 'pot_A_stew',
+  path: 'restaurant/pot_A_stew',
+  fullPath: 'pizza/models/restaurant/pot_A_stew.gltf',
+  format: 'gltf',
+  nodes: {
+  "PotAStew": "pot_A_stew"
+}
+} as const;
+
+const RestaurantPotB = {
+  id: 'pot_B',
+  path: 'restaurant/pot_B',
+  fullPath: 'pizza/models/restaurant/pot_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "PotB": "pot_B"
+}
+} as const;
+
+const RestaurantPotBStew = {
+  id: 'pot_B_stew',
+  path: 'restaurant/pot_B_stew',
+  fullPath: 'pizza/models/restaurant/pot_B_stew.gltf',
+  format: 'gltf',
+  nodes: {
+  "PotBStew": "pot_B_stew"
+}
+} as const;
+
+const RestaurantPotLarge = {
+  id: 'pot_large',
+  path: 'restaurant/pot_large',
+  fullPath: 'pizza/models/restaurant/pot_large.gltf',
+  format: 'gltf',
+  nodes: {
+  "PotLarge": "pot_large"
+}
+} as const;
+
+const RestaurantRollingpin = {
+  id: 'rollingpin',
+  path: 'restaurant/rollingpin',
+  fullPath: 'pizza/models/restaurant/rollingpin.gltf',
+  format: 'gltf',
+  nodes: {
+  "Rollingpin": "rollingpin"
+}
+} as const;
+
+const RestaurantShelfPapertowel = {
+  id: 'shelf_papertowel',
+  path: 'restaurant/shelf_papertowel',
+  fullPath: 'pizza/models/restaurant/shelf_papertowel.gltf',
+  format: 'gltf',
+  nodes: {
+  "ShelfPapertowel": "shelf_papertowel"
+}
+} as const;
+
+const RestaurantShelfPapertowelDecorated = {
+  id: 'shelf_papertowel_decorated',
+  path: 'restaurant/shelf_papertowel_decorated',
+  fullPath: 'pizza/models/restaurant/shelf_papertowel_decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "ShelfPapertowelDecorated": "shelf_papertowel_decorated"
+}
+} as const;
+
+const RestaurantSpoon = {
+  id: 'spoon',
+  path: 'restaurant/spoon',
+  fullPath: 'pizza/models/restaurant/spoon.gltf',
+  format: 'gltf',
+  nodes: {
+  "Spoon": "spoon"
+}
+} as const;
+
+const RestaurantStewBowl = {
+  id: 'stew_bowl',
+  path: 'restaurant/stew_bowl',
+  fullPath: 'pizza/models/restaurant/stew_bowl.gltf',
+  format: 'gltf',
+  nodes: {
+  "StewBowl": "stew_bowl"
+}
+} as const;
+
+const RestaurantStewPot = {
+  id: 'stew_pot',
+  path: 'restaurant/stew_pot',
+  fullPath: 'pizza/models/restaurant/stew_pot.gltf',
+  format: 'gltf',
+  nodes: {
+  "StewPot": "stew_pot"
+}
+} as const;
+
+const RestaurantStoveMulti = {
+  id: 'stove_multi',
+  path: 'restaurant/stove_multi',
+  fullPath: 'pizza/models/restaurant/stove_multi.gltf',
+  format: 'gltf',
+  nodes: {
+  "StoveMulti": "stove_multi"
+}
+} as const;
+
+const RestaurantStoveMultiCountertop = {
+  id: 'stove_multi_countertop',
+  path: 'restaurant/stove_multi_countertop',
+  fullPath: 'pizza/models/restaurant/stove_multi_countertop.gltf',
+  format: 'gltf',
+  nodes: {
+  "StoveMultiCountertop": "stove_multi_countertop"
+}
+} as const;
+
+const RestaurantStoveMultiDecorated = {
+  id: 'stove_multi_decorated',
+  path: 'restaurant/stove_multi_decorated',
+  fullPath: 'pizza/models/restaurant/stove_multi_decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "StoveMultiDecorated": "stove_multi_decorated"
+}
+} as const;
+
+const RestaurantStoveSingle = {
+  id: 'stove_single',
+  path: 'restaurant/stove_single',
+  fullPath: 'pizza/models/restaurant/stove_single.gltf',
+  format: 'gltf',
+  nodes: {
+  "StoveSingle": "stove_single"
+}
+} as const;
+
+const RestaurantStoveSingleCountertop = {
+  id: 'stove_single_countertop',
+  path: 'restaurant/stove_single_countertop',
+  fullPath: 'pizza/models/restaurant/stove_single_countertop.gltf',
+  format: 'gltf',
+  nodes: {
+  "StoveSingleCountertop": "stove_single_countertop"
+}
+} as const;
+
+const RestaurantTableRoundA = {
+  id: 'table_round_A',
+  path: 'restaurant/table_round_A',
+  fullPath: 'pizza/models/restaurant/table_round_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableRoundA": "table_round_A"
+}
+} as const;
+
+const RestaurantTableRoundADecorated = {
+  id: 'table_round_A_decorated',
+  path: 'restaurant/table_round_A_decorated',
+  fullPath: 'pizza/models/restaurant/table_round_A_decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableRoundADecorated": "table_round_A_decorated"
+}
+} as const;
+
+const RestaurantTableRoundASmall = {
+  id: 'table_round_A_small',
+  path: 'restaurant/table_round_A_small',
+  fullPath: 'pizza/models/restaurant/table_round_A_small.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableRoundASmall": "table_round_A_small"
+}
+} as const;
+
+const RestaurantTableRoundASmallDecorated = {
+  id: 'table_round_A_small_decorated',
+  path: 'restaurant/table_round_A_small_decorated',
+  fullPath: 'pizza/models/restaurant/table_round_A_small_decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableRoundASmallDecorated": "table_round_A_small_decorated"
+}
+} as const;
+
+const RestaurantTableRoundB = {
+  id: 'table_round_B',
+  path: 'restaurant/table_round_B',
+  fullPath: 'pizza/models/restaurant/table_round_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableRoundB": "table_round_B"
+}
+} as const;
+
+const RestaurantTableRoundBTableclothGreen = {
+  id: 'table_round_B_tablecloth_green',
+  path: 'restaurant/table_round_B_tablecloth_green',
+  fullPath: 'pizza/models/restaurant/table_round_B_tablecloth_green.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableRoundBTableclothGreen": "table_round_B_tablecloth_green"
+}
+} as const;
+
+const RestaurantTableRoundBTableclothRed = {
+  id: 'table_round_B_tablecloth_red',
+  path: 'restaurant/table_round_B_tablecloth_red',
+  fullPath: 'pizza/models/restaurant/table_round_B_tablecloth_red.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableRoundBTableclothRed": "table_round_B_tablecloth_red"
+}
+} as const;
+
+const RestaurantTableRoundBTableclothRedDecorated = {
+  id: 'table_round_B_tablecloth_red_decorated',
+  path: 'restaurant/table_round_B_tablecloth_red_decorated',
+  fullPath: 'pizza/models/restaurant/table_round_B_tablecloth_red_decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableRoundBTableclothRedDecorated": "table_round_B_tablecloth_red_decorated"
+}
+} as const;
+
+const RestaurantTowelrail = {
+  id: 'towelrail',
+  path: 'restaurant/towelrail',
+  fullPath: 'pizza/models/restaurant/towelrail.gltf',
+  format: 'gltf',
+  nodes: {
+  "Towelrail": "towelrail"
+}
+} as const;
+
+const RestaurantWall = {
+  id: 'wall',
+  path: 'restaurant/wall',
+  fullPath: 'pizza/models/restaurant/wall.gltf',
+  format: 'gltf',
+  nodes: {
+  "Wall": "wall"
+}
+} as const;
+
+const RestaurantWallDecorated = {
+  id: 'wall_decorated',
+  path: 'restaurant/wall_decorated',
+  fullPath: 'pizza/models/restaurant/wall_decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallDecorated": "wall_decorated"
+}
+} as const;
+
+const RestaurantWallDecoratedStyleB = {
+  id: 'wall_decorated_styleB',
+  path: 'restaurant/wall_decorated_styleB',
+  fullPath: 'pizza/models/restaurant/wall_decorated_styleB.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallDecoratedStyleB": "wall_decorated_styleB"
+}
+} as const;
+
+const RestaurantWallDoorway = {
+  id: 'wall_doorway',
+  path: 'restaurant/wall_doorway',
+  fullPath: 'pizza/models/restaurant/wall_doorway.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallDoorway": "wall_doorway"
+}
+} as const;
+
+const RestaurantWallHalf = {
+  id: 'wall_half',
+  path: 'restaurant/wall_half',
+  fullPath: 'pizza/models/restaurant/wall_half.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallHalf": "wall_half"
+}
+} as const;
+
+const RestaurantWallOrderwindow = {
+  id: 'wall_orderwindow',
+  path: 'restaurant/wall_orderwindow',
+  fullPath: 'pizza/models/restaurant/wall_orderwindow.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallOrderwindow": "wall_orderwindow"
+}
+} as const;
+
+const RestaurantWallOrderwindowDecorated = {
+  id: 'wall_orderwindow_decorated',
+  path: 'restaurant/wall_orderwindow_decorated',
+  fullPath: 'pizza/models/restaurant/wall_orderwindow_decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallOrderwindowDecorated": "wall_orderwindow_decorated"
+}
+} as const;
+
+const RestaurantWallTilesA = {
+  id: 'wall_tiles_A',
+  path: 'restaurant/wall_tiles_A',
+  fullPath: 'pizza/models/restaurant/wall_tiles_A.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallTilesA": "wall_tiles_A"
+}
+} as const;
+
+const RestaurantWallTilesB = {
+  id: 'wall_tiles_B',
+  path: 'restaurant/wall_tiles_B',
+  fullPath: 'pizza/models/restaurant/wall_tiles_B.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallTilesB": "wall_tiles_B"
+}
+} as const;
+
+const RestaurantWallWindowClosed = {
+  id: 'wall_window_closed',
+  path: 'restaurant/wall_window_closed',
+  fullPath: 'pizza/models/restaurant/wall_window_closed.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallWindowClosed": "wall_window_closed"
+}
+} as const;
+
+const RestaurantWallWindowClosedCurtainsGreen = {
+  id: 'wall_window_closed_curtains_green',
+  path: 'restaurant/wall_window_closed_curtains_green',
+  fullPath: 'pizza/models/restaurant/wall_window_closed_curtains_green.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallWindowClosedCurtainsGreen": "wall_window_closed_curtains_green"
+}
+} as const;
+
+const RestaurantWallWindowClosedCurtainsRed = {
+  id: 'wall_window_closed_curtains_red',
+  path: 'restaurant/wall_window_closed_curtains_red',
+  fullPath: 'pizza/models/restaurant/wall_window_closed_curtains_red.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallWindowClosedCurtainsRed": "wall_window_closed_curtains_red"
+}
+} as const;
+
+const RestaurantWallWindowOpen = {
+  id: 'wall_window_open',
+  path: 'restaurant/wall_window_open',
+  fullPath: 'pizza/models/restaurant/wall_window_open.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallWindowOpen": "wall_window_open"
+}
+} as const;
+
 const SurvivalBarrelOpen = {
   id: 'barrel-open',
   path: 'survival/barrel-open',
@@ -6669,6 +8931,233 @@ export const MODELS = {
     WoodLogA: ResourcesWoodLogA,
     WoodLogB: ResourcesWoodLogB,
     WoodLogStack: ResourcesWoodLogStack
+  },
+  Restaurant: {
+    Bowl: RestaurantBowl,
+    BowlDirty: RestaurantBowlDirty,
+    BowlSmall: RestaurantBowlSmall,
+    ChairA: RestaurantChairA,
+    ChairB: RestaurantChairB,
+    ChairStool: RestaurantChairStool,
+    Crate: RestaurantCrate,
+    CrateBuns: RestaurantCrateBuns,
+    CrateCarrots: RestaurantCrateCarrots,
+    CrateCheese: RestaurantCrateCheese,
+    CrateDough: RestaurantCrateDough,
+    CrateHam: RestaurantCrateHam,
+    CrateLettuce: RestaurantCrateLettuce,
+    CrateLid: RestaurantCrateLid,
+    CrateMushrooms: RestaurantCrateMushrooms,
+    CrateOnions: RestaurantCrateOnions,
+    CratePepperoni: RestaurantCratePepperoni,
+    CratePotatoes: RestaurantCratePotatoes,
+    CrateSteak: RestaurantCrateSteak,
+    CrateTomatoes: RestaurantCrateTomatoes,
+    Cuttingboard: RestaurantCuttingboard,
+    Dishrack: RestaurantDishrack,
+    DishrackPlates: RestaurantDishrackPlates,
+    DoorA: RestaurantDoorA,
+    DoorB: RestaurantDoorB,
+    Extractorhood: RestaurantExtractorhood,
+    FloorKitchen: RestaurantFloorKitchen,
+    FloorKitchenSmall: RestaurantFloorKitchenSmall,
+    FloorKitchenSmallStyleB: RestaurantFloorKitchenSmallStyleB,
+    FloorKitchenStyleB: RestaurantFloorKitchenStyleB,
+    FoodBurger: RestaurantFoodBurger,
+    FoodDinner: RestaurantFoodDinner,
+    FoodIcecreamConeChocolate: RestaurantFoodIcecreamConeChocolate,
+    FoodIcecreamConeStrawberry: RestaurantFoodIcecreamConeStrawberry,
+    FoodIcecreamConeVanilla: RestaurantFoodIcecreamConeVanilla,
+    FoodIngredientBun: RestaurantFoodIngredientBun,
+    FoodIngredientBunBottom: RestaurantFoodIngredientBunBottom,
+    FoodIngredientBunTop: RestaurantFoodIngredientBunTop,
+    FoodIngredientBurgerCooked: RestaurantFoodIngredientBurgerCooked,
+    FoodIngredientBurgerTrash: RestaurantFoodIngredientBurgerTrash,
+    FoodIngredientBurgerUncooked: RestaurantFoodIngredientBurgerUncooked,
+    FoodIngredientCarrot: RestaurantFoodIngredientCarrot,
+    FoodIngredientCarrotChopped: RestaurantFoodIngredientCarrotChopped,
+    FoodIngredientCarrotPieces: RestaurantFoodIngredientCarrotPieces,
+    FoodIngredientCheese: RestaurantFoodIngredientCheese,
+    FoodIngredientCheeseChopped: RestaurantFoodIngredientCheeseChopped,
+    FoodIngredientCheeseGrated: RestaurantFoodIngredientCheeseGrated,
+    FoodIngredientCheeseSlice: RestaurantFoodIngredientCheeseSlice,
+    FoodIngredientDough: RestaurantFoodIngredientDough,
+    FoodIngredientDoughBase: RestaurantFoodIngredientDoughBase,
+    FoodIngredientHam: RestaurantFoodIngredientHam,
+    FoodIngredientHamCooked: RestaurantFoodIngredientHamCooked,
+    FoodIngredientHamTrash: RestaurantFoodIngredientHamTrash,
+    FoodIngredientLettuce: RestaurantFoodIngredientLettuce,
+    FoodIngredientLettuceChopped: RestaurantFoodIngredientLettuceChopped,
+    FoodIngredientLettuceSlice: RestaurantFoodIngredientLettuceSlice,
+    FoodIngredientMushroom: RestaurantFoodIngredientMushroom,
+    FoodIngredientMushroomChopped: RestaurantFoodIngredientMushroomChopped,
+    FoodIngredientMushroomPieces: RestaurantFoodIngredientMushroomPieces,
+    FoodIngredientOnion: RestaurantFoodIngredientOnion,
+    FoodIngredientOnionChopped: RestaurantFoodIngredientOnionChopped,
+    FoodIngredientOnionRings: RestaurantFoodIngredientOnionRings,
+    FoodIngredientPepperoni: RestaurantFoodIngredientPepperoni,
+    FoodIngredientPepperoniChopped: RestaurantFoodIngredientPepperoniChopped,
+    FoodIngredientPepperoniSlices: RestaurantFoodIngredientPepperoniSlices,
+    FoodIngredientPotato: RestaurantFoodIngredientPotato,
+    FoodIngredientPotatoChopped: RestaurantFoodIngredientPotatoChopped,
+    FoodIngredientPotatoMashed: RestaurantFoodIngredientPotatoMashed,
+    FoodIngredientSteak: RestaurantFoodIngredientSteak,
+    FoodIngredientSteakPieces: RestaurantFoodIngredientSteakPieces,
+    FoodIngredientTomato: RestaurantFoodIngredientTomato,
+    FoodIngredientTomatoSauce: RestaurantFoodIngredientTomatoSauce,
+    FoodIngredientTomatoSlice: RestaurantFoodIngredientTomatoSlice,
+    FoodIngredientTomatoSlices: RestaurantFoodIngredientTomatoSlices,
+    FoodIngredientVegetableburgerCooked: RestaurantFoodIngredientVegetableburgerCooked,
+    FoodIngredientVegetableburgerUncooked: RestaurantFoodIngredientVegetableburgerUncooked,
+    FoodPizzaCheesePlated: RestaurantFoodPizzaCheesePlated,
+    FoodPizzaCheeseSlice: RestaurantFoodPizzaCheeseSlice,
+    FoodPizzaMushroomPlated: RestaurantFoodPizzaMushroomPlated,
+    FoodPizzaMushroomSlice: RestaurantFoodPizzaMushroomSlice,
+    FoodPizzaPepperoniPlated: RestaurantFoodPizzaPepperoniPlated,
+    FoodPizzaPepperoniSlice: RestaurantFoodPizzaPepperoniSlice,
+    FoodStew: RestaurantFoodStew,
+    FoodVegetableburger: RestaurantFoodVegetableburger,
+    FridgeA: RestaurantFridgeA,
+    FridgeADecorated: RestaurantFridgeADecorated,
+    FridgeB: RestaurantFridgeB,
+    IcecreamBowl: RestaurantIcecreamBowl,
+    IcecreamBowlCherries: RestaurantIcecreamBowlCherries,
+    IcecreamBowlCookiesticks: RestaurantIcecreamBowlCookiesticks,
+    IcecreamBowlDecoratedA: RestaurantIcecreamBowlDecoratedA,
+    IcecreamBowlDecoratedB: RestaurantIcecreamBowlDecoratedB,
+    IcecreamBowlIcecreamChocolate: RestaurantIcecreamBowlIcecreamChocolate,
+    IcecreamBowlIcecreamStrawberry: RestaurantIcecreamBowlIcecreamStrawberry,
+    IcecreamBowlIcecreamVanilla: RestaurantIcecreamBowlIcecreamVanilla,
+    IcecreamBowlWaffles: RestaurantIcecreamBowlWaffles,
+    IcecreamCherry: RestaurantIcecreamCherry,
+    IcecreamCone: RestaurantIcecreamCone,
+    IcecreamConeStacked: RestaurantIcecreamConeStacked,
+    IcecreamContainer: RestaurantIcecreamContainer,
+    IcecreamContainerIcecreamChocolate: RestaurantIcecreamContainerIcecreamChocolate,
+    IcecreamContainerIcecreamStrawberry: RestaurantIcecreamContainerIcecreamStrawberry,
+    IcecreamContainerIcecreamVanilla: RestaurantIcecreamContainerIcecreamVanilla,
+    IcecreamContainerTop: RestaurantIcecreamContainerTop,
+    IcecreamCookiestick: RestaurantIcecreamCookiestick,
+    IcecreamMachine: RestaurantIcecreamMachine,
+    IcecreamScoop: RestaurantIcecreamScoop,
+    IcecreamSoftserveIcecreamChocolate: RestaurantIcecreamSoftserveIcecreamChocolate,
+    IcecreamSoftserveIcecreamStrawberry: RestaurantIcecreamSoftserveIcecreamStrawberry,
+    IcecreamSoftserveIcecreamVanilla: RestaurantIcecreamSoftserveIcecreamVanilla,
+    IcecreamWaffle: RestaurantIcecreamWaffle,
+    JarALarge: RestaurantJarALarge,
+    JarAMedium: RestaurantJarAMedium,
+    JarASmall: RestaurantJarASmall,
+    JarBLarge: RestaurantJarBLarge,
+    JarBMedium: RestaurantJarBMedium,
+    JarBSmall: RestaurantJarBSmall,
+    JarCLarge: RestaurantJarCLarge,
+    JarCMedium: RestaurantJarCMedium,
+    JarCSmall: RestaurantJarCSmall,
+    JarDLarge: RestaurantJarDLarge,
+    JarDMedium: RestaurantJarDMedium,
+    JarDSmall: RestaurantJarDSmall,
+    Ketchup: RestaurantKetchup,
+    Kitchencabinet: RestaurantKitchencabinet,
+    KitchencabinetCorner: RestaurantKitchencabinetCorner,
+    KitchencabinetCornerHalf: RestaurantKitchencabinetCornerHalf,
+    KitchencabinetCornerHalfStyleB: RestaurantKitchencabinetCornerHalfStyleB,
+    KitchencabinetCornerStyleB: RestaurantKitchencabinetCornerStyleB,
+    KitchencabinetHalf: RestaurantKitchencabinetHalf,
+    KitchencabinetHalfStyleB: RestaurantKitchencabinetHalfStyleB,
+    KitchencabinetStyleB: RestaurantKitchencabinetStyleB,
+    KitchencounterInnercorner: RestaurantKitchencounterInnercorner,
+    KitchencounterInnercornerBacksplash: RestaurantKitchencounterInnercornerBacksplash,
+    KitchencounterInnercornerBacksplashStyleB: RestaurantKitchencounterInnercornerBacksplashStyleB,
+    KitchencounterInnercornerStyleB: RestaurantKitchencounterInnercornerStyleB,
+    KitchencounterOutercorner: RestaurantKitchencounterOutercorner,
+    KitchencounterOutercornerBacksplash: RestaurantKitchencounterOutercornerBacksplash,
+    KitchencounterOutercornerBacksplashStyleB: RestaurantKitchencounterOutercornerBacksplashStyleB,
+    KitchencounterOutercornerStyleB: RestaurantKitchencounterOutercornerStyleB,
+    KitchencounterSink: RestaurantKitchencounterSink,
+    KitchencounterSinkBacksplash: RestaurantKitchencounterSinkBacksplash,
+    KitchencounterSinkBacksplashStyleB: RestaurantKitchencounterSinkBacksplashStyleB,
+    KitchencounterSinkStyleB: RestaurantKitchencounterSinkStyleB,
+    KitchencounterStraightA: RestaurantKitchencounterStraightA,
+    KitchencounterStraightABacksplash: RestaurantKitchencounterStraightABacksplash,
+    KitchencounterStraightABacksplashStyleB: RestaurantKitchencounterStraightABacksplashStyleB,
+    KitchencounterStraightADecorated: RestaurantKitchencounterStraightADecorated,
+    KitchencounterStraightADecoratedStyleB: RestaurantKitchencounterStraightADecoratedStyleB,
+    KitchencounterStraightAStyleB: RestaurantKitchencounterStraightAStyleB,
+    KitchencounterStraightB: RestaurantKitchencounterStraightB,
+    KitchencounterStraightBBacksplash: RestaurantKitchencounterStraightBBacksplash,
+    KitchencounterStraightBBacksplashStyleB: RestaurantKitchencounterStraightBBacksplashStyleB,
+    KitchencounterStraightBStyleB: RestaurantKitchencounterStraightBStyleB,
+    KitchencounterStraightDecorated: RestaurantKitchencounterStraightDecorated,
+    KitchencounterStraightDecoratedStyleB: RestaurantKitchencounterStraightDecoratedStyleB,
+    KitchentableA: RestaurantKitchentableA,
+    KitchentableALarge: RestaurantKitchentableALarge,
+    KitchentableALargeDecoratedA: RestaurantKitchentableALargeDecoratedA,
+    KitchentableALargeDecoratedB: RestaurantKitchentableALargeDecoratedB,
+    KitchentableALargeDecoratedC: RestaurantKitchentableALargeDecoratedC,
+    KitchentableB: RestaurantKitchentableB,
+    KitchentableBDecorated: RestaurantKitchentableBDecorated,
+    KitchentableBLarge: RestaurantKitchentableBLarge,
+    KitchentableSink: RestaurantKitchentableSink,
+    KitchentableSinkLarge: RestaurantKitchentableSinkLarge,
+    KitchentableSinkLargeDecorated: RestaurantKitchentableSinkLargeDecorated,
+    Knife: RestaurantKnife,
+    LidA: RestaurantLidA,
+    LidB: RestaurantLidB,
+    LidLarge: RestaurantLidLarge,
+    Menu: RestaurantMenu,
+    Mustard: RestaurantMustard,
+    Oven: RestaurantOven,
+    Pan006: RestaurantPan006,
+    PanA: RestaurantPanA,
+    PanB: RestaurantPanB,
+    Papertowel: RestaurantPapertowel,
+    PillarA: RestaurantPillarA,
+    PillarB: RestaurantPillarB,
+    PizzaboxClosed: RestaurantPizzaboxClosed,
+    PizzaboxOpen: RestaurantPizzaboxOpen,
+    PizzaboxStacked: RestaurantPizzaboxStacked,
+    PizzaOven: RestaurantPizzaOven,
+    Plate: RestaurantPlate,
+    PlateDirty: RestaurantPlateDirty,
+    PlateSmall: RestaurantPlateSmall,
+    PotA: RestaurantPotA,
+    PotAStew: RestaurantPotAStew,
+    PotB: RestaurantPotB,
+    PotBStew: RestaurantPotBStew,
+    PotLarge: RestaurantPotLarge,
+    Rollingpin: RestaurantRollingpin,
+    ShelfPapertowel: RestaurantShelfPapertowel,
+    ShelfPapertowelDecorated: RestaurantShelfPapertowelDecorated,
+    Spoon: RestaurantSpoon,
+    StewBowl: RestaurantStewBowl,
+    StewPot: RestaurantStewPot,
+    StoveMulti: RestaurantStoveMulti,
+    StoveMultiCountertop: RestaurantStoveMultiCountertop,
+    StoveMultiDecorated: RestaurantStoveMultiDecorated,
+    StoveSingle: RestaurantStoveSingle,
+    StoveSingleCountertop: RestaurantStoveSingleCountertop,
+    TableRoundA: RestaurantTableRoundA,
+    TableRoundADecorated: RestaurantTableRoundADecorated,
+    TableRoundASmall: RestaurantTableRoundASmall,
+    TableRoundASmallDecorated: RestaurantTableRoundASmallDecorated,
+    TableRoundB: RestaurantTableRoundB,
+    TableRoundBTableclothGreen: RestaurantTableRoundBTableclothGreen,
+    TableRoundBTableclothRed: RestaurantTableRoundBTableclothRed,
+    TableRoundBTableclothRedDecorated: RestaurantTableRoundBTableclothRedDecorated,
+    Towelrail: RestaurantTowelrail,
+    Wall: RestaurantWall,
+    WallDecorated: RestaurantWallDecorated,
+    WallDecoratedStyleB: RestaurantWallDecoratedStyleB,
+    WallDoorway: RestaurantWallDoorway,
+    WallHalf: RestaurantWallHalf,
+    WallOrderwindow: RestaurantWallOrderwindow,
+    WallOrderwindowDecorated: RestaurantWallOrderwindowDecorated,
+    WallTilesA: RestaurantWallTilesA,
+    WallTilesB: RestaurantWallTilesB,
+    WallWindowClosed: RestaurantWallWindowClosed,
+    WallWindowClosedCurtainsGreen: RestaurantWallWindowClosedCurtainsGreen,
+    WallWindowClosedCurtainsRed: RestaurantWallWindowClosedCurtainsRed,
+    WallWindowOpen: RestaurantWallWindowOpen
   },
   Survival: {
     BarrelOpen: SurvivalBarrelOpen,

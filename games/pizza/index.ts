@@ -21,6 +21,8 @@ import { loadIslands } from './game/world/IslandStorage';
 import { HighScoreStorage } from './game/data/HighScoreStorage';
 import { GlobalResourceStorage } from './game/data/GlobalResourceStorage';
 import { BackpackStorage } from './game/data/BackpackStorage';
+import { BackpackCapacityStorage } from './game/data/BackpackCapacityStorage';
+import { StorageInventory } from './game/data/StorageInventory';
 import { BuildingStorage } from './game/data/BuildingStorage';
 import { GateStorage } from './game/data/GateStorage';
 import { EconomyStorage } from './game/data/EconomyStorage';
@@ -91,6 +93,8 @@ export default class MyGame extends Game {
             await HighScoreStorage.load();
             await GlobalResourceStorage.load();
             await BackpackStorage.load();
+            await BackpackCapacityStorage.load();
+            await StorageInventory.load();
             await BuildingStorage.load();
             await GateStorage.load();
             await EconomyStorage.load();

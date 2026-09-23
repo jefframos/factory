@@ -366,7 +366,8 @@ export default class ShopZone extends Entity {
     private playRevealEffect(root: THREE.Object3D): void {
         // See BuildingZone.playRevealEffect()'s own doc — `root` was just parented this same
         // tick, so its matrixWorld chain needs forcing before Box3 reads world positions off it.
-        root.updateMatrixWorld(true);
+        // Parents included — see BuildingZone.playRevealEffect()'s identical comment.
+        root.updateWorldMatrix(true, true);
         const bounds = new THREE.Box3().setFromObject(root);
         // See BuildingZone.playRevealEffect()'s own doc — this.transform.position.y can still
         // be mid-rise (ZoneVisibilityManager's sunk-then-rise-into-view animation) the instant

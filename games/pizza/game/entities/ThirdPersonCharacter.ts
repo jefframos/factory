@@ -20,6 +20,7 @@ import * as THREE from 'three';
 import CharacterBody from './CharacterBody';
 import { ToolId } from '../actions/ToolRegistry';
 import { CharacterViewConfig } from '../data/CharacterViewTypes';
+import type { PlayerBackpackConfig } from '../data/PlayerConfig';
 
 /** Purely cosmetic — fakes an airborne window so the jumpUp→falling→landing chain still plays without any real vertical physics. See jump(). */
 const JUMP_AIRTIME = 0.7;
@@ -88,9 +89,19 @@ export default class ThirdPersonCharacter {
         this.body.setHeadOffset(x, y, z);
     }
 
-    /** Placeholder backpack cube on the rig's Chest bone — see CharacterBody.mountBackpackCube(). */
-    public mountBackpackCube(): void {
-        this.body.mountBackpackCube();
+    /** Backpack prop on the rig's Chest bone — see CharacterBody.mountBackpack(). Omit `config` for the plain placeholder cube. */
+    public mountBackpack(config?: PlayerBackpackConfig): void {
+        this.body.mountBackpack(config);
+    }
+
+    /** See CharacterBody.getBackpackContents() — where BackpackStackVisual piles carried items. */
+    public getBackpackContents(): { root: THREE.Object3D; bounds: THREE.Box3 } | undefined {
+        return this.body.getBackpackContents();
+    }
+
+    /** Live-tunes offset/rotation/scale — see CharacterBody.setBackpackTransform(). */
+    public setBackpackTransform(config: PlayerBackpackConfig): void {
+        this.body.setBackpackTransform(config);
     }
 
     public setBackpackOffset(x: number, y: number, z: number): void {

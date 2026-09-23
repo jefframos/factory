@@ -698,6 +698,8 @@ export default class BuildingZone extends Entity {
             () => {
                 if (fitFootprint) {
                     const mesh = visual.mesh;
+                    // Same parents-included refresh as PizzaScene.setupMeshLayer() — see its comment.
+                    mesh.updateWorldMatrix(true, true);
                     const box = new THREE.Box3().setFromObject(mesh);
                     const nativeSize = box.getSize(new THREE.Vector3());
                     const scaleX = nativeSize.x > 1e-4 ? fitFootprint.width / nativeSize.x : 1;
@@ -752,7 +754,10 @@ export default class BuildingZone extends Entity {
         // stale/identity matrix — collapsing min/max toward the wrong Y range and discarding
         // almost the entire mesh under the reveal shader below, i.e. the building silently
         // rendering as "not there" instead of at its correct fill level.
-        root.updateMatrixWorld(true);
+        // updateWorldMatrix(true, true), not updateMatrixWorld(true) — the latter never touches
+        // ANCESTORS, so this.transform's own matrixWorld could still be stale (identity) if no
+        // frame has rendered since spawn (game loaded in a background tab).
+        root.updateWorldMatrix(true, true);
         const bounds = new THREE.Box3().setFromObject(root);
         // ZoneVisibilityManager parks a newly-registered zone `riseDistance` units BELOW restY
         // and animates it rising back up over time (see that file's own reveal-on-approach
