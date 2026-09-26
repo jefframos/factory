@@ -280,8 +280,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_FARM_PLOT_CONFIG',
         byIdExportName: 'FARM_PLOT_CONFIG_BY_ID',
-        managedKeys: ['price', 'appearRequirement', 'allowedCrops', 'assignedCropId', 'requiredTool', 'solid', 'disabled'],
-        optionalKeys: ['appearRequirement', 'allowedCrops', 'assignedCropId', 'requiredTool', 'solid', 'disabled'],
+        managedKeys: ['price', 'appearRequirement', 'allowedCrops', 'assignedCropId', 'requiredTool', 'autoPlant', 'solid', 'disabled'],
+        optionalKeys: ['appearRequirement', 'allowedCrops', 'assignedCropId', 'requiredTool', 'autoPlant', 'solid', 'disabled'],
         tileExportName: 'FARM_TILE_CONFIG',
         tileManagedKeys: ['empty', 'prepared', 'icon', 'availableTint', 'occupiedTint'],
     },
@@ -295,8 +295,19 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORAGE_CONFIG',
         byIdExportName: 'STORAGE_CONFIG_BY_ID',
-        managedKeys: ['name', 'accepts', 'resourceType', 'models', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'popupBobOffset', 'solid', 'disabled'],
-        optionalKeys: ['name', 'resourceType', 'itemScale', 'popupBobOffset', 'solid', 'disabled'],
+        managedKeys: ['name', 'accepts', 'resourceType', 'models', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'frame', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'disabled'],
+        optionalKeys: ['name', 'resourceType', 'itemScale', 'frame', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'disabled'],
+    },
+    // A STORE — a "store"-typed object on the Tiled map's "stores" layer (see store/StoreTypes.ts),
+    // open-ended by id. Same {default, byId} two-export shape as storages (kind: 'queues'); `npcs`
+    // and `storageSpotDirections` are plain object lists, serialized as-is.
+    stores: {
+        file: path.join(GAME_DIR, 'store', 'StoreTypes.ts'),
+        kind: 'queues',
+        defaultExportName: 'DEFAULT_STORE_CONFIG',
+        byIdExportName: 'STORE_CONFIG_BY_ID',
+        managedKeys: ['name', 'npcs', 'spawnIntervalSec', 'maxClients', 'moveSpeed', 'maxDistinctItems', 'maxAmountPerItem', 'priceMultiplier', 'spotSpacing', 'spotMargin', 'storageSpotDirections', 'cashierSpotDirection', 'pickDelaySec', 'payDelaySec', 'moneyPerBill', 'billsPerPile', 'bubbleOffset', 'defaultStorageId', 'levels', 'disabled'],
+        optionalKeys: ['name', 'storageSpotDirections', 'cashierSpotDirection', 'defaultStorageId', 'levels', 'disabled'],
     },
     // A MART — a "mart"-typed object drawn on the Tiled map's "mapSettings" layer, open-ended
     // by id like shops/crafting/farms, not enum-backed. Same {default, byId} two-export shape

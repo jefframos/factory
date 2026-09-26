@@ -36,6 +36,9 @@
 //     it run out (autoPlant()) plants `assignedCropId` directly, no seed
 //     spent. allowedCrops is meaningless for this plot kind — there's no
 //     picker to filter.
+//   - set AND FarmPlotConfig.autoPlant: no planting step at all — every empty
+//     cell is planted the moment it spawns and again right after each
+//     harvest (see isAutoPlant()); the player only collects.
 // Either way, CropVisualComponent then grows a real mesh on top of the
 // prepared ground purely off FarmCropStorage's stored state — this entity
 // never manually swaps/removes it.
@@ -303,6 +306,17 @@ export default class FarmPlotTile extends Entity {
         // Grows purely off FarmCropStorage's own stored state (see this file's own top doc) —
         // added once, for good, regardless of whether this cell happens to be empty right now.
         this.addComponent(new CropVisualComponent(() => FarmCropStorage.getPlanted(this.tileKey)));
+
+        // FarmPlotConfig.autoPlant — an empty cell never waits for the player, it starts growing now
+        // (also refills cells that were empty in an older save).
+        if (this.isAutoPlant()) {
+            this.autoPlant();
+        }
+    }
+
+    /** FarmPlotConfig.autoPlant — only meaningful with an assigned crop to plant. */
+    private isAutoPlant(): boolean {
+        return this.plotConfig.autoPlant === true && this.plotConfig.assignedCropId !== undefined;
     }
 
     /** Registers this cell as a live seed-picker candidate — see FarmSeedPicker.ts's own doc for why this cell never builds its own popup, and why registering doesn't unconditionally make it THE active one. */
@@ -369,7 +383,11 @@ export default class FarmPlotTile extends Entity {
 
         const plantedAtSec = Date.now() / 1000;
         FarmCropStorage.plant(this.tileKey, cropId, plantedAtSec);
-        this.registerAsCropHudCandidate({ cropId, plantedAtSec });
+        // An autoPlant cell also plants with nobody standing on it (see awake()/harvest()) — only
+        // show the growth HUD when the player is actually here, same as handleTriggerEnter() does.
+        if (this.playerInside) {
+            this.registerAsCropHudCandidate({ cropId, plantedAtSec });
+        }
     }
 
     /** MainPlayer walking into this cell's own trigger — makes this cell the shared seed-picker's or crop-hud's new candidate, or starts the no-seed auto-plant countdown, depending on whether anything's planted here and whether this plot has an assigned crop (see this file's own top doc). Harvesting is now always a deliberate "Collect" tap in FarmCropHud, never automatic on collision. */
@@ -392,6 +410,8 @@ export default class FarmPlotTile extends Entity {
             if (!autoHarvests) {
                 this.registerAsCropHudCandidate(planted);
             }
+        } else if (this.isAutoPlant()) {
+            this.autoPlant();
         } else if (this.plotConfig.assignedCropId !== undefined) {
             this.startAutoPlantTimer();
         } else {
@@ -437,7 +457,10 @@ export default class FarmPlotTile extends Entity {
             this.showHarvestGainPopup(cropYield.resourceType, cropYield.amount);
         }
         this.cropHud.unregister(this.tileKey);
-        if (this.plotConfig.assignedCropId !== undefined) {
+        if (this.isAutoPlant()) {
+            // FarmPlotConfig.autoPlant — the next crop starts growing right away, no countdown.
+            this.autoPlant();
+        } else if (this.plotConfig.assignedCropId !== undefined) {
             this.startAutoPlantTimer();
         } else {
             this.registerAsSeedPickerCandidate();

@@ -46,6 +46,8 @@
 // registry's one-shot bookkeeping. See that method's own doc.
 
 import { isMilestoneRequirementMet, MilestoneRequirement } from '../data/MilestoneRequirement';
+import { StoreUnlocks } from '../store/StoreUnlocks';
+import { StoreProgressStorage } from '../store/StoreProgressStorage';
 
 interface SpawnGateEntry {
     readonly id: string;
@@ -64,6 +66,11 @@ interface UnlockGateEntry {
 export default class RequirementRegistry {
     private readonly spawnGates: SpawnGateEntry[] = [];
     private readonly unlockGates: UnlockGateEntry[] = [];
+
+    public constructor() {
+        // A store level-up can enable any spawn-gated id (see StoreUnlocks.ts) — recheck right away.
+        StoreProgressStorage.onLevelChanged.add(() => this.trySpawnAll());
+    }
 
     /**
      * Registers a spawn gate and immediately tries it — see this file's own doc. `id` is only
@@ -117,7 +124,7 @@ export default class RequirementRegistry {
     }
 
     private trySpawn(entry: SpawnGateEntry): void {
-        if (entry.spawned || (entry.requirement && !isMilestoneRequirementMet(entry.requirement))) {
+        if (entry.spawned || (entry.requirement && !isMilestoneRequirementMet(entry.requirement)) || !StoreUnlocks.isEnabled(entry.id)) {
             return;
         }
         entry.spawned = true;

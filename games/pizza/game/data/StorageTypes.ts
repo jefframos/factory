@@ -14,6 +14,8 @@
 // editor's Storages tab.
 
 import { ResourceType } from '../actions/ResourceTypes';
+import { CurrencyType } from './EconomyTypes';
+import type { FrameName } from '../ui/FrameRegistry';
 import type { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
 import MODELS from "../../registry/assetsRegistry/modelsRegistry";
 
@@ -26,12 +28,19 @@ import MODELS from "../../registry/assetsRegistry/modelsRegistry";
  */
 export type StorageAccepts = 'farm' | 'main' | 'animal' | 'all';
 
+
 export interface StoragePileConfig {
     /** Most items per row / per column of each layer (fewer if the largest stored item doesn't fit that many — see ItemPile.ts). */
     columns: number;
     rows: number;
     /** Most layers drawn — anything past columns x rows x layers is still stored, just not shown. */
     layers: number;
+}
+
+/** What buying a storage costs — same shape as FarmPlotPrice. */
+export interface StoragePrice {
+    currency: CurrencyType;
+    amount: number;
 }
 
 export interface StorageConfig {
@@ -82,6 +91,24 @@ export interface StorageConfig {
      * collider would stop the player from ever reaching it.
      */
     solid?: number;
+    /**
+     * How this storage shows its info — the stored count (only when `resourceType` is set) and, while
+     * for sale, its price:
+     *   - 'Floor' (FLOOR_FRAME — the default when unset): painted on the floor in 3D. The count sits
+     *     just south of the storage; the price sits on the purchase area (its dropper, or its own footprint).
+     *   - any FrameRegistry preset (e.g. 'QueueFrame'): a floating popup on the UI layer in that frame.
+     */
+    frame?: FrameName;
+    /** Floor label height in world units (width grows with the text). Unset = 2.7. */
+    floorLabelSize?: number;
+    /** Gap between the storage's south edge and the floor label, world units. Unset = 0.3. */
+    floorLabelGap?: number;
+    /**
+     * Optional — when set, the storage starts "for sale": the player stands in its footprint to
+     * pay, same coin-drain flow as a farm plot (see store/StoragePurchaseZone.ts). Unset = owned
+     * from the start. A store's `defaultStorageId` is always free regardless (see StoreTypes.ts).
+     */
+    price?: StoragePrice;
     /** When true, this storage isn't spawned at all — same convention as every other entity's `disabled`. */
     disabled?: boolean;
 }
@@ -99,12 +126,35 @@ export const DEFAULT_STORAGE_CONFIG: StorageConfig = {
         "columns": 2,
         "rows": 2,
         "layers": 3
+    },
+    "price": {
+        "currency": CurrencyType.Money,
+        "amount": 10
     }
 };
 
 /** Per-storage-id overrides — sparse: only storages a level designer has customized need an entry. */
 export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
     "storage2": {
+        "accepts": "farm",
+        "resourceType": ResourceType.Tomato,
+        "models": [MODELS.Restaurant.Crate],
+        "scale": 1,
+        "rotationDeg": 0,
+        "dropOffset": {},
+        "pile": {
+            "columns": 2,
+            "rows": 2,
+            "layers": 3
+        },
+        "solid": 1,
+        "popupBobOffset": 3,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 10
+        }
+    },
+    "storage1": {
         "accepts": "farm",
         "resourceType": ResourceType.Carrot,
         "models": [MODELS.Restaurant.Crate],
@@ -116,8 +166,31 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             "rows": 2,
             "layers": 3
         },
+        "popupBobOffset": 3,
         "solid": 1,
-        "popupBobOffset": 3
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 10
+        }
+    },
+    "storage3": {
+        "accepts": "farm",
+        "resourceType": ResourceType.Broccoli,
+        "models": [MODELS.Restaurant.Crate],
+        "scale": 1,
+        "rotationDeg": 0,
+        "dropOffset": {},
+        "pile": {
+            "columns": 2,
+            "rows": 2,
+            "layers": 3
+        },
+        "popupBobOffset": 3,
+        "solid": 1,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 10
+        }
     }
 };
 

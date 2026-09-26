@@ -104,6 +104,14 @@ export interface FarmPlotConfig {
      * this. undefined means no tool needed.
      */
     requiredTool?: ToolId;
+    /**
+     * Optional — skips planting entirely for an `assignedCropId` plot: every empty cell is planted
+     * with that crop the moment the plot appears, and a cell starts growing again the instant it's
+     * harvested. The player only ever collects. No planting countdown and no `requiredTool` check.
+     * Ignored without `assignedCropId` (there'd be no crop to plant), and unset/false keeps the
+     * normal stand-on-it countdown (see FarmPlotTile.ts).
+     */
+    autoPlant?: boolean;
     /** 0-1 fraction of this plot's own footprint that becomes a SOLID collider blocking the player while still unacquired — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default) means no solid collider — a for-sale plot is walkable, same as an unbought queue/shop today. */
     solid?: number;
     /**
@@ -123,7 +131,8 @@ export const DEFAULT_FARM_PLOT_CONFIG: FarmPlotConfig = {
         "currency": CurrencyType.Money,
         "amount": 50
     },
-    "requiredTool": "shovel"
+    "requiredTool": "shovel",
+    "autoPlant": true
 };
 
 /** Per-plot-id overrides — e.g. FARM_PLOT_CONFIG_BY_ID['farm1'] = { price: {...} } for a plot that should cost/unlock/behave differently from every other one. Sparse: only plots a level designer has actually customized need an entry. */
@@ -131,10 +140,11 @@ export const FARM_PLOT_CONFIG_BY_ID: Partial<Record<string, FarmPlotConfig>> = {
     "farm1": {
         "price": {
             "currency": CurrencyType.Money,
-            "amount": 10
+            "amount": 0
         },
         "assignedCropId": CropId.Carrot,
-        "requiredTool": "shovel"
+        "requiredTool": "shovel",
+        "autoPlant": true
     },
     "farm2": {
         "price": {
@@ -142,7 +152,8 @@ export const FARM_PLOT_CONFIG_BY_ID: Partial<Record<string, FarmPlotConfig>> = {
             "amount": 50
         },
         "assignedCropId": CropId.Tomato,
-        "requiredTool": "shovel"
+        "requiredTool": "shovel",
+        "autoPlant": true
     },
     "farm3": {
         "price": {
@@ -150,7 +161,8 @@ export const FARM_PLOT_CONFIG_BY_ID: Partial<Record<string, FarmPlotConfig>> = {
             "amount": 50
         },
         "assignedCropId": CropId.Broccoli,
-        "requiredTool": "shovel"
+        "requiredTool": "shovel",
+        "autoPlant": true
     }
 };
 

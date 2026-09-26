@@ -48,6 +48,9 @@ import { flyResourceModel } from '../components/FlyToStack';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { buildLockRequirementPanel } from '../ui/LockRequirementPanel';
+import FloorLabelComponent, { DEFAULT_FLOOR_LABEL_SIZE } from '../components/FloorLabelComponent';
+import { isFloorFrame, FLOOR_FRAME } from '../ui/PopupConfig';
+import type { LockRequirementPanel } from '../ui/LockRequirementPanel';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from './AssetLibraryRegistry';
 import { BackpackStorage } from '../data/BackpackStorage';
@@ -76,6 +79,8 @@ const DEFAULT_DROP_OFFSET = { x: 0, y: 0.4, z: 0 };
 const SOLID_HALF_HEIGHT = 0.5;
 /** Default gap (world units) between the top of the pile and the bottom of the "only this resource" panel, when StorageConfig.popupBobOffset is unset — see this file's own doc. */
 const DEFAULT_ACCEPTS_PANEL_CLEARANCE = 1.0;
+/** StorageConfig.floorLabelGap fallback (floorLabelSize falls back to FloorLabelComponent's own default). */
+const DEFAULT_FLOOR_LABEL_GAP = 0.3;
 
 export default class StorageZone extends Entity {
     private readonly storageId: string;
@@ -101,9 +106,15 @@ export default class StorageZone extends Entity {
     private transferring = false;
     private destroyed = false;
 
+    /** The stored-count label on the floor — see buildFloorLabel(). Only for a `resourceType` storage in 'floor' label mode. */
+    private floorLabel?: FloorLabelComponent;
+    /** The popup alternative to `floorLabel` — see buildAcceptsPanel(). */
+    private acceptsPanel?: LockRequirementPanel;
+
     private readonly handleInventoryChanged = (storageId: string): void => {
         if (storageId === this.storageId) {
             this.pile.sync(StorageInventory.getAll(this.storageId));
+            this.refreshFloorLabel();
         }
     };
 
@@ -194,7 +205,11 @@ export default class StorageZone extends Entity {
         StorageInventory.onChange.add(this.handleInventoryChanged);
 
         if (this.config.resourceType !== undefined) {
-            this.buildAcceptsPanel(this.config.resourceType);
+            if (isFloorFrame(this.config.frame ?? FLOOR_FRAME)) {
+                this.buildFloorLabel(this.config.resourceType);
+            } else {
+                this.buildAcceptsPanel(this.config.resourceType);
+            }
         }
     }
 
@@ -205,9 +220,36 @@ export default class StorageZone extends Entity {
         super.destroy();
     }
 
-    /** The "only this resource" panel — see this file's own doc. */
+    /** Icon + stored count painted on the floor just south of the storage's own footprint. */
+    private buildFloorLabel(type: ResourceType): void {
+        const size = this.config.floorLabelSize ?? DEFAULT_FLOOR_LABEL_SIZE;
+        const gap = this.config.floorLabelGap ?? DEFAULT_FLOOR_LABEL_GAP;
+        this.floorLabel = this.addComponent(new FloorLabelComponent({
+            icon: getAssetIcon(resolveResourceAssetKey(type)),
+            text: `${StorageInventory.getCount(this.storageId, type)}`,
+            size,
+            offset: this.meshOffset.clone().setZ(this.meshOffset.z + this.storageSize.depth / 2 + gap + size / 2),
+        }));
+    }
+
+    /** Keeps whichever count display this storage has (floor label or popup) in sync with StorageInventory. */
+    private refreshFloorLabel(): void {
+        if (this.config.resourceType === undefined) {
+            return;
+        }
+        const text = `${StorageInventory.getCount(this.storageId, this.config.resourceType)}`;
+        this.floorLabel?.setText(text);
+        this.acceptsPanel?.setCornerText(text);
+    }
+
+    /** The "only this resource" panel (icon + stored count) in the chosen `frame` preset — the popup alternative to buildFloorLabel(). */
     private buildAcceptsPanel(type: ResourceType): void {
-        const panel = buildLockRequirementPanel(getAssetIcon(resolveResourceAssetKey(type)), { showBadge: false });
+        const panel = buildLockRequirementPanel(getAssetIcon(resolveResourceAssetKey(type)), {
+            showBadge: false,
+            frame: this.config.frame,
+            cornerText: `${StorageInventory.getCount(this.storageId, type)}`,
+        });
+        this.acceptsPanel = panel;
 
         const clearance = this.config.popupBobOffset ?? DEFAULT_ACCEPTS_PANEL_CLEARANCE;
         const anchor = new THREE.Vector3();

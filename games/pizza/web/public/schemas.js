@@ -68,6 +68,14 @@ const CURRENCY_OPTIONS = [
     { value: 'energy', label: 'Energy' },
 ];
 
+/** StoreTypes.ts's StoreSpotDirection — which way a store's waiting line extends (map north = up in Tiled). */
+const STORE_SPOT_DIRECTION_OPTIONS = [
+    { value: 'north', label: 'North (up on the map)' },
+    { value: 'south', label: 'South (down on the map)' },
+    { value: 'east', label: 'East (right on the map)' },
+    { value: 'west', label: 'West (left on the map)' },
+];
+
 const FRAME_FIELD = {
     key: 'frame', type: 'select', label: 'Popup Frame Override (blank = this type\'s own default)', optional: true,
     options: [
@@ -82,6 +90,17 @@ const FRAME_FIELD = {
         { value: 'QueueFrame', label: 'QueueFrame' },
         { value: 'CraftingFrame', label: 'CraftingFrame' },
     ],
+};
+
+/**
+ * FRAME_FIELD plus the in-world 'Floor' pseudo frame (PopupConfig.ts's FLOOR_FRAME — info painted on
+ * the floor in 3D instead of a UI-layer popup). Only storages understand 'Floor' for now, so only
+ * the Storages schema uses this variant; every other entity keeps plain FRAME_FIELD.
+ */
+const STORAGE_FRAME_FIELD = {
+    ...FRAME_FIELD,
+    label: 'Popup Frame Override (blank = Floor — stored count south of the storage, price on its purchase area; pick a frame for a floating popup instead)',
+    options: [{ value: 'Floor', label: 'Floor (in-world, painted on the ground)' }, ...FRAME_FIELD.options],
 };
 
 /**
@@ -567,9 +586,79 @@ const ENTITY_SCHEMAS = {
             ],
         },
         { key: 'itemScale', type: 'number', label: 'Item Scale (blank = same as the player stack\'s)', optional: true },
-        { key: 'popupBobOffset', type: 'number', label: 'Popup Height Offset (gap above the top of the pile for the "Only This Resource" popup — blank = 1)', optional: true },
+        STORAGE_FRAME_FIELD,
+        { key: 'floorLabelSize', type: 'number', label: 'Floor Label Size (Floor frame — height on the floor, world units; the price label also shrinks to fit the purchase area — blank = 2.7)', optional: true },
+        { key: 'floorLabelGap', type: 'number', label: 'Floor Label Gap (Floor frame — distance of the stored-count label south of the storage — blank = 0.3)', optional: true },
+        { key: 'popupBobOffset', type: 'number', label: 'Popup Height Offset (popup frames only — gap above the top of the pile, blank = 1)', optional: true },
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full storage footprint, 0.5 = half size centered — 0 by default)', optional: true },
+        {
+            key: 'price', type: 'group', label: 'Price (the player buys this storage by standing on it — amount 0 = free; a store\'s Default Storage is always free)',
+            fields: [
+                { key: 'currency', type: 'select', label: 'Currency', options: CURRENCY_OPTIONS },
+                { key: 'amount', type: 'number', label: 'Amount' },
+            ],
+        },
         { key: 'disabled', type: 'boolean', label: 'Disabled (takes this storage out of the game entirely)', optional: true },
+    ],
+    // Store entries — both the shared "default" and each entry in "byId" — see store/StoreTypes.ts's
+    // own doc. Ids come from the map's own "store"-typed objects on the "stores" layer. What a store
+    // sells isn't set here: it's every storage drawn inside its area (see Storages tab), and its
+    // optional "starter" building is a custom property on the map object itself.
+    stores: [
+        { key: 'name', type: 'text', label: 'Name', optional: true },
+        {
+            key: 'npcs', type: 'list', label: 'Client Looks (each client picks one at random — NPCs tab)',
+            itemLabel: item => item.npcId || 'npc',
+            fields: [
+                { key: 'npcId', type: 'select', label: 'NPC', source: 'npcs' },
+            ],
+        },
+        { key: 'maxClients', type: 'number', label: 'Max Clients (queue length — most clients inside the store at once)' },
+        { key: 'spawnIntervalSec', type: 'number', label: 'Spawn Interval (seconds between two clients arriving)' },
+        { key: 'moveSpeed', type: 'number', label: 'Client Walk Speed (world units / second)' },
+        { key: 'maxDistinctItems', type: 'number', label: 'Max Different Items per Client (1 = always one kind of item)' },
+        { key: 'maxAmountPerItem', type: 'number', label: 'Max Amount of Each Item (random 1..this)' },
+        { key: 'priceMultiplier', type: 'number', label: 'Price Multiplier (x each item\'s Resources-tab price — 1 = base price)' },
+        { key: 'pickDelaySec', type: 'number', label: 'Pick Time (seconds to take ONE unit from a storage)' },
+        { key: 'payDelaySec', type: 'number', label: 'Pay Time (seconds the player must stand at the cashier before the front client pays)' },
+        { key: 'spotSpacing', type: 'number', label: 'Waiting Spot Spacing (distance between clients in a line — world units)' },
+        { key: 'spotMargin', type: 'number', label: 'First Spot Gap (distance from the storage/cashier edge to the first client — world units)' },
+        {
+            key: 'storageSpotDirections', type: 'list', label: 'Storage Line Directions (storages not listed line up toward the store\'s center)', optional: true,
+            itemLabel: item => `${item.storageId || 'storage'} → ${item.direction || '?'}`,
+            fields: [
+                { key: 'storageId', type: 'text', label: 'Storage Id (as drawn on the map, e.g. storage1)' },
+                { key: 'direction', type: 'select', label: 'Direction', options: STORE_SPOT_DIRECTION_OPTIONS },
+            ],
+        },
+        { key: 'cashierSpotDirection', type: 'select', label: 'Cashier Line Direction (blank = toward the store\'s center)', options: STORE_SPOT_DIRECTION_OPTIONS, optional: true },
+        { key: 'moneyPerBill', type: 'number', label: 'Money per Bill (how much one bill on the money drop represents — visual only)' },
+        { key: 'billsPerPile', type: 'number', label: 'Bills per Pile (how tall a money pile gets before the next one starts beside it — visual only)' },
+        { key: 'bubbleOffset', type: 'number', label: 'Bubble Height (above the client\'s head — world units)' },
+        { key: 'defaultStorageId', type: 'text', label: 'Default Storage (storage id on the map — FREE, appears when the store opens; blank = every storage must be bought)', optional: true },
+        {
+            key: 'levels', type: 'list', label: 'Levels (store is Lv 1 when it opens; each entry is what it takes to REACH that level, counted from the previous one)', optional: true,
+            itemLabel: item => `Lv ${item.level ?? '?'} — ${item.amount ?? '?'} ${item.requirementType === 'sales' ? 'sales' : 'money'}${item.enables?.length ? ` — enables ${item.enables.map(e => e.entityId).filter(Boolean).join(', ')}` : ''}`,
+            fields: [
+                { key: 'level', type: 'number', label: 'Level (2, 3, ... — a Lv 1 entry just enables things on opening, its requirement is ignored)' },
+                {
+                    key: 'requirementType', type: 'select', label: 'Requirement',
+                    options: [
+                        { value: 'money', label: 'Money earned (what clients paid)' },
+                        { value: 'sales', label: 'Sales (number of clients who paid)' },
+                    ],
+                },
+                { key: 'amount', type: 'number', label: 'Amount' },
+                {
+                    key: 'enables', type: 'list', label: 'Enables (map object ids that stay hidden until this level — storage, farm, building, queue, shop, mart, crafting table)', optional: true,
+                    itemLabel: item => item.entityId || 'entity',
+                    fields: [
+                        { key: 'entityId', type: 'text', label: 'Map Object Id (e.g. farm2, storage2)' },
+                    ],
+                },
+            ],
+        },
+        { key: 'disabled', type: 'boolean', label: 'Disabled (takes this store out of the game entirely)', optional: true },
     ],
     farms: [
         {
@@ -589,6 +678,7 @@ const ENTITY_SCHEMAS = {
             source: 'crops', optional: true,
         },
         { key: 'requiredTool', type: 'select', label: 'Required Tool (the player must own this tool to plant here at all — for an Assigned Crop plot, the tool\'s own Action Time is also how long planting takes)', source: 'tools', optional: true },
+        { key: 'autoPlant', type: 'boolean', label: 'Auto Plant (needs Assigned Crop — no planting step: every cell is growing from the start and replants instantly after each harvest; the player only collects. Ignores Required Tool.)', optional: true },
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
         { key: 'disabled', type: 'boolean', label: 'Disabled (takes this farm plot out of the game entirely — never built, whether for-sale or already owned)', optional: true },
     ],

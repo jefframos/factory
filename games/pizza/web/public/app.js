@@ -481,7 +481,7 @@ function renderActiveTab() {
             contentEl.appendChild(sectionLabel('Tile Settings — shared by every farm plot, not per-plot'));
             contentEl.appendChild(renderEntryCard(null, 'tiles', data.tiles, ENTITY_SCHEMAS.farmTiles ?? [], false, false, missingOnMap, 'Tile Settings'));
         }
-        const noun = { farms: 'plot', storages: 'storage' }[activeId] ?? 'queue';
+        const noun = { farms: 'plot', storages: 'storage', stores: 'store' }[activeId] ?? 'queue';
         contentEl.appendChild(sectionLabel(`Default — used by any ${noun} placed on the map with no id-specific override below`));
         contentEl.appendChild(renderEntryCard(null, 'default', data.default, schema, false, false, missingOnMap));
         contentEl.appendChild(sectionLabel(`By ${noun} id — only takes effect for a ${noun} object on the Tiled map with a matching id`));

@@ -67,6 +67,17 @@ import { ScreenAnchorOptions } from '../components/ScreenAnchorComponent';
 
 export type PopupMode = 'none' | 'complete' | 'simple';
 
+/**
+ * Pseudo frame name for a `frame` override: instead of a PIXI popup in some FrameRegistry preset,
+ * the info is painted on the floor in 3D (FloorLabelComponent). Only storages understand it for now
+ * (StorageConfig.frame — see StorageZone / StoragePurchaseZone).
+ */
+export const FLOOR_FRAME = 'Floor';
+
+export function isFloorFrame(frame: string | undefined): boolean {
+    return frame === FLOOR_FRAME;
+}
+
 /** Top-center — see this file's own top-of-file doc for why 'simple' popups use this instead of leaving ScreenAnchorOptions.anchor unset (content's own local-origin default). */
 const SIMPLE_POPUP_ANCHOR = { x: 0.5, y: 0 };
 

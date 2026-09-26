@@ -9,6 +9,9 @@ import { GlobalResourceStorage } from './GlobalResourceStorage';
 import { BackpackStorage } from './BackpackStorage';
 import { BackpackCapacityStorage } from './BackpackCapacityStorage';
 import { StorageInventory } from './StorageInventory';
+import { StoreMoneyStorage } from '../store/StoreMoneyStorage';
+import { StoreProgressStorage } from '../store/StoreProgressStorage';
+import { StorageOwnershipStorage } from '../store/StorageOwnershipStorage';
 import { BuildingStorage } from './BuildingStorage';
 import { GateStorage } from './GateStorage';
 import { QueueStorage } from './QueueStorage';
@@ -85,6 +88,9 @@ export function clearAllPlayerData(): void {
         BackpackStorage.clearAll(),
         BackpackCapacityStorage.clearAll(),
         StorageInventory.clearAll(),
+        StoreMoneyStorage.clearAll(),
+        StoreProgressStorage.clearAll(),
+        StorageOwnershipStorage.clearAll(),
         BuildingStorage.clearAll(),
         GateStorage.clearAll(),
         QueueStorage.clearAll(),

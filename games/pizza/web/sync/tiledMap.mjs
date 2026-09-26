@@ -20,6 +20,8 @@ import fs from 'node:fs';
 
 /** Matches WorldObjectRegistry.OBJECTS_LAYER_NAME exactly — see that file's own doc. */
 const OBJECTS_LAYER_NAME = 'mapSettings';
+/** Matches store/StoreLayout.ts's STORES_LAYER_NAME — its objects ("store", "storeEntrance", ...) are bucketed alongside mapSettings' by readMapObjectIds(). */
+const STORES_LAYER_NAME = 'stores';
 
 /**
  * Reads `mapFilePath` and buckets every object on its "mapSettings" layer by
@@ -55,7 +57,8 @@ export function readMapObjectIds(mapFilePath) {
     }
 
     const byType = {};
-    for (const obj of layer.objects ?? []) {
+    const storesLayer = map.layers?.find(l => l.type === 'objectgroup' && l.name === STORES_LAYER_NAME);
+    for (const obj of [...(layer.objects ?? []), ...(storesLayer?.objects ?? [])]) {
         const props = Object.fromEntries((obj.properties ?? []).map(p => [p.name, p.value]));
         const type = props.type;
         const id = props.id;

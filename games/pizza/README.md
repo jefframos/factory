@@ -28,7 +28,8 @@ then sequentially loads every persisted-data store *before* any asset loads —
 `ItemStorage`, `CraftStorage`, `DynamicResourceStorage`, `ShapeResourceStorage`,
 `FarmPlotStorage`, `FarmCropStorage`, `SeedStorage`, `BackpackUnlockStorage`,
 `CurrencyUnlockStorage`, `AnimalFollowStorage`, `PlayerPositionStorage`,
-`TutorialProgressStorage`, `TriggerStorage`, `Localization`. `loadAssets()` then loads
+`TutorialProgressStorage`, `TriggerStorage`, `StoreProgressStorage`, `StorageOwnershipStorage`
+(see Stores below), `Localization`. `loadAssets()` then loads
 three PIXI bundles in order — `json` (also triggers `loadShopItems()`/`loadIslands()`),
 `fonts`, `images` — each patched to `pizza/<kind>/` via `ManifestHelper.patchPaths()`.
 `startGame()` calls `applyDebugPhysicsCookie()` (dev-mode-only, see Debug cookies below —
@@ -111,7 +112,8 @@ preloaded PIXI assets, read synchronously via `loadTiledMap()`/`loadTileDefs()`.
   `findLayers()`/`GROUND_LAYER_NAME`, not just an exact match — lets a map stack
   decorative variants like `groundLayer2`) as its own `InstancedMesh` (one draw call per
   matched layer regardless of map size), tinted from `tiles.json`'s per-tile color. A
-  layer beyond the first sits `GROUND_LAYER_Y_STEP` (0.05) higher than the one before it.
+  layer beyond the first sits `GROUND_LAYER_Y_STEP` (0.03) higher than the one before it
+  (floor labels sit at 0.1 so they always clear the stacked ground — see Rendering helpers).
   Keeps two separate lookups: `cellDefs` (`getGroundDefAt()`/`isWalkableAt()`) is ALWAYS
   merged across every matched layer, topmost wins per cell, so an overlay tile's
   walkability always takes priority; `layerCellLists` (`getGroundCellLayers()`) keeps
@@ -394,18 +396,23 @@ composable on the same map:
 
 ## Farming — `game/world/Farm*.ts`, `game/data/Farm*.ts`, `CropTypes.ts`, `SeedTypes.ts`, `SeedStorage.ts`
 
-A second, independent progression loop layered onto the base gather/deposit game — the
-one place the game currently asks for deliberate taps rather than pure movement (see the
-intro caveat above).
+A second, independent progression loop layered onto the base gather/deposit game. A
+seed-picker plot still asks for deliberate taps rather than pure movement (see the intro
+caveat above); an `autoPlant` plot (every current farm) is movement-only — walk over it to
+collect, everything else is automatic.
 
 A farm PLOT is a `"farm"`-typed object on the Tiled `mapSettings` layer, configured via
 `FarmTypes.ts`'s `FarmPlotConfig` (`price`, optional `appearRequirement`, optional
-`allowedCrops`, optional `solid`) — `getFarmPlotConfig(id)` falls back to
+`allowedCrops`, optional `assignedCropId`, optional `requiredTool`, optional `autoPlant`,
+optional `solid`) — `getFarmPlotConfig(id)` falls back to
 `DEFAULT_FARM_PLOT_CONFIG` for any plot not explicitly listed, so every discovered plot
 is always valid. `PizzaScene.setupFarms()` registers one `RequirementRegistry` spawn gate
 per plot; on trigger it branches on `FarmPlotStorage.isOwned(id)` — an already-owned plot
 (from a previous session) skips straight to `spawnFarmGrid()`, an unowned one spawns
-`FarmZone`. `FarmGrid.computeFarmGrid(width, depth)` is the shared geometry step both the
+`FarmZone`. A plot whose `price.amount` is **0** is free: it's marked owned the moment it
+spawns (`tryCompletePurchase()` with nothing owed, saved like a bought plot) and goes straight
+to its grid — no "0/0" for-sale zone. A plot listed in a store level's `enables` only spawns
+once that store level is reached (see Stores below / `game/store/README.md`). `FarmGrid.computeFarmGrid(width, depth)` is the shared geometry step both the
 pre-purchase preview and the post-purchase grid build off, turning a plot's Tiled
 footprint into row-major `FarmGridCell[]` sized to `WORLD_UNITS_PER_TILE`, so the two
 states always agree on layout.
@@ -429,17 +436,23 @@ is active" by proximity to the player's position every frame (`resolveActive()`)
 registration order or trigger-enter/exit state — this specifically fixes a bug where two
 overlapping/adjacent triggers could each believe they own the popup; `FarmPlotTile`'s
 outline visibility is likewise driven off `FarmSeedPicker.getActiveTileKey() ===
-this.tileKey`, not its own trigger state. Planting flow: seed-picker tap →
-`SeedStorage.removeOne(seedId)` → `FarmCropStorage.plant(tileKey,
-SEED_CONFIG[seedId].cropId, Date.now()/1000)`; `CropVisualComponent` grows purely off
-that stored state. Growth/readiness (`CropTypes.isCropReady`) is computed from real
+this.tileKey`, not its own trigger state. How a cell gets planted depends on the plot:
+
+| Plot | Planting | Harvest |
+|---|---|---|
+| no `assignedCropId` ("free" plot) | seed-picker tap → `SeedStorage.removeOne(seedId)` → `FarmCropStorage.plant(tileKey, SEED_CONFIG[seedId].cropId, now)` | "Collect" tap in `FarmCropHud` |
+| `assignedCropId` | stand on the empty cell for the `requiredTool`'s action time (`FarmAutoPlantHud` countdown), no seed spent | automatic while standing on a ready cell |
+| `assignedCropId` + `autoPlant` (**all current farms**) | none — every empty cell is planted the moment the tile spawns (also refills empty cells from older saves) and again right after each harvest; `requiredTool` is ignored | automatic while standing on a ready cell |
+
+For `autoPlant` plots the only farm UI is `FarmCropHud`'s growth bar while standing on a
+growing cell — no countdown, seed picker or "about to plant" outline. `CropVisualComponent`
+grows purely off `FarmCropStorage`'s stored state in every case. Growth/readiness (`CropTypes.isCropReady`) is computed from real
 elapsed wall-clock time against `plantedAtSec`, so it survives reloads with no
-offline-catchup step — same pattern as `GateStorage`/`QueueStorage`. Harvest is always a
-deliberate "Collect" tap in `FarmCropHud`, never automatic on collision (auto-collect is
-a planned unlockable, not implemented); `FarmPlotTile.harvest()` banks
-`CROP_CONFIG[cropId].yield` into `BackpackStorage`, calls `FarmCropStorage.harvest(tileKey)`,
-then immediately re-registers the tile with the seed picker so it can be replanted without
-stepping off and back on.
+offline-catchup step — same pattern as `GateStorage`/`QueueStorage`. `FarmPlotTile.harvest()`
+banks `CROP_CONFIG[cropId].yield` (onto the carry stack when `harvestIntoStack`, else into
+`BackpackStorage`; a full stack leaves the crop on the cell), calls
+`FarmCropStorage.harvest(tileKey)`, then immediately re-arms the cell for the next planting
+without stepping off — seed picker, planting countdown, or (for `autoPlant`) an instant replant.
 
 **Persistence** — `FarmPlotStorage` (owned ids + deposit progress), `FarmCropStorage`
 (per-tile `PlantedCrop`), `SeedStorage` (seed counts) are all static-class/Signal/
@@ -453,7 +466,9 @@ top of a plot; rotation is ignored (axis-aligned only), consistent with `FarmZon
 `FarmPlotTile` themselves also ignoring rotation.
 
 **Gotchas:** `FARM_TILE_CONFIG` (empty/prepared views, notification icon, ground tints) is
-game-WIDE, not per-plot — only price/`appearRequirement`/`allowedCrops` vary per plot id.
+game-WIDE, not per-plot — only price/`appearRequirement`/`allowedCrops`/`assignedCropId`/
+`requiredTool`/`autoPlant` vary per plot id. `autoPlant` does nothing without `assignedCropId`
+(no crop to plant) — the Default entry has none, so a brand-new plot still uses the seed picker.
 Ground tint (`applyGroundTint`) only applies on the `GlbVisualComponent` path; the
 `BoxVisualComponent` dev placeholder keeps a fixed color regardless. **There is currently
 no in-game seed acquisition path** — `SeedStorage.add` is only ever called from dev-GUI
@@ -718,6 +733,13 @@ Wiring: building setup looks up `getNpcConfig(buildingConfig.npcId)` and constru
 `npcPosition` derived from the building's own placement + `npcOffset` — not from
 `WorldObjectRegistry`.
 
+## Stores — `game/store/`
+
+Grocery stores: NPC clients buy items out of the storages inside a store, pay at the
+cashier, and sales level the store up, unlocking farms/storages/etc. per level. Map setup
+(the `stores` Tiled layer), config (Stores/Storages editor tabs), progression and the code
+map are all in **[game/store/README.md](game/store/README.md)**.
+
 ## Queues — `game/player/QueueZone.ts`, `game/data/QueueTypes.ts`, `game/data/QueueStorage.ts`
 
 A queue is a repeating task-delivery trigger, id'd from whatever's drawn on the Tiled
@@ -806,6 +828,19 @@ are never physically resolved — they only fire `onTriggerEnter/Stay/Exit`; sol
 get both physical push-out AND `onCollisionEnter/Stay/Exit`.
 
 ## Rendering helpers
+
+- **`components/FloorLabelComponent.ts`** — world-space UI painted on the floor: an icon plus
+  optional text (e.g. a count) drawn on one canvas → `CanvasTexture` on a flat plane
+  (`MeshBasicMaterial`, transparent, no depth write, bent) — the same decal technique the `down`
+  game uses. Aligned with the world grid (text reads from the south; `rotationDeg` to turn),
+  default height `DEFAULT_FLOOR_LABEL_SIZE` (2.7 world units), optional `maxWidth`/`maxDepth` to
+  shrink-to-fit an area, `setText()` redraws only on change. Sits at y=0.1 — above every stacked
+  ground layer — with depth testing ON, so buildings/props still cover it. Selected per entity
+  via the `'Floor'` pseudo frame (`ui/PopupConfig.ts`'s `FLOOR_FRAME`); **only storages support it
+  so far** (`StorageConfig.frame` — stored count south of the storage, price on its purchase area).
+- **`builders/PixiIconToThree.ts`** — turns a PIXI spritesheet texture (any `getAssetIcon()` icon)
+  into an upright canvas / THREE texture, undoing TexturePacker's rotated/trimmed frames. Cached;
+  never dispose the results.
 
 - **`BendService.ts`** — the shared vertex-shader "world curves away from the player"
   effect. `applyBend(material)` is idempotent (safe to call repeatedly on a shared

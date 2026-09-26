@@ -45,6 +45,9 @@ const MAP_CHECKED_ENTITIES = {
     farms: { mapType: 'farm', configIds: data => Object.keys(data.byId ?? {}), missingOnMapSeverity: 'info' },
     // Same harmless-either-way severity as farms — an unoverridden storage just uses DEFAULT_STORAGE_CONFIG.
     storages: { mapType: 'storage', configIds: data => Object.keys(data.byId ?? {}), missingOnMapSeverity: 'info' },
+    // Same harmless-either-way severity — an unoverridden store just uses DEFAULT_STORE_CONFIG. Store
+    // objects live on the map's "stores" layer, which readMapObjectIds() also scans.
+    stores: { mapType: 'store', configIds: data => Object.keys(data.byId ?? {}), missingOnMapSeverity: 'info' },
     // Same reasoning/severity as farms just above — a mart id missing on the map means that
     // override never applies; one drawn but not overridden just falls back to
     // DEFAULT_MART_CONFIG (see MartTypes.ts's own doc).

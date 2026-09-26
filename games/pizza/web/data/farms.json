@@ -4,16 +4,18 @@
             "currency": "money",
             "amount": 50
         },
-        "requiredTool": "shovel"
+        "requiredTool": "shovel",
+        "autoPlant": true
     },
     "byId": {
         "farm1": {
             "price": {
                 "currency": "money",
-                "amount": 10
+                "amount": 0
             },
             "assignedCropId": "carrot",
-            "requiredTool": "shovel"
+            "requiredTool": "shovel",
+            "autoPlant": true
         },
         "farm2": {
             "price": {
@@ -21,7 +23,8 @@
                 "amount": 50
             },
             "assignedCropId": "tomato",
-            "requiredTool": "shovel"
+            "requiredTool": "shovel",
+            "autoPlant": true
         },
         "farm3": {
             "price": {
@@ -29,7 +32,8 @@
                 "amount": 50
             },
             "assignedCropId": "broccoli",
-            "requiredTool": "shovel"
+            "requiredTool": "shovel",
+            "autoPlant": true
         }
     },
     "tiles": {

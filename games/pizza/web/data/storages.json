@@ -11,10 +11,14 @@
             "columns": 2,
             "rows": 2,
             "layers": 3
+        },
+        "price": {
+            "currency": "money",
+            "amount": 10
         }
     },
     "byId": {
-        "storage2": {
+        "storage1": {
             "models": [
                 "Restaurant.Crate"
             ],
@@ -29,7 +33,53 @@
             "scale": 1,
             "rotationDeg": 0,
             "solid": 1,
-            "popupBobOffset": 3
+            "popupBobOffset": 3,
+            "price": {
+                "currency": "money",
+                "amount": 10
+            }
+        },
+        "storage2": {
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "dropOffset": {},
+            "pile": {
+                "columns": 2,
+                "rows": 2,
+                "layers": 3
+            },
+            "accepts": "farm",
+            "resourceType": "tomato",
+            "scale": 1,
+            "rotationDeg": 0,
+            "solid": 1,
+            "popupBobOffset": 3,
+            "price": {
+                "currency": "money",
+                "amount": 10
+            }
+        },
+        "storage3": {
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "dropOffset": {},
+            "pile": {
+                "columns": 2,
+                "rows": 2,
+                "layers": 3
+            },
+            "accepts": "farm",
+            "resourceType": "broccoli",
+            "scale": 1,
+            "rotationDeg": 0,
+            "solid": 1,
+            "popupBobOffset": 3,
+            "price": {
+                "currency": "money",
+                "amount": 10
+            }
         }
     }
 }

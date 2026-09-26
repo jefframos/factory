@@ -110,6 +110,10 @@ import { DevGuiManager } from 'core/utils/DevGuiManager';
 import { BackpackStackMode, getPlayerConfig } from '../data/PlayerConfig';
 import { getStorageConfig } from '../data/StorageTypes';
 import StorageZone from '../world/StorageZone';
+import { spawnStores } from '../store/Store';
+import { StoreUnlocks } from '../store/StoreUnlocks';
+import StoragePurchaseZone from '../store/StoragePurchaseZone';
+import { FLOOR_FRAME } from '../ui/PopupConfig';
 import { BackpackCapacityStorage } from '../data/BackpackCapacityStorage';
 import { CarryStack } from '../player/CarryStack';
 import PlayerUIAvoidanceComponent from '../components/PlayerUIAvoidanceComponent';
@@ -437,6 +441,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupCraftingTables();
         this.setupFarms();
         this.setupStorages();
+        this.setupStores();
         this.setupTriggers();
         this.setupCraftTables();
         this.setupDebugGui();
@@ -1567,6 +1572,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      * One StorageZone per "storage" mapSettings object (see StorageTypes.ts) — its trigger is the
      * dropper rect targeting it (getDropperFor()), or the storage's own footprint if it has none,
      * same fallback buildings use. The mesh always sits at the storage object's own position.
+     *
+     * Registered as a spawn gate (no requirement of its own) so a storage listed under a store
+     * level stays hidden until that level — see store/StoreUnlocks.ts. A priced storage the player
+     * hasn't bought yet spawns a StoragePurchaseZone over the same trigger area instead, which
+     * swaps in the real StorageZone once paid.
      */
     private setupStorages(): void {
         for (const [id, placement] of this.worldObjects.getAllOfType('storage')) {
@@ -1579,19 +1589,57 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             // No dropper + solid: the trigger IS the storage's footprint, which the solid collider
             // would keep the player out of — pad it so standing against the storage still counts.
             const padding = !dropper && (config.solid ?? 0) > 0 ? STORAGE_SOLID_TRIGGER_PADDING : 0;
-            const storageZone = this.world.add(new StorageZone(
-                id,
-                config,
-                new THREE.Vector3(placement.x, 0, placement.z),
-                new THREE.Vector3(trigger.x, 0, trigger.z),
-                { width: trigger.width + padding * 2, depth: trigger.depth + padding * 2 },
-                { width: placement.width, depth: placement.depth },
-                this.screenHost,
-            ));
-            this.threeScene.add(storageZone.transform);
-            // Registered over the storage's OWN footprint (where its mesh is), not the dropper's.
-            this.registerZoneVisibility(storageZone.transform, placement.x, placement.z, placement.width, placement.depth);
+            const triggerPosition = new THREE.Vector3(trigger.x, 0, trigger.z);
+            const triggerSize = { width: trigger.width + padding * 2, depth: trigger.depth + padding * 2 };
+
+            const spawnStorage = (): void => {
+                const storageZone = this.world.add(new StorageZone(
+                    id,
+                    config,
+                    new THREE.Vector3(placement.x, 0, placement.z),
+                    triggerPosition,
+                    triggerSize,
+                    { width: placement.width, depth: placement.depth },
+                    this.screenHost,
+                ));
+                this.threeScene.add(storageZone.transform);
+                // Registered over the storage's OWN footprint (where its mesh is), not the dropper's.
+                this.registerZoneVisibility(storageZone.transform, placement.x, placement.z, placement.width, placement.depth);
+            };
+
+            this.requirementRegistry.registerSpawnGate(id, undefined, () => {
+                if (!config.price || StoreUnlocks.isStorageOwned(id, config)) {
+                    spawnStorage();
+                    return;
+                }
+                const price = config.price;
+                const purchaseZone = this.world.add(new StoragePurchaseZone(
+                    id,
+                    price,
+                    triggerPosition,
+                    triggerSize,
+                    this.screenHost,
+                    () => this.uiService.economyUi.getIconAnchorPosition(price.currency),
+                    spawnStorage,
+                    config.frame ?? FLOOR_FRAME,
+                    config.floorLabelSize,
+                ));
+                this.threeScene.add(purchaseZone.transform);
+                this.registerZoneVisibility(purchaseZone.transform, trigger.x, trigger.z, trigger.width, trigger.depth);
+            });
         }
+    }
+
+    /** Grocery stores drawn on the map's "stores" layer — see store/Store.ts. Independent of setupStorages(): a store reads its storages straight from the map + StorageInventory. */
+    private setupStores(): void {
+        spawnStores({
+            world: this.world,
+            threeScene: this.threeScene,
+            worldObjects: this.worldObjects,
+            screenHost: this.screenHost,
+            getWalletOverlayPosition: () => this.uiService.economyUi.getIconAnchorPosition(CurrencyType.Money),
+            registerZoneVisibility: (object, x, z, width, depth) => this.registerZoneVisibility(object, x, z, width, depth),
+        });
     }
 
     private setupFarms(): void {
@@ -1605,6 +1653,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             }
 
             this.requirementRegistry.registerSpawnGate(id, config.appearRequirement, () => {
+                // A free plot (price 0) is owned the moment it appears — no "0/0" for-sale zone.
+                // tryCompletePurchase() completes straight away (0 paid >= 0 owed) and saves it like a bought one.
+                if (config.price.amount <= 0) {
+                    FarmPlotStorage.tryCompletePurchase(id, config);
+                }
                 if (FarmPlotStorage.isOwned(id)) {
                     this.spawnFarmGrid(id, placement, config);
                     return;

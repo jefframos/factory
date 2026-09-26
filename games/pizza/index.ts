@@ -23,6 +23,8 @@ import { GlobalResourceStorage } from './game/data/GlobalResourceStorage';
 import { BackpackStorage } from './game/data/BackpackStorage';
 import { BackpackCapacityStorage } from './game/data/BackpackCapacityStorage';
 import { StorageInventory } from './game/data/StorageInventory';
+import { StoreProgressStorage } from './game/store/StoreProgressStorage';
+import { StorageOwnershipStorage } from './game/store/StorageOwnershipStorage';
 import { BuildingStorage } from './game/data/BuildingStorage';
 import { GateStorage } from './game/data/GateStorage';
 import { EconomyStorage } from './game/data/EconomyStorage';
@@ -95,6 +97,8 @@ export default class MyGame extends Game {
             await BackpackStorage.load();
             await BackpackCapacityStorage.load();
             await StorageInventory.load();
+            await StoreProgressStorage.load();
+            await StorageOwnershipStorage.load();
             await BuildingStorage.load();
             await GateStorage.load();
             await EconomyStorage.load();
