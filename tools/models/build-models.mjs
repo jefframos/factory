@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path, { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { convertFbxAnimationToGlb } from './fbx-anim-to-glb.mjs';
 
 dotenv.config();
 
@@ -66,6 +67,40 @@ function copyFolderSync(from, to) {
 }
 
 /**
+ * Animation-only FBX files (no mesh) are re-packed into a much smaller
+ * animation-only GLB next to where the FBX was copied, and the copied FBX is
+ * removed — see fbx-anim-to-glb.mjs. Returns the published file name, which
+ * is unchanged for anything that isn't an animation-only FBX.
+ */
+async function publishModelFile(sourcePath, destFolder, fileName) {
+    const parsed = path.parse(fileName);
+    if (parsed.ext.toLowerCase() !== '.fbx') return fileName;
+
+    const glbName = `${parsed.name}.glb`;
+    // A hand-made .glb of the same name in raw-assets wins.
+    if (fs.existsSync(path.join(path.dirname(sourcePath), glbName))) return fileName;
+
+    const glbPath = path.join(destFolder, glbName);
+    const copiedFbxPath = path.join(destFolder, fileName);
+    const isUpToDate = fs.existsSync(glbPath)
+        && fs.statSync(glbPath).mtimeMs >= fs.statSync(sourcePath).mtimeMs;
+
+    if (!isUpToDate) {
+        let glb = null;
+        try {
+            glb = await convertFbxAnimationToGlb(fs.readFileSync(sourcePath));
+        } catch (e) {
+            console.warn(`⚠️  Could not convert ${fileName} to GLB, keeping FBX:`, e.message);
+        }
+        if (!glb) return fileName;
+        fs.writeFileSync(glbPath, glb);
+    }
+
+    if (fs.existsSync(copiedFbxPath)) fs.unlinkSync(copiedFbxPath);
+    return glbName;
+}
+
+/**
  * Scans models and ensures the entire containing folder is copied to public.
  *
  * `group` is fixed the FIRST time we descend into a subfolder of raw-assets/models (e.g.
@@ -109,7 +144,8 @@ async function scanModels(dir, relativeDir = '', group = null) {
                 }
                 // --------------------------
 
-                const relativeFilePath = relativeDir ? path.join(relativeDir, item.name) : item.name;
+                const publishedName = await publishModelFile(fullSourcePath, destFolder, item.name);
+                const relativeFilePath = relativeDir ? path.join(relativeDir, publishedName) : publishedName;
 
                 results.push({
                     group: group ?? 'Root',
@@ -117,7 +153,7 @@ async function scanModels(dir, relativeDir = '', group = null) {
                     id: nameOnly,
                     path: relativeDir ? `${relativeDir}/${nameOnly}` : nameOnly,
                     fullPath: `${game}/models/${relativeFilePath.replace(/\\/g, '/')}`,
-                    format: ext.replace('.', ''),
+                    format: path.extname(publishedName).slice(1).toLowerCase(),
                     nodes
                 });
             }

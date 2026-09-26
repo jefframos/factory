@@ -28,6 +28,7 @@
         "font": "node tools/font/build-font.mjs",
         "watch:font": "cross-env WATCH=true node tools/font/build-font.mjs",
         "models": "node tools/models/build-models.mjs",
+        "anims": "node tools/models/convert-anims.mjs",
         "watch:models": "cross-env WATCH=true node tools/models/build-models.mjs",
         "all": "node tools/build-all.mjs",
         "audio": "node tools/audio/build-audio.mjs",

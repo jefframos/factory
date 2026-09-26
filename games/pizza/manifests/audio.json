@@ -13,6 +13,14 @@
         },
         {
           "alias": [
+            "Tap.wav"
+          ],
+          "src": [
+            "Tap.mp3"
+          ]
+        },
+        {
+          "alias": [
             "footstep_wood_000.ogg"
           ],
           "src": [
@@ -129,14 +137,6 @@
           ],
           "src": [
             "phaserUp2.mp3"
-          ]
-        },
-        {
-          "alias": [
-            "Tap.wav"
-          ],
-          "src": [
-            "Tap.mp3"
           ]
         },
         {

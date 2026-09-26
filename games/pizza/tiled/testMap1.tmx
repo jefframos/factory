@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="9" nextobjectid="118">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="10" nextobjectid="158">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -1093,7 +1093,7 @@
 </chunk>
   </data>
  </layer>
- <layer id="7" name="zones" width="30" height="20" opacity="0.38">
+ <layer id="7" name="zones" width="30" height="20" visible="0" opacity="0.38">
   <data encoding="csv">
    <chunk x="-32" y="-16" width="16" height="16">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1464,7 +1464,7 @@
     <property name="type" value="queue"/>
    </properties>
   </object>
-  <object id="58" x="59.6966" y="735.333" width="99.6364" height="32">
+  <object id="58" x="13.6966" y="387.333" width="99.6364" height="32">
    <properties>
     <property name="id" value="queue2"/>
     <property name="type" value="queue"/>
@@ -1504,7 +1504,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="59" x="141.121" y="721.303">
+  <object id="59" x="95.121" y="373.303">
    <properties>
     <property name="order" type="int" value="0"/>
     <property name="target" value="queue2"/>
@@ -1512,7 +1512,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="60" x="140.121" y="562.969">
+  <object id="60" x="94.121" y="214.969">
    <properties>
     <property name="order" type="int" value="1"/>
     <property name="target" value="queue2"/>
@@ -1520,7 +1520,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="61" x="269.121" y="563.302">
+  <object id="61" x="223.121" y="215.302">
    <properties>
     <property name="order" type="int" value="2"/>
     <property name="target" value="queue2"/>
@@ -1668,7 +1668,7 @@
     <property name="useOwnMesh" type="bool" value="true"/>
    </properties>
   </object>
-  <object id="62" x="268.455" y="722.636">
+  <object id="62" x="222.455" y="374.636">
    <properties>
     <property name="order" type="int" value="-1"/>
     <property name="target" value="queue2"/>
@@ -1676,7 +1676,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="63" x="269.121" y="594.636">
+  <object id="63" x="223.121" y="246.636">
    <properties>
     <property name="order" type="int" value="-2"/>
     <property name="target" value="queue2"/>
@@ -1695,6 +1695,281 @@
    <properties>
     <property name="id" value="gateWood"/>
     <property name="type" value="gate"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="9" name="stores">
+  <object id="118" x="1056" y="512" width="32" height="128">
+   <properties>
+    <property name="id" value="queue1"/>
+    <property name="type" value="queue"/>
+   </properties>
+  </object>
+  <object id="119" x="13.6966" y="387.333" width="99.6364" height="32">
+   <properties>
+    <property name="id" value="queue2"/>
+    <property name="type" value="queue"/>
+   </properties>
+  </object>
+  <object id="120" x="69.667" y="640" width="64.5" height="64.5">
+   <properties>
+    <property name="id" value="dropperStall1"/>
+    <property name="target" value="stall1"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="121" x="172.334" y="650.667" width="64.5" height="64.5">
+   <properties>
+    <property name="id" value="dropperStorage1"/>
+    <property name="target" value="storage1"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="122" x="177.667" y="653.333" width="46.333" height="50.6667">
+   <properties>
+    <property name="id" value="storage1"/>
+    <property name="type" value="storage"/>
+   </properties>
+  </object>
+  <object id="123" x="256.94" y="658.242" width="46.333" height="50.6667">
+   <properties>
+    <property name="id" value="storage2"/>
+    <property name="type" value="storage"/>
+   </properties>
+  </object>
+  <object id="124" x="1175" y="572.667">
+   <properties>
+    <property name="order" type="int" value="0"/>
+    <property name="target" value="queue1"/>
+    <property name="type" value="waypoint"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="125" x="95.121" y="373.303">
+   <properties>
+    <property name="order" type="int" value="0"/>
+    <property name="target" value="queue2"/>
+    <property name="type" value="waypoint"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="126" x="94.121" y="214.969">
+   <properties>
+    <property name="order" type="int" value="1"/>
+    <property name="target" value="queue2"/>
+    <property name="type" value="waypoint"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="127" x="223.121" y="215.302">
+   <properties>
+    <property name="order" type="int" value="2"/>
+    <property name="target" value="queue2"/>
+    <property name="type" value="waypoint"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="128" x="1541.67" y="591.667">
+   <properties>
+    <property name="order" type="int" value="1"/>
+    <property name="target" value="queue1"/>
+    <property name="type" value="waypoint"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="129" x="1742" y="755.666">
+   <properties>
+    <property name="order" type="int" value="2"/>
+    <property name="target" value="queue1"/>
+    <property name="type" value="waypoint"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="130" x="-128.25" y="456" width="65" height="65">
+   <properties>
+    <property name="id" value="shop1"/>
+    <property name="type" value="shop"/>
+   </properties>
+  </object>
+  <object id="131" x="576" y="416" width="65" height="65">
+   <properties>
+    <property name="id" value="shop2"/>
+    <property name="type" value="shop"/>
+   </properties>
+  </object>
+  <object id="132" x="-128.25" y="462" width="64.5" height="64.5">
+   <properties>
+    <property name="id" value="dropperShop1"/>
+    <property name="target" value="shop1"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="133" x="576" y="422" width="64.5" height="64.5">
+   <properties>
+    <property name="id" value="dropperShop2"/>
+    <property name="target" value="shop2"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="134" x="537.417" y="68.583" width="32" height="32">
+   <properties>
+    <property name="id" value="craftPickaxe"/>
+    <property name="type" value="craft"/>
+   </properties>
+  </object>
+  <object id="135" x="521.667" y="52.333" width="64.5" height="64.5">
+   <properties>
+    <property name="id" value="dropperCraft"/>
+    <property name="target" value="craftPickaxe"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="136" x="-505.833" y="1302">
+   <properties>
+    <property name="id" value="playerStart"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="137" x="-496.25" y="656.25" width="32" height="32">
+   <properties>
+    <property name="id" value="craftAxe"/>
+    <property name="type" value="craft"/>
+   </properties>
+  </object>
+  <object id="138" x="-512" y="640" width="64.5" height="64.5">
+   <properties>
+    <property name="id" value="craftAxeDropper"/>
+    <property name="target" value="craftAxe"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="139" x="-543.333" y="272">
+   <properties>
+    <property name="id" value="treeSpawner"/>
+    <property name="type" value="spawner"/>
+   </properties>
+   <polygon points="84,-110 -142.667,103 -134,300 -81.8705,408.412 1.21295,338.119 41.9727,262.829 -101.558,202.551 -111.351,130.209 92.2079,136.933 318.241,334.065 394,163 301.667,-96"/>
+  </object>
+  <object id="140" x="-592.333" y="837.333">
+   <properties>
+    <property name="id" value="basicSpawner"/>
+    <property name="type" value="spawner"/>
+   </properties>
+   <polygon points="-100.333,-29.6667 -100.333,152.5 19.1667,127.167 45.3337,94.8333"/>
+  </object>
+  <object id="141" x="-319.667" y="813.999">
+   <properties>
+    <property name="id" value="basicSpawner"/>
+    <property name="type" value="spawner"/>
+   </properties>
+   <polygon points="-100.333,-29.6667 -93.6666,133.167 29.8333,166.5 38.667,-84.5"/>
+  </object>
+  <object id="142" x="602.666" y="83.166">
+   <properties>
+    <property name="id" value="stoneSpawner"/>
+    <property name="type" value="spawner"/>
+   </properties>
+   <polygon points="93,-44 -111.667,115 -87.8333,219 230,196 236.167,97.5"/>
+  </object>
+  <object id="143" x="240.5" y="466" width="96" height="64">
+   <properties>
+    <property name="id" value="farm1"/>
+    <property name="type" value="farm"/>
+   </properties>
+  </object>
+  <object id="144" x="115.5" y="464.5" width="96" height="64">
+   <properties>
+    <property name="id" value="farm2"/>
+    <property name="type" value="farm"/>
+   </properties>
+  </object>
+  <object id="145" x="-7" y="464.5" width="96" height="64">
+   <properties>
+    <property name="id" value="farm3"/>
+    <property name="type" value="farm"/>
+   </properties>
+  </object>
+  <object id="146" x="-543" y="1057" width="61.8182" height="61.3352">
+   <properties>
+    <property name="id" value="walkTutorialTrigger"/>
+    <property name="type" value="trigger"/>
+   </properties>
+  </object>
+  <object id="147" x="-740.5" y="-75">
+   <properties>
+    <property name="id" value="farmTeleporter"/>
+    <property name="type" value="teleporter"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="148" gid="28" x="64" y="669.333" width="75.6667" height="75.6667">
+   <properties>
+    <property name="id" value="stall1"/>
+    <property name="type" value="building"/>
+    <property name="useOwnMesh" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="149" x="222.455" y="374.636">
+   <properties>
+    <property name="order" type="int" value="-1"/>
+    <property name="target" value="queue2"/>
+    <property name="type" value="waypoint"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="150" x="223.121" y="246.636">
+   <properties>
+    <property name="order" type="int" value="-2"/>
+    <property name="target" value="queue2"/>
+    <property name="type" value="waypoint"/>
+   </properties>
+   <ellipse/>
+  </object>
+  <object id="151" x="-288" y="640" width="62.875" height="64">
+   <properties>
+    <property name="id" value="gateWoodDropper"/>
+    <property name="target" value="gateWood"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="152" x="-225" y="640" width="64" height="32" rotation="90">
+   <properties>
+    <property name="id" value="gateWood"/>
+    <property name="type" value="gate"/>
+   </properties>
+  </object>
+  <object id="153" x="-9" y="599" width="342" height="359">
+   <properties>
+    <property name="id" value="farmStore1"/>
+    <property name="type" value="store"/>
+   </properties>
+  </object>
+  <object id="154" x="221" y="958" width="105" height="79">
+   <properties>
+    <property name="id" value="farmStore1Entrance"/>
+    <property name="target" value="farmStore1"/>
+    <property name="type" value="storeEntrance"/>
+   </properties>
+  </object>
+  <object id="155" x="26" y="963" width="105" height="79">
+   <properties>
+    <property name="id" value="farmStore1Exit"/>
+    <property name="target" value="farmStore1"/>
+    <property name="type" value="storeExit"/>
+   </properties>
+  </object>
+  <object id="156" x="30" y="772" width="67" height="79">
+   <properties>
+    <property name="id" value="farmStore1Cashier"/>
+    <property name="target" value="farmStore1"/>
+    <property name="type" value="storeCashier"/>
+   </properties>
+  </object>
+  <object id="157" x="30" y="855" width="67" height="79">
+   <properties>
+    <property name="id" value="farmStore1MoneyDrop"/>
+    <property name="target" value="farmStore1"/>
+    <property name="type" value="storeMoneyDrop"/>
    </properties>
   </object>
  </objectgroup>
