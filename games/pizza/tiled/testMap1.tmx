@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="10" nextobjectid="160">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="11" nextobjectid="161">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -911,6 +911,82 @@
  </layer>
  <layer id="2" name="resourcesLayer" width="30" height="20">
   <data encoding="csv">
+   <chunk x="-32" y="0" width="16" height="16">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,21,21,21,21,21,21,
+0,0,0,0,0,0,0,0,0,0,21,21,21,21,21,21,
+0,0,0,0,0,0,0,0,0,0,21,21,21,21,21,21,
+0,0,0,0,0,0,0,0,0,0,21,21,21,21,21,21,
+0,0,0,0,0,0,0,0,0,21,21,21,21,21,21,0,
+0,0,0,0,0,0,0,0,0,21,21,21,21,0,0,0,
+0,0,0,0,0,0,0,0,21,21,21,21,0,0,0,0,
+0,0,0,0,0,0,0,0,21,21,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,21,21,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,21,21,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,21,21,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,21,21,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,21,21,0,0,0,0,0,0
+</chunk>
+   <chunk x="16" y="0" width="16" height="16">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,14,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,14,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</chunk>
+   <chunk x="-32" y="16" width="16" height="16">
+0,0,0,0,0,0,0,0,21,21,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,21,21,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,21,21,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,21,21,21,0,0,0,0,0,
+0,0,0,0,0,0,0,0,21,21,21,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,21,21,21,0,21,0,0,
+0,0,0,0,0,0,0,0,0,0,21,21,21,21,0,0,
+0,0,0,0,0,0,0,0,0,0,0,21,21,21,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,21,21,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</chunk>
+   <chunk x="0" y="16" width="16" height="16">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,14,14,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</chunk>
+  </data>
+ </layer>
+ <layer id="10" name="resourcesLayerOLD" width="30" height="20" visible="0" locked="1">
+  <data encoding="csv">
    <chunk x="0" y="-32" width="16" height="16">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1457,14 +1533,14 @@
 </chunk>
   </data>
  </layer>
- <objectgroup id="3" name="mapSettings">
+ <objectgroup id="3" name="mapSettings1">
   <object id="3" x="1056" y="512" width="32" height="128">
    <properties>
     <property name="id" value="queue1"/>
     <property name="type" value="queue"/>
    </properties>
   </object>
-  <object id="84" x="69.667" y="640" width="64.5" height="64.5">
+  <object id="84" x="36.667" y="640" width="242.167" height="64.5">
    <properties>
     <property name="id" value="dropperStall1"/>
     <property name="target" value="stall1"/>
@@ -1520,23 +1596,10 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="10" x="-128.25" y="456" width="65" height="65">
-   <properties>
-    <property name="id" value="shop1"/>
-    <property name="type" value="shop"/>
-   </properties>
-  </object>
   <object id="55" x="576" y="416" width="65" height="65">
    <properties>
     <property name="id" value="shop2"/>
     <property name="type" value="shop"/>
-   </properties>
-  </object>
-  <object id="11" x="-128.25" y="462" width="64.5" height="64.5">
-   <properties>
-    <property name="id" value="dropperShop1"/>
-    <property name="target" value="shop1"/>
-    <property name="type" value="dropper"/>
    </properties>
   </object>
   <object id="56" x="576" y="422" width="64.5" height="64.5">
@@ -1583,21 +1646,14 @@
     <property name="id" value="treeSpawner"/>
     <property name="type" value="spawner"/>
    </properties>
-   <polygon points="84,-110 -142.667,103 -134,300 -81.8705,408.412 1.21295,338.119 41.9727,262.829 -101.558,202.551 -111.351,130.209 92.2079,136.933 318.241,334.065 394,163 301.667,-96"/>
+   <polygon points="84,-110 -142.667,103 -134,300 -81.8705,408.412 1.21295,338.119 41.9727,262.829 -101.558,202.551 -111.351,130.209 92.2079,136.933 318.241,334.065 492,-103 300.667,-140"/>
   </object>
-  <object id="81" x="-592.333" y="837.333">
+  <object id="160" x="-336.333" y="858">
    <properties>
-    <property name="id" value="basicSpawner"/>
+    <property name="id" value="treeSpawner"/>
     <property name="type" value="spawner"/>
    </properties>
-   <polygon points="-100.333,-29.6667 -100.333,152.5 19.1667,127.167 45.3337,94.8333"/>
-  </object>
-  <object id="113" x="-319.667" y="813.999">
-   <properties>
-    <property name="id" value="basicSpawner"/>
-    <property name="type" value="spawner"/>
-   </properties>
-   <polygon points="-100.333,-29.6667 -93.6666,133.167 29.8333,166.5 38.667,-84.5"/>
+   <polygon points="-82.667,-104 -97,131 16.2079,232.933 316.241,241.065 233,84 239.667,-110"/>
   </object>
   <object id="82" x="602.666" y="83.166">
    <properties>
@@ -1659,7 +1715,7 @@
   </object>
  </objectgroup>
  <objectgroup id="9" name="stores">
-  <object id="153" x="-9" y="599" width="342" height="359">
+  <object id="153" x="-61" y="444.333" width="442.667" height="577">
    <properties>
     <property name="id" value="farmStore1"/>
     <property name="starter" value="stall1"/>
@@ -1919,6 +1975,33 @@
     <property name="type" value="waypoint"/>
    </properties>
    <ellipse/>
+  </object>
+  <object id="81" x="-592.333" y="837.333">
+   <properties>
+    <property name="id" value="basicSpawner"/>
+    <property name="type" value="spawner"/>
+   </properties>
+   <polygon points="-100.333,-29.6667 -100.333,152.5 19.1667,127.167 45.3337,94.8333"/>
+  </object>
+  <object id="113" x="-319.667" y="813.999">
+   <properties>
+    <property name="id" value="basicSpawner"/>
+    <property name="type" value="spawner"/>
+   </properties>
+   <polygon points="-100.333,-29.6667 -93.6666,133.167 29.8333,166.5 38.667,-84.5"/>
+  </object>
+  <object id="10" x="-128.25" y="456" width="65" height="65">
+   <properties>
+    <property name="id" value="shop1"/>
+    <property name="type" value="shop"/>
+   </properties>
+  </object>
+  <object id="11" x="-128.25" y="462" width="64.5" height="64.5">
+   <properties>
+    <property name="id" value="dropperShop1"/>
+    <property name="target" value="shop1"/>
+    <property name="type" value="dropper"/>
+   </properties>
   </object>
  </objectgroup>
 </map>

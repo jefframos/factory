@@ -18,7 +18,7 @@
 
 import { Signal } from 'signals';
 import PlatformHandler from 'core/platforms/PlatformHandler';
-import { applyShopLevel, getUpgradeCost, resetAllActionConfigs, SHOP_CONFIG_BY_ID, ShopConfig } from './ShopTypes';
+import { applyShopLevel, getShopMaxLevel, getUpgradeCost, resetAllActionConfigs, SHOP_CONFIG_BY_ID, ShopConfig } from './ShopTypes';
 
 const STORAGE_KEY = 'PIZZA_SHOP_UPGRADES';
 
@@ -57,6 +57,8 @@ export class ShopUpgradeStorage {
 
     /** Reapplies every configured shop's current level back onto ACTION_CONFIG — call once at boot, right after load(). ACTION_CONFIG itself starts out at its hand-authored base values every session (it's a plain module-level const, not persisted), so without this a reload would silently forget every previously-purchased upgrade's effect even though `level` itself survived the reload. applyShopLevel() computes each attribute from scratch off `level` (see its own doc), so — unlike the old sparse per-level array — there's no history to replay here, just one call per shop. */
     static reapplyAllShopUpgrades(): void {
+        // Base values + every tool's startLevel first (see resetAllActionConfigs()), then each shop's bought levels on top.
+        resetAllActionConfigs();
         for (const [id, config] of Object.entries(SHOP_CONFIG_BY_ID) as [string, ShopConfig][]) {
             applyShopLevel(config, this.getLevel(id));
         }
@@ -81,7 +83,7 @@ export class ShopUpgradeStorage {
     }
 
     static isMaxLevel(id: string, config: ShopConfig): boolean {
-        return this.getLevel(id) >= config.totalLevels;
+        return this.getLevel(id) >= getShopMaxLevel(config);
     }
 
     /** True while `id`'s cooldown from its last purchase hasn't elapsed yet — mirrors QueueStorage.tryRollNextTask()'s "never set == already passed" treatment for a shop that's never bought anything. */

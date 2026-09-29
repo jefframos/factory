@@ -4,8 +4,8 @@
 // drawn on the Tiled map (see tiledMap.mjs) and reports both directions of
 // mismatch:
 //  - "in config, missing on map" — for gates/buildings this means
-//    PizzaScene falls back to a hardcoded position (still spawns, just not
-//    where the level designer probably intended); for queues it means the
+//    PizzaScene skips spawning it entirely (the map decides what exists —
+//    see setupBuildingZone()/setupGates()); for queues it means the
 //    id just never appears at all (queues are entirely map-driven — no
 //    Tiled object, no spawn); for shops/crafting it's worse — PizzaScene
 //    explicitly SKIPS spawning that shop/craft table (see
@@ -73,7 +73,7 @@ const MAP_CHECKED_ENTITIES = {
  * is still returned (all empty) so callers don't need a separate branch.
  */
 export function validateMap(allData) {
-    const { byType, error } = readMapObjectIds(MAP_FILE);
+    const { byType, storeStarters = {}, error } = readMapObjectIds(MAP_FILE);
 
     const entities = {};
     for (const [entityId, check] of Object.entries(MAP_CHECKED_ENTITIES)) {
@@ -91,5 +91,15 @@ export function validateMap(allData) {
         };
     }
 
-    return { mapError: error, mapFile: MAP_FILE, entities };
+    // Every store drawn on the map with what opens it — shown read-only on the Stores tab (the
+    // "starter" property only lives on the Tiled object, so it can't be edited from here).
+    // `starterIsBuilding` false means the store will stay closed forever (see Store.ts).
+    const buildingIds = new Set(Object.keys(allData.buildings ?? {}));
+    const mapStores = Object.entries(storeStarters).map(([id, starter]) => ({
+        id,
+        starter,
+        starterIsBuilding: starter === null || buildingIds.has(starter),
+    }));
+
+    return { mapError: error, mapFile: MAP_FILE, entities, mapStores };
 }

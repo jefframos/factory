@@ -26,6 +26,7 @@ import { BuildingId } from './BuildingId';
 import { ItemType } from '../crafting/ItemTypes';
 import { MilestoneRequirement } from './MilestoneRequirement';
 import { FrameName } from '../ui/FrameRegistry';
+import type { FloorLabelConfig, PopupFrameChoice } from '../ui/PopupConfig';
 import { ResourceType } from "../actions/ResourceTypes";
 
 /** Alias kept for readability at GateConfig's own call sites — see this file's own doc for why the underlying type is shared with QueueTypes.ts rather than defined here. */
@@ -46,7 +47,7 @@ export interface GateMeshConfig {
     color: number;
 }
 
-export interface GateConfig {
+export interface GateConfig extends FloorLabelConfig {
     name: string;
     /** World-space spawn position — [x, y, z]. */
     position: [number, number, number];
@@ -59,7 +60,8 @@ export interface GateConfig {
     /** Multiplied onto `view`'s own resolved scale (see EntityViewRegistry.resolveEntityView()) — same "share one view, adjust per gate" reasoning as viewRotationOffsetDeg, for size instead of facing (e.g. a gate needing a visibly bigger/smaller version of the shared model to fit its own opening). Ignored when `view` isn't set. undefined/1 = no adjustment, unchanged from before this field existed. */
     viewScaleMultiplier?: number;
     /** Overrides FrameRegistry.ts's 'GateLock' default for THIS gate's own icon panel — see PopupConfig.ts's resolvePopupFrameName()'s own doc/Gate.ts's buildLabel(). undefined uses 'GateLock'. */
-    frame?: FrameName;
+    /** Also accepts 'Floor' (PopupConfig.ts's FLOOR_FRAME): painted on the ground instead of a floating popup, placed by the floorLabel* fields (FloorLabelConfig). */
+    frame?: PopupFrameChoice;
     /** Optional continuous ambient particle effect (see ParticleRegistry.ts — PARTICLE_REGISTRY) drifting off this gate for as long as it stands — same "common to every entity" slot CraftTableConfig/ProviderConfig carry, wired via a plain ParticleEmitterComponent in Gate.awake(). undefined means no particles at all. */
     particleEffectId?: string;
     /** Optional one-shot particle burst (see ParticleRegistry.ts — PARTICLE_REGISTRY) fired the instant this gate's mesh finishes its collapse animation — see Gate.collapseMesh(). undefined means no burst at all, unchanged from before this field existed. */

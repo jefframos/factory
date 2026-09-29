@@ -52,6 +52,11 @@ export interface OcclusionFadeConfig {
  * Tuning: uBendStrength = world-Y drop per unit² of XZ distance from origin.
  *   0.001 = very subtle   0.002 = gentle horizon   0.005 = exaggerated planet
  */
+/** Target segment length (world units) for flat geometry that must follow the bend — see BendService.segmentsForSpan(). */
+const BEND_SEGMENT_LENGTH = 1;
+/** Cap per axis so a huge decal can't explode into an absurd vertex count. */
+const BEND_MAX_SEGMENTS = 128;
+
 export class BendService {
     public static uniforms = {
         uBendOrigin: { value: new THREE.Vector3() },
@@ -68,6 +73,17 @@ export class BendService {
         /** Running clock driving applyReveal()'s wavy fill line — see updateTime()'s own doc. */
         uTime: { value: 0 },
     };
+
+    /**
+     * How many segments a flat plane spanning `length` world units needs to follow the bend.
+     * The bend moves VERTICES, so a 1-segment plane only bends at its corners and its edges stay
+     * straight — a large floor decal then sinks under the curved ground. Between two vertices
+     * `L` apart the straight edge sits at most strength * (L/2)² off the curve, so 1-unit
+     * segments keep that under ~0.0005 at the default strength (vs 0.2 for one 20-unit span).
+     */
+    public static segmentsForSpan(length: number): number {
+        return Math.min(BEND_MAX_SEGMENTS, Math.max(1, Math.ceil(length / BEND_SEGMENT_LENGTH)));
+    }
 
     /** Remembers the last non-zero strength so setEnabled(true) restores whatever it was tuned to, rather than a hardcoded default. */
     private static lastStrength = this.uniforms.uBendStrength.value;

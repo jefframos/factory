@@ -48,7 +48,7 @@ import { flyResourceModel } from '../components/FlyToStack';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { buildLockRequirementPanel } from '../ui/LockRequirementPanel';
-import FloorLabelComponent, { DEFAULT_FLOOR_LABEL_SIZE } from '../components/FloorLabelComponent';
+import FloorLabelComponent, { createConfiguredFloorLabel } from '../components/FloorLabelComponent';
 import { isFloorFrame, FLOOR_FRAME } from '../ui/PopupConfig';
 import type { LockRequirementPanel } from '../ui/LockRequirementPanel';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
@@ -79,8 +79,6 @@ const DEFAULT_DROP_OFFSET = { x: 0, y: 0.4, z: 0 };
 const SOLID_HALF_HEIGHT = 0.5;
 /** Default gap (world units) between the top of the pile and the bottom of the "only this resource" panel, when StorageConfig.popupBobOffset is unset — see this file's own doc. */
 const DEFAULT_ACCEPTS_PANEL_CLEARANCE = 1.0;
-/** StorageConfig.floorLabelGap fallback (floorLabelSize falls back to FloorLabelComponent's own default). */
-const DEFAULT_FLOOR_LABEL_GAP = 0.3;
 
 export default class StorageZone extends Entity {
     private readonly storageId: string;
@@ -220,16 +218,12 @@ export default class StorageZone extends Entity {
         super.destroy();
     }
 
-    /** Icon + stored count painted on the floor just south of the storage's own footprint. */
+    /** Icon + stored count painted on the floor just outside the storage's own footprint, on its floorLabelSide (default south). */
     private buildFloorLabel(type: ResourceType): void {
-        const size = this.config.floorLabelSize ?? DEFAULT_FLOOR_LABEL_SIZE;
-        const gap = this.config.floorLabelGap ?? DEFAULT_FLOOR_LABEL_GAP;
-        this.floorLabel = this.addComponent(new FloorLabelComponent({
-            icon: getAssetIcon(resolveResourceAssetKey(type)),
-            text: `${StorageInventory.getCount(this.storageId, type)}`,
-            size,
-            offset: this.meshOffset.clone().setZ(this.meshOffset.z + this.storageSize.depth / 2 + gap + size / 2),
-        }));
+        this.floorLabel = this.addComponent(createConfiguredFloorLabel(
+            this.config, this.meshOffset, this.storageSize.width, this.storageSize.depth,
+            [{ icon: getAssetIcon(resolveResourceAssetKey(type)), text: `${StorageInventory.getCount(this.storageId, type)}` }],
+        ));
     }
 
     /** Keeps whichever count display this storage has (floor label or popup) in sync with StorageInventory. */

@@ -17,6 +17,86 @@ pieces fit. For the original pitch/design framing (tower progression, biomes, et
 aspirational, not all implemented yet) see git history; this doc reflects what
 actually exists in code today so a new session can extend it without re-deriving it.
 
+## Designing the game: start here
+
+Most design work needs **no code changes**. It happens in three places:
+
+| What you're changing | Where | Runs with |
+|---|---|---|
+| Numbers & content: gates, buildings, shops, queues, farms, crops, stores, recipes, providers, drop tables, zones, particles, camera templates, entity meshes, ... | **Pizza web editor** (one tab per entity type) | `npm run editor` → http://localhost:4600 |
+| Layout: where things are, terrain, zones, spawn areas, triggers, props | **Tiled** — open `tiled/world.tiled-project`, edit `tiled/testMap1.tmx` | Tiled 1.12+ |
+| Playtesting & shortcuts | **The game with `?dev`** | `npm run dev` → http://localhost:9001/?dev |
+
+`.env` must say `GAME=pizza` for both `dev` and `editor`.
+
+**Web editor → game.** Saving a tab writes its mirror JSON (`web/data/*.json`) *and*
+patches the real TS config (`game/**/*Types.ts`, via ts-morph, only the fields the editor
+manages). The game reads the TS, so a save shows up on the next Vite reload. If the save
+reports a sync warning, the change did **not** reach the game. The Map tab is the
+exception: it writes `raw-assets/json/map/tiles.json` directly and regenerates Tiled's
+`grounds.png`/`resources.png` swatches. Other things to know:
+- **Rename ids with the editor's rename action**, not by retyping the id. Retyping leaves
+  every reference to the old id broken.
+- Deleting an entry on a fixed-enum type (gates, buildings, resources, actions, items)
+  is **not** removed from source. That's a manual code change.
+- Run the editor's consistency / map-validation checks after a batch of edits. They catch
+  ids in config that aren't drawn on the map, and the other way round.
+
+**Tiled → game.** The `.tmx` auto-exports to `raw-assets/json/map/testMap1.json` (set in
+the map's export settings). **Save in Tiled, then check that the JSON export updated.**
+The game only reads the JSON. Key layers:
+- `groundLayer*`: terrain (walkability comes from the tile, water/lava block).
+- `resourcesLayer`: hand-placed providers (trees, deposits, ...).
+- `zones`: tile id = zone number. **Unpainted cells are never walkable.**
+- `spawnerLayer*`: tile clusters that loose resources scatter across.
+- `mapSettings*` (objects): every object layer whose name **contains** `mapSettings`
+  (`mapSettings1`, `mapSettings2`, ...) is read as one list, so you can split objects across
+  layers. Name a backup layer without `mapSettings` in it (e.g. `backup`) to take its
+  objects out of the game. Holds buildings, gates, shops, queues, farms, craft tables,
+  triggers, spawner areas, waypoints, `playerStart`. **Identity comes from the `type` +
+  `id` custom properties**, not Tiled's own name/type fields. `id` must match the
+  editor's entry.
+- `meshes` (objects): drag PNGs from `tiled/models/` to place real 3D props. Move, rotate
+  and stretch them in Tiled; the game swaps in the real model at that footprint. To add
+  a model PNG, use the in-game dev GUI → *Model Snapshots* folder, then drop the
+  downloaded file in `tiled/models/`.
+- `stores`: see [game/store/README.md](game/store/README.md).
+
+**The map decides what exists.** If an entity has no object on `mapSettings` (for
+example, you moved it to a backup layer), it isn't spawned at all, even if it has a config
+entry. A placement with no config entry uses the defaults (open-id types such as queues
+and farms).
+**The browser console logs every `mapSettings` object it found.** Check it first when
+something isn't showing up.
+
+**Playtesting (`?dev`).** The dev GUI has force-upgrade per shop, add money/seeds, reveal
+next zone / reveal up to zone N, clear data, live camera and performance sliders, and
+model snapshots. The editor header's *Debug Colliders / Debug Triggers* toggles also
+apply to the game, via a shared cookie. Progress is saved, so **use Clear Data** to test a
+fresh-player run.
+
+**Design gotchas**
+- A progression beat is always a `MilestoneRequirement`: building level, owned item, held
+  resource, or walked-through trigger. Anything with an `appearRequirement` (queues,
+  shops, buildings, farms, craft tables) and every zone/gate uses the same vocabulary.
+- A `resource` gate must be **fed** at its dropper. Having the resource in your backpack
+  doesn't open it.
+- Tool power is three separate knobs per shop level: `hitIntervalSec` (speed), `hitScale`
+  (fewer swings, capped by remaining life), and `resourcePerHit` (yield, uncapped). See
+  Tools & shop upgrades.
+- A tool's stats scale over its own `maxLevel` in the Tools tab. **Start Level On Acquire**
+  puts a new tool that far up the ladder. For example, start 5 of max 10 gives
+  mid-range stats, and the shop sells only the remaining 5 upgrades. The game still
+  shows it as Lv.1 at acquire.
+- A new player starts with **no tools**. The first loop is Bark → craft Axe → axe gate.
+  Don't gate early content behind a tool the player can't get yet.
+- There's **no in-game seed source** yet (dev GUI only). Current farms all use `autoPlant`
+  + `assignedCropId`, so they don't need seeds.
+- A 0-price farm plot is free and appears already owned.
+
+For the full list of "add a new X" recipes, see **Where to look first when extending**
+at the bottom.
+
 ## Entry point & bootstrap
 
 `index.ts` (`MyGame`) — `initialize()` resolves the platform (`VITE_PLATFORM` env var →
@@ -149,8 +229,8 @@ preloaded PIXI assets, read synchronously via `loadTiledMap()`/`loadTileDefs()`.
   name/type fields, which Tiled leaves blank in this project's exports. Converts each
   rect's pixel position *and* width/height to world units/footprint
   (`objectToWorldRect()` — Tiled has no 3rd dimension, so only X/Z come from this; mesh
-  height still comes from game config). `require(type, id, fallback)` warns and falls
-  back if a spawner asks for an id that isn't on the map; the constructor logs every
+  height still comes from game config). A building/gate whose id isn't on the map is
+  **not spawned** (PizzaScene warns once listing them); the constructor logs every
   object it finds unconditionally (not just `?dev`) — check the console first if a
   building/gate isn't showing up where expected. Several more object kinds now read off
   the same layer, each with its own bucket:

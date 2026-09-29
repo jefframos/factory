@@ -62,7 +62,8 @@ import { getAssetIcon, pickRandom, resolveRange } from '../world/AssetLibraryReg
 import { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
 import { TOOL_LIBRARY } from '../actions/ToolRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
-import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer } from '../ui/PopupConfig';
+import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer, isFloorFrame } from '../ui/PopupConfig';
+import FloorLabelComponent, { createConfiguredFloorLabel } from '../components/FloorLabelComponent';
 import { createResourceSlot } from '../ui/ResourceSlotVisual';
 import { getIconLayout } from '../ui/LayoutRegistry';
 import MainPlayer from '../player/MainPlayer';
@@ -136,6 +137,8 @@ export default class CraftZone extends Entity {
     /** resultIcon + bodyContainer, the two REAL pieces of content, wrapped in AutoFitFrame's own bubble border — no separate dark backdrop behind it, just the bubble texture itself. */
     private labelColumn!: PIXI.Container;
     private labelFrame!: AutoFitFrame;
+    /** Set instead of the floating popup when this table's `frame` is 'Floor' — see refreshFloorLabel(). */
+    private floorLabel?: FloorLabelComponent;
 
     private readonly handleCraftChanged = (id: string): void => {
         if (id === this.craftId) {
@@ -206,6 +209,12 @@ export default class CraftZone extends Entity {
             centerOffset,
         ));
 
+        // 'Floor' frame: the recipe cost is painted on the ground beside the deposit area instead
+        // of a floating popup — labelFrame is still built/refreshed but never put on screen.
+        if (isFloorFrame(this.config.frame)) {
+            this.floorLabel = this.addComponent(createConfiguredFloorLabel(this.config, centerOffset, halfExtents.x * 2, halfExtents.z * 2));
+        }
+
         this.createTableMesh();
 
         if (this.config.particleEffectId) {
@@ -240,12 +249,14 @@ export default class CraftZone extends Entity {
         this.transform.add(this.labelAnchor);
         const labelAnchorWorldPosition = new THREE.Vector3();
 
-        this.addComponent(new ScreenAnchorComponent(
-            this.screenHost,
-            this.labelFrame,
-            () => this.labelAnchor.getWorldPosition(labelAnchorWorldPosition),
-            { ...ZONE_LABEL_ANCHOR_OPTIONS, ...resolvePopupAvoidViewer(this.config.popupMode) },
-        ));
+        if (!this.floorLabel) {
+            this.addComponent(new ScreenAnchorComponent(
+                this.screenHost,
+                this.labelFrame,
+                () => this.labelAnchor.getWorldPosition(labelAnchorWorldPosition),
+                { ...ZONE_LABEL_ANCHOR_OPTIONS, ...resolvePopupAvoidViewer(this.config.popupMode) },
+            ));
+        }
 
         CraftStorage.onChange.add(this.handleCraftChanged);
 
@@ -321,6 +332,7 @@ export default class CraftZone extends Entity {
 
     /** Rewrites the panel from CraftStorage's current state and re-fits the frame around the new bounds. `popupMode: 'none'` (see PopupConfig.ts's own doc) skips all of this and just keeps the panel permanently hidden — checked first since it overrides every other state below (fully-crafted, destroyOnComplete, ...) the same way. */
     private refreshLabel(): void {
+        this.refreshFloorLabel();
         this.bodyContainer.removeChildren().forEach(child => child.destroy({ children: true }));
 
         if (this.config.popupMode === 'none') {
@@ -377,6 +389,30 @@ export default class CraftZone extends Entity {
 
         this.resultIcon.position.set(0, -(bodyHeight + ICON_BODY_GAP));
         this.labelFrame.fit();
+    }
+
+    /** The 'Floor' frame's version of refreshLabel()'s panel — the result item's icon (unless 'simple'), then one icon + have/need per cost resource; "All Crafted!" once a permanent table is done. */
+    private refreshFloorLabel(): void {
+        if (!this.floorLabel) {
+            return;
+        }
+        if (this.config.popupMode === 'none') {
+            this.floorLabel.setItems([]);
+            return;
+        }
+        if (CraftStorage.isFullyCrafted(this.craftId, this.config)) {
+            this.floorLabel.setItems(this.config.destroyOnComplete ? [] : [{ text: 'All Crafted!' }]);
+            return;
+        }
+        const recipe = CraftStorage.getNextRecipe(this.craftId, this.config)!;
+        const entries = Object.entries(recipe.cost) as [ResourceType, number][];
+        this.floorLabel.setItems([
+            ...(this.config.popupMode !== 'simple' ? [{ icon: getItemIcon(recipe.result.item) }] : []),
+            ...entries.map(([type, need]) => ({
+                icon: getAssetIcon(resolveResourceAssetKey(type)),
+                text: `${CraftStorage.getProgress(this.craftId, type)}/${need}`,
+            })),
+        ]);
     }
 
     private tryDeposit(other: RigidBody): void {

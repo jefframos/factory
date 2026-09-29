@@ -223,8 +223,50 @@ async function checkMap() {
     renderActiveTab();
 }
 
-/** Renders the current tab's map-validation banner, or nothing if no check has run yet or this tab isn't map-checked at all (resources/actions/items/tools/dynamicResourcePlacements have no Tiled placement concept — see validateMap.mjs's own doc). */
+/** Renders the current tab's map-validation banner — plus, on the Stores tab, what opens each store drawn on the map (see renderMapStoresBlock()). */
 function renderMapBanner() {
+    const banner = renderMapIssuesBanner();
+    if (banner && activeId === 'stores' && !mapValidation.mapError) {
+        const block = renderMapStoresBlock();
+        if (block) banner.appendChild(block);
+    }
+    return banner;
+}
+
+/** The map-check entry for store `id` (see validateMap.mjs's mapStores), or undefined if "Check map" hasn't run or the store isn't drawn on the map. */
+function findMapStore(id) {
+    return mapValidation?.mapStores?.find(s => s.id === id);
+}
+
+/** Plain-language "what opens this store" for a mapStores entry — mirrors store/Store.ts's isOpen(). */
+function describeStoreStarter(mapStore) {
+    if (mapStore.starter === null) {
+        return 'Open from the start (no "starter" set on the map)';
+    }
+    if (!mapStore.starterIsBuilding) {
+        return `"${mapStore.starter}" is not a building id: the store will stay closed`;
+    }
+    return `Build "${mapStore.starter}" to level 1`;
+}
+
+/** "Stores on the map" list for the Stores tab's banner — every store object drawn on the map with its read-only opening requirement. */
+function renderMapStoresBlock() {
+    const stores = mapValidation?.mapStores ?? [];
+    if (stores.length === 0) return null;
+    const block = document.createElement('div');
+    block.innerHTML = '<span class="title">Stores on the map (the requirement is the store object\'s "starter" property. Edit it in Tiled):</span>';
+    const list = document.createElement('ul');
+    for (const store of stores) {
+        const li = document.createElement('li');
+        li.textContent = `${store.id}: ${describeStoreStarter(store)}`;
+        list.appendChild(li);
+    }
+    block.appendChild(list);
+    return block;
+}
+
+/** The generic id-mismatch part of the banner, or nothing if no check has run yet or this tab isn't map-checked at all (resources/actions/items/tools/dynamicResourcePlacements have no Tiled placement concept — see validateMap.mjs's own doc). */
+function renderMapIssuesBanner() {
     if (!mapValidation) return null;
 
     if (mapValidation.mapError) {
@@ -331,8 +373,8 @@ function createMissingMapEntry(id) {
 
 /** Human-readable consequence of a "config id has no matching map object" mismatch — matches what PizzaScene actually does for each entity type (see validateMap.mjs's own doc), so the banner tells a designer what will really happen instead of just "mismatch." */
 const MISSING_ON_MAP_LABEL = {
-    gates: 'not on the map — will spawn at its hardcoded fallback position',
-    buildings: 'not on the map — will spawn at its hardcoded fallback position',
+    gates: 'not on the map — PizzaScene will skip spawning this gate entirely',
+    buildings: 'not on the map — PizzaScene will skip spawning this building entirely',
     queues: 'not on the map — this queue config will never be used',
     shops: 'not on the map — PizzaScene will skip spawning this shop entirely',
     crafting: 'not on the map — PizzaScene will skip spawning this craft table entirely',
@@ -1590,6 +1632,19 @@ function renderEntryCard(container, key, value, schema, removable, renamable, mi
 
     const body = document.createElement('div');
     body.className = 'entry-body';
+    // Stores: a locked "what opens this store" row read off the map (see findMapStore()) —
+    // only shown after "Check map", since the value lives on the Tiled object, not in this tab.
+    const mapStore = activeId === 'stores' ? findMapStore(String(key)) : undefined;
+    if (mapStore) {
+        const { row, control } = fieldRow('Opens when (from the map, edit the store\'s "starter" property in Tiled)');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = describeStoreStarter(mapStore);
+        input.readOnly = true;
+        input.disabled = true;
+        control.appendChild(input);
+        body.appendChild(row);
+    }
     renderFields(body, value, schema, markDirty);
     details.appendChild(body);
 

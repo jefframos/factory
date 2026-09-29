@@ -78,6 +78,25 @@ export function isFloorFrame(frame: string | undefined): boolean {
     return frame === FLOOR_FRAME;
 }
 
+/** What an entity config's `frame` field can hold — a FrameRegistry preset, or the 'Floor' pseudo frame (see FLOOR_FRAME). */
+export type PopupFrameChoice = FrameName | typeof FLOOR_FRAME;
+
+/** Which side of the entity's footprint a floor label sits on (map north = up in Tiled = -Z). */
+export type FloorLabelSide = 'north' | 'south' | 'east' | 'west';
+
+/** The 'Floor' frame's own tuning — shared by every entity config that accepts `frame: 'Floor'`. */
+export interface FloorLabelConfig {
+    /** Side of the footprint the floor label sits on. Unset = 'south'. */
+    floorLabelSide?: FloorLabelSide;
+    /** Floor label height in world units (width grows with the content). Unset = 2.7. */
+    floorLabelSize?: number;
+    /** Gap between the footprint's edge and the floor label, world units. Unset = 0.3. */
+    floorLabelGap?: number;
+}
+
+/** FloorLabelConfig.floorLabelGap fallback. */
+export const DEFAULT_FLOOR_LABEL_GAP = 0.3;
+
 /** Top-center — see this file's own top-of-file doc for why 'simple' popups use this instead of leaving ScreenAnchorOptions.anchor unset (content's own local-origin default). */
 const SIMPLE_POPUP_ANCHOR = { x: 0.5, y: 0 };
 
@@ -92,9 +111,11 @@ const SIMPLE_POPUP_ANCHOR = { x: 0.5, y: 0 };
  * (e.g. 'BuildingFrame' for BuildingZone — see FrameRegistry.ts's own doc on why each type
  * gets its own starting preset instead of every zone sharing 'Popup').
  */
-export function resolvePopupFrameName(mode: PopupMode | undefined, defaultFrame: FrameName, override: FrameName | undefined = undefined): FrameName {
-    if (override) {
-        return override;
+export function resolvePopupFrameName(mode: PopupMode | undefined, defaultFrame: FrameName, override: PopupFrameChoice | undefined = undefined): FrameName {
+    // 'Floor' isn't a PIXI frame — the entity paints a FloorLabelComponent instead and never
+    // shows this frame, so just hand back the type's own default.
+    if (override && !isFloorFrame(override)) {
+        return override as FrameName;
     }
     return mode === 'simple' ? 'Simple' : defaultFrame;
 }

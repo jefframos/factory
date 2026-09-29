@@ -50,7 +50,7 @@
 // (QuestGiverEntity.ts, walking a queue's giver in/out along the path).
 //
 // Built once alongside TileMap (same loadTiledMap()/loadTileDefs() PIXI
-// Assets reads, no extra network/parse cost) — call get()/require()/
+// Assets reads, no extra network/parse cost) — call get()/
 // getDropperFor()/getWaypoints() any time after that, e.g. right where
 // PizzaScene currently spawns each BuildingZone/Gate/QueueZone.
 
@@ -326,18 +326,22 @@ export default class WorldObjectRegistry {
     ) {
         const map = loadTiledMap(mapAlias);
         const tileDefs = loadTileDefs(tilesAlias);
-        const layer = map.layers.find(l => l.type === 'objectgroup' && l.name === OBJECTS_LAYER_NAME);
-        if (!layer?.objects) {
-            console.warn(`[WorldObjectRegistry] no "${OBJECTS_LAYER_NAME}" objectgroup layer found on "${mapAlias}" — every building/gate placement will fall back to its hardcoded position`);
+        // Every objectgroup whose name CONTAINS "mapSettings" (mapSettings1, mapSettings2, ...) —
+        // same substring convention TileMap's "groundLayer" uses, so the map's objects can be
+        // split across several layers. All matched layers are read as one list.
+        const layers = map.layers.filter(l => l.type === 'objectgroup' && l.name.includes(OBJECTS_LAYER_NAME));
+        const objects = layers.flatMap(l => l.objects ?? []);
+        if (layers.length === 0) {
+            console.warn(`[WorldObjectRegistry] no objectgroup layer with "${OBJECTS_LAYER_NAME}" in its name found on "${mapAlias}" — nothing placed on the map will spawn`);
             return;
         }
 
         // Logged unconditionally (not just on ?dev) since this is exactly the "what did it
-        // actually find" the user asked for — cheap, one-time, at map-load — see require()'s
-        // own warning for the OTHER half (an id a spawner asked for that ISN'T in this list).
-        console.log(`[WorldObjectRegistry] "${OBJECTS_LAYER_NAME}" has ${layer.objects.length} object(s):`);
+        // actually find" the user asked for — cheap, one-time, at map-load — PizzaScene
+        // warns about the OTHER half (a building/gate id that ISN'T in this list, so isn't spawned).
+        console.log(`[WorldObjectRegistry] ${layers.map(l => `"${l.name}"`).join(', ')} have ${objects.length} object(s):`);
 
-        for (const obj of layer.objects) {
+        for (const obj of objects) {
             const type = getObjectProperty(obj, 'type');
 
             // The player-start marker has no "type" at all (see this file's own doc) — checked
@@ -501,14 +505,14 @@ export default class WorldObjectRegistry {
         return this.ownMeshesByKey.get(`${type}:${id}`) ?? [];
     }
 
-    /** The placement for `id` within `type`'s bucket, or undefined if no such object exists on the map — callers decide what "not found" means (fall back to a hardcoded position, skip spawning, ...); this never warns on its own, see require() for the warn-and-fall-back convenience below. */
+    /** The placement for `id` within `type`'s bucket, or undefined if no such object exists on the map — callers decide what "not found" means (buildings/gates skip spawning); this never warns on its own. */
     public get(type: string, id: string): WorldObjectPlacement | undefined {
         return this.byType.get(type)?.get(id);
     }
 
     /**
      * Every id -> placement found for `type`, e.g. every "queue" object on the map — for
-     * spawners with no FIXED, known-ahead-of-time id list to require() against (unlike
+     * spawners with no FIXED, known-ahead-of-time id list to get() against (unlike
      * BuildingId/GateId's small hand-authored enums), where "whatever's drawn on the map,
      * however many there are" IS the source of truth. Returns a fresh copy (not the live
      * bucket) so a caller can't accidentally mutate this registry's own state. Empty map
@@ -522,8 +526,7 @@ export default class WorldObjectRegistry {
     /**
      * The dropper rect (see this file's own doc) whose "target" custom property equals
      * `targetId` — undefined if no dropper targets it, in which case the caller should fall
-     * back to `targetId`'s own placement as its trigger area. Never warns on its own (unlike
-     * require()) — a target with no dropper is an expected, not-necessarily-wrong state (not
+     * back to `targetId`'s own placement as its trigger area. Never warns on its own —a target with no dropper is an expected, not-necessarily-wrong state (not
      * every building needs a dropper); callers that care (e.g. PizzaScene, wanting to flag
      * buildings a level designer forgot to give one) collect the misses themselves and warn
      * once after resolving everything, not per-lookup.
@@ -562,21 +565,5 @@ export default class WorldObjectRegistry {
     /** The map's "playerStart" point (see this file's own doc), or undefined if the level designer hasn't drawn one — the caller (PizzaScene) falls back to MainPlayer's own default position in that case. */
     public getPlayerStart(): WorldObjectPlacement | undefined {
         return this.playerStartPlacement;
-    }
-
-    /**
-     * Same lookup as get(), but warns (once per missing id, not once per call) and returns
-     * `fallback` instead of undefined — the convenience for "spawn this thing somewhere
-     * even if the level designer hasn't dropped its marker in Tiled yet," so a missing
-     * object degrades to a visible warning instead of a building/gate silently not spawning
-     * at all.
-     */
-    public require(type: string, id: string, fallback: WorldObjectPlacement): WorldObjectPlacement {
-        const placement = this.get(type, id);
-        if (!placement) {
-            console.warn(`[WorldObjectRegistry] "${id}" (type "${type}") not found on the Tiled map's "${OBJECTS_LAYER_NAME}" layer — using fallback position`);
-            return fallback;
-        }
-        return placement;
     }
 }

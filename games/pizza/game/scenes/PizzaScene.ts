@@ -110,7 +110,7 @@ import { DevGuiManager } from 'core/utils/DevGuiManager';
 import { BackpackStackMode, getPlayerConfig } from '../data/PlayerConfig';
 import { getStorageConfig } from '../data/StorageTypes';
 import StorageZone from '../world/StorageZone';
-import { spawnStores } from '../store/Store';
+import Store, { spawnStores } from '../store/Store';
 import { StoreUnlocks } from '../store/StoreUnlocks';
 import StoragePurchaseZone from '../store/StoragePurchaseZone';
 import { FLOOR_FRAME } from '../ui/PopupConfig';
@@ -305,6 +305,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
     /** Central "spawn once a requirement is met" / "unlock once a requirement is met" system shared by queues, shops, buildings, and gates — see RequirementRegistry.ts's own doc. */
     private readonly requirementRegistry = new RequirementRegistry();
+    /** Every store on the map (see setupStores()) — updateStoreUi() picks the one the player stands in. */
+    private stores: Store[] = [];
 
     /** Points a screen-space arrow at whatever the player's current zone's tutorial (see ZoneTutorialTypes.ts) wants them to do next — see ZoneTutorialController.ts's own doc. Driven once per fixedUpdate(), same call-site pattern as worldManager.update(). */
     private readonly zoneTutorialController = new ZoneTutorialController(
@@ -1197,6 +1199,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      */
     private setupBuildingZone(): void {
         const buildingsWithoutDropper: BuildingId[] = [];
+        const buildingsNotOnMap: BuildingId[] = [];
 
         for (const buildingId of Object.values(BuildingId)) {
             // Treated as if it doesn't exist at all — see BuildingConfig.disabled's own doc.
@@ -1204,10 +1207,13 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 continue;
             }
 
-            // Fallback width/depth match BuildingTypes.ts's own baseMesh footprint (1x1) —
-            // only used if this building isn't found on the Tiled map's "mapSettings" layer
-            // at all (see WorldObjectRegistry.require()'s warning).
-            const placement = this.worldObjects.require('building', buildingId, { x: BUILDING_ZONE_OFFSET.x, z: BUILDING_ZONE_OFFSET.z, width: 1, depth: 1, rotationDeg: 0 });
+            // The map is the source of truth: a building with no object on the Tiled map's
+            // "mapSettings" layer doesn't exist in the world (same as queues/shops/farms).
+            const placement = this.worldObjects.get('building', buildingId);
+            if (!placement) {
+                buildingsNotOnMap.push(buildingId);
+                continue;
+            }
             const position = new THREE.Vector3(placement.x, BUILDING_ZONE_OFFSET.y, placement.z);
 
             const dropperPlacement = this.worldObjects.getDropperFor(buildingId);
@@ -1257,6 +1263,9 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             });
         }
 
+        if (buildingsNotOnMap.length > 0) {
+            console.warn(`[PizzaScene] building(s) not on the map's "mapSettings" layer, not spawned: ${buildingsNotOnMap.join(', ')}`);
+        }
         if (buildingsWithoutDropper.length > 0) {
             console.warn(`[PizzaScene] no dropper found for building(s): ${buildingsWithoutDropper.join(', ')} — each is using its own footprint as its deposit trigger instead`);
         }
@@ -1284,14 +1293,13 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 continue;
             }
 
-            // Fallback width/depth = this gate's own configured mesh size — only used if `id`
-            // isn't found on the Tiled map's "mapSettings" layer at all (see
-            // WorldObjectRegistry.require()'s warning).
-            const placement = this.worldObjects.require('gate', id, {
-                x: config.position[0], z: config.position[2],
-                width: config.mesh.size[0], depth: config.mesh.size[2],
-                rotationDeg: 0,
-            });
+            // The map is the source of truth: a gate with no object on the Tiled map's
+            // "mapSettings" layer doesn't exist in the world.
+            const placement = this.worldObjects.get('gate', id);
+            if (!placement) {
+                console.warn(`[PizzaScene] gate "${id}" not on the map's "mapSettings" layer, not spawned`);
+                continue;
+            }
             // The marker object's OWN rotation (drawn in Tiled — e.g. rotating a placed gate
             // marker 90° to fit a different opening) — same clockwise-degrees-to-THREE-degrees
             // sign flip MeshLayerSpawner.ts's own rotationY doc explains, added on TOP of
@@ -1630,9 +1638,26 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         }
     }
 
+    /** Shows the top-center StoreUI for whichever open, revealed store the player is standing in (first match if areas overlap), or fades it out when they're in none. */
+    private updateStoreUi(): void {
+        const position = this.mainPlayer?.transform.position;
+        let state;
+        if (position) {
+            for (const store of this.stores) {
+                if (store.containsPoint(position.x, position.z)) {
+                    state = store.getHudState();
+                    if (state) {
+                        break;
+                    }
+                }
+            }
+        }
+        this.uiService.storeUi.setState(state);
+    }
+
     /** Grocery stores drawn on the map's "stores" layer — see store/Store.ts. Independent of setupStorages(): a store reads its storages straight from the map + StorageInventory. */
     private setupStores(): void {
-        spawnStores({
+        this.stores = spawnStores({
             world: this.world,
             threeScene: this.threeScene,
             worldObjects: this.worldObjects,
@@ -2383,6 +2408,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // needs mainPlayer's fully-current-frame position, not whatever it was before this
         // frame's own movement resolved).
         this.world.lateUpdate(delta);
+        this.updateStoreUi();
         this.uiService.update();
         this.movementTutorialOverlay.update(delta);
         ParticleSystem.update(delta);

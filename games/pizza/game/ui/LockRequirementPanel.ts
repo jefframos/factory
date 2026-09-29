@@ -20,6 +20,7 @@ import ViewUtils from 'core/utils/ViewUtils';
 import AutoFitFrame, { uniformFitPadding } from './AutoFitFrame';
 import { TextStyleRegistry } from './TextStyleRegistry';
 import { FrameName } from './FrameRegistry';
+import { isFloorFrame, type PopupFrameChoice } from './PopupConfig';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(18);
 
@@ -44,7 +45,8 @@ export interface LockRequirementPanelOptions {
     /** Small text on the requirement icon's bottom-left corner — omit for an icon-only panel. */
     cornerText?: string;
     /** FrameRegistry preset behind everything — defaults to the gate's own 'GateLock'. */
-    frame?: FrameName;
+    /** 'Floor' (see PopupConfig.ts) falls back to GateLock — the caller paints a floor label instead and never shows this panel. */
+    frame?: PopupFrameChoice;
     /** The "missing" exclamation badge on the requirement icon — default true. Turn off where the icon means "this goes here", not "you don't have this yet" (e.g. StorageZone's accepted-resource panel). */
     showBadge?: boolean;
 }
@@ -90,7 +92,7 @@ export function buildLockRequirementPanel(requirementIcon: PIXI.Texture, options
         row.addChild(cornerLabel);
     }
 
-    const frame = new AutoFitFrame(LABEL_FRAME_PADDING, options.frame ?? 'GateLock', row);
+    const frame = new AutoFitFrame(LABEL_FRAME_PADDING, options.frame && !isFloorFrame(options.frame) ? options.frame as FrameName : 'GateLock', row);
 
     return {
         frame,

@@ -85,7 +85,8 @@ export class DottedLineBuilder {
         const pitch = resolved.dashLength + resolved.gapLength;
         const texture = DottedLineBuilder.getLineTileTexture(resolved);
 
-        const geometry = new THREE.PlaneGeometry(length, resolved.lineWidth);
+        // Subdivided along its length so a long line follows the world bend (see BendService.segmentsForSpan()).
+        const geometry = new THREE.PlaneGeometry(length, resolved.lineWidth, BendService.segmentsForSpan(length), 1);
         // The tile texture is one pitch wide; stretching its UV by length/pitch (instead of
         // touching the shared texture's own .repeat, which every OTHER line using this same
         // cached texture would also see) is what lets every line reuse one texture object
@@ -111,7 +112,11 @@ export class DottedLineBuilder {
 
         // Canvas is padded by lineWidth so the stroke isn't clipped at the plane's own edge —
         // the plane must match that same padded size or the texture stretches/squashes.
-        const geometry = new THREE.PlaneGeometry(width + resolved.lineWidth, depth + resolved.lineWidth);
+        // Subdivided so a large zone's outline follows the world bend instead of only bending at
+        // its 4 corners and sinking under the curved ground — see BendService.segmentsForSpan().
+        const planeWidth = width + resolved.lineWidth;
+        const planeDepth = depth + resolved.lineWidth;
+        const geometry = new THREE.PlaneGeometry(planeWidth, planeDepth, BendService.segmentsForSpan(planeWidth), BendService.segmentsForSpan(planeDepth));
         geometry.rotateX(-Math.PI / 2);
         geometry.translate(0, resolved.y, 0);
 
@@ -126,7 +131,8 @@ export class DottedLineBuilder {
         // Padded by lineWidth so the stroke isn't clipped at the plane's own edge — same
         // reasoning as buildRoundedRect()'s own padded geometry.
         const size = (radius + resolved.lineWidth / 2) * 2;
-        const geometry = new THREE.PlaneGeometry(size, size);
+        const segments = BendService.segmentsForSpan(size);
+        const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
         geometry.rotateX(-Math.PI / 2);
         geometry.translate(0, resolved.y, 0);
 

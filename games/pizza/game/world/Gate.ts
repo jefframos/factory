@@ -43,8 +43,10 @@ import AutoFitFrame from '../ui/AutoFitFrame';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import {
     buildLockRequirementPanel, LockRequirementPanel,
-    LOCK_ICON_SIZE, LOCK_ICON_UNLOCKED, REQUIREMENT_BADGE_MET, REQUIREMENT_BADGE_SIZE,
+    LOCK_ICON_LOCKED, LOCK_ICON_SIZE, LOCK_ICON_UNLOCKED, REQUIREMENT_BADGE_MET, REQUIREMENT_BADGE_SIZE,
 } from '../ui/LockRequirementPanel';
+import { isFloorFrame } from '../ui/PopupConfig';
+import FloorLabelComponent, { createConfiguredFloorLabel } from '../components/FloorLabelComponent';
 import { getBuildingIcon } from '../data/BuildingTypes';
 import { GateConfig, GateId, GateRequirement } from '../data/GateTypes';
 import { GateStorage } from '../data/GateStorage';
@@ -104,6 +106,8 @@ export default class Gate extends Entity {
 
     /** The shared lock/requirement panel (see LockRequirementPanel.ts) — its frame is faded out wholesale at the end of playUnlockIconSequence(), and its lockIcon/badge swapped to their unlocked textures just before. */
     private panel!: LockRequirementPanel;
+    /** Set instead of the floating icon panel when this gate's `frame` is 'Floor' — see refreshFloorLabel(). */
+    private floorLabel?: FloorLabelComponent;
     private get labelFrame(): AutoFitFrame { return this.panel.frame; }
     private get lockIcon(): PIXI.Sprite { return this.panel.lockIcon; }
     private get requirementBadge(): PIXI.Sprite { return this.panel.badge; }
@@ -189,12 +193,21 @@ export default class Gate extends Entity {
         this.transform.add(labelAnchor);
         const labelAnchorWorldPosition = new THREE.Vector3();
 
-        this.addComponent(new ScreenAnchorComponent(
-            this.screenHost,
-            this.buildLabel(),
-            () => labelAnchor.getWorldPosition(labelAnchorWorldPosition),
-            ZONE_LABEL_ANCHOR_OPTIONS,
-        ));
+        const label = this.buildLabel();
+        // 'Floor' frame: the lock + requirement is painted on the ground beside the gate instead
+        // of a floating panel — the panel is still built (the unlock sequence animates it) but
+        // never put on screen.
+        if (isFloorFrame(this.config.frame)) {
+            this.floorLabel = this.addComponent(createConfiguredFloorLabel(this.config, new THREE.Vector3(), width, depth));
+            this.refreshFloorLabel(false);
+        } else {
+            this.addComponent(new ScreenAnchorComponent(
+                this.screenHost,
+                label,
+                () => labelAnchor.getWorldPosition(labelAnchorWorldPosition),
+                ZONE_LABEL_ANCHOR_OPTIONS,
+            ));
+        }
 
         if (this.config.requirement.type === 'resource') {
             GateStorage.onDepositChanged.add(this.handleDepositChanged);
@@ -214,6 +227,25 @@ export default class Gate extends Entity {
 
         const have = Math.min(GateStorage.getDepositProgress(this.gateId), this.config.requirement.amount);
         this.panel.setCornerText(`${have}/${this.config.requirement.amount}`);
+        this.refreshFloorLabel(false);
+    }
+
+    /** The 'Floor' frame's version of the icon panel — the padlock (open once `unlocked`) beside the requirement's icon, with the same "LvN" / "have/need" text the panel shows in its corner. */
+    private refreshFloorLabel(unlocked: boolean): void {
+        if (!this.floorLabel) {
+            return;
+        }
+        const requirement = this.config.requirement;
+        let text: string | undefined;
+        if (requirement.type === 'building') {
+            text = `Lv${requirement.level}`;
+        } else if (requirement.type === 'resource') {
+            text = `${Math.min(GateStorage.getDepositProgress(this.gateId), requirement.amount)}/${requirement.amount}`;
+        }
+        this.floorLabel.setItems([
+            { icon: PIXI.Texture.from(unlocked ? LOCK_ICON_UNLOCKED : LOCK_ICON_LOCKED) },
+            { icon: resolveRequirementIcon(requirement), text },
+        ]);
     }
 
     /**
@@ -317,6 +349,7 @@ export default class Gate extends Entity {
         });
 
         this.lockIcon.texture = PIXI.Texture.from(LOCK_ICON_UNLOCKED);
+        this.refreshFloorLabel(true);
         this.requirementBadge.texture = PIXI.Texture.from(REQUIREMENT_BADGE_MET);
         this.requirementBadge.scale.set(ViewUtils.elementScaler(this.requirementBadge, REQUIREMENT_BADGE_SIZE));
         const settledScale = ViewUtils.elementScaler(this.lockIcon, LOCK_ICON_SIZE);
@@ -330,5 +363,6 @@ export default class Gate extends Entity {
         await new Promise<void>(resolve => {
             gsap.to(this.labelFrame, { alpha: 0, duration: LABEL_FADE_DURATION_SEC, onComplete: resolve });
         });
+        this.floorLabel?.setVisible(false);
     }
 }

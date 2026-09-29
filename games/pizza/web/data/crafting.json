@@ -24,7 +24,8 @@
         "popupMode": "simple",
         "popupBobOffset": 0,
         "solid": 0.5,
-        "particleEffectId": "craftingMyst"
+        "particleEffectId": "craftingMyst",
+        "disabled": true
     },
     "craftPickaxe": {
         "name": "Crafting Table",

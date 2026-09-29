@@ -17,16 +17,6 @@
     "1": {
         "steps": [
             {
-                "kind": "craft",
-                "craftId": "craftAxe",
-                "offset": [
-                    0,
-                    0,
-                    0
-                ],
-                "iconTextureId": "tutorialHand2"
-            },
-            {
                 "kind": "gate",
                 "gateId": "gateWood",
                 "offset": [

@@ -32,7 +32,7 @@ import { MilestoneRequirement } from '../data/MilestoneRequirement';
 import MODELS, { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
 import { NumberRange } from '../world/AssetLibraryRegistry';
 import { ToolId } from '../actions/ToolRegistry';
-import { PopupMode } from '../ui/PopupConfig';
+import { FloorLabelConfig, PopupFrameChoice, PopupMode } from '../ui/PopupConfig';
 import { FrameName } from '../ui/FrameRegistry';
 
 export interface CraftRecipeDef {
@@ -46,7 +46,7 @@ export interface CraftRecipeDef {
     cost: Partial<Record<ResourceType, number>>;
 }
 
-export interface CraftTableConfig {
+export interface CraftTableConfig extends FloorLabelConfig {
     name: string;
     /** Independent recipes this table can craft — see this file's own doc for why order doesn't matter beyond CraftStorage.getNextRecipe()'s scan order. */
     recipes: CraftRecipeDef[];
@@ -87,7 +87,8 @@ export interface CraftTableConfig {
     /** How high above this table's own base the requirements panel floats — see PopupConfig.ts's own doc. undefined/0 sits it right at the table's base instead of floating. */
     popupBobOffset?: number;
     /** Overrides FrameRegistry.ts's 'CraftingFrame' default for THIS table's own popup — see PopupConfig.ts's resolvePopupFrameName()'s own doc. undefined uses the type-wide default. */
-    frame?: FrameName;
+    /** Also accepts 'Floor' (PopupConfig.ts's FLOOR_FRAME): painted on the ground instead of a floating popup, placed by the floorLabel* fields (FloorLabelConfig). */
+    frame?: PopupFrameChoice;
     /** 0-1 fraction of this table's own trigger footprint that becomes a SOLID collider blocking the player — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default for every table until a designer opts one in) means no solid collider at all — unchanged walk-through behavior from before this field existed. */
     solid?: number;
     /** Optional ambient particle effect (see ParticleRegistry.ts — PARTICLE_REGISTRY) this table continuously emits from just above its own base — see CraftZone.awake(). undefined means no particles at all. */
@@ -141,7 +142,8 @@ export const CRAFT_CONFIG_BY_ID: Partial<Record<string, CraftTableConfig>> = {
         "popupMode": "simple",
         "popupBobOffset": 0,
         "solid": 0.5,
-        "particleEffectId": "craftingMyst"
+        "particleEffectId": "craftingMyst",
+        "disabled": true
     },
     "craftPickaxe": {
         "name": "Crafting Table",

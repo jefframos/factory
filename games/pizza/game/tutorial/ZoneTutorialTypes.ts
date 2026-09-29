@@ -124,16 +124,6 @@ export const ZONE_TUTORIAL_CONFIG: Partial<Record<number, ZoneTutorialConfig>> =
     "1": {
         "steps": [
             {
-                "kind": "craft",
-                "craftId": "craftAxe",
-                "offset": [
-                    0,
-                    0,
-                    0
-                ],
-                "iconTextureId": "tutorialHand2"
-            },
-            {
                 "kind": "gate",
                 "gateId": GateId.GateWood,
                 "offset": [

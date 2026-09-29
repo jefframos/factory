@@ -35,7 +35,8 @@ import { spawnFlyingIconFromOverlayPoint } from '../components/FlyingResourceIco
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
-import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer } from '../ui/PopupConfig';
+import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer, isFloorFrame } from '../ui/PopupConfig';
+import FloorLabelComponent, { createConfiguredFloorLabel, FloorLabelItem } from '../components/FloorLabelComponent';
 import { FrameRegistry } from '../ui/FrameRegistry';
 import { EconomyStorage } from '../data/EconomyStorage';
 import { CURRENCY_CONFIG, CurrencyType } from '../data/EconomyTypes';
@@ -134,6 +135,8 @@ export default class ShopZone extends Entity {
     private bodyContainer!: PIXI.Container;
     /** SHOP_UPGRADE_AVAILABLE_ICON — overlaps the tool icon's top-right corner whenever the player already has enough money on hand to fund the rest of the next level right now, so it reads as "come spend here" from a glance rather than needing to walk up and check. Toggled in refreshLabel(); never shown once maxed. */
     private upgradeBadge!: PIXI.Sprite;
+    /** Set instead of the floating popup when this shop's `frame` is 'Floor' — see refreshFloorLabel(). */
+    private floorLabel?: FloorLabelComponent;
     private labelFrame!: AutoFitFrame;
     /** labelFrame's own starting texture (from FrameRegistry, per resolvePopupFrameName()'s pick) — what refreshLabel() restores labelFrame to via setTexture() once neither COOLDOWN_FRAME_TEXTURE nor AVAILABLE_FRAME_TEXTURE applies. Undefined for a frame with no background texture at all (e.g. 'Simple', popupMode 'simple') — refreshLabel() leaves those alone entirely rather than painting a background where there was deliberately none. */
     private defaultFrameTexture?: string;
@@ -233,6 +236,12 @@ export default class ShopZone extends Entity {
             centerOffset,
         ));
 
+        // 'Floor' frame: the cost/cooldown is painted on the ground beside the deposit area
+        // instead of a floating popup — labelFrame is still built/refreshed but never put on screen.
+        if (isFloorFrame(this.config.frame)) {
+            this.floorLabel = this.addComponent(createConfiguredFloorLabel(this.config, centerOffset, halfExtents.x * 2, halfExtents.z * 2));
+        }
+
         this.createShopMesh();
 
         // iconRow groups the tool icon + upgrade badge (anchored relative to the icon) so the
@@ -275,12 +284,14 @@ export default class ShopZone extends Entity {
         this.transform.add(this.labelAnchor);
         const labelAnchorWorldPosition = new THREE.Vector3();
 
-        this.addComponent(new ScreenAnchorComponent(
-            this.screenHost,
-            this.labelFrame,
-            () => this.labelAnchor.getWorldPosition(labelAnchorWorldPosition),
-            { ...ZONE_LABEL_ANCHOR_OPTIONS, ...resolvePopupAvoidViewer(this.config.popupMode) },
-        ));
+        if (!this.floorLabel) {
+            this.addComponent(new ScreenAnchorComponent(
+                this.screenHost,
+                this.labelFrame,
+                () => this.labelAnchor.getWorldPosition(labelAnchorWorldPosition),
+                { ...ZONE_LABEL_ANCHOR_OPTIONS, ...resolvePopupAvoidViewer(this.config.popupMode) },
+            ));
+        }
 
         ShopUpgradeStorage.onChange.add(this.handleShopChanged);
 
@@ -418,6 +429,7 @@ export default class ShopZone extends Entity {
 
     /** Rewrites the panel's body from ShopUpgradeStorage's current state and re-fits the frame around the new bounds. Icon-first throughout (tool icon, money icon, upgrade-arrow badge) — the only text left is short numbers, not sentences, per this file's own doc. `popupMode: 'none'` (see PopupConfig.ts's own doc) skips all of this and keeps the panel permanently hidden; `'simple'` drops the tool-icon header (iconRow), keeping only the cost/cooldown row. */
     private refreshLabel(): void {
+        this.refreshFloorLabel();
         if (this.config.popupMode === 'none') {
             this.iconRow.visible = false;
             this.labelFrame.visible = false;
@@ -496,6 +508,27 @@ export default class ShopZone extends Entity {
 
         this.iconRow.position.set(0, -(bodyHeight + ICON_BODY_GAP));
         this.labelFrame.fit();
+    }
+
+    /** The 'Floor' frame's version of refreshLabel()'s panel — the tool icon (unless 'simple'), then "MAX", the cooldown countdown, or the money icon + progress/cost. */
+    private refreshFloorLabel(): void {
+        if (!this.floorLabel) {
+            return;
+        }
+        if (this.config.popupMode === 'none') {
+            this.floorLabel.setItems([]);
+            return;
+        }
+        const items: FloorLabelItem[] = this.config.popupMode !== 'simple' ? [{ icon: getToolIcon(this.config.tool) }] : [];
+        if (ShopUpgradeStorage.isMaxLevel(this.shopId, this.config)) {
+            items.push({ text: 'MAX' });
+        } else if (ShopUpgradeStorage.isOnCooldown(this.shopId)) {
+            items.push({ icon: PIXI.Texture.from('Icon_Timer'), text: formatCooldown(ShopUpgradeStorage.getCooldownRemainingSec(this.shopId)) });
+        } else {
+            const state = ShopUpgradeStorage.getState(this.shopId);
+            items.push({ icon: getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey), text: `${state.progress}/${getUpgradeCost(this.config, state.level)}` });
+        }
+        this.floorLabel.setItems(items);
     }
 
     private tryDeposit(other: RigidBody): void {

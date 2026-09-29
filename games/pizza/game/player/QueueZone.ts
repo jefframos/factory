@@ -46,7 +46,8 @@ import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { createResourceSlot } from '../ui/ResourceSlotVisual';
 import { getIconLayout } from '../ui/LayoutRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
-import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer } from '../ui/PopupConfig';
+import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer, isFloorFrame } from '../ui/PopupConfig';
+import FloorLabelComponent, { createConfiguredFloorLabel } from '../components/FloorLabelComponent';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { QueueStorage } from '../data/QueueStorage';
 import { QueueConfig, getQueueConfig } from '../data/QueueTypes';
@@ -158,6 +159,8 @@ export default class QueueZone extends Entity {
     /** Holds either the active task's requirement row (see ResourceSlotVisual.ts), or a "next task in Ns" countdown — rebuilt wholesale by refreshLabel() on every actual state change (see handleTaskChanged()). No title anywhere — the reward line IS the header, see this file's own doc. */
     private bodyContainer!: PIXI.Container;
     private labelFrame!: AutoFitFrame;
+    /** Set instead of the floating popup when this queue's `frame` is 'Floor' — see refreshFloorLabel(). */
+    private floorLabel?: FloorLabelComponent;
     /** Whether the panel was visible as of the LAST refreshLabel() call — see refreshLabel()'s own doc on why the fade-in only plays on the false->true edge, not on every rebuild while already shown (progress ticking rebuilds the panel constantly while a task is being delivered). */
     private wasDeliverable = false;
     /**
@@ -235,6 +238,12 @@ export default class QueueZone extends Entity {
             { color: getZoneColor(ZoneColorKind.Queue) },
         ));
 
+        // 'Floor' frame: the task is painted on the ground beside the zone instead of a floating
+        // popup — labelFrame is still built/refreshed below but never put on screen.
+        if (isFloorFrame(this.config.frame)) {
+            this.floorLabel = this.addComponent(createConfiguredFloorLabel(this.config, new THREE.Vector3(), halfExtents.x * 2, halfExtents.z * 2));
+        }
+
         this.headerContainer = new PIXI.Container();
         this.bodyContainer = new PIXI.Container();
 
@@ -278,7 +287,7 @@ export default class QueueZone extends Entity {
         this.transform.add(this.labelAnchor);
         const labelAnchorWorldPosition = new THREE.Vector3();
 
-        this.addComponent(new ScreenAnchorComponent(
+        if (!this.floorLabel) this.addComponent(new ScreenAnchorComponent(
             this.screenHost,
             anchorContent,
             () => {
@@ -400,6 +409,7 @@ export default class QueueZone extends Entity {
      * appearance apart from "still deliverable, just rebuilding content."
      */
     private refreshLabel(): void {
+        this.refreshFloorLabel();
         this.headerContainer.removeChildren().forEach(child => child.destroy({ children: true }));
         this.bodyContainer.removeChildren().forEach(child => child.destroy({ children: true }));
 
@@ -522,6 +532,28 @@ export default class QueueZone extends Entity {
 
         this.headerContainer.position.set(0, -(bodyHeight + HEADER_BODY_GAP));
         this.labelFrame.fit();
+    }
+
+    /** The 'Floor' frame's version of refreshLabel()'s panel — the reward (+N, unless 'simple') then the task's resource icon + progress/amount, only while a task is deliverable. */
+    private refreshFloorLabel(): void {
+        if (!this.floorLabel) {
+            return;
+        }
+        const state = QueueStorage.getState(this.queueId);
+        const task = state.activeTask;
+        if (this.config.popupMode === 'none' || !task || !this.isTaskDeliverable()) {
+            this.floorLabel.setItems([]);
+            return;
+        }
+        const moneyIcon = getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey);
+        if (this.pendingCompletionRewardAmount !== undefined) {
+            this.floorLabel.setItems([{ icon: moneyIcon, text: `+${this.pendingCompletionRewardAmount}` }]);
+            return;
+        }
+        this.floorLabel.setItems([
+            ...(this.config.popupMode !== 'simple' ? [{ icon: moneyIcon, text: `+${task.rewardAmount}` }] : []),
+            { icon: getAssetIcon(resolveResourceAssetKey(task.resourceType)), text: `${state.progress}/${task.amount}` },
+        ]);
     }
 
     /**

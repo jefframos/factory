@@ -17,7 +17,9 @@
 //
 // Progression: level 0 while closed, 1 on opening, then each payment counts
 // (money and sales) toward the next StoreLevelConfig — see
-// StoreProgressStorage.ts. Anything a level `enables` (and the store's free
+// StoreProgressStorage.ts. The level/progress is shown by the top-center
+// StoreUI (ui/StoreUI.ts) while the player is inside the store's area —
+// PizzaScene reads containsPoint()/getHudState() every frame. Anything a level `enables` (and the store's free
 // defaultStorageId, at level 1) stays hidden until then — see StoreUnlocks.ts.
 // Only AVAILABLE storages (enabled + bought/free) are used, and no client
 // spawns until at least one exists.
@@ -37,8 +39,8 @@
 import * as THREE from 'three';
 import Entity from '../ecs/Entity';
 import World from '../ecs/World';
-import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
-import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
+import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
+import type { StoreUIState } from '../ui/StoreUI';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
@@ -57,10 +59,6 @@ import { StoreMoneyStorage } from './StoreMoneyStorage';
 import { StoreConfig, getNextStoreLevel, getStoreConfig, getStorageSpotDirection } from './StoreTypes';
 import { StoreProgressStorage } from './StoreProgressStorage';
 import { StoreUnlocks } from './StoreUnlocks';
-import StoreLevelPanel from './StoreLevelPanel';
-
-/** Height of the level panel above the cashier's own ground position. */
-const LEVEL_PANEL_HEIGHT = 3;
 
 /** The first client shows up this long after the store spawns, rather than a full spawnIntervalSec. */
 const FIRST_SPAWN_DELAY_SEC = 1;
@@ -89,8 +87,6 @@ export default class Store extends Entity implements StoreClientHost {
     private moneyPile?: StoreMoneyPile;
     private spawnTimerSec: number;
     private payTimerSec = 0;
-    private readonly levelPanel = new StoreLevelPanel();
-    private levelPanelAnchor?: ScreenAnchorComponent;
 
     public constructor(
         layout: StoreLayout,
@@ -130,14 +126,6 @@ export default class Store extends Entity implements StoreClientHost {
         this.root.add(this.moneyPile.transform);
         void StoreMoneyStorage.load();
 
-        const panelPosition = new THREE.Vector3(this.layout.cashier.x, LEVEL_PANEL_HEIGHT, this.layout.cashier.z);
-        this.levelPanelAnchor = this.addComponent(new ScreenAnchorComponent(
-            this.screenHost,
-            this.levelPanel.content,
-            () => panelPosition,
-            ZONE_LABEL_ANCHOR_OPTIONS,
-        ));
-
         console.log(`[Store] "${this.layout.id}" sells from ${this.storages.length} storage(s): ${this.storages.map(s => s.id).join(', ') || '(none)'}`);
     }
 
@@ -158,7 +146,6 @@ export default class Store extends Entity implements StoreClientHost {
         }
         this.cashier!.transform.visible = open;
         this.moneyPile!.transform.visible = open;
-        this.refreshLevelPanel(open);
 
         // No clients while closed, still hidden under fog of war (they'd drain storages the player
         // can't reach yet), or with no storage available to buy from.
@@ -228,21 +215,26 @@ export default class Store extends Entity implements StoreClientHost {
         return this.storages.filter(s => StoreUnlocks.isStorageAvailable(s.id, s.config));
     }
 
-    private refreshLevelPanel(open: boolean): void {
-        this.levelPanelAnchor?.setForceHidden(!open || !this.isVisible());
-        if (!open) {
-            return;
+    /** True when world point (x, z) is inside this store's own area (the "store" rect on the map). */
+    public containsPoint(x: number, z: number): boolean {
+        return rectContains(this.layout.area, x, z);
+    }
+
+    /** What the top-center StoreUI shows for this store — undefined while it's closed or still hidden under fog of war. */
+    public getHudState(): StoreUIState | undefined {
+        if (!this.isOpen() || !this.isVisible()) {
+            return undefined;
         }
         const level = StoreProgressStorage.getLevel(this.layout.id);
         const next = getNextStoreLevel(this.config, level);
-        this.levelPanel.show({
+        return {
             level,
             next: next && {
                 type: next.requirementType,
                 progress: next.requirementType === 'sales' ? StoreProgressStorage.getSales(this.layout.id) : StoreProgressStorage.getMoney(this.layout.id),
                 amount: next.amount,
             },
-        });
+        };
     }
 
     /** Every item a new client may ask for right now — see this file's own doc. */

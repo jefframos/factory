@@ -77,8 +77,9 @@ const STORE_SPOT_DIRECTION_OPTIONS = [
 ];
 
 const FRAME_FIELD = {
-    key: 'frame', type: 'select', label: 'Popup Frame Override (blank = this type\'s own default)', optional: true,
+    key: 'frame', type: 'select', label: 'Popup Frame Override (blank = this type\'s own default; Floor = painted on the ground, placed by the Floor Label fields below)', optional: true,
     options: [
+        { value: 'Floor', label: 'Floor (in-world, painted on the ground)' },
         { value: 'Main', label: 'Main' },
         { value: 'Large', label: 'Large' },
         { value: 'Info', label: 'Info' },
@@ -99,9 +100,26 @@ const FRAME_FIELD = {
  */
 const STORAGE_FRAME_FIELD = {
     ...FRAME_FIELD,
-    label: 'Popup Frame Override (blank = Floor — stored count south of the storage, price on its purchase area; pick a frame for a floating popup instead)',
-    options: [{ value: 'Floor', label: 'Floor (in-world, painted on the ground)' }, ...FRAME_FIELD.options],
+    label: 'Popup Frame Override (blank = Floor — stored count beside the storage, price on its purchase area; pick a frame for a floating popup instead)',
 };
+
+/** PopupConfig.ts's FloorLabelSide — which side of the footprint a 'Floor' frame label sits on. */
+const FLOOR_LABEL_SIDE_FIELD = {
+    key: 'floorLabelSide', type: 'select', label: 'Floor Label Side (Floor frame only — blank = South)', optional: true,
+    options: [
+        { value: 'south', label: 'South (below, on the map)' },
+        { value: 'north', label: 'North (above, on the map)' },
+        { value: 'east', label: 'East (right, on the map)' },
+        { value: 'west', label: 'West (left, on the map)' },
+    ],
+};
+
+/** PopupConfig.ts's FloorLabelConfig — only used when `frame` is 'Floor'. */
+const FLOOR_LABEL_FIELDS = [
+    FLOOR_LABEL_SIDE_FIELD,
+    { key: 'floorLabelSize', type: 'number', label: 'Floor Label Size (Floor frame only — height on the ground, world units; blank = 2.7)', optional: true },
+    { key: 'floorLabelGap', type: 'number', label: 'Floor Label Gap (Floor frame only — distance from the footprint\'s edge; blank = 0.3)', optional: true },
+];
 
 /**
  * Shared requirements-popup fields — appended to every zone-type entity's schema (buildings,
@@ -124,6 +142,7 @@ const POPUP_FIELDS = [
     },
     { key: 'popupBobOffset', type: 'number', label: 'Popup Height Offset (blank = sit at the entity\'s base)', optional: true },
     FRAME_FIELD,
+    ...FLOOR_LABEL_FIELDS,
 ];
 
 /**
@@ -226,7 +245,8 @@ const ENTITY_SCHEMAS = {
         { key: 'view', type: 'select', label: 'View (real mesh override, optional)', source: 'entityViews', optional: true },
         { key: 'viewRotationOffsetDeg', type: 'number', label: 'View Rotation Offset (deg, added on top of the View\'s own rotation)', optional: true },
         { key: 'viewScaleMultiplier', type: 'number', label: 'View Scale Multiplier (multiplied onto the View\'s own scale, e.g. 1.5 = 50% bigger)', optional: true },
-        { ...FRAME_FIELD, label: 'Icon Panel Frame Override (blank = GateLock)' },
+        { ...FRAME_FIELD, label: 'Icon Panel Frame Override (blank = GateLock; Floor = painted on the ground beside the gate)' },
+        ...FLOOR_LABEL_FIELDS,
         { key: 'particleEffectId', type: 'select', label: 'Particle Effect (ambient, while the gate stands)', source: 'particleEffects', optional: true },
         { key: 'destroyParticleEffectId', type: 'select', label: 'Destroy Particle Effect (fires when the gate finishes collapsing)', source: 'particleEffects', optional: true },
         { key: 'destroyParticleCount', type: 'number', label: 'Destroy Particle Count', optional: true },
@@ -469,6 +489,7 @@ const ENTITY_SCHEMAS = {
         { key: 'icon', type: 'icon', label: 'Icon' },
         { key: 'models', type: 'modelList', label: 'Models' },
         { key: 'maxLevel', type: 'number', label: 'Max Level (0 = never upgraded, e.g. rope/hammer — hides the level UI wherever this tool appears)' },
+        { key: 'startLevel', type: 'number', label: 'Start Level On Acquire (attributes start this far up the 0..Max Level ladder; shops only sell Max − Start upgrades; shown in game as Lv.1)', optional: true },
         { key: 'startWith', type: 'boolean', label: 'Start With (a brand-new save begins owning one of whichever item shares this tool\'s id, instead of having to craft/earn it)', optional: true },
         {
             key: 'actionTime', type: 'group', label: 'Action Time (seconds — Min = level 0, Max = fully upgraded; only for tools with a timed action, e.g. Shovel = time to plant a no-seed farm cell)', optional: true,
@@ -587,8 +608,9 @@ const ENTITY_SCHEMAS = {
         },
         { key: 'itemScale', type: 'number', label: 'Item Scale (blank = same as the player stack\'s)', optional: true },
         STORAGE_FRAME_FIELD,
+        { ...FLOOR_LABEL_SIDE_FIELD, label: 'Floor Label Side (Floor frame — which side of the storage the stored-count label sits on; blank = South)' },
         { key: 'floorLabelSize', type: 'number', label: 'Floor Label Size (Floor frame — height on the floor, world units; the price label also shrinks to fit the purchase area — blank = 2.7)', optional: true },
-        { key: 'floorLabelGap', type: 'number', label: 'Floor Label Gap (Floor frame — distance of the stored-count label south of the storage — blank = 0.3)', optional: true },
+        { key: 'floorLabelGap', type: 'number', label: 'Floor Label Gap (Floor frame — distance of the stored-count label from the storage — blank = 0.3)', optional: true },
         { key: 'popupBobOffset', type: 'number', label: 'Popup Height Offset (popup frames only — gap above the top of the pile, blank = 1)', optional: true },
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full storage footprint, 0.5 = half size centered — 0 by default)', optional: true },
         {

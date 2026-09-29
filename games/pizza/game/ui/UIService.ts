@@ -33,9 +33,13 @@ import SettingsUIService, { SETTINGS_ROW_BUTTON_SIZE, SETTINGS_ROW_TOP_LEFT_MARG
 import { UpgradeNotificationManager } from './notifications/UpgradeNotificationManager';
 import InGameButtonList from './InGameButtonList';
 import BackpackButton from './BackpackButton';
+import StoreUI from './StoreUI';
 
 /** Gap between the backpack HUD panel's bottom edge and the actual bottom of the screen — see positionBackpackUi(). Only relevant if backpackUi is switched back on — see that field's own comment. */
 const BACKPACK_UI_BOTTOM_MARGIN = 16;
+
+/** Gap between the store panel's top edge and the top of the screen — see positionStoreUi(). */
+const STORE_UI_TOP_MARGIN = 16;
 
 /** Gap between the backpack LIST's top/left edges and the currency topbar/screen edge — see positionBackpackListUi(). */
 const BACKPACK_LIST_UI_MARGIN = 16;
@@ -104,6 +108,9 @@ export default class UIService {
     /** Bottom-left button that opens InventoryPopup — see BackpackButton.ts's own doc. */
     private readonly backpackButton: BackpackButton;
 
+    /** Top-center level + progress panel for the store the player is standing in — PizzaScene feeds it via setState() every frame (see StoreUI.ts's own doc). */
+    public readonly storeUi: StoreUI;
+
     /**
      * `onCameraToggle` is a callback into the scene rather than this service importing
      * PizzaScene directly — same structural-interface style ScreenAnchorHost already uses
@@ -133,8 +140,15 @@ export default class UIService {
         this.toolLevelUi = new ToolLevelUI();
         //this.game.uiLayer.addChild(this.toolLevelUi);
 
+        // Tools list and backpack button are debug/dev-only for now (?debug or ?dev) — built and
+        // updated either way, just never put on screen otherwise. Not a `visible` toggle, since
+        // both set their own `visible` from game state every update.
+        const showDebugHud = Boolean(Game.debugParams.debug || Game.debugParams.dev);
+
         this.toolListUi = new ToolListUI();
-        this.game.uiLayer.addChild(this.toolListUi);
+        if (showDebugHud) {
+            this.game.uiLayer.addChild(this.toolListUi);
+        }
 
         this.inGameButtonList = new InGameButtonList();
         this.game.uiLayer.addChild(this.inGameButtonList);
@@ -147,8 +161,13 @@ export default class UIService {
         this.settingsUi = new SettingsUIService(this.game);
         UpgradeNotificationManager.instance.init(this.game);
 
+        this.storeUi = new StoreUI();
+        this.game.uiLayer.addChild(this.storeUi);
+
         this.backpackButton = new BackpackButton();
-        this.game.uiLayer.addChild(this.backpackButton);
+        if (showDebugHud) {
+            this.game.uiLayer.addChild(this.backpackButton);
+        }
 
         this.update();
     }
@@ -171,6 +190,7 @@ export default class UIService {
         this.positionAnimalDockUi();
         this.positionToolLevelUi();
         this.positionToolListUi();
+        this.positionStoreUi();
         this.settingsUi.update();
         this.backpackButton.update();
     }
@@ -277,6 +297,19 @@ export default class UIService {
     }
 
     /** Top-left, dropped below the settings/mute button row's own fixed height so it reads as "under the settings" — re-run every frame since the list's own height changes as tools are crafted/upgraded. */
+    /** Top-center — the panel's own top edge (frame included) sits STORE_UI_TOP_MARGIN below the screen's top, horizontally centered on its own bounds. */
+    private positionStoreUi(): void {
+        const screen = Game.overlayScreenData;
+        if (!screen) {
+            return;
+        }
+        const bounds = this.storeUi.getLocalBounds();
+        this.storeUi.position.set(
+            screen.center.x - (bounds.x + bounds.width / 2),
+            screen.topLeft.y + STORE_UI_TOP_MARGIN - bounds.y,
+        );
+    }
+
     private positionToolListUi(): void {
         const screen = Game.overlayScreenData;
         if (!screen) {
@@ -302,6 +335,7 @@ export default class UIService {
         this.inGameButtonList.destroy();
         this.toolLevelUi.destroy();
         this.toolListUi.destroy();
+        this.storeUi.destroy({ children: true });
         this.settingsUi.destroy();
         this.backpackButton.destroy();
     }

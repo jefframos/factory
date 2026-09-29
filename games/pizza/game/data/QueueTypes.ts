@@ -15,7 +15,7 @@
 import { ResourceType } from '../actions/ResourceTypes';
 import { ItemType } from '../crafting/ItemTypes';
 import { MilestoneRequirement } from './MilestoneRequirement';
-import { PopupMode } from '../ui/PopupConfig';
+import { FloorLabelConfig, PopupFrameChoice, PopupMode } from '../ui/PopupConfig';
 import { FrameName } from '../ui/FrameRegistry';
 import { GateId } from "./GateTypes";
 import { BuildingId } from "./BuildingId";
@@ -28,7 +28,7 @@ export interface QueueTaskDef {
     rewardAmount: number;
 }
 
-export interface QueueConfig {
+export interface QueueConfig extends FloorLabelConfig {
     /** Seconds after completing a task before the next one becomes available — see QueueStorage.tryRollNextTask(). */
     cooldownSec: number;
     /** One is picked at random whenever a new task starts — see QueueStorage.tryRollNextTask(). */
@@ -54,7 +54,8 @@ export interface QueueConfig {
     /** Optional real-mesh override, keyed into EntityViewRegistry.ts's ENTITY_VIEW_CONFIG — see BuildingLevelConfig.view's own doc for the full convention. undefined keeps QueueZone's own existing hardcoded visual, unchanged from before this field existed. */
     view?: string;
     /** Overrides FrameRegistry.ts's 'QueueFrame' default for THIS queue's own popup — see PopupConfig.ts's resolvePopupFrameName()'s own doc. undefined uses the type-wide default. */
-    frame?: FrameName;
+    /** Also accepts 'Floor' (PopupConfig.ts's FLOOR_FRAME): painted on the ground instead of a floating popup, placed by the floorLabel* fields (FloorLabelConfig). */
+    frame?: PopupFrameChoice;
     /** 0-1 fraction of this queue's own trigger footprint that becomes a SOLID collider blocking the player — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default for every queue until a designer opts one in) means no solid collider at all — unchanged walk-through behavior from before this field existed. */
     solid?: number;
     /**

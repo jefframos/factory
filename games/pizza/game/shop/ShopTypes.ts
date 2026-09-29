@@ -15,8 +15,8 @@
 // [min, max] range PER ATTRIBUTE (see ToolAttributeRanges, defined on the TOOL
 // itself in ToolRegistry.ts — TOOL_LIBRARY[tool].attributes, not on the shop:
 // the shop is only the storefront, cost/cooldown/appearance for whichever
-// tool it names) plus a level count (totalLevels): buying level N of
-// totalLevels sets EVERY attribute to min + (max - min) * (N / totalLevels),
+// tool it names) plus the tool's maxLevel/startLevel: a tool at ladder level N of
+// maxLevel (startLevel + levels bought) has EVERY attribute at min + (max - min) * (N / maxLevel),
 // all at once, from scratch (see applyShopLevel()). A tool that's never been
 // upgraded (N=0) sits at every attribute's own min — which is also, by
 // construction, this game's hand-authored ACTION_CONFIG default (see
@@ -27,9 +27,9 @@
 // independent of how many levels the ladder has.
 
 import { ACTION_CONFIG, ActionType, BASE_ACTION_CONFIG } from '../actions/ActionTypes';
-import { AttributeRange, TOOL_LIBRARY, ToolId, ToolVisualEntry } from '../actions/ToolRegistry';
+import { AttributeRange, getToolStartLevel, TOOL_LIBRARY, ToolId, ToolVisualEntry } from '../actions/ToolRegistry';
 import { MilestoneRequirement } from '../data/MilestoneRequirement';
-import { PopupMode } from '../ui/PopupConfig';
+import { FloorLabelConfig, PopupFrameChoice, PopupMode } from '../ui/PopupConfig';
 import { FrameName } from '../ui/FrameRegistry';
 import { ItemType } from "../crafting/ItemTypes";
 
@@ -42,14 +42,14 @@ export interface ShopMeshConfig {
     color: number;
 }
 
-export interface ShopConfig {
+export interface ShopConfig extends FloorLabelConfig {
     name: string;
     tool: ToolId;
     action: ActionType;
     mesh: ShopMeshConfig;
     /** Optional real-mesh override for the shop's OWN structure, keyed into EntityViewRegistry.ts's ENTITY_VIEW_CONFIG — see BuildingLevelConfig.view's own doc for the full convention. undefined keeps the placeholder box (`mesh`). The shop building itself doesn't visually grow per level (unlike the old per-level `view` override) — see getViewIdForShopLevel()'s own doc. */
     baseView?: string;
-    /** How many levels this ladder has — level 0 (nothing bought) sits at every attribute's min, level totalLevels (maxed) at every max, and anything in between is a straight-line blend (see applyShopLevel()). Also what ShopUpgradeStorage.isMaxLevel() checks `level` against. */
+    /** Fallback ladder length, used only when the tool itself has no maxLevel — the tool's own maxLevel/startLevel decide the ladder and how many levels this shop can sell (see getShopMaxLevel()/applyShopLevel()). */
     totalLevels: number;
     /** CurrencyType.Money cost of buying the FIRST level (level 0 -> 1) — see getUpgradeCost(). */
     baseCost: number;
@@ -64,7 +64,8 @@ export interface ShopConfig {
     /** How high above this shop's own base the requirements panel floats — see PopupConfig.ts's own doc. undefined/0 sits it right at the shop's base instead of floating. */
     popupBobOffset?: number;
     /** Overrides FrameRegistry.ts's 'ShopFrame' default for THIS shop's own popup — see PopupConfig.ts's resolvePopupFrameName()'s own doc. undefined uses the type-wide default. */
-    frame?: FrameName;
+    /** Also accepts 'Floor' (PopupConfig.ts's FLOOR_FRAME): painted on the ground instead of a floating popup, placed by the floorLabel* fields (FloorLabelConfig). */
+    frame?: PopupFrameChoice;
     /** 0-1 fraction of this shop's own trigger footprint that becomes a SOLID collider blocking the player — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default for every shop until a designer opts one in) means no solid collider at all — unchanged walk-through behavior from before this field existed. */
     solid?: number;
     /**
@@ -151,36 +152,65 @@ function lerp(range: AttributeRange, progress: number): number {
 }
 
 /**
- * Sets ACTION_CONFIG[config.action] to exactly what `boughtLevels` levels bought (0 = nothing
- * yet) SHOULD produce, computed from scratch every call — unlike the old sparse per-level
- * array, there's nothing to replay incrementally (see ShopUpgradeStorage.reapplyAllShopUpgrades(),
- * now a single call per shop instead of a loop over its history). `progress` is
- * `boughtLevels / config.totalLevels` clamped to [0, 1] — e.g. a 10-level ladder at level 5, or
- * a 20-level ladder at level 10, both land on progress 0.5 and therefore identical attribute
- * values, regardless of how many total levels either ladder has. Every attribute lerps
- * min -> max on that same progress EXCEPT speed, which is attacks/sec and gets inverted into
- * ACTION_CONFIG.hitIntervalSec's seconds/attack (see ToolAttributeRanges.speed's own doc).
+ * The full length of the ladder `config`'s tool climbs — the tool's own maxLevel (see
+ * ToolVisualEntry.maxLevel), falling back to the shop's `totalLevels` only for a tool with no
+ * maxLevel set. This is what attributes scale against, including the tool's startLevel.
  */
-export function applyShopLevel(config: ShopConfig, boughtLevels: number): void {
-    const progress = Math.min(1, Math.max(0, boughtLevels / config.totalLevels));
-    const actionConfig = ACTION_CONFIG[config.action];
-    // Every tool a shop references MUST define its own ladder range — see
-    // ToolVisualEntry.attributes' own doc in ToolRegistry.ts.
+function getLadderLevels(config: ShopConfig): number {
+    const toolMax = (TOOL_LIBRARY[config.tool] as ToolVisualEntry).maxLevel;
+    return toolMax > 0 ? toolMax : config.totalLevels;
+}
+
+/**
+ * How many levels this shop can actually SELL — the ladder minus the tool's startLevel (see
+ * ToolVisualEntry.startLevel): a max-10 tool that starts at 5 only has 5 upgrades left. This is
+ * what ShopUpgradeStorage.isMaxLevel() checks the bought count against.
+ */
+export function getShopMaxLevel(config: ShopConfig): number {
+    return Math.max(0, getLadderLevels(config) - getToolStartLevel(config.tool));
+}
+
+/**
+ * Sets ACTION_CONFIG[action] to `tool`'s attributes at `toolLevel` of `ladderLevels`, computed
+ * from scratch every call. `progress` is `toolLevel / ladderLevels` clamped to [0, 1]. Every
+ * attribute lerps min -> max on that same progress EXCEPT speed, which is attacks/sec and gets
+ * inverted into ACTION_CONFIG.hitIntervalSec's seconds/attack (see ToolAttributeRanges.speed's
+ * own doc). Returns false (and changes nothing) if the tool has no attributes range.
+ */
+function applyToolLevel(action: ActionType, tool: ToolId, toolLevel: number, ladderLevels: number): boolean {
     // Cast needed because TOOL_LIBRARY's own `satisfies Record<...>` declaration keeps each
     // entry's literal type (no `attributes` key at all on tools that never define one) rather
     // than widening to ToolVisualEntry — indexing with a generic ToolId then produces a union
     // TS won't uniformly read `.attributes` off of.
-    const attrs = (TOOL_LIBRARY[config.tool] as ToolVisualEntry).attributes;
-    if (!attrs) {
-        console.warn(`[ShopTypes] tool "${config.tool}" has no attributes range defined on TOOL_LIBRARY — skipping upgrade apply.`);
-        return;
+    const attrs = (TOOL_LIBRARY[tool] as ToolVisualEntry).attributes;
+    if (!attrs || ladderLevels <= 0) {
+        return false;
     }
+    const progress = Math.min(1, Math.max(0, toolLevel / ladderLevels));
+    const actionConfig = ACTION_CONFIG[action];
 
     actionConfig.hitScale = lerp(attrs.damage, progress);
     actionConfig.hitAngleDeg = lerp(attrs.hitAngleDeg, progress);
     actionConfig.hitRangeMeters = lerp(attrs.hitRangeMeters, progress);
     actionConfig.resourcePerHit = lerp(attrs.resourcePerHit, progress);
     actionConfig.hitIntervalSec = 1 / lerp(attrs.speed, progress);
+    return true;
+}
+
+/**
+ * Sets ACTION_CONFIG[config.action] to exactly what `boughtLevels` levels bought (0 = nothing
+ * yet) SHOULD produce — the tool sits at startLevel + boughtLevels on its ladder (see
+ * ToolVisualEntry.startLevel), so a max-10 tool starting at 5 reads as ladder level 5 with
+ * nothing bought and 10 once this shop's 5 upgrades are done. Computed from scratch every call,
+ * so ShopUpgradeStorage.reapplyAllShopUpgrades() is a single call per shop.
+ */
+export function applyShopLevel(config: ShopConfig, boughtLevels: number): void {
+    // Every tool a shop references MUST define its own ladder range — see
+    // ToolVisualEntry.attributes' own doc in ToolRegistry.ts.
+    const toolLevel = getToolStartLevel(config.tool) + boughtLevels;
+    if (!applyToolLevel(config.action, config.tool, toolLevel, getLadderLevels(config))) {
+        console.warn(`[ShopTypes] tool "${config.tool}" has no attributes range defined on TOOL_LIBRARY — skipping upgrade apply.`);
+    }
 }
 
 /** Cost to buy the NEXT level (`boughtLevels` -> `boughtLevels + 1`) — see ShopConfig.costScale's own doc. A flat costScale of 1 would cost baseCost every single time; anything above 1 makes each purchase costScale-fold pricier than the one before it. */
@@ -195,5 +225,12 @@ export function getUpgradeCost(config: ShopConfig, boughtLevels: number): number
 export function resetAllActionConfigs(): void {
     for (const action of Object.values(ActionType)) {
         Object.assign(ACTION_CONFIG[action], BASE_ACTION_CONFIG[action]);
+        // A tool acquired at a startLevel above 0 starts at that point of its ladder even with
+        // no shop selling it (or before any shop's own level is applied on top) — see
+        // ToolVisualEntry.startLevel. A startLevel-0 tool keeps the hand-authored default.
+        const tool = ACTION_CONFIG[action].tool;
+        if (tool !== undefined && getToolStartLevel(tool) > 0) {
+            applyToolLevel(action, tool, getToolStartLevel(tool), (TOOL_LIBRARY[tool] as ToolVisualEntry).maxLevel);
+        }
     }
 }

@@ -15,7 +15,7 @@
 import * as PIXI from 'pixi.js';
 import { ResourceType } from '../actions/ResourceTypes';
 import { MilestoneRequirement } from './MilestoneRequirement';
-import { PopupMode } from '../ui/PopupConfig';
+import { FloorLabelConfig, PopupFrameChoice, PopupMode } from '../ui/PopupConfig';
 import { FrameName } from '../ui/FrameRegistry';
 import { ToolId } from '../actions/ToolRegistry';
 import { GateId } from "./GateTypes";
@@ -79,7 +79,7 @@ export interface BuildingLevelConfig {
     forceOwnMesh?: boolean;
 }
 
-export interface BuildingConfig {
+export interface BuildingConfig extends FloorLabelConfig {
     name: string;
     /** Texture alias (packed 'images'/'ui' bundle) representing this building elsewhere in the UI — e.g. GateConfig's own requirement icon, for a gate whose requirement is reaching one of this building's levels (see Gate.ts's resolveRequirementIcon()). Optional — getBuildingIcon() falls back to a blank white square, same "icon-optional, blank fallback" convention as AssetLibraryEntry.icon. */
     icon?: string;
@@ -123,7 +123,8 @@ export interface BuildingConfig {
     /** How high above this building's own base the requirements panel floats — see PopupConfig.ts's own doc. undefined/0 sits it right at the building's base instead of floating. */
     popupBobOffset?: number;
     /** Overrides FrameRegistry.ts's 'BuildingFrame' default for THIS building's own popup — see PopupConfig.ts's resolvePopupFrameName()'s own doc. undefined uses the type-wide default. */
-    frame?: FrameName;
+    /** Also accepts 'Floor' (PopupConfig.ts's FLOOR_FRAME): painted on the ground instead of a floating popup, placed by the floorLabel* fields (FloorLabelConfig). */
+    frame?: PopupFrameChoice;
     /** 0-1 fraction of this building's own deposit-trigger footprint that becomes a SOLID collider blocking the player — see SolidArea.ts's own doc for the shared 0/1/0.5 semantics every provider/building/shop/craft-table/queue's `solid` field uses. undefined/0 (the default for every building until a designer opts one in) means no solid collider at all — unchanged walk-through behavior from before this field existed. Ignored when `solidFromMap` is set — see that field's own doc. */
     solid?: number;
     /**
@@ -341,7 +342,9 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         ],
         "solidFromMap": true,
         "baseView": "baseBuildingSite",
-        "baseFillFull": true
+        "baseFillFull": true,
+        "frame": "Floor",
+        "floorLabelSide": "south"
     }
 };
 

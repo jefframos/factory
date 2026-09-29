@@ -20,7 +20,7 @@ import { spawnFlyingIconFromOverlayPoint } from '../components/FlyingResourceIco
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { buildLockRequirementPanel, LockRequirementPanel } from '../ui/LockRequirementPanel';
 import { FrameName } from '../ui/FrameRegistry';
-import { isFloorFrame } from '../ui/PopupConfig';
+import { isFloorFrame, type PopupFrameChoice } from '../ui/PopupConfig';
 import FloorLabelComponent, { DEFAULT_FLOOR_LABEL_SIZE } from '../components/FloorLabelComponent';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
@@ -54,7 +54,7 @@ export default class StoragePurchaseZone extends Entity {
     private player?: MainPlayer;
     private destroying = false;
     private readonly labelAnchor = new THREE.Object3D();
-    private readonly frame?: FrameName;
+    private readonly frame?: PopupFrameChoice;
     private readonly floorLabelSize?: number;
     /** Exactly one of these is built, depending on `frame` — see awake(). */
     private pricePanel?: LockRequirementPanel;
@@ -75,7 +75,7 @@ export default class StoragePurchaseZone extends Entity {
         getWalletOverlayPosition: () => { x: number; y: number },
         onPurchased: () => void,
         /** StorageConfig.frame — see that field's own doc. */
-        frame?: FrameName,
+        frame?: PopupFrameChoice,
         /** StorageConfig.floorLabelSize — max height of the floor price label. */
         floorLabelSize?: number,
     ) {

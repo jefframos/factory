@@ -15,7 +15,7 @@
 
 import { ResourceType } from '../actions/ResourceTypes';
 import { CurrencyType } from './EconomyTypes';
-import type { FrameName } from '../ui/FrameRegistry';
+import type { FloorLabelSide, PopupFrameChoice } from '../ui/PopupConfig';
 import type { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
 import MODELS from "../../registry/assetsRegistry/modelsRegistry";
 
@@ -98,7 +98,9 @@ export interface StorageConfig {
      *     just south of the storage; the price sits on the purchase area (its dropper, or its own footprint).
      *   - any FrameRegistry preset (e.g. 'QueueFrame'): a floating popup on the UI layer in that frame.
      */
-    frame?: FrameName;
+    frame?: PopupFrameChoice;
+    /** Which side of the storage the stored-count floor label sits on. Unset = 'south'. */
+    floorLabelSide?: FloorLabelSide;
     /** Floor label height in world units (width grows with the text). Unset = 2.7. */
     floorLabelSize?: number;
     /** Gap between the storage's south edge and the floor label, world units. Unset = 0.3. */

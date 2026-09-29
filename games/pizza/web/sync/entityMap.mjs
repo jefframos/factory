@@ -101,16 +101,16 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'GATE_CONFIG',
         kind: 'enumRecord',
         enumName: 'GateId',
-        managedKeys: ['name', 'requirement', 'view', 'frame', 'viewRotationOffsetDeg', 'viewScaleMultiplier', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount', 'cameraFocusHeightOffset', 'disabled'],
-        optionalKeys: ['view', 'frame', 'viewRotationOffsetDeg', 'viewScaleMultiplier', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount', 'cameraFocusHeightOffset', 'disabled'],
+        managedKeys: ['name', 'requirement', 'view', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'viewRotationOffsetDeg', 'viewScaleMultiplier', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount', 'cameraFocusHeightOffset', 'disabled'],
+        optionalKeys: ['view', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'viewRotationOffsetDeg', 'viewScaleMultiplier', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount', 'cameraFocusHeightOffset', 'disabled'],
     },
     buildings: {
         file: path.join(GAME_DIR, 'data', 'BuildingTypes.ts'),
         exportName: 'BUILDING_CONFIG',
         kind: 'enumRecord',
         enumName: 'BuildingId',
-        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'anchorAtDropper', 'npcId', 'npcOffset', 'disabled'],
-        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'anchorAtDropper', 'npcId', 'npcOffset', 'disabled'],
+        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'anchorAtDropper', 'npcId', 'npcOffset', 'disabled'],
+        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'anchorAtDropper', 'npcId', 'npcOffset', 'disabled'],
         // BuildingLevelConfig also carries a `mesh` field (per-level placeholder art) that
         // this editor doesn't manage — a plain wholesale replacement of the `levels` array
         // (what every OTHER list field in this map gets, since none of their items have
@@ -136,8 +136,8 @@ export const ENTITY_SOURCE_MAP = {
         // upgraded (`tool`, resolved into TOOL_LIBRARY[tool].attributes — see the `tools`
         // mapping below and ToolRegistry.ts's own doc), not on the shop — a shop is just the
         // storefront (cost/cooldown/appearance) for whichever tool it names.
-        managedKeys: ['name', 'tool', 'action', 'appearRequirement', 'totalLevels', 'baseCost', 'costScale', 'cooldownSec', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid', 'disabled'],
-        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'solid', 'disabled'],
+        managedKeys: ['name', 'tool', 'action', 'appearRequirement', 'totalLevels', 'baseCost', 'costScale', 'cooldownSec', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'disabled'],
+        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'disabled'],
     },
     crafting: {
         file: path.join(GAME_DIR, 'crafting', 'CraftTypes.ts'),
@@ -152,8 +152,8 @@ export const ENTITY_SOURCE_MAP = {
         // no ENUM_VALUE_FIELDS entry needed for it. `particleEffectId` is likewise a plain
         // string reference, into PARTICLE_REGISTRY this time (see the `particleEffects`
         // mapping below) — resolved at runtime by CraftZone.awake()'s ParticleEmitterComponent.
-        managedKeys: ['name', 'recipes', 'destroyOnComplete', 'appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset', 'frame', 'solid', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount', 'disabled'],
-        optionalKeys: ['appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset', 'frame', 'solid', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount', 'disabled'],
+        managedKeys: ['name', 'recipes', 'destroyOnComplete', 'appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount', 'disabled'],
+        optionalKeys: ['appearRequirement', 'showModel', 'toolId', 'models', 'scale', 'rotationDeg', 'float', 'heightOffset', 'popupMode', 'popupBobOffset', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'particleEffectId', 'destroyParticleEffectId', 'destroyParticleCount', 'disabled'],
     },
     // A RESOURCE is the bankable item (Wood/Stone/Berries/Bark/Pebble/GrassFiber) — what
     // ends up in BackpackStorage. What actually PRODUCES one is a separate concern — see
@@ -262,8 +262,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_QUEUE_CONFIG',
         byIdExportName: 'QUEUE_CONFIG_BY_ID',
-        managedKeys: ['cooldownSec', 'possibleTasks', 'appearRequirement', 'popupMode', 'popupBobOffset', 'view', 'frame', 'solid', 'disabled'],
-        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset', 'view', 'frame', 'solid', 'disabled'],
+        managedKeys: ['cooldownSec', 'possibleTasks', 'appearRequirement', 'popupMode', 'popupBobOffset', 'view', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'disabled'],
+        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset', 'view', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'disabled'],
     },
     // A FARM PLOT — a "farm"-typed object drawn on the Tiled map's "mapSettings" layer (see
     // WorldObjectRegistry.ts), open-ended by id like queues/shops/crafting, not enum-backed.
@@ -295,8 +295,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORAGE_CONFIG',
         byIdExportName: 'STORAGE_CONFIG_BY_ID',
-        managedKeys: ['name', 'accepts', 'resourceType', 'models', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'frame', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'disabled'],
-        optionalKeys: ['name', 'resourceType', 'itemScale', 'frame', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'disabled'],
+        managedKeys: ['name', 'accepts', 'resourceType', 'models', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'disabled'],
+        optionalKeys: ['name', 'resourceType', 'itemScale', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'disabled'],
     },
     // A STORE — a "store"-typed object on the Tiled map's "stores" layer (see store/StoreTypes.ts),
     // open-ended by id. Same {default, byId} two-export shape as storages (kind: 'queues'); `npcs`
@@ -421,8 +421,10 @@ export const ENTITY_SOURCE_MAP = {
         // knows whether to show a level at all — NOT in optionalKeys.
         // `actionTime` (ToolVisualEntry.actionTime) — optional single {min,max}, wholesale
         // replace like `attributes`.
-        managedKeys: ['label', 'icon', 'models', 'maxLevel', 'attributes', 'startWith', 'actionTime'],
-        optionalKeys: ['attributes', 'startWith', 'actionTime'],
+        // `startLevel` (ToolVisualEntry.startLevel) — optional number, where on the ladder the
+        // tool sits when acquired.
+        managedKeys: ['label', 'icon', 'models', 'maxLevel', 'startLevel', 'attributes', 'startWith', 'actionTime'],
+        optionalKeys: ['startLevel', 'attributes', 'startWith', 'actionTime'],
     },
     assetLibrary: {
         file: path.join(GAME_DIR, 'world', 'AssetLibraryRegistry.ts'),

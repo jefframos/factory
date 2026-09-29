@@ -1,26 +1,30 @@
 // FloorLabelComponent.ts
 //
-// World-space UI painted on the floor — an icon, plus an optional text value
-// (e.g. a stored count), drawn on a flat plane lying on the ground next to
-// whatever it describes. The in-world alternative to a ScreenAnchorComponent
-// bubble on the PIXI overlay: it sits IN the scene (occluded by nothing, but
-// moving/bending/hiding with its entity exactly like the meshes around it).
+// World-space UI painted on the floor — one or more items (each an optional
+// icon + optional text, e.g. a stored count) drawn in one row on a flat plane
+// lying on the ground next to whatever it describes. The in-world alternative
+// to a ScreenAnchorComponent bubble on the PIXI overlay: it sits IN the scene
+// (occluded by nothing, but moving/bending/hiding with its entity exactly like
+// the meshes around it). An empty item list hides the label entirely.
 //
 // Same decal setup the "down" game uses for its face/number decals: one
-// canvas (icon + text, bold font with a dark outline) -> CanvasTexture ->
+// canvas (icons + text, bold font with a dark outline) -> CanvasTexture ->
 // MeshBasicMaterial (transparent, no depth write, sRGB) with the world bend
-// applied. The canvas is only redrawn when the text actually changes.
+// applied. The canvas is only redrawn when the content actually changes.
 //
 // The plane is aligned with the world grid (square with the map / the thing
 // it labels), text reading from the south. Pass `rotationDeg` to turn it.
 //
-// First user: StorageZone (the stored count in front of each storage).
+// Users: StorageZone/StoragePurchaseZone, and every entity whose `frame` is
+// 'Floor' (buildings, shops, queues, crafting, gates — see PopupConfig.ts's
+// FLOOR_FRAME).
 
 import * as PIXI from 'pixi.js';
 import * as THREE from 'three';
 import Component from '../ecs/Component';
 import { BendService } from '../services/BendService';
 import { pixiTextureToCanvas } from '../builders/PixiIconToThree';
+import { DEFAULT_FLOOR_LABEL_GAP, type FloorLabelConfig, type FloorLabelSide } from '../ui/PopupConfig';
 
 /** Canvas pixels per world unit — high enough that the text stays crisp at gameplay camera distance. */
 const PIXELS_PER_UNIT = 160;
@@ -33,16 +37,32 @@ export const DEFAULT_FLOOR_LABEL_SIZE = 2.7;
  */
 const FLOOR_HEIGHT = 0.1;
 const FONT_FAMILY = '"Baloo2-ExtraBold", "Arial Black", Arial, sans-serif';
+/** Plate padding as a fraction of the label's height — left/right, and top/bottom (the icon fills the rest of the height). */
+const PAD_X = 0.18;
+const PAD_Y = 0.06;
+
+/** One entry in the label's row — an icon, a text, or both (icon first). */
+export interface FloorLabelItem {
+    icon?: PIXI.Texture;
+    text?: string;
+}
 
 export interface FloorLabelOptions {
-    /** Icon drawn on the label (e.g. getAssetIcon(...)). Omit for a text-only label. */
+    /** Icon drawn on the label (e.g. getAssetIcon(...)) — single-item shorthand for `items`. Omit for a text-only label. */
     icon?: PIXI.Texture;
-    /** Initial text — omit/empty for an icon-only label. Change later with setText(). */
+    /** Initial text — single-item shorthand for `items`. Change later with setText(). */
     text?: string;
+    /** Several icon/text entries in one row — wins over icon/text when set. Change later with setItems(). */
+    items?: FloorLabelItem[];
     /** Label height on the floor (world units). Width follows: square for icon-only, wider with text. Default DEFAULT_FLOOR_LABEL_SIZE (2.7). */
     size?: number;
-    /** Center of the label, relative to the owning entity (Y is ignored — it always sits on the floor). */
+    /** Where the label sits, relative to the owning entity (Y is ignored — it always sits on the floor). Its center, unless `side` is set. */
     offset?: THREE.Vector3;
+    /**
+     * Which way the label extends from `offset`: 'south' puts its north edge on `offset` (so it
+     * sits south of that point), etc. Unset = centered on `offset`. See floorLabelEdgeOffset().
+     */
+    side?: FloorLabelSide;
     /** Yaw in degrees. Default 0 — aligned with the world grid, text readable from the south. */
     rotationDeg?: number;
     /** Draw a translucent rounded plate behind the icon/text. Default true. */
@@ -52,10 +72,54 @@ export interface FloorLabelOptions {
     maxDepth?: number;
 }
 
+/**
+ * The point on a footprint's `side` edge, `gap` further out — pass it as `offset` together with
+ * the same `side` so the label sits just outside that edge. `center` is the footprint's own
+ * center relative to the owning entity.
+ */
+export function floorLabelEdgeOffset(side: FloorLabelSide, center: THREE.Vector3, width: number, depth: number, gap: number): THREE.Vector3 {
+    const offset = center.clone();
+    switch (side) {
+        case 'north': offset.z -= depth / 2 + gap; break;
+        case 'south': offset.z += depth / 2 + gap; break;
+        case 'east': offset.x += width / 2 + gap; break;
+        case 'west': offset.x -= width / 2 + gap; break;
+    }
+    return offset;
+}
+
+/**
+ * A floor label placed from an entity config's own FloorLabelConfig fields — on its
+ * `floorLabelSide` (default south) of the footprint (`center`/`width`/`depth`, relative to the
+ * owning entity), `floorLabelGap` out, `floorLabelSize` tall. Add it with addComponent().
+ */
+export function createConfiguredFloorLabel(config: FloorLabelConfig, center: THREE.Vector3, width: number, depth: number, items: FloorLabelItem[] = []): FloorLabelComponent {
+    const side = config.floorLabelSide ?? 'south';
+    return new FloorLabelComponent({
+        items,
+        size: config.floorLabelSize ?? DEFAULT_FLOOR_LABEL_SIZE,
+        side,
+        offset: floorLabelEdgeOffset(side, center, width, depth, config.floorLabelGap ?? DEFAULT_FLOOR_LABEL_GAP),
+    });
+}
+
+interface DrawnItem {
+    iconCanvas: HTMLCanvasElement | null;
+    text: string;
+}
+
+/** Resolves each item's icon to its (cached) canvas and drops items with neither icon nor text. */
+function toDrawnItems(items: FloorLabelItem[]): DrawnItem[] {
+    return items
+        .map(item => ({ iconCanvas: item.icon ? pixiTextureToCanvas(item.icon) : null, text: item.text ?? '' }))
+        .filter(item => item.iconCanvas !== null || item.text.length > 0);
+}
+
 export default class FloorLabelComponent extends Component {
     private readonly options: FloorLabelOptions;
-    private readonly iconCanvas: HTMLCanvasElement | null;
-    private text: string;
+    private items: DrawnItem[];
+    /** Last value passed to setVisible() — the mesh also hides on its own while `items` is empty. */
+    private shown = true;
 
     private readonly canvas = document.createElement('canvas');
     private texture: THREE.CanvasTexture;
@@ -65,8 +129,7 @@ export default class FloorLabelComponent extends Component {
     public constructor(options: FloorLabelOptions) {
         super();
         this.options = options;
-        this.text = options.text ?? '';
-        this.iconCanvas = options.icon ? pixiTextureToCanvas(options.icon) : null;
+        this.items = toDrawnItems(options.items ?? [{ icon: options.icon, text: options.text }]);
         this.texture = this.createTexture();
         this.material = new THREE.MeshBasicMaterial({
             map: this.texture,
@@ -82,19 +145,35 @@ export default class FloorLabelComponent extends Component {
         this.rebuild();
     }
 
-    /** Updates the value shown — redraws only if it changed. */
+    /** Updates the (first item's) text — redraws only if it changed. Single-item shorthand for setItems(). */
     public setText(text: string): void {
-        if (text === this.text) {
+        const first = this.items[0];
+        if (!first) {
+            this.setItems([{ text }]);
             return;
         }
-        this.text = text;
+        if (text === first.text) {
+            return;
+        }
+        first.text = text;
+        this.rebuild();
+    }
+
+    /** Replaces every item — redraws only if anything changed. An empty list hides the label. */
+    public setItems(items: FloorLabelItem[]): void {
+        const next = toDrawnItems(items);
+        const same = next.length === this.items.length
+            && next.every((item, i) => item.iconCanvas === this.items[i].iconCanvas && item.text === this.items[i].text);
+        if (same) {
+            return;
+        }
+        this.items = next;
         this.rebuild();
     }
 
     public setVisible(visible: boolean): void {
-        if (this.mesh) {
-            this.mesh.visible = visible;
-        }
+        this.shown = visible;
+        this.applyVisibility();
     }
 
     public destroy(): void {
@@ -104,20 +183,37 @@ export default class FloorLabelComponent extends Component {
         this.texture.dispose();
     }
 
-    /** Redraws the canvas and (re)builds the plane when its aspect changes (text appearing/disappearing/growing). */
+    private applyVisibility(): void {
+        if (this.mesh) {
+            this.mesh.visible = this.shown && this.items.length > 0;
+        }
+    }
+
+    /** Redraws the canvas and (re)builds the plane when its aspect changes (items appearing/disappearing/growing). */
     private rebuild(): void {
         const size = this.options.size ?? DEFAULT_FLOOR_LABEL_SIZE;
         const heightPx = Math.round(size * PIXELS_PER_UNIT);
+        // Plate padding — wider on the sides than top/bottom (PAD_X/PAD_Y). Gaps between an icon
+        // and its text / between items stay on the old uniform 10% base.
+        const padX = Math.round(heightPx * PAD_X);
+        const padY = Math.round(heightPx * PAD_Y);
         const pad = Math.round(heightPx * 0.1);
-        const iconSize = this.iconCanvas ? heightPx - pad * 2 : 0;
-        const hasText = this.text.length > 0;
+        const iconSize = heightPx - padY * 2;
+        const iconTextGap = Math.round(pad * 0.6);
+        const itemGap = pad * 2;
 
         const ctx = this.canvas.getContext('2d')!;
         const fontSize = Math.round(heightPx * 0.6);
         ctx.font = `${fontSize}px ${FONT_FAMILY}`;
-        const textWidth = hasText ? Math.ceil(ctx.measureText(this.text).width) : 0;
-        const gap = this.iconCanvas && hasText ? Math.round(pad * 0.6) : 0;
-        const widthPx = Math.max(heightPx, pad * 2 + iconSize + gap + textWidth);
+        // Per item: [icon][gap][text] — widths measured once, reused for drawing below.
+        const layout = this.items.map(item => {
+            const textWidth = item.text.length > 0 ? Math.ceil(ctx.measureText(item.text).width) : 0;
+            const iconWidth = item.iconCanvas ? iconSize : 0;
+            const gap = item.iconCanvas && textWidth > 0 ? iconTextGap : 0;
+            return { item, iconWidth, gap, textWidth, width: iconWidth + gap + textWidth };
+        });
+        const contentWidth = layout.reduce((sum, l) => sum + l.width, 0) + Math.max(0, layout.length - 1) * itemGap;
+        const widthPx = Math.max(heightPx, padX * 2 + contentWidth);
 
         const resized = this.canvas.width !== widthPx || this.canvas.height !== heightPx;
         this.canvas.width = widthPx;
@@ -136,25 +232,29 @@ export default class FloorLabelComponent extends Component {
             ctx.stroke();
         }
 
-        // Icon + text centered as one group.
-        const contentWidth = iconSize + gap + textWidth;
+        // Every item centered as one group. Font must be set again — resizing the canvas resets
+        // the context state.
+        ctx.font = `${fontSize}px ${FONT_FAMILY}`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = Math.max(4, fontSize * 0.16);
         let x = (widthPx - contentWidth) / 2;
-        if (this.iconCanvas) {
-            ctx.drawImage(this.iconCanvas, x, pad, iconSize, iconSize);
-            x += iconSize + gap;
+        for (const l of layout) {
+            if (l.item.iconCanvas) {
+                ctx.drawImage(l.item.iconCanvas, x, padY, iconSize, iconSize);
+            }
+            if (l.textWidth > 0) {
+                const textX = x + l.iconWidth + l.gap;
+                const textY = heightPx / 2 + fontSize * 0.05;
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.strokeText(l.item.text, textX, textY);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(l.item.text, textX, textY);
+            }
+            x += l.width + itemGap;
         }
-        if (hasText) {
-            // Font must be set again — resizing the canvas resets the context state.
-            ctx.font = `${fontSize}px ${FONT_FAMILY}`;
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
-            ctx.lineJoin = 'round';
-            ctx.lineWidth = Math.max(4, fontSize * 0.16);
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.strokeText(this.text, x, heightPx / 2 + fontSize * 0.05);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText(this.text, x, heightPx / 2 + fontSize * 0.05);
-        }
+
         if (resized) {
             // A GPU texture can't change size in place — swap in a fresh one.
             this.texture.dispose();
@@ -168,6 +268,7 @@ export default class FloorLabelComponent extends Component {
         if (!this.mesh || resized) {
             this.buildMesh(widthPx / PIXELS_PER_UNIT, heightPx / PIXELS_PER_UNIT);
         }
+        this.applyVisibility();
     }
 
     private createTexture(): THREE.CanvasTexture {
@@ -184,11 +285,11 @@ export default class FloorLabelComponent extends Component {
         );
         width *= fit;
         depth *= fit;
-        const visible = this.mesh?.visible ?? true;
         this.mesh?.geometry.dispose();
         this.mesh?.removeFromParent();
 
-        const geometry = new THREE.PlaneGeometry(width, depth);
+        // Subdivided so a wide label follows the world bend — see BendService.segmentsForSpan().
+        const geometry = new THREE.PlaneGeometry(width, depth, BendService.segmentsForSpan(width), BendService.segmentsForSpan(depth));
         // Lie flat with the texture's "up" pointing north (-Z), then turn to the label's yaw.
         geometry.rotateX(-Math.PI / 2);
         geometry.rotateY(THREE.MathUtils.degToRad(this.options.rotationDeg ?? 0));
@@ -196,8 +297,15 @@ export default class FloorLabelComponent extends Component {
         const mesh = new THREE.Mesh(geometry, this.material);
         const offset = this.options.offset;
         mesh.position.set(offset?.x ?? 0, FLOOR_HEIGHT, offset?.z ?? 0);
+        // Shift so the label's near edge (not its center) lands on `offset` — see
+        // FloorLabelOptions.side. Uses the un-yawed width/depth, exact for the grid-aligned default.
+        switch (this.options.side) {
+            case 'north': mesh.position.z -= depth / 2; break;
+            case 'south': mesh.position.z += depth / 2; break;
+            case 'east': mesh.position.x += width / 2; break;
+            case 'west': mesh.position.x -= width / 2; break;
+        }
         mesh.renderOrder = 1;
-        mesh.visible = visible;
         this.mesh = mesh;
         this.entity.transform.add(mesh);
     }

@@ -127,8 +127,9 @@ you. Both tabs have a **Default** entry (used by any id without an override) and
   (anything spawned through `RequirementRegistry.registerSpawnGate`). Gates, triggers and
   craft stations are **not** covered.
 - An enabled farm/storage still has to be **bought** if it has a price.
-- A panel above the cashier shows `STORE LV N` + progress; a "STORE LEVEL UP!" notification
-  plays on level-up.
+- While the player is inside a store's area (its `store` rect), a top-center panel
+  (`ui/StoreUI.ts`) shows `STORE LV N` + a progress bar toward the next level; it fades out
+  when they leave. A "STORE LEVEL UP!" notification plays on level-up.
 
 ### Current setup — `farmStore1`
 
@@ -205,7 +206,7 @@ themselves are **not** saved — a reload mid-shopping loses the items they alre
 | `Store.ts` | One store: storages, lines, spawning, cashier/payment, opening + level-ups, level panel. `spawnStores()` is the entry point. |
 | `StoreClient.ts` | A client's walk/pick/wait/pay/leave state machine. |
 | `StoreLine.ts` | Evenly-spaced waiting spots (no overlap). |
-| `StoreBubble.ts` / `StoreLevelPanel.ts` | Want-bubble over clients / level panel over the cashier. |
+| `StoreBubble.ts` | Want-bubble over clients. The level/progress panel is `ui/StoreUI.ts` (fed by PizzaScene from `Store.getHudState()`). |
 | `StoreCashier.ts` / `StoreMoneyPile.ts` | Cashier trigger / money pile + collect. |
 | `StoragePurchaseZone.ts` | "For sale" zone for a priced storage. |
 | `StoreLayout.ts` | Reads the `stores` map layer. |

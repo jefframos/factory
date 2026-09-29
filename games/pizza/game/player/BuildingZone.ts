@@ -48,7 +48,8 @@ import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
-import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer } from '../ui/PopupConfig';
+import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer, isFloorFrame } from '../ui/PopupConfig';
+import FloorLabelComponent, { createConfiguredFloorLabel } from '../components/FloorLabelComponent';
 import { createResourceSlot } from '../ui/ResourceSlotVisual';
 import { CameraFocusHost } from '../camera/CameraFocusHost';
 import { WorldProgressionHost } from '../camera/WorldProgressionHost';
@@ -152,6 +153,8 @@ export default class BuildingZone extends Entity {
     private dropperVisual!: DottedZoneVisualComponent;
     /** Owns the requirements panel's on-screen positioning/pointer — force-hidden at max level (see refreshLabel()) so its own `content.visible = true` (whenever the target is on-screen) can't override labelFrame.visible back to true, and so its avoidViewer pointer sprite stops showing too. Undefined only for the very first refreshLabel() call in awake(), which runs before this component is constructed. */
     private labelScreenAnchor?: ScreenAnchorComponent;
+    /** Set instead of labelScreenAnchor when this building's `frame` is 'Floor' — see refreshFloorLabel(). */
+    private floorLabel?: FloorLabelComponent;
 
     private titleText!: PIXI.Text;
     /** Holds either a single horizontal row of requirement slots (see ResourceSlotVisual.ts) or a lone "MAX LEVEL" text — rebuilt wholesale by refreshLabel() rather than diffed, since it only ever has a handful of children. */
@@ -446,12 +449,21 @@ export default class BuildingZone extends Entity {
         // doc) doesn't exist synchronously here (NpcEntity.load() is async) and can't be baked
         // into labelAnchor's own fixed local offset the way the ground-level/dropper/mesh cases
         // always could.
-        this.labelScreenAnchor = this.addComponent(new ScreenAnchorComponent(
-            this.screenHost,
-            this.labelFrame,
-            () => this.getLabelBasePosition(labelAnchorWorldPosition).add(labelBobOffset),
-            { ...ZONE_LABEL_ANCHOR_OPTIONS, ...resolvePopupAvoidViewer(BUILDING_CONFIG[this.buildingId].popupMode) },
-        ));
+        // 'Floor' frame: the requirements are painted on the ground beside the deposit area
+        // (the dropper, or the building's own footprint without one) instead of a floating
+        // popup — labelFrame is still built/refreshed but never put on screen.
+        if (isFloorFrame(BUILDING_CONFIG[this.buildingId].frame)) {
+            this.floorLabel = this.addComponent(createConfiguredFloorLabel(
+                BUILDING_CONFIG[this.buildingId], centerOffset, halfExtents.x * 2, halfExtents.z * 2,
+            ));
+        } else {
+            this.labelScreenAnchor = this.addComponent(new ScreenAnchorComponent(
+                this.screenHost,
+                this.labelFrame,
+                () => this.getLabelBasePosition(labelAnchorWorldPosition).add(labelBobOffset),
+                { ...ZONE_LABEL_ANCHOR_OPTIONS, ...resolvePopupAvoidViewer(BUILDING_CONFIG[this.buildingId].popupMode) },
+            ));
+        }
 
         // Deliberately called only now, AFTER labelScreenAnchor exists — refreshLabel() calls
         // this.labelScreenAnchor?.setForceHidden() at max level, and a building that's ALREADY
@@ -844,6 +856,7 @@ export default class BuildingZone extends Entity {
     /** Rewrites the panel's title/requirement slots from BuildingStorage's current state and re-fits the frame around the new bounds. `popupMode: 'none'` (see PopupConfig.ts's own doc) skips all of this and keeps the panel permanently hidden; `'simple'` keeps the requirement slots but drops the title line. At max level there's nothing left to deposit or read, so the whole panel and the dropper's dotted outline are hidden instead — just the finished mesh stays. */
     private refreshLabel(): void {
         const config = BUILDING_CONFIG[this.buildingId];
+        this.refreshFloorLabel();
 
         const maxLevel = BuildingStorage.isMaxLevel(this.buildingId);
         this.dropperVisual.setVisible(!maxLevel);
@@ -925,6 +938,35 @@ export default class BuildingZone extends Entity {
 
         this.titleText.position.set(0, -(requirementsHeight + TITLE_SLOTS_GAP));
         this.labelFrame.fit();
+    }
+
+    /** The 'Floor' frame's version of refreshLabel()'s panel — same content (title from level 1 on, then one icon + have/need per resource; the missing tool instead while it isn't owned), as one row on the ground. Hidden at max level / popupMode 'none'. */
+    private refreshFloorLabel(): void {
+        if (!this.floorLabel) {
+            return;
+        }
+        const config = BUILDING_CONFIG[this.buildingId];
+        if (config.popupMode === 'none' || BuildingStorage.isMaxLevel(this.buildingId)) {
+            this.floorLabel.setItems([]);
+            return;
+        }
+        const requiredTool = config.requiredTool;
+        if (requiredTool !== undefined && !ItemStorage.hasCount(requiredTool as ItemType, 1)) {
+            this.floorLabel.setItems([{ icon: getToolIcon(requiredTool), text: 'Needed' }]);
+            return;
+        }
+        // No title while still level 0 (not built yet) — just the requirements and their values.
+        const level = BuildingStorage.getLevel(this.buildingId);
+        const title = config.popupMode === 'simple' ? `Lv${level}` : `${config.name} Lv.${level}`;
+        const next = BuildingStorage.getNextLevelConfig(this.buildingId)!;
+        const entries = Object.entries(next.requirements) as [ResourceType, number][];
+        this.floorLabel.setItems([
+            ...(level > 0 ? [{ text: title }] : []),
+            ...entries.map(([type, need]) => ({
+                icon: getAssetIcon(resolveResourceAssetKey(type)),
+                text: `${BuildingStorage.getProgress(this.buildingId, type)}/${need}`,
+            })),
+        ]);
     }
 
     private tryDeposit(other: RigidBody): void {

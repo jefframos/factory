@@ -18,8 +18,14 @@
 
 import fs from 'node:fs';
 
-/** Matches WorldObjectRegistry.OBJECTS_LAYER_NAME exactly — see that file's own doc. */
+/** Matches WorldObjectRegistry.OBJECTS_LAYER_NAME — any objectgroup whose name CONTAINS this (mapSettings1, mapSettings2, ...) is read, same as the game. */
 const OBJECTS_LAYER_NAME = 'mapSettings';
+
+/** Every object on every objectgroup whose name contains OBJECTS_LAYER_NAME, as one list — null if no such layer exists. */
+function readMapSettingsObjects(map) {
+    const layers = (map.layers ?? []).filter(l => l.type === 'objectgroup' && typeof l.name === 'string' && l.name.includes(OBJECTS_LAYER_NAME));
+    return layers.length > 0 ? layers.flatMap(l => l.objects ?? []) : null;
+}
 /** Matches store/StoreLayout.ts's STORES_LAYER_NAME — its objects ("store", "storeEntrance", ...) are bucketed alongside mapSettings' by readMapObjectIds(). */
 const STORES_LAYER_NAME = 'stores';
 
@@ -51,14 +57,18 @@ export function readMapObjectIds(mapFilePath) {
         return { byType: {}, error: `map file isn't valid JSON: ${err.message}` };
     }
 
-    const layer = map.layers?.find(l => l.type === 'objectgroup' && l.name === OBJECTS_LAYER_NAME);
-    if (!layer) {
-        return { byType: {}, error: `no "${OBJECTS_LAYER_NAME}" objectgroup layer found in the map` };
+    const mapSettingsObjects = readMapSettingsObjects(map);
+    if (!mapSettingsObjects) {
+        return { byType: {}, error: `no objectgroup layer with "${OBJECTS_LAYER_NAME}" in its name found in the map` };
     }
 
     const byType = {};
+    // store id -> its "starter" custom property (a building id), or null when it has none —
+    // what opens the store in-game (see store/Store.ts's isOpen()). Map-only data the editor
+    // can show but not edit.
+    const storeStarters = {};
     const storesLayer = map.layers?.find(l => l.type === 'objectgroup' && l.name === STORES_LAYER_NAME);
-    for (const obj of [...(layer.objects ?? []), ...(storesLayer?.objects ?? [])]) {
+    for (const obj of [...mapSettingsObjects, ...(storesLayer?.objects ?? [])]) {
         const props = Object.fromEntries((obj.properties ?? []).map(p => [p.name, p.value]));
         const type = props.type;
         const id = props.id;
@@ -66,9 +76,12 @@ export function readMapObjectIds(mapFilePath) {
             continue;
         }
         (byType[type] ??= new Set()).add(String(id));
+        if (type === 'store') {
+            storeStarters[String(id)] = props.starter ? String(props.starter) : null;
+        }
     }
 
-    return { byType, error: null };
+    return { byType, storeStarters, error: null };
 }
 
 /** Matches WorldObjectRegistry's SPAWNER_TYPE ("spawner") exactly — the "type" custom property value marking a spawner AREA object (rect/ellipse/polygon) on mapSettings, as opposed to WorldSpawner's own unrelated "spawnerLayer" TILE clusters below. */
@@ -290,9 +303,8 @@ export function readZoneContents(mapFilePath) {
         }
     }
 
-    const objectLayer = (map.layers ?? []).find(l => l.type === 'objectgroup' && l.name === OBJECTS_LAYER_NAME);
     const byZone = {};
-    for (const obj of objectLayer?.objects ?? []) {
+    for (const obj of readMapSettingsObjects(map) ?? []) {
         const props = Object.fromEntries((obj.properties ?? []).map(p => [p.name, p.value]));
         const type = props.type;
         const id = props.id;

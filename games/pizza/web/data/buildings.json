@@ -148,6 +148,8 @@
         "updateParticleEffectId": "craftingMyst",
         "popupMode": "simple",
         "solidFromMap": true,
-        "baseFillFull": true
+        "baseFillFull": true,
+        "frame": "Floor",
+        "floorLabelSide": "south"
     }
 }
