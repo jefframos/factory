@@ -13,7 +13,7 @@
     "yellow": {
         "color": "#ffca28",
         "headShape": "cube",
-        "face": "skins/clown.webp"
+        "face": "skins/face-mustache-1.webp"
     },
     "blue": {
         "color": "#42a5f5",
@@ -24,22 +24,22 @@
     "coral": {
         "color": "#ff8a65",
         "headShape": "cube",
-        "face": "skins/pirate.webp"
+        "face": "skins/face-dizzy-1.webp"
     },
     "purple": {
         "color": "#ab47bc",
         "headShape": "cube",
-        "face": "skins/ninja.webp"
+        "face": "skins/face-brave-1.webp"
     },
     "cyan": {
         "color": "#26c6da",
         "headShape": "cube",
-        "face": "skins/cat.webp"
+        "face": "skins/face-brave-1.webp"
     },
     "pink": {
         "color": "#ec407a",
         "headShape": "cube",
-        "face": "skins/face-hearts-1.webp"
+        "face": "skins/face-smirk-1.webp"
     },
     "violet": {
         "color": "#7e57c2",
@@ -49,11 +49,51 @@
     "green": {
         "color": "#66bb6a",
         "headShape": "cube",
-        "face": "skins/dog.webp"
+        "face": "skins/panda.webp"
     },
     "orange": {
         "color": "#ffa726",
         "headShape": "cube",
         "face": "skins/face-sunglasses-2.webp"
+    },
+    "mint": {
+        "color": "#80cbc4",
+        "headShape": "cube",
+        "face": "skins/face-smile-1.webp"
+    },
+    "lime": {
+        "color": "#c0ca33",
+        "headShape": "cube",
+        "face": "skins/face-laughing-1.webp"
+    },
+    "teal": {
+        "color": "#00897b",
+        "headShape": "cube",
+        "face": "skins/face-glasses-1.webp"
+    },
+    "brown": {
+        "color": "#a1887f",
+        "headShape": "cube",
+        "face": "skins/face-mustache-1.webp"
+    },
+    "gold": {
+        "color": "#fbc02d",
+        "headShape": "cube",
+        "face": "skins/face-money-1.webp"
+    },
+    "sky": {
+        "color": "#81d4fa",
+        "headShape": "cube",
+        "face": "skins/face-star-1.webp"
+    },
+    "rose": {
+        "color": "#f48fb1",
+        "headShape": "cube",
+        "face": "skins/face-smirk-1.webp"
+    },
+    "slate": {
+        "color": "#78909c",
+        "headShape": "cube",
+        "face": "skins/face-smiling-2.webp"
     }
 }

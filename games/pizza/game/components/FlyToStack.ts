@@ -25,7 +25,7 @@ import { CarryStack } from '../player/CarryStack';
 import type MainPlayer from '../player/MainPlayer';
 import BackpackStackVisual, { rememberStackItemSize, stackItemScale } from './BackpackStackVisual';
 import CharacterVisualComponent from './CharacterVisualComponent';
-import { disposeResourceDisplayModel, loadResourceDisplayModel } from '../world/ResourceDisplayModel';
+import { disposeResourceDisplayModel, ItemOrientation, loadResourceDisplayModel } from '../world/ResourceDisplayModel';
 
 const FLY_DURATION_SEC = 0.45;
 /** How far above the higher of the two endpoints the arc peaks. */
@@ -46,15 +46,21 @@ export interface ResourceFlight {
     endScale: number;
     /** Fires once, right as it arrives (the model is already gone). */
     onArrive: () => void;
+    /** How the flying model is turned — match the pile it lands in (see ItemPileLayout.itemOrientation). Unset = 'lying'. */
+    orientation?: ItemOrientation;
+    /** Fixed yaw (degrees) for the flying model — match the pile's itemYawDeg. Unset = 0. */
+    yawDeg?: number;
 }
 
 /** The shared arc flight — see this file's own doc. */
 export function flyResourceModel(flight: ResourceFlight): void {
     const start = flight.from.clone();
-    void loadResourceDisplayModel(flight.type, { layDownIfTall: true }).then(({ object: model, size }) => {
-        // Lets the stack reserve this item's real size for a slot it's heading to, even before the
-        // stack's own copy of the model has loaded.
-        rememberStackItemSize(flight.type, size);
+    const orientation = flight.orientation ?? 'lying';
+    void loadResourceDisplayModel(flight.type, { orientation }).then(({ object: model, size }) => {
+        // Lets the destination pile reserve this item's real size for a slot it's heading to, even
+        // before the pile's own copy of the model has loaded.
+        rememberStackItemSize(flight.type, size, orientation);
+        model.rotation.y = THREE.MathUtils.degToRad(flight.yawDeg ?? 0);
         model.scale.setScalar(flight.startScale);
         model.position.copy(start);
         flight.parent.add(model);

@@ -15,7 +15,8 @@
         "price": {
             "currency": "money",
             "amount": 10
-        }
+        },
+        "view": "storageView"
     },
     "byId": {
         "storage1": {
@@ -24,20 +25,22 @@
             ],
             "dropOffset": {},
             "pile": {
-                "columns": 2,
-                "rows": 2,
-                "layers": 3
+                "columns": 4,
+                "rows": 4,
+                "layers": 1
             },
             "accepts": "farm",
             "resourceType": "carrot",
             "scale": 1,
-            "rotationDeg": 0,
+            "rotationDeg": 90,
             "solid": 1,
             "popupBobOffset": 3,
             "price": {
                 "currency": "money",
                 "amount": 10
-            }
+            },
+            "view": "storageView",
+            "itemScale": 4
         },
         "storage2": {
             "models": [
@@ -58,7 +61,8 @@
             "price": {
                 "currency": "money",
                 "amount": 10
-            }
+            },
+            "view": "storageView"
         },
         "storage3": {
             "models": [
@@ -79,7 +83,25 @@
             "price": {
                 "currency": "money",
                 "amount": 10
-            }
+            },
+            "view": "storageView"
         }
+    },
+    "signpost": {
+        "models": [
+            "Survival.SignpostSingle"
+        ],
+        "scale": 12,
+        "iconScale": 1.5,
+        "iconOffset": [
+            0,
+            4.6,
+            0.3
+        ],
+        "offset": [
+            0,
+            -2.8,
+            0
+        ]
     }
 }

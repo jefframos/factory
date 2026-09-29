@@ -6,6 +6,9 @@ Selling earns store progress; store **levels** unlock new map objects (farms, st
 ...). Everything lives in `game/store/`; the only hooks outside it are listed in
 [Code map](#code-map).
 
+> **TODO — next up:** client pathfinding & avoidance is planned but not built yet. See
+> [Planned: client pathfinding & avoidance](#planned-client-pathfinding--avoidance-not-implemented-yet).
+
 ```
 entrance ──► storage line(s) ──► cashier line ──► exit
                (take items)      (player at cashier → client pays → money drop)
@@ -75,8 +78,13 @@ you. Both tabs have a **Default** entry (used by any id without an override) and
 | Field | Meaning |
 |---|---|
 | `npcs` | Client looks, one picked at random per client (NPCs tab ids). |
-| `maxClients` | Queue length — most clients inside the store at once. |
-| `spawnIntervalSec` | Seconds between two clients arriving. |
+| `maxClients` | Queue length — most clients inside the store at once, once **every** shelf (storage) is available. |
+| `spawnIntervalSec` | Seconds between two clients arriving, once every shelf is available. |
+| `startMaxClients` / `startSpawnIntervalSec` | Same, with only **one** shelf. Each shelf added steps linearly toward the values above. Blank = 2 / 1.6 × `spawnIntervalSec`. |
+| `startPatienceMultiplier` | × mood step time with one shelf (more forgiving early), easing to ×1 with every shelf. Blank = 1.5. |
+| `moodStepSec` | Seconds before a client's mood drops a step (happy → annoyed → sad → angry). Blank = 20. Early levels are forgiving: at store level 1 moods never drop below happy, at level 2 never below annoyed — nobody walks out or pays less (`MOOD_FLOOR_BY_LEVEL` in Store.ts). |
+| `minClientPatience` / `maxClientPatience` | Each client's own tolerance — × mood step time, random in this range. Blank = 0.8 / 1.5. |
+| `veryHappyPayMultiplier` / `unhappyPayPenalty` | Very happy clients pay × this (blank = 2); sad/angry ones pay this fraction less, rounded (blank = 0.2). |
 | `moveSpeed` | Client walk speed (world units/sec). |
 | `maxDistinctItems` | Most different items per client (random 1..N). |
 | `maxAmountPerItem` | Most units of each item (random 1..N). |
@@ -165,7 +173,7 @@ crops to the matching storage → clients buy them*.
 **Add a level**: Stores tab → store → Levels → + Add → set `level`, requirement, amount, and
 its Enables ids. Ids must match the map's `id` property exactly.
 
-**Change pacing**: `maxClients`, `spawnIntervalSec`, `maxDistinctItems`,
+**Change pacing**: `maxClients`, `spawnIntervalSec` (and their `start*` one-shelf versions), `moodStepSec`, `maxDistinctItems`,
 `maxAmountPerItem`, level `amount`s, `priceMultiplier`.
 
 ---
@@ -222,10 +230,54 @@ Hooks outside this folder:
 - `index.ts` — loads `StoreProgressStorage` / `StorageOwnershipStorage` at boot.
 - `data/PlayerDataReset.ts` — clears the store saves.
 
+## Planned: client pathfinding & avoidance (not implemented yet)
+
+Goal: clients stop walking through each other and through storages/walls, and waiting
+clients gather naturally around what they're queuing for instead of in one rigid line —
+while the queue ORDER (who's served next) stays exactly as it is today.
+
+**Why not a navmesh:** a store is one small, mostly rectangular room with ~5 agents. A
+navmesh (e.g. recast) brings a dependency, a bake step, and still needs local avoidance for
+agents on top. A fine grid over just the store's area gives the same result here for far less.
+
+### Phase 1 — local separation steering (quick win, `StoreClient.moveToward()`)
+- Each walking client adds a push away from every other client within ~0.7 world units
+  (strength falls off with distance) to its straight-line direction toward its goal.
+- Standing (waiting) clients don't steer, walkers flow around them.
+- Arrival snaps the last bit so two clients never "fight" over the same spot.
+- Cheap (≤ maxClients² distance checks per frame). Fixes overlapping; doesn't fix walking
+  through storages.
+
+### Phase 2 — `StoreNavGrid` (static obstacles)
+- Built per store at spawn over `layout.area`, cell size ~0.25 world units (a 20×20 store =
+  80×80 = 6,400 cells).
+- A cell is blocked if it's inside a storage/cashier rect or a static solid (physics
+  static bodies / `TileWalkability.isWalkable()`), inflated by the client radius so they
+  don't clip corners. Rebuilt when a storage appears (bought / level-up).
+- Clients get paths with A* (8-neighbour, octile heuristic), then line-of-sight smoothing so
+  they walk a few straight segments, not a staircase. Replan only when the goal changes
+  (a line moved up) or the path is blocked — well under a millisecond per plan at this size.
+- Phase 1 steering stays on top for client-vs-client; the grid clamps it so steering never
+  pushes a client into an obstacle.
+
+### Phase 3 — waiting "clusters" instead of straight lines (`StoreLine` → wait area)
+- Same queue API (`join` / `leave` / `isFront` / `getSpotFor`), so `StoreClient` barely
+  changes — only where the spots are changes.
+- Spot 0 stays the pick-up point in front of the storage. The other spots are free nav-grid
+  cells in a fan around it, sorted by distance, at least `spotSpacing` apart.
+- The i-th client in the queue takes the i-th closest spot, so they bunch up around the
+  storage and shuffle closer as the queue moves, without lines crossing each other.
+  `storageSpotDirections` becomes an optional bias for the fan's direction.
+
+### Extras
+- Debug overlay (grid cells, blocked cells, current paths) behind the debug menu.
+- Config: `navCellSize`, `clientRadius`, `waitStyle: 'line' | 'cluster'` (keep `line`
+  available for fallback/comparison).
+
 ## Known limitations
 
 - Clients walk in straight lines (through crates/walls) — keep entrance/exit/storages/
-  cashier reachable in a straight line.
+  cashier reachable in a straight line. See *Planned: client pathfinding & avoidance*.
 - Line directions are straight; with `maxClients` clients all at one storage its line can
   reach another line — tune `storageSpotDirections`/`maxClients` or move objects.
 - A storage belongs to a store only by its center being inside the store rect.

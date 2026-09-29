@@ -47,11 +47,21 @@ const PLACEHOLDER_SIZE = 0.3;
  */
 const LAY_DOWN_ASPECT = 1.5;
 
+/**
+ * How a display model is turned before it's measured/placed:
+ *   - 'lying':      tall models (a carrot) lie on their side, squat ones stay as authored — same as layDownIfTall.
+ *   - 'standing':   exactly as authored.
+ *   - 'upsideDown': as authored, flipped 180° end over end (a carrot authored tip-up then points tip-down).
+ */
+export type ItemOrientation = 'lying' | 'standing' | 'upsideDown';
+
 export interface ResourceDisplayOptions {
     /** Normalize the largest dimension to this (world units) instead of using the real world size. */
     maxSize?: number;
-    /** Rotate tall models onto their side — see this file's own doc. */
+    /** Rotate tall models onto their side — see this file's own doc. Same as orientation 'lying'; `orientation` wins when both are set. */
     layDownIfTall?: boolean;
+    /** See ItemOrientation. Unset = 'lying' if layDownIfTall, else 'standing'. */
+    orientation?: ItemOrientation;
 }
 
 export interface ResourceDisplayModel {
@@ -121,9 +131,12 @@ export async function loadResourceDisplayModel(type: ResourceType, options: Reso
         scaler.scale.setScalar(worldScale);
     }
 
-    // 2. Orientation — tall things lie on their side.
-    if (options.layDownIfTall && nativeSize.y > LAY_DOWN_ASPECT * Math.max(nativeSize.x, nativeSize.z)) {
+    // 2. Orientation — see ItemOrientation.
+    const orientation = options.orientation ?? (options.layDownIfTall ? 'lying' : 'standing');
+    if (orientation === 'lying' && nativeSize.y > LAY_DOWN_ASPECT * Math.max(nativeSize.x, nativeSize.z)) {
         orient.rotation.z = Math.PI / 2;
+    } else if (orientation === 'upsideDown') {
+        orient.rotation.x = Math.PI;
     }
 
     // 3. Bottom-center at the origin.

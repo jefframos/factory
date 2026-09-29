@@ -283,6 +283,7 @@ const ENTITY_SCHEMAS = {
         },
         { key: 'updateParticleEffectId', type: 'select', label: 'Update Particle Effect (fires every time this building levels up)', source: 'particleEffects', optional: true },
         { key: 'updateParticleCount', type: 'number', label: 'Update Particle Count', optional: true },
+        { key: 'baseAtDropper', type: 'boolean', label: 'Base Site At Dropper (the unbuilt level-0 Base View stands at the center of this building\'s dropper instead of at the building\'s own position — falls back to the building position if it has no dropper)', optional: true },
         { key: 'anchorAtDropper', type: 'boolean', label: 'Anchor Popup/Particles At Dropper (requirements panel, Level Up! callout, and update particle burst all spawn at this building\'s own dropper instead of its mesh — falls back to the mesh if it has no dropper)', optional: true },
         { key: 'npcId', type: 'select', label: 'NPC (optional — spawns an animated NPC at this building)', source: 'npcs', optional: true },
         { key: 'npcOffset', type: 'vector3', label: 'NPC Offset (x, y, z — nudges off the building\'s own mesh position; only used when NPC is set)', optional: true },
@@ -587,7 +588,16 @@ const ENTITY_SCHEMAS = {
             ],
         },
         { key: 'resourceType', type: 'select', label: 'Only This Resource (e.g. one specific crop — overrides Accepts; blank = anything Accepts allows)', source: 'resources', optional: true },
-        { key: 'models', type: 'modelList', label: 'Model (first entry used — e.g. Restaurant.Crate)' },
+        { key: 'view', type: 'select', label: 'View (Entity Views tab — the storage mesh; when set it wins over Model/Scale/Rotation below)', source: 'entityViews', optional: true },
+        { ...FLOOR_LABEL_SIDE_FIELD, key: 'signpostSide', label: 'Signpost Side (which edge of the storage its signpost stands on — blank = North; the signpost itself is the shared Signpost card above)', options: [
+            { value: 'north', label: 'North (above, on the map)' },
+            { value: 'south', label: 'South (below, on the map)' },
+            { value: 'east', label: 'East (right, on the map)' },
+            { value: 'west', label: 'West (left, on the map)' },
+        ] },
+        { key: 'signpostGap', type: 'number', label: 'Signpost Gap (distance from the storage\'s edge, world units — blank = 0.2)', optional: true },
+        { key: 'signpostRotationDeg', type: 'number', label: 'Signpost Rotation (degrees — this storage\'s signpost yaw; blank = 0)', optional: true },
+        { key: 'models', type: 'modelList', label: 'Model (first entry used — e.g. Restaurant.Crate; ignored when View is set)' },
         { key: 'scale', type: 'number', label: 'Scale (Restaurant.Crate is 2 x 0.8 x 2 at 1)' },
         { key: 'rotationDeg', type: 'number', label: 'Rotation (degrees)' },
         {
@@ -607,10 +617,14 @@ const ENTITY_SCHEMAS = {
             ],
         },
         { key: 'itemScale', type: 'number', label: 'Item Scale (blank = same as the player stack\'s)', optional: true },
+        { key: 'itemYawDeg', type: 'number', label: 'Item Rotation (degrees — every stored item turned the same way, e.g. 0 or 90 so carrots lie parallel; blank = scattered, natural-pile look)', optional: true },
+        { key: 'itemOrientation', type: 'select', label: 'Item Orientation (how stored items are turned — blank = Lying)', optional: true, options: [
+            { value: 'lying', label: 'Lying (tall items like carrots on their side)' },
+            { value: 'standing', label: 'Standing (as the model is authored)' },
+            { value: 'upsideDown', label: 'Upside Down (as authored, flipped — e.g. carrots tip-down)' },
+        ] },
         STORAGE_FRAME_FIELD,
-        { ...FLOOR_LABEL_SIDE_FIELD, label: 'Floor Label Side (Floor frame — which side of the storage the stored-count label sits on; blank = South)' },
         { key: 'floorLabelSize', type: 'number', label: 'Floor Label Size (Floor frame — height on the floor, world units; the price label also shrinks to fit the purchase area — blank = 2.7)', optional: true },
-        { key: 'floorLabelGap', type: 'number', label: 'Floor Label Gap (Floor frame — distance of the stored-count label from the storage — blank = 0.3)', optional: true },
         { key: 'popupBobOffset', type: 'number', label: 'Popup Height Offset (popup frames only — gap above the top of the pile, blank = 1)', optional: true },
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full storage footprint, 0.5 = half size centered — 0 by default)', optional: true },
         {
@@ -657,6 +671,14 @@ const ENTITY_SCHEMAS = {
         { key: 'moneyPerBill', type: 'number', label: 'Money per Bill (how much one bill on the money drop represents — visual only)' },
         { key: 'billsPerPile', type: 'number', label: 'Bills per Pile (how tall a money pile gets before the next one starts beside it — visual only)' },
         { key: 'bubbleOffset', type: 'number', label: 'Bubble Height (above the client\'s head — world units)' },
+        { key: 'startSpawnIntervalSec', type: 'number', label: 'Start Spawn Interval (with ONE shelf — each extra shelf steps toward Spawn Interval, reached with all shelves; blank = 1.6x Spawn Interval)', optional: true },
+        { key: 'startMaxClients', type: 'number', label: 'Start Max Clients (with ONE shelf — steps toward Max Clients as shelves are added; blank = 2)', optional: true },
+        { key: 'startPatienceMultiplier', type: 'number', label: 'Start Patience Multiplier (x Mood Step Time with ONE shelf, easing to x1 with all shelves; blank = 1.5)', optional: true },
+        { key: 'moodStepSec', type: 'number', label: 'Mood Step Time (seconds before a client\'s mood drops one step — blank = 20)', optional: true },
+        { key: 'minClientPatience', type: 'number', label: 'Min Client Patience (each client\'s own tolerance: x Mood Step Time, random between min and max — blank = 0.8)', optional: true },
+        { key: 'maxClientPatience', type: 'number', label: 'Max Client Patience (blank = 1.5)', optional: true },
+        { key: 'veryHappyPayMultiplier', type: 'number', label: 'Very Happy Pay Multiplier (x what a very happy client pays — blank = 2)', optional: true },
+        { key: 'unhappyPayPenalty', type: 'number', label: 'Sad/Angry Pay Penalty (fraction taken off, 0.2 = 20% less — blank = 0.2)', optional: true },
         { key: 'defaultStorageId', type: 'text', label: 'Default Storage (storage id on the map — FREE, appears when the store opens; blank = every storage must be bought)', optional: true },
         {
             key: 'levels', type: 'list', label: 'Levels (store is Lv 1 when it opens; each entry is what it takes to REACH that level, counted from the previous one)', optional: true,
@@ -765,6 +787,14 @@ const ENTITY_SCHEMAS = {
     // (see FarmTypes.ts's own doc for why this is a single game-wide export, not per-plot).
     // Rendered once, above the Default/By-id cards, by app.js's renderFarmsTab() — not a normal
     // ENTITY_SCHEMAS entry read through the generic per-id card path the rest of this file backs.
+    /** StorageTypes.ts's STORAGE_SIGNPOST_CONFIG — the Storages tab's shared Signpost card (see app.js's SHARED_SECTIONS). */
+    storageSignpost: [
+        { key: 'models', type: 'modelList', label: 'Signpost Model (first entry used — empty = no signposts)' },
+        { key: 'scale', type: 'number', label: 'Signpost Scale' },
+        { key: 'offset', type: 'vector3', label: 'Signpost Offset (x, y, z — nudges every signpost off its side/gap spot; x/z turn with each storage Signpost Rotation; the icon follows)' },
+        { key: 'iconOffset', type: 'vector3', label: 'Icon Offset (x, y, z — item icon center from the signpost base; y = height above the ground; x/z turn with each storage Signpost Rotation)' },
+        { key: 'iconScale', type: 'number', label: 'Icon Scale (item icon size, world units)' },
+    ],
     farmTiles: [
         { key: 'empty', type: 'select', label: 'Empty (shown before ANY plot is bought)', source: 'entityViews', optional: true },
         { key: 'prepared', type: 'select', label: 'Prepared (shown once a plot is bought, before anything is planted)', source: 'entityViews', optional: true },
@@ -954,6 +984,7 @@ const ENTITY_SCHEMAS = {
                 },
                 { key: 'scale', type: 'number', label: 'Scale (multiplies the model\'s native size — Restaurant.Crate is 2 x 0.8 x 2)' },
                 { key: 'itemScale', type: 'number', label: 'Stacked Item Scale (multiplies each carried item\'s real world size — also applied while it flies onto the stack; 1 = true size)', optional: true },
+                { key: 'itemYawDeg', type: 'number', label: 'Stacked Item Rotation (degrees — every carried item turned the same way and the tower stacked perfectly straight, e.g. 0 or 90 for carrots; blank = scattered natural look)', optional: true },
                 {
                     key: 'stackMode', type: 'select', label: 'Stack Mode (how carried items pile up in it)',
                     options: [

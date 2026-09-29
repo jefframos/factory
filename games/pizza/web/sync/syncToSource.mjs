@@ -721,7 +721,7 @@ function syncQueues(sourceFile, mapping, postedQueues, warnings, refreshedThisSy
 
     if (mapping.tileExportName) {
         const tileDecl = sourceFile.getVariableDeclarationOrThrow(mapping.tileExportName);
-        tileDecl.setInitializer(serialize(sourceFile, pick(postedQueues.tiles ?? {}, mapping.tileManagedKeys), refreshedThisSync));
+        tileDecl.setInitializer(serialize(sourceFile, pick(postedQueues[mapping.tileDataKey ?? 'tiles'] ?? {}, mapping.tileManagedKeys), refreshedThisSync));
     }
 }
 

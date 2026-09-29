@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="11" nextobjectid="161">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="11" nextobjectid="184">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -780,7 +780,7 @@
 </chunk>
    <chunk x="0" y="16" width="16" height="16">
 4,4,4,4,4,4,4,4,4,4,4,0,0,0,0,0,
-0,0,0,0,4,4,0,0,0,0,0,0,0,0,0,0,
+4,4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,
 4,4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,
 4,0,0,0,0,0,0,0,0,4,4,4,4,4,4,0,
 0,0,0,0,0,0,0,0,0,0,4,0,0,0,4,4,
@@ -1547,20 +1547,13 @@
     <property name="type" value="dropper"/>
    </properties>
   </object>
-  <object id="117" x="172.334" y="650.667" width="64.5" height="64.5">
-   <properties>
-    <property name="id" value="dropperStorage1"/>
-    <property name="target" value="storage1"/>
-    <property name="type" value="dropper"/>
-   </properties>
-  </object>
-  <object id="115" x="177.667" y="653.333" width="46.333" height="50.6667">
+  <object id="115" x="186.667" y="648" width="46.333" height="50.6667">
    <properties>
     <property name="id" value="storage1"/>
     <property name="type" value="storage"/>
    </properties>
   </object>
-  <object id="116" x="256.94" y="658.242" width="46.333" height="50.6667">
+  <object id="116" x="247.607" y="649.575" width="46.333" height="50.6667">
    <properties>
     <property name="id" value="storage2"/>
     <property name="type" value="storage"/>
@@ -1653,7 +1646,7 @@
     <property name="id" value="treeSpawner"/>
     <property name="type" value="spawner"/>
    </properties>
-   <polygon points="-82.667,-104 -97,131 16.2079,232.933 316.241,241.065 233,84 239.667,-110"/>
+   <polygon points="-82.667,-104 -97,131 16.2079,232.933 254.908,247.732 285.233,195.6 58.3333,121.333 31.667,-104"/>
   </object>
   <object id="82" x="602.666" y="83.166">
    <properties>
@@ -1662,19 +1655,19 @@
    </properties>
    <polygon points="93,-44 -111.667,115 -87.8333,219 230,196 236.167,97.5"/>
   </object>
-  <object id="37" x="240.5" y="466" width="96" height="64">
+  <object id="37" x="-160" y="928" width="96" height="64">
    <properties>
     <property name="id" value="farm1"/>
     <property name="type" value="farm"/>
    </properties>
   </object>
-  <object id="100" x="115.5" y="464.5" width="96" height="64">
+  <object id="100" x="-160" y="832" width="96" height="64">
    <properties>
     <property name="id" value="farm2"/>
     <property name="type" value="farm"/>
    </properties>
   </object>
-  <object id="101" x="-7" y="464.5" width="96" height="64">
+  <object id="101" x="-160" y="736" width="96" height="64">
    <properties>
     <property name="id" value="farm3"/>
     <property name="type" value="farm"/>
@@ -1713,8 +1706,50 @@
     <property name="type" value="gate"/>
    </properties>
   </object>
+  <object id="161" gid="25" x="-34.1667" y="610" width="35" height="8">
+   <properties>
+    <property name="id" value="stall1"/>
+    <property name="type" value="building"/>
+    <property name="useOwnMesh" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="170" gid="25" x="-32" y="736" width="35" height="8" rotation="270">
+   <properties>
+    <property name="id" value="stall1"/>
+    <property name="type" value="building"/>
+    <property name="useOwnMesh" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="171" gid="25" x="-32" y="640" width="35" height="8" rotation="270">
+   <properties>
+    <property name="id" value="stall1"/>
+    <property name="type" value="building"/>
+    <property name="useOwnMesh" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="172" gid="25" x="0" y="608" width="35" height="8" rotation="270">
+   <properties>
+    <property name="id" value="stall1"/>
+    <property name="type" value="building"/>
+    <property name="useOwnMesh" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="173" gid="25" x="0" y="608" width="35" height="8" rotation="270">
+   <properties>
+    <property name="id" value="stall1"/>
+    <property name="type" value="building"/>
+    <property name="useOwnMesh" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="174" gid="25" x="328" y="608" width="35" height="8" rotation="270">
+   <properties>
+    <property name="id" value="stall1"/>
+    <property name="type" value="building"/>
+    <property name="useOwnMesh" type="bool" value="true"/>
+   </properties>
+  </object>
  </objectgroup>
- <objectgroup id="9" name="stores">
+ <objectgroup id="9" name="stores" locked="1">
   <object id="153" x="-61" y="444.333" width="442.667" height="577">
    <properties>
     <property name="id" value="farmStore1"/>
@@ -1772,6 +1807,7 @@
   <object id="96" gid="27" x="1056" y="1248" width="80" height="80"/>
   <object id="97" gid="27" x="1120" y="1248" width="80" height="80"/>
   <object id="98" gid="27" x="1184" y="1248" width="80" height="80"/>
+  <object id="183" gid="27" x="256" y="1024" width="80" height="80" rotation="90"/>
  </objectgroup>
  <objectgroup id="8" name="backup" visible="0">
   <object id="24" gid="27" x="32.25" y="516.75" width="48" height="40.5"/>
@@ -2000,6 +2036,13 @@
    <properties>
     <property name="id" value="dropperShop1"/>
     <property name="target" value="shop1"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="117" x="172.334" y="650.667" width="64.5" height="64.5">
+   <properties>
+    <property name="id" value="dropperStorage1"/>
+    <property name="target" value="storage1"/>
     <property name="type" value="dropper"/>
    </properties>
   </object>

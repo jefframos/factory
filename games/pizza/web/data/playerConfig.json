@@ -37,7 +37,8 @@
                 "base": 3,
                 "perLevel": 1,
                 "maxLevel": 12
-            }
+            },
+            "itemYawDeg": 0
         },
         "harvestIntoStack": true
     }

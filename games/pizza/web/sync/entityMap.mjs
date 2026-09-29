@@ -109,8 +109,8 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'BUILDING_CONFIG',
         kind: 'enumRecord',
         enumName: 'BuildingId',
-        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'anchorAtDropper', 'npcId', 'npcOffset', 'disabled'],
-        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'anchorAtDropper', 'npcId', 'npcOffset', 'disabled'],
+        managedKeys: ['name', 'icon', 'appearRequirement', 'levels', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'baseAtDropper', 'anchorAtDropper', 'npcId', 'npcOffset', 'disabled'],
+        optionalKeys: ['icon', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'baseFillFull', 'baseFillFraction', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'solidFromMap', 'updateParticleEffectId', 'updateParticleCount', 'baseAtDropper', 'anchorAtDropper', 'npcId', 'npcOffset', 'disabled'],
         // BuildingLevelConfig also carries a `mesh` field (per-level placeholder art) that
         // this editor doesn't manage — a plain wholesale replacement of the `levels` array
         // (what every OTHER list field in this map gets, since none of their items have
@@ -295,8 +295,13 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORAGE_CONFIG',
         byIdExportName: 'STORAGE_CONFIG_BY_ID',
-        managedKeys: ['name', 'accepts', 'resourceType', 'models', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'disabled'],
-        optionalKeys: ['name', 'resourceType', 'itemScale', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'disabled'],
+        managedKeys: ['name', 'accepts', 'resourceType', 'models', 'view', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'disabled'],
+        optionalKeys: ['name', 'view', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'resourceType', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'disabled'],
+        // Third export — the ONE signpost every storage shares (see StorageTypes.ts's STORAGE_SIGNPOST_CONFIG),
+        // shown as the Storages tab's own 'Signpost' card; same mechanism as farms' FARM_TILE_CONFIG.
+        tileExportName: 'STORAGE_SIGNPOST_CONFIG',
+        tileManagedKeys: ['models', 'scale', 'offset', 'iconOffset', 'iconScale'],
+        tileDataKey: 'signpost',
     },
     // A STORE — a "store"-typed object on the Tiled map's "stores" layer (see store/StoreTypes.ts),
     // open-ended by id. Same {default, byId} two-export shape as storages (kind: 'queues'); `npcs`
@@ -306,8 +311,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORE_CONFIG',
         byIdExportName: 'STORE_CONFIG_BY_ID',
-        managedKeys: ['name', 'npcs', 'spawnIntervalSec', 'maxClients', 'moveSpeed', 'maxDistinctItems', 'maxAmountPerItem', 'priceMultiplier', 'spotSpacing', 'spotMargin', 'storageSpotDirections', 'cashierSpotDirection', 'pickDelaySec', 'payDelaySec', 'moneyPerBill', 'billsPerPile', 'bubbleOffset', 'defaultStorageId', 'levels', 'disabled'],
-        optionalKeys: ['name', 'storageSpotDirections', 'cashierSpotDirection', 'defaultStorageId', 'levels', 'disabled'],
+        managedKeys: ['name', 'npcs', 'spawnIntervalSec', 'maxClients', 'moveSpeed', 'maxDistinctItems', 'maxAmountPerItem', 'priceMultiplier', 'spotSpacing', 'spotMargin', 'storageSpotDirections', 'cashierSpotDirection', 'pickDelaySec', 'payDelaySec', 'moneyPerBill', 'billsPerPile', 'bubbleOffset', 'startSpawnIntervalSec', 'startMaxClients', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'disabled'],
+        optionalKeys: ['name', 'storageSpotDirections', 'cashierSpotDirection', 'startSpawnIntervalSec', 'startMaxClients', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'disabled'],
     },
     // A MART — a "mart"-typed object drawn on the Tiled map's "mapSettings" layer, open-ended
     // by id like shops/crafting/farms, not enum-backed. Same {default, byId} two-export shape

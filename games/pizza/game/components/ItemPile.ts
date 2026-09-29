@@ -32,7 +32,7 @@
 
 import * as THREE from 'three';
 import { ResourceType } from '../actions/ResourceTypes';
-import { disposeResourceDisplayModel, loadResourceDisplayModel } from '../world/ResourceDisplayModel';
+import { disposeResourceDisplayModel, ItemOrientation, loadResourceDisplayModel } from '../world/ResourceDisplayModel';
 
 export type ItemPileMode = 'grid' | 'tower';
 
@@ -51,6 +51,13 @@ export interface ItemPileLayout {
     towerMaxItems: number;
     /** Multiplier on every item's real world size. */
     itemScale: number;
+    /**
+     * Optional fixed yaw (degrees) for EVERY item — e.g. carrots all lying parallel. Unset = each
+     * item gets its own scattered yaw (the natural-pile look, fine for round items like tomatoes).
+     */
+    itemYawDeg?: number;
+    /** How each item is turned (see ResourceDisplayModel's ItemOrientation). Unset = 'lying'. */
+    itemOrientation?: ItemOrientation;
     /** Root-local units per world unit — see this file's own doc. */
     localPerWorld: number;
 }
@@ -66,16 +73,21 @@ const TOWER_JITTER_FRACTION = 0.08;
 /** Stand-in size (world units) for an item whose model hasn't loaded yet and whose type was never seen before. */
 const FALLBACK_ITEM_SIZE = new THREE.Vector3(0.25, 0.25, 0.25);
 
-/** Last measured (world-unit, oriented, unscaled) size per resource — lets a layout reserve the right space for an item before its own model has loaded. Shared by every pile, and filled by flights too (see FlyToStack). */
-const knownSizes = new Map<ResourceType, THREE.Vector3>();
+/**
+ * Last measured (world-unit, oriented, unscaled) size per resource AND orientation — lets a layout
+ * reserve the right space for an item before its own model has loaded. Shared by every pile, and
+ * filled by flights too (see FlyToStack). Keyed by orientation as well since a carrot lying in the
+ * backpack and one standing in a storage have very different sizes.
+ */
+const knownSizes = new Map<string, THREE.Vector3>();
 
 /** Record `type`'s display size (world units, oriented) — see knownSizes. */
-export function rememberItemSize(type: ResourceType, size: THREE.Vector3): void {
-    knownSizes.set(type, size.clone());
+export function rememberItemSize(type: ResourceType, size: THREE.Vector3, orientation: ItemOrientation = 'lying'): void {
+    knownSizes.set(`${type}|${orientation}`, size.clone());
 }
 
-function sizeOf(type: ResourceType): THREE.Vector3 {
-    return knownSizes.get(type) ?? FALLBACK_ITEM_SIZE;
+function sizeOf(type: ResourceType, orientation: ItemOrientation): THREE.Vector3 {
+    return knownSizes.get(`${type}|${orientation}`) ?? FALLBACK_ITEM_SIZE;
 }
 
 interface Slot {
@@ -219,7 +231,18 @@ export default class ItemPile {
                 slot.model.position.copy(position);
             }
             slot.model.scale.setScalar(itemScale * localPerWorld * (fits[i] ?? 1));
+            slot.model.rotation.y = this.yawFor(slot);
         });
+    }
+
+    private get orientation(): ItemOrientation {
+        return this.layout.itemOrientation ?? 'lying';
+    }
+
+    /** The layout's fixed itemYawDeg when set, else the slot's own scattered yaw. */
+    private yawFor(slot: Slot): number {
+        const fixed = this.layout.itemYawDeg;
+        return fixed !== undefined ? THREE.MathUtils.degToRad(fixed) : slot.yaw;
     }
 
     public dispose(): void {
@@ -240,13 +263,14 @@ export default class ItemPile {
     private computePositions(types: ResourceType[]): THREE.Vector3[] {
         const { mode, base, footprint, maxColumns, maxRows, itemScale, localPerWorld } = this.layout;
         const toLocal = itemScale * localPerWorld;
-        const sizes = types.slice(0, this.capacity).map(type => sizeOf(type).clone().multiplyScalar(toLocal));
+        const sizes = types.slice(0, this.capacity).map(type => sizeOf(type, this.orientation).clone().multiplyScalar(toLocal));
         const positions: THREE.Vector3[] = [];
 
         if (mode === 'tower') {
             let y = base.y;
             sizes.forEach((size, i) => {
-                const jitter = Math.max(size.x, size.z) * TOWER_JITTER_FRACTION;
+                // A fixed itemYawDeg means "aligned" — no wobble either, so the tower stacks perfectly straight.
+                const jitter = this.layout.itemYawDeg !== undefined ? 0 : Math.max(size.x, size.z) * TOWER_JITTER_FRACTION;
                 // Two incommensurate sines — cheap deterministic wobble.
                 positions.push(new THREE.Vector3(base.x + Math.sin(i * 2.1) * jitter, y, base.z + Math.sin(i * 3.7 + 1) * jitter));
                 y += size.y * TOWER_REST_FRACTION;
@@ -311,7 +335,7 @@ export default class ItemPile {
     /** fitsFor() for the live types — what relayout() scales each model by. */
     private computeFits(types: ResourceType[]): number[] {
         const { itemScale, localPerWorld } = this.layout;
-        const sizes = types.slice(0, this.capacity).map(type => sizeOf(type).clone().multiplyScalar(itemScale * localPerWorld));
+        const sizes = types.slice(0, this.capacity).map(type => sizeOf(type, this.orientation).clone().multiplyScalar(itemScale * localPerWorld));
         const { columns, rows } = this.gridShape(sizes);
         return this.fitsFor(sizes, columns, rows);
     }
@@ -323,14 +347,16 @@ export default class ItemPile {
                 return;
             }
             this.loading.add(slot);
-            void loadResourceDisplayModel(slot.type, { layDownIfTall: true }).then(({ object, size }) => {
+            // Captured now — a setLayout() mid-load could change it, and the size must match THIS model.
+            const orientation = this.orientation;
+            void loadResourceDisplayModel(slot.type, { orientation }).then(({ object, size }) => {
                 this.loading.delete(slot);
-                rememberItemSize(slot.type, size);
+                rememberItemSize(slot.type, size, orientation);
                 if (this.disposed || !this.slots.includes(slot)) {
                     disposeResourceDisplayModel(object);
                     return;
                 }
-                object.rotation.y = slot.yaw;
+                object.rotation.y = this.yawFor(slot);
                 slot.model = object;
                 this.root.add(object);
                 // Its real size may differ from what the layout assumed while it loaded.

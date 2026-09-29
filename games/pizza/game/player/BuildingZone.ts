@@ -579,7 +579,7 @@ export default class BuildingZone extends Entity {
         // explicit way to say "not this time" — see isOwnMeshForcedForLevel()'s own doc.
         const entityView = this.currentForceOwnMesh ? undefined : resolveEntityView(viewId);
         if (entityView) {
-            this.createBuildingView(entityView, dropIn, targetFraction);
+            this.createBuildingView(level === 0 ? this.withBaseAtDropper(entityView) : entityView, dropIn, targetFraction);
             return;
         }
 
@@ -656,6 +656,22 @@ export default class BuildingZone extends Entity {
         }
 
         return results;
+    }
+
+    /** BuildingConfig.baseAtDropper — the level-0 site view shifted so it stands at the dropper's center (its own view offset still applies on top). Unchanged when the flag is off or there's no dropper. */
+    private withBaseAtDropper(view: NonNullable<ReturnType<typeof resolveEntityView>>): NonNullable<ReturnType<typeof resolveEntityView>> {
+        if (!BUILDING_CONFIG[this.buildingId].baseAtDropper || !this.triggerArea) {
+            return view;
+        }
+        const [x, y, z] = view.offset;
+        return {
+            ...view,
+            offset: [
+                x + this.triggerArea.position.x - this.transform.position.x,
+                y,
+                z + this.triggerArea.position.z - this.transform.position.z,
+            ],
+        };
     }
 
     private createBuildingBox(config: ReturnType<typeof getMeshConfigForLevel>, dropIn: boolean, targetFraction: number): void {
@@ -1029,6 +1045,19 @@ export default class BuildingZone extends Entity {
      * for the rest of the transition even though the player never left), the backpack runs
      * out, or the FBX character (and so the backpack cube) hasn't loaded yet.
      */
+    /**
+     * Where deposited icons fly to (written into `target`) — the requirements panel's anchor
+     * (labelAnchor) normally, but the dropper's center (same popup height) while the level-0
+     * site is standing there (BuildingConfig.baseAtDropper), so they land on the thing being built.
+     */
+    private getFlyInTarget(target: THREE.Vector3): THREE.Vector3 {
+        const config = BUILDING_CONFIG[this.buildingId];
+        if (config.baseAtDropper && this.triggerArea && BuildingStorage.getLevel(this.buildingId) === 0) {
+            return target.copy(this.triggerArea.position).add(resolvePopupAnchorOffset(config.popupBobOffset));
+        }
+        return this.labelAnchor.getWorldPosition(target);
+    }
+
     private flyInResource(type: ResourceType): void {
         if (this.draining.has(type)) {
             return;
@@ -1055,7 +1084,7 @@ export default class BuildingZone extends Entity {
                 return;
             }
 
-            this.labelAnchor.getWorldPosition(toWorld);
+            this.getFlyInTarget(toWorld);
             this.inFlightByType.set(type, inFlight + 1);
 
             spawnFlyingResourceIcon(this.screenHost, fromWorld.clone(), toWorld.clone(), icon, () => {

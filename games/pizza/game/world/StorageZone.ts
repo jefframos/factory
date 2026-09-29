@@ -41,6 +41,7 @@ import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
 import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import GlbVisualComponent from '../components/GlbVisualComponent';
+import { resolveEntityView } from './EntityViewRegistry';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
 import BackpackStackVisual, { stackItemScale } from '../components/BackpackStackVisual';
 import ItemPile, { ItemPileLayout } from '../components/ItemPile';
@@ -48,14 +49,14 @@ import { flyResourceModel } from '../components/FlyToStack';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { buildLockRequirementPanel } from '../ui/LockRequirementPanel';
-import FloorLabelComponent, { createConfiguredFloorLabel } from '../components/FloorLabelComponent';
+import FloorLabelComponent, { FloorLabelItem, floorLabelEdgeOffset } from '../components/FloorLabelComponent';
 import { isFloorFrame, FLOOR_FRAME } from '../ui/PopupConfig';
 import type { LockRequirementPanel } from '../ui/LockRequirementPanel';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from './AssetLibraryRegistry';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { StorageInventory } from '../data/StorageInventory';
-import { StorageConfig } from '../data/StorageTypes';
+import { StorageConfig, STORAGE_SIGNPOST_CONFIG } from '../data/StorageTypes';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
@@ -75,6 +76,12 @@ const LAND_BOUNCE_SEC = 0.12;
 const FALLBACK_BACKPACK_HEIGHT = 1.2;
 /** Per-axis fallback for a missing StorageConfig.dropOffset value — half-way up Restaurant.Crate. */
 const DEFAULT_DROP_OFFSET = { x: 0, y: 0.4, z: 0 };
+/** StorageConfig.signpostGap fallback — see that field's own doc. */
+const DEFAULT_SIGNPOST_GAP = 0.2;
+const UP_AXIS = new THREE.Vector3(0, 1, 0);
+/** Icon height when STORAGE_SIGNPOST_CONFIG.iconOffset is missing (e.g. a stale save from the editor). */
+const DEFAULT_SIGNPOST_ICON_HEIGHT = 1.5;
+
 /** Half-height of StorageConfig.solid's collider — a little over Restaurant.Crate's 0.8. */
 const SOLID_HALF_HEIGHT = 0.5;
 /** Default gap (world units) between the top of the pile and the bottom of the "only this resource" panel, when StorageConfig.popupBobOffset is unset — see this file's own doc. */
@@ -91,6 +98,10 @@ export default class StorageZone extends Entity {
     private readonly meshOffset: THREE.Vector3;
 
     private visual?: GlbVisualComponent;
+    /** Scale the storage mesh was built at — the view's when StorageConfig.view resolves, else config.scale. playLandBounce() returns to it. */
+    private meshScale = 1;
+    /** The item icon + "xN" count standing on the signpost — see buildSignpost(). */
+    private signpostLabel?: FloorLabelComponent;
     /** Parent of every stored-item model — sits at meshOffset + config.dropOffset, so the pile's local origin IS the drop point. */
     private readonly pileRoot = new THREE.Group();
     private pile!: ItemPile;
@@ -104,9 +115,7 @@ export default class StorageZone extends Entity {
     private transferring = false;
     private destroyed = false;
 
-    /** The stored-count label on the floor — see buildFloorLabel(). Only for a `resourceType` storage in 'floor' label mode. */
-    private floorLabel?: FloorLabelComponent;
-    /** The popup alternative to `floorLabel` — see buildAcceptsPanel(). */
+    /** The popup alternative to the signpost's count (a non-Floor `frame`) — see buildAcceptsPanel(). */
     private acceptsPanel?: LockRequirementPanel;
 
     private readonly handleInventoryChanged = (storageId: string): void => {
@@ -165,17 +174,23 @@ export default class StorageZone extends Entity {
             }));
         }
 
+        // StorageConfig.view (an Entity Views id) wins over the inline models/scale/rotationDeg.
+        const view = resolveEntityView(this.config.view);
+        if (this.config.view && !view) {
+            console.warn(`[StorageZone] "${this.storageId}": view "${this.config.view}" has no model in Entity Views — using the inline model`);
+        }
         const modelRef = this.config.models[0];
-        const modelDef = ModelSnapshotTool.resolveModelRef(modelRef);
-        if (modelRef && !modelDef) {
+        const modelDef = view?.model ?? ModelSnapshotTool.resolveModelRef(modelRef);
+        if (!view && modelRef && !modelDef) {
             console.warn(`[StorageZone] "${this.storageId}": model "${String(modelRef)}" is not a known MODELS ref — no mesh`);
         }
+        this.meshScale = view?.scale ?? this.config.scale;
         if (modelDef) {
             const visual: GlbVisualComponent = new GlbVisualComponent(
                 modelDef,
-                this.meshOffset.clone(),
-                this.config.scale,
-                THREE.MathUtils.degToRad(this.config.rotationDeg),
+                view ? this.meshOffset.clone().add(new THREE.Vector3(...view.offset)) : this.meshOffset.clone(),
+                this.meshScale,
+                THREE.MathUtils.degToRad(view?.rotationDeg ?? this.config.rotationDeg),
                 () => {
                     // Parents included before measuring — see the background-tab stale-matrixWorld
                     // note in ResourceDisplayModel.ts. Only the X/Z SIZE is used, so the mesh's own
@@ -188,6 +203,8 @@ export default class StorageZone extends Entity {
             );
             this.visual = this.addComponent(visual);
         }
+
+        this.buildSignpost();
 
         // Each axis falls back on its own — the web editor can save a partial/empty object
         // (e.g. `dropOffset: {}`), and an undefined axis would put the whole pile at NaN.
@@ -202,12 +219,10 @@ export default class StorageZone extends Entity {
         this.pile.sync(StorageInventory.getAll(this.storageId));
         StorageInventory.onChange.add(this.handleInventoryChanged);
 
-        if (this.config.resourceType !== undefined) {
-            if (isFloorFrame(this.config.frame ?? FLOOR_FRAME)) {
-                this.buildFloorLabel(this.config.resourceType);
-            } else {
-                this.buildAcceptsPanel(this.config.resourceType);
-            }
+        // 'Floor' (the default) draws nothing extra here — the stored count is shown on the
+        // signpost instead (see buildSignpost()). A popup frame keeps its floating panel.
+        if (this.config.resourceType !== undefined && !isFloorFrame(this.config.frame ?? FLOOR_FRAME)) {
+            this.buildAcceptsPanel(this.config.resourceType);
         }
     }
 
@@ -218,22 +233,62 @@ export default class StorageZone extends Entity {
         super.destroy();
     }
 
-    /** Icon + stored count painted on the floor just outside the storage's own footprint, on its floorLabelSide (default south). */
-    private buildFloorLabel(type: ResourceType): void {
-        this.floorLabel = this.addComponent(createConfiguredFloorLabel(
-            this.config, this.meshOffset, this.storageSize.width, this.storageSize.depth,
-            [{ icon: getAssetIcon(resolveResourceAssetKey(type)), text: `${StorageInventory.getCount(this.storageId, type)}` }],
-        ));
+    /**
+     * The shared signpost (STORAGE_SIGNPOST_CONFIG — one model/scale/icon size for every
+     * storage) just outside this storage's signpostSide edge (default north), turned by its own
+     * signpostRotationDeg; with a `resourceType`, that item's icon stands on it. The icon is a flat
+     * plane facing south (toward the camera) rather than a THREE.Sprite, since a sprite's shader
+     * can't take the world bend and would drift off the post away from the player.
+     */
+    private buildSignpost(): void {
+        const shared = STORAGE_SIGNPOST_CONFIG;
+        const modelRef = shared.models[0];
+        const model = ModelSnapshotTool.resolveModelRef(modelRef);
+        if (!model) {
+            if (modelRef) {
+                console.warn(`[StorageZone] signpost model "${String(modelRef)}" is not a known MODELS ref — no signposts`);
+            }
+            return;
+        }
+        const side = this.config.signpostSide ?? 'north';
+        const yaw = THREE.MathUtils.degToRad(this.config.signpostRotationDeg ?? 0);
+        // Shared offset nudges the post off its side/gap spot — x/z turn with this storage's yaw.
+        const [postX, postY, postZ] = shared.offset ?? [0, 0, 0];
+        const position = floorLabelEdgeOffset(side, this.meshOffset, this.storageSize.width, this.storageSize.depth, this.config.signpostGap ?? DEFAULT_SIGNPOST_GAP)
+            .add(new THREE.Vector3(postX, 0, postZ).applyAxisAngle(UP_AXIS, yaw));
+        position.y += postY;
+        this.addComponent(new GlbVisualComponent(model, position.clone(), shared.scale, yaw));
+
+        if (this.config.resourceType === undefined) {
+            return;
+        }
+        // Upright sign (item icon + "xN") — a FloorLabelComponent stood up, so it redraws on count
+        // changes and takes the world bend (a THREE.Sprite couldn't). iconScale is its height;
+        // iconOffset is relative to the signpost, so its x/z turn with this storage's signpost yaw.
+        const [offsetX, offsetY, offsetZ] = shared.iconOffset ?? [0, DEFAULT_SIGNPOST_ICON_HEIGHT, 0];
+        const iconOffset = new THREE.Vector3(offsetX, 0, offsetZ).applyAxisAngle(UP_AXIS, yaw);
+        this.signpostLabel = this.addComponent(new FloorLabelComponent({
+            items: this.signpostItems(this.config.resourceType),
+            size: shared.iconScale,
+            upright: true,
+            background: false,
+            offset: new THREE.Vector3(position.x + iconOffset.x, 0, position.z + iconOffset.z),
+            height: position.y + offsetY,
+        }));
     }
 
-    /** Keeps whichever count display this storage has (floor label or popup) in sync with StorageInventory. */
+    /** The signpost sign's content — the item icon + "xN" stored count. */
+    private signpostItems(type: ResourceType): FloorLabelItem[] {
+        return [{ icon: getAssetIcon(resolveResourceAssetKey(type)), text: `x${StorageInventory.getCount(this.storageId, type)}` }];
+    }
+
+    /** Keeps whichever count display this storage has (signpost sign or popup) in sync with StorageInventory. */
     private refreshFloorLabel(): void {
         if (this.config.resourceType === undefined) {
             return;
         }
-        const text = `${StorageInventory.getCount(this.storageId, this.config.resourceType)}`;
-        this.floorLabel?.setText(text);
-        this.acceptsPanel?.setCornerText(text);
+        this.signpostLabel?.setItems(this.signpostItems(this.config.resourceType));
+        this.acceptsPanel?.setCornerText(`${StorageInventory.getCount(this.storageId, this.config.resourceType)}`);
     }
 
     /** The "only this resource" panel (icon + stored count) in the chosen `frame` preset — the popup alternative to buildFloorLabel(). */
@@ -277,6 +332,8 @@ export default class StorageZone extends Entity {
             fitToCells: true,
             towerMaxItems: pile.columns * pile.rows * pile.layers,
             itemScale: this.itemScale(),
+            itemYawDeg: this.config.itemYawDeg,
+            itemOrientation: this.config.itemOrientation,
             localPerWorld: 1,
         };
     }
@@ -341,6 +398,9 @@ export default class StorageZone extends Entity {
                 from,
                 startScale: stackItemScale(),
                 endScale: landingScale,
+                // Already turned the way it'll sit in this storage, so it doesn't flip on landing.
+                orientation: this.config.itemOrientation,
+                yawDeg: this.config.itemYawDeg,
                 resolveTarget: target => {
                     // The Nth item in flight aims N slots above the current top of this pile.
                     const index = this.pile.count + Math.max(this.incoming.indexOf(incomingId), 0);
@@ -388,7 +448,7 @@ export default class StorageZone extends Entity {
             return;
         }
         const mesh = this.visual.mesh;
-        const base = this.config.scale;
+        const base = this.meshScale;
         gsap.killTweensOf(mesh.scale);
         mesh.scale.setScalar(base * LAND_BOUNCE_SCALE);
         gsap.to(mesh.scale, { x: base, y: base, z: base, duration: LAND_BOUNCE_SEC, ease: 'power2.out' });

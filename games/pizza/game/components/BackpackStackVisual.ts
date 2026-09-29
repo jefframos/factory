@@ -82,7 +82,7 @@ export default class BackpackStackVisual extends Component {
         // Mode / itemScale / backpack scale can all change live (dev GUI) — cheap to compare.
         const layout = this.buildLayout(contents.bounds);
         const current = pile.getLayout();
-        if (layout.mode !== current.mode || layout.itemScale !== current.itemScale || Math.abs(layout.localPerWorld - current.localPerWorld) > 1e-6) {
+        if (layout.mode !== current.mode || layout.itemScale !== current.itemScale || layout.itemYawDeg !== current.itemYawDeg || Math.abs(layout.localPerWorld - current.localPerWorld) > 1e-6) {
             pile.setLayout(layout);
         }
 
@@ -123,6 +123,7 @@ export default class BackpackStackVisual extends Component {
             fitToCells: false,
             towerMaxItems: TOWER_MAX_ITEMS,
             itemScale: stackItemScale(),
+            itemYawDeg: backpack.itemYawDeg,
             localPerWorld: this.localPerWorld(),
         };
     }

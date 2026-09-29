@@ -67,6 +67,14 @@ export interface FloorLabelOptions {
     rotationDeg?: number;
     /** Draw a translucent rounded plate behind the icon/text. Default true. */
     background?: boolean;
+    /**
+     * Stand the label up (a vertical plane facing south, toward the camera) instead of lying on the
+     * floor — e.g. a sign on a signpost. `height` is then its center's height above the ground.
+     * `side`, `maxDepth` and `rotationDeg` still apply (rotationDeg turns it around the vertical).
+     */
+    upright?: boolean;
+    /** Center height above the ground for an `upright` label, world units. Default = half its own height. */
+    height?: number;
     /** Shrinks the whole label (keeping its aspect) so it fits inside this footprint, world units — e.g. the area it sits on. Unset = no limit. */
     maxWidth?: number;
     maxDepth?: number;
@@ -290,13 +298,17 @@ export default class FloorLabelComponent extends Component {
 
         // Subdivided so a wide label follows the world bend — see BendService.segmentsForSpan().
         const geometry = new THREE.PlaneGeometry(width, depth, BendService.segmentsForSpan(width), BendService.segmentsForSpan(depth));
-        // Lie flat with the texture's "up" pointing north (-Z), then turn to the label's yaw.
-        geometry.rotateX(-Math.PI / 2);
+        // Flat: lie down with the texture's "up" pointing north (-Z). Upright: PlaneGeometry already
+        // stands in XY facing +Z (south, toward the camera). Either way, then turn to the label's yaw.
+        if (!this.options.upright) {
+            geometry.rotateX(-Math.PI / 2);
+        }
         geometry.rotateY(THREE.MathUtils.degToRad(this.options.rotationDeg ?? 0));
 
         const mesh = new THREE.Mesh(geometry, this.material);
         const offset = this.options.offset;
-        mesh.position.set(offset?.x ?? 0, FLOOR_HEIGHT, offset?.z ?? 0);
+        const y = this.options.upright ? (this.options.height ?? depth / 2) : FLOOR_HEIGHT;
+        mesh.position.set(offset?.x ?? 0, y, offset?.z ?? 0);
         // Shift so the label's near edge (not its center) lands on `offset` — see
         // FloorLabelOptions.side. Uses the un-yawed width/depth, exact for the grid-aligned default.
         switch (this.options.side) {

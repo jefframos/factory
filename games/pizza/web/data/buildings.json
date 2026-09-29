@@ -150,6 +150,7 @@
         "solidFromMap": true,
         "baseFillFull": true,
         "frame": "Floor",
-        "floorLabelSide": "south"
+        "floorLabelSide": "south",
+        "baseAtDropper": true
     }
 }

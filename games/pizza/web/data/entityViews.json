@@ -313,5 +313,17 @@
         ],
         "scale": 8,
         "rotationDeg": 1
+    },
+    "storageView": {
+        "models": [
+            "Restaurant.Crate"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 1,
+        "rotationDeg": 0
     }
 }

@@ -73,6 +73,12 @@ export interface PlayerBackpackConfig {
      */
     itemScale?: number;
     /**
+     * Optional fixed yaw (degrees) for every carried item — e.g. carrots all lying the same way. Also
+     * turns off the tower's small sideways wobble, so the stack is perfectly straight. Unset = the
+     * natural scattered look. Live on the next stack change.
+     */
+    itemYawDeg?: number;
+    /**
      * How many farm items the stack holds — `base` at upgrade level 0, +`perLevel` per level, up
      * to `maxLevel` levels. The level itself is persisted by BackpackCapacityStorage (only the
      * level — so retuning these numbers applies to existing saves). A harvest that doesn't fit
@@ -198,7 +204,8 @@ export const PLAYER_CONFIG_BY_ID: Partial<Record<string, PlayerConfigEntry>> = {
                 "base": 3,
                 "perLevel": 1,
                 "maxLevel": 12
-            }
+            },
+            "itemYawDeg": 0
         },
         "harvestIntoStack": true
     },

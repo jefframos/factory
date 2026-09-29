@@ -16,6 +16,7 @@
 import { ResourceType } from '../actions/ResourceTypes';
 import { CurrencyType } from './EconomyTypes';
 import type { FloorLabelSide, PopupFrameChoice } from '../ui/PopupConfig';
+import type { ItemOrientation } from '../world/ResourceDisplayModel';
 import type { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
 import MODELS from "../../registry/assetsRegistry/modelsRegistry";
 
@@ -68,6 +69,21 @@ export interface StorageConfig {
     /** Yaw, degrees. */
     rotationDeg: number;
     /**
+     * Optional Entity Views id (EntityViewRegistry.ts) for the storage's own mesh — when it resolves,
+     * it WINS over `models`/`scale`/`rotationDeg` above (its own offset is added on top of the
+     * storage's position). Unset or empty view = the inline `models` fields, unchanged.
+     */
+    view?: string;
+    /**
+     * Which side of the storage its signpost stands on — the signpost itself (model, scale, icon)
+     * is shared by every storage, see STORAGE_SIGNPOST_CONFIG. Unset = 'north'.
+     */
+    signpostSide?: FloorLabelSide;
+    /** Distance from the storage's edge to the signpost, world units. Unset = 0.2. */
+    signpostGap?: number;
+    /** Yaw of this storage's signpost model, degrees. Unset = 0. The item icon keeps facing the camera. */
+    signpostRotationDeg?: number;
+    /**
      * Where the pile starts (the first item's bottom-center) — and so where dropped items land —
      * relative to the storage object's own position, world units. Default sits half-way up
      * Restaurant.Crate (0.8 tall), so the pile rises out of it.
@@ -77,6 +93,10 @@ export interface StorageConfig {
     pile: StoragePileConfig;
     /** Multiplier on each stored item's real world size. Optional — missing uses the player's own PlayerConfig.backpack.itemScale, so items look the same on the stack and in storage. */
     itemScale?: number;
+    /** Optional fixed yaw (degrees) for every stored item, so long items (carrots) lie aligned. Unset = scattered yaws, the natural-pile look (fine for round items). */
+    itemYawDeg?: number;
+    /** How stored items are turned — 'lying' (tall items on their side, the default), 'standing' (as authored) or 'upsideDown' (as authored, flipped — e.g. carrots tip-down). See ResourceDisplayModel's ItemOrientation. */
+    itemOrientation?: ItemOrientation;
     /**
      * Height (world units) of the "only this resource" popup's bottom above the TOP of the pile —
      * same field name/meaning as every other entity's popupBobOffset (see PopupConfig.ts). Only
@@ -115,12 +135,50 @@ export interface StorageConfig {
     disabled?: boolean;
 }
 
+/**
+ * The signpost every storage shares — one model/scale and one item-icon size for all of them, so
+ * it's tuned in one place (the Storages tab's "Signpost" card). Each storage only picks where its
+ * own stands (StorageConfig.signpostSide/signpostGap) and its yaw (signpostRotationDeg). The icon
+ * is the storage's `resourceType` item — a storage without one gets the post but no icon.
+ */
+export interface StorageSignpostConfig {
+    /** First entry used — "Group.Key" string or MODELS.* ref, same as StorageConfig.models. Empty = no signposts at all. */
+    models: (string | ModelDefinition)[];
+    /** Uniform scale on the signpost model's native size. */
+    scale: number;
+    /** Nudge off each storage's side/gap spot, [x, y, z] world units — x/z turn with that storage's signpostRotationDeg. The icon moves with it. */
+    offset: [number, number, number];
+    /** Where the item icon's center sits, [x, y, z] world units from the signpost's base — y is the height above the ground; x/z turn with the storage's signpostRotationDeg. */
+    iconOffset: [number, number, number];
+    /** Size of the item icon, world units (1 = one unit square). */
+    iconScale: number;
+}
+
+export const STORAGE_SIGNPOST_CONFIG: StorageSignpostConfig = {
+    "models": [
+        "Survival.SignpostSingle"
+    ],
+    "scale": 12,
+    "offset": [
+        0,
+        -2.8,
+        0
+    ],
+    "iconOffset": [
+        0,
+        4.6,
+        0.3
+    ],
+    "iconScale": 1.5
+};
+
 /** Applied to every discovered "storage" object unless STORAGE_CONFIG_BY_ID has an override for its id. */
 export const DEFAULT_STORAGE_CONFIG: StorageConfig = {
     "accepts": "farm",
     "models": [
         "Restaurant.Crate"
     ],
+    "view": "storageView",
     "scale": 1,
     "rotationDeg": 0,
     "dropOffset": {},
@@ -154,26 +212,30 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
         "price": {
             "currency": CurrencyType.Money,
             "amount": 10
-        }
+        },
+        "view": "storageView",
     },
     "storage1": {
         "accepts": "farm",
         "resourceType": ResourceType.Carrot,
         "models": [MODELS.Restaurant.Crate],
         "scale": 1,
-        "rotationDeg": 0,
+        "rotationDeg": 90,
         "dropOffset": {},
         "pile": {
-            "columns": 2,
-            "rows": 2,
-            "layers": 3
+            "columns": 4,
+            "rows": 4,
+            "layers": 1
         },
         "popupBobOffset": 3,
         "solid": 1,
         "price": {
             "currency": CurrencyType.Money,
             "amount": 10
-        }
+        },
+        "view": "storageView",
+        "itemScale": 4,
+        "itemOrientation": "standing"
     },
     "storage3": {
         "accepts": "farm",
@@ -192,7 +254,8 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
         "price": {
             "currency": CurrencyType.Money,
             "amount": 10
-        }
+        },
+        "view": "storageView",
     }
 };
 

@@ -45,6 +45,89 @@ export const NPC_CONFIG_BY_ID: Partial<Record<string, NpcConfig>> = {
         "characterViewId": "cyan",
         "viewRadius": 3,
         "viewAngleDeg": 180
+    },
+    "shopper3": {
+        "characterViewId": "red",
+        "viewRadius": 3,
+        "viewAngleDeg": 180
+    },
+    "shopper4": {
+        "characterViewId": "yellow",
+        "scale": 0.0065,
+        "viewRadius": 3,
+        "viewAngleDeg": 180
+    },
+    "shopper5": {
+        "characterViewId": "coral",
+        "viewRadius": 3,
+        "viewAngleDeg": 180
+    },
+    "shopper6": {
+        "characterViewId": "purple",
+        "scale": 0.0085,
+        "viewRadius": 3,
+        "viewAngleDeg": 180
+    },
+    "shopper7": {
+        "characterViewId": "pink",
+        "scale": 0.0065,
+        "viewRadius": 3,
+        "viewAngleDeg": 180
+    },
+    "shopper8": {
+        "characterViewId": "green",
+        "viewRadius": 3,
+        "viewAngleDeg": 180
+    },
+    "shopper9": {
+        "characterViewId": "orange",
+        "scale": 0.008,
+        "viewRadius": 3,
+        "viewAngleDeg": 180
+    },
+    "shopper10": {
+        "characterViewId": "mint",
+        "viewRadius": 3,
+        "viewAngleDeg": 180
+    },
+    "shopper11": {
+        "characterViewId": "lime",
+        "scale": 0.0065,
+        "viewRadius": 3,
+        "viewAngleDeg": 180
+    },
+    "shopper12": {
+        "characterViewId": "teal",
+        "viewRadius": 3,
+        "viewAngleDeg": 180
+    },
+    "shopper13": {
+        "characterViewId": "brown",
+        "scale": 0.0085,
+        "viewRadius": 3,
+        "viewAngleDeg": 180
+    },
+    "shopper14": {
+        "characterViewId": "gold",
+        "viewRadius": 3,
+        "viewAngleDeg": 180
+    },
+    "shopper15": {
+        "characterViewId": "sky",
+        "scale": 0.0065,
+        "viewRadius": 3,
+        "viewAngleDeg": 180
+    },
+    "shopper16": {
+        "characterViewId": "rose",
+        "viewRadius": 3,
+        "viewAngleDeg": 180
+    },
+    "shopper17": {
+        "characterViewId": "slate",
+        "scale": 0.008,
+        "viewRadius": 3,
+        "viewAngleDeg": 180
     }
 };
 

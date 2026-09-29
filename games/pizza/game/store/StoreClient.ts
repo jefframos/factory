@@ -10,6 +10,15 @@
 // Store.ts decides when it pays (pay()). After paying
 // it walks straight to the exit and reports isFinished() so Store removes it.
 //
+// Mood (StoreClientMood, shown as a face in its bubble): arrives HAPPY and
+// drops one step every moodStepSec (its own — see the constructor) until it pays; completing an item while
+// more are still left cheers it up one step. Dropping to SAD with nothing
+// bought yet makes it walk out without buying; with anything bought it stays
+// until its order is done. Early store levels set a floor the mood never
+// drops below (level 1: HAPPY, level 2: ANNOYED — see
+// StoreClientHost.getMoodFloor()), so nobody walks out or pays less there. Its mood at payment scales what it pays —
+// see applyMoodToPrice().
+//
 // Walks in straight lines with the same CharacterBody rig and
 // NPC_MOVE_INPUT_MAGNITUDE trick QuestGiverEntity uses — see that file's own
 // doc on why the move input isn't a full 1.0.
@@ -28,7 +37,7 @@ import { ResourceType } from '../actions/ResourceTypes';
 import { StorageInventory } from '../data/StorageInventory';
 import StoreBubble, { StoreBubbleContent } from './StoreBubble';
 import StoreLine from './StoreLine';
-import { StoreConfig, getStoreItemPrice } from './StoreTypes';
+import { STORE_MOOD_LADDER, StoreClientMood, StoreConfig, applyMoodToPrice, getStoreItemPrice } from './StoreTypes';
 
 const NPC_MOVE_INPUT_MAGNITUDE = 0.5;
 const ARRIVAL_EPSILON = 0.05;
@@ -38,7 +47,9 @@ const REROUTE_CHECK_SEC = 1;
 const FALLBACK_HEAD_HEIGHT = 2;
 /** Picked items fly from this high above the storage's own position. */
 const STORAGE_ICON_HEIGHT = 1;
-
+const ARRIVAL_MOOD_INDEX = STORE_MOOD_LADDER.indexOf('happy');
+/** Reaching this mood with nothing bought yet makes a client walk out. */
+const LEAVE_EMPTY_HANDED_MOOD_INDEX = STORE_MOOD_LADDER.indexOf('sad');
 /** A storage a client can queue at — built by Store.ts, one per active storage inside the store. */
 export interface StoreStorageRef {
     readonly id: string;
@@ -55,6 +66,8 @@ export interface StoreClientHost {
     chooseStorageFor(type: ResourceType): StoreStorageRef | undefined;
     /** Whether the store is currently revealed (fog of war) — the bubble hides while it isn't. */
     isVisible(): boolean;
+    /** Lowest mood a client can drop to right now (early store levels), undefined = no floor — see Store.getMoodFloor(). */
+    getMoodFloor(): StoreClientMood | undefined;
 }
 
 export interface StoreClientWant {
@@ -74,7 +87,9 @@ export default class StoreClient extends Entity {
     private readonly host: StoreClientHost;
     private readonly wants: WantProgress[];
     private readonly exitPoint: THREE.Vector3;
-    private readonly npcId: string;
+    public readonly npcId: string;
+    /** This client's own seconds per mood step — rolled by Store (rollClientMoodStepSec()), so some clients are more tolerant than others. */
+    private readonly moodStepSec: number;
     private readonly body = new CharacterBody();
     private readonly bubble = new StoreBubble();
     private anchor?: ScreenAnchorComponent;
@@ -85,6 +100,8 @@ export default class StoreClient extends Entity {
     private pickTimerSec = 0;
     private rerouteTimerSec = REROUTE_CHECK_SEC;
     private waitingForStock = false;
+    private moodIndex = ARRIVAL_MOOD_INDEX;
+    private moodTimerSec = 0;
 
     private readonly goal = new THREE.Vector3();
     private readonly scratchHead = new THREE.Vector3();
@@ -93,8 +110,9 @@ export default class StoreClient extends Entity {
     private moveDirZ = 0;
     private isMoving = false;
 
-    public constructor(host: StoreClientHost, spawnAt: THREE.Vector3, exitPoint: THREE.Vector3, wants: StoreClientWant[], npcId: string) {
+    public constructor(host: StoreClientHost, spawnAt: THREE.Vector3, exitPoint: THREE.Vector3, wants: StoreClientWant[], npcId: string, moodStepSec: number) {
         super();
+        this.moodStepSec = moodStepSec;
         this.host = host;
         this.exitPoint = exitPoint.clone();
         this.wants = wants.map(want => ({ type: want.type, remaining: want.amount, bought: 0 }));
@@ -124,6 +142,10 @@ export default class StoreClient extends Entity {
 
     public override update(delta: number): void {
         super.update(delta);
+
+        if (this.state === 'shopping' || this.state === 'toCashier' || this.state === 'readyToPay') {
+            this.updateMood(delta);
+        }
 
         let faceTarget: THREE.Vector3 | undefined;
         switch (this.state) {
@@ -172,6 +194,10 @@ export default class StoreClient extends Entity {
         this.host.cashierLine.leave(this);
         this.state = 'leaving';
         return this.getTotalPrice();
+    }
+
+    public getMood(): StoreClientMood {
+        return STORE_MOOD_LADDER[this.moodIndex];
     }
 
     public isFinished(): boolean {
@@ -252,14 +278,42 @@ export default class StoreClient extends Entity {
                     storage.line.leave(this);
                     this.storage = undefined;
                     this.wantIndex++;
+                    if (this.wantIndex < this.wants.length) {
+                        this.changeMood(1);
+                    }
                 }
             }
         }
         return storage.position;
     }
 
+    /** One step worse every this.moodStepSec; out of patience with nothing bought yet -> walks out. */
+    private updateMood(delta: number): void {
+        this.moodTimerSec += delta;
+        if (this.moodTimerSec < this.moodStepSec) {
+            return;
+        }
+        const floor = this.host.getMoodFloor();
+        if (floor !== undefined && this.moodIndex <= STORE_MOOD_LADDER.indexOf(floor)) {
+            this.moodTimerSec = 0;
+            return;
+        }
+        this.changeMood(-1);
+        if (this.state === 'shopping' && this.moodIndex <= LEAVE_EMPTY_HANDED_MOOD_INDEX && !this.wants.some(want => want.bought > 0)) {
+            this.storage?.line.leave(this);
+            this.storage = undefined;
+            this.state = 'leaving';
+        }
+    }
+
+    /** Steps the mood up (+1) or down (-1), clamped to the ladder — restarts the time spent in the current mood. */
+    private changeMood(step: number): void {
+        this.moodIndex = Math.max(0, Math.min(STORE_MOOD_LADDER.length - 1, this.moodIndex + step));
+        this.moodTimerSec = 0;
+    }
+
     private startCheckout(): void {
-        if (this.getTotalPrice() <= 0) {
+        if (this.getBasePrice() <= 0) {
             // Couldn't buy anything at all — just leave.
             this.state = 'leaving';
             return;
@@ -268,21 +322,29 @@ export default class StoreClient extends Entity {
         this.state = 'toCashier';
     }
 
+    /** What this client pays right now — its base price scaled by its current mood. */
     private getTotalPrice(): number {
+        return applyMoodToPrice(this.host.config, this.getMood(), this.getBasePrice());
+    }
+
+    private getBasePrice(): number {
         const base = this.wants.reduce((sum, want) => sum + want.bought * getStoreItemPrice(want.type), 0);
         return base > 0 ? Math.max(1, Math.round(base * this.host.config.priceMultiplier)) : 0;
     }
 
     private bubbleContent(): StoreBubbleContent {
+        const mood = this.getMood();
         switch (this.state) {
             case 'shopping': {
                 const wants = this.wants.filter(want => want.remaining > 0).map(want => ({ type: want.type, remaining: want.remaining }));
                 const waitingFor = this.waitingForStock ? this.wants[this.wantIndex]?.type : undefined;
-                return wants.length > 0 ? { kind: 'wants', wants, waitingFor } : { kind: 'hidden' };
+                return wants.length > 0 ? { kind: 'wants', mood, wants, waitingFor } : { kind: 'mood', mood };
             }
             case 'toCashier':
             case 'readyToPay':
-                return { kind: 'pay', amount: this.getTotalPrice() };
+                return { kind: 'pay', mood, amount: this.getTotalPrice() };
+            case 'leaving':
+                return { kind: 'mood', mood };
             default:
                 return { kind: 'hidden' };
         }

@@ -299,6 +299,16 @@ export const ENTITY_VIEW_CONFIG: Record<string, EntityViewConfig> = {
             0,
             0
         ]
+    },
+    "storageView": {
+        "models": [MODELS.Restaurant.Crate],
+        "scale": 1,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            0,
+            0
+        ]
     }
 };
 

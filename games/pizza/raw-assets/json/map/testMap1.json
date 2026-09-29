@@ -879,7 +879,7 @@
                 }, 
                 {
                  "data":[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0,
-                    0, 0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0,
                     4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0,
                     4, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 0,
                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 4, 4,
@@ -1906,34 +1906,6 @@
                  "y":640
                 }, 
                 {
-                 "height":64.5,
-                 "id":117,
-                 "name":"",
-                 "opacity":1,
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"string",
-                         "value":"dropperStorage1"
-                        }, 
-                        {
-                         "name":"target",
-                         "type":"string",
-                         "value":"storage1"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"dropper"
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":64.5,
-                 "x":172.334,
-                 "y":650.667
-                }, 
-                {
                  "height":50.6667,
                  "id":115,
                  "name":"",
@@ -1953,8 +1925,8 @@
                  "type":"",
                  "visible":true,
                  "width":46.333,
-                 "x":177.667,
-                 "y":653.333
+                 "x":186.666666666667,
+                 "y":648
                 }, 
                 {
                  "height":50.6667,
@@ -1976,8 +1948,8 @@
                  "type":"",
                  "visible":true,
                  "width":46.333,
-                 "x":256.94,
-                 "y":658.242
+                 "x":247.606666666667,
+                 "y":649.575333333333
                 }, 
                 {
                  "height":50.6667,
@@ -2260,8 +2232,7 @@
                  "width":64.5,
                  "x":-512,
                  "y":640
-                },
-            
+                }, 
                 {
                  "height":0,
                  "id":35,
@@ -2333,7 +2304,8 @@
                  "width":0,
                  "x":-543.333,
                  "y":272
-                }, 
+                },
+            
                 {
                  "height":0,
                  "id":160,
@@ -2353,16 +2325,20 @@
                          "y":232.933
                         }, 
                         {
-                         "x":316.241,
-                         "y":241.065
+                         "x":254.907666666667,
+                         "y":247.731666666667
                         }, 
                         {
-                         "x":233,
-                         "y":84
+                         "x":285.233080849136,
+                         "y":195.599912986438
                         }, 
                         {
-                         "x":239.667,
-                         "y":-110
+                         "x":58.3333333333333,
+                         "y":121.333333333333
+                        }, 
+                        {
+                         "x":31.667,
+                         "y":-104
                         }],
                  "properties":[
                         {
@@ -2446,8 +2422,8 @@
                  "type":"",
                  "visible":true,
                  "width":96,
-                 "x":240.5,
-                 "y":466
+                 "x":-160,
+                 "y":928
                 }, 
                 {
                  "height":64,
@@ -2469,8 +2445,8 @@
                  "type":"",
                  "visible":true,
                  "width":96,
-                 "x":115.5,
-                 "y":464.5
+                 "x":-160,
+                 "y":832
                 }, 
                 {
                  "height":64,
@@ -2492,8 +2468,8 @@
                  "type":"",
                  "visible":true,
                  "width":96,
-                 "x":-7,
-                 "y":464.5
+                 "x":-160,
+                 "y":736
                 }, 
                 {
                  "height":61.3352,
@@ -2621,6 +2597,180 @@
                  "width":64,
                  "x":-225,
                  "y":640
+                }, 
+                {
+                 "gid":25,
+                 "height":8,
+                 "id":161,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"stall1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"building"
+                        }, 
+                        {
+                         "name":"useOwnMesh",
+                         "type":"bool",
+                         "value":true
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":35,
+                 "x":-34.1666666666667,
+                 "y":610
+                }, 
+                {
+                 "gid":25,
+                 "height":8,
+                 "id":170,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"stall1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"building"
+                        }, 
+                        {
+                         "name":"useOwnMesh",
+                         "type":"bool",
+                         "value":true
+                        }],
+                 "rotation":270,
+                 "type":"",
+                 "visible":true,
+                 "width":35,
+                 "x":-32,
+                 "y":736
+                }, 
+                {
+                 "gid":25,
+                 "height":8,
+                 "id":171,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"stall1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"building"
+                        }, 
+                        {
+                         "name":"useOwnMesh",
+                         "type":"bool",
+                         "value":true
+                        }],
+                 "rotation":270,
+                 "type":"",
+                 "visible":true,
+                 "width":35,
+                 "x":-32,
+                 "y":640
+                }, 
+                {
+                 "gid":25,
+                 "height":8,
+                 "id":172,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"stall1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"building"
+                        }, 
+                        {
+                         "name":"useOwnMesh",
+                         "type":"bool",
+                         "value":true
+                        }],
+                 "rotation":270,
+                 "type":"",
+                 "visible":true,
+                 "width":35,
+                 "x":0,
+                 "y":608
+                }, 
+                {
+                 "gid":25,
+                 "height":8,
+                 "id":173,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"stall1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"building"
+                        }, 
+                        {
+                         "name":"useOwnMesh",
+                         "type":"bool",
+                         "value":true
+                        }],
+                 "rotation":270,
+                 "type":"",
+                 "visible":true,
+                 "width":35,
+                 "x":0,
+                 "y":608
+                }, 
+                {
+                 "gid":25,
+                 "height":8,
+                 "id":174,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"stall1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"building"
+                        }, 
+                        {
+                         "name":"useOwnMesh",
+                         "type":"bool",
+                         "value":true
+                        }],
+                 "rotation":270,
+                 "type":"",
+                 "visible":true,
+                 "width":35,
+                 "x":328,
+                 "y":608
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -2631,6 +2781,7 @@
         {
          "draworder":"topdown",
          "id":9,
+         "locked":true,
          "name":"stores",
          "objects":[
                 {
@@ -3044,6 +3195,19 @@
                  "width":80,
                  "x":1184,
                  "y":1248
+                }, 
+                {
+                 "gid":27,
+                 "height":80,
+                 "id":183,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":90,
+                 "type":"",
+                 "visible":true,
+                 "width":80,
+                 "x":256,
+                 "y":1024
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -4026,6 +4190,34 @@
                  "width":64.5,
                  "x":-128.25,
                  "y":462
+                }, 
+                {
+                 "height":64.5,
+                 "id":117,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"dropperStorage1"
+                        }, 
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"storage1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"dropper"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":64.5,
+                 "x":172.334,
+                 "y":650.667
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -4034,7 +4226,7 @@
          "y":0
         }],
  "nextlayerid":11,
- "nextobjectid":161,
+ "nextobjectid":184,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

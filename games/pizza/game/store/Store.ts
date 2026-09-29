@@ -6,10 +6,14 @@
 //     whose position is inside the store's area. A storage with a
 //     `resourceType` always offers that item (even while empty — clients
 //     then wait for a refill); a storage without one offers whatever it
-//     currently holds.
+//     currently holds. A crop resource is only offered once the player can
+//     actually get it (see isObtainable()) — e.g. no tomato orders before a
+//     tomato farm plot is owned, unless tomatoes are already in stock.
 //   - spawning clients (StoreClient) at the entrance every
 //     spawnIntervalSec, up to maxClients, each asking for a few of the
-//     currently offered items.
+//     currently offered items. Both (and how patient clients are) scale
+//     with how many shelves are available — quiet and forgiving with one,
+//     full pace with all of them (see getStorePacing()).
 //   - one waiting line per storage plus one for the cashier (StoreLine).
 //   - the cashier (StoreCashier) and money drop (StoreMoneyPile): while the
 //     player stands at the cashier, the client at the front of its line pays
@@ -48,6 +52,12 @@ import { StorageInventory } from '../data/StorageInventory';
 import { StorageConfig, getStorageConfig } from '../data/StorageTypes';
 import { BuildingStorage } from '../data/BuildingStorage';
 import { BuildingId } from '../data/BuildingId';
+import { BackpackStorage } from '../data/BackpackStorage';
+import { CROP_CONFIG, CropId } from '../data/CropTypes';
+import { FarmPlotStorage } from '../data/FarmPlotStorage';
+import { getFarmPlotConfig } from '../data/FarmTypes';
+import { SeedStorage } from '../data/SeedStorage';
+import { SEED_CONFIG, SeedId } from '../data/SeedTypes';
 import { pickRandom } from '../world/AssetLibraryRegistry';
 import WorldObjectRegistry from '../world/WorldObjectRegistry';
 import StoreClient, { StoreClientHost, StoreClientWant, StoreStorageRef } from './StoreClient';
@@ -56,12 +66,20 @@ import StoreMoneyPile from './StoreMoneyPile';
 import StoreLine from './StoreLine';
 import { StoreLayout, StoreRect, randomPointInRect, readStoreLayouts, rectContains } from './StoreLayout';
 import { StoreMoneyStorage } from './StoreMoneyStorage';
-import { StoreConfig, getNextStoreLevel, getStoreConfig, getStorageSpotDirection } from './StoreTypes';
+import { StoreClientMood, StoreConfig, StorePacing, getNextStoreLevel, getStoreConfig, getStorageSpotDirection, getStorePacing, rollClientMoodStepSec } from './StoreTypes';
 import { StoreProgressStorage } from './StoreProgressStorage';
 import { StoreUnlocks } from './StoreUnlocks';
 
 /** The first client shows up this long after the store spawns, rather than a full spawnIntervalSec. */
 const FIRST_SPAWN_DELAY_SEC = 1;
+/**
+ * Early store levels are forgiving: a client's mood never drops below this. Level 1 stays happy,
+ * level 2 can get annoyed; levels not listed have no floor (sad/angry, walking out, paying less).
+ */
+const MOOD_FLOOR_BY_LEVEL: Partial<Record<number, StoreClientMood>> = {
+    1: 'happy',
+    2: 'annoyed',
+};
 
 export interface StoreStorageSource {
     id: string;
@@ -80,12 +98,16 @@ export default class Store extends Entity implements StoreClientHost {
 
     private readonly layout: StoreLayout;
     private readonly storages: StoreStorage[];
+    /** Every enabled farm plot id on the map — see isObtainable(). */
+    private readonly farmIds: string[];
     private readonly root: THREE.Object3D;
     private readonly getWalletOverlayPosition: () => { x: number; y: number };
     private readonly clients: StoreClient[] = [];
     private cashier?: StoreCashier;
     private moneyPile?: StoreMoneyPile;
-    private spawnTimerSec: number;
+    private spawnTimerSec = 0;
+    /** True until the first client spawns — it comes after FIRST_SPAWN_DELAY_SEC instead of a full interval. */
+    private firstSpawnPending = true;
     private payTimerSec = 0;
 
     public constructor(
@@ -95,14 +117,15 @@ export default class Store extends Entity implements StoreClientHost {
         screenHost: ScreenAnchorHost,
         root: THREE.Object3D,
         getWalletOverlayPosition: () => { x: number; y: number },
+        farmIds: string[] = [],
     ) {
         super();
+        this.farmIds = farmIds;
         this.layout = layout;
         this.config = config;
         this.screenHost = screenHost;
         this.root = root;
         this.getWalletOverlayPosition = getWalletOverlayPosition;
-        this.spawnTimerSec = Math.max(0, config.spawnIntervalSec - FIRST_SPAWN_DELAY_SEC);
 
         if (layout.starter !== undefined && !(Object.values(BuildingId) as string[]).includes(layout.starter)) {
             console.warn(`[Store] "${layout.id}" starter "${layout.starter}" is not a BuildingId — the store will stay closed`);
@@ -149,11 +172,14 @@ export default class Store extends Entity implements StoreClientHost {
 
         // No clients while closed, still hidden under fog of war (they'd drain storages the player
         // can't reach yet), or with no storage available to buy from.
-        if (open && this.isVisible() && this.clients.length < this.config.maxClients && this.getAvailableStorages().length > 0) {
+        const pacing = this.getPacing();
+        if (open && this.isVisible() && this.clients.length < pacing.maxClients && this.getAvailableStorages().length > 0) {
             this.spawnTimerSec += delta;
-            if (this.spawnTimerSec >= this.config.spawnIntervalSec) {
+            if (this.spawnTimerSec >= (this.firstSpawnPending ? FIRST_SPAWN_DELAY_SEC : pacing.spawnIntervalSec)) {
                 this.spawnTimerSec = 0;
-                this.trySpawnClient();
+                if (this.trySpawnClient(pacing)) {
+                    this.firstSpawnPending = false;
+                }
             }
         }
 
@@ -191,6 +217,11 @@ export default class Store extends Entity implements StoreClientHost {
         return this.root.visible;
     }
 
+    /** Lowest mood a client can drop to at the store's current level — see MOOD_FLOOR_BY_LEVEL. */
+    public getMoodFloor(): StoreClientMood | undefined {
+        return MOOD_FLOOR_BY_LEVEL[StoreProgressStorage.getLevel(this.layout.id)];
+    }
+
     /**
      * In-stock storages first; otherwise a storage dedicated to `type` (the client waits there
      * for a refill); otherwise a generic storage that accepts it. Ties go to the shortest line.
@@ -208,6 +239,11 @@ export default class Store extends Entity implements StoreClientHost {
             }
         }
         return best;
+    }
+
+    /** Busier (and less forgiving) with every shelf the player has made available — see getStorePacing(). */
+    private getPacing(): StorePacing {
+        return getStorePacing(this.config, this.getAvailableStorages().length, this.storages.length);
     }
 
     /** Storages clients can use right now — bought (or free), and enabled by the store's level. See StoreUnlocks.isStorageAvailable(). */
@@ -249,13 +285,42 @@ export default class Store extends Entity implements StoreClientHost {
                 }
             }
         }
-        return [...types];
+        return [...types].filter(type => this.isObtainable(type));
     }
 
-    private trySpawnClient(): void {
+    /**
+     * Can the player fill an order for `type` right now? True when some is already in one of this
+     * store's storages or in the backpack, when no crop yields it (not farm-gated — any other
+     * source is assumed reachable), or when an owned farm plot can grow a crop that yields it:
+     * its assignedCropId, or — for a free plot — an allowed crop the player holds a seed for.
+     */
+    private isObtainable(type: ResourceType): boolean {
+        if (BackpackStorage.getCount(type) > 0 || this.storages.some(s => StorageInventory.getCount(s.id, type) > 0)) {
+            return true;
+        }
+        const crops = (Object.keys(CROP_CONFIG) as CropId[]).filter(id => CROP_CONFIG[id].yield.resourceType === type);
+        if (crops.length === 0) {
+            return true;
+        }
+        return this.farmIds.some(farmId => {
+            if (!FarmPlotStorage.isOwned(farmId)) {
+                return false;
+            }
+            const plot = getFarmPlotConfig(farmId);
+            if (plot.assignedCropId !== undefined) {
+                return crops.includes(plot.assignedCropId);
+            }
+            return crops.some(crop =>
+                (plot.allowedCrops === undefined || plot.allowedCrops.includes(crop)) &&
+                (Object.keys(SEED_CONFIG) as SeedId[]).some(seed => SEED_CONFIG[seed].cropId === crop && SeedStorage.getCount(seed) > 0));
+        });
+    }
+
+    /** Returns false when nothing could spawn (nothing offered / no looks configured). */
+    private trySpawnClient(pacing: StorePacing): boolean {
         const offered = shuffle(this.getOfferedTypes());
         if (offered.length === 0 || this.config.npcs.length === 0) {
-            return;
+            return false;
         }
 
         const distinct = randomInt(1, Math.min(Math.max(1, this.config.maxDistinctItems), offered.length));
@@ -271,10 +336,19 @@ export default class Store extends Entity implements StoreClientHost {
             new THREE.Vector3(spawn.x, 0, spawn.z),
             new THREE.Vector3(exit.x, 0, exit.z),
             wants,
-            pickRandom(this.config.npcs).npcId,
+            this.pickNpcId(),
+            rollClientMoodStepSec(this.config, pacing),
         ));
         this.root.add(client.transform);
         this.clients.push(client);
+        return true;
+    }
+
+    /** A random look, preferring ones nobody inside the store is wearing yet so the crowd stays varied. */
+    private pickNpcId(): string {
+        const inside = new Set(this.clients.map(client => client.npcId));
+        const unused = this.config.npcs.filter(entry => !inside.has(entry.npcId));
+        return pickRandom(unused.length > 0 ? unused : this.config.npcs).npcId;
     }
 
     /** While the player stands at the cashier, the client at the front of its line pays after payDelaySec. */
@@ -349,12 +423,19 @@ export function spawnStores(deps: SpawnStoresDeps): Store[] {
             }
         }
 
+        const farmIds: string[] = [];
+        for (const [id] of deps.worldObjects.getAllOfType('farm')) {
+            if (!getFarmPlotConfig(id).disabled) {
+                farmIds.push(id);
+            }
+        }
+
         const root = new THREE.Group();
         root.name = `store:${layout.id}`;
         deps.threeScene.add(root);
         deps.registerZoneVisibility(root, layout.area.x, layout.area.z, layout.area.width, layout.area.depth);
 
-        const store = deps.world.add(new Store(layout, config, storages, deps.screenHost, root, deps.getWalletOverlayPosition));
+        const store = deps.world.add(new Store(layout, config, storages, deps.screenHost, root, deps.getWalletOverlayPosition, farmIds));
         stores.push(store);
     }
     return stores;

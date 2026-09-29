@@ -6,6 +6,51 @@
             },
             {
                 "npcId": "shopper2"
+            },
+            {
+                "npcId": "shopper3"
+            },
+            {
+                "npcId": "shopper4"
+            },
+            {
+                "npcId": "shopper5"
+            },
+            {
+                "npcId": "shopper6"
+            },
+            {
+                "npcId": "shopper7"
+            },
+            {
+                "npcId": "shopper8"
+            },
+            {
+                "npcId": "shopper9"
+            },
+            {
+                "npcId": "shopper10"
+            },
+            {
+                "npcId": "shopper11"
+            },
+            {
+                "npcId": "shopper12"
+            },
+            {
+                "npcId": "shopper13"
+            },
+            {
+                "npcId": "shopper14"
+            },
+            {
+                "npcId": "shopper15"
+            },
+            {
+                "npcId": "shopper16"
+            },
+            {
+                "npcId": "shopper17"
             }
         ],
         "spawnIntervalSec": 6,
@@ -31,9 +76,54 @@
                 },
                 {
                     "npcId": "shopper2"
+                },
+                {
+                    "npcId": "shopper3"
+                },
+                {
+                    "npcId": "shopper4"
+                },
+                {
+                    "npcId": "shopper5"
+                },
+                {
+                    "npcId": "shopper6"
+                },
+                {
+                    "npcId": "shopper7"
+                },
+                {
+                    "npcId": "shopper8"
+                },
+                {
+                    "npcId": "shopper9"
+                },
+                {
+                    "npcId": "shopper10"
+                },
+                {
+                    "npcId": "shopper11"
+                },
+                {
+                    "npcId": "shopper12"
+                },
+                {
+                    "npcId": "shopper13"
+                },
+                {
+                    "npcId": "shopper14"
+                },
+                {
+                    "npcId": "shopper15"
+                },
+                {
+                    "npcId": "shopper16"
+                },
+                {
+                    "npcId": "shopper17"
                 }
             ],
-            "spawnIntervalSec": 15,
+            "spawnIntervalSec": 12,
             "maxClients": 5,
             "moveSpeed": 2.5,
             "maxDistinctItems": 2,
@@ -98,7 +188,13 @@
                     ]
                 }
             ],
-            "defaultStorageId": "storage1"
+            "defaultStorageId": "storage1",
+            "startSpawnIntervalSec": 24,
+            "startMaxClients": 2,
+            "startPatienceMultiplier": 1.6,
+            "moodStepSec": 20,
+            "minClientPatience": 0.8,
+            "maxClientPatience": 1.6
         }
     }
 }

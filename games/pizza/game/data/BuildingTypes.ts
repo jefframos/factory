@@ -167,6 +167,14 @@ export interface BuildingConfig extends FloorLabelConfig {
      * these at the mesh position, unchanged from before this field existed.
      */
     anchorAtDropper?: boolean;
+    /**
+     * When true, the unbuilt site (level 0's `baseView`) is placed at the CENTER of this building's
+     * dropper instead of at the building's own position — for a building made of several map
+     * pieces, where the building's position isn't where the construction site should stand.
+     * Only level 0; built levels keep their own placement. Falls back to the building's position
+     * when it has no dropper. undefined/false (the default) keeps the old placement.
+     */
+    baseAtDropper?: boolean;
     /** NpcTypes.ts id — optional; when set, an animated NPC (see NpcEntity.ts) spawns alongside this building, wearing that NpcConfig's CharacterView. Same convention as MartConfig.npcId. undefined (the default) means no NPC spawns here at all. */
     npcId?: string;
     /** World-unit [x, y, z] nudge off the building's own mesh position (see PizzaScene.setupBuildingZone()) — undefined/[0,0,0] (the default) puts the NPC right at the building's own center. Only read when `npcId` is set. Always relative to the mesh position, regardless of `anchorAtDropper` — that flag only affects the requirements panel/particles, not where a level designer wants an NPC standing relative to the building's own visible model. */
@@ -344,7 +352,8 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
         "baseView": "baseBuildingSite",
         "baseFillFull": true,
         "frame": "Floor",
-        "floorLabelSide": "south"
+        "floorLabelSide": "south",
+        "baseAtDropper": true
     }
 };
 

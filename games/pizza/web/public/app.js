@@ -372,6 +372,16 @@ function createMissingMapEntry(id) {
 }
 
 /** Human-readable consequence of a "config id has no matching map object" mismatch — matches what PizzaScene actually does for each entity type (see validateMap.mjs's own doc), so the banner tells a designer what will really happen instead of just "mismatch." */
+/**
+ * A 'queues'-shaped tab's extra single-object export, shown as its own card above Default/By id —
+ * `dataKey` is where it lives in the tab's JSON (matches that mapping's tileDataKey in
+ * entityMap.mjs), `schema` its ENTITY_SCHEMAS entry.
+ */
+const SHARED_SECTIONS = {
+    farms: { dataKey: 'tiles', schema: 'farmTiles', title: 'Tile Settings — shared by every farm plot, not per-plot', label: 'Tile Settings' },
+    storages: { dataKey: 'signpost', schema: 'storageSignpost', title: 'Signpost — shared by every storage (each storage only sets its own Signpost Side / Gap / Rotation below)', label: 'Signpost' },
+};
+
 const MISSING_ON_MAP_LABEL = {
     gates: 'not on the map — PizzaScene will skip spawning this gate entirely',
     buildings: 'not on the map — PizzaScene will skip spawning this building entirely',
@@ -519,9 +529,11 @@ function renderActiveTab() {
         // usual default/byId pair — rendered here as its own card, above both, since it isn't
         // per-plot at all and has no schema in common with the price/appearRequirement/solid
         // fields the entry cards below edit.
-        if (data.tiles) {
-            contentEl.appendChild(sectionLabel('Tile Settings — shared by every farm plot, not per-plot'));
-            contentEl.appendChild(renderEntryCard(null, 'tiles', data.tiles, ENTITY_SCHEMAS.farmTiles ?? [], false, false, missingOnMap, 'Tile Settings'));
+        // Storages use the same mechanism for their shared Signpost card — see SHARED_SECTIONS.
+        const shared = SHARED_SECTIONS[activeId];
+        if (shared && data[shared.dataKey]) {
+            contentEl.appendChild(sectionLabel(shared.title));
+            contentEl.appendChild(renderEntryCard(null, shared.dataKey, data[shared.dataKey], ENTITY_SCHEMAS[shared.schema] ?? [], false, false, missingOnMap, shared.label));
         }
         const noun = { farms: 'plot', storages: 'storage', stores: 'store' }[activeId] ?? 'queue';
         contentEl.appendChild(sectionLabel(`Default — used by any ${noun} placed on the map with no id-specific override below`));

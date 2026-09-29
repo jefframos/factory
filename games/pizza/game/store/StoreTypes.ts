@@ -87,6 +87,26 @@ export interface StoreConfig {
     billsPerPile: number;
     /** Height of the want-bubble above the client's head, world units. */
     bubbleOffset: number;
+    /**
+     * Pacing while the store has only ONE shelf (available storage). spawnIntervalSec/maxClients
+     * above are the pacing with EVERY shelf in the store available; in between, each shelf added
+     * moves pacing a step from these toward those — see getStorePacing(). Unset =
+     * spawnIntervalSec x DEFAULT_START_SPAWN_INTERVAL_FACTOR.
+     */
+    startSpawnIntervalSec?: number;
+    /** Same, for maxClients. Unset = min(DEFAULT_START_MAX_CLIENTS, maxClients). */
+    startMaxClients?: number;
+    /** x moodStepSec with only one shelf (more forgiving early on), easing to x1 with every shelf. Unset = DEFAULT_START_PATIENCE_MULTIPLIER. */
+    startPatienceMultiplier?: number;
+    /** Seconds a client stays in one mood before dropping a step (see StoreClientMood). Unset = DEFAULT_MOOD_STEP_SEC. */
+    moodStepSec?: number;
+    /** Each client's own tolerance: its mood step time is x a random value between these two. Unset = DEFAULT_MIN/MAX_CLIENT_PATIENCE. */
+    minClientPatience?: number;
+    maxClientPatience?: number;
+    /** What a VERY HAPPY client's payment is multiplied by. Unset = DEFAULT_VERY_HAPPY_PAY_MULTIPLIER. */
+    veryHappyPayMultiplier?: number;
+    /** Fraction taken off a SAD or ANGRY client's payment (0.2 = 20% less, rounded). Unset = DEFAULT_UNHAPPY_PAY_PENALTY. */
+    unhappyPayPenalty?: number;
     /** A storage (map id, inside this store) that is FREE and appears the moment the store opens. Unset = the player has to buy every storage. */
     defaultStorageId?: string;
     /** Level ladder — see StoreLevelConfig's own doc. Empty/unset = the store stays level 1 forever. */
@@ -103,6 +123,51 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
         },
         {
             "npcId": "shopper2"
+        },
+        {
+            "npcId": "shopper3"
+        },
+        {
+            "npcId": "shopper4"
+        },
+        {
+            "npcId": "shopper5"
+        },
+        {
+            "npcId": "shopper6"
+        },
+        {
+            "npcId": "shopper7"
+        },
+        {
+            "npcId": "shopper8"
+        },
+        {
+            "npcId": "shopper9"
+        },
+        {
+            "npcId": "shopper10"
+        },
+        {
+            "npcId": "shopper11"
+        },
+        {
+            "npcId": "shopper12"
+        },
+        {
+            "npcId": "shopper13"
+        },
+        {
+            "npcId": "shopper14"
+        },
+        {
+            "npcId": "shopper15"
+        },
+        {
+            "npcId": "shopper16"
+        },
+        {
+            "npcId": "shopper17"
         }
     ],
     "spawnIntervalSec": 6,
@@ -129,10 +194,61 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
             },
             {
                 "npcId": "shopper2"
+            },
+            {
+                "npcId": "shopper3"
+            },
+            {
+                "npcId": "shopper4"
+            },
+            {
+                "npcId": "shopper5"
+            },
+            {
+                "npcId": "shopper6"
+            },
+            {
+                "npcId": "shopper7"
+            },
+            {
+                "npcId": "shopper8"
+            },
+            {
+                "npcId": "shopper9"
+            },
+            {
+                "npcId": "shopper10"
+            },
+            {
+                "npcId": "shopper11"
+            },
+            {
+                "npcId": "shopper12"
+            },
+            {
+                "npcId": "shopper13"
+            },
+            {
+                "npcId": "shopper14"
+            },
+            {
+                "npcId": "shopper15"
+            },
+            {
+                "npcId": "shopper16"
+            },
+            {
+                "npcId": "shopper17"
             }
         ],
-        "spawnIntervalSec": 15,
+        "spawnIntervalSec": 12,
+        "startSpawnIntervalSec": 24,
         "maxClients": 5,
+        "startMaxClients": 2,
+        "startPatienceMultiplier": 1.6,
+        "moodStepSec": 20,
+        "minClientPatience": 0.8,
+        "maxClientPatience": 1.6,
         "moveSpeed": 2.5,
         "maxDistinctItems": 2,
         "maxAmountPerItem": 2,
@@ -217,6 +333,83 @@ export function getNextStoreLevel(config: StoreConfig, currentLevel: number): St
         }
     }
     return next;
+}
+
+/**
+ * A client's mood, best to worst — see StoreClient.ts. Arrives HAPPY, drops one step every
+ * moodStepSec until paid, and climbs one step each time it completes an item while more are
+ * still left. Dropping to SAD with nothing bought makes it leave; with something bought it
+ * stays until its order is done (SAD, then ANGRY) and pays less.
+ */
+export type StoreClientMood = 'veryHappy' | 'happy' | 'annoyed' | 'sad' | 'angry';
+
+/** Worst to best — a mood's index is its "happiness", used to step up/down. */
+export const STORE_MOOD_LADDER: readonly StoreClientMood[] = ['angry', 'sad', 'annoyed', 'happy', 'veryHappy'];
+
+/** Texture key (packed 'ui' bundle, ui{tps}/faces) shown in the client's bubble for each mood. */
+export const STORE_MOOD_ICON: Record<StoreClientMood, string> = {
+    veryHappy: 'emoji-very-happy',
+    happy: 'emoji-happy',
+    annoyed: 'emoji-annoyed',
+    sad: 'emoji-sad',
+    angry: 'emoji-angry',
+};
+
+export const DEFAULT_MOOD_STEP_SEC = 20;
+export const DEFAULT_VERY_HAPPY_PAY_MULTIPLIER = 2;
+export const DEFAULT_UNHAPPY_PAY_PENALTY = 0.2;
+export const DEFAULT_START_SPAWN_INTERVAL_FACTOR = 1.6;
+export const DEFAULT_START_MAX_CLIENTS = 2;
+export const DEFAULT_START_PATIENCE_MULTIPLIER = 1.5;
+export const DEFAULT_MIN_CLIENT_PATIENCE = 0.8;
+export const DEFAULT_MAX_CLIENT_PATIENCE = 1.5;
+
+/** How busy/forgiving a store is right now — see getStorePacing(). */
+export interface StorePacing {
+    spawnIntervalSec: number;
+    maxClients: number;
+    /** x moodStepSec for clients spawned now, before their own random tolerance. */
+    patienceMultiplier: number;
+}
+
+/**
+ * Pacing for a store with `shelves` of its `totalShelves` storages available: the `start*`
+ * values at one shelf, the regular spawnIntervalSec/maxClients (and x1 patience) with all of
+ * them, a linear step per shelf in between — so each new shelf brings a few more clients.
+ */
+export function getStorePacing(config: StoreConfig, shelves: number, totalShelves: number): StorePacing {
+    const t = totalShelves > 1 ? Math.min(1, Math.max(0, (shelves - 1) / (totalShelves - 1))) : 1;
+    const lerp = (from: number, to: number) => from + (to - from) * t;
+    const startInterval = config.startSpawnIntervalSec ?? config.spawnIntervalSec * DEFAULT_START_SPAWN_INTERVAL_FACTOR;
+    const startMax = config.startMaxClients ?? Math.min(DEFAULT_START_MAX_CLIENTS, config.maxClients);
+    return {
+        spawnIntervalSec: lerp(startInterval, config.spawnIntervalSec),
+        // Rounded down so client count grows on the slow side (2 -> 3 -> 5 over three shelves, not 2 -> 4 -> 5).
+        maxClients: Math.max(1, Math.floor(lerp(startMax, config.maxClients) + 1e-6)),
+        patienceMultiplier: lerp(config.startPatienceMultiplier ?? DEFAULT_START_PATIENCE_MULTIPLIER, 1),
+    };
+}
+
+/** Seconds per mood step for one new client — the store's pacing x that client's own random tolerance. */
+export function rollClientMoodStepSec(config: StoreConfig, pacing: StorePacing): number {
+    const min = config.minClientPatience ?? DEFAULT_MIN_CLIENT_PATIENCE;
+    const max = Math.max(min, config.maxClientPatience ?? DEFAULT_MAX_CLIENT_PATIENCE);
+    const tolerance = min + Math.random() * (max - min);
+    return (config.moodStepSec ?? DEFAULT_MOOD_STEP_SEC) * pacing.patienceMultiplier * tolerance;
+}
+
+/** What a client in `mood` pays for an order worth `price` — x2 when very happy, 20% less (rounded) when sad/angry, by default. */
+export function applyMoodToPrice(config: StoreConfig, mood: StoreClientMood, price: number): number {
+    if (price <= 0) {
+        return 0;
+    }
+    if (mood === 'veryHappy') {
+        return Math.round(price * (config.veryHappyPayMultiplier ?? DEFAULT_VERY_HAPPY_PAY_MULTIPLIER));
+    }
+    if (mood === 'sad' || mood === 'angry') {
+        return Math.max(1, Math.round(price * (1 - (config.unhappyPayPenalty ?? DEFAULT_UNHAPPY_PAY_PENALTY))));
+    }
+    return price;
 }
 
 /** An item's BASE price per unit (before StoreConfig.priceMultiplier) — the same base `price` marts already trade at (see ResourceConfig.price). A priceless resource still pays 1 so a store never gives an item away. */
