@@ -143,6 +143,14 @@
                 {
                     "storageId": "storage3",
                     "direction": "west"
+                },
+                {
+                    "storageId": "storage4",
+                    "direction": "west"
+                },
+                {
+                    "storageId": "storage5",
+                    "direction": "west"
                 }
             ],
             "cashierSpotDirection": "east",
@@ -184,6 +192,32 @@
                         },
                         {
                             "entityId": "storage3"
+                        }
+                    ]
+                },
+                {
+                    "level": 4,
+                    "requirementType": "money",
+                    "amount": 200,
+                    "enables": [
+                        {
+                            "entityId": "farm4"
+                        },
+                        {
+                            "entityId": "storage4"
+                        }
+                    ]
+                },
+                {
+                    "level": 5,
+                    "requirementType": "money",
+                    "amount": 350,
+                    "enables": [
+                        {
+                            "entityId": "farm5"
+                        },
+                        {
+                            "entityId": "storage5"
                         }
                     ]
                 }

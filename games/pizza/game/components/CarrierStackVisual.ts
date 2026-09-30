@@ -1,18 +1,18 @@
-// BackpackStackVisual.ts
+// CarrierStackVisual.ts
 //
 // The carry stack on the player's back: every 'farm'-category unit in
 // BackpackStorage, drawn as a diegetic ItemPile (see ItemPile.ts — the same
-// system a map storage uses for its contents) inside the backpack
-// (PlayerConfig.backpack — a Restaurant.Crate by default).
+// system a map storage uses for its contents) inside the carrier
+// (PlayerConfig.carrier — a Restaurant.Crate by default).
 //
 // This component only decides WHERE and HOW the pile sits, every frame:
-//   - root: CharacterBody.getBackpackContents().root — the backpack's own
+//   - root: CharacterBody.getCarrierContents().root — the carrier's own
 //     visual group, so the pile follows its offset/rotation automatically;
-//   - layout: derived from the backpack model's own bounds (base half-way up
+//   - layout: derived from the carrier model's own bounds (base half-way up
 //     the crate, grid across FOOTPRINT_FILL of its floor), in
-//     PlayerConfig.backpack.stackMode ('grid' | 'tower', live from the dev GUI);
-//   - scale: items stay TRUE world size (x PlayerConfig.backpack.itemScale)
-//     whatever the backpack's own scale, measured relative to the character
+//     PlayerConfig.carrier.stackMode ('grid' | 'tower', live from the dev GUI);
+//   - scale: items stay TRUE world size (x PlayerConfig.carrier.itemScale)
+//     whatever the carrier's own scale, measured relative to the character
 //     container so they grow with the character's landing pop (see
 //     localPerWorld()).
 // BackpackStorage stays the single source of truth; this mirrors it into the pile.
@@ -30,26 +30,26 @@ import { CHARACTER_SCALE } from '../player/MainPlayer';
 const MAX_COLUMNS = 3;
 const MAX_ROWS = 3;
 const MAX_LAYERS = 3;
-/** Fraction of the backpack's X/Z footprint the grid spans — leaves the crate's walls visible around the pile. */
+/** Fraction of the carrier's X/Z footprint the grid spans — leaves the crate's walls visible around the pile. */
 const FOOTPRINT_FILL = 0.8;
 // --- 'tower' mode ---
 /** Most items the tower shows before it stops growing (the rest are still counted, just not drawn). */
 const TOWER_MAX_ITEMS = 15;
-/** Both modes: where the first item's BOTTOM sits, as a fraction of the backpack's own height — low enough to sit inside the crate, high enough to peek over the rim. */
+/** Both modes: where the first item's BOTTOM sits, as a fraction of the carrier's own height — low enough to sit inside the crate, high enough to peek over the rim. */
 const BASE_HEIGHT_FRACTION = 0.5;
 
 /** Kept for FlyToStack — see ItemPile.rememberItemSize(). */
 export const rememberStackItemSize = rememberItemSize;
 
-/** PlayerConfig.backpack.itemScale, read live (the dev GUI slider writes straight into the config) — see that field's own doc. Also used by FlyToStack/StorageZone so a flight matches the landing size. */
+/** PlayerConfig.carrier.itemScale, read live (the dev GUI slider writes straight into the config) — see that field's own doc. Also used by FlyToStack/StorageZone so a flight matches the landing size. */
 export function stackItemScale(): number {
-    const scale = getPlayerConfig().backpack.itemScale;
+    const scale = getPlayerConfig().carrier.itemScale;
     return scale !== undefined && scale > 0 ? scale : 1;
 }
 
-export default class BackpackStackVisual extends Component {
+export default class CarrierStackVisual extends Component {
     private pile?: ItemPile;
-    /** The backpack root the pile is parented under — a remount (new root) rebuilds the pile. */
+    /** The carrier root the pile is parented under — a remount (new root) rebuilds the pile. */
     private attachedRoot?: THREE.Object3D;
     private dirty = true;
 
@@ -67,7 +67,7 @@ export default class BackpackStackVisual extends Component {
     }
 
     public update(): void {
-        const contents = this.entity.getComponent(CharacterVisualComponent)?.character.getBackpackContents();
+        const contents = this.entity.getComponent(CharacterVisualComponent)?.character.getCarrierContents();
         if (!contents) {
             return; // backpack model still loading — try again next frame
         }
@@ -79,7 +79,7 @@ export default class BackpackStackVisual extends Component {
         }
         const pile = this.pile!;
 
-        // Mode / itemScale / backpack scale can all change live (dev GUI) — cheap to compare.
+        // Mode / itemScale / carrier scale can all change live (dev GUI) — cheap to compare.
         const layout = this.buildLayout(contents.bounds);
         const current = pile.getLayout();
         if (layout.mode !== current.mode || layout.itemScale !== current.itemScale || layout.itemYawDeg !== current.itemYawDeg || Math.abs(layout.localPerWorld - current.localPerWorld) > 1e-6) {
@@ -98,7 +98,7 @@ export default class BackpackStackVisual extends Component {
         this.pile = undefined;
     }
 
-    /** Where stack slot `index` will sit in world space — see ItemPile.getSlotWorldPosition(). undefined until the backpack model exists. */
+    /** Where stack slot `index` will sit in world space — see ItemPile.getSlotWorldPosition(). undefined until the carrier model exists. */
     public getSlotWorldTarget(index: number, incomingType: ResourceType, out: THREE.Vector3): THREE.Vector3 | undefined {
         return this.pile?.getSlotWorldPosition(index, incomingType, out);
     }
@@ -109,7 +109,7 @@ export default class BackpackStackVisual extends Component {
     }
 
     private buildLayout(bounds: THREE.Box3): ItemPileLayout {
-        const backpack = getPlayerConfig().backpack;
+        const backpack = getPlayerConfig().carrier;
         const size = bounds.getSize(new THREE.Vector3());
         const center = bounds.getCenter(new THREE.Vector3());
         return {
@@ -125,11 +125,15 @@ export default class BackpackStackVisual extends Component {
             itemScale: stackItemScale(),
             itemYawDeg: backpack.itemYawDeg,
             localPerWorld: this.localPerWorld(),
+            // Per-resource packing on the back (e.g. carrots closer) — ResourceConfig.carrierSpacing.
+            spacingFor: type => RESOURCE_CONFIG[type]?.carrierSpacing ?? 1,
+            // Per-resource turn on the back (e.g. corn laid on its side) — ResourceConfig.carrierOrientation.
+            orientationFor: type => RESOURCE_CONFIG[type]?.carrierOrientation,
         };
     }
 
     /**
-     * Backpack-root-local units per world unit, AS IF the character were at its normal
+     * Carrier-root-local units per world unit, AS IF the character were at its normal
      * CHARACTER_SCALE — measured relative to the character's own container, not straight off the
      * live world scale. The character "pops" in from scale 0 (see MainPlayer.playLandingPop());
      * against the live value items would hold full world size while the character around them is

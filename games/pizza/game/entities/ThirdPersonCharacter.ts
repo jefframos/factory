@@ -20,7 +20,7 @@ import * as THREE from 'three';
 import CharacterBody from './CharacterBody';
 import { ToolId } from '../actions/ToolRegistry';
 import { CharacterViewConfig } from '../data/CharacterViewTypes';
-import type { PlayerBackpackConfig } from '../data/PlayerConfig';
+import type { PlayerCarrierConfig } from '../data/PlayerConfig';
 
 /** Purely cosmetic — fakes an airborne window so the jumpUp→falling→landing chain still plays without any real vertical physics. See jump(). */
 const JUMP_AIRTIME = 0.7;
@@ -89,28 +89,28 @@ export default class ThirdPersonCharacter {
         this.body.setHeadOffset(x, y, z);
     }
 
-    /** Backpack prop on the rig's Chest bone — see CharacterBody.mountBackpack(). Omit `config` for the plain placeholder cube. */
-    public mountBackpack(config?: PlayerBackpackConfig): void {
-        this.body.mountBackpack(config);
+    /** Carrier prop on the rig's Chest bone — see CharacterBody.mountCarrier(). Omit `config` for the plain placeholder cube. */
+    public mountCarrier(config?: PlayerCarrierConfig): void {
+        this.body.mountCarrier(config);
     }
 
-    /** See CharacterBody.getBackpackContents() — where BackpackStackVisual piles carried items. */
-    public getBackpackContents(): { root: THREE.Object3D; bounds: THREE.Box3 } | undefined {
-        return this.body.getBackpackContents();
+    /** See CharacterBody.getCarrierContents() — where CarrierStackVisual piles carried items. */
+    public getCarrierContents(): { root: THREE.Object3D; bounds: THREE.Box3 } | undefined {
+        return this.body.getCarrierContents();
     }
 
-    /** Live-tunes offset/rotation/scale — see CharacterBody.setBackpackTransform(). */
-    public setBackpackTransform(config: PlayerBackpackConfig): void {
-        this.body.setBackpackTransform(config);
+    /** Live-tunes offset/rotation/scale — see CharacterBody.setCarrierTransform(). */
+    public setCarrierTransform(config: PlayerCarrierConfig): void {
+        this.body.setCarrierTransform(config);
     }
 
-    public setBackpackOffset(x: number, y: number, z: number): void {
-        this.body.setBackpackOffset(x, y, z);
+    public setCarrierOffset(x: number, y: number, z: number): void {
+        this.body.setCarrierOffset(x, y, z);
     }
 
-    /** See CharacterBody.getBackpackWorldPosition() — used by AutoGatherController to aim gathered resource chips. */
-    public getBackpackWorldPosition(target?: THREE.Vector3): THREE.Vector3 | undefined {
-        return this.body.getBackpackWorldPosition(target);
+    /** See CharacterBody.getCarrierWorldPosition() — used by AutoGatherController to aim gathered resource chips. */
+    public getCarrierWorldPosition(target?: THREE.Vector3): THREE.Vector3 | undefined {
+        return this.body.getCarrierWorldPosition(target);
     }
 
     /** See CharacterBody.faceDirection()'s own doc — turns the character toward a world-space direction over the next several frames, independent of move input. */
@@ -173,7 +173,7 @@ export default class ThirdPersonCharacter {
         this.body.showTool(toolId);
     }
 
-    /** Live-tunes a tool's position/rotation/size — see CharacterBody's own doc on each; call from the console while showTool() has it visible, same workflow as setHeadOffset()/setBackpackOffset(). */
+    /** Live-tunes a tool's position/rotation/size — see CharacterBody's own doc on each; call from the console while showTool() has it visible, same workflow as setHeadOffset()/setCarrierOffset(). */
     public setToolOffset(toolId: ToolId, x: number, y: number, z: number): void {
         this.body.setToolOffset(toolId, x, y, z);
     }

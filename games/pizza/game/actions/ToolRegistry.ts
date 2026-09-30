@@ -58,7 +58,7 @@ export interface ToolVisualEntry {
     icon: string;
     /** Placeholder cylinder color, used only while `models` is empty. */
     color: number;
-    /** Placeholder cylinder radius/length, world units (same scale as HEAD_CUBE_SIZE/BACKPACK_CUBE_SIZE in CharacterBody.ts) — used only while `models` is empty. */
+    /** Placeholder cylinder radius/length, world units (same scale as HEAD_CUBE_SIZE/CARRIER_CUBE_SIZE in CharacterBody.ts) — used only while `models` is empty. */
     radius: number;
     length: number;
     /**
@@ -126,6 +126,13 @@ export interface ToolVisualEntry {
      *     (FarmPlotConfig.assignedCropId — see FarmPlotTile.startAutoPlantTimer()).
      */
     actionTime?: AttributeRange;
+    /**
+     * How many farm items this tool holds — only the "carrier" (the crate on the player's back
+     * the carry stack sits in, see data/CarrierCapacity.ts) has one. `min` is the capacity at
+     * ladder level 0, `max` at maxLevel; each level in between lerps and rounds (so min 3 / max
+     * 13 over maxLevel 10 is +1 per level). Undefined for every other tool.
+     */
+    capacity?: AttributeRange;
 }
 
 export const TOOL_LIBRARY = {
@@ -302,6 +309,26 @@ export const TOOL_LIBRARY = {
             }
         },
         "actionTime": {}
+    },
+    // The crate on the player's back (PlayerConfig.carrier is how it LOOKS/mounts). Never held in
+    // the hand — no action uses it — so models/offset/rotation are unused placeholders. Its one
+    // upgradeable stat is `capacity`, sold by the carrier shop (ShopTypes "shopBackpack").
+    "carrier": {
+        label: "Carrier",
+        models: [],
+        icon: "survival-backpack",
+        color: 0x8b5a2b,
+        radius: 8,
+        length: 100,
+        scale: 100,
+        offset: new THREE.Vector3(0, 0, 0),
+        rotationDeg: new THREE.Vector3(0, 0, 0),
+        maxLevel: 10,
+        "capacity": {
+            "min": 3,
+            "max": 13
+        },
+        "startWith": true
     }
 } satisfies Record<string, ToolVisualEntry>;
 

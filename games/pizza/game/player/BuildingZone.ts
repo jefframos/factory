@@ -64,6 +64,7 @@ import ViewUtils from 'core/utils/ViewUtils';
 import { ParticleSystem } from '../vfx/ParticleSystem';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import NpcEntity from '../world/NpcEntity';
+import DepositPacer from '../utils/DepositPacer';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
@@ -109,6 +110,8 @@ export interface BuildingTriggerArea {
 }
 
 export default class BuildingZone extends Entity {
+    /** Speeds this zone's one-unit-at-a-time deposits up (to ~3x) the longer the player keeps paying — see DepositPacer.ts. */
+    private readonly depositPacer = new DepositPacer(FLY_IN_STAGGER_SEC);
     private readonly screenHost: ScreenAnchorHost;
     private readonly buildingId: BuildingId;
     /** This zone's own intended resting world-Y, captured once from the constructor's `position` — deliberately NOT read back off `this.transform.position.y` later, since ZoneVisibilityManager parks a newly-registered zone below this Y and animates it rising back up (see playRevealEffect()'s own doc on why that transient sunken position, if read mid-rise, corrupts the reveal shader's bounds). */
@@ -1076,7 +1079,7 @@ export default class BuildingZone extends Entity {
             const remaining = need - BuildingStorage.getProgress(this.buildingId, type) - inFlight;
 
             const fromWorld = remaining > 0 && BackpackStorage.getCount(type) - inFlight > 0
-                ? this.player?.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition()
+                ? this.player?.getComponent(CharacterVisualComponent)?.character.getCarrierWorldPosition()
                 : undefined;
 
             if (!fromWorld) {
@@ -1095,7 +1098,7 @@ export default class BuildingZone extends Entity {
                 }
             });
 
-            gsap.delayedCall(FLY_IN_STAGGER_SEC, step);
+            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
         };
 
         step();

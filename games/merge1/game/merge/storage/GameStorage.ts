@@ -81,6 +81,10 @@ export interface IFarmSaveData {
     missions?: IMissionsSaveData;
     missionStats?: IMissionStatsSaveData;
     modifierLevels: Record<string, number>;
+
+    // Passive (idle) income is accounted in this save up to this time — see
+    // GameStorage.runPassive() and MergeMediator.applyOfflineCatchUp().
+    savedAtMs?: number;
 }
 
 
@@ -93,7 +97,12 @@ export default class GameStorage {
     private _cachedState: IFarmSaveData | null = null;
     private _isHydrated = false;
     private _hydrationPromise: Promise<void> | null = null;
-    private _writeQueue: Promise<void> = Promise.resolve();
+    private _persistInFlight = false;
+    private _persistDirty = false;
+
+    // Passive scope — see runPassive().
+    private _passiveDepth = 0;
+    private _passiveClockMs: number | null = null;
 
     // Mutations made before the platform load resolves are replayed on top of
     // the loaded save once it arrives, instead of being discarded or discarding it.
@@ -137,6 +146,7 @@ export default class GameStorage {
             }
 
             let loaded = JSON.parse(raw) as IFarmSaveData;
+            this._passiveClockMs = typeof loaded.savedAtMs === "number" ? loaded.savedAtMs : null;
 
             // Replay any mutations that happened locally while this load was in
             // flight on top of the real save, so the freshly-loaded progress is
@@ -165,7 +175,41 @@ export default class GameStorage {
     }
 
     /**
-     * Retrieves the current state. 
+     * Runs `fn` with persistence suppressed: state changes land in the cache but
+     * nothing is written to the platform. Used for idle changes (generator
+     * coins, egg spawns, mission timers, playtime) — they ride along with the
+     * next player-driven save, and anything unsaved is recomputed on boot from
+     * `savedAtMs` by the offline catch-up.
+     *
+     * This keeps a running-but-idle game from writing at all, so an external
+     * wipe (e.g. YouTube Test Suite "clear data") isn't silently undone by the
+     * still-running session's next idle save.
+     */
+    public runPassive<T>(fn: () => T): T {
+        this._passiveDepth++;
+        try {
+            return fn();
+        } finally {
+            this._passiveDepth--;
+        }
+    }
+
+    public get isPassive(): boolean {
+        return this._passiveDepth > 0;
+    }
+
+    /** Time up to which passive income is accounted in the cached state (null = unknown / fresh save). */
+    public get passiveClockMs(): number | null {
+        return this._passiveClockMs;
+    }
+
+    /** Written into the save as `savedAtMs` on the next persist. */
+    public setPassiveClock(ms: number): void {
+        this._passiveClockMs = ms;
+    }
+
+    /**
+     * Retrieves the current state.
      * Prioritizes cache for performance and data consistency.
      */
     public getFullState(): IFarmSaveData {
@@ -213,18 +257,34 @@ export default class GameStorage {
      * Private helper to stringify and write to platform storage
      */
     private async persist(): Promise<void> {
-        if (!this._cachedState) return;
+        // Coalesced: at most one write in flight, and the next write always
+        // serializes the LATEST cached state. This used to queue one snapshot per
+        // call — with ProgressionStats persisting every ~150ms and each
+        // ytgame.game.saveData() round-trip taking longer than that, the queue
+        // grew unbounded, so a level-up could sit minutes behind in the backlog
+        // and be lost on reload (YouTube cert CGM_02).
+        if (this._passiveDepth > 0) return;
 
-        const serialized = JSON.stringify(this._cachedState);
-        this._writeQueue = this._writeQueue
-            .then(async () => {
-                await PlatformHandler.instance.platform.setItem(GameStorage.STORAGE_KEY, serialized);
-            })
-            .catch((e) => {
-                console.error("GameStorage: Failed to persist data", e);
-            });
+        this._persistDirty = true;
+        if (this._persistInFlight) return;
 
-        await this._writeQueue;
+        this._persistInFlight = true;
+        try {
+            while (this._persistDirty && this._cachedState) {
+                this._persistDirty = false;
+                if (this._passiveClockMs !== null) {
+                    this._cachedState.savedAtMs = this._passiveClockMs;
+                }
+                const serialized = JSON.stringify(this._cachedState);
+                try {
+                    await PlatformHandler.instance.platform.setItem(GameStorage.STORAGE_KEY, serialized);
+                } catch (e) {
+                    console.error("GameStorage: Failed to persist data", e);
+                }
+            }
+        } finally {
+            this._persistInFlight = false;
+        }
     }
 
     public createEmptyState(): IFarmSaveData {
@@ -289,6 +349,7 @@ export default class GameStorage {
         this._cachedState = this.createEmptyState();
         this._pendingMutations = [];
         this._isHydrated = true;
+        this._passiveClockMs = null;
         void this.persist();
 
         // reset singleton in-memory state too (if it exists)

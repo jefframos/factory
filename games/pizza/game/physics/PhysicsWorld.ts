@@ -54,8 +54,22 @@ export default class PhysicsWorld {
     private readonly otherMin = new THREE.Vector3();
     private readonly otherMax = new THREE.Vector3();
 
+    /** Bumped on every register()/unregister() — lets a reader (e.g. store/nav/StoreNavGrid's rebuild check) skip work while the set of bodies hasn't changed. */
+    public get version(): number {
+        return this.bodiesVersion;
+    }
+    private bodiesVersion = 0;
+
+    /** Read-only walk over every registered body — for queries like "which static solids sit inside this area" (see Store.ts's nav grid). */
+    public forEachBody(visit: (body: RigidBody) => void): void {
+        for (const body of this.bodies) {
+            visit(body);
+        }
+    }
+
     public register(body: RigidBody): void {
         this.bodies.push(body);
+        this.bodiesVersion++;
     }
 
     /** Removes the body AND immediately fires Exit for any pair it was still active in — otherwise a body destroyed mid-overlap would just silently vanish from the next contact pass with no Exit ever reaching its (already-gone) listeners, or reach them a frame late for no reason. */
@@ -63,6 +77,7 @@ export default class PhysicsWorld {
         const index = this.bodies.indexOf(body);
         if (index !== -1) {
             this.bodies.splice(index, 1);
+            this.bodiesVersion++;
         }
 
         for (const [key, pair] of this.activePairs) {

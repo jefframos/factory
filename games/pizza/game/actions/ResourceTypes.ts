@@ -95,6 +95,19 @@ export interface ResourceConfig {
      */
     sellable?: boolean;
     /**
+     * Extra DRAW size for this resource when piled — on the carrier, in a storage, and on the
+     * flight to either (see ItemPile.getPileScale()). Only the model grows (from its own
+     * bottom-center); where it sits and how the pile is spaced stay exactly as at 1, so e.g. 2 =
+     * carrots twice as big in the same spots. Unset = 1.
+     */
+    pileScale?: number;
+    /** How close this resource stacks on the player's carrier: multiplier on the room each one takes (0.7 = 30% closer). Only the spacing changes, not the drawn size. Unset = 1. */
+    carrierSpacing?: number;
+    /** World units added to this resource's height in storages (negative = lower, e.g. sinks it into the crate). Unset = 0. */
+    storageOffsetY?: number;
+    /** How this resource sits on the player's carrier (and on its flight there) — see ItemOrientation. 'onSide' lays down something that isn't tall enough to be laid down on its own (corn). Unset = 'lying'. Storages are unaffected. */
+    carrierOrientation?: 'lying' | 'standing' | 'upsideDown' | 'onSide';
+    /**
      * True takes this resource out of the game entirely — no Provider ever drops it
      * (rollProviderDrop() filters it out of every drop table it appears in), it's hidden from
      * every always-on resource panel/inventory tab even if a save already has some left over
@@ -227,7 +240,10 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         color: 0xe8791a,
         category: "farm",
         "price": 10,
-        "sellable": true
+        "sellable": true,
+        "pileScale": 2,
+        "carrierSpacing": 0.7,
+        "storageOffsetY": -0.12
     },
     [ResourceType.Cauliflower]: {
         amountPerGather: 1,
@@ -243,7 +259,9 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         color: 0xf2c94c,
         category: "farm",
         "price": 7,
-        "sellable": true
+        "sellable": true,
+        "carrierOrientation": "onSide",
+        "carrierSpacing": 0.5
     },
     [ResourceType.Leek]: {
         amountPerGather: 1,

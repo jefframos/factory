@@ -1,27 +1,35 @@
 // StoreClient.ts
 //
-// One shopper walking through a Store (see Store.ts). Spawns at the
-// entrance with a short shopping list, then, for each item in turn:
-//   1. joins the waiting line of a storage that sells it (StoreLine),
-//   2. once at the front, takes one unit at a time out of StorageInventory
-//      (which is what shrinks that storage's pile) — or, if the storage is
-//      empty, WAITS there (bubble pulses that item) until it's refilled.
-// With the list done it lines up at the cashier and waits for the player;
-// Store.ts decides when it pays (pay()). After paying
-// it walks straight to the exit and reports isFinished() so Store removes it.
+// One shopper in a Store (see Store.ts), run as an explicit state machine.
+// Each state is one entry in `states` (enter / update / exit), so a new
+// activity later (sitting, eating, ...) is a new ClientState plus one
+// handler — nothing else in the class has to know about it.
+//
+//   toShelf ──arrived──► queuing ◄──────► browsing
+//      ▲  │                 │ front          (looks at another shelf for a bit,
+//      │  │ front            ▼                keeps its place in line)
+//      │  └──arrived──► picking ──item done──► toShelf (next item)
+//      │                    │ shelf empty           └─ list done ─► toCashier
+//      │                    ▼
+//      └──restocked─── wandering  (strolls the store, still asking for the item)
+//
+//   toCashier ──arrived──► cashierQueue ──front──► readyToPay ──paid──► leaving ──► done
+//
+//   Any shopping state, out of patience with nothing bought ──► leaving
+//
+// Queues (StoreLine) decide ORDER only; where a queue index stands comes
+// from the store's queue layout (StoreQueueSpots.ts). Walking is NavAgent
+// on the store's nav grid: paths around shelves/solids, steering around
+// other clients and the player.
 //
 // Mood (StoreClientMood, shown as a face in its bubble): arrives HAPPY and
-// drops one step every moodStepSec (its own — see the constructor) until it pays; completing an item while
-// more are still left cheers it up one step. Dropping to SAD with nothing
-// bought yet makes it walk out without buying; with anything bought it stays
-// until its order is done. Early store levels set a floor the mood never
-// drops below (level 1: HAPPY, level 2: ANNOYED — see
-// StoreClientHost.getMoodFloor()), so nobody walks out or pays less there. Its mood at payment scales what it pays —
-// see applyMoodToPrice().
-//
-// Walks in straight lines with the same CharacterBody rig and
-// NPC_MOVE_INPUT_MAGNITUDE trick QuestGiverEntity uses — see that file's own
-// doc on why the move input isn't a full 1.0.
+// drops one step every moodStepSec (its own — see the constructor) until it
+// pays; completing an item while more are still left cheers it up one step.
+// Dropping to SAD with nothing bought yet makes it walk out without buying;
+// with anything bought it stays until its order is done. Early store levels
+// set a floor the mood never drops below (level 1: HAPPY, level 2: ANNOYED —
+// see StoreClientHost.getMoodFloor()), so nobody walks out or pays less
+// there. Its mood at payment scales what it pays — see applyMoodToPrice().
 
 import * as THREE from 'three';
 import Entity from '../ecs/Entity';
@@ -35,13 +43,22 @@ import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { ResourceType } from '../actions/ResourceTypes';
 import { StorageInventory } from '../data/StorageInventory';
+import NavAgent, { NavNeighbor } from './nav/NavAgent';
+import StoreNavGrid from './nav/StoreNavGrid';
 import StoreBubble, { StoreBubbleContent } from './StoreBubble';
 import StoreLine from './StoreLine';
-import { STORE_MOOD_LADDER, StoreClientMood, StoreConfig, applyMoodToPrice, getStoreItemPrice } from './StoreTypes';
+import {
+    DEFAULT_BROWSE_CHANCE,
+    DEFAULT_CLIENT_RADIUS,
+    STORE_MOOD_LADDER,
+    StoreClientMood,
+    StoreConfig,
+    applyMoodToPrice,
+    getStoreItemPrice,
+} from './StoreTypes';
 
 const NPC_MOVE_INPUT_MAGNITUDE = 0.5;
-const ARRIVAL_EPSILON = 0.05;
-/** How often a client waiting on an empty storage looks for another storage that has its item in stock. */
+/** How often a client checks for another storage with its item in stock (in line at an empty one, or wandering). */
 const REROUTE_CHECK_SEC = 1;
 /** Bubble height above the client's feet until its rig (and so its Head bone) has loaded. */
 const FALLBACK_HEAD_HEIGHT = 2;
@@ -50,11 +67,26 @@ const STORAGE_ICON_HEIGHT = 1;
 const ARRIVAL_MOOD_INDEX = STORE_MOOD_LADDER.indexOf('happy');
 /** Reaching this mood with nothing bought yet makes a client walk out. */
 const LEAVE_EMPTY_HANDED_MOOD_INDEX = STORE_MOOD_LADDER.indexOf('sad');
+/** At the front of an empty shelf, how long a client waits before giving up its place and wandering. */
+const WANDER_AFTER_EMPTY_SEC = 2;
+/** Seconds between "should I go browse?" rolls while waiting in a shelf line (random in range). */
+const RESTLESS_SEC: [number, number] = [3, 6];
+/** Seconds spent looking once at a browse spot. */
+const BROWSE_LOOK_SEC: [number, number] = [2, 4];
+/** Seconds standing still between two wander walks. */
+const WANDER_IDLE_SEC: [number, number] = [1.5, 3.5];
+
 /** A storage a client can queue at — built by Store.ts, one per active storage inside the store. */
 export interface StoreStorageRef {
     readonly id: string;
     readonly position: THREE.Vector3;
     readonly line: StoreLine<StoreClient>;
+}
+
+/** Somewhere to stand, and what to look at once there. */
+export interface StoreSpot {
+    point: THREE.Vector3;
+    lookAt?: THREE.Vector3;
 }
 
 /** What a client needs from its Store — an interface so this file doesn't import Store.ts. */
@@ -68,6 +100,14 @@ export interface StoreClientHost {
     isVisible(): boolean;
     /** Lowest mood a client can drop to right now (early store levels), undefined = no floor — see Store.getMoodFloor(). */
     getMoodFloor(): StoreClientMood | undefined;
+    /** The store's walkability grid — undefined until built (clients then walk straight). */
+    getNavGrid(): StoreNavGrid | undefined;
+    /** Everyone to steer around (all clients, including `this` — skipped by identity — and the player). */
+    getNavNeighbors(): readonly NavNeighbor[];
+    /** A spot to go look at something while waiting in `line` (near another shelf), or undefined. */
+    findBrowseSpot(client: StoreClient, line: StoreLine<StoreClient>): StoreSpot | undefined;
+    /** A random free spot to stroll to while waiting for a restock, or undefined. */
+    findWanderSpot(client: StoreClient): StoreSpot | undefined;
 }
 
 export interface StoreClientWant {
@@ -79,46 +119,104 @@ interface WantProgress {
     type: ResourceType;
     remaining: number;
     bought: number;
+    /** Nothing in the store sells it any more (storage disabled/removed) — dropped from the list. */
+    skipped?: boolean;
 }
 
-type ClientState = 'shopping' | 'toCashier' | 'readyToPay' | 'leaving' | 'done';
+/** See this file's own doc for the state diagram. */
+export type ClientState =
+    | 'toShelf'
+    | 'queuing'
+    | 'browsing'
+    | 'picking'
+    | 'wandering'
+    | 'toCashier'
+    | 'cashierQueue'
+    | 'readyToPay'
+    | 'leaving'
+    | 'done';
 
-export default class StoreClient extends Entity {
+interface StateHandler {
+    enter?(): void;
+    update(delta: number): void;
+    exit?(): void;
+}
+
+/** States still working through the shopping list — mood can make these walk out. */
+const SHOPPING_STATES: ReadonlySet<ClientState> = new Set<ClientState>(['toShelf', 'queuing', 'browsing', 'picking', 'wandering']);
+/** States before paying — the mood clock runs through these. */
+const MOOD_STATES: ReadonlySet<ClientState> = new Set<ClientState>([...SHOPPING_STATES, 'toCashier', 'cashierQueue', 'readyToPay']);
+
+export default class StoreClient extends Entity implements NavNeighbor {
+    public readonly npcId: string;
     private readonly host: StoreClientHost;
     private readonly wants: WantProgress[];
     private readonly exitPoint: THREE.Vector3;
-    public readonly npcId: string;
     /** This client's own seconds per mood step — rolled by Store (rollClientMoodStepSec()), so some clients are more tolerant than others. */
     private readonly moodStepSec: number;
     private readonly body = new CharacterBody();
     private readonly bubble = new StoreBubble();
+    private readonly agent: NavAgent;
+    private readonly states: Record<ClientState, StateHandler>;
     private anchor?: ScreenAnchorComponent;
 
-    private state: ClientState = 'shopping';
+    private state: ClientState = 'toShelf';
     private wantIndex = 0;
     private storage?: StoreStorageRef;
     private pickTimerSec = 0;
+    private emptyTimerSec = 0;
     private rerouteTimerSec = REROUTE_CHECK_SEC;
-    private waitingForStock = false;
+    private restlessTimerSec = randomRange(RESTLESS_SEC);
     private moodIndex = ARRIVAL_MOOD_INDEX;
     private moodTimerSec = 0;
+    /** Browsing / wandering: where it's headed, and whether it's arrived and is looking around. */
+    private outing?: StoreSpot;
+    private outingLookSec = 0;
+    /** What to face while standing still this frame — set by the current state. */
+    private faceTarget?: THREE.Vector3;
 
-    private readonly goal = new THREE.Vector3();
+    private readonly spot = new THREE.Vector3();
     private readonly scratchHead = new THREE.Vector3();
     private readonly scratchFrom = new THREE.Vector3();
-    private moveDirX = 0;
-    private moveDirZ = 0;
-    private isMoving = false;
 
     public constructor(host: StoreClientHost, spawnAt: THREE.Vector3, exitPoint: THREE.Vector3, wants: StoreClientWant[], npcId: string, moodStepSec: number) {
         super();
-        this.moodStepSec = moodStepSec;
         this.host = host;
         this.exitPoint = exitPoint.clone();
         this.wants = wants.map(want => ({ type: want.type, remaining: want.amount, bought: 0 }));
         this.npcId = npcId;
+        this.moodStepSec = moodStepSec;
         this.transform.position.copy(spawnAt);
+        this.agent = new NavAgent(this.transform.position, () => host.getNavGrid(), {
+            radius: host.config.clientRadius ?? DEFAULT_CLIENT_RADIUS,
+            speed: host.config.moveSpeed,
+        });
+
+        this.states = {
+            toShelf: { update: delta => this.updateToShelf(delta) },
+            queuing: { update: delta => this.updateQueuing(delta) },
+            browsing: { enter: () => this.startOuting(), update: delta => this.updateBrowsing(delta), exit: () => this.endOuting() },
+            picking: { enter: () => { this.pickTimerSec = 0; this.emptyTimerSec = 0; }, update: delta => this.updatePicking(delta) },
+            wandering: { enter: () => this.enterWandering(), update: delta => this.updateWandering(delta), exit: () => this.endOuting() },
+            toCashier: { enter: () => this.host.cashierLine.join(this), update: () => this.updateToCashier() },
+            cashierQueue: { update: () => this.updateCashierQueue() },
+            readyToPay: { update: () => this.updateReadyToPay() },
+            leaving: { enter: () => this.enterLeaving(), update: () => this.updateLeaving() },
+            done: { enter: () => this.agent.stop(), update: () => undefined },
+        };
     }
+
+    // ---- NavNeighbor
+
+    public get position(): THREE.Vector3 {
+        return this.transform.position;
+    }
+
+    public isNavMoving(): boolean {
+        return this.agent.isMoving;
+    }
+
+    // ---- Entity
 
     public override awake(): void {
         this.transform.add(this.body.container);
@@ -143,73 +241,27 @@ export default class StoreClient extends Entity {
     public override update(delta: number): void {
         super.update(delta);
 
-        if (this.state === 'shopping' || this.state === 'toCashier' || this.state === 'readyToPay') {
+        if (MOOD_STATES.has(this.state)) {
             this.updateMood(delta);
         }
 
-        let faceTarget: THREE.Vector3 | undefined;
-        switch (this.state) {
-            case 'shopping':
-                faceTarget = this.updateShopping(delta);
-                break;
-            case 'toCashier':
-            case 'readyToPay': {
-                const line = this.host.cashierLine;
-                const arrived = line.getSpotFor(this, this.goal) ? this.moveToward(this.goal, delta) : false;
-                if (this.state === 'toCashier' && arrived && line.isFront(this)) {
-                    this.state = 'readyToPay';
-                }
-                faceTarget = arrived ? line.target : undefined;
-                break;
-            }
-            case 'leaving':
-                if (this.moveToward(this.exitPoint, delta)) {
-                    this.state = 'done';
-                }
-                break;
-            case 'done':
-                this.isMoving = false;
-                break;
-        }
+        this.faceTarget = undefined;
+        this.states[this.state].update(delta);
+        this.agent.update(delta, this.host.getNavNeighbors());
 
-        if (!this.isMoving && faceTarget) {
+        const moving = this.agent.isMoving;
+        // Re-read through a cast: TS narrowed faceTarget to undefined above and can't see the state handler set it.
+        const faceTarget = this.faceTarget as THREE.Vector3 | undefined;
+        if (!moving && faceTarget) {
             this.body.faceDirection(faceTarget.x - this.transform.position.x, faceTarget.z - this.transform.position.z);
         }
-        const dirX = this.isMoving ? this.moveDirX * NPC_MOVE_INPUT_MAGNITUDE : 0;
-        const dirZ = this.isMoving ? this.moveDirZ * NPC_MOVE_INPUT_MAGNITUDE : 0;
+        const dirX = moving ? this.agent.moveDirX * NPC_MOVE_INPUT_MAGNITUDE : 0;
+        const dirZ = moving ? this.agent.moveDirZ * NPC_MOVE_INPUT_MAGNITUDE : 0;
         // `grounded: true` — see QuestGiverEntity.update()'s own doc: every idle/walk transition is gated on it.
         this.body.update(delta, dirX, dirZ, { grounded: true });
 
         this.bubble.show(this.bubbleContent());
         this.anchor?.setForceHidden(!this.host.isVisible());
-    }
-
-    /** True once standing at the front of the cashier line with everything picked, waiting for the player. */
-    public isReadyToPay(): boolean {
-        return this.state === 'readyToPay';
-    }
-
-    /** Store.ts calls this when the player is at the cashier — frees the cashier spot, starts walking to the exit and returns what this client pays. */
-    public pay(): number {
-        this.host.cashierLine.leave(this);
-        this.state = 'leaving';
-        return this.getTotalPrice();
-    }
-
-    public getMood(): StoreClientMood {
-        return STORE_MOOD_LADDER[this.moodIndex];
-    }
-
-    public isFinished(): boolean {
-        return this.state === 'done';
-    }
-
-    public getHeadWorldPosition(target: THREE.Vector3 = new THREE.Vector3()): THREE.Vector3 {
-        const head = this.body.getBone('Head');
-        if (head && this.body.container.visible) {
-            return head.getWorldPosition(target);
-        }
-        return target.copy(this.transform.position).setY(this.transform.position.y + FALLBACK_HEAD_HEIGHT);
     }
 
     public override destroy(): void {
@@ -220,72 +272,365 @@ export default class StoreClient extends Entity {
         super.destroy();
     }
 
-    /** Returns what to face while parked (the storage), or undefined while walking. */
-    private updateShopping(delta: number): THREE.Vector3 | undefined {
-        this.waitingForStock = false;
-        const want = this.wants[this.wantIndex];
-        if (!want) {
-            this.startCheckout();
-            return undefined;
-        }
+    // ---- Store-facing API
 
-        if (!this.storage) {
-            this.storage = this.host.chooseStorageFor(want.type);
-            if (!this.storage) {
-                // Nothing in the store sells this any more (storage disabled/removed) — skip it.
-                this.wantIndex++;
-                return undefined;
-            }
-            this.storage.line.join(this);
-            this.pickTimerSec = 0;
-        }
+    public getState(): ClientState {
+        return this.state;
+    }
 
-        // Stuck on an empty storage while another one has this item in stock — switch lines.
-        this.rerouteTimerSec -= delta;
-        if (this.rerouteTimerSec <= 0) {
-            this.rerouteTimerSec = REROUTE_CHECK_SEC;
-            if (StorageInventory.getCount(this.storage.id, want.type) <= 0) {
-                const better = this.host.chooseStorageFor(want.type);
-                if (better && better !== this.storage && StorageInventory.getCount(better.id, want.type) > 0) {
-                    this.storage.line.leave(this);
-                    this.storage = better;
-                    this.storage.line.join(this);
-                    this.pickTimerSec = 0;
+    /** True once standing at the front of the cashier line with everything picked, waiting for the player. */
+    public isReadyToPay(): boolean {
+        return this.state === 'readyToPay';
+    }
+
+    /** Store.ts calls this when the player is at the cashier — frees the cashier spot, starts walking to the exit and returns what this client pays. */
+    public pay(): number {
+        const amount = this.getTotalPrice();
+        this.setState('leaving');
+        return amount;
+    }
+
+    public getMood(): StoreClientMood {
+        return STORE_MOOD_LADDER[this.moodIndex];
+    }
+
+    public isFinished(): boolean {
+        return this.state === 'done';
+    }
+
+    /** Where it's walking right now (debug drawing). */
+    public getPath(): readonly THREE.Vector3[] {
+        return this.agent.getRemainingPath();
+    }
+
+    public getHeadWorldPosition(target: THREE.Vector3 = new THREE.Vector3()): THREE.Vector3 {
+        const head = this.body.getBone('Head');
+        if (head && this.body.container.visible) {
+            return head.getWorldPosition(target);
+        }
+        return target.copy(this.transform.position).setY(this.transform.position.y + FALLBACK_HEAD_HEIGHT);
+    }
+
+    // ---- State machine
+
+    private setState(next: ClientState): void {
+        if (next === this.state) {
+            return;
+        }
+        this.states[this.state].exit?.();
+        this.state = next;
+        this.states[next].enter?.();
+    }
+
+    /** Walking to its spot in a shelf's line (or picking the next shelf when it has none). */
+    private updateToShelf(delta: number): void {
+        const storage = this.ensureStorage();
+        if (!storage) {
+            return;
+        }
+        this.checkReroute(delta);
+        if (this.state !== 'toShelf' || !this.storage) {
+            return;
+        }
+        this.walkToLineSpot(this.storage.line);
+        if (this.agent.hasArrived()) {
+            this.setState(this.storage.line.isFront(this) ? 'picking' : 'queuing');
+        }
+    }
+
+    /** Standing in a shelf's line, not at the front yet — may get restless and go browsing. */
+    private updateQueuing(delta: number): void {
+        const storage = this.storage;
+        if (!storage) {
+            this.setState('toShelf');
+            return;
+        }
+        this.checkReroute(delta);
+        if (this.state !== 'queuing') {
+            return;
+        }
+        // Line moved up (or its spots were re-laid): walk to the new spot.
+        this.walkToLineSpot(storage.line);
+        if (!this.agent.hasArrived()) {
+            this.setState('toShelf');
+            return;
+        }
+        this.faceTarget = storage.position;
+
+        this.restlessTimerSec -= delta;
+        if (this.restlessTimerSec <= 0) {
+            this.restlessTimerSec = randomRange(RESTLESS_SEC);
+            // Only when there's still someone ahead to wait for.
+            if (storage.line.indexOf(this) >= 1 && Math.random() < (this.host.config.browseChance ?? DEFAULT_BROWSE_CHANCE)) {
+                this.outing = this.host.findBrowseSpot(this, storage.line);
+                if (this.outing) {
+                    this.setState('browsing');
                 }
             }
         }
+    }
 
+    /** Away from its spot looking at another shelf — keeps its place, heads back when it's up next. */
+    private updateBrowsing(delta: number): void {
         const storage = this.storage;
-        const arrived = storage.line.getSpotFor(this, this.goal) ? this.moveToward(this.goal, delta) : false;
-        if (!arrived || !storage.line.isFront(this)) {
-            return arrived ? storage.position : undefined;
+        if (!storage || !this.outing || storage.line.indexOf(this) <= 0) {
+            this.setState('toShelf');
+            return;
         }
+        if (!this.agent.hasArrived()) {
+            return;
+        }
+        this.faceTarget = this.outing.lookAt;
+        this.outingLookSec -= delta;
+        if (this.outingLookSec <= 0) {
+            this.setState('toShelf');
+        }
+    }
+
+    /** At the front of a shelf's line, taking one unit at a time. An empty shelf sends it wandering. */
+    private updatePicking(delta: number): void {
+        const storage = this.storage;
+        const want = this.currentWant();
+        if (!storage || !want) {
+            this.setState('toShelf');
+            return;
+        }
+        this.faceTarget = storage.position;
 
         if (StorageInventory.getCount(storage.id, want.type) <= 0) {
             this.pickTimerSec = 0;
-            this.waitingForStock = true;
-            return storage.position;
+            this.checkReroute(delta);
+            if (this.state !== 'picking') {
+                return;
+            }
+            this.emptyTimerSec += delta;
+            if (this.emptyTimerSec >= WANDER_AFTER_EMPTY_SEC) {
+                this.setState('wandering');
+            }
+            return;
         }
+        this.emptyTimerSec = 0;
 
         this.pickTimerSec += delta;
-        if (this.pickTimerSec >= this.host.config.pickDelaySec) {
-            this.pickTimerSec = 0;
-            if (StorageInventory.remove(storage.id, want.type, 1) > 0) {
-                want.remaining--;
-                want.bought++;
-                this.flyPickedItem(want.type, storage.position);
-                if (want.remaining <= 0) {
-                    storage.line.leave(this);
-                    this.storage = undefined;
-                    this.wantIndex++;
-                    if (this.wantIndex < this.wants.length) {
-                        this.changeMood(1);
-                    }
+        if (this.pickTimerSec < this.host.config.pickDelaySec) {
+            return;
+        }
+        this.pickTimerSec = 0;
+        if (StorageInventory.remove(storage.id, want.type, 1) <= 0) {
+            return;
+        }
+        want.remaining--;
+        want.bought++;
+        this.flyPickedItem(want.type, storage.position);
+        if (want.remaining <= 0) {
+            this.leaveStorage();
+            if (this.wants.some(other => other.remaining > 0 && !other.skipped)) {
+                this.changeMood(1);
+            }
+            // toShelf -> ensureStorage() picks the next item (in-stock ones first).
+            this.setState('toShelf');
+        }
+    }
+
+    /** Everything left on its list is out of stock: gives up its place and strolls, checking back every REROUTE_CHECK_SEC. */
+    private enterWandering(): void {
+        this.leaveStorage();
+        this.rerouteTimerSec = REROUTE_CHECK_SEC;
+        this.nextWanderSpot();
+    }
+
+    private updateWandering(delta: number): void {
+        this.rerouteTimerSec -= delta;
+        if (this.rerouteTimerSec <= 0) {
+            this.rerouteTimerSec = REROUTE_CHECK_SEC;
+            // ANY item still on its list back in stock (not just the one it gave up on) -> go get it.
+            const inStock = this.findWantIndex(true);
+            if (inStock !== -1 || !this.currentWant()) {
+                if (inStock !== -1) {
+                    this.wantIndex = inStock;
                 }
+                this.setState('toShelf');
+                return;
             }
         }
-        return storage.position;
+
+        // No free spot last time (crowded store): idle where it is, then try again.
+        if (this.outing && !this.agent.hasArrived()) {
+            return;
+        }
+        this.faceTarget = this.outing?.lookAt;
+        this.outingLookSec -= delta;
+        if (this.outingLookSec <= 0) {
+            this.nextWanderSpot();
+        }
     }
+
+    /** Walking to its spot in the cashier line. */
+    private updateToCashier(): void {
+        this.walkToLineSpot(this.host.cashierLine);
+        if (this.agent.hasArrived()) {
+            this.setState(this.host.cashierLine.isFront(this) ? 'readyToPay' : 'cashierQueue');
+        }
+    }
+
+    /** Standing in the cashier line behind someone. */
+    private updateCashierQueue(): void {
+        this.walkToLineSpot(this.host.cashierLine);
+        if (!this.agent.hasArrived()) {
+            this.setState('toCashier');
+            return;
+        }
+        this.faceTarget = this.host.cashierLine.target;
+        if (this.host.cashierLine.isFront(this)) {
+            this.setState('readyToPay');
+        }
+    }
+
+    /** At the front of the cashier line, waiting for the player — Store.ts calls pay(). */
+    private updateReadyToPay(): void {
+        this.walkToLineSpot(this.host.cashierLine);
+        if (!this.agent.hasArrived()) {
+            this.setState('toCashier');
+            return;
+        }
+        this.faceTarget = this.host.cashierLine.target;
+    }
+
+    private enterLeaving(): void {
+        this.leaveStorage();
+        this.host.cashierLine.leave(this);
+        this.agent.setGoal(this.exitPoint);
+    }
+
+    private updateLeaving(): void {
+        if (this.agent.hasArrived()) {
+            this.setState('done');
+        }
+    }
+
+    // ---- State helpers
+
+    /**
+     * The storage for the current want, joining its line if needed. With no storage yet it
+     * (re)picks WHICH item to go for — one in stock first (see findWantIndex()) — and moves on
+     * to checkout when the list is done.
+     */
+    private ensureStorage(): StoreStorageRef | undefined {
+        while (!this.storage) {
+            this.wantIndex = this.findWantIndex(false);
+            const want = this.currentWant();
+            if (!want) {
+                this.startCheckout();
+                return undefined;
+            }
+            this.storage = this.host.chooseStorageFor(want.type);
+            if (!this.storage) {
+                want.skipped = true;
+                continue;
+            }
+            this.storage.line.join(this);
+        }
+        return this.storage;
+    }
+
+    /**
+     * Waiting on an empty storage: go where something on its list IS in stock — the same item
+     * at another storage first, else any other item it still needs (so a client never idles on
+     * an empty shelf while it could be getting something else).
+     */
+    private checkReroute(delta: number): void {
+        this.rerouteTimerSec -= delta;
+        const storage = this.storage;
+        const want = this.currentWant();
+        if (this.rerouteTimerSec > 0 || !storage || !want) {
+            return;
+        }
+        this.rerouteTimerSec = REROUTE_CHECK_SEC;
+        if (StorageInventory.getCount(storage.id, want.type) > 0) {
+            return;
+        }
+        const better = this.host.chooseStorageFor(want.type);
+        if (better && better !== storage && StorageInventory.getCount(better.id, want.type) > 0) {
+            this.leaveStorage();
+            this.storage = better;
+            better.line.join(this);
+            this.setState('toShelf');
+            return;
+        }
+        const other = this.findWantIndex(true);
+        if (other !== -1 && other !== this.wantIndex) {
+            this.leaveStorage();
+            this.wantIndex = other;
+            this.setState('toShelf');
+        }
+    }
+
+    /** The want it's going for — undefined when there's none left (or the current one is done/dropped). */
+    private currentWant(): WantProgress | undefined {
+        const want = this.wants[this.wantIndex];
+        return want && want.remaining > 0 && !want.skipped ? want : undefined;
+    }
+
+    /**
+     * Index of the item to go for next: one that's in stock somewhere first; unless `inStockOnly`,
+     * otherwise the first one still needed. -1 if none. Marks items nothing sells any more as skipped.
+     */
+    private findWantIndex(inStockOnly: boolean): number {
+        let fallback = -1;
+        // Current item first, so a tie keeps what it was already doing.
+        const order = [this.wantIndex, ...this.wants.map((_, index) => index).filter(index => index !== this.wantIndex)];
+        for (const index of order) {
+            const want = this.wants[index];
+            if (!want || want.remaining <= 0 || want.skipped) {
+                continue;
+            }
+            const storage = this.host.chooseStorageFor(want.type);
+            if (!storage) {
+                want.skipped = true;
+                continue;
+            }
+            if (StorageInventory.getCount(storage.id, want.type) > 0) {
+                return index;
+            }
+            if (fallback === -1) {
+                fallback = index;
+            }
+        }
+        return inStockOnly ? -1 : fallback;
+    }
+
+    private leaveStorage(): void {
+        this.storage?.line.leave(this);
+        this.storage = undefined;
+    }
+
+    private walkToLineSpot(line: StoreLine<StoreClient>): void {
+        if (line.getSpotFor(this, this.spot)) {
+            this.agent.setGoal(this.spot);
+        }
+    }
+
+    /** Browsing: head for `outing` (set by updateQueuing()). */
+    private startOuting(): void {
+        this.outingLookSec = randomRange(BROWSE_LOOK_SEC);
+        if (this.outing) {
+            this.agent.setGoal(this.outing.point);
+        }
+    }
+
+    private endOuting(): void {
+        this.outing = undefined;
+    }
+
+    private nextWanderSpot(): void {
+        this.outing = this.host.findWanderSpot(this);
+        this.outingLookSec = randomRange(WANDER_IDLE_SEC);
+        if (this.outing) {
+            this.agent.setGoal(this.outing.point);
+        }
+    }
+
+    // ---- Mood & money
 
     /** One step worse every this.moodStepSec; out of patience with nothing bought yet -> walks out. */
     private updateMood(delta: number): void {
@@ -299,10 +644,8 @@ export default class StoreClient extends Entity {
             return;
         }
         this.changeMood(-1);
-        if (this.state === 'shopping' && this.moodIndex <= LEAVE_EMPTY_HANDED_MOOD_INDEX && !this.wants.some(want => want.bought > 0)) {
-            this.storage?.line.leave(this);
-            this.storage = undefined;
-            this.state = 'leaving';
+        if (SHOPPING_STATES.has(this.state) && this.moodIndex <= LEAVE_EMPTY_HANDED_MOOD_INDEX && !this.wants.some(want => want.bought > 0)) {
+            this.setState('leaving');
         }
     }
 
@@ -313,13 +656,8 @@ export default class StoreClient extends Entity {
     }
 
     private startCheckout(): void {
-        if (this.getBasePrice() <= 0) {
-            // Couldn't buy anything at all — just leave.
-            this.state = 'leaving';
-            return;
-        }
-        this.host.cashierLine.join(this);
-        this.state = 'toCashier';
+        // Couldn't buy anything at all — just leave.
+        this.setState(this.getBasePrice() > 0 ? 'toCashier' : 'leaving');
     }
 
     /** What this client pays right now — its base price scaled by its current mood. */
@@ -332,15 +670,20 @@ export default class StoreClient extends Entity {
         return base > 0 ? Math.max(1, Math.round(base * this.host.config.priceMultiplier)) : 0;
     }
 
+    // ---- Presentation
+
     private bubbleContent(): StoreBubbleContent {
         const mood = this.getMood();
+        if (SHOPPING_STATES.has(this.state)) {
+            const wants = this.wants.filter(want => want.remaining > 0 && !want.skipped).map(want => ({ type: want.type, remaining: want.remaining }));
+            const current = this.currentWant();
+            const outOfStock = this.state === 'wandering' || (this.state === 'picking' && !!this.storage && !!current && StorageInventory.getCount(this.storage.id, current.type) <= 0);
+            const waitingFor = outOfStock ? current?.type : undefined;
+            return wants.length > 0 ? { kind: 'wants', mood, wants, waitingFor } : { kind: 'mood', mood };
+        }
         switch (this.state) {
-            case 'shopping': {
-                const wants = this.wants.filter(want => want.remaining > 0).map(want => ({ type: want.type, remaining: want.remaining }));
-                const waitingFor = this.waitingForStock ? this.wants[this.wantIndex]?.type : undefined;
-                return wants.length > 0 ? { kind: 'wants', mood, wants, waitingFor } : { kind: 'mood', mood };
-            }
             case 'toCashier':
+            case 'cashierQueue':
             case 'readyToPay':
                 return { kind: 'pay', mood, amount: this.getTotalPrice() };
             case 'leaving':
@@ -355,24 +698,8 @@ export default class StoreClient extends Entity {
         const to = this.getHeadWorldPosition(this.scratchHead).clone();
         spawnFlyingResourceIcon(this.host.screenHost, from, to, getAssetIcon(resolveResourceAssetKey(type)));
     }
+}
 
-    /** Straight-line step toward `goal` (XZ only) — returns true once standing on it. */
-    private moveToward(goal: THREE.Vector3, delta: number): boolean {
-        const position = this.transform.position;
-        const dx = goal.x - position.x;
-        const dz = goal.z - position.z;
-        const distance = Math.hypot(dx, dz);
-        if (distance <= ARRIVAL_EPSILON) {
-            this.isMoving = false;
-            return true;
-        }
-
-        const step = Math.min(distance, this.host.config.moveSpeed * delta);
-        position.x += (dx / distance) * step;
-        position.z += (dz / distance) * step;
-        this.moveDirX = dx / distance;
-        this.moveDirZ = dz / distance;
-        this.isMoving = true;
-        return distance - step <= ARRIVAL_EPSILON;
-    }
+function randomRange([min, max]: [number, number]): number {
+    return min + Math.random() * (max - min);
 }

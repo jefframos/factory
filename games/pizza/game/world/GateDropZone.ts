@@ -33,6 +33,7 @@ import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from './AssetLibraryRegistry';
 import MainPlayer from '../player/MainPlayer';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
+import DepositPacer from '../utils/DepositPacer';
 
 /** Same fixed trigger height every other deposit zone (BuildingZone/QueueZone/DropZone) uses — a gate's own footprint has no vertical dimension to derive one from either. */
 const HALF_EXTENTS_Y = 0.75;
@@ -41,6 +42,8 @@ const DROPPER_ZONE_CORNER_RADIUS = 0.3;
 const FLY_IN_STAGGER_SEC = 0.12;
 
 export default class GateDropZone extends Entity {
+    /** Speeds this zone's one-unit-at-a-time deposits up (to ~3x) the longer the player keeps paying — see DepositPacer.ts. */
+    private readonly depositPacer = new DepositPacer(FLY_IN_STAGGER_SEC);
     private readonly gateId: GateId;
     private readonly resourceType: ResourceType;
     private readonly amount: number;
@@ -141,7 +144,7 @@ export default class GateDropZone extends Entity {
 
             const remaining = this.amount - GateStorage.getDepositProgress(this.gateId) - this.inFlight;
             const fromWorld = this.isPlayerInside && remaining > 0 && BackpackStorage.getCount(this.resourceType) - this.inFlight > 0
-                ? this.player?.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition()
+                ? this.player?.getComponent(CharacterVisualComponent)?.character.getCarrierWorldPosition()
                 : undefined;
 
             if (!fromWorld) {
@@ -163,7 +166,7 @@ export default class GateDropZone extends Entity {
                 }
             });
 
-            gsap.delayedCall(FLY_IN_STAGGER_SEC, step);
+            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
         };
 
         step();

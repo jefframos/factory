@@ -85,6 +85,50 @@
                 "amount": 10
             },
             "view": "storageView"
+        },
+        "storage4": {
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "dropOffset": {},
+            "pile": {
+                "columns": 2,
+                "rows": 2,
+                "layers": 3
+            },
+            "accepts": "farm",
+            "resourceType": "strawberry",
+            "scale": 1,
+            "rotationDeg": 0,
+            "solid": 1,
+            "popupBobOffset": 3,
+            "price": {
+                "currency": "money",
+                "amount": 10
+            },
+            "view": "storageView"
+        },
+        "storage5": {
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "dropOffset": {},
+            "pile": {
+                "columns": 2,
+                "rows": 2,
+                "layers": 3
+            },
+            "accepts": "farm",
+            "resourceType": "corn",
+            "scale": 1,
+            "rotationDeg": 0,
+            "solid": 1,
+            "popupBobOffset": 3,
+            "price": {
+                "currency": "money",
+                "amount": 10
+            },
+            "view": "storageView"
         }
     },
     "signpost": {

@@ -501,7 +501,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
         name: "Corn",
         stages: [
             {
-                "durationSec": 20,
+                "durationSec": 3,
                 "mesh": "cropCornView",
                 "start": {
                     "offset": [
@@ -521,7 +521,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
                 }
             },
             {
-                "durationSec": 20,
+                "durationSec": 3,
                 "start": {
                     "offset": [
                         0,
@@ -540,7 +540,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
                 }
             },
             {
-                "durationSec": 0,
+                "durationSec": 2,
                 "start": {
                     "offset": [
                         0,
@@ -841,7 +841,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
         name: "Strawberry",
         stages: [
             {
-                "durationSec": 20,
+                "durationSec": 3,
                 "mesh": "cropStrawberryView",
                 "start": {
                     "offset": [
@@ -861,7 +861,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
                 }
             },
             {
-                "durationSec": 20,
+                "durationSec": 3,
                 "start": {
                     "offset": [
                         0,
@@ -880,7 +880,7 @@ export const CROP_CONFIG: Record<CropId, CropConfig> = {
                 }
             },
             {
-                "durationSec": 0,
+                "durationSec": 2,
                 "start": {
                     "offset": [
                         0,

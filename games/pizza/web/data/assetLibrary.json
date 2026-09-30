@@ -285,7 +285,7 @@
         "models": [
             "Food.Corn"
         ],
-        "scale": 1,
+        "scale": 2,
         "rotationDeg": 0,
         "icon": "pizza-model-snapshots_Food-Corn"
     },
@@ -355,7 +355,7 @@
         "models": [
             "Food.Strawberry"
         ],
-        "scale": 1,
+        "scale": 4,
         "rotationDeg": 0,
         "icon": "pizza-model-snapshots_Food-Strawberry"
     },

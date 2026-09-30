@@ -45,7 +45,7 @@ import { MergeInputMergeGridService } from "./grid/MergeInputMergeGridService";
 
 import { ModifierManager, ModifierType } from "./modifiers/ModifierManager";
 import { EnvironmentManager } from "./rooms/EnvironmentManager";
-import { ProgressionType } from "./storage/GameStorage";
+import GameStorage, { ProgressionType } from "./storage/GameStorage";
 
 export type MergeMode = "Free" | "Grid";
 
@@ -63,6 +63,10 @@ type InputServiceDeps = {
 
 const MEDIATOR_CFG = {
     maxCoinsPerEntity: 3,
+    // Cap on idle income credited on boot (see applyOfflineCatchUp). It can't tell
+    // "idled with the game open" from "game closed", so this also bounds the
+    // offline earnings a closed game accrues — tune as an economy value.
+    maxOfflineCatchUpSec: 2 * 60 * 60,
     mergeRadiusPx: 100,
     eggHoverRadiusPx: 60,
 
@@ -158,6 +162,7 @@ export class MergeMediator {
         this.setupTimedRewards();
 
         this.initEggGenerator();
+        this.applyOfflineCatchUp();
         this.bootstrapFTUE();
 
         this.ftueService.markDirty();
@@ -470,7 +475,62 @@ export class MergeMediator {
     }
 
     private loadSave(): void {
-        this.rooms.boot();
+        // Restoring the saved room isn't new progress — don't write it back.
+        GameStorage.instance.runPassive(() => this.rooms.boot());
+    }
+
+    /**
+     * Idle income (generator coins, egg spawns) is never written on its own —
+     * see GameStorage.runPassive(). Instead it's recomputed here from the save's
+     * `savedAtMs` (the time up to which idle income is already in the save), so
+     * reloading after idling keeps what was earned without the idle session
+     * ever having written (which would undo an external "clear data").
+     *
+     * Also passive, and relative to the saved clock rather than "now", so
+     * reloading repeatedly without playing never double-credits.
+     */
+    private applyOfflineCatchUp(): void {
+        const storage = GameStorage.instance;
+        const since = storage.passiveClockMs;
+        const now = Date.now();
+        storage.setPassiveClock(now);
+
+        if (since === null) {
+            return;
+        }
+
+        const elapsedSec = Math.min(MEDIATOR_CFG.maxOfflineCatchUpSec, Math.max(0, (now - since) / 1000));
+        if (elapsedSec < 1) {
+            return;
+        }
+
+        storage.runPassive(() => {
+            // Coins — mirrors updateCoinGeneration (autoCollectCoins is always on).
+            const genMul = ModifierManager.instance.getNormalizedValue(ModifierType.SpeedGeneration);
+            const passiveMul = ModifierManager.instance.getNormalizedValue(ModifierType.PassiveIncome);
+            let earned = 0;
+
+            this.entities.forEach((logic) => {
+                if (!logic.generator || logic.data.type !== "animal") {
+                    return;
+                }
+                const animal = StaticData.getAnimalData(logic.data.level);
+                const produced = Math.floor((elapsedSec * genMul) / Math.max(0.1, logic.generator.interval));
+                earned += produced * Math.ceil(animal.coinValue * passiveMul);
+            });
+
+            if (earned > 0) {
+                ProgressionStats.instance.recordCurrencyGained(CurrencyType.MONEY, earned);
+                InGameEconomy.instance.add(CurrencyType.MONEY, earned);
+            }
+
+            // Eggs — mirrors updateGameplay's generator (spawnEgg stops at max slots).
+            if (this.ftueService.isCompleted) {
+                const speedMul = ModifierManager.instance.getNormalizedValue(ModifierType.SpawnSpeed);
+                let eggs = Math.floor((elapsedSec * speedMul) / EggGenerator.MAX_TIME);
+                while (eggs-- > 0 && this.entities.spawnEgg()) { }
+            }
+        });
     }
 
     // ---------------------------------------------------------------------
@@ -494,7 +554,8 @@ export class MergeMediator {
 
     private updateGameplay(delta: number): void {
         if (!this.ftueService.ftueEnabled) {
-            MissionManager.instance.update(delta);
+            // Timer-driven mission rotation is recomputed from timestamps on boot.
+            GameStorage.instance.runPassive(() => MissionManager.instance.update(delta));
             this.timedRewards.update(delta);
         }
 
@@ -510,7 +571,8 @@ export class MergeMediator {
 
         if (!isFull && this.ftueService.isCompleted) {
             const speedMul = ModifierManager.instance.getNormalizedValue(ModifierType.SpawnSpeed);
-            this.eggGenerator.update(delta * speedMul);
+            // Idle egg spawns are passive — recomputed by applyOfflineCatchUp().
+            GameStorage.instance.runPassive(() => this.eggGenerator.update(delta * speedMul));
             this.hud.updateProgress(this.eggGenerator.ratio);
         } else {
             this.hud.updateProgress(1);
@@ -521,6 +583,13 @@ export class MergeMediator {
     }
 
     private updateCoinGeneration(delta: number): void {
+        // Idle coins are passive — recomputed by applyOfflineCatchUp() — and the
+        // clock records that the cached state has idle income up to this frame.
+        GameStorage.instance.runPassive(() => this.generateCoins(delta));
+        GameStorage.instance.setPassiveClock(Date.now());
+    }
+
+    private generateCoins(delta: number): void {
         this.entities.forEach((logic, view) => {
             if (!logic.generator || logic.data.type !== "animal") {
                 return;

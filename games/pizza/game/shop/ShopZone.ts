@@ -31,7 +31,11 @@ import { buildSolidArea } from '../physics/SolidArea';
 import { BendService } from '../services/BendService';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
-import { spawnFlyingIconFromOverlayPoint } from '../components/FlyingResourceIcon';
+import { spawnFlyingIconFromOverlayPoint, spawnFlyingResourceIcon } from '../components/FlyingResourceIcon';
+import CharacterVisualComponent from '../components/CharacterVisualComponent';
+import { BackpackStorage } from '../data/BackpackStorage';
+import { ResourceType } from '../actions/ResourceTypes';
+import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
@@ -41,15 +45,33 @@ import { FrameRegistry } from '../ui/FrameRegistry';
 import { EconomyStorage } from '../data/EconomyStorage';
 import { CURRENCY_CONFIG, CurrencyType } from '../data/EconomyTypes';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
-import { getToolIcon } from '../actions/ToolRegistry';
+import { getToolIcon, TOOL_LIBRARY, ToolVisualEntry } from '../actions/ToolRegistry';
+import { applyFloatAnimation } from '../components/FloatAnimation';
+import ParticleEmitterComponent from '../components/ParticleEmitterComponent';
+import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
+import { getPlayerConfig } from '../data/PlayerConfig';
+import { CARRIER_TOOL_ID } from '../data/CarrierCapacity';
+import { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
 import { ShopUpgradeStorage } from './ShopUpgradeStorage';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
-import { getShopConfig, getUpgradeCost, getViewIdForShopLevel, ShopConfig, SHOP_UPGRADE_AVAILABLE_ICON } from './ShopTypes';
+import { DEFAULT_SHOWCASE_HEIGHT, getShopConfig, getUpgradeCost, getViewIdForShopLevel, ShopConfig, SHOP_UPGRADE_AVAILABLE_ICON } from './ShopTypes';
+
+/** Showcase particles (ShopConfig.particleEffectId): spawn rate, and how far below the model they start drifting up — same rate as a craft table's. */
+const SHOWCASE_PARTICLE_RATE_PER_SEC = 4;
+const SHOWCASE_PARTICLE_BELOW = 1.2;
+
+/** One line of a level's cost on the panel: money or one resource, how much is paid so far and how much it needs. */
+interface CostEntry {
+    icon: PIXI.Texture;
+    progress: number;
+    need: number;
+}
 import MainPlayer from '../player/MainPlayer';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 import { resolveEntityView } from '../world/EntityViewRegistry';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
+import DepositPacer from '../utils/DepositPacer';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
@@ -59,6 +81,8 @@ const DROPPER_ZONE_CORNER_RADIUS = 0.3;
 const COST_ICON_SIZE = 22;
 /** Gap between the cost row's money icon and its "progress/cost" text — see refreshLabel(). */
 const COST_ICON_TEXT_GAP = 10;
+/** Gap between two cost entries (money / each resource) on the same row — see refreshLabel(). */
+const COST_ENTRY_GAP = 18;
 const FLY_IN_STAGGER_SEC = 0.12;
 /** Frame texture swapped in via labelFrame.setTexture() while ShopUpgradeStorage.isOnCooldown() — see refreshLabel(). */
 const COOLDOWN_FRAME_TEXTURE = 'ResourceBar_Single_Btn_Grey';
@@ -79,6 +103,8 @@ export interface ShopTriggerArea {
 }
 
 export default class ShopZone extends Entity {
+    /** Speeds this zone's one-unit-at-a-time deposits up (to ~3x) the longer the player keeps paying — see DepositPacer.ts. */
+    private readonly depositPacer = new DepositPacer(FLY_IN_STAGGER_SEC);
     private readonly screenHost: ScreenAnchorHost;
     private readonly shopId: string;
     private readonly config: ShopConfig;
@@ -121,6 +147,10 @@ export default class ShopZone extends Entity {
      * QueueZone.ts's own inFlightByType — see that file's own doc for the worked example).
      */
     private inFlightCoins = 0;
+    /** Resource cost (ShopConfig.levels): which resources have a drain loop running — same guard as `draining`, per type. */
+    private readonly drainingResources = new Set<ResourceType>();
+    /** Resource units departed from the player's carrier but not landed yet — same persistent in-flight bookkeeping as `inFlightCoins`, per type (see BuildingZone.inFlightByType). */
+    private readonly inFlightByType = new Map<ResourceType, number>();
     /** True for as long as the player's RigidBody is inside this zone's trigger — the deposit loop checks this before every coin and stops the instant it goes false, same convention as BuildingZone/QueueZone. */
     private isPlayerInside = false;
     private player?: MainPlayer;
@@ -144,6 +174,8 @@ export default class ShopZone extends Entity {
     private shopMesh?: THREE.Mesh;
     /** The real-glb counterpart to `shopMesh` above, used instead of it when the currently-bought level's `view` id resolves to an actual model (see ShopTypes.ts's getViewIdForShopLevel()/EntityViewRegistry.ts's resolveEntityView()). Mutually exclusive with `shopMesh`. */
     private shopVisual?: GlbVisualComponent;
+    /** Idle bob on the showcased tool model (ShopConfig.showcase) — see createShowcase(). */
+    private showcaseTween?: gsap.core.Tween;
     /** The view id `shopMesh`/`shopVisual` was last built from — lets handleShopChanged() tell "the bought level advanced past a view-bearing entry" (rebuild the mesh) apart from "just the cost/progress display changed" (recompute the label only). */
     private currentViewId?: string;
 
@@ -164,6 +196,13 @@ export default class ShopZone extends Entity {
 
     private readonly handleEconomyChanged = (type: CurrencyType): void => {
         if (type === CurrencyType.Money) {
+            this.refreshLabel();
+        }
+    };
+
+    /** Only subscribed for a shop whose levels cost resources — the "upgrade available" badge depends on what the player carries too. */
+    private readonly handleBackpackChanged = (type: ResourceType): void => {
+        if (getUpgradeCost(this.config, ShopUpgradeStorage.getLevel(this.shopId)).resources[type] !== undefined) {
             this.refreshLabel();
         }
     };
@@ -243,6 +282,7 @@ export default class ShopZone extends Entity {
         }
 
         this.createShopMesh();
+        this.createShowcase();
 
         // iconRow groups the tool icon + upgrade badge (anchored relative to the icon) so the
         // whole block repositions as ONE unit above bodyContainer, the same way titleText used
@@ -278,6 +318,9 @@ export default class ShopZone extends Entity {
         // not just this shop's own state — ShopUpgradeStorage.onChange alone wouldn't catch
         // the moment a queue reward pushes the wallet over this shop's remaining cost.
         EconomyStorage.onChange.add(this.handleEconomyChanged);
+        if (this.hasResourceCosts()) {
+            BackpackStorage.onChange.add(this.handleBackpackChanged);
+        }
 
         this.labelAnchor = new THREE.Object3D();
         this.labelAnchor.position.copy(resolvePopupAnchorOffset(this.config.popupBobOffset));
@@ -303,6 +346,9 @@ export default class ShopZone extends Entity {
     public override destroy(): void {
         ShopUpgradeStorage.onChange.remove(this.handleShopChanged);
         EconomyStorage.onChange.remove(this.handleEconomyChanged);
+        BackpackStorage.onChange.remove(this.handleBackpackChanged);
+        this.showcaseTween?.kill();
+        this.showcaseTween = undefined;
         this.disposeShopMesh();
         super.destroy();
     }
@@ -350,6 +396,12 @@ export default class ShopZone extends Entity {
                 // world bounds, so it's set up in onReady rather than right after construction.
                 reveal ? () => this.playRevealEffect(this.shopVisual!.mesh) : undefined,
             ));
+            return;
+        }
+
+        // No real model, but a showcased item (ShopConfig.showcase): that floating item IS the
+        // shop's look — skip the placeholder box instead of parking it underneath.
+        if (this.config.showcase) {
             return;
         }
 
@@ -413,6 +465,53 @@ export default class ShopZone extends Entity {
     }
 
     /**
+     * ShopConfig.showcase: the tool this shop upgrades, floating above it with an idle bob and
+     * (optionally) ambient particles — same look as a craft table showing the axe it crafts (see
+     * CraftZone.createTableMesh()). Built once; the visual/emitter are components, so
+     * super.destroy() tears them down.
+     */
+    private createShowcase(): void {
+        if (!this.config.showcase) {
+            return;
+        }
+        const height = this.config.showcaseHeight ?? DEFAULT_SHOWCASE_HEIGHT;
+        const model = this.resolveShowcaseModel();
+        if (model) {
+            const glb: GlbVisualComponent = this.addComponent(new GlbVisualComponent(
+                model,
+                new THREE.Vector3(0, height, 0),
+                this.config.showcaseScale ?? 1,
+                0,
+                () => {
+                    this.showcaseTween = applyFloatAnimation(glb.mesh);
+                },
+            ));
+        } else {
+            console.warn(`[ShopZone] "${this.shopId}" has showcase on but tool "${this.config.tool}" has no model to show`);
+        }
+        if (this.config.particleEffectId) {
+            this.addComponent(new ParticleEmitterComponent(
+                this.config.particleEffectId,
+                SHOWCASE_PARTICLE_RATE_PER_SEC,
+                new THREE.Vector3(0, Math.max(0, height - SHOWCASE_PARTICLE_BELOW), 0),
+            ));
+        }
+    }
+
+    /** The tool's own first model — or, for the carrier (never held, no `models`), the crate the player wears (PlayerConfig.carrier.models). */
+    private resolveShowcaseModel(): ModelDefinition | undefined {
+        const toolModels = (TOOL_LIBRARY[this.config.tool] as ToolVisualEntry).models;
+        if (toolModels.length > 0) {
+            return toolModels[0];
+        }
+        if (this.config.tool === CARRIER_TOOL_ID) {
+            const ref = getPlayerConfig().carrier.models[0];
+            return ref ? ModelSnapshotTool.resolveModelDef(ref) : undefined;
+        }
+        return undefined;
+    }
+
+    /**
      * True while the player already has enough money on hand, right now, to fund the rest of
      * the next level in one go — see upgradeBadge's own doc. Never true once maxed or on
      * cooldown; there's nothing left to flag "come buy this" for in either case.
@@ -422,9 +521,39 @@ export default class ShopZone extends Entity {
             return false;
         }
 
+        if (EconomyStorage.getBalance(CurrencyType.Money) < ShopUpgradeStorage.getRemainingMoney(this.shopId, this.config)) {
+            return false;
+        }
+        const resources = getUpgradeCost(this.config, ShopUpgradeStorage.getLevel(this.shopId)).resources;
+        return (Object.keys(resources) as ResourceType[])
+            .every(type => BackpackStorage.getCount(type) >= ShopUpgradeStorage.getRemainingResource(this.shopId, this.config, type));
+    }
+
+    /** True if any of this shop's hand-listed levels costs resources (not just money). */
+    private hasResourceCosts(): boolean {
+        return (this.config.levels ?? []).some(level => Object.values(level.resources ?? {}).some(amount => (amount ?? 0) > 0));
+    }
+
+    /**
+     * The next level's cost, one entry per thing it takes — money first (shown even at 0 for a
+     * money-only shop, as before), then each resource. `progress` is what's already deposited.
+     */
+    private getCostEntries(): CostEntry[] {
         const state = ShopUpgradeStorage.getState(this.shopId);
-        const remaining = getUpgradeCost(this.config, state.level) - state.progress;
-        return EconomyStorage.getBalance(CurrencyType.Money) >= remaining;
+        const cost = getUpgradeCost(this.config, state.level);
+        const entries: CostEntry[] = [];
+        const resourceTypes = Object.keys(cost.resources) as ResourceType[];
+        if (cost.money > 0 || resourceTypes.length === 0) {
+            entries.push({ icon: getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey), progress: state.progress, need: cost.money });
+        }
+        for (const type of resourceTypes) {
+            entries.push({
+                icon: getAssetIcon(resolveResourceAssetKey(type)),
+                progress: ShopUpgradeStorage.getResourceProgress(this.shopId, type),
+                need: cost.resources[type] ?? 0,
+            });
+        }
+        return entries;
     }
 
     /** Rewrites the panel's body from ShopUpgradeStorage's current state and re-fits the frame around the new bounds. Icon-first throughout (tool icon, money icon, upgrade-arrow badge) — the only text left is short numbers, not sentences, per this file's own doc. `popupMode: 'none'` (see PopupConfig.ts's own doc) skips all of this and keeps the panel permanently hidden; `'simple'` drops the tool-icon header (iconRow), keeping only the cost/cooldown row. */
@@ -485,20 +614,23 @@ export default class ShopZone extends Entity {
             this.bodyContainer.addChild(row);
             bodyHeight = row.height;
         } else {
-            const state = ShopUpgradeStorage.getState(this.shopId);
-            const cost = getUpgradeCost(this.config, state.level);
-
+            // One icon + "paid/need" pair per cost entry (money, then each resource), side by side.
             const row = new PIXI.Container();
-            const icon = new PIXI.Sprite(getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey));
-            icon.anchor.set(0, 0.5);
-            icon.width = COST_ICON_SIZE;
-            icon.height = COST_ICON_SIZE;
-            row.addChild(icon);
+            let x = 0;
+            for (const entry of this.getCostEntries()) {
+                const icon = new PIXI.Sprite(entry.icon);
+                icon.anchor.set(0, 0.5);
+                icon.width = COST_ICON_SIZE;
+                icon.height = COST_ICON_SIZE;
+                icon.position.set(x, 0);
+                row.addChild(icon);
 
-            const costText = new PIXI.Text(`${state.progress}/${cost}`, TextStyleRegistry.Body);
-            costText.anchor.set(0, 0.5);
-            costText.position.set(COST_ICON_SIZE + COST_ICON_TEXT_GAP, 0);
-            row.addChild(costText);
+                const costText = new PIXI.Text(`${entry.progress}/${entry.need}`, TextStyleRegistry.Body);
+                costText.anchor.set(0, 0.5);
+                costText.position.set(x + COST_ICON_SIZE + COST_ICON_TEXT_GAP, 0);
+                row.addChild(costText);
+                x = costText.x + costText.width + COST_ENTRY_GAP;
+            }
 
             row.pivot.set(row.width / 2, row.height / 2);
             row.position.set(0, -row.height / 2);
@@ -525,8 +657,9 @@ export default class ShopZone extends Entity {
         } else if (ShopUpgradeStorage.isOnCooldown(this.shopId)) {
             items.push({ icon: PIXI.Texture.from('Icon_Timer'), text: formatCooldown(ShopUpgradeStorage.getCooldownRemainingSec(this.shopId)) });
         } else {
-            const state = ShopUpgradeStorage.getState(this.shopId);
-            items.push({ icon: getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey), text: `${state.progress}/${getUpgradeCost(this.config, state.level)}` });
+            for (const entry of this.getCostEntries()) {
+                items.push({ icon: entry.icon, text: `${entry.progress}/${entry.need}` });
+            }
         }
         this.floorLabel.setItems(items);
     }
@@ -545,6 +678,10 @@ export default class ShopZone extends Entity {
         }
 
         this.flyInCoins();
+        const resources = getUpgradeCost(this.config, ShopUpgradeStorage.getLevel(this.shopId)).resources;
+        for (const type of Object.keys(resources) as ResourceType[]) {
+            this.flyInResource(type);
+        }
     }
 
     /** Player's RigidBody left this zone's trigger — the deposit loop reads isPlayerInside before every coin, so clearing it here is the ENTIRE "stop depositing" instruction, same shape as BuildingZone/QueueZone's identical handler. */
@@ -582,7 +719,10 @@ export default class ShopZone extends Entity {
                 // wallet: EconomyStorage's balance only drops on LANDING, but a coin departs
                 // every FLY_IN_STAGGER_SEC — without this, a 1-coin balance would still read
                 // getBalance()>0 for every departure that fires before the first one lands.
-                && EconomyStorage.getBalance(CurrencyType.Money) - this.inFlightCoins > 0;
+                && EconomyStorage.getBalance(CurrencyType.Money) - this.inFlightCoins > 0
+                // Stop once the money part is paid — a level that also costs resources may still
+                // be waiting on those, and extra coins would be spent for nothing.
+                && ShopUpgradeStorage.getRemainingMoney(this.shopId, this.config) - this.inFlightCoins > 0;
 
             if (!stillWants) {
                 this.draining = false;
@@ -594,28 +734,84 @@ export default class ShopZone extends Entity {
 
             spawnFlyingIconFromOverlayPoint(this.screenHost, this.getWalletOverlayPosition, toWorld.clone(), icon, () => {
                 this.inFlightCoins--;
+                // Level completed (or cooldown started) while this coin was in the air: keep it.
+                if (ShopUpgradeStorage.getRemainingMoney(this.shopId, this.config) <= 0 || ShopUpgradeStorage.isOnCooldown(this.shopId)) {
+                    return;
+                }
                 if (!EconomyStorage.spend(CurrencyType.Money, 1)) {
                     return;
                 }
                 ShopUpgradeStorage.addProgress(this.shopId, this.config, 1);
-                if (ShopUpgradeStorage.tryCompleteUpgrade(this.shopId, this.config)) {
-                    // Rarity is hardcoded to Common for now — ShopConfig has no rarity-by-level
-                    // field yet (see ShopTypes.ts). Wire it up to actually vary per level once
-                    // that's added.
-                    UpgradeNotificationManager.instance.show({
-                        type: NotificationType.Upgrade,
-                        rarity: NotificationRarity.Common,
-                        icon: getToolIcon(this.config.tool),
-                        title: 'UPGRADE!',
-                        subtitle: `${this.config.tool.toUpperCase()} LEVEL ${ShopUpgradeStorage.getLevel(this.shopId)}`,
-                    });
-                }
+                this.completeIfFunded();
             });
 
-            gsap.delayedCall(FLY_IN_STAGGER_SEC, step);
+            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
         };
 
         step();
+    }
+
+    /**
+     * Drains one resource of the next level's cost (ShopConfig.levels) from the player's
+     * backpack, one unit at a time, flying from the carrier on their back — same loop as
+     * BuildingZone.flyInResource(), re-checking before every unit.
+     */
+    private flyInResource(type: ResourceType): void {
+        if (this.drainingResources.has(type)) {
+            return;
+        }
+        this.drainingResources.add(type);
+
+        const icon = getAssetIcon(resolveResourceAssetKey(type));
+        const toWorld = new THREE.Vector3();
+
+        const step = (): void => {
+            const inFlight = this.inFlightByType.get(type) ?? 0;
+            const wants = this.isPlayerInside
+                && !ShopUpgradeStorage.isMaxLevel(this.shopId, this.config)
+                && !ShopUpgradeStorage.isOnCooldown(this.shopId)
+                && ShopUpgradeStorage.getRemainingResource(this.shopId, this.config, type) - inFlight > 0
+                && BackpackStorage.getCount(type) - inFlight > 0;
+            const fromWorld = wants ? this.player?.getComponent(CharacterVisualComponent)?.character.getCarrierWorldPosition() : undefined;
+            if (!fromWorld) {
+                this.drainingResources.delete(type);
+                return;
+            }
+
+            this.labelAnchor.getWorldPosition(toWorld);
+            this.inFlightByType.set(type, inFlight + 1);
+
+            spawnFlyingResourceIcon(this.screenHost, fromWorld.clone(), toWorld.clone(), icon, () => {
+                this.inFlightByType.set(type, (this.inFlightByType.get(type) ?? 1) - 1);
+                if (ShopUpgradeStorage.getRemainingResource(this.shopId, this.config, type) <= 0 || ShopUpgradeStorage.isOnCooldown(this.shopId)) {
+                    return;
+                }
+                if (BackpackStorage.removeOne(type)) {
+                    ShopUpgradeStorage.addResourceProgress(this.shopId, this.config, type, 1);
+                    this.completeIfFunded();
+                }
+            });
+
+            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
+        };
+
+        step();
+    }
+
+    /** Buys the level once money AND every resource are fully deposited, with the upgrade callout. */
+    private completeIfFunded(): void {
+        if (!ShopUpgradeStorage.tryCompleteUpgrade(this.shopId, this.config)) {
+            return;
+        }
+        // Rarity is hardcoded to Common for now — ShopConfig has no rarity-by-level field yet
+        // (see ShopTypes.ts). Wire it up to actually vary per level once that's added.
+        UpgradeNotificationManager.instance.show({
+            type: NotificationType.Upgrade,
+            rarity: NotificationRarity.Common,
+            icon: getToolIcon(this.config.tool),
+            title: 'UPGRADE!',
+            subtitle: `${TOOL_LIBRARY[this.config.tool].label.toUpperCase()} LEVEL ${ShopUpgradeStorage.getLevel(this.shopId)}`,
+        });
     }
 }
 

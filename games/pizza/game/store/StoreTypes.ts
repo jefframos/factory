@@ -12,6 +12,7 @@
 // editor's Stores tab (games/pizza/web).
 
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
+import type { StoreWaitStyle } from './StoreQueueSpots';
 
 export type StoreSpotDirection = 'north' | 'south' | 'east' | 'west';
 
@@ -77,6 +78,18 @@ export interface StoreConfig {
     storageSpotDirections?: StoreSpotDirectionEntry[];
     /** Same, for the cashier's line. Unset = toward the store's own center. */
     cashierSpotDirection?: StoreSpotDirection;
+    /**
+     * How waiting clients stand (see StoreQueueSpots.ts): 'cluster' gathers them around the
+     * shelf/cashier (biased toward its line direction), 'line' keeps the straight line. The
+     * queue order is the same either way. Unset = 'cluster'.
+     */
+    waitStyle?: StoreWaitStyle;
+    /** Nav grid cell size, world units (see store/nav/StoreNavGrid.ts). Smaller = tighter paths, more cells. Unset = DEFAULT_NAV_CELL_SIZE. */
+    navCellSize?: number;
+    /** A client's personal-space radius, world units — obstacles are grown by this and clients steer apart at about twice it. Unset = DEFAULT_CLIENT_RADIUS. */
+    clientRadius?: number;
+    /** 0-1: each time a client waiting in a shelf line (not at the front) gets restless, the chance it goes browsing another shelf instead of standing. Unset = DEFAULT_BROWSE_CHANCE. */
+    browseChance?: number;
     /** Seconds a client takes to pick up ONE unit once it's at the front of a storage line. */
     pickDelaySec: number;
     /** Seconds between the player reaching the cashier and the front client paying. */
@@ -267,6 +280,14 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
             {
                 "storageId": "storage3",
                 "direction": "west"
+            },
+            {
+                "storageId": "storage4",
+                "direction": "west"
+            },
+            {
+                "storageId": "storage5",
+                "direction": "west"
             }
         ],
         "cashierSpotDirection": "east",
@@ -308,6 +329,32 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
                     },
                     {
                         "entityId": "storage3"
+                    }
+                ]
+            },
+            {
+                "level": 4,
+                "requirementType": "money",
+                "amount": 200,
+                "enables": [
+                    {
+                        "entityId": "farm4"
+                    },
+                    {
+                        "entityId": "storage4"
+                    }
+                ]
+            },
+            {
+                "level": 5,
+                "requirementType": "money",
+                "amount": 350,
+                "enables": [
+                    {
+                        "entityId": "farm5"
+                    },
+                    {
+                        "entityId": "storage5"
                     }
                 ]
             }
@@ -355,6 +402,9 @@ export const STORE_MOOD_ICON: Record<StoreClientMood, string> = {
     angry: 'emoji-angry',
 };
 
+export const DEFAULT_NAV_CELL_SIZE = 0.3;
+export const DEFAULT_CLIENT_RADIUS = 0.35;
+export const DEFAULT_BROWSE_CHANCE = 0.4;
 export const DEFAULT_MOOD_STEP_SEC = 20;
 export const DEFAULT_VERY_HAPPY_PAY_MULTIPLIER = 2;
 export const DEFAULT_UNHAPPY_PAY_PENALTY = 0.2;

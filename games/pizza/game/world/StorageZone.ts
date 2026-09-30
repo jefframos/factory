@@ -11,7 +11,7 @@
 // While the player stands in the trigger, accepted items leave the player one
 // at a time, every TRANSFER_STAGGER_SEC:
 //   - stacked items (the crops piled on the player's back) come off the TOP of
-//     the stack first — BackpackStackVisual.peekTop() says which item and where
+//     the stack first — CarrierStackVisual.peekTop() says which item and where
 //     it is, so the model visibly flies from that exact spot;
 //   - anything else accepted but not drawn on the stack (e.g. wood, for a
 //     storage accepting 'main') flies from the backpack itself.
@@ -43,8 +43,8 @@ import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 import { resolveEntityView } from './EntityViewRegistry';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
-import BackpackStackVisual, { stackItemScale } from '../components/BackpackStackVisual';
-import ItemPile, { ItemPileLayout } from '../components/ItemPile';
+import CarrierStackVisual, { stackItemScale } from '../components/CarrierStackVisual';
+import ItemPile, { getPileScale, ItemPileLayout } from '../components/ItemPile';
 import { flyResourceModel } from '../components/FlyToStack';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
@@ -61,6 +61,7 @@ import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
 import MainPlayer from '../player/MainPlayer';
+import DepositPacer from '../utils/DepositPacer';
 
 const TRIGGER_HEIGHT = 0.75;
 const CORNER_RADIUS = 0.3;
@@ -73,7 +74,7 @@ const FALLBACK_FOOTPRINT = 1.6;
 const LAND_BOUNCE_SCALE = 1.08;
 const LAND_BOUNCE_SEC = 0.12;
 /** Where to launch a non-stacked item from if the character (and so its backpack) hasn't loaded — roughly chest height. */
-const FALLBACK_BACKPACK_HEIGHT = 1.2;
+const FALLBACK_CARRIER_HEIGHT = 1.2;
 /** Per-axis fallback for a missing StorageConfig.dropOffset value — half-way up Restaurant.Crate. */
 const DEFAULT_DROP_OFFSET = { x: 0, y: 0.4, z: 0 };
 /** StorageConfig.signpostGap fallback — see that field's own doc. */
@@ -88,6 +89,8 @@ const SOLID_HALF_HEIGHT = 0.5;
 const DEFAULT_ACCEPTS_PANEL_CLEARANCE = 1.0;
 
 export default class StorageZone extends Entity {
+    /** Speeds this zone's one-unit-at-a-time deposits up (to ~3x) the longer the player keeps paying — see DepositPacer.ts. */
+    private readonly depositPacer = new DepositPacer(TRANSFER_STAGGER_SEC);
     private readonly storageId: string;
     private readonly config: StorageConfig;
     private readonly triggerSize: { width: number; depth: number };
@@ -335,6 +338,8 @@ export default class StorageZone extends Entity {
             itemYawDeg: this.config.itemYawDeg,
             itemOrientation: this.config.itemOrientation,
             localPerWorld: 1,
+            // Per-resource height in storages (e.g. carrots a bit lower) — ResourceConfig.storageOffsetY.
+            offsetYFor: type => RESOURCE_CONFIG[type]?.storageOffsetY ?? 0,
         };
     }
 
@@ -396,7 +401,8 @@ export default class StorageZone extends Entity {
                 parent: scene,
                 type,
                 from,
-                startScale: stackItemScale(),
+                // Leaves the carrier at the size it was drawn there (pileScale included).
+                startScale: stackItemScale() * getPileScale(type),
                 endScale: landingScale,
                 // Already turned the way it'll sit in this storage, so it doesn't flip on landing.
                 orientation: this.config.itemOrientation,
@@ -416,7 +422,7 @@ export default class StorageZone extends Entity {
                 },
             });
 
-            gsap.delayedCall(TRANSFER_STAGGER_SEC, step);
+            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
         };
 
         step();
@@ -426,16 +432,16 @@ export default class StorageZone extends Entity {
     private nextOutgoing(player: MainPlayer, from: THREE.Vector3): ResourceType | undefined {
         const accepts = (type: ResourceType): boolean => this.accepts(type) && BackpackStorage.getCount(type) > 0;
 
-        const stacked = player.getComponent(BackpackStackVisual)?.peekTop(accepts, from);
+        const stacked = player.getComponent(CarrierStackVisual)?.peekTop(accepts, from);
         if (stacked !== undefined) {
             return stacked;
         }
 
         for (const [type, count] of BackpackStorage.getAll()) {
             if (count > 0 && accepts(type)) {
-                const backpack = player.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition(from);
+                const backpack = player.getComponent(CharacterVisualComponent)?.character.getCarrierWorldPosition(from);
                 if (!backpack) {
-                    from.copy(player.transform.position).setY(player.transform.position.y + FALLBACK_BACKPACK_HEIGHT);
+                    from.copy(player.transform.position).setY(player.transform.position.y + FALLBACK_CARRIER_HEIGHT);
                 }
                 return type;
             }

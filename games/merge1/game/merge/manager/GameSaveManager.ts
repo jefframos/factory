@@ -21,6 +21,10 @@ export interface IRoomMergeSaveState {
 
 export class GameSaveManager {
     private dirty: boolean = false;
+    // True when a non-passive change (player merge/move/hatch, room switch...)
+    // is among the unsaved ones. Idle-only dirtiness (egg/coin spawns inside
+    // GameStorage.runPassive) flushes to the cache without a platform write.
+    private dirtyByPlayer: boolean = false;
     private saveCooldownMs: number = 500;
     private saveTimerMs: number = 0;
     private activeRoomId: string = "room_0";
@@ -50,6 +54,9 @@ export class GameSaveManager {
 
     public markDirty(): void {
         this.dirty = true;
+        if (!GameStorage.instance.isPassive) {
+            this.dirtyByPlayer = true;
+        }
     }
 
     public update(deltaSeconds: number): void {
@@ -69,18 +76,27 @@ export class GameSaveManager {
      * Does NOT overwrite currencies/progress/missions.
      */
     public flushNow(): void {
+        const byPlayer = this.dirtyByPlayer;
         this.saveTimerMs = 0;
         this.dirty = false;
+        this.dirtyByPlayer = false;
 
-        const full = this.ensureRoomsExist(GameStorage.instance.getFullState());
-        const roomId = this.activeRoomId ?? full.activeRoomId ?? this.DEFAULT_ROOM_ID;
-        full.activeRoomId = roomId;
+        const write = () => {
+            const full = this.ensureRoomsExist(GameStorage.instance.getFullState());
+            const roomId = this.activeRoomId ?? full.activeRoomId ?? this.DEFAULT_ROOM_ID;
+            full.activeRoomId = roomId;
 
+            full.rooms![roomId] = this.buildRoomState(roomId);
+            full.activeRoomId = roomId;
 
-        full.rooms![roomId] = this.buildRoomState(roomId);
-        full.activeRoomId = roomId;
+            GameStorage.instance.saveFullState(full);
+        };
 
-        GameStorage.instance.saveFullState(full);
+        if (byPlayer) {
+            write();
+        } else {
+            GameStorage.instance.runPassive(write);
+        }
     }
     public setActiveRoomId(roomId: string): void {
         this.activeRoomId = roomId;
@@ -137,6 +153,7 @@ export class GameSaveManager {
         GameStorage.instance.saveFullState(full);
 
         this.dirty = false;
+        this.dirtyByPlayer = false;
         this.saveTimerMs = 0;
     }
 
@@ -170,6 +187,7 @@ export class GameSaveManager {
         }
 
         this.dirty = false;
+        this.dirtyByPlayer = false;
         this.saveTimerMs = 0;
     }
 

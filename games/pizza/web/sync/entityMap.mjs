@@ -136,8 +136,10 @@ export const ENTITY_SOURCE_MAP = {
         // upgraded (`tool`, resolved into TOOL_LIBRARY[tool].attributes — see the `tools`
         // mapping below and ToolRegistry.ts's own doc), not on the shop — a shop is just the
         // storefront (cost/cooldown/appearance) for whichever tool it names.
-        managedKeys: ['name', 'tool', 'action', 'appearRequirement', 'totalLevels', 'baseCost', 'costScale', 'cooldownSec', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'disabled'],
-        optionalKeys: ['appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'disabled'],
+        // `levels` (ShopConfig.levels — optional hand-listed cost per upgrade, money + resources)
+        // replaces baseCost/costScale when set; `action` is optional (the carrier shop has none).
+        managedKeys: ['name', 'tool', 'action', 'appearRequirement', 'totalLevels', 'baseCost', 'costScale', 'cooldownSec', 'levels', 'showcase', 'showcaseScale', 'showcaseHeight', 'particleEffectId', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'disabled'],
+        optionalKeys: ['action', 'levels', 'showcase', 'showcaseScale', 'showcaseHeight', 'particleEffectId', 'appearRequirement', 'popupMode', 'popupBobOffset', 'baseView', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'solid', 'disabled'],
     },
     crafting: {
         file: path.join(GAME_DIR, 'crafting', 'CraftTypes.ts'),
@@ -165,14 +167,14 @@ export const ENTITY_SOURCE_MAP = {
         exportName: 'RESOURCE_CONFIG',
         kind: 'enumRecord',
         enumName: 'ResourceType',
-        managedKeys: ['label', 'amountPerGather', 'category', 'price', 'sellable', 'disabled'],
+        managedKeys: ['label', 'amountPerGather', 'category', 'price', 'sellable', 'pileScale', 'carrierSpacing', 'storageOffsetY', 'carrierOrientation', 'disabled'],
         // Unset means 'main' (see ResourceConfig.category's own doc) — a mirror/entry that
         // predates this field just leaves it alone rather than getting force-set to 'main'.
         // `price`/`sellable` are MartTypes.ts's own concern (see that file's own doc) — unset
         // price means this resource can never be bought/sold at any mart at all; unset sellable
         // means true whenever a price IS set. `disabled` unset means "live," same as every
         // resource before this field existed — see ResourceConfig.disabled's own doc.
-        optionalKeys: ['category', 'price', 'sellable', 'disabled'],
+        optionalKeys: ['category', 'price', 'sellable', 'pileScale', 'carrierSpacing', 'storageOffsetY', 'carrierOrientation', 'disabled'],
         // The Resources tab ALSO has icon/models/scale/rotationDeg fields, but ResourceConfig
         // itself carries none of those — see entityMap's own top-of-file doc on
         // `externalFields`. For a LOOSE ground-loot resource (bark/pebble/grassFiber, no
@@ -311,8 +313,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORE_CONFIG',
         byIdExportName: 'STORE_CONFIG_BY_ID',
-        managedKeys: ['name', 'npcs', 'spawnIntervalSec', 'maxClients', 'moveSpeed', 'maxDistinctItems', 'maxAmountPerItem', 'priceMultiplier', 'spotSpacing', 'spotMargin', 'storageSpotDirections', 'cashierSpotDirection', 'pickDelaySec', 'payDelaySec', 'moneyPerBill', 'billsPerPile', 'bubbleOffset', 'startSpawnIntervalSec', 'startMaxClients', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'disabled'],
-        optionalKeys: ['name', 'storageSpotDirections', 'cashierSpotDirection', 'startSpawnIntervalSec', 'startMaxClients', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'disabled'],
+        managedKeys: ['name', 'npcs', 'spawnIntervalSec', 'maxClients', 'moveSpeed', 'maxDistinctItems', 'maxAmountPerItem', 'priceMultiplier', 'spotSpacing', 'spotMargin', 'storageSpotDirections', 'cashierSpotDirection', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'pickDelaySec', 'payDelaySec', 'moneyPerBill', 'billsPerPile', 'bubbleOffset', 'startSpawnIntervalSec', 'startMaxClients', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'disabled'],
+        optionalKeys: ['name', 'storageSpotDirections', 'cashierSpotDirection', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'startSpawnIntervalSec', 'startMaxClients', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'disabled'],
     },
     // A MART — a "mart"-typed object drawn on the Tiled map's "mapSettings" layer, open-ended
     // by id like shops/crafting/farms, not enum-backed. Same {default, byId} two-export shape
@@ -428,8 +430,9 @@ export const ENTITY_SOURCE_MAP = {
         // replace like `attributes`.
         // `startLevel` (ToolVisualEntry.startLevel) — optional number, where on the ladder the
         // tool sits when acquired.
-        managedKeys: ['label', 'icon', 'models', 'maxLevel', 'startLevel', 'attributes', 'startWith', 'actionTime'],
-        optionalKeys: ['startLevel', 'attributes', 'startWith', 'actionTime'],
+        // `capacity` (ToolVisualEntry.capacity) — the carrier's optional {min,max}, wholesale replace like `actionTime`.
+        managedKeys: ['label', 'icon', 'models', 'maxLevel', 'startLevel', 'attributes', 'startWith', 'actionTime', 'capacity'],
+        optionalKeys: ['startLevel', 'attributes', 'startWith', 'actionTime', 'capacity'],
     },
     assetLibrary: {
         file: path.join(GAME_DIR, 'world', 'AssetLibraryRegistry.ts'),
@@ -532,7 +535,7 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'partialRecord',
         managedKeys: [
             'walkSpeed', 'runSpeedMultiplier', 'resourceDetectionRadius', 'resourceDetectionAngleDeg',
-            'idleToWalkSpeed', 'walkToRunSpeed', 'animations', 'backpack', 'harvestIntoStack',
+            'idleToWalkSpeed', 'walkToRunSpeed', 'animations', 'carrier', 'harvestIntoStack',
         ],
     },
 };

@@ -53,6 +53,7 @@ import MainPlayer from '../player/MainPlayer';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
+import DepositPacer from '../utils/DepositPacer';
 
 const FARM_ZONE_CORNER_RADIUS = 0.2;
 const PLACEHOLDER_HEIGHT = 0.1;
@@ -62,6 +63,8 @@ const POPUP_HEIGHT_OFFSET = 1.2;
 const FLY_IN_STAGGER_SEC = 0.12;
 
 export default class FarmZone extends Entity {
+    /** Speeds this zone's one-unit-at-a-time deposits up (to ~3x) the longer the player keeps paying — see DepositPacer.ts. */
+    private readonly depositPacer = new DepositPacer(FLY_IN_STAGGER_SEC);
     private readonly screenHost: ScreenAnchorHost;
     private readonly farmId: string;
     private readonly config: FarmPlotConfig;
@@ -260,7 +263,7 @@ export default class FarmZone extends Entity {
                 }
             });
 
-            gsap.delayedCall(FLY_IN_STAGGER_SEC, step);
+            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
         };
 
         step();

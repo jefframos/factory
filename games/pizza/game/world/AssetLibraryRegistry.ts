@@ -252,7 +252,7 @@ export const ASSET_LIBRARY = {
     },
     "corn": {
         "models": [MODELS.Food.Corn],
-        "scale": 1,
+        "scale": 2,
         "rotationDeg": 0,
         "icon": "pizza-model-snapshots_Food-Corn"
     },
@@ -282,7 +282,7 @@ export const ASSET_LIBRARY = {
     },
     "strawberry": {
         "models": [MODELS.Food.Strawberry],
-        "scale": 1,
+        "scale": 4,
         "rotationDeg": 0,
         "icon": "pizza-model-snapshots_Food-Strawberry"
     },

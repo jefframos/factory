@@ -103,7 +103,9 @@ const USE_OWN_MESH_PROPERTY = 'useOwnMesh';
  * pieces) and mark only SOME of them solid (the walls, not the floor), instead of the single
  * BuildingConfig.solid fraction applying uniformly to the whole building's trigger footprint.
  * Missing/0 on a piece (the default, same as before this property existed) means that ONE
- * piece stays walk-through — it doesn't affect any other piece sharing the same id.
+ * piece stays walk-through — it doesn't affect any other piece sharing the same id. A "bool"
+ * checkbox instead of a number also works: checked = 1 (fully solid), unchecked = 0 — the same
+ * checkbox the meshes layer's own "solid" uses, so either habit gives the expected result.
  */
 const OWN_MESH_SOLID_PROPERTY = 'solid';
 
@@ -397,7 +399,10 @@ export default class WorldObjectRegistry {
                         z: placement.z,
                         width: placement.width,
                         depth: placement.depth,
-                        solid: getObjectNumberProperty(obj, OWN_MESH_SOLID_PROPERTY) ?? 0,
+                        // A number is the fraction; a checked bool (the way the meshes layer's own
+                        // "solid" works — see MeshLayerSpawner.ts) means fully solid.
+                        solid: getObjectNumberProperty(obj, OWN_MESH_SOLID_PROPERTY)
+                            ?? (getObjectBooleanProperty(obj, OWN_MESH_SOLID_PROPERTY) ? 1 : 0),
                     });
                 } else {
                     console.warn(`[WorldObjectRegistry] "${id}" (type "${type}") has "${USE_OWN_MESH_PROPERTY}" checked but no image of its own dragged onto it (or it doesn't decode to a known model) — no mesh fallback available from this object`);

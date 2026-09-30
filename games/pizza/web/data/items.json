@@ -16,5 +16,8 @@
     },
     "knife": {
         "label": "Knife"
+    },
+    "carrier": {
+        "label": "Carrier"
     }
 }

@@ -52,6 +52,7 @@ import { getToolIcon, ToolId, TOOL_LIBRARY } from '../../actions/ToolRegistry';
 import { ItemStorage } from '../../crafting/ItemStorage';
 import { ItemType } from '../../crafting/ItemTypes';
 import { ShopUpgradeStorage } from '../../shop/ShopUpgradeStorage';
+import { CARRIER_TOOL_ID, getCarrierCapacity } from '../../data/CarrierCapacity';
 import { SHOP_CONFIG_BY_ID } from '../../shop/ShopTypes';
 import { ACTION_CONFIG } from '../../actions/ActionTypes';
 import { BackpackStorage } from '../../data/BackpackStorage';
@@ -425,13 +426,16 @@ export default class InventoryPopup extends Popup {
             row.addChild(nameLabel);
 
             const config = shopId ? SHOP_CONFIG_BY_ID[shopId] : undefined;
-            const stats = config ? ACTION_CONFIG[config.action] : undefined;
+            const stats = config?.action !== undefined ? ACTION_CONFIG[config.action] : undefined;
             // hitScale/resourcePerHit are lerped floats (see ShopTypes.applyShopLevel()) — at a
             // mid-ladder level they can land on values like 2.3333333333333335, unreadable
             // un-rounded. toFixed(1) matches hitIntervalSec's own existing rounding below.
-            const statsText = stats
-                ? `Speed ${stats.hitIntervalSec.toFixed(2)}s  x${stats.hitScale.toFixed(1)}  +${stats.resourcePerHit.toFixed(1)}/hit`
-                : '';
+            // The carrier has no action — its one stat is how much it holds.
+            const statsText = toolId === CARRIER_TOOL_ID
+                ? `Holds ${getCarrierCapacity()} items`
+                : stats
+                    ? `Speed ${stats.hitIntervalSec.toFixed(2)}s  x${stats.hitScale.toFixed(1)}  +${stats.resourcePerHit.toFixed(1)}/hit`
+                    : '';
             const statsLabel = new PIXI.Text(statsText, { ...TextStyleRegistry.Inventory, fontSize: 16 });
             statsLabel.alpha = 0.8;
             statsLabel.anchor.set(0, 0.5);

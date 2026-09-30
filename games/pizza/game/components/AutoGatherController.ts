@@ -353,15 +353,15 @@ export default class AutoGatherController extends Component {
         }
 
         const character = this.entity.getComponent(CharacterVisualComponent)?.character;
-        const backpackWorldPosition = character?.getBackpackWorldPosition();
+        const carrierWorldPosition = character?.getCarrierWorldPosition();
 
         // node.transform is added directly to the THREE.Scene by WorldManager (see
         // spawnFlyingResourceChip's own doc) — its parent IS the scene.
         const scene = node.transform.parent;
-        if (!backpackWorldPosition || !scene) {
+        if (!carrierWorldPosition || !scene) {
             return;
         }
 
-        //spawnFlyingResourceChip(scene, node.position, backpackWorldPosition, config.color);
+        //spawnFlyingResourceChip(scene, node.position, carrierWorldPosition, config.color);
     }
 }

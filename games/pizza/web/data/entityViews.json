@@ -174,7 +174,7 @@
         "models": [
             "Food.Corn"
         ],
-        "scale": 1.5,
+        "scale": 0.75,
         "rotationDeg": 0,
         "offset": [
             0,

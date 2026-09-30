@@ -8,7 +8,10 @@
 // player stands in its trigger — same "storage mutates on landing, not on
 // departure" convention every other deposit flow here follows), and the
 // epoch-ms timestamp the next purchase becomes available at once one
-// completes (same cooldown shape as QueueStorage's nextTaskAtEpochMs).
+// completes (same cooldown shape as QueueStorage's nextTaskAtEpochMs). A
+// shop whose level also costs resources (ShopConfig.levels) tracks those
+// separately in `resourceProgress`; a level completes only once money AND
+// every resource are fully paid (see isFunded()).
 //
 // ACTION_CONFIG itself (see ActionTypes.ts) is NOT persisted — it's a plain
 // in-memory const mutated live by applyShopLevel() (see ShopTypes.ts). What
@@ -19,13 +22,16 @@
 import { Signal } from 'signals';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { applyShopLevel, getShopMaxLevel, getUpgradeCost, resetAllActionConfigs, SHOP_CONFIG_BY_ID, ShopConfig } from './ShopTypes';
+import { ResourceType } from '../actions/ResourceTypes';
 
 const STORAGE_KEY = 'PIZZA_SHOP_UPGRADES';
 
 interface ShopUpgradeState {
     level: number;
-    /** Money deposited toward getUpgradeCost(config, level) — reset to 0 whenever a purchase completes. Meaningless once the shop is already maxed out. */
+    /** Money deposited toward getUpgradeCost(config, level).money — reset to 0 whenever a purchase completes. Meaningless once the shop is already maxed out. */
     progress: number;
+    /** Resources deposited toward the next level's resource cost — same reset rule as `progress`. Missing (older saves, money-only shops) = nothing deposited. */
+    resourceProgress?: Partial<Record<ResourceType, number>>;
     /** Epoch ms the next purchase becomes available at — undefined while never on cooldown yet, treated the same as "already passed" (see tryStartDeposit()). */
     nextUpgradeAtEpochMs?: number;
 }
@@ -47,7 +53,12 @@ export class ShopUpgradeStorage {
             const parsed: Record<string, ShopUpgradeState> = raw ? JSON.parse(raw) : {};
             for (const [id, state] of Object.entries(parsed)) {
                 if (state && typeof state.level === 'number' && typeof state.progress === 'number') {
-                    this.states.set(id, { level: state.level, progress: state.progress, nextUpgradeAtEpochMs: state.nextUpgradeAtEpochMs });
+                    this.states.set(id, {
+                        level: state.level,
+                        progress: state.progress,
+                        resourceProgress: state.resourceProgress && typeof state.resourceProgress === 'object' ? { ...state.resourceProgress } : undefined,
+                        nextUpgradeAtEpochMs: state.nextUpgradeAtEpochMs,
+                    });
                 }
             }
         } catch (e) {
@@ -113,7 +124,7 @@ export class ShopUpgradeStorage {
         }
 
         const state = this.state(id);
-        const cost = getUpgradeCost(config, state.level);
+        const cost = getUpgradeCost(config, state.level).money;
         const accepted = Math.min(amount, cost - state.progress);
         if (accepted <= 0) {
             return 0;
@@ -123,6 +134,46 @@ export class ShopUpgradeStorage {
         this.onChange.dispatch(id);
         void this.persist();
         return accepted;
+    }
+
+    /** Same as addProgress(), for one resource of the next level's cost (see ShopConfig.levels). */
+    static addResourceProgress(id: string, config: ShopConfig, type: ResourceType, amount: number): number {
+        if (amount <= 0 || this.isMaxLevel(id, config)) {
+            return 0;
+        }
+        const state = this.state(id);
+        const accepted = Math.min(amount, this.getRemainingResource(id, config, type));
+        if (accepted <= 0) {
+            return 0;
+        }
+        state.resourceProgress = { ...state.resourceProgress, [type]: (state.resourceProgress?.[type] ?? 0) + accepted };
+        this.onChange.dispatch(id);
+        void this.persist();
+        return accepted;
+    }
+
+    /** Resource `type` already deposited toward the next level. */
+    static getResourceProgress(id: string, type: ResourceType): number {
+        return this.state(id).resourceProgress?.[type] ?? 0;
+    }
+
+    /** Money still owed for the next level. */
+    static getRemainingMoney(id: string, config: ShopConfig): number {
+        const state = this.state(id);
+        return Math.max(0, getUpgradeCost(config, state.level).money - state.progress);
+    }
+
+    /** Resource `type` still owed for the next level (0 if the level doesn't need it). */
+    static getRemainingResource(id: string, config: ShopConfig, type: ResourceType): number {
+        const need = getUpgradeCost(config, this.state(id).level).resources[type] ?? 0;
+        return Math.max(0, need - this.getResourceProgress(id, type));
+    }
+
+    /** True once money and every resource of the next level are fully deposited. */
+    static isFunded(id: string, config: ShopConfig): boolean {
+        const cost = getUpgradeCost(config, this.state(id).level);
+        return this.getRemainingMoney(id, config) <= 0
+            && (Object.keys(cost.resources) as ResourceType[]).every(type => this.getRemainingResource(id, config, type) <= 0);
     }
 
     /**
@@ -139,18 +190,42 @@ export class ShopUpgradeStorage {
         }
 
         const state = this.state(id);
-        const cost = getUpgradeCost(config, state.level);
-        if (state.progress < cost) {
+        if (!this.isFunded(id, config)) {
             return undefined;
         }
 
         state.level += 1;
         state.progress = 0;
+        state.resourceProgress = undefined;
         state.nextUpgradeAtEpochMs = Date.now() + config.cooldownSec * 1000;
         applyShopLevel(config, state.level);
         this.onChange.dispatch(id);
         void this.persist();
         return state.level;
+    }
+
+    /** Dev GUI: buys the next level for free, skipping cost and cooldown. Returns false once maxed. */
+    static grantLevel(id: string, config: ShopConfig): boolean {
+        if (this.isMaxLevel(id, config)) {
+            return false;
+        }
+        const state = this.state(id);
+        state.level += 1;
+        state.progress = 0;
+        state.resourceProgress = undefined;
+        applyShopLevel(config, state.level);
+        this.onChange.dispatch(id);
+        void this.persist();
+        return true;
+    }
+
+    /** Dev GUI: puts ONE shop back to level 0 (no cooldown, nothing deposited). */
+    static resetShop(id: string): void {
+        this.states.set(id, createDefaultState());
+        // Recomputes every action from scratch, so an action this shop drove drops back too.
+        this.reapplyAllShopUpgrades();
+        this.onChange.dispatch(id);
+        void this.persist();
     }
 
     private static async persist(): Promise<void> {

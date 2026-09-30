@@ -198,14 +198,44 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
             log("audio restored after rewarded");
         }
     }
-    private savePromise: Promise<void> = Promise.resolve();
     // -------------------------
     // STORAGE
     // -------------------------
+    // saveData() writes the whole blob, so N queued writes are redundant — only
+    // the latest matters. Keep at most one flush in flight plus one queued
+    // behind it; every setItem/removeItem arriving meanwhile shares the queued
+    // one, which serializes whatever `saveData` holds at the moment it runs.
+    // (A strict one-flush-per-call chain used to back up by minutes under
+    // frequent writes, losing progress on reload — YouTube cert CGM_02.)
+    private flushInFlight: Promise<void> | null = null;
+    private flushQueued: Promise<void> | null = null;
+
+    private requestFlush(): Promise<void> {
+        if (!this.flushInFlight) {
+            this.flushInFlight = this.flushSaveData().finally(() => {
+                this.flushInFlight = null;
+            });
+            return this.flushInFlight;
+        }
+
+        if (!this.flushQueued) {
+            this.flushQueued = this.flushInFlight.then(() => {
+                this.flushQueued = null;
+                return this.requestFlush();
+            });
+        }
+        return this.flushQueued;
+    }
+
+    /** Never rejects — failures are reported and the next write retries with fresh data. */
     private async flushSaveData(): Promise<void> {
-        await window.ytgame?.game?.saveData?.(
-            JSON.stringify(this.saveData)
-        );
+        try {
+            await window.ytgame?.game?.saveData?.(
+                JSON.stringify(this.saveData)
+            );
+        } catch (e) {
+            console.warn("[YT_PLATFORM] saveData failed", e);
+        }
     }
 
     public async setItem(key: string, value: string): Promise<void> {
@@ -226,20 +256,7 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
         }
 
         this.saveData[key] = value;
-
-        // Chain onto savePromise for ordering, but never let a rejection poison
-        // it — ytgame.game.saveData() can reject (e.g. API_UNAVAILABLE) per the
-        // SDK's own docs, and an uncaught rejection here would permanently break
-        // every future save for the rest of the session (.then() on an already-
-        // rejected promise never runs its callback again).
-        const next = this.savePromise.catch(() => {}).then(() => this.flushSaveData());
-        this.savePromise = next;
-
-        try {
-            await next;
-        } catch (e) {
-            log("saveData failed", e);
-        }
+        await this.requestFlush();
     }
 
     public async getItem(key: string): Promise<string | null> {
@@ -267,15 +284,7 @@ export default class YouTubePlayablePlatform implements IPlatformConnection {
         }
 
         delete this.saveData[key];
-
-        const next = this.savePromise.catch(() => {}).then(() => this.flushSaveData());
-        this.savePromise = next;
-
-        try {
-            await next;
-        } catch (e) {
-            log("saveData failed", e);
-        }
+        await this.requestFlush();
     }
 
     // -------------------------

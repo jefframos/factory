@@ -182,7 +182,7 @@ export const ENTITY_VIEW_CONFIG: Record<string, EntityViewConfig> = {
     },
     "cropCornView": {
         "models": [MODELS.Food.Corn],
-        "scale": 1.5,
+        "scale": 0.75,
         "rotationDeg": 0,
         "offset": [
             0,

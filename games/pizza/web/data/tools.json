@@ -146,5 +146,16 @@
             }
         },
         "actionTime": {}
+    },
+    "carrier": {
+        "label": "Carrier",
+        "icon": "survival-backpack",
+        "models": [],
+        "maxLevel": 10,
+        "capacity": {
+            "min": 3,
+            "max": 13
+        },
+        "startWith": true
     }
 }

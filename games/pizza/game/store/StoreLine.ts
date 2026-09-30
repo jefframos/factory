@@ -5,6 +5,11 @@
 // queueSpacing: whoever joined first stands at spot 0 (right at `target`),
 // the next one `spacing` world units behind, and so on. When someone leaves,
 // everyone behind them moves up one spot, so waiting clients never overlap.
+//
+// The ORDER is all this class decides. WHERE spot N is comes from setSpots()
+// (see StoreQueueSpots.ts — a straight line or a cluster around the target,
+// fitted to the store's nav grid); until that's called, spots fall back to
+// the plain straight line described above.
 
 import * as THREE from 'three';
 import { StoreRect } from './StoreLayout';
@@ -20,11 +25,14 @@ const DIRECTION_VECTORS: Record<StoreSpotDirection, THREE.Vector3> = {
 export default class StoreLine<T> {
     /** What the line is FOR (a storage / the cashier) — clients face it while waiting. */
     public readonly target: THREE.Vector3;
-    private readonly firstSpot: THREE.Vector3;
+    /** Spot 0 of the plain straight line — where the front client stands (e.g. picks items). */
+    public readonly firstSpot: THREE.Vector3;
     /** Unit vector pointing from spot 0 toward the back of the line. */
-    private readonly direction: THREE.Vector3;
-    private readonly spacing: number;
+    public readonly direction: THREE.Vector3;
+    public readonly spacing: number;
     private readonly members: T[] = [];
+    /** Spot positions by queue index — see setSpots(). Empty = the straight-line fallback. */
+    private spots: THREE.Vector3[] = [];
 
     /**
      * `rect` is the thing being queued at; the line starts `margin` past its edge and extends
@@ -78,12 +86,38 @@ export default class StoreLine<T> {
         return this.members[0];
     }
 
+    /** Queue position (0 = front), or -1 if not in this line. */
+    public indexOf(member: T): number {
+        return this.members.indexOf(member);
+    }
+
+    /** Replaces where each queue index stands. Indices past the end continue straight on from the last spot. */
+    public setSpots(spots: THREE.Vector3[]): void {
+        this.spots = spots.map(spot => spot.clone());
+    }
+
+    /** Every spot currently laid out (debug drawing). */
+    public getSpots(): readonly THREE.Vector3[] {
+        return this.spots;
+    }
+
+    /** Straight-line position of queue index `index` — the fallback layout. */
+    public lineSpot(index: number, target: THREE.Vector3 = new THREE.Vector3()): THREE.Vector3 {
+        return target.copy(this.firstSpot).addScaledVector(this.direction, index * this.spacing);
+    }
+
     /** Where `member` should stand right now — undefined if it isn't in this line. */
     public getSpotFor(member: T, target: THREE.Vector3 = new THREE.Vector3()): THREE.Vector3 | undefined {
         const index = this.members.indexOf(member);
         if (index === -1) {
             return undefined;
         }
-        return target.copy(this.firstSpot).addScaledVector(this.direction, index * this.spacing);
+        if (this.spots.length === 0) {
+            return this.lineSpot(index, target);
+        }
+        if (index < this.spots.length) {
+            return target.copy(this.spots[index]);
+        }
+        return target.copy(this.spots[this.spots.length - 1]).addScaledVector(this.direction, (index - this.spots.length + 1) * this.spacing);
     }
 }

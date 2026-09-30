@@ -1,14 +1,14 @@
 // CarryStack.ts
 //
 // Runtime bookkeeping for the player's carry stack — the farm items piled in
-// the backpack (see BackpackStackVisual.ts). Three numbers decide whether
+// the carrier (see CarrierStackVisual.ts). Three numbers decide whether
 // something can be collected:
 //
 //   carried    — farm-category units already in BackpackStorage (the stack itself)
 //   in flight  — items launched toward the stack but not landed yet (see
 //                FlyToStack.ts); they already count, or a burst of harvests
 //                could overshoot the limit before the first one lands
-//   capacity   — BackpackCapacityStorage.getCapacity() (upgradeable, starts at 3)
+//   capacity   — getCarrierCapacity() (the carrier tool, upgraded at its shop; starts at 3)
 //
 // Flights are tracked in launch order so each one knows WHICH stack slot it's
 // heading for (see flightIndex()) — the Nth in-flight item aims N slots above
@@ -17,12 +17,12 @@
 
 import * as PIXI from 'pixi.js';
 import { BackpackStorage } from '../data/BackpackStorage';
-import { BackpackCapacityStorage } from '../data/BackpackCapacityStorage';
+import { getCarrierCapacity } from '../data/CarrierCapacity';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import type MainPlayer from './MainPlayer';
 import PlayerNotificationComponent from '../components/PlayerNotificationComponent';
 
-/** Backpack icon shown in the "stack is full" balloon — same texture BackpackButton uses. */
+/** Carrier icon shown in the "stack is full" balloon — same texture BackpackButton uses. */
 const FULL_ICON_TEXTURE = 'survival-backpack';
 /** Minimum gap between two "stack is full" balloons — the farm checks every frame while the player stands on a ready crop, so this is what stops it re-popping constantly. */
 const FULL_NOTIFY_COOLDOWN_MS = 1500;
@@ -44,7 +44,7 @@ export const CarryStack = {
     },
 
     capacity(): number {
-        return BackpackCapacityStorage.getCapacity();
+        return getCarrierCapacity();
     },
 
     /** Room left right now, counting items already in flight. Can be negative (e.g. a save carrying more than today's capacity). */
@@ -75,7 +75,7 @@ export const CarryStack = {
         return flights.indexOf(id);
     },
 
-    /** Pops the "!" + backpack balloon over the player's head — rate-limited (see FULL_NOTIFY_COOLDOWN_MS). */
+    /** Pops the "!" + carrier balloon over the player's head — rate-limited (see FULL_NOTIFY_COOLDOWN_MS). */
     notifyFull(player: MainPlayer): void {
         const now = performance.now();
         if (now - lastFullNotifyMs < FULL_NOTIFY_COOLDOWN_MS) {

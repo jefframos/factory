@@ -42,6 +42,7 @@ import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import MainPlayer from './MainPlayer';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
+import DepositPacer from '../utils/DepositPacer';
 
 /** Breathing room between the nameplate's text and its AutoFitFrame border — separate from the frame asset's OWN 9-slice padding (see FrameRegistry.ts). */
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
@@ -80,6 +81,8 @@ function defaultCreateLabelContent(): PIXI.Container {
 }
 
 export default class DropZone extends Entity {
+    /** Speeds this zone's one-unit-at-a-time deposits up (to ~3x) the longer the player keeps paying — see DepositPacer.ts. */
+    private readonly depositPacer = new DepositPacer(FLY_OUT_STAGGER_SEC);
     private readonly screenHost: ScreenAnchorHost;
     private readonly createPopupContent: (label: string) => PIXI.Container;
     private readonly createLabelContent: () => PIXI.Container;
@@ -213,7 +216,7 @@ export default class DropZone extends Entity {
         const step = (): void => {
             const inFlight = this.inFlightByType.get(type) ?? 0;
             const fromWorld = this.isPlayerInside && BackpackStorage.getCount(type) - inFlight > 0
-                ? this.player?.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition()
+                ? this.player?.getComponent(CharacterVisualComponent)?.character.getCarrierWorldPosition()
                 : undefined;
 
             if (!fromWorld) {
@@ -236,7 +239,7 @@ export default class DropZone extends Entity {
                 }
             });
 
-            gsap.delayedCall(FLY_OUT_STAGGER_SEC, step);
+            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
         };
 
         step();

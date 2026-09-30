@@ -3,7 +3,7 @@
 // "Show this ResourceType as a small 3D object" — the resource's own
 // AssetLibraryRegistry model (the same art LooseResourceNode/ResourceNode use).
 // Shared by HarvestPickup (lying on the ground), FlyToStack (flying onto the
-// player) and BackpackStackVisual (piled on the player's back), so an item
+// player) and CarrierStackVisual (piled on the player's back), so an item
 // looks identical in all three.
 //
 // Sizing: by default the model is shown at its REAL world size — its native
@@ -52,8 +52,10 @@ const LAY_DOWN_ASPECT = 1.5;
  *   - 'lying':      tall models (a carrot) lie on their side, squat ones stay as authored — same as layDownIfTall.
  *   - 'standing':   exactly as authored.
  *   - 'upsideDown': as authored, flipped 180° end over end (a carrot authored tip-up then points tip-down).
+ *   - 'onSide':     always rotated onto its side like a lying carrot, whatever its shape — for a
+ *                   model 'lying' leaves upright because it isn't tall enough (e.g. corn).
  */
-export type ItemOrientation = 'lying' | 'standing' | 'upsideDown';
+export type ItemOrientation = 'lying' | 'standing' | 'upsideDown' | 'onSide';
 
 export interface ResourceDisplayOptions {
     /** Normalize the largest dimension to this (world units) instead of using the real world size. */
@@ -69,6 +71,45 @@ export interface ResourceDisplayModel {
     object: THREE.Group;
     /** Extent in `object`'s own frame (after any lay-down), in the units the model was sized in. */
     size: THREE.Vector3;
+    /**
+     * How high something resting on this model's MIDDLE sits — its real top surface around the
+     * center, same units as `size` (see measureRestHeight()). Equals size.y for a round/boxy
+     * model; less for a lying carrot (a cone: its bounding box is its fat shoulder, its middle is
+     * much thinner). Used when a different item is piled on top of this one (ItemPile).
+     */
+    restHeight: number;
+}
+
+/** measureRestHeight(): half-width of the sampled middle, as a fraction of the model's smaller horizontal extent. */
+const REST_SAMPLE_FRACTION = 0.25;
+/** measureRestHeight(): samples per side of the grid of downward rays. */
+const REST_SAMPLE_GRID = 3;
+
+/**
+ * The model's actual top surface around its center: casts a small grid of rays straight down
+ * over the middle REST_SAMPLE_FRACTION of its footprint and takes the highest hit. `wrapper` must
+ * be parentless with its bottom-center at the origin (see loadResourceDisplayModel()). Falls back
+ * to the bounding-box height if nothing is hit.
+ */
+export function measureRestHeight(wrapper: THREE.Object3D, size: THREE.Vector3): number {
+    wrapper.updateWorldMatrix(false, true);
+    const half = Math.min(size.x, size.z) * REST_SAMPLE_FRACTION;
+    const raycaster = new THREE.Raycaster();
+    const origin = new THREE.Vector3();
+    const down = new THREE.Vector3(0, -1, 0);
+    let top = -Infinity;
+    for (let i = 0; i < REST_SAMPLE_GRID; i++) {
+        for (let j = 0; j < REST_SAMPLE_GRID; j++) {
+            const u = REST_SAMPLE_GRID > 1 ? i / (REST_SAMPLE_GRID - 1) * 2 - 1 : 0;
+            const v = REST_SAMPLE_GRID > 1 ? j / (REST_SAMPLE_GRID - 1) * 2 - 1 : 0;
+            raycaster.set(origin.set(u * half, size.y * 2 + 1, v * half), down);
+            const hit = raycaster.intersectObject(wrapper, true)[0];
+            if (hit) {
+                top = Math.max(top, hit.point.y);
+            }
+        }
+    }
+    return Number.isFinite(top) ? Math.min(top, size.y) : size.y;
 }
 
 /** Loads `type`'s display model — see this file's own doc. Falls back to a flat-colored box when the resource has no AssetLibrary model or the load fails; never rejects. */
@@ -133,7 +174,7 @@ export async function loadResourceDisplayModel(type: ResourceType, options: Reso
 
     // 2. Orientation — see ItemOrientation.
     const orientation = options.orientation ?? (options.layDownIfTall ? 'lying' : 'standing');
-    if (orientation === 'lying' && nativeSize.y > LAY_DOWN_ASPECT * Math.max(nativeSize.x, nativeSize.z)) {
+    if (orientation === 'onSide' || (orientation === 'lying' && nativeSize.y > LAY_DOWN_ASPECT * Math.max(nativeSize.x, nativeSize.z))) {
         orient.rotation.z = Math.PI / 2;
     } else if (orientation === 'upsideDown') {
         orient.rotation.x = Math.PI;
@@ -144,7 +185,8 @@ export async function loadResourceDisplayModel(type: ResourceType, options: Reso
     const center = bounds.getCenter(new THREE.Vector3());
     align.position.set(-center.x, -bounds.min.y, -center.z);
 
-    return { object: wrapper, size: bounds.getSize(new THREE.Vector3()) };
+    const size = bounds.getSize(new THREE.Vector3());
+    return { object: wrapper, size, restHeight: measureRestHeight(wrapper, size) };
 }
 
 /** Releases everything loadResourceDisplayModel() created — its cloned materials, plus the placeholder box's geometry. Cached model geometry is left alone. Also detaches `model` from its parent. */

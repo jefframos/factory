@@ -6,8 +6,9 @@ Selling earns store progress; store **levels** unlock new map objects (farms, st
 ...). Everything lives in `game/store/`; the only hooks outside it are listed in
 [Code map](#code-map).
 
-> **TODO — next up:** client pathfinding & avoidance is planned but not built yet. See
-> [Planned: client pathfinding & avoidance](#planned-client-pathfinding--avoidance-not-implemented-yet).
+Clients walk on a nav grid (around shelves, walls and each other) and run a small state
+machine — waiting, browsing, wandering, ... — see
+[Client behaviour & pathfinding](#client-behaviour--pathfinding).
 
 ```
 entrance ──► storage line(s) ──► cashier line ──► exit
@@ -46,9 +47,9 @@ A store missing any of its four parts is skipped (console warning `[StoreLayout]
   `storage1..3` in the current map). Size ~46x51 px matches the crate.
 - Optional `type=dropper` with `target=storageN` — becomes the player's drop-off /
   purchase area instead of the storage's own footprint.
-- Leave room in front of each storage for its **client line** (see
-  `storageSpotDirections` below) — lines are straight, `spotSpacing` apart, up to
-  `maxClients` long.
+- Leave room in front of each storage for its **waiting clients** (see
+  `storageSpotDirections` / `waitStyle` below) — they gather in a fan in front of it,
+  `spotSpacing` apart, up to `maxClients` of them.
 
 ### Scale
 
@@ -92,7 +93,11 @@ you. Both tabs have a **Default** entry (used by any id without an override) and
 | `pickDelaySec` | Seconds to take one unit from a storage. |
 | `payDelaySec` | Seconds the player stands at the cashier before the front client pays. |
 | `spotSpacing` / `spotMargin` | Distance between clients in a line / gap from the storage or cashier edge to the first client. |
-| `storageSpotDirections` | Per storage: which way its line extends (`north`/`south`/`east`/`west`, map-up = north). Unlisted storages line up toward the store's center. |
+| `storageSpotDirections` | Per storage: which way its waiting clients gather (`north`/`south`/`east`/`west`, map-up = north). Unlisted storages face the store's center. |
+| `waitStyle` | `cluster` (default) — waiting clients fan out around the shelf/cashier; `line` — the old straight line. Queue order is the same either way. |
+| `browseChance` | 0–1: how often a client waiting in a shelf line goes to look at another shelf (keeps its place). Blank = 0.4. |
+| `clientRadius` | Personal space (world units): obstacles grow by this, clients steer apart at about twice it. Blank = 0.35. |
+| `navCellSize` | Pathfinding grid cell size (world units). Blank = 0.3. |
 | `cashierSpotDirection` | Same for the cashier line (blank = toward center). |
 | `moneyPerBill` | Visual only — money per bill on the floor. |
 | `billsPerPile` | Visual only — a money pile grows to this many bills, then the next pile starts beside it (row by row across the money drop). |
@@ -146,9 +151,14 @@ you. Both tabs have a **Default** entry (used by any id without an override) and
 | 1 | build `stall1` | `storage1` (carrots, free default) + `farm1` (price 0 → appears already owned) |
 | 2 | 50 money | `farm2` (50) + `storage2` (tomatoes, 10) |
 | 3 | +100 money | `farm3` (50) + `storage3` (broccoli, 10) |
+| 4 | +200 money | `farm4` (50) + `storage4` (strawberries, 10) |
+| 5 | +350 money | `farm5` (50) + `storage5` (corn, 10) |
 
+Strawberry and corn grow on the tomato's curve (3 s + 3 s + 2 s, scale 0.2 → 0.6 → 1 → 4); corn's
+crop view is scaled 0.75 (its model is ~2x the tomato's) so all three end up about the same size.
+Pacing (`start*` settings) now spreads over all five shelves — full pace only once every shelf is out.
 
-All three farms use **Auto Plant** (Farms tab — see the main README's Farming section): the
+All five farms use **Auto Plant** (Farms tab — see the main README's Farming section): the
 moment a farm appears every cell is already growing its assigned crop, the player walks over
 to collect, and each cell replants instantly — so the whole loop is *walk over farm → carry
 crops to the matching storage → clients buy them*.
@@ -167,7 +177,7 @@ crops to the matching storage → clients buy them*.
 **Add a storage for a new item**
 1. `mapSettings`: draw `type=storage`, `id=storageN` inside the store (export the map).
 2. Storages tab → By id `storageN`: set `resourceType`, `price`, model/pile like the others.
-3. Stores tab → if its line would cross another, add it to `storageSpotDirections`.
+3. Stores tab → if its waiting clients should gather on a particular side, add it to `storageSpotDirections`.
 4. To unlock it later instead of right away: add `storageN` to a level's `enables`.
 
 **Add a level**: Stores tab → store → Levels → + Add → set `level`, requirement, amount, and
@@ -212,8 +222,12 @@ themselves are **not** saved — a reload mid-shopping loses the items they alre
 | File | Role |
 |---|---|
 | `Store.ts` | One store: storages, lines, spawning, cashier/payment, opening + level-ups, level panel. `spawnStores()` is the entry point. |
-| `StoreClient.ts` | A client's walk/pick/wait/pay/leave state machine. |
-| `StoreLine.ts` | Evenly-spaced waiting spots (no overlap). |
+| `StoreClient.ts` | A client's state machine (see [Client behaviour & pathfinding](#client-behaviour--pathfinding)). |
+| `StoreLine.ts` | Queue ORDER at a shelf/cashier (who's next). Where each place stands comes from `StoreQueueSpots.ts`. |
+| `StoreQueueSpots.ts` | Lays out queue spots on the nav grid — cluster or straight line. |
+| `nav/StoreNavGrid.ts` | Walkability grid + A* + path smoothing. |
+| `nav/NavAgent.ts` | Path following + steering around other clients and the player. Reusable by any future walker. |
+| `nav/StoreNavDebug.ts` | Floor overlay of the grid, spots and paths (shown with Debug Colliders). |
 | `StoreBubble.ts` | Want-bubble over clients. The level/progress panel is `ui/StoreUI.ts` (fed by PizzaScene from `Store.getHudState()`). |
 | `StoreCashier.ts` / `StoreMoneyPile.ts` | Cashier trigger / money pile + collect. |
 | `StoragePurchaseZone.ts` | "For sale" zone for a priced storage. |
@@ -230,54 +244,79 @@ Hooks outside this folder:
 - `index.ts` — loads `StoreProgressStorage` / `StorageOwnershipStorage` at boot.
 - `data/PlayerDataReset.ts` — clears the store saves.
 
-## Planned: client pathfinding & avoidance (not implemented yet)
+## Client behaviour & pathfinding
 
-Goal: clients stop walking through each other and through storages/walls, and waiting
-clients gather naturally around what they're queuing for instead of in one rigid line —
-while the queue ORDER (who's served next) stays exactly as it is today.
+### States (`StoreClient.ts`)
 
-**Why not a navmesh:** a store is one small, mostly rectangular room with ~5 agents. A
-navmesh (e.g. recast) brings a dependency, a bake step, and still needs local avoidance for
-agents on top. A fine grid over just the store's area gives the same result here for far less.
+```
+toShelf ──arrived──► queuing ◄──────► browsing
+   ▲  │                 │ front          (looks at another shelf, keeps its place)
+   │  │ front            ▼
+   │  └──arrived──► picking ──item done──► toShelf (next item) / toCashier (list done)
+   │                    │ shelf empty for 2 s
+   │                    ▼
+   └──restocked─── wandering   (strolls the store, bubble pulses the missing item)
 
-### Phase 1 — local separation steering (quick win, `StoreClient.moveToward()`)
-- Each walking client adds a push away from every other client within ~0.7 world units
-  (strength falls off with distance) to its straight-line direction toward its goal.
-- Standing (waiting) clients don't steer, walkers flow around them.
-- Arrival snaps the last bit so two clients never "fight" over the same spot.
-- Cheap (≤ maxClients² distance checks per frame). Fixes overlapping; doesn't fix walking
-  through storages.
+toCashier ──arrived──► cashierQueue ──front──► readyToPay ──paid──► leaving ──► done
+any shopping state, out of patience with nothing bought ──► leaving
+```
 
-### Phase 2 — `StoreNavGrid` (static obstacles)
-- Built per store at spawn over `layout.area`, cell size ~0.25 world units (a 20×20 store =
-  80×80 = 6,400 cells).
-- A cell is blocked if it's inside a storage/cashier rect or a static solid (physics
-  static bodies / `TileWalkability.isWalkable()`), inflated by the client radius so they
-  don't clip corners. Rebuilt when a storage appears (bought / level-up).
-- Clients get paths with A* (8-neighbour, octile heuristic), then line-of-sight smoothing so
-  they walk a few straight segments, not a staircase. Replan only when the goal changes
-  (a line moved up) or the path is blocked — well under a millisecond per plan at this size.
-- Phase 1 steering stays on top for client-vs-client; the grid clamps it so steering never
-  pushes a client into an obstacle.
+| State | What the client does |
+|---|---|
+| `toShelf` | Walks to its place at the shelf that sells its current item (joins that queue). |
+| `queuing` | Stands at its place, facing the shelf. Every 3–6 s, if someone is still ahead of it, it may go **browsing** (`browseChance`). |
+| `browsing` | Walks to a free spot near another shelf (or beside its own, if there's only one) and looks at it for 2–4 s, then goes back. **Keeps its place in the queue**; heads straight back the moment it's next. |
+| `picking` | At the front: takes one unit every `pickDelaySec`. Finishing an item cheers it up one mood step (when more items are left). |
+| `wandering` | Everything left on its list has run out: after 2 s at the empty shelf it gives up its place (so people behind it can get other things) and strolls to random free spots in the store. Every second it checks **every item still on its list** and goes for the first one back in stock. |
+| `toCashier` / `cashierQueue` / `readyToPay` | Walks to its place at the cashier, waits behind others, then waits at the front for the player. |
+| `leaving` / `done` | Walks to the exit, then Store removes it. |
 
-### Phase 3 — waiting "clusters" instead of straight lines (`StoreLine` → wait area)
-- Same queue API (`join` / `leave` / `isFront` / `getSpotFor`), so `StoreClient` barely
-  changes — only where the spots are changes.
-- Spot 0 stays the pick-up point in front of the storage. The other spots are free nav-grid
-  cells in a fan around it, sorted by distance, at least `spotSpacing` apart.
-- The i-th client in the queue takes the i-th closest spot, so they bunch up around the
-  storage and shuffle closer as the queue moves, without lines crossing each other.
-  `storageSpotDirections` becomes an optional bias for the fan's direction.
+**Item order is flexible:** a client always goes for an item that is in stock first. Waiting
+at an empty shelf (in line or at the front), it checks every second and switches to another
+shelf with the same item, or else to any other item on its list that is in stock. Only when
+nothing on its list is available does it wander.
 
-### Extras
-- Debug overlay (grid cells, blocked cells, current paths) behind the debug menu.
-- Config: `navCellSize`, `clientRadius`, `waitStyle: 'line' | 'cluster'` (keep `line`
-  available for fallback/comparison).
+The mood clock runs in every state before paying. **Adding an activity** (sitting, eating,
+...): add a name to `ClientState`, one entry (`enter`/`update`/`exit`) to the `states`
+table in the constructor, and the transitions into/out of it — nothing else changes.
+
+### Walking (`nav/`)
+
+- **Grid** (`StoreNavGrid`): covers the store area + entrance + exit (+1 unit), `navCellSize`
+  cells (farmStore1: 99×132 ≈ 13k cells). Blocked: every storage of the store, the cashier
+  and money-drop spots, every static solid physics body in reach (walls, buildings, solid
+  crates — the same things the player bumps into) and unwalkable tiles — all grown by
+  `clientRadius`. Rebuilt when physics bodies change (checked every 1 s, full check every
+  5 s); an identical result is ignored, so nobody replans for nothing.
+- **Paths**: A* (8 directions, no corner cutting), then smoothed to a few straight
+  segments. ~0.5 ms for the longest path in farmStore1. Cells next to someone standing
+  cost more, so paths bend around waiting clients.
+- **Steering** (`NavAgent`): walkers push away from other clients and the player, and
+  pass on the right when meeting someone head-on. Steps never land on blocked cells
+  (they slide along obstacles instead). Replans when its goal moves, the grid changes,
+  every 1.25 s while walking, and when stuck; stuck for ~2 s → walks straight
+  (fail-open — may clip something, never freezes).
+- **Queue spots** (`StoreQueueSpots`): spot 0 is always the pick-up/pay spot in front of the
+  shelf/cashier. With `waitStyle: cluster` the others are free cells in a fan behind it
+  (along `storageSpotDirections` first, then diagonals), at least `spotSpacing` apart and
+  handed out round-robin across all queues, so neighbouring shelves share the floor and no
+  two spots overlap.
+
+Checked numerically on farmStore1's real layout (grid, spots, 5 agents from the entrance,
+head-on, 4-way crossing, walking past a standing row): everyone arrives, nobody enters a
+blocked cell, walkers keep ≥ ~0.4 apart.
+
+### Debugging
+
+Turn on **Debug Colliders** in the editor header (`PHYSICS_DEBUG`) and reload: each store
+draws blocked cells (red), queue spots (green — front spots brighter) and every client's
+current path (yellow). `StoreClient.getState()` gives the current state.
 
 ## Known limitations
 
-- Clients walk in straight lines (through crates/walls) — keep entrance/exit/storages/
-  cashier reachable in a straight line. See *Planned: client pathfinding & avoidance*.
-- Line directions are straight; with `maxClients` clients all at one storage its line can
-  reach another line — tune `storageSpotDirections`/`maxClients` or move objects.
+- Only static solids that exist when the grid is built block paths; something that moves
+  (e.g. a physics prop pushed around) isn't avoided until the next rebuild.
+- Clients never block the player (they only steer away) and aren't physical — if the player
+  stands still in a doorway, clients squeeze past.
+- Wandering clients that come back after a restock rejoin at the back of the queue.
 - A storage belongs to a store only by its center being inside the store rect.

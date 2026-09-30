@@ -71,6 +71,7 @@ import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificat
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
 import { WorldProgressionHost } from '../camera/WorldProgressionHost';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
+import DepositPacer from '../utils/DepositPacer';
 
 /** A separate deposit-trigger rect, in WORLD space — see the constructor's `triggerArea` param doc. Same shape as BuildingZone's BuildingTriggerArea/ShopZone's ShopTriggerArea. */
 export interface CraftTriggerArea {
@@ -100,6 +101,8 @@ const PARTICLE_SPAWN_RATE_PER_SEC = 4;
 const DEFAULT_DESTROY_PARTICLE_COUNT = 24;
 
 export default class CraftZone extends Entity {
+    /** Speeds this zone's one-unit-at-a-time deposits up (to ~3x) the longer the player keeps paying — see DepositPacer.ts. */
+    private readonly depositPacer = new DepositPacer(FLY_IN_STAGGER_SEC);
     private readonly screenHost: ScreenAnchorHost;
     private readonly craftId: string;
     private readonly config: CraftTableConfig;
@@ -466,7 +469,7 @@ export default class CraftZone extends Entity {
             const remaining = need - CraftStorage.getProgress(this.craftId, type) - inFlight;
 
             const fromWorld = remaining > 0 && BackpackStorage.getCount(type) - inFlight > 0
-                ? this.player?.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition()
+                ? this.player?.getComponent(CharacterVisualComponent)?.character.getCarrierWorldPosition()
                 : undefined;
 
             if (!fromWorld) {
@@ -508,7 +511,7 @@ export default class CraftZone extends Entity {
                 }
             });
 
-            gsap.delayedCall(FLY_IN_STAGGER_SEC, step);
+            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
         };
 
         step();

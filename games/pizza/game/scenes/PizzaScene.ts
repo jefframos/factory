@@ -107,14 +107,14 @@ import { getToolIcon } from '../actions/ToolRegistry';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
-import { BackpackStackMode, getPlayerConfig } from '../data/PlayerConfig';
+import { CarrierStackMode, getPlayerConfig } from '../data/PlayerConfig';
 import { getStorageConfig } from '../data/StorageTypes';
 import StorageZone from '../world/StorageZone';
 import Store, { spawnStores } from '../store/Store';
 import { StoreUnlocks } from '../store/StoreUnlocks';
 import StoragePurchaseZone from '../store/StoragePurchaseZone';
 import { FLOOR_FRAME } from '../ui/PopupConfig';
-import { BackpackCapacityStorage } from '../data/BackpackCapacityStorage';
+import { getCarrierCapacity, getCarrierLevel, getCarrierShopIds } from '../data/CarrierCapacity';
 import { CarryStack } from '../player/CarryStack';
 import PlayerUIAvoidanceComponent from '../components/PlayerUIAvoidanceComponent';
 import SetupThree from 'core/scene/SetupThree';
@@ -551,70 +551,74 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     }
 
     /**
-     * Live-tunes PlayerConfig.backpack (offset/rotation/scale) on the player's loaded character —
-     * see CharacterBody.setBackpackTransform(). Session-only: copy the numbers you like into the
+     * Live-tunes PlayerConfig.carrier (offset/rotation/scale) on the player's loaded character —
+     * see CharacterBody.setCarrierTransform(). Session-only: copy the numbers you like into the
      * web editor's Player tab (or PlayerConfig.ts) to keep them. Each slider applies straight
      * away; before the character has loaded there's nothing to move, so changes just wait for the
      * next slider tick after it has.
      */
-    private setupBackpackDevGui(): void {
-        const initial = getPlayerConfig().backpack;
+    private setupCarrierDevGui(): void {
+        const initial = getPlayerConfig().carrier;
         const values: Record<string, number> = {
             offsetX: initial.offset.x, offsetY: initial.offset.y, offsetZ: initial.offset.z,
             rotX: initial.rotationDeg.x, rotY: initial.rotationDeg.y, rotZ: initial.rotationDeg.z,
             scale: initial.scale,
         };
         const apply = (): void => {
-            this.mainPlayer.character?.setBackpackTransform({
+            this.mainPlayer.character?.setCarrierTransform({
                 models: initial.models,
                 offset: { x: values.offsetX, y: values.offsetY, z: values.offsetZ },
                 rotationDeg: { x: values.rotX, y: values.rotY, z: values.rotZ },
                 scale: values.scale,
                 stackMode: initial.stackMode,
-                capacity: initial.capacity,
             });
         };
-        DevGuiManager.instance.addObjectTrigger(values, apply, ['offsetX', 'offsetY', 'offsetZ'], [-200, 200], 'Backpack', 'Backpack');
-        DevGuiManager.instance.addObjectTrigger(values, apply, ['rotX', 'rotY', 'rotZ'], [-180, 180], 'Backpack', 'Backpack');
-        DevGuiManager.instance.addObjectTrigger(values, apply, ['scale'], [0, 150], 'Backpack', 'Backpack');
-        // Written straight into the LIVE config — BackpackStackVisual/FlyToStack read it every
+        DevGuiManager.instance.addObjectTrigger(values, apply, ['offsetX', 'offsetY', 'offsetZ'], [-200, 200], 'Carrier', 'Carrier');
+        DevGuiManager.instance.addObjectTrigger(values, apply, ['rotX', 'rotY', 'rotZ'], [-180, 180], 'Carrier', 'Carrier');
+        DevGuiManager.instance.addObjectTrigger(values, apply, ['scale'], [0, 150], 'Carrier', 'Carrier');
+        // Written straight into the LIVE config — CarrierStackVisual/FlyToStack read it every
         // frame (see stackItemScale()), so the pile re-fits immediately.
         const itemScaleValues = { itemScale: initial.itemScale ?? 1 };
         DevGuiManager.instance.addObjectTrigger(itemScaleValues, updated => {
             initial.itemScale = updated.itemScale;
-        }, ['itemScale'], [0.25, 4], 'Stacked Item', 'Backpack');
-        // Bound straight to the LIVE config object — BackpackStackVisual re-reads stackMode every
+        }, ['itemScale'], [0.25, 4], 'Stacked Item', 'Carrier');
+        // Bound straight to the LIVE config object — CarrierStackVisual re-reads stackMode every
         // frame and rebuilds the pile when it changes, so nothing else needs to happen here.
-        DevGuiManager.instance.addDropdown<BackpackStackMode>(
-            initial as unknown as Record<string, unknown>, 'stackMode', ['grid', 'tower'], () => undefined, 'Stack Mode', 'Backpack',
+        DevGuiManager.instance.addDropdown<CarrierStackMode>(
+            initial as unknown as Record<string, unknown>, 'stackMode', ['grid', 'tower'], () => undefined, 'Stack Mode', 'Carrier',
         );
-        // Stack capacity upgrade (see BackpackCapacityStorage.ts) — no shop sells it yet, so this
-        // is how to play-test higher limits. Persisted like any other upgrade.
-        const capacityReadout = { capacity: BackpackCapacityStorage.getCapacity(), level: BackpackCapacityStorage.getLevel(), carried: 0 };
-        DevGuiManager.instance.addReadout(capacityReadout, ['capacity', 'level', 'carried'], 'Stack', 'Backpack');
+        // Carrier capacity (see data/CarrierCapacity.ts) comes from the carrier shop's level, so these
+        // buttons buy/reset that level (free, no cooldown) to play-test higher limits.
+        const capacityReadout = { capacity: getCarrierCapacity(), level: getCarrierLevel(), carried: 0 };
+        DevGuiManager.instance.addReadout(capacityReadout, ['capacity', 'level', 'carried'], 'Stack', 'Carrier');
         const refreshCapacityReadout = (): void => {
-            capacityReadout.capacity = BackpackCapacityStorage.getCapacity();
-            capacityReadout.level = BackpackCapacityStorage.getLevel();
+            capacityReadout.capacity = getCarrierCapacity();
+            capacityReadout.level = getCarrierLevel();
             capacityReadout.carried = CarryStack.carriedCount();
         };
-        BackpackCapacityStorage.onChange.add(refreshCapacityReadout);
+        ShopUpgradeStorage.onChange.add(refreshCapacityReadout);
         BackpackStorage.onChange.add(refreshCapacityReadout);
         refreshCapacityReadout();
-        DevGuiManager.instance.addButton('Upgrade Stack Capacity (+1 level)', () => {
-            if (!BackpackCapacityStorage.upgrade()) {
-                console.log('[Backpack] stack capacity already maxed');
+        DevGuiManager.instance.addButton('Upgrade Carrier (+1 level, free)', () => {
+            const shopId = getCarrierShopIds()[0];
+            const config = shopId ? getShopConfig(shopId) : undefined;
+            if (!shopId || !config || !ShopUpgradeStorage.grantLevel(shopId, config)) {
+                console.log('[Carrier] no carrier shop, or already maxed');
             }
-        }, 'Backpack');
-        DevGuiManager.instance.addButton('Reset Stack Capacity', () => void BackpackCapacityStorage.clearAll(), 'Backpack');
-        DevGuiManager.instance.addButton('Log Backpack Config', () => console.log('PlayerConfig.backpack =', JSON.stringify({
+        }, 'Carrier');
+        DevGuiManager.instance.addButton('Reset Carrier Level', () => {
+            for (const shopId of getCarrierShopIds()) {
+                ShopUpgradeStorage.resetShop(shopId);
+            }
+        }, 'Carrier');
+        DevGuiManager.instance.addButton('Log Carrier Config', () => console.log('PlayerConfig.carrier =', JSON.stringify({
             models: initial.models,
             offset: { x: values.offsetX, y: values.offsetY, z: values.offsetZ },
             rotationDeg: { x: values.rotX, y: values.rotY, z: values.rotZ },
             scale: values.scale,
             stackMode: initial.stackMode,
             itemScale: initial.itemScale,
-            capacity: initial.capacity,
-        })), 'Backpack');
+        })), 'Carrier');
     }
 
     /** Dev-only tools — no-ops entirely unless launched with ?dev (see Game.debugParams/DevGuiManager.initialize(), called once in index.ts's startGame()). */
@@ -649,7 +653,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
 
         this.setupModelSnapshotDevGui();
         this.setupMapLayoutSuggestionDevGui();
-        this.setupBackpackDevGui();
+        this.setupCarrierDevGui();
 
         // TEMP DEBUG (background-tab missing meshes) — see dumpSceneMeshes(). Remove once diagnosed.
         DevGuiManager.instance.addButton('Dump Scene Meshes', () => this.dumpSceneMeshes(), 'Debug');
@@ -835,7 +839,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                         return;
                     }
                     const cost = getUpgradeCost(config, ShopUpgradeStorage.getLevel(id));
-                    ShopUpgradeStorage.addProgress(id, config, cost);
+                    ShopUpgradeStorage.addProgress(id, config, cost.money);
+                    for (const [type, amount] of Object.entries(cost.resources) as [ResourceType, number][]) {
+                        ShopUpgradeStorage.addResourceProgress(id, config, type, amount);
+                    }
                     if (ShopUpgradeStorage.tryCompleteUpgrade(id, config)) {
                         UpgradeNotificationManager.instance.show({
                             type: NotificationType.Upgrade,
@@ -865,28 +872,30 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // `action` equals this shop's action, since that's what amountPerGather lives on now
         // (see ProviderTypes.ts — moved off ResourceConfig when providers split out).
         for (const config of Object.values(SHOP_CONFIG_BY_ID)) {
-            if (!config) {
+            // A shop with no action (the carrier) has no swing stats to read out.
+            const action = config?.action;
+            if (!config || action === undefined) {
                 continue;
             }
-            const providerConfig = Object.values(PROVIDER_CONFIG).find(p => p.action === config.action);
+            const providerConfig = Object.values(PROVIDER_CONFIG).find(p => p.action === action);
             if (!providerConfig) {
                 continue;
             }
             const toolStats = {
                 get hitIntervalSec(): number {
-                    return ACTION_CONFIG[config.action].hitIntervalSec;
+                    return ACTION_CONFIG[action].hitIntervalSec;
                 },
                 get hitScale(): number {
-                    return ACTION_CONFIG[config.action].hitScale;
+                    return ACTION_CONFIG[action].hitScale;
                 },
                 get yieldPerHit(): number {
-                    return providerConfig.amountPerGather * ACTION_CONFIG[config.action].resourcePerHit;
+                    return providerConfig.amountPerGather * ACTION_CONFIG[action].resourcePerHit;
                 },
                 get hitAngleDeg(): number {
-                    return ACTION_CONFIG[config.action].hitAngleDeg;
+                    return ACTION_CONFIG[action].hitAngleDeg;
                 },
                 get hitRangeMeters(): number {
-                    return ACTION_CONFIG[config.action].hitRangeMeters;
+                    return ACTION_CONFIG[action].hitRangeMeters;
                 },
             };
             const folderName = config.tool.charAt(0).toUpperCase() + config.tool.slice(1);
@@ -1048,7 +1057,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         InGameButtonList.registerButton('Clear Queue States', () => void QueueStorage.clearAll());
         // Empties the backpack only (carried resources + the farm stack on the player's back) —
         // no reload, nothing else touched. The stack visual follows on its own via
-        // BackpackStorage.onChange (see BackpackStackVisual.ts).
+        // BackpackStorage.onChange (see CarrierStackVisual.ts).
         InGameButtonList.registerButton('Clear Backpack', () => void BackpackStorage.clearAll());
         InGameButtonList.registerButton('Open Next Zone', () => this.worldManager.revealNextZone());
         InGameButtonList.registerButton('Teleport: Next', () => this.teleportToNextTeleporter());

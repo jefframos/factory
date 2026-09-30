@@ -60,6 +60,7 @@ import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import MainPlayer from './MainPlayer';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
+import DepositPacer from '../utils/DepositPacer';
 
 const LABEL_FRAME_PADDING = uniformFitPadding(15);
 
@@ -101,6 +102,8 @@ const LABEL_FADE_IN_SEC = 0.25;
 const REWARD_POPUP_HOLD_SEC = 2;
 
 export default class QueueZone extends Entity {
+    /** Speeds this zone's one-unit-at-a-time deposits up (to ~3x) the longer the player keeps paying — see DepositPacer.ts. */
+    private readonly depositPacer = new DepositPacer(FLY_IN_STAGGER_SEC);
     private readonly screenHost: ScreenAnchorHost;
     private readonly queueId: string;
     private readonly config: QueueConfig;
@@ -639,7 +642,7 @@ export default class QueueZone extends Entity {
             // lands (0.12s stagger vs. a ~0.45s flight), sending out more units than the
             // backpack really has and over-crediting the task on landing.
             const fromWorld = stillNeedsThisType && BackpackStorage.getCount(type) - inFlight > 0
-                ? this.player?.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition()
+                ? this.player?.getComponent(CharacterVisualComponent)?.character.getCarrierWorldPosition()
                 : undefined;
 
             if (!fromWorld) {
@@ -659,7 +662,7 @@ export default class QueueZone extends Entity {
                 this.checkForCompletion();
             });
 
-            gsap.delayedCall(FLY_IN_STAGGER_SEC, step);
+            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
         };
 
         step();
@@ -707,7 +710,7 @@ export default class QueueZone extends Entity {
                 this.checkForCompletion();
             });
 
-            gsap.delayedCall(FLY_IN_STAGGER_SEC, step);
+            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
         };
 
         step();

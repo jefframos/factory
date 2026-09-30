@@ -69,6 +69,11 @@ const CURRENCY_OPTIONS = [
 ];
 
 /** StoreTypes.ts's StoreSpotDirection — which way a store's waiting line extends (map north = up in Tiled). */
+const STORE_WAIT_STYLE_OPTIONS = [
+    { value: 'cluster', label: 'Cluster (gather around the shelf/cashier)' },
+    { value: 'line', label: 'Line (straight line)' },
+];
+
 const STORE_SPOT_DIRECTION_OPTIONS = [
     { value: 'north', label: 'North (up on the map)' },
     { value: 'south', label: 'South (down on the map)' },
@@ -293,14 +298,26 @@ const ENTITY_SCHEMAS = {
     shops: [
         { key: 'name', type: 'text', label: 'Name' },
         { key: 'tool', type: 'select', label: 'Tool', source: 'tools' },
-        { key: 'action', type: 'select', label: 'Action', source: 'actions' },
+        { key: 'action', type: 'select', label: 'Action (the swing whose stats an upgrade raises — blank for a tool with no action, e.g. the Carrier)', source: 'actions', optional: true },
         { key: 'appearRequirement', type: 'requirement', label: 'Appear Requirement', optional: true },
         { key: 'baseView', type: 'select', label: 'Base View (before any upgrade, optional)', source: 'entityViews', optional: true },
         { key: 'solid', type: 'number', label: 'Solid (0 = no collider/walk-through, 1 = full trigger area, 0.5 = half size centered — 0 by default)', optional: true },
+        { key: 'showcase', type: 'boolean', label: 'Showcase (float the upgraded tool above the shop, bobbing like a crafting table — the Carrier shows the crate the player wears)', optional: true },
+        { key: 'showcaseScale', type: 'number', label: 'Showcase Scale (x the model\'s native size — blank = 1)', optional: true },
+        { key: 'showcaseHeight', type: 'number', label: 'Showcase Height (world units above the shop\'s base — blank = 2.6)', optional: true },
+        { key: 'particleEffectId', type: 'select', label: 'Showcase Particles (ambient effect around the floating item)', source: 'particleEffects', optional: true },
         { key: 'totalLevels', type: 'number', label: 'Total Upgrade Levels (purchases needed to reach max — level N/totalLevels blends every attribute N/totalLevels of the way from Min to Max)' },
         { key: 'baseCost', type: 'number', label: 'Base Cost (coins for the FIRST upgrade)' },
         { key: 'costScale', type: 'number', label: 'Cost Scale (each subsequent upgrade costs this many times the previous one — cost = baseCost * costScale ^ levelsAlreadyBought)' },
         { key: 'cooldownSec', type: 'number', label: 'Cooldown (sec, after buying any level, before the next purchase can start)' },
+        {
+            key: 'levels', type: 'list', label: 'Level Costs (optional — one entry per upgrade, in order; when set, replaces Base Cost/Cost Scale and the shop sells at most this many upgrades)', optional: true,
+            itemLabel: (item, index) => `Upgrade ${(index ?? 0) + 1}: ${[item.money ? `${item.money} cash` : '', ...Object.entries(item.resources || {}).filter(([, v]) => v).map(([k, v]) => `${v} ${k}`)].filter(Boolean).join(' + ') || 'free'}`,
+            fields: [
+                { key: 'money', type: 'number', label: 'Cash', optional: true },
+                { key: 'resources', type: 'costMap', label: 'Resources (taken from the player\'s backpack)', source: 'resources', optional: true },
+            ],
+        },
         ...POPUP_FIELDS,
         { key: 'disabled', type: 'boolean', label: 'Disabled (takes this shop out of the game entirely — never built)', optional: true },
     ],
@@ -380,6 +397,18 @@ const ENTITY_SCHEMAS = {
         },
         { key: 'price', type: 'number', label: 'Mart Price (base price a Mart buys/sells this at — blank means this resource can never be bought or sold at any mart)', optional: true },
         { key: 'sellable', type: 'boolean', label: 'Sellable To Marts (blocks selling this resource back even though it has a Mart Price — still buyable; meaningless with no Mart Price set)', optional: true },
+        { key: 'pileScale', type: 'number', label: 'Pile Scale (draw size on the carrier/in storages and while flying there — only the model grows, spots/spacing stay the same; blank = 1)', optional: true },
+        { key: 'carrierSpacing', type: 'number', label: 'Carrier Spacing (how close it stacks on the player\'s back — 0.7 = 30% closer; drawn size unchanged; blank = 1)', optional: true },
+        { key: 'storageOffsetY', type: 'number', label: 'Storage Height Offset (world units added to where it sits in storages — negative = lower; blank = 0)', optional: true },
+        {
+            key: 'carrierOrientation', type: 'select', label: 'Carrier Orientation (how it sits on the player\'s back — storages unaffected; blank = Lying)', optional: true,
+            options: [
+                { value: 'lying', label: 'Lying (tall items like carrots lie down, squat ones stay upright)' },
+                { value: 'onSide', label: 'On Its Side (always laid down, whatever its shape — e.g. corn)' },
+                { value: 'standing', label: 'Standing (as modeled)' },
+                { value: 'upsideDown', label: 'Upside Down' },
+            ],
+        },
         { key: 'disabled', type: 'boolean', label: 'Disabled (takes this resource out of the game entirely — no Provider ever drops it, it\'s hidden from every resource panel/inventory tab even with leftover banked count, and any Crafting recipe cost naming it is treated as if that line didn\'t exist)', optional: true },
     ],
     // A PROVIDER is the world dispenser the player actually chops/mines/forages — action,
@@ -494,6 +523,13 @@ const ENTITY_SCHEMAS = {
         { key: 'startWith', type: 'boolean', label: 'Start With (a brand-new save begins owning one of whichever item shares this tool\'s id, instead of having to craft/earn it)', optional: true },
         {
             key: 'actionTime', type: 'group', label: 'Action Time (seconds — Min = level 0, Max = fully upgraded; only for tools with a timed action, e.g. Shovel = time to plant a no-seed farm cell)', optional: true,
+            fields: [
+                { key: 'min', type: 'number', label: 'Min' },
+                { key: 'max', type: 'number', label: 'Max' },
+            ],
+        },
+        {
+            key: 'capacity', type: 'group', label: 'Capacity (Carrier only — farm items it holds; Min = level 0, Max = Max Level, rounded in between, e.g. 3 -> 13 over 10 levels = +1 per upgrade)', optional: true,
             fields: [
                 { key: 'min', type: 'number', label: 'Min' },
                 { key: 'max', type: 'number', label: 'Max' },
@@ -668,6 +704,10 @@ const ENTITY_SCHEMAS = {
             ],
         },
         { key: 'cashierSpotDirection', type: 'select', label: 'Cashier Line Direction (blank = toward the store\'s center)', options: STORE_SPOT_DIRECTION_OPTIONS, optional: true },
+        { key: 'waitStyle', type: 'select', label: 'Wait Style (how waiting clients stand — queue order is the same either way; blank = Cluster)', options: STORE_WAIT_STYLE_OPTIONS, optional: true },
+        { key: 'browseChance', type: 'number', label: 'Browse Chance (0-1 — how often a client waiting in a shelf line wanders off to look at another shelf; blank = 0.4)', optional: true },
+        { key: 'clientRadius', type: 'number', label: 'Client Radius (personal space — obstacles grow by this, clients steer apart at about twice it; blank = 0.35)', optional: true },
+        { key: 'navCellSize', type: 'number', label: 'Nav Cell Size (pathfinding grid — smaller = tighter paths, more cells; blank = 0.3)', optional: true },
         { key: 'moneyPerBill', type: 'number', label: 'Money per Bill (how much one bill on the money drop represents — visual only)' },
         { key: 'billsPerPile', type: 'number', label: 'Bills per Pile (how tall a money pile gets before the next one starts beside it — visual only)' },
         { key: 'bubbleOffset', type: 'number', label: 'Bubble Height (above the client\'s head — world units)' },
@@ -962,8 +1002,8 @@ const ENTITY_SCHEMAS = {
         {
             // Nested `models` is stored as plain "Group.Key" strings (only a TOP-LEVEL `models`
             // key gets MODELS.* serialization — see syncToSource.mjs's isModelRefArray()), which
-            // is exactly what PlayerBackpackConfig.models is typed as.
-            key: 'backpack', type: 'group', label: 'Backpack (mounted on the Chest bone — units are character-rig units, ~100 = 0.75 world units)',
+            // is exactly what PlayerCarrierConfig.models is typed as.
+            key: 'carrier', type: 'group', label: 'Carrier (the crate on the player\'s back the carry stack sits in — mounted on the Chest bone, units are character-rig units, ~100 = 0.75 world units; how much it holds is the Carrier tool\'s Capacity, Tools tab)',
             fields: [
                 { key: 'models', type: 'modelList', label: 'Model (first entry used — empty = placeholder cube)' },
                 {
@@ -992,17 +1032,9 @@ const ENTITY_SCHEMAS = {
                         { value: 'tower', label: 'Tower (one per level, stacked up high — very visible)' },
                     ],
                 },
-                {
-                    key: 'capacity', type: 'group', label: 'Stack Capacity (farm items carried at once — upgrade level is saved per player)',
-                    fields: [
-                        { key: 'base', type: 'number', label: 'Base (capacity at upgrade level 0)' },
-                        { key: 'perLevel', type: 'number', label: 'Per Level (added per upgrade)' },
-                        { key: 'maxLevel', type: 'number', label: 'Max Level' },
-                    ],
-                },
             ],
         },
-        { key: 'harvestIntoStack', type: 'boolean', label: 'Harvest Into Stack (farm harvests fly straight onto the carry stack, limited by Stack Capacity — off = banked instantly, no limit)' },
+        { key: 'harvestIntoStack', type: 'boolean', label: 'Harvest Into Stack (farm harvests fly straight onto the carry stack, limited by the Carrier\'s capacity — off = banked instantly, no limit)' },
     ],
 };
 

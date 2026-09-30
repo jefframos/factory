@@ -60,13 +60,20 @@ import { SeedStorage } from '../data/SeedStorage';
 import { SEED_CONFIG, SeedId } from '../data/SeedTypes';
 import { pickRandom } from '../world/AssetLibraryRegistry';
 import WorldObjectRegistry from '../world/WorldObjectRegistry';
-import StoreClient, { StoreClientHost, StoreClientWant, StoreStorageRef } from './StoreClient';
+import StoreClient, { StoreClientHost, StoreClientWant, StoreSpot, StoreStorageRef } from './StoreClient';
+import StoreNavGrid, { NavBounds } from './nav/StoreNavGrid';
+import { NavNeighbor } from './nav/NavAgent';
+import StoreNavDebug from './nav/StoreNavDebug';
+import { layoutQueueSpots } from './StoreQueueSpots';
+import { Layers, PHYSICS_DEBUG } from '../physics/PhysicsConstants';
+import RigidBody from '../physics/RigidBody';
+import { isWalkable } from '../world/TileWalkability';
 import StoreCashier from './StoreCashier';
 import StoreMoneyPile from './StoreMoneyPile';
 import StoreLine from './StoreLine';
 import { StoreLayout, StoreRect, randomPointInRect, readStoreLayouts, rectContains } from './StoreLayout';
 import { StoreMoneyStorage } from './StoreMoneyStorage';
-import { StoreClientMood, StoreConfig, StorePacing, getNextStoreLevel, getStoreConfig, getStorageSpotDirection, getStorePacing, rollClientMoodStepSec } from './StoreTypes';
+import { DEFAULT_CLIENT_RADIUS, DEFAULT_NAV_CELL_SIZE, StoreClientMood, StoreConfig, StorePacing, getNextStoreLevel, getStoreConfig, getStorageSpotDirection, getStorePacing, rollClientMoodStepSec } from './StoreTypes';
 import { StoreProgressStorage } from './StoreProgressStorage';
 import { StoreUnlocks } from './StoreUnlocks';
 
@@ -80,6 +87,17 @@ const MOOD_FLOOR_BY_LEVEL: Partial<Record<number, StoreClientMood>> = {
     1: 'happy',
     2: 'annoyed',
 };
+/** The nav grid covers the store area + entrance + exit, grown by this much (world units). */
+const NAV_BOUNDS_MARGIN = 1;
+/** How often the nav grid checks whether anything solid appeared/disappeared (physics bodies changed). */
+const NAV_CHECK_SEC = 1;
+/** ... and rebuilds regardless this often (e.g. the tile map published its walkability late). */
+const NAV_FULL_CHECK_SEC = 5;
+/** Static solids taller than this bottom / shorter than this top don't block walking (overhead / flat on the ground). */
+const NAV_BODY_MAX_BOTTOM = 1.8;
+const NAV_BODY_MIN_TOP = 0.05;
+/** Bigger than this on X or Z = a ground plane or similar, never an obstacle. */
+const NAV_BODY_MAX_SIZE = 200;
 
 export interface StoreStorageSource {
     id: string;
@@ -89,6 +107,7 @@ export interface StoreStorageSource {
 
 interface StoreStorage extends StoreStorageRef {
     readonly config: StorageConfig;
+    readonly rect: StoreRect;
 }
 
 export default class Store extends Entity implements StoreClientHost {
@@ -109,6 +128,17 @@ export default class Store extends Entity implements StoreClientHost {
     /** True until the first client spawns — it comes after FIRST_SPAWN_DELAY_SEC instead of a full interval. */
     private firstSpawnPending = true;
     private payTimerSec = 0;
+
+    // Navigation — see buildNavGrid().
+    private navGrid?: StoreNavGrid;
+    private readonly navBounds: NavBounds;
+    private navCheckTimerSec = 0;
+    private navFullCheckTimerSec = 0;
+    private navPhysicsVersion = -1;
+    private readonly navNeighbors: NavNeighbor[] = [];
+    private player?: RigidBody;
+    private playerNeighbor?: NavNeighbor;
+    private navDebug?: StoreNavDebug;
 
     public constructor(
         layout: StoreLayout,
@@ -135,10 +165,19 @@ export default class Store extends Entity implements StoreClientHost {
         this.storages = storages.map(source => ({
             id: source.id,
             config: source.config,
+            rect: source.rect,
             position: new THREE.Vector3(source.rect.x, 0, source.rect.z),
             line: new StoreLine<StoreClient>(source.rect, center, config.spotSpacing, config.spotMargin, getStorageSpotDirection(config, source.id)),
         }));
         this.cashierLine = new StoreLine<StoreClient>(layout.cashier, center, config.spotSpacing, config.spotMargin, config.cashierSpotDirection);
+
+        const covered = [layout.area, layout.entrance, layout.exit].map(rectBounds);
+        this.navBounds = {
+            minX: Math.min(...covered.map(b => b.minX)) - NAV_BOUNDS_MARGIN,
+            minZ: Math.min(...covered.map(b => b.minZ)) - NAV_BOUNDS_MARGIN,
+            maxX: Math.max(...covered.map(b => b.maxX)) + NAV_BOUNDS_MARGIN,
+            maxZ: Math.max(...covered.map(b => b.maxZ)) + NAV_BOUNDS_MARGIN,
+        };
     }
 
     public override awake(): void {
@@ -148,6 +187,11 @@ export default class Store extends Entity implements StoreClientHost {
         this.moneyPile = world.add(new StoreMoneyPile(this.layout.id, this.layout.moneyDrop, this.screenHost, this.config.moneyPerBill, this.config.billsPerPile, this.getWalletOverlayPosition));
         this.root.add(this.moneyPile.transform);
         void StoreMoneyStorage.load();
+
+        if (PHYSICS_DEBUG) {
+            this.navDebug = new StoreNavDebug();
+            this.root.add(this.navDebug.object);
+        }
 
         console.log(`[Store] "${this.layout.id}" sells from ${this.storages.length} storage(s): ${this.storages.map(s => s.id).join(', ') || '(none)'}`);
     }
@@ -184,9 +228,11 @@ export default class Store extends Entity implements StoreClientHost {
         }
 
         this.updateCashier(delta);
+        this.updateNav(delta);
     }
 
     public override destroy(): void {
+        this.navDebug?.destroy();
         const world = this.world;
         for (const client of this.clients) {
             world?.remove(client);
@@ -239,6 +285,149 @@ export default class Store extends Entity implements StoreClientHost {
             }
         }
         return best;
+    }
+
+    public getNavGrid(): StoreNavGrid | undefined {
+        return this.navGrid;
+    }
+
+    /** Every client plus the player — refreshed once per frame in updateNav(). */
+    public getNavNeighbors(): readonly NavNeighbor[] {
+        return this.navNeighbors;
+    }
+
+    /** Near another available shelf (looking at it), or — with only one — beside the client's own. */
+    public findBrowseSpot(client: StoreClient, line: StoreLine<StoreClient>): StoreSpot | undefined {
+        const others = this.getAvailableStorages().filter(storage => storage.line !== line);
+        const shelf = others.length > 0 ? pickRandom(others) : this.storages.find(storage => storage.line === line);
+        if (!shelf) {
+            return undefined;
+        }
+        const point = this.pickFreePointNear(client, shelf.line.firstSpot, shelf.line.spacing * 0.8, shelf.line.spacing * 2.2);
+        return point && { point, lookAt: shelf.position };
+    }
+
+    /** Somewhere free inside the store's own area, sometimes looking at a shelf once there. */
+    public findWanderSpot(client: StoreClient): StoreSpot | undefined {
+        const grid = this.navGrid;
+        const area = rectBounds(this.layout.area);
+        const inset = { minX: area.minX + 1, minZ: area.minZ + 1, maxX: area.maxX - 1, maxZ: area.maxZ - 1 };
+        const fallback = randomPointInRect(this.layout.area, 1);
+        const point = grid
+            ? grid.randomWalkablePoint(inset, candidate => this.isFreeSpot(client, candidate))
+            : new THREE.Vector3(fallback.x, 0, fallback.z);
+        if (!point) {
+            return undefined;
+        }
+        const shelves = this.getAvailableStorages();
+        return { point, lookAt: shelves.length > 0 && Math.random() < 0.5 ? pickRandom(shelves).position : undefined };
+    }
+
+    /**
+     * Rebuilds the nav grid when something solid may have changed (throttled — see NAV_CHECK_SEC),
+     * refreshes the steering neighbour list, and drives the debug overlay.
+     */
+    private updateNav(delta: number): void {
+        const physics = this.world!.physics;
+        this.navCheckTimerSec -= delta;
+        this.navFullCheckTimerSec -= delta;
+        if (this.navCheckTimerSec <= 0) {
+            this.navCheckTimerSec = NAV_CHECK_SEC;
+            if (!this.navGrid || physics.version !== this.navPhysicsVersion || this.navFullCheckTimerSec <= 0) {
+                this.navFullCheckTimerSec = NAV_FULL_CHECK_SEC;
+                if (physics.version !== this.navPhysicsVersion) {
+                    this.player = undefined;
+                }
+                this.navPhysicsVersion = physics.version;
+                this.rebuildNavGrid();
+            }
+        }
+
+        if (!this.player) {
+            physics.forEachBody(body => {
+                if (!this.player && (body.layer & Layers.Player) !== 0 && !body.isTrigger && !body.isStatic) {
+                    this.player = body;
+                    // Always "moving": clients sidestep the player but don't replan around them.
+                    this.playerNeighbor = { position: body.entity.transform.position, isNavMoving: () => true };
+                }
+            });
+        }
+        this.navNeighbors.length = 0;
+        this.navNeighbors.push(...this.clients);
+        if (this.player && this.playerNeighbor) {
+            this.navNeighbors.push(this.playerNeighbor);
+        }
+
+        this.navDebug?.update(this.navGrid, [...this.storages.map(storage => storage.line), this.cashierLine], this.clients);
+    }
+
+    /**
+     * Blocked: every storage of this store (bought or not), the cashier and money-drop spots,
+     * every static solid physics body in reach (walls, buildings, solid storages, ...), and
+     * unwalkable tiles — all grown by the client radius. Kept as-is (no replans) when the
+     * result is identical to the current grid; otherwise swapped in and the queue spots re-laid.
+     */
+    private rebuildNavGrid(): void {
+        const radius = this.config.clientRadius ?? DEFAULT_CLIENT_RADIUS;
+        const grid = new StoreNavGrid(this.navBounds, this.config.navCellSize ?? DEFAULT_NAV_CELL_SIZE);
+        for (const storage of this.storages) {
+            grid.blockRect(rectBounds(storage.rect), radius);
+        }
+        grid.blockRect(rectBounds(this.layout.cashier), radius);
+        grid.blockRect(rectBounds(this.layout.moneyDrop), radius);
+
+        const min = new THREE.Vector3();
+        const max = new THREE.Vector3();
+        this.world!.physics.forEachBody(body => {
+            if (!body.isStatic || body.isTrigger || (body.layer & Layers.Player) !== 0) {
+                return;
+            }
+            body.getMin(min);
+            body.getMax(max);
+            if (max.y < NAV_BODY_MIN_TOP || min.y > NAV_BODY_MAX_BOTTOM || max.x - min.x > NAV_BODY_MAX_SIZE || max.z - min.z > NAV_BODY_MAX_SIZE) {
+                return;
+            }
+            if (max.x < this.navBounds.minX || min.x > this.navBounds.maxX || max.z < this.navBounds.minZ || min.z > this.navBounds.maxZ) {
+                return;
+            }
+            grid.blockRect({ minX: min.x, minZ: min.z, maxX: max.x, maxZ: max.z }, radius);
+        });
+        grid.blockWhere((x, z) => !isWalkable(x, z));
+
+        if (this.navGrid && this.navGrid.sameBlockedAs(grid)) {
+            return;
+        }
+        this.navGrid = grid;
+        layoutQueueSpots(grid, [...this.storages.map(storage => storage.line), this.cashierLine], this.config.waitStyle ?? 'cluster', this.config.maxClients);
+    }
+
+    /** A random walkable point between minRadius and maxRadius of `center`, clear of other clients and queue spots. */
+    private pickFreePointNear(client: StoreClient, center: THREE.Vector3, minRadius: number, maxRadius: number): THREE.Vector3 | undefined {
+        const grid = this.navGrid;
+        if (!grid) {
+            return undefined;
+        }
+        const candidates = grid.walkableCellsNear(center.x, center.z, maxRadius)
+            .filter(cell => cell.distanceTo(center) >= minRadius && this.isFreeSpot(client, cell));
+        return candidates.length > 0 ? pickRandom(candidates) : undefined;
+    }
+
+    /** Not on top of another client (where it stands or is heading), nor on any line's queue spot. */
+    private isFreeSpot(client: StoreClient, point: THREE.Vector3): boolean {
+        const radius = this.config.clientRadius ?? DEFAULT_CLIENT_RADIUS;
+        const personal = radius * 4;
+        for (const other of this.clients) {
+            if (other !== client && other.position.distanceTo(point) < personal) {
+                return false;
+            }
+        }
+        for (const line of [...this.storages.map(storage => storage.line), this.cashierLine]) {
+            const clearance = line.spacing * 0.6;
+            if (line.getSpots().some(spot => spot.distanceTo(point) < clearance) || line.firstSpot.distanceTo(point) < clearance) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** Busier (and less forgiving) with every shelf the player has made available — see getStorePacing(). */
@@ -331,10 +520,15 @@ export default class Store extends Entity implements StoreClientHost {
 
         const spawn = randomPointInRect(this.layout.entrance);
         const exit = randomPointInRect(this.layout.exit);
+        const spawnAt = new THREE.Vector3(spawn.x, 0, spawn.z);
+        const exitAt = new THREE.Vector3(exit.x, 0, exit.z);
+        // Never start inside a wall/shelf.
+        this.navGrid?.snapToWalkable(spawnAt);
+        this.navGrid?.snapToWalkable(exitAt);
         const client = this.world!.add(new StoreClient(
             this,
-            new THREE.Vector3(spawn.x, 0, spawn.z),
-            new THREE.Vector3(exit.x, 0, exit.z),
+            spawnAt,
+            exitAt,
             wants,
             this.pickNpcId(),
             rollClientMoodStepSec(this.config, pacing),
@@ -377,6 +571,10 @@ export default class Store extends Entity implements StoreClientHost {
             });
         }
     }
+}
+
+function rectBounds(rect: StoreRect): NavBounds {
+    return { minX: rect.x - rect.width / 2, minZ: rect.z - rect.depth / 2, maxX: rect.x + rect.width / 2, maxZ: rect.z + rect.depth / 2 };
 }
 
 /** Same rule as StorageZone.accepts() for a storage with no `resourceType`. */

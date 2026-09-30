@@ -16,7 +16,7 @@
             "talk": "Talking",
             "happy": "Excited"
         },
-        "backpack": {
+        "carrier": {
             "models": [
                 "Restaurant.Crate"
             ],
@@ -33,11 +33,6 @@
             "scale": 40,
             "stackMode": "tower",
             "itemScale": 1.5,
-            "capacity": {
-                "base": 3,
-                "perLevel": 1,
-                "maxLevel": 12
-            },
             "itemYawDeg": 0
         },
         "harvestIntoStack": true

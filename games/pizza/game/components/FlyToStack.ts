@@ -7,7 +7,7 @@
 // player keeps walking; the stack can change under it mid-flight).
 //
 //   flyResourceToStack() — onto the NEXT free slot on top of the player's stack
-//     (BackpackStackVisual.getSlotWorldTarget()), then banks it. Used by
+//     (CarrierStackVisual.getSlotWorldTarget()), then banks it. Used by
 //     FarmPlotTile (a harvest goes straight onto the stack) and HarvestPickup.
 //     The slot is reserved for the whole flight (CarryStack.beginFlight()), so a
 //     burst of collections can never overshoot the capacity, and each in-flight
@@ -20,17 +20,18 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { BackpackStorage } from '../data/BackpackStorage';
-import { ResourceType } from '../actions/ResourceTypes';
+import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { CarryStack } from '../player/CarryStack';
 import type MainPlayer from '../player/MainPlayer';
-import BackpackStackVisual, { rememberStackItemSize, stackItemScale } from './BackpackStackVisual';
+import CarrierStackVisual, { rememberStackItemSize, stackItemScale } from './CarrierStackVisual';
+import { getPileScale } from './ItemPile';
 import CharacterVisualComponent from './CharacterVisualComponent';
 import { disposeResourceDisplayModel, ItemOrientation, loadResourceDisplayModel } from '../world/ResourceDisplayModel';
 
 const FLY_DURATION_SEC = 0.45;
 /** How far above the higher of the two endpoints the arc peaks. */
 const ARC_HEIGHT = 0.8;
-/** Where to aim if the stack (character/backpack) hasn't loaded yet — roughly chest height above the player's feet. */
+/** Where to aim if the stack (character/carrier) hasn't loaded yet — roughly chest height above the player's feet. */
 const FALLBACK_TARGET_HEIGHT = 1.2;
 
 export interface ResourceFlight {
@@ -56,10 +57,10 @@ export interface ResourceFlight {
 export function flyResourceModel(flight: ResourceFlight): void {
     const start = flight.from.clone();
     const orientation = flight.orientation ?? 'lying';
-    void loadResourceDisplayModel(flight.type, { orientation }).then(({ object: model, size }) => {
+    void loadResourceDisplayModel(flight.type, { orientation }).then(({ object: model, size, restHeight }) => {
         // Lets the destination pile reserve this item's real size for a slot it's heading to, even
         // before the pile's own copy of the model has loaded.
-        rememberStackItemSize(flight.type, size, orientation);
+        rememberStackItemSize(flight.type, size, orientation, restHeight);
         model.rotation.y = THREE.MathUtils.degToRad(flight.yawDeg ?? 0);
         model.scale.setScalar(flight.startScale);
         model.position.copy(start);
@@ -105,21 +106,23 @@ export function flyResourceToStack(
     onArrive?: () => void,
 ): void {
     const flightId = CarryStack.beginFlight();
-    // Same itemScale the stack draws it at, the whole way — so it doesn't pop size on landing.
-    const scale = stackItemScale();
+    // Same size the stack draws it at (itemScale x its pileScale), the whole way — so it doesn't pop size on landing.
+    const scale = stackItemScale() * getPileScale(type);
     flyResourceModel({
         parent,
         type,
         from: fromWorld,
         startScale: scale,
         endScale: scale,
+        // Already turned the way it sits on the back (e.g. corn on its side), so it doesn't flip on landing.
+        orientation: RESOURCE_CONFIG[type]?.carrierOrientation,
         resolveTarget: target => {
             // The Nth in-flight item aims N slots above the current top — see CarryStack's doc.
             const index = CarryStack.carriedCount() + Math.max(CarryStack.flightIndex(flightId), 0);
-            if (player.getComponent(BackpackStackVisual)?.getSlotWorldTarget(index, type, target)) {
+            if (player.getComponent(CarrierStackVisual)?.getSlotWorldTarget(index, type, target)) {
                 return;
             }
-            if (!player.getComponent(CharacterVisualComponent)?.character.getBackpackWorldPosition(target)) {
+            if (!player.getComponent(CharacterVisualComponent)?.character.getCarrierWorldPosition(target)) {
                 target.copy(player.transform.position).setY(player.transform.position.y + FALLBACK_TARGET_HEIGHT);
             }
         },

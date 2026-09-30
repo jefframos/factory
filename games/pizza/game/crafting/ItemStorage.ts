@@ -71,6 +71,12 @@ export class ItemStorage {
                     this.counts.set(type as ItemType, amount);
                 }
             }
+            // The carrier is what the player wears, not something earned — a save from before it
+            // was an item still owns one (so it shows in the tool list with its level).
+            if (this.getCount(ItemType.Carrier) <= 0) {
+                this.counts.set(ItemType.Carrier, 1);
+                void this.persist();
+            }
         } catch (e) {
             console.error('ItemStorage: failed to load save data', e);
         }

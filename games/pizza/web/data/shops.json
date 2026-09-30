@@ -32,5 +32,35 @@
             "type": "item",
             "item": "pickaxe"
         }
+    },
+    "shopBackpack": {
+        "name": "Carrier Shop",
+        "tool": "carrier",
+        "totalLevels": 10,
+        "baseCost": 0,
+        "costScale": 1,
+        "cooldownSec": 300,
+        "popupBobOffset": 3,
+        "solid": 0.5,
+        "frame": "QueueFrame",
+        "showcase": true,
+        "showcaseScale": 0.6,
+        "showcaseHeight": 1.2,
+        "particleEffectId": "craftingMyst",
+        "levels": [
+            {
+                "money": 100,
+                "resources": {
+                    "wood": 50
+                }
+            },
+            {
+                "money": 150,
+                "resources": {
+                    "wood": 50,
+                    "stone": 20
+                }
+            }
+        ]
     }
 }

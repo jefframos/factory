@@ -34,6 +34,24 @@
             "assignedCropId": "broccoli",
             "requiredTool": "shovel",
             "autoPlant": true
+        },
+        "farm4": {
+            "price": {
+                "currency": "money",
+                "amount": 50
+            },
+            "assignedCropId": "strawberry",
+            "requiredTool": "shovel",
+            "autoPlant": true
+        },
+        "farm5": {
+            "price": {
+                "currency": "money",
+                "amount": 50
+            },
+            "assignedCropId": "corn",
+            "requiredTool": "shovel",
+            "autoPlant": true
         }
     },
     "tiles": {

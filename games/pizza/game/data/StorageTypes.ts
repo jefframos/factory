@@ -91,7 +91,7 @@ export interface StorageConfig {
     dropOffset: { x?: number; y?: number; z?: number };
     /** How stored items are laid out — see StoragePileConfig's own doc. The grid spans 80% of the mesh's own floor. */
     pile: StoragePileConfig;
-    /** Multiplier on each stored item's real world size. Optional — missing uses the player's own PlayerConfig.backpack.itemScale, so items look the same on the stack and in storage. */
+    /** Multiplier on each stored item's real world size. Optional — missing uses the player's own PlayerConfig.carrier.itemScale, so items look the same on the stack and in storage. */
     itemScale?: number;
     /** Optional fixed yaw (degrees) for every stored item, so long items (carrots) lie aligned. Unset = scattered yaws, the natural-pile look (fine for round items). */
     itemYawDeg?: number;
@@ -240,6 +240,46 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
     "storage3": {
         "accepts": "farm",
         "resourceType": ResourceType.Broccoli,
+        "models": [MODELS.Restaurant.Crate],
+        "scale": 1,
+        "rotationDeg": 0,
+        "dropOffset": {},
+        "pile": {
+            "columns": 2,
+            "rows": 2,
+            "layers": 3
+        },
+        "popupBobOffset": 3,
+        "solid": 1,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 10
+        },
+        "view": "storageView",
+    },
+    "storage4": {
+        "accepts": "farm",
+        "resourceType": ResourceType.Strawberry,
+        "models": [MODELS.Restaurant.Crate],
+        "scale": 1,
+        "rotationDeg": 0,
+        "dropOffset": {},
+        "pile": {
+            "columns": 2,
+            "rows": 2,
+            "layers": 3
+        },
+        "popupBobOffset": 3,
+        "solid": 1,
+        "price": {
+            "currency": CurrencyType.Money,
+            "amount": 10
+        },
+        "view": "storageView",
+    },
+    "storage5": {
+        "accepts": "farm",
+        "resourceType": ResourceType.Corn,
         "models": [MODELS.Restaurant.Crate],
         "scale": 1,
         "rotationDeg": 0,

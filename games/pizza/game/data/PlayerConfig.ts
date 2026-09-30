@@ -34,22 +34,24 @@ export interface PlayerAnimationConfig {
 }
 
 /**
- * The player's backpack — the prop mounted on the rig's Chest bone (see
- * CharacterBody.mountBackpack()). Units match the old placeholder cube's: character-RIG units,
+ * The player's CARRIER — the prop mounted on the rig's Chest bone that the carry stack sits in
+ * (see CharacterBody.mountCarrier()). Not to be confused with the "backpack" inventory
+ * (BackpackStorage / the backpack popup). How much it holds is the Carrier TOOL's own capacity,
+ * upgraded at the carrier shop — see data/CarrierCapacity.ts. Units match the old placeholder cube's: character-RIG units,
  * i.e. before MainPlayer's CHARACTER_SCALE (0.0075) shrinks the whole character — so 100 here is
  * ~0.75 world units. The holder cancels the Chest bone's own inherited scale, so these are true
  * rig units regardless of how the FBX's bones happen to be scaled.
  */
 /**
- * How BackpackStackVisual lays carried items out in the backpack:
+ * How CarrierStackVisual lays carried items out in the carrier:
  *   - 'grid':  a 3x3 grid per layer inside the crate, a few layers deep, peeking over the rim.
  *   - 'tower': one item per level, stacked straight up out of the crate — bigger and much more
  *              visible from a distance (the classic hyper-casual "carry stack").
- * Switchable live from the dev GUI's Backpack folder for play-testing both.
+ * Switchable live from the dev GUI's Carrier folder for play-testing both.
  */
-export type BackpackStackMode = 'grid' | 'tower';
+export type CarrierStackMode = 'grid' | 'tower';
 
-export interface PlayerBackpackConfig {
+export interface PlayerCarrierConfig {
     /**
      * MODELS "Group.Key" dot-paths (e.g. "Restaurant.Crate" — same form the web editor's model
      * picker stores), resolved at runtime via ModelSnapshotTool.resolveModelDef(), same
@@ -63,13 +65,13 @@ export interface PlayerBackpackConfig {
     rotationDeg: { x: number; y: number; z: number };
     /** Uniform scale on the model's own native size (Restaurant.Crate is 2 x 0.8 x 2 units, pivot at its bottom-center, so 40 -> an 80 x 32 x 80 rig-unit crate). Ignored by the placeholder cube. */
     scale: number;
-    /** How carried items pile up in it — see BackpackStackMode's own doc. */
-    stackMode: BackpackStackMode;
+    /** How carried items pile up in it — see CarrierStackMode's own doc. */
+    stackMode: CarrierStackMode;
     /**
      * Multiplier on each carried item's real world size (see ResourceDisplayModel.ts), applied on
      * the stack AND during its flight onto it, so nothing pops size on landing. 1 = exactly the
      * resource's own world size; bump it if the pile reads too small on the character. Live-tunable
-     * from the dev GUI's Backpack folder. Optional — missing means 1.
+     * from the dev GUI's Carrier folder. Optional — missing means 1.
      */
     itemScale?: number;
     /**
@@ -78,13 +80,6 @@ export interface PlayerBackpackConfig {
      * natural scattered look. Live on the next stack change.
      */
     itemYawDeg?: number;
-    /**
-     * How many farm items the stack holds — `base` at upgrade level 0, +`perLevel` per level, up
-     * to `maxLevel` levels. The level itself is persisted by BackpackCapacityStorage (only the
-     * level — so retuning these numbers applies to existing saves). A harvest that doesn't fit
-     * stays on its cell and shows the "stack is full" balloon (see CarryStack.notifyFull()).
-     */
-    capacity: { base: number; perLevel: number; maxLevel: number };
 }
 
 export interface PlayerConfigEntry {
@@ -123,11 +118,11 @@ export interface PlayerConfigEntry {
     walkToRunSpeed: number;
     /** The idle/run/jump board's clip bindings — see PlayerAnimationConfig's own doc. */
     animations: PlayerAnimationConfig;
-    /** What's mounted on the player's back — see PlayerBackpackConfig's own doc. */
-    backpack: PlayerBackpackConfig;
+    /** What's mounted on the player's back — see PlayerCarrierConfig's own doc. */
+    carrier: PlayerCarrierConfig;
     /**
      * When true, harvesting a farm cell flies its yield straight onto the top of the player's
-     * carry stack (see FlyToStack.ts / BackpackStackVisual.ts), limited by `backpack.capacity` —
+     * carry stack (see FlyToStack.ts / CarrierStackVisual.ts), limited by the carrier's capacity (data/CarrierCapacity.ts) —
      * instead of being banked into BackpackStorage instantly with a "+N" popup. Either way the
      * items end up in BackpackStorage (so anything that consumes crops keeps working); this only
      * changes HOW they get there, and whether the stack limit applies.
@@ -152,14 +147,13 @@ const DEFAULT_PLAYER_CONFIG: PlayerConfigEntry = {
         talk: 'Talking',
         happy: 'Excited',
     },
-    backpack: {
+    carrier: {
         models: ['Restaurant.Crate'],
         offset: { x: 0, y: -20, z: -50 },
         rotationDeg: { x: 0, y: 0, z: 0 },
         scale: 40,
         stackMode: 'grid',
         itemScale: 1.5,
-        capacity: { base: 3, perLevel: 1, maxLevel: 12 },
     },
     harvestIntoStack: true,
 };
@@ -183,7 +177,7 @@ export const PLAYER_CONFIG_BY_ID: Partial<Record<string, PlayerConfigEntry>> = {
             "talk": "Talking",
             "happy": "Excited"
         },
-        "backpack": {
+        "carrier": {
             "models": [
                 "Restaurant.Crate"
             ],
@@ -200,11 +194,6 @@ export const PLAYER_CONFIG_BY_ID: Partial<Record<string, PlayerConfigEntry>> = {
             "scale": 40,
             "stackMode": "tower",
             "itemScale": 1.5,
-            "capacity": {
-                "base": 3,
-                "perLevel": 1,
-                "maxLevel": 12
-            },
             "itemYawDeg": 0
         },
         "harvestIntoStack": true

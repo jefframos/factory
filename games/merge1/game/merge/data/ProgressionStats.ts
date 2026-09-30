@@ -71,7 +71,9 @@ export class ProgressionStats {
     private _lastFlushAtMs: number = 0;
 
     // Throttle platform storage writes (ms)
-    private readonly _minFlushIntervalMs: number = 150;
+    // Flushes only write into GameStorage's cache (passive), so this just bounds
+    // how stale the cached stats can be when the next real save goes out.
+    private readonly _minFlushIntervalMs: number = 2000;
 
     private constructor() {
         this.load();
@@ -140,9 +142,14 @@ export class ProgressionStats {
         this._dirty = false;
         this._lastFlushAtMs = Date.now();
 
-        // Persist a clone to avoid accidental reference sharing
-        GameStorage.instance.updateState({
-            stats: { ...this._stats }
+        // Passive: stats alone are never material progress (totalPlaySeconds ticks
+        // every frame). They land in the cache and ride along with the next
+        // player-driven save — see GameStorage.runPassive().
+        // Clone to avoid accidental reference sharing.
+        GameStorage.instance.runPassive(() => {
+            GameStorage.instance.updateState({
+                stats: { ...this._stats }
+            });
         });
 
         if (this._flushTimer !== null) {
@@ -151,8 +158,18 @@ export class ProgressionStats {
         }
     }
 
-    private markDirty(): void {
+    /**
+     * `throttled` is only for per-frame playtime. Every other stat goes into the
+     * cache immediately, so the player-driven save that usually follows (e.g. the
+     * room save after a merge) carries it — mergesMade gates FTUE completion.
+     */
+    private markDirty(throttled: boolean = false): void {
         this._dirty = true;
+
+        if (!throttled) {
+            this.flushNow();
+            return;
+        }
 
         const now = Date.now();
         const elapsed = now - this._lastFlushAtMs;
@@ -192,7 +209,7 @@ export class ProgressionStats {
             return;
         }
         this._stats.totalPlaySeconds += dtSeconds;
-        this.markDirty();
+        this.markDirty(true);
     }
 
     public recordEggSpawned(count: number = 1): void {

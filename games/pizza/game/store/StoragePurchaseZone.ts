@@ -31,6 +31,7 @@ import { StoragePrice } from '../data/StorageTypes';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import MainPlayer from '../player/MainPlayer';
 import { StorageOwnershipStorage } from './StorageOwnershipStorage';
+import DepositPacer from '../utils/DepositPacer';
 
 const TRIGGER_HALF_HEIGHT = 0.5;
 const CORNER_RADIUS = 0.3;
@@ -42,6 +43,8 @@ const FLOOR_LABEL_AREA_FILL = 0.9;
 const FLY_IN_STAGGER_SEC = 0.12;
 
 export default class StoragePurchaseZone extends Entity {
+    /** Speeds this zone's one-unit-at-a-time deposits up (to ~3x) the longer the player keeps paying — see DepositPacer.ts. */
+    private readonly depositPacer = new DepositPacer(FLY_IN_STAGGER_SEC);
     private readonly storageId: string;
     private readonly price: StoragePrice;
     private readonly footprint: { width: number; depth: number };
@@ -193,7 +196,7 @@ export default class StoragePurchaseZone extends Entity {
                 }
             });
 
-            gsap.delayedCall(FLY_IN_STAGGER_SEC, step);
+            gsap.delayedCall(this.depositPacer.nextDelaySec(), step);
         };
 
         step();

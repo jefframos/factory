@@ -1,7 +1,7 @@
 // ItemPile.ts
 //
 // A diegetic pile of resource models — the ONE system behind both the carry
-// stack on the player's back (BackpackStackVisual) and a map storage's
+// stack on the player's back (CarrierStackVisual) and a map storage's
 // contents (StorageZone). One display model (see ResourceDisplayModel.ts —
 // real world size, tall items laid on their side) per unit, kept in ARRIVAL
 // order: a new unit goes on top, removing one of a type takes the TOPMOST of
@@ -31,7 +31,7 @@
 // crate). Nothing here reads any storage directly.
 
 import * as THREE from 'three';
-import { ResourceType } from '../actions/ResourceTypes';
+import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { disposeResourceDisplayModel, ItemOrientation, loadResourceDisplayModel } from '../world/ResourceDisplayModel';
 
 export type ItemPileMode = 'grid' | 'tower';
@@ -58,8 +58,18 @@ export interface ItemPileLayout {
     itemYawDeg?: number;
     /** How each item is turned (see ResourceDisplayModel's ItemOrientation). Unset = 'lying'. */
     itemOrientation?: ItemOrientation;
+    /** Per-type override of itemOrientation — undefined for a type = use itemOrientation. The carrier feeds ResourceConfig.carrierOrientation through this. */
+    orientationFor?: (type: ResourceType) => ItemOrientation | undefined;
     /** Root-local units per world unit — see this file's own doc. */
     localPerWorld: number;
+    /**
+     * Per-type multiplier on the room an item takes in the layout (tower step, grid spacing/
+     * layers) — <1 packs that type closer, without changing how big it's drawn. Unset / a type it
+     * returns 1 for = unchanged. The carrier feeds ResourceConfig.carrierSpacing through this.
+     */
+    spacingFor?: (type: ResourceType) => number;
+    /** Per-type height offset, WORLD units (negative = lower), added to where that type sits. Storages feed ResourceConfig.storageOffsetY through this. */
+    offsetYFor?: (type: ResourceType) => number;
 }
 
 /** Vertical step between grid layers, as a fraction of the tallest item — <1 so layers nestle into each other like a real pile. */
@@ -70,6 +80,15 @@ const ODD_LAYER_SHIFT = 0.25;
 const TOWER_REST_FRACTION = 0.95;
 /** Max sideways wobble per tower level, as a fraction of that item's own width — deterministic per level. */
 const TOWER_JITTER_FRACTION = 0.08;
+/**
+ * ResourceConfig.pileScale — extra DRAW scale for `type` in a pile (and on the flight into one).
+ * Applied to the model only, never to layout: positions/spacing are computed from the unscaled
+ * size, and the model grows from its own bottom-center, so it stays in exactly the same spot.
+ */
+export function getPileScale(type: ResourceType): number {
+    return RESOURCE_CONFIG[type]?.pileScale ?? 1;
+}
+
 /** Stand-in size (world units) for an item whose model hasn't loaded yet and whose type was never seen before. */
 const FALLBACK_ITEM_SIZE = new THREE.Vector3(0.25, 0.25, 0.25);
 
@@ -80,14 +99,24 @@ const FALLBACK_ITEM_SIZE = new THREE.Vector3(0.25, 0.25, 0.25);
  * backpack and one standing in a storage have very different sizes.
  */
 const knownSizes = new Map<string, THREE.Vector3>();
+/** Same keys — ResourceDisplayModel.restHeight: how high an item resting on this one's middle sits (world units, unscaled). */
+const knownRestHeights = new Map<string, number>();
 
-/** Record `type`'s display size (world units, oriented) — see knownSizes. */
-export function rememberItemSize(type: ResourceType, size: THREE.Vector3, orientation: ItemOrientation = 'lying'): void {
+/** Record `type`'s display size (world units, oriented) and, when known, its rest height — see knownSizes. */
+export function rememberItemSize(type: ResourceType, size: THREE.Vector3, orientation: ItemOrientation = 'lying', restHeight?: number): void {
     knownSizes.set(`${type}|${orientation}`, size.clone());
+    if (restHeight !== undefined) {
+        knownRestHeights.set(`${type}|${orientation}`, restHeight);
+    }
 }
 
 function sizeOf(type: ResourceType, orientation: ItemOrientation): THREE.Vector3 {
     return knownSizes.get(`${type}|${orientation}`) ?? FALLBACK_ITEM_SIZE;
+}
+
+/** Where the top of `type`'s middle is (unscaled world units) — its bounding-box height until measured. */
+function restHeightOf(type: ResourceType, orientation: ItemOrientation): number {
+    return knownRestHeights.get(`${type}|${orientation}`) ?? sizeOf(type, orientation).y;
 }
 
 interface Slot {
@@ -198,7 +227,8 @@ export default class ItemPile {
             types.push(incomingType);
         }
         const fits = this.computeFits(types);
-        return this.layout.itemScale * (fits[Math.min(Math.max(index, 0), fits.length - 1)] ?? 1);
+        const slot = Math.min(Math.max(index, 0), fits.length - 1);
+        return this.layout.itemScale * (fits[slot] ?? 1) * getPileScale(types[Math.max(index, 0)] ?? incomingType);
     }
 
     /** The TOPMOST unit whose type passes `accepts`, with its world position written into `out` — undefined if none. See this file's own doc. */
@@ -230,13 +260,15 @@ export default class ItemPile {
             if (position) {
                 slot.model.position.copy(position);
             }
-            slot.model.scale.setScalar(itemScale * localPerWorld * (fits[i] ?? 1));
+            // pileScale on the model only — position above came from the unscaled layout.
+            slot.model.scale.setScalar(itemScale * localPerWorld * (fits[i] ?? 1) * getPileScale(slot.type));
             slot.model.rotation.y = this.yawFor(slot);
         });
     }
 
-    private get orientation(): ItemOrientation {
-        return this.layout.itemOrientation ?? 'lying';
+    /** How `type` is turned in this pile: the layout's per-type orientationFor() when it has one, else its itemOrientation ('lying' by default). */
+    private orientationOf(type: ResourceType): ItemOrientation {
+        return this.layout.orientationFor?.(type) ?? this.layout.itemOrientation ?? 'lying';
     }
 
     /** The layout's fixed itemYawDeg when set, else the slot's own scattered yaw. */
@@ -263,17 +295,41 @@ export default class ItemPile {
     private computePositions(types: ResourceType[]): THREE.Vector3[] {
         const { mode, base, footprint, maxColumns, maxRows, itemScale, localPerWorld } = this.layout;
         const toLocal = itemScale * localPerWorld;
-        const sizes = types.slice(0, this.capacity).map(type => sizeOf(type, this.orientation).clone().multiplyScalar(toLocal));
+        const sizes = this.layoutSizes(types, toLocal);
         const positions: THREE.Vector3[] = [];
+        // Per-type height offset (world -> root-local).
+        const offsetY = (index: number): number => (this.layout.offsetYFor?.(types[index]) ?? 0) * localPerWorld;
+        // Where the top of item `index`'s MIDDLE actually is, as drawn (rest height x pileScale x
+        // its fit), root-local. Not its bounding-box height: a lying carrot's box is its fat
+        // shoulder, but whatever sits on it rests on its much thinner middle.
+        const drawnRestHeight = (index: number, fit: number): number =>
+            restHeightOf(types[index], this.orientationOf(types[index])) * toLocal * getPileScale(types[index]) * fit;
+        /**
+         * Height from `below`'s resting point to `above`'s (both before their own offsetY).
+         *   - Same type: the layout's own spacing (layout size x rest fraction) — how a
+         *     single-type pile has always stacked, spacingFor/pileScale overlap included.
+         *   - Different type: rest on `below`'s real drawn top at its middle (see
+         *     drawnRestHeight) — a tomato on a 2x carrot sits on the carrot, not inside it and not
+         *     floating over its bounding box. Offsets are folded in so `above` rests on where
+         *     `below` actually is, not where it would be without its offset.
+         */
+        const step = (below: number, above: number, fitBelow: number, rest: number): number => {
+            if (types[below] === types[above]) {
+                return sizes[below].y * fitBelow * rest;
+            }
+            return drawnRestHeight(below, fitBelow) * rest + offsetY(below) - offsetY(above);
+        };
 
         if (mode === 'tower') {
             let y = base.y;
             sizes.forEach((size, i) => {
+                if (i > 0) {
+                    y += step(i - 1, i, 1, TOWER_REST_FRACTION);
+                }
                 // A fixed itemYawDeg means "aligned" — no wobble either, so the tower stacks perfectly straight.
                 const jitter = this.layout.itemYawDeg !== undefined ? 0 : Math.max(size.x, size.z) * TOWER_JITTER_FRACTION;
                 // Two incommensurate sines — cheap deterministic wobble.
-                positions.push(new THREE.Vector3(base.x + Math.sin(i * 2.1) * jitter, y, base.z + Math.sin(i * 3.7 + 1) * jitter));
-                y += size.y * TOWER_REST_FRACTION;
+                positions.push(new THREE.Vector3(base.x + Math.sin(i * 2.1) * jitter, y + offsetY(i), base.z + Math.sin(i * 3.7 + 1) * jitter));
             });
             return positions;
         }
@@ -282,21 +338,26 @@ export default class ItemPile {
         const cellX = columns > 1 ? footprint.x / columns : 0;
         const cellZ = rows > 1 ? footprint.z / rows : 0;
         const perLayer = columns * rows;
-        // Layer height from the FITTED sizes, so shrunk items don't leave gaps between layers.
+        // Heights from the FITTED sizes, so shrunk items don't leave gaps between layers.
         const fits = this.fitsFor(sizes, columns, rows);
-        let maxY = 0;
-        sizes.forEach((size, i) => {
-            maxY = Math.max(maxY, size.y * fits[i]);
-        });
+        // Each cell stacks on its own: an item rests on the one below it in the SAME cell (see
+        // step()), so a mixed pile doesn't push every layer to the tallest item's height. A
+        // single-type pile comes out exactly as uniform layers, as before.
+        const cellY: number[] = [];
+        const cellBelow: number[] = [];
         sizes.forEach((_, i) => {
             const layer = Math.floor(i / perLayer);
             const inLayer = i % perLayer;
             const column = inLayer % columns;
             const row = Math.floor(inLayer / columns);
             const shift = layer % 2 === 1 ? ODD_LAYER_SHIFT : 0;
+            const below = cellBelow[inLayer];
+            const y = below === undefined ? base.y : cellY[inLayer] + step(below, i, fits[below], LAYER_STEP_FRACTION);
+            cellY[inLayer] = y;
+            cellBelow[inLayer] = i;
             positions.push(new THREE.Vector3(
                 base.x + (column - (columns - 1) / 2 + shift) * cellX,
-                base.y + layer * maxY * LAYER_STEP_FRACTION,
+                y + offsetY(i),
                 base.z + (row - (rows - 1) / 2 + shift) * cellZ,
             ));
         });
@@ -335,9 +396,15 @@ export default class ItemPile {
     /** fitsFor() for the live types — what relayout() scales each model by. */
     private computeFits(types: ResourceType[]): number[] {
         const { itemScale, localPerWorld } = this.layout;
-        const sizes = types.slice(0, this.capacity).map(type => sizeOf(type, this.orientation).clone().multiplyScalar(itemScale * localPerWorld));
+        const sizes = this.layoutSizes(types, itemScale * localPerWorld);
         const { columns, rows } = this.gridShape(sizes);
         return this.fitsFor(sizes, columns, rows);
+    }
+
+    /** Root-local size each of `types` takes in the layout: real size x `toLocal` x its spacingFor() (see ItemPileLayout.spacingFor). */
+    private layoutSizes(types: ResourceType[], toLocal: number): THREE.Vector3[] {
+        return types.slice(0, this.capacity).map(type =>
+            sizeOf(type, this.orientationOf(type)).clone().multiplyScalar(toLocal * (this.layout.spacingFor?.(type) ?? 1)));
     }
 
     /** Loads a model for every slot the layout draws that has none yet (and isn't already loading). */
@@ -348,10 +415,10 @@ export default class ItemPile {
             }
             this.loading.add(slot);
             // Captured now — a setLayout() mid-load could change it, and the size must match THIS model.
-            const orientation = this.orientation;
-            void loadResourceDisplayModel(slot.type, { orientation }).then(({ object, size }) => {
+            const orientation = this.orientationOf(slot.type);
+            void loadResourceDisplayModel(slot.type, { orientation }).then(({ object, size, restHeight }) => {
                 this.loading.delete(slot);
-                rememberItemSize(slot.type, size, orientation);
+                rememberItemSize(slot.type, size, orientation, restHeight);
                 if (this.disposed || !this.slots.includes(slot)) {
                     disposeResourceDisplayModel(object);
                     return;

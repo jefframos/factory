@@ -222,7 +222,10 @@
         "amountPerGather": 1,
         "category": "farm",
         "price": 10,
-        "sellable": true
+        "sellable": true,
+        "pileScale": 2,
+        "carrierSpacing": 0.7,
+        "storageOffsetY": -0.12
     },
     "cauliflower": {
         "label": "Cauliflower",
@@ -243,12 +246,14 @@
         "models": [
             "Food.Corn"
         ],
-        "scale": 1,
+        "scale": 2,
         "rotationDeg": 0,
         "amountPerGather": 1,
         "category": "farm",
         "price": 7,
-        "sellable": true
+        "sellable": true,
+        "carrierOrientation": "onSide",
+        "carrierSpacing": 0.5
     },
     "leek": {
         "label": "Leek",
@@ -308,7 +313,7 @@
         "models": [
             "Food.Strawberry"
         ],
-        "scale": 1,
+        "scale": 4,
         "rotationDeg": 0,
         "amountPerGather": 1,
         "category": "farm",
