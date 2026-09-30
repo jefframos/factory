@@ -58,7 +58,7 @@ import { AnimalType, ANIMAL_CONFIG } from '../actions/AnimalTypes';
 import { PROVIDER_CONFIG } from '../actions/ProviderTypes';
 import { RESOURCE_CONFIG } from '../actions/ResourceTypes';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
-import WorldObjectRegistry, { SpawnerShape, sampleRandomPointInShape, shapeArea } from './WorldObjectRegistry';
+import WorldObjectRegistry, { SpawnerShape, isPointInShape, sampleRandomPointInShape, shapeArea } from './WorldObjectRegistry';
 import { SHAPE_RESOURCE_PLACEMENTS, ShapeResourcePlacement, shapePlacementKey } from './ShapeResourceTypes';
 import { ShapeResourceStorage } from './ShapeResourceStorage';
 import { WORLD_UNITS_PER_TILE } from './TileMapConfig';
@@ -171,13 +171,36 @@ export default class ShapeResourceSpawner {
                     placement,
                     shape,
                     key,
-                    records: ShapeResourceStorage.getRecords(key).map(record => ({
+                    records: this.loadValidRecords(key, shape).map(record => ({
                         position: new THREE.Vector3(record.x, 0, record.z),
                     })),
                     checkTimerSec: 0,
                 };
             });
         });
+    }
+
+    /**
+     * The saved records for `key` that still belong: inside this spawner's CURRENT shape and not
+     * on a farm. Anything else is left over from before the spawner was moved/redrawn (or a farm
+     * was placed over it) — it's deleted from the save here, so it never comes back, and
+     * tryFillDensity() refills inside the new shape.
+     */
+    private loadValidRecords(key: string, shape: SpawnerShape): ReturnType<typeof ShapeResourceStorage.getRecords> {
+        const kept: ReturnType<typeof ShapeResourceStorage.getRecords> = [];
+        let dropped = 0;
+        for (const record of ShapeResourceStorage.getRecords(key)) {
+            if (isPointInShape(shape, record.x, record.z) && !isInsideAnyFarmFootprint(record.x, record.z, this.farmFootprints)) {
+                kept.push(record);
+            } else {
+                ShapeResourceStorage.removeRecord(key, record);
+                dropped++;
+            }
+        }
+        if (dropped > 0) {
+            console.log(`[ShapeResourceSpawner] "${key}": dropped ${dropped} saved spawn(s) outside the spawner's current area`);
+        }
+        return kept;
     }
 
     public update(playerPosition: THREE.Vector3, delta: number): void {

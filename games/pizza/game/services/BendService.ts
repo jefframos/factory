@@ -40,7 +40,31 @@ export interface OcclusionFadeConfig {
      * not through it) — this is what actually rules those out, not `radius`. Default 1.5.
      */
     minOccluderHeight?: number;
+    /**
+     * What counts as "in the way":
+     *   - 'point' (default): one test point, the top-center of each mesh, within `radius` of the
+     *     camera->player line — right for trunk-like props (trees, rocks).
+     *   - 'bounds': the camera->player line passing through (or within `radius` of) the WHOLE
+     *     model's bounding box, and the whole model fading together — right for big props
+     *     (buildings, walls, gates), whose top-center can sit far from the line while the model
+     *     still completely hides the player. Applied per model, see applyOcclusionFadeToObject().
+     */
+    test?: 'point' | 'bounds';
 }
+
+/** A ready-made 'bounds' config for buildings, walls, gates, shops and big map props — see OcclusionFadeConfig.test. */
+export const STRUCTURE_OCCLUSION_FADE: OcclusionFadeConfig = {
+    test: 'bounds',
+    radius: 0.2,
+    fadeWidth: 0.8,
+    minOpacity: 0.25,
+    minOccluderHeight: 1.8,
+    dither: true,
+};
+
+/** applyOcclusionFadeToObject(): points sampled along the camera->player line, and how far toward the player they go (short of 1, so a wall right BEHIND the player never counts). */
+const BOUNDS_SAMPLES = 12;
+const BOUNDS_SAMPLE_END = 0.92;
 
 /**
  * Radial world-bend: the ground curves away from the player in all directions.
@@ -299,6 +323,70 @@ export class BendService {
         return THREE.MathUtils.lerp(minOpacity, maxOpacity, t);
     }
 
+    /** Adds the occlusion cutout to one material (once — see occludedMaterials): its alpha (or dither threshold) reads `uOccAlpha`, a uniform the caller updates every frame. */
+    private static patchOcclusionMaterial(material: THREE.Material, uOccAlpha: { value: number }, dither: boolean): void {
+        if (BendService.occludedMaterials.has(material)) {
+            return;
+        }
+        BendService.occludedMaterials.add(material);
+        BendService.tagProgramCacheKey(material, `occlusion:${dither ? 'dither' : 'blend'}`);
+
+        // Dithered discard needs no blending at all — leave the material opaque. The smooth
+        // path still needs alpha blending, same as every other *Fade method in this file.
+        material.transparent = !dither;
+        const prev = material.onBeforeCompile;
+        material.onBeforeCompile = (shader, renderer) => {
+            prev(shader, renderer);
+            shader.uniforms.uOccAlpha = uOccAlpha;
+
+            // Ordered 4x4 Bayer matrix, evaluated with an if-chain instead of a dynamically-
+            // indexed array (GLSL ES 1.00 / WebGL1 doesn't allow indexing an array with a
+            // non-constant expression) — same 16 evenly-spaced threshold levels every classic
+            // ordered-dither implementation uses, giving a regular stipple grid instead of the
+            // clumpy look a pure hash/noise threshold produces.
+            const bayerFn = dither ? `
+                float _occBayer4x4(vec2 fragCoord) {
+                    int ix = int(mod(fragCoord.x, 4.0));
+                    int iy = int(mod(fragCoord.y, 4.0));
+                    int index = ix + iy * 4;
+                    if (index == 0)  return 0.0  / 16.0;
+                    if (index == 1)  return 8.0  / 16.0;
+                    if (index == 2)  return 2.0  / 16.0;
+                    if (index == 3)  return 10.0 / 16.0;
+                    if (index == 4)  return 12.0 / 16.0;
+                    if (index == 5)  return 4.0  / 16.0;
+                    if (index == 6)  return 14.0 / 16.0;
+                    if (index == 7)  return 6.0  / 16.0;
+                    if (index == 8)  return 3.0  / 16.0;
+                    if (index == 9)  return 11.0 / 16.0;
+                    if (index == 10) return 1.0  / 16.0;
+                    if (index == 11) return 9.0  / 16.0;
+                    if (index == 12) return 15.0 / 16.0;
+                    if (index == 13) return 7.0  / 16.0;
+                    if (index == 14) return 13.0 / 16.0;
+                    return 5.0 / 16.0;
+                }
+            ` : '';
+            shader.fragmentShader = [
+                'uniform float uOccAlpha;',
+                bayerFn,
+            ].join('\n') + '\n' + shader.fragmentShader;
+            // uOccAlpha is now the SAME value for every fragment of this mesh (computed once
+            // per frame below, from the mesh's own world position rather than each pixel's) —
+            // so the whole object fades or dithers together instead of a hole opening up
+            // through only the part of the mesh nearest the camera->player line.
+            const occlusionTail = dither
+                ? `float _occDitherThreshold = _occBayer4x4(gl_FragCoord.xy);
+                if (_occDitherThreshold > uOccAlpha) discard;`
+                : 'diffuseColor.a *= uOccAlpha;';
+            shader.fragmentShader = shader.fragmentShader.replace(
+                '#include <alphamap_fragment>',
+                `#include <alphamap_fragment>\n${occlusionTail}`,
+            );
+        };
+        material.needsUpdate = true;
+    }
+
     public static applyOcclusionFade(mesh: THREE.Mesh, config: OcclusionFadeConfig = {}): void {
         const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
 
@@ -316,68 +404,7 @@ export class BendService {
 
         const uOccAlpha = { value: maxOpacity };
 
-        materials.forEach(material => {
-            if (BendService.occludedMaterials.has(material)) {
-                return;
-            }
-            BendService.occludedMaterials.add(material);
-            BendService.tagProgramCacheKey(material, `occlusion:${dither ? 'dither' : 'blend'}`);
-
-            // Dithered discard needs no blending at all — leave the material opaque. The smooth
-            // path still needs alpha blending, same as every other *Fade method in this file.
-            material.transparent = !dither;
-            const prev = material.onBeforeCompile;
-            material.onBeforeCompile = (shader, renderer) => {
-                prev(shader, renderer);
-                shader.uniforms.uOccAlpha = uOccAlpha;
-
-                // Ordered 4x4 Bayer matrix, evaluated with an if-chain instead of a dynamically-
-                // indexed array (GLSL ES 1.00 / WebGL1 doesn't allow indexing an array with a
-                // non-constant expression) — same 16 evenly-spaced threshold levels every classic
-                // ordered-dither implementation uses, giving a regular stipple grid instead of the
-                // clumpy look a pure hash/noise threshold produces.
-                const bayerFn = dither ? `
-                    float _occBayer4x4(vec2 fragCoord) {
-                        int ix = int(mod(fragCoord.x, 4.0));
-                        int iy = int(mod(fragCoord.y, 4.0));
-                        int index = ix + iy * 4;
-                        if (index == 0)  return 0.0  / 16.0;
-                        if (index == 1)  return 8.0  / 16.0;
-                        if (index == 2)  return 2.0  / 16.0;
-                        if (index == 3)  return 10.0 / 16.0;
-                        if (index == 4)  return 12.0 / 16.0;
-                        if (index == 5)  return 4.0  / 16.0;
-                        if (index == 6)  return 14.0 / 16.0;
-                        if (index == 7)  return 6.0  / 16.0;
-                        if (index == 8)  return 3.0  / 16.0;
-                        if (index == 9)  return 11.0 / 16.0;
-                        if (index == 10) return 1.0  / 16.0;
-                        if (index == 11) return 9.0  / 16.0;
-                        if (index == 12) return 15.0 / 16.0;
-                        if (index == 13) return 7.0  / 16.0;
-                        if (index == 14) return 13.0 / 16.0;
-                        return 5.0 / 16.0;
-                    }
-                ` : '';
-                shader.fragmentShader = [
-                    'uniform float uOccAlpha;',
-                    bayerFn,
-                ].join('\n') + '\n' + shader.fragmentShader;
-                // uOccAlpha is now the SAME value for every fragment of this mesh (computed once
-                // per frame below, from the mesh's own world position rather than each pixel's) —
-                // so the whole object fades or dithers together instead of a hole opening up
-                // through only the part of the mesh nearest the camera->player line.
-                const occlusionTail = dither
-                    ? `float _occDitherThreshold = _occBayer4x4(gl_FragCoord.xy);
-                    if (_occDitherThreshold > uOccAlpha) discard;`
-                    : 'diffuseColor.a *= uOccAlpha;';
-                shader.fragmentShader = shader.fragmentShader.replace(
-                    '#include <alphamap_fragment>',
-                    `#include <alphamap_fragment>\n${occlusionTail}`,
-                );
-            };
-            material.needsUpdate = true;
-        });
+        materials.forEach(material => BendService.patchOcclusionMaterial(material, uOccAlpha, dither));
 
         // Test point is the TOP-center of the mesh's local bounding box, not the mesh's own
         // pivot/origin — most props are pivoted at their base, so testing the pivot treats a
@@ -412,6 +439,86 @@ export class BendService {
             mesh.localToWorld(_occWorldPos);
             uOccAlpha.value = BendService.computeOcclusionAlpha(_occWorldPos, radius, fadeWidth, minOpacity, maxOpacity, playerPointOffset);
         };
+    }
+
+    /**
+     * OcclusionFadeConfig.test 'bounds' — the whole of `root` (every mesh under it) fades
+     * together, driven by ONE test per frame: how close the camera->player line (sampled up to
+     * BOUNDS_SAMPLE_END of the way, so a wall right behind the player never counts) comes to
+     * `root`'s world bounding box — 0 when it passes through it. Needed for big props: a
+     * building's top-center (what the 'point' test uses) can be several units from the line
+     * while the building still hides the player completely.
+     *
+     * Call with `root` parentless and untransformed (GlbVisualComponent does, before placing it),
+     * so its bounding box is measured in its own local frame once; each frame that box is carried
+     * to world space by root.matrixWorld.
+     */
+    public static applyOcclusionFadeToObject(root: THREE.Object3D, config: OcclusionFadeConfig = {}): void {
+        const radius = config.radius ?? 0.2;
+        const fadeWidth = Math.max(config.fadeWidth ?? 0.8, 0.001);
+        const minOpacity = config.minOpacity ?? 0.15;
+        const maxOpacity = config.maxOpacity ?? 1.0;
+        const dither = config.dither ?? false;
+        const minOccluderHeight = config.minOccluderHeight ?? 1.5;
+        const playerPointOffset = new THREE.Vector3(
+            config.playerPointOffset?.x ?? 0,
+            config.playerPointOffset?.y ?? 0,
+            config.playerPointOffset?.z ?? 0,
+        );
+
+        root.updateWorldMatrix(true, true);
+        const localBox = new THREE.Box3().setFromObject(root);
+        const inverseRoot = root.matrixWorld.clone().invert();
+        localBox.applyMatrix4(inverseRoot);
+        if (localBox.isEmpty()) {
+            return;
+        }
+
+        const uOccAlpha = { value: maxOpacity };
+        const meshes: THREE.Mesh[] = [];
+        root.traverse(child => {
+            if (child instanceof THREE.Mesh) {
+                meshes.push(child);
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                materials.forEach(material => BendService.patchOcclusionMaterial(material, uOccAlpha, dither));
+            }
+        });
+
+        const worldBox = new THREE.Box3();
+        const size = new THREE.Vector3();
+        const player = new THREE.Vector3();
+        const sample = new THREE.Vector3();
+        let lastFrame = -1;
+        const update = (renderer: THREE.WebGLRenderer): void => {
+            // Every mesh under root calls this — compute once per rendered frame.
+            const frame = renderer.info.render.frame;
+            if (frame === lastFrame) {
+                return;
+            }
+            lastFrame = frame;
+
+            worldBox.copy(localBox).applyMatrix4(root.matrixWorld);
+            if (worldBox.getSize(size).y < minOccluderHeight) {
+                uOccAlpha.value = maxOpacity;
+                return;
+            }
+            const cam = BendService.uniforms.uOccCameraPos.value;
+            player.addVectors(BendService.uniforms.uOccPlayerPos.value, playerPointOffset);
+            let closest = Infinity;
+            for (let i = 0; i <= BOUNDS_SAMPLES && closest > 0; i++) {
+                sample.lerpVectors(cam, player, (i / BOUNDS_SAMPLES) * BOUNDS_SAMPLE_END);
+                closest = Math.min(closest, worldBox.distanceToPoint(sample));
+            }
+            const t = THREE.MathUtils.smoothstep(closest, radius, radius + fadeWidth);
+            uOccAlpha.value = THREE.MathUtils.lerp(minOpacity, maxOpacity, t);
+        };
+        for (const mesh of meshes) {
+            const prevOnBeforeRender = mesh.onBeforeRender;
+            mesh.onBeforeRender = function (renderer, scene, camera, geometry, material, group) {
+                prevOnBeforeRender.call(this, renderer, scene, camera, geometry, material, group);
+                update(renderer);
+            };
+        }
     }
 
     /**

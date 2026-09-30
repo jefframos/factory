@@ -154,7 +154,7 @@ export default class DynamicResourceSpawner {
             return [{
                 placement,
                 key,
-                records: DynamicResourceStorage.getRecords(key).map(record => ({
+                records: this.loadValidRecords(key, placement.spawnerTileType).map(record => ({
                     col: record.col,
                     row: record.row,
                     position: cellToWorldVector(record.col, record.row),
@@ -162,6 +162,31 @@ export default class DynamicResourceSpawner {
                 checkTimerSec: 0,
             }];
         });
+    }
+
+    /**
+     * The saved records for `key` that still belong: on a cell of a `spawnerTileType` cluster on
+     * the CURRENT map, and not on a farm. Anything else is left over from before the spawner tiles
+     * were repainted (or a farm was placed over them) — deleted from the save here so it never
+     * comes back; tryFillDensity() refills on the current tiles.
+     */
+    private loadValidRecords(key: string, spawnerTileType: string): ReturnType<typeof DynamicResourceStorage.getRecords> {
+        const validCells = new Set(this.collectCellsForType(spawnerTileType).map(cell => `${cell.col},${cell.row}`));
+        const kept: ReturnType<typeof DynamicResourceStorage.getRecords> = [];
+        let dropped = 0;
+        for (const record of DynamicResourceStorage.getRecords(key)) {
+            const position = cellToWorldVector(record.col, record.row);
+            if (validCells.has(`${record.col},${record.row}`) && !isInsideAnyFarmFootprint(position.x, position.z, this.farmFootprints)) {
+                kept.push(record);
+            } else {
+                DynamicResourceStorage.removeRecord(key, record);
+                dropped++;
+            }
+        }
+        if (dropped > 0) {
+            console.log(`[DynamicResourceSpawner] "${key}": dropped ${dropped} saved spawn(s) no longer on its spawner tiles`);
+        }
+        return kept;
     }
 
     public update(playerPosition: THREE.Vector3, delta: number): void {

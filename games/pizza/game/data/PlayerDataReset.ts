@@ -6,9 +6,12 @@
 // doc for why each entry is here.
 
 import { GlobalResourceStorage } from './GlobalResourceStorage';
+import { GameClock } from '../utils/GameClock';
 import { BackpackStorage } from './BackpackStorage';
 import { StorageInventory } from './StorageInventory';
 import { StoreMoneyStorage } from '../store/StoreMoneyStorage';
+import { StoreClientStorage } from '../store/StoreClientStorage';
+import { StoreWorkerStorage } from '../store/StoreWorkerStorage';
 import { StoreProgressStorage } from '../store/StoreProgressStorage';
 import { StorageOwnershipStorage } from '../store/StorageOwnershipStorage';
 import { BuildingStorage } from './BuildingStorage';
@@ -87,6 +90,9 @@ export function clearAllPlayerData(): void {
         BackpackStorage.clearAll(),
         StorageInventory.clearAll(),
         StoreMoneyStorage.clearAll(),
+        StoreClientStorage.clearAll(),
+        StoreWorkerStorage.clearAll(),
+        GameClock.clearAll(),
         StoreProgressStorage.clearAll(),
         StorageOwnershipStorage.clearAll(),
         BuildingStorage.clearAll(),

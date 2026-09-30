@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="11" nextobjectid="189">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="11" nextobjectid="195">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -1571,6 +1571,12 @@
     <property name="type" value="storage"/>
    </properties>
   </object>
+  <object id="192" x="528" y="640" width="46.333" height="50.6667">
+   <properties>
+    <property name="id" value="trash1"/>
+    <property name="type" value="storage"/>
+   </properties>
+  </object>
   <object id="188" x="448" y="640" width="46.333" height="50.6667">
    <properties>
     <property name="id" value="storage5"/>
@@ -1780,7 +1786,7 @@
    </properties>
   </object>
  </objectgroup>
- <objectgroup id="9" name="stores" locked="1">
+ <objectgroup id="9" name="stores">
   <object id="153" x="-61" y="444.333" width="717.667" height="577">
    <properties>
     <property name="id" value="farmStore1"/>
@@ -1815,6 +1821,30 @@
     <property name="target" value="farmStore1"/>
     <property name="type" value="storeMoneyDrop"/>
    </properties>
+  </object>
+  <object id="189" gid="24" x="127" y="836" width="34" height="42">
+   <properties>
+    <property name="target" value="farmStore1Cashier"/>
+   </properties>
+  </object>
+  <object id="190" gid="24" x="127" y="909" width="34" height="42">
+   <properties>
+    <property name="target" value="farmStore1MoneyDrop"/>
+   </properties>
+  </object>
+  <object id="193" x="114.667" y="806.333">
+   <properties>
+    <property name="target" value="farmStore1Cashier"/>
+    <property name="type" value="npcPoint"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="194" x="113.333" y="886.667">
+   <properties>
+    <property name="target" value="farmStore1MoneyDrop"/>
+    <property name="type" value="npcPoint"/>
+   </properties>
+   <point/>
   </object>
  </objectgroup>
  <objectgroup id="6" name="meshes">

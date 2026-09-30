@@ -22,6 +22,7 @@ import CharacterBody from '../entities/CharacterBody';
 import { getPlayerConfig } from '../data/PlayerConfig';
 import { getCharacterView } from '../data/CharacterViewTypes';
 import { NpcConfig } from '../data/NpcTypes';
+import type { PlayerCarrierConfig } from '../data/PlayerConfig';
 import { CHARACTER_SCALE } from '../player/MainPlayer';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
 
@@ -46,7 +47,12 @@ type CharacterClipName = keyof typeof MODELS.Characters;
  * forces that first tick synchronously (delta=0 still snaps to the clip's own time-0 frame), so
  * whatever's about to become visible is already correctly posed in 'idle', never a T-pose.
  */
-export async function loadNpcBody(body: CharacterBody, config: NpcConfig): Promise<void> {
+export interface NpcBodyOptions {
+    /** Mounts this carrier on the Chest bone (see CharacterBody.mountCarrier()) — e.g. a store worker carrying crops like the player. Unset = no carrier. */
+    carrier?: PlayerCarrierConfig;
+}
+
+export async function loadNpcBody(body: CharacterBody, config: NpcConfig, options: NpcBodyOptions = {}): Promise<void> {
     body.container.visible = false;
 
     const playerConfig = getPlayerConfig();
@@ -67,6 +73,13 @@ export async function loadNpcBody(body: CharacterBody, config: NpcConfig): Promi
     const view = getCharacterView(config.characterViewId);
     if (view) {
         body.applyNpcView(view);
+    }
+
+    // Before the container is scaled — mountCarrier() cancels the Chest bone's inherited scale, so
+    // mounting after would cancel the container's too (a giant crate). Same order as
+    // MainPlayer.loadCharacter(): applyCharacterView() → mountCarrier() → container.scale.
+    if (options.carrier) {
+        body.mountCarrier(options.carrier);
     }
 
     // MUST run AFTER applyNpcView()'s mountHeadCube() — see MainPlayer.loadCharacter()'s own

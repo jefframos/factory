@@ -8,8 +8,15 @@
 // is full (the amount itself keeps counting). Stays until the player
 // walks onto it, at which point it all flies to EconomyUI's wallet and is
 // credited on arrival (same "storage mutates on landing" convention as
-// QueueZone.flyRewardToWallet()). The amount itself lives in
+// QueueZone.flyRewardToWallet()). A store's cashier worker collects the same
+// way — see collectToWallet() / StoreWorker.ts. The amount itself lives in
 // StoreMoneyStorage so uncollected money survives a reload.
+//
+// With a counter — the map's own model targeting this money drop
+// (StoreLayout's moneyDropMesh, see MapMeshVisual.ts), else
+// StoreConfig.moneyDropView (StorePropVisual.ts) — the bills pile on the counter's TOP instead of the
+// floor: once its model has loaded and been measured, the pile spots are
+// re-laid across the top's own footprint and every bill moves up onto it.
 
 import * as THREE from 'three';
 import gsap from 'gsap';
@@ -27,6 +34,9 @@ import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import MainPlayer from '../player/MainPlayer';
 import { StoreRect } from './StoreLayout';
 import { StoreMoneyStorage } from './StoreMoneyStorage';
+import { addStorePropVisual } from './StorePropVisual';
+import { addMapMeshVisual } from '../world/MapMeshVisual';
+import { MeshPlacement } from '../world/MeshLayerSpawner';
 
 const TRIGGER_HALF_HEIGHT = 0.75;
 const CORNER_RADIUS = 0.3;
@@ -38,6 +48,8 @@ const PILE_SPACING_X = BILL_SIZE.x + 0.25;
 const PILE_SPACING_Z = BILL_SIZE.z + 0.3;
 /** Keeps piles off the drop area's own dotted outline. */
 const PILE_AREA_INSET = 0.3;
+/** Same, on a counter's top — just enough that no bill hangs over its edge. */
+const COUNTER_TOP_INSET = 0.05;
 /** Fixed per-pile jitter so rows don't look machine-placed (deterministic per pile — piles never shift on refresh). */
 const PILE_JITTER_OFFSET = 0.06;
 const PILE_JITTER_ROTATION = 0.25;
@@ -58,8 +70,15 @@ export default class StoreMoneyPile extends Entity {
     private readonly screenHost: ScreenAnchorHost;
     private readonly moneyPerBill: number;
     private readonly billsPerPile: number;
-    /** Local X/Z of every pile spot, in fill order — computed once from the drop area's size. */
+    /** StoreConfig.moneyDropView — the counter the bills pile on (undefined = on the floor). */
+    private readonly viewId?: string;
+    /** The map's own counter model for this money drop, if any — wins over viewId. */
+    private readonly mesh?: MeshPlacement;
+    /** Local X/Z of every pile spot, in fill order — from the drop area's size, or the counter top's once measured (see awake()). */
     private readonly pileSpots: { x: number; z: number; rotation: number }[] = [];
+    /** Local height the bills rest on — 0 (the floor) until a counter is measured, then its top. */
+    private surfaceY = 0;
+    private counterShown = false;
     /** False until the first refresh — bills restored from a save appear in place, only NEW ones drop in. */
     private initialized = false;
     private readonly getWalletOverlayPosition: () => { x: number; y: number };
@@ -82,8 +101,12 @@ export default class StoreMoneyPile extends Entity {
         moneyPerBill: number,
         billsPerPile: number,
         getWalletOverlayPosition: () => { x: number; y: number },
+        viewId?: string,
+        mesh?: MeshPlacement,
     ) {
         super();
+        this.viewId = viewId;
+        this.mesh = mesh;
         this.storeId = storeId;
         this.rect = rect;
         this.screenHost = screenHost;
@@ -96,7 +119,7 @@ export default class StoreMoneyPile extends Entity {
     public override awake(): void {
         BendService.applyBend(this.billMaterial);
         this.transform.add(this.billsRoot);
-        this.buildPileSpots();
+        this.buildPileSpots(this.rect.width - PILE_AREA_INSET * 2, this.rect.depth - PILE_AREA_INSET * 2, 0, 0);
 
         const halfExtents = new THREE.Vector3(this.rect.width / 2, TRIGGER_HALF_HEIGHT, this.rect.depth / 2);
         const rigidBody = this.addComponent(new RigidBody({
@@ -113,6 +136,17 @@ export default class StoreMoneyPile extends Entity {
 
         StoreMoneyStorage.onChange.add(this.handleMoneyChanged);
         this.refreshBills();
+    }
+
+    /** Draws the counter the bills pile on (and its collider) — Store calls this once the store opens, same reason as StoreCashier.showCounter(). */
+    public showCounter(): void {
+        if (!this.counterShown) {
+            this.counterShown = true;
+            const onFitted = (bounds: THREE.Box3): void => this.moveOntoCounter(bounds);
+            if (!this.mesh || !addMapMeshVisual(this, this.mesh, { onFitted })) {
+                addStorePropVisual(this, this.viewId, onFitted);
+            }
+        }
     }
 
     /** A client just paid — money icons fly from `fromWorld` onto the pile and the amount is added once they land. */
@@ -135,9 +169,13 @@ export default class StoreMoneyPile extends Entity {
     }
 
     private tryCollect(other: RigidBody): void {
-        if (!(other.entity instanceof MainPlayer)) {
-            return;
+        if (other.entity instanceof MainPlayer) {
+            this.collectToWallet();
         }
+    }
+
+    /** Sends the whole pile to the wallet (credited as each icon lands) — the player walking onto it, or the store's cashier worker (StoreWorker.ts). No-op while it's empty. */
+    public collectToWallet(): void {
         const amount = StoreMoneyStorage.takeAll(this.storeId);
         if (amount <= 0) {
             return;
@@ -166,21 +204,37 @@ export default class StoreMoneyPile extends Entity {
     /** Where the next bill will land — flying money icons aim here. */
     private getTopWorldPosition(): THREE.Vector3 {
         const index = Math.min(this.bills.length, this.getMaxBills() - 1);
-        return this.transform.localToWorld(this.getBillLocalPosition(Math.max(0, index))).setY(ICON_HEIGHT + (index % this.billsPerPile) * BILL_LAYER_HEIGHT);
+        return this.transform.localToWorld(this.getBillLocalPosition(Math.max(0, index))).setY(this.surfaceY + ICON_HEIGHT + (index % this.billsPerPile) * BILL_LAYER_HEIGHT);
     }
 
     private getMaxBills(): number {
         return this.pileSpots.length * this.billsPerPile;
     }
 
-    /** Pile centers across the drop area, row-major from its north edge, centered in both directions. */
-    private buildPileSpots(): void {
-        const usableWidth = Math.max(0, this.rect.width - PILE_AREA_INSET * 2 - BILL_SIZE.x);
-        const usableDepth = Math.max(0, this.rect.depth - PILE_AREA_INSET * 2 - BILL_SIZE.z);
+    /** The counter finished loading: re-lay the pile spots across its top and move every bill up onto it (no drop animation). */
+    private moveOntoCounter(bounds: THREE.Box3): void {
+        const size = bounds.getSize(new THREE.Vector3());
+        const center = bounds.getCenter(new THREE.Vector3());
+        this.surfaceY = bounds.max.y;
+        this.pileSpots.length = 0;
+        this.buildPileSpots(size.x - COUNTER_TOP_INSET * 2, size.z - COUNTER_TOP_INSET * 2, center.x, center.z);
+        this.bills.forEach(bill => {
+            gsap.killTweensOf(bill.position);
+            bill.removeFromParent();
+        });
+        this.bills.length = 0;
+        this.initialized = false;
+        this.refreshBills();
+    }
+
+    /** Pile centers across a width x depth area centered on (centerX, centerZ), row-major from its north edge. Always at least one spot. */
+    private buildPileSpots(areaWidth: number, areaDepth: number, centerX: number, centerZ: number): void {
+        const usableWidth = Math.max(0, areaWidth - BILL_SIZE.x);
+        const usableDepth = Math.max(0, areaDepth - BILL_SIZE.z);
         const columns = Math.floor(usableWidth / PILE_SPACING_X) + 1;
         const rows = Math.floor(usableDepth / PILE_SPACING_Z) + 1;
-        const startX = -((columns - 1) * PILE_SPACING_X) / 2;
-        const startZ = -((rows - 1) * PILE_SPACING_Z) / 2;
+        const startX = centerX - ((columns - 1) * PILE_SPACING_X) / 2;
+        const startZ = centerZ - ((rows - 1) * PILE_SPACING_Z) / 2;
         for (let row = 0; row < rows; row++) {
             for (let column = 0; column < columns; column++) {
                 const index = this.pileSpots.length;
@@ -196,7 +250,7 @@ export default class StoreMoneyPile extends Entity {
     private getBillLocalPosition(index: number, target: THREE.Vector3 = new THREE.Vector3()): THREE.Vector3 {
         const spot = this.pileSpots[Math.floor(index / this.billsPerPile)] ?? this.pileSpots[this.pileSpots.length - 1];
         const layer = index % this.billsPerPile;
-        return target.set(spot.x, BILL_SIZE.y / 2 + layer * BILL_LAYER_HEIGHT, spot.z);
+        return target.set(spot.x, this.surfaceY + BILL_SIZE.y / 2 + layer * BILL_LAYER_HEIGHT, spot.z);
     }
 
     private refreshBills(): void {

@@ -6,8 +6,16 @@ import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 
 export default class ModelLoaderManager {
   private static _instance: ModelLoaderManager;
+  /**
+   * Keyed by the model's full PATH (query string dropped) — never by `id`. Model ids are just
+   * file basenames and are NOT unique across folders (pirate/crate.glb and restaurant/crate.gltf
+   * are both "crate"), so keying by id handed whichever loaded first to every model sharing that
+   * name — e.g. every storage turning into a pirate crate once one was placed on the map.
+   */
   private _cache: Map<string, THREE.Object3D> = new Map();
   private _inflight: Map<string, Promise<THREE.Object3D>> = new Map();
+  /** id -> the path(s) loaded under it, for the id-based getModel()/clearCache() lookups. */
+  private _pathsById: Map<string, Set<string>> = new Map();
 
   private _gltfLoader = new GLTFLoader();
   private _fbxLoader = new FBXLoader();
@@ -24,12 +32,20 @@ export default class ModelLoaderManager {
 
   /**
    * Loads a model from a path or returns a clone from cache.
-   * param path The full URL/path to the model file.
-   * param id Optional custom ID. If not provided, filename is used.
+   * param path The full URL/path to the model file — also the cache key (see _cache).
+   * param id Optional name to look the model up by later (getModel()/clearCache()). If not
+   * provided, the filename is used. Only an alias: two models with the same id but different
+   * paths are cached separately.
    */
   public async loadModel(path: string, id?: string): Promise<THREE.Object3D> {
-    // Generate cache key: Use provided ID or extract filename from path
-    const cacheId = id || path.split('/').pop()?.split('?')[0] || path;
+    const cacheId = path.split('?')[0];
+    const alias = id || cacheId.split('/').pop() || cacheId;
+    let aliasPaths = this._pathsById.get(alias);
+    if (!aliasPaths) {
+      aliasPaths = new Set();
+      this._pathsById.set(alias, aliasPaths);
+    }
+    aliasPaths.add(cacheId);
 
     // 1. Return from cache if exists
     if (this._cache.has(cacheId)) {
@@ -121,21 +137,36 @@ export default class ModelLoaderManager {
     return found;
   }
   /**
-   * Retrieves a previously loaded model by its ID or Path-name
+   * Retrieves a previously loaded model by its path, or by its id — an id shared by several
+   * loaded paths is ambiguous, so it returns null (and warns) rather than guessing one.
    */
-  public getModel(id: string): THREE.Object3D | null {
-    const cached = this._cache.get(id);
+  public getModel(idOrPath: string): THREE.Object3D | null {
+    const direct = this._cache.get(idOrPath.split('?')[0]);
+    if (direct) {
+      return direct.clone(true);
+    }
+    const paths = [...(this._pathsById.get(idOrPath) ?? [])].filter(path => this._cache.has(path));
+    if (paths.length > 1) {
+      console.warn(`ModelLoaderManager: "${idOrPath}" names ${paths.length} different models (${paths.join(', ')}) — look it up by path instead`);
+      return null;
+    }
+    const cached = paths.length === 1 ? this._cache.get(paths[0]) : undefined;
     return cached ? cached.clone(true) : null;
   }
 
   /**
-   * Clears a specific model or the whole cache
+   * Clears a specific model (by path, or every path loaded under an id) or the whole cache
    */
-  public clearCache(id?: string): void {
-    if (id) {
-      this._cache.delete(id);
-    } else {
+  public clearCache(idOrPath?: string): void {
+    if (!idOrPath) {
       this._cache.clear();
+      this._pathsById.clear();
+      return;
     }
+    this._cache.delete(idOrPath.split('?')[0]);
+    for (const path of this._pathsById.get(idOrPath) ?? []) {
+      this._cache.delete(path);
+    }
+    this._pathsById.delete(idOrPath);
   }
 }

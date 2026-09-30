@@ -297,8 +297,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORAGE_CONFIG',
         byIdExportName: 'STORAGE_CONFIG_BY_ID',
-        managedKeys: ['name', 'accepts', 'resourceType', 'models', 'view', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'disabled'],
-        optionalKeys: ['name', 'view', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'resourceType', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'disabled'],
+        managedKeys: ['name', 'accepts', 'resourceType', 'trash', 'particleEffectId', 'particleSpawnRate', 'models', 'view', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
+        optionalKeys: ['name', 'view', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'resourceType', 'trash', 'particleEffectId', 'particleSpawnRate', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
         // Third export — the ONE signpost every storage shares (see StorageTypes.ts's STORAGE_SIGNPOST_CONFIG),
         // shown as the Storages tab's own 'Signpost' card; same mechanism as farms' FARM_TILE_CONFIG.
         tileExportName: 'STORAGE_SIGNPOST_CONFIG',
@@ -313,8 +313,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORE_CONFIG',
         byIdExportName: 'STORE_CONFIG_BY_ID',
-        managedKeys: ['name', 'npcs', 'spawnIntervalSec', 'maxClients', 'moveSpeed', 'maxDistinctItems', 'maxAmountPerItem', 'priceMultiplier', 'spotSpacing', 'spotMargin', 'storageSpotDirections', 'cashierSpotDirection', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'pickDelaySec', 'payDelaySec', 'moneyPerBill', 'billsPerPile', 'bubbleOffset', 'startSpawnIntervalSec', 'startMaxClients', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'disabled'],
-        optionalKeys: ['name', 'storageSpotDirections', 'cashierSpotDirection', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'startSpawnIntervalSec', 'startMaxClients', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'disabled'],
+        managedKeys: ['name', 'npcs', 'spawnIntervalSec', 'maxClients', 'moveSpeed', 'maxDistinctItems', 'maxAmountPerItem', 'priceMultiplier', 'spotSpacing', 'spotMargin', 'storageSpotDirections', 'cashierSpotDirection', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'pickDelaySec', 'payDelaySec', 'moneyPerBill', 'billsPerPile', 'bubbleOffset', 'cashierView', 'moneyDropView', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'disabled'],
+        optionalKeys: ['name', 'storageSpotDirections', 'cashierSpotDirection', 'cashierView', 'moneyDropView', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'disabled'],
     },
     // A MART — a "mart"-typed object drawn on the Tiled map's "mapSettings" layer, open-ended
     // by id like shops/crafting/farms, not enum-backed. Same {default, byId} two-export shape

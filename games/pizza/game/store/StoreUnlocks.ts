@@ -13,7 +13,7 @@
 // Also owns the "is this storage usable by clients" rule shared by
 // PizzaScene.setupStorages() and Store.ts — see isStorageAvailable().
 
-import { StorageConfig } from '../data/StorageTypes';
+import { StorageConfig, isStorageForSale } from '../data/StorageTypes';
 import { readStoreLayouts } from './StoreLayout';
 import { StoreProgressStorage } from './StoreProgressStorage';
 import { StorageOwnershipStorage } from './StorageOwnershipStorage';
@@ -40,9 +40,9 @@ export class StoreUnlocks {
         return this.defaultStorageIds!.has(storageId);
     }
 
-    /** Owned = free (no price, a price of 0, or a store's default storage) or bought. */
+    /** Owned = free (costs nothing — see isStorageForSale() — or a store's default storage) or bought. */
     static isStorageOwned(storageId: string, config: StorageConfig): boolean {
-        return !config.price || config.price.amount <= 0 || this.isDefaultStorage(storageId) || StorageOwnershipStorage.isOwned(storageId);
+        return !isStorageForSale(config) || this.isDefaultStorage(storageId) || StorageOwnershipStorage.isOwned(storageId);
     }
 
     /** Usable by clients: not disabled, enabled by its store level (if gated), and owned. */

@@ -59,9 +59,12 @@ import {
     getObjectBooleanProperty,
     getObjectNumberProperty,
     getObjectProperty,
+    getTiledTileBooleanProperty,
+    getTiledTileNumberProperty,
     loadTiledMap,
     loadTileDefs,
     objectToWorldRect,
+    TiledMapData,
     TiledObject,
     WORLD_UNITS_PER_TILE,
 } from './TileMapConfig';
@@ -108,6 +111,21 @@ const USE_OWN_MESH_PROPERTY = 'useOwnMesh';
  * checkbox the meshes layer's own "solid" uses, so either habit gives the expected result.
  */
 const OWN_MESH_SOLID_PROPERTY = 'solid';
+
+/**
+ * A piece's OWN_MESH_SOLID_PROPERTY: set on the placed object wins; otherwise the same property
+ * on the object's TILE (the image dragged onto it — e.g. a fence tile marked solid once in the
+ * tileset, for every fence drawn with it), same object-then-tile precedence MeshLayerSpawner.ts
+ * uses for the meshes layer. A number is the 0-1 fraction; a checked bool means fully solid (1).
+ */
+function readOwnMeshSolid(obj: TiledObject, map: TiledMapData): number {
+    const own = obj.properties?.find(p => p.name === OWN_MESH_SOLID_PROPERTY);
+    if (own) {
+        return getObjectNumberProperty(obj, OWN_MESH_SOLID_PROPERTY) ?? (getObjectBooleanProperty(obj, OWN_MESH_SOLID_PROPERTY) ? 1 : 0);
+    }
+    return getTiledTileNumberProperty(map, obj.gid, OWN_MESH_SOLID_PROPERTY)
+        ?? (getTiledTileBooleanProperty(map, obj.gid, OWN_MESH_SOLID_PROPERTY) ? 1 : 0);
+}
 
 /** The "type" custom property value marking a dropper rect — see this file's own doc. */
 const DROPPER_TYPE = 'dropper';
@@ -399,10 +417,7 @@ export default class WorldObjectRegistry {
                         z: placement.z,
                         width: placement.width,
                         depth: placement.depth,
-                        // A number is the fraction; a checked bool (the way the meshes layer's own
-                        // "solid" works — see MeshLayerSpawner.ts) means fully solid.
-                        solid: getObjectNumberProperty(obj, OWN_MESH_SOLID_PROPERTY)
-                            ?? (getObjectBooleanProperty(obj, OWN_MESH_SOLID_PROPERTY) ? 1 : 0),
+                        solid: readOwnMeshSolid(obj, map),
                     });
                 } else {
                     console.warn(`[WorldObjectRegistry] "${id}" (type "${type}") has "${USE_OWN_MESH_PROPERTY}" checked but no image of its own dragged onto it (or it doesn't decode to a known model) — no mesh fallback available from this object`);

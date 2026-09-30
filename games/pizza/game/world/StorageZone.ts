@@ -30,16 +30,23 @@
 // above the TOP of the pile, so it rises with it instead of ending up buried in
 // the stacked items.
 //
+// A TRASH storage (StorageConfig.trash) runs the exact same transfer, but each
+// item flies into the storage's drop point, shrinks and is destroyed instead of
+// landing in StorageInventory — no pile, no count. Its signpost shows
+// TRASH_SIGNPOST_ICON only.
+//
 // The entity's transform sits at the TRIGGER's center (so the RigidBody and the
 // dotted outline need no offset); the mesh and pile are offset to the storage's
 // own position.
 
 import * as THREE from 'three';
+import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import Entity from '../ecs/Entity';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
 import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
+import ParticleEmitterComponent from '../components/ParticleEmitterComponent';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 import { resolveEntityView } from './EntityViewRegistry';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
@@ -85,6 +92,14 @@ const DEFAULT_SIGNPOST_ICON_HEIGHT = 1.5;
 
 /** Half-height of StorageConfig.solid's collider — a little over Restaurant.Crate's 0.8. */
 const SOLID_HALF_HEIGHT = 0.5;
+/** StorageConfig.particleSpawnRate fallback — same rate Gate/CraftZone's own ambient emitters use. */
+const DEFAULT_PARTICLE_SPAWN_RATE_PER_SEC = 4;
+
+/** Texture alias shown on a trash storage's signpost (StorageConfig.trash). */
+const TRASH_SIGNPOST_ICON = 'PictoIcon_Delete-2';
+/** A trashed item shrinks to this fraction of its slot size as it falls in, then disappears. */
+const TRASH_END_SCALE_FRACTION = 0.2;
+
 /** Default gap (world units) between the top of the pile and the bottom of the "only this resource" panel, when StorageConfig.popupBobOffset is unset — see this file's own doc. */
 const DEFAULT_ACCEPTS_PANEL_CLEARANCE = 1.0;
 
@@ -219,12 +234,23 @@ export default class StorageZone extends Entity {
         ));
         this.transform.add(this.pileRoot);
         this.pile = new ItemPile(this.pileRoot, this.buildLayout());
+
+        // StorageConfig.particleEffectId — from the drop point (pileRoot), so e.g. a trash's fire
+        // rises out of the crate where items fall in. The effect's own `offset` nudges it further.
+        if (this.config.particleEffectId) {
+            const rate = this.config.particleSpawnRate;
+            this.addComponent(new ParticleEmitterComponent(
+                this.config.particleEffectId,
+                rate !== undefined && rate > 0 ? rate : DEFAULT_PARTICLE_SPAWN_RATE_PER_SEC,
+                this.pileRoot.position.clone(),
+            ));
+        }
         this.pile.sync(StorageInventory.getAll(this.storageId));
         StorageInventory.onChange.add(this.handleInventoryChanged);
 
         // 'Floor' (the default) draws nothing extra here — the stored count is shown on the
         // signpost instead (see buildSignpost()). A popup frame keeps its floating panel.
-        if (this.config.resourceType !== undefined && !isFloorFrame(this.config.frame ?? FLOOR_FRAME)) {
+        if (!this.config.trash && this.config.resourceType !== undefined && !isFloorFrame(this.config.frame ?? FLOOR_FRAME)) {
             this.buildAcceptsPanel(this.config.resourceType);
         }
     }
@@ -262,16 +288,17 @@ export default class StorageZone extends Entity {
         position.y += postY;
         this.addComponent(new GlbVisualComponent(model, position.clone(), shared.scale, yaw));
 
-        if (this.config.resourceType === undefined) {
+        const items = this.signpostItems();
+        if (!items) {
             return;
         }
-        // Upright sign (item icon + "xN") — a FloorLabelComponent stood up, so it redraws on count
+        // Upright sign (item icon + "xN", or just the trash icon) — a FloorLabelComponent stood up, so it redraws on count
         // changes and takes the world bend (a THREE.Sprite couldn't). iconScale is its height;
         // iconOffset is relative to the signpost, so its x/z turn with this storage's signpost yaw.
         const [offsetX, offsetY, offsetZ] = shared.iconOffset ?? [0, DEFAULT_SIGNPOST_ICON_HEIGHT, 0];
         const iconOffset = new THREE.Vector3(offsetX, 0, offsetZ).applyAxisAngle(UP_AXIS, yaw);
         this.signpostLabel = this.addComponent(new FloorLabelComponent({
-            items: this.signpostItems(this.config.resourceType),
+            items,
             size: shared.iconScale,
             upright: true,
             background: false,
@@ -280,17 +307,24 @@ export default class StorageZone extends Entity {
         }));
     }
 
-    /** The signpost sign's content — the item icon + "xN" stored count. */
-    private signpostItems(type: ResourceType): FloorLabelItem[] {
+    /** The signpost sign's content — the item icon + "xN" stored count, just the trash icon for a trash, or undefined (no sign) for a storage with no `resourceType`. */
+    private signpostItems(): FloorLabelItem[] | undefined {
+        if (this.config.trash) {
+            return [{ icon: PIXI.Texture.from(TRASH_SIGNPOST_ICON) }];
+        }
+        const type = this.config.resourceType;
+        if (type === undefined) {
+            return undefined;
+        }
         return [{ icon: getAssetIcon(resolveResourceAssetKey(type)), text: `x${StorageInventory.getCount(this.storageId, type)}` }];
     }
 
     /** Keeps whichever count display this storage has (signpost sign or popup) in sync with StorageInventory. */
     private refreshFloorLabel(): void {
-        if (this.config.resourceType === undefined) {
+        if (this.config.trash || this.config.resourceType === undefined) {
             return;
         }
-        this.signpostLabel?.setItems(this.signpostItems(this.config.resourceType));
+        this.signpostLabel?.setItems(this.signpostItems() ?? []);
         this.acceptsPanel?.setCornerText(`${StorageInventory.getCount(this.storageId, this.config.resourceType)}`);
     }
 
@@ -393,10 +427,14 @@ export default class StorageZone extends Entity {
                 return;
             }
 
+            const trash = this.config.trash === true;
             const incomingId = this.nextIncomingId++;
             this.incoming.push(incomingId);
-            // Ends at the size it will actually be drawn at in its slot (fit-to-cell included), so it doesn't pop on landing.
-            const landingScale = this.pile.getSlotScale(this.pile.count + this.incoming.length - 1, type);
+            // Ends at the size it will actually be drawn at in its slot (fit-to-cell included), so it
+            // doesn't pop on landing. A trash has no pile: everything aims at slot 0 and shrinks away.
+            const landingScale = trash
+                ? this.pile.getSlotScale(0, type) * TRASH_END_SCALE_FRACTION
+                : this.pile.getSlotScale(this.pile.count + this.incoming.length - 1, type);
             flyResourceModel({
                 parent: scene,
                 type,
@@ -409,7 +447,7 @@ export default class StorageZone extends Entity {
                 yawDeg: this.config.itemYawDeg,
                 resolveTarget: target => {
                     // The Nth item in flight aims N slots above the current top of this pile.
-                    const index = this.pile.count + Math.max(this.incoming.indexOf(incomingId), 0);
+                    const index = trash ? 0 : this.pile.count + Math.max(this.incoming.indexOf(incomingId), 0);
                     this.pile.getSlotWorldPosition(index, type, target);
                 },
                 onArrive: () => {
@@ -417,7 +455,10 @@ export default class StorageZone extends Entity {
                     if (index !== -1) {
                         this.incoming.splice(index, 1);
                     }
-                    StorageInventory.add(this.storageId, type, 1);
+                    // Trash: already gone from BackpackStorage on departure — nothing to add.
+                    if (!trash) {
+                        StorageInventory.add(this.storageId, type, 1);
+                    }
                     this.playLandBounce();
                 },
             });

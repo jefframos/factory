@@ -147,6 +147,27 @@ export const PARTICLE_REGISTRY: Record<string, ParticleEffectDescriptor> = {
         burstSpeedMax: 4,
         gravity: 8,
     },
+    /** Ambient fire rising out of a trash storage — see StorageTypes.ts's trash1 entry. */
+    "trashFire": {
+        "name": "Trash Fire",
+        "texture": "particles/flame_02.webp",
+        "color": "#ff7a2e",
+        "blendMode": "additive",
+        "fadeInSec": 0.12,
+        "fadeOutSec": 0.45,
+        "lifetimeSec": 0.9,
+        "sizeMin": 0.6,
+        "sizeMax": 1.1,
+        "riseSpeedMin": 0.8,
+        "riseSpeedMax": 1.6,
+        "spreadRadius": 0.45,
+        "maxOpacity": 0.9,
+        "offset": [
+            0,
+            0,
+            0
+        ]
+    },
     "gateMyst": {
         "name": "Gate Myst",
         "texture": "particles/star_08.webp",

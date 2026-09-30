@@ -27,12 +27,13 @@
 // async, purely cosmetic step (see MainPlayer.loadCharacter()'s own doc).
 
 import { ThreeScene } from 'core/scene/ThreeScene';
+import { GameClock } from '../utils/GameClock';
 import * as THREE from 'three';
 import { ParticleSystem } from '../vfx/ParticleSystem';
 import gsap from 'gsap';
 // import { DEFAULT_START_VALUE } from '../ClogConstants';
 // import { PlayerEntity } from '../entities/PlayerEntity';
-import { BendService } from '../services/BendService';
+import { BendService, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
 import { Game } from 'core/Game';
 import { LoadingSpinner } from '../dom-ui/LoadingSpinner';
 import World from '../ecs/World';
@@ -108,10 +109,12 @@ import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificat
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
 import { DevGuiManager } from 'core/utils/DevGuiManager';
 import { CarrierStackMode, getPlayerConfig } from '../data/PlayerConfig';
-import { getStorageConfig } from '../data/StorageTypes';
+import { getStorageConfig, getStorageResourceCost, isStorageForSale } from '../data/StorageTypes';
+import { StorageInventory } from '../data/StorageInventory';
 import StorageZone from '../world/StorageZone';
 import Store, { spawnStores } from '../store/Store';
 import { StoreUnlocks } from '../store/StoreUnlocks';
+import type { StoreWorkerRole } from '../store/StoreTypes';
 import StoragePurchaseZone from '../store/StoragePurchaseZone';
 import { FLOOR_FRAME } from '../ui/PopupConfig';
 import { getCarrierCapacity, getCarrierLevel, getCarrierShopIds } from '../data/CarrierCapacity';
@@ -135,6 +138,7 @@ import { isWalkable } from '../world/TileWalkability';
 import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
 import { MapLayoutSuggestionTool, MapLayoutArchetype } from '../debug/MapLayoutSuggestionTool';
 import { getMeshPlacements } from '../world/MeshLayerSpawner';
+import { addMapMeshVisual } from '../world/MapMeshVisual';
 import GlbVisualComponent from '../components/GlbVisualComponent';
 
 /**
@@ -1072,6 +1076,10 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 BackpackStorage.add(type, 10);
             }
         });
+        InGameButtonList.registerButton('Add 50 To Store', () => this.addMoneyToCurrentStore(50));
+        InGameButtonList.registerButton('Fill Storages +3', () => this.fillAvailableStorages(3));
+        InGameButtonList.registerButton('Hire Cashier', () => this.hireStoreWorker('cashier'));
+        InGameButtonList.registerButton('Hire Restocker', () => this.hireStoreWorker('restocker'));
         InGameButtonList.registerButton('Add 5 Seeds', () => {
             for (const seedId of Object.values(SeedId)) {
                 SeedStorage.add(seedId, 5);
@@ -1091,6 +1099,55 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             const walkable = tileMap.isWalkableAt(x, z);
             return `Tile (${col}, ${row}): ${def?.name ?? 'none'}${walkable ? '' : ' [BLOCKED]'} @ (${x.toFixed(2)}, ${z.toFixed(2)})`;
         });
+    }
+
+    /** Debug/test — counts `amount` as one sale toward the next level of whichever open store the player is standing in (same lookup as updateStoreUi()), to test store level-ups without serving clients. */
+    private addMoneyToCurrentStore(amount: number): void {
+        const { x, z } = this.mainPlayer.transform.position;
+        const store = this.stores.find(s => s.containsPoint(x, z) && s.isOpen());
+        if (!store) {
+            console.warn('[PizzaScene] "Add 50 To Store": player is not inside an open store');
+            return;
+        }
+        store.debugRecordSale(amount);
+    }
+
+    /** Debug/test — hires a worker into the open store the player is standing in, else the first open store (see Store.hireWorker()). */
+    private hireStoreWorker(role: StoreWorkerRole): void {
+        const { x, z } = this.mainPlayer.transform.position;
+        const store = this.stores.find(s => s.isOpen() && s.containsPoint(x, z)) ?? this.stores.find(s => s.isOpen());
+        if (!store) {
+            console.warn(`[PizzaScene] "Hire ${role}": no open store`);
+            return;
+        }
+        store.hireWorker(role);
+    }
+
+    /**
+     * Debug/test — adds `amount` of each storage's own resource to every AVAILABLE storage (bought
+     * or free, and enabled by its store's level — StoreUnlocks.isStorageAvailable()). A storage with
+     * no `resourceType` gets `amount` of every resource it accepts instead (same category rule as
+     * StorageZone.accepts()), skipping Pig/disabled resources like "Add 10 Resources" does.
+     */
+    private fillAvailableStorages(amount: number): void {
+        for (const [id] of this.worldObjects.getAllOfType('storage')) {
+            const config = getStorageConfig(id);
+            if (config.disabled || config.trash || !StoreUnlocks.isStorageAvailable(id, config)) {
+                continue;
+            }
+            if (config.resourceType !== undefined) {
+                StorageInventory.add(id, config.resourceType, amount);
+                continue;
+            }
+            for (const type of Object.values(ResourceType)) {
+                if (type === ResourceType.Pig || RESOURCE_CONFIG[type]?.disabled) {
+                    continue;
+                }
+                if (config.accepts === 'all' || (RESOURCE_CONFIG[type]?.category ?? 'main') === config.accepts) {
+                    StorageInventory.add(id, type, amount);
+                }
+            }
+        }
     }
 
     /**
@@ -1416,92 +1473,15 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
      */
     private setupMeshLayer(): void {
         for (const placement of getMeshPlacements()) {
-            const modelDef = ModelSnapshotTool.resolveModelDef(placement.modelRef);
-            if (!modelDef) {
-                // Already warned by getMeshPlacements() itself if this ever happens — this
-                // check is just to satisfy TypeScript, not a second failure mode.
-                continue;
-            }
-
             const entity = this.world.spawn();
             entity.transform.position.set(placement.x, 0, placement.z);
-
-            // offsetX/Y/Z (Tiled custom properties — see OFFSET_X_PROPERTY's own doc) are a
-            // level designer's manual nudge for wherever this model's own pivot sits relative
-            // to its placeholder's rect center — e.g. a corner-pivoted model needing offsetX/Z
-            // to visually center itself. That nudge is meaningless in a fixed WORLD direction
-            // once the object is rotated (it has to turn WITH the model, same as everything
-            // else about this placement) — rotating it by this SAME placement.rotationY that
-            // mesh.rotation.y gets below is what keeps it pointing the same way RELATIVE to the
-            // model as the model itself turns. Y is untouched by a Y-axis rotation regardless.
-            const meshOffset = new THREE.Vector3(placement.offsetX, placement.offsetY, placement.offsetZ)
-                .applyAxisAngle(UP_AXIS, placement.rotationY);
-            const visual: GlbVisualComponent = new GlbVisualComponent(modelDef, meshOffset, 1, 0, () => {
-                const mesh = visual.mesh;
-                // Refresh the WHOLE chain (parents included) before measuring — Box3.setFromObject()
-                // only updates the object itself against its parent's CURRENT matrixWorld, which is
-                // stale (identity) if no frame has rendered since this entity was positioned (e.g.
-                // the game loaded in a background tab: every GLB resolves before the first frame).
-                // worldToLocal() below DOES refresh the parent itself, so without this the box is
-                // measured in local space but converted back as if it were world space — shifting
-                // the mesh by ~entityPosition * scale.
-                mesh.updateWorldMatrix(true, true);
-                const box = new THREE.Box3().setFromObject(mesh);
-                const nativeSize = box.getSize(new THREE.Vector3());
-                const scaleX = nativeSize.x > 1e-4 ? placement.worldWidth / nativeSize.x : 1;
-                const scaleZ = nativeSize.z > 1e-4 ? placement.worldDepth / nativeSize.z : 1;
-                // No Tiled-side signal for vertical scale (a top-down placement has no height
-                // to resize) — splitting the difference between the two horizontal axes is the
-                // least-arbitrary stand-in, same as this method's own averaging used to do for
-                // every axis before this fix.
-                const scaleY = (scaleX + scaleZ) / 2;
-
-                // ModelSnapshotTool frames its placeholder snapshot around the model's own
-                // BOUNDING-BOX center (see frameTopDown()), not its local origin/pivot — so
-                // `placement.x/z` (this Tiled rect's own rotated center) is where that box
-                // center belongs. For a model whose pivot ISN'T at its own box center (e.g. a
-                // corner-pivoted piece, unlike a symmetric prop where the two coincide) THREE
-                // still scales/rotates around the pivot, not the box center, so without this
-                // correction the box center visibly swings away from `placement.x/z` as
-                // rotation grows. X/Z ONLY, deliberately — Y positioning stays exactly the
-                // vertical-pivot-at-base convention every other prop already relies on, and a
-                // Y-axis rotation never touches Y anyway. `box.getCenter()` is WORLD space,
-                // `mesh.position` is LOCAL to `entity.transform` (which itself sits at
-                // `placement.x/z`, a large non-zero world offset) — worldToLocal() re-expresses
-                // the box center in that SAME local frame so this isolates the model's own
-                // intrinsic pivot-to-center offset instead of also picking up entity.transform's
-                // own world position.
-                const localBoxCenter = mesh.parent!.worldToLocal(box.getCenter(new THREE.Vector3()));
-                const pivotToCenterXZ = new THREE.Vector3(
-                    (localBoxCenter.x - mesh.position.x) * scaleX,
-                    0,
-                    (localBoxCenter.z - mesh.position.z) * scaleZ,
-                ).applyAxisAngle(UP_AXIS, placement.rotationY);
-                mesh.position.x -= pivotToCenterXZ.x;
-                mesh.position.z -= pivotToCenterXZ.z;
-
-                mesh.scale.set(scaleX, scaleY, scaleZ);
-                mesh.rotation.y = placement.rotationY;
-
-                if (placement.solid) {
-                    const halfExtents = new THREE.Vector3(
-                        placement.worldWidth / 2,
-                        Math.max(nativeSize.y * scaleY, 0.1) / 2,
-                        placement.worldDepth / 2,
-                    );
-                    entity.addComponent(new RigidBody({
-                        halfExtents,
-                        isStatic: true,
-                        layer: Layers.Environment,
-                        // Follows the SAME offsetX/Y/Z the visual mesh got (see meshOffset
-                        // above) — a collider that stayed at the entity's own origin while the
-                        // mesh moved (e.g. a bridge's offsetY raising it up) would leave the
-                        // collider floating at the wrong height relative to what's drawn.
-                        centerOffset: new THREE.Vector3(placement.offsetX, placement.offsetY + halfExtents.y, placement.offsetZ),
-                    }));
-                }
-            });
-            entity.addComponent(visual);
+            // Scaled to its drawn footprint, rotated, pivot-corrected and (if solid) given a
+            // collider exactly like any map-placed model — see MapMeshVisual.ts.
+            if (!addMapMeshVisual(entity, placement, { occlusionFade: STRUCTURE_OCCLUSION_FADE })) {
+                // Already warned by getMeshPlacements() itself if this ever happens.
+                this.world.despawn(entity);
+                continue;
+            }
             this.threeScene.add(entity.transform);
             this.registerZoneVisibility(entity.transform, placement.x, placement.z, placement.worldWidth, placement.worldDepth);
         }
@@ -1625,7 +1605,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             };
 
             this.requirementRegistry.registerSpawnGate(id, undefined, () => {
-                if (!config.price || StoreUnlocks.isStorageOwned(id, config)) {
+                if (!isStorageForSale(config) || StoreUnlocks.isStorageOwned(id, config)) {
                     spawnStorage();
                     return;
                 }
@@ -1633,10 +1613,11 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 const purchaseZone = this.world.add(new StoragePurchaseZone(
                     id,
                     price,
+                    getStorageResourceCost(config),
                     triggerPosition,
                     triggerSize,
                     this.screenHost,
-                    () => this.uiService.economyUi.getIconAnchorPosition(price.currency),
+                    () => this.uiService.economyUi.getIconAnchorPosition(price?.currency ?? CurrencyType.Money),
                     spawnStorage,
                     config.frame ?? FLOOR_FRAME,
                     config.floorLabelSize,
@@ -2407,6 +2388,8 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     }
 
     public override update(delta: number): void {
+        // Game time gained while sped up — see GameClock.ts.
+        GameClock.tick(delta);
         // Runs every entity's update() — for the player, that's PlayerMovementController's own
         // pointer-follow tracking plus CharacterVisualComponent syncing position/animation from
         // whatever fixedUpdate's physics step last resolved (once the FBX character has loaded

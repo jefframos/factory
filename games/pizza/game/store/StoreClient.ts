@@ -23,8 +23,13 @@
 // other clients and the player.
 //
 // Mood (StoreClientMood, shown as a face in its bubble): arrives HAPPY and
-// drops one step every moodStepSec (its own — see the constructor) until it
-// pays; completing an item while more are still left cheers it up one step.
+// only gets frustrated while it's WAITING (see isFrustrated()) — for an item
+// that's out of stock (heading to / standing at an empty shelf, or wandering
+// until a restock) or in the cashier line. Each moodStepSec (its own — see the
+// constructor) spent waiting drops it one step; walking, picking in-stock
+// items and waiting behind others at a stocked shelf don't count, so a client
+// who finds everything in stock and is served right away stays happy.
+// Completing an item while more are still left cheers it up one step.
 // Dropping to SAD with nothing bought yet makes it walk out without buying;
 // with anything bought it stays until its order is done. Early store levels
 // set a floor the mood never drops below (level 1: HAPPY, level 2: ANNOYED —
@@ -47,6 +52,7 @@ import NavAgent, { NavNeighbor } from './nav/NavAgent';
 import StoreNavGrid from './nav/StoreNavGrid';
 import StoreBubble, { StoreBubbleContent } from './StoreBubble';
 import StoreLine from './StoreLine';
+import type { SavedStoreClient, SavedStoreClientWant } from './StoreClientStorage';
 import {
     DEFAULT_BROWSE_CHANCE,
     DEFAULT_CLIENT_RADIUS,
@@ -108,6 +114,8 @@ export interface StoreClientHost {
     findBrowseSpot(client: StoreClient, line: StoreLine<StoreClient>): StoreSpot | undefined;
     /** A random free spot to stroll to while waiting for a restock, or undefined. */
     findWanderSpot(client: StoreClient): StoreSpot | undefined;
+    /** Something saved by toSave() changed (an item picked, mood, or it paid/left) — the store re-saves its clients. */
+    notifyClientChanged(): void;
 }
 
 export interface StoreClientWant {
@@ -241,7 +249,7 @@ export default class StoreClient extends Entity implements NavNeighbor {
     public override update(delta: number): void {
         super.update(delta);
 
-        if (MOOD_STATES.has(this.state)) {
+        if (MOOD_STATES.has(this.state) && this.isFrustrated()) {
             this.updateMood(delta);
         }
 
@@ -296,6 +304,39 @@ export default class StoreClient extends Entity implements NavNeighbor {
 
     public isFinished(): boolean {
         return this.state === 'done';
+    }
+
+    /**
+     * What StoreClientStorage keeps for this client — only once it holds at least one picked item
+     * and hasn't paid yet (see that file's own doc), undefined otherwise. Always restored into
+     * 'toShelf', which carries on with whatever's left of the list, or heads to the cashier.
+     */
+    public toSave(): SavedStoreClient | undefined {
+        if (!MOOD_STATES.has(this.state) || !this.wants.some(want => want.bought > 0)) {
+            return undefined;
+        }
+        return {
+            npcId: this.npcId,
+            wants: this.wants.map(want => ({ type: want.type, remaining: want.remaining, bought: want.bought })),
+            moodIndex: this.moodIndex,
+            moodStepSec: this.moodStepSec,
+            x: this.transform.position.x,
+            z: this.transform.position.z,
+            exitX: this.exitPoint.x,
+            exitZ: this.exitPoint.z,
+        };
+    }
+
+    /** Puts back a saved client's progress (see toSave()) — call right after constructing it with the same wants. */
+    public restoreProgress(wants: readonly SavedStoreClientWant[], moodIndex: number): void {
+        wants.forEach((saved, index) => {
+            const want = this.wants[index];
+            if (want && want.type === saved.type) {
+                want.remaining = Math.max(0, saved.remaining);
+                want.bought = Math.max(0, saved.bought);
+            }
+        });
+        this.moodIndex = Math.max(0, Math.min(STORE_MOOD_LADDER.length - 1, Math.floor(moodIndex)));
     }
 
     /** Where it's walking right now (debug drawing). */
@@ -421,6 +462,7 @@ export default class StoreClient extends Entity implements NavNeighbor {
         }
         want.remaining--;
         want.bought++;
+        this.host.notifyClientChanged();
         this.flyPickedItem(want.type, storage.position);
         if (want.remaining <= 0) {
             this.leaveStorage();
@@ -497,6 +539,7 @@ export default class StoreClient extends Entity implements NavNeighbor {
     }
 
     private enterLeaving(): void {
+        this.host.notifyClientChanged();
         this.leaveStorage();
         this.host.cashierLine.leave(this);
         this.agent.setGoal(this.exitPoint);
@@ -632,7 +675,26 @@ export default class StoreClient extends Entity implements NavNeighbor {
 
     // ---- Mood & money
 
-    /** One step worse every this.moodStepSec; out of patience with nothing bought yet -> walks out. */
+    /** Waiting on something — an out-of-stock item, or the cashier line. Only then does the mood clock run (see this file's own doc). */
+    private isFrustrated(): boolean {
+        switch (this.state) {
+            case 'wandering':
+            case 'cashierQueue':
+            case 'readyToPay':
+                return true;
+            case 'toShelf':
+            case 'queuing':
+            case 'browsing':
+            case 'picking': {
+                const want = this.currentWant();
+                return !!this.storage && !!want && StorageInventory.getCount(this.storage.id, want.type) <= 0;
+            }
+            default:
+                return false;
+        }
+    }
+
+    /** One step worse every this.moodStepSec spent frustrated (see isFrustrated()); out of patience with nothing bought yet -> walks out. */
     private updateMood(delta: number): void {
         this.moodTimerSec += delta;
         if (this.moodTimerSec < this.moodStepSec) {
@@ -653,6 +715,7 @@ export default class StoreClient extends Entity implements NavNeighbor {
     private changeMood(step: number): void {
         this.moodIndex = Math.max(0, Math.min(STORE_MOOD_LADDER.length - 1, this.moodIndex + step));
         this.moodTimerSec = 0;
+        this.host.notifyClientChanged();
     }
 
     private startCheckout(): void {

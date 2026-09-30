@@ -16,6 +16,10 @@
 //     container so they grow with the character's landing pop (see
 //     localPerWorld()).
 // BackpackStorage stays the single source of truth; this mirrors it into the pile.
+//
+// Pass a CarrierStackSource to drive the same stack for someone else — a store
+// restocker worker (store/StoreRestockerWorker.ts) with its own body and its
+// own carried counts; it calls markDirty() whenever those change.
 
 import * as THREE from 'three';
 import Component from '../ecs/Component';
@@ -25,6 +29,18 @@ import { BackpackStorage } from '../data/BackpackStorage';
 import { getPlayerConfig } from '../data/PlayerConfig';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { CHARACTER_SCALE } from '../player/MainPlayer';
+import type CharacterBody from '../entities/CharacterBody';
+
+/** The two things this component needs from whoever wears the carrier — a CharacterBody, or the player's own ThirdPersonCharacter. */
+type CarrierWearer = Pick<CharacterBody, 'getCarrierContents' | 'container'>;
+
+/** What a non-player carrier stack reads — see this file's own doc. */
+export interface CarrierStackSource {
+    /** The character wearing the carrier — undefined while still loading. */
+    getBody(): CarrierWearer | undefined;
+    /** What's on the stack, in draw order. */
+    getCounts(): Iterable<[ResourceType, number]>;
+}
 
 // --- 'grid' mode ---
 const MAX_COLUMNS = 3;
@@ -52,6 +68,18 @@ export default class CarrierStackVisual extends Component {
     /** The carrier root the pile is parented under — a remount (new root) rebuilds the pile. */
     private attachedRoot?: THREE.Object3D;
     private dirty = true;
+    private readonly source?: CarrierStackSource;
+
+    /** Omit `source` for the player's own stack (BackpackStorage + CharacterVisualComponent). */
+    public constructor(source?: CarrierStackSource) {
+        super();
+        this.source = source;
+    }
+
+    /** A CarrierStackSource's counts changed — re-sync the pile next update. */
+    public markDirty(): void {
+        this.dirty = true;
+    }
 
     private readonly scratchScale = new THREE.Vector3();
     private readonly scratchContainerScale = new THREE.Vector3();
@@ -63,11 +91,17 @@ export default class CarrierStackVisual extends Component {
     };
 
     public awake(): void {
-        BackpackStorage.onChange.add(this.handleBackpackChanged);
+        if (!this.source) {
+            BackpackStorage.onChange.add(this.handleBackpackChanged);
+        }
+    }
+
+    private getBody(): CarrierWearer | undefined {
+        return this.source ? this.source.getBody() : this.entity.getComponent(CharacterVisualComponent)?.character;
     }
 
     public update(): void {
-        const contents = this.entity.getComponent(CharacterVisualComponent)?.character.getCarrierContents();
+        const contents = this.getBody()?.getCarrierContents();
         if (!contents) {
             return; // backpack model still loading — try again next frame
         }
@@ -88,7 +122,7 @@ export default class CarrierStackVisual extends Component {
 
         if (this.dirty) {
             this.dirty = false;
-            pile.sync(farmCounts());
+            pile.sync(this.source ? this.source.getCounts() : farmCounts());
         }
     }
 
@@ -147,8 +181,9 @@ export default class CarrierStackVisual extends Component {
         // Parents included — see the background-tab stale-matrixWorld note in ResourceDisplayModel.ts.
         root.updateWorldMatrix(true, false);
         root.getWorldScale(this.scratchScale);
-        const container = this.entity.getComponent(CharacterVisualComponent)?.character.container;
         let rootScale = this.scratchScale.x || 1;
+        // A source's character (an NPC) has no landing pop and its own scale — its live world scale is right as-is.
+        const container = this.source ? undefined : this.getBody()?.container;
         if (container) {
             container.getWorldScale(this.scratchContainerScale);
             if (this.scratchContainerScale.x < 1e-9) {

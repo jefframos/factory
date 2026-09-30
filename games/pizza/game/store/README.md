@@ -229,7 +229,8 @@ themselves are **not** saved — a reload mid-shopping loses the items they alre
 | `nav/NavAgent.ts` | Path following + steering around other clients and the player. Reusable by any future walker. |
 | `nav/StoreNavDebug.ts` | Floor overlay of the grid, spots and paths (shown with Debug Colliders). |
 | `StoreBubble.ts` | Want-bubble over clients. The level/progress panel is `ui/StoreUI.ts` (fed by PizzaScene from `Store.getHudState()`). |
-| `StoreCashier.ts` / `StoreMoneyPile.ts` | Cashier trigger / money pile + collect. |
+| `StoreCashier.ts` / `StoreMoneyPile.ts` | Cashier trigger / money pile + collect. Each draws a solid counter (`cashierView` / `moneyDropView`, kitchen cabinets for now) once the store opens; bills pile on the money counter's top. |
+| `StorePropVisual.ts` | Loads a counter's view, sits it bottom-center on its spot whatever the model's pivot, and fits a solid collider to its real bounds. |
 | `StoragePurchaseZone.ts` | "For sale" zone for a priced storage. |
 | `StoreLayout.ts` | Reads the `stores` map layer. |
 | `StoreTypes.ts` | Config (Stores tab). |

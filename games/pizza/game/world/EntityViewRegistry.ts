@@ -309,6 +309,26 @@ export const ENTITY_VIEW_CONFIG: Record<string, EntityViewConfig> = {
             0,
             0
         ]
+    },
+    "storeCashierView": {
+        "models": [MODELS.Restaurant.Kitchencabinet],
+        "scale": 0.75,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            0,
+            0
+        ]
+    },
+    "storeMoneyDropView": {
+        "models": [MODELS.Restaurant.Kitchencabinet],
+        "scale": 0.75,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            0,
+            0
+        ]
     }
 };
 

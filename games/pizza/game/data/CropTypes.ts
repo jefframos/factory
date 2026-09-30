@@ -38,6 +38,7 @@
 // growing.
 
 import { ResourceType } from '../actions/ResourceTypes';
+import { GameClock } from '../utils/GameClock';
 
 export enum CropId {
     Wheat = 'wheat',
@@ -1049,7 +1050,7 @@ export function getCropTotalGrowSec(config: CropConfig): number {
 }
 
 /** True once `plantedAtSec` (FarmCropStorage's own wall-clock timestamp) is far enough in the past for every stage's own `durationSec` to have elapsed — growth is computed from real elapsed time, not simulated tick-by-tick, so this stays correct across a reload same as GateStorage/QueueStorage's own cooldowns. */
-export function isCropReady(config: CropConfig, plantedAtSec: number, nowSec: number = Date.now() / 1000): boolean {
+export function isCropReady(config: CropConfig, plantedAtSec: number, nowSec: number = GameClock.nowSec()): boolean {
     return nowSec - plantedAtSec >= getCropTotalGrowSec(config);
 }
 

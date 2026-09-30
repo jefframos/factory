@@ -44,6 +44,13 @@ export interface StoragePrice {
     amount: number;
 }
 
+/** One resource a storage costs on top of its price (e.g. 20 wood) — paid from the backpack, see StoragePurchaseZone.ts. */
+export interface StorageResourceCost {
+    /** Named `resourceType` so the web editor's sync writes a real ResourceType.X value (see syncToSource.mjs's ENUM_VALUE_FIELDS). */
+    resourceType: ResourceType;
+    amount: number;
+}
+
 export interface StorageConfig {
     /** Display name — shown in the web editor. Optional. */
     name?: string;
@@ -56,6 +63,21 @@ export interface StorageConfig {
      * (see syncToSource.mjs's ENUM_VALUE_FIELDS).
      */
     resourceType?: ResourceType;
+    /**
+     * When true, this storage is a TRASH: it takes whatever `accepts`/`resourceType` allow off the
+     * player exactly like a storage, but every item is destroyed on landing — nothing is stored, no
+     * pile, no count. Its signpost shows a trash icon instead of an item + count, and stores never
+     * sell from it (see store/Store.ts). Unset = a normal storage.
+     */
+    trash?: boolean;
+    /**
+     * Optional continuous ambient particle effect (see vfx/ParticleRegistry.ts — PARTICLE_REGISTRY),
+     * emitted from this storage's drop point (dropOffset) for as long as it stands — same slot
+     * GateConfig/CraftTableConfig carry. Unset = no particles.
+     */
+    particleEffectId?: string;
+    /** Particles per second for particleEffectId. Unset = 4 (same rate gates/crafting tables use). */
+    particleSpawnRate?: number;
     /**
      * First entry used. Either form is fine — a MODELS "Group.Key" string (e.g.
      * "Restaurant.Crate") or a real MODELS.* reference — because the web editor's sync writes
@@ -131,6 +153,12 @@ export interface StorageConfig {
      * from the start. A store's `defaultStorageId` is always free regardless (see StoreTypes.ts).
      */
     price?: StoragePrice;
+    /**
+     * Optional resources it ALSO costs (e.g. 20 wood), paid from the backpack while the player
+     * stands on the purchase area, alongside the price's coins — it's bought once everything is
+     * paid. Unset/empty = coins only (or free, with no price either).
+     */
+    resourceCost?: StorageResourceCost[];
     /** When true, this storage isn't spawned at all — same convention as every other entity's `disabled`. */
     disabled?: boolean;
 }
@@ -190,7 +218,13 @@ export const DEFAULT_STORAGE_CONFIG: StorageConfig = {
     "price": {
         "currency": CurrencyType.Money,
         "amount": 10
-    }
+    },
+    "resourceCost": [
+        {
+            "resourceType": ResourceType.Wood,
+            "amount": 20
+        }
+    ]
 };
 
 /** Per-storage-id overrides — sparse: only storages a level designer has customized need an entry. */
@@ -213,6 +247,12 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             "currency": CurrencyType.Money,
             "amount": 10
         },
+        "resourceCost": [
+            {
+                "resourceType": ResourceType.Wood,
+                "amount": 20
+            }
+        ],
         "view": "storageView",
     },
     "storage1": {
@@ -233,6 +273,12 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             "currency": CurrencyType.Money,
             "amount": 10
         },
+        "resourceCost": [
+            {
+                "resourceType": ResourceType.Wood,
+                "amount": 20
+            }
+        ],
         "view": "storageView",
         "itemScale": 4,
         "itemOrientation": "standing"
@@ -255,6 +301,12 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             "currency": CurrencyType.Money,
             "amount": 10
         },
+        "resourceCost": [
+            {
+                "resourceType": ResourceType.Wood,
+                "amount": 20
+            }
+        ],
         "view": "storageView",
     },
     "storage4": {
@@ -275,6 +327,30 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             "currency": CurrencyType.Money,
             "amount": 10
         },
+        "resourceCost": [
+            {
+                "resourceType": ResourceType.Wood,
+                "amount": 20
+            }
+        ],
+        "view": "storageView",
+    },
+    "trash1": {
+        "name": "Trash",
+        "accepts": "farm",
+        "trash": true,
+        "particleEffectId": "trashFire",
+        "particleSpawnRate": 10,
+        "models": [MODELS.Restaurant.Crate],
+        "scale": 1,
+        "rotationDeg": 0,
+        "dropOffset": {},
+        "pile": {
+            "columns": 2,
+            "rows": 2,
+            "layers": 3
+        },
+        "solid": 1,
         "view": "storageView",
     },
     "storage5": {
@@ -295,9 +371,25 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             "currency": CurrencyType.Money,
             "amount": 10
         },
+        "resourceCost": [
+            {
+                "resourceType": ResourceType.Wood,
+                "amount": 20
+            }
+        ],
         "view": "storageView",
     }
 };
+
+/** Its resource costs that actually cost something (amount > 0). */
+export function getStorageResourceCost(config: StorageConfig): StorageResourceCost[] {
+    return (config.resourceCost ?? []).filter(cost => cost.amount > 0);
+}
+
+/** True when buying this storage costs anything — coins or resources. */
+export function isStorageForSale(config: StorageConfig): boolean {
+    return (config.price?.amount ?? 0) > 0 || getStorageResourceCost(config).length > 0;
+}
 
 /** The config a storage with this id should use — its own override if STORAGE_CONFIG_BY_ID has one, else DEFAULT_STORAGE_CONFIG. */
 export function getStorageConfig(id: string): StorageConfig {

@@ -20,6 +20,7 @@
 // never block on storage I/O.
 
 import { Signal } from 'signals';
+import { GameClock } from '../utils/GameClock';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { QueueConfig, QueueTaskDef } from './QueueTypes';
 
@@ -127,7 +128,7 @@ export class QueueStorage {
         if (state.activeTask) {
             return false;
         }
-        if (state.nextTaskAtEpochMs !== undefined && Date.now() < state.nextTaskAtEpochMs) {
+        if (state.nextTaskAtEpochMs !== undefined && GameClock.nowMs() < state.nextTaskAtEpochMs) {
             return false;
         }
 
@@ -263,7 +264,7 @@ export class QueueStorage {
 
         state.activeTask = undefined;
         state.progress = 0;
-        state.nextTaskAtEpochMs = Date.now() + config.cooldownSec * 1000;
+        state.nextTaskAtEpochMs = GameClock.nowMs() + config.cooldownSec * 1000;
         this.onTaskChanged.dispatch(id);
         void this.persist();
         return task;

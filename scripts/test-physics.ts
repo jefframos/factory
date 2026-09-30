@@ -265,6 +265,105 @@ console.log('Test 7: a cluster of obstacles taller than the player (e.g. adjacen
 
     assert(entity.transform.position.y > -0.5, `player wasn't shoved through the floor (y=${entity.transform.position.y.toFixed(4)})`);
     assert(Math.abs(entity.transform.position.x) < 50, `player wasn't flung to the edge of the map (x=${entity.transform.position.x.toFixed(4)})`);
+
+    // ...and it doesn't stay stuck INSIDE the cluster either: it's eased out to the nearest edge.
+    for (let i = 0; i < 120; i++) {
+        world.step(1 / 60);
+    }
+    const p = entity.transform.position;
+    const inside = p.x + 0.4 > -12 && p.x - 0.4 < -8 && p.z + 0.4 > -16 && p.z - 0.4 < -12;
+    assert(!inside, `player was eased out of the cluster instead of staying embedded (x=${p.x.toFixed(3)}, z=${p.z.toFixed(3)})`);
+}
+
+/** A thin static wall like a stall fence (Props Fence: 35x8 px = 2.19 x 0.5 world units), bottom at y=0. */
+function makeFence(world: PhysicsWorld, x: number, z: number, width: number, depth: number): RigidBody {
+    const fence = new Entity();
+    fence.transform.position.set(x, 0, z);
+    const body = fence.addComponent(new RigidBody({
+        halfExtents: new THREE.Vector3(width / 2, 0.75, depth / 2),
+        isStatic: true,
+        centerOffset: new THREE.Vector3(0, 0.75, 0),
+        layer: Layers.Environment,
+        blocksVertical: false,
+    }));
+    world.register(body);
+    return body;
+}
+
+console.log('Test 8: running into a thin fence with a big step never pushes the player THROUGH it');
+{
+    // Old rule ("push out the nearer face") put the player on the far side once it got past the
+    // fence's middle in one step: 15 u/s x MAX_PHYSICS_DELTA = 0.75 > (0.5 + 0.8) / 2.
+    const world = new PhysicsWorld();
+    makeGround(world);
+    const { entity, body } = makePlayer(world);
+    makeFence(world, 0, 5, 2.19, 0.5);
+    entity.transform.position.set(0, 0, 3.8);
+    for (let i = 0; i < 30; i++) {
+        body.velocity.x = 0;
+        body.velocity.z = 15;
+        world.step(MAX_PHYSICS_DELTA);
+    }
+    const front = entity.transform.position.z + 0.4;
+    assert(front <= 4.75 + 1e-3, `player stopped on the near side of the fence (front=${front.toFixed(4)}, fence near face=4.75)`);
+}
+
+console.log('Test 9: a fence collider appearing ON the player eases it out along the shortest way, no teleport');
+{
+    // The stall's per-piece colliders are created when its mesh (re)builds — possibly right where
+    // the player stands. Old rule: pushed along whatever axis it was walking, up to the fence's
+    // full length (2.19) in one step.
+    const world = new PhysicsWorld();
+    makeGround(world);
+    const { entity, body } = makePlayer(world);
+    entity.transform.position.set(0, 0, 0);
+    for (let i = 0; i < 30; i++) {
+        world.step(1 / 60);
+    }
+    makeFence(world, 0.1, 0, 0.5, 2.19); // a fence turned 90°: thin in X, long in Z
+    let maxJump = 0;
+    const last = entity.transform.position.clone();
+    for (let i = 0; i < 60; i++) {
+        body.velocity.x = 0;
+        body.velocity.z = 3; // walking along the fence — the axis the old rule would shove on
+        world.step(1 / 60);
+        const moved = Math.hypot(entity.transform.position.x - last.x, entity.transform.position.z - last.z) - 3 / 60;
+        maxJump = Math.max(maxJump, moved);
+        last.copy(entity.transform.position);
+    }
+    const p = entity.transform.position;
+    const inside = Math.abs(p.x - 0.1) < 0.25 + 0.4 && Math.abs(p.z) < 1.095 + 0.4;
+    assert(!inside, `player ended outside the fence (x=${p.x.toFixed(3)}, z=${p.z.toFixed(3)})`);
+    assert(Math.abs(p.x - 0.1) < 0.66 + 0.01, `left through the short side (|dx|=${Math.abs(p.x - 0.1).toFixed(3)}, needs 0.65), not the long one`);
+    assert(maxJump <= 0.1 + 1e-3, `never jumped more than a slide step on top of walking (max extra ${maxJump.toFixed(4)} per step)`);
+}
+
+console.log('Test 10: pushing into the corner where two fences overlap leaves the player outside both');
+{
+    const world = new PhysicsWorld();
+    makeGround(world);
+    const { entity, body } = makePlayer(world);
+    const a = makeFence(world, 0, 0, 2.19, 0.5);      // along X
+    const b = makeFence(world, 0.85, 0.85, 0.5, 2.19); // along Z, overlapping a's end
+    const b2 = makeFence(world, 0.85, 0.85, 0.5, 2.19); // an exact duplicate (like stall1's #172/#173)
+    entity.transform.position.set(-1, 0, 2);
+    let maxJump = 0;
+    const last = entity.transform.position.clone();
+    for (let i = 0; i < 180; i++) {
+        body.velocity.x = 4;
+        body.velocity.z = -4;
+        world.step(1 / 60);
+        maxJump = Math.max(maxJump, last.distanceTo(entity.transform.position));
+        last.copy(entity.transform.position);
+    }
+    const overlapsAny = [a, b, b2].some(fence => {
+        const min = fence.getMin(new THREE.Vector3());
+        const max = fence.getMax(new THREE.Vector3());
+        const p = entity.transform.position;
+        return p.x + 0.4 > min.x + 1e-3 && p.x - 0.4 < max.x - 1e-3 && p.z + 0.4 > min.z + 1e-3 && p.z - 0.4 < max.z - 1e-3;
+    });
+    assert(!overlapsAny, `player isn't inside either fence (x=${entity.transform.position.x.toFixed(3)}, z=${entity.transform.position.z.toFixed(3)})`);
+    assert(maxJump <= Math.hypot(4, 4) / 60 + 0.1 + 1e-3, `never jumped (max move per step ${maxJump.toFixed(4)})`);
 }
 
 if (failures > 0) {

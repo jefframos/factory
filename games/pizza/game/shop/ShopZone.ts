@@ -28,7 +28,7 @@ import Entity from '../ecs/Entity';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
 import { buildSolidArea } from '../physics/SolidArea';
-import { BendService } from '../services/BendService';
+import { BendService, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import { spawnFlyingIconFromOverlayPoint, spawnFlyingResourceIcon } from '../components/FlyingResourceIcon';
@@ -395,6 +395,7 @@ export default class ShopZone extends Entity {
                 // The glb loads asynchronously — the reveal sweep needs the finished mesh's
                 // world bounds, so it's set up in onReady rather than right after construction.
                 reveal ? () => this.playRevealEffect(this.shopVisual!.mesh) : undefined,
+                STRUCTURE_OCCLUSION_FADE,
             ));
             return;
         }

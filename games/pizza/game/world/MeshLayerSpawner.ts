@@ -153,49 +153,62 @@ export function getMeshPlacements(
         if (!obj.gid) {
             continue;
         }
-
-        const decoded = decodeObjectModel(obj, map);
-        if (!decoded) {
+        const placement = objectToMeshPlacement(obj, map, scale);
+        if (!placement) {
             console.warn(`[MeshLayerSpawner] object #${obj.id} on "${MESH_LAYER_NAME}" doesn't decode to a known model — skipping`);
             continue;
         }
-
-        // Tile objects are anchored at their BOTTOM-left in Tiled (`(obj.x, obj.y)`), unlike a
-        // plain rectangle object's top-left — see TiledObject.gid's own doc. Critically,
-        // Tiled's `rotation` pivots around THAT ORIGIN, not the rectangle's center — rotating a
-        // placed object in Tiled swings its whole footprint around its bottom-left corner, the
-        // same way a tile layer cell would. So the true center isn't the fixed
-        // `(width/2, -height/2)` offset a rotation=0 object would have; that offset itself has
-        // to be rotated (by the SAME angle, around the SAME origin) before being added back to
-        // (obj.x, obj.y) — skipping this (as an earlier version of this file did) put every
-        // rotated placement in the wrong spot, more so the further from 0°/180° its rotation was.
-        const rotationRad = (obj.rotation * Math.PI) / 180;
-        const cos = Math.cos(rotationRad);
-        const sin = Math.sin(rotationRad);
-        const localCenterX = obj.width / 2;
-        const localCenterY = -obj.height / 2;
-        // Standard 2D rotation matrix, applied directly in Tiled's own pixel space (x right, y
-        // DOWN) — that y-down basis is what makes this formula already match Tiled's own
-        // clockwise-positive `rotation` with no extra sign flip needed here (unlike rotationY
-        // below, which crosses into THREE's y-UP/right-handed convention and DOES need one).
-        const rotatedCenterX = localCenterX * cos - localCenterY * sin;
-        const rotatedCenterY = localCenterX * sin + localCenterY * cos;
-        const centerXpx = obj.x + rotatedCenterX;
-        const centerYpx = obj.y + rotatedCenterY;
-
-        placements.push({
-            modelRef: decoded.modelRef,
-            x: centerXpx * scale,
-            z: centerYpx * scale,
-            rotationY: decoded.rotationY,
-            worldWidth: obj.width * scale,
-            worldDepth: obj.height * scale,
-            solid: getObjectBooleanProperty(obj, SOLID_PROPERTY) || getTiledTileBooleanProperty(map, obj.gid, SOLID_PROPERTY),
-            offsetX: decoded.offsetX,
-            offsetY: decoded.offsetY,
-            offsetZ: decoded.offsetZ,
-        });
+        placements.push(placement);
     }
 
     return placements;
+}
+
+/**
+ * One tile object (an image dragged onto the map — see decodeObjectModel()) as a MeshPlacement, on
+ * any object layer — the meshes layer (getMeshPlacements()) or another feature's own objects (e.g. a
+ * store counter, see StoreLayout.ts). `scale` is world units per Tiled pixel. undefined if the
+ * object's image doesn't decode to a known model.
+ */
+export function objectToMeshPlacement(obj: TiledObject, map: TiledMapData, scale: number): MeshPlacement | undefined {
+    const decoded = decodeObjectModel(obj, map);
+    if (!decoded) {
+        return undefined;
+    }
+
+    // Tile objects are anchored at their BOTTOM-left in Tiled (`(obj.x, obj.y)`), unlike a
+    // plain rectangle object's top-left — see TiledObject.gid's own doc. Critically,
+    // Tiled's `rotation` pivots around THAT ORIGIN, not the rectangle's center — rotating a
+    // placed object in Tiled swings its whole footprint around its bottom-left corner, the
+    // same way a tile layer cell would. So the true center isn't the fixed
+    // `(width/2, -height/2)` offset a rotation=0 object would have; that offset itself has
+    // to be rotated (by the SAME angle, around the SAME origin) before being added back to
+    // (obj.x, obj.y) — skipping this (as an earlier version of this file did) put every
+    // rotated placement in the wrong spot, more so the further from 0°/180° its rotation was.
+    const rotationRad = (obj.rotation * Math.PI) / 180;
+    const cos = Math.cos(rotationRad);
+    const sin = Math.sin(rotationRad);
+    const localCenterX = obj.width / 2;
+    const localCenterY = -obj.height / 2;
+    // Standard 2D rotation matrix, applied directly in Tiled's own pixel space (x right, y
+    // DOWN) — that y-down basis is what makes this formula already match Tiled's own
+    // clockwise-positive `rotation` with no extra sign flip needed here (unlike rotationY
+    // below, which crosses into THREE's y-UP/right-handed convention and DOES need one).
+    const rotatedCenterX = localCenterX * cos - localCenterY * sin;
+    const rotatedCenterY = localCenterX * sin + localCenterY * cos;
+    const centerXpx = obj.x + rotatedCenterX;
+    const centerYpx = obj.y + rotatedCenterY;
+
+    return {
+        modelRef: decoded.modelRef,
+        x: centerXpx * scale,
+        z: centerYpx * scale,
+        rotationY: decoded.rotationY,
+        worldWidth: obj.width * scale,
+        worldDepth: obj.height * scale,
+        solid: getObjectBooleanProperty(obj, SOLID_PROPERTY) || getTiledTileBooleanProperty(map, obj.gid, SOLID_PROPERTY),
+        offsetX: decoded.offsetX,
+        offsetY: decoded.offsetY,
+        offsetZ: decoded.offsetZ,
+    };
 }

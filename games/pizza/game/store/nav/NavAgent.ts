@@ -65,7 +65,7 @@ export default class NavAgent {
     private readonly position: THREE.Vector3;
     private readonly getGrid: () => StoreNavGrid | undefined;
     private readonly radius: number;
-    private readonly speed: number;
+    private speed: number;
 
     private readonly goal = new THREE.Vector3();
     private hasGoal = false;
@@ -97,6 +97,11 @@ export default class NavAgent {
         this.hasGoal = true;
         this.arrived = false;
         this.needsPlan = true;
+    }
+
+    /** Changes the walk speed (world units per second) — e.g. a store worker levelling up. */
+    public setSpeed(speed: number): void {
+        this.speed = speed;
     }
 
     /** Stand still and forget the goal. */

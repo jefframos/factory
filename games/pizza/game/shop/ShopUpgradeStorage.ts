@@ -20,6 +20,7 @@
 // onto the fresh default ACTION_CONFIG on the next session.
 
 import { Signal } from 'signals';
+import { GameClock } from '../utils/GameClock';
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { applyShopLevel, getShopMaxLevel, getUpgradeCost, resetAllActionConfigs, SHOP_CONFIG_BY_ID, ShopConfig } from './ShopTypes';
 import { ResourceType } from '../actions/ResourceTypes';
@@ -100,7 +101,7 @@ export class ShopUpgradeStorage {
     /** True while `id`'s cooldown from its last purchase hasn't elapsed yet — mirrors QueueStorage.tryRollNextTask()'s "never set == already passed" treatment for a shop that's never bought anything. */
     static isOnCooldown(id: string): boolean {
         const state = this.state(id);
-        return state.nextUpgradeAtEpochMs !== undefined && Date.now() < state.nextUpgradeAtEpochMs;
+        return state.nextUpgradeAtEpochMs !== undefined && GameClock.nowMs() < state.nextUpgradeAtEpochMs;
     }
 
     /** Seconds remaining on `id`'s cooldown, floored at 0 — purely for ShopZone's countdown text, see refreshLabel(). */
@@ -109,7 +110,7 @@ export class ShopUpgradeStorage {
         if (state.nextUpgradeAtEpochMs === undefined) {
             return 0;
         }
-        return Math.max(0, Math.ceil((state.nextUpgradeAtEpochMs - Date.now()) / 1000));
+        return Math.max(0, Math.ceil((state.nextUpgradeAtEpochMs - GameClock.nowMs()) / 1000));
     }
 
     /**
@@ -197,7 +198,7 @@ export class ShopUpgradeStorage {
         state.level += 1;
         state.progress = 0;
         state.resourceProgress = undefined;
-        state.nextUpgradeAtEpochMs = Date.now() + config.cooldownSec * 1000;
+        state.nextUpgradeAtEpochMs = GameClock.nowMs() + config.cooldownSec * 1000;
         applyShopLevel(config, state.level);
         this.onChange.dispatch(id);
         void this.persist();

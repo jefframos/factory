@@ -26,13 +26,23 @@ import { CONTACT_SKIN, GRAVITY, MAX_PHYSICS_DELTA } from './PhysicsConstants';
 type Axis = 'x' | 'y' | 'z';
 
 /**
- * Diagnostic threshold for pushOut()'s own console.warn (see there) — bigger than any
+ * Diagnostic threshold for pushToFace()'s own console.warn (see there) — bigger than any
  * legitimate single-axis overlap a normal-sized dynamic body (the player) should ever have
  * against a normal-sized static one, so a warning firing means something is actually wrong
  * (e.g. a body overlapping a MUCH bigger box than intended, like the ground plane's own
  * huge half-extents) rather than an ordinary contact.
  */
 const PUSH_OUT_WARN_DISTANCE = 3;
+
+/** moveAxis(): how far past a face still counts as "came from that side" — float slack for a body resting flush against it. */
+const SWEEP_EPSILON = 1e-4;
+/** depenetrate(): top speed (world units/second) a body already inside an obstacle is eased out at — quick, but a slide, never a teleport. */
+const DEPENETRATION_SPEED = 6;
+/** exitDistance(): how many boxes deep a way out is followed (one box into the next) before giving up on that direction. */
+const DEPENETRATION_PASSES = 8;
+/** depenetrate(): a body sunk at most this far into the top of something it stands on is lifted onto it (the ground), instead of slid out sideways. */
+const DEPENETRATION_STEP_UP = 0.3;
+const HORIZONTAL_AXES: readonly Axis[] = ['x', 'z'];
 
 function pairKey(a: RigidBody, b: RigidBody): string {
     return a.id < b.id ? `${a.id}:${b.id}` : `${b.id}:${a.id}`;
@@ -107,6 +117,10 @@ export default class PhysicsWorld {
 
             body.grounded = false;
             this.moveAxis(body, 'y', delta);
+
+            if (!body.isTrigger) {
+                this.depenetrate(body, delta);
+            }
         }
 
         this.updateContacts();
@@ -139,8 +153,22 @@ export default class PhysicsWorld {
         return (a.mask & b.layer) !== 0 && (b.mask & a.layer) !== 0;
     }
 
+    /**
+     * Moves `body` along one axis, then resolves what it ran into — DIRECTIONALLY: an obstacle
+     * this move entered is pushed back out through the face the body came from, never through to
+     * the far face. The old "whichever face is nearer" rule shoved a body straight through a thin
+     * wall (a 0.5-unit fence) once it got past its middle, and — when a body was already inside
+     * something (pushed from one overlapping fence into its neighbour, or a collider created on
+     * top of it) — teleported it along whatever axis it happened to be walking on, up to the full
+     * length of the box. An obstacle the body was ALREADY overlapping on this axis before the move
+     * isn't this move's to resolve: depenetrate() eases it out afterwards.
+     */
     private moveAxis(body: RigidBody, axis: Axis, delta: number): void {
         const position = body.entity.transform.position;
+        body.getMin(this.scratchMin);
+        body.getMax(this.scratchMax);
+        const startMin = this.scratchMin[axis];
+        const startMax = this.scratchMax[axis];
         position[axis] += body.velocity[axis] * delta;
 
         // Triggers are never physically resolved — see this class's own doc.
@@ -158,44 +186,38 @@ export default class PhysicsWorld {
                 continue;
             }
 
-            this.pushOut(body, other, axis);
+            other.getMin(this.otherMin);
+            other.getMax(this.otherMax);
+            if (startMax <= this.otherMin[axis] + SWEEP_EPSILON) {
+                this.pushToFace(body, other, axis, -1);
+            } else if (startMin >= this.otherMax[axis] - SWEEP_EPSILON) {
+                this.pushToFace(body, other, axis, 1);
+            }
+            // else: already inside `other` along this axis before moving — see depenetrate().
         }
     }
 
-    /** Pushes `body` out of `other` along a single axis, taking whichever side has the smaller overlap (so it pops out the nearest face), and zeroes/clamps velocity on that axis. */
-    private pushOut(body: RigidBody, other: RigidBody, axis: Axis): void {
+    /**
+     * Places `body` flush against `other`'s face on `axis` — `side` -1 = its min face (the body
+     * came from below/behind), +1 = its max face — and stops velocity heading back into it.
+     */
+    private pushToFace(body: RigidBody, other: RigidBody, axis: Axis, side: -1 | 1): void {
         body.getMin(this.scratchMin);
         body.getMax(this.scratchMax);
         other.getMin(this.otherMin);
         other.getMax(this.otherMax);
-
-        const overlapNegative = this.scratchMax[axis] - this.otherMin[axis];
-        const overlapPositive = this.otherMax[axis] - this.scratchMin[axis];
         const position = body.entity.transform.position;
-
-        const pushDistance = Math.min(overlapNegative, overlapPositive);
-        if (pushDistance > PUSH_OUT_WARN_DISTANCE) {
-            const before = position.clone();
-            console.warn(
-                `[PhysicsWorld] large push-out on axis "${axis}": ${pushDistance.toFixed(2)} units — `
-                + `${describeEntity(body)} at (${before.x.toFixed(2)}, ${before.y.toFixed(2)}, ${before.z.toFixed(2)}) `
-                + `pushed by ${describeEntity(other)} (halfExtents ${other.halfExtents.x},${other.halfExtents.y},${other.halfExtents.z}, `
-                + `center ${other.getCenter().toArray().map(n => n.toFixed(2))}). `
-                + `body box [${this.scratchMin.toArray().map(n => n.toFixed(2))}]-[${this.scratchMax.toArray().map(n => n.toFixed(2))}], `
-                + `other box [${this.otherMin.toArray().map(n => n.toFixed(2))}]-[${this.otherMax.toArray().map(n => n.toFixed(2))}], `
-                + `overlapNegative=${overlapNegative.toFixed(2)}, overlapPositive=${overlapPositive.toFixed(2)}`
-            );
+        const push = side < 0 ? this.scratchMax[axis] - this.otherMin[axis] : this.otherMax[axis] - this.scratchMin[axis];
+        if (push > PUSH_OUT_WARN_DISTANCE) {
+            console.warn(`[PhysicsWorld] large push-out on axis "${axis}": ${push.toFixed(2)} units — ${describeEntity(body)} pushed by ${describeEntity(other)}`);
         }
-
-        if (overlapNegative < overlapPositive) {
-            // body sits on the min side of other (e.g. hitting its underside from below) — push it back.
-            position[axis] -= overlapNegative;
+        if (side < 0) {
+            position[axis] -= push;
             if (body.velocity[axis] > 0) {
                 body.velocity[axis] = 0;
             }
         } else {
-            // body sits on the max side of other (e.g. landing on top of it) — push it back.
-            position[axis] += overlapPositive;
+            position[axis] += push;
             if (axis === 'y' && body.velocity.y < 0) {
                 body.grounded = true;
             }
@@ -205,7 +227,103 @@ export default class PhysicsWorld {
         }
     }
 
-    /** Strict overlap test — used ONLY for push-out resolution. Deliberately has no skin: it must stay exactly this strict, since a resting body (zero gap) reading as "still overlapping" here would make pushOut() fight itself every frame instead of settling (this is the same invariant the throw-out regression test in scripts/test-physics.ts pins down). */
+    /**
+     * Eases a body that's still INSIDE something after its move (see moveAxis()'s own doc) back
+     * out, in two parts:
+     *   1. Sunk a little into something it stands on (a blocksVertical box whose top is within
+     *      DEPENETRATION_STEP_UP of the body's feet — the ground): lifted onto it in full.
+     *   2. Otherwise, for each of ±X/±Z, how far it would have to slide to clear EVERYTHING it
+     *      would pass through that way (see exitDistance() — following one box into the next, so
+     *      inside a group of touching boxes it heads for the group's real edge instead of
+     *      ping-ponging between neighbours), then slides the shortest of those at most
+     *      DEPENETRATION_SPEED * delta per step — a quick slide out, never a teleport.
+     */
+    private depenetrate(body: RigidBody, delta: number): void {
+        const position = body.entity.transform.position;
+
+        for (const other of this.bodies) {
+            if (!this.isSolidAgainst(body, other) || !other.blocksVertical || !this.overlaps(body, other)) {
+                continue;
+            }
+            body.getMin(this.scratchMin);
+            other.getMax(this.otherMax);
+            const sink = this.otherMax.y - this.scratchMin.y;
+            if (sink > 0 && sink <= DEPENETRATION_STEP_UP) {
+                position.y += sink;
+                body.grounded = true;
+                body.velocity.y = Math.max(0, body.velocity.y);
+            }
+        }
+
+        if (!this.bodies.some(other => this.isSolidAgainst(body, other) && this.overlaps(body, other))) {
+            return;
+        }
+        let bestAxis: Axis = 'x';
+        let bestSign = 1;
+        let bestDistance = Infinity;
+        for (const axis of HORIZONTAL_AXES) {
+            for (const sign of [-1, 1] as const) {
+                const distance = this.exitDistance(body, axis, sign);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    bestAxis = axis;
+                    bestSign = sign;
+                }
+            }
+        }
+        if (Number.isFinite(bestDistance)) {
+            position[bestAxis] += bestSign * Math.min(bestDistance, DEPENETRATION_SPEED * delta);
+        }
+    }
+
+    /** A non-trigger body `body` can collide with (layers/masks allowing). */
+    private isSolidAgainst(body: RigidBody, other: RigidBody): boolean {
+        return other !== body && !other.isTrigger && this.shouldInteract(body, other);
+    }
+
+    /**
+     * How far `body` would have to slide along `axis` in direction `sign` to overlap nothing at
+     * all: clears each box it overlaps, then re-checks from there (the next box may start where
+     * the last ends), up to DEPENETRATION_PASSES boxes deep. Infinity if still inside after that.
+     */
+    private exitDistance(body: RigidBody, axis: Axis, sign: -1 | 1): number {
+        body.getMin(this.scratchMin);
+        body.getMax(this.scratchMax);
+        const baseMin = this.scratchMin.clone();
+        const baseMax = this.scratchMax.clone();
+        let distance = 0;
+        for (let pass = 0; pass < DEPENETRATION_PASSES; pass++) {
+            let furthest = 0;
+            for (const other of this.bodies) {
+                if (!this.isSolidAgainst(body, other)) {
+                    continue;
+                }
+                other.getMin(this.otherMin);
+                other.getMax(this.otherMax);
+                const shift = sign * distance;
+                const minX = baseMin.x + (axis === 'x' ? shift : 0);
+                const maxX = baseMax.x + (axis === 'x' ? shift : 0);
+                const minZ = baseMin.z + (axis === 'z' ? shift : 0);
+                const maxZ = baseMax.z + (axis === 'z' ? shift : 0);
+                const overlapping = minX < this.otherMax.x && maxX > this.otherMin.x
+                    && baseMin.y < this.otherMax.y && baseMax.y > this.otherMin.y
+                    && minZ < this.otherMax.z && maxZ > this.otherMin.z;
+                if (!overlapping) {
+                    continue;
+                }
+                const bodyEdge = sign > 0 ? baseMin[axis] + shift : baseMax[axis] + shift;
+                const need = sign > 0 ? this.otherMax[axis] - bodyEdge : bodyEdge - this.otherMin[axis];
+                furthest = Math.max(furthest, need);
+            }
+            if (furthest <= 0) {
+                return distance;
+            }
+            distance += furthest;
+        }
+        return Infinity;
+    }
+
+    /** Strict overlap test — used ONLY for push-out resolution. Deliberately has no skin: it must stay exactly this strict, since a resting body (zero gap) reading as "still overlapping" here would make push-out fight itself every frame instead of settling (this is the same invariant the throw-out regression test in scripts/test-physics.ts pins down). */
     private overlaps(a: RigidBody, b: RigidBody): boolean {
         a.getMin(this.scratchMin);
         a.getMax(this.scratchMax);

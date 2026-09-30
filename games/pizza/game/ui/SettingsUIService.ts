@@ -14,6 +14,10 @@
 // "same across every game" framework piece the mute button is supposed to
 // reuse, not a new pizza-specific button.
 //
+// The speed toggle (right of the mute button) flips the whole game between 1x
+// and 2x — GameClock.setSpeed(), see GameClock.ts for what that scales. One
+// arrow at 1x, two at 2x.
+//
 // The settings button's own PANEL content lives in PopupManager/SettingsPopup
 // (see games/pizza/game/ui/popups/) — this file only owns the button that
 // opens it.
@@ -25,6 +29,7 @@ import SoundToggleButton from 'core/ui/SoundToggleButton';
 import Assets from '../../Assets';
 import { PopupManager } from './popups/PopupManager';
 import SettingsPopup from './popups/SettingsPopup';
+import { GameClock } from '../utils/GameClock';
 
 /** Gap between the button row's top/left edges and the actual top-left corner of the screen. Exported so UIService (ToolListUI's positioning) can pin something directly under this row without duplicating the margin. */
 export const SETTINGS_ROW_TOP_LEFT_MARGIN = 16;
@@ -35,6 +40,13 @@ const BUTTON_GAP = 10;
 export const SETTINGS_ROW_BUTTON_SIZE = 48;
 const BUTTON_SIZE = SETTINGS_ROW_BUTTON_SIZE;
 const BUTTON_ICON_SIZE = 42;
+/** Speed toggle art — one arrow at 1x, a second one in front at 2x. */
+const SPEED_ICON = 'PictoIcon_Arrow_Right_2-2';
+/** The sped-up game speed. */
+const FAST_SPEED = 2;
+/** Speed arrow height inside the BUTTON_SIZE square, and how far the second arrow sits right of the first (fraction of its width — they overlap a little). */
+const SPEED_ICON_SIZE = 30;
+const SPEED_ICON_STEP = 0.55;
 /** Corner-pinned "this matters" badge on the settings button — see BaseButton.addAlertIcon(). Always shown (not conditional on anything) since the ask is simply "mark this button as important," not "only when a setting needs attention." */
 const ALERT_ICON_SIZE = 20;
 
@@ -42,6 +54,9 @@ export default class SettingsUIService {
     private readonly game: Game;
     private readonly soundToggle: SoundToggleButton;
     private readonly settingsButton: BaseButton;
+    /** Right of the mute button — see this file's own doc. Top-left anchored, BUTTON_SIZE square. */
+    private readonly speedButton = new PIXI.Container();
+    private readonly speedArrows = [new PIXI.Sprite(), new PIXI.Sprite()];
 
     public constructor(game: Game) {
         this.game = game;
@@ -77,6 +92,23 @@ export default class SettingsUIService {
         this.settingsButton.addAlertIcon(PIXI.Texture.from(Assets.Textures.UI.Exclamation), ALERT_ICON_SIZE);
         this.game.uiLayer.addChild(this.settingsButton);
 
+        const arrowTexture = PIXI.Texture.from(SPEED_ICON);
+        for (const arrow of this.speedArrows) {
+            arrow.texture = arrowTexture;
+            arrow.anchor.set(0.5);
+            arrow.scale.set(SPEED_ICON_SIZE / Math.max(1, arrowTexture.height));
+            this.speedButton.addChild(arrow);
+        }
+        this.speedButton.hitArea = new PIXI.Rectangle(0, 0, BUTTON_SIZE, BUTTON_SIZE);
+        this.speedButton.interactive = true;
+        this.speedButton.cursor = 'pointer';
+        this.speedButton.on('pointertap', () => {
+            GameClock.setSpeed(GameClock.getSpeed() > 1 ? 1 : FAST_SPEED);
+            this.refreshSpeedIcon();
+        });
+        this.game.uiLayer.addChild(this.speedButton);
+        this.refreshSpeedIcon();
+
         this.update();
     }
 
@@ -100,10 +132,26 @@ export default class SettingsUIService {
             screen.topLeft.x + TOP_LEFT_MARGIN + BUTTON_SIZE + BUTTON_GAP + BUTTON_SIZE / 2,
             screen.topLeft.y + TOP_LEFT_MARGIN + BUTTON_SIZE / 2,
         );
+
+        this.speedButton.position.set(
+            screen.topLeft.x + TOP_LEFT_MARGIN + (BUTTON_SIZE + BUTTON_GAP) * 2,
+            screen.topLeft.y + TOP_LEFT_MARGIN,
+        );
+    }
+
+    /** One centered arrow at 1x; at 2x a second arrow in front of it (to its right), the pair centered together. */
+    private refreshSpeedIcon(): void {
+        const [back, front] = this.speedArrows;
+        const fast = GameClock.getSpeed() > 1;
+        const step = fast ? back.width * SPEED_ICON_STEP : 0;
+        back.position.set(BUTTON_SIZE / 2 - step / 2, BUTTON_SIZE / 2);
+        front.position.set(BUTTON_SIZE / 2 + step / 2, BUTTON_SIZE / 2);
+        front.visible = fast;
     }
 
     public destroy(): void {
         this.soundToggle.destroy();
         this.settingsButton.destroy();
+        this.speedButton.destroy({ children: true });
     }
 }

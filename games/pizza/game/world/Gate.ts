@@ -37,7 +37,7 @@ import gsap from 'gsap';
 import Entity from '../ecs/Entity';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
-import { BendService } from '../services/BendService';
+import { BendService, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import AutoFitFrame from '../ui/AutoFitFrame';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
@@ -170,6 +170,7 @@ export default class Gate extends Entity {
                 scale,
                 THREE.MathUtils.degToRad(rotationDeg),
                 () => { this.mesh = visual.mesh; },
+                STRUCTURE_OCCLUSION_FADE,
             );
             this.addComponent(visual);
         } else {

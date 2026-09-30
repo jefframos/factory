@@ -30,7 +30,7 @@ import Entity from '../ecs/Entity';
 import RigidBody from '../physics/RigidBody';
 import { Layers } from '../physics/PhysicsConstants';
 import { buildSolidArea } from '../physics/SolidArea';
-import { BendService } from '../services/BendService';
+import { BendService, STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
 import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
@@ -513,7 +513,16 @@ export default class BuildingZone extends Entity {
                 continue;
             }
 
-            const pieceHalfExtents = new THREE.Vector3(entry.width / 2, HALF_EXTENTS.y, entry.depth / 2);
+            // Colliders are axis-aligned boxes, so a rotated piece (e.g. a fence turned 270° in
+            // Tiled) gets the box around its ROTATED footprint — exact for 90°/270°, the bounding
+            // box for any other angle — instead of lying across it.
+            const cos = Math.abs(Math.cos(entry.rotationY));
+            const sin = Math.abs(Math.sin(entry.rotationY));
+            const pieceHalfExtents = new THREE.Vector3(
+                (entry.width * cos + entry.depth * sin) / 2,
+                HALF_EXTENTS.y,
+                (entry.width * sin + entry.depth * cos) / 2,
+            );
             const pieceCenterOffset = new THREE.Vector3(
                 entry.x - this.transform.position.x,
                 pieceHalfExtents.y,
@@ -761,6 +770,7 @@ export default class BuildingZone extends Entity {
                 }
                 this.playRevealEffect(visual.mesh, dropIn, targetFraction);
             },
+            STRUCTURE_OCCLUSION_FADE,
         );
         this.buildingVisuals.push(this.addComponent(visual));
     }

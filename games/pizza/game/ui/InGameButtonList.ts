@@ -37,10 +37,10 @@ import { Game } from 'core/Game';
 import { createLibraryButton } from './ButtonLibrary';
 import { DebugMenuVisibilityCookie } from '../utils/DebugMenuVisibilityCookie';
 
-/** Shared by every registered button in the list — same fixed size the old standalone camera-toggle button used. */
-const BUTTON_SIZE = { width: 160, height: 48 };
+/** Shared by every registered button in the list — kept short (32 = 2x BUTTON_NINE_SLICE_PADDING, the smallest height the nine-slice art renders cleanly at) so the growing stack of debug buttons fits on screen. */
+const BUTTON_SIZE = { width: 160, height: 32 };
 /** Vertical gap between two stacked buttons. */
-const BUTTON_GAP = 8;
+const BUTTON_GAP = 4;
 /** Gap between the stack's bottom/left edges and the actual bottom-left corner of the screen — same margin the old standalone camera-toggle button used. */
 const SCREEN_MARGIN = 16;
 /** The always-visible toggle button occupies the same footprint/gap as every other row — same width/height/BUTTON_GAP, just pinned unconditionally at local y=0 (see the constructor's own doc) instead of stacking with the collapsible rows above it. */

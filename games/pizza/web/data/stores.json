@@ -70,6 +70,47 @@
     },
     "byId": {
         "farmStore1": {
+            "restockerWorker": {
+                "wanderRadius": 3,
+                "levels": [
+                    {
+                        "level": 1,
+                        "moveSpeed": 4,
+                        "carryCapacity": 2
+                    },
+                    {
+                        "level": 2,
+                        "moveSpeed": 4.5,
+                        "carryCapacity": 3
+                    },
+                    {
+                        "level": 3,
+                        "moveSpeed": 5,
+                        "carryCapacity": 4
+                    }
+                ]
+            },
+            "cashierWorker": {
+                "collectEverySales": 5,
+                "wanderRadius": 2,
+                "levels": [
+                    {
+                        "level": 1,
+                        "moveSpeed": 2,
+                        "payDelaySec": 2
+                    },
+                    {
+                        "level": 2,
+                        "moveSpeed": 2.8,
+                        "payDelaySec": 1.4
+                    },
+                    {
+                        "level": 3,
+                        "moveSpeed": 3.6,
+                        "payDelaySec": 0.8
+                    }
+                ]
+            },
             "npcs": [
                 {
                     "npcId": "shopper1"

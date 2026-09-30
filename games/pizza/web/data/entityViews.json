@@ -325,5 +325,29 @@
         ],
         "scale": 1,
         "rotationDeg": 0
+    },
+    "storeCashierView": {
+        "models": [
+            "Restaurant.Kitchencabinet"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 0.75,
+        "rotationDeg": 0
+    },
+    "storeMoneyDropView": {
+        "models": [
+            "Restaurant.Kitchencabinet"
+        ],
+        "offset": [
+            0,
+            0,
+            0
+        ],
+        "scale": 0.75,
+        "rotationDeg": 0
     }
 }

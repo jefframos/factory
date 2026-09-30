@@ -49,6 +49,76 @@ export interface StoreLevelConfig {
     enables?: StoreEnableEntry[];
 }
 
+/**
+ * What a store worker does (see StoreWorker.ts):
+ *   - 'cashier':   serves at the cashier and collects the money drop — StoreCashierWorker.ts.
+ *   - 'restocker': refills the emptiest shelf from the farms — StoreRestockerWorker.ts.
+ */
+export type StoreWorkerRole = 'cashier' | 'restocker';
+
+/** NPCs tab id EVERY store worker wears — one shared look (edit it there to change them all). */
+export const WORKER_NPC_ID = 'worker';
+
+/**
+ * One worker a store starts with. The store's roster is SAVED (StoreWorkerStorage.ts) the first
+ * time it opens — from then on the save is the source of truth for each worker's level (so the
+ * store can upgrade it); an entry added here later still joins an existing save.
+ */
+export interface StoreWorkerEntry {
+    /** Unique within the store, e.g. "cashier1", "restocker2". */
+    id: string;
+    role: StoreWorkerRole;
+    /** Starting level. Unset = 1. */
+    level?: number;
+}
+
+/** A cashier's stats at one level — see StoreCashierWorkerConfig.levels. */
+export interface StoreWorkerLevelConfig {
+    /** The level this entry is for (1, 2, ...). */
+    level: number;
+    /** Walk speed, world units per second. */
+    moveSpeed: number;
+    /** Seconds between the worker reaching the cashier (with a client ready) and that client paying — the worker's own Pay Time. */
+    payDelaySec: number;
+}
+
+/**
+ * Settings shared by this store's CASHIER workers (StoreCashierWorker.ts): serves at the cashier's
+ * npcPoint while clients are waiting to pay — exactly like the player standing there — and walks
+ * to the money drop's npcPoint to send the pile to the player's wallet every `collectEverySales`
+ * sales, or whenever no client is waiting. Otherwise wanders near the cashier.
+ */
+export interface StoreCashierWorkerConfig {
+    /** Sales served in a row before the worker walks off to collect the money drop. Unset = DEFAULT_WORKER_COLLECT_EVERY_SALES. */
+    collectEverySales?: number;
+    /** How far from its cashier point it strolls while idle, world units. Unset = DEFAULT_WORKER_WANDER_RADIUS. */
+    wanderRadius?: number;
+    /** Stats per level. The entry for the worker's level (or the highest one below it) is used; empty/unset = the store's own client Walk Speed and Pay Time. */
+    levels?: StoreWorkerLevelConfig[];
+}
+
+/** A restocker's stats at one level — see StoreRestockerWorkerConfig.levels. */
+export interface StoreRestockerLevelConfig {
+    level: number;
+    /** Walk speed, world units per second (the player walks at PlayerConfig.walkSpeed — 5). */
+    moveSpeed: number;
+    /** How many items fit on its back at once. */
+    carryCapacity: number;
+}
+
+/**
+ * Settings shared by this store's RESTOCKER workers (StoreRestockerWorker.ts): picks the shelf
+ * (a storage with a `resourceType`) with the fewest items whose crop is ready on some farm,
+ * harvests up to carryCapacity of it into the crate on its back, and brings it to that shelf.
+ * Otherwise wanders among the store's shelves.
+ */
+export interface StoreRestockerWorkerConfig {
+    /** How far from the middle of the store's shelves it strolls while idle, world units. Unset = DEFAULT_RESTOCKER_WANDER_RADIUS. */
+    wanderRadius?: number;
+    /** Stats per level (entry for the worker's level, or the highest below it). Empty/unset = DEFAULT_RESTOCKER_MOVE_SPEED / DEFAULT_RESTOCKER_CARRY_CAPACITY. */
+    levels?: StoreRestockerLevelConfig[];
+}
+
 export interface StoreConfig {
     /** Display name — shown in the web editor. Optional. */
     name?: string;
@@ -100,6 +170,10 @@ export interface StoreConfig {
     billsPerPile: number;
     /** Height of the want-bubble above the client's head, world units. */
     bubbleOffset: number;
+    /** EntityViewRegistry view for the solid counter drawn in the cashier rect (see StorePropVisual.ts) — the player serves standing against it. Unset = DEFAULT_CASHIER_VIEW. */
+    cashierView?: string;
+    /** Same, for the money drop — paid bills pile on its top. Unset = DEFAULT_MONEY_DROP_VIEW. */
+    moneyDropView?: string;
     /**
      * Pacing while the store has only ONE shelf (available storage). spawnIntervalSec/maxClients
      * above are the pacing with EVERY shelf in the store available; in between, each shelf added
@@ -109,6 +183,18 @@ export interface StoreConfig {
     startSpawnIntervalSec?: number;
     /** Same, for maxClients. Unset = min(DEFAULT_START_MAX_CLIENTS, maxClients). */
     startMaxClients?: number;
+    /** Extra clients allowed inside per hired worker (on top of the shelf-based max — see getStorePacing()). Fractions add up (0.5 = one more per two workers). Unset = DEFAULT_CLIENTS_PER_WORKER. */
+    clientsPerWorker?: number;
+    /** Extra clients allowed inside per store level above 1. Unset = DEFAULT_CLIENTS_PER_LEVEL. */
+    clientsPerLevel?: number;
+    /**
+     * How far past the max (above) the store may still go when it's STUCK — full and nobody has
+     * paid for stuckSec: one more client is let in each stuckSec, up to this many; any payment
+     * closes the extra slots again. Unset = DEFAULT_OVERFLOW_CLIENTS.
+     */
+    overflowClients?: number;
+    /** Seconds full with no payment before one overflow client is let in — see overflowClients. Unset = DEFAULT_STUCK_SEC. */
+    stuckSec?: number;
     /** x moodStepSec with only one shelf (more forgiving early on), easing to x1 with every shelf. Unset = DEFAULT_START_PATIENCE_MULTIPLIER. */
     startPatienceMultiplier?: number;
     /** Seconds a client stays in one mood before dropping a step (see StoreClientMood). Unset = DEFAULT_MOOD_STEP_SEC. */
@@ -124,6 +210,12 @@ export interface StoreConfig {
     defaultStorageId?: string;
     /** Level ladder — see StoreLevelConfig's own doc. Empty/unset = the store stays level 1 forever. */
     levels?: StoreLevelConfig[];
+    /** Workers this store starts with — see StoreWorkerEntry's own doc. Empty/unset = the player does everything. */
+    workers?: StoreWorkerEntry[];
+    /** Settings for this store's cashier workers — see StoreCashierWorkerConfig's own doc. */
+    cashierWorker?: StoreCashierWorkerConfig;
+    /** Settings for this store's restocker workers — see StoreRestockerWorkerConfig's own doc. */
+    restockerWorker?: StoreRestockerWorkerConfig;
     /** When true, this store isn't spawned at all — same convention as every other entity's `disabled`. */
     disabled?: boolean;
 }
@@ -201,6 +293,47 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
 /** Per-store-id overrides — sparse: only stores a level designer has customized need an entry. */
 export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
     "farmStore1": {
+        "restockerWorker": {
+            "wanderRadius": 3,
+            "levels": [
+                {
+                    "level": 1,
+                    "moveSpeed": 4,
+                    "carryCapacity": 2
+                },
+                {
+                    "level": 2,
+                    "moveSpeed": 4.5,
+                    "carryCapacity": 3
+                },
+                {
+                    "level": 3,
+                    "moveSpeed": 5,
+                    "carryCapacity": 4
+                }
+            ]
+        },
+        "cashierWorker": {
+            "collectEverySales": 5,
+            "wanderRadius": 2,
+            "levels": [
+                {
+                    "level": 1,
+                    "moveSpeed": 2,
+                    "payDelaySec": 2
+                },
+                {
+                    "level": 2,
+                    "moveSpeed": 2.8,
+                    "payDelaySec": 1.4
+                },
+                {
+                    "level": 3,
+                    "moveSpeed": 3.6,
+                    "payDelaySec": 0.8
+                }
+            ]
+        },
         "npcs": [
             {
                 "npcId": "shopper1"
@@ -368,6 +501,44 @@ export function getStoreConfig(id: string): StoreConfig {
     return STORE_CONFIG_BY_ID[id] ?? DEFAULT_STORE_CONFIG;
 }
 
+/** StoreCashierWorkerConfig.collectEverySales fallback. */
+export const DEFAULT_WORKER_COLLECT_EVERY_SALES = 5;
+/** StoreCashierWorkerConfig.wanderRadius fallback, world units. */
+export const DEFAULT_WORKER_WANDER_RADIUS = 2;
+
+/** StoreRestockerWorkerConfig.wanderRadius fallback, world units. */
+export const DEFAULT_RESTOCKER_WANDER_RADIUS = 3;
+/** Restocker walk speed with no levels configured — a bit slower than the player's own walkSpeed (5). */
+export const DEFAULT_RESTOCKER_MOVE_SPEED = 4;
+/** Restocker carry capacity with no levels configured. */
+export const DEFAULT_RESTOCKER_CARRY_CAPACITY = 2;
+
+/** The entry for `level` in a worker level list — or the highest one below it; undefined when none fits. */
+function pickLevelEntry<T extends { level: number }>(levels: readonly T[] | undefined, level: number): T | undefined {
+    const wanted = Math.max(1, Math.floor(level));
+    return [...(levels ?? [])]
+        .filter(candidate => candidate.level <= wanted)
+        .sort((a, b) => b.level - a.level)[0];
+}
+
+/** A cashier worker's stats at `level` — see StoreCashierWorkerConfig.levels. */
+export function getCashierLevelStats(config: StoreConfig, level: number): { moveSpeed: number; payDelaySec: number } {
+    const entry = pickLevelEntry(config.cashierWorker?.levels, level);
+    return {
+        moveSpeed: entry?.moveSpeed ?? config.moveSpeed,
+        payDelaySec: entry?.payDelaySec ?? config.payDelaySec,
+    };
+}
+
+/** A restocker worker's stats at `level` — see StoreRestockerWorkerConfig.levels. */
+export function getRestockerLevelStats(config: StoreConfig, level: number): { moveSpeed: number; carryCapacity: number } {
+    const entry = pickLevelEntry(config.restockerWorker?.levels, level);
+    return {
+        moveSpeed: entry?.moveSpeed ?? DEFAULT_RESTOCKER_MOVE_SPEED,
+        carryCapacity: Math.max(1, Math.floor(entry?.carryCapacity ?? DEFAULT_RESTOCKER_CARRY_CAPACITY)),
+    };
+}
+
 /** The entry for reaching the level after `currentLevel` — undefined once the ladder is done (or while closed, level 0: opening isn't a paid level). */
 export function getNextStoreLevel(config: StoreConfig, currentLevel: number): StoreLevelConfig | undefined {
     if (currentLevel < 1) {
@@ -402,6 +573,9 @@ export const STORE_MOOD_ICON: Record<StoreClientMood, string> = {
     angry: 'emoji-angry',
 };
 
+/** StoreConfig.cashierView / moneyDropView fallbacks — kitchen cabinets for now (see EntityViewRegistry.ts). */
+export const DEFAULT_CASHIER_VIEW = 'storeCashierView';
+export const DEFAULT_MONEY_DROP_VIEW = 'storeMoneyDropView';
 export const DEFAULT_NAV_CELL_SIZE = 0.3;
 export const DEFAULT_CLIENT_RADIUS = 0.35;
 export const DEFAULT_BROWSE_CHANCE = 0.4;
@@ -414,10 +588,19 @@ export const DEFAULT_START_PATIENCE_MULTIPLIER = 1.5;
 export const DEFAULT_MIN_CLIENT_PATIENCE = 0.8;
 export const DEFAULT_MAX_CLIENT_PATIENCE = 1.5;
 
+/** StoreConfig.clientsPerWorker / clientsPerLevel / overflowClients / stuckSec fallbacks. */
+export const DEFAULT_CLIENTS_PER_WORKER = 1;
+export const DEFAULT_CLIENTS_PER_LEVEL = 0.5;
+export const DEFAULT_OVERFLOW_CLIENTS = 2;
+export const DEFAULT_STUCK_SEC = 15;
+
 /** How busy/forgiving a store is right now — see getStorePacing(). */
 export interface StorePacing {
     spawnIntervalSec: number;
+    /** Soft cap on clients inside — the store can go past it by up to overflowClients while stuck (see StoreConfig.overflowClients). */
     maxClients: number;
+    overflowClients: number;
+    stuckSec: number;
     /** x moodStepSec for clients spawned now, before their own random tolerance. */
     patienceMultiplier: number;
 }
@@ -425,9 +608,11 @@ export interface StorePacing {
 /**
  * Pacing for a store with `shelves` of its `totalShelves` storages available: the `start*`
  * values at one shelf, the regular spawnIntervalSec/maxClients (and x1 patience) with all of
- * them, a linear step per shelf in between — so each new shelf brings a few more clients.
+ * them, a linear step per shelf in between — so each new shelf brings a few more clients. On top
+ * of that shelf-based max, every hired worker (clientsPerWorker) and every store level above 1
+ * (clientsPerLevel) allow a little more — the more help the player has, the busier it gets.
  */
-export function getStorePacing(config: StoreConfig, shelves: number, totalShelves: number): StorePacing {
+export function getStorePacing(config: StoreConfig, shelves: number, totalShelves: number, workers = 0, level = 1): StorePacing {
     const t = totalShelves > 1 ? Math.min(1, Math.max(0, (shelves - 1) / (totalShelves - 1))) : 1;
     const lerp = (from: number, to: number) => from + (to - from) * t;
     const startInterval = config.startSpawnIntervalSec ?? config.spawnIntervalSec * DEFAULT_START_SPAWN_INTERVAL_FACTOR;
@@ -435,7 +620,14 @@ export function getStorePacing(config: StoreConfig, shelves: number, totalShelve
     return {
         spawnIntervalSec: lerp(startInterval, config.spawnIntervalSec),
         // Rounded down so client count grows on the slow side (2 -> 3 -> 5 over three shelves, not 2 -> 4 -> 5).
-        maxClients: Math.max(1, Math.floor(lerp(startMax, config.maxClients) + 1e-6)),
+        maxClients: Math.max(1, Math.floor(
+            lerp(startMax, config.maxClients)
+            + Math.max(0, workers) * (config.clientsPerWorker ?? DEFAULT_CLIENTS_PER_WORKER)
+            + Math.max(0, level - 1) * (config.clientsPerLevel ?? DEFAULT_CLIENTS_PER_LEVEL)
+            + 1e-6,
+        )),
+        overflowClients: Math.max(0, Math.floor(config.overflowClients ?? DEFAULT_OVERFLOW_CLIENTS)),
+        stuckSec: Math.max(1, config.stuckSec ?? DEFAULT_STUCK_SEC),
         patienceMultiplier: lerp(config.startPatienceMultiplier ?? DEFAULT_START_PATIENCE_MULTIPLIER, 1),
     };
 }

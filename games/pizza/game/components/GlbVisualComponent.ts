@@ -101,7 +101,11 @@ export default class GlbVisualComponent extends Component {
 
         // Opt-in per this.occlusionFade — see its own doc for why this isn't applied
         // unconditionally the way applyBend() is above.
-        if (this.occlusionFade) {
+        if (this.occlusionFade?.test === 'bounds') {
+            // Whole model fades together, tested against its full bounds (buildings, walls, ...)
+            // — must run while `object` is still parentless and untransformed (see its own doc).
+            BendService.applyOcclusionFadeToObject(object, this.occlusionFade);
+        } else if (this.occlusionFade) {
             object.traverse(child => {
                 if (child instanceof THREE.Mesh) {
                     BendService.applyOcclusionFade(child, this.occlusionFade);

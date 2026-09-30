@@ -16,6 +16,12 @@
             "currency": "money",
             "amount": 10
         },
+        "resourceCost": [
+            {
+                "resourceType": "wood",
+                "amount": 20
+            }
+        ],
         "view": "storageView"
     },
     "byId": {
@@ -39,6 +45,12 @@
                 "currency": "money",
                 "amount": 10
             },
+            "resourceCost": [
+                {
+                    "resourceType": "wood",
+                    "amount": 20
+                }
+            ],
             "view": "storageView",
             "itemScale": 4
         },
@@ -62,6 +74,12 @@
                 "currency": "money",
                 "amount": 10
             },
+            "resourceCost": [
+                {
+                    "resourceType": "wood",
+                    "amount": 20
+                }
+            ],
             "view": "storageView"
         },
         "storage3": {
@@ -84,6 +102,12 @@
                 "currency": "money",
                 "amount": 10
             },
+            "resourceCost": [
+                {
+                    "resourceType": "wood",
+                    "amount": 20
+                }
+            ],
             "view": "storageView"
         },
         "storage4": {
@@ -106,6 +130,32 @@
                 "currency": "money",
                 "amount": 10
             },
+            "resourceCost": [
+                {
+                    "resourceType": "wood",
+                    "amount": 20
+                }
+            ],
+            "view": "storageView"
+        },
+        "trash1": {
+            "name": "Trash",
+            "accepts": "farm",
+            "trash": true,
+            "particleEffectId": "trashFire",
+            "particleSpawnRate": 10,
+            "models": [
+                "Restaurant.Crate"
+            ],
+            "scale": 1,
+            "rotationDeg": 0,
+            "dropOffset": {},
+            "pile": {
+                "columns": 2,
+                "rows": 2,
+                "layers": 3
+            },
+            "solid": 1,
             "view": "storageView"
         },
         "storage5": {
@@ -128,6 +178,12 @@
                 "currency": "money",
                 "amount": 10
             },
+            "resourceCost": [
+                {
+                    "resourceType": "wood",
+                    "amount": 20
+                }
+            ],
             "view": "storageView"
         }
     },

@@ -2021,6 +2021,29 @@
                  "y":640
                 }, 
                 {
+                 "height":50.6667,
+                 "id":192,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"trash1"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"storage"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":46.333,
+                 "x":528,
+                 "y":640
+                }, 
+                {
                  "ellipse":true,
                  "height":0,
                  "id":5,
@@ -2902,7 +2925,6 @@
         {
          "draworder":"topdown",
          "id":9,
-         "locked":true,
          "name":"stores",
          "objects":[
                 {
@@ -3044,6 +3066,92 @@
                  "width":67,
                  "x":96,
                  "y":851
+                },
+                {
+                 "height":0,
+                 "id":193,
+                 "name":"",
+                 "opacity":1,
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"farmStore1Cashier"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"npcPoint"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":114.667,
+                 "y":806.333
+                }, 
+                {
+                 "height":0,
+                 "id":194,
+                 "name":"",
+                 "opacity":1,
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"farmStore1MoneyDrop"
+                        }, 
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"npcPoint"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":113.333,
+                 "y":886.667
+                },  
+                {
+                 "gid":24,
+                 "height":42,
+                 "id":189,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"farmStore1Cashier"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":34,
+                 "x":127,
+                 "y":836
+                }, 
+                {
+                 "gid":24,
+                 "height":42,
+                 "id":190,
+                 "name":"",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"target",
+                         "type":"string",
+                         "value":"farmStore1MoneyDrop"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":34,
+                 "x":127,
+                 "y":909
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -4347,7 +4455,7 @@
          "y":0
         }],
  "nextlayerid":11,
- "nextobjectid":189,
+ "nextobjectid":195,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

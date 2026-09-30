@@ -128,6 +128,12 @@ export const NPC_CONFIG_BY_ID: Partial<Record<string, NpcConfig>> = {
         "scale": 0.008,
         "viewRadius": 3,
         "viewAngleDeg": 180
+    },
+    "worker": {
+        "characterViewId": "slate",
+        "scale": 0.008,
+        "viewRadius": 3,
+        "viewAngleDeg": 180
     }
 };
 

@@ -88,12 +88,18 @@
 // PLACEHOLDER_COLOR regardless, since that path only exists for
 // dev/no-art-yet plots anyway.
 //
+// Store restocker workers (store/StoreRestockerWorker.ts) harvest too: every
+// live tile is listed in FarmPlotTile.getAll(), and harvestForWorker() takes
+// a ready crop off the cell (re-arming it exactly like a player harvest) and
+// hands the yield back to the worker instead of BackpackStorage.
+//
 // Harvesting plays the same rising "+N icon" gain popup LooseResourceNode.
 // showGainPopup() plays for a ground pickup (Bark/Pebble/...) — see
 // showHarvestGainPopup() below, a near-verbatim copy since there's no
 // shared helper for it yet (see that method's own doc).
 
 import * as THREE from 'three';
+import { GameClock } from '../utils/GameClock';
 import * as PIXI from 'pixi.js';
 import gsap from 'gsap';
 import Entity from '../ecs/Entity';
@@ -149,6 +155,14 @@ const HARVEST_POPUP_ICON_SIZE = 28;
 const HARVEST_POPUP_ICON_GAP = 4;
 
 export default class FarmPlotTile extends Entity {
+    /** Every tile currently in the world — see getAll(). */
+    private static readonly live = new Set<FarmPlotTile>();
+
+    /** Every farm cell currently spawned (owned plots only) — what store restocker workers search for ready crops. */
+    public static getAll(): ReadonlySet<FarmPlotTile> {
+        return FarmPlotTile.live;
+    }
+
     /** This cell's plot id + grid position — keys FarmCropStorage's own per-cell planted state (see tileKey below) and this file's own top doc. */
     public readonly farmId: string;
     public readonly col: number;
@@ -250,7 +264,45 @@ export default class FarmPlotTile extends Entity {
         }
     }
 
+    public override destroy(): void {
+        FarmPlotTile.live.delete(this);
+        super.destroy();
+    }
+
+    /** What harvesting this cell right now would give — undefined unless a crop is planted AND ready. */
+    public getReadyYield(): { resourceType: ResourceType; amount: number } | undefined {
+        const planted = FarmCropStorage.getPlanted(this.tileKey);
+        if (!planted || !isCropReady(CROP_CONFIG[planted.cropId], planted.plantedAtSec)) {
+            return undefined;
+        }
+        const { resourceType, amount } = CROP_CONFIG[planted.cropId].yield;
+        return { resourceType, amount };
+    }
+
+    /**
+     * A store restocker worker harvests this cell: clears it exactly like harvest() does (an
+     * autoPlant cell starts its next crop right away; with the player standing here the usual
+     * next-planting prompt comes back) and returns the yield for the worker to carry — nothing
+     * goes to BackpackStorage. undefined if nothing ready is here any more.
+     */
+    public harvestForWorker(): { resourceType: ResourceType; amount: number } | undefined {
+        const ready = this.getReadyYield();
+        if (!ready || !FarmCropStorage.harvest(this.tileKey)) {
+            return undefined;
+        }
+        this.cropHud.unregister(this.tileKey);
+        if (this.isAutoPlant()) {
+            this.autoPlant();
+        } else if (this.playerInside && this.plotConfig.assignedCropId !== undefined) {
+            this.startAutoPlantTimer();
+        } else if (this.playerInside) {
+            this.registerAsSeedPickerCandidate();
+        }
+        return ready;
+    }
+
     public override awake(): void {
+        FarmPlotTile.live.add(this);
         const halfExtents = new THREE.Vector3(FARM_GRID_CELL_SIZE / 2, PLACEHOLDER_HEIGHT, FARM_GRID_CELL_SIZE / 2);
         const centerOffset = new THREE.Vector3(0, halfExtents.y, 0);
 
@@ -343,7 +395,7 @@ export default class FarmPlotTile extends Entity {
             return;
         }
 
-        const plantedAtSec = Date.now() / 1000;
+        const plantedAtSec = GameClock.nowSec();
         FarmCropStorage.plant(this.tileKey, SEED_CONFIG[seedId].cropId, plantedAtSec);
         this.seedPicker.unregister(this.tileKey);
         this.registerAsCropHudCandidate({ cropId: SEED_CONFIG[seedId].cropId, plantedAtSec });
@@ -381,7 +433,7 @@ export default class FarmPlotTile extends Entity {
             return;
         }
 
-        const plantedAtSec = Date.now() / 1000;
+        const plantedAtSec = GameClock.nowSec();
         FarmCropStorage.plant(this.tileKey, cropId, plantedAtSec);
         // An autoPlant cell also plants with nobody standing on it (see awake()/harvest()) — only
         // show the growth HUD when the player is actually here, same as handleTriggerEnter() does.

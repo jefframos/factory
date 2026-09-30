@@ -624,6 +624,9 @@ const ENTITY_SCHEMAS = {
             ],
         },
         { key: 'resourceType', type: 'select', label: 'Only This Resource (e.g. one specific crop — overrides Accepts; blank = anything Accepts allows)', source: 'resources', optional: true },
+        { key: 'trash', type: 'boolean', label: 'Trash (destroys everything dropped in — no pile, no count; signpost shows a trash icon; stores never sell from it)', optional: true },
+        { key: 'particleEffectId', type: 'select', label: 'Particle Effect (ambient, from the drop point — Particle Effects tab; blank = none)', source: 'particleEffects', optional: true },
+        { key: 'particleSpawnRate', type: 'number', label: 'Particle Spawn Rate (particles per second — blank = 4)', optional: true },
         { key: 'view', type: 'select', label: 'View (Entity Views tab — the storage mesh; when set it wins over Model/Scale/Rotation below)', source: 'entityViews', optional: true },
         { ...FLOOR_LABEL_SIDE_FIELD, key: 'signpostSide', label: 'Signpost Side (which edge of the storage its signpost stands on — blank = North; the signpost itself is the shared Signpost card above)', options: [
             { value: 'north', label: 'North (above, on the map)' },
@@ -670,6 +673,14 @@ const ENTITY_SCHEMAS = {
                 { key: 'amount', type: 'number', label: 'Amount' },
             ],
         },
+        {
+            key: 'resourceCost', type: 'list', label: 'Resource Cost (resources it ALSO costs, paid from the backpack alongside the price — e.g. 20 wood; empty = coins only)', optional: true,
+            itemLabel: item => `${item.amount ?? '?'} ${item.resourceType || 'resource'}`,
+            fields: [
+                { key: 'resourceType', type: 'select', label: 'Resource', source: 'resources' },
+                { key: 'amount', type: 'number', label: 'Amount' },
+            ],
+        },
         { key: 'disabled', type: 'boolean', label: 'Disabled (takes this storage out of the game entirely)', optional: true },
     ],
     // Store entries — both the shared "default" and each entry in "byId" — see store/StoreTypes.ts's
@@ -711,8 +722,14 @@ const ENTITY_SCHEMAS = {
         { key: 'moneyPerBill', type: 'number', label: 'Money per Bill (how much one bill on the money drop represents — visual only)' },
         { key: 'billsPerPile', type: 'number', label: 'Bills per Pile (how tall a money pile gets before the next one starts beside it — visual only)' },
         { key: 'bubbleOffset', type: 'number', label: 'Bubble Height (above the client\'s head — world units)' },
+        { key: 'cashierView', type: 'select', label: 'Cashier Counter (solid prop in the cashier rect — the player serves standing against it; blank = kitchen cabinet)', source: 'entityViews', optional: true },
+        { key: 'moneyDropView', type: 'select', label: 'Money Drop Counter (solid prop — paid bills pile on its top; blank = kitchen cabinet)', source: 'entityViews', optional: true },
         { key: 'startSpawnIntervalSec', type: 'number', label: 'Start Spawn Interval (with ONE shelf — each extra shelf steps toward Spawn Interval, reached with all shelves; blank = 1.6x Spawn Interval)', optional: true },
         { key: 'startMaxClients', type: 'number', label: 'Start Max Clients (with ONE shelf — steps toward Max Clients as shelves are added; blank = 2)', optional: true },
+        { key: 'clientsPerWorker', type: 'number', label: 'Clients per Worker (extra clients allowed inside per hired worker, on top of the shelf-based max — fractions add up; blank = 1)', optional: true },
+        { key: 'clientsPerLevel', type: 'number', label: 'Clients per Store Level (extra clients per level above 1 — blank = 0.5)', optional: true },
+        { key: 'overflowClients', type: 'number', label: 'Overflow Clients (when the store is full and nobody has paid for Stuck Time, one more comes in each Stuck Time, up to this many — any payment closes them; blank = 2)', optional: true },
+        { key: 'stuckSec', type: 'number', label: 'Stuck Time (seconds full with no payment before an overflow client comes in — blank = 15)', optional: true },
         { key: 'startPatienceMultiplier', type: 'number', label: 'Start Patience Multiplier (x Mood Step Time with ONE shelf, easing to x1 with all shelves; blank = 1.5)', optional: true },
         { key: 'moodStepSec', type: 'number', label: 'Mood Step Time (seconds before a client\'s mood drops one step — blank = 20)', optional: true },
         { key: 'minClientPatience', type: 'number', label: 'Min Client Patience (each client\'s own tolerance: x Mood Step Time, random between min and max — blank = 0.8)', optional: true },
@@ -738,6 +755,52 @@ const ENTITY_SCHEMAS = {
                     itemLabel: item => item.entityId || 'entity',
                     fields: [
                         { key: 'entityId', type: 'text', label: 'Map Object Id (e.g. farm2, storage2)' },
+                    ],
+                },
+            ],
+        },
+        {
+            key: 'workers', type: 'list', label: 'Workers (the store starts with these — saved the first time it opens, so each keeps its own level after that; every worker wears the NPCs tab\'s "worker" look)', optional: true,
+            itemLabel: item => `${item.id || 'worker'} — ${item.role || '?'} Lv ${item.level ?? 1}`,
+            fields: [
+                { key: 'id', type: 'text', label: 'Id (unique in this store, e.g. cashier1, restocker2)' },
+                {
+                    key: 'role', type: 'select', label: 'Role',
+                    options: [
+                        { value: 'cashier', label: 'Cashier (serves at the cashier, collects the money drop — one per store)' },
+                        { value: 'restocker', label: 'Restocker (refills the emptiest shelf from the farms)' },
+                    ],
+                },
+                { key: 'level', type: 'number', label: 'Starting Level (blank = 1)', optional: true },
+            ],
+        },
+        {
+            key: 'cashierWorker', type: 'group', label: 'Cashier Worker Settings (serves at the cashier npcPoint while clients wait, collects the money drop to the wallet every N sales or when idle, wanders near the cashier otherwise)',
+            fields: [
+                { key: 'collectEverySales', type: 'number', label: 'Collect Every N Sales (walks to the money drop after this many sales in a row — blank = 5)', optional: true },
+                { key: 'wanderRadius', type: 'number', label: 'Wander Radius (how far from the cashier point it strolls while idle — world units; blank = 2)', optional: true },
+                {
+                    key: 'levels', type: 'list', label: 'Levels (stats per worker level — the entry for Level, or the highest below it, is used; empty = the store\'s client Walk Speed and Pay Time)', optional: true,
+                    itemLabel: item => `Lv ${item.level ?? '?'} — speed ${item.moveSpeed ?? '?'}, pay ${item.payDelaySec ?? '?'}s`,
+                    fields: [
+                        { key: 'level', type: 'number', label: 'Level' },
+                        { key: 'moveSpeed', type: 'number', label: 'Walk Speed (world units / second)' },
+                        { key: 'payDelaySec', type: 'number', label: 'Pay Time (seconds at the cashier before the front client pays)' },
+                    ],
+                },
+            ],
+        },
+        {
+            key: 'restockerWorker', type: 'group', label: 'Restocker Worker Settings (takes the shelf with the fewest items whose crop is ready on a farm, harvests it into the crate on its back, brings it to the shelf)',
+            fields: [
+                { key: 'wanderRadius', type: 'number', label: 'Wander Radius (how far from the middle of the shelves it strolls while idle — world units; blank = 3)', optional: true },
+                {
+                    key: 'levels', type: 'list', label: 'Levels (stats per worker level — the entry for its level, or the highest below it, is used; empty = speed 4, carries 2)', optional: true,
+                    itemLabel: item => `Lv ${item.level ?? '?'} — speed ${item.moveSpeed ?? '?'}, carries ${item.carryCapacity ?? '?'}`,
+                    fields: [
+                        { key: 'level', type: 'number', label: 'Level' },
+                        { key: 'moveSpeed', type: 'number', label: 'Walk Speed (world units / second — the player walks at 5)' },
+                        { key: 'carryCapacity', type: 'number', label: 'Carry Spaces (items on its back at once)' },
                     ],
                 },
             ],

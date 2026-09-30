@@ -26,6 +26,7 @@
 // menu that should follow the player around.
 
 import * as THREE from 'three';
+import { GameClock } from '../utils/GameClock';
 import * as PIXI from 'pixi.js';
 import Entity from '../ecs/Entity';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
@@ -187,7 +188,7 @@ export default class FarmCropHud extends Entity {
 
         if (!ready) {
             const totalGrowSec = getCropTotalGrowSec(cropConfig);
-            const elapsedSec = Date.now() / 1000 - candidate.plantedAtSec;
+            const elapsedSec = GameClock.nowSec() - candidate.plantedAtSec;
             const fraction = totalGrowSec > 0 ? elapsedSec / totalGrowSec : 1;
             this.bar.setProgress(fraction);
         }

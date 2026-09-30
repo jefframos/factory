@@ -10,10 +10,12 @@
 //     actually get it (see isObtainable()) — e.g. no tomato orders before a
 //     tomato farm plot is owned, unless tomatoes are already in stock.
 //   - spawning clients (StoreClient) at the entrance every
-//     spawnIntervalSec, up to maxClients, each asking for a few of the
-//     currently offered items. Both (and how patient clients are) scale
-//     with how many shelves are available — quiet and forgiving with one,
-//     full pace with all of them (see getStorePacing()).
+//     spawnIntervalSec, each asking for a few of the currently offered items.
+//     How many can be inside is a RANGE, not a hard cap: a soft max that grows
+//     with the available shelves, hired workers and the store's level (see
+//     getStorePacing()), plus up to overflowClients more let in one at a time
+//     while the store is stuck — full with nobody paying for stuckSec (see
+//     updateOverflow()). A payment closes the extra slots again.
 //   - one waiting line per storage plus one for the cashier (StoreLine).
 //   - the cashier (StoreCashier) and money drop (StoreMoneyPile): while the
 //     player stands at the cashier, the client at the front of its line pays
@@ -35,6 +37,21 @@
 // Everything spawned here is parented under `root`, which spawnStores()
 // registers with fog of war over the store's own area — so the whole store
 // appears/hides together, the same way every other zone does.
+//
+// Workers (StoreWorker.ts): the store's roster — StoreConfig.workers, saved in
+// StoreWorkerStorage.ts the first time the store opens (so levels can be
+// upgraded later) — spawns once it's open (see restoreWorkers()):
+//   - a cashier (StoreCashierWorker.ts): serving at the cashier counts exactly
+//     like the player standing there (see updateCashier()), and it collects
+//     the money drop to the player's wallet on its own;
+//   - restockers (StoreRestockerWorker.ts): refill the emptiest shelf from the
+//     farms. Shelves and farm cells are claimed here (findRestockJob() /
+//     claimReadyTile()) so two restockers never chase the same one, and the
+//     nav grid also covers every farm plot so they can walk there.
+//
+// Clients that already picked something are saved (StoreClientStorage.ts) and
+// respawned on load, so a reload never loses items taken off a shelf — see
+// restoreClients() / saveClients().
 //
 // Stores never touch any existing entity: they only read StorageInventory
 // (and remove what clients pick up), so StorageZone's own pile follows along
@@ -61,6 +78,12 @@ import { SEED_CONFIG, SeedId } from '../data/SeedTypes';
 import { pickRandom } from '../world/AssetLibraryRegistry';
 import WorldObjectRegistry from '../world/WorldObjectRegistry';
 import StoreClient, { StoreClientHost, StoreClientWant, StoreSpot, StoreStorageRef } from './StoreClient';
+import StoreWorker from './StoreWorker';
+import type { StoreWorkerRole } from './StoreTypes';
+import StoreCashierWorker, { StoreCashierHost } from './StoreCashierWorker';
+import StoreRestockerWorker, { RestockJob, StoreRestockerHost } from './StoreRestockerWorker';
+import { SavedStoreWorker, StoreWorkerStorage } from './StoreWorkerStorage';
+import FarmPlotTile from '../world/FarmPlotTile';
 import StoreNavGrid, { NavBounds } from './nav/StoreNavGrid';
 import { NavNeighbor } from './nav/NavAgent';
 import StoreNavDebug from './nav/StoreNavDebug';
@@ -71,9 +94,10 @@ import { isWalkable } from '../world/TileWalkability';
 import StoreCashier from './StoreCashier';
 import StoreMoneyPile from './StoreMoneyPile';
 import StoreLine from './StoreLine';
-import { StoreLayout, StoreRect, randomPointInRect, readStoreLayouts, rectContains } from './StoreLayout';
+import { StoreLayout, StorePoint, StoreRect, randomPointInRect, readStoreLayouts, rectContains } from './StoreLayout';
 import { StoreMoneyStorage } from './StoreMoneyStorage';
-import { DEFAULT_CLIENT_RADIUS, DEFAULT_NAV_CELL_SIZE, StoreClientMood, StoreConfig, StorePacing, getNextStoreLevel, getStoreConfig, getStorageSpotDirection, getStorePacing, rollClientMoodStepSec } from './StoreTypes';
+import { SavedStoreClient, StoreClientStorage } from './StoreClientStorage';
+import { DEFAULT_CASHIER_VIEW, DEFAULT_CLIENT_RADIUS, DEFAULT_MONEY_DROP_VIEW, DEFAULT_NAV_CELL_SIZE, DEFAULT_RESTOCKER_WANDER_RADIUS, DEFAULT_WORKER_COLLECT_EVERY_SALES, DEFAULT_WORKER_WANDER_RADIUS, getCashierLevelStats, getRestockerLevelStats, StoreClientMood, StoreConfig, StorePacing, getNextStoreLevel, getStoreConfig, getStorageSpotDirection, getStorePacing, rollClientMoodStepSec } from './StoreTypes';
 import { StoreProgressStorage } from './StoreProgressStorage';
 import { StoreUnlocks } from './StoreUnlocks';
 
@@ -87,6 +111,8 @@ const MOOD_FLOOR_BY_LEVEL: Partial<Record<number, StoreClientMood>> = {
     1: 'happy',
     2: 'annoyed',
 };
+/** Extra waiting spots laid out past the busiest the store can be right now — covers workers hired / levels gained before the next nav rebuild. */
+const QUEUE_SPOT_HEADROOM = 3;
 /** The nav grid covers the store area + entrance + exit, grown by this much (world units). */
 const NAV_BOUNDS_MARGIN = 1;
 /** How often the nav grid checks whether anything solid appeared/disappeared (physics bodies changed). */
@@ -103,14 +129,18 @@ export interface StoreStorageSource {
     id: string;
     rect: StoreRect;
     config: StorageConfig;
+    /** The dropper rect targeting this storage, if any — where a restocker stands to fill it. */
+    dropRect?: StoreRect;
 }
 
 interface StoreStorage extends StoreStorageRef {
     readonly config: StorageConfig;
     readonly rect: StoreRect;
+    /** Where a restocker stands to fill it — its dropper's center, else its own (see StoreStorageSource.dropRect). */
+    readonly dropPoint: THREE.Vector3;
 }
 
-export default class Store extends Entity implements StoreClientHost {
+export default class Store extends Entity implements StoreClientHost, StoreCashierHost, StoreRestockerHost {
     public readonly config: StoreConfig;
     public readonly screenHost: ScreenAnchorHost;
     public readonly cashierLine: StoreLine<StoreClient>;
@@ -124,10 +154,35 @@ export default class Store extends Entity implements StoreClientHost {
     private readonly clients: StoreClient[] = [];
     private cashier?: StoreCashier;
     private moneyPile?: StoreMoneyPile;
+    /** Every spawned worker — see restoreWorkers(). */
+    private readonly workers: StoreWorker[] = [];
+    /** The one cashier among them (a second cashier entry is kept in the roster but not spawned). */
+    private cashierWorker?: StoreCashierWorker;
+    /** Roster loaded/seeded and workers spawned — see restoreWorkers(). Nothing is saved before this. */
+    private workersRestored = false;
+    /** A worker reported a change (see notifyWorkerChanged()) — saveWorkers() runs at the end of this frame. */
+    private workersDirty = false;
+    /** Shelf / farm cell claims, so two restockers never chase the same one. */
+    private readonly claimedStorages = new Map<string, StoreRestockerWorker>();
+    private readonly claimedTiles = new Map<FarmPlotTile, StoreRestockerWorker>();
+    private readonly handleWorkerLevelChanged = (storeId: string): void => {
+        if (storeId === this.layout.id) {
+            this.applyWorkerLevels();
+        }
+    };
     private spawnTimerSec = 0;
     /** True until the first client spawns — it comes after FIRST_SPAWN_DELAY_SEC instead of a full interval. */
     private firstSpawnPending = true;
     private payTimerSec = 0;
+    /** Extra clients currently allowed past the soft max, and how long the store has been full with nobody paying — see updateOverflow(). */
+    private overflowAllowed = 0;
+    private stuckTimerSec = 0;
+    /** Saved clients respawned yet — see restoreClients(). Nothing is saved before this, so an early save can't wipe them. */
+    private clientsRestored = false;
+    /** A client reported a change (see notifyClientChanged()) — saveClients() runs at the end of this frame. */
+    private clientsDirty = false;
+    /** Last list written to StoreClientStorage, to skip identical writes. */
+    private lastSavedClients = '';
 
     // Navigation — see buildNavGrid().
     private navGrid?: StoreNavGrid;
@@ -148,6 +203,7 @@ export default class Store extends Entity implements StoreClientHost {
         root: THREE.Object3D,
         getWalletOverlayPosition: () => { x: number; y: number },
         farmIds: string[] = [],
+        farmRects: StoreRect[] = [],
     ) {
         super();
         this.farmIds = farmIds;
@@ -167,11 +223,13 @@ export default class Store extends Entity implements StoreClientHost {
             config: source.config,
             rect: source.rect,
             position: new THREE.Vector3(source.rect.x, 0, source.rect.z),
+            dropPoint: new THREE.Vector3(source.dropRect?.x ?? source.rect.x, 0, source.dropRect?.z ?? source.rect.z),
             line: new StoreLine<StoreClient>(source.rect, center, config.spotSpacing, config.spotMargin, getStorageSpotDirection(config, source.id)),
         }));
         this.cashierLine = new StoreLine<StoreClient>(layout.cashier, center, config.spotSpacing, config.spotMargin, config.cashierSpotDirection);
 
-        const covered = [layout.area, layout.entrance, layout.exit].map(rectBounds);
+        // Farm plots too — restocker workers walk there (see StoreRestockerWorker.ts).
+        const covered = [layout.area, layout.entrance, layout.exit, ...farmRects].map(rectBounds);
         this.navBounds = {
             minX: Math.min(...covered.map(b => b.minX)) - NAV_BOUNDS_MARGIN,
             minZ: Math.min(...covered.map(b => b.minZ)) - NAV_BOUNDS_MARGIN,
@@ -182,11 +240,14 @@ export default class Store extends Entity implements StoreClientHost {
 
     public override awake(): void {
         const world = this.world!;
-        this.cashier = world.add(new StoreCashier(this.layout.cashier));
+        this.cashier = world.add(new StoreCashier(this.layout.cashier, this.config.cashierView ?? DEFAULT_CASHIER_VIEW, this.layout.cashierMesh));
         this.root.add(this.cashier.transform);
-        this.moneyPile = world.add(new StoreMoneyPile(this.layout.id, this.layout.moneyDrop, this.screenHost, this.config.moneyPerBill, this.config.billsPerPile, this.getWalletOverlayPosition));
+        this.moneyPile = world.add(new StoreMoneyPile(this.layout.id, this.layout.moneyDrop, this.screenHost, this.config.moneyPerBill, this.config.billsPerPile, this.getWalletOverlayPosition, this.config.moneyDropView ?? DEFAULT_MONEY_DROP_VIEW, this.layout.moneyDropMesh));
         this.root.add(this.moneyPile.transform);
         void StoreMoneyStorage.load();
+        void StoreClientStorage.load();
+        void StoreWorkerStorage.load();
+        StoreWorkerStorage.onLevelChanged.add(this.handleWorkerLevelChanged);
 
         if (PHYSICS_DEBUG) {
             this.navDebug = new StoreNavDebug();
@@ -213,11 +274,21 @@ export default class Store extends Entity implements StoreClientHost {
         }
         this.cashier!.transform.visible = open;
         this.moneyPile!.transform.visible = open;
+        if (open) {
+            // No-ops after the first time — counters (and their colliders) only exist once open.
+            this.cashier!.showCounter();
+            this.moneyPile!.showCounter();
+            // Once, as soon as the saved roster has loaded.
+            if (!this.workersRestored && StoreWorkerStorage.isLoaded()) {
+                this.restoreWorkers();
+            }
+        }
 
         // No clients while closed, still hidden under fog of war (they'd drain storages the player
         // can't reach yet), or with no storage available to buy from.
         const pacing = this.getPacing();
-        if (open && this.isVisible() && this.clients.length < pacing.maxClients && this.getAvailableStorages().length > 0) {
+        this.updateOverflow(delta, pacing);
+        if (open && this.isVisible() && this.clients.length < pacing.maxClients + this.overflowAllowed && this.getAvailableStorages().length > 0) {
             this.spawnTimerSec += delta;
             if (this.spawnTimerSec >= (this.firstSpawnPending ? FIRST_SPAWN_DELAY_SEC : pacing.spawnIntervalSec)) {
                 this.spawnTimerSec = 0;
@@ -229,6 +300,20 @@ export default class Store extends Entity implements StoreClientHost {
 
         this.updateCashier(delta);
         this.updateNav(delta);
+
+        if (open && !this.clientsRestored && StoreClientStorage.isLoaded()) {
+            this.restoreClients();
+        }
+        if (this.clientsDirty && this.clientsRestored) {
+            this.saveClients();
+        }
+        if (this.workersDirty && this.workersRestored) {
+            this.saveWorkers();
+        }
+    }
+
+    public notifyClientChanged(): void {
+        this.clientsDirty = true;
     }
 
     public override destroy(): void {
@@ -238,6 +323,12 @@ export default class Store extends Entity implements StoreClientHost {
             world?.remove(client);
         }
         this.clients.length = 0;
+        StoreWorkerStorage.onLevelChanged.remove(this.handleWorkerLevelChanged);
+        for (const worker of this.workers) {
+            world?.remove(worker);
+        }
+        this.workers.length = 0;
+        this.cashierWorker = undefined;
         if (this.cashier) {
             world?.remove(this.cashier);
         }
@@ -354,6 +445,7 @@ export default class Store extends Entity implements StoreClientHost {
         }
         this.navNeighbors.length = 0;
         this.navNeighbors.push(...this.clients);
+        this.navNeighbors.push(...this.workers);
         if (this.player && this.playerNeighbor) {
             this.navNeighbors.push(this.playerNeighbor);
         }
@@ -398,7 +490,8 @@ export default class Store extends Entity implements StoreClientHost {
             return;
         }
         this.navGrid = grid;
-        layoutQueueSpots(grid, [...this.storages.map(storage => storage.line), this.cashierLine], this.config.waitStyle ?? 'cluster', this.config.maxClients);
+        const pacing = getStorePacing(this.config, this.storages.length, this.storages.length, this.workers.length, StoreProgressStorage.getLevel(this.layout.id));
+        layoutQueueSpots(grid, [...this.storages.map(storage => storage.line), this.cashierLine], this.config.waitStyle ?? 'cluster', pacing.maxClients + pacing.overflowClients + QUEUE_SPOT_HEADROOM);
     }
 
     /** A random walkable point between minRadius and maxRadius of `center`, clear of other clients and queue spots. */
@@ -430,9 +523,31 @@ export default class Store extends Entity implements StoreClientHost {
         return true;
     }
 
-    /** Busier (and less forgiving) with every shelf the player has made available — see getStorePacing(). */
+    /** Busier (and less forgiving) with every shelf the player has made available, every hired worker and every store level — see getStorePacing(). */
     private getPacing(): StorePacing {
-        return getStorePacing(this.config, this.getAvailableStorages().length, this.storages.length);
+        return getStorePacing(this.config, this.getAvailableStorages().length, this.storages.length, this.workers.length, StoreProgressStorage.getLevel(this.layout.id));
+    }
+
+    /**
+     * Full (at the soft max plus whatever overflow is already open) with nobody paying for
+     * stuckSec -> one more client may come in, up to overflowClients. Dropping back under the
+     * soft max closes the extra slots; so does any payment (see recordSale()).
+     */
+    private updateOverflow(delta: number, pacing: StorePacing): void {
+        if (this.clients.length < pacing.maxClients) {
+            this.overflowAllowed = 0;
+            this.stuckTimerSec = 0;
+            return;
+        }
+        if (this.overflowAllowed >= pacing.overflowClients || this.clients.length < pacing.maxClients + this.overflowAllowed) {
+            this.stuckTimerSec = 0;
+            return;
+        }
+        this.stuckTimerSec += delta;
+        if (this.stuckTimerSec >= pacing.stuckSec) {
+            this.stuckTimerSec = 0;
+            this.overflowAllowed++;
+        }
     }
 
     /** Storages clients can use right now — bought (or free), and enabled by the store's level. See StoreUnlocks.isStorageAvailable(). */
@@ -538,6 +653,277 @@ export default class Store extends Entity implements StoreClientHost {
         return true;
     }
 
+    // ---- Workers
+
+    /**
+     * Loads this store's saved roster (StoreWorkerStorage.ts) — seeding it from StoreConfig.workers
+     * the first time, and appending any config entry the save doesn't have yet — then spawns
+     * every worker in it. Runs once, as soon as the store is open and the save has loaded.
+     */
+    private restoreWorkers(): void {
+        this.workersRestored = true;
+        const saved = StoreWorkerStorage.getRoster(this.layout.id);
+        const roster: SavedStoreWorker[] = saved ? saved.map(entry => ({ ...entry })) : [];
+        for (const entry of this.config.workers ?? []) {
+            if (entry.id && !roster.some(existing => existing.id === entry.id)) {
+                roster.push({ id: entry.id, role: entry.role, level: Math.max(1, Math.floor(entry.level ?? 1)) });
+            }
+        }
+        StoreWorkerStorage.setRoster(this.layout.id, roster);
+
+        for (const entry of roster) {
+            this.spawnWorker(entry);
+        }
+    }
+
+    /**
+     * Hires one more worker (level 1) — added to the saved roster and spawned right away. Returns
+     * false (with a warning) when the store isn't open yet, or for a second cashier (one per store).
+     */
+    public hireWorker(role: StoreWorkerRole): boolean {
+        if (!this.workersRestored) {
+            console.warn(`[Store] "${this.layout.id}" isn't open yet — can't hire a ${role}`);
+            return false;
+        }
+        if (role === 'cashier' && this.cashierWorker) {
+            console.warn(`[Store] "${this.layout.id}" already has a cashier`);
+            return false;
+        }
+        const roster = [...(StoreWorkerStorage.getRoster(this.layout.id) ?? [])];
+        let index = 1;
+        while (roster.some(entry => entry.id === `${role}${index}`)) {
+            index++;
+        }
+        const entry: SavedStoreWorker = { id: `${role}${index}`, role, level: 1 };
+        roster.push(entry);
+        StoreWorkerStorage.setRoster(this.layout.id, roster);
+        this.spawnWorker(entry);
+        return true;
+    }
+
+    private spawnWorker(entry: SavedStoreWorker): void {
+        const radius = this.config.clientRadius ?? DEFAULT_CLIENT_RADIUS;
+        let worker: StoreWorker;
+        if (entry.role === 'cashier') {
+            if (this.cashierWorker) {
+                console.warn(`[Store] "${this.layout.id}": only one cashier worker is spawned — "${entry.id}" stays in the roster unused`);
+                return;
+            }
+            const cashierConfig = this.config.cashierWorker ?? {};
+            const stats = getCashierLevelStats(this.config, entry.level);
+            const toPoint = (point: StorePoint | undefined, rect: StoreRect): THREE.Vector3 =>
+                new THREE.Vector3(point?.x ?? rect.x, 0, point?.z ?? rect.z);
+            const cashierPoint = toPoint(this.layout.cashierNpcPoint, this.layout.cashier);
+            this.cashierWorker = new StoreCashierWorker(this, {
+                id: entry.id,
+                level: entry.level,
+                moveSpeed: stats.moveSpeed,
+                radius,
+                spawnAt: cashierPoint,
+                payDelaySec: stats.payDelaySec,
+                collectEverySales: Math.max(1, Math.floor(cashierConfig.collectEverySales ?? DEFAULT_WORKER_COLLECT_EVERY_SALES)),
+                wanderRadius: cashierConfig.wanderRadius ?? DEFAULT_WORKER_WANDER_RADIUS,
+                cashierPoint,
+                collectPoint: toPoint(this.layout.moneyDropNpcPoint, this.layout.moneyDrop),
+            });
+            worker = this.cashierWorker;
+        } else if (entry.role === 'restocker') {
+            const stats = getRestockerLevelStats(this.config, entry.level);
+            const spawnAt = this.getHomePoint().clone();
+            this.navGrid?.snapToWalkable(spawnAt);
+            worker = new StoreRestockerWorker(this, {
+                id: entry.id,
+                level: entry.level,
+                moveSpeed: stats.moveSpeed,
+                radius,
+                spawnAt,
+                carryCapacity: stats.carryCapacity,
+                wanderRadius: this.config.restockerWorker?.wanderRadius ?? DEFAULT_RESTOCKER_WANDER_RADIUS,
+                carried: entry.carried,
+            });
+        } else {
+            console.warn(`[Store] "${this.layout.id}": worker "${entry.id}" has unknown role "${String(entry.role)}" — skipping`);
+            return;
+        }
+        this.world!.add(worker);
+        this.root.add(worker.transform);
+        this.workers.push(worker);
+    }
+
+    /** Re-saves the roster: every spawned worker's current state, plus any saved entry that isn't spawned (e.g. a second cashier). */
+    private saveWorkers(): void {
+        this.workersDirty = false;
+        const saved = StoreWorkerStorage.getRoster(this.layout.id) ?? [];
+        const roster = saved.map(entry => {
+            const worker = this.workers.find(candidate => candidate.workerId === entry.id);
+            if (worker instanceof StoreRestockerWorker) {
+                return worker.toSave();
+            }
+            return worker ? { ...entry, level: worker.getLevel() } : entry;
+        });
+        StoreWorkerStorage.setRoster(this.layout.id, roster);
+    }
+
+    /** StoreWorkerStorage.setLevel() changed someone's level — hand each live worker its saved level. */
+    private applyWorkerLevels(): void {
+        const roster = StoreWorkerStorage.getRoster(this.layout.id) ?? [];
+        for (const worker of this.workers) {
+            const entry = roster.find(candidate => candidate.id === worker.workerId);
+            if (entry && entry.level !== worker.getLevel()) {
+                worker.applyLevel(entry.level);
+            }
+        }
+    }
+
+    public getCashierStats(level: number): { moveSpeed: number; payDelaySec: number } {
+        return getCashierLevelStats(this.config, level);
+    }
+
+    public getRestockerStats(level: number): { moveSpeed: number; carryCapacity: number } {
+        return getRestockerLevelStats(this.config, level);
+    }
+
+    public hasMoneyToCollect(): boolean {
+        return StoreMoneyStorage.get(this.layout.id) > 0;
+    }
+
+    public collectMoney(): void {
+        this.moneyPile?.collectToWallet();
+    }
+
+    /** Middle of the store's shelves (the store area's center with none). */
+    public getHomePoint(): THREE.Vector3 {
+        if (this.storages.length === 0) {
+            return new THREE.Vector3(this.layout.area.x, 0, this.layout.area.z);
+        }
+        const sum = new THREE.Vector3();
+        this.storages.forEach(storage => sum.add(storage.position));
+        return sum.divideScalar(this.storages.length);
+    }
+
+    /** See StoreRestockerHost.findRestockJob() — the emptiest available, not-full shelf with a ready, unclaimed farm cell for its item. */
+    public findRestockJob(worker: StoreRestockerWorker): RestockJob | undefined {
+        const pick = this.getAvailableStorages()
+            .filter(storage => storage.config.resourceType !== undefined && !this.isClaimedByOther(this.claimedStorages.get(storage.id), worker))
+            .map(storage => ({ storage, type: storage.config.resourceType!, count: StorageInventory.getCount(storage.id, storage.config.resourceType!) }))
+            .filter(candidate => candidate.count < storageCapacity(candidate.storage.config) && this.hasReadyTile(candidate.type, worker))
+            .sort((a, b) => a.count - b.count)[0];
+        return pick && this.claimStorage(pick.storage, pick.type, worker);
+    }
+
+    /** See StoreRestockerHost.findShelfFor() — a shelf dedicated to `type` (an unclaimed one first), else any shelf that accepts it. */
+    public findShelfFor(worker: StoreRestockerWorker, type: ResourceType): RestockJob | undefined {
+        const shelves = this.getAvailableStorages();
+        const dedicated = shelves.filter(storage => storage.config.resourceType === type);
+        const generic = shelves.filter(storage => storage.config.resourceType === undefined && storageAccepts(storage.config, type));
+        const pick = dedicated.find(storage => !this.isClaimedByOther(this.claimedStorages.get(storage.id), worker)) ?? dedicated[0] ?? generic[0];
+        return pick && this.claimStorage(pick, type, worker);
+    }
+
+    /** See StoreRestockerHost.claimReadyTile() — the nearest ready, unclaimed farm cell yielding `type`; replaces this worker's previous cell claim. */
+    public claimReadyTile(worker: StoreRestockerWorker, type: ResourceType, near: THREE.Vector3): FarmPlotTile | undefined {
+        for (const [tile, owner] of this.claimedTiles) {
+            if (owner === worker) {
+                this.claimedTiles.delete(tile);
+            }
+        }
+        let best: FarmPlotTile | undefined;
+        let bestDistance = Infinity;
+        for (const tile of FarmPlotTile.getAll()) {
+            if (tile.getReadyYield()?.resourceType !== type || this.isClaimedByOther(this.claimedTiles.get(tile), worker)) {
+                continue;
+            }
+            const distance = tile.transform.position.distanceToSquared(near);
+            if (distance < bestDistance) {
+                best = tile;
+                bestDistance = distance;
+            }
+        }
+        if (best) {
+            this.claimedTiles.set(best, worker);
+        }
+        return best;
+    }
+
+    public releaseClaims(worker: StoreRestockerWorker): void {
+        for (const [id, owner] of this.claimedStorages) {
+            if (owner === worker) {
+                this.claimedStorages.delete(id);
+            }
+        }
+        for (const [tile, owner] of this.claimedTiles) {
+            if (owner === worker) {
+                this.claimedTiles.delete(tile);
+            }
+        }
+    }
+
+    public getFlightParent(): THREE.Object3D | undefined {
+        return this.root;
+    }
+
+    public notifyWorkerChanged(): void {
+        this.workersDirty = true;
+    }
+
+    private claimStorage(storage: StoreStorage, type: ResourceType, worker: StoreRestockerWorker): RestockJob {
+        this.claimedStorages.set(storage.id, worker);
+        return { storageId: storage.id, type, dropPoint: storage.dropPoint.clone(), shelfPosition: storage.position.clone() };
+    }
+
+    private hasReadyTile(type: ResourceType, worker: StoreRestockerWorker): boolean {
+        for (const tile of FarmPlotTile.getAll()) {
+            if (tile.getReadyYield()?.resourceType === type && !this.isClaimedByOther(this.claimedTiles.get(tile), worker)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private isClaimedByOther(owner: StoreRestockerWorker | undefined, worker: StoreRestockerWorker): boolean {
+        return owner !== undefined && owner !== worker;
+    }
+
+    /** Respawns every client saved with picked items (see StoreClientStorage.ts) where it was, with the same list, progress and mood. Runs once, as soon as the store is open and the save has loaded. */
+    private restoreClients(): void {
+        this.clientsRestored = true;
+        for (const saved of StoreClientStorage.get(this.layout.id)) {
+            const wants = saved.wants.filter(want => RESOURCE_CONFIG[want.type] !== undefined);
+            if (!wants.some(want => want.bought > 0)) {
+                continue;
+            }
+            const spawnAt = new THREE.Vector3(saved.x, 0, saved.z);
+            const exitAt = new THREE.Vector3(saved.exitX, 0, saved.exitZ);
+            this.navGrid?.snapToWalkable(spawnAt);
+            this.navGrid?.snapToWalkable(exitAt);
+            const client = this.world!.add(new StoreClient(
+                this,
+                spawnAt,
+                exitAt,
+                wants.map(want => ({ type: want.type, amount: want.remaining + want.bought })),
+                saved.npcId,
+                saved.moodStepSec,
+            ));
+            client.restoreProgress(wants, saved.moodIndex);
+            this.root.add(client.transform);
+            this.clients.push(client);
+        }
+        // Re-save right away — drops anything that couldn't be restored.
+        this.clientsDirty = true;
+    }
+
+    /** Writes every client worth keeping (see StoreClient.toSave()) to StoreClientStorage. */
+    private saveClients(): void {
+        this.clientsDirty = false;
+        const list = this.clients.map(client => client.toSave()).filter((saved): saved is SavedStoreClient => saved !== undefined);
+        const json = JSON.stringify(list);
+        if (json === this.lastSavedClients) {
+            return;
+        }
+        this.lastSavedClients = json;
+        StoreClientStorage.set(this.layout.id, list);
+    }
+
     /** A random look, preferring ones nobody inside the store is wearing yet so the crowd stays varied. */
     private pickNpcId(): string {
         const inside = new Set(this.clients.map(client => client.npcId));
@@ -545,23 +931,44 @@ export default class Store extends Entity implements StoreClientHost {
         return pickRandom(unused.length > 0 ? unused : this.config.npcs).npcId;
     }
 
-    /** While the player stands at the cashier, the client at the front of its line pays after payDelaySec. */
+    /**
+     * While the player stands at the cashier — or the cashier worker is serving there — the client
+     * at the front of its line pays after payDelaySec (the worker's own, when only it is there; the
+     * quicker of the two when both are).
+     */
     private updateCashier(delta: number): void {
         const front = this.cashierLine.front();
-        if (!front?.isReadyToPay() || !this.cashier?.isPlayerInside()) {
+        const playerServing = this.cashier?.isPlayerInside() ?? false;
+        const worker = this.cashierWorker?.isServing() ? this.cashierWorker : undefined;
+        if (!front?.isReadyToPay() || (!playerServing && !worker)) {
             this.payTimerSec = 0;
             return;
         }
 
+        const delaySec = worker
+            ? (playerServing ? Math.min(this.config.payDelaySec, worker.getPayDelaySec()) : worker.getPayDelaySec())
+            : this.config.payDelaySec;
         this.payTimerSec += delta;
-        if (this.payTimerSec < this.config.payDelaySec) {
+        if (this.payTimerSec < delaySec) {
             return;
         }
         this.payTimerSec = 0;
         const from = front.getHeadWorldPosition();
         const amount = front.pay();
         this.moneyPile?.receivePayment(amount, from);
+        this.recordSale(amount);
+        worker?.onServed();
+    }
 
+    /** Debug/test — counts `amount` as one paid sale toward the next level (see PizzaScene's "Add 50 To Store" button). No-op while the store is closed. */
+    public debugRecordSale(amount: number): void {
+        this.recordSale(amount);
+    }
+
+    private recordSale(amount: number): void {
+        // Someone paid — the store isn't stuck any more (see updateOverflow()).
+        this.overflowAllowed = 0;
+        this.stuckTimerSec = 0;
         for (const level of StoreProgressStorage.recordSale(this.layout.id, this.config, amount)) {
             UpgradeNotificationManager.instance.show({
                 type: NotificationType.Unlockable,
@@ -575,6 +982,12 @@ export default class Store extends Entity implements StoreClientHost {
 
 function rectBounds(rect: StoreRect): NavBounds {
     return { minX: rect.x - rect.width / 2, minZ: rect.z - rect.depth / 2, maxX: rect.x + rect.width / 2, maxZ: rect.z + rect.depth / 2 };
+}
+
+/** How many items a storage's pile shows — a restocker treats a shelf at this count as full. Same fallback as StorageZone.buildLayout(). */
+function storageCapacity(config: StorageConfig): number {
+    const pile = config.pile ?? { columns: 3, rows: 3, layers: 4 };
+    return pile.columns * pile.rows * pile.layers;
 }
 
 /** Same rule as StorageZone.accepts() for a storage with no `resourceType`. */
@@ -616,15 +1029,17 @@ export function spawnStores(deps: SpawnStoresDeps): Store[] {
         const storages: StoreStorageSource[] = [];
         for (const [id, placement] of deps.worldObjects.getAllOfType('storage')) {
             const storageConfig = getStorageConfig(id);
-            if (!storageConfig.disabled && rectContains(layout.area, placement.x, placement.z)) {
-                storages.push({ id, rect: placement, config: storageConfig });
+            if (!storageConfig.disabled && !storageConfig.trash && rectContains(layout.area, placement.x, placement.z)) {
+                storages.push({ id, rect: placement, config: storageConfig, dropRect: deps.worldObjects.getDropperFor(id) });
             }
         }
 
         const farmIds: string[] = [];
-        for (const [id] of deps.worldObjects.getAllOfType('farm')) {
+        const farmRects: StoreRect[] = [];
+        for (const [id, placement] of deps.worldObjects.getAllOfType('farm')) {
             if (!getFarmPlotConfig(id).disabled) {
                 farmIds.push(id);
+                farmRects.push(placement);
             }
         }
 
@@ -633,7 +1048,7 @@ export function spawnStores(deps: SpawnStoresDeps): Store[] {
         deps.threeScene.add(root);
         deps.registerZoneVisibility(root, layout.area.x, layout.area.z, layout.area.width, layout.area.depth);
 
-        const store = deps.world.add(new Store(layout, config, storages, deps.screenHost, root, deps.getWalletOverlayPosition, farmIds));
+        const store = deps.world.add(new Store(layout, config, storages, deps.screenHost, root, deps.getWalletOverlayPosition, farmIds, farmRects));
         stores.push(store);
     }
     return stores;

@@ -68,6 +68,8 @@ export class Game {
 
     static deltaTime: number;
     static scale: number;
+    /** Multiplies every frame's delta (update() and fixedUpdate() alike) — e.g. pizza's 2x speed toggle (games/pizza/game/utils/GameClock.ts). 1 = real time. */
+    static timeScale = 1;
 
     private static extractDebugParams() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -192,13 +194,13 @@ export class Game {
         const deltaMS = now - this.lastTime;
         this.lastTime = now;
 
-        const deltaSeconds = deltaMS / 1000;
+        const deltaSeconds = (deltaMS / 1000) * Game.timeScale;
         Game.deltaTime = deltaSeconds;
 
         // --- Fixed Update Accumulator Logic ---
         // Clamp catch-up after a long gap (e.g. tab backgrounded for minutes) so we don't
         // spiral into thousands of synchronous fixedUpdate() calls trying to replay lost time.
-        this.accumulator += Math.min(deltaMS, Game._fixedDeltaTime * 5);
+        this.accumulator += Math.min(deltaMS, Game._fixedDeltaTime * 5) * Game.timeScale;
 
         // Run as many fixed updates as needed to "catch up" to real time
         // We pass the fixed step in seconds (e.g., 0.01666 for 60fps)

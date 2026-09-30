@@ -46,6 +46,7 @@ import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import MainPlayer from '../player/MainPlayer';
 import MartPopup from '../ui/popups/MartPopup';
 import { PopupManager } from '../ui/popups/PopupManager';
+import { STRUCTURE_OCCLUSION_FADE } from '../services/BendService';
 
 const MART_ZONE_CORNER_RADIUS = 0.2;
 const PLACEHOLDER_HEIGHT = 1.5;
@@ -160,6 +161,8 @@ export default class MartZone extends Entity {
                 new THREE.Vector3(offsetX, offsetY, offsetZ),
                 resolved.scale,
                 THREE.MathUtils.degToRad(resolved.rotationDeg),
+                undefined,
+                STRUCTURE_OCCLUSION_FADE,
             ));
         } else {
             this.addComponent(new BoxVisualComponent(

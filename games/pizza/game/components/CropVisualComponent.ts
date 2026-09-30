@@ -22,6 +22,7 @@
 // stay in sync as a single load DOES here.
 
 import * as THREE from 'three';
+import { GameClock } from '../utils/GameClock';
 import Component from '../ecs/Component';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
 import { BendService } from '../services/BendService';
@@ -57,7 +58,7 @@ export default class CropVisualComponent extends Component {
         }
 
         const config = CROP_CONFIG[planted.cropId];
-        const elapsedSec = Date.now() / 1000 - planted.plantedAtSec;
+        const elapsedSec = GameClock.nowSec() - planted.plantedAtSec;
         const { stage, t, meshKey } = resolveCropStage(config, elapsedSec);
 
         if (meshKey !== this.currentMeshKey) {
