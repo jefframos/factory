@@ -142,21 +142,24 @@
             "name": "Trash",
             "accepts": "farm",
             "trash": true,
+            "hideSignpost": true,
             "particleEffectId": "trashFire",
             "particleSpawnRate": 10,
             "models": [
-                "Restaurant.Crate"
+                "Restaurant.Trashcan"
             ],
             "scale": 1,
             "rotationDeg": 0,
-            "dropOffset": {},
+            "dropOffset": {
+                "y": 2.3
+            },
             "pile": {
                 "columns": 2,
                 "rows": 2,
                 "layers": 3
             },
             "solid": 1,
-            "view": "storageView"
+            "view": "trashcanView"
         },
         "storage5": {
             "models": [

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="11" nextobjectid="195">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="11" nextobjectid="197">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -9,7 +9,7 @@
  <tileset firstgid="13" name="resources" tilewidth="32" tileheight="32" tilecount="11" columns="11">
   <image source="resources.png" width="352" height="32"/>
  </tileset>
- <tileset firstgid="24" name="models" tilewidth="116" tileheight="117" tilecount="14" columns="0">
+ <tileset firstgid="24" name="models" tilewidth="116" tileheight="117" tilecount="15" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="0">
    <properties>
@@ -68,6 +68,12 @@
   </tile>
   <tile id="14">
    <image source="models/pizza-model-snapshots_Survival--TentCanvas__18x18.png" width="18" height="18"/>
+  </tile>
+  <tile id="15">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Restaurant--TableMediumLong__96x48.png" width="96" height="48"/>
   </tile>
  </tileset>
  <layer id="1" name="groundLayer" width="30" height="20" opacity="0.41">
@@ -1808,43 +1814,43 @@
     <property name="type" value="storeExit"/>
    </properties>
   </object>
-  <object id="156" x="96" y="768" width="67" height="79">
+  <object id="156" x="96" y="800" width="64" height="64">
    <properties>
     <property name="id" value="farmStore1Cashier"/>
     <property name="target" value="farmStore1"/>
     <property name="type" value="storeCashier"/>
    </properties>
   </object>
-  <object id="157" x="96" y="851" width="67" height="79">
+  <object id="157" x="96" y="864" width="64" height="64">
    <properties>
     <property name="id" value="farmStore1MoneyDrop"/>
     <property name="target" value="farmStore1"/>
     <property name="type" value="storeMoneyDrop"/>
    </properties>
   </object>
-  <object id="189" gid="24" x="127" y="836" width="34" height="42">
-   <properties>
-    <property name="target" value="farmStore1Cashier"/>
-   </properties>
-  </object>
-  <object id="190" gid="24" x="127" y="909" width="34" height="42">
-   <properties>
-    <property name="target" value="farmStore1MoneyDrop"/>
-   </properties>
-  </object>
-  <object id="193" x="114.667" y="806.333">
+  <object id="193" x="114.667" y="831">
    <properties>
     <property name="target" value="farmStore1Cashier"/>
     <property name="type" value="npcPoint"/>
    </properties>
    <point/>
   </object>
-  <object id="194" x="113.333" y="886.667">
+  <object id="194" x="115" y="894.667">
    <properties>
     <property name="target" value="farmStore1MoneyDrop"/>
     <property name="type" value="npcPoint"/>
    </properties>
    <point/>
+  </object>
+  <object id="195" gid="39" x="128" y="800" width="64" height="32" rotation="90">
+   <properties>
+    <property name="target" value="farmStore1Cashier"/>
+   </properties>
+  </object>
+  <object id="196" gid="39" x="128" y="864" width="64" height="32" rotation="90">
+   <properties>
+    <property name="target" value="farmStore1MoneyDrop"/>
+   </properties>
   </object>
  </objectgroup>
  <objectgroup id="6" name="meshes">

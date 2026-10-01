@@ -4024,6 +4024,150 @@ const FoodWineWhite = {
 }
 } as const;
 
+const HatsAmericanHat = {
+  id: 'American_Hat',
+  path: 'hats/American_Hat',
+  fullPath: 'pizza/models/hats/American_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsArmorHat = {
+  id: 'Armor_Hat',
+  path: 'hats/Armor_Hat',
+  fullPath: 'pizza/models/hats/Armor_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsBoxingHat = {
+  id: 'Boxing_Hat',
+  path: 'hats/Boxing_Hat',
+  fullPath: 'pizza/models/hats/Boxing_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsCashierHat = {
+  id: 'Cashier_Hat',
+  path: 'hats/Cashier_Hat',
+  fullPath: 'pizza/models/hats/Cashier_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsChefHat = {
+  id: 'Chef_Hat',
+  path: 'hats/Chef_Hat',
+  fullPath: 'pizza/models/hats/Chef_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsCowboyHat = {
+  id: 'Cowboy_Hat',
+  path: 'hats/Cowboy_Hat',
+  fullPath: 'pizza/models/hats/Cowboy_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsCrown = {
+  id: 'Crown',
+  path: 'hats/Crown',
+  fullPath: 'pizza/models/hats/Crown.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsFiremanHat = {
+  id: 'Fireman_Hat',
+  path: 'hats/Fireman_Hat',
+  fullPath: 'pizza/models/hats/Fireman_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsGreenHat = {
+  id: 'Green_Hat',
+  path: 'hats/Green_Hat',
+  fullPath: 'pizza/models/hats/Green_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsHardHat = {
+  id: 'Hard_Hat',
+  path: 'hats/Hard_Hat',
+  fullPath: 'pizza/models/hats/Hard_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsJesterHat = {
+  id: 'Jester_Hat',
+  path: 'hats/Jester_Hat',
+  fullPath: 'pizza/models/hats/Jester_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsMexicanHat = {
+  id: 'Mexican_Hat',
+  path: 'hats/Mexican_Hat',
+  fullPath: 'pizza/models/hats/Mexican_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsMillitaryHat = {
+  id: 'Millitary_Hat',
+  path: 'hats/Millitary_Hat',
+  fullPath: 'pizza/models/hats/Millitary_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsPirateHat = {
+  id: 'Pirate_Hat',
+  path: 'hats/Pirate_Hat',
+  fullPath: 'pizza/models/hats/Pirate_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsPoliceHat = {
+  id: 'Police_Hat',
+  path: 'hats/Police_Hat',
+  fullPath: 'pizza/models/hats/Police_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsSantaHat = {
+  id: 'Santa_Hat',
+  path: 'hats/Santa_Hat',
+  fullPath: 'pizza/models/hats/Santa_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsVikingHat = {
+  id: 'Viking_Hat',
+  path: 'hats/Viking_Hat',
+  fullPath: 'pizza/models/hats/Viking_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
+const HatsWarriorHat = {
+  id: 'Warrior_Hat',
+  path: 'hats/Warrior_Hat',
+  fullPath: 'pizza/models/hats/Warrior_Hat.glb',
+  format: 'glb',
+  nodes: {}
+} as const;
+
 const PetsAnimalBeaver = {
   id: 'animal-beaver',
   path: 'pets/animal-beaver',
@@ -7865,6 +8009,16 @@ const RestaurantStoveSingleCountertop = {
 }
 } as const;
 
+const RestaurantTableMediumLong = {
+  id: 'table_medium_long',
+  path: 'restaurant/table_medium_long',
+  fullPath: 'pizza/models/restaurant/table_medium_long.gltf',
+  format: 'gltf',
+  nodes: {
+  "TableMediumLong": "table_medium_long"
+}
+} as const;
+
 const RestaurantTableRoundA = {
   id: 'table_round_A',
   path: 'restaurant/table_round_A',
@@ -7952,6 +8106,16 @@ const RestaurantTowelrail = {
   format: 'gltf',
   nodes: {
   "Towelrail": "towelrail"
+}
+} as const;
+
+const RestaurantTrashcan = {
+  id: 'trashcan',
+  path: 'restaurant/trashcan',
+  fullPath: 'pizza/models/restaurant/trashcan.gltf',
+  format: 'gltf',
+  nodes: {
+  "Trashcan": "trashcan"
 }
 } as const;
 
@@ -9704,6 +9868,26 @@ export const MODELS = {
     WineRed: FoodWineRed,
     WineWhite: FoodWineWhite
   },
+  Hats: {
+    AmericanHat: HatsAmericanHat,
+    ArmorHat: HatsArmorHat,
+    BoxingHat: HatsBoxingHat,
+    CashierHat: HatsCashierHat,
+    ChefHat: HatsChefHat,
+    CowboyHat: HatsCowboyHat,
+    Crown: HatsCrown,
+    FiremanHat: HatsFiremanHat,
+    GreenHat: HatsGreenHat,
+    HardHat: HatsHardHat,
+    JesterHat: HatsJesterHat,
+    MexicanHat: HatsMexicanHat,
+    MillitaryHat: HatsMillitaryHat,
+    PirateHat: HatsPirateHat,
+    PoliceHat: HatsPoliceHat,
+    SantaHat: HatsSantaHat,
+    VikingHat: HatsVikingHat,
+    WarriorHat: HatsWarriorHat
+  },
   Pets: {
     AnimalBeaver: PetsAnimalBeaver,
     AnimalBee: PetsAnimalBee,
@@ -10076,6 +10260,7 @@ export const MODELS = {
     StoveMultiDecorated: RestaurantStoveMultiDecorated,
     StoveSingle: RestaurantStoveSingle,
     StoveSingleCountertop: RestaurantStoveSingleCountertop,
+    TableMediumLong: RestaurantTableMediumLong,
     TableRoundA: RestaurantTableRoundA,
     TableRoundADecorated: RestaurantTableRoundADecorated,
     TableRoundASmall: RestaurantTableRoundASmall,
@@ -10085,6 +10270,7 @@ export const MODELS = {
     TableRoundBTableclothRed: RestaurantTableRoundBTableclothRed,
     TableRoundBTableclothRedDecorated: RestaurantTableRoundBTableclothRedDecorated,
     Towelrail: RestaurantTowelrail,
+    Trashcan: RestaurantTrashcan,
     Wall: RestaurantWall,
     WallDecorated: RestaurantWallDecorated,
     WallDecoratedStyleB: RestaurantWallDecoratedStyleB,

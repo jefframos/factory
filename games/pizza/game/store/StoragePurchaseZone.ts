@@ -7,8 +7,8 @@
 //   - coins fly from the wallet (EconomyStorage is only charged as each lands);
 //   - each resource (e.g. 20 wood) flies from the player's backpack
 //     (BackpackStorage is only charged as each lands) — same as BuildingZone.
-// The cost shows as one icon + "paid/total" per part — a popup row in the
-// storage's `frame` preset, or, for the 'Floor' frame, painted on the floor,
+// The cost shows as one icon + "paid/total" per part, one part per line — a
+// popup stack in the storage's `frame` preset, or, for the 'Floor' frame, painted on the floor,
 // centered on (and shrunk to fit) this purchase area. Progress is saved per
 // part (StorageOwnershipStorage.ts); once EVERY part is paid it marks the
 // storage owned, `onPurchased` spawns the real StorageZone (see
@@ -50,7 +50,7 @@ const FLOOR_COIN_TARGET_HEIGHT = 0.3;
 /** The floor cost label fills at most this fraction of the purchase area. */
 const FLOOR_LABEL_AREA_FILL = 0.9;
 const FLY_IN_STAGGER_SEC = 0.12;
-/** Horizontal gap between two cost panels in the popup row, UI pixels. */
+/** Vertical gap between two cost panels in the popup stack, UI pixels. */
 const POPUP_PANEL_GAP = 8;
 /** Where a resource launches from if the character (and so its backpack) hasn't loaded — roughly chest height. */
 const FALLBACK_CARRIER_HEIGHT = 1.2;
@@ -140,13 +140,15 @@ export default class StoragePurchaseZone extends Entity {
             this.labelAnchor.position.set(0, FLOOR_COIN_TARGET_HEIGHT, 0);
             this.floorLabel = this.addComponent(new FloorLabelComponent({
                 items: this.labelItems(),
+                // One cost per line — side by side it gets wide and shrinks to fit the area.
+                stack: 'column',
                 size: this.floorLabelSize ?? DEFAULT_FLOOR_LABEL_SIZE,
                 maxWidth: width * FLOOR_LABEL_AREA_FILL,
                 maxDepth: depth * FLOOR_LABEL_AREA_FILL,
             }));
         } else {
             this.labelAnchor.position.set(0, POPUP_HEIGHT_OFFSET, 0);
-            // One padlock panel per cost part, side by side in one row, centered on the anchor.
+            // One padlock panel per cost part, stacked top to bottom, centered on the anchor.
             const row = new PIXI.Container();
             this.pricePanels = this.parts.map(part => {
                 const panel = buildLockRequirementPanel(this.partIcon(part), { cornerText: this.partText(part), frame: this.frame });
@@ -207,19 +209,19 @@ export default class StoragePurchaseZone extends Entity {
         this.layoutPopupRow();
     }
 
-    /** Lays the popup panels out left to right (each panel's own bounds + POPUP_PANEL_GAP) and centers the row on its origin. */
+    /** Stacks the popup panels top to bottom (each panel's own bounds + POPUP_PANEL_GAP), each centered horizontally, and puts the stack's bottom on its origin — where a single panel's bottom would sit. */
     private layoutPopupRow(): void {
         const row = this.popupRow;
         if (!row) {
             return;
         }
-        let x = 0;
+        let y = 0;
         for (const panel of this.pricePanels) {
             const bounds = panel.frame.getLocalBounds();
-            panel.frame.position.x = x - bounds.x;
-            x += bounds.width + POPUP_PANEL_GAP;
+            panel.frame.position.set(-bounds.x - bounds.width / 2, y - bounds.y);
+            y += bounds.height + POPUP_PANEL_GAP;
         }
-        row.pivot.x = Math.max(0, x - POPUP_PANEL_GAP) / 2;
+        row.pivot.set(0, Math.max(0, y - POPUP_PANEL_GAP));
     }
 
     // ---- Paying

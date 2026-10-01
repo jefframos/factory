@@ -297,8 +297,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORAGE_CONFIG',
         byIdExportName: 'STORAGE_CONFIG_BY_ID',
-        managedKeys: ['name', 'accepts', 'resourceType', 'trash', 'particleEffectId', 'particleSpawnRate', 'models', 'view', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
-        optionalKeys: ['name', 'view', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'resourceType', 'trash', 'particleEffectId', 'particleSpawnRate', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
+        managedKeys: ['name', 'accepts', 'resourceType', 'trash', 'particleEffectId', 'particleSpawnRate', 'models', 'view', 'hideSignpost', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'scale', 'rotationDeg', 'dropOffset', 'pile', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
+        optionalKeys: ['name', 'view', 'hideSignpost', 'signpostSide', 'signpostGap', 'signpostRotationDeg', 'resourceType', 'trash', 'particleEffectId', 'particleSpawnRate', 'itemScale', 'itemYawDeg', 'itemOrientation', 'frame', 'floorLabelSide', 'floorLabelSize', 'floorLabelGap', 'popupBobOffset', 'solid', 'price', 'resourceCost', 'disabled'],
         // Third export — the ONE signpost every storage shares (see StorageTypes.ts's STORAGE_SIGNPOST_CONFIG),
         // shown as the Storages tab's own 'Signpost' card; same mechanism as farms' FARM_TILE_CONFIG.
         tileExportName: 'STORAGE_SIGNPOST_CONFIG',

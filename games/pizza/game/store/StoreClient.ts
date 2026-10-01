@@ -17,6 +17,12 @@
 //
 //   Any shopping state, out of patience with nothing bought ──► leaving
 //
+// What it has picked rides on its back, like the player's and a restocker's
+// (StoreRestockerWorker.ts): the same crate (PlayerConfig.carrier) with the
+// items stacked in it — CarrierStackVisual fed from its own bought counts.
+// Each picked unit flies from the shelf onto the next slot and is drawn there
+// once it lands; it keeps carrying everything through paying and walking out.
+//
 // Queues (StoreLine) decide ORDER only; where a queue index stands comes
 // from the store's queue layout (StoreQueueSpots.ts). Walking is NavAgent
 // on the store's nav grid: paths around shelves/solids, steering around
@@ -40,12 +46,13 @@ import * as THREE from 'three';
 import Entity from '../ecs/Entity';
 import CharacterBody from '../entities/CharacterBody';
 import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
-import { spawnFlyingResourceIcon } from '../components/FlyingResourceIcon';
+import CarrierStackVisual, { stackItemScale } from '../components/CarrierStackVisual';
+import { getPileScale } from '../components/ItemPile';
+import { flyResourceModel } from '../components/FlyToStack';
+import { getPlayerConfig } from '../data/PlayerConfig';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { getNpcConfig } from '../data/NpcTypes';
 import { loadNpcBody } from '../world/NpcBodyLoader';
-import { getAssetIcon } from '../world/AssetLibraryRegistry';
-import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { ResourceType } from '../actions/ResourceTypes';
 import { StorageInventory } from '../data/StorageInventory';
 import NavAgent, { NavNeighbor } from './nav/NavAgent';
@@ -70,6 +77,8 @@ const REROUTE_CHECK_SEC = 1;
 const FALLBACK_HEAD_HEIGHT = 2;
 /** Picked items fly from this high above the storage's own position. */
 const STORAGE_ICON_HEIGHT = 1;
+/** Where a picked item aims if the crate hasn't loaded yet — roughly its back. */
+const FALLBACK_CARRY_HEIGHT = 1.2;
 const ARRIVAL_MOOD_INDEX = STORE_MOOD_LADDER.indexOf('happy');
 /** Reaching this mood with nothing bought yet makes a client walk out. */
 const LEAVE_EMPTY_HANDED_MOOD_INDEX = STORE_MOOD_LADDER.indexOf('sad');
@@ -184,8 +193,11 @@ export default class StoreClient extends Entity implements NavNeighbor {
     private faceTarget?: THREE.Vector3;
 
     private readonly spot = new THREE.Vector3();
-    private readonly scratchHead = new THREE.Vector3();
     private readonly scratchFrom = new THREE.Vector3();
+    /** The crate on its back — see this file's own doc. */
+    private stack?: CarrierStackVisual;
+    /** Picked units still flying onto its back, per type — counted in `bought` already, drawn once landed. */
+    private readonly incoming = new Map<ResourceType, number>();
 
     public constructor(host: StoreClientHost, spawnAt: THREE.Vector3, exitPoint: THREE.Vector3, wants: StoreClientWant[], npcId: string, moodStepSec: number) {
         super();
@@ -230,11 +242,16 @@ export default class StoreClient extends Entity implements NavNeighbor {
         this.transform.add(this.body.container);
         const npcConfig = getNpcConfig(this.npcId) ?? getNpcConfig('default');
         if (npcConfig) {
-            void loadNpcBody(this.body, npcConfig)
+            void loadNpcBody(this.body, npcConfig, { carrier: getPlayerConfig().carrier })
                 .catch(error => console.error(`[StoreClient] failed to load npc "${this.npcId}"`, error));
         } else {
             console.warn(`[StoreClient] npc "${this.npcId}" has no NpcConfig registered — client will be invisible`);
         }
+
+        this.stack = this.addComponent(new CarrierStackVisual({
+            getBody: () => this.body,
+            getCounts: () => this.carriedCounts(),
+        }));
 
         const headTarget = new THREE.Vector3();
         const bubbleOffset = new THREE.Vector3(0, this.host.config.bubbleOffset, 0);
@@ -337,6 +354,7 @@ export default class StoreClient extends Entity implements NavNeighbor {
             }
         });
         this.moodIndex = Math.max(0, Math.min(STORE_MOOD_LADDER.length - 1, Math.floor(moodIndex)));
+        this.stack?.markDirty();
     }
 
     /** Where it's walking right now (debug drawing). */
@@ -756,10 +774,40 @@ export default class StoreClient extends Entity implements NavNeighbor {
         }
     }
 
+    /** What its crate draws: every bought unit that has landed (see flyPickedItem()). */
+    private carriedCounts(): [ResourceType, number][] {
+        return this.wants.map(want => [want.type, Math.max(0, want.bought - (this.incoming.get(want.type) ?? 0))]);
+    }
+
+    /** One picked unit flies from the shelf onto the next slot on its back (`bought` already counts it) — drawn there once it lands. */
     private flyPickedItem(type: ResourceType, storagePosition: THREE.Vector3): void {
         const from = this.scratchFrom.copy(storagePosition).setY(storagePosition.y + STORAGE_ICON_HEIGHT).clone();
-        const to = this.getHeadWorldPosition(this.scratchHead).clone();
-        spawnFlyingResourceIcon(this.host.screenHost, from, to, getAssetIcon(resolveResourceAssetKey(type)));
+        this.incoming.set(type, (this.incoming.get(type) ?? 0) + 1);
+        const slot = this.wants.reduce((sum, want) => sum + want.bought, 0) - 1;
+        const land = (): void => {
+            this.incoming.set(type, Math.max(0, (this.incoming.get(type) ?? 0) - 1));
+            this.stack?.markDirty();
+        };
+
+        const parent = this.transform.parent;
+        if (!parent) {
+            land();
+            return;
+        }
+        const scale = stackItemScale() * getPileScale(type);
+        flyResourceModel({
+            parent,
+            type,
+            from,
+            startScale: scale,
+            endScale: scale,
+            resolveTarget: out => {
+                if (!this.stack?.getSlotWorldTarget(slot, type, out)) {
+                    out.copy(this.transform.position).setY(this.transform.position.y + FALLBACK_CARRY_HEIGHT);
+                }
+            },
+            onArrive: land,
+        });
     }
 }
 

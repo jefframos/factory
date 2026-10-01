@@ -1,7 +1,8 @@
 // FloorLabelComponent.ts
 //
 // World-space UI painted on the floor — one or more items (each an optional
-// icon + optional text, e.g. a stored count) drawn in one row on a flat plane
+// icon + optional text, e.g. a stored count) drawn in one row (or, with
+// `stack: 'column'`, one item per line — e.g. a multi-part price) on a flat plane
 // lying on the ground next to whatever it describes. The in-world alternative
 // to a ScreenAnchorComponent bubble on the PIXI overlay: it sits IN the scene
 // (occluded by nothing, but moving/bending/hiding with its entity exactly like
@@ -54,8 +55,10 @@ export interface FloorLabelOptions {
     text?: string;
     /** Several icon/text entries in one row — wins over icon/text when set. Change later with setItems(). */
     items?: FloorLabelItem[];
-    /** Label height on the floor (world units). Width follows: square for icon-only, wider with text. Default DEFAULT_FLOOR_LABEL_SIZE (2.7). */
+    /** Label height on the floor (world units) — per LINE with `stack: 'column'`. Width follows: square for icon-only, wider with text. Default DEFAULT_FLOOR_LABEL_SIZE (2.7). */
     size?: number;
+    /** 'row' (default): every item side by side. 'column': one item per line, icons lined up on the left — reads better (and stays closer to square) for several icon+count items. */
+    stack?: 'row' | 'column';
     /** Where the label sits, relative to the owning entity (Y is ignored — it always sits on the floor). Its center, unless `side` is set. */
     offset?: THREE.Vector3;
     /**
@@ -220,19 +223,26 @@ export default class FloorLabelComponent extends Component {
             const gap = item.iconCanvas && textWidth > 0 ? iconTextGap : 0;
             return { item, iconWidth, gap, textWidth, width: iconWidth + gap + textWidth };
         });
-        const contentWidth = layout.reduce((sum, l) => sum + l.width, 0) + Math.max(0, layout.length - 1) * itemGap;
+        // 'column': one item per line (each line iconSize tall, `pad` apart), the widest line sets
+        // the width. 'row': everything on one line, as before.
+        const column = this.options.stack === 'column' && layout.length > 1;
+        const lineGap = pad;
+        const contentWidth = column
+            ? Math.max(0, ...layout.map(l => l.width))
+            : layout.reduce((sum, l) => sum + l.width, 0) + Math.max(0, layout.length - 1) * itemGap;
+        const canvasHeightPx = column ? padY * 2 + layout.length * iconSize + (layout.length - 1) * lineGap : heightPx;
         const widthPx = Math.max(heightPx, padX * 2 + contentWidth);
 
-        const resized = this.canvas.width !== widthPx || this.canvas.height !== heightPx;
+        const resized = this.canvas.width !== widthPx || this.canvas.height !== canvasHeightPx;
         this.canvas.width = widthPx;
-        this.canvas.height = heightPx;
-        ctx.clearRect(0, 0, widthPx, heightPx);
+        this.canvas.height = canvasHeightPx;
+        ctx.clearRect(0, 0, widthPx, canvasHeightPx);
 
         if (this.options.background ?? true) {
             const radius = heightPx * 0.25;
             const inset = Math.max(2, heightPx * 0.03);
             ctx.beginPath();
-            ctx.roundRect(inset, inset, widthPx - inset * 2, heightPx - inset * 2, radius);
+            ctx.roundRect(inset, inset, widthPx - inset * 2, canvasHeightPx - inset * 2, radius);
             ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
             ctx.fill();
             ctx.lineWidth = inset * 2;
@@ -247,21 +257,24 @@ export default class FloorLabelComponent extends Component {
         ctx.textBaseline = 'middle';
         ctx.lineJoin = 'round';
         ctx.lineWidth = Math.max(4, fontSize * 0.16);
-        let x = (widthPx - contentWidth) / 2;
-        for (const l of layout) {
+        const startX = (widthPx - contentWidth) / 2;
+        let x = startX;
+        layout.forEach((l, index) => {
+            // Column: every line starts at the same x (icons lined up); row: items follow each other.
+            const lineTop = column ? padY + index * (iconSize + lineGap) : padY;
             if (l.item.iconCanvas) {
-                ctx.drawImage(l.item.iconCanvas, x, padY, iconSize, iconSize);
+                ctx.drawImage(l.item.iconCanvas, x, lineTop, iconSize, iconSize);
             }
             if (l.textWidth > 0) {
                 const textX = x + l.iconWidth + l.gap;
-                const textY = heightPx / 2 + fontSize * 0.05;
+                const textY = lineTop + iconSize / 2 + fontSize * 0.05;
                 ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
                 ctx.strokeText(l.item.text, textX, textY);
                 ctx.fillStyle = '#ffffff';
                 ctx.fillText(l.item.text, textX, textY);
             }
-            x += l.width + itemGap;
-        }
+            x = column ? startX : x + l.width + itemGap;
+        });
 
         if (resized) {
             // A GPU texture can't change size in place — swap in a fresh one.
@@ -274,7 +287,7 @@ export default class FloorLabelComponent extends Component {
         }
 
         if (!this.mesh || resized) {
-            this.buildMesh(widthPx / PIXELS_PER_UNIT, heightPx / PIXELS_PER_UNIT);
+            this.buildMesh(widthPx / PIXELS_PER_UNIT, canvasHeightPx / PIXELS_PER_UNIT);
         }
         this.applyVisibility();
     }

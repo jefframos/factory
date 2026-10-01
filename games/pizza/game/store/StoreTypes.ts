@@ -287,7 +287,16 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
     "pickDelaySec": 0.5,
     "payDelaySec": 0.5,
     "moneyPerBill": 5,
-    "bubbleOffset": 0.6
+    "billsPerPile": 20,
+    "bubbleOffset": 0.6,
+    "levels": [],
+    "workers": [],
+    "cashierWorker": {
+        "levels": []
+    },
+    "restockerWorker": {
+        "levels": []
+    }
 };
 
 /** Per-store-id overrides — sparse: only stores a level designer has customized need an entry. */
@@ -298,18 +307,18 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
             "levels": [
                 {
                     "level": 1,
-                    "moveSpeed": 4,
-                    "carryCapacity": 2
+                    "moveSpeed": 2,
+                    "carryCapacity": 1
                 },
                 {
                     "level": 2,
-                    "moveSpeed": 4.5,
-                    "carryCapacity": 3
+                    "moveSpeed": 2.5,
+                    "carryCapacity": 2
                 },
                 {
                     "level": 3,
-                    "moveSpeed": 5,
-                    "carryCapacity": 4
+                    "moveSpeed": 3,
+                    "carryCapacity": 3
                 }
             ]
         },
@@ -319,18 +328,18 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
             "levels": [
                 {
                     "level": 1,
-                    "moveSpeed": 2,
-                    "payDelaySec": 2
+                    "moveSpeed": 1.5,
+                    "payDelaySec": 4
                 },
                 {
                     "level": 2,
-                    "moveSpeed": 2.8,
-                    "payDelaySec": 1.4
+                    "moveSpeed": 2,
+                    "payDelaySec": 3
                 },
                 {
                     "level": 3,
                     "moveSpeed": 3.6,
-                    "payDelaySec": 0.8
+                    "payDelaySec": 2
                 }
             ]
         },
@@ -493,7 +502,8 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
             }
         ],
         "defaultStorageId": "storage1",
-        "billsPerPile": 10
+        "billsPerPile": 10,
+        "workers": []
     }
 };
 

@@ -310,6 +310,16 @@ export const ENTITY_VIEW_CONFIG: Record<string, EntityViewConfig> = {
             0
         ]
     },
+    "trashcanView": {
+        "models": [MODELS.Restaurant.Trashcan],
+        "scale": 1,
+        "rotationDeg": 0,
+        "offset": [
+            0,
+            1,
+            0
+        ]
+    },
     "storeCashierView": {
         "models": [MODELS.Restaurant.Kitchencabinet],
         "scale": 0.75,

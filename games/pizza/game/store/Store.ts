@@ -61,7 +61,9 @@ import * as THREE from 'three';
 import Entity from '../ecs/Entity';
 import World from '../ecs/World';
 import { ScreenAnchorHost } from '../components/ScreenAnchorComponent';
-import type { StoreUIState } from '../ui/StoreUI';
+import * as PIXI from 'pixi.js';
+import { STORE_ICON, type StoreUIState } from '../ui/StoreUI';
+import { storeBadgeTextureFor } from '../ui/StoreBadgeProgress';
 import { UpgradeNotificationManager } from '../ui/notifications/UpgradeNotificationManager';
 import { NotificationRarity, NotificationType } from '../ui/notifications/NotificationTypes';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
@@ -568,6 +570,7 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         const level = StoreProgressStorage.getLevel(this.layout.id);
         const next = getNextStoreLevel(this.config, level);
         return {
+            name: this.config.name ?? 'Store',
             level,
             next: next && {
                 type: next.requirementType,
@@ -973,6 +976,8 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
             UpgradeNotificationManager.instance.show({
                 type: NotificationType.Unlockable,
                 rarity: NotificationRarity.Common,
+                icon: PIXI.Texture.from(STORE_ICON),
+                badgeTexture: storeBadgeTextureFor(level),
                 title: 'STORE LEVEL UP!',
                 subtitle: `LEVEL ${level}`,
             });

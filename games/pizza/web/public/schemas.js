@@ -634,6 +634,7 @@ const ENTITY_SCHEMAS = {
             { value: 'east', label: 'East (right, on the map)' },
             { value: 'west', label: 'West (left, on the map)' },
         ] },
+        { key: 'hideSignpost', type: 'boolean', label: 'Hide Signpost (no post and no icon for this storage — e.g. the trash)', optional: true },
         { key: 'signpostGap', type: 'number', label: 'Signpost Gap (distance from the storage\'s edge, world units — blank = 0.2)', optional: true },
         { key: 'signpostRotationDeg', type: 'number', label: 'Signpost Rotation (degrees — this storage\'s signpost yaw; blank = 0)', optional: true },
         { key: 'models', type: 'modelList', label: 'Model (first entry used — e.g. Restaurant.Crate; ignored when View is set)' },

@@ -57,6 +57,8 @@ export interface UpgradeNotificationOptions {
     type: NotificationType;
     /** How rare this particular upgrade is — picks the badge color/art via UpgradeStyle.badgeTextureFor(). */
     rarity: NotificationRarity;
+    /** Overrides the rarity's badge art with this texture alias — e.g. the store's level badge (see StoreBadgeProgress.storeBadgeTextureFor()), so the notification matches the HUD. */
+    badgeTexture?: string;
     /** Shown inside the badge hanging off the ribbon — omitted entirely (badge still shows, just empty) if the target has no icon, per the brief's "if the icon exists." */
     icon?: PIXI.Texture;
     /** The ribbon's own text — always "UPGRADE!" today, kept as a param rather than hardcoded in case a future caller needs a different headline. */
@@ -93,7 +95,7 @@ export default class UpgradeNotificationView extends PIXI.Container {
         this.addChild(spinEffect);
         this.spinTween = gsap.to(spinEffect, { rotation: Math.PI * 2, duration: SPIN_DURATION_SEC, repeat: -1, ease: 'none' });
 
-        const badge = new PIXI.Sprite(PIXI.Texture.from(UpgradeStyle.badgeTextureFor(options.rarity)));
+        const badge = new PIXI.Sprite(PIXI.Texture.from(options.badgeTexture ?? UpgradeStyle.badgeTextureFor(options.rarity)));
         badge.anchor.set(0.5, 0.5);
         badge.width = BADGE_NATURAL_SIZE.width;
         badge.height = BADGE_NATURAL_SIZE.height;

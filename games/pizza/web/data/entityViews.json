@@ -326,6 +326,18 @@
         "scale": 1,
         "rotationDeg": 0
     },
+    "trashcanView": {
+        "models": [
+            "Restaurant.Trashcan"
+        ],
+        "offset": [
+            0,
+            1,
+            0
+        ],
+        "scale": 1,
+        "rotationDeg": 0
+    },
     "storeCashierView": {
         "models": [
             "Restaurant.Kitchencabinet"

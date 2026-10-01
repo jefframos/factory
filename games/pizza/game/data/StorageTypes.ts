@@ -101,6 +101,8 @@ export interface StorageConfig {
      * is shared by every storage, see STORAGE_SIGNPOST_CONFIG. Unset = 'north'.
      */
     signpostSide?: FloorLabelSide;
+    /** When true, this storage has no signpost at all (post and icon) — e.g. the trash, whose model already says what it is. Unset = signpost shown. */
+    hideSignpost?: boolean;
     /** Distance from the storage's edge to the signpost, world units. Unset = 0.2. */
     signpostGap?: number;
     /** Yaw of this storage's signpost model, degrees. Unset = 0. The item icon keeps facing the camera. */
@@ -339,19 +341,22 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
         "name": "Trash",
         "accepts": "farm",
         "trash": true,
+        "hideSignpost": true,
         "particleEffectId": "trashFire",
         "particleSpawnRate": 10,
-        "models": [MODELS.Restaurant.Crate],
+        "models": [MODELS.Restaurant.Trashcan],
         "scale": 1,
         "rotationDeg": 0,
-        "dropOffset": {},
+        "dropOffset": {
+            "y": 2.3
+        },
         "pile": {
             "columns": 2,
             "rows": 2,
             "layers": 3
         },
         "solid": 1,
-        "view": "storageView",
+        "view": "trashcanView",
     },
     "storage5": {
         "accepts": "farm",

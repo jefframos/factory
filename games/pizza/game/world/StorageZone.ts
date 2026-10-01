@@ -270,6 +270,10 @@ export default class StorageZone extends Entity {
      * can't take the world bend and would drift off the post away from the player.
      */
     private buildSignpost(): void {
+        // StorageConfig.hideSignpost — no post, no icon.
+        if (this.config.hideSignpost) {
+            return;
+        }
         const shared = STORAGE_SIGNPOST_CONFIG;
         const modelRef = shared.models[0];
         const model = ModelSnapshotTool.resolveModelRef(modelRef);

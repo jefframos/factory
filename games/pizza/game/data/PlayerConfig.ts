@@ -161,7 +161,7 @@ const DEFAULT_PLAYER_CONFIG: PlayerConfigEntry = {
 export const PLAYER_CONFIG_BY_ID: Partial<Record<string, PlayerConfigEntry>> = {
     default: {
         ...DEFAULT_PLAYER_CONFIG,
-        "walkSpeed": 5,
+        "walkSpeed": 6,
         "runSpeedMultiplier": 1.8,
         "resourceDetectionRadius": 2,
         "resourceDetectionAngleDeg": 120,
