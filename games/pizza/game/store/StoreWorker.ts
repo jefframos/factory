@@ -3,8 +3,9 @@
 // Base class for every store WORKER — an NPC a store employs (see
 // StoreTypes.ts's StoreWorkerEntry). Owns what every worker kind shares:
 //   - its body: always the WORKER_NPC_ID look (one shared face for every
-//     worker), loaded like a client's (NpcBodyLoader.ts), optionally with a
-//     carrier on its back (see bodyOptions());
+//     worker), in its STORE's staff color and hat (StoreConfig.workerColor /
+//     workerHat — see Store.getWorkerLook()), loaded like a client's
+//     (NpcBodyLoader.ts), optionally with a carrier on its back (see bodyOptions());
 //   - walking (walkTo()): NavAgent on the store's nav grid to the goal's
 //     nearest walkable cell, then — for an `exact` goal — straight onto the
 //     exact point. The store's cashier/money-drop npcPoints sit inside rects
@@ -22,7 +23,7 @@
 import * as THREE from 'three';
 import Entity from '../ecs/Entity';
 import CharacterBody from '../entities/CharacterBody';
-import { getNpcConfig } from '../data/NpcTypes';
+import { getNpcConfig, NpcLook } from '../data/NpcTypes';
 import { loadNpcBody, NpcBodyOptions } from '../world/NpcBodyLoader';
 import NavAgent, { NavNeighbor } from './nav/NavAgent';
 import StoreNavGrid from './nav/StoreNavGrid';
@@ -46,6 +47,8 @@ export interface StoreWorkerBaseOptions {
     /** Personal-space radius — same as the store's clients. */
     radius: number;
     spawnAt: THREE.Vector3;
+    /** The store's staff look (color, hat — see Store.getWorkerLook()), over the WORKER_NPC_ID setup. */
+    look?: NpcLook;
 }
 
 export default abstract class StoreWorker extends Entity implements NavNeighbor {
@@ -57,6 +60,7 @@ export default abstract class StoreWorker extends Entity implements NavNeighbor 
     protected readonly agent: NavAgent;
     protected moveSpeed: number;
     protected level: number;
+    private readonly look?: NpcLook;
     /** What to face while standing still this frame — set by think(). */
     protected faceTarget?: THREE.Vector3;
 
@@ -75,6 +79,7 @@ export default abstract class StoreWorker extends Entity implements NavNeighbor 
         this.workerId = options.id;
         this.level = options.level;
         this.moveSpeed = options.moveSpeed;
+        this.look = options.look;
         this.transform.position.copy(options.spawnAt);
         this.agent = new NavAgent(this.transform.position, () => host.getNavGrid(), {
             radius: options.radius,
@@ -101,7 +106,7 @@ export default abstract class StoreWorker extends Entity implements NavNeighbor 
             console.warn(`[StoreWorker] npc "${WORKER_NPC_ID}" has no NpcConfig registered — worker will be invisible`);
             return;
         }
-        void loadNpcBody(this.body, npcConfig, this.bodyOptions())
+        void loadNpcBody(this.body, npcConfig, { ...this.bodyOptions(), look: this.look })
             .catch(error => console.error(`[StoreWorker] failed to load npc "${WORKER_NPC_ID}"`, error));
     }
 

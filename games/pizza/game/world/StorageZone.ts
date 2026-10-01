@@ -63,6 +63,7 @@ import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from './AssetLibraryRegistry';
 import { BackpackStorage } from '../data/BackpackStorage';
 import { StorageInventory } from '../data/StorageInventory';
+import { GARBAGE_DARKEN, GarbageCarryStorage } from '../data/GarbageCarryStorage';
 import { StorageConfig, STORAGE_SIGNPOST_CONFIG } from '../data/StorageTypes';
 import { getZoneColor, ZoneColorKind } from '../data/ZoneColorTypes';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
@@ -382,6 +383,13 @@ export default class StorageZone extends Entity {
     }
 
     private accepts(type: ResourceType): boolean {
+        // The trash takes garbage (store/StoreGarbage.ts) and nothing else; garbage goes nowhere else.
+        if (this.config.trash) {
+            return type === ResourceType.Garbage;
+        }
+        if (type === ResourceType.Garbage) {
+            return false;
+        }
         // A specific resource overrides the category — see StorageConfig.resourceType's own doc.
         if (this.config.resourceType !== undefined) {
             return type === this.config.resourceType;
@@ -426,6 +434,8 @@ export default class StorageZone extends Entity {
 
             const from = new THREE.Vector3();
             const type = this.nextOutgoing(player, from);
+            // Garbage keeps looking like the darkened item it was (read before the removal trims that list).
+            const garbageWas = type === ResourceType.Garbage ? GarbageCarryStorage.peekTop() : undefined;
             if (type === undefined || !BackpackStorage.removeOne(type)) {
                 this.transferring = false;
                 return;
@@ -442,6 +452,8 @@ export default class StorageZone extends Entity {
             flyResourceModel({
                 parent: scene,
                 type,
+                displayType: garbageWas,
+                darken: garbageWas ? GARBAGE_DARKEN : undefined,
                 from,
                 // Leaves the carrier at the size it was drawn there (pileScale included).
                 startScale: stackItemScale() * getPileScale(type),

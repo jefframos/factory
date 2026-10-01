@@ -298,6 +298,12 @@ export const ASSET_LIBRARY = {
         "rotationDeg": 0,
         "icon": "pizza-model-snapshots_Food-Watermelon"
     },
+    "garbage": {
+        "models": [MODELS.Restaurant.FoodIngredientBurgerTrash],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "PictoIcon_Delete-2"
+    },
     "palm": {
         "models": [MODELS.Resources.Tree4AColor1, MODELS.Resources.Tree4BColor1],
         "scale": [

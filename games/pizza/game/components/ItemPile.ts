@@ -25,6 +25,11 @@
 // incoming flight exactly where the NEXT item will sit; peekTop() tells an
 // outgoing one which item is on top and where.
 //
+// A slot can be DRAWN as a different item than it counts as (layout.displayFor)
+// — carried garbage counts as ResourceType.Garbage but is drawn, sized and
+// stacked as the darkened item it was (see GarbageCarryStorage.ts). Layout and
+// models always use the display type; sync()/peekTop() the real one.
+//
 // The owner feeds it: the counts to mirror (sync()), and `localPerWorld` — how
 // many root-local units one world unit is (1 for an unscaled root; the backpack
 // passes its own counter-scale so items stay true world size inside a scaled
@@ -32,7 +37,7 @@
 
 import * as THREE from 'three';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
-import { disposeResourceDisplayModel, ItemOrientation, loadResourceDisplayModel } from '../world/ResourceDisplayModel';
+import { disposeResourceDisplayModel, ItemOrientation, loadResourceDisplayModel, darkenResourceDisplayModel } from '../world/ResourceDisplayModel';
 
 export type ItemPileMode = 'grid' | 'tower';
 
@@ -70,6 +75,18 @@ export interface ItemPileLayout {
     spacingFor?: (type: ResourceType) => number;
     /** Per-type height offset, WORLD units (negative = lower), added to where that type sits. Storages feed ResourceConfig.storageOffsetY through this. */
     offsetYFor?: (type: ResourceType) => number;
+    /**
+     * Draw the `ordinal`-th unit (0 = bottom-most) of `type` as another item, optionally darkened —
+     * see this file's own doc. Asked once, when that unit's slot is created. undefined = drawn as itself.
+     */
+    displayFor?: (type: ResourceType, ordinal: number) => SlotDisplay | undefined;
+}
+
+/** See ItemPileLayout.displayFor. */
+export interface SlotDisplay {
+    type: ResourceType;
+    /** Multiplier on the model's colors (see darkenResourceDisplayModel()). */
+    darken?: number;
 }
 
 /** Vertical step between grid layers, as a fraction of the tallest item — <1 so layers nestle into each other like a real pile. */
@@ -121,6 +138,9 @@ function restHeightOf(type: ResourceType, orientation: ItemOrientation): number 
 
 interface Slot {
     type: ResourceType;
+    /** What it's drawn/laid out as — `type` unless layout.displayFor said otherwise. */
+    displayType: ResourceType;
+    darken?: number;
     /** undefined while its model is still loading (or never, past the layout's capacity). */
     model?: THREE.Group;
     /** Per-item yaw, fixed at creation so it never changes when the item slides down. */
@@ -193,7 +213,13 @@ export default class ItemPile {
         for (const [type, want] of desired) {
             const have = this.slots.filter(slot => slot.type === type).length;
             for (let i = have; i < want; i++) {
-                this.slots.push({ type, yaw: ((this.createdCount++ * 137) % 360) * (Math.PI / 180) });
+                const display = this.layout.displayFor?.(type, i);
+                this.slots.push({
+                    type,
+                    displayType: display?.type ?? type,
+                    darken: display?.darken,
+                    yaw: ((this.createdCount++ * 137) % 360) * (Math.PI / 180),
+                });
             }
         }
 
@@ -207,7 +233,7 @@ export default class ItemPile {
      * flight aims at. Past the layout's capacity it clamps to the last drawn slot.
      */
     public getSlotWorldPosition(index: number, incomingType: ResourceType, out: THREE.Vector3): THREE.Vector3 {
-        const types = this.slots.map(slot => slot.type);
+        const types = this.slots.map(slot => slot.displayType);
         while (types.length <= index) {
             types.push(incomingType);
         }
@@ -222,7 +248,7 @@ export default class ItemPile {
      * flight can end at exactly the size it lands at.
      */
     public getSlotScale(index: number, incomingType: ResourceType): number {
-        const types = this.slots.map(slot => slot.type);
+        const types = this.slots.map(slot => slot.displayType);
         while (types.length <= index) {
             types.push(incomingType);
         }
@@ -237,7 +263,7 @@ export default class ItemPile {
             if (!accepts(this.slots[i].type)) {
                 continue;
             }
-            const positions = this.computePositions(this.slots.map(slot => slot.type));
+            const positions = this.computePositions(this.slots.map(slot => slot.displayType));
             out.copy(positions.length > 0 ? positions[Math.min(i, positions.length - 1)] : this.layout.base);
             this.toWorld(out);
             return this.slots[i].type;
@@ -248,7 +274,7 @@ export default class ItemPile {
     /** Re-places every loaded model from the live list and re-applies its scale. */
     public relayout(): void {
         const { itemScale, localPerWorld } = this.layout;
-        const types = this.slots.map(slot => slot.type);
+        const types = this.slots.map(slot => slot.displayType);
         const positions = this.computePositions(types);
         const fits = this.computeFits(types);
         this.slots.forEach((slot, i) => {
@@ -261,7 +287,7 @@ export default class ItemPile {
                 slot.model.position.copy(position);
             }
             // pileScale on the model only — position above came from the unscaled layout.
-            slot.model.scale.setScalar(itemScale * localPerWorld * (fits[i] ?? 1) * getPileScale(slot.type));
+            slot.model.scale.setScalar(itemScale * localPerWorld * (fits[i] ?? 1) * getPileScale(slot.displayType));
             slot.model.rotation.y = this.yawFor(slot);
         });
     }
@@ -415,15 +441,18 @@ export default class ItemPile {
             }
             this.loading.add(slot);
             // Captured now — a setLayout() mid-load could change it, and the size must match THIS model.
-            const orientation = this.orientationOf(slot.type);
-            void loadResourceDisplayModel(slot.type, { orientation }).then(({ object, size, restHeight }) => {
+            const orientation = this.orientationOf(slot.displayType);
+            void loadResourceDisplayModel(slot.displayType, { orientation }).then(({ object, size, restHeight }) => {
                 this.loading.delete(slot);
-                rememberItemSize(slot.type, size, orientation, restHeight);
+                rememberItemSize(slot.displayType, size, orientation, restHeight);
                 if (this.disposed || !this.slots.includes(slot)) {
                     disposeResourceDisplayModel(object);
                     return;
                 }
                 object.rotation.y = this.yawFor(slot);
+                if (slot.darken !== undefined) {
+                    darkenResourceDisplayModel(object, slot.darken);
+                }
                 slot.model = object;
                 this.root.add(object);
                 // Its real size may differ from what the layout assumed while it loaded.

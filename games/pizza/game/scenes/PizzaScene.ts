@@ -1070,7 +1070,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         InGameButtonList.registerButton('Add 100 Money', () => EconomyStorage.add(CurrencyType.Money, 100));
         InGameButtonList.registerButton('Add 10 Resources', () => {
             for (const type of Object.values(ResourceType)) {
-                if (type === ResourceType.Pig || RESOURCE_CONFIG[type]?.disabled) {
+                if (type === ResourceType.Pig || type === ResourceType.Garbage || RESOURCE_CONFIG[type]?.disabled) {
                     continue;
                 }
                 BackpackStorage.add(type, 10);
@@ -1080,6 +1080,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         InGameButtonList.registerButton('Fill Storages +3', () => this.fillAvailableStorages(3));
         InGameButtonList.registerButton('Hire Cashier', () => this.hireStoreWorker('cashier'));
         InGameButtonList.registerButton('Hire Restocker', () => this.hireStoreWorker('restocker'));
+        InGameButtonList.registerButton('Hire Cleaner', () => this.hireStoreWorker('cleaner'));
         InGameButtonList.registerButton('Add 5 Seeds', () => {
             for (const seedId of Object.values(SeedId)) {
                 SeedStorage.add(seedId, 5);
@@ -1140,7 +1141,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                 continue;
             }
             for (const type of Object.values(ResourceType)) {
-                if (type === ResourceType.Pig || RESOURCE_CONFIG[type]?.disabled) {
+                if (type === ResourceType.Pig || type === ResourceType.Garbage || RESOURCE_CONFIG[type]?.disabled) {
                     continue;
                 }
                 if (config.accepts === 'all' || (RESOURCE_CONFIG[type]?.category ?? 'main') === config.accepts) {

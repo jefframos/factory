@@ -168,6 +168,27 @@ export const PARTICLE_REGISTRY: Record<string, ParticleEffectDescriptor> = {
             0
         ]
     },
+    /** Little black dots buzzing over garbage on a store floor — see store/StoreGarbage.ts. */
+    "garbageFlies": {
+        "name": "Garbage Flies",
+        "texture": "particles/circle_05.webp",
+        "color": "#111111",
+        "blendMode": "normal",
+        "fadeInSec": 0.2,
+        "fadeOutSec": 0.3,
+        "lifetimeSec": 1.4,
+        "sizeMin": 0.12,
+        "sizeMax": 0.22,
+        "riseSpeedMin": 0.09,
+        "riseSpeedMax": 0.3,
+        "spreadRadius": 0.35,
+        "maxOpacity": 0.9,
+        "offset": [
+            0,
+            0.25,
+            0
+        ]
+    },
     "gateMyst": {
         "name": "Gate Myst",
         "texture": "particles/star_08.webp",

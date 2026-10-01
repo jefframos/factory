@@ -345,5 +345,17 @@
         "category": "farm",
         "price": 10,
         "sellable": true
+    },
+    "garbage": {
+        "label": "Garbage",
+        "icon": "PictoIcon_Delete-2",
+        "models": [
+            "Restaurant.FoodIngredientBurgerTrash"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "amountPerGather": 1,
+        "category": "farm",
+        "sellable": false
     }
 }

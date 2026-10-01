@@ -37,7 +37,11 @@
 // who finds everything in stock and is served right away stays happy.
 // Completing an item while more are still left cheers it up one step.
 // Dropping to SAD with nothing bought yet makes it walk out without buying;
-// with anything bought it stays until its order is done. Early store levels
+// with anything bought it stays — but once it has been at the bottom mood
+// (ANGRY) for angryDropSec while still waiting, it walks to a CLEAN spot of the
+// store ('dumping' — StoreClientHost.findCleanDropSpot()), drops everything it
+// carries there as garbage (StoreClientHost.dropGarbage(), see
+// StoreGarbage.ts) and walks out without paying. With StoreConfig.forgivingEarlyLevels, early store levels
 // set a floor the mood never drops below (level 1: HAPPY, level 2: ANNOYED —
 // see StoreClientHost.getMoodFloor()), so nobody walks out or pays less
 // there. Its mood at payment scales what it pays — see applyMoodToPrice().
@@ -51,7 +55,7 @@ import { getPileScale } from '../components/ItemPile';
 import { flyResourceModel } from '../components/FlyToStack';
 import { getPlayerConfig } from '../data/PlayerConfig';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
-import { getNpcConfig } from '../data/NpcTypes';
+import { getNpcConfig, NpcLook, rollNpcLook } from '../data/NpcTypes';
 import { loadNpcBody } from '../world/NpcBodyLoader';
 import { ResourceType } from '../actions/ResourceTypes';
 import { StorageInventory } from '../data/StorageInventory';
@@ -61,6 +65,7 @@ import StoreBubble, { StoreBubbleContent } from './StoreBubble';
 import StoreLine from './StoreLine';
 import type { SavedStoreClient, SavedStoreClientWant } from './StoreClientStorage';
 import {
+    DEFAULT_ANGRY_DROP_SEC,
     DEFAULT_BROWSE_CHANCE,
     DEFAULT_CLIENT_RADIUS,
     STORE_MOOD_LADDER,
@@ -77,6 +82,8 @@ const REROUTE_CHECK_SEC = 1;
 const FALLBACK_HEAD_HEIGHT = 2;
 /** Picked items fly from this high above the storage's own position. */
 const STORAGE_ICON_HEIGHT = 1;
+/** A fed-up client walking to a clean spot dumps wherever it is after this long (unreachable spot). */
+const DUMP_WALK_TIMEOUT_SEC = 12;
 /** Where a picked item aims if the crate hasn't loaded yet — roughly its back. */
 const FALLBACK_CARRY_HEIGHT = 1.2;
 const ARRIVAL_MOOD_INDEX = STORE_MOOD_LADDER.indexOf('happy');
@@ -123,6 +130,10 @@ export interface StoreClientHost {
     findBrowseSpot(client: StoreClient, line: StoreLine<StoreClient>): StoreSpot | undefined;
     /** A random free spot to stroll to while waiting for a restock, or undefined. */
     findWanderSpot(client: StoreClient): StoreSpot | undefined;
+    /** A fed-up client throws `types` (one entry per unit) on the floor around `from` — they become garbage. */
+    dropGarbage(from: THREE.Vector3, types: ResourceType[]): void;
+    /** Where a fed-up client goes to dump its items — a clean (garbage-free) free spot in the store, or undefined (it dumps where it stands). */
+    findCleanDropSpot(client: StoreClient): THREE.Vector3 | undefined;
     /** Something saved by toSave() changed (an item picked, mood, or it paid/left) — the store re-saves its clients. */
     notifyClientChanged(): void;
 }
@@ -150,6 +161,7 @@ export type ClientState =
     | 'toCashier'
     | 'cashierQueue'
     | 'readyToPay'
+    | 'dumping'
     | 'leaving'
     | 'done';
 
@@ -166,6 +178,8 @@ const MOOD_STATES: ReadonlySet<ClientState> = new Set<ClientState>([...SHOPPING_
 
 export default class StoreClient extends Entity implements NavNeighbor {
     public readonly npcId: string;
+    /** Its rolled color/face/scale (see NpcConfig.colors) — kept so a saved client looks the same after a reload. */
+    public readonly look: NpcLook;
     private readonly host: StoreClientHost;
     private readonly wants: WantProgress[];
     private readonly exitPoint: THREE.Vector3;
@@ -186,6 +200,10 @@ export default class StoreClient extends Entity implements NavNeighbor {
     private restlessTimerSec = randomRange(RESTLESS_SEC);
     private moodIndex = ARRIVAL_MOOD_INDEX;
     private moodTimerSec = 0;
+    /** Seconds spent at the bottom mood while frustrated — see updateAngryDrop(). */
+    private angryTimerSec = 0;
+    /** Seconds spent walking to its dump spot — see updateDumping(). */
+    private dumpTimerSec = 0;
     /** Browsing / wandering: where it's headed, and whether it's arrived and is looking around. */
     private outing?: StoreSpot;
     private outingLookSec = 0;
@@ -199,12 +217,14 @@ export default class StoreClient extends Entity implements NavNeighbor {
     /** Picked units still flying onto its back, per type — counted in `bought` already, drawn once landed. */
     private readonly incoming = new Map<ResourceType, number>();
 
-    public constructor(host: StoreClientHost, spawnAt: THREE.Vector3, exitPoint: THREE.Vector3, wants: StoreClientWant[], npcId: string, moodStepSec: number) {
+    public constructor(host: StoreClientHost, spawnAt: THREE.Vector3, exitPoint: THREE.Vector3, wants: StoreClientWant[], npcId: string, moodStepSec: number, look?: NpcLook) {
         super();
         this.host = host;
         this.exitPoint = exitPoint.clone();
         this.wants = wants.map(want => ({ type: want.type, remaining: want.amount, bought: 0 }));
         this.npcId = npcId;
+        const npcConfig = getNpcConfig(npcId) ?? getNpcConfig('default');
+        this.look = look ?? (npcConfig ? rollNpcLook(npcConfig) : {});
         this.moodStepSec = moodStepSec;
         this.transform.position.copy(spawnAt);
         this.agent = new NavAgent(this.transform.position, () => host.getNavGrid(), {
@@ -221,6 +241,7 @@ export default class StoreClient extends Entity implements NavNeighbor {
             toCashier: { enter: () => this.host.cashierLine.join(this), update: () => this.updateToCashier() },
             cashierQueue: { update: () => this.updateCashierQueue() },
             readyToPay: { update: () => this.updateReadyToPay() },
+            dumping: { enter: () => this.enterDumping(), update: delta => this.updateDumping(delta) },
             leaving: { enter: () => this.enterLeaving(), update: () => this.updateLeaving() },
             done: { enter: () => this.agent.stop(), update: () => undefined },
         };
@@ -242,7 +263,7 @@ export default class StoreClient extends Entity implements NavNeighbor {
         this.transform.add(this.body.container);
         const npcConfig = getNpcConfig(this.npcId) ?? getNpcConfig('default');
         if (npcConfig) {
-            void loadNpcBody(this.body, npcConfig, { carrier: getPlayerConfig().carrier })
+            void loadNpcBody(this.body, npcConfig, { carrier: getPlayerConfig().carrier, look: this.look })
                 .catch(error => console.error(`[StoreClient] failed to load npc "${this.npcId}"`, error));
         } else {
             console.warn(`[StoreClient] npc "${this.npcId}" has no NpcConfig registered — client will be invisible`);
@@ -268,6 +289,7 @@ export default class StoreClient extends Entity implements NavNeighbor {
 
         if (MOOD_STATES.has(this.state) && this.isFrustrated()) {
             this.updateMood(delta);
+            this.updateAngryDrop(delta);
         }
 
         this.faceTarget = undefined;
@@ -334,6 +356,7 @@ export default class StoreClient extends Entity implements NavNeighbor {
         }
         return {
             npcId: this.npcId,
+            look: this.look,
             wants: this.wants.map(want => ({ type: want.type, remaining: want.remaining, bought: want.bought })),
             moodIndex: this.moodIndex,
             moodStepSec: this.moodStepSec,
@@ -729,6 +752,60 @@ export default class StoreClient extends Entity implements NavNeighbor {
         }
     }
 
+    /** At the bottom mood (ANGRY) for angryDropSec while still waiting, holding anything -> drops it all as garbage and walks out (see this file's own doc). */
+    private updateAngryDrop(delta: number): void {
+        if (this.moodIndex > 0 || !MOOD_STATES.has(this.state)) {
+            this.angryTimerSec = 0;
+            return;
+        }
+        this.angryTimerSec += delta;
+        if (this.angryTimerSec < (this.host.config.angryDropSec ?? DEFAULT_ANGRY_DROP_SEC)) {
+            return;
+        }
+        // Holding something: go find a clean spot to dump it first. Nothing: just leave.
+        this.setState(this.wants.some(want => want.bought > 0) ? 'dumping' : 'leaving');
+    }
+
+    /** Off to a clean spot (see this file's own doc) — out of every line; with no spot found it dumps right here. */
+    private enterDumping(): void {
+        this.leaveStorage();
+        this.host.cashierLine.leave(this);
+        this.dumpTimerSec = 0;
+        const spot = this.host.findCleanDropSpot(this);
+        if (spot) {
+            this.agent.setGoal(spot);
+        } else {
+            this.agent.stop();
+        }
+    }
+
+    /** Dumps on arrival (or after DUMP_WALK_TIMEOUT_SEC, wherever it got to), then walks out. */
+    private updateDumping(delta: number): void {
+        this.dumpTimerSec += delta;
+        if (!this.agent.hasArrived() && this.dumpTimerSec < DUMP_WALK_TIMEOUT_SEC) {
+            return;
+        }
+        this.agent.stop();
+        this.dropEverything();
+        this.setState('leaving');
+    }
+
+    /** Throws everything it carries (in flight onto its back included) on the floor as garbage. */
+    private dropEverything(): void {
+        const dropped: ResourceType[] = [];
+        for (const want of this.wants) {
+            for (let i = 0; i < want.bought; i++) {
+                dropped.push(want.type);
+            }
+            want.bought = 0;
+        }
+        this.incoming.clear();
+        this.stack?.markDirty();
+        if (dropped.length > 0) {
+            this.host.dropGarbage(this.transform.position.clone().setY(this.transform.position.y + FALLBACK_CARRY_HEIGHT), dropped);
+        }
+    }
+
     /** Steps the mood up (+1) or down (-1), clamped to the ladder — restarts the time spent in the current mood. */
     private changeMood(step: number): void {
         this.moodIndex = Math.max(0, Math.min(STORE_MOOD_LADDER.length - 1, this.moodIndex + step));
@@ -767,6 +844,7 @@ export default class StoreClient extends Entity implements NavNeighbor {
             case 'cashierQueue':
             case 'readyToPay':
                 return { kind: 'pay', mood, amount: this.getTotalPrice() };
+            case 'dumping':
             case 'leaving':
                 return { kind: 'mood', mood };
             default:

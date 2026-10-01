@@ -24,8 +24,9 @@
 import * as THREE from 'three';
 import Component from '../ecs/Component';
 import CharacterVisualComponent from './CharacterVisualComponent';
-import ItemPile, { ItemPileLayout, rememberItemSize } from './ItemPile';
+import ItemPile, { ItemPileLayout, rememberItemSize, SlotDisplay } from './ItemPile';
 import { BackpackStorage } from '../data/BackpackStorage';
+import { GARBAGE_DARKEN, GarbageCarryStorage } from '../data/GarbageCarryStorage';
 import { getPlayerConfig } from '../data/PlayerConfig';
 import { RESOURCE_CONFIG, ResourceType } from '../actions/ResourceTypes';
 import { CHARACTER_SCALE } from '../player/MainPlayer';
@@ -40,6 +41,8 @@ export interface CarrierStackSource {
     getBody(): CarrierWearer | undefined;
     /** What's on the stack, in draw order. */
     getCounts(): Iterable<[ResourceType, number]>;
+    /** How each slot is drawn (see ItemPileLayout.displayFor) — unset = the player's own carried-garbage lookup (GarbageCarryStorage). */
+    displayFor?: (type: ResourceType, ordinal: number) => SlotDisplay | undefined;
 }
 
 // --- 'grid' mode ---
@@ -163,6 +166,15 @@ export default class CarrierStackVisual extends Component {
             spacingFor: type => RESOURCE_CONFIG[type]?.carrierSpacing ?? 1,
             // Per-resource turn on the back (e.g. corn laid on its side) — ResourceConfig.carrierOrientation.
             orientationFor: type => RESOURCE_CONFIG[type]?.carrierOrientation,
+            // Carried garbage looks like the darkened item it was picked up as (see GarbageCarryStorage.ts) —
+            // a source (e.g. a store cleaner) can bring its own lookup instead.
+            displayFor: this.source?.displayFor ?? ((type, ordinal) => {
+                if (type !== ResourceType.Garbage) {
+                    return undefined;
+                }
+                const was = GarbageCarryStorage.getAt(ordinal);
+                return was ? { type: was, darken: GARBAGE_DARKEN } : undefined;
+            }),
         };
     }
 

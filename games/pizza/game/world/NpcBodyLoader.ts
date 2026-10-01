@@ -21,7 +21,7 @@
 import CharacterBody from '../entities/CharacterBody';
 import { getPlayerConfig } from '../data/PlayerConfig';
 import { getCharacterView } from '../data/CharacterViewTypes';
-import { NpcConfig } from '../data/NpcTypes';
+import { NpcConfig, NpcLook, rollNpcLook } from '../data/NpcTypes';
 import type { PlayerCarrierConfig } from '../data/PlayerConfig';
 import { CHARACTER_SCALE } from '../player/MainPlayer';
 import MODELS from '../../registry/assetsRegistry/modelsRegistry';
@@ -50,6 +50,8 @@ type CharacterClipName = keyof typeof MODELS.Characters;
 export interface NpcBodyOptions {
     /** Mounts this carrier on the Chest bone (see CharacterBody.mountCarrier()) — e.g. a store worker carrying crops like the player. Unset = no carrier. */
     carrier?: PlayerCarrierConfig;
+    /** A look already rolled (e.g. a saved store client's) — unset = rolled here from `config` (see rollNpcLook()), so an NPC with a random-look setup still varies. */
+    look?: NpcLook;
 }
 
 export async function loadNpcBody(body: CharacterBody, config: NpcConfig, options: NpcBodyOptions = {}): Promise<void> {
@@ -70,9 +72,13 @@ export async function loadNpcBody(body: CharacterBody, config: NpcConfig, option
     await body.registerAnimation('happy', modelUrl(MODELS.Characters[anim.happy as CharacterClipName].fullPath));
     body.setUp(playerConfig.idleToWalkSpeed, playerConfig.walkToRunSpeed);
 
-    const view = getCharacterView(config.characterViewId);
+    // The CharacterView, with a random look's color/face (NpcConfig.colors/faces) over it.
+    const look = options.look ?? rollNpcLook(config);
+    const view = getCharacterView(config.characterViewId) ?? getCharacterView('default');
     if (view) {
-        body.applyNpcView(view);
+        body.applyNpcView({ ...view, color: look.color ?? view.color, face: look.face ?? view.face });
+        // On the head just mounted (see CharacterBody.setHat()).
+        body.setHat(look.hat);
     }
 
     // Before the container is scaled — mountCarrier() cancels the Chest bone's inherited scale, so
@@ -84,7 +90,7 @@ export async function loadNpcBody(body: CharacterBody, config: NpcConfig, option
 
     // MUST run AFTER applyNpcView()'s mountHeadCube() — see MainPlayer.loadCharacter()'s own
     // ordering (applyCharacterView() → mountCarrier() → THEN container.scale.setScalar()).
-    body.container.scale.setScalar(config.scale ?? CHARACTER_SCALE);
+    body.container.scale.setScalar(look.scale ?? config.scale ?? CHARACTER_SCALE);
 
     // See this function's own doc — forces idle's own first frame onto the skeleton before
     // anything is shown, so revealing it never flashes the raw bind-pose T-pose.

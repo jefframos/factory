@@ -2,55 +2,7 @@
     "default": {
         "npcs": [
             {
-                "npcId": "shopper1"
-            },
-            {
-                "npcId": "shopper2"
-            },
-            {
-                "npcId": "shopper3"
-            },
-            {
-                "npcId": "shopper4"
-            },
-            {
-                "npcId": "shopper5"
-            },
-            {
-                "npcId": "shopper6"
-            },
-            {
-                "npcId": "shopper7"
-            },
-            {
-                "npcId": "shopper8"
-            },
-            {
-                "npcId": "shopper9"
-            },
-            {
-                "npcId": "shopper10"
-            },
-            {
-                "npcId": "shopper11"
-            },
-            {
-                "npcId": "shopper12"
-            },
-            {
-                "npcId": "shopper13"
-            },
-            {
-                "npcId": "shopper14"
-            },
-            {
-                "npcId": "shopper15"
-            },
-            {
-                "npcId": "shopper16"
-            },
-            {
-                "npcId": "shopper17"
+                "npcId": "shopper"
             }
         ],
         "spawnIntervalSec": 6,
@@ -74,21 +26,33 @@
         "restockerWorker": {
             "levels": []
         },
-        "billsPerPile": 20
+        "billsPerPile": 20,
+        "workerHat": {
+            "models": []
+        },
+        "cleanerWorker": {
+            "levels": []
+        }
     },
     "byId": {
         "farmStore1": {
+            "workerColor": "#2ecc40",
+            "workerHat": {
+                "models": [
+                    "Hats.CashierHat"
+                ]
+            },
             "restockerWorker": {
                 "wanderRadius": 3,
                 "levels": [
                     {
                         "level": 1,
-                        "moveSpeed": 2,
+                        "moveSpeed": 1.5,
                         "carryCapacity": 1
                     },
                     {
                         "level": 2,
-                        "moveSpeed": 2.5,
+                        "moveSpeed": 2,
                         "carryCapacity": 2
                     },
                     {
@@ -121,55 +85,7 @@
             },
             "npcs": [
                 {
-                    "npcId": "shopper1"
-                },
-                {
-                    "npcId": "shopper2"
-                },
-                {
-                    "npcId": "shopper3"
-                },
-                {
-                    "npcId": "shopper4"
-                },
-                {
-                    "npcId": "shopper5"
-                },
-                {
-                    "npcId": "shopper6"
-                },
-                {
-                    "npcId": "shopper7"
-                },
-                {
-                    "npcId": "shopper8"
-                },
-                {
-                    "npcId": "shopper9"
-                },
-                {
-                    "npcId": "shopper10"
-                },
-                {
-                    "npcId": "shopper11"
-                },
-                {
-                    "npcId": "shopper12"
-                },
-                {
-                    "npcId": "shopper13"
-                },
-                {
-                    "npcId": "shopper14"
-                },
-                {
-                    "npcId": "shopper15"
-                },
-                {
-                    "npcId": "shopper16"
-                },
-                {
-                    "npcId": "shopper17"
+                    "npcId": "shopper"
                 }
             ],
             "spawnIntervalSec": 12,
@@ -279,7 +195,16 @@
             "minClientPatience": 0.8,
             "maxClientPatience": 1.6,
             "workers": [],
-            "billsPerPile": 10
+            "billsPerPile": 10,
+            "cleanerWorker": {
+                "levels": [
+                    {
+                        "level": 1,
+                        "moveSpeed": 1.5,
+                        "carryCapacity": 1
+                    }
+                ]
+            }
         }
     }
 }

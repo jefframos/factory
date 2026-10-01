@@ -392,5 +392,13 @@
         "scale": 1,
         "rotationDeg": 0,
         "icon": "pizza-model-snapshots_Food-Watermelon"
+    },
+    "garbage": {
+        "models": [
+            "Restaurant.FoodIngredientBurgerTrash"
+        ],
+        "scale": 1,
+        "rotationDeg": 0,
+        "icon": "PictoIcon_Delete-2"
     }
 }

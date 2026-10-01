@@ -12,6 +12,8 @@ import { StorageInventory } from './StorageInventory';
 import { StoreMoneyStorage } from '../store/StoreMoneyStorage';
 import { StoreClientStorage } from '../store/StoreClientStorage';
 import { StoreWorkerStorage } from '../store/StoreWorkerStorage';
+import { StoreGarbageStorage } from '../store/StoreGarbageStorage';
+import { GarbageCarryStorage } from './GarbageCarryStorage';
 import { StoreProgressStorage } from '../store/StoreProgressStorage';
 import { StorageOwnershipStorage } from '../store/StorageOwnershipStorage';
 import { BuildingStorage } from './BuildingStorage';
@@ -92,6 +94,8 @@ export function clearAllPlayerData(): void {
         StoreMoneyStorage.clearAll(),
         StoreClientStorage.clearAll(),
         StoreWorkerStorage.clearAll(),
+        StoreGarbageStorage.clearAll(),
+        GarbageCarryStorage.clearAll(),
         GameClock.clearAll(),
         StoreProgressStorage.clearAll(),
         StorageOwnershipStorage.clearAll(),

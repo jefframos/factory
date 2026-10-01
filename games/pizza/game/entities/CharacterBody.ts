@@ -20,6 +20,7 @@ import AnimatorController from './animation/AnimatorController';
 import { loadCompressedFile, releaseObjectURL } from '../utils/GzipLoader';
 import { TOOL_LIBRARY, ToolId, ToolVisualEntry } from '../actions/ToolRegistry';
 import ModelLoaderManager from 'core/three/ModelLoaderManager';
+import type { ModelDefinition } from '../../registry/assetsRegistry/modelsRegistry';
 import type { PlayerCarrierConfig } from '../data/PlayerConfig';
 import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
 
@@ -36,6 +37,26 @@ const ROTATION_SLERP = 0.15;
 const HEAD_CUBE_SIZE = 120;
 /** Head-cube pivot/offset, in the SAME real world units as HEAD_CUBE_SIZE — (0,0,0) sits exactly at the head bone's own origin. Tune here, or live via setHeadOffset(). */
 const HEAD_CUBE_OFFSET = new THREE.Vector3(0, 50, 0);
+
+/** A hat's widest side is scaled to this fraction of HEAD_CUBE_SIZE (x HatSpec.scale) — see setHat(). */
+const HAT_WIDTH_FIT = 1.05;
+/** How far a hat sinks onto the head, as a fraction of HEAD_CUBE_SIZE — so its brim hugs the top instead of floating on it. */
+const HAT_SINK = 0.03;
+
+/**
+ * A hat on the head cube — see setHat(). The model is measured when it loads and fitted to the
+ * head (widest side = HEAD_CUBE_SIZE x HAT_WIDTH_FIT x scale), its bottom sitting on the head's top.
+ */
+export interface HatSpec {
+    /** A MODELS ref — "Group.Key" (e.g. "Hats.ChefHat") or the definition itself. */
+    model: string | ModelDefinition;
+    /** Multiplier on the fitted size. Unset = 1. */
+    scale?: number;
+    /** Extra lift, as a fraction of the head's size (negative = lower). Unset = 0. */
+    offsetY?: number;
+    /** Yaw, degrees — turn a hat whose front isn't the model's +Z. Unset = 0. */
+    rotationDeg?: number;
+}
 
 /** Fallback carrier cube size (rig units, same convention as HEAD_CUBE_SIZE) — only built when PlayerCarrierConfig.models is empty/unresolvable (see mountCarrier()). */
 const CARRIER_CUBE_SIZE = 90;
@@ -73,6 +94,9 @@ export default class CharacterBody {
     private headCube?: THREE.Mesh;
     /** Wraps headCube — cancels the head bone's own inherited scale so HEAD_CUBE_SIZE/HEAD_CUBE_OFFSET are true world units, and gives setHeadOffset() something to reposition without touching the cube's own scale. */
     private headCubeHolder?: THREE.Group;
+    /** The hat on the head cube (see setHat()), and a token so a slow load can't land on a newer head / after the hat changed. */
+    private hat?: THREE.Group;
+    private hatToken = 0;
     private headBone?: THREE.Object3D;
     /** Same role as headCubeHolder, for the carrier (see mountCarrier()) — cancels the Chest bone's inherited scale and carries PlayerCarrierConfig.offset. */
     private carrierCubeHolder?: THREE.Group;
@@ -441,8 +465,62 @@ export default class CharacterBody {
         );
     }
 
+    /**
+     * Puts `spec`'s hat on the head cube (replacing any previous one), or takes it off with no
+     * `spec`. Call after the head is mounted (applyNpcView()/applyCharacterView()) — a hat lives on
+     * the head cube's holder, so it follows the head and is removed with it. Loads asynchronously.
+     */
+    public setHat(spec?: HatSpec): void {
+        this.removeHat();
+        const holder = this.headCubeHolder;
+        if (!spec || !holder) {
+            return;
+        }
+        const def = ModelSnapshotTool.resolveModelRef(spec.model);
+        if (!def) {
+            console.warn(`CharacterBody: hat model "${String(spec.model)}" is not a known MODELS ref — no hat.`);
+            return;
+        }
+        const token = ++this.hatToken;
+        ModelLoaderManager.instance.loadModel(modelUrl(def.fullPath), def.id)
+            .then(object => {
+                if (token !== this.hatToken || holder !== this.headCubeHolder) {
+                    return; // hat changed / head remounted while loading
+                }
+                object.traverse(child => {
+                    if (child instanceof THREE.Mesh) {
+                        const materials = Array.isArray(child.material) ? child.material : [child.material];
+                        materials.forEach(material => BendService.applyBend(material));
+                    }
+                });
+                // Measured unparented, in the model's own units — same idea as mountCarrier().
+                object.updateWorldMatrix(false, true);
+                const box = new THREE.Box3().setFromObject(object);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                // Centered on X/Z, bottom at y=0 — so the hat sits ON the head whatever the model's pivot.
+                object.position.set(-center.x, -box.min.y, -center.z);
+
+                const hat = new THREE.Group();
+                hat.add(object);
+                hat.scale.setScalar((HEAD_CUBE_SIZE * HAT_WIDTH_FIT * (spec.scale ?? 1)) / Math.max(size.x, size.z, 1e-6));
+                hat.rotation.y = THREE.MathUtils.degToRad(spec.rotationDeg ?? 0);
+                hat.position.y = HEAD_CUBE_SIZE / 2 - HEAD_CUBE_SIZE * HAT_SINK + (spec.offsetY ?? 0) * HEAD_CUBE_SIZE;
+                holder.add(hat);
+                this.hat = hat;
+            })
+            .catch(error => console.warn(`CharacterBody: failed to load hat model "${String(spec.model)}"`, error));
+    }
+
+    private removeHat(): void {
+        this.hatToken++;
+        this.hat?.removeFromParent();
+        this.hat = undefined;
+    }
+
     private removeHeadCube(): void {
         ShopStorage.onEquipChanged.remove(this.applyEquippedFace, this);
+        this.removeHat();
 
         if (!this.headCubeHolder) {
             return;

@@ -190,6 +190,20 @@ export async function loadResourceDisplayModel(type: ResourceType, options: Reso
 }
 
 /** Releases everything loadResourceDisplayModel() created — its cloned materials, plus the placeholder box's geometry. Cached model geometry is left alone. Also detaches `model` from its parent. */
+/** Multiplies every material color of a loaded display model by `factor` — e.g. garbage (GARBAGE_DARKEN). Safe: each loaded model owns its own material clones. */
+export function darkenResourceDisplayModel(model: THREE.Object3D, factor: number): void {
+    model.traverse(child => {
+        if (child instanceof THREE.Mesh) {
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            materials.forEach(material => {
+                if ('color' in material && material.color instanceof THREE.Color) {
+                    material.color.multiplyScalar(factor);
+                }
+            });
+        }
+    });
+}
+
 export function disposeResourceDisplayModel(model: THREE.Object3D): void {
     model.traverse(child => {
         if (child instanceof THREE.Mesh) {

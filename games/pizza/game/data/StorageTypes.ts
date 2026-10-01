@@ -64,10 +64,11 @@ export interface StorageConfig {
      */
     resourceType?: ResourceType;
     /**
-     * When true, this storage is a TRASH: it takes whatever `accepts`/`resourceType` allow off the
-     * player exactly like a storage, but every item is destroyed on landing — nothing is stored, no
-     * pile, no count. Its signpost shows a trash icon instead of an item + count, and stores never
-     * sell from it (see store/Store.ts). Unset = a normal storage.
+     * When true, this storage is a TRASH: it takes ONLY garbage (ResourceType.Garbage — see
+     * store/StoreGarbage.ts; `accepts`/`resourceType` are ignored) off the player exactly like a
+     * storage, but every piece is destroyed on landing — nothing is stored, no pile, no count. Its
+     * signpost shows a trash icon instead of an item + count, and stores never sell from it (see
+     * store/Store.ts). Unset = a normal storage.
      */
     trash?: boolean;
     /**

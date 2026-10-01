@@ -44,10 +44,20 @@
 //   - a cashier (StoreCashierWorker.ts): serving at the cashier counts exactly
 //     like the player standing there (see updateCashier()), and it collects
 //     the money drop to the player's wallet on its own;
+//   - cleaners (StoreCleanerWorker.ts): pick garbage off the floor and throw it
+//     in the nearest trash storage (claimNearestGarbage() / getTrashTarget());
 //   - restockers (StoreRestockerWorker.ts): refill the emptiest shelf from the
 //     farms. Shelves and farm cells are claimed here (findRestockJob() /
 //     claimReadyTile()) so two restockers never chase the same one, and the
 //     nav grid also covers every farm plot so they can walk there.
+//
+// Garbage (StoreGarbage.ts): a client that stays ANGRY too long drops what it
+// carries on the floor (dropGarbage() — each piece on its own free spot, never
+// overlapping). The player walking over a piece picks it up as
+// ResourceType.Garbage (if their stack has room) for the trash. It's saved
+// (StoreGarbageStorage.ts). Every piece makes clients come a little less
+// often (garbageSpawnSlowdown), and with maxGarbage pieces no new client comes
+// until it's cleaned up.
 //
 // Clients that already picked something are saved (StoreClientStorage.ts) and
 // respawned on load, so a reload never loses items taken off a shelf — see
@@ -81,11 +91,21 @@ import { pickRandom } from '../world/AssetLibraryRegistry';
 import WorldObjectRegistry from '../world/WorldObjectRegistry';
 import StoreClient, { StoreClientHost, StoreClientWant, StoreSpot, StoreStorageRef } from './StoreClient';
 import StoreWorker from './StoreWorker';
-import type { StoreWorkerRole } from './StoreTypes';
+import { WORKER_NPC_ID, type StoreWorkerRole } from './StoreTypes';
+import { getNpcConfig, hatSpecOf, NpcLook, rollNpcLook } from '../data/NpcTypes';
 import StoreCashierWorker, { StoreCashierHost } from './StoreCashierWorker';
 import StoreRestockerWorker, { RestockJob, StoreRestockerHost } from './StoreRestockerWorker';
+import StoreCleanerWorker, { StoreCleanerHost, TrashTarget } from './StoreCleanerWorker';
 import { SavedStoreWorker, StoreWorkerStorage } from './StoreWorkerStorage';
 import FarmPlotTile from '../world/FarmPlotTile';
+import StoreGarbage from './StoreGarbage';
+import { SavedGarbage, StoreGarbageStorage } from './StoreGarbageStorage';
+import { GARBAGE_DARKEN, GarbageCarryStorage } from '../data/GarbageCarryStorage';
+import MainPlayer from '../player/MainPlayer';
+import { CarryStack } from '../player/CarryStack';
+import { flyResourceModel, flyResourceToStack } from '../components/FlyToStack';
+import { stackItemScale } from '../components/CarrierStackVisual';
+import { getPileScale } from '../components/ItemPile';
 import StoreNavGrid, { NavBounds } from './nav/StoreNavGrid';
 import { NavNeighbor } from './nav/NavAgent';
 import StoreNavDebug from './nav/StoreNavDebug';
@@ -99,7 +119,7 @@ import StoreLine from './StoreLine';
 import { StoreLayout, StorePoint, StoreRect, randomPointInRect, readStoreLayouts, rectContains } from './StoreLayout';
 import { StoreMoneyStorage } from './StoreMoneyStorage';
 import { SavedStoreClient, StoreClientStorage } from './StoreClientStorage';
-import { DEFAULT_CASHIER_VIEW, DEFAULT_CLIENT_RADIUS, DEFAULT_MONEY_DROP_VIEW, DEFAULT_NAV_CELL_SIZE, DEFAULT_RESTOCKER_WANDER_RADIUS, DEFAULT_WORKER_COLLECT_EVERY_SALES, DEFAULT_WORKER_WANDER_RADIUS, getCashierLevelStats, getRestockerLevelStats, StoreClientMood, StoreConfig, StorePacing, getNextStoreLevel, getStoreConfig, getStorageSpotDirection, getStorePacing, rollClientMoodStepSec } from './StoreTypes';
+import { DEFAULT_CASHIER_VIEW, DEFAULT_CLIENT_RADIUS, DEFAULT_MONEY_DROP_VIEW, DEFAULT_NAV_CELL_SIZE, DEFAULT_RESTOCKER_WANDER_RADIUS, DEFAULT_GARBAGE_SPAWN_SLOWDOWN, DEFAULT_MAX_GARBAGE, DEFAULT_WORKER_COLLECT_EVERY_SALES, DEFAULT_WORKER_WANDER_RADIUS, getCashierLevelStats, getCleanerLevelStats, getRestockerLevelStats, StoreClientMood, StoreConfig, StorePacing, getNextStoreLevel, getStoreConfig, getStorageSpotDirection, getStorePacing, rollClientMoodStepSec } from './StoreTypes';
 import { StoreProgressStorage } from './StoreProgressStorage';
 import { StoreUnlocks } from './StoreUnlocks';
 
@@ -115,6 +135,22 @@ const MOOD_FLOOR_BY_LEVEL: Partial<Record<number, StoreClientMood>> = {
 };
 /** Extra waiting spots laid out past the busiest the store can be right now — covers workers hired / levels gained before the next nav rebuild. */
 const QUEUE_SPOT_HEADROOM = 3;
+/** Two pieces of garbage never sit closer than this (center to center), world units. */
+const GARBAGE_SPACING = 1.1;
+/** Rings of candidate spots tried around a dropping client, and how far apart they are. */
+const GARBAGE_SPOT_RINGS = 6;
+/** The player picks garbage up within this distance (world units, on the ground). */
+const GARBAGE_PICKUP_RADIUS = 0.9;
+/** An angry client compares this many random spots in the store when looking for a clean place to dump — see findCleanDropSpot(). */
+const CLEAN_SPOT_CANDIDATES = 24;
+/** Garbage further than this from a spot doesn't make it any "cleaner" — past it, closer to the client wins. */
+const CLEAN_SPOT_REACH = 6;
+/** How much walking distance counts against a spot's cleanness (per world unit). */
+const CLEAN_SPOT_WALK_PENALTY = 0.25;
+/** Gap between two pickups while standing on a pile. */
+const GARBAGE_PICKUP_STAGGER_SEC = 0.12;
+/** Picked-up garbage launches from this high above the floor. */
+const GARBAGE_PICKUP_HEIGHT = 0.2;
 /** The nav grid covers the store area + entrance + exit, grown by this much (world units). */
 const NAV_BOUNDS_MARGIN = 1;
 /** How often the nav grid checks whether anything solid appeared/disappeared (physics bodies changed). */
@@ -142,7 +178,7 @@ interface StoreStorage extends StoreStorageRef {
     readonly dropPoint: THREE.Vector3;
 }
 
-export default class Store extends Entity implements StoreClientHost, StoreCashierHost, StoreRestockerHost {
+export default class Store extends Entity implements StoreClientHost, StoreCashierHost, StoreRestockerHost, StoreCleanerHost {
     public readonly config: StoreConfig;
     public readonly screenHost: ScreenAnchorHost;
     public readonly cashierLine: StoreLine<StoreClient>;
@@ -158,6 +194,8 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     private moneyPile?: StoreMoneyPile;
     /** Every spawned worker — see restoreWorkers(). */
     private readonly workers: StoreWorker[] = [];
+    /** See getWorkerLook(). */
+    private workerLook?: NpcLook;
     /** The one cashier among them (a second cashier entry is kept in the roster but not spawned). */
     private cashierWorker?: StoreCashierWorker;
     /** Roster loaded/seeded and workers spawned — see restoreWorkers(). Nothing is saved before this. */
@@ -167,6 +205,10 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     /** Shelf / farm cell claims, so two restockers never chase the same one. */
     private readonly claimedStorages = new Map<string, StoreRestockerWorker>();
     private readonly claimedTiles = new Map<FarmPlotTile, StoreRestockerWorker>();
+    /** Garbage claimed by a cleaner — see claimNearestGarbage(). */
+    private readonly claimedGarbage = new Map<StoreGarbage, StoreCleanerWorker>();
+    /** Every trash storage on the map — where cleaners throw garbage (see getTrashTarget()). */
+    private readonly trashTargets: TrashTarget[];
     private readonly handleWorkerLevelChanged = (storeId: string): void => {
         if (storeId === this.layout.id) {
             this.applyWorkerLevels();
@@ -176,6 +218,13 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     /** True until the first client spawns — it comes after FIRST_SPAWN_DELAY_SEC instead of a full interval. */
     private firstSpawnPending = true;
     private payTimerSec = 0;
+    /** Garbage on the floor — see dropGarbage(). */
+    private readonly garbage: StoreGarbage[] = [];
+    /** Saved garbage respawned yet — nothing is saved before this, so an early save can't wipe it. */
+    private garbageRestored = false;
+    /** Spots promised to garbage still flying to the floor — so two drops never pick the same spot. */
+    private readonly garbageReserved: THREE.Vector3[] = [];
+    private garbagePickupTimerSec = 0;
     /** Extra clients currently allowed past the soft max, and how long the store has been full with nobody paying — see updateOverflow(). */
     private overflowAllowed = 0;
     private stuckTimerSec = 0;
@@ -206,9 +255,11 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         getWalletOverlayPosition: () => { x: number; y: number },
         farmIds: string[] = [],
         farmRects: StoreRect[] = [],
+        trashTargets: TrashTarget[] = [],
     ) {
         super();
         this.farmIds = farmIds;
+        this.trashTargets = trashTargets;
         this.layout = layout;
         this.config = config;
         this.screenHost = screenHost;
@@ -249,6 +300,7 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         void StoreMoneyStorage.load();
         void StoreClientStorage.load();
         void StoreWorkerStorage.load();
+        void StoreGarbageStorage.load();
         StoreWorkerStorage.onLevelChanged.add(this.handleWorkerLevelChanged);
 
         if (PHYSICS_DEBUG) {
@@ -290,9 +342,14 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         // can't reach yet), or with no storage available to buy from.
         const pacing = this.getPacing();
         this.updateOverflow(delta, pacing);
-        if (open && this.isVisible() && this.clients.length < pacing.maxClients + this.overflowAllowed && this.getAvailableStorages().length > 0) {
+        if (!this.garbageRestored && StoreGarbageStorage.isLoaded()) {
+            this.restoreGarbage();
+        }
+        this.updateGarbagePickup(delta);
+        // A dirty floor (maxGarbage pieces) keeps new clients away until it's cleaned up.
+        if (open && this.isVisible() && !this.isTooDirty() && this.clients.length < pacing.maxClients + this.overflowAllowed && this.getAvailableStorages().length > 0) {
             this.spawnTimerSec += delta;
-            if (this.spawnTimerSec >= (this.firstSpawnPending ? FIRST_SPAWN_DELAY_SEC : pacing.spawnIntervalSec)) {
+            if (this.spawnTimerSec >= (this.firstSpawnPending ? FIRST_SPAWN_DELAY_SEC : pacing.spawnIntervalSec * this.garbageSpawnFactor())) {
                 this.spawnTimerSec = 0;
                 if (this.trySpawnClient(pacing)) {
                     this.firstSpawnPending = false;
@@ -330,6 +387,10 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
             world?.remove(worker);
         }
         this.workers.length = 0;
+        for (const piece of this.garbage) {
+            world?.remove(piece);
+        }
+        this.garbage.length = 0;
         this.cashierWorker = undefined;
         if (this.cashier) {
             world?.remove(this.cashier);
@@ -358,7 +419,157 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
 
     /** Lowest mood a client can drop to at the store's current level — see MOOD_FLOOR_BY_LEVEL. */
     public getMoodFloor(): StoreClientMood | undefined {
-        return MOOD_FLOOR_BY_LEVEL[StoreProgressStorage.getLevel(this.layout.id)];
+        // Opt-in (StoreConfig.forgivingEarlyLevels) — by default clients can always get angry.
+        return this.config.forgivingEarlyLevels ? MOOD_FLOOR_BY_LEVEL[StoreProgressStorage.getLevel(this.layout.id)] : undefined;
+    }
+
+    // ---- Garbage
+
+    /** See StoreClientHost.dropGarbage() — each unit flies from `from` to its own free floor spot and becomes a StoreGarbage there. */
+    public dropGarbage(from: THREE.Vector3, types: ResourceType[]): void {
+        for (const type of types) {
+            const spot = this.pickGarbageSpot(from);
+            this.garbageReserved.push(spot);
+            const yaw = Math.random() * Math.PI * 2;
+            const land = (): void => {
+                const index = this.garbageReserved.indexOf(spot);
+                if (index !== -1) {
+                    this.garbageReserved.splice(index, 1);
+                }
+                this.addGarbage({ type, x: spot.x, z: spot.z, yaw });
+                this.saveGarbage();
+            };
+            const scale = stackItemScale() * getPileScale(type);
+            flyResourceModel({
+                parent: this.root,
+                type,
+                from: from.clone(),
+                startScale: scale,
+                endScale: scale,
+                orientation: 'lying',
+                yawDeg: THREE.MathUtils.radToDeg(yaw),
+                resolveTarget: out => out.copy(spot),
+                onArrive: land,
+            });
+        }
+    }
+
+    /** x on the spawn interval: every piece of garbage on the floor makes clients come a bit less often (StoreConfig.garbageSpawnSlowdown). */
+    private garbageSpawnFactor(): number {
+        return 1 + this.garbage.length * Math.max(0, this.config.garbageSpawnSlowdown ?? DEFAULT_GARBAGE_SPAWN_SLOWDOWN);
+    }
+
+    /**
+     * See StoreClientHost.findCleanDropSpot() — the cleanest of CLEAN_SPOT_CANDIDATES random free
+     * spots in the store: furthest from any garbage (up to CLEAN_SPOT_REACH), minus a little for
+     * the walk there. undefined without a nav grid / no free spot.
+     */
+    public findCleanDropSpot(client: StoreClient): THREE.Vector3 | undefined {
+        const grid = this.navGrid;
+        if (!grid) {
+            return undefined;
+        }
+        const area = rectBounds(this.layout.area);
+        const inset = { minX: area.minX + 1, minZ: area.minZ + 1, maxX: area.maxX - 1, maxZ: area.maxZ - 1 };
+        const taken = [...this.garbage.map(piece => piece.transform.position), ...this.garbageReserved];
+        let best: THREE.Vector3 | undefined;
+        let bestScore = -Infinity;
+        for (let i = 0; i < CLEAN_SPOT_CANDIDATES; i++) {
+            const candidate = grid.randomWalkablePoint(inset, point => this.isFreeSpot(client, point));
+            if (!candidate) {
+                continue;
+            }
+            const nearestGarbage = taken.reduce((min, other) => Math.min(min, Math.hypot(other.x - candidate.x, other.z - candidate.z)), CLEAN_SPOT_REACH);
+            const score = nearestGarbage - CLEAN_SPOT_WALK_PENALTY * client.position.distanceTo(candidate);
+            if (score > bestScore) {
+                best = candidate;
+                bestScore = score;
+            }
+        }
+        return best;
+    }
+
+    /** True with maxGarbage (or more) pieces on the floor — no new clients until it's cleaned up. */
+    public isTooDirty(): boolean {
+        return this.garbage.length >= Math.max(1, this.config.maxGarbage ?? DEFAULT_MAX_GARBAGE);
+    }
+
+    /**
+     * The nearest free spot around `near`: rings of candidates GARBAGE_SPACING apart, each on a
+     * walkable nav cell (when there's a grid) and at least GARBAGE_SPACING from every piece already
+     * down or on its way — so garbage never overlaps. Falls back to `near` itself.
+     */
+    private pickGarbageSpot(near: THREE.Vector3): THREE.Vector3 {
+        const taken = [...this.garbage.map(piece => piece.transform.position), ...this.garbageReserved];
+        const grid = this.navGrid;
+        for (let ring = 0; ring < GARBAGE_SPOT_RINGS; ring++) {
+            const radius = ring * GARBAGE_SPACING;
+            const count = ring === 0 ? 1 : ring * 6;
+            const startAngle = Math.random() * Math.PI * 2;
+            for (let i = 0; i < count; i++) {
+                const angle = startAngle + (i / count) * Math.PI * 2;
+                const spot = new THREE.Vector3(near.x + Math.cos(angle) * radius, 0, near.z + Math.sin(angle) * radius);
+                if (grid && !grid.isWalkableAt(spot.x, spot.z)) {
+                    continue;
+                }
+                if (taken.some(other => Math.hypot(other.x - spot.x, other.z - spot.z) < GARBAGE_SPACING)) {
+                    continue;
+                }
+                return spot;
+            }
+        }
+        return new THREE.Vector3(near.x, 0, near.z);
+    }
+
+    private addGarbage(saved: SavedGarbage): void {
+        const piece = this.world!.add(new StoreGarbage(saved));
+        this.root.add(piece.transform);
+        this.garbage.push(piece);
+    }
+
+    /** Respawns the saved garbage — once, as soon as the save has loaded. */
+    private restoreGarbage(): void {
+        this.garbageRestored = true;
+        for (const saved of StoreGarbageStorage.get(this.layout.id)) {
+            this.addGarbage(saved);
+        }
+    }
+
+    private saveGarbage(): void {
+        if (this.garbageRestored) {
+            StoreGarbageStorage.set(this.layout.id, this.garbage.map(piece => piece.toSave()));
+        }
+    }
+
+    /** The player walking over garbage picks it up (one piece per GARBAGE_PICKUP_STAGGER_SEC) — it flies onto their stack as ResourceType.Garbage, if there's room. */
+    private updateGarbagePickup(delta: number): void {
+        this.garbagePickupTimerSec -= delta;
+        const player = this.player?.entity;
+        if (this.garbagePickupTimerSec > 0 || !(player instanceof MainPlayer) || this.garbage.length === 0) {
+            return;
+        }
+        const { x, z } = player.transform.position;
+        const index = this.garbage.findIndex(piece => Math.hypot(piece.transform.position.x - x, piece.transform.position.z - z) <= GARBAGE_PICKUP_RADIUS);
+        if (index === -1) {
+            return;
+        }
+        if (!CarryStack.hasRoomFor(1)) {
+            CarryStack.notifyFull(player);
+            return;
+        }
+        const [piece] = this.garbage.splice(index, 1);
+        this.claimedGarbage.delete(piece);
+        const from = piece.transform.position.clone().setY(GARBAGE_PICKUP_HEIGHT);
+        this.world!.remove(piece);
+        this.saveGarbage();
+        // Keeps looking like the darkened item it was, on the way and on the back (see GarbageCarryStorage.ts).
+        const was = piece.type;
+        flyResourceToStack(this.root, player, ResourceType.Garbage, from, undefined, {
+            type: was,
+            darken: GARBAGE_DARKEN,
+            beforeBank: () => GarbageCarryStorage.push(was),
+        });
+        this.garbagePickupTimerSec = GARBAGE_PICKUP_STAGGER_SEC;
     }
 
     /**
@@ -722,6 +933,7 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
                 level: entry.level,
                 moveSpeed: stats.moveSpeed,
                 radius,
+                look: this.getWorkerLook(),
                 spawnAt: cashierPoint,
                 payDelaySec: stats.payDelaySec,
                 collectEverySales: Math.max(1, Math.floor(cashierConfig.collectEverySales ?? DEFAULT_WORKER_COLLECT_EVERY_SALES)),
@@ -739,9 +951,25 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
                 level: entry.level,
                 moveSpeed: stats.moveSpeed,
                 radius,
+                look: this.getWorkerLook(),
                 spawnAt,
                 carryCapacity: stats.carryCapacity,
                 wanderRadius: this.config.restockerWorker?.wanderRadius ?? DEFAULT_RESTOCKER_WANDER_RADIUS,
+                carried: entry.carried,
+            });
+        } else if (entry.role === 'cleaner') {
+            const stats = getCleanerLevelStats(this.config, entry.level);
+            const spawnAt = this.getHomePoint().clone();
+            this.navGrid?.snapToWalkable(spawnAt);
+            worker = new StoreCleanerWorker(this, {
+                id: entry.id,
+                level: entry.level,
+                moveSpeed: stats.moveSpeed,
+                radius,
+                look: this.getWorkerLook(),
+                spawnAt,
+                carryCapacity: stats.carryCapacity,
+                wanderRadius: this.config.cleanerWorker?.wanderRadius ?? DEFAULT_RESTOCKER_WANDER_RADIUS,
                 carried: entry.carried,
             });
         } else {
@@ -753,13 +981,31 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         this.workers.push(worker);
     }
 
+    /**
+     * This store's staff look — every worker wears the same one: the NPCs tab's "worker" setup,
+     * with this store's workerColor and workerHat over it (so each store's staff looks different).
+     * Rolled once per store and reused.
+     */
+    private getWorkerLook(): NpcLook {
+        if (!this.workerLook) {
+            const workerNpc = getNpcConfig(WORKER_NPC_ID);
+            const base = workerNpc ? rollNpcLook(workerNpc) : {};
+            this.workerLook = {
+                ...base,
+                color: this.config.workerColor || base.color,
+                hat: hatSpecOf(this.config.workerHat) ?? base.hat,
+            };
+        }
+        return this.workerLook;
+    }
+
     /** Re-saves the roster: every spawned worker's current state, plus any saved entry that isn't spawned (e.g. a second cashier). */
     private saveWorkers(): void {
         this.workersDirty = false;
         const saved = StoreWorkerStorage.getRoster(this.layout.id) ?? [];
         const roster = saved.map(entry => {
             const worker = this.workers.find(candidate => candidate.workerId === entry.id);
-            if (worker instanceof StoreRestockerWorker) {
+            if (worker instanceof StoreRestockerWorker || worker instanceof StoreCleanerWorker) {
                 return worker.toSave();
             }
             return worker ? { ...entry, level: worker.getLevel() } : entry;
@@ -848,6 +1094,71 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
         return best;
     }
 
+    public getCleanerStats(level: number): { moveSpeed: number; carryCapacity: number } {
+        return getCleanerLevelStats(this.config, level);
+    }
+
+    /** See StoreCleanerHost.claimNearestGarbage() — the nearest unclaimed piece on this store's floor; replaces the cleaner's previous claim. */
+    public claimNearestGarbage(worker: StoreCleanerWorker, near: THREE.Vector3): StoreGarbage | undefined {
+        this.releaseGarbageClaims(worker);
+        let best: StoreGarbage | undefined;
+        let bestDistance = Infinity;
+        for (const piece of this.garbage) {
+            const owner = this.claimedGarbage.get(piece);
+            if (owner && owner !== worker) {
+                continue;
+            }
+            const distance = piece.transform.position.distanceToSquared(near);
+            if (distance < bestDistance) {
+                best = piece;
+                bestDistance = distance;
+            }
+        }
+        if (best) {
+            this.claimedGarbage.set(best, worker);
+        }
+        return best;
+    }
+
+    public hasGarbage(piece: StoreGarbage): boolean {
+        return this.garbage.includes(piece);
+    }
+
+    /** See StoreCleanerHost.takeGarbage() — off the floor (and the save); false if it's gone already. */
+    public takeGarbage(worker: StoreCleanerWorker, piece: StoreGarbage): boolean {
+        const index = this.garbage.indexOf(piece);
+        if (index === -1) {
+            return false;
+        }
+        this.garbage.splice(index, 1);
+        this.claimedGarbage.delete(piece);
+        this.world!.remove(piece);
+        this.saveGarbage();
+        return true;
+    }
+
+    /** See StoreCleanerHost.getTrashTarget() — the nearest trash storage on the map. */
+    public getTrashTarget(near: THREE.Vector3): TrashTarget | undefined {
+        let best: TrashTarget | undefined;
+        let bestDistance = Infinity;
+        for (const target of this.trashTargets) {
+            const distance = target.dropPoint.distanceToSquared(near);
+            if (distance < bestDistance) {
+                best = target;
+                bestDistance = distance;
+            }
+        }
+        return best && { dropPoint: best.dropPoint.clone(), binPosition: best.binPosition.clone() };
+    }
+
+    public releaseGarbageClaims(worker: StoreCleanerWorker): void {
+        for (const [piece, owner] of this.claimedGarbage) {
+            if (owner === worker) {
+                this.claimedGarbage.delete(piece);
+            }
+        }
+    }
+
     public releaseClaims(worker: StoreRestockerWorker): void {
         for (const [id, owner] of this.claimedStorages) {
             if (owner === worker) {
@@ -906,6 +1217,7 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
                 wants.map(want => ({ type: want.type, amount: want.remaining + want.bought })),
                 saved.npcId,
                 saved.moodStepSec,
+                saved.look,
             ));
             client.restoreProgress(wants, saved.moodIndex);
             this.root.add(client.transform);
@@ -997,6 +1309,9 @@ function storageCapacity(config: StorageConfig): number {
 
 /** Same rule as StorageZone.accepts() for a storage with no `resourceType`. */
 function storageAccepts(config: StorageConfig, type: ResourceType): boolean {
+    if (type === ResourceType.Garbage) {
+        return false;
+    }
     return config.accepts === 'all' || (RESOURCE_CONFIG[type]?.category ?? 'main') === config.accepts;
 }
 
@@ -1048,12 +1363,27 @@ export function spawnStores(deps: SpawnStoresDeps): Store[] {
             }
         }
 
+        // Every trash storage on the map (stores never sell from one — see above) — where cleaners throw garbage.
+        const trashTargets: TrashTarget[] = [];
+        for (const [id, placement] of deps.worldObjects.getAllOfType('storage')) {
+            const storageConfig = getStorageConfig(id);
+            if (storageConfig.disabled || !storageConfig.trash) {
+                continue;
+            }
+            const dropper = deps.worldObjects.getDropperFor(id);
+            trashTargets.push({
+                dropPoint: new THREE.Vector3(dropper?.x ?? placement.x, 0, dropper?.z ?? placement.z),
+                // Its drop point (StorageZone: dropOffset, default y 0.4) — the bin's opening.
+                binPosition: new THREE.Vector3(placement.x + (storageConfig.dropOffset?.x ?? 0), storageConfig.dropOffset?.y ?? 0.4, placement.z + (storageConfig.dropOffset?.z ?? 0)),
+            });
+        }
+
         const root = new THREE.Group();
         root.name = `store:${layout.id}`;
         deps.threeScene.add(root);
         deps.registerZoneVisibility(root, layout.area.x, layout.area.z, layout.area.width, layout.area.depth);
 
-        const store = deps.world.add(new Store(layout, config, storages, deps.screenHost, root, deps.getWalletOverlayPosition, farmIds, farmRects));
+        const store = deps.world.add(new Store(layout, config, storages, deps.screenHost, root, deps.getWalletOverlayPosition, farmIds, farmRects, trashTargets));
         stores.push(store);
     }
     return stores;

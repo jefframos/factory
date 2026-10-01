@@ -43,6 +43,7 @@ import { PlayerPositionStorage } from './game/data/PlayerPositionStorage';
 import { TutorialProgressStorage } from './game/tutorial/TutorialProgressStorage';
 import { TriggerStorage } from './game/data/TriggerStorage';
 import { GameClock } from './game/utils/GameClock';
+import { GarbageCarryStorage } from './game/data/GarbageCarryStorage';
 import { Localization } from './game/i18n/Localization';
 import loaderConfig from './loader.config';
 
@@ -95,6 +96,7 @@ export default class MyGame extends Game {
             await HighScoreStorage.load();
             await GlobalResourceStorage.load();
             await BackpackStorage.load();
+            await GarbageCarryStorage.load();
             await StorageInventory.load();
             await StoreProgressStorage.load();
             await StorageOwnershipStorage.load();

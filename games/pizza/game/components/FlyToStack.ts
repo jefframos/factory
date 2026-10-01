@@ -26,7 +26,7 @@ import type MainPlayer from '../player/MainPlayer';
 import CarrierStackVisual, { rememberStackItemSize, stackItemScale } from './CarrierStackVisual';
 import { getPileScale } from './ItemPile';
 import CharacterVisualComponent from './CharacterVisualComponent';
-import { disposeResourceDisplayModel, ItemOrientation, loadResourceDisplayModel } from '../world/ResourceDisplayModel';
+import { disposeResourceDisplayModel, ItemOrientation, loadResourceDisplayModel, darkenResourceDisplayModel } from '../world/ResourceDisplayModel';
 
 const FLY_DURATION_SEC = 0.45;
 /** How far above the higher of the two endpoints the arc peaks. */
@@ -51,16 +51,24 @@ export interface ResourceFlight {
     orientation?: ItemOrientation;
     /** Fixed yaw (degrees) for the flying model — match the pile's itemYawDeg. Unset = 0. */
     yawDeg?: number;
+    /** Draw the flying model as this item instead of `type` (e.g. garbage that was a tomato) — see ItemPileLayout.displayFor. */
+    displayType?: ResourceType;
+    /** Multiplier on the flying model's colors — see darkenResourceDisplayModel(). */
+    darken?: number;
 }
 
 /** The shared arc flight — see this file's own doc. */
 export function flyResourceModel(flight: ResourceFlight): void {
     const start = flight.from.clone();
     const orientation = flight.orientation ?? 'lying';
-    void loadResourceDisplayModel(flight.type, { orientation }).then(({ object: model, size, restHeight }) => {
+    const displayType = flight.displayType ?? flight.type;
+    void loadResourceDisplayModel(displayType, { orientation }).then(({ object: model, size, restHeight }) => {
         // Lets the destination pile reserve this item's real size for a slot it's heading to, even
         // before the pile's own copy of the model has loaded.
-        rememberStackItemSize(flight.type, size, orientation, restHeight);
+        rememberStackItemSize(displayType, size, orientation, restHeight);
+        if (flight.darken !== undefined) {
+            darkenResourceDisplayModel(model, flight.darken);
+        }
         model.rotation.y = THREE.MathUtils.degToRad(flight.yawDeg ?? 0);
         model.scale.setScalar(flight.startScale);
         model.position.copy(start);
@@ -104,22 +112,27 @@ export function flyResourceToStack(
     type: ResourceType,
     fromWorld: THREE.Vector3,
     onArrive?: () => void,
+    /** Fly (and aim) as another, optionally darkened item — e.g. garbage that was a tomato; `beforeBank` runs right before `type` is added (see GarbageCarryStorage.push()). */
+    display?: { type: ResourceType; darken?: number; beforeBank?: () => void },
 ): void {
     const flightId = CarryStack.beginFlight();
+    const shownType = display?.type ?? type;
     // Same size the stack draws it at (itemScale x its pileScale), the whole way — so it doesn't pop size on landing.
-    const scale = stackItemScale() * getPileScale(type);
+    const scale = stackItemScale() * getPileScale(shownType);
     flyResourceModel({
         parent,
         type,
+        displayType: display?.type,
+        darken: display?.darken,
         from: fromWorld,
         startScale: scale,
         endScale: scale,
         // Already turned the way it sits on the back (e.g. corn on its side), so it doesn't flip on landing.
-        orientation: RESOURCE_CONFIG[type]?.carrierOrientation,
+        orientation: RESOURCE_CONFIG[shownType]?.carrierOrientation,
         resolveTarget: target => {
             // The Nth in-flight item aims N slots above the current top — see CarryStack's doc.
             const index = CarryStack.carriedCount() + Math.max(CarryStack.flightIndex(flightId), 0);
-            if (player.getComponent(CarrierStackVisual)?.getSlotWorldTarget(index, type, target)) {
+            if (player.getComponent(CarrierStackVisual)?.getSlotWorldTarget(index, shownType, target)) {
                 return;
             }
             if (!player.getComponent(CharacterVisualComponent)?.character.getCarrierWorldPosition(target)) {
@@ -128,6 +141,7 @@ export function flyResourceToStack(
         },
         onArrive: () => {
             CarryStack.endFlight(flightId);
+            display?.beforeBank?.();
             BackpackStorage.add(type, 1);
             onArrive?.();
         },

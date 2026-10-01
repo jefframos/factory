@@ -624,7 +624,7 @@ const ENTITY_SCHEMAS = {
             ],
         },
         { key: 'resourceType', type: 'select', label: 'Only This Resource (e.g. one specific crop — overrides Accepts; blank = anything Accepts allows)', source: 'resources', optional: true },
-        { key: 'trash', type: 'boolean', label: 'Trash (destroys everything dropped in — no pile, no count; signpost shows a trash icon; stores never sell from it)', optional: true },
+        { key: 'trash', type: 'boolean', label: 'Trash (takes ONLY garbage — Accepts/Only This Resource are ignored — and destroys it: no pile, no count; signpost shows a trash icon; stores never sell from it)', optional: true },
         { key: 'particleEffectId', type: 'select', label: 'Particle Effect (ambient, from the drop point — Particle Effects tab; blank = none)', source: 'particleEffects', optional: true },
         { key: 'particleSpawnRate', type: 'number', label: 'Particle Spawn Rate (particles per second — blank = 4)', optional: true },
         { key: 'view', type: 'select', label: 'View (Entity Views tab — the storage mesh; when set it wins over Model/Scale/Rotation below)', source: 'entityViews', optional: true },
@@ -730,6 +730,10 @@ const ENTITY_SCHEMAS = {
         { key: 'clientsPerWorker', type: 'number', label: 'Clients per Worker (extra clients allowed inside per hired worker, on top of the shelf-based max — fractions add up; blank = 1)', optional: true },
         { key: 'clientsPerLevel', type: 'number', label: 'Clients per Store Level (extra clients per level above 1 — blank = 0.5)', optional: true },
         { key: 'overflowClients', type: 'number', label: 'Overflow Clients (when the store is full and nobody has paid for Stuck Time, one more comes in each Stuck Time, up to this many — any payment closes them; blank = 2)', optional: true },
+        { key: 'angryDropSec', type: 'number', label: 'Angry Drop Time (seconds a client stays ANGRY while still waiting before it throws what it carries on the floor as garbage and leaves without paying — blank = 8)', optional: true },
+        { key: 'maxGarbage', type: 'number', label: 'Max Garbage (pieces on the floor at which clients stop coming altogether until the player cleans up — blank = 15)', optional: true },
+        { key: 'garbageSpawnSlowdown', type: 'number', label: 'Garbage Slowdown (below Max Garbage, each piece makes clients come this much less often — 0.15 = +15% spawn interval per piece; blank = 0.15)', optional: true },
+        { key: 'forgivingEarlyLevels', type: 'boolean', label: 'Forgiving Early Levels (level 1 clients never drop below happy, level 2 below annoyed — off = clients can always get angry)', optional: true },
         { key: 'stuckSec', type: 'number', label: 'Stuck Time (seconds full with no payment before an overflow client comes in — blank = 15)', optional: true },
         { key: 'startPatienceMultiplier', type: 'number', label: 'Start Patience Multiplier (x Mood Step Time with ONE shelf, easing to x1 with all shelves; blank = 1.5)', optional: true },
         { key: 'moodStepSec', type: 'number', label: 'Mood Step Time (seconds before a client\'s mood drops one step — blank = 20)', optional: true },
@@ -770,9 +774,20 @@ const ENTITY_SCHEMAS = {
                     options: [
                         { value: 'cashier', label: 'Cashier (serves at the cashier, collects the money drop — one per store)' },
                         { value: 'restocker', label: 'Restocker (refills the emptiest shelf from the farms)' },
+                        { value: 'cleaner', label: 'Cleaner (picks garbage off the floor and throws it in the trash)' },
                     ],
                 },
                 { key: 'level', type: 'number', label: 'Starting Level (blank = 1)', optional: true },
+            ],
+        },
+        { key: 'workerColor', type: 'color', label: 'Staff Color (every worker of this store — blank = the NPCs tab\'s "worker" look)', optional: true },
+        {
+            key: 'workerHat', type: 'group', label: 'Staff Hat (every worker of this store wears it — no model = none)',
+            fields: [
+                { key: 'models', type: 'modelList', label: 'Hat Model (first entry used — the Hats group)' },
+                { key: 'scale', type: 'number', label: 'Scale (x the size fitted to the head — blank = 1)', optional: true },
+                { key: 'offsetY', type: 'number', label: 'Lift (fraction of the head size — blank = 0)', optional: true },
+                { key: 'rotationDeg', type: 'number', label: 'Rotation (degrees — blank = 0)', optional: true },
             ],
         },
         {
@@ -787,6 +802,21 @@ const ENTITY_SCHEMAS = {
                         { key: 'level', type: 'number', label: 'Level' },
                         { key: 'moveSpeed', type: 'number', label: 'Walk Speed (world units / second)' },
                         { key: 'payDelaySec', type: 'number', label: 'Pay Time (seconds at the cashier before the front client pays)' },
+                    ],
+                },
+            ],
+        },
+        {
+            key: 'cleanerWorker', type: 'group', label: 'Cleaner Worker Settings (picks the nearest garbage off the floor into the crate on its back, throws it in the nearest trash)',
+            fields: [
+                { key: 'wanderRadius', type: 'number', label: 'Wander Radius (how far from the middle of the shelves it strolls while idle — world units; blank = 3)', optional: true },
+                {
+                    key: 'levels', type: 'list', label: 'Levels (stats per worker level — the entry for its level, or the highest below it, is used; empty = speed 4, carries 2)', optional: true,
+                    itemLabel: item => `Lv ${item.level ?? '?'} — speed ${item.moveSpeed ?? '?'}, carries ${item.carryCapacity ?? '?'}`,
+                    fields: [
+                        { key: 'level', type: 'number', label: 'Level' },
+                        { key: 'moveSpeed', type: 'number', label: 'Walk Speed (world units / second — the player walks at 5)' },
+                        { key: 'carryCapacity', type: 'number', label: 'Carry Spaces (pieces on its back at once)' },
                     ],
                 },
             ],
@@ -1006,6 +1036,30 @@ const ENTITY_SCHEMAS = {
         { key: 'scale', type: 'number', label: 'Scale (uniform; blank defaults to 0.0075, same rig scale the player itself uses)', optional: true },
         { key: 'viewRadius', type: 'number', label: 'View Radius (world units — blank means this NPC never looks at the player at all)', optional: true },
         { key: 'viewAngleDeg', type: 'number', label: 'View Angle (deg, full aperture — how wide a facing cone counts as "in front of the NPC"; only used when View Radius is set)', optional: true },
+        {
+            key: 'colors', type: 'list', label: 'Random Colors (each spawn picks one — e.g. store clients; empty = the Character View\'s color)', optional: true,
+            itemLabel: item => item.color || 'color',
+            fields: [{ key: 'color', type: 'color', label: 'Color' }],
+        },
+        {
+            key: 'faces', type: 'list', label: 'Random Faces (each spawn picks one; empty = the Character View\'s face)', optional: true,
+            itemLabel: item => (item.face || 'face').split('/').pop(),
+            fields: [{ key: 'face', type: 'faceIcon', label: 'Face (images/non-preload)' }],
+        },
+        {
+            key: 'hats', type: 'list', label: 'Random Hats (pool — a spawn that wears a hat picks one, weighted; empty = never a hat)', optional: true,
+            itemLabel: item => `${(item.models?.[0] || 'hat').split('.').pop()} — weight ${item.weight ?? '?'}`,
+            fields: [
+                { key: 'models', type: 'modelList', label: 'Hat Model (first entry used — the Hats group)' },
+                { key: 'weight', type: 'number', label: 'Weight (relative odds — 2 = twice as likely as a 1)' },
+                { key: 'scale', type: 'number', label: 'Scale (x the size fitted to the head — blank = 1)', optional: true },
+                { key: 'offsetY', type: 'number', label: 'Lift (fraction of the head size, negative = lower — blank = 0)', optional: true },
+                { key: 'rotationDeg', type: 'number', label: 'Rotation (degrees — turn a hat that faces the wrong way; blank = 0)', optional: true },
+            ],
+        },
+        { key: 'noHatChance', type: 'number', label: 'No Hat Chance (0-1 — 0.5 = half of the spawns wear no hat; blank = 0)', optional: true },
+        { key: 'minScale', type: 'number', label: 'Random Min Scale (each spawn picks a scale between min and max — blank = Scale above)', optional: true },
+        { key: 'maxScale', type: 'number', label: 'Random Max Scale', optional: true },
     ],
     // Reusable 2D particle-emitter presets (see ParticleRegistry.ts's own doc) — create one
     // here, then pick it by name wherever a "Particle Effect" field appears (e.g. the Crafting

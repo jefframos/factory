@@ -53,8 +53,9 @@ export interface StoreLevelConfig {
  * What a store worker does (see StoreWorker.ts):
  *   - 'cashier':   serves at the cashier and collects the money drop — StoreCashierWorker.ts.
  *   - 'restocker': refills the emptiest shelf from the farms — StoreRestockerWorker.ts.
+ *   - 'cleaner':   picks garbage off the floor and throws it in the trash — StoreCleanerWorker.ts.
  */
-export type StoreWorkerRole = 'cashier' | 'restocker';
+export type StoreWorkerRole = 'cashier' | 'restocker' | 'cleaner';
 
 /** NPCs tab id EVERY store worker wears — one shared look (edit it there to change them all). */
 export const WORKER_NPC_ID = 'worker';
@@ -70,6 +71,16 @@ export interface StoreWorkerEntry {
     role: StoreWorkerRole;
     /** Starting level. Unset = 1. */
     level?: number;
+}
+
+/** A store's staff hat — same fields as an NPC hat entry (NpcTypes.ts's NpcHatEntry), minus the weight. */
+export interface StoreWorkerHat {
+    /** First entry used — a MODELS "Group.Key" ref (e.g. "Hats.CashierHat"). Empty = no hat. */
+    models?: string[];
+    /** See HatSpec (CharacterBody.ts) — fitted-size multiplier, lift (fraction of the head), yaw. */
+    scale?: number;
+    offsetY?: number;
+    rotationDeg?: number;
 }
 
 /** A cashier's stats at one level — see StoreCashierWorkerConfig.levels. */
@@ -195,6 +206,18 @@ export interface StoreConfig {
     overflowClients?: number;
     /** Seconds full with no payment before one overflow client is let in — see overflowClients. Unset = DEFAULT_STUCK_SEC. */
     stuckSec?: number;
+    /**
+     * Seconds a client stays at the bottom mood (ANGRY) while still waiting before it drops
+     * everything it carries on the floor as garbage and walks out without paying (see
+     * StoreClient.ts / store/StoreGarbage.ts). Unset = DEFAULT_ANGRY_DROP_SEC.
+     */
+    angryDropSec?: number;
+    /** Pieces of garbage on the floor at which clients stop coming altogether until it's cleaned up. Unset = DEFAULT_MAX_GARBAGE. */
+    maxGarbage?: number;
+    /** Below maxGarbage, each piece on the floor makes clients come this much less often (0.15 = spawn interval +15% per piece). Unset = DEFAULT_GARBAGE_SPAWN_SLOWDOWN. */
+    garbageSpawnSlowdown?: number;
+    /** When true, early store levels cap how low a client's mood can drop (level 1: happy, level 2: annoyed — see Store.getMoodFloor()). Unset/false = clients can always get angry. */
+    forgivingEarlyLevels?: boolean;
     /** x moodStepSec with only one shelf (more forgiving early on), easing to x1 with every shelf. Unset = DEFAULT_START_PATIENCE_MULTIPLIER. */
     startPatienceMultiplier?: number;
     /** Seconds a client stays in one mood before dropping a step (see StoreClientMood). Unset = DEFAULT_MOOD_STEP_SEC. */
@@ -216,6 +239,12 @@ export interface StoreConfig {
     cashierWorker?: StoreCashierWorkerConfig;
     /** Settings for this store's restocker workers — see StoreRestockerWorkerConfig's own doc. */
     restockerWorker?: StoreRestockerWorkerConfig;
+    /** Settings for this store's cleaner workers — same shape as restockers (speed + carry spaces per level). See StoreCleanerWorker.ts. */
+    cleanerWorker?: StoreRestockerWorkerConfig;
+    /** Body/head color EVERY worker of this store wears — so each store's staff has its own look. Unset = the NPCs tab's "worker" look. */
+    workerColor?: string;
+    /** Hat every worker of this store wears — see StoreWorkerHat. Unset / no model = the "worker" look's own (none by default). */
+    workerHat?: StoreWorkerHat;
     /** When true, this store isn't spawned at all — same convention as every other entity's `disabled`. */
     disabled?: boolean;
 }
@@ -224,55 +253,7 @@ export interface StoreConfig {
 export const DEFAULT_STORE_CONFIG: StoreConfig = {
     "npcs": [
         {
-            "npcId": "shopper1"
-        },
-        {
-            "npcId": "shopper2"
-        },
-        {
-            "npcId": "shopper3"
-        },
-        {
-            "npcId": "shopper4"
-        },
-        {
-            "npcId": "shopper5"
-        },
-        {
-            "npcId": "shopper6"
-        },
-        {
-            "npcId": "shopper7"
-        },
-        {
-            "npcId": "shopper8"
-        },
-        {
-            "npcId": "shopper9"
-        },
-        {
-            "npcId": "shopper10"
-        },
-        {
-            "npcId": "shopper11"
-        },
-        {
-            "npcId": "shopper12"
-        },
-        {
-            "npcId": "shopper13"
-        },
-        {
-            "npcId": "shopper14"
-        },
-        {
-            "npcId": "shopper15"
-        },
-        {
-            "npcId": "shopper16"
-        },
-        {
-            "npcId": "shopper17"
+            "npcId": "shopper"
         }
     ],
     "spawnIntervalSec": 6,
@@ -296,23 +277,35 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
     },
     "restockerWorker": {
         "levels": []
+    },
+    "cleanerWorker": {
+        "levels": []
+    },
+    "workerHat": {
+        "models": []
     }
 };
 
 /** Per-store-id overrides — sparse: only stores a level designer has customized need an entry. */
 export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
     "farmStore1": {
+        "workerColor": "#2ecc40",
+        "workerHat": {
+            "models": [
+                "Hats.CashierHat"
+            ]
+        },
         "restockerWorker": {
             "wanderRadius": 3,
             "levels": [
                 {
                     "level": 1,
-                    "moveSpeed": 2,
+                    "moveSpeed": 1.5,
                     "carryCapacity": 1
                 },
                 {
                     "level": 2,
-                    "moveSpeed": 2.5,
+                    "moveSpeed": 2,
                     "carryCapacity": 2
                 },
                 {
@@ -345,55 +338,7 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
         },
         "npcs": [
             {
-                "npcId": "shopper1"
-            },
-            {
-                "npcId": "shopper2"
-            },
-            {
-                "npcId": "shopper3"
-            },
-            {
-                "npcId": "shopper4"
-            },
-            {
-                "npcId": "shopper5"
-            },
-            {
-                "npcId": "shopper6"
-            },
-            {
-                "npcId": "shopper7"
-            },
-            {
-                "npcId": "shopper8"
-            },
-            {
-                "npcId": "shopper9"
-            },
-            {
-                "npcId": "shopper10"
-            },
-            {
-                "npcId": "shopper11"
-            },
-            {
-                "npcId": "shopper12"
-            },
-            {
-                "npcId": "shopper13"
-            },
-            {
-                "npcId": "shopper14"
-            },
-            {
-                "npcId": "shopper15"
-            },
-            {
-                "npcId": "shopper16"
-            },
-            {
-                "npcId": "shopper17"
+                "npcId": "shopper"
             }
         ],
         "spawnIntervalSec": 12,
@@ -503,7 +448,16 @@ export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
         ],
         "defaultStorageId": "storage1",
         "billsPerPile": 10,
-        "workers": []
+        "workers": [],
+        "cleanerWorker": {
+            "levels": [
+                {
+                    "level": 1,
+                    "moveSpeed": 1.5,
+                    "carryCapacity": 1
+                }
+            ]
+        }
     }
 };
 
@@ -543,6 +497,15 @@ export function getCashierLevelStats(config: StoreConfig, level: number): { move
 /** A restocker worker's stats at `level` — see StoreRestockerWorkerConfig.levels. */
 export function getRestockerLevelStats(config: StoreConfig, level: number): { moveSpeed: number; carryCapacity: number } {
     const entry = pickLevelEntry(config.restockerWorker?.levels, level);
+    return {
+        moveSpeed: entry?.moveSpeed ?? DEFAULT_RESTOCKER_MOVE_SPEED,
+        carryCapacity: Math.max(1, Math.floor(entry?.carryCapacity ?? DEFAULT_RESTOCKER_CARRY_CAPACITY)),
+    };
+}
+
+/** A cleaner worker's stats at `level` — StoreConfig.cleanerWorker.levels, same defaults as a restocker's. */
+export function getCleanerLevelStats(config: StoreConfig, level: number): { moveSpeed: number; carryCapacity: number } {
+    const entry = pickLevelEntry(config.cleanerWorker?.levels, level);
     return {
         moveSpeed: entry?.moveSpeed ?? DEFAULT_RESTOCKER_MOVE_SPEED,
         carryCapacity: Math.max(1, Math.floor(entry?.carryCapacity ?? DEFAULT_RESTOCKER_CARRY_CAPACITY)),
@@ -603,6 +566,10 @@ export const DEFAULT_CLIENTS_PER_WORKER = 1;
 export const DEFAULT_CLIENTS_PER_LEVEL = 0.5;
 export const DEFAULT_OVERFLOW_CLIENTS = 2;
 export const DEFAULT_STUCK_SEC = 15;
+/** StoreConfig.angryDropSec / maxGarbage fallbacks. */
+export const DEFAULT_ANGRY_DROP_SEC = 8;
+export const DEFAULT_MAX_GARBAGE = 15;
+export const DEFAULT_GARBAGE_SPAWN_SLOWDOWN = 0.15;
 
 /** How busy/forgiving a store is right now — see getStorePacing(). */
 export interface StorePacing {

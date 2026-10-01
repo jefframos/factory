@@ -48,6 +48,12 @@ export enum ResourceType {
     Strawberry = "strawberry",
     Tomato = "tomato",
     Watermelon = "watermelon",
+    /**
+     * What a store client's dropped items become once the player picks them up off the floor (see
+     * store/StoreGarbage.ts) — rides the back stack like a crop ('farm' category) but only a trash
+     * storage takes it (StorageZone.accepts()), and it can't be sold.
+     */
+    Garbage = "garbage",
 }
 
 export interface ResourceConfig {
@@ -318,5 +324,12 @@ export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
         category: "farm",
         "price": 10,
         "sellable": true
+    },
+    [ResourceType.Garbage]: {
+        amountPerGather: 1,
+        label: "Garbage",
+        color: 0x4a4a3a,
+        category: "farm",
+        "sellable": false
     },
 };

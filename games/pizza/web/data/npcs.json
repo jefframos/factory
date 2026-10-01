@@ -1,104 +1,238 @@
 {
     "default": {
-        "characterViewId": "purple"
+        "characterViewId": "purple",
+        "colors": [],
+        "faces": []
     },
     "shopper1": {
         "characterViewId": "violet",
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper2": {
         "characterViewId": "cyan",
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper3": {
         "characterViewId": "red",
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper4": {
         "characterViewId": "yellow",
         "scale": 0.0065,
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper5": {
         "characterViewId": "coral",
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper6": {
         "characterViewId": "purple",
         "scale": 0.0085,
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper7": {
         "characterViewId": "pink",
         "scale": 0.0065,
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper8": {
         "characterViewId": "green",
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper9": {
         "characterViewId": "orange",
         "scale": 0.008,
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper10": {
         "characterViewId": "mint",
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper11": {
         "characterViewId": "lime",
         "scale": 0.0065,
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper12": {
         "characterViewId": "teal",
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper13": {
         "characterViewId": "brown",
         "scale": 0.0085,
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper14": {
         "characterViewId": "gold",
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper15": {
         "characterViewId": "sky",
         "scale": 0.0065,
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper16": {
         "characterViewId": "rose",
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "shopper17": {
         "characterViewId": "slate",
         "scale": 0.008,
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [],
+        "faces": []
     },
     "worker": {
         "characterViewId": "slate",
         "scale": 0.008,
         "viewRadius": 3,
-        "viewAngleDeg": 180
+        "viewAngleDeg": 180,
+        "colors": [
+            {
+                "color": "#2ecc40"
+            }
+        ],
+        "faces": []
+    },
+    "shopper": {
+        "characterViewId": "default",
+        "viewRadius": 3,
+        "viewAngleDeg": 180,
+        "colors": [
+            {
+                "color": "#ff9100"
+            },
+            {
+                "color": "#ff7a00"
+            },
+            {
+                "color": "#ff6d1f"
+            },
+            {
+                "color": "#ff5722"
+            },
+            {
+                "color": "#ff5a3c"
+            },
+            {
+                "color": "#ff4f5e"
+            },
+            {
+                "color": "#ff4a78"
+            },
+            {
+                "color": "#ff4081"
+            },
+            {
+                "color": "#f5398f"
+            },
+            {
+                "color": "#ff5fa2"
+            }
+        ],
+        "faces": [
+            {
+                "face": "skins/face-brave-1.webp"
+            },
+            {
+                "face": "skins/face-mustache-1.webp"
+            },
+            {
+                "face": "skins/face-dizzy-1.webp"
+            },
+            {
+                "face": "skins/face-smirk-1.webp"
+            },
+            {
+                "face": "skins/face-sunglasses-2.webp"
+            },
+            {
+                "face": "skins/face-smile-1.webp"
+            },
+            {
+                "face": "skins/face-laughing-1.webp"
+            },
+            {
+                "face": "skins/face-glasses-1.webp"
+            },
+            {
+                "face": "skins/face-star-1.webp"
+            },
+            {
+                "face": "skins/face-smiling-2.webp"
+            }
+        ],
+        "minScale": 0.0065,
+        "maxScale": 0.0085,
+        "noHatChance": 0.5,
+        "hats": [
+            {
+                "models": [
+                    "Hats.CowboyHat"
+                ],
+                "weight": 3
+            },
+            {
+                "models": [
+                    "Hats.AmericanHat"
+                ],
+                "weight": 2
+            },
+            {
+                "models": [
+                    "Hats.PirateHat"
+                ],
+                "weight": 1
+            }
+        ]
     }
 }

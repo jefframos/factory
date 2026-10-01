@@ -313,8 +313,8 @@ export const ENTITY_SOURCE_MAP = {
         kind: 'queues',
         defaultExportName: 'DEFAULT_STORE_CONFIG',
         byIdExportName: 'STORE_CONFIG_BY_ID',
-        managedKeys: ['name', 'npcs', 'spawnIntervalSec', 'maxClients', 'moveSpeed', 'maxDistinctItems', 'maxAmountPerItem', 'priceMultiplier', 'spotSpacing', 'spotMargin', 'storageSpotDirections', 'cashierSpotDirection', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'pickDelaySec', 'payDelaySec', 'moneyPerBill', 'billsPerPile', 'bubbleOffset', 'cashierView', 'moneyDropView', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'disabled'],
-        optionalKeys: ['name', 'storageSpotDirections', 'cashierSpotDirection', 'cashierView', 'moneyDropView', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'disabled'],
+        managedKeys: ['name', 'npcs', 'spawnIntervalSec', 'maxClients', 'moveSpeed', 'maxDistinctItems', 'maxAmountPerItem', 'priceMultiplier', 'spotSpacing', 'spotMargin', 'storageSpotDirections', 'cashierSpotDirection', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'pickDelaySec', 'payDelaySec', 'moneyPerBill', 'billsPerPile', 'bubbleOffset', 'cashierView', 'moneyDropView', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'angryDropSec', 'maxGarbage', 'garbageSpawnSlowdown', 'forgivingEarlyLevels', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'cleanerWorker', 'workerColor', 'workerHat', 'disabled'],
+        optionalKeys: ['name', 'storageSpotDirections', 'cashierSpotDirection', 'cashierView', 'moneyDropView', 'waitStyle', 'browseChance', 'clientRadius', 'navCellSize', 'startSpawnIntervalSec', 'startMaxClients', 'clientsPerWorker', 'clientsPerLevel', 'overflowClients', 'stuckSec', 'angryDropSec', 'maxGarbage', 'garbageSpawnSlowdown', 'forgivingEarlyLevels', 'startPatienceMultiplier', 'moodStepSec', 'minClientPatience', 'maxClientPatience', 'veryHappyPayMultiplier', 'unhappyPayPenalty', 'defaultStorageId', 'levels', 'workers', 'cashierWorker', 'restockerWorker', 'cleanerWorker', 'workerColor', 'workerHat', 'disabled'],
     },
     // A MART — a "mart"-typed object drawn on the Tiled map's "mapSettings" layer, open-ended
     // by id like shops/crafting/farms, not enum-backed. Same {default, byId} two-export shape
@@ -497,8 +497,8 @@ export const ENTITY_SOURCE_MAP = {
         file: path.join(GAME_DIR, 'data', 'NpcTypes.ts'),
         exportName: 'NPC_CONFIG_BY_ID',
         kind: 'partialRecord',
-        managedKeys: ['characterViewId', 'scale', 'viewRadius', 'viewAngleDeg'],
-        optionalKeys: ['scale', 'viewRadius', 'viewAngleDeg'],
+        managedKeys: ['characterViewId', 'scale', 'viewRadius', 'viewAngleDeg', 'colors', 'faces', 'minScale', 'maxScale', 'hats', 'noHatChance'],
+        optionalKeys: ['scale', 'viewRadius', 'viewAngleDeg', 'colors', 'faces', 'minScale', 'maxScale', 'hats', 'noHatChance'],
     },
     // Reusable, named task pools (see LootTableTypes.ts's own doc) — a QuestGiverVariant
     // references one of these by id instead of carrying its own possibleTasks list inline, so

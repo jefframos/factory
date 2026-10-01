@@ -104,5 +104,25 @@
             -0.5,
             0
         ]
+    },
+    "garbageFlies": {
+        "name": "Garbage Flies",
+        "texture": "particles/circle_05.webp",
+        "color": "#111111",
+        "blendMode": "normal",
+        "fadeInSec": 0.2,
+        "fadeOutSec": 0.3,
+        "lifetimeSec": 1.4,
+        "sizeMin": 0.12,
+        "sizeMax": 0.22,
+        "riseSpeedMin": 0.09,
+        "riseSpeedMax": 0.3,
+        "spreadRadius": 0.35,
+        "maxOpacity": 0.9,
+        "offset": [
+            0,
+            0.25,
+            0
+        ]
     }
 }

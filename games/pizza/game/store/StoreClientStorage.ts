@@ -12,6 +12,7 @@
 
 import PlatformHandler from 'core/platforms/PlatformHandler';
 import { ResourceType } from '../actions/ResourceTypes';
+import type { NpcLook } from '../data/NpcTypes';
 
 const STORAGE_KEY = 'PIZZA_STORE_CLIENTS';
 
@@ -23,6 +24,8 @@ export interface SavedStoreClientWant {
 
 export interface SavedStoreClient {
     npcId: string;
+    /** Its rolled look — so it looks the same after a reload. Missing in older saves (re-rolled). */
+    look?: NpcLook;
     wants: SavedStoreClientWant[];
     moodIndex: number;
     moodStepSec: number;

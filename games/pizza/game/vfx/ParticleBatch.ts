@@ -21,6 +21,17 @@ import * as THREE from 'three';
 import { BendService } from '../services/BendService';
 import { ParticleEffectDescriptor } from './ParticleRegistry';
 
+/**
+ * How far (world units) each particle is pulled toward the camera for the depth test only — its own
+ * size x this, plus DEPTH_BIAS_MARGIN. See the vertex shader's DEPTH BIAS note: enough to stop the
+ * ground cropping/hiding low particles; bigger values let particles show through more of whatever
+ * stands just in front of them.
+ */
+const DEPTH_BIAS_SIZE_FACTOR = 1.0;
+const DEPTH_BIAS_MARGIN = 0.3;
+/** Above everything else drawn in the scene (floor labels: 1, dotted decals: 10 — see DottedLineBuilder) so particles always draw last. */
+const PARTICLE_RENDER_ORDER = 100;
+
 const VERTEX_SHADER = `
 attribute vec3 aVelocity;
 attribute vec3 aColor;
@@ -78,7 +89,19 @@ void main() {
     // ~15-unit follow-camera distance (see PizzaScene's CAMERA_SETTINGS.distance) — a
     // physically-correct projection would render these as a few px, unreadable as a "glow".
     gl_PointSize = aSize * (800.0 / -mvPosition.z);
-    gl_Position = projectionMatrix * mvPosition;
+
+    // DEPTH BIAS. A point is a flat camera-facing square drawn at ONE depth (its center's). The
+    // camera looks down at the ground, so the ground under the square's lower half is closer to the
+    // camera than that center — the depth test then lets the floor cut the particle off (or hide
+    // it entirely when it spawns low, e.g. flies over garbage or a myst offset into the ground).
+    // Sliding the point toward the camera ALONG ITS OWN VIEW RAY keeps it on exactly the same
+    // pixel at the same size (gl_PointSize above used the unbiased depth) and only changes its
+    // depth — by about its own size plus a margin, enough to clear the ground beneath it, while
+    // anything solid well in front of it (a wall, a building) still hides it.
+    float viewDistance = length(mvPosition.xyz);
+    float depthBias = aSize * ${DEPTH_BIAS_SIZE_FACTOR.toFixed(2)} + ${DEPTH_BIAS_MARGIN.toFixed(2)};
+    vec3 biased = mvPosition.xyz * (max(viewDistance - depthBias, 0.05) / max(viewDistance, 0.0001));
+    gl_Position = projectionMatrix * vec4(biased, 1.0);
 }
 `;
 
@@ -171,6 +194,13 @@ export class ParticleBatch {
         // static bounding sphere (computed from wherever slots happen to sit) falls outside
         // view, hiding every currently-live particle at once.
         this.points.frustumCulled = false;
+        // Drawn after every other transparent thing. The ground is transparent too (each island
+        // tile fades out below the surface — see IslandMeshBuilder's fadeTo), and three.js sorts
+        // transparent objects back-to-front by OBJECT position: this whole batch is one object
+        // sitting at the world origin, so it often sorted before the ground, which then painted
+        // over every particle that wasn't in front of an opaque mesh. Depth testing still hides
+        // particles behind walls/buildings. See PARTICLE_RENDER_ORDER for the value.
+        this.points.renderOrder = PARTICLE_RENDER_ORDER;
     }
 
     public spawn(worldPos: THREE.Vector3, velocity: THREE.Vector3, descriptor: ParticleEffectDescriptor, size: number, gravity = 0): void {
