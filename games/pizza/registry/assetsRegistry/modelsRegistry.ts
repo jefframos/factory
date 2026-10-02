@@ -1557,6 +1557,61 @@ const CharactersRunning = {
 }
 } as const;
 
+const CharactersSitting = {
+  id: 'Sitting',
+  path: 'characters/default/Sitting',
+  fullPath: 'pizza/models/characters/default/Sitting.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "Root",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "LeftToeRoll": "LeftToeRoll",
+  "LeftFootIK": "LeftFootIK",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "RightFootCtrl": "RightFootCtrl",
+  "RightHeelRoll": "RightHeelRoll",
+  "RightToeRoll": "RightToeRoll",
+  "RightFootIK": "RightFootIK",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "RightKneeCtrl": "RightKneeCtrl",
+  "HipsCtrl": "HipsCtrl",
+  "Hips": "Hips",
+  "Spine": "Spine",
+  "Chest": "Chest",
+  "UpperChest": "UpperChest",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandIndex3": "RightHandIndex3",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToes": "LeftToes",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToes": "RightToes"
+}
+} as const;
+
 const CharactersStandingMeleeAttackDownwardCHOP = {
   id: 'StandingMeleeAttackDownwardCHOP',
   path: 'characters/default/StandingMeleeAttackDownwardCHOP',
@@ -1671,6 +1726,61 @@ const CharactersStandToRoll = {
   id: 'StandToRoll',
   path: 'characters/default/StandToRoll',
   fullPath: 'pizza/models/characters/default/StandToRoll.glb',
+  format: 'glb',
+  nodes: {
+  "Root": "Root",
+  "LeftFootCtrl": "LeftFootCtrl",
+  "LeftHeelRoll": "LeftHeelRoll",
+  "LeftToeRoll": "LeftToeRoll",
+  "LeftFootIK": "LeftFootIK",
+  "LeftFootRollCtrl": "LeftFootRollCtrl",
+  "LeftKneeCtrl": "LeftKneeCtrl",
+  "RightFootCtrl": "RightFootCtrl",
+  "RightHeelRoll": "RightHeelRoll",
+  "RightToeRoll": "RightToeRoll",
+  "RightFootIK": "RightFootIK",
+  "RightFootRollCtrl": "RightFootRollCtrl",
+  "RightKneeCtrl": "RightKneeCtrl",
+  "HipsCtrl": "HipsCtrl",
+  "Hips": "Hips",
+  "Spine": "Spine",
+  "Chest": "Chest",
+  "UpperChest": "UpperChest",
+  "Neck": "Neck",
+  "Head": "Head",
+  "LeftShoulder": "LeftShoulder",
+  "LeftArm": "LeftArm",
+  "LeftForeArm": "LeftForeArm",
+  "LeftHand": "LeftHand",
+  "LeftHandIndex1": "LeftHandIndex1",
+  "LeftHandIndex2": "LeftHandIndex2",
+  "LeftHandIndex3": "LeftHandIndex3",
+  "LeftHandThumb1": "LeftHandThumb1",
+  "LeftHandThumb2": "LeftHandThumb2",
+  "RightShoulder": "RightShoulder",
+  "RightArm": "RightArm",
+  "RightForeArm": "RightForeArm",
+  "RightHand": "RightHand",
+  "RightHandIndex1": "RightHandIndex1",
+  "RightHandIndex2": "RightHandIndex2",
+  "RightHandIndex3": "RightHandIndex3",
+  "RightHandThumb1": "RightHandThumb1",
+  "RightHandThumb2": "RightHandThumb2",
+  "LeftUpLeg": "LeftUpLeg",
+  "LeftLeg": "LeftLeg",
+  "LeftFoot": "LeftFoot",
+  "LeftToes": "LeftToes",
+  "RightUpLeg": "RightUpLeg",
+  "RightLeg": "RightLeg",
+  "RightFoot": "RightFoot",
+  "RightToes": "RightToes"
+}
+} as const;
+
+const CharactersStandToSit = {
+  id: 'StandToSit',
+  path: 'characters/default/StandToSit',
+  fullPath: 'pizza/models/characters/default/StandToSit.glb',
   format: 'glb',
   nodes: {
   "Root": "Root",
@@ -8249,6 +8359,56 @@ const RestaurantWallWindowOpen = {
 }
 } as const;
 
+const StoreDeskDecorated = {
+  id: 'desk_decorated',
+  path: 'store/desk_decorated',
+  fullPath: 'pizza/models/store/desk_decorated.gltf',
+  format: 'gltf',
+  nodes: {
+  "DeskDecorated": "desk_decorated"
+}
+} as const;
+
+const StoreWall = {
+  id: 'wall',
+  path: 'store/wall',
+  fullPath: 'pizza/models/store/wall.gltf',
+  format: 'gltf',
+  nodes: {
+  "Wall": "wall"
+}
+} as const;
+
+const StoreWallHalf = {
+  id: 'wall_half',
+  path: 'store/wall_half',
+  fullPath: 'pizza/models/store/wall_half.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallHalf": "wall_half"
+}
+} as const;
+
+const StoreWallWindowClosed = {
+  id: 'wall_window_closed',
+  path: 'store/wall_window_closed',
+  fullPath: 'pizza/models/store/wall_window_closed.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallWindowClosed": "wall_window_closed"
+}
+} as const;
+
+const StoreWallWindowOpen = {
+  id: 'wall_window_open',
+  path: 'store/wall_window_open',
+  fullPath: 'pizza/models/store/wall_window_open.gltf',
+  format: 'gltf',
+  nodes: {
+  "WallWindowOpen": "wall_window_open"
+}
+} as const;
+
 const SurvivalBarrelOpen = {
   id: 'barrel-open',
   path: 'survival/barrel-open',
@@ -9658,9 +9818,11 @@ export const MODELS = {
     Roll: CharactersRoll,
     Run: CharactersRun,
     Running: CharactersRunning,
+    Sitting: CharactersSitting,
     StandingMeleeAttackDownwardCHOP: CharactersStandingMeleeAttackDownwardCHOP,
     StandingPICKAXE: CharactersStandingPICKAXE,
     StandToRoll: CharactersStandToRoll,
+    StandToSit: CharactersStandToSit,
     Talking: CharactersTalking,
     TestIdle: CharactersTestIdle,
     Walking: CharactersWalking,
@@ -10284,6 +10446,13 @@ export const MODELS = {
     WallWindowClosedCurtainsGreen: RestaurantWallWindowClosedCurtainsGreen,
     WallWindowClosedCurtainsRed: RestaurantWallWindowClosedCurtainsRed,
     WallWindowOpen: RestaurantWallWindowOpen
+  },
+  Store: {
+    DeskDecorated: StoreDeskDecorated,
+    Wall: StoreWall,
+    WallHalf: StoreWallHalf,
+    WallWindowClosed: StoreWallWindowClosed,
+    WallWindowOpen: StoreWallWindowOpen
   },
   Survival: {
     BarrelOpen: SurvivalBarrelOpen,

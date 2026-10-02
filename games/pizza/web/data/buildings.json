@@ -152,5 +152,37 @@
         "frame": "Floor",
         "floorLabelSide": "south",
         "baseAtDropper": true
+    },
+    "storeRoom1": {
+        "levels": [
+            {
+                "requirements": {
+                    "wood": 30
+                },
+                "money": 150,
+                "effect": {
+                    "type": "storeRoom",
+                    "value": 1,
+                    "description": "New store room"
+                },
+                "level": 1,
+                "forceOwnMesh": true
+            }
+        ],
+        "name": "StoreRoom1",
+        "baseFillFraction": 0.1,
+        "appearRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 1
+        },
+        "baseView": "baseBuildingSite",
+        "updateParticleEffectId": "craftingMyst",
+        "popupMode": "simple",
+        "solidFromMap": true,
+        "baseFillFull": true,
+        "frame": "Floor",
+        "floorLabelSide": "south",
+        "baseAtDropper": true
     }
 }

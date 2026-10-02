@@ -299,6 +299,22 @@ export default class AnimatorController {
         return this.actionLayerId;
     }
 
+    /** True once `id` has been registered (and its clip loaded) — lets callers skip a state whose clip never loaded instead of getting stuck in it. */
+    public hasAnimation(id: string): boolean {
+        return this.animations[id] !== undefined;
+    }
+
+    /** True when the base layer's current clip is a play-once clip that has reached its end — AnimationBoard's `whenFinished` transitions read this. Always false for a looping clip. */
+    public isCurrentClipFinished(): boolean {
+        const action = this.currentAction;
+        if (!action || action.loop !== THREE.LoopOnce) {
+            return false;
+        }
+        // A finished LoopOnce action either pauses on its last frame (clampWhenFinished, what
+        // play()/mix() set) or disables itself — and its time sits at the clip's end either way.
+        return !action.enabled || action.paused || action.time >= action.getClip().duration;
+    }
+
     // Update the mixer; call this in your render loop
     update(delta: number): void {
         this.animatorBoard?.update(delta)

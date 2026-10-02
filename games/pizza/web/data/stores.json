@@ -204,6 +204,55 @@
                         "carryCapacity": 1
                     }
                 ]
+            },
+            "hiring": {
+                "roles": [
+                    {
+                        "role": "cashier",
+                        "cost": 100,
+                        "maxCount": 1,
+                        "upgrades": [
+                            {
+                                "level": 2,
+                                "cost": 80
+                            },
+                            {
+                                "level": 3,
+                                "cost": 160
+                            }
+                        ]
+                    },
+                    {
+                        "role": "restocker",
+                        "cost": 75,
+                        "maxCount": 3,
+                        "upgrades": [
+                            {
+                                "level": 2,
+                                "cost": 60
+                            },
+                            {
+                                "level": 3,
+                                "cost": 120
+                            }
+                        ]
+                    },
+                    {
+                        "role": "cleaner",
+                        "cost": 75,
+                        "maxCount": 2,
+                        "upgrades": [
+                            {
+                                "level": 2,
+                                "cost": 60
+                            },
+                            {
+                                "level": 3,
+                                "cost": 120
+                            }
+                        ]
+                    }
+                ]
             }
         }
     }

@@ -179,7 +179,7 @@ const MAP_TILE_FIELDS = {
 // own PlayerAnimationConfig doc) so all eight fields offer the same dropdown.
 const CHARACTER_ANIMATION_OPTIONS = [
     'Digging', 'Excited', 'FallingIdle', 'Idle', 'Jump', 'JumpingUp', 'Landing', 'PickFruit',
-    'PlantTree', 'Roll', 'Run', 'Running', 'StandToRoll', 'StandingMeleeAttackDownwardCHOP',
+    'PlantTree', 'Roll', 'Run', 'Running', 'Sitting', 'StandToRoll', 'StandToSit', 'StandingMeleeAttackDownwardCHOP',
     'StandingPICKAXE', 'Talking', 'TestIdle', 'Walking', 'Watering',
 ].map(name => ({ value: name, label: name }));
 
@@ -192,6 +192,8 @@ const ANIMATION_CLIP_FIELDS = [
     { key: 'landing', type: 'select', label: 'Landing', options: CHARACTER_ANIMATION_OPTIONS },
     { key: 'talk', type: 'select', label: 'Talk (quest-giver offer pose, unused by the player itself)', options: CHARACTER_ANIMATION_OPTIONS },
     { key: 'happy', type: 'select', label: 'Happy (quest-giver completion pose, unused by the player itself)', options: CHARACTER_ANIMATION_OPTIONS },
+    { key: 'sitDown', type: 'select', label: 'Sit Down (played once when an NPC sits — e.g. the hire desk manager; then Sitting loops)', options: CHARACTER_ANIMATION_OPTIONS, optional: true },
+    { key: 'sitting', type: 'select', label: 'Sitting (looped while seated)', options: CHARACTER_ANIMATION_OPTIONS, optional: true },
 ];
 
 const ENTITY_SCHEMAS = {
@@ -273,6 +275,7 @@ const ENTITY_SCHEMAS = {
             fields: [
                 { key: 'level', type: 'number', label: 'Level' },
                 { key: 'requirements', type: 'costMap', label: 'Requirements', source: 'resources' },
+                { key: 'money', type: 'number', label: 'Money (coins paid from the wallet at the dropper, on top of Requirements — blank = none)', optional: true },
                 {
                     key: 'effect', type: 'group', label: 'Effect',
                     fields: [
@@ -759,7 +762,7 @@ const ENTITY_SCHEMAS = {
                     key: 'enables', type: 'list', label: 'Enables (map object ids that stay hidden until this level — storage, farm, building, queue, shop, mart, crafting table)', optional: true,
                     itemLabel: item => item.entityId || 'entity',
                     fields: [
-                        { key: 'entityId', type: 'text', label: 'Map Object Id (e.g. farm2, storage2)' },
+                        { key: 'entityId', type: 'select', label: 'Map Object (from the Tiled map)', source: '$storeEnableableIds' },
                     ],
                 },
             ],
@@ -802,6 +805,36 @@ const ENTITY_SCHEMAS = {
                         { key: 'level', type: 'number', label: 'Level' },
                         { key: 'moveSpeed', type: 'number', label: 'Walk Speed (world units / second)' },
                         { key: 'payDelaySec', type: 'number', label: 'Pay Time (seconds at the cashier before the front client pays)' },
+                    ],
+                },
+            ],
+        },
+        {
+            key: 'hiring', type: 'group', label: 'Hire Desk (what a "hireDesk" drawn on the map\'s sections layer sells — the desk appears once its section is built)',
+            fields: [
+                { key: 'npcId', type: 'select', label: 'Desk NPC (blank = the "worker" look)', source: 'npcs', optional: true },
+                {
+                    key: 'roles', type: 'list', label: 'Roles (in popup order — empty = cashier 100, restocker 75, cleaner 75)', optional: true,
+                    itemLabel: item => `${item.role || '?'} — ${item.cost ?? '?'} money${item.maxCount ? `, max ${item.maxCount}` : ''}`,
+                    fields: [
+                        {
+                            key: 'role', type: 'select', label: 'Role',
+                            options: [
+                                { value: 'cashier', label: 'Cashier (one per store)' },
+                                { value: 'restocker', label: 'Restocker' },
+                                { value: 'cleaner', label: 'Cleaner' },
+                            ],
+                        },
+                        { key: 'cost', type: 'number', label: 'Cost (money per hire)' },
+                        { key: 'maxCount', type: 'number', label: 'Max (total of this role, starting workers included — blank = 3; a cashier is always 1)', optional: true },
+                        {
+                            key: 'upgrades', type: 'list', label: 'Upgrades (the hire desk\'s Upgrade tab — each entry is what it costs to REACH that level; the highest level listed is the max, and it should match the levels this role\'s Worker Settings below have stats for. Empty = Lv2 50, Lv3 100)', optional: true,
+                            itemLabel: item => `Lv ${item.level ?? '?'} — ${item.cost ?? '?'} money`,
+                            fields: [
+                                { key: 'level', type: 'number', label: 'Level (2, 3, ...)' },
+                                { key: 'cost', type: 'number', label: 'Cost (money)' },
+                            ],
+                        },
                     ],
                 },
             ],
@@ -1180,5 +1213,12 @@ const REQUIREMENT_TYPE_FIELDS = {
     // field, on whichever entity actually cares, IS the effect.
     trigger: [
         { key: 'triggerId', type: 'select', label: 'Trigger', source: 'triggers' },
+    ],
+    // "Appears once store X reaches level N" — same effect as listing the id under that store
+    // level's own Enables, but set from the entity being unlocked (and also usable by zones
+    // and craft tables, which Enables can't hide). See MilestoneRequirement.ts.
+    store: [
+        { key: 'storeId', type: 'select', label: 'Store', source: 'stores' },
+        { key: 'level', type: 'number', label: 'Store Level (at least)' },
     ],
 };

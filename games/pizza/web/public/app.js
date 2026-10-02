@@ -31,6 +31,8 @@ let spawnerTileTypes = [];
 let dynamicResourceAreaFilter = 'all';
 /** Every "spawner"-type object's "id" custom property drawn on the map's mapSettings layer (e.g. "animalSpawner1" — see tiledMap.mjs's readSpawnerShapeIds()) — fetched once at init/restart, backs the '$spawnerShapeIds' virtual select source (see getOptions()) and the Shape Resources tab's own grouping (see renderShapeResourcesByArea()). */
 let spawnerShapeIds = [];
+/** type -> ids of every object on the map (see /api/map-object-ids) — backs the '$storeEnableableIds' select source. */
+let mapObjectIdsByType = {};
 /** Every zone actually painted on the map's "zones" tilelayer right now — `{ zones: [{zoneNumber, cellCount, minCol, maxCol, minRow, maxRow, cells}], error }` (see tiledMap.mjs's readZoneCells()). Fetched once at init/restart; backs the Zones tab's own map visualization AND its auto-discovery of which zoneNumbers need an entry (see renderZonesTab()). */
 let zoneCells = { zones: [], error: null };
 /** Which spawner shape the Shape Resources tab is currently filtered to — 'all' or one shapeId — same convention as dynamicResourceAreaFilter, see renderShapeResourcesByArea(). */
@@ -112,6 +114,12 @@ async function init() {
         spawnerShapeIds = result.shapeIds ?? [];
     } catch {
         spawnerShapeIds = [];
+    }
+    try {
+        const result = await fetchJson('/api/map-object-ids');
+        mapObjectIdsByType = result.byType ?? {};
+    } catch {
+        mapObjectIdsByType = {};
     }
     try {
         zoneCells = await fetchJson('/api/zone-cells');
@@ -1667,6 +1675,9 @@ function renderEntryCard(container, key, value, schema, removable, renamable, mi
 // Field engine — see schemas.js's own doc for the field descriptor shapes.
 // ---------------------------------------------------------------------------
 
+/** Map object types whose entities spawn through RequirementRegistry.registerSpawnGate() — the only ones a store level's "enables" list can hide. */
+const STORE_ENABLEABLE_MAP_TYPES = ['building', 'storage', 'farm', 'queue', 'shop', 'mart', 'craftTable'];
+
 function getOptions(sourceId) {
     // A '$'-prefixed source isn't a manifest tab id — it's a map-derived option list fetched
     // straight from the real Tiled map (see readSpawnerTileTypes()), not any tab's own data.
@@ -1678,6 +1689,9 @@ function getOptions(sourceId) {
     }
     if (sourceId === '$spawnerShapeIds') {
         return spawnerShapeIds.map(id => ({ value: id, label: id }));
+    }
+    if (sourceId === '$storeEnableableIds') {
+        return STORE_ENABLEABLE_MAP_TYPES.flatMap(type => (mapObjectIdsByType[type] ?? []).map(id => ({ value: id, label: `${id} (${type})` })));
     }
 
     const manifestEntry = manifest.find(e => e.id === sourceId);
@@ -1900,6 +1914,9 @@ function renderRequirementField(container, obj, field, onDirty) {
         }
         if (type === 'trigger') {
             return { type: 'trigger', triggerId: getOptions('triggers')[0]?.value ?? '' };
+        }
+        if (type === 'store') {
+            return { type: 'store', storeId: getOptions('stores')[0]?.value ?? '', level: 2 };
         }
         return { type: 'resource', resourceType: getOptions('resources')[0]?.value ?? '', amount: 1 };
     }

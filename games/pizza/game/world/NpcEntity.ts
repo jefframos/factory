@@ -30,7 +30,7 @@
 import * as THREE from 'three';
 import Entity from '../ecs/Entity';
 import { NpcConfig } from '../data/NpcTypes';
-import { loadNpcBody } from './NpcBodyLoader';
+import { loadNpcBody, NpcBodyOptions } from './NpcBodyLoader';
 import NpcLookAtSensor from './NpcLookAtSensor';
 import CharacterBody from '../entities/CharacterBody';
 
@@ -42,11 +42,15 @@ export default class NpcEntity extends Entity {
     /** A live getter (not a snapshot), same "always reads the player's CURRENT position" convention as AnimalNode's own getPlayerPosition. */
     private readonly getPlayerPosition: () => THREE.Vector3;
 
-    public constructor(position: THREE.Vector3, config: NpcConfig, getPlayerPosition: () => THREE.Vector3) {
+    /** Passed through to loadNpcBody() — see NpcBodyOptions (e.g. `sitting` for an NPC placed on a chair). */
+    private readonly bodyOptions: NpcBodyOptions;
+
+    public constructor(position: THREE.Vector3, config: NpcConfig, getPlayerPosition: () => THREE.Vector3, bodyOptions: NpcBodyOptions = {}) {
         super();
         this.transform.position.copy(position);
         this.config = config;
         this.getPlayerPosition = getPlayerPosition;
+        this.bodyOptions = bodyOptions;
     }
 
     public override awake(): void {
@@ -58,7 +62,7 @@ export default class NpcEntity extends Entity {
         // See NpcBodyLoader.ts's own doc — this is the same mesh/clip/CharacterView sequence
         // QuestGiverEntity.ts's own `npc` variant uses to build its rig, factored out so neither
         // caller duplicates it.
-        await loadNpcBody(this.body, this.config);
+        await loadNpcBody(this.body, this.config, this.bodyOptions);
 
         // Also last, for the same reason — EntityBoneLookAt captures its rest pose in WORLD
         // space (see that class's own doc), so it has to be built once the container's final

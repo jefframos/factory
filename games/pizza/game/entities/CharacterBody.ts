@@ -28,6 +28,9 @@ import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
 const modelUrl = (fullPath: string): string => `./${fullPath}`;
 
 const ROTATION_SLERP = 0.15;
+/** Animation ids (registerAnimation()) of the sit states — see setUp()/setSitting(). */
+export const SIT_DOWN_STATE = 'standToSit';
+export const SITTING_STATE = 'sitting';
 /**
  * Cube-head size in REAL world units (same units as the floor/camera —
  * see mountHeadCube(), which divides out the head bone's own inherited
@@ -202,6 +205,19 @@ export default class CharacterBody {
         board.registerTransition('jumpUp', 'falling', 0.5, (vars) => (vars.verticalSpeed as number) > 0.01);
         board.registerTransition('falling', 'landing', 0.25, (vars) => vars.grounded === true);
 
+        // Sitting — driven by setSitting(), never by movement: stand -> SIT_DOWN_STATE (plays
+        // once) -> SITTING_STATE (loops) for as long as the 'sitting' var stays true. Standing
+        // back up just blends out to idle (there's no stand-up clip yet). Only reachable once
+        // both clips are registered — see setSitting().
+        const isSitting = (vars: Record<string, number | boolean>): boolean => vars.sitting === true;
+        board.setOneShot(SIT_DOWN_STATE);
+        for (const from of ['idle', 'walk', 'run']) {
+            board.registerTransition(from, SIT_DOWN_STATE, 0.25, isSitting);
+        }
+        board.registerTransition(SIT_DOWN_STATE, SITTING_STATE, 0.2, undefined, undefined, true);
+        board.registerTransition(SIT_DOWN_STATE, 'idle', 0.3, vars => !isSitting(vars));
+        board.registerTransition(SITTING_STATE, 'idle', 0.3, vars => !isSitting(vars));
+
         // PlayerActionController's timed actions (chop/mine/pick — see ActionTypes.ts's
         // animationTrigger field) do NOT go through this board at all: they run on
         // AnimatorController's separate, concurrent action layer (see playActionLayer()/
@@ -213,6 +229,20 @@ export default class CharacterBody {
         // one-shot poses a quest-giver NPC plays directly via AnimatorController.play()/mix()
         // while stationary, not states this movement graph should ever transition into on
         // its own (see QuestGiverTypes.ts).
+    }
+
+    /**
+     * Sit down (stand-to-sit once, then loop sitting) or stand back up — see setUp()'s sitting
+     * transitions. Needs both SIT_DOWN_STATE and SITTING_STATE clips registered (see
+     * NpcBodyLoader's `sitting` option); warns and stays standing otherwise rather than leaving
+     * the board stuck in a state with no clip.
+     */
+    public setSitting(sitting: boolean): void {
+        if (sitting && !(this.animator.hasAnimation(SIT_DOWN_STATE) && this.animator.hasAnimation(SITTING_STATE))) {
+            console.warn(`[CharacterBody] setSitting(true) needs the "${SIT_DOWN_STATE}" and "${SITTING_STATE}" clips registered — staying up`);
+            return;
+        }
+        this.animator.animatorBoard?.setVariable('sitting', sitting);
     }
 
     /** Public bone lookup — e.g. so a caller can build an EntityBoneLookAt.ts against one of this body's own bones (a "Neck" bone, plus a child like "Head" as its aim reference) without CharacterBody needing to know anything about look-at logic itself. Same case-insensitive traversal findBoneByName() (used internally for Head/Chest/RightHand) uses. */

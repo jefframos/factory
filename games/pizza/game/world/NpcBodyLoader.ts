@@ -18,7 +18,7 @@
 // function's own doc below for why that's not the same moment as "the mesh
 // finished loading."
 
-import CharacterBody from '../entities/CharacterBody';
+import CharacterBody, { SIT_DOWN_STATE, SITTING_STATE } from '../entities/CharacterBody';
 import { getPlayerConfig } from '../data/PlayerConfig';
 import { getCharacterView } from '../data/CharacterViewTypes';
 import { NpcConfig, NpcLook, rollNpcLook } from '../data/NpcTypes';
@@ -52,6 +52,8 @@ export interface NpcBodyOptions {
     carrier?: PlayerCarrierConfig;
     /** A look already rolled (e.g. a saved store client's) — unset = rolled here from `config` (see rollNpcLook()), so an NPC with a random-look setup still varies. */
     look?: NpcLook;
+    /** Loads the sit clips (PlayerAnimationConfig.sitDown/sitting) and sits the NPC down right away — stand-to-sit once, then the sitting loop (see CharacterBody.setSitting()). E.g. the hire desk manager on its chair. */
+    sitting?: boolean;
 }
 
 export async function loadNpcBody(body: CharacterBody, config: NpcConfig, options: NpcBodyOptions = {}): Promise<void> {
@@ -86,6 +88,13 @@ export async function loadNpcBody(body: CharacterBody, config: NpcConfig, option
     // MainPlayer.loadCharacter(): applyCharacterView() → mountCarrier() → container.scale.
     if (options.carrier) {
         body.mountCarrier(options.carrier);
+    }
+
+    // Only NPCs that sit pay for these two clips — see NpcBodyOptions.sitting.
+    if (options.sitting) {
+        await body.registerAnimation(SIT_DOWN_STATE, modelUrl(MODELS.Characters[(anim.sitDown ?? 'StandToSit') as CharacterClipName].fullPath));
+        await body.registerAnimation(SITTING_STATE, modelUrl(MODELS.Characters[(anim.sitting ?? 'Sitting') as CharacterClipName].fullPath));
+        body.setSitting(true);
     }
 
     // MUST run AFTER applyNpcView()'s mountHeadCube() — see MainPlayer.loadCharacter()'s own

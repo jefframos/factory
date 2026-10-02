@@ -49,6 +49,11 @@
 // beyond its place in that ordered list — see getWaypoints(), the one reader
 // (QuestGiverEntity.ts, walking a queue's giver in/out along the path).
 //
+// A "cameraTarget" object is a point carrying "target" (e.g. a BuildingId)
+// instead of "id" — where the camera looks when that building levels up,
+// instead of its default (see BuildingZone.getCameraFocusPosition()). Read
+// through getCameraTargetFor().
+//
 // Built once alongside TileMap (same loadTiledMap()/loadTileDefs() PIXI
 // Assets reads, no extra network/parse cost) — call get()/
 // getDropperFor()/getWaypoints() any time after that, e.g. right where
@@ -72,6 +77,21 @@ import { decodeObjectModel, DecodedObjectModel } from './MeshLayerSpawner';
 
 /** Tiled layer name holding hand-placed building/gate/etc. spawn points — see this file's own doc. */
 export const OBJECTS_LAYER_NAME = 'mapSettings';
+
+/**
+ * Tiled layer(s) (name CONTAINS this, like mapSettings) holding buildable STORE SECTIONS — see
+ * readSectionLayers(). Authoring: draw one "storeSection" rect (custom props `id` = a building id
+ * from the editor's Buildings tab, `target` = its store id), then drop any model tiles inside it
+ * with NO properties — every one becomes part of what appears once that building is built (solid
+ * from the tile's own/object's "solid" prop, same as useOwnMesh). A "dropper" (`target` = the
+ * section id) is where the player pays. A "hireDesk" (`id`) inside it is where the desk's NPC
+ * stands, and a dropper with `target` = that desk id is where the player stands to hire.
+ */
+export const SECTIONS_LAYER_NAME = 'sections';
+/** The "type" of a section's own area rect — see SECTIONS_LAYER_NAME. */
+const STORE_SECTION_TYPE = 'storeSection';
+/** The "type" of a hire desk spot — see SECTIONS_LAYER_NAME / HireDeskZone.ts. */
+const HIRE_DESK_TYPE = 'hireDesk';
 
 /**
  * Custom BOOL property (Tiled's "Custom Properties" panel, type "bool"), set on a "building"
@@ -144,6 +164,11 @@ const WAYPOINT_TYPE = 'waypoint';
 const WAYPOINT_TARGET_PROPERTY = 'target';
 /** The custom property giving a waypoint's position within its path — see WaypointPlacement's own doc. */
 const WAYPOINT_ORDER_PROPERTY = 'order';
+
+/** The "type" custom property value marking a camera-target point — see this file's own doc. */
+const CAMERA_TARGET_TYPE = 'cameraTarget';
+/** The custom property (NOT "id") a cameraTarget uses to name what it's FOR — e.g. a BuildingId. */
+const CAMERA_TARGET_TARGET_PROPERTY = 'target';
 
 /** width/depth are the rect's HORIZONTAL footprint (Tiled has no 3rd dimension) — see objectToWorldRect()'s own doc for why a spawner should keep its own config's Y height and only override X/Z from these. `rotationDeg` is Tiled's own clockwise-degrees `rotation`, unconverted — see objectToWorldRect()'s own doc for the sign flip a caller needs applying it to a THREE Y-axis rotation. 0 for an object that was never rotated at all, same as before this field existed. */
 export interface WorldObjectPlacement {
@@ -298,6 +323,26 @@ export function sampleRandomPointInShape(shape: SpawnerShape, maxAttempts: numbe
     return undefined;
 }
 
+/** One "storeSection" area — see SECTIONS_LAYER_NAME. Also registered as a `building` placement under the same id, so the regular building setup spawns it. */
+export interface StoreSectionPlacement {
+    /** The building id (Buildings tab) this section is built as. */
+    id: string;
+    /** The store this section belongs to — its own `target` prop. Undefined if not set. */
+    storeId?: string;
+    placement: WorldObjectPlacement;
+}
+
+/** One "hireDesk" spot — where the desk's NPC stands. The player interacts at the dropper whose `target` is this desk's `id` (see getDropperFor()), else on the desk area itself. See SECTIONS_LAYER_NAME / HireDeskZone.ts. */
+export interface HireDeskPlacement {
+    /** Its own `id` prop, else `hireDesk#<Tiled object id>` — what a dropper's `target` names. */
+    id: string;
+    /** Its own `target` prop, else the containing section's store. */
+    storeId?: string;
+    /** The section it sits in — the desk appears once that section is built. Undefined = drawn outside every section. */
+    sectionId?: string;
+    placement: WorldObjectPlacement;
+}
+
 /** One stop on a waypoint path — see this file's own doc and getWaypoints(). */
 export interface WaypointPlacement {
     /** This waypoint's position within its path — getWaypoints() always returns these sorted ascending, so index 0 of the returned array IS order 0 regardless of the order objects were drawn/exported in. */
@@ -313,6 +358,8 @@ export default class WorldObjectRegistry {
     private readonly dropperPlacementsByTarget = new Map<string, WorldObjectPlacement>();
     /** target (a waypoint's "target" custom property, e.g. a queue id) -> every waypoint drawn for that path, sorted ascending by order once the constructor finishes — see getWaypoints(). */
     private readonly waypointsByTarget = new Map<string, WaypointPlacement[]>();
+    /** target (a cameraTarget's "target" custom property, e.g. a BuildingId) -> that point — see getCameraTargetFor(). */
+    private readonly cameraTargetsByTarget = new Map<string, { x: number; z: number }>();
     /**
      * id -> EVERY spawner object drawn with that id, in the order they're stored in the map's
      * own layer data — see SpawnerShape's own doc and getShape()/getShapes()/getAllShapes().
@@ -326,6 +373,10 @@ export default class WorldObjectRegistry {
     private readonly shapesById = new Map<string, SpawnerShape[]>();
     /** The map's single "playerStart" point, if drawn — see this file's own doc and getPlayerStart(). */
     private playerStartPlacement?: WorldObjectPlacement;
+    /** Every "storeSection" area — see readSectionLayers()/getStoreSections(). */
+    private readonly storeSections: StoreSectionPlacement[] = [];
+    /** Every "hireDesk" spot — see readSectionLayers()/getHireDesks(). */
+    private readonly hireDesks: HireDeskPlacement[] = [];
     /**
      * `"${type}:${id}"` -> EVERY object sharing that (type, id) whose USE_OWN_MESH_PROPERTY was
      * checked AND whose own dragged-on image actually decoded to a real model — see that
@@ -379,6 +430,22 @@ export default class WorldObjectRegistry {
             // goes through below.
             if (type === WAYPOINT_TYPE) {
                 this.registerWaypoint(obj, tileDefs.tileSize, worldUnitsPerTile);
+                continue;
+            }
+
+            // Same "target, no id" shape as a waypoint — see this file's own doc.
+            if (type === CAMERA_TARGET_TYPE) {
+                const target = getObjectProperty(obj, CAMERA_TARGET_TARGET_PROPERTY);
+                if (!target) {
+                    console.warn(`[WorldObjectRegistry] cameraTarget #${obj.id} has no "${CAMERA_TARGET_TARGET_PROPERTY}" custom property — skipping`);
+                    continue;
+                }
+                const { x, z } = objectToWorldRect(obj, tileDefs.tileSize, worldUnitsPerTile);
+                if (this.cameraTargetsByTarget.has(target)) {
+                    console.warn(`[WorldObjectRegistry] more than one cameraTarget targets "${target}" — the last one found (#${obj.id}) wins`);
+                }
+                this.cameraTargetsByTarget.set(target, { x, z });
+                console.log(`  - type="cameraTarget" target="${target}" -> world x=${x.toFixed(2)} z=${z.toFixed(2)}`);
                 continue;
             }
 
@@ -455,9 +522,121 @@ export default class WorldObjectRegistry {
             }
         }
 
+        this.readSectionLayers(map, tileDefs.tileSize, worldUnitsPerTile);
+
         // Sorted ONCE here rather than on every getWaypoints() call — see that method's own doc.
         for (const waypoints of this.waypointsByTarget.values()) {
             waypoints.sort((a, b) => a.order - b.order);
+        }
+    }
+
+    /**
+     * The SECTIONS_LAYER_NAME layers — see that constant's own doc for the authoring rules. Two
+     * passes: section rects first (so containment can be tested regardless of draw order), then
+     * every other object: droppers, hire desks, and property-less model tiles (pieces), which
+     * join whichever section rect contains their center.
+     */
+    private readSectionLayers(map: TiledMapData, tileSizePx: number, worldUnitsPerTile: number): void {
+        const objects = map.layers
+            .filter(l => l.type === 'objectgroup' && l.name.includes(SECTIONS_LAYER_NAME))
+            .flatMap(l => l.objects ?? []);
+        if (objects.length === 0) {
+            return;
+        }
+
+        for (const obj of objects) {
+            if (getObjectProperty(obj, 'type') !== STORE_SECTION_TYPE) {
+                continue;
+            }
+            const id = getObjectProperty(obj, 'id');
+            if (!id) {
+                console.warn(`[WorldObjectRegistry] storeSection #${obj.id} has no "id" (a building id from the Buildings tab) — skipping`);
+                continue;
+            }
+            const placement = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+            let buildings = this.byType.get('building');
+            if (!buildings) {
+                buildings = new Map();
+                this.byType.set('building', buildings);
+            }
+            if (buildings.has(id)) {
+                console.warn(`[WorldObjectRegistry] storeSection "${id}" reuses an id already placed as a building — the section wins`);
+            }
+            buildings.set(id, placement);
+            this.storeSections.push({ id, storeId: getObjectProperty(obj, DROPPER_TARGET_PROPERTY), placement });
+            console.log(`  - type="storeSection" id="${id}" -> world x=${placement.x.toFixed(2)} z=${placement.z.toFixed(2)} width=${placement.width.toFixed(2)} depth=${placement.depth.toFixed(2)}`);
+        }
+
+        const sectionAt = (x: number, z: number): StoreSectionPlacement | undefined => this.storeSections.find(({ placement: p }) =>
+            Math.abs(x - p.x) <= p.width / 2 && Math.abs(z - p.z) <= p.depth / 2);
+
+        for (const obj of objects) {
+            const type = getObjectProperty(obj, 'type');
+            if (type === STORE_SECTION_TYPE) {
+                continue;
+            }
+            const placement = objectToWorldRect(obj, tileSizePx, worldUnitsPerTile);
+
+            if (type === DROPPER_TYPE) {
+                const target = getObjectProperty(obj, DROPPER_TARGET_PROPERTY);
+                if (!target) {
+                    console.warn(`[WorldObjectRegistry] dropper #${obj.id} on "${SECTIONS_LAYER_NAME}" has no "${DROPPER_TARGET_PROPERTY}" — skipping`);
+                    continue;
+                }
+                if (this.dropperPlacementsByTarget.has(target)) {
+                    console.warn(`[WorldObjectRegistry] more than one dropper targets "${target}" — the last one found (#${obj.id}) wins`);
+                }
+                this.dropperPlacementsByTarget.set(target, placement);
+                continue;
+            }
+
+            const section = sectionAt(placement.x, placement.z);
+
+            if (type === HIRE_DESK_TYPE) {
+                const storeId = getObjectProperty(obj, DROPPER_TARGET_PROPERTY) ?? section?.storeId;
+                if (!storeId) {
+                    console.warn(`[WorldObjectRegistry] hireDesk #${obj.id} has no "${DROPPER_TARGET_PROPERTY}" store and isn't inside a storeSection with one — it won't spawn`);
+                }
+                const id = getObjectProperty(obj, 'id') ?? `hireDesk#${obj.id}`;
+                this.hireDesks.push({ id, storeId, sectionId: section?.id, placement });
+                console.log(`  - type="hireDesk" id="${id}" store="${storeId}" section="${section?.id ?? '(none)'}" -> world x=${placement.x.toFixed(2)} z=${placement.z.toFixed(2)}`);
+                continue;
+            }
+
+            if (type) {
+                console.warn(`[WorldObjectRegistry] object #${obj.id} on "${SECTIONS_LAYER_NAME}" has type "${type}", which this layer doesn't use (storeSection/dropper/hireDesk, or a property-less model) — skipping`);
+                continue;
+            }
+            if (!obj.gid) {
+                continue;
+            }
+            if (!section) {
+                console.warn(`[WorldObjectRegistry] model #${obj.id} on "${SECTIONS_LAYER_NAME}" isn't inside any storeSection rect — it won't appear`);
+                continue;
+            }
+            const decoded = decodeObjectModel(obj, map);
+            if (!decoded) {
+                console.warn(`[WorldObjectRegistry] model #${obj.id} in section "${section.id}" doesn't decode to a known model — skipping`);
+                continue;
+            }
+            const key = `building:${section.id}`;
+            let entries = this.ownMeshesByKey.get(key);
+            if (!entries) {
+                entries = [];
+                this.ownMeshesByKey.set(key, entries);
+            }
+            entries.push({
+                ...decoded,
+                x: placement.x,
+                z: placement.z,
+                width: placement.width,
+                depth: placement.depth,
+                solid: readOwnMeshSolid(obj, map),
+            });
+        }
+
+        for (const section of this.storeSections) {
+            console.log(`  - section "${section.id}" has ${this.getOwnMeshes('building', section.id).length} model piece(s)`);
         }
     }
 
@@ -555,6 +734,11 @@ export default class WorldObjectRegistry {
         return this.dropperPlacementsByTarget.get(targetId);
     }
 
+    /** The "cameraTarget" point drawn for `targetId` (e.g. a BuildingId) — where the camera looks when that entity levels up. Undefined if none is drawn; the caller picks its own default. */
+    public getCameraTargetFor(targetId: string): { x: number; z: number } | undefined {
+        return this.cameraTargetsByTarget.get(targetId);
+    }
+
     /** Every waypoint drawn for `target`'s path, sorted ascending by order (already sorted once at construction — see the constructor's own doc) — index 0 IS order 0. Empty array if `target` has no waypoints at all; callers (QuestGiverEntity.ts) treat fewer than 2 as "no usable path" themselves. */
     public getWaypoints(target: string): readonly WaypointPlacement[] {
         return this.waypointsByTarget.get(target) ?? [];
@@ -585,5 +769,15 @@ export default class WorldObjectRegistry {
     /** The map's "playerStart" point (see this file's own doc), or undefined if the level designer hasn't drawn one — the caller (PizzaScene) falls back to MainPlayer's own default position in that case. */
     public getPlayerStart(): WorldObjectPlacement | undefined {
         return this.playerStartPlacement;
+    }
+
+    /** The "storeSection" area with this (building) id, if drawn — see SECTIONS_LAYER_NAME. */
+    public getStoreSection(id: string): StoreSectionPlacement | undefined {
+        return this.storeSections.find(section => section.id === id);
+    }
+
+    /** Every "hireDesk" spot drawn on a sections layer — see SECTIONS_LAYER_NAME. */
+    public getHireDesks(): readonly HireDeskPlacement[] {
+        return this.hireDesks;
     }
 }

@@ -388,6 +388,19 @@ export class ModelSnapshotTool {
         a.click();
     }
 
+    /** The filename snapshotOne() would download for this render. Portrait shots are one-off icon previews, not Tiled-placement placeholders — see encodeFilename()'s own doc for why the size suffix only matters for the latter. */
+    public static filenameFor(modelRef: string, widthPx: number, heightPx: number): string {
+        return this.settings.portraitMode
+            ? this.encodeFilename(modelRef)
+            : this.encodeFilename(modelRef, widthPx, heightPx);
+    }
+
+    /** Renders `modelRef` with the CURRENT settings, exactly as snapshotOne() would, but returns it instead of downloading — ModelSnapshotWindow's live preview. */
+    public static async renderPreview(modelRef: string): Promise<{ dataUrl: string; widthPx: number; heightPx: number; filename: string }> {
+        const result = await this.renderModel(modelRef);
+        return { ...result, filename: this.filenameFor(modelRef, result.widthPx, result.heightPx) };
+    }
+
     /** "Snapshot Selected Model" — a single download, so pixelsPerWorldUnit/framing can be checked before running a full batch. */
     public static async snapshotOne(modelRef: string): Promise<void> {
         if (!modelRef) {
@@ -396,12 +409,7 @@ export class ModelSnapshotTool {
         }
         try {
             const { dataUrl, widthPx, heightPx } = await this.renderModel(modelRef);
-            // Portrait shots are one-off icon previews, not Tiled-placement placeholders — see
-            // encodeFilename()'s own doc for why the size suffix only matters for the latter.
-            const filename = this.settings.portraitMode
-                ? this.encodeFilename(modelRef)
-                : this.encodeFilename(modelRef, widthPx, heightPx);
-            this.download(dataUrl, filename);
+            this.download(dataUrl, this.filenameFor(modelRef, widthPx, heightPx));
         } catch (e) {
             console.error('ModelSnapshotTool: failed to snapshot', modelRef, e);
         }

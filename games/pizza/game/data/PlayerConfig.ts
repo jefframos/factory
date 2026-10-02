@@ -31,6 +31,10 @@ export interface PlayerAnimationConfig {
     talk: string;
     /** Played once on task completion/delivery (give/deliver) — see QuestGiverTypes.ts. Unused by the player's own board today. */
     happy: string;
+    /** Played once when a character sits down, then `sitting` loops — see CharacterBody.setSitting(). Only loaded for NPCs that sit (NpcBodyLoader's `sitting` option). Unset = 'StandToSit'. */
+    sitDown?: string;
+    /** Looped while seated, after `sitDown` — see CharacterBody.setSitting(). Unset = 'Sitting'. */
+    sitting?: string;
 }
 
 /**
@@ -146,6 +150,8 @@ const DEFAULT_PLAYER_CONFIG: PlayerConfigEntry = {
         landing: 'Landing',
         talk: 'Talking',
         happy: 'Excited',
+        sitDown: 'StandToSit',
+        sitting: 'Sitting',
     },
     carrier: {
         models: ['Restaurant.Crate'],
@@ -175,7 +181,9 @@ export const PLAYER_CONFIG_BY_ID: Partial<Record<string, PlayerConfigEntry>> = {
             "falling": "FallingIdle",
             "landing": "Landing",
             "talk": "Talking",
-            "happy": "Excited"
+            "happy": "Excited",
+            "sitDown": "StandToSit",
+            "sitting": "Sitting"
         },
         "carrier": {
             "models": [

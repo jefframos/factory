@@ -73,6 +73,79 @@ export interface StoreWorkerEntry {
     level?: number;
 }
 
+/** One role a store's hire desk (see HireDeskZone.ts) offers. */
+export interface StoreHireRoleConfig {
+    role: StoreWorkerRole;
+    /** Money (CurrencyType.Money) per hire. */
+    cost: number;
+    /** Most of this role the store can have in total, starting workers included. Unset = 1 for a cashier (a store only ever has one — see Store.hireWorker()), else DEFAULT_HIRE_MAX_COUNT. */
+    maxCount?: number;
+    /** Upgrade ladder for every worker of this role — each entry is what it costs to REACH that level; the highest listed level is the max. Empty/unset = DEFAULT_WORKER_UPGRADES. */
+    upgrades?: StoreWorkerUpgradeConfig[];
+}
+
+/** One rung of a worker's upgrade ladder — see StoreHireRoleConfig.upgrades. */
+export interface StoreWorkerUpgradeConfig {
+    /** The level this buys (2, 3, ...). */
+    level: number;
+    /** Money (CurrencyType.Money) to reach it from the level below. */
+    cost: number;
+}
+
+/** What a role's workers can upgrade to when its StoreHireRoleConfig has no `upgrades`. */
+export const DEFAULT_WORKER_UPGRADES: readonly StoreWorkerUpgradeConfig[] = [
+    { level: 2, cost: 50 },
+    { level: 3, cost: 100 },
+];
+
+/** A role's resolved upgrade ladder for this store — see StoreHireRoleConfig.upgrades. Works for a role the desk doesn't sell too (a starting worker), using the defaults. */
+export function getWorkerUpgrades(config: StoreConfig, role: StoreWorkerRole): readonly StoreWorkerUpgradeConfig[] {
+    const upgrades = getStoreHireRoles(config).find(entry => entry.role === role)?.upgrades;
+    return upgrades && upgrades.length > 0 ? upgrades : DEFAULT_WORKER_UPGRADES;
+}
+
+/** The upgrade a worker at `level` can buy next — undefined once it's at its role's max (see getWorkerMaxLevel()). */
+export function getNextWorkerUpgrade(config: StoreConfig, role: StoreWorkerRole, level: number): StoreWorkerUpgradeConfig | undefined {
+    return getWorkerUpgrades(config, role).find(upgrade => upgrade.level === level + 1);
+}
+
+/** Highest level a worker of this role can reach — 1 if the ladder is somehow empty. */
+export function getWorkerMaxLevel(config: StoreConfig, role: StoreWorkerRole): number {
+    return Math.max(1, ...getWorkerUpgrades(config, role).map(upgrade => upgrade.level));
+}
+
+/** What a store's hire desk sells — see HireDeskZone.ts / HireWorkersPopup.ts. Unset on a store = DEFAULT_HIRE_ROLES, worker NPC look. */
+export interface StoreHiringConfig {
+    /** NPCs tab id for whoever stands at the desk. Unset = WORKER_NPC_ID. */
+    npcId?: string;
+    /** Roles offered, in popup order. Empty/unset = DEFAULT_HIRE_ROLES. */
+    roles?: StoreHireRoleConfig[];
+}
+
+/** StoreHireRoleConfig.maxCount fallback for non-cashier roles. */
+export const DEFAULT_HIRE_MAX_COUNT = 3;
+
+/** What a hire desk offers when its store has no `hiring.roles` set. */
+export const DEFAULT_HIRE_ROLES: readonly StoreHireRoleConfig[] = [
+    { role: 'cashier', cost: 100, maxCount: 1 },
+    { role: 'restocker', cost: 75 },
+    { role: 'cleaner', cost: 75 },
+];
+
+/** Resolved hire-desk roles for a store — see StoreHiringConfig. */
+export function getStoreHireRoles(config: StoreConfig): readonly StoreHireRoleConfig[] {
+    const roles = config.hiring?.roles;
+    return roles && roles.length > 0 ? roles : DEFAULT_HIRE_ROLES;
+}
+
+/** Resolved StoreHireRoleConfig.maxCount — see that field's own doc. */
+export function getHireMaxCount(entry: StoreHireRoleConfig): number {
+    if (entry.role === 'cashier') {
+        return 1;
+    }
+    return entry.maxCount ?? DEFAULT_HIRE_MAX_COUNT;
+}
+
 /** A store's staff hat — same fields as an NPC hat entry (NpcTypes.ts's NpcHatEntry), minus the weight. */
 export interface StoreWorkerHat {
     /** First entry used — a MODELS "Group.Key" ref (e.g. "Hats.CashierHat"). Empty = no hat. */
@@ -245,6 +318,8 @@ export interface StoreConfig {
     workerColor?: string;
     /** Hat every worker of this store wears — see StoreWorkerHat. Unset / no model = the "worker" look's own (none by default). */
     workerHat?: StoreWorkerHat;
+    /** What this store's hire desk(s) offer — see StoreHiringConfig. Unset = DEFAULT_HIRE_ROLES. */
+    hiring?: StoreHiringConfig;
     /** When true, this store isn't spawned at all — same convention as every other entity's `disabled`. */
     disabled?: boolean;
 }
@@ -289,6 +364,22 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
 /** Per-store-id overrides — sparse: only stores a level designer has customized need an entry. */
 export const STORE_CONFIG_BY_ID: Partial<Record<string, StoreConfig>> = {
     "farmStore1": {
+        "hiring": {
+            "roles": [
+                {
+                    "role": "cashier", "cost": 100, "maxCount": 1,
+                    "upgrades": [{ "level": 2, "cost": 80 }, { "level": 3, "cost": 160 }]
+                },
+                {
+                    "role": "restocker", "cost": 75, "maxCount": 3,
+                    "upgrades": [{ "level": 2, "cost": 60 }, { "level": 3, "cost": 120 }]
+                },
+                {
+                    "role": "cleaner", "cost": 75, "maxCount": 2,
+                    "upgrades": [{ "level": 2, "cost": 60 }, { "level": 3, "cost": 120 }]
+                }
+            ]
+        },
         "workerColor": "#2ecc40",
         "workerHat": {
             "models": [

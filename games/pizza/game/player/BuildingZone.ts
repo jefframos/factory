@@ -35,7 +35,9 @@ import ScreenAnchorComponent, { ScreenAnchorHost } from '../components/ScreenAnc
 import DottedZoneVisualComponent from '../components/DottedZoneVisualComponent';
 import CharacterVisualComponent from '../components/CharacterVisualComponent';
 import GlbVisualComponent from '../components/GlbVisualComponent';
-import { spawnFlyingResourceIcon } from '../components/FlyingResourceIcon';
+import { spawnFlyingIconFromOverlayPoint, spawnFlyingResourceIcon } from '../components/FlyingResourceIcon';
+import { EconomyStorage } from '../data/EconomyStorage';
+import { CURRENCY_CONFIG, CurrencyType } from '../data/EconomyTypes';
 import { TextStyleRegistry } from '../ui/TextStyleRegistry';
 import AutoFitFrame, { uniformFitPadding } from '../ui/AutoFitFrame';
 import { BackpackStorage } from '../data/BackpackStorage';
@@ -50,7 +52,7 @@ import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { ZONE_LABEL_ANCHOR_OPTIONS } from '../ui/ZoneLabelConfig';
 import { resolvePopupFrameName, resolvePopupAnchorOffset, resolvePopupAvoidViewer, isFloorFrame } from '../ui/PopupConfig';
 import FloorLabelComponent, { createConfiguredFloorLabel } from '../components/FloorLabelComponent';
-import { createResourceSlot } from '../ui/ResourceSlotVisual';
+import { createIconSlot, createResourceSlot } from '../ui/ResourceSlotVisual';
 import { CameraFocusHost } from '../camera/CameraFocusHost';
 import { WorldProgressionHost } from '../camera/WorldProgressionHost';
 import { wait } from '../utils/GsapUtils';
@@ -100,6 +102,8 @@ const FLY_IN_STAGGER_SEC = 0.12;
 const MESH_DROP_DURATION_SEC = 0.7;
 /** How long awaitingReentry stays true after a level clears before auto-clearing on its own — see that field's own doc. A player who stays standing in the zone through the whole level-up beat can resume depositing toward the NEXT level after this, without having to walk out and back in. */
 const REENTRY_TIMEOUT_SEC = 3;
+/** Construction-site view a store section shows before it's built when its own config sets no baseView — see the constructor's `isSection` param doc. */
+const SECTION_SITE_VIEW = 'baseBuildingSite';
 /** Fallback for BuildingConfig.updateParticleCount when a building sets updateParticleEffectId but not its own count. */
 const DEFAULT_UPDATE_PARTICLE_COUNT = 24;
 
@@ -132,6 +136,10 @@ export default class BuildingZone extends Entity {
      * before a departure, decremented the instant that same unit lands.
      */
     private readonly inFlightByType = new Map<ResourceType, number>();
+    /** BuildingLevelConfig.money's own drain state — same roles as `draining`/`inFlightByType`/`depositPacer` above, for coins flying in from the wallet (see flyInMoney()). */
+    private moneyDraining = false;
+    private moneyInFlight = 0;
+    private readonly moneyPacer = new DepositPacer(FLY_IN_STAGGER_SEC);
     /** True for as long as the player's RigidBody is inside this zone's trigger — flyInResource()'s per-unit loop checks this before every unit and stops the instant it goes false, rather than a fixed onTriggerEnter burst draining everything regardless of whether the player stuck around. */
     private isPlayerInside = false;
     /** The player entity currently inside this zone — undefined whenever isPlayerInside is false. Kept so flyInResource() can read the player's CURRENT backpack world position on every unit, not a stale snapshot from whenever the trigger first fired. */
@@ -226,6 +234,12 @@ export default class BuildingZone extends Entity {
     private readonly ownMeshes: readonly OwnMeshPlacement[];
     /** See the constructor's `npc` param doc. Undefined means "no NPC assigned," same as before this existed. */
     private readonly npc?: NpcEntity;
+    /** See the constructor's `cameraTarget` param doc. */
+    private readonly cameraTarget?: THREE.Vector3;
+    /** See the constructor's `getWalletOverlayPosition` param doc. */
+    private readonly getWalletOverlayPosition?: () => { x: number; y: number };
+    /** See the constructor's `isSection` param doc. */
+    private readonly isSection: boolean;
 
     public constructor(
         position: THREE.Vector3,
@@ -286,8 +300,24 @@ export default class BuildingZone extends Entity {
          * from before this param existed.
          */
         npc?: NpcEntity,
+        /** World point the level-up camera trip looks at — the map's "cameraTarget" point for this building (see WorldObjectRegistry.getCameraTargetFor()). Undefined = see getCameraFocusPosition(). */
+        cameraTarget?: THREE.Vector3,
+        /** Screen-space wallet icon position — where BuildingLevelConfig.money's coins fly FROM (see flyInMoney()). Undefined = money costs can't be paid here (a warning is logged when one is configured). */
+        getWalletOverlayPosition?: () => { x: number; y: number },
+        /**
+         * True when this building is a store SECTION — a "storeSection" area on the map's
+         * sections layer (see WorldObjectRegistry.SECTIONS_LAYER_NAME), whose `ownMeshes` are
+         * every model drawn inside that area. Sections get sensible defaults so the Buildings tab
+         * only needs a cost + appear requirement: the site view (baseView, else SECTION_SITE_VIEW)
+         * until built, the drawn pieces once built, always at full fill, solidFromMap and
+         * baseAtDropper on unless set — see viewIdForLevel()/forcesOwnMesh() and friends.
+         */
+        isSection = false,
     ) {
         super();
+        this.cameraTarget = cameraTarget;
+        this.getWalletOverlayPosition = getWalletOverlayPosition;
+        this.isSection = isSection;
         this.screenHost = screenHost;
         this.buildingId = buildingId;
         this.cameraFocusHost = cameraFocusHost;
@@ -387,7 +417,7 @@ export default class BuildingZone extends Entity {
         // itself instead of once here — see createBuildingMesh()/disposeBuildingMesh() — so a
         // piece that isn't visible yet (e.g. this building's own targetFraction <= 0, before
         // its first level clears) never blocks the player with an invisible wall.
-        if (!BUILDING_CONFIG[this.buildingId].solidFromMap) {
+        if (!this.solidFromMap) {
             const solidArea = buildSolidArea(halfExtents, centerOffset, BUILDING_CONFIG[this.buildingId].solid ?? 0);
             if (solidArea) {
                 this.addComponent(solidArea);
@@ -567,20 +597,17 @@ export default class BuildingZone extends Entity {
      * since there's nothing to dispose) and calls back in here with `dropIn: true`, sweeping the
      * mesh in from scratch exactly like a fresh view swap would. BuildingConfig.solidFromMap's
      * own per-piece colliders (see addSolidAreasFromMap()) are built right here too, for the
-     * exact same reason — a piece with a positive `targetFraction` gets both its visual AND its
-     * collider together; a piece that isn't visible yet gets neither.
+     * exact same reason — a piece gets its collider only when its own visual is what's actually
+     * built (the own-mesh branch below); a level showing a real view instead (e.g. level 0's
+     * baseView site), or nothing at all, gets none.
      */
     private createBuildingMesh(level: number, dropIn: boolean): void {
-        const viewId = getViewIdForLevel(this.buildingId, level);
+        const viewId = this.viewIdForLevel(level);
         this.currentViewId = viewId;
-        this.currentForceOwnMesh = isOwnMeshForcedForLevel(this.buildingId, level);
-        const targetFraction = getFillFractionForLevel(this.buildingId, level);
+        this.currentForceOwnMesh = this.forcesOwnMesh(level);
+        const targetFraction = this.fillFractionForLevel(level);
         if (targetFraction <= 0) {
             return;
-        }
-
-        if (BUILDING_CONFIG[this.buildingId].solidFromMap) {
-            this.addSolidAreasFromMap();
         }
 
         // BuildingLevelConfig.forceOwnMesh (see its own doc) skips straight past a real
@@ -594,9 +621,19 @@ export default class BuildingZone extends Entity {
             this.createBuildingView(level === 0 ? this.withBaseAtDropper(entityView) : entityView, dropIn, targetFraction);
             return;
         }
+        // A section's drawn pieces are its BUILT look — before that (no site view resolving),
+        // show nothing rather than the pieces or a placeholder box.
+        if (this.isSection && level === 0) {
+            return;
+        }
 
         const ownMeshViews = this.resolveOwnMeshFallbacks();
         if (ownMeshViews.length > 0) {
+            // Only here — the map-drawn pieces are what's actually showing. A level still on a
+            // real view (e.g. level 0's baseView site) must not collide with pieces it doesn't show.
+            if (this.solidFromMap) {
+                this.addSolidAreasFromMap();
+            }
             for (const { resolved, footprint, rotationY } of ownMeshViews) {
                 this.createBuildingView(resolved, dropIn, targetFraction, footprint, rotationY);
             }
@@ -670,9 +707,40 @@ export default class BuildingZone extends Entity {
         return results;
     }
 
+    // ---- Store sections (see the constructor's `isSection` param doc). Each of these is the
+    // plain BuildingTypes.ts helper/field for a normal building, with the section default on top.
+
+    /** getViewIdForLevel(), but a section with no baseView still shows SECTION_SITE_VIEW before it's built. */
+    private viewIdForLevel(level: number): string | undefined {
+        return getViewIdForLevel(this.buildingId, level) ?? (this.isSection && level === 0 ? SECTION_SITE_VIEW : undefined);
+    }
+
+    /** isOwnMeshForcedForLevel(), but a section's built levels always use its drawn pieces unless that level sets its own `view`. */
+    private forcesOwnMesh(level: number): boolean {
+        if (isOwnMeshForcedForLevel(this.buildingId, level)) {
+            return true;
+        }
+        return this.isSection && level > 0 && !BUILDING_CONFIG[this.buildingId].levels[level - 1]?.view;
+    }
+
+    /** getFillFractionForLevel(), but a section always shows its site/pieces at 100% — no partial-fill runs. */
+    private fillFractionForLevel(level: number): number {
+        return this.isSection ? 1 : getFillFractionForLevel(this.buildingId, level);
+    }
+
+    /** BuildingConfig.solidFromMap — on by default for a section (its pieces' own "solid" decides). */
+    private get solidFromMap(): boolean {
+        return BUILDING_CONFIG[this.buildingId].solidFromMap ?? this.isSection;
+    }
+
+    /** BuildingConfig.baseAtDropper — on by default for a section (the site stands on its dropper). */
+    private get baseAtDropper(): boolean {
+        return BUILDING_CONFIG[this.buildingId].baseAtDropper ?? this.isSection;
+    }
+
     /** BuildingConfig.baseAtDropper — the level-0 site view shifted so it stands at the dropper's center (its own view offset still applies on top). Unchanged when the flag is off or there's no dropper. */
     private withBaseAtDropper(view: NonNullable<ReturnType<typeof resolveEntityView>>): NonNullable<ReturnType<typeof resolveEntityView>> {
-        if (!BUILDING_CONFIG[this.buildingId].baseAtDropper || !this.triggerArea) {
+        if (!this.baseAtDropper || !this.triggerArea) {
             return view;
         }
         const [x, y, z] = view.offset;
@@ -868,12 +936,12 @@ export default class BuildingZone extends Entity {
      *     scratch, exactly as before.
      */
     private replaceBuildingMesh(level: number): void {
-        const viewId = getViewIdForLevel(this.buildingId, level);
-        const forcesOwnMesh = isOwnMeshForcedForLevel(this.buildingId, level);
+        const viewId = this.viewIdForLevel(level);
+        const forcesOwnMesh = this.forcesOwnMesh(level);
         const sameView = viewId === this.currentViewId && forcesOwnMesh === this.currentForceOwnMesh
             && (this.buildingMesh || this.buildingVisuals.length > 0);
         if (sameView) {
-            const targetFraction = getFillFractionForLevel(this.buildingId, level);
+            const targetFraction = this.fillFractionForLevel(level);
             gsap.to(this.revealProgress, { value: targetFraction, duration: MESH_DROP_DURATION_SEC, ease: 'power2.out' });
             return;
         }
@@ -947,10 +1015,15 @@ export default class BuildingZone extends Entity {
         const next = BuildingStorage.getNextLevelConfig(this.buildingId)!;
         const entries = Object.entries(next.requirements) as [ResourceType, number][];
 
-        const slots = entries.map(([type, need]) => {
-            const have = BuildingStorage.getProgress(this.buildingId, type);
-            return createResourceSlot(type, REQ_SLOT_SIZE, `${have}/${need}`);
-        });
+        const slots = [
+            ...((next.money ?? 0) > 0
+                ? [createIconSlot(getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey), REQ_SLOT_SIZE, `${BuildingStorage.getMoneyProgress(this.buildingId)}/${next.money}`)]
+                : []),
+            ...entries.map(([type, need]) => {
+                const have = BuildingStorage.getProgress(this.buildingId, type);
+                return createResourceSlot(type, REQ_SLOT_SIZE, `${have}/${need}`);
+            }),
+        ];
         // All slots share the same size/font, so their visualHeight (slot + label below
         // it) is identical in practice — max() just guards against a future label style
         // that could vary per-entry.
@@ -959,7 +1032,7 @@ export default class BuildingZone extends Entity {
         // One horizontal row, centered — same slot visual as BackpackUI (see
         // ResourceSlotVisual.ts) — with its bottom edge (below each slot's label) landing
         // exactly at y=0 (see this file's own doc).
-        const rowWidth = entries.length * REQ_SLOT_SIZE + Math.max(0, entries.length - 1) * REQ_SLOT_GAP;
+        const rowWidth = slots.length * REQ_SLOT_SIZE + Math.max(0, slots.length - 1) * REQ_SLOT_GAP;
         slots.forEach((slot, index) => {
             slot.container.position.set(-rowWidth / 2 + index * (REQ_SLOT_SIZE + REQ_SLOT_GAP), -requirementsHeight);
             this.requirementsContainer.addChild(slot.container);
@@ -991,6 +1064,9 @@ export default class BuildingZone extends Entity {
         const entries = Object.entries(next.requirements) as [ResourceType, number][];
         this.floorLabel.setItems([
             ...(level > 0 ? [{ text: title }] : []),
+            ...((next.money ?? 0) > 0
+                ? [{ icon: getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey), text: `${BuildingStorage.getMoneyProgress(this.buildingId)}/${next.money}` }]
+                : []),
             ...entries.map(([type, need]) => ({
                 icon: getAssetIcon(resolveResourceAssetKey(type)),
                 text: `${BuildingStorage.getProgress(this.buildingId, type)}/${need}`,
@@ -1025,6 +1101,9 @@ export default class BuildingZone extends Entity {
 
         for (const type of Object.keys(next.requirements) as ResourceType[]) {
             this.flyInResource(type);
+        }
+        if ((next.money ?? 0) > 0) {
+            this.flyInMoney();
         }
     }
 
@@ -1065,7 +1144,7 @@ export default class BuildingZone extends Entity {
      */
     private getFlyInTarget(target: THREE.Vector3): THREE.Vector3 {
         const config = BUILDING_CONFIG[this.buildingId];
-        if (config.baseAtDropper && this.triggerArea && BuildingStorage.getLevel(this.buildingId) === 0) {
+        if (this.baseAtDropper && this.triggerArea && BuildingStorage.getLevel(this.buildingId) === 0) {
             return target.copy(this.triggerArea.position).add(resolvePopupAnchorOffset(config.popupBobOffset));
         }
         return this.labelAnchor.getWorldPosition(target);
@@ -1115,6 +1194,52 @@ export default class BuildingZone extends Entity {
     }
 
     /**
+     * flyInResource()'s counterpart for BuildingLevelConfig.money — same per-unit loop and stop
+     * conditions, but each coin flies from the on-screen wallet icon (StoragePurchaseZone's own
+     * coin drain does the same) and EconomyStorage is only charged as it lands.
+     */
+    private flyInMoney(): void {
+        if (this.moneyDraining) {
+            return;
+        }
+        const getWalletOverlayPosition = this.getWalletOverlayPosition;
+        if (!getWalletOverlayPosition) {
+            console.warn(`[BuildingZone] "${this.buildingId}" has a money cost but no wallet position was passed in — coins can't be paid here`);
+            return;
+        }
+        this.moneyDraining = true;
+
+        const icon = getAssetIcon(CURRENCY_CONFIG[CurrencyType.Money].assetKey);
+        const toWorld = new THREE.Vector3();
+
+        const step = (): void => {
+            const next = this.isPlayerInside && !this.awaitingReentry && !BuildingStorage.isMaxLevel(this.buildingId)
+                ? BuildingStorage.getNextLevelConfig(this.buildingId)
+                : undefined;
+            const remaining = (next?.money ?? 0) - BuildingStorage.getMoneyProgress(this.buildingId) - this.moneyInFlight;
+            if (remaining <= 0 || EconomyStorage.getBalance(CurrencyType.Money) - this.moneyInFlight <= 0) {
+                this.moneyDraining = false;
+                return;
+            }
+
+            this.getFlyInTarget(toWorld);
+            this.moneyInFlight++;
+
+            spawnFlyingIconFromOverlayPoint(this.screenHost, getWalletOverlayPosition, toWorld.clone(), icon, () => {
+                this.moneyInFlight--;
+                if (EconomyStorage.spend(CurrencyType.Money, 1)) {
+                    BuildingStorage.addMoneyProgress(this.buildingId, 1);
+                    BuildingStorage.tryCompleteLevel(this.buildingId);
+                }
+            });
+
+            gsap.delayedCall(this.moneyPacer.nextDelaySec(), step);
+        };
+
+        step();
+    }
+
+    /**
      * The level-up EVENT, played out as one sequential timeline: pop the "Level Up!" callout,
      * send the camera to visit the building (if a CameraFocusHost was given — see the
      * constructor) and hold there for a beat, ease the camera back to the player, THEN flip
@@ -1125,6 +1250,28 @@ export default class BuildingZone extends Entity {
      * non-scene test harness), the reveal just times off a plain wait() instead — same shape,
      * minus the camera trip.
      */
+    /**
+     * Ground point the level-up camera trip looks at: the map's "cameraTarget" point for this
+     * building when one is drawn (see the constructor's `cameraTarget` param), else the center of
+     * every own-mesh piece's footprint — this zone's own position is just whichever piece the map
+     * listed last, so for a composite building it's an arbitrary corner — else that position.
+     */
+    private getCameraFocusPosition(): THREE.Vector3 {
+        if (this.cameraTarget) {
+            return this.cameraTarget.clone().setY(this.transform.position.y);
+        }
+        if (this.ownMeshes.length === 0) {
+            return this.transform.position.clone();
+        }
+        const bounds = new THREE.Box2();
+        for (const entry of this.ownMeshes) {
+            bounds.expandByPoint(new THREE.Vector2(entry.x - entry.width / 2, entry.z - entry.depth / 2));
+            bounds.expandByPoint(new THREE.Vector2(entry.x + entry.width / 2, entry.z + entry.depth / 2));
+        }
+        const center = bounds.getCenter(new THREE.Vector2());
+        return new THREE.Vector3(center.x, this.transform.position.y, center.y);
+    }
+
     private async playLevelUpSequence(level: number): Promise<void> {
         this.spawnLevelUpPopup(level);
         this.replaceBuildingMesh(level);
@@ -1140,7 +1287,7 @@ export default class BuildingZone extends Entity {
         }
 
         if (this.cameraFocusHost) {
-            const focusTarget = this.transform.position.clone().add(CAMERA_FOCUS_HEIGHT_OFFSET);
+            const focusTarget = this.getCameraFocusPosition().add(CAMERA_FOCUS_HEIGHT_OFFSET);
             await this.cameraFocusHost.focusCameraOn(focusTarget, { holdSec: CAMERA_FOCUS_HOLD_SEC });
         } else {
             await wait(LEVEL_UP_REVEAL_DELAY_SEC);

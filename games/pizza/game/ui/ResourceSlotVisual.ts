@@ -17,7 +17,7 @@ import { ResourceType } from '../actions/ResourceTypes';
 import { resolveResourceAssetKey } from '../actions/ResourceRegistry';
 import { getAssetIcon } from '../world/AssetLibraryRegistry';
 import { TextStyleRegistry } from './TextStyleRegistry';
-import { createIconSlotBackground, styleForResourceType } from './IconSlotRegistry';
+import { createIconSlotBackground, IconSlotName, styleForResourceType } from './IconSlotRegistry';
 import { getIconLayout } from './LayoutRegistry';
 import ViewUtils from 'core/utils/ViewUtils';
 
@@ -34,12 +34,17 @@ export interface ResourceSlotVisual {
 
 /** Builds one `size`x`size` slot showing `type`'s icon, with `labelText` in its bottom-right corner — same slot look (and count-badge placement) as BackpackUI, sized for wherever it's used. Caller owns positioning/adding `container` and destroying it when done. */
 export function createResourceSlot(type: ResourceType, size: number, labelText: string): ResourceSlotVisual {
+    return createIconSlot(getAssetIcon(resolveResourceAssetKey(type)), size, labelText, styleForResourceType(type));
+}
+
+/** createResourceSlot() for any icon — e.g. a currency (BuildingZone's money cost slot). */
+export function createIconSlot(iconTexture: PIXI.Texture, size: number, labelText: string, style: IconSlotName = 'Default'): ResourceSlotVisual {
     const container = new PIXI.Container();
 
-    const background = createIconSlotBackground(size, styleForResourceType(type));
+    const background = createIconSlotBackground(size, style);
     container.addChild(background);
 
-    const icon = new PIXI.Sprite(getAssetIcon(resolveResourceAssetKey(type)));
+    const icon = new PIXI.Sprite(iconTexture);
     icon.anchor.set(0.5);
     icon.position.set(size / 2, size / 2);
     icon.scale.set(ViewUtils.elementScaler(icon, size - LAYOUT.iconPadding * 2));

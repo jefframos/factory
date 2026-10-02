@@ -9,11 +9,14 @@
             "scaleInEditor": 1
         },
         "testMap1.tmx": {
-            "scale": 1,
+            "expandedObjectLayers": [
+                9
+            ],
+            "scale": 1.5,
             "selectedLayer": 7,
             "viewCenter": {
-                "x": 182,
-                "y": 562.5
+                "x": 326.33333333333326,
+                "y": 867
             }
         },
         "testMap1.tmx#models": {
@@ -27,6 +30,24 @@
         "testMap1.tmx#tileset": {
             "dynamicWrapping": false,
             "scaleInDock": 1
+        },
+        "testMap1Old.tmx": {
+            "scale": 0.700625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": -204.10347903657453,
+                "y": 256.199821587868
+            }
+        },
+        "testMap1Old.tmx#models": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1
+        },
+        "testMap1Old.tmx#resources": {
+            "scaleInDock": 1
+        },
+        "testMap1Old.tmx#tileset": {
+            "scaleInDock": 1
         }
     },
     "last.exportedFilePath": "C:/Users/jfbod/Documents/Projects/projects/hyper/factory/games/pizza/raw-assets/json/map",
@@ -39,6 +60,7 @@
     "project": "world.tiled-project",
     "property.type": "string",
     "recentFiles": [
+        "testMap1Old.tmx",
         "testMap1.tmx"
     ],
     "tileset.embedInMap": true,

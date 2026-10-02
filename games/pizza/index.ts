@@ -40,6 +40,7 @@ import { ShapeResourceStorage } from './game/world/ShapeResourceStorage';
 import { AnimalFollowStorage } from './game/data/AnimalFollowStorage';
 import { ShopUpgradeStorage } from './game/shop/ShopUpgradeStorage';
 import { PlayerPositionStorage } from './game/data/PlayerPositionStorage';
+import { ensureSaveDataVersion } from './game/data/SaveDataVersion';
 import { TutorialProgressStorage } from './game/tutorial/TutorialProgressStorage';
 import { TriggerStorage } from './game/data/TriggerStorage';
 import { GameClock } from './game/utils/GameClock';
@@ -92,6 +93,8 @@ export default class MyGame extends Game {
 
             // 4. Initialize the Handler
             await PlatformHandler.instance.initialize(plat);
+            // Must run before every *Storage.load() below — see SaveDataVersion.ts.
+            await ensureSaveDataVersion();
             await ShopStorage.load();
             await HighScoreStorage.load();
             await GlobalResourceStorage.load();

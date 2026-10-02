@@ -283,8 +283,7 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
             }
         ],
         "view": "storageView",
-        "itemScale": 4,
-        "itemOrientation": "standing"
+        "itemScale": 4
     },
     "storage3": {
         "accepts": "farm",
@@ -346,7 +345,7 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
         "particleEffectId": "trashFire",
         "particleSpawnRate": 10,
         "models": [MODELS.Restaurant.Trashcan],
-        "scale": 1,
+        "scale": 0.5,
         "rotationDeg": 0,
         "dropOffset": {
             "y": 2.3
@@ -358,6 +357,8 @@ export const STORAGE_CONFIG_BY_ID: Partial<Record<string, StorageConfig>> = {
         },
         "solid": 1,
         "view": "trashcanView",
+        "price": {},
+        "resourceCost": []
     },
     "storage5": {
         "accepts": "farm",

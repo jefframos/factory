@@ -30,6 +30,7 @@ import { ResourceType } from '../actions/ResourceTypes';
 import { GateStorage } from './GateStorage';
 import { TriggerStorage } from './TriggerStorage';
 import { getTriggerConfig } from './TriggerTypes';
+import { StoreProgressStorage } from '../store/StoreProgressStorage';
 // GateId stays type-only (`type GateId`) since GateTypes.ts's own GateConfig.requirement field
 // is typed as MilestoneRequirement — a plain runtime import of GateId here would be circular.
 // GATE_CONFIG, unlike GateId, IS read as a real value below (isMilestoneRequirementMet()'s own
@@ -72,7 +73,14 @@ export interface TriggerMilestoneRequirement {
     triggerId: string;
 }
 
-export type MilestoneRequirement = BuildingMilestoneRequirement | ItemMilestoneRequirement | ResourceMilestoneRequirement | GateMilestoneRequirement | TriggerMilestoneRequirement;
+/** Store `storeId` must be AT LEAST `level` — see StoreProgressStorage.getLevel() (0 = closed, 1 = open, then one per StoreConfig.levels rung). Same effect as listing an id under that level's own `enables` (see StoreUnlocks.ts), but set on the entity being unlocked, and usable by zones/craft tables too, which `enables` can't hide (gates take the narrower GateRequirement, so not those). */
+export interface StoreMilestoneRequirement {
+    type: 'store';
+    storeId: string;
+    level: number;
+}
+
+export type MilestoneRequirement = BuildingMilestoneRequirement | ItemMilestoneRequirement | ResourceMilestoneRequirement | GateMilestoneRequirement | TriggerMilestoneRequirement | StoreMilestoneRequirement;
 
 /**
  * True once whichever storage backs `requirement`'s own kind says it's already satisfied — the
@@ -105,5 +113,7 @@ export function isMilestoneRequirementMet(requirement: MilestoneRequirement): bo
         case 'trigger':
             return getTriggerConfig(requirement.triggerId)?.disabled
                 || TriggerStorage.isActivated(requirement.triggerId);
+        case 'store':
+            return StoreProgressStorage.getLevel(requirement.storeId) >= requirement.level;
     }
 }

@@ -28,6 +28,8 @@ function readMapSettingsObjects(map) {
 }
 /** Matches store/StoreLayout.ts's STORES_LAYER_NAME — its objects ("store", "storeEntrance", ...) are bucketed alongside mapSettings' by readMapObjectIds(). */
 const STORES_LAYER_NAME = 'stores';
+/** Matches WorldObjectRegistry.SECTIONS_LAYER_NAME — a "storeSection" there IS a building (its id is a Buildings tab id), so readMapObjectIds() buckets it under "building" too. */
+const SECTIONS_LAYER_NAME = 'sections';
 
 /**
  * Reads `mapFilePath` and buckets every object on its "mapSettings" layer by
@@ -78,6 +80,14 @@ export function readMapObjectIds(mapFilePath) {
         (byType[type] ??= new Set()).add(String(id));
         if (type === 'store') {
             storeStarters[String(id)] = props.starter ? String(props.starter) : null;
+        }
+    }
+    const sectionLayers = (map.layers ?? []).filter(l => l.type === 'objectgroup' && typeof l.name === 'string' && l.name.includes(SECTIONS_LAYER_NAME));
+    for (const obj of sectionLayers.flatMap(l => l.objects ?? [])) {
+        const props = Object.fromEntries((obj.properties ?? []).map(p => [p.name, p.value]));
+        if (props.type === 'storeSection' && props.id) {
+            (byType.storeSection ??= new Set()).add(String(props.id));
+            (byType.building ??= new Set()).add(String(props.id));
         }
     }
 

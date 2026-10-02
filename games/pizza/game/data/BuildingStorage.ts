@@ -24,6 +24,8 @@ interface BuildingState {
     level: number;
     /** Progress toward level `level + 1`'s requirements — reset to {} whenever a level clears. */
     progress: Partial<Record<ResourceType, number>>;
+    /** Coins paid toward level `level + 1`'s `money` (see BuildingLevelConfig.money) — reset to 0 whenever a level clears. Missing on saves from before money costs existed. */
+    money?: number;
 }
 
 function createDefaultState(): BuildingState {
@@ -45,7 +47,7 @@ export class BuildingStorage {
             const parsed: Partial<Record<BuildingId, BuildingState>> = raw ? JSON.parse(raw) : {};
             for (const [id, state] of Object.entries(parsed)) {
                 if (state && typeof state.level === 'number') {
-                    this.states.set(id as BuildingId, { level: state.level, progress: { ...state.progress } });
+                    this.states.set(id as BuildingId, { level: state.level, progress: { ...state.progress }, money: state.money ?? 0 });
                 }
             }
         } catch (e) {
@@ -68,6 +70,10 @@ export class BuildingStorage {
 
     static getProgress(id: BuildingId, type: ResourceType): number {
         return this.state(id).progress[type] ?? 0;
+    }
+
+    static getMoneyProgress(id: BuildingId): number {
+        return this.state(id).money ?? 0;
     }
 
     static isMaxLevel(id: BuildingId): boolean {
@@ -109,7 +115,27 @@ export class BuildingStorage {
         return accepted;
     }
 
-    /** True once every resource in the current next-level requirement has been fully deposited. */
+    /** Money counterpart of addProgress() — credits coins toward the CURRENT next level's `money`, capped the same way, and returns how much was accepted. */
+    static addMoneyProgress(id: BuildingId, amount: number): number {
+        if (amount <= 0) {
+            return 0;
+        }
+
+        const need = this.getNextLevelConfig(id)?.money ?? 0;
+        const state = this.state(id);
+        const current = state.money ?? 0;
+        const accepted = Math.min(amount, need - current);
+        if (accepted <= 0) {
+            return 0;
+        }
+
+        state.money = current + accepted;
+        this.onProgressChanged.dispatch(id);
+        void this.persist();
+        return accepted;
+    }
+
+    /** True once every resource (and the money, if any) in the current next-level requirement has been fully deposited. */
     static isNextLevelReady(id: BuildingId): boolean {
         const next = this.getNextLevelConfig(id);
         if (!next) {
@@ -117,7 +143,8 @@ export class BuildingStorage {
         }
 
         const state = this.state(id);
-        return Object.entries(next.requirements).every(([type, need]) => (state.progress[type as ResourceType] ?? 0) >= (need ?? 0));
+        return (state.money ?? 0) >= (next.money ?? 0)
+            && Object.entries(next.requirements).every(([type, need]) => (state.progress[type as ResourceType] ?? 0) >= (need ?? 0));
     }
 
     /**
@@ -134,6 +161,7 @@ export class BuildingStorage {
         const state = this.state(id);
         state.level += 1;
         state.progress = {};
+        state.money = 0;
         this.onLevelUp.dispatch(id, state.level);
         void this.persist();
         return true;

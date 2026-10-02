@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="11" nextobjectid="197">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="32" tileheight="32" infinite="1" nextlayerid="12" nextobjectid="244">
  <editorsettings>
   <export target="../raw-assets/json/map/testMap1.json" format="json"/>
  </editorsettings>
@@ -9,7 +9,7 @@
  <tileset firstgid="13" name="resources" tilewidth="32" tileheight="32" tilecount="11" columns="11">
   <image source="resources.png" width="352" height="32"/>
  </tileset>
- <tileset firstgid="24" name="models" tilewidth="116" tileheight="117" tilecount="15" columns="0">
+ <tileset firstgid="24" name="models" tilewidth="128" tileheight="117" tilecount="23" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="0">
    <properties>
@@ -74,6 +74,51 @@
     <property name="solid" type="bool" value="true"/>
    </properties>
    <image source="models/pizza-model-snapshots_Restaurant--TableMediumLong__96x48.png" width="96" height="48"/>
+  </tile>
+  <tile id="16">
+   <image source="models/pizza-model-snapshots_Restaurant--ChairA__32x32.png" width="32" height="32"/>
+  </tile>
+  <tile id="17">
+   <properties>
+    <property name="offsetY" type="float" value="0.1"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Restaurant--FloorKitchenSmall__64x64.png" width="64" height="64"/>
+  </tile>
+  <tile id="18">
+   <properties>
+    <property name="offsetY" type="float" value="0.1"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Restaurant--FloorKitchenSmallStyleB__64x64.png" width="64" height="64"/>
+  </tile>
+  <tile id="19">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Store--Wall__128x16.png" width="128" height="16"/>
+  </tile>
+  <tile id="20">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Store--WallWindowClosed__128x16.png" width="128" height="16"/>
+  </tile>
+  <tile id="21">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Store--WallWindowOpen__128x16.png" width="128" height="16"/>
+  </tile>
+  <tile id="22">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Store--DeskDecorated__96x49.png" width="96" height="49"/>
+  </tile>
+  <tile id="23">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+   <image source="models/pizza-model-snapshots_Store--WallHalf__64x16.png" width="64" height="16"/>
   </tile>
  </tileset>
  <layer id="1" name="groundLayer" width="30" height="20" opacity="0.41">
@@ -361,7 +406,7 @@
 12,12,12,12,12,12,12,12,12,12,12,12,12,0,0,1,
 12,12,12,12,12,12,12,12,12,12,12,12,0,0,1,1,
 12,12,12,12,12,12,12,12,12,12,0,0,0,1,1,1,
-0,0,0,0,1,1,1,1,1,0,0,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
@@ -724,8 +769,8 @@
 0,0,0,0,0,0,4,0,0,0,0,0,0,0,5,5,
 0,0,0,0,0,0,4,0,0,0,0,0,0,5,5,4,
 0,0,0,0,0,0,4,0,0,0,0,0,5,5,0,4,
-5,0,0,0,0,0,4,0,0,0,5,5,5,0,0,4,
-5,5,5,5,5,4,4,4,5,5,5,0,0,0,0,0,
+5,5,5,5,5,0,4,0,0,0,5,5,5,0,0,4,
+0,0,0,0,5,4,4,4,5,5,5,0,0,0,0,0,
 0,0,0,0,0,4,4,4,0,0,0,0,0,0,0,0,
 0,0,0,0,0,4,4,4,0,0,0,0,0,0,0,0,
 0,0,0,0,0,4,4,4,0,0,0,0,0,0,0,0
@@ -971,10 +1016,10 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </chunk>
-   <chunk x="0" y="16" width="16" height="16">
+   <chunk x="16" y="16" width="16" height="16">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,14,14,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,14,14,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1577,7 +1622,7 @@
     <property name="type" value="storage"/>
    </properties>
   </object>
-  <object id="192" x="528" y="640" width="46.333" height="50.6667">
+  <object id="192" x="128" y="768" width="32" height="32">
    <properties>
     <property name="id" value="trash1"/>
     <property name="type" value="storage"/>
@@ -1613,7 +1658,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="55" x="576" y="416" width="65" height="65">
+  <object id="55" x="864" y="448" width="65" height="65">
    <properties>
     <property name="id" value="shop2"/>
     <property name="type" value="shop"/>
@@ -1625,7 +1670,7 @@
     <property name="type" value="shop"/>
    </properties>
   </object>
-  <object id="56" x="576" y="422" width="64.5" height="64.5">
+  <object id="56" x="864" y="454" width="64.5" height="64.5">
    <properties>
     <property name="id" value="dropperShop2"/>
     <property name="target" value="shop2"/>
@@ -1792,7 +1837,49 @@
    </properties>
   </object>
  </objectgroup>
- <objectgroup id="9" name="stores">
+ <objectgroup draworder="index" id="11" name="sections">
+  <object id="230" gid="42" x="353" y="480" width="64" height="64"/>
+  <object id="231" gid="42" x="417" y="480" width="64" height="64"/>
+  <object id="232" gid="42" x="481" y="480" width="64" height="64"/>
+  <object id="233" gid="42" x="481" y="544" width="64" height="64"/>
+  <object id="234" gid="42" x="481" y="608" width="64" height="64"/>
+  <object id="235" gid="42" x="417" y="608" width="64" height="64"/>
+  <object id="236" gid="42" x="353" y="608" width="64" height="64"/>
+  <object id="237" gid="42" x="353" y="544" width="64" height="64"/>
+  <object id="238" gid="42" x="417" y="544" width="64" height="64"/>
+  <object id="210" x="353" y="401" width="208" height="207">
+   <properties>
+    <property name="id" value="storeRoom1"/>
+    <property name="target" value="farmStore1"/>
+    <property name="type" value="storeSection"/>
+   </properties>
+  </object>
+  <object id="226" gid="40" x="441.409" y="471.068" width="13.7727" height="12.8636"/>
+  <object id="227" x="437.583" y="461.644" width="21.3333" height="21.3333">
+   <properties>
+    <property name="id" value="hireDesk1"/>
+    <property name="type" value="hireDesk"/>
+   </properties>
+  </object>
+  <object id="228" x="402.917" y="495.333" width="96" height="48">
+   <properties>
+    <property name="target" value="hireDesk1"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="229" x="385" y="512" width="128" height="96">
+   <properties>
+    <property name="target" value="storeRoom1"/>
+    <property name="type" value="dropper"/>
+   </properties>
+  </object>
+  <object id="239" gid="45" x="353" y="416" width="128" height="16"/>
+  <object id="240" gid="45" x="545" y="480" width="128" height="16" rotation="90"/>
+  <object id="241" gid="46" x="481" y="480" width="64" height="32" rotation="180"/>
+  <object id="242" gid="47" x="481" y="416" width="64" height="16"/>
+  <object id="243" gid="47" x="545" y="416" width="64" height="16" rotation="90"/>
+ </objectgroup>
+ <objectgroup id="9" name="stores" locked="1">
   <object id="153" x="-61" y="444.333" width="717.667" height="577">
    <properties>
     <property name="id" value="farmStore1"/>

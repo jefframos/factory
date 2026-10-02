@@ -150,6 +150,22 @@ export default class WorldManager {
     }
 
     /**
+     * True if `zoneNumber` will be unlocked on this boot — callable BEFORE buildGround(), which
+     * is what PizzaScene's constructor needs to validate a saved spawn position (see
+     * PlayerPositionStorage.ts) before anything has actually been revealed yet. Same three
+     * sources that end up revealing a zone during startup: zone 0 (always, buildGround()), the
+     * debug cookie's catch-up range (buildGround()), or a ZONE_CONFIG requirement that's already
+     * met (checkZoneRequirements(), on the first update()).
+     */
+    public isZoneUnlockedAtBoot(zoneNumber: number): boolean {
+        if (zoneNumber === 0 || zoneNumber < DebugZoneRevealCookie.getNextZoneToReveal()) {
+            return true;
+        }
+        const requirement = ZONE_CONFIG[zoneNumber]?.requirement;
+        return requirement !== undefined && isMilestoneRequirementMet(requirement);
+    }
+
+    /**
      * Checks every zoneNumber with a `requirement` configured in ZONE_CONFIG (see
      * ZoneTypes.ts's own doc — set from the pizza web editor's Zones tab) and reveals any
      * that's both not-yet-revealed and now met, through the same revealZoneWithEffect() path

@@ -53,6 +53,8 @@ export interface BuildingLevelConfig {
     level: number;
     /** Resources needed to clear this level, deposited via BuildingZone. */
     requirements: Partial<Record<ResourceType, number>>;
+    /** Coins (CurrencyType.Money) also needed to clear this level — paid from the wallet at the same dropper, alongside `requirements` (see BuildingZone.flyInMoney()). undefined/0 = no money cost. */
+    money?: number;
     effect: BuildingEffect;
     /** What the building looks like once THIS level is cleared — see getMeshConfigForLevel(). */
     mesh: BuildingMeshConfig;
@@ -348,6 +350,38 @@ export const BUILDING_CONFIG: Record<BuildingId, BuildingConfig> = {
             0,
             0
         ],
+        "solidFromMap": true,
+        "baseView": "baseBuildingSite",
+        "baseFillFull": true,
+        "frame": "Floor",
+        "floorLabelSide": "south",
+        "baseAtDropper": true
+    },
+    "storeRoom1": {
+        baseMesh: { size: [1, 0.6, 1], color: 0x8899aa },
+        "name": "StoreRoom1",
+        "appearRequirement": {
+            "type": "store",
+            "storeId": "farmStore1",
+            "level": 1
+        },
+        "levels": [{
+            "level": 1,
+            "requirements": {
+                "wood": 30
+            },
+            "money": 150,
+            "effect": {
+                "type": "storeRoom",
+                "value": 1,
+                "description": "New store room"
+            },
+            mesh: { size: [1, 1, 1], color: 0x8899aa },
+            "forceOwnMesh": true
+        }],
+        "popupMode": "simple",
+        "baseFillFraction": 0.1,
+        "updateParticleEffectId": "craftingMyst",
         "solidFromMap": true,
         "baseView": "baseBuildingSite",
         "baseFillFull": true,

@@ -402,6 +402,11 @@ export default class Store extends Entity implements StoreClientHost, StoreCashi
     }
 
     /** True once the starter building (if any) has been built — see this file's own doc. */
+    /** This store's map id (the "store" object's `id` on the stores layer). */
+    public getId(): string {
+        return this.layout.id;
+    }
+
     public isOpen(): boolean {
         const starter = this.layout.starter;
         if (starter === undefined) {

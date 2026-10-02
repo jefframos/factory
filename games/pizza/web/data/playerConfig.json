@@ -14,7 +14,9 @@
             "falling": "FallingIdle",
             "landing": "Landing",
             "talk": "Talking",
-            "happy": "Excited"
+            "happy": "Excited",
+            "sitDown": "StandToSit",
+            "sitting": "Sitting"
         },
         "carrier": {
             "models": [

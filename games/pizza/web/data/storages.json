@@ -148,7 +148,7 @@
             "models": [
                 "Restaurant.Trashcan"
             ],
-            "scale": 1,
+            "scale": 0.5,
             "rotationDeg": 0,
             "dropOffset": {
                 "y": 2.3
@@ -159,7 +159,9 @@
                 "layers": 3
             },
             "solid": 1,
-            "view": "trashcanView"
+            "view": "trashcanView",
+            "price": {},
+            "resourceCost": []
         },
         "storage5": {
             "models": [

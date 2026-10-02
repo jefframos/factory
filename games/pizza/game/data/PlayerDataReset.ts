@@ -86,8 +86,18 @@ import { DebugZoneRevealCookie } from '../utils/DebugZoneRevealCookie';
  * first-ever visit gets — the exact bug report that added this line.
  */
 export function clearAllPlayerData(): void {
+    void wipeAllPlayerData().then(() => window.location.reload());
+}
+
+/**
+ * The wipe half of clearAllPlayerData(), without the reload — also used by
+ * SaveDataVersion.ensureSaveDataVersion() at boot (BEFORE any *Storage.load() runs) to discard
+ * a save written under an older SAVE_DATA_VERSION. Every entry is safe to call pre-load: each
+ * one just resets its own static state and removes/rewrites its own key.
+ */
+export async function wipeAllPlayerData(): Promise<void> {
     DebugZoneRevealCookie.clear();
-    void Promise.all([
+    await Promise.all([
         GlobalResourceStorage.clearAll(),
         BackpackStorage.clearAll(),
         StorageInventory.clearAll(),
@@ -119,5 +129,5 @@ export function clearAllPlayerData(): void {
         SeedStorage.clearAll(),
         TutorialProgressStorage.clearAll(),
         TriggerStorage.clearAll(),
-    ]).then(() => window.location.reload());
+    ]);
 }

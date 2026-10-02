@@ -73,8 +73,6 @@ import { ZONE_CONFIG } from '../data/ZoneTypes';
 import { DEFAULT_CAMERA_TEMPLATE_ID, getCameraTemplate } from '../data/CameraTemplateTypes';
 import { TriggerStorage } from '../data/TriggerStorage';
 import { FarmPlotStorage } from '../data/FarmPlotStorage';
-import { FarmCropStorage } from '../data/FarmCropStorage';
-import { DebugZoneRevealCookie } from '../utils/DebugZoneRevealCookie';
 import { SeedId } from '../data/SeedTypes';
 import { SeedStorage } from '../data/SeedStorage';
 import { TutorialProgressStorage } from '../tutorial/TutorialProgressStorage';
@@ -114,7 +112,8 @@ import { StorageInventory } from '../data/StorageInventory';
 import StorageZone from '../world/StorageZone';
 import Store, { spawnStores } from '../store/Store';
 import { StoreUnlocks } from '../store/StoreUnlocks';
-import type { StoreWorkerRole } from '../store/StoreTypes';
+import { getStoreConfig, WORKER_NPC_ID, type StoreWorkerRole } from '../store/StoreTypes';
+import HireDeskZone from '../store/HireDeskZone';
 import StoragePurchaseZone from '../store/StoragePurchaseZone';
 import { FLOOR_FRAME } from '../ui/PopupConfig';
 import { getCarrierCapacity, getCarrierLevel, getCarrierShopIds } from '../data/CarrierCapacity';
@@ -135,7 +134,7 @@ import { GateStorage } from '../data/GateStorage';
 import { downloadGameData } from '../debug/GameDataBaker';
 import { PlayerPositionStorage } from '../data/PlayerPositionStorage';
 import { isWalkable } from '../world/TileWalkability';
-import { ModelSnapshotTool } from '../debug/ModelSnapshotTool';
+import { ModelSnapshotWindow } from '../debug/ModelSnapshotWindow';
 import { MapLayoutSuggestionTool, MapLayoutArchetype } from '../debug/MapLayoutSuggestionTool';
 import { getMeshPlacements } from '../world/MeshLayerSpawner';
 import { addMapMeshVisual } from '../world/MapMeshVisual';
@@ -401,7 +400,21 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         // WorldObjectRegistry.ts's own doc), which in turn beats wherever MainPlayer's own
         // transform otherwise defaults to (world origin). No-op (keeps whichever fallback
         // applies) if neither exists yet — e.g. a brand-new save with no persisted position.
-        const savedPosition = PlayerPositionStorage.getPosition();
+        //
+        // A saved position inside a zone the rest of the save doesn't unlock is discarded —
+        // that's reachable (the position save only checks the zones revealed IN MEMORY right
+        // then, e.g. a reset that wipes gates without reloading, or a map edit moving zone
+        // boundaries), and spawning there leaves loadPlayerCharacter() waiting forever on a
+        // zone reveal that can never happen.
+        let savedPosition = PlayerPositionStorage.getPosition();
+        if (savedPosition) {
+            const savedZone = this.worldManager.getZoneVisibilityManager().getZoneForPosition(savedPosition.x, savedPosition.z);
+            if (savedZone !== undefined && !this.worldManager.isZoneUnlockedAtBoot(savedZone)) {
+                console.warn(`[PizzaScene] saved position (${savedPosition.x}, ${savedPosition.z}) is in locked zone ${savedZone} — discarding it, spawning at playerStart`);
+                void PlayerPositionStorage.clearAll();
+                savedPosition = undefined;
+            }
+        }
         const playerStart = this.worldObjects.getPlayerStart();
         if (savedPosition) {
             this.mainPlayer.transform.position.set(savedPosition.x, 0, savedPosition.z);
@@ -448,6 +461,9 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         this.setupFarms();
         this.setupStorages();
         this.setupStores();
+        // After setupStores() — a desk can spawn immediately (its section already built) and
+        // looks its store up from this.stores.
+        this.setupHireDesks();
         this.setupTriggers();
         this.setupCraftTables();
         this.setupDebugGui();
@@ -655,7 +671,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             'Data',
         );
 
-        this.setupModelSnapshotDevGui();
+        this.setupModelSnapshotWindow();
         this.setupMapLayoutSuggestionDevGui();
         this.setupCarrierDevGui();
 
@@ -794,32 +810,13 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             },
             'Resources',
         );
+        // Same wipe + reload as the player-facing "Clear Data" (see PlayerDataReset.ts). This
+        // used to clear storages in place WITHOUT reloading, which left zones revealed in
+        // memory while GateStorage etc. were wiped — the periodic stable-tile save then
+        // re-persisted the player's position inside a zone the fresh save never unlocks.
         DevGuiManager.instance.addButton(
             'Reset Everything',
-            () => {
-                void GlobalResourceStorage.clearAll();
-                void BackpackStorage.clearAll();
-                void BuildingStorage.clearAll();
-                void GateStorage.clearAll();
-                void QueueStorage.clearAll();
-                void EconomyStorage.clearAll();
-                void ShopUpgradeStorage.clearAll();
-                void this.resetCraftingProgress();
-                void this.dynamicResourceSpawner.resetAll();
-                void this.shapeResourceSpawner.resetAll();
-                void AnimalFollowStorage.clearAll();
-                void PlayerPositionStorage.clearAll();
-                void FarmPlotStorage.clearAll();
-                void FarmCropStorage.clearAll();
-                void SeedStorage.clearAll();
-                void TutorialProgressStorage.clearAll();
-                void TriggerStorage.clearAll();
-                // See PlayerDataReset.ts's own doc on why this dev-only cookie needs clearing
-                // too — without it, a session that ever used "Open Next Zone"/"Teleport: Next"
-                // would have this button reset every real storage but leave zone visibility
-                // stuck wherever that debug reveal last left off.
-                DebugZoneRevealCookie.clear();
-            },
+            () => clearAllPlayerData(),
             'Resources',
         );
 
@@ -915,80 +912,15 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     }
 
     /**
-     * Renders any MODELS registry entry from directly overhead and downloads it as a
-     * name-encoded PNG (see ModelSnapshotTool.ts's own doc) — the level-design workflow this
-     * exists for: drop the PNG as a placeholder object on a Tiled object layer, position/rotate
-     * it there by eye, and a future lazy loader reads that layer back, decodes the filename to
-     * a model ref, and spawns the real 3D model in its place. "Snapshot Random Model" is the
-     * quick way to pull a handful of real test images without generating the whole registry.
+     * Renders any MODELS registry entry as a name-encoded PNG (see ModelSnapshotTool.ts's own
+     * doc) — drop it as a placeholder object in Tiled and the game decodes the filename back to
+     * the real model. Lives in its own floating DOM window with a live preview (see
+     * ModelSnapshotWindow.ts), mounted only when the page has ?snap=1 — independent of ?dev.
      */
-    private setupModelSnapshotDevGui(): void {
-        const modelRefs = ModelSnapshotTool.listModelRefs();
-        if (modelRefs.length > 0) {
-            ModelSnapshotTool.settings.selectedModelRef = modelRefs[0];
+    private setupModelSnapshotWindow(): void {
+        if (Game.debugParams.snap === 1) {
+            ModelSnapshotWindow.mount();
         }
-        const groups = ModelSnapshotTool.listGroups();
-        if (groups.length > 0) {
-            ModelSnapshotTool.settings.selectedGroup = groups[0];
-        }
-
-        DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['pixelsPerWorldUnit'], [1, 64], 'Pixels Per World Unit', 'Model Snapshots');
-
-        // Off (default) -> every snapshot renders exactly the same straight-down shot this tool
-        // always took. On -> portraitDistance/portraitPitchDeg/portraitYawDeg below frame an
-        // angled shot instead — same distance/pitch/yaw convention the live gameplay camera
-        // (CAMERA_SETTINGS above) uses, just orbiting the model's own center.
-        DevGuiManager.instance.addToggle('portraitMode', ModelSnapshotTool.settings.portraitMode, (value) => {
-            ModelSnapshotTool.settings.portraitMode = value;
-        }, 'Model Snapshots');
-        DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['portraitDistance'], [1, 30], 'Portrait Distance', 'Model Snapshots');
-        DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['portraitPitchDeg'], [-89, 89], 'Portrait Pitch', 'Model Snapshots');
-        DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['portraitYawDeg'], [-180, 180], 'Portrait Yaw', 'Model Snapshots');
-
-        // Off (default) -> portrait shots keep their usual variable-size, tight-fit-to-model
-        // output (unchanged). On -> every portrait shot instead renders at a fixed
-        // portraitTextureSizePx square with the model padded to fill it (see
-        // ModelSnapshotTool.settings.portraitFillTexture's own doc) — the setting to flip on
-        // when producing actual game icon assets, not Tiled-placeholder previews.
-        DevGuiManager.instance.addToggle('portraitFillTexture', ModelSnapshotTool.settings.portraitFillTexture, (value) => {
-            ModelSnapshotTool.settings.portraitFillTexture = value;
-        }, 'Model Snapshots');
-        DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['portraitTextureSizePx'], [32, 2048], 'Portrait Texture Size (px)', 'Model Snapshots');
-        DevGuiManager.instance.addProperties(ModelSnapshotTool.settings, ['portraitPaddingPercent'], [0, 45], 'Portrait Padding (% per side)', 'Model Snapshots');
-
-        DevGuiManager.instance.addDropdown(
-            ModelSnapshotTool.settings,
-            'selectedModelRef',
-            modelRefs,
-            () => { /* value already written straight into settings.selectedModelRef */ },
-            'Model To Test',
-            'Model Snapshots',
-        );
-
-        DevGuiManager.instance.addButton('Snapshot Selected Model', () => {
-            void ModelSnapshotTool.snapshotOne(ModelSnapshotTool.settings.selectedModelRef);
-        }, 'Model Snapshots');
-
-        DevGuiManager.instance.addButton('Snapshot Random Model', () => {
-            void ModelSnapshotTool.snapshotRandom();
-        }, 'Model Snapshots');
-
-        DevGuiManager.instance.addButton('Snapshot All Models', () => {
-            void ModelSnapshotTool.snapshotAll();
-        }, 'Model Snapshots');
-
-        DevGuiManager.instance.addDropdown(
-            ModelSnapshotTool.settings,
-            'selectedGroup',
-            groups,
-            () => { /* value already written straight into settings.selectedGroup */ },
-            'Group To Snapshot',
-            'Model Snapshots',
-        );
-
-        DevGuiManager.instance.addButton('Snapshot Group', () => {
-            void ModelSnapshotTool.snapshotGroup(ModelSnapshotTool.settings.selectedGroup);
-        }, 'Model Snapshots');
     }
 
     /**
@@ -1295,6 +1227,7 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
             }
 
             const ownMeshes = this.worldObjects.getOwnMeshes('building', buildingId);
+            const cameraTarget = this.worldObjects.getCameraTargetFor(buildingId);
             this.requirementRegistry.registerSpawnGate(buildingId, BUILDING_CONFIG[buildingId].appearRequirement, () => {
                 // Same optional NPC-in-front-of-the-entity system setupMarts() uses — see
                 // BuildingConfig.npcId/npcOffset's own doc for why this is always relative to
@@ -1324,6 +1257,9 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
                     triggerArea,
                     ownMeshes,
                     npc,
+                    cameraTarget && new THREE.Vector3(cameraTarget.x, BUILDING_ZONE_OFFSET.y, cameraTarget.z),
+                    () => this.uiService.economyUi.getIconAnchorPosition(CurrencyType.Money),
+                    this.worldObjects.getStoreSection(buildingId) !== undefined,
                 ));
                 this.threeScene.add(buildingZone.transform);
                 this.registerZoneVisibility(buildingZone.transform, position.x, position.z, placement.width, placement.depth);
@@ -1647,6 +1583,59 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
     }
 
     /** Grocery stores drawn on the map's "stores" layer — see store/Store.ts. Independent of setupStorages(): a store reads its storages straight from the map + StorageInventory. */
+    /**
+     * One HireDeskZone (+ its NPC) per "hireDesk" on the map's sections layer (see
+     * WorldObjectRegistry.SECTIONS_LAYER_NAME). The NPC stands at the desk area's center; the
+     * player interacts at the dropper targeting the desk's id (else on the desk area itself). A
+     * desk inside a section appears once that section's building reaches level 1; one drawn
+     * outside every section appears right away. The NPC look is the store's
+     * StoreConfig.hiring.npcId, else the shared worker look.
+     */
+    private setupHireDesks(): void {
+        for (const desk of this.worldObjects.getHireDesks()) {
+            const storeId = desk.storeId;
+            if (!storeId) {
+                continue;
+            }
+            const sectionId = desk.sectionId as BuildingId | undefined;
+            if (sectionId && !BUILDING_CONFIG[sectionId]) {
+                console.warn(`[PizzaScene] hireDesk "${desk.id}" sits in section "${sectionId}", which has no Buildings tab entry — the desk appears right away`);
+            }
+            const requirement = sectionId && BUILDING_CONFIG[sectionId]
+                ? { type: 'building' as const, buildingId: sectionId, level: 1 }
+                : undefined;
+            const trigger = this.worldObjects.getDropperFor(desk.id) ?? desk.placement;
+            if (trigger === desk.placement) {
+                console.warn(`[PizzaScene] hireDesk "${desk.id}" has no dropper targeting it — the player hires by standing on the desk area itself`);
+            }
+
+            this.requirementRegistry.registerSpawnGate(desk.id, requirement, () => {
+                const triggerPosition = new THREE.Vector3(trigger.x, 0, trigger.z);
+                const triggerFootprint = { width: trigger.width, depth: trigger.depth };
+
+                const deskZone = this.world.add(new HireDeskZone(
+                    triggerPosition, triggerFootprint, this.screenHost, storeId,
+                    () => this.stores.find(store => store.getId() === storeId),
+                    () => this.freezePlayerMovement(),
+                    () => this.unfreezePlayerMovement(),
+                ));
+                this.threeScene.add(deskZone.transform);
+                this.registerZoneVisibility(deskZone.transform, triggerPosition.x, triggerPosition.z, triggerFootprint.width, triggerFootprint.depth);
+
+                const npcId = getStoreConfig(storeId).hiring?.npcId ?? WORKER_NPC_ID;
+                const npcConfig = getNpcConfig(npcId);
+                if (npcConfig) {
+                    const npcPosition = new THREE.Vector3(desk.placement.x, 0, desk.placement.z);
+                    // Seated — the hireDesk spot is drawn on the desk's chair.
+                    const npc = this.world.add(new NpcEntity(npcPosition, npcConfig, () => this.mainPlayer.transform.position, { sitting: true }));
+                    this.threeScene.add(npc.transform);
+                } else {
+                    console.warn(`[PizzaScene] hireDesk "${desk.id}" wants npcId "${npcId}", which has no NpcConfig entry — no NPC at the desk`);
+                }
+            });
+        }
+    }
+
     private setupStores(): void {
         this.stores = spawnStores({
             world: this.world,
@@ -2135,8 +2124,14 @@ export default class PizzaScene extends ThreeScene implements CameraFocusHost, W
         }
 
         return new Promise(resolve => {
+            // Never resolves if the zone can't unlock — the constructor's saved-spawn validation
+            // is what prevents that; this just makes it loud instead of a silent stuck spinner.
+            const stuckWarning = window.setTimeout(() => {
+                console.warn(`[PizzaScene] still waiting for spawn zone ${zoneNumber} to reveal — "Loading Player" spinner is blocked on it`);
+            }, 5000);
             const handleRevealed = (revealedZone: number): void => {
                 if (revealedZone === zoneNumber) {
+                    window.clearTimeout(stuckWarning);
                     this.worldManager.onZoneRevealed.remove(handleRevealed);
                     resolve();
                 }

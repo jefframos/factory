@@ -25,7 +25,7 @@ import { renameEntity } from './sync/renameEntity.mjs';
 import { checkConsistency } from './sync/checkConsistency.mjs';
 import { validateMap } from './sync/validateMap.mjs';
 import { scanImageAssets, scanNonPreloadAssets } from './sync/imageAssets.mjs';
-import { readSpawnerTileTypes, readSpawnerShapeIds, readZoneCells, readZoneContents, readMapSize } from './sync/tiledMap.mjs';
+import { readSpawnerTileTypes, readSpawnerShapeIds, readZoneCells, readZoneContents, readMapSize, readMapObjectIds } from './sync/tiledMap.mjs';
 import { generateTilesetImage, GROUND_NUMBER_STYLE, RESOURCE_NUMBER_STYLE } from './sync/tilesetImage.mjs';
 import { readModelsCatalog } from './sync/modelsCatalog.mjs';
 
@@ -221,6 +221,13 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/spawner-shape-ids' && req.method === 'GET') {
         return sendJson(res, 200, readSpawnerShapeIds(MAP_FILE));
+    }
+
+    // type -> sorted ids of every mapSettings/stores object — backs the '$mapObjectIds' select source (see app.js getOptions()).
+    if (url.pathname === '/api/map-object-ids' && req.method === 'GET') {
+        const { byType, error } = readMapObjectIds(MAP_FILE);
+        const ids = Object.fromEntries(Object.entries(byType).map(([type, set]) => [type, [...set].sort()]));
+        return sendJson(res, 200, { byType: ids, error });
     }
 
     if (url.pathname === '/api/zone-cells' && req.method === 'GET') {
