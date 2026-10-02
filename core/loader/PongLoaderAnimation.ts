@@ -288,7 +288,8 @@ export class PongLoaderAnimation {
                 height: ${this.PADDLE_HEIGHT}px;
 
                 border-radius: 999px;
-                background: #ffffff;
+                background: var(--loader-accent, #ffffff);
+                box-shadow: var(--loader-accent-shadow, none);
 
                 will-change: transform;
             }
@@ -302,7 +303,8 @@ export class PongLoaderAnimation {
                 height: ${this.BALL_SIZE}px;
 
                 border-radius: 50%;
-                background: #ffffff;
+                background: var(--loader-accent, #ffffff);
+                box-shadow: var(--loader-accent-shadow, none);
 
                 will-change: transform;
             }

@@ -10,18 +10,28 @@ export interface LoaderPatternConfig {
 export interface LoaderBarConfig {
     width?: string;
     height?: string;
-    /** Fill color of the progress bar. */
+    /** Fill of the progress bar — any CSS background: a color or a gradient. */
     fillColor?: string;
-    /** Background color behind the fill (the "empty" portion of the bar). */
+    /** CSS box-shadow on the fill — e.g. an inset top highlight for a glossy look. Default none. */
+    fillShadow?: string;
+    /** CSS border-radius of the fill's own ends (rounded leading edge). Default '0' — square, clipped by the bar's own radius. */
+    fillRadius?: string;
+    /** Behind the fill (the "empty" portion of the bar) — any CSS background: a color or a gradient. */
     backgroundColor?: string;
     borderColor?: string;
     borderWidth?: string;
     borderRadius?: string;
+    /** CSS box-shadow on the whole bar — drop shadow and/or an inset to look recessed. Default none. */
+    shadow?: string;
 }
 
 export interface LoaderConfig {
-    /** Background color covering the whole screen behind the bar. */
+    /** Covers the whole screen behind the bar — any CSS background: a color or a gradient. */
     backgroundColor?: string;
+    /** Color of the Pong paddles + ball above the bar (any CSS background). Default white. */
+    accentColor?: string;
+    /** CSS box-shadow on the paddles + ball. Default none. */
+    accentShadow?: string;
     /** Optional tiling pattern drawn over the background. */
     pattern?: LoaderPatternConfig;
     bar?: LoaderBarConfig;

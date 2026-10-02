@@ -20,7 +20,7 @@ function injectStyles() {
             align-items: center;
             justify-content: center;
 
-            background-color: var(--loader-bg, #111111);
+            background: var(--loader-bg, #111111);
 
             transition: opacity var(--loader-fade, 400ms) ease;
             opacity: 1;
@@ -60,7 +60,7 @@ function injectStyles() {
             width: var(--loader-bar-width, 300px);
             height: var(--loader-bar-height, 24px);
 
-            background-color: var(
+            background: var(
                 --loader-bar-bg,
                 rgba(255, 255, 255, 0.15)
             );
@@ -69,6 +69,7 @@ function injectStyles() {
             border-color: var(--loader-bar-border-color, #ffffff);
             border-width: var(--loader-bar-border-width, 2px);
             border-radius: var(--loader-bar-radius, 999px);
+            box-shadow: var(--loader-bar-shadow, none);
 
             overflow: hidden;
         }
@@ -77,7 +78,9 @@ function injectStyles() {
             height: 100%;
             width: 0%;
 
-            background-color: var(--loader-bar-fill, #ffffff);
+            background: var(--loader-bar-fill, #ffffff);
+            box-shadow: var(--loader-bar-fill-shadow, none);
+            border-radius: var(--loader-bar-fill-radius, 0);
 
             transition: width 120ms ease-out;
         }
@@ -157,6 +160,13 @@ export default class HtmlLoader {
             '--loader-bar-fill',
             bar.fillColor ?? '#ffffff',
         );
+
+        // Optional extras — each defaults to the look this loader always had.
+        this.root.style.setProperty('--loader-bar-fill-shadow', bar.fillShadow ?? 'none');
+        this.root.style.setProperty('--loader-bar-fill-radius', bar.fillRadius ?? '0');
+        this.root.style.setProperty('--loader-bar-shadow', bar.shadow ?? 'none');
+        this.root.style.setProperty('--loader-accent', config.accentColor ?? '#ffffff');
+        this.root.style.setProperty('--loader-accent-shadow', config.accentShadow ?? 'none');
 
         if (config.pattern?.image) {
             const pattern = document.createElement('div');
